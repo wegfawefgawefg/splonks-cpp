@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cmake: configure (dev)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build.sh --configure-only",
+      "problemMatcher": ["$gcc", "$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "cmake: build (dev)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build.sh",
+      "problemMatcher": ["$gcc", "$msCompile"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOn": ["cmake: configure (dev)"]
+    },
+    {
+      "label": "run splonks-cpp",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/run.sh",
+      "options": {
+        "env": {
+          "SDL_VIDEODRIVER": "x11"
+        }
+      }
+    }
+  ]
+}

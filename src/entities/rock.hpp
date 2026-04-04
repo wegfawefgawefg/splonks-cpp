@@ -1,0 +1,18 @@
+#pragma once
+
+#include "entity.hpp"
+
+namespace splonks {
+
+struct Audio;
+struct State;
+
+}
+
+namespace splonks::entities::rock {
+
+void SetEntityRock(Entity& entity);
+void StepEntityLogicAsRock(std::size_t entity_idx, State& state, Audio& audio);
+void StepEntityPhysicsAsRock(std::size_t entity_idx, State& state, Audio& audio, float dt);
+
+} // namespace splonks::entities::rock

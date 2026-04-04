@@ -1,0 +1,2 @@
+- pots not breaking when falling.
+    - maybe instigate a breakable system

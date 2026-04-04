@@ -1,0 +1,98 @@
+#include "state.hpp"
+
+namespace splonks {
+
+State State::New() {
+    State state;
+    state.mode = Mode::Title;
+    state.settings = Settings::New();
+    state.menu_inputs = MenuInputs::New();
+    state.menu_input_debounce_timers = MenuInputDebounceTimers::New();
+    state.playing_inputs = PlayingInputs::New();
+    state.title_menu_selection = TitleMenuOption::Start;
+    state.settings_menu_selection = SettingsMenuOption::Video;
+    state.video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
+    state.video_settings_target_window_size_index.reset();
+    state.video_settings_target_resolution_index.reset();
+    state.video_settings_target_fullscreen.reset();
+    state.choosing_control_binding = false;
+    state.rebuild_render_texture = false;
+    state.scene_frame = 0;
+    state.time_since_last_update = 0.0F;
+    state.now = 0.0;
+    state.running = true;
+    state.frame = 0;
+    state.stage_frame = 0;
+    state.menu_return_to = Mode::Title;
+    state.game_over = false;
+    state.pause = false;
+    state.win = false;
+    state.points = 0;
+    state.deaths = 0;
+    state.frame_pause = 0;
+    state.entity_manager = EntityManager::New();
+    state.special_effects.clear();
+    state.sid = SID::New();
+    state.stage = Stage::NewBlank();
+    state.next_stage = StageType::Test1;
+    state.player_vid.reset();
+    state.mouse_trailer_vid.reset();
+    return state;
+}
+
+void State::SetMode(Mode new_mode) {
+    mode = new_mode;
+    scene_frame = 0;
+}
+
+void State::RebuildSid() {
+    sid = SID::New();
+
+    for (const Entity& entity : entity_manager.entities) {
+        if (entity.active) {
+            sid.Insert(entity.vid, entity.pos, entity.size);
+        }
+    }
+}
+
+bool IsStageWon(const State& state) {
+    if (!state.player_vid.has_value()) {
+        return false;
+    }
+
+    const Entity* player = state.entity_manager.GetEntity(*state.player_vid);
+    if (player == nullptr) {
+        return false;
+    }
+
+    const auto [player_tl, player_br] = player->GetBounds();
+    const IVec2 player_tl_tile_pos = ToIVec2(player_tl) / static_cast<int>(kTileSize);
+    const IVec2 player_br_tile_pos = ToIVec2(player_br) / static_cast<int>(kTileSize);
+    const std::vector<const Tile*> player_tiles =
+        state.stage.GetTilesInRect(player_tl_tile_pos, player_br_tile_pos);
+
+    for (const Tile* tile : player_tiles) {
+        if (*tile == Tile::Exit) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void StepSpecialEffects(State& state) {
+    for (auto& effect : state.special_effects) {
+        effect->Step();
+    }
+
+    std::vector<std::unique_ptr<SpecialEffect>> kept_effects;
+    kept_effects.reserve(state.special_effects.size());
+    for (auto& effect : state.special_effects) {
+        if (!effect->IsFinished()) {
+            kept_effects.push_back(std::move(effect));
+        }
+    }
+    state.special_effects = std::move(kept_effects);
+}
+
+} // namespace splonks

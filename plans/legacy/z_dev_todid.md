@@ -1,0 +1,111 @@
+## todid
+
+- version up raylib to raylib 5
+- fix audio under raylib 5
+- how about some default chunk types,
+- how about rendering some different tile types, just different colors is fine
+- probabalistic tile sets
+- spikes and stuff
+- room sub features
+- added every level one room sub feature
+- entrance and exit
+- got some textures in
+- basic character collisions
+- character movement
+- ladder climbing
+- player ledge hanging
+- new tileset
+- controller input
+- entity manager in
+- entity versioned IDS in
+- entity architecture settled
+- animations in
+- common animations step function in
+- entity sprite atlas reasoned out
+- an enemy of some sort
+- frame skipping for effect
+- picking up things
+- picking up a rock
+- make camera clip at edges again
+- some things cant be picked up.
+- prevent player from dropping items into collideable tiles, basically just do a check on spawn them, and if they are inside a tile, idk its late
+- tile collisions respect out of bounds now
+- bugfix: picking up items that are behind an unpickubable item
+- entity collisions
+- grounded is for entity collisions too
+- prevent player from dropping items, that are bigger than or equal to TILE in size, into collideable tiles:
+- double check the grounded check is not just the bottom left corner please
+- redo tile collisions for small and big things.
+- disable pushing block unless grounded.
+- DEBUG: fix hanging not turning off logic
+- make block kill things
+- add dying
+- double check friction when grounded on other entities
+- make block not kill unkillable things, such as other blocks lol
+- enable hanging right on entities
+- equip item to back
+- jetpack
+- expand bat perching area beyond just top left corner.
+- working jetpack
+- jetpack physics tuned
+- equip sound
+- fixed logic for equipping multiple
+- throw sound
+- squish sound
+- grenade in
+- backpack now droppable
+- reanimated pushing
+- moved push logic to player
+- jetpack fuel
+- grenade should inactivate / blow up impassables
+- grenade should damage things on hit like rock.
+- grenade should damage things on explosion
+- jetpack bug fixed
+- falling on spikes
+- fix block not always crushing from the right for some reason
+- taking off a thing on your back
+- make back item position correctly
+- make back item blowupable, damageable
+- make ordered rendering (back item being on top of player is weird)
+- make explosion that damages tiles
+- jetpack jump logic, entity agnostic
+- money_entity, but can just implement one in code, but they all call the same update function
+- picking up money in
+- basic ui, hearts, bomb
+- money ui
+- stunning
+- bat damage
+- bat forgiveness
+- drop item if stunned
+- dropped item gets thrown immunity timer: should dropping an item from getting stunned let the item hit you for the double wammy????
+- player makes sound on fall
+- scrape sound on block move
+- grenades omnidirectional throwing
+- rock should stun on hit
+- grenade should do one damage and stun on hit
+- reworked throwing to not depend on facing, but instead on is_trying entity "intentions". same for grenade
+- put rope in
+- redo title screen
+- box, pot, throwable, spawn innards chance and noise on break
+- jump on thing to do damage
+- thrown bat to stun bats, or hurt them.
+- other entities getting stunned,
+- stun timer becomes common code
+- rocks only do 1 dmg and stun pls
+- baseball_bat swing
+- particle system is IN
+- level progression
+- level transitions
+- win condition
+- huge abstraction rewrite (lots of code removed, communized)
+- entities can make sound on damage
+- entities have unique crush sounds
+- main menu
+- settings
+- video settings
+- fix the rendering at different resolutions fire
+- working video settings
+- score, money, ui
+- getting hurt
+- seperate effects mini entities for things like smoke and stuff.
+- make cam have some momentum, its a nice feel

@@ -1,0 +1,175 @@
+#include "entities/jetpack.hpp"
+
+#include "audio.hpp"
+#include "entities/common.hpp"
+#include "special_effects/ultra_dynamic_effect.hpp"
+#include "sprite.hpp"
+#include "state.hpp"
+
+#include <memory>
+#include <random>
+
+namespace splonks::entities::jetpack {
+
+namespace {
+
+int RandomIntExclusive(int minimum, int maximum) {
+    static std::random_device device;
+    static std::mt19937 generator(device());
+    std::uniform_int_distribution<int> distribution(minimum, maximum - 1);
+    return distribution(generator);
+}
+
+float RandomFloat(float minimum, float maximum) {
+    static std::random_device device;
+    static std::mt19937 generator(device());
+    std::uniform_real_distribution<float> distribution(minimum, maximum);
+    return distribution(generator);
+}
+
+} // namespace
+
+void SetEntityJetpack(Entity& entity) {
+    entity.Reset();
+    entity.type_ = EntityType::JetPack;
+    entity.super_state = EntitySuperState::Idle;
+    entity.display_state = EntityDisplayState::Neutral;
+    entity.size = Vec2::New(8.0F, 8.0F);
+    entity.health = 1;
+    entity.damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion;
+    entity.has_physics = true;
+    entity.can_collide = true;
+    entity.impassable = false;
+    entity.facing = LeftOrRight::Left;
+    entity.counter_a = kFuel; // fuel lol
+    entity.draw_layer = DrawLayer::Foreground;
+    entity.can_be_stunned = false;
+    entity.alignment = Alignment::Neutral;
+    entity.sprite_animator.SetSprite(Sprite::Jetpack);
+}
+
+/** jetpack goes up by default, and idles if it hits the ceiling.
+ *  If the jetpack detects the player is beneath it,
+ *  It checks if the player is within some dist below, some dist left or right.
+ *      if yes, move towards the player right now.
+ *  If no, give up and fly back to the ceiling.
+ */
+void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
+    Entity& jetpack = state.entity_manager.entities[entity_idx];
+    if (jetpack.super_state == EntitySuperState::Dead) {
+        const Vec2 center = jetpack.GetCenter();
+        common::DoExplosion(entity_idx, center, 2.0F, state, audio);
+        return;
+    }
+
+    // if jetpack is in use, add acc to player
+    const EntityState jetpack_state = jetpack.state;
+    const std::optional<VID> held_by_vid = jetpack.held_by_vid;
+    const float fuel = jetpack.counter_a;
+    if (jetpack_state == EntityState::InUse) {
+        bool refill_fuel = false;
+        if (held_by_vid.has_value()) {
+            if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
+                if (holder->grounded || holder->climbing || holder->IsHanging() ||
+                    holder->jumped_this_frame) {
+                    refill_fuel = true;
+                }
+            }
+        }
+        if (refill_fuel) {
+            jetpack.counter_a = kFuel;
+        }
+        if (fuel > 0.0F) {
+            // make the holder go up
+            if (held_by_vid.has_value()) {
+                if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
+                    const float jetpack_max_upspeed = -2.0F;
+                    if (holder->vel.y > jetpack_max_upspeed) {
+                        holder->acc.y = -0.6F;
+                        holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
+                    }
+                    holder->display_state = EntityDisplayState::Neutral;
+                }
+            }
+
+            // play travel sound
+            jetpack.travel_sound_countdown -= 1.0F;
+
+            if (jetpack.travel_sound_countdown < 0.0F) {
+                jetpack.travel_sound_countdown = kTravelSoundDistInterval;
+                const SoundEffect sound_effect =
+                    jetpack.travel_sound == TravelSound::One ? SoundEffect::Jetpack1
+                                                             : SoundEffect::Jetpack2;
+                audio.PlaySoundEffect(sound_effect);
+                jetpack.IncTravelSound();
+            }
+            if (fuel > 0.0F) {
+                jetpack.counter_a -= 1.0F;
+            }
+
+            const Vec2 center = jetpack.GetCenter();
+            for (int i = 0; i < 16; ++i) {
+                const float vel = RandomFloat(0.1F, 0.5F);
+                const float svel = RandomFloat(vel * 0.1F, vel * 1.0F);
+                const float sacc = RandomFloat(vel * 0.01F, vel * 0.02F);
+                auto effect = std::make_unique<UltraDynamicEffect>();
+                effect->type_ = SpecialEffectType::BasicSmoke;
+                effect->draw_layer = DrawLayer::Foreground;
+                effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(0, 32));
+                effect->pos = center + Vec2::New(3.0F, 3.0F);
+                effect->size = Vec2::New(1.0F, 1.0F) * 2.0F;
+                effect->rot = RandomFloat(0.0F, 360.0F);
+                effect->alpha = 1.0F;
+                effect->vel = Vec2::New(0.0F, RandomFloat(0.0F, 0.3F));
+                effect->svel = Vec2::New(svel, svel);
+                effect->rotvel = RandomFloat(-0.2F, -0.01F);
+                effect->alpha_vel = vel * 0.001F;
+                effect->acc = Vec2::New(0.0F, 0.0F);
+                effect->sacc = Vec2::New(sacc, sacc);
+                effect->rotacc = 0.0F;
+                effect->alpha_acc = 0.0F;
+                state.special_effects.push_back(std::move(effect));
+            }
+            for (int i = 0; i < 16; ++i) {
+                const float vel = RandomFloat(0.1F, 0.5F);
+                const float svel = RandomFloat(vel * 0.1F, vel * 1.0F);
+                const float sacc = RandomFloat(vel * 0.01F, vel * 0.02F);
+                auto effect = std::make_unique<UltraDynamicEffect>();
+                effect->type_ = SpecialEffectType::BasicSmoke;
+                effect->draw_layer = DrawLayer::Foreground;
+                effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(0, 32));
+                effect->pos = center + Vec2::New(-3.0F, 3.0F);
+                effect->size = Vec2::New(1.0F, 1.0F) * 2.0F;
+                effect->rot = RandomFloat(0.0F, 360.0F);
+                effect->alpha = 1.0F;
+                effect->vel = Vec2::New(0.0F, RandomFloat(0.0F, 0.3F));
+                effect->svel = Vec2::New(svel, svel);
+                effect->rotvel = RandomFloat(-0.2F, -0.01F);
+                effect->alpha_vel = vel * 0.001F;
+                effect->acc = Vec2::New(0.0F, 0.0F);
+                effect->sacc = Vec2::New(sacc, sacc);
+                effect->rotacc = 0.0F;
+                effect->alpha_acc = 0.0F;
+                state.special_effects.push_back(std::move(effect));
+            }
+        }
+    } else if (jetpack_state == EntityState::Idle) {
+        jetpack.travel_sound_countdown = 0.0F;
+    }
+}
+
+/** generalize this to all square or rectangular entities somehow */
+void StepEntityPhysicsAsJetpack(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    float dt
+) {
+    common::ApplyGravity(entity_idx, state, dt);
+    common::PrePartialEulerStep(entity_idx, state, dt);
+    common::DoTileAndEntityCollisions(entity_idx, state, audio);
+    common::ApplyGroundFriction(entity_idx, state);
+    common::PostPartialEulerStep(entity_idx, state, dt);
+}
+
+} // namespace splonks::entities::jetpack

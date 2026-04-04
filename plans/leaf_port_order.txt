@@ -1,0 +1,97 @@
+splonks-rs leaf-first port order
+================================
+
+Purpose:
+- classify modules by dependency weight before porting
+- keep the literal port focused on real leaves first
+- avoid forcing fake scaffolding into non-leaf modules too early
+
+Note on `mod.rs` files
+----------------------
+- yes, they are kind of cheating
+- most of them are just module wiring, not real behavioral code
+- track them separately so they do not distract from the actual leaf pass
+
+True leaves
+-----------
+- `src/direction.rs`
+- `src/utils.rs`
+- `src/tile.rs`
+- `src/settings.rs`
+- `src/special_effects/special_effect.rs`
+
+Near leaves
+-----------
+- `src/sid.rs`
+  - caveat: depends on `VID`, which we already peeled into a tiny support type
+- `src/sprite.rs`
+  - caveat: depended on `entity::Origin`, now peeled into a tiny support type
+- `src/audio.rs`
+  - caveat: backend-heavy; now ported with a placeholder backend and preserved surface API
+- `src/special_effects/static_effect.rs`
+- `src/special_effects/dynamic_effect.rs`
+- `src/special_effects/spline_effect.rs`
+- `src/special_effects/ultra_dynamic_effect.rs`
+
+Not leaves yet
+--------------
+- `src/room.rs`
+- `src/stage.rs`
+- `src/entity.rs`
+- `src/entity_display_states.rs`
+- `src/entity_manager.rs`
+- `src/graphics.rs`
+- `src/inputs.rs`
+- `src/menu_settings.rs`
+- `src/menu_title.rs`
+- `src/menu_video.rs`
+- `src/on_damage_effects.rs`
+- `src/render.rs`
+- `src/render_debug.rs`
+- `src/render_tiles_and_entities.rs`
+- `src/render_ui.rs`
+- `src/stage_init.rs`
+- `src/state.rs`
+- `src/step.rs`
+- `src/step_entities.rs`
+- `src/systems/controls.rs`
+- `src/stage_gen/cave.rs`
+- `src/stage_gen/test.rs`
+- `src/entities/common.rs`
+- `src/entities/player.rs`
+- `src/entities/block.rs`
+- `src/entities/bat.rs`
+- `src/entities/baseball_bat.rs`
+- `src/entities/breakaway_container.rs`
+- `src/entities/rope.rs`
+- `src/entities/ghost_ball.rs`
+- `src/entities/jetpack.rs`
+- `src/entities/money.rs`
+- `src/entities/rock.rs`
+- `src/entities/bomb.rs`
+- `src/entities/mouse_trailer.rs`
+
+Trivial module wiring
+---------------------
+- `src/stage_gen/mod.rs`
+- `src/systems/mod.rs`
+- `src/entities/mod.rs`
+- `src/special_effects/mod.rs`
+
+Current completed real leaves
+-----------------------------
+- `src/direction.rs`
+- `src/utils.rs`
+- `src/tile.rs`
+- `src/settings.rs`
+- `src/special_effects/special_effect.rs`
+
+Current completed near leaves
+-----------------------------
+- `src/sid.rs`
+- `src/sprite.rs`
+- `src/audio.rs`
+- `src/special_effects/static_effect.rs`
+- `src/special_effects/dynamic_effect.rs`
+- `src/special_effects/spline_effect.rs`
+- `src/special_effects/ultra_dynamic_effect.rs`
