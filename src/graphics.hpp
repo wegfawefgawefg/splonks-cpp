@@ -5,9 +5,12 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 struct TTF_Font;
+struct SDL_Renderer;
+struct SDL_Texture;
 
 namespace splonks {
 
@@ -59,18 +62,29 @@ struct Graphics {
     Camera2D camera;
     PlayCam play_cam;
     std::vector<SpriteData> sprites;
+    std::vector<SDL_Texture*> sprite_textures;
+    std::vector<bool> sprite_uses_fallback;
+    std::vector<SDL_Texture*> textures;
+    std::vector<SDL_Texture*> tile_sets;
+    SDL_Texture* special_effects_texture = nullptr;
+    std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
     std::string font_path = "assets/fonts/DejaVuSans.ttf";
     LoadedFont menu_title_font;
     LoadedFont menu_item_font;
     LoadedFont ui_font;
 
-    static Graphics New(const std::string& sprite_assets_folder);
+    static Graphics New(SDL_Renderer* renderer, const std::string& sprite_assets_folder);
     const SpriteData& GetSpriteData(Sprite sprite) const;
+    SDL_Texture* GetSpriteTexture(Sprite sprite) const;
+    bool SpriteUsesFallback(Sprite sprite) const;
+    SDL_Texture* GetTexture(TextureName texture) const;
+    SDL_Texture* GetTileSetTexture(TileSet tile_set) const;
     Vec2 ScreenToWc(const UVec2& screen_pos) const;
     IVec2 ScreenToTileCoords(const UVec2& screen_pos) const;
     void ResetTileVariation(const IVec2& tile_pos);
     void ResetTileVariations();
     void ShutdownText();
+    void ShutdownTextures();
 };
 
 bool IsTileTransparent(Tile tile);

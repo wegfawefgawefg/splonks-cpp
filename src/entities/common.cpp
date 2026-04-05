@@ -450,7 +450,7 @@ void DoEntityCollisions(std::size_t entity_idx, State& state) {
             }
         }
         if (blocked_y) {
-            entity.pos.y += min_displacement.x;
+            entity.pos.y += min_displacement.y;
             entity.vel.y = 0.0F;
         }
         entity.collided |= blocked_y;
@@ -708,27 +708,30 @@ void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& gr
 }
 
 void EulerStep(std::size_t entity_idx, State& state, float dt) {
+    (void)dt;
     PrePartialEulerStep(entity_idx, state, dt);
     PostPartialEulerStep(entity_idx, state, dt);
 }
 
 void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt) {
+    (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.vel += entity.acc * dt;
+    entity.vel += entity.acc;
 }
 
 void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
-    // TODO: move this to a generic system
+    (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.acc.y += state.stage.gravity * dt;
+    entity.acc.y += state.stage.gravity;
 }
 
 void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
+    (void)dt;
     // TODO: rework collisions for smaller objects and bigger ones too
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.vel.x = std::clamp(entity.vel.x, -kMaxSpeed, kMaxSpeed);
     entity.vel.y = std::clamp(entity.vel.y, -kMaxSpeed, kMaxSpeed);
-    entity.pos += entity.vel * dt;
+    entity.pos += ToVec2(ToIVec2(entity.vel));
     entity.acc = Vec2::New(0.0F, 0.0F);
 
     float dist_traveled = Length(entity.vel);
@@ -739,6 +742,10 @@ void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
 }
 
 void ApplyGroundFriction(std::size_t entity_idx, State& state) {
+    if (state.stage.stage_type == StageType::Ice1 || state.stage.stage_type == StageType::Ice2 ||
+        state.stage.stage_type == StageType::Ice3) {
+        return;
+    }
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
         entity.grounded = false;
@@ -748,6 +755,7 @@ void ApplyGroundFriction(std::size_t entity_idx, State& state) {
         state.entity_manager.entities[entity_idx].grounded |= true;
     }
     Entity& entity = state.entity_manager.entities[entity_idx];
+    entity.SetGrounded(state.stage);
     if (entity.grounded) {
         entity.vel.x *= 0.85F;
     }
@@ -822,22 +830,108 @@ void DoThrownByStep(std::size_t entity_idx, State& state) {
 }
 
 void HangHandsStep(std::size_t entity_idx, State& state) {
-    (void)entity_idx;
-    (void)state;
-    // let entity = &state.entity_manager.entities[entity_idx];
-    // let vid = entity.vid;
-    // let vel = entity.vel;
-    // let mut no_hang = entity.no_hang;
-    // if entity.super_state == EntitySuperState::Stunned
-    //     || entity.super_state == EntitySuperState::Dead
-    // {
-    //     no_hang = true;
-    // }
-    // let stage = &mut state.stage;
-    // let hanghands = entity.get_hang_hands();
-    //
-    // Entire Rust body is currently commented out. Keep the function present,
-    // but do not invent behavior here.
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    const VID vid = entity.vid;
+    const Vec2 vel = entity.vel;
+    bool no_hang = entity.no_hang;
+    if (entity.super_state == EntitySuperState::Stunned ||
+        entity.super_state == EntitySuperState::Dead) {
+        no_hang = true;
+    }
+    Stage& stage = state.stage;
+    const HangHandBounds hanghands = entity.GetHangHandsBounds();
+
+    bool left_hanging = false;
+    bool right_hanging = false;
+    if (!no_hang) {
+        if (vel.y >= 0.0F) {
+            const std::vector<const Tile*> hanghand_collided_tiles =
+                stage.GetTilesInRectWc(ToIVec2(hanghands.left_tl), ToIVec2(hanghands.left_br));
+            const bool on_collidable_tiles = CollidableTileInList(hanghand_collided_tiles);
+
+            const std::vector<VID> entities_at_hang_hands =
+                state.sid.QueryExclude(hanghands.left_tl, hanghands.left_br, vid);
+            const bool on_impassable_entities = std::any_of(
+                entities_at_hang_hands.begin(),
+                entities_at_hang_hands.end(),
+                [&](const VID& test_vid) {
+                    return state.entity_manager.entities[test_vid.id].impassable;
+                });
+
+            const bool hh_blocked = on_collidable_tiles || on_impassable_entities;
+
+            const Vec2 under_tl = Vec2::New(hanghands.left_tl.x, hanghands.left_br.y);
+            const Vec2 under_br = hanghands.left_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
+            const std::vector<const Tile*> under_hanghand_collided_tiles =
+                stage.GetTilesInRectWc(ToIVec2(under_tl), ToIVec2(under_br));
+            const bool on_collidable_under_tiles =
+                CollidableTileInList(under_hanghand_collided_tiles);
+
+            const std::vector<VID> entities_under_hang_hands =
+                state.sid.QueryExclude(under_tl, under_br, vid);
+            const bool on_impassable_under_entities = std::any_of(
+                entities_under_hang_hands.begin(),
+                entities_under_hang_hands.end(),
+                [&](const VID& test_vid) {
+                    return state.entity_manager.entities[test_vid.id].impassable;
+                });
+
+            const bool uhh_blocked = on_collidable_under_tiles || on_impassable_under_entities;
+            left_hanging = !hh_blocked && uhh_blocked;
+        }
+
+        if (vel.y >= 0.0F) {
+            const std::vector<const Tile*> hanghand_collided_tiles =
+                stage.GetTilesInRectWc(ToIVec2(hanghands.right_tl), ToIVec2(hanghands.right_br));
+            const bool on_collidable_tiles = CollidableTileInList(hanghand_collided_tiles);
+
+            const std::vector<VID> entities_at_hang_hands =
+                state.sid.QueryExclude(hanghands.right_tl, hanghands.right_br, vid);
+            const bool on_impassable_entities = std::any_of(
+                entities_at_hang_hands.begin(),
+                entities_at_hang_hands.end(),
+                [&](const VID& test_vid) {
+                    return state.entity_manager.entities[test_vid.id].impassable;
+                });
+
+            const bool hh_blocked = on_collidable_tiles || on_impassable_entities;
+
+            const Vec2 under_tl = Vec2::New(hanghands.right_tl.x, hanghands.right_br.y);
+            const Vec2 under_br = hanghands.right_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
+            const std::vector<const Tile*> under_hanghand_collided_tiles =
+                stage.GetTilesInRectWc(ToIVec2(under_tl), ToIVec2(under_br));
+            const bool on_collidable_under_tiles =
+                CollidableTileInList(under_hanghand_collided_tiles);
+
+            const std::vector<VID> entities_under_hang_hands =
+                state.sid.QueryExclude(under_tl, under_br, vid);
+            const bool on_impassable_under_entities = std::any_of(
+                entities_under_hang_hands.begin(),
+                entities_under_hang_hands.end(),
+                [&](const VID& test_vid) {
+                    return state.entity_manager.entities[test_vid.id].impassable;
+                });
+
+            const bool uhh_blocked = on_collidable_under_tiles || on_impassable_under_entities;
+            right_hanging = !hh_blocked && uhh_blocked;
+        }
+    }
+
+    Entity& mutable_entity = state.entity_manager.entities[entity_idx];
+    mutable_entity.left_hanging = left_hanging;
+    mutable_entity.right_hanging = right_hanging;
+
+    if (mutable_entity.left_hanging || mutable_entity.right_hanging) {
+        mutable_entity.grounded = false;
+    }
+    if (mutable_entity.no_hang) {
+        mutable_entity.left_hanging = false;
+        mutable_entity.right_hanging = false;
+    }
+    if (mutable_entity.IsHanging()) {
+        mutable_entity.vel.y = 0.0F;
+        mutable_entity.grounded = false;
+    }
 }
 
 /** damaging an entity should always be done through this, unless you want to mow through the entities immunities...
@@ -942,14 +1036,35 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     //  FIX THAT. maybe just one climb speed is fine
     //  TODO: only uses a common stage gravity for some reason...
     GroundedCheck(entity_idx, state, audio, true, true);
-    // set_grounded_on_entites(entity_idx, state);
 
     Entity& entity = state.entity_manager.entities[entity_idx];
     Stage& stage = state.stage;
     const auto [player_tl, player_br] = entity.GetBounds();
+    const std::vector<const Tile*> newly_collided_tiles =
+        stage.GetTilesInRectWc(ToIVec2(player_tl), ToIVec2(player_br));
+    const bool can_climb = ClimbableTileInList(newly_collided_tiles);
 
-    // TODO: reimplement climbing as generic system
-    stage.GetTilesInRectWc(ToIVec2(player_tl), ToIVec2(player_br));
+        if (can_climb) {
+        if (entity.trying_to_go_up) {
+            entity.climbing = true;
+            entity.grounded = false;
+            entity.vel.y = -player::kClimbSpeed;
+        } else if (entity.climbing && !entity.trying_to_go_down) {
+            entity.vel.y = 0.0F;
+        }
+        if (entity.climbing && !entity.trying_to_go_up && entity.trying_to_go_down) {
+            entity.vel.y = player::kClimbSpeed;
+        }
+        if (entity.climbing && entity.trying_to_jump && entity.trying_to_go_down) {
+            entity.climbing = false;
+        }
+    } else {
+        entity.climbing = false;
+    }
+
+    if (entity.climbing && entity.grounded) {
+        entity.climbing = false;
+    }
 
     if (entity.super_state == EntitySuperState::Stunned ||
         entity.super_state == EntitySuperState::Dead) {

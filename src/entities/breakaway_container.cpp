@@ -7,6 +7,7 @@
 #include "sprite.hpp"
 #include "state.hpp"
 
+#include <cmath>
 #include <random>
 
 namespace splonks::entities::breakaway_container {
@@ -18,6 +19,21 @@ unsigned int RandomPercent() {
     static std::mt19937 generator(device());
     std::uniform_int_distribution<unsigned int> distribution(0, 99);
     return distribution(generator);
+}
+
+bool EntityJustCollided(Entity& entity) {
+    constexpr unsigned int kCollidedTriggerCooldown = 4;
+
+    const bool trigger =
+        !entity.collided_last_frame && entity.collided && entity.collided_trigger_cooldown == 0;
+
+    if (entity.collided) {
+        entity.collided_trigger_cooldown = kCollidedTriggerCooldown;
+    } else if (entity.collided_trigger_cooldown > 0) {
+        entity.collided_trigger_cooldown -= 1;
+    }
+
+    return trigger;
 }
 
 } // namespace
@@ -60,7 +76,7 @@ void StepEntityLogicAsBreakawayContainer(
     Audio& audio
 ) {
     (void)audio;
-    const Entity& breakaway_container = state.entity_manager.entities[entity_idx];
+    Entity& breakaway_container = state.entity_manager.entities[entity_idx];
     const EntitySuperState breakaway_container_super_state = breakaway_container.super_state;
     const Vec2 breakaway_container_pos = breakaway_container.pos;
     const EntityType breakaway_container_type = breakaway_container.type_;
@@ -112,9 +128,15 @@ void StepEntityLogicAsBreakawayContainer(
         return;
     }
 
-    // TODO: reenable pot and box shattering on throw, fall
-    //TODO: if you hit the ground, do a clunky sound
-    // if you hit something, do breakaway_container damage and try to stun probs
+    const bool just_collided = EntityJustCollided(breakaway_container);
+    const bool moving_fast =
+        std::abs(breakaway_container.vel.x) > 1.0F || std::abs(breakaway_container.vel.y) > 1.0F;
+    const bool was_thrown = breakaway_container.thrown_by.has_value();
+    const bool fell_far = breakaway_container.fall_distance >= static_cast<float>(kTileSize);
+
+    if (just_collided && (was_thrown || moving_fast || fell_far)) {
+        breakaway_container.health = 0;
+    }
 }
 
 /** generalize this to all square or rectangular entities somehow */

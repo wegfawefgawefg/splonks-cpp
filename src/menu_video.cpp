@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "graphics.hpp"
+#include "inputs.hpp"
 #include "state.hpp"
 
 namespace splonks {
@@ -50,14 +51,26 @@ void ProcessInputVideoSettingsMenu(
     float dt
 ) {
     (void)dt;
-    const VideoUpOrDownOrNeither up_down =
-        state.menu_inputs.up ? VideoUpOrDownOrNeither::Up
-                             : (state.menu_inputs.down ? VideoUpOrDownOrNeither::Down
-                                                       : VideoUpOrDownOrNeither::Neither);
+    const bool confirm_pressed =
+        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_START) ||
+        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_SOUTH) ||
+        KeyPressedEdge(SDL_SCANCODE_SPACE) || KeyPressedEdge(SDL_SCANCODE_RETURN) ||
+        KeyPressedEdge(SDL_SCANCODE_KP_ENTER);
+    const bool up_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_UP) ||
+                            KeyPressedEdge(SDL_SCANCODE_UP) || KeyPressedEdge(SDL_SCANCODE_W);
+    const bool down_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_DOWN) ||
+                              KeyPressedEdge(SDL_SCANCODE_DOWN) || KeyPressedEdge(SDL_SCANCODE_S);
+    const bool left_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_LEFT) ||
+                              KeyPressedEdge(SDL_SCANCODE_LEFT) || KeyPressedEdge(SDL_SCANCODE_A);
+    const bool right_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_RIGHT) ||
+                               KeyPressedEdge(SDL_SCANCODE_RIGHT) || KeyPressedEdge(SDL_SCANCODE_D);
+    const VideoUpOrDownOrNeither up_down = up_pressed ? VideoUpOrDownOrNeither::Up
+                                                      : (down_pressed ? VideoUpOrDownOrNeither::Down
+                                                                      : VideoUpOrDownOrNeither::Neither);
     const VideoLeftOrRightOrNeither left_right =
-        state.menu_inputs.left ? VideoLeftOrRightOrNeither::Left
-                               : (state.menu_inputs.right ? VideoLeftOrRightOrNeither::Right
-                                                          : VideoLeftOrRightOrNeither::Neither);
+        left_pressed ? VideoLeftOrRightOrNeither::Left
+                     : (right_pressed ? VideoLeftOrRightOrNeither::Right
+                                      : VideoLeftOrRightOrNeither::Neither);
 
     switch (state.video_settings_menu_selection) {
     case VideoSettingsMenuOption::Resolution:
@@ -142,7 +155,7 @@ void ProcessInputVideoSettingsMenu(
         }
         break;
     case VideoSettingsMenuOption::Fullscreen:
-        if (state.menu_inputs.confirm) {
+        if (confirm_pressed) {
             PlayMenuSoundConfirm(audio);
         } else if (up_down == VideoUpOrDownOrNeither::Up) {
             state.video_settings_menu_selection =
@@ -169,7 +182,7 @@ void ProcessInputVideoSettingsMenu(
         }
         break;
     case VideoSettingsMenuOption::Apply:
-        if (state.menu_inputs.confirm) {
+        if (confirm_pressed) {
             if (state.video_settings_target_resolution_index) {
                 graphics.dims = kResolutions[*state.video_settings_target_resolution_index];
                 state.rebuild_render_texture = true;
@@ -195,7 +208,7 @@ void ProcessInputVideoSettingsMenu(
         }
         break;
     case VideoSettingsMenuOption::Back:
-        if (state.menu_inputs.confirm) {
+        if (confirm_pressed) {
             state.SetMode(Mode::Settings);
             state.video_settings_target_resolution_index.reset();
             state.video_settings_target_fullscreen.reset();

@@ -2,14 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "cmake: configure (dev)",
+      "label": "cmake: configure (release)",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh --configure-only",
       "problemMatcher": ["$gcc", "$msCompile"],
       "group": "build"
     },
     {
-      "label": "cmake: build (dev)",
+      "label": "cmake: build (release)",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
       "problemMatcher": ["$gcc", "$msCompile"],
@@ -17,12 +17,37 @@
         "kind": "build",
         "isDefault": true
       },
+      "dependsOn": ["cmake: configure (release)"]
+    },
+    {
+      "label": "cmake: configure (dev)",
+      "type": "shell",
+      "command": "SPLONKS_PRESET=dev ${workspaceFolder}/scripts/build.sh --configure-only",
+      "problemMatcher": ["$gcc", "$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "cmake: build (dev)",
+      "type": "shell",
+      "command": "SPLONKS_PRESET=dev ${workspaceFolder}/scripts/build.sh",
+      "problemMatcher": ["$gcc", "$msCompile"],
+      "group": "build",
       "dependsOn": ["cmake: configure (dev)"]
     },
     {
       "label": "run splonks-cpp",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/run.sh",
+      "options": {
+        "env": {
+          "SDL_VIDEODRIVER": "x11"
+        }
+      }
+    },
+    {
+      "label": "run splonks-cpp (dev)",
+      "type": "shell",
+      "command": "SPLONKS_PRESET=dev ${workspaceFolder}/scripts/run.sh",
       "options": {
         "env": {
           "SDL_VIDEODRIVER": "x11"

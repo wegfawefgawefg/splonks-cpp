@@ -11,6 +11,7 @@
 #include "text.hpp"
 
 #include <cstdio>
+#include <cmath>
 
 namespace splonks {
 
@@ -58,6 +59,37 @@ void RenderMenuLine(
 void RenderTitle(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     SDL_SetRenderDrawColor(renderer, 38, 43, 68, 255);
     SDL_RenderClear(renderer);
+
+    const float t = static_cast<float>(SDL_GetTicks()) / 1000.0F;
+    const float parallax_param = std::sin(t);
+
+    const auto render_layer = [&](TextureName texture_name,
+                                  float max_displacement,
+                                  float expansion_frac_base) {
+        SDL_Texture* texture = graphics.GetTexture(texture_name);
+        if (texture == nullptr) {
+            return;
+        }
+        float width = 0.0F;
+        float height = 0.0F;
+        SDL_GetTextureSize(texture, &width, &height);
+
+        const float expansion_frac = expansion_frac_base + (4.0F * max_displacement);
+        const Vec2 target_size = Vec2::New(
+            static_cast<float>(graphics.dims.x) * expansion_frac,
+            static_cast<float>(graphics.dims.y)
+        );
+        Vec2 pos = (ToVec2(graphics.dims) - target_size) / 2.0F;
+        pos.x += parallax_param * static_cast<float>(graphics.dims.x) * max_displacement;
+
+        const SDL_FRect src{0.0F, 0.0F, width, height};
+        const SDL_FRect dst{pos.x, 0.0F, target_size.x, target_size.y};
+        SDL_RenderTexture(renderer, texture, &src, &dst);
+    };
+
+    render_layer(TextureName::TitleLayer3, 0.0001F, 1.2F);
+    render_layer(TextureName::TitleLayer2, 0.02F, 1.0F);
+    render_layer(TextureName::TitleLayer1, 0.06F, 1.0F);
 
     DrawMenuTitle(renderer, graphics, "Splonks");
 
@@ -230,42 +262,212 @@ void RenderVideoSettingsMenu(SDL_Renderer* renderer, State& state, Graphics& gra
 }
 
 void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    const float base = 5.0F;
+    if (graphics.dims.x < 1280U) {
+        const float ratio = 1280.0F / static_cast<float>(graphics.dims.x);
+        graphics.camera.zoom = base / ratio;
+    } else {
+        graphics.camera.zoom = base;
+    }
+
+    if (state.player_vid.has_value()) {
+        if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
+            const Vec2 delta = player->pos - graphics.play_cam.pos;
+            graphics.play_cam.pos += delta * 0.075F;
+
+            const Vec2 half_room_dims = ToVec2(state.stage.GetRoomDims()) / 2.0F;
+            const Vec2 map_tl_bound = ToVec2(state.stage.GetRoomTlWc(IVec2::New(0, 0))) + half_room_dims;
+            const Vec2 map_br_bound = ToVec2(state.stage.GetRoomTlWc(IVec2::New(3, 3))) + half_room_dims;
+            graphics.play_cam.pos.x = graphics.play_cam.pos.x < map_tl_bound.x
+                                          ? map_tl_bound.x
+                                          : (graphics.play_cam.pos.x > map_br_bound.x
+                                                 ? map_br_bound.x
+                                                 : graphics.play_cam.pos.x);
+            graphics.play_cam.pos.y = graphics.play_cam.pos.y < map_tl_bound.y
+                                          ? map_tl_bound.y
+                                          : (graphics.play_cam.pos.y > map_br_bound.y
+                                                 ? map_br_bound.y
+                                                 : graphics.play_cam.pos.y);
+
+            graphics.camera.target = graphics.play_cam.pos;
+        } else {
+            graphics.camera.target = ToVec2(state.stage.GetStageDims()) / 2.0F;
+        }
+    } else {
+        graphics.camera.target = ToVec2(state.stage.GetStageDims()) / 2.0F;
+    }
+
     SDL_SetRenderDrawColor(renderer, 38, 43, 68, 255);
     SDL_RenderClear(renderer);
+    RenderStageTileWrapper(renderer, state, graphics);
     RenderStageTiles(renderer, state, graphics);
     RenderEntities(renderer, state, graphics);
     RenderSpecialEffects(renderer, state, graphics);
     RenderHealthRopeBombs(renderer, state, graphics);
-    PrintCtrlsHelp(renderer, graphics, graphics.window_dims.y - 56);
+    PrintCtrlsHelp(renderer, graphics, graphics.dims.y - 56U);
 }
 
-void RenderStageTransition(SDL_Renderer* renderer, State& state) {
-    (void)state;
+void DrawCenteredText(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    TextType text_type,
+    const char* text,
+    float center_x,
+    float y,
+    SDL_Color color
+) {
+    int text_width = 0;
+    int text_height = 0;
+    if (!MeasureText(graphics, text_type, text, &text_width, &text_height)) {
+        DrawText(renderer, graphics, text_type, text, center_x, y, color);
+        return;
+    }
+    DrawText(
+        renderer,
+        graphics,
+        text_type,
+        text,
+        center_x - (static_cast<float>(text_width) / 2.0F),
+        y - (static_cast<float>(text_height) / 2.0F),
+        color
+    );
+}
+
+const char* GetStageTransitionTitle(const State& state) {
+    switch (state.next_stage.value_or(StageType::Blank)) {
+    case StageType::Test1:
+        return "Test1";
+    case StageType::Blank:
+        return "Blank?? Expect crash";
+    case StageType::Cave1:
+        return "Cave";
+    case StageType::Cave2:
+        return "Cave 2";
+    case StageType::Cave3:
+        return "Cave 3";
+    case StageType::Ice1:
+        return "Ice";
+    case StageType::Ice2:
+        return "Ice 2";
+    case StageType::Ice3:
+        return "Ice 3";
+    case StageType::Desert1:
+        return "Desert";
+    case StageType::Desert2:
+        return "Desert 2";
+    case StageType::Desert3:
+        return "Desert 3";
+    case StageType::Temple1:
+        return "Temple";
+    case StageType::Temple2:
+        return "Temple 2";
+    case StageType::Temple3:
+        return "Temple 3";
+    case StageType::Boss:
+        return "Boss";
+    }
+    return "This shouldnt be possible...???";
+}
+
+const char* GetStageTransitionMessage(const State& state) {
+    switch (state.next_stage.value_or(StageType::Blank)) {
+    case StageType::Blank:
+        return "!!!!expect a crash on a press!!!!";
+    case StageType::Test1:
+        return "You feel like figuring out bugs...";
+    case StageType::Cave1:
+        return "You enter the cave...";
+    case StageType::Ice1:
+        return "Its getting cold...";
+    case StageType::Desert1:
+        return "This place looks old...";
+    case StageType::Temple1:
+        return "Cant turn back now...";
+    case StageType::Boss:
+        return "The end is near...";
+    default:
+        return "Press [jump] to go deeper...";
+    }
+}
+
+void RenderStageTransition(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
     SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDebugText(renderer, 32.0F, 32.0F, "STAGE TRANSITION");
-    SDL_RenderDebugText(renderer, 32.0F, 56.0F, "Press Space / Enter to continue");
+
+    const float center_x = static_cast<float>(graphics.dims.x) / 2.0F;
+    const float center_y = static_cast<float>(graphics.dims.y) / 2.0F;
+    DrawCenteredText(
+        renderer,
+        graphics,
+        TextType::MenuTitle,
+        GetStageTransitionTitle(state),
+        center_x,
+        center_y,
+        SDL_Color{255, 255, 255, 255}
+    );
+    DrawText(
+        renderer,
+        graphics,
+        30,
+        graphics.ui_font,
+        GetStageTransitionMessage(state),
+        center_x - (static_cast<float>(graphics.dims.x) * 0.16F),
+        center_y + 75.0F,
+        SDL_Color{255, 255, 255, 255}
+    );
 }
 
-void RenderGameOver(SDL_Renderer* renderer) {
+void RenderGameOver(SDL_Renderer* renderer, Graphics& graphics) {
     SDL_SetRenderDrawColor(renderer, 50, 0, 0, 255);
     SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDebugText(renderer, 32.0F, 32.0F, "GAME OVER");
-    SDL_RenderDebugText(renderer, 32.0F, 56.0F, "Press Space to continue");
+
+    const float center_x = static_cast<float>(graphics.dims.x) / 2.0F;
+    const float center_y = static_cast<float>(graphics.dims.y) / 2.0F;
+    DrawCenteredText(
+        renderer,
+        graphics,
+        TextType::MenuTitle,
+        "Game Over",
+        center_x,
+        center_y,
+        SDL_Color{255, 255, 255, 255}
+    );
+    DrawText(
+        renderer,
+        graphics,
+        30,
+        graphics.ui_font,
+        "Press [jump] to try again...",
+        center_x - (static_cast<float>(graphics.dims.x) * 0.15F),
+        center_y + 75.0F,
+        SDL_Color{255, 255, 255, 255}
+    );
 }
 
-void RenderWin(SDL_Renderer* renderer) {
+void RenderWin(SDL_Renderer* renderer, Graphics& graphics) {
     SDL_SetRenderDrawColor(renderer, 0, 50, 20, 255);
     SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDebugText(renderer, 32.0F, 32.0F, "YOU WIN");
+
+    DrawCenteredText(
+        renderer,
+        graphics,
+        TextType::MenuTitle,
+        "Win! Nice!",
+        static_cast<float>(graphics.dims.x) / 2.0F,
+        static_cast<float>(graphics.dims.y) / 2.0F,
+        SDL_Color{255, 255, 255, 255}
+    );
 }
 
 } // namespace
 
-void Render(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+void Render(SDL_Renderer* renderer, SDL_Texture* render_texture, State& state, Graphics& graphics) {
+    if (render_texture == nullptr) {
+        return;
+    }
+
+    SDL_SetRenderTarget(renderer, render_texture);
+
     switch (state.mode) {
     case Mode::Title:
         RenderTitle(renderer, state, graphics);
@@ -280,15 +482,40 @@ void Render(SDL_Renderer* renderer, State& state, Graphics& graphics) {
         RenderPlaying(renderer, state, graphics);
         break;
     case Mode::StageTransition:
-        RenderStageTransition(renderer, state);
+        RenderStageTransition(renderer, state, graphics);
         break;
     case Mode::GameOver:
-        RenderGameOver(renderer);
+        RenderGameOver(renderer, graphics);
         break;
     case Mode::Win:
-        RenderWin(renderer);
+        RenderWin(renderer, graphics);
         break;
     }
+
+    SDL_SetRenderTarget(renderer, nullptr);
+
+    int output_width = static_cast<int>(graphics.window_dims.x);
+    int output_height = static_cast<int>(graphics.window_dims.y);
+    if (graphics.fullscreen) {
+        SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    const SDL_FRect src{
+        0.0F,
+        0.0F,
+        static_cast<float>(graphics.dims.x),
+        static_cast<float>(graphics.dims.y),
+    };
+    const SDL_FRect dst{
+        0.0F,
+        0.0F,
+        static_cast<float>(output_width),
+        static_cast<float>(output_height),
+    };
+    SDL_RenderTexture(renderer, render_texture, &src, &dst);
     SDL_RenderPresent(renderer);
 }
 

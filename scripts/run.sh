@@ -6,4 +6,10 @@ if [ -n "${DISPLAY:-}" ] && [ -z "${SDL_VIDEODRIVER:-}" ]; then
 fi
 
 "$(dirname "$0")"/build.sh
-"$(dirname "$0")"/../build/splonks-cpp
+
+binary_dir="build"
+if [ "${SPLONKS_PRESET:-release}" = "dev" ]; then
+    binary_dir="build-debug"
+fi
+
+"$(dirname "$0")"/../${binary_dir}/splonks-cpp

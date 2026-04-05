@@ -2,6 +2,7 @@
 
 #include "entity_core_types.hpp"
 #include "sprite.hpp"
+#include "stage.hpp"
 #include "utils.hpp"
 
 #include <optional>
@@ -30,7 +31,7 @@ struct Entity {
     Vec2 acc;
     Vec2 size;
     float dist_traveled_this_frame = 0.0F;
-    Origin origin = Origin::Foot;
+    Origin origin = Origin::TopLeft;
     LeftOrRight facing = LeftOrRight::Left;
     bool vertical_flip = false;
     DrawLayer draw_layer = DrawLayer::Middle;
@@ -45,6 +46,17 @@ struct Entity {
     bool running = false;
     bool holding = false;
     bool climbing = false;
+    bool trying_to_jump = false;
+    bool trying_to_use = false;
+    bool trying_to_go_left = false;
+    bool trying_to_go_right = false;
+    bool trying_to_equip = false;
+    bool trying_pick_up_drop = false;
+    bool trying_to_go_up = false;
+    bool trying_to_go_down = false;
+    bool trying_to_bomb = false;
+    bool trying_to_rope = false;
+    bool trying_to_attack = false;
     std::uint32_t money = 0;
     std::uint32_t bombs = 4;
     std::uint32_t ropes = 4;
@@ -111,8 +123,10 @@ struct Entity {
     bool IsHanging() const;
     bool IsHorizontallyControlled() const;
     AABB GetFeet() const;
+    void SetGrounded(const Stage& stage);
     std::tuple<Vec2, Vec2> GetTlAndTrCorners() const;
     HangHands GetHangHands() const;
+    HangHandBounds GetHangHandsBounds() const;
 };
 
 bool CanGoOnBack(EntityType type_);

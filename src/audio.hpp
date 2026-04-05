@@ -3,6 +3,10 @@
 #include <string>
 #include <vector>
 
+struct MIX_Audio;
+struct MIX_Mixer;
+struct MIX_Track;
+
 namespace splonks {
 
 enum class Song {
@@ -63,11 +67,13 @@ struct LoadedSong {
     std::string path;
     float volume = 1.0F;
     bool playing = false;
+    MIX_Audio* audio = nullptr;
 };
 
 struct LoadedSound {
     std::string path;
     float volume = 1.0F;
+    MIX_Audio* audio = nullptr;
 };
 
 std::vector<Song> AllSongs();
@@ -76,14 +82,20 @@ std::vector<LoadedSong> LoadSongs();
 std::vector<LoadedSound> LoadSounds();
 
 struct Audio {
+    bool initialized = false;
     bool has_current_song = false;
     Song current_song = Song::Title;
     std::vector<LoadedSong> songs;
     std::vector<LoadedSound> sounds;
+    MIX_Mixer* mixer = nullptr;
+    MIX_Track* song_track = nullptr;
+    std::vector<MIX_Track*> sound_effect_tracks;
+    std::size_t next_sound_effect_track = 0;
     float music_volume = 1.0F;
     float sound_effects_volume = 1.0F;
 
     static Audio New(const std::vector<LoadedSong>& songs, const std::vector<LoadedSound>& sounds);
+    void Shutdown();
 
     void PlaySong(Song song);
     void StopCurrentSong();

@@ -6,6 +6,11 @@
 
 namespace splonks {
 
+bool KeyPressedEdge(SDL_Scancode scancode);
+bool GamepadButtonPressedEdge(SDL_GamepadButton button);
+bool GamepadButtonDown(SDL_GamepadButton button);
+bool GamepadAxisPressed(SDL_GamepadAxis axis);
+
 struct MenuInputs {
     bool left = false;
     bool right = false;

@@ -1,7 +1,11 @@
 #include "audio.hpp"
 
+#include <SDL3/SDL.h>
+#include <SDL3_mixer/SDL_mixer.h>
+
 #include <filesystem>
 #include <stdexcept>
+#include <string>
 
 namespace splonks {
 
@@ -13,6 +17,65 @@ std::size_t SongIndex(Song song) {
 
 std::size_t SoundEffectIndex(SoundEffect sound_effect) {
     return static_cast<std::size_t>(sound_effect);
+}
+
+[[noreturn]] void ThrowAudioError(const char* message) {
+    throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
+}
+
+void DestroyLoadedAudio(LoadedSong& song) {
+    if (song.audio != nullptr) {
+        MIX_DestroyAudio(song.audio);
+        song.audio = nullptr;
+    }
+}
+
+void DestroyLoadedAudio(LoadedSound& sound) {
+    if (sound.audio != nullptr) {
+        MIX_DestroyAudio(sound.audio);
+        sound.audio = nullptr;
+    }
+}
+
+void LoadAudioObjects(Audio& audio) {
+    for (LoadedSong& song : audio.songs) {
+        song.audio = MIX_LoadAudio(audio.mixer, song.path.c_str(), false);
+        if (song.audio == nullptr) {
+            ThrowAudioError(("MIX_LoadAudio failed for " + song.path).c_str());
+        }
+    }
+
+    for (LoadedSound& sound : audio.sounds) {
+        sound.audio = MIX_LoadAudio(audio.mixer, sound.path.c_str(), true);
+        if (sound.audio == nullptr) {
+            ThrowAudioError(("MIX_LoadAudio failed for " + sound.path).c_str());
+        }
+    }
+}
+
+void CreateTracks(Audio& audio) {
+    audio.song_track = MIX_CreateTrack(audio.mixer);
+    if (audio.song_track == nullptr) {
+        ThrowAudioError("MIX_CreateTrack for song track failed");
+    }
+
+    constexpr std::size_t kSoundEffectTrackCount = 16;
+    audio.sound_effect_tracks.reserve(kSoundEffectTrackCount);
+    for (std::size_t i = 0; i < kSoundEffectTrackCount; ++i) {
+        MIX_Track* track = MIX_CreateTrack(audio.mixer);
+        if (track == nullptr) {
+            ThrowAudioError("MIX_CreateTrack for sound effect track failed");
+        }
+        audio.sound_effect_tracks.push_back(track);
+    }
+}
+
+SDL_PropertiesID MakeLoopingProperties() {
+    SDL_PropertiesID properties = SDL_CreateProperties();
+    if (properties != 0) {
+        SDL_SetNumberProperty(properties, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
+    }
+    return properties;
 }
 
 } // namespace
@@ -119,20 +182,92 @@ Audio Audio::New(const std::vector<LoadedSong>& loaded_songs,
     result.sounds = loaded_sounds;
     result.music_volume = 1.0F;
     result.sound_effects_volume = 1.0F;
+
+    if (!MIX_Init()) {
+        ThrowAudioError("MIX_Init failed");
+    }
+
+    result.mixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr);
+    if (result.mixer == nullptr) {
+        MIX_Quit();
+        ThrowAudioError("MIX_CreateMixerDevice failed");
+    }
+
+    try {
+        CreateTracks(result);
+        LoadAudioObjects(result);
+    } catch (...) {
+        result.Shutdown();
+        throw;
+    }
+
+    result.initialized = true;
     return result;
 }
 
+void Audio::Shutdown() {
+    if (!initialized && mixer == nullptr) {
+        return;
+    }
+
+    if (song_track != nullptr) {
+        MIX_StopTrack(song_track, 0);
+    }
+    for (MIX_Track* track : sound_effect_tracks) {
+        if (track != nullptr) {
+            MIX_StopTrack(track, 0);
+        }
+    }
+
+    for (LoadedSong& song : songs) {
+        DestroyLoadedAudio(song);
+    }
+    for (LoadedSound& sound : sounds) {
+        DestroyLoadedAudio(sound);
+    }
+
+    if (mixer != nullptr) {
+        MIX_DestroyMixer(mixer);
+        mixer = nullptr;
+    }
+
+    song_track = nullptr;
+    sound_effect_tracks.clear();
+    has_current_song = false;
+    initialized = false;
+    MIX_Quit();
+}
+
 void Audio::PlaySong(Song song) {
+    if (!initialized || song_track == nullptr) {
+        return;
+    }
+
     if (has_current_song && current_song != song) {
         StopSong(current_song);
+    }
+
+    LoadedSong& loaded_song = songs[SongIndex(song)];
+    if (loaded_song.audio == nullptr) {
+        return;
     }
 
     has_current_song = true;
     current_song = song;
 
-    LoadedSong& loaded_song = songs[SongIndex(song)];
     loaded_song.volume = music_volume;
     loaded_song.playing = true;
+
+    if (!MIX_SetTrackAudio(song_track, loaded_song.audio)) {
+        return;
+    }
+    MIX_SetTrackGain(song_track, music_volume);
+
+    SDL_PropertiesID properties = MakeLoopingProperties();
+    MIX_PlayTrack(song_track, properties);
+    if (properties != 0) {
+        SDL_DestroyProperties(properties);
+    }
 }
 
 void Audio::StopCurrentSong() {
@@ -142,32 +277,55 @@ void Audio::StopCurrentSong() {
 }
 
 void Audio::StopSong(Song song) {
-    LoadedSong& loaded_song = songs[SongIndex(song)];
-    loaded_song.playing = false;
-}
-
-void Audio::UpdateCurrentSongStreamData() {
-    if (!has_current_song) {
+    if (!initialized || song_track == nullptr) {
         return;
     }
 
-    // Placeholder hook. The Rust code updates streamed music here.
-    LoadedSong& loaded_song = songs[SongIndex(current_song)];
-    loaded_song.volume = music_volume;
+    LoadedSong& loaded_song = songs[SongIndex(song)];
+    loaded_song.playing = false;
+    MIX_StopTrack(song_track, 0);
+    has_current_song = false;
+}
+
+void Audio::UpdateCurrentSongStreamData() {
+    if (!initialized || !has_current_song || song_track == nullptr) {
+        return;
+    }
+
+    MIX_SetTrackGain(song_track, music_volume);
 }
 
 void Audio::PlaySoundEffect(SoundEffect sound_effect) {
+    if (!initialized || sound_effect_tracks.empty()) {
+        return;
+    }
+
     LoadedSound& loaded_sound = sounds[SoundEffectIndex(sound_effect)];
+    if (loaded_sound.audio == nullptr) {
+        return;
+    }
+
     loaded_sound.volume = sound_effects_volume;
+
+    MIX_Track* track = sound_effect_tracks[next_sound_effect_track];
+    next_sound_effect_track = (next_sound_effect_track + 1) % sound_effect_tracks.size();
+
+    if (!MIX_SetTrackAudio(track, loaded_sound.audio)) {
+        return;
+    }
+    MIX_SetTrackGain(track, sound_effects_volume);
+    MIX_PlayTrack(track, 0);
 }
 
 void Audio::SetCurrentSongVolume(float volume) {
-    if (!has_current_song) {
+    music_volume = volume;
+    if (!initialized || !has_current_song || song_track == nullptr) {
         return;
     }
 
     LoadedSong& loaded_song = songs[SongIndex(current_song)];
     loaded_song.volume = volume;
+    MIX_SetTrackGain(song_track, volume);
 }
 
 void PlayMenuSoundCant(Audio& audio) {

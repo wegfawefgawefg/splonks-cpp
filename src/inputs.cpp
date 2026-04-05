@@ -14,28 +14,106 @@ namespace splonks {
 
 namespace {
 
-bool KeyPressed(const bool* keys, SDL_Scancode scancode) {
+SDL_Gamepad* GetFirstGamepad() {
+    static SDL_Gamepad* cached_gamepad = nullptr;
+    static SDL_JoystickID cached_id = 0;
+
+    if (cached_gamepad != nullptr) {
+        if (SDL_GamepadConnected(cached_gamepad)) {
+            return cached_gamepad;
+        }
+        SDL_CloseGamepad(cached_gamepad);
+        cached_gamepad = nullptr;
+        cached_id = 0;
+    }
+
+    int count = 0;
+    SDL_JoystickID* gamepads = SDL_GetGamepads(&count);
+    if (gamepads == nullptr || count <= 0) {
+        return nullptr;
+    }
+
+    const SDL_JoystickID first_id = gamepads[0];
+    SDL_free(gamepads);
+    cached_gamepad = SDL_OpenGamepad(first_id);
+    if (cached_gamepad != nullptr) {
+        cached_id = first_id;
+    } else {
+        cached_id = 0;
+    }
+    (void)cached_id;
+    return cached_gamepad;
+}
+
+} // namespace
+
+bool KeyPressedEdge(SDL_Scancode scancode) {
+    const bool* keys = SDL_GetKeyboardState(nullptr);
     static bool previous[SDL_SCANCODE_COUNT]{};
     const bool pressed = keys[scancode] && !previous[scancode];
     previous[scancode] = keys[scancode];
     return pressed;
 }
 
-bool AnyKeyPressed(const bool* keys, SDL_Scancode a, SDL_Scancode b) {
-    return KeyPressed(keys, a) || KeyPressed(keys, b);
+bool GamepadButtonPressedEdge(SDL_GamepadButton button) {
+    static bool previous[SDL_GAMEPAD_BUTTON_COUNT]{};
+
+    SDL_Gamepad* gamepad = GetFirstGamepad();
+    if (gamepad == nullptr) {
+        previous[button] = false;
+        return false;
+    }
+
+    const bool current = SDL_GetGamepadButton(gamepad, button);
+    const bool pressed = current && !previous[button];
+    previous[button] = current;
+    return pressed;
 }
+
+bool GamepadButtonDown(SDL_GamepadButton button) {
+    SDL_Gamepad* gamepad = GetFirstGamepad();
+    if (gamepad == nullptr) {
+        return false;
+    }
+
+    return SDL_GetGamepadButton(gamepad, button);
+}
+
+bool GamepadAxisPressed(SDL_GamepadAxis axis) {
+    SDL_Gamepad* gamepad = GetFirstGamepad();
+    if (gamepad == nullptr) {
+        return false;
+    }
+
+    constexpr Sint16 kTriggerThreshold = 16000;
+    return SDL_GetGamepadAxis(gamepad, axis) > kTriggerThreshold;
+}
+
+namespace {
 
 void SetMenuInputs(State& state, float dt) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     const MenuInputs last_inputs = state.menu_inputs;
     MenuInputs new_inputs = MenuInputs::New();
 
-    new_inputs.left = keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A];
-    new_inputs.right = keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D];
-    new_inputs.up = keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W];
-    new_inputs.down = keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S];
-    new_inputs.confirm = KeyPressed(keys, SDL_SCANCODE_RETURN) || KeyPressed(keys, SDL_SCANCODE_SPACE);
-    new_inputs.back = KeyPressed(keys, SDL_SCANCODE_ESCAPE) || KeyPressed(keys, SDL_SCANCODE_BACKSPACE);
+    new_inputs.left =
+        keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A] ||
+        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+    new_inputs.right =
+        keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D] ||
+        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+    new_inputs.up =
+        keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W] ||
+        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP);
+    new_inputs.down =
+        keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S] ||
+        GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+    new_inputs.confirm =
+        keys[SDL_SCANCODE_RETURN] || keys[SDL_SCANCODE_SPACE] ||
+        GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
+    new_inputs.back =
+        keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_BACKSPACE] ||
+        GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
 
     state.menu_input_debounce_timers.Step(dt);
     new_inputs = state.menu_input_debounce_timers.Debounce(new_inputs);
@@ -46,19 +124,22 @@ void SetMenuInputs(State& state, float dt) {
 void SetPlayingInputs(State& state) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     PlayingInputs new_inputs = PlayingInputs::New();
-    new_inputs.left = keys[SDL_SCANCODE_A];
-    new_inputs.right = keys[SDL_SCANCODE_D];
-    new_inputs.up = keys[SDL_SCANCODE_W];
-    new_inputs.down = keys[SDL_SCANCODE_S];
-    new_inputs.jump = keys[SDL_SCANCODE_SPACE];
-    new_inputs.run = keys[SDL_SCANCODE_LSHIFT];
-    new_inputs.use_button = keys[SDL_SCANCODE_J];
-    new_inputs.equip_button = keys[SDL_SCANCODE_I];
-    new_inputs.pick_up_drop = keys[SDL_SCANCODE_K];
-    new_inputs.stop = keys[SDL_SCANCODE_LCTRL];
-    new_inputs.bomb = keys[SDL_SCANCODE_M];
-    new_inputs.rope = keys[SDL_SCANCODE_O];
-    new_inputs.attack = keys[SDL_SCANCODE_H];
+    new_inputs.left = keys[SDL_SCANCODE_A] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+    new_inputs.right = keys[SDL_SCANCODE_D] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+    new_inputs.up = keys[SDL_SCANCODE_W] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP);
+    new_inputs.down = keys[SDL_SCANCODE_S] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+    new_inputs.jump = keys[SDL_SCANCODE_SPACE] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
+    new_inputs.run = keys[SDL_SCANCODE_LSHIFT] || GamepadAxisPressed(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
+    new_inputs.use_button = keys[SDL_SCANCODE_J] || GamepadAxisPressed(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+    new_inputs.equip_button =
+        keys[SDL_SCANCODE_I] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+    new_inputs.pick_up_drop =
+        keys[SDL_SCANCODE_K] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_WEST);
+    new_inputs.stop = keys[SDL_SCANCODE_LCTRL] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_START);
+    new_inputs.bomb = keys[SDL_SCANCODE_M] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
+    new_inputs.rope = keys[SDL_SCANCODE_O] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_NORTH);
+    new_inputs.attack =
+        keys[SDL_SCANCODE_H] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
     float mx = 0.0F;
     float my = 0.0F;
     SDL_GetMouseState(&mx, &my);
@@ -75,16 +156,16 @@ void ProcessInputPlaying(
 ) {
     (void)audio;
     (void)dt;
-    const bool* keys = SDL_GetKeyboardState(nullptr);
-    if (KeyPressed(keys, SDL_SCANCODE_ESCAPE) || KeyPressed(keys, SDL_SCANCODE_Q)) {
+    if (KeyPressedEdge(SDL_SCANCODE_ESCAPE) || KeyPressedEdge(SDL_SCANCODE_Q)) {
         state.running = false;
     }
 
     // randomize the stage tiles
-    if (KeyPressed(keys, SDL_SCANCODE_R)) {
+    if (KeyPressedEdge(SDL_SCANCODE_R) || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK)) {
         if (state.next_stage) {
             state.stage = Stage::New(*state.next_stage);
             InitStage(state);
+            graphics.ResetTileVariations();
         }
     }
     (void)window;
@@ -102,15 +183,18 @@ void ProcessInputStageTransition(
     (void)audio;
     (void)dt;
     const bool* keys = SDL_GetKeyboardState(nullptr);
-    if (KeyPressed(keys, SDL_SCANCODE_ESCAPE) || KeyPressed(keys, SDL_SCANCODE_Q)) {
+    if (KeyPressedEdge(SDL_SCANCODE_ESCAPE) || KeyPressedEdge(SDL_SCANCODE_Q)) {
         state.running = false;
     }
 
-    const bool proceed = keys[SDL_SCANCODE_SPACE] || keys[SDL_SCANCODE_RETURN];
+    const bool proceed =
+        keys[SDL_SCANCODE_SPACE] || keys[SDL_SCANCODE_RETURN] ||
+        GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
     if (proceed && state.scene_frame >= 60) {
         if (state.next_stage) {
             state.stage = Stage::New(*state.next_stage);
             InitStage(state);
+            graphics.ResetTileVariations();
             state.scene_frame = 0;
             state.SetMode(Mode::Playing);
         } else {
@@ -131,7 +215,7 @@ void ProcessInputGameOver(
     (void)audio;
     (void)dt;
     const bool* keys = SDL_GetKeyboardState(nullptr);
-    if (keys[SDL_SCANCODE_SPACE]) {
+    if (keys[SDL_SCANCODE_SPACE] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH)) {
         if (state.next_stage != std::optional<StageType>(StageType::Test1)) {
             state.next_stage = StageType::Cave1;
         }
@@ -151,8 +235,10 @@ void ProcessInputWin(
     (void)audio;
     (void)dt;
     const bool* keys = SDL_GetKeyboardState(nullptr);
-    if (keys[SDL_SCANCODE_SPACE] && state.scene_frame >= (60 * 5)) {
+    if ((keys[SDL_SCANCODE_SPACE] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH)) &&
+        state.scene_frame >= (60 * 5)) {
         state.stage = Stage::NewBlank();
+        graphics.ResetTileVariations();
         state.SetMode(Mode::Title);
     }
     (void)graphics;
@@ -183,10 +269,10 @@ void MenuInputDebounceTimers::Step(float dt) {
 
 MenuInputs MenuInputDebounceTimers::Debounce(const MenuInputs& menu_inputs) const {
     MenuInputs result;
-    result.left = left > 0.0F && menu_inputs.left;
-    result.right = right > 0.0F && menu_inputs.right;
-    result.up = up > 0.0F && menu_inputs.up;
-    result.down = down > 0.0F && menu_inputs.down;
+    result.left = left <= 0.0F && menu_inputs.left;
+    result.right = right <= 0.0F && menu_inputs.right;
+    result.up = up <= 0.0F && menu_inputs.up;
+    result.down = down <= 0.0F && menu_inputs.down;
     result.confirm = menu_inputs.confirm;
     result.back = menu_inputs.back;
     return result;

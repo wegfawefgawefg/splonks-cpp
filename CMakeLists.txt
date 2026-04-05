@@ -12,7 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(SPLONKS_STRICT "Enable stricter warning sets." ON)
 option(SPLONKS_WARN_AS_ERROR "Treat warnings as errors." ON)
 
-find_package(SDL3 CONFIG QUIET)
+find_package(SDL3 3.4.0 CONFIG QUIET)
 
 if (NOT SDL3_FOUND)
     set(SPLONKS_LOCAL_SDL3_CONFIG
@@ -20,15 +20,16 @@ if (NOT SDL3_FOUND)
     )
     if (EXISTS "${SPLONKS_LOCAL_SDL3_CONFIG}/SDL3Config.cmake")
         list(PREPEND CMAKE_PREFIX_PATH "${SPLONKS_LOCAL_SDL3_CONFIG}")
-        find_package(SDL3 CONFIG QUIET)
+        find_package(SDL3 3.4.0 CONFIG QUIET)
     endif()
 endif()
 
 if (NOT SDL3_FOUND)
+    set(SDL_X11_XTEST OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(
         SDL3
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-3.2.10
+        GIT_TAG release-3.4.0
         GIT_SHALLOW TRUE
     )
     FetchContent_MakeAvailable(SDL3)
@@ -49,6 +50,68 @@ if (NOT SDL3_ttf_FOUND)
     set(SDLTTF_SAMPLES OFF CACHE BOOL "" FORCE)
     set(SDLTTF_VENDORED ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(SDL3_ttf)
+endif()
+
+find_package(SDL3_image CONFIG QUIET)
+
+if (NOT SDL3_image_FOUND)
+    if (DEFINED sdl3_BINARY_DIR AND EXISTS "${sdl3_BINARY_DIR}/SDL3Config.cmake")
+        set(SDL3_DIR "${sdl3_BINARY_DIR}" CACHE PATH "" FORCE)
+    endif()
+    FetchContent_Declare(
+        SDL3_image
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
+        GIT_TAG release-3.2.0
+        GIT_SHALLOW TRUE
+    )
+    set(SDLIMAGE_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_VENDORED ON CACHE BOOL "" FORCE)
+    set(SDLIMAGE_AVIF OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_JPG OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_WEBP OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_TIF OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_QOI OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_BMP OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_GIF OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_LBM OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_PCX OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_PNM OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_SVG OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_TGA OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_XCF OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_XPM OFF CACHE BOOL "" FORCE)
+    set(SDLIMAGE_XV OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(SDL3_image)
+endif()
+
+find_package(SDL3_mixer CONFIG QUIET)
+
+if (NOT SDL3_mixer_FOUND)
+    if (DEFINED sdl3_BINARY_DIR AND EXISTS "${sdl3_BINARY_DIR}/SDL3Config.cmake")
+        set(SDL3_DIR "${sdl3_BINARY_DIR}" CACHE PATH "" FORCE)
+    endif()
+    FetchContent_Declare(
+        SDL3_mixer
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
+        GIT_TAG release-3.2.0
+        GIT_SHALLOW TRUE
+    )
+    set(SDLMIXER_VENDORED ON CACHE BOOL "" FORCE)
+    set(SDLMIXER_WERROR OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_FLAC OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_GME OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_MOD OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_MP3 OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_MIDI OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_OPUS OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_WAVPACK OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_VORBIS_STB ON CACHE BOOL "" FORCE)
+    set(SDLMIXER_VORBIS_VORBISFILE OFF CACHE BOOL "" FORCE)
+    set(SDLMIXER_VORBIS_TREMOR OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(SDL3_mixer)
 endif()
 
 add_executable(splonks-cpp
@@ -114,7 +177,14 @@ target_include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/../gubsy/third_party"
 )
 target_compile_features(splonks-cpp PRIVATE cxx_std_20)
-target_link_libraries(splonks-cpp PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf)
+target_link_libraries(
+    splonks-cpp
+    PRIVATE
+        SDL3::SDL3
+        SDL3_ttf::SDL3_ttf
+        SDL3_image::SDL3_image
+        SDL3_mixer::SDL3_mixer
+)
 
 if (MSVC)
     target_compile_options(splonks-cpp PRIVATE /W4 /permissive-)

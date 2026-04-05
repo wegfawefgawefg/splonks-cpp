@@ -25,7 +25,7 @@ Rules:
 | ported | `src/tile.rs` | `src/tile.hpp` + `src/tile.cpp` | Preserves the Rust random range exactly, including the unreachable ladder/spikes branches behind `0..=5`. |
 | in_progress | `src/room.rs` | `src/room.hpp` + `src/room.cpp` | Room/template enums, template paste, random template resolution, and `gen_room` dispatch are ported. |
 | ported | `src/settings.rs` | `src/settings.hpp` + `src/settings.cpp` | |
-| in_progress | `src/inputs.rs` | `src/inputs.hpp` + `src/inputs.cpp` | Input state structs, menu debounce timers, SDL keyboard polling, and per-mode input dispatch are ported. Gamepad parity and a few Rust-side mode details are still pending. |
+| in_progress | `src/inputs.rs` | `src/inputs.hpp` + `src/inputs.cpp` | Input state structs, menu debounce timers, SDL keyboard polling, SDL gamepad init, pressed-edge helpers, and per-mode input dispatch are ported. Exact SDL-side controller parity still needs more cleanup. |
 | ported | `src/sprite.rs` | `src/sprite.hpp` + `src/sprite.cpp` | Uses `nlohmann::json` from local workspace and a peeled-out `Origin` support type instead of waiting for full `entity.rs`. |
 | ported | `src/entity_display_states.rs` | `src/entity_display_states.hpp` + `src/entity_display_states.cpp` | Uses a temporary `EntityDisplayInput` support struct instead of the full `Entity` type. |
 
@@ -33,12 +33,12 @@ Rules:
 
 | Status | Rust source | C++ target | Notes |
 | --- | --- | --- | --- |
-| in_progress | `src/entity.rs` | `src/entity.hpp` + `src/entity.cpp` | Struct shape, defaults, and geometry/state helpers are ported. `set_grounded()` still depends on the later `Stage` port. |
+| in_progress | `src/entity.rs` | `src/entity.hpp` + `src/entity.cpp` | Struct shape, defaults, and geometry/state helpers are ported. The old top-left / inclusive-bounds gameplay semantics and grounded/hang helpers are back in place and runtime-validated, but the full file still carries broader non-physics port cleanup. |
 | ported | `src/entity_manager.rs` | `src/entity_manager.hpp` + `src/entity_manager.cpp` | Uses raw pointers / `std::optional` instead of Rust `Option<&T>` / `Option<&mut T>`, but preserves the visible manager behavior. |
 | in_progress | `src/state.rs` | `src/state.hpp` + `src/state.cpp` | State struct, defaults, mode switching, SID rebuild, `is_stage_won`, and special-effect stepping are ported. |
 | in_progress | `src/stage.rs` | `src/stage.hpp` + `src/stage.cpp` | Tile query/update helpers, blank stage, room-layout/path generation, and stage generator wiring are ported. |
 | ported | `src/stage_init.rs` | `src/stage_init.hpp` + `src/stage_init.cpp` | Player spawn, entity clear, and entrance-door placement path are ported. |
-| in_progress | `src/step.rs` | `src/step.hpp` + `src/step.cpp` | Step loop, mode dispatch, stage progression mapping, and Rust comments are ported. Raylib handle/thread parameters were collapsed out of the C++ signature. |
+| verified | `src/step.rs` | `src/step.hpp` + `src/step.cpp` | Step loop, mode dispatch, stage progression mapping, and Rust comments are ported. Raylib handle/thread parameters were collapsed out of the C++ signature. Fixed-step gameplay semantics were restored from `splonks-old` and runtime-validated. |
 | in_progress | `src/step_entities.rs` | `src/step_entities.hpp` + `src/step_entities.cpp` | Rust comments and dispatch structure are ported. All current entity branches are wired; what remains is parity cleanup rather than missing modules. |
 | ported | `src/on_damage_effects.rs` | `src/on_damage_effects.hpp` + `src/on_damage_effects.cpp` | |
 
@@ -46,20 +46,20 @@ Rules:
 
 | Status | Rust source | C++ target | Notes |
 | --- | --- | --- | --- |
-| in_progress | `src/graphics.rs` | `src/graphics.hpp` + `src/graphics.cpp` | Data types, sprite metadata loading, screen-space helpers, and tile/font helper functions are ported. SDL texture/shader/backend loading is still pending. |
+| in_progress | `src/graphics.rs` | `src/graphics.hpp` + `src/graphics.cpp` | Data types, sprite metadata loading, screen-space helpers, tile/font helper functions, SDL_ttf font caching, and SDL texture loading are ported. Shader parity and the remaining backend/runtime cleanup are still pending. |
 | ported | `src/audio.rs` | `src/audio.hpp` + `src/audio.cpp` | Public surface preserved; backend is currently a no-op SDL-side placeholder that validates asset files and stores playback state only. |
-| in_progress | `src/render.rs` | `src/render.hpp` + `src/render.cpp` | SDL render dispatcher exists and is split back out by Rust file boundaries. It is still a primitive SDL debug-text/rect renderer, not the texture/shader parity path yet. |
-| in_progress | `src/render_tiles_and_entities.rs` | `src/render_tiles_and_entities.hpp` + `src/render_tiles_and_entities.cpp` | SDL primitive tile/entity/effect rendering is in place. Texture-atlas parity with Rust is still pending. |
-| in_progress | `src/render_ui.rs` | `src/render_ui.hpp` + `src/render_ui.cpp` | HUD values render through SDL debug text; sprite/icon parity is still pending. |
-| in_progress | `src/render_debug.rs` | `src/render_debug.hpp` + `src/render_debug.cpp` | Control-help output, stage layout, and room overlay helpers are ported with SDL primitive drawing. |
+| in_progress | `src/render.rs` | `src/render.hpp` + `src/render.cpp` | SDL render dispatcher exists and is split back out by Rust file boundaries. Menus and stage/game-over/win text render through SDL_ttf, and title parallax now uses real textures. Shader parity and some layout cleanup are still pending. |
+| in_progress | `src/render_tiles_and_entities.rs` | `src/render_tiles_and_entities.hpp` + `src/render_tiles_and_entities.cpp` | Texture-backed tile/entity/effect rendering is in place. The remaining gap is parity cleanup around missing sprite assets and deeper runtime behavior. |
+| in_progress | `src/render_ui.rs` | `src/render_ui.hpp` + `src/render_ui.cpp` | HUD icon/count layout and stage-type text now follow the Rust structure. Remaining gaps are asset completeness and final visual parity cleanup. |
+| in_progress | `src/render_debug.rs` | `src/render_debug.hpp` + `src/render_debug.cpp` | Control-help output, stage layout, and room overlay helpers are ported with SDL primitive drawing and SDL_ttf labels. |
 
 ## Menus
 
 | Status | Rust source | C++ target | Notes |
 | --- | --- | --- | --- |
-| in_progress | `src/menu_title.rs` | `src/menu_title.hpp` + `src/menu_title.cpp` | Menu enums, option-name mapping, and input state machine are ported. Texture/parallax title rendering is still pending. |
-| in_progress | `src/menu_settings.rs` | `src/menu_settings.hpp` + `src/menu_settings.cpp` | Menu enums, option-name mapping, and input state machine are ported. Rust-style text rendering layout is still pending. |
-| in_progress | `src/menu_video.rs` | `src/menu_video.hpp` + `src/menu_video.cpp` | Menu enums, resolution list, option-name mapping, and SDL-side apply behavior are ported. Rust-style text rendering layout is still pending. |
+| in_progress | `src/menu_title.rs` | `src/menu_title.hpp` + `src/menu_title.cpp` | Menu enums, option-name mapping, input state machine, Rust-style text layout, and title parallax rendering are ported. Remaining work is exact input/visual parity cleanup. |
+| in_progress | `src/menu_settings.rs` | `src/menu_settings.hpp` + `src/menu_settings.cpp` | Menu enums, option-name mapping, input state machine, and Rust-style text layout are ported. |
+| in_progress | `src/menu_video.rs` | `src/menu_video.hpp` + `src/menu_video.cpp` | Menu enums, resolution list, option-name mapping, SDL-side apply behavior, and Rust-style text layout are ported. |
 
 ## Stage Generation
 
@@ -74,15 +74,15 @@ Rules:
 | Status | Rust source | C++ target | Notes |
 | --- | --- | --- | --- |
 | ported | `src/systems/mod.rs` | `src/systems/mod.hpp` + `src/systems/mod.cpp` | Literal module entrypoint includes the translated controls module. |
-| ported | `src/systems/controls.rs` | `src/systems/controls.hpp` + `src/systems/controls.cpp` | |
+| verified | `src/systems/controls.rs` | `src/systems/controls.hpp` + `src/systems/controls.cpp` | Old control-facing player intent flags were restored to support the known-good physics path, and the movement path is runtime-validated. |
 
 ## Entities
 
 | Status | Rust source | C++ target | Notes |
 | --- | --- | --- | --- |
 | ported | `src/entities/mod.rs` | `src/entities/mod.hpp` + `src/entities/mod.cpp` | Literal module entrypoint exists and includes the translated entity headers. |
-| in_progress | `src/entities/common.rs` | `src/entities/common.hpp` + `src/entities/common.cpp` | Core stun/travel-sound/euler/gravity/grounded/damage/jump helpers are ported, plus tile/entity collision, hurt-on-contact, death/deactivate, projectile hurt, spikes, and grounded-on-entities paths. Some later Rust helpers like explosion/fall helpers are still not surfaced in C++. |
-| in_progress | `src/entities/player.rs` | `src/entities/player.hpp` + `src/entities/player.cpp` | `set_entity_player`, active player logic, pickup handling, display-state routing, sprite sync, and physics step are ported. Large Rust commented-out action sections remain commented-out here too, and bomb/rope/attack/push paths still depend on the unported entity modules. |
+| in_progress | `src/entities/common.rs` | `src/entities/common.hpp` + `src/entities/common.cpp` | Core stun/travel-sound/euler/gravity/grounded/damage/jump helpers are ported, plus tile/entity collision, hurt-on-contact, death/deactivate, projectile hurt, spikes, and grounded-on-entities paths. The old fixed-step physics/collision semantics from `splonks-old` are restored and runtime-validated. Some later Rust helpers like explosion/fall helpers are still not surfaced in C++. |
+| in_progress | `src/entities/player.rs` | `src/entities/player.hpp` + `src/entities/player.cpp` | `set_entity_player`, active player logic, pickup handling, display-state routing, sprite sync, and physics step are ported. Old movement/collision behavior from `splonks-old` is restored and runtime-validated, including hang/climb/friction/stomp behavior. Large Rust commented-out action sections remain commented-out here too, and bomb/rope/attack/push paths still depend on the unported entity modules. |
 | ported | `src/entities/block.rs` | `src/entities/block.hpp` + `src/entities/block.cpp` | |
 | ported | `src/entities/bat.rs` | `src/entities/bat.hpp` + `src/entities/bat.cpp` | |
 | ported | `src/entities/baseball_bat.rs` | `src/entities/baseball_bat.hpp` + `src/entities/baseball_bat.cpp` | |

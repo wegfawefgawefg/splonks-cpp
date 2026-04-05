@@ -7,7 +7,6 @@
 #include "text.hpp"
 
 #include <SDL3/SDL.h>
-
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -62,12 +61,14 @@ void RebaseCwdToRepoRoot() {
 int main() {
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
+    SDL_Texture* render_texture = nullptr;
     splonks::Graphics graphics;
+    splonks::Audio audio;
 
     try {
         ////////////////        GRAPHICS INIT        ////////////////
-        if (!SDL_Init(SDL_INIT_VIDEO)) {
-            ThrowSdlError("SDL_Init(SDL_INIT_VIDEO) failed");
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+            ThrowSdlError("SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD) failed");
         }
         if (!splonks::InitTextSubsystem()) {
             ThrowSdlError("TTF_Init failed");
@@ -92,14 +93,37 @@ int main() {
         RebaseCwdToRepoRoot();
 
         try {
-            const std::string sprite_assets_folder = "assets/graphics/sprites";
-            graphics = splonks::Graphics::New(sprite_assets_folder);
+            const std::string sprite_assets_folder = "assets/graphics/aseprite";
+            graphics = splonks::Graphics::New(renderer, sprite_assets_folder);
         } catch (const std::exception&) {
             graphics = splonks::Graphics{};
         }
 
+        const auto rebuild_render_texture = [&]() {
+            if (render_texture != nullptr) {
+                SDL_DestroyTexture(render_texture);
+                render_texture = nullptr;
+            }
+
+            render_texture = SDL_CreateTexture(
+                renderer,
+                SDL_PIXELFORMAT_RGBA8888,
+                SDL_TEXTUREACCESS_TARGET,
+                static_cast<int>(graphics.dims.x),
+                static_cast<int>(graphics.dims.y)
+            );
+            if (render_texture == nullptr) {
+                ThrowSdlError("SDL_CreateTexture render target failed");
+            }
+
+            SDL_SetTextureBlendMode(render_texture, SDL_BLENDMODE_BLEND);
+            SDL_SetTextureScaleMode(render_texture, SDL_SCALEMODE_NEAREST);
+            graphics.camera.offset = splonks::ToVec2(graphics.dims / 2U);
+        };
+
+        rebuild_render_texture();
+
         ////////////////        AUDIO INIT        ////////////////
-        splonks::Audio audio;
         try {
             const auto songs = splonks::LoadSongs();
             const auto sounds = splonks::LoadSounds();
@@ -119,6 +143,10 @@ int main() {
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_EVENT_QUIT) {
                     state.running = false;
+                } else if (event.type == SDL_EVENT_KEY_DOWN &&
+                           event.key.scancode == SDL_SCANCODE_ESCAPE &&
+                           !event.key.repeat) {
+                    state.running = false;
                 }
             }
 
@@ -126,12 +154,21 @@ int main() {
             const float dt = static_cast<float>(now - last_ticks) / 1000.0F;
             last_ticks = now;
 
+            if (state.rebuild_render_texture) {
+                rebuild_render_texture();
+                state.rebuild_render_texture = false;
+            }
+
             splonks::ProcessInput(window, renderer, state, audio, graphics, dt);
             splonks::Step(state, audio, graphics, dt);
-            splonks::Render(renderer, state, graphics);
+            splonks::Render(renderer, render_texture, state, graphics);
             audio.UpdateCurrentSongStreamData();
         }
 
+        if (render_texture != nullptr) {
+            SDL_DestroyTexture(render_texture);
+            render_texture = nullptr;
+        }
         if (renderer != nullptr) {
             SDL_DestroyRenderer(renderer);
             renderer = nullptr;
@@ -140,18 +177,25 @@ int main() {
             SDL_DestroyWindow(window);
             window = nullptr;
         }
+        graphics.ShutdownTextures();
         graphics.ShutdownText();
+        audio.Shutdown();
         splonks::ShutdownTextSubsystem();
         SDL_Quit();
         return 0;
     } catch (const std::exception& exception) {
+        graphics.ShutdownTextures();
         graphics.ShutdownText();
+        if (render_texture != nullptr) {
+            SDL_DestroyTexture(render_texture);
+        }
         if (renderer != nullptr) {
             SDL_DestroyRenderer(renderer);
         }
         if (window != nullptr) {
             SDL_DestroyWindow(window);
         }
+        audio.Shutdown();
         splonks::ShutdownTextSubsystem();
         SDL_Quit();
         std::cerr << exception.what() << '\n';

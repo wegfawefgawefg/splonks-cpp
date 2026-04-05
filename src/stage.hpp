@@ -4,6 +4,7 @@
 #include "tile.hpp"
 #include "utils.hpp"
 
+#include <optional>
 #include <vector>
 
 namespace splonks {
@@ -50,6 +51,9 @@ struct Stage {
     void SetTilesInRectWc(const AABB& area, Tile tile_type);
     void SetTilesInRect(const AABB& area, Tile tile_type);
     std::vector<IAABB> GetAabbsForAllCollidableTilesInRect(const IVec2& tl, const IVec2& br) const;
+    UVec2 GetRandomRoom() const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInRandomRoom() const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInRoom(const UVec2& room) const;
     unsigned int GetWidth() const;
     unsigned int GetHeight() const;
     unsigned int GetTileWidth() const;

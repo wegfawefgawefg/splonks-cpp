@@ -60,6 +60,9 @@ Current caveats
      Keep the near-leaf pass moving without fabricating the rest of `entity.rs`.
    - Future plan:
      Fold this back into the real `entity` port once `entity.rs` is translated.
+     For gameplay physics, the validated path now intentionally uses canonical
+     top-left / inclusive bounds semantics again; alternate origins should stay
+     a rendering/attachment concern unless a concrete gameplay need appears.
 
 5. Sprite JSON loading backend
    - Rust source: `splonks-rs/src/sprite.rs`
@@ -147,15 +150,16 @@ Current caveats
    - Rust source: `splonks-rs/src/entities/player.rs`
    - Current C++ port: `splonks-cpp/src/entities/player.cpp`
    - Caveat:
-     The C++ file currently ports the player constants and `set_entity_player`,
-     but not yet the large logic/physics stepping functions.
+     The C++ file now has the known-good physics and movement behavior ported
+     from `splonks-old`, including hang/climb/friction/stomp semantics. The
+     remaining incompleteness is in broader action and item-interaction slices,
+     not in the core physical feel path.
    - Why:
-     `stage_init.rs` needed the real player constructor path first, and that is
-     a clean incremental landing without fabricating the rest of player control
-     and combat behavior.
+     The port was landed in slices, and physical feel had to be restored before
+     the rest of the player action surface could be trusted.
    - Future plan:
-     Port the remaining player logic and physics functions into the same file
-     and then retire this caveat.
+     Port the remaining non-physics player action paths into the same file and
+     then retire this caveat.
 
 12. `step.rs` / `step_entities.rs` signature and dispatch are partial
    - Rust source: `splonks-rs/src/step.rs`, `splonks-rs/src/step_entities.rs`
@@ -164,11 +168,12 @@ Current caveats
      The Rust files take raylib handle/thread parameters and dispatch into the
      full entity module set.
      The current C++ port collapses the step signatures down to `State`,
-     `Audio`, `Graphics`, and `dt`, and only the player + common call paths are
-     currently wired in `step_entities.cpp`.
+     `Audio`, `Graphics`, and `dt`, and `step_entities.cpp` still reflects the
+     currently landed module set rather than the full eventual entity surface.
    - Why:
      This preserves the real step loop structure and comments now, without
-     pretending the missing entity modules already exist.
+     pretending every entity module already exists. The fixed-step gameplay
+     semantics themselves are now restored and validated.
    - Future plan:
      Rewire these files onto the eventual SDL-side runtime/context and fill in
      the remaining entity dispatch branches as each entity module lands.
@@ -177,11 +182,11 @@ Current caveats
    - Rust source: `splonks-rs/src/entities/common.rs`
    - Current C++ port: `splonks-cpp/src/entities/common.cpp`
    - Caveat:
-     The common file now carries real stun, animation, euler, gravity, grounded,
-     damage, jump/climb, tile/entity collision, hurt-on-contact, projectile
-     hurt, spikes, death/deactivate, and grounded-on-entities helpers. Some of
-     the later Rust helper inventory such as explosion/fall helpers is still not
-     surfaced in C++.
+     The common file now carries the known-good core physics/collision path from
+     `splonks-old`, including grounded, jump/climb, tile/entity collision, and
+     related helper behavior. The remaining incompleteness is in later helper
+     inventory such as explosion/fall support, not in the validated collision
+     feel path.
    - Why:
      This unlocks real gameplay support under `player.rs` without pretending the
      rest of the entity/collision stack already exists.
@@ -195,18 +200,35 @@ Current caveats
      `splonks-rs/src/menu_title.rs`, `splonks-rs/src/menu_settings.rs`,
      `splonks-rs/src/menu_video.rs`, `splonks-rs/src/inputs.rs`
    - Current C++ port: `splonks-cpp/src/render*.cpp`, `splonks-cpp/src/menu_*.cpp`,
-     `splonks-cpp/src/inputs.cpp`, `splonks-cpp/src/app.cpp`
+     `splonks-cpp/src/inputs.cpp`, `splonks-cpp/src/main.cpp`,
+     `splonks-cpp/src/text.cpp`
    - Caveat:
      The current C++ port now has real SDL-side input dispatch, menu state
-     machines, runtime stepping, and the render stack split back into the same
-     file boundaries as Rust. The rendering path is still using SDL debug text
-     and primitive rectangles instead of the raylib texture/shader pipeline, and
-     `App` falls back to empty `Graphics` / `Audio` instances when the current
-     asset set is incomplete.
+     machines, runtime stepping, SDL_ttf text rendering, title parallax
+     textures, texture-backed tile/entity/effect rendering, and a Rust-shaped
+     HUD icon/count layout. But the render/runtime layer is still not a literal
+     raylib equivalent: controller handling still needs parity cleanup, shader
+     behavior is not ported, and `main.cpp` still falls back to empty
+     `Graphics` / `Audio` instances when the current asset/backend layer is
+     incomplete.
    - Why:
      This gets menus, stage transition, HUD values, and basic playing visuals on
-     screen now without blocking the port on full texture/audio backend parity.
+     screen now without blocking the port on full texture/audio/backend parity.
    - Future plan:
-     Replace the primitive SDL render bridge with a literal-enough texture/shader
-     path and remove the `Graphics` / `Audio` fallback bootstrapping once the
-     asset/backend layer is complete.
+     Finish the remaining controller/input cleanup, port shader behavior, close
+     the remaining visual/layout gaps, and remove the `Graphics` / `Audio`
+     fallback bootstrapping once the asset/backend layer is complete.
+
+15. Sprite asset fallback behavior was initially too strict
+   - Rust source: `splonks-rs/src/sprite.rs`, `splonks-rs/src/graphics.rs`
+   - Current C++ port: `splonks-cpp/src/sprite.cpp`, `splonks-cpp/src/graphics.cpp`
+   - Caveat:
+     The first C++ pass aborted the whole graphics load if any sprite metadata
+     or texture file was missing. Rust does per-sprite fallback metadata and
+     warns instead of failing the entire load.
+   - Why:
+     That stricter behavior was accidental drift during the initial port.
+   - Future plan:
+     Keep the current per-sprite warning/fallback behavior and keep tightening
+     it toward the Rust asset-loading path as the missing sprite set is restored
+     or renamed into place.

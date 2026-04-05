@@ -5,8 +5,8 @@
 
 namespace splonks {
 
-void Step(State& state, Audio& audio, Graphics& graphics, float dt) {
-    state.time_since_last_update += dt;
+void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
+    state.time_since_last_update += frame_dt;
     while (state.time_since_last_update > kTimestep) {
         state.time_since_last_update -= kTimestep;
         if (state.frame_pause > 0) {
@@ -22,13 +22,13 @@ void Step(State& state, Audio& audio, Graphics& graphics, float dt) {
         case Mode::VideoSettings:
             break;
         case Mode::Playing:
-            StepPlaying(state, audio, graphics, dt);
+            StepPlaying(state, audio, graphics, kTimestep);
             break;
         case Mode::StageTransition:
             StepStageTransition(state, audio, graphics);
             break;
         case Mode::GameOver:
-            StepGameOver(state, audio, graphics, dt);
+            StepGameOver(state, audio, graphics, kTimestep);
             break;
         case Mode::Win:
             StepWin(state, audio, graphics);

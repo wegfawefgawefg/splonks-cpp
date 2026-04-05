@@ -2,6 +2,7 @@
 
 #include "room.hpp"
 
+#include <algorithm>
 #include <random>
 
 namespace splonks {
@@ -255,6 +256,55 @@ std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,
         }
     }
     return result;
+}
+
+UVec2 Stage::GetRandomRoom() const {
+    return UVec2::New(
+        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(kRoomLayout.x))),
+        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(kRoomLayout.y)))
+    );
+}
+
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRandomRoom() const {
+    const UVec2 random_room = GetRandomRoom();
+    return GetRandomNoncollidablePositionInRoom(random_room);
+}
+
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRoom(const UVec2& room) const {
+    const auto [room_tl, room_br] = GetRoomCorners(room);
+
+    if (static_cast<int>(room_tl.x) > static_cast<int>(GetTileWidth()) ||
+        static_cast<int>(room_tl.y) > static_cast<int>(GetTileHeight())) {
+        return std::nullopt;
+    }
+
+    const IVec2 tl = IVec2::New(
+        std::clamp(static_cast<int>(room_tl.x), 0, static_cast<int>(GetTileWidth()) - 1),
+        std::clamp(static_cast<int>(room_tl.y), 0, static_cast<int>(GetTileHeight()) - 1)
+    );
+    const IVec2 br = IVec2::New(
+        std::clamp(static_cast<int>(room_br.x), 0, static_cast<int>(GetTileWidth()) - 1),
+        std::clamp(static_cast<int>(room_br.y), 0, static_cast<int>(GetTileHeight()) - 1)
+    );
+
+    std::vector<IVec2> noncollidable_tile_coords;
+    for (int y = tl.y; y <= br.y; ++y) {
+        for (int x = tl.x; x <= br.x; ++x) {
+            const Tile tile = GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+            if (!IsTileCollidable(tile)) {
+                noncollidable_tile_coords.push_back(IVec2::New(x, y));
+            }
+        }
+    }
+
+    if (noncollidable_tile_coords.empty()) {
+        return std::nullopt;
+    }
+
+    const int random_tile_idx =
+        RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
+    const IVec2 tile_coord = noncollidable_tile_coords[static_cast<std::size_t>(random_tile_idx)];
+    return tile_coord * static_cast<int>(kTileSize);
 }
 
 unsigned int Stage::GetWidth() const {

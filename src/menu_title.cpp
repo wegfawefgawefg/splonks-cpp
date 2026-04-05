@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "graphics.hpp"
+#include "inputs.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
 
@@ -30,16 +31,27 @@ void ProcessInputTitle(
     (void)graphics;
     (void)dt;
     (void)window;
+
+    const bool confirm_pressed =
+        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_START) ||
+        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_SOUTH) ||
+        KeyPressedEdge(SDL_SCANCODE_SPACE) || KeyPressedEdge(SDL_SCANCODE_RETURN) ||
+        KeyPressedEdge(SDL_SCANCODE_KP_ENTER);
+    const bool up_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_UP) ||
+                            KeyPressedEdge(SDL_SCANCODE_UP) || KeyPressedEdge(SDL_SCANCODE_W);
+    const bool down_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_DOWN) ||
+                              KeyPressedEdge(SDL_SCANCODE_DOWN) || KeyPressedEdge(SDL_SCANCODE_S);
+
     //  TITLE MENU STATE MACHINE
     switch (state.title_menu_selection) {
     case TitleMenuOption::Start:
-        if (state.menu_inputs.confirm) {
+        if (confirm_pressed) {
             audio.PlaySong(Song::Playing);
             PlayMenuSoundSuperConfirm(audio);
             state.SetMode(Mode::StageTransition);
         } else {
-            switch (state.menu_inputs.up ? UpOrDownOrNeither::Up
-                                         : (state.menu_inputs.down ? UpOrDownOrNeither::Down
+            switch (up_pressed ? UpOrDownOrNeither::Up
+                               : (down_pressed ? UpOrDownOrNeither::Down
                                                                    : UpOrDownOrNeither::Neither)) {
             case UpOrDownOrNeither::Up:
                 PlayMenuSoundCant(audio);
@@ -54,12 +66,12 @@ void ProcessInputTitle(
         }
         break;
     case TitleMenuOption::Settings:
-        if (state.menu_inputs.confirm) {
+        if (confirm_pressed) {
             state.SetMode(Mode::Settings);
             PlayMenuSoundConfirm(audio);
         } else {
-            switch (state.menu_inputs.up ? UpOrDownOrNeither::Up
-                                         : (state.menu_inputs.down ? UpOrDownOrNeither::Down
+            switch (up_pressed ? UpOrDownOrNeither::Up
+                               : (down_pressed ? UpOrDownOrNeither::Down
                                                                    : UpOrDownOrNeither::Neither)) {
             case UpOrDownOrNeither::Up:
                 state.title_menu_selection = TitleMenuOption::Start;
@@ -75,11 +87,11 @@ void ProcessInputTitle(
         }
         break;
     case TitleMenuOption::Quit:
-        if (state.menu_inputs.confirm) {
+        if (confirm_pressed) {
             state.running = false;
         } else {
-            switch (state.menu_inputs.up ? UpOrDownOrNeither::Up
-                                         : (state.menu_inputs.down ? UpOrDownOrNeither::Down
+            switch (up_pressed ? UpOrDownOrNeither::Up
+                               : (down_pressed ? UpOrDownOrNeither::Down
                                                                    : UpOrDownOrNeither::Neither)) {
             case UpOrDownOrNeither::Up:
                 state.title_menu_selection = TitleMenuOption::Settings;

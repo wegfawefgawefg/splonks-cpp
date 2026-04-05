@@ -63,7 +63,7 @@ void PrintCtrlsHelp(SDL_Renderer* renderer, Graphics& graphics, unsigned int scr
     );
 }
 
-void RenderStageLayout(SDL_Renderer* renderer, const State& state) {
+void RenderStageLayout(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
     // draw the origin with lines going in all directions
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderLine(renderer, 0.0F, 0.0F, 100.0F, 0.0F);
@@ -95,21 +95,34 @@ void RenderStageLayout(SDL_Renderer* renderer, const State& state) {
             // draw in tiny text the room number at the top left of the room
             char room_text[32];
             std::snprintf(room_text, sizeof(room_text), "(%u, %u)", x, y);
-            SDL_RenderDebugText(
-                renderer, static_cast<float>(room_pos.x), static_cast<float>(room_pos.y), room_text);
+            DrawText(
+                renderer,
+                graphics,
+                10,
+                graphics.ui_font,
+                room_text,
+                static_cast<float>(room_pos.x),
+                static_cast<float>(room_pos.y),
+                SDL_Color{255, 105, 180, 255}
+            );
             // below that draw the room boundaries
             char bounds_text[32];
             std::snprintf(bounds_text, sizeof(bounds_text), "(%u, %u)", room_pos.x, room_pos.y);
-            SDL_RenderDebugText(
+            DrawText(
                 renderer,
+                graphics,
+                10,
+                graphics.ui_font,
+                bounds_text,
                 static_cast<float>(room_pos.x),
                 static_cast<float>(room_pos.y + 11U),
-                bounds_text);
+                SDL_Color{255, 105, 180, 255}
+            );
         }
     }
 }
 
-void RenderRoomsOverlay(SDL_Renderer* renderer, const State& state) {
+void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
     for (unsigned int y = 0; y < Stage::kRoomLayout.y; ++y) {
         for (unsigned int x = 0; x < Stage::kRoomLayout.x; ++x) {
             const UVec2 room_pos = UVec2::New(x, y) * state.stage.GetRoomDims();
@@ -143,19 +156,29 @@ void RenderRoomsOverlay(SDL_Renderer* renderer, const State& state) {
                 break;
             case RoomType::Exit:
                 // put the word exit here
-                SDL_RenderDebugText(
+                DrawText(
                     renderer,
+                    graphics,
+                    static_cast<int>(kTileSize),
+                    graphics.ui_font,
+                    "exit",
                     static_cast<float>(room_center.x - kTileSize),
                     static_cast<float>(room_center.y - kTileSize),
-                    "exit");
+                    SDL_Color{255, 0, 0, 255}
+                );
                 break;
             case RoomType::Entrance:
                 // put the word entrance here
-                SDL_RenderDebugText(
+                DrawText(
                     renderer,
+                    graphics,
+                    static_cast<int>(kTileSize),
+                    graphics.ui_font,
+                    "entrance",
                     static_cast<float>(room_center.x - kTileSize),
                     static_cast<float>(room_center.y - kTileSize),
-                    "entrance");
+                    SDL_Color{255, 0, 0, 255}
+                );
                 break;
             }
         }

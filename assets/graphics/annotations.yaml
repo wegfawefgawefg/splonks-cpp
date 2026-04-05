@@ -1,0 +1,1408 @@
+sprites:
+  - path: "entities.png"
+    aabb:
+      x: 2
+      y: 194
+      w: 11
+      h: 14
+    name: "player_standing"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 9
+    tags: []
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 19
+      y: 194
+      w: 11
+      h: 14
+    name: "player_standing"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 10
+    tags: []
+    cbox:
+      x: 2
+      y: 1
+      w: 8
+      h: 13
+  - path: "entities.png"
+    aabb:
+      x: 35
+      y: 194
+      w: 10
+      h: 14
+    name: "player_standing_holding"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 10
+    tags: []
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 51
+      y: 194
+      w: 10
+      h: 14
+    name: "player_standing_holding"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 10
+    tags: []
+    cbox:
+      x: 2
+      y: 1
+      w: 8
+      h: 13
+  - path: "entities.png"
+    aabb:
+      x: 66
+      y: 194
+      w: 13
+      h: 14
+    name: "player_walking"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 9
+    tags: []
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 4
+      y: 233
+      w: 8
+      h: 7
+    name: "pot"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 7
+  - path: "entities.png"
+    aabb:
+      x: 83
+      y: 194
+      w: 13
+      h: 14
+    name: "player_walking"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 8
+    tags: []
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 99
+      y: 194
+      w: 10
+      h: 14
+    name: "walk_holding"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 115
+      y: 194
+      w: 10
+      h: 14
+    name: "walk_holding"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 2
+      y: 244
+      w: 12
+      h: 12
+    name: "box"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 5
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 12
+  - path: "entities.png"
+    aabb:
+      x: 2
+      y: 262
+      w: 12
+      h: 4
+    name: "baseball_bat_swing"
+    frame: 0
+    duration: 5
+    offset:
+      x: 12
+      y: 3
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 18
+      y: 261
+      w: 13
+      h: 5
+    name: "baseball_bat_swing"
+    frame: 1
+    duration: 4
+    offset:
+      x: 5
+      y: 1
+    center:
+      x: 4
+      y: 1
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 34
+      y: 264
+      w: 12
+      h: 2
+    name: "baseball_bat_swing"
+    frame: 2
+    duration: 8
+    offset:
+      x: -4
+      y: 5
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 228
+      y: 194
+      w: 10
+      h: 14
+    name: "player_climbing"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 7
+    tags: []
+    cbox:
+      x: 1
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 243
+      y: 194
+      w: 10
+      h: 14
+    name: "player_climbing"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 7
+    tags: []
+    cbox:
+      x: 1
+      y: 0
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 162
+      y: 195
+      w: 14
+      h: 13
+    name: "player_dead"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 11
+    tags: []
+    cbox:
+      x: 0
+      y: 7
+      w: 14
+      h: 6
+  - path: "entities.png"
+    aabb:
+      x: 178
+      y: 195
+      w: 14
+      h: 13
+    name: "player_dead"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 11
+    tags: []
+    cbox:
+      x: 0
+      y: 7
+      w: 14
+      h: 6
+  - path: "entities.png"
+    aabb:
+      x: 194
+      y: 198
+      w: 13
+      h: 10
+    name: "player_stunned"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 210
+      y: 198
+      w: 13
+      h: 10
+    name: "player_stunned"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 66
+      y: 76
+      w: 4
+      h: 4
+    name: "gold_icon"
+    frame: 0
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 74
+      y: 76
+      w: 4
+      h: 4
+    name: "gold_icon"
+    frame: 1
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 82
+      y: 76
+      w: 4
+      h: 4
+    name: "gold_icon"
+    frame: 2
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 90
+      y: 76
+      w: 4
+      h: 4
+    name: "gold_icon"
+    frame: 3
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 98
+      y: 76
+      w: 4
+      h: 4
+    name: "gold_icon"
+    frame: 4
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 106
+      y: 76
+      w: 4
+      h: 4
+    name: "gold_icon"
+    frame: 5
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 114
+      y: 76
+      w: 4
+      h: 4
+    name: "gold_icon"
+    frame: 6
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 17
+      y: 149
+      w: 14
+      h: 11
+    name: "heart_ui_icon"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 36
+      y: 148
+      w: 9
+      h: 12
+    name: "grenade_ui_icon"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 0
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 104
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 1
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 2
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 120
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 3
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 4
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 136
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 5
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 6
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 152
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 7
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 8
+      w: 8
+      h: 8
+    name: "rope_ui_icon"
+    frame: 8
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 66
+      y: 88
+      w: 4
+      h: 8
+    name: "copper_torch"
+    frame: 0
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 74
+      y: 88
+      w: 4
+      h: 8
+    name: "copper_torch"
+    frame: 1
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 82
+      y: 88
+      w: 4
+      h: 8
+    name: "copper_torch"
+    frame: 2
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 90
+      y: 88
+      w: 4
+      h: 8
+    name: "copper_torch"
+    frame: 3
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 163
+      w: 3
+      h: 2
+    name: "gold_coin"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 1
+      y: 1
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 3
+      h: 2
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 172
+      w: 6
+      h: 4
+    name: "gold_stack"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 6
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 24
+      y: 170
+      w: 9
+      h: 6
+    name: "big_gold_stack"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 1
+      y: 2
+      w: 8
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 1
+      y: 187
+      w: 6
+      h: 5
+    name: "rope_ball"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 2
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 6
+      h: 5
+  - path: "entities.png"
+    aabb:
+      x: 9
+      y: 187
+      w: 6
+      h: 5
+    name: "rope_ball"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 2
+    tags: []
+    cbox:
+      x: 1
+      y: 0
+      w: 5
+      h: 5
+  - path: "entities.png"
+    aabb:
+      x: 18
+      y: 178
+      w: 12
+      h: 14
+    name: "unfolding_rope"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 256
+      y: 194
+      w: 9
+      h: 14
+    name: "player_hanging"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 9
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 291
+      y: 192
+      w: 12
+      h: 16
+    name: "player_falling"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 2
+      y: 2
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 306
+      y: 192
+      w: 12
+      h: 16
+    name: "player_falling"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 2
+      y: 2
+      w: 8
+      h: 14
+  - path: "entities.png"
+    aabb:
+      x: 3
+      y: 118
+      w: 10
+      h: 10
+    name: "jetpack"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+  - path: "entities.png"
+    aabb:
+      x: 17
+      y: 118
+      w: 10
+      h: 10
+    name: "jetpack_back"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+  - path: "entities.png"
+    aabb:
+      x: 33
+      y: 118
+      w: 7
+      h: 10
+    name: "jetpack_side"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 1
+      y: 0
+      w: 6
+      h: 10
+  - path: "entities.png"
+    aabb:
+      x: 17
+      y: 139
+      w: 6
+      h: 5
+    name: "live_grenade"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 2
+    center:
+      x: 2
+      y: 3
+    tags: []
+    cbox:
+      x: 0
+      y: 1
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 33
+      y: 137
+      w: 8
+      h: 7
+    name: "live_grenade"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 4
+    tags: []
+    cbox:
+      x: 0
+      y: 2
+      w: 5
+      h: 5
+  - path: "entities.png"
+    aabb:
+      x: 6
+      y: 139
+      w: 6
+      h: 5
+    name: "grenade"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 3
+    tags: []
+    cbox:
+      x: 0
+      y: 1
+      w: 4
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 6
+      y: 16
+      w: 6
+      h: 11
+    name: "hanging_bat"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 17
+      w: 15
+      h: 11
+    name: "flying_bat"
+    frame: 0
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 8
+    tags: []
+    cbox:
+      x: 3
+      y: 6
+      w: 5
+      h: 4
+  - path: "entities.png"
+    aabb:
+      x: 34
+      y: 21
+      w: 10
+      h: 11
+    name: "flying_bat"
+    frame: 1
+    duration: 6
+    offset:
+      x: 2
+      y: 4
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 1
+      y: 1
+      w: 5
+      h: 6
+  - path: "entities.png"
+    aabb:
+      x: 49
+      y: 28
+      w: 13
+      h: 4
+    name: "dead_bat"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 35
+      y: 8
+      w: 2
+      h: 8
+    name: "wooden_torch_burning"
+    frame: 0
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 43
+      y: 8
+      w: 2
+      h: 8
+    name: "wooden_torch_burning"
+    frame: 1
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 51
+      y: 8
+      w: 2
+      h: 8
+    name: "wooden_torch_burning"
+    frame: 2
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 59
+      y: 8
+      w: 2
+      h: 8
+    name: "wooden_torch_burning"
+    frame: 3
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 4
+      y: 42
+      w: 8
+      h: 6
+    name: "rock"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 3
+    tags: []
+    cbox:
+      x: 1
+      y: 1
+      w: 6
+      h: 5
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    name: "no_sprite"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 0
+      w: 16
+      h: 16
+    name: "no_sprite"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0

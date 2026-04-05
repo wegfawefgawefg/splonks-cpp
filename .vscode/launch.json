@@ -15,6 +15,31 @@
         { "name": "SDL_VIDEODRIVER", "value": "x11" }
       ],
       "externalConsole": false,
+      "preLaunchTask": "cmake: build (release)",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "Debug splonks-cpp",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build-debug/splonks-cpp",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        { "name": "DISPLAY", "value": "${env:DISPLAY}" },
+        { "name": "WAYLAND_DISPLAY", "value": "${env:WAYLAND_DISPLAY}" },
+        { "name": "SDL_VIDEODRIVER", "value": "x11" }
+      ],
+      "externalConsole": false,
       "preLaunchTask": "cmake: build (dev)",
       "miDebuggerPath": "/usr/bin/gdb",
       "MIMode": "gdb",
@@ -33,7 +58,7 @@
       "program": "${workspaceFolder}/build/splonks-cpp",
       "args": [],
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "cmake: build (dev)"
+      "preLaunchTask": "cmake: build (release)"
     }
   ]
 }

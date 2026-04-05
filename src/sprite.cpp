@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <random>
 #include <stdexcept>
@@ -10,6 +11,9 @@
 namespace splonks {
 
 namespace {
+
+constexpr unsigned int kDefaultFallbackSpriteSize = 8;
+constexpr float kDefaultFallbackFrameDuration = 1.0F;
 
 int RandomIntExclusive(int minimum, int maximum) {
     static std::random_device device;
@@ -23,6 +27,18 @@ std::size_t SpriteIndex(Sprite sprite) {
     return static_cast<std::size_t>(sprite);
 }
 
+SpriteData DefaultFallbackSpriteData() {
+    return SpriteData{
+        std::vector<Frame>{Frame{UVec2::New(0, 0), kDefaultFallbackFrameDuration}},
+        UVec2::New(kDefaultFallbackSpriteSize, kDefaultFallbackSpriteSize),
+    };
+}
+
+void PrintAssetWarning(const std::string& message, const std::string& path) {
+    std::cerr << "\033[33mwarning:\033[0m " << message << '\n';
+    std::cerr << "    " << path << '\n';
+}
+
 } // namespace
 
 const char* ToFilename(Sprite sprite) {
@@ -32,7 +48,7 @@ const char* ToFilename(Sprite sprite) {
     case Sprite::Reticle:
         return "reticle";
     case Sprite::Heart:
-        return "heart_icon";
+        return "heart";
     case Sprite::Bomb:
         return "bomb_icon";
     case Sprite::RopeIcon:
@@ -40,9 +56,9 @@ const char* ToFilename(Sprite sprite) {
     case Sprite::GoldIcon:
         return "gold_icon";
     case Sprite::Rope:
-        return "rope";
+        return "rope_bundle";
     case Sprite::RopeWindingUp:
-        return "rope_winding_up";
+        return "rope_unfolding";
     case Sprite::BaseballBat:
         return "baseball_bat";
     case Sprite::BatNeutral:
@@ -68,25 +84,25 @@ const char* ToFilename(Sprite sprite) {
     case Sprite::Rock:
         return "rock";
     case Sprite::PlayerStanding:
-        return "player_standing";
+        return "man_neutral";
     case Sprite::PlayerStandingHolding:
-        return "player_standing_holding";
+        return "man_neutral_holding";
     case Sprite::PlayerWalking:
-        return "player_walking";
+        return "man_walking";
     case Sprite::PlayerWalkingHolding:
-        return "player_walking_holding";
+        return "man_walking_holding";
     case Sprite::PlayerFlying:
-        return "player_flying";
+        return "man_neutral";
     case Sprite::PlayerDead:
-        return "player_dead";
+        return "man_dead";
     case Sprite::PlayerStunned:
-        return "player_stunned";
+        return "man_stunned";
     case Sprite::PlayerClimbing:
-        return "player_climbing";
+        return "man_neutral";
     case Sprite::PlayerHanging:
-        return "player_hanging";
+        return "man_neutral";
     case Sprite::PlayerFalling:
-        return "player_falling";
+        return "man_neutral";
     }
 
     return "no_sprite";
@@ -128,23 +144,14 @@ std::vector<Sprite> AllSprites() {
 }
 
 std::vector<SpriteData> LoadSprites(const std::string& asset_folder) {
-    std::vector<std::string> missing_files;
-    for (const Sprite sprite : AllSprites()) {
-        const char* filename = ToFilename(sprite);
-        const std::filesystem::path png_path =
-            std::filesystem::path(asset_folder) / (std::string(filename) + ".png");
-        const std::filesystem::path json_path =
-            std::filesystem::path(asset_folder) / (std::string(filename) + ".json");
-        if (!std::filesystem::exists(png_path)) {
-            missing_files.push_back(png_path.string());
+    const std::filesystem::path fallback_json_path =
+        std::filesystem::path(asset_folder) / (std::string(ToFilename(Sprite::NoSprite)) + ".json");
+    SpriteData fallback_sprite_data = DefaultFallbackSpriteData();
+    if (std::filesystem::exists(fallback_json_path)) {
+        try {
+            fallback_sprite_data = LoadSpriteData(fallback_json_path.string());
+        } catch (...) {
         }
-        if (!std::filesystem::exists(json_path)) {
-            missing_files.push_back(json_path.string());
-        }
-    }
-
-    if (!missing_files.empty()) {
-        throw std::runtime_error("Missing sprite files");
     }
 
     std::vector<SpriteData> sprites;
@@ -153,7 +160,26 @@ std::vector<SpriteData> LoadSprites(const std::string& asset_folder) {
         const char* filename = ToFilename(sprite);
         const std::filesystem::path json_path =
             std::filesystem::path(asset_folder) / (std::string(filename) + ".json");
-        sprites.push_back(LoadSpriteData(json_path.string()));
+        if (std::filesystem::exists(json_path)) {
+            try {
+                sprites.push_back(LoadSpriteData(json_path.string()));
+            } catch (const std::exception& exception) {
+                PrintAssetWarning(
+                    "Failed to parse sprite metadata for " + std::string(filename) +
+                        ". Using fallback metadata.",
+                    json_path.string()
+                );
+                std::cerr << "    reason: " << exception.what() << '\n';
+                sprites.push_back(fallback_sprite_data);
+            }
+        } else {
+            PrintAssetWarning(
+                "Missing sprite metadata for " + std::string(filename) +
+                    ". Using fallback metadata.",
+                json_path.string()
+            );
+            sprites.push_back(fallback_sprite_data);
+        }
     }
     return sprites;
 }

@@ -4,9 +4,10 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 build_dir="${repo_root}/build"
 mode="${1:-build}"
+preset="${SPLONKS_PRESET:-release}"
 
 configure() {
-    cmake --preset dev
+    cmake --preset "${preset}"
 }
 
 if ! configure; then
@@ -19,4 +20,4 @@ if [ "${mode}" = "--configure-only" ]; then
     exit 0
 fi
 
-cmake --build --preset dev -j
+cmake --build --preset "${preset}" -j

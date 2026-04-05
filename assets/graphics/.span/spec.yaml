@@ -1,0 +1,12 @@
+- label: Sprite
+  group: sprites
+  aabb: rect
+  path: file_name
+  name: string
+  frame: ainteger
+  duration: integer
+  offset: point
+  properties:
+    center: point
+    tags: string[]
+    cbox: rect

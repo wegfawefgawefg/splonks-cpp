@@ -22,7 +22,7 @@ Entity Entity::New() {
     entity.acc = Vec2::New(0.0F, 0.0F);
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.dist_traveled_this_frame = 0.0F;
-    entity.origin = Origin::Foot;
+    entity.origin = Origin::TopLeft;
     entity.facing = LeftOrRight::Left;
     entity.vertical_flip = false;
     entity.draw_layer = DrawLayer::Middle;
@@ -37,6 +37,17 @@ Entity Entity::New() {
     entity.running = false;
     entity.holding = false;
     entity.climbing = false;
+    entity.trying_to_jump = false;
+    entity.trying_to_use = false;
+    entity.trying_to_go_left = false;
+    entity.trying_to_go_right = false;
+    entity.trying_to_equip = false;
+    entity.trying_pick_up_drop = false;
+    entity.trying_to_go_up = false;
+    entity.trying_to_go_down = false;
+    entity.trying_to_bomb = false;
+    entity.trying_to_rope = false;
+    entity.trying_to_attack = false;
     entity.money = 0;
     entity.bombs = 4;
     entity.ropes = 4;
@@ -95,28 +106,39 @@ void Entity::Reset() {
 std::tuple<Vec2, Vec2> Entity::GetBounds() const {
     switch (origin) {
     case Origin::TopLeft:
-        return {pos, pos + size};
-    case Origin::Center:
-        return {pos - size / 2.0F, pos + size / 2.0F};
-    case Origin::Foot:
-        return {pos - Vec2::New(size.x / 2.0F, size.y), pos};
+        return {pos, pos + size - Vec2::New(1.0F, 1.0F)};
+    case Origin::Center: {
+        const Vec2 tl = pos - size / 2.0F;
+        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
+        return {tl, br};
+    }
+    case Origin::Foot: {
+        const Vec2 tl = pos - Vec2::New(size.x / 2.0F, size.y);
+        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
+        return {tl, br};
+    }
     }
 
-    return {pos, pos + size};
+    return {pos, pos + size - Vec2::New(1.0F, 1.0F)};
 }
 
 AABB Entity::GetAABB() const {
     switch (origin) {
     case Origin::TopLeft:
-        return AABB::New(pos, pos + size);
-    case Origin::Center:
-        return AABB::New(pos - size / 2.0F, pos + size / 2.0F);
-    case Origin::Foot:
-        return AABB::New(pos - Vec2::New(size.x / 2.0F, size.y),
-                         pos + Vec2::New(size.x / 2.0F, 0.0F));
+        return AABB::New(pos, pos + size - Vec2::New(1.0F, 1.0F));
+    case Origin::Center: {
+        const Vec2 tl = pos - size / 2.0F;
+        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
+        return AABB::New(tl, br);
+    }
+    case Origin::Foot: {
+        const Vec2 tl = pos - Vec2::New(size.x / 2.0F, size.y);
+        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
+        return AABB::New(tl, br);
+    }
     }
 
-    return AABB::New(pos, pos + size);
+    return AABB::New(pos, pos + size - Vec2::New(1.0F, 1.0F));
 }
 
 Vec2 Entity::GetCenter() const {
@@ -162,23 +184,26 @@ bool Entity::IsHanging() const {
 }
 
 bool Entity::IsHorizontallyControlled() const {
-    return was_horizontally_controlled_this_frame;
+    return trying_to_go_left || trying_to_go_right;
 }
 
 AABB Entity::GetFeet() const {
-    switch (origin) {
-    case Origin::TopLeft:
-        return AABB::New(Vec2::New(pos.x, pos.y + size.y),
-                         Vec2::New(pos.x + size.x, pos.y + size.y + 1.0F));
-    case Origin::Center:
-        return AABB::New(Vec2::New(pos.x - size.x / 2.0F, pos.y + size.y / 2.0F),
-                         Vec2::New(pos.x + size.x / 2.0F, pos.y + size.y / 2.0F + 1.0F));
-    case Origin::Foot:
-        return AABB::New(Vec2::New(pos.x - size.x / 2.0F, pos.y),
-                         Vec2::New(pos.x + size.x / 2.0F, pos.y + 1.0F));
+    const auto [tl, br] = GetBounds();
+    return AABB::New(Vec2::New(tl.x, br.y), br + Vec2::New(0.0F, 1.0F));
+}
+
+void Entity::SetGrounded(const Stage& stage) {
+    const AABB feet = GetFeet();
+    if (feet.br.y >= static_cast<float>(stage.GetHeight())) {
+        grounded |= true;
+        return;
     }
 
-    return AABB::New(pos, pos);
+    const IVec2 feet_tl_tile_pos = ToIVec2(feet.tl) / static_cast<int>(kTileSize);
+    const IVec2 feet_br_tile_pos = ToIVec2(feet.br) / static_cast<int>(kTileSize);
+    const std::vector<const Tile*> tiles_at_feet =
+        stage.GetTilesInRect(feet_tl_tile_pos, feet_br_tile_pos);
+    grounded |= CollidableTileInList(tiles_at_feet);
 }
 
 std::tuple<Vec2, Vec2> Entity::GetTlAndTrCorners() const {
@@ -201,6 +226,17 @@ HangHands Entity::GetHangHands() const {
     HangHands hang_hands;
     hang_hands.left = tl;
     hang_hands.right = tr;
+    return hang_hands;
+}
+
+HangHandBounds Entity::GetHangHandsBounds() const {
+    const auto [tl, _br] = GetBounds();
+    const Vec2 right_edge = tl + Vec2::New(size.x, 0.0F);
+    HangHandBounds hang_hands;
+    hang_hands.left_tl = tl - kHangHandSize;
+    hang_hands.left_br = tl;
+    hang_hands.right_tl = right_edge - Vec2::New(0.0F, kHangHandSize.y);
+    hang_hands.right_br = right_edge + Vec2::New(kHangHandSize.x, 0.0F);
     return hang_hands;
 }
 

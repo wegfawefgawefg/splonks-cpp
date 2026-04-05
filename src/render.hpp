@@ -7,6 +7,6 @@ namespace splonks {
 struct Graphics;
 struct State;
 
-void Render(SDL_Renderer* renderer, State& state, Graphics& graphics);
+void Render(SDL_Renderer* renderer, SDL_Texture* render_texture, State& state, Graphics& graphics);
 
 } // namespace splonks
