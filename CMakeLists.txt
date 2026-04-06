@@ -116,6 +116,7 @@ endif()
 
 add_executable(splonks-cpp
     src/audio.cpp
+    src/cli.cpp
     src/direction.cpp
     src/entity.cpp
     src/entity_display_states.cpp
@@ -134,6 +135,7 @@ add_executable(splonks-cpp
     src/entities/player.cpp
     src/entities/rock.cpp
     src/entities/rope.cpp
+    src/frame_data.cpp
     src/graphics.cpp
     src/inputs.cpp
     src/main.cpp
@@ -146,6 +148,7 @@ add_executable(splonks-cpp
     src/render_debug.cpp
     src/render_tiles_and_entities.cpp
     src/render_ui.cpp
+    src/raw_frame_data.cpp
     src/settings.cpp
     src/sid.cpp
     src/sprite.cpp
@@ -164,6 +167,7 @@ add_executable(splonks-cpp
     src/special_effects/spline_effect.cpp
     src/special_effects/static_effect.cpp
     src/tile.cpp
+    src/tile_source_data.cpp
     src/utils.cpp
     src/systems/controls.cpp
     src/systems/mod.cpp

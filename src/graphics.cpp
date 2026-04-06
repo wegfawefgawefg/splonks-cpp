@@ -1,5 +1,7 @@
 #include "graphics.hpp"
 
+#include "raw_frame_data.hpp"
+
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -113,7 +115,6 @@ std::vector<SDL_Texture*> LoadSpriteTextures(
 Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_folder) {
     Graphics graphics;
     graphics.sprites = LoadSprites(sprite_assets_folder);
-    graphics.sprite_uses_fallback.reserve(kSpriteCount);
     graphics.sprite_textures =
         LoadSpriteTextures(renderer, sprite_assets_folder, graphics.sprite_uses_fallback);
     for (std::size_t i = 0; i < graphics.sprites.size() && i < graphics.sprite_uses_fallback.size();
@@ -125,20 +126,23 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
         }
     }
     graphics.textures = {
-        LoadTexture(renderer, "assets/graphics/textures/title.png"),
-        LoadTexture(renderer, "assets/graphics/textures/title_layer_1.png"),
-        LoadTexture(renderer, "assets/graphics/textures/title_layer_2.png"),
-        LoadTexture(renderer, "assets/graphics/textures/title_layer_3.png"),
+        LoadTexture(renderer, "assets/graphics/images/title.png"),
+        LoadTexture(renderer, "assets/graphics/images/title_layer_1.png"),
+        LoadTexture(renderer, "assets/graphics/images/title_layer_2.png"),
+        LoadTexture(renderer, "assets/graphics/images/title_layer_3.png"),
     };
-    graphics.tile_sets = {
-        LoadTexture(renderer, "assets/graphics/textures/cave.png"),
-        LoadTexture(renderer, "assets/graphics/textures/ice.png"),
-        LoadTexture(renderer, "assets/graphics/textures/jungle.png"),
-        LoadTexture(renderer, "assets/graphics/textures/temple.png"),
-        LoadTexture(renderer, "assets/graphics/textures/boss.png"),
-    };
+    const RawFrameDataFile raw_frame_data_file =
+        LoadRawFrameDataFile("assets/graphics/annotations.yaml");
+    graphics.frame_data_db = FrameDataDb::FromRaw(raw_frame_data_file);
+    graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
+    graphics.tile_source_images.reserve(graphics.tile_source_db.image_paths.size());
+    for (const std::string& image_path : graphics.tile_source_db.image_paths) {
+        graphics.tile_source_images.push_back(
+            LoadTexture(renderer, "assets/graphics/tiles/" + image_path)
+        );
+    }
     graphics.special_effects_texture =
-        LoadTexture(renderer, "assets/graphics/textures/special_effects.png");
+        LoadTexture(renderer, "assets/graphics/special_effects/special_effects.png");
     graphics.window_dims = UVec2::New(1280, 720);
     graphics.dims = UVec2::New(1280, 720);
     graphics.fullscreen = false;
@@ -185,14 +189,6 @@ SDL_Texture* Graphics::GetTexture(TextureName texture) const {
         return nullptr;
     }
     return textures[index];
-}
-
-SDL_Texture* Graphics::GetTileSetTexture(TileSet tile_set) const {
-    const std::size_t index = static_cast<std::size_t>(tile_set);
-    if (index >= tile_sets.size()) {
-        return nullptr;
-    }
-    return tile_sets[index];
 }
 
 Vec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
@@ -245,12 +241,12 @@ void Graphics::ShutdownTextures() {
     }
     textures.clear();
 
-    for (SDL_Texture* texture : tile_sets) {
+    for (SDL_Texture* texture : tile_source_images) {
         if (texture != nullptr) {
             SDL_DestroyTexture(texture);
         }
     }
-    tile_sets.clear();
+    tile_source_images.clear();
 
     if (special_effects_texture != nullptr) {
         SDL_DestroyTexture(special_effects_texture);
@@ -275,44 +271,6 @@ bool IsTileTransparent(Tile tile) {
     }
 
     return false;
-}
-
-std::uint32_t TileNumVariations(Tile tile) {
-    switch (tile) {
-    case Tile::Dirt:
-        return 3;
-    case Tile::Air:
-        return 2;
-    default:
-        return 1;
-    }
-}
-
-UVec2 GetTileTextureSamplePosition(Tile tile) {
-    switch (tile) {
-    case Tile::Air:
-        return UVec2::New(0, 0) * kTileSize;
-    case Tile::Dirt:
-        return UVec2::New(0, 1) * kTileSize;
-    case Tile::Gold:
-        return UVec2::New(0, 2) * kTileSize;
-    case Tile::Block:
-        return UVec2::New(0, 3) * kTileSize;
-    case Tile::LadderTop:
-        return UVec2::New(0, 4) * kTileSize;
-    case Tile::Ladder:
-        return UVec2::New(0, 5) * kTileSize;
-    case Tile::Spikes:
-        return UVec2::New(0, 6) * kTileSize;
-    case Tile::Rope:
-        return UVec2::New(0, 7) * kTileSize;
-    case Tile::Entrance:
-        return UVec2::New(0, 8) * kTileSize;
-    case Tile::Exit:
-        return UVec2::New(0, 9) * kTileSize;
-    }
-
-    return UVec2::New(0, 0);
 }
 
 int GetReasonableFontScale(const UVec2& dims, TextType text_type) {

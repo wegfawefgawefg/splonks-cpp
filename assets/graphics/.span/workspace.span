@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "58d9428d-800d-4c2b-9993-a29d11216497",
+  "selectedAnnotationId": "47776a78-25e1-4a9d-99f3-0bba174de60e",
   "sheets": [
     {
       "path": "images/title.png",
@@ -123,7 +123,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -155,7 +156,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -187,7 +189,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -219,7 +222,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -251,7 +255,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -283,7 +288,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 1
+            "duration": 1,
+            "tile": false
           }
         },
         {
@@ -315,7 +321,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -330,7 +337,7 @@
           "point": null,
           "chromaKey": "",
           "properties": {
-            "name": "walk_holding",
+            "name": "player_walk_holding",
             "frame": 0,
             "center": {
               "x": 0,
@@ -347,7 +354,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -362,7 +370,7 @@
           "point": null,
           "chromaKey": "",
           "properties": {
-            "name": "walk_holding",
+            "name": "player_walk_holding",
             "frame": 1,
             "center": {
               "x": 0,
@@ -379,7 +387,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 12
+            "duration": 12,
+            "tile": false
           }
         },
         {
@@ -411,7 +420,8 @@
               "x": 0,
               "y": 0
             },
-            "duration": 1
+            "duration": 1,
+            "tile": false
           }
         },
         {
@@ -443,7 +453,8 @@
               "x": 12,
               "y": 3
             },
-            "duration": 5
+            "duration": 5,
+            "tile": false
           }
         },
         {
@@ -475,7 +486,8 @@
               "x": 5,
               "y": 1
             },
-            "duration": 4
+            "duration": 4,
+            "tile": false
           }
         },
         {
@@ -507,7 +519,8 @@
               "x": -4,
               "y": 5
             },
-            "duration": 8
+            "duration": 8,
+            "tile": false
           }
         },
         {
@@ -539,7 +552,8 @@
               "y": 0,
               "w": 8,
               "h": 14
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -571,7 +585,8 @@
               "y": 0,
               "w": 8,
               "h": 14
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -603,7 +618,8 @@
               "y": 7,
               "w": 14,
               "h": 6
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -635,7 +651,8 @@
               "y": 7,
               "w": 14,
               "h": 6
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -667,7 +684,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -699,7 +717,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -731,7 +750,8 @@
               "y": 0,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -763,7 +783,8 @@
               "y": 0,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -795,7 +816,8 @@
               "y": 0,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -827,7 +849,8 @@
               "y": 0,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -859,7 +882,8 @@
               "y": 0,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -891,7 +915,8 @@
               "y": 0,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -923,7 +948,8 @@
               "y": 0,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -955,7 +981,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -987,7 +1014,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1019,7 +1047,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1051,7 +1080,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1083,7 +1113,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1115,7 +1146,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1147,7 +1179,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1179,7 +1212,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1211,7 +1245,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1243,7 +1278,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1275,7 +1311,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1307,7 +1344,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1339,7 +1377,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1371,7 +1410,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1403,7 +1443,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1435,7 +1476,8 @@
               "y": 0,
               "w": 3,
               "h": 2
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1467,7 +1509,8 @@
               "y": 0,
               "w": 6,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1499,7 +1542,8 @@
               "y": 2,
               "w": 8,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1531,7 +1575,8 @@
               "y": 0,
               "w": 6,
               "h": 5
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1563,7 +1608,8 @@
               "y": 0,
               "w": 5,
               "h": 5
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1595,7 +1641,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1627,7 +1674,8 @@
               "y": 0,
               "w": 9,
               "h": 14
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1659,7 +1707,8 @@
               "y": 2,
               "w": 8,
               "h": 14
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1691,7 +1740,8 @@
               "y": 2,
               "w": 8,
               "h": 14
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1723,7 +1773,8 @@
               "y": 0,
               "w": 9,
               "h": 10
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1755,7 +1806,8 @@
               "y": 0,
               "w": 9,
               "h": 10
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1787,7 +1839,8 @@
               "y": 0,
               "w": 6,
               "h": 10
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1819,7 +1872,8 @@
               "y": 1,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1851,7 +1905,8 @@
               "y": 2,
               "w": 5,
               "h": 5
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1883,7 +1938,8 @@
               "y": 1,
               "w": 4,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1915,7 +1971,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1947,7 +2004,8 @@
               "y": 6,
               "w": 5,
               "h": 4
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -1979,7 +2037,8 @@
               "y": 1,
               "w": 5,
               "h": 6
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2011,7 +2070,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2043,7 +2103,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2075,7 +2136,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2107,7 +2169,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2139,7 +2202,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2171,7 +2235,8 @@
               "y": 1,
               "w": 6,
               "h": 5
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2203,7 +2268,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         },
         {
@@ -2235,7 +2301,8 @@
               "y": 0,
               "w": 0,
               "h": 0
-            }
+            },
+            "tile": false
           }
         }
       ],
@@ -2243,57 +2310,1579 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 1.759,
-        "centerX": 209.77828311540648,
-        "centerY": 109.72143263217738
+        "zoom": 8.389,
+        "centerX": 97.27023483132675,
+        "centerY": 181.48766241506738
       }
     },
     {
       "path": "tiles/boss.png",
-      "annotations": [],
+      "annotations": [
+        {
+          "id": "b4335c0c-cd60-4f0e-af5f-9512465279a0",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_air_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "d0bac5b2-662f-4d61-a6e3-57b81d65e10b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_air_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "3b2aa40b-a1b0-4fde-a902-4be3f44501fd",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_air_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "ca725718-3940-493e-b39b-68b3f8546b8e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_dirt_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "48527aa6-5ce8-4acb-a8bc-69cc61bf49d9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_dirt_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "5de090ee-1c8f-477f-ae13-ee71f0d2e4dd",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_dirt_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "333ec715-848a-4a0e-8c26-fdc10f6f7d25",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 33,
+            "w": 16,
+            "h": 15
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_gold",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "32e57f26-bf16-4291-9613-6a56c86c26dc",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_block_0",
+            "frame": 6,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "64d1e548-4e6c-4210-8964-fc2a5e8c725d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boss_block",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false
+          }
+        }
+      ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.156,
-        "centerX": 128.01484230055658,
-        "centerY": 128.01484230055658
+        "zoom": 16.064,
+        "centerX": 22.659362549800797,
+        "centerY": 50.64118525896414
       }
     },
     {
       "path": "tiles/cave.png",
-      "annotations": [],
+      "annotations": [
+        {
+          "id": "6d5ebd5b-dc77-4ef8-bcad-1b2d87987938",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_air_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "0d318d6d-ae87-4f0c-aafc-877b0dc5aeaf",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_air_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "7928a10f-8cf9-4c69-9e01-614237414c98",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_air_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "4f23698d-4044-4201-8bdc-3abc5a0cd5b9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_dirt_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "44a521a6-a13f-4082-b6d1-12009477aaff",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_dirt_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "cf31c2bf-dc8c-47be-85c1-bf8b501bcdd0",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_dirt_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "85711597-d958-4e30-aed9-f602a7e437dc",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 32,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_gold_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "365491f0-68eb-4aa9-a508-2af753b0b5c9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_block_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "712c3213-4925-48ae-9a81-0626c97b1ce3",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 64,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ladder_top_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "c433b4a1-7221-4beb-8fe5-6e74382c542c",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 80,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ladder_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "610752c0-c4ac-49f6-b3c7-8e3aaf219f08",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 96,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "spikes_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "7148bbdc-7029-476a-8391-618aaecaab7c",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 112,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "rope",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "80462022-c842-4cc8-ac53-e7236a925fdb",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 144,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "exit",
+            "frame": 0,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "dcbd173f-8ab6-4c21-95d5-dc1149039332",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "entrance",
+            "frame": 1,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "c4873d4f-b8fa-44dc-8b9a-529c0a85e346",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "entrance",
+            "frame": 2,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "9eed6b7e-1892-4b17-9363-f9be225fbb08",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 48,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "entrance",
+            "frame": 3,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "40aa2487-93cd-40e5-9770-625bfe3a5932",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 64,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "entrance",
+            "frame": 4,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "c4fce0a8-5f1f-4108-a942-fce7611a7c0e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "entrance",
+            "frame": 0,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "f1c8e285-37c5-4bf2-9575-fe4f7c6b464b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cave_block",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false
+          }
+        }
+      ],
       "view": {
-        "gridEnabled": false,
+        "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.156,
-        "centerX": 128.01484230055658,
-        "centerY": 128.01484230055658
+        "zoom": 12.851,
+        "centerX": 24.667341062952296,
+        "centerY": 51.00770368064742
       }
     },
     {
       "path": "tiles/ice.png",
-      "annotations": [],
+      "annotations": [
+        {
+          "id": "11486f82-7116-4fcf-a6ef-ee0b6af3bed9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_air_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "009f4dad-0877-4efc-9858-a6062f41a3d4",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_air_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "675ea519-a3d7-4fc7-b816-3c791dc262e1",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_air_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "48fd0bec-6247-4755-a3dd-fceeb096bd4b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_dirt_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "a5efb126-e4b6-4cc5-955e-52dfc6ddabb6",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_dirt_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "52bb8656-100a-4877-a67f-5b33a595240d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_dirt_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "1a758faf-e972-42b5-8da3-c2386ae9de91",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 32,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_gold",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "e872598c-890b-4115-8d0d-444c33f4ffb6",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_block_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "37b96f71-3050-48b2-9582-048dc8a900cd",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "ice_block",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false
+          }
+        }
+      ],
       "view": {
-        "gridEnabled": false,
+        "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.156,
-        "centerX": 128.01484230055658,
-        "centerY": 128.01484230055658
+        "zoom": 6.58,
+        "centerX": 33.43465045592705,
+        "centerY": 61.32218844984802
       }
     },
     {
       "path": "tiles/jungle.png",
-      "annotations": [],
+      "annotations": [
+        {
+          "id": "d896746e-f810-4708-8318-1c078ca5a943",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_air_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "b4ca24cb-c3a5-4707-871c-7cdb8dc9d736",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_air_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "59ba6539-9610-4ce6-9075-f0c88c39ea7d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_air_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "0c8e746a-3a87-44ce-ae27-add3eb2aa8b7",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_dirt_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "129c1721-96e1-4b39-8ed3-a6a07e89981f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_dirt_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "f1f0537d-9a22-4e98-a276-5694a23916e4",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_dirt_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "efa64111-b29a-454a-a346-32cac64279a9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 32,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_gold_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "565d34d5-0b73-4334-a70c-a411da8ea008",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_block_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "c0a6d5c9-58e7-49e1-a118-ea831c983538",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "jungle_block",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false
+          }
+        }
+      ],
       "view": {
-        "gridEnabled": false,
+        "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.156,
-        "centerX": 128.01484230055658,
-        "centerY": 128.01484230055658
+        "zoom": 4.211,
+        "centerX": 85.72785561624316,
+        "centerY": 24.103538351935406
       }
     },
     {
@@ -2305,19 +3894,317 @@
         "gridHeight": 16,
         "zoom": 32,
         "centerX": 4,
-        "centerY": 4
+        "centerY": 3.984375
       }
     },
     {
       "path": "tiles/temple.png",
-      "annotations": [],
+      "annotations": [
+        {
+          "id": "d426d831-b641-48ea-b22b-dea30f50e92c",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_air_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "1e3d08f6-9315-4f2f-bfc6-a7628db8131d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_air_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "23304a38-5808-4a80-ba80-ff0afe8fdf07",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_air_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "9976d08e-8403-4553-9b28-4313b550a998",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_dirt_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "a3941582-203a-4860-8783-ec331fd8b275",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_dirt_1",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "6a774654-19c6-4909-bee1-79c5786aa7d8",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 16,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_dirt_2",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "de1534a7-4dbf-4965-b764-d7a4984d57c2",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 32,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_gold",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "3f2e0df4-6bbb-4203-aa66-6a39bc765fdf",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_block_0",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": true
+          }
+        },
+        {
+          "id": "987edea6-81f6-41b1-a58c-7f5b4fbbecef",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "temple_block",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false
+          }
+        }
+      ],
       "view": {
-        "gridEnabled": false,
+        "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.156,
-        "centerX": 128.01484230055658,
-        "centerY": 128.01484230055658
+        "zoom": 4.295,
+        "centerX": 47.72991850989523,
+        "centerY": 78.81257275902212
       }
     }
   ]

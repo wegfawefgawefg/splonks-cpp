@@ -1,4 +1,5 @@
 #include "audio.hpp"
+#include "cli.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
 #include "render.hpp"
@@ -58,7 +59,13 @@ void RebaseCwdToRepoRoot() {
 
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    RebaseCwdToRepoRoot();
+
+    if (splonks::RunCliCommand(argc, argv)) {
+        return 0;
+    }
+
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
     SDL_Texture* render_texture = nullptr;
@@ -89,8 +96,6 @@ int main() {
         if (renderer == nullptr) {
             ThrowSdlError("SDL_CreateRenderer failed");
         }
-
-        RebaseCwdToRepoRoot();
 
         try {
             const std::string sprite_assets_folder = "assets/graphics/aseprite";

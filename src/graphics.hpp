@@ -1,7 +1,9 @@
 #pragma once
 
+#include "frame_data.hpp"
 #include "sprite.hpp"
 #include "tile.hpp"
+#include "tile_source_data.hpp"
 
 #include <cstdint>
 #include <string>
@@ -27,14 +29,6 @@ enum class TextureName {
 
 enum class SpriteTexture {
     Entities,
-};
-
-enum class TileSet {
-    Cave,
-    Ice,
-    Jungle,
-    Temple,
-    Boss,
 };
 
 struct PlayCam {
@@ -65,7 +59,9 @@ struct Graphics {
     std::vector<SDL_Texture*> sprite_textures;
     std::vector<bool> sprite_uses_fallback;
     std::vector<SDL_Texture*> textures;
-    std::vector<SDL_Texture*> tile_sets;
+    FrameDataDb frame_data_db;
+    TileSourceDb tile_source_db;
+    std::vector<SDL_Texture*> tile_source_images;
     SDL_Texture* special_effects_texture = nullptr;
     std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
     std::string font_path = "assets/fonts/DejaVuSans.ttf";
@@ -78,7 +74,6 @@ struct Graphics {
     SDL_Texture* GetSpriteTexture(Sprite sprite) const;
     bool SpriteUsesFallback(Sprite sprite) const;
     SDL_Texture* GetTexture(TextureName texture) const;
-    SDL_Texture* GetTileSetTexture(TileSet tile_set) const;
     Vec2 ScreenToWc(const UVec2& screen_pos) const;
     IVec2 ScreenToTileCoords(const UVec2& screen_pos) const;
     void ResetTileVariation(const IVec2& tile_pos);
@@ -88,8 +83,6 @@ struct Graphics {
 };
 
 bool IsTileTransparent(Tile tile);
-std::uint32_t TileNumVariations(Tile tile);
-UVec2 GetTileTextureSamplePosition(Tile tile);
 
 enum class TextType {
     MenuTitle,

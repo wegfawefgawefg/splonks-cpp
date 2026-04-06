@@ -18,6 +18,7 @@ enum class Tile {
 };
 
 constexpr unsigned int kTileSize = 16;
+constexpr std::size_t kTileCount = 10;
 
 Tile RandomTile();
 bool IsTileCollidable(Tile tile);

@@ -10,3 +10,4 @@
     center: point
     tags: string[]
     cbox: rect
+    tile: boolean
