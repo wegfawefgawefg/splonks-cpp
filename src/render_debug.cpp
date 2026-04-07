@@ -13,14 +13,24 @@ namespace splonks {
 
 namespace {
 
-SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
+SDL_FRect WorldRectToScreen(
+    const Graphics& graphics,
+    const SDL_FRect& presentation,
+    const Vec2& world_pos,
+    const Vec2& world_size
+) {
+    const float presentation_scale = presentation.w / static_cast<float>(graphics.dims.x);
     const Vec2 relative = world_pos - graphics.camera.target;
-    const Vec2 screen = relative * graphics.camera.zoom + graphics.camera.offset;
+    const Vec2 internal_screen = relative * graphics.camera.zoom + graphics.camera.offset;
+    const Vec2 screen = Vec2::New(
+        presentation.x + internal_screen.x * presentation_scale,
+        presentation.y + internal_screen.y * presentation_scale
+    );
     return SDL_FRect{
         screen.x,
         screen.y,
-        world_size.x * graphics.camera.zoom,
-        world_size.y * graphics.camera.zoom,
+        world_size.x * graphics.camera.zoom * presentation_scale,
+        world_size.y * graphics.camera.zoom * presentation_scale,
     };
 }
 
@@ -198,6 +208,13 @@ void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
 }
 
 void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
+    int output_width = static_cast<int>(graphics.window_dims.x);
+    int output_height = static_cast<int>(graphics.window_dims.y);
+    if (graphics.fullscreen) {
+        SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+    }
+    const SDL_FRect presentation = GetPresentationRect(graphics, output_width, output_height);
+
     for (const Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
             continue;
@@ -205,7 +222,7 @@ void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, cons
 
         const AABB aabb = entity.GetAABB();
         const Vec2 size = aabb.br - aabb.tl + Vec2::New(1.0F, 1.0F);
-        const SDL_FRect rect = WorldRectToScreen(graphics, aabb.tl, size);
+        const SDL_FRect rect = WorldRectToScreen(graphics, presentation, aabb.tl, size);
 
         SDL_Color color = SDL_Color{255, 255, 0, 255};
         if (entity.type_ == EntityType::Player) {

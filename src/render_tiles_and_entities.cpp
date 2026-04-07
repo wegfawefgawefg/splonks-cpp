@@ -14,16 +14,22 @@ namespace splonks {
 namespace {
 
 Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos) {
-    return ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
+    const Vec2 screen =
+        ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
+    return Vec2::New(std::round(screen.x), std::round(screen.y));
 }
 
 SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
     const Vec2 screen_pos = WorldToScreen(graphics, world_pos);
+    const Vec2 screen_size = Vec2::New(
+        std::round(world_size.x * graphics.camera.zoom),
+        std::round(world_size.y * graphics.camera.zoom)
+    );
     return SDL_FRect{
         screen_pos.x,
         screen_pos.y,
-        world_size.x * graphics.camera.zoom,
-        world_size.y * graphics.camera.zoom,
+        screen_size.x,
+        screen_size.y,
     };
 }
 

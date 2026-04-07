@@ -114,9 +114,18 @@ if (NOT SDL3_mixer_FOUND)
     FetchContent_MakeAvailable(SDL3_mixer)
 endif()
 
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.92.7
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(imgui)
+
 add_executable(splonks-cpp
     src/audio.cpp
     src/cli.cpp
+    src/debug_playback.cpp
     src/direction.cpp
     src/entity.cpp
     src/entity_display_states.cpp
@@ -138,6 +147,7 @@ add_executable(splonks-cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp
     src/graphics.cpp
+    src/imgui_layer.cpp
     src/inputs.cpp
     src/main.cpp
     src/menu_settings.cpp
@@ -172,6 +182,21 @@ add_executable(splonks-cpp
     src/systems/controls.cpp
     src/systems/mod.cpp
     src/special_effects/ultra_dynamic_effect.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
+)
+
+set(SPLONKS_IMGUI_SOURCES
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
 )
 
 target_include_directories(
@@ -179,6 +204,8 @@ target_include_directories(
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
         "${CMAKE_CURRENT_SOURCE_DIR}/../gubsy/third_party"
+        "${imgui_SOURCE_DIR}"
+        "${imgui_SOURCE_DIR}/backends"
 )
 target_compile_features(splonks-cpp PRIVATE cxx_std_20)
 target_link_libraries(
@@ -208,6 +235,14 @@ else()
             $<$<BOOL:${SPLONKS_STRICT}>:-Wshadow>
             $<$<BOOL:${SPLONKS_STRICT}>:-Wnon-virtual-dtor>
             $<$<BOOL:${SPLONKS_WARN_AS_ERROR}>:-Werror>
+    )
+endif()
+
+if (NOT MSVC)
+    set_source_files_properties(
+        ${SPLONKS_IMGUI_SOURCES}
+        PROPERTIES
+            COMPILE_OPTIONS "-Wno-error;-Wno-conversion;-Wno-sign-conversion;-Wno-shadow"
     )
 endif()
 

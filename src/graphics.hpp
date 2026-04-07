@@ -12,6 +12,7 @@
 struct TTF_Font;
 struct SDL_Renderer;
 struct SDL_Texture;
+struct SDL_FRect;
 
 namespace splonks {
 
@@ -52,6 +53,7 @@ struct Graphics {
     UVec2 window_dims = UVec2::New(1280, 720);
     UVec2 dims = UVec2::New(1280, 720);
     bool fullscreen = false;
+    bool debug_lock_play_camera = false;
     Camera2D camera;
     PlayCam play_cam;
     std::vector<SDL_Texture*> textures;
@@ -75,6 +77,8 @@ struct Graphics {
     void ShutdownText();
     void ShutdownTextures();
 };
+
+SDL_FRect GetPresentationRect(const Graphics& graphics, int output_width, int output_height);
 
 bool IsTileTransparent(Tile tile);
 

@@ -9,33 +9,38 @@ void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
     state.time_since_last_update += frame_dt;
     while (state.time_since_last_update > kTimestep) {
         state.time_since_last_update -= kTimestep;
-        if (state.frame_pause > 0) {
-            state.frame_pause -= 1;
-            return;
-        }
-        switch (state.mode) {
-        case Mode::Title:
-            StepTitle(state, audio);
-            break;
-        case Mode::Settings:
-            break;
-        case Mode::VideoSettings:
-            break;
-        case Mode::Playing:
-            StepPlaying(state, audio, graphics, kTimestep);
-            break;
-        case Mode::StageTransition:
-            StepStageTransition(state, audio, graphics);
-            break;
-        case Mode::GameOver:
-            StepGameOver(state, audio, graphics, kTimestep);
-            break;
-        case Mode::Win:
-            StepWin(state, audio, graphics);
-            break;
-        }
-        state.scene_frame += 1;
+        StepSingleTick(state, audio, graphics);
     }
+}
+
+void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
+    if (state.frame_pause > 0) {
+        state.frame_pause -= 1;
+        return;
+    }
+
+    switch (state.mode) {
+    case Mode::Title:
+        StepTitle(state, audio);
+        break;
+    case Mode::Settings:
+        break;
+    case Mode::VideoSettings:
+        break;
+    case Mode::Playing:
+        StepPlaying(state, audio, graphics, kTimestep);
+        break;
+    case Mode::StageTransition:
+        StepStageTransition(state, audio, graphics);
+        break;
+    case Mode::GameOver:
+        StepGameOver(state, audio, graphics, kTimestep);
+        break;
+    case Mode::Win:
+        StepWin(state, audio, graphics);
+        break;
+    }
+    state.scene_frame += 1;
 }
 
 void StepTitle(State& state, Audio& audio) {

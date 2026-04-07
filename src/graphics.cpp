@@ -74,7 +74,7 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     graphics.dims = UVec2::New(1280, 720);
     graphics.fullscreen = false;
 
-    const Vec2 screen_center = ToVec2(graphics.window_dims / 2U);
+    const Vec2 screen_center = ToVec2(graphics.dims / 2U);
     graphics.camera.target = Vec2::New(0.0F, 0.0F);
     graphics.camera.offset = screen_center;
     graphics.camera.rotation = 0.0F;
@@ -84,6 +84,24 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     graphics.play_cam.vel = Vec2::New(0.0F, 0.0F);
     graphics.play_cam.acc = Vec2::New(0.0F, 0.0F);
     return graphics;
+}
+
+SDL_FRect GetPresentationRect(const Graphics& graphics, int output_width, int output_height) {
+    const int scale_x = output_width / static_cast<int>(graphics.dims.x);
+    const int scale_y = output_height / static_cast<int>(graphics.dims.y);
+    const int scale = std::max(1, std::min(scale_x, scale_y));
+
+    const int presented_width = static_cast<int>(graphics.dims.x) * scale;
+    const int presented_height = static_cast<int>(graphics.dims.y) * scale;
+    const int dst_x = (output_width - presented_width) / 2;
+    const int dst_y = (output_height - presented_height) / 2;
+
+    return SDL_FRect{
+        static_cast<float>(dst_x),
+        static_cast<float>(dst_y),
+        static_cast<float>(presented_width),
+        static_cast<float>(presented_height),
+    };
 }
 
 SDL_Texture* Graphics::GetTexture(TextureName texture) const {
@@ -103,9 +121,21 @@ SDL_Texture* Graphics::GetFrameDataTexture(std::uint32_t image_id) const {
 }
 
 Vec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
+    const SDL_FRect presentation = GetPresentationRect(
+        *this,
+        static_cast<int>(window_dims.x),
+        static_cast<int>(window_dims.y)
+    );
+
     Vec2 screen = ToVec2(screen_pos);
-    const Vec2 screen_center = ToVec2(window_dims) / 2.0F;
-    screen = screen - screen_center;
+    screen = screen - Vec2::New(presentation.x, presentation.y);
+
+    const float presentation_scale = presentation.w / static_cast<float>(dims.x);
+    if (presentation_scale > 0.0F) {
+        screen = screen / presentation_scale;
+    }
+
+    screen = screen - camera.offset;
     screen = screen / camera.zoom;
     return screen + camera.target;
 }

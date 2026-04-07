@@ -6,7 +6,9 @@
 #include "tile.hpp"
 
 #include <algorithm>
+#include <array>
 #include <compare>
+#include <cmath>
 #include <vector>
 
 namespace splonks::entities::common {
@@ -50,6 +52,219 @@ void ApplyFrameDataGeometryToEntity(std::size_t entity_idx, State& state, const 
 }
 
 bool MaybeHurtAndStunOnContactAsProjectile(std::size_t entity_idx, State& state, Audio& audio);
+
+AABB GetAabbAtPosition(const Entity& entity, const Vec2& pos) {
+    return AABB::New(pos, pos + entity.size - Vec2::New(1.0F, 1.0F));
+}
+
+bool AabbsIntersect(const AABB& left, const AABB& right) {
+    if (left.br.x < right.tl.x) {
+        return false;
+    }
+    if (left.tl.x > right.br.x) {
+        return false;
+    }
+    if (left.br.y < right.tl.y) {
+        return false;
+    }
+    if (left.tl.y > right.br.y) {
+        return false;
+    }
+    return true;
+}
+
+bool IsBlockedByStageBounds(const AABB& aabb, const Stage& stage) {
+    if (aabb.tl.x < 0.0F || aabb.tl.y < 0.0F) {
+        return true;
+    }
+    if (aabb.br.x > static_cast<float>(stage.GetWidth() - 1)) {
+        return true;
+    }
+    if (aabb.br.y > static_cast<float>(stage.GetHeight() - 1)) {
+        return true;
+    }
+    return false;
+}
+
+bool IsBlockedByTiles(const AABB& aabb, const Stage& stage) {
+    const std::vector<const Tile*> collided_tiles =
+        stage.GetTilesInRectWc(ToIVec2(aabb.tl), ToIVec2(aabb.br));
+    return CollidableTileInList(collided_tiles);
+}
+
+bool IsBlockedByImpassableEntities(
+    std::size_t entity_idx,
+    const AABB& aabb,
+    const State& state
+) {
+    const VID self_vid = state.entity_manager.entities[entity_idx].vid;
+    for (const Entity& other : state.entity_manager.entities) {
+        if (!other.active) {
+            continue;
+        }
+        if (other.vid.id == self_vid.id) {
+            continue;
+        }
+        if (!other.impassable) {
+            continue;
+        }
+        if (AabbsIntersect(aabb, other.GetAABB())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsBlockingAabbForEntity(
+    std::size_t entity_idx,
+    const AABB& aabb,
+    const State& state,
+    bool check_tiles,
+    bool check_entities
+) {
+    if (check_tiles) {
+        if (IsBlockedByStageBounds(aabb, state.stage)) {
+            return true;
+        }
+        if (IsBlockedByTiles(aabb, state.stage)) {
+            return true;
+        }
+    }
+
+    if (check_entities && IsBlockedByImpassableEntities(entity_idx, aabb, state)) {
+        return true;
+    }
+
+    return false;
+}
+
+int GetIntegerStepDistance(float distance, unsigned int time) {
+    const float abs_distance = std::abs(distance);
+    int integer_distance = static_cast<int>(std::floor(abs_distance));
+    const float fractional_distance = abs_distance - static_cast<float>(integer_distance);
+    if (fractional_distance != 0.0F) {
+        const int fractional_period = static_cast<int>(std::round(1.0F / fractional_distance));
+        if (fractional_period != 0 && (time % static_cast<unsigned int>(fractional_period)) == 0U) {
+            integer_distance += 1;
+        }
+    }
+    if (distance < 0.0F) {
+        integer_distance *= -1;
+    }
+    return integer_distance;
+}
+
+void StoreDistanceTraveled(std::size_t entity_idx, State& state, const Vec2& start_pos) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    float dist_traveled = Length(entity.pos - start_pos);
+    if (dist_traveled < 1.0F) {
+        dist_traveled = 0.0F;
+    }
+    entity.dist_traveled_this_frame = dist_traveled;
+}
+
+void ResolveBlockingOverlap(
+    std::size_t entity_idx,
+    State& state,
+    bool check_tiles,
+    bool check_entities
+) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    const AABB current_aabb = entity.GetAABB();
+    if (!IsBlockingAabbForEntity(entity_idx, current_aabb, state, check_tiles, check_entities)) {
+        return;
+    }
+
+    const int max_push = static_cast<int>(kTileSize) * 2;
+    const std::array<IVec2, 4> candidates = {
+        IVec2::New(0, -1),
+        IVec2::New(-1, 0),
+        IVec2::New(1, 0),
+        IVec2::New(0, 1),
+    };
+
+    for (int distance = 1; distance <= max_push; ++distance) {
+        for (const IVec2& direction : candidates) {
+            const Vec2 candidate_pos = entity.pos + ToVec2(direction * distance);
+            const AABB candidate_aabb = GetAabbAtPosition(entity, candidate_pos);
+            if (!IsBlockingAabbForEntity(
+                    entity_idx,
+                    candidate_aabb,
+                    state,
+                    check_tiles,
+                    check_entities
+                )) {
+                entity.pos = candidate_pos;
+                return;
+            }
+        }
+    }
+}
+
+void MoveEntityPixelStep(
+    std::size_t entity_idx,
+    State& state,
+    bool check_tiles,
+    bool check_entities
+) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    const Vec2 start_pos = entity.pos;
+
+    ResolveBlockingOverlap(entity_idx, state, check_tiles, check_entities);
+
+    const int move_x = GetIntegerStepDistance(entity.vel.x, state.stage_frame);
+    const int move_y = GetIntegerStepDistance(entity.vel.y, state.stage_frame);
+
+    if (move_x > 0) {
+        for (int i = 0; i < move_x; ++i) {
+            const Vec2 next_pos = entity.pos + Vec2::New(1.0F, 0.0F);
+            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+                entity.vel.x = 0.0F;
+                entity.collided = true;
+                break;
+            }
+            entity.pos = next_pos;
+        }
+    } else if (move_x < 0) {
+        for (int i = 0; i < -move_x; ++i) {
+            const Vec2 next_pos = entity.pos + Vec2::New(-1.0F, 0.0F);
+            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+                entity.vel.x = 0.0F;
+                entity.collided = true;
+                break;
+            }
+            entity.pos = next_pos;
+        }
+    }
+
+    if (move_y > 0) {
+        for (int i = 0; i < move_y; ++i) {
+            const Vec2 next_pos = entity.pos + Vec2::New(0.0F, 1.0F);
+            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+                entity.vel.y = 0.0F;
+                entity.collided = true;
+                break;
+            }
+            entity.pos = next_pos;
+        }
+    } else if (move_y < 0) {
+        for (int i = 0; i < -move_y; ++i) {
+            const Vec2 next_pos = entity.pos + Vec2::New(0.0F, -1.0F);
+            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+                entity.vel.y = 0.0F;
+                entity.collided = true;
+                break;
+            }
+            entity.pos = next_pos;
+        }
+    }
+
+    StoreDistanceTraveled(entity_idx, state, start_pos);
+}
 
 void CrushIfCanBeCrushed(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
@@ -286,264 +501,6 @@ void DoSuperStateChangedEffect(std::size_t entity_idx, State& state, Audio& audi
     entity.last_super_state = entity.super_state;
 }
 
-void DoTileCollisionsImpl(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    Stage& stage = state.stage;
-
-    bool blocked_x = false;
-    bool blocked_y = false;
-
-    const auto [current_pos_tl, current_pos_br] = entity.GetBounds();
-    const IVec2 cur_tl_tile_pos = ToIVec2(current_pos_tl) / static_cast<int>(kTileSize);
-    const IVec2 cur_br_tile_pos = ToIVec2(current_pos_br) / static_cast<int>(kTileSize);
-
-    // check if colliding in the x direction
-    {
-        const Vec2 one_dim_vel = Vec2::New(entity.vel.x, 0.0F);
-        const Vec2 next_pos = entity.pos + one_dim_vel;
-        const Vec2 next_pos_tl = next_pos;
-        const Vec2 next_pos_br = next_pos + entity.size - Vec2::New(1.0F, 1.0F);
-        const IVec2 np_tl_tile_pos = ToIVec2(next_pos_tl) / static_cast<int>(kTileSize);
-        const IVec2 np_br_tile_pos = ToIVec2(next_pos_br) / static_cast<int>(kTileSize);
-
-        bool blocked = false;
-
-        // //   check if the player is out of bounds
-        if (next_pos_tl.x < 0.0F ||
-            next_pos_br.x > (static_cast<float>(stage.GetWidth()) - 1.0F)) {
-            blocked = true;
-        }
-
-        const std::vector<const Tile*> newly_collided_tiles =
-            stage.GetTilesInRect(np_tl_tile_pos, np_br_tile_pos);
-        blocked = CollidableTileInList(newly_collided_tiles) || blocked;
-
-        if (blocked) {
-            blocked_x = true;
-            if (entity.vel.x > 0.0F) {
-                // Entity was moving to the right; place it at the right edge of the tile.
-                const int tile_x = (cur_br_tile_pos.x + 1) * static_cast<int>(kTileSize);
-                entity.pos.x = static_cast<float>(tile_x) - entity.size.x;
-            } else if (entity.vel.x < 0.0F) {
-                // Entity was moving to the left; place it at the left edge of the tile.
-                const int tile_x = cur_tl_tile_pos.x * static_cast<int>(kTileSize);
-                entity.pos.x = static_cast<float>(tile_x);
-            }
-            // Reset x velocity.
-            entity.vel.x = 0.0F;
-        }
-        entity.collided |= blocked;
-    }
-
-    // check if player is colliding in the y directionEntrance
-    {
-        const Vec2 one_dim_vel = Vec2::New(0.0F, entity.vel.y);
-        const Vec2 next_pos = entity.pos + one_dim_vel;
-        const Vec2 next_pos_tl = next_pos;
-        const Vec2 next_pos_br = next_pos + entity.size - Vec2::New(1.0F, 1.0F);
-        const IVec2 np_tl_tile_pos = ToIVec2(next_pos_tl) / static_cast<int>(kTileSize);
-        const IVec2 np_br_tile_pos = ToIVec2(next_pos_br) / static_cast<int>(kTileSize);
-
-        bool blocked = false;
-
-        // //   check if the player is out of bounds
-        if (next_pos_tl.y < 0.0F ||
-            next_pos_br.y > (static_cast<float>(stage.GetHeight()) - 1.0F)) {
-            blocked = true;
-        }
-
-        const std::vector<const Tile*> newly_collided_tiles =
-            stage.GetTilesInRect(np_tl_tile_pos, np_br_tile_pos);
-        blocked = CollidableTileInList(newly_collided_tiles) || blocked;
-
-        if (blocked) {
-            blocked_y = true;
-
-            if (entity.vel.y > 0.0F) {
-                // Entity was moving upward; place it at the top edge of the tile.
-                const int tile_y = (cur_br_tile_pos.y + 1) * static_cast<int>(kTileSize);
-                entity.pos.y = static_cast<float>(tile_y) - entity.size.y;
-            } else if (entity.vel.y < 0.0F) {
-                // Entity was moving downward; place it at the bottom edge of the tile.
-                const int tile_y = cur_tl_tile_pos.y * static_cast<int>(kTileSize);
-                entity.pos.y = static_cast<float>(tile_y);
-            }
-            // Reset y velocity.
-            entity.vel.y = 0.0F;
-        }
-        entity.collided |= blocked;
-    }
-
-    // if not blocked in either direction, then check and resolve diagonal collision
-    if (!blocked_x && !blocked_y) {
-        const Vec2 diagonal_vel = Vec2::New(entity.vel.x, entity.vel.y);
-        const Vec2 next_pos = entity.pos + diagonal_vel;
-        const Vec2 next_pos_tl = next_pos;
-        const Vec2 next_pos_br = next_pos + entity.size - Vec2::New(1.0F, 1.0F);
-        const IVec2 np_tl_tile_pos = ToIVec2(next_pos_tl) / static_cast<int>(kTileSize);
-        const IVec2 np_br_tile_pos = ToIVec2(next_pos_br) / static_cast<int>(kTileSize);
-        const std::vector<const Tile*> newly_collided_tiles =
-            stage.GetTilesInRect(np_tl_tile_pos, np_br_tile_pos);
-        bool blocked = CollidableTileInList(newly_collided_tiles);
-        const bool out_of_bounds_corner =
-            next_pos_tl.x < 0.0F || next_pos_br.x > static_cast<float>(stage.GetWidth() - 1) ||
-            next_pos_tl.y < 0.0F || next_pos_br.y > static_cast<float>(stage.GetHeight() - 1);
-        blocked |= out_of_bounds_corner;
-
-        if (blocked) {
-            // Resolve collision
-            // Place the entity back to the tile it was in before the attempted diagonal move
-            const Vec2 min_pos = Vec2::New(
-                static_cast<float>(cur_tl_tile_pos.x) * static_cast<float>(kTileSize),
-                static_cast<float>(cur_tl_tile_pos.y) * static_cast<float>(kTileSize));
-            const Vec2 max_pos = Vec2::New(
-                (static_cast<float>(cur_br_tile_pos.x) + 1.0F) * static_cast<float>(kTileSize) -
-                    entity.size.x,
-                (static_cast<float>(cur_br_tile_pos.y) + 1.0F) * static_cast<float>(kTileSize) -
-                    entity.size.y);
-            entity.pos.x = std::clamp(entity.pos.x, min_pos.x, max_pos.x);
-            entity.pos.y = std::clamp(entity.pos.y, min_pos.y, max_pos.y);
-            // Reset velocities
-            entity.vel.x = 0.0F;
-            entity.vel.y = 0.0F;
-        }
-        entity.collided |= blocked;
-    }
-}
-
-void DoEntityCollisions(std::size_t entity_idx, State& state) {
-    bool blocked_x = false;
-    bool blocked_y = false;
-
-    // check if colliding in the x direction
-    {
-        Entity& entity = state.entity_manager.entities[entity_idx];
-        const Vec2 one_dim_vel = Vec2::New(entity.vel.x, 0.0F);
-        const Vec2 next_pos = entity.pos + one_dim_vel;
-        const AABB entity_aabb = {
-            .tl = next_pos,
-            .br = next_pos + entity.size - Vec2::New(1.0F, 1.0F),
-        };
-        Vec2 min_displacement = Vec2::New(0.0F, 0.0F);
-        const std::vector<VIDAABB> collided_entities_vidaabbs =
-            state.sid.QueryForVIDAABBsExclude(entity_aabb.tl, entity_aabb.br, entity.vid);
-
-        std::vector<const VIDAABB*> impassable_entities;
-        for (const VIDAABB& vidaabb : collided_entities_vidaabbs) {
-            if (state.entity_manager.entities[vidaabb.vid.id].impassable) {
-                impassable_entities.push_back(&vidaabb);
-            }
-        }
-
-        if (!impassable_entities.empty()) {
-            blocked_x = true;
-            min_displacement = GetMinDisplacement(entity_aabb, impassable_entities.front()->aabb);
-            for (const VIDAABB* imp_entity : impassable_entities) {
-                const Vec2 candidate = GetMinDisplacement(entity_aabb, imp_entity->aabb);
-                if ((candidate.x * candidate.x) + (candidate.y * candidate.y) <
-                    (min_displacement.x * min_displacement.x) +
-                        (min_displacement.y * min_displacement.y)) {
-                    min_displacement = candidate;
-                }
-            }
-        }
-        if (blocked_x) {
-            entity.pos.x += min_displacement.x;
-            entity.vel.x = 0.0F;
-        }
-        entity.collided |= blocked_x;
-    }
-
-    // check if colliding in the y direction
-    {
-        Entity& entity = state.entity_manager.entities[entity_idx];
-        const Vec2 one_dim_vel = Vec2::New(0.0F, entity.vel.y);
-        const Vec2 next_pos = entity.pos + one_dim_vel;
-        const AABB entity_aabb = {
-            .tl = next_pos,
-            .br = next_pos + entity.size - Vec2::New(1.0F, 1.0F),
-        };
-        Vec2 min_displacement = Vec2::New(0.0F, 0.0F);
-        const std::vector<VIDAABB> collided_entities_vidaabbs =
-            state.sid.QueryForVIDAABBsExclude(entity_aabb.tl, entity_aabb.br, entity.vid);
-
-        std::vector<const VIDAABB*> impassable_entities;
-        for (const VIDAABB& vidaabb : collided_entities_vidaabbs) {
-            if (state.entity_manager.entities[vidaabb.vid.id].impassable) {
-                impassable_entities.push_back(&vidaabb);
-            }
-        }
-
-        if (!impassable_entities.empty()) {
-            blocked_y = true;
-            min_displacement = GetMinDisplacement(entity_aabb, impassable_entities.front()->aabb);
-            for (const VIDAABB* imp_entity : impassable_entities) {
-                const Vec2 candidate = GetMinDisplacement(entity_aabb, imp_entity->aabb);
-                if ((candidate.x * candidate.x) + (candidate.y * candidate.y) <
-                    (min_displacement.x * min_displacement.x) +
-                        (min_displacement.y * min_displacement.y)) {
-                    min_displacement = candidate;
-                }
-            }
-        }
-        if (blocked_y) {
-            entity.pos.y += min_displacement.y;
-            entity.vel.y = 0.0F;
-        }
-        entity.collided |= blocked_y;
-    }
-
-    // if not blocked in either direction, then check and resolve diagonal collision
-    {
-        bool diagonal_collide = false;
-        Vec2 min_displacement = Vec2::New(0.0F, 0.0F);
-        if (!blocked_x && !blocked_y) {
-            Entity& entity = state.entity_manager.entities[entity_idx];
-            const Vec2 diagonal_vel = Vec2::New(entity.vel.x, entity.vel.y);
-            const Vec2 next_pos = entity.pos + diagonal_vel;
-            const AABB entity_aabb = {
-                .tl = next_pos,
-                .br = next_pos + entity.size - Vec2::New(1.0F, 1.0F),
-            };
-
-            const std::vector<VIDAABB> collided_entities_vidaabbs =
-                state.sid.QueryForVIDAABBsExclude(entity_aabb.tl, entity_aabb.br, entity.vid);
-
-            std::vector<const VIDAABB*> impassable_entities;
-            for (const VIDAABB& vidaabb : collided_entities_vidaabbs) {
-                if (state.entity_manager.entities[vidaabb.vid.id].impassable) {
-                    impassable_entities.push_back(&vidaabb);
-                }
-            }
-
-            if (!impassable_entities.empty()) {
-                diagonal_collide = true;
-                min_displacement = GetMinDisplacement(entity_aabb, impassable_entities.front()->aabb);
-                for (const VIDAABB* imp_entity : impassable_entities) {
-                    const Vec2 candidate = GetMinDisplacement(entity_aabb, imp_entity->aabb);
-                    if ((candidate.x * candidate.x) + (candidate.y * candidate.y) <
-                        (min_displacement.x * min_displacement.x) +
-                            (min_displacement.y * min_displacement.y)) {
-                        min_displacement = candidate;
-                    }
-                }
-                // If we have more overlap on the X axis, then the collision occurred on the Y axis first, and vice versa.
-            }
-        }
-        if (diagonal_collide) {
-            Entity& entity = state.entity_manager.entities[entity_idx];
-            if (std::abs(min_displacement.x) > std::abs(min_displacement.y)) {
-                entity.pos.y += min_displacement.y;
-                entity.vel.y = 0.0F;
-            } else {
-                entity.pos.x += min_displacement.x;
-                entity.vel.x = 0.0F;
-            }
-        }
-        state.entity_manager.entities[entity_idx].collided |= diagonal_collide;
-    }
-}
-
 bool IsGroundedOnEntities(std::size_t entity_idx, State& state) {
     // get the bounds of the line below the entities feet.
     const auto [entity_tl, entity_br] = state.entity_manager.entities[entity_idx].GetBounds();
@@ -764,8 +721,8 @@ void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& gr
 }
 
 void EulerStep(std::size_t entity_idx, State& state, float dt) {
-    (void)dt;
     PrePartialEulerStep(entity_idx, state, dt);
+    MoveEntityPixelStep(entity_idx, state, false, false);
     PostPartialEulerStep(entity_idx, state, dt);
 }
 
@@ -783,18 +740,10 @@ void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
 
 void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
     (void)dt;
-    // TODO: rework collisions for smaller objects and bigger ones too
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.vel.x = std::clamp(entity.vel.x, -kMaxSpeed, kMaxSpeed);
     entity.vel.y = std::clamp(entity.vel.y, -kMaxSpeed, kMaxSpeed);
-    entity.pos += ToVec2(ToIVec2(entity.vel));
     entity.acc = Vec2::New(0.0F, 0.0F);
-
-    float dist_traveled = Length(entity.vel);
-    if (dist_traveled < 1.0F) {
-        dist_traveled = 0.0F;
-    }
-    entity.dist_traveled_this_frame = dist_traveled;
 }
 
 void ApplyGroundFriction(std::size_t entity_idx, State& state) {
@@ -1161,13 +1110,15 @@ void DoTileAndEntityCollisions(std::size_t entity_idx, State& state, Audio& audi
 
     entity.collided_last_frame = entity.collided;
     entity.collided = false;
-    DoTileCollisions(entity_idx, state);
-    DoEntityCollisions(entity_idx, state);
+    MoveEntityPixelStep(entity_idx, state, true, true);
     entity.collided |= entity.grounded;
 }
 
 void DoTileCollisions(std::size_t entity_idx, State& state) {
-    DoTileCollisionsImpl(entity_idx, state);
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    entity.collided_last_frame = entity.collided;
+    entity.collided = false;
+    MoveEntityPixelStep(entity_idx, state, true, false);
 }
 
 void DoExplosion(std::size_t entity_idx, Vec2 center, float size, State& state, Audio& audio) {

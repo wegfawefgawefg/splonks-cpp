@@ -1,6 +1,8 @@
 #include "audio.hpp"
 #include "cli.hpp"
+#include "debug_playback.hpp"
 #include "graphics.hpp"
+#include "imgui_layer.hpp"
 #include "inputs.hpp"
 #include "render.hpp"
 #include "state.hpp"
@@ -71,6 +73,7 @@ int main(int argc, char** argv) {
     SDL_Texture* render_texture = nullptr;
     splonks::Graphics graphics;
     splonks::Audio audio;
+    splonks::DebugPlayback debug = splonks::DebugPlayback::New();
 
     try {
         ////////////////        GRAPHICS INIT        ////////////////
@@ -95,6 +98,13 @@ int main(int argc, char** argv) {
         renderer = SDL_CreateRenderer(window, nullptr);
         if (renderer == nullptr) {
             ThrowSdlError("SDL_CreateRenderer failed");
+        }
+        if (!SDL_SetRenderVSync(renderer, 1)) {
+            ThrowSdlError("SDL_SetRenderVSync failed");
+        }
+
+        if (!splonks::InitImGuiLayer(window, renderer)) {
+            ThrowSdlError("InitImGuiLayer failed");
         }
 
         try {
@@ -146,6 +156,7 @@ int main(int argc, char** argv) {
         while (state.running) {
             SDL_Event event{};
             while (SDL_PollEvent(&event)) {
+                splonks::ImGuiLayerProcessEvent(event);
                 if (event.type == SDL_EVENT_QUIT) {
                     state.running = false;
                 } else if (event.type == SDL_EVENT_KEY_DOWN &&
@@ -164,9 +175,21 @@ int main(int argc, char** argv) {
                 state.rebuild_render_texture = false;
             }
 
-            splonks::ProcessInput(window, renderer, state, audio, graphics, dt);
-            splonks::Step(state, audio, graphics, dt);
+            splonks::ImGuiLayerNewFrame();
+            splonks::DrawDebugPlaybackControls(debug, state, graphics);
+            splonks::RunSimulationWithDebugControls(
+                window,
+                renderer,
+                state,
+                audio,
+                graphics,
+                debug,
+                dt
+            );
+            splonks::DrawDebugPlaybackInspector(debug, state, graphics);
             splonks::Render(renderer, render_texture, state, graphics);
+            splonks::ImGuiLayerRender();
+            SDL_RenderPresent(renderer);
             audio.UpdateCurrentSongStreamData();
         }
 
@@ -185,12 +208,14 @@ int main(int argc, char** argv) {
         graphics.ShutdownTextures();
         graphics.ShutdownText();
         audio.Shutdown();
+        splonks::ShutdownImGuiLayer();
         splonks::ShutdownTextSubsystem();
         SDL_Quit();
         return 0;
     } catch (const std::exception& exception) {
         graphics.ShutdownTextures();
         graphics.ShutdownText();
+        splonks::ShutdownImGuiLayer();
         if (render_texture != nullptr) {
             SDL_DestroyTexture(render_texture);
         }

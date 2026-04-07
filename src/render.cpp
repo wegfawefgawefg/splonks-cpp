@@ -272,22 +272,26 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
 
     if (state.player_vid.has_value()) {
         if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-            const Vec2 delta = player->pos - graphics.play_cam.pos;
-            graphics.play_cam.pos += delta * 0.075F;
+            if (!graphics.debug_lock_play_camera) {
+                const Vec2 delta = player->pos - graphics.play_cam.pos;
+                graphics.play_cam.pos += delta * 0.075F;
 
-            const Vec2 half_room_dims = ToVec2(state.stage.GetRoomDims()) / 2.0F;
-            const Vec2 map_tl_bound = ToVec2(state.stage.GetRoomTlWc(IVec2::New(0, 0))) + half_room_dims;
-            const Vec2 map_br_bound = ToVec2(state.stage.GetRoomTlWc(IVec2::New(3, 3))) + half_room_dims;
-            graphics.play_cam.pos.x = graphics.play_cam.pos.x < map_tl_bound.x
-                                          ? map_tl_bound.x
-                                          : (graphics.play_cam.pos.x > map_br_bound.x
-                                                 ? map_br_bound.x
-                                                 : graphics.play_cam.pos.x);
-            graphics.play_cam.pos.y = graphics.play_cam.pos.y < map_tl_bound.y
-                                          ? map_tl_bound.y
-                                          : (graphics.play_cam.pos.y > map_br_bound.y
-                                                 ? map_br_bound.y
-                                                 : graphics.play_cam.pos.y);
+                const Vec2 half_room_dims = ToVec2(state.stage.GetRoomDims()) / 2.0F;
+                const Vec2 map_tl_bound =
+                    ToVec2(state.stage.GetRoomTlWc(IVec2::New(0, 0))) + half_room_dims;
+                const Vec2 map_br_bound =
+                    ToVec2(state.stage.GetRoomTlWc(IVec2::New(3, 3))) + half_room_dims;
+                graphics.play_cam.pos.x = graphics.play_cam.pos.x < map_tl_bound.x
+                                              ? map_tl_bound.x
+                                              : (graphics.play_cam.pos.x > map_br_bound.x
+                                                     ? map_br_bound.x
+                                                     : graphics.play_cam.pos.x);
+                graphics.play_cam.pos.y = graphics.play_cam.pos.y < map_tl_bound.y
+                                              ? map_tl_bound.y
+                                              : (graphics.play_cam.pos.y > map_br_bound.y
+                                                     ? map_br_bound.y
+                                                     : graphics.play_cam.pos.y);
+            }
 
             graphics.camera.target = graphics.play_cam.pos;
         } else {
@@ -302,12 +306,8 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     RenderStageTileWrapper(renderer, state, graphics);
     RenderStageTiles(renderer, state, graphics);
     RenderEntities(renderer, state, graphics);
-    if (state.show_entity_collision_boxes) {
-        RenderEntityCollisionBoxes(renderer, graphics, state);
-    }
     RenderSpecialEffects(renderer, state, graphics);
     RenderHealthRopeBombs(renderer, state, graphics);
-    PrintCtrlsHelp(renderer, graphics, graphics.dims.y - 56U);
 }
 
 void DrawCenteredText(
@@ -512,14 +512,19 @@ void Render(SDL_Renderer* renderer, SDL_Texture* render_texture, State& state, G
         static_cast<float>(graphics.dims.x),
         static_cast<float>(graphics.dims.y),
     };
-    const SDL_FRect dst{
-        0.0F,
-        0.0F,
-        static_cast<float>(output_width),
-        static_cast<float>(output_height),
-    };
+    const SDL_FRect dst = GetPresentationRect(graphics, output_width, output_height);
     SDL_RenderTexture(renderer, render_texture, &src, &dst);
-    SDL_RenderPresent(renderer);
+
+    if (state.mode == Mode::Playing) {
+        if (state.show_entity_collision_boxes) {
+            RenderEntityCollisionBoxes(renderer, graphics, state);
+        }
+        PrintCtrlsHelp(
+            renderer,
+            graphics,
+            static_cast<unsigned int>(output_height > 56 ? output_height - 56 : 0)
+        );
+    }
 }
 
 } // namespace splonks
