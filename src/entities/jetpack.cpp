@@ -2,8 +2,8 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
+#include "frame_data_id.hpp"
 #include "special_effects/ultra_dynamic_effect.hpp"
-#include "sprite.hpp"
 #include "state.hpp"
 
 #include <memory>
@@ -45,7 +45,7 @@ void SetEntityJetpack(Entity& entity) {
     entity.draw_layer = DrawLayer::Foreground;
     entity.can_be_stunned = false;
     entity.alignment = Alignment::Neutral;
-    entity.sprite_animator.SetSprite(Sprite::Jetpack);
+    entity.frame_data_animator.SetAnimation(frame_data_ids::Jetpack);
 }
 
 /** jetpack goes up by default, and idles if it hits the ceiling.
@@ -56,6 +56,24 @@ void SetEntityJetpack(Entity& entity) {
  */
 void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& jetpack = state.entity_manager.entities[entity_idx];
+    if (jetpack.super_state == EntitySuperState::EquippedToBack) {
+        FrameDataId equipped_animation = frame_data_ids::JetpackBack;
+        if (jetpack.held_by_vid.has_value()) {
+            if (const Entity* const holder = state.entity_manager.GetEntity(*jetpack.held_by_vid)) {
+                if (holder->IsHanging()) {
+                    equipped_animation = frame_data_ids::JetpackSide;
+                } else if (holder->climbing) {
+                    equipped_animation = frame_data_ids::JetpackBack;
+                }
+            }
+        }
+        jetpack.frame_data_animator.SetAnimation(equipped_animation);
+    } else if (jetpack.held_by_vid.has_value()) {
+        jetpack.frame_data_animator.SetAnimation(frame_data_ids::JetpackSide);
+    } else {
+        jetpack.frame_data_animator.SetAnimation(frame_data_ids::Jetpack);
+    }
+
     if (jetpack.super_state == EntitySuperState::Dead) {
         const Vec2 center = jetpack.GetCenter();
         common::DoExplosion(entity_idx, center, 2.0F, state, audio);

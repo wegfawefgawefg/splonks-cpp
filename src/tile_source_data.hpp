@@ -5,7 +5,6 @@
 #include "tile.hpp"
 
 #include <cstdint>
-#include <string>
 #include <vector>
 
 struct SDL_Texture;
@@ -35,12 +34,10 @@ struct TileSourceSpan {
 };
 
 struct TileSourceDb {
-    std::vector<std::string> image_paths;
     std::vector<TileSourceData> sources;
     std::vector<TileSourceSpan> spans;
 };
 
-std::uint32_t HashFrameDataName(const std::string& name);
 TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db);
 TileSet TileSetForStageType(StageType stage_type);
 const TileSourceData* GetTileSourceData(

@@ -43,6 +43,7 @@ struct State {
     std::optional<bool> video_settings_target_fullscreen;
     bool rebuild_render_texture = false;
     bool choosing_control_binding = false;
+    bool show_entity_collision_boxes = false;
     bool running = true;
     double now = 0.0;
     float time_since_last_update = 0.0F;

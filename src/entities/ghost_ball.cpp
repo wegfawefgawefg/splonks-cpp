@@ -1,6 +1,7 @@
 #include "entities/ghost_ball.hpp"
 
 #include "entities/common.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 
 namespace splonks::entities::ghost_ball {
@@ -24,6 +25,7 @@ void SetEntityGhostBall(Entity& entity) {
     entity.has_physics = true;
     entity.can_collide = false;
     entity.entity_label_a = EntityLabel::GoToThis;
+    entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);
 }
 
 void StepEntityLogicAsGhostBall(std::size_t entity_idx, State& state) {

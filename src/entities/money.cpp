@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
-#include "sprite.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 
 namespace splonks::entities::money {
@@ -24,13 +24,13 @@ void SetEntityMoney(Entity& entity, EntityType type_) {
     entity.alignment = Alignment::Neutral;
     switch (type_) {
     case EntityType::Gold:
-        entity.sprite_animator.SetSprite(Sprite::Gold);
+        entity.frame_data_animator.SetAnimation(frame_data_ids::GoldCoin);
         break;
     case EntityType::GoldStack:
-        entity.sprite_animator.SetSprite(Sprite::GoldStack);
+        entity.frame_data_animator.SetAnimation(frame_data_ids::GoldStack);
         break;
     default:
-        entity.sprite_animator.SetSprite(Sprite::NoSprite);
+        entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);
         break;
     }
 }

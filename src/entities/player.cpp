@@ -6,6 +6,7 @@
 #include "entities/bomb.hpp"
 #include "entities/common.hpp"
 #include "entities/rope.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 
 #include <algorithm>
@@ -34,7 +35,7 @@ void SetEntityPlayer(Entity& entity) {
     entity.can_be_stunned = true;
     entity.alignment = Alignment::Ally;
     entity.hurt_on_contact = false;
-    entity.sprite_animator.SetSprite(Sprite::PlayerStanding);
+    entity.frame_data_animator.SetAnimation(frame_data_ids::PlayerStanding);
 }
 
 void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio, float dt) {
@@ -664,7 +665,6 @@ void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio,
         }
     }
 
-    SyncEntitySpriteToDisplayStatePlayer(state.entity_manager.entities[entity_idx]);
 }
 
 /** generalize this to all square or rectangular entities somehow */
@@ -695,44 +695,6 @@ void StepEntityPhysicsAsPlayer(std::size_t entity_idx, State& state, Audio& audi
     }
     common::DoTileAndEntityCollisions(entity_idx, state, audio);
     common::PostPartialEulerStep(entity_idx, state, dt);
-}
-
-void SyncEntitySpriteToDisplayStatePlayer(Entity& entity) {
-    const EntityDisplayState display_state = entity.display_state;
-    Sprite current_sprite = Sprite::PlayerStanding;
-    switch (display_state) {
-    case EntityDisplayState::Neutral:
-        current_sprite = Sprite::PlayerStanding;
-        break;
-    case EntityDisplayState::NeutralHolding:
-        current_sprite = Sprite::PlayerStandingHolding;
-        break;
-    case EntityDisplayState::Walk:
-        current_sprite = Sprite::PlayerWalking;
-        break;
-    case EntityDisplayState::WalkHolding:
-        current_sprite = Sprite::PlayerWalkingHolding;
-        break;
-    case EntityDisplayState::Fly:
-        current_sprite = Sprite::PlayerFlying;
-        break;
-    case EntityDisplayState::Dead:
-        current_sprite = Sprite::PlayerDead;
-        break;
-    case EntityDisplayState::Stunned:
-        current_sprite = Sprite::PlayerStunned;
-        break;
-    case EntityDisplayState::Climbing:
-        current_sprite = Sprite::PlayerClimbing;
-        break;
-    case EntityDisplayState::Hanging:
-        current_sprite = Sprite::PlayerHanging;
-        break;
-    case EntityDisplayState::Falling:
-        current_sprite = Sprite::PlayerFalling;
-        break;
-    }
-    entity.sprite_animator.SetSprite(current_sprite);
 }
 
 } // namespace splonks::entities::player

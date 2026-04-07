@@ -38,6 +38,7 @@ FrameData ToFrameData(const RawFrameData& raw_frame_data) {
     ValidateRawFrameData(raw_frame_data);
 
     FrameData frame_data;
+    frame_data.animation_id = HashFrameDataId(raw_frame_data.name);
     frame_data.path = raw_frame_data.path;
     frame_data.sample_rect = raw_frame_data.aabb;
     frame_data.name = raw_frame_data.name;
@@ -57,9 +58,20 @@ FrameData ToFrameData(const RawFrameData& raw_frame_data) {
 FrameDataDb FrameDataDb::FromRaw(const RawFrameDataFile& raw_file) {
     FrameDataDb database;
     database.frames.reserve(raw_file.sprites.size());
+    std::unordered_map<std::string, std::uint32_t> image_id_by_path;
+    image_id_by_path.reserve(raw_file.sprites.size());
 
     for (const RawFrameData& raw_frame_data : raw_file.sprites) {
-        database.frames.push_back(ToFrameData(raw_frame_data));
+        FrameData frame_data = ToFrameData(raw_frame_data);
+        const auto image_found = image_id_by_path.find(frame_data.path);
+        if (image_found != image_id_by_path.end()) {
+            frame_data.image_id = image_found->second;
+        } else {
+            frame_data.image_id = static_cast<std::uint32_t>(database.image_paths.size());
+            database.image_paths.push_back(frame_data.path);
+            image_id_by_path[frame_data.path] = frame_data.image_id;
+        }
+        database.frames.push_back(std::move(frame_data));
     }
 
     std::unordered_map<std::string, std::vector<std::size_t>> grouped_indices;
@@ -93,11 +105,18 @@ FrameDataDb FrameDataDb::FromRaw(const RawFrameDataFile& raw_file) {
         }
 
         FrameDataAnimation animation;
+        animation.animation_id = HashFrameDataId(name);
         animation.name = name;
         animation.tile = database.frames[frame_indices.front()].tile;
         animation.frame_indices = std::move(frame_indices);
 
         database.animation_indices_by_name[animation.name] = database.animations.size();
+        const auto animation_id_found = database.animation_indices_by_id.find(animation.animation_id);
+        if (animation_id_found != database.animation_indices_by_id.end() &&
+            database.animations[animation_id_found->second].name != animation.name) {
+            throw std::runtime_error("FrameData conversion error: animation id collision for " + name);
+        }
+        database.animation_indices_by_id[animation.animation_id] = database.animations.size();
         database.animations.push_back(std::move(animation));
     }
 
@@ -112,8 +131,24 @@ const FrameDataAnimation* FrameDataDb::FindAnimation(const std::string& name) co
     return &animations[found->second];
 }
 
+const FrameDataAnimation* FrameDataDb::FindAnimation(FrameDataId animation_id) const {
+    const auto found = animation_indices_by_id.find(animation_id);
+    if (found == animation_indices_by_id.end()) {
+        return nullptr;
+    }
+    return &animations[found->second];
+}
+
 const FrameData* FrameDataDb::FindFrame(const std::string& name, std::size_t ordered_frame_index) const {
     const FrameDataAnimation* const animation = FindAnimation(name);
+    if (animation == nullptr || ordered_frame_index >= animation->frame_indices.size()) {
+        return nullptr;
+    }
+    return &frames[animation->frame_indices[ordered_frame_index]];
+}
+
+const FrameData* FrameDataDb::FindFrame(FrameDataId animation_id, std::size_t ordered_frame_index) const {
+    const FrameDataAnimation* const animation = FindAnimation(animation_id);
     if (animation == nullptr || ordered_frame_index >= animation->frame_indices.size()) {
         return nullptr;
     }

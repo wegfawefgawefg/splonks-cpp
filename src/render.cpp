@@ -302,6 +302,9 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     RenderStageTileWrapper(renderer, state, graphics);
     RenderStageTiles(renderer, state, graphics);
     RenderEntities(renderer, state, graphics);
+    if (state.show_entity_collision_boxes) {
+        RenderEntityCollisionBoxes(renderer, graphics, state);
+    }
     RenderSpecialEffects(renderer, state, graphics);
     RenderHealthRopeBombs(renderer, state, graphics);
     PrintCtrlsHelp(renderer, graphics, graphics.dims.y - 56U);

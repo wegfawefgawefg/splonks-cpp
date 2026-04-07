@@ -34,10 +34,10 @@ void PrintTileSourceDataSummary() {
     const FrameDataDb frame_data_db = FrameDataDb::FromRaw(raw_file);
     const TileSourceDb tile_source_db = BuildTileSourceDb(frame_data_db);
 
-    std::cout << "tile images: " << tile_source_db.image_paths.size() << '\n';
+    std::cout << "tile images: " << frame_data_db.image_paths.size() << '\n';
     std::cout << "tile sources: " << tile_source_db.sources.size() << '\n';
     std::cout << "tile spans: " << tile_source_db.spans.size() << '\n';
-    for (const std::string& image_path : tile_source_db.image_paths) {
+    for (const std::string& image_path : frame_data_db.image_paths) {
         std::cout << "  " << image_path << '\n';
     }
 }

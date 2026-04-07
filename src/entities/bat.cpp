@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
-#include "sprite.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 
@@ -43,7 +43,7 @@ void SetEntityBat(Entity& entity) {
     entity.entity_a.reset();
     entity.entity_label_a = EntityLabel::AttackThis;
     entity.impassable = false;
-    entity.sprite_animator.SetSprite(Sprite::BatNeutral);
+    entity.frame_data_animator.SetAnimation(frame_data_ids::HangingBat);
     entity.can_be_stunned = true;
     entity.alignment = Alignment::Enemy;
 }

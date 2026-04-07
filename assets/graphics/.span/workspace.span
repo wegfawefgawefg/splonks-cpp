@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "47776a78-25e1-4a9d-99f3-0bba174de60e",
+  "selectedAnnotationId": "e1438c1e-b778-4997-9b75-ac0454c70e95",
   "sheets": [
     {
       "path": "images/title.png",
@@ -2310,9 +2310,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 8.389,
-        "centerX": 97.27023483132675,
-        "centerY": 181.48766241506738
+        "zoom": 4.295,
+        "centerX": 107.79976717112922,
+        "centerY": 160.53550640279394
       }
     },
     {

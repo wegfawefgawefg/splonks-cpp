@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
-#include "sprite.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 
 namespace splonks::entities::bomb {
@@ -21,6 +21,7 @@ void SetEntityBomb(Entity& entity) {
     entity.can_be_stunned = false;
     entity.damage_vulnerability = DamageVulnerability::CrushingAndSpikes;
     entity.alignment = Alignment::Neutral;
+    entity.frame_data_animator.SetAnimation(frame_data_ids::Grenade);
 }
 
 void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
@@ -37,7 +38,7 @@ void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
         bomb.counter_a = 144.0F;
         bomb.state = EntityState::WindingUp;
         bomb.display_state = EntityDisplayState::Stunned;
-        bomb.sprite_animator.SetSprite(Sprite::BombTicking);
+        bomb.frame_data_animator.SetAnimation(frame_data_ids::LiveGrenade);
     }
 
     // if bomb is in winding up

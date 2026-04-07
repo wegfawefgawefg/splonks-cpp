@@ -27,7 +27,7 @@ Entity Entity::New() {
     entity.vertical_flip = false;
     entity.draw_layer = DrawLayer::Middle;
     entity.display_state = EntityDisplayState::Neutral;
-    entity.sprite_animator = SpriteAnimator{};
+    entity.frame_data_animator = FrameDataAnimator{};
     entity.jump_delay_frame_count = kJumpDelayFrames;
     entity.jumping = false;
     entity.jumped_this_frame = false;

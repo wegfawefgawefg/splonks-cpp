@@ -1,7 +1,6 @@
 #pragma once
 
 #include "frame_data.hpp"
-#include "sprite.hpp"
 #include "tile.hpp"
 #include "tile_source_data.hpp"
 
@@ -55,13 +54,10 @@ struct Graphics {
     bool fullscreen = false;
     Camera2D camera;
     PlayCam play_cam;
-    std::vector<SpriteData> sprites;
-    std::vector<SDL_Texture*> sprite_textures;
-    std::vector<bool> sprite_uses_fallback;
     std::vector<SDL_Texture*> textures;
     FrameDataDb frame_data_db;
+    std::vector<SDL_Texture*> frame_data_images;
     TileSourceDb tile_source_db;
-    std::vector<SDL_Texture*> tile_source_images;
     SDL_Texture* special_effects_texture = nullptr;
     std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
     std::string font_path = "assets/fonts/DejaVuSans.ttf";
@@ -70,10 +66,8 @@ struct Graphics {
     LoadedFont ui_font;
 
     static Graphics New(SDL_Renderer* renderer, const std::string& sprite_assets_folder);
-    const SpriteData& GetSpriteData(Sprite sprite) const;
-    SDL_Texture* GetSpriteTexture(Sprite sprite) const;
-    bool SpriteUsesFallback(Sprite sprite) const;
     SDL_Texture* GetTexture(TextureName texture) const;
+    SDL_Texture* GetFrameDataTexture(std::uint32_t image_id) const;
     Vec2 ScreenToWc(const UVec2& screen_pos) const;
     IVec2 ScreenToTileCoords(const UVec2& screen_pos) const;
     void ResetTileVariation(const IVec2& tile_pos);

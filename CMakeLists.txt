@@ -135,6 +135,7 @@ add_executable(splonks-cpp
     src/entities/player.cpp
     src/entities/rock.cpp
     src/entities/rope.cpp
+    src/frame_data_animator.cpp
     src/frame_data.cpp
     src/graphics.cpp
     src/inputs.cpp
@@ -151,7 +152,6 @@ add_executable(splonks-cpp
     src/raw_frame_data.cpp
     src/settings.cpp
     src/sid.cpp
-    src/sprite.cpp
     src/stage.cpp
     src/stage_init.cpp
     src/stage_gen/cave.cpp

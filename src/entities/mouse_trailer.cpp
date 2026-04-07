@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 
@@ -22,6 +23,7 @@ void SetEntityMouseTrailer(Entity& entity) {
     entity.display_state = EntityDisplayState::Neutral;
     entity.facing = LeftOrRight::Left;
     entity.alignment = Alignment::Neutral;
+    entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);
 }
 
 /** mouse_trailer does nothing, if falling, it should instakill if it hits an entity, and that entity is also grounded.

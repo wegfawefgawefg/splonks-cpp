@@ -1,7 +1,7 @@
 #pragma once
 
 #include "entity_core_types.hpp"
-#include "sprite.hpp"
+#include "frame_data_animator.hpp"
 #include "stage.hpp"
 #include "utils.hpp"
 
@@ -36,7 +36,7 @@ struct Entity {
     bool vertical_flip = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     EntityDisplayState display_state = EntityDisplayState::Neutral;
-    SpriteAnimator sprite_animator;
+    FrameDataAnimator frame_data_animator;
     std::uint32_t jump_delay_frame_count = kJumpDelayFrames;
     bool jumping = false;
     bool jumped_this_frame = false;

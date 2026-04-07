@@ -7,7 +7,6 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include <filesystem>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -18,14 +17,6 @@ namespace {
 std::uint64_t TileVariationCacheKey(const IVec2& tile_pos) {
     return (static_cast<std::uint64_t>(static_cast<std::uint32_t>(tile_pos.x)) << 32U) |
            static_cast<std::uint32_t>(tile_pos.y);
-}
-
-const SpriteData& EmptySpriteData() {
-    static const SpriteData sprite_data{
-        std::vector<Frame>{Frame{UVec2::New(0, 0), 0.0F}},
-        UVec2::New(0, 0),
-    };
-    return sprite_data;
 }
 
 [[noreturn]] void ThrowGraphicsError(const char* message) {
@@ -42,89 +33,27 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const std::string& path) {
     return texture;
 }
 
-SDL_Texture* CreateGeneratedMissingTexture(SDL_Renderer* renderer) {
-    SDL_Surface* surface = SDL_CreateSurface(16, 16, SDL_PIXELFORMAT_RGBA8888);
-    if (surface == nullptr) {
-        ThrowGraphicsError("SDL_CreateSurface failed for generated missing texture");
-    }
+SDL_Texture* LoadFrameDataTexture(SDL_Renderer* renderer, const std::string& filename) {
+    const std::vector<std::string> candidate_paths = {
+        "assets/graphics/sprites/" + filename,
+        "assets/graphics/tiles/" + filename,
+        "assets/graphics/images/" + filename,
+        "assets/graphics/special_effects/" + filename,
+    };
 
-    SDL_FillSurfaceRect(surface, nullptr, SDL_MapSurfaceRGBA(surface, 0, 0, 0, 0));
-
-    const Uint32 white = SDL_MapSurfaceRGBA(surface, 255, 255, 255, 255);
-    const Uint32 red = SDL_MapSurfaceRGBA(surface, 255, 0, 0, 255);
-    SDL_Rect top{0, 0, 16, 1};
-    SDL_Rect bottom{0, 15, 16, 1};
-    SDL_Rect left{0, 0, 1, 16};
-    SDL_Rect right{15, 0, 1, 16};
-    SDL_FillSurfaceRect(surface, &top, white);
-    SDL_FillSurfaceRect(surface, &bottom, white);
-    SDL_FillSurfaceRect(surface, &left, white);
-    SDL_FillSurfaceRect(surface, &right, white);
-
-    auto* pixels = static_cast<Uint32*>(surface->pixels);
-    const std::size_t pitch =
-        static_cast<std::size_t>(surface->pitch) / sizeof(Uint32);
-    for (std::size_t i = 1; i <= 14; ++i) {
-        pixels[i * pitch + i] = red;
-        pixels[i * pitch + (15U - i)] = red;
-    }
-
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_DestroySurface(surface);
-    if (texture == nullptr) {
-        ThrowGraphicsError("SDL_CreateTextureFromSurface failed for generated missing texture");
-    }
-    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-    return texture;
-}
-
-std::vector<SDL_Texture*> LoadSpriteTextures(
-    SDL_Renderer* renderer,
-    const std::string& sprite_assets_folder,
-    std::vector<bool>& sprite_uses_fallback
-) {
-    const std::string fallback_texture_path =
-        sprite_assets_folder + "/" + std::string(ToFilename(Sprite::NoSprite)) + ".png";
-    std::vector<SDL_Texture*> textures;
-    textures.reserve(kSpriteCount);
-    for (Sprite sprite : AllSprites()) {
-        const std::string filename = std::string(ToFilename(sprite));
-        const std::string path =
-            sprite_assets_folder + "/" + filename + ".png";
+    for (const std::string& path : candidate_paths) {
         if (std::filesystem::exists(path)) {
-            sprite_uses_fallback.push_back(false);
-            textures.push_back(LoadTexture(renderer, path));
-        } else if (std::filesystem::exists(fallback_texture_path)) {
-            std::cerr << "\033[33mwarning:\033[0m Missing sprite texture for " << filename
-                      << ". Using " << fallback_texture_path << ".\n";
-            sprite_uses_fallback.push_back(true);
-            textures.push_back(LoadTexture(renderer, fallback_texture_path));
-        } else {
-            std::cerr << "\033[33mwarning:\033[0m Missing sprite texture for " << filename
-                      << " and fallback texture is absent. Generating placeholder texture.\n";
-            sprite_uses_fallback.push_back(true);
-            textures.push_back(CreateGeneratedMissingTexture(renderer));
+            return LoadTexture(renderer, path);
         }
     }
-    return textures;
-}
 
+    throw std::runtime_error("Missing frame data texture for " + filename);
+}
 } // namespace
 
 Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_folder) {
+    (void)sprite_assets_folder;
     Graphics graphics;
-    graphics.sprites = LoadSprites(sprite_assets_folder);
-    graphics.sprite_textures =
-        LoadSpriteTextures(renderer, sprite_assets_folder, graphics.sprite_uses_fallback);
-    for (std::size_t i = 0; i < graphics.sprites.size() && i < graphics.sprite_uses_fallback.size();
-         ++i) {
-        const SpriteData& sprite_data = graphics.sprites[i];
-        if (sprite_data.frames.size() == 1 && sprite_data.frames[0].sample_position == UVec2::New(0, 0) &&
-            sprite_data.size == UVec2::New(8, 8)) {
-            graphics.sprite_uses_fallback[i] = true;
-        }
-    }
     graphics.textures = {
         LoadTexture(renderer, "assets/graphics/images/title.png"),
         LoadTexture(renderer, "assets/graphics/images/title_layer_1.png"),
@@ -134,13 +63,11 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     const RawFrameDataFile raw_frame_data_file =
         LoadRawFrameDataFile("assets/graphics/annotations.yaml");
     graphics.frame_data_db = FrameDataDb::FromRaw(raw_frame_data_file);
-    graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
-    graphics.tile_source_images.reserve(graphics.tile_source_db.image_paths.size());
-    for (const std::string& image_path : graphics.tile_source_db.image_paths) {
-        graphics.tile_source_images.push_back(
-            LoadTexture(renderer, "assets/graphics/tiles/" + image_path)
-        );
+    graphics.frame_data_images.reserve(graphics.frame_data_db.image_paths.size());
+    for (const std::string& image_path : graphics.frame_data_db.image_paths) {
+        graphics.frame_data_images.push_back(LoadFrameDataTexture(renderer, image_path));
     }
+    graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
     graphics.special_effects_texture =
         LoadTexture(renderer, "assets/graphics/special_effects/special_effects.png");
     graphics.window_dims = UVec2::New(1280, 720);
@@ -159,36 +86,20 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     return graphics;
 }
 
-const SpriteData& Graphics::GetSpriteData(Sprite sprite) const {
-    const std::size_t index = static_cast<std::size_t>(sprite);
-    if (index >= sprites.size()) {
-        return EmptySpriteData();
-    }
-    return sprites[index];
-}
-
-SDL_Texture* Graphics::GetSpriteTexture(Sprite sprite) const {
-    const std::size_t index = static_cast<std::size_t>(sprite);
-    if (index >= sprite_textures.size()) {
-        return nullptr;
-    }
-    return sprite_textures[index];
-}
-
-bool Graphics::SpriteUsesFallback(Sprite sprite) const {
-    const std::size_t index = static_cast<std::size_t>(sprite);
-    if (index >= sprite_uses_fallback.size()) {
-        return true;
-    }
-    return sprite_uses_fallback[index];
-}
-
 SDL_Texture* Graphics::GetTexture(TextureName texture) const {
     const std::size_t index = static_cast<std::size_t>(texture);
     if (index >= textures.size()) {
         return nullptr;
     }
     return textures[index];
+}
+
+SDL_Texture* Graphics::GetFrameDataTexture(std::uint32_t image_id) const {
+    const std::size_t index = static_cast<std::size_t>(image_id);
+    if (index >= frame_data_images.size()) {
+        return nullptr;
+    }
+    return frame_data_images[index];
 }
 
 Vec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
@@ -227,13 +138,6 @@ void Graphics::ShutdownText() {
 }
 
 void Graphics::ShutdownTextures() {
-    for (SDL_Texture* texture : sprite_textures) {
-        if (texture != nullptr) {
-            SDL_DestroyTexture(texture);
-        }
-    }
-    sprite_textures.clear();
-
     for (SDL_Texture* texture : textures) {
         if (texture != nullptr) {
             SDL_DestroyTexture(texture);
@@ -241,12 +145,12 @@ void Graphics::ShutdownTextures() {
     }
     textures.clear();
 
-    for (SDL_Texture* texture : tile_source_images) {
+    for (SDL_Texture* texture : frame_data_images) {
         if (texture != nullptr) {
             SDL_DestroyTexture(texture);
         }
     }
-    tile_source_images.clear();
+    frame_data_images.clear();
 
     if (special_effects_texture != nullptr) {
         SDL_DestroyTexture(special_effects_texture);

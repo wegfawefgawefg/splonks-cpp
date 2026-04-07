@@ -157,90 +157,77 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                 continue;
             }
 
-            if (entity.type_ == EntityType::Block) {
-                const TileSourceData* const tile_source_data = GetTileSourceData(
-                    graphics,
-                    TileSetForStageType(state.stage.stage_type),
-                    Tile::Block,
-                    ToIVec2(entity.pos)
+            if (entity.frame_data_animator.HasAnimation()) {
+                const FrameDataAnimation* const animation =
+                    graphics.frame_data_db.FindAnimation(entity.frame_data_animator.animation_id);
+                if (animation == nullptr || animation->frame_indices.empty()) {
+                    continue;
+                }
+
+                std::size_t frame_index = entity.frame_data_animator.current_frame;
+                if (frame_index >= animation->frame_indices.size()) {
+                    frame_index = 0;
+                }
+                const FrameData& frame_data =
+                    graphics.frame_data_db.frames[animation->frame_indices[frame_index]];
+                SDL_Texture* const sprite_texture =
+                    graphics.GetFrameDataTexture(frame_data.image_id);
+                if (sprite_texture == nullptr) {
+                    continue;
+                }
+
+                const Vec2 sprite_world_size = Vec2::New(
+                    static_cast<float>(frame_data.sample_rect.w),
+                    static_cast<float>(frame_data.sample_rect.h)
                 );
-                if (tile_source_data == nullptr) {
-                    continue;
+                const Vec2 sprite_scaled_size =
+                    sprite_world_size * entity.frame_data_animator.scale;
+                const Vec2 collider_tl = entity.GetAABB().tl;
+
+                const Vec2 draw_offset = Vec2::New(
+                    static_cast<float>(frame_data.draw_offset.x),
+                    static_cast<float>(frame_data.draw_offset.y)
+                );
+                const Vec2 cbox_offset = Vec2::New(
+                    static_cast<float>(frame_data.cbox.x),
+                    static_cast<float>(frame_data.cbox.y)
+                );
+                Vec2 render_position = collider_tl;
+                if (entity.facing == LeftOrRight::Left) {
+                    render_position = collider_tl - cbox_offset + draw_offset;
+                } else {
+                    const float mirrored_cbox_x =
+                        static_cast<float>(frame_data.sample_rect.w - frame_data.cbox.x -
+                                           frame_data.cbox.w);
+                    render_position = collider_tl -
+                                      Vec2::New(
+                                          mirrored_cbox_x,
+                                          static_cast<float>(frame_data.cbox.y)
+                                      ) +
+                                      draw_offset;
                 }
-                SDL_Texture* const tile_texture = GetTileTexture(graphics, *tile_source_data);
-                if (tile_texture == nullptr) {
-                    continue;
-                }
+
                 const SDL_FRect src{
-                    static_cast<float>(tile_source_data->sample_rect.x),
-                    static_cast<float>(tile_source_data->sample_rect.y),
-                    static_cast<float>(tile_source_data->sample_rect.w),
-                    static_cast<float>(tile_source_data->sample_rect.h),
+                    static_cast<float>(frame_data.sample_rect.x),
+                    static_cast<float>(frame_data.sample_rect.y),
+                    static_cast<float>(frame_data.sample_rect.w),
+                    static_cast<float>(frame_data.sample_rect.h),
                 };
-                const SDL_FRect dst = WorldRectToScreen(
-                    graphics,
-                    entity.pos,
-                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
-                );
-                SDL_RenderTexture(
+                SDL_FRect dst = WorldRectToScreen(graphics, render_position, sprite_scaled_size);
+                const SDL_FlipMode flip =
+                    entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+                SDL_RenderTextureRotated(
                     renderer,
-                    tile_texture,
+                    sprite_texture,
                     &src,
-                    &dst
+                    &dst,
+                    0.0,
+                    nullptr,
+                    flip
                 );
                 continue;
             }
 
-            const SpriteData& sprite_data = graphics.GetSpriteData(entity.sprite_animator.sprite);
-            SDL_Texture* sprite_texture = graphics.GetSpriteTexture(entity.sprite_animator.sprite);
-            if (sprite_texture == nullptr || sprite_data.frames.empty()) {
-                continue;
-            }
-            const Frame& frame = sprite_data.frames[entity.sprite_animator.current_frame];
-            const bool sprite_uses_fallback = graphics.SpriteUsesFallback(entity.sprite_animator.sprite);
-            const Vec2 sprite_world_size = sprite_uses_fallback ? entity.size : ToVec2(sprite_data.size);
-            const Vec2 sprite_scaled_size = sprite_world_size * entity.sprite_animator.scale;
-            Vec2 render_position = entity.pos;
-            switch (entity.origin) {
-            case Origin::Center:
-                render_position = entity.pos - (sprite_scaled_size / 2.0F);
-                break;
-            case Origin::TopLeft:
-                render_position = entity.pos;
-                break;
-            case Origin::Foot:
-                render_position = Vec2::New(
-                    entity.pos.x - (sprite_scaled_size.x / 2.0F),
-                    entity.pos.y - sprite_scaled_size.y
-                );
-                break;
-            }
-
-            SDL_FRect src{
-                static_cast<float>(frame.sample_position.x),
-                static_cast<float>(frame.sample_position.y),
-                static_cast<float>(sprite_data.size.x),
-                static_cast<float>(sprite_data.size.y),
-            };
-            SDL_FRect dst = WorldRectToScreen(
-                graphics,
-                render_position,
-                Vec2::New(
-                    sprite_scaled_size.x,
-                    sprite_scaled_size.y
-                )
-            );
-            const SDL_FlipMode flip =
-                entity.facing == LeftOrRight::Right ? SDL_FLIP_NONE : SDL_FLIP_HORIZONTAL;
-            SDL_RenderTextureRotated(
-                renderer,
-                sprite_texture,
-                &src,
-                &dst,
-                0.0,
-                nullptr,
-                flip
-            );
         }
     }
 }

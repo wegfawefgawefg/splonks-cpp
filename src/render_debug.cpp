@@ -1,5 +1,6 @@
 #include "render_debug.hpp"
 
+#include "entity.hpp"
 #include "graphics.hpp"
 #include "room.hpp"
 #include "state.hpp"
@@ -11,6 +12,17 @@
 namespace splonks {
 
 namespace {
+
+SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
+    const Vec2 relative = world_pos - graphics.camera.target;
+    const Vec2 screen = relative * graphics.camera.zoom + graphics.camera.offset;
+    return SDL_FRect{
+        screen.x,
+        screen.y,
+        world_size.x * graphics.camera.zoom,
+        world_size.y * graphics.camera.zoom,
+    };
+}
 
 void RenderArrow(SDL_Renderer* renderer, Vec2 pos, float length, Vec2 dir, SDL_Color color) {
     const Vec2 line_end = pos + (dir * length);
@@ -182,6 +194,28 @@ void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
                 break;
             }
         }
+    }
+}
+
+void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!entity.active) {
+            continue;
+        }
+
+        const AABB aabb = entity.GetAABB();
+        const Vec2 size = aabb.br - aabb.tl + Vec2::New(1.0F, 1.0F);
+        const SDL_FRect rect = WorldRectToScreen(graphics, aabb.tl, size);
+
+        SDL_Color color = SDL_Color{255, 255, 0, 255};
+        if (entity.type_ == EntityType::Player) {
+            color = SDL_Color{64, 255, 64, 255};
+        } else if (!entity.can_collide) {
+            color = SDL_Color{255, 180, 64, 255};
+        }
+
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+        SDL_RenderRect(renderer, &rect);
     }
 }
 

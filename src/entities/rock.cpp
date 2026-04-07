@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
-#include "sprite.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 
 namespace splonks::entities::rock {
@@ -26,7 +26,7 @@ void SetEntityRock(Entity& entity) {
     entity.draw_layer = DrawLayer::Foreground;
     entity.can_be_stunned = false;
     entity.alignment = Alignment::Neutral;
-    entity.sprite_animator.SetSprite(Sprite::Rock);
+    entity.frame_data_animator.SetAnimation(frame_data_ids::Rock);
 }
 
 /** Rock does nothing, but if it hits an entity it should do rock damage and try to stun probs.

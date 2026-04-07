@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
-#include "sprite.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 
@@ -21,6 +21,33 @@ Vec2 NormalizeOrZero(const Vec2& value) {
     return value / length;
 }
 
+FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
+    switch (stage_type) {
+    case StageType::Ice1:
+    case StageType::Ice2:
+    case StageType::Ice3:
+        return frame_data_ids::IceBlock;
+    case StageType::Desert1:
+    case StageType::Desert2:
+    case StageType::Desert3:
+        return frame_data_ids::JungleBlock;
+    case StageType::Temple1:
+    case StageType::Temple2:
+    case StageType::Temple3:
+        return frame_data_ids::TempleBlock;
+    case StageType::Boss:
+        return frame_data_ids::BossBlock;
+    case StageType::Blank:
+    case StageType::Test1:
+    case StageType::Cave1:
+    case StageType::Cave2:
+    case StageType::Cave3:
+        return frame_data_ids::CaveBlock;
+    }
+
+    return frame_data_ids::CaveBlock;
+}
+
 } // namespace
 
 void SetEntityBlock(Entity& entity) {
@@ -37,12 +64,17 @@ void SetEntityBlock(Entity& entity) {
     entity.state = EntityState::Projectile;
     entity.display_state = EntityDisplayState::Neutral;
     entity.facing = LeftOrRight::Left;
-    entity.sprite_animator.SetSprite(Sprite::Block); //TODO: make block depend on environment
+    entity.frame_data_animator.SetAnimation(frame_data_ids::CaveBlock);
     entity.can_be_stunned = false;
     entity.alignment = Alignment::Neutral;
 }
 
 void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) {
+    {
+        Entity& entity = state.entity_manager.entities[entity_idx];
+        entity.frame_data_animator.SetAnimation(BlockFrameDataIdForStageType(state.stage.stage_type));
+    }
+
     //TODO: if you hit the ground, do a clunky sound
     // if you hit something, do block damage and try to stun probs
 

@@ -3,8 +3,8 @@
 #include "audio.hpp"
 #include "entities/bat.hpp"
 #include "entities/common.hpp"
+#include "frame_data_id.hpp"
 #include "entities/money.hpp"
-#include "sprite.hpp"
 #include "state.hpp"
 
 #include <cmath>
@@ -59,13 +59,13 @@ void SetEntityBreakawayContainer(Entity& entity, EntityType type_) {
     entity.alignment = Alignment::Neutral;
     switch (type_) {
     case EntityType::Pot:
-        entity.sprite_animator.SetSprite(Sprite::Pot);
+        entity.frame_data_animator.SetAnimation(frame_data_ids::Pot);
         break;
     case EntityType::Box:
-        entity.sprite_animator.SetSprite(Sprite::Box);
+        entity.frame_data_animator.SetAnimation(frame_data_ids::Box);
         break;
     default:
-        entity.sprite_animator.SetSprite(Sprite::NoSprite);
+        entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);
         break;
     }
 }

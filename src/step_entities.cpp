@@ -48,7 +48,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             if (active) {
                 entities::common::CommonStep(state.player_vid->id, state, graphics, audio, dt);
                 entities::player::StepEntityLogicAsPlayer(state.player_vid->id, state, audio, dt);
-                entities::common::CommonPostStep(state.player_vid->id, state, audio);
+                entities::common::CommonPostStep(state.player_vid->id, state, graphics, audio, dt);
             }
             if (has_physics) {
                 entities::player::StepEntityPhysicsAsPlayer(state.player_vid->id, state, audio, dt);
@@ -107,7 +107,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 entities::money::StepEntityLogicAsMoney(entity_idx, state, audio);
                 break;
             }
-            entities::common::CommonPostStep(entity_idx, state, audio);
+            entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
 
             if (has_physics) {
                 switch (type_) {

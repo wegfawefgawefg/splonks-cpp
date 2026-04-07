@@ -1,10 +1,12 @@
 #include "render_ui.hpp"
 
 #include "entity.hpp"
+#include "frame_data_id.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 #include "text.hpp"
 
+#include <algorithm>
 #include <cstdio>
 
 namespace splonks {
@@ -48,24 +50,69 @@ const char* ToDebugName(StageType stage_type) {
     return "Unknown";
 }
 
-void DrawSpriteIcon(
+std::size_t GetUiAnimationFrameIndex(
+    const FrameDataAnimation& animation,
+    const FrameDataDb& frame_data_db,
+    std::uint64_t tick
+) {
+    if (animation.frame_indices.empty()) {
+        return 0;
+    }
+
+    std::uint64_t total_duration = 0;
+    for (std::size_t frame_index : animation.frame_indices) {
+        total_duration += static_cast<std::uint64_t>(
+            std::max(frame_data_db.frames[frame_index].duration, 1)
+        );
+    }
+    if (total_duration == 0) {
+        return 0;
+    }
+
+    std::uint64_t local_tick = tick % total_duration;
+    for (std::size_t ordered_index = 0; ordered_index < animation.frame_indices.size(); ++ordered_index) {
+        const FrameData& frame_data = frame_data_db.frames[animation.frame_indices[ordered_index]];
+        const std::uint64_t duration = static_cast<std::uint64_t>(std::max(frame_data.duration, 1));
+        if (local_tick < duration) {
+            return ordered_index;
+        }
+        local_tick -= duration;
+    }
+
+    return 0;
+}
+
+void DrawFrameDataIcon(
     SDL_Renderer* renderer,
+    const State& state,
     Graphics& graphics,
-    Sprite sprite,
+    FrameDataId animation_id,
     const IVec2& cursor,
     const IVec2& size
 ) {
-    const SpriteData& sprite_data = graphics.GetSpriteData(sprite);
-    SDL_Texture* texture = graphics.GetSpriteTexture(sprite);
-    if (texture == nullptr || sprite_data.frames.empty()) {
+    const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animation_id);
+    if (animation == nullptr || animation->frame_indices.empty()) {
         return;
     }
-    const Frame& first_frame = sprite_data.frames[0];
+
+    const std::size_t ordered_frame_index =
+        GetUiAnimationFrameIndex(*animation, graphics.frame_data_db, state.scene_frame);
+    if (ordered_frame_index >= animation->frame_indices.size()) {
+        return;
+    }
+
+    const FrameData& frame_data =
+        graphics.frame_data_db.frames[animation->frame_indices[ordered_frame_index]];
+    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data.image_id);
+    if (texture == nullptr) {
+        return;
+    }
+
     const SDL_FRect src{
-        static_cast<float>(first_frame.sample_position.x),
-        static_cast<float>(first_frame.sample_position.y),
-        static_cast<float>(sprite_data.size.x),
-        static_cast<float>(sprite_data.size.y),
+        static_cast<float>(frame_data.sample_rect.x),
+        static_cast<float>(frame_data.sample_rect.y),
+        static_cast<float>(frame_data.sample_rect.w),
+        static_cast<float>(frame_data.sample_rect.h),
     };
     const SDL_FRect dst{
         static_cast<float>(cursor.x),
@@ -106,7 +153,7 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
     {
         // HEALTH
         // draw heart
-        DrawSpriteIcon(renderer, graphics, Sprite::Heart, cursor, size);
+        DrawFrameDataIcon(renderer, state, graphics, frame_data_ids::HeartUiIcon, cursor, size);
     }
     cursor = cursor + cursor_advance;
     {
@@ -128,7 +175,7 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
 
     // BOMB
     // draw bomb
-    DrawSpriteIcon(renderer, graphics, Sprite::Bomb, cursor, size);
+    DrawFrameDataIcon(renderer, state, graphics, frame_data_ids::GrenadeUiIcon, cursor, size);
     cursor = cursor + cursor_advance;
     {
         // draw num boms
@@ -149,7 +196,7 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
 
     // ROPE
     // draw rope
-    DrawSpriteIcon(renderer, graphics, Sprite::RopeIcon, cursor, size);
+    DrawFrameDataIcon(renderer, state, graphics, frame_data_ids::RopeUiIcon, cursor, size);
     cursor = cursor + cursor_advance;
     {
         // draw num ropes
@@ -170,7 +217,7 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
     // Money
     // draw gold
     cursor = IVec2::New(static_cast<int>(graphics.dims.x) - (five_percent * 3), five_percent);
-    DrawSpriteIcon(renderer, graphics, Sprite::GoldIcon, cursor, size);
+    DrawFrameDataIcon(renderer, state, graphics, frame_data_ids::GoldIcon, cursor, size);
     cursor = cursor + cursor_advance;
     {
         // draw num ropes

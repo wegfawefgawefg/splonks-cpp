@@ -12,7 +12,13 @@ constexpr unsigned int kDefaultStunTimer = 60;
 constexpr unsigned int kThrownByImmunityDuration = 16;
 
 void CommonStep(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
-void CommonPostStep(std::size_t entity_idx, State& state, Audio& audio);
+void CommonPostStep(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state);
 void StoreHealthToLastHealth(std::size_t entity_idx, State& state);
 void StepStunTimer(std::size_t entity_idx, State& state);

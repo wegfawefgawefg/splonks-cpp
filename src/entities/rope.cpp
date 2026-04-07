@@ -2,8 +2,8 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
+#include "frame_data_id.hpp"
 #include "graphics.hpp"
-#include "sprite.hpp"
 #include "stage.hpp"
 #include "state.hpp"
 #include "tile.hpp"
@@ -15,7 +15,7 @@ void SetEntityRope(Entity& entity) {
     entity.type_ = EntityType::Rope;
     entity.size = Vec2::New(8.0F, 6.0F);
     entity.health = 1;
-    entity.sprite_animator.SetSprite(Sprite::Rope);
+    entity.frame_data_animator.SetAnimation(frame_data_ids::RopeBall);
 
     entity.damage_vulnerability = DamageVulnerability::Immune;
     entity.has_physics = true;
@@ -40,7 +40,7 @@ void StepEntityLogicAsRope(
         rope.counter_a = 16.0F;
         rope.state = EntityState::WindingUp;
         rope.display_state = EntityDisplayState::Neutral;
-        rope.sprite_animator.SetSprite(Sprite::RopeWindingUp);
+        rope.frame_data_animator.SetAnimation(frame_data_ids::UnfoldingRope);
     }
 
     // if rope is in winding up

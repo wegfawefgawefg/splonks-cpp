@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "entities/common.hpp"
-#include "sprite.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 
 #include <memory>
@@ -33,7 +33,8 @@ void SetEntityBaseballBat(Entity& entity) {
     entity.can_collide = false;
     entity.impassable = false;
     entity.facing = LeftOrRight::Left;
-    entity.sprite_animator.SetSprite(Sprite::BaseballBat);
+    entity.frame_data_animator.SetAnimation(frame_data_ids::BaseballBatSwing);
+    entity.frame_data_animator.animate = false;
     entity.draw_layer = DrawLayer::Foreground;
     entity.can_be_stunned = false;
     entity.alignment = Alignment::Neutral;
@@ -69,7 +70,6 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Audio& audio) {
     if (0.0F <= baseball_bat.counter_a && baseball_bat.counter_a <= 4.0F) {
         swing_stage = SwingStage::Back;
         baseball_bat.display_state = EntityDisplayState::Neutral;
-        baseball_bat.size = Vec2::New(16.0F, 6.0F);
         switch (baseball_bat.facing) {
         case LeftOrRight::Left:
             baseball_bat.pos = swinger_pos + Vec2::New(2.0F, 1.0F);
@@ -81,7 +81,6 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Audio& audio) {
     } else if (5.0F <= baseball_bat.counter_a && baseball_bat.counter_a <= 8.0F) {
         swing_stage = SwingStage::Above;
         baseball_bat.display_state = EntityDisplayState::NeutralHolding;
-        baseball_bat.size = Vec2::New(16.0F, 6.0F);
         switch (baseball_bat.facing) {
         case LeftOrRight::Left:
             baseball_bat.pos = swinger_pos + Vec2::New(-4.0F, -5.0F);
@@ -93,7 +92,6 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Audio& audio) {
     } else if (9.0F <= baseball_bat.counter_a && baseball_bat.counter_a <= 16.0F) {
         swing_stage = SwingStage::Swing;
         baseball_bat.display_state = EntityDisplayState::Walk;
-        baseball_bat.size = Vec2::New(16.0F, 6.0F);
         switch (baseball_bat.facing) {
         case LeftOrRight::Left:
             baseball_bat.pos = swinger_pos + Vec2::New(-10.0F, 2.0F);

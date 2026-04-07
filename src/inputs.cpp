@@ -160,6 +160,10 @@ void ProcessInputPlaying(
         state.running = false;
     }
 
+    if (KeyPressedEdge(SDL_SCANCODE_F1)) {
+        state.show_entity_collision_boxes = !state.show_entity_collision_boxes;
+    }
+
     // randomize the stage tiles
     if (KeyPressedEdge(SDL_SCANCODE_R) || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK)) {
         if (state.next_stage) {

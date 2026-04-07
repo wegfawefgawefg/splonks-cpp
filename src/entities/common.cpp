@@ -1,5 +1,6 @@
 #include "entities/common.hpp"
 
+#include "entity_display_states.hpp"
 #include "entities/player.hpp"
 #include "on_damage_effects.hpp"
 #include "tile.hpp"
@@ -11,6 +12,42 @@
 namespace splonks::entities::common {
 
 namespace {
+
+const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics) {
+    if (!entity.frame_data_animator.HasAnimation()) {
+        return nullptr;
+    }
+
+    const FrameDataAnimation* const animation =
+        graphics.frame_data_db.FindAnimation(entity.frame_data_animator.animation_id);
+    if (animation == nullptr || animation->frame_indices.empty()) {
+        return nullptr;
+    }
+
+    std::size_t frame_index = entity.frame_data_animator.current_frame;
+    if (frame_index >= animation->frame_indices.size()) {
+        frame_index = 0;
+    }
+
+    return &graphics.frame_data_db.frames[animation->frame_indices[frame_index]];
+}
+
+void ApplyFrameDataGeometryToEntity(std::size_t entity_idx, State& state, const Graphics& graphics) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
+    if (frame_data == nullptr) {
+        return;
+    }
+
+    if (frame_data->cbox.w <= 0 || frame_data->cbox.h <= 0) {
+        return;
+    }
+
+    entity.size = Vec2::New(
+        static_cast<float>(frame_data->cbox.w),
+        static_cast<float>(frame_data->cbox.h)
+    );
+}
 
 bool MaybeHurtAndStunOnContactAsProjectile(std::size_t entity_idx, State& state, Audio& audio);
 
@@ -607,15 +644,22 @@ void CommonStep(
     DoThrownByStep(entity_idx, state); // TODO REVIEW THIS
     ApplyHurtOnContact(entity_idx, state, audio);
     DieIfFootInSpikes(entity_idx, state, audio);
-    StepAnimationTimer(entity_idx, state, graphics, dt);
     DoDamagedEffect(entity_idx, state, audio);
     DoSuperStateChangedEffect(entity_idx, state, audio);
+    (void)graphics;
+    (void)dt;
 }
 
-void CommonPostStep(std::size_t entity_idx, State& state, Audio& audio) {
-    (void)entity_idx;
-    (void)state;
+void CommonPostStep(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
     (void)audio;
+    StepAnimationTimer(entity_idx, state, graphics, dt);
+    ApplyFrameDataGeometryToEntity(entity_idx, state, graphics);
 }
 
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
@@ -704,7 +748,19 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
 
 void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& graphics, float dt) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.sprite_animator.Step(graphics.sprites, dt);
+    const auto selection = GetFrameDataSelectionForDisplayState(EntityDisplayInput{
+        .type_ = entity.type_,
+        .display_state = entity.display_state,
+    });
+    if (selection.has_value()) {
+        entity.frame_data_animator.SetAnimation(selection->animation_id);
+        entity.frame_data_animator.animate = selection->animate;
+        if (selection->has_forced_frame) {
+            entity.frame_data_animator.SetForcedFrame(selection->forced_frame);
+        }
+    }
+
+    entity.frame_data_animator.Step(graphics.frame_data_db, dt);
 }
 
 void EulerStep(std::size_t entity_idx, State& state, float dt) {
