@@ -50,6 +50,12 @@ void DoExplosion(std::size_t entity_idx, Vec2 center, float size, State& state, 
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);
+void CollectTouchingPickups(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+);
 
 enum class DamageResult {
     None,

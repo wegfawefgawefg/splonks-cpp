@@ -142,6 +142,7 @@ add_executable(splonks-cpp
     src/entities/common_hang.cpp
     src/entities/common_physics.cpp
     src/entities/common_step.cpp
+    src/entities/common_collect.cpp
     src/entities/ghost_ball.cpp
     src/entities/jetpack.cpp
     src/entities/mod.cpp

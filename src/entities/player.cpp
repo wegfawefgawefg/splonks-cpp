@@ -596,7 +596,7 @@ void StepEntityLogicAsPlayer(
         }
     }
 
-    //  PICK UPS: MONEY, ETC
+    //  STOMP / JUMP ON ENEMIES
     if (!loss_of_control) {
         const Entity& player = state.entity_manager.entities[entity_idx];
         const VID player_vid = player.vid;
@@ -648,35 +648,7 @@ void StepEntityLogicAsPlayer(
     }
 
     //  PICK UPS: MONEY, ETC
-    {
-        const Entity& player = state.entity_manager.entities[entity_idx];
-        const AABB aabb = common::GetContactAabbForEntity(player, graphics);
-        const VID player_vid = player.vid;
-        const std::vector<VID> search_results = state.sid.QueryExclude(aabb.tl, aabb.br, player_vid);
-        unsigned int money_gained = 0;
-        for (const VID& e_vid : search_results) {
-            if (const Entity* const e = state.entity_manager.GetEntity(e_vid)) {
-                switch (e->type_) {
-                case EntityType::Gold:
-                    money_gained = 1;
-                    audio.PlaySoundEffect(SoundEffect::Gold);
-                    break;
-                case EntityType::GoldStack:
-                    money_gained = 2;
-                    audio.PlaySoundEffect(SoundEffect::GoldStack);
-                    break;
-                default:
-                    money_gained = 0;
-                    break;
-                }
-            }
-            if (money_gained > 0) {
-                state.entity_manager.SetInactiveVid(e_vid);
-            }
-            Entity& mutable_player = state.entity_manager.entities[entity_idx];
-            mutable_player.money += money_gained;
-        }
-    }
+    common::CollectTouchingPickups(entity_idx, state, graphics, audio);
 
 }
 

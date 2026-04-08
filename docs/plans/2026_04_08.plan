@@ -20,3 +20,4 @@ try a moving platform entity - probably its own level. and test edge hanging on 
 make double jetpack deliberate
 fix held object not flipping to match ur facing
 split up common.cpp in entities. 
+fix ropes adding to their length 
