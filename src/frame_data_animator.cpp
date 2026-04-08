@@ -14,10 +14,15 @@ bool FrameDataAnimator::HasAnimation() const {
     return animation_id != kInvalidFrameDataId;
 }
 
+bool FrameDataAnimator::IsFinished() const {
+    return finished;
+}
+
 void FrameDataAnimator::SetAnimation(FrameDataId animation_id_value) {
     if (animation_id != animation_id_value) {
         current_frame = 0;
         current_time = 0.0F;
+        finished = false;
     }
     animation_id = animation_id_value;
 }
@@ -25,6 +30,7 @@ void FrameDataAnimator::SetAnimation(FrameDataId animation_id_value) {
 void FrameDataAnimator::SetForcedFrame(std::size_t frame_index) {
     current_frame = frame_index;
     current_time = 0.0F;
+    finished = false;
 }
 
 void FrameDataAnimator::SetSpeed(float speed_value) {
@@ -37,7 +43,7 @@ void FrameDataAnimator::ResetSpeed() {
 
 void FrameDataAnimator::Step(const FrameDataDb& frame_data_db, float dt) {
     (void)dt;
-    if (!animate || animation_id == kInvalidFrameDataId) {
+    if (!animate || animation_id == kInvalidFrameDataId || finished) {
         return;
     }
 
@@ -54,8 +60,16 @@ void FrameDataAnimator::Step(const FrameDataDb& frame_data_db, float dt) {
     const FrameData& frame_data = frame_data_db.frames[animation->frame_indices[current_frame]];
     current_time += speed;
     if (current_time >= static_cast<float>(frame_data.duration)) {
-        current_time = 0.0F;
-        current_frame = (current_frame + 1) % animation->frame_indices.size();
+        if (current_frame + 1 < animation->frame_indices.size()) {
+            current_time = 0.0F;
+            current_frame += 1;
+        } else if (loop) {
+            current_time = 0.0F;
+            current_frame = 0;
+        } else {
+            current_time = static_cast<float>(frame_data.duration);
+            finished = true;
+        }
     }
 }
 

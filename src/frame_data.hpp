@@ -21,6 +21,7 @@ struct FrameData {
     IVec2 draw_offset = IVec2::New(0, 0);
     IVec2 center = IVec2::New(0, 0);
     std::vector<std::string> tags;
+    FrameRect pbox;
     FrameRect cbox;
     bool tile = false;
 };

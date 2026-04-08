@@ -29,6 +29,34 @@ bool RandomBool() {
     return distribution(generator) == 0;
 }
 
+IAABB GetAreaAbove(const Entity& bat) {
+    const auto [tl, br] = bat.GetBounds();
+    return IAABB{
+        .tl = IVec2::New(static_cast<int>(tl.x), static_cast<int>(tl.y) - 1),
+        .br = IVec2::New(static_cast<int>(br.x), static_cast<int>(tl.y)),
+    };
+}
+
+bool IsAtPerchOrRoof(const Entity& bat, const State& state) {
+    const IAABB area_above = GetAreaAbove(bat);
+    const std::vector<const Tile*> tiles_above_you =
+        state.stage.GetTilesInRectWc(area_above.tl, area_above.br);
+    return CollidableTileInList(tiles_above_you);
+}
+
+void SnapBatToRoof(Entity& bat, const State& state) {
+    if (IsAtPerchOrRoof(bat, state)) {
+        return;
+    }
+
+    for (int i = 0; i < static_cast<int>(kTileSize); ++i) {
+        bat.pos.y -= 1.0F;
+        if (IsAtPerchOrRoof(bat, state)) {
+            return;
+        }
+    }
+}
+
 } // namespace
 
 void SetEntityBat(Entity& entity) {
@@ -96,14 +124,7 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
             //  Go Back To Your Perch, (straight up from here lol)
             mutable_bat.super_state = EntitySuperState::Returning;
             //  did you arrive at the perch
-            const auto [tl, br] = mutable_bat.GetBounds();
-            const IAABB area_above = {
-                .tl = IVec2::New(static_cast<int>(tl.x), static_cast<int>(tl.y) - 1),
-                .br = IVec2::New(static_cast<int>(br.x), static_cast<int>(tl.y)),
-            };
-            const std::vector<const Tile*> tiles_above_you =
-                state.stage.GetTilesInRectWc(area_above.tl, area_above.br);
-            const bool at_perch_or_roof = CollidableTileInList(tiles_above_you);
+            const bool at_perch_or_roof = IsAtPerchOrRoof(mutable_bat, state);
             if (at_perch_or_roof) {
                 mutable_bat.super_state = EntitySuperState::Idle;
                 mutable_bat.acc = Vec2::New(0.0F, 0.0F);
@@ -130,13 +151,27 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
 void StepEntityPhysicsAsBat(
     std::size_t entity_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    common::ApplyGravity(entity_idx, state, dt);
-    common::PrePartialEulerStep(entity_idx, state, dt);
     Entity& bat = state.entity_manager.entities[entity_idx];
     const EntitySuperState bat_super_state = bat.super_state;
+    const bool entered_idle_this_frame =
+        bat_super_state == EntitySuperState::Idle && bat.last_super_state != EntitySuperState::Idle;
+
+    if (entered_idle_this_frame) {
+        SnapBatToRoof(bat, state);
+    }
+
+    if (bat_super_state == EntitySuperState::Idle) {
+        bat.acc = Vec2::New(0.0F, 0.0F);
+        bat.vel = Vec2::New(0.0F, 0.0F);
+    } else {
+        common::ApplyGravity(entity_idx, state, dt);
+    }
+
+    common::PrePartialEulerStep(entity_idx, state, dt);
     if (bat.super_state == EntitySuperState::Pursuing ||
         bat.super_state == EntitySuperState::Returning) {
         bat.vel.x = std::clamp(bat.vel.x, -kChaseMaxSpeed, kChaseMaxSpeed);
@@ -145,7 +180,7 @@ void StepEntityPhysicsAsBat(
                bat.super_state == EntitySuperState::Stunned) {
         common::ApplyGroundFriction(entity_idx, state);
     }
-    common::DoTileAndEntityCollisions(entity_idx, state, audio);
+    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
     if (bat_super_state != EntitySuperState::Pursuing) {
     }
     common::PostPartialEulerStep(entity_idx, state, dt);

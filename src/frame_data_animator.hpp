@@ -11,10 +11,13 @@ struct FrameDataAnimator {
     float scale = 1.0F;
     float speed = 1.0F;
     bool animate = true;
+    bool loop = true;
+    bool finished = false;
 
     static FrameDataAnimator New(FrameDataId animation_id_value);
 
     bool HasAnimation() const;
+    bool IsFinished() const;
     void SetAnimation(FrameDataId animation_id_value);
     void SetForcedFrame(std::size_t frame_index);
     void SetSpeed(float speed_value);

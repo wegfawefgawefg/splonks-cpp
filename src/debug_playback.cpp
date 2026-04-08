@@ -616,6 +616,8 @@ bool ExportRecordingToTextFile(const DebugPlayback& debug, const Graphics& graph
                             << ", " << frame_data->sample_rect.h << ")\n";
                         out << "    draw_offset: (" << frame_data->draw_offset.x << ", "
                             << frame_data->draw_offset.y << ")\n";
+                        out << "    pbox: (" << frame_data->pbox.x << ", " << frame_data->pbox.y
+                            << ", " << frame_data->pbox.w << ", " << frame_data->pbox.h << ")\n";
                         out << "    cbox: (" << frame_data->cbox.x << ", " << frame_data->cbox.y
                             << ", " << frame_data->cbox.w << ", " << frame_data->cbox.h << ")\n";
                     }
@@ -734,6 +736,20 @@ void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphi
     }
     if (!debug.io_status.empty()) {
         ImGui::TextWrapped("%s", debug.io_status.c_str());
+    }
+
+    ImGui::Separator();
+    ImGui::TextUnformatted("Tuning");
+    ImGui::DragFloat2(
+        "Bat Hold Offset",
+        &graphics.debug_baseball_bat_hold_offset.x,
+        0.25F,
+        -32.0F,
+        32.0F,
+        "%.2f"
+    );
+    if (ImGui::Button("Reset Bat Hold Offset")) {
+        graphics.debug_baseball_bat_hold_offset = Vec2::New(5.0F, -10.0F);
     }
 
     if (debug.playback_active && !debug.recorded_snapshots.empty()) {
@@ -872,6 +888,11 @@ void DrawEntityInspector(DebugPlayback& debug, const State& state, const Graphic
                 ImGui::Text("Draw Offset: (%d, %d)",
                             frame_data->draw_offset.x,
                             frame_data->draw_offset.y);
+                ImGui::Text("PBox: (%d, %d, %d, %d)",
+                            frame_data->pbox.x,
+                            frame_data->pbox.y,
+                            frame_data->pbox.w,
+                            frame_data->pbox.h);
                 ImGui::Text("CBox: (%d, %d, %d, %d)",
                             frame_data->cbox.x,
                             frame_data->cbox.y,

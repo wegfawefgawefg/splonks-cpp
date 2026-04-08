@@ -7,6 +7,7 @@
 namespace splonks {
 
 struct Audio;
+struct Graphics;
 struct State;
 
 }
@@ -28,8 +29,20 @@ constexpr unsigned int kAttackDelay = 24;
 constexpr unsigned int kEquipDelay = 8;
 
 void SetEntityPlayer(Entity& entity);
-void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio, float dt);
-void StepEntityPhysicsAsPlayer(std::size_t entity_idx, State& state, Audio& audio, float dt);
+void StepEntityLogicAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
+void StepEntityPhysicsAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 void SyncEntitySpriteToDisplayStatePlayer(Entity& entity);
 
 } // namespace splonks::entities::player

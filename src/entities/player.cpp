@@ -38,7 +38,13 @@ void SetEntityPlayer(Entity& entity) {
     entity.frame_data_animator.SetAnimation(frame_data_ids::PlayerStanding);
 }
 
-void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio, float dt) {
+void StepEntityLogicAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
     (void)dt;
     {
         // SKIP CONDITIONS
@@ -151,7 +157,7 @@ void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio,
                 } else {
                     if (!player.IsHanging() && !player.climbing && player.holding_timer == 0) {
                         player.holding_timer = kDefaultHoldingTimer;
-                        const AABB aabb = player.GetAABB();
+                        const AABB aabb = common::GetContactAabbForEntity(player, graphics);
                         trying_to_pick_up_these =
                             state.sid.QueryExclude(aabb.tl, aabb.br, player.vid);
                     }
@@ -540,7 +546,7 @@ void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio,
     if (!loss_of_control) {
         Entity& player = state.entity_manager.entities[entity_idx];
         const bool player_grounded = player.grounded;
-        const AABB player_aabb = player.GetAABB();
+        const AABB player_aabb = common::GetContactAabbForEntity(player, graphics);
         const VID player_vid = player.vid;
         const Vec2 player_vel = player.vel;
 
@@ -587,7 +593,7 @@ void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio,
     if (!loss_of_control) {
         const Entity& player = state.entity_manager.entities[entity_idx];
         const VID player_vid = player.vid;
-        const AABB aabb = player.GetAABB();
+        const AABB aabb = common::GetContactAabbForEntity(player, graphics);
         const AABB player_jump_foot = {
             .tl = Vec2::New(aabb.tl.x, aabb.br.y - 2.0F),
             .br = aabb.br,
@@ -637,7 +643,7 @@ void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio,
     //  PICK UPS: MONEY, ETC
     {
         const Entity& player = state.entity_manager.entities[entity_idx];
-        const AABB aabb = player.GetAABB();
+        const AABB aabb = common::GetContactAabbForEntity(player, graphics);
         const VID player_vid = player.vid;
         const std::vector<VID> search_results = state.sid.QueryExclude(aabb.tl, aabb.br, player_vid);
         unsigned int money_gained = 0;
@@ -668,7 +674,13 @@ void StepEntityLogicAsPlayer(std::size_t entity_idx, State& state, Audio& audio,
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsPlayer(std::size_t entity_idx, State& state, Audio& audio, float dt) {
+void StepEntityPhysicsAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
     common::HangHandsStep(entity_idx, state);
     common::JumpingAndClimbingStep(entity_idx, state, audio);
 
@@ -693,7 +705,7 @@ void StepEntityPhysicsAsPlayer(std::size_t entity_idx, State& state, Audio& audi
             entity.vel.x *= 0.85F;
         }
     }
-    common::DoTileAndEntityCollisions(entity_idx, state, audio);
+    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
     common::PostPartialEulerStep(entity_idx, state, dt);
 }
 

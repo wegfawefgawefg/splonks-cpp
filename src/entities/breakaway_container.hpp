@@ -5,6 +5,7 @@
 namespace splonks {
 
 struct Audio;
+struct Graphics;
 struct State;
 
 }
@@ -16,6 +17,7 @@ void StepEntityLogicAsBreakawayContainer(std::size_t entity_idx, State& state, A
 void StepEntityPhysicsAsBreakawayContainer(
     std::size_t entity_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
     float dt
 );

@@ -36,8 +36,6 @@ namespace splonks {
         force every entity to implement is_burnable() for example. and the dyn table will take care of that for you.
 */
 void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
-    (void)graphics;
-
     // extract and step the player first, this is so held items and stuff are updated with the latest player pos.
     // also makes sense to do this first, since the player is the most important entity.
 
@@ -47,11 +45,23 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             const bool active = player->active;
             if (active) {
                 entities::common::CommonStep(state.player_vid->id, state, graphics, audio, dt);
-                entities::player::StepEntityLogicAsPlayer(state.player_vid->id, state, audio, dt);
+                entities::player::StepEntityLogicAsPlayer(
+                    state.player_vid->id,
+                    state,
+                    graphics,
+                    audio,
+                    dt
+                );
                 entities::common::CommonPostStep(state.player_vid->id, state, graphics, audio, dt);
             }
             if (has_physics) {
-                entities::player::StepEntityPhysicsAsPlayer(state.player_vid->id, state, audio, dt);
+                entities::player::StepEntityPhysicsAsPlayer(
+                    state.player_vid->id,
+                    state,
+                    graphics,
+                    audio,
+                    dt
+                );
             }
             entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
         }
@@ -97,7 +107,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 entities::rope::StepEntityLogicAsRope(entity_idx, state, audio, graphics);
                 break;
             case EntityType::BaseballBat:
-                entities::baseball_bat::StepBaseballBat(entity_idx, state, audio);
+                entities::baseball_bat::StepBaseballBat(entity_idx, state, graphics, audio);
                 break;
             case EntityType::MouseTrailer:
                 entities::mouse_trailer::StepEntityLogicAsMouseTrailer(entity_idx, state, audio);
@@ -117,37 +127,39 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                     entities::ghost_ball::StepEntityPhysicsAsGhostBall(entity_idx, state, dt);
                     break;
                 case EntityType::Bat:
-                    entities::bat::StepEntityPhysicsAsBat(entity_idx, state, audio, dt);
+                    entities::bat::StepEntityPhysicsAsBat(entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::Rock:
-                    entities::rock::StepEntityPhysicsAsRock(entity_idx, state, audio, dt);
+                    entities::rock::StepEntityPhysicsAsRock(entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::Pot:
                 case EntityType::Box:
                     entities::breakaway_container::StepEntityPhysicsAsBreakawayContainer(
-                        entity_idx, state, audio, dt);
+                        entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::Block:
-                    entities::block::StepEntityPhysicsAsBlock(entity_idx, state, audio, dt);
+                    entities::block::StepEntityPhysicsAsBlock(entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::Bomb:
-                    entities::bomb::StepEntityPhysicsAsBomb(entity_idx, state, audio, dt);
+                    entities::bomb::StepEntityPhysicsAsBomb(entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::JetPack:
-                    entities::jetpack::StepEntityPhysicsAsJetpack(entity_idx, state, audio, dt);
+                    entities::jetpack::StepEntityPhysicsAsJetpack(
+                        entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::Rope:
-                    entities::rope::StepEntityPhysicsAsRope(entity_idx, state, audio, dt);
+                    entities::rope::StepEntityPhysicsAsRope(entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::BaseballBat:
-                    entities::baseball_bat::StepEntityPhysicsAsBaseballBat(entity_idx, state, audio, dt);
+                    entities::baseball_bat::StepEntityPhysicsAsBaseballBat(
+                        entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::MouseTrailer:
                     entities::mouse_trailer::StepEntityPhysicsAsMouseTrailer(entity_idx, state, dt);
                     break;
                 case EntityType::Gold:
                 case EntityType::GoldStack:
-                    entities::money::StepEntityPhysicsAsMoney(entity_idx, state, audio, dt);
+                    entities::money::StepEntityPhysicsAsMoney(entity_idx, state, graphics, audio, dt);
                     break;
                 }
             }

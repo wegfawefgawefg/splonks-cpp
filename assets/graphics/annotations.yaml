@@ -15,12 +15,12 @@ sprites:
       x: 7
       y: 9
     tags: []
-    cbox:
+    pbox:
       x: 4
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 4
       y: 2
       w: 8
@@ -42,12 +42,12 @@ sprites:
       x: 7
       y: 9
     tags: []
-    cbox:
+    pbox:
       x: 4
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 4
       y: 3
       w: 8
@@ -69,12 +69,12 @@ sprites:
       x: 7
       y: 9
     tags: []
-    cbox:
+    pbox:
       x: 5
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 5
       y: 2
       w: 8
@@ -96,12 +96,12 @@ sprites:
       x: 7
       y: 9
     tags: []
-    cbox:
+    pbox:
       x: 5
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -123,12 +123,12 @@ sprites:
       x: 7
       y: 9
     tags: []
-    cbox:
+    pbox:
       x: 4
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 4
       y: 2
       w: 8
@@ -150,12 +150,12 @@ sprites:
       x: 4
       y: 4
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 8
       h: 7
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -177,12 +177,12 @@ sprites:
       x: 7
       y: 9
     tags: []
-    cbox:
+    pbox:
       x: 5
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 5
       y: 2
       w: 8
@@ -204,12 +204,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 5
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 5
       y: 2
       w: 8
@@ -231,12 +231,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 5
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 5
       y: 2
       w: 8
@@ -258,12 +258,12 @@ sprites:
       x: 6
       y: 5
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 12
       h: 12
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -279,22 +279,22 @@ sprites:
     frame: 0
     duration: 5
     offset:
-      x: 12
-      y: 3
+      x: 15
+      y: 13
     center:
       x: 0
       y: 0
     tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 4
     cbox:
       x: 0
       y: 0
       w: 12
       h: 4
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
     tile: false
   - path: "entities.png"
     aabb:
@@ -312,16 +312,16 @@ sprites:
       x: 4
       y: 1
     tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 4
     cbox:
       x: 0
       y: 0
       w: 12
       h: 4
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
     tile: false
   - path: "entities.png"
     aabb:
@@ -334,21 +334,21 @@ sprites:
     duration: 8
     offset:
       x: -4
-      y: 5
+      y: 15
     center:
       x: 0
       y: 0
     tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 2
     cbox:
       x: 0
       y: 0
       w: 12
       h: 2
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
     tile: false
   - path: "entities.png"
     aabb:
@@ -366,16 +366,16 @@ sprites:
       x: 5
       y: 7
     tags: []
-    cbox:
-      x: 1
-      y: -0
+    pbox:
+      x: 5
+      y: 2
       w: 8
       h: 14
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+    cbox:
+      x: 5
+      y: 2
+      w: 8
+      h: 14
     tile: false
   - path: "entities.png"
     aabb:
@@ -393,16 +393,16 @@ sprites:
       x: 5
       y: 7
     tags: []
-    cbox:
-      x: 1
-      y: -0
+    pbox:
+      x: 4
+      y: 2
       w: 8
       h: 14
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+    cbox:
+      x: 4
+      y: 2
+      w: 8
+      h: 14
     tile: false
   - path: "entities.png"
     aabb:
@@ -420,12 +420,12 @@ sprites:
       x: 7
       y: 11
     tags: []
-    cbox:
-      x: 0
-      y: 7
+    pbox:
+      x: 2
+      y: 10
       w: 14
       h: 6
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -447,12 +447,12 @@ sprites:
       x: 7
       y: 11
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 7
       w: 14
       h: 6
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -474,16 +474,16 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
-      x: 0
-      y: 0
-      w: 13
+    pbox:
+      x: 3
+      y: 6
+      w: 9
       h: 10
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+    cbox:
+      x: 3
+      y: 6
+      w: 9
+      h: 10
     tile: false
   - path: "entities.png"
     aabb:
@@ -501,16 +501,16 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
-      x: 0
-      y: 0
-      w: 13
+    pbox:
+      x: 3
+      y: 6
+      w: 9
       h: 10
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+    cbox:
+      x: 3
+      y: 6
+      w: 9
+      h: 10
     tile: false
   - path: "entities.png"
     aabb:
@@ -528,12 +528,12 @@ sprites:
       x: 2
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -555,12 +555,12 @@ sprites:
       x: 2
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -582,12 +582,12 @@ sprites:
       x: 2
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -609,12 +609,12 @@ sprites:
       x: 2
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -636,12 +636,12 @@ sprites:
       x: 2
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -663,12 +663,12 @@ sprites:
       x: 2
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -690,12 +690,12 @@ sprites:
       x: 2
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -717,12 +717,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -744,12 +744,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -771,12 +771,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -798,12 +798,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -825,12 +825,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -852,12 +852,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -879,12 +879,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -906,12 +906,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -933,12 +933,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -960,12 +960,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -987,12 +987,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1014,12 +1014,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1041,12 +1041,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1068,12 +1068,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1095,12 +1095,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1122,12 +1122,12 @@ sprites:
       x: 1
       y: 1
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 3
       h: 2
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1149,12 +1149,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 6
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1176,12 +1176,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 1
       y: 2
       w: 8
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1203,12 +1203,12 @@ sprites:
       x: 3
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 6
       h: 5
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1230,12 +1230,12 @@ sprites:
       x: 3
       y: 2
     tags: []
-    cbox:
+    pbox:
       x: 1
       y: 0
       w: 5
       h: 5
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1257,12 +1257,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1284,12 +1284,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1311,12 +1311,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 2
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1338,12 +1338,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 2
       y: 2
       w: 8
       h: 14
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1365,14 +1365,14 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 1
       y: 0
       w: 9
       h: 10
-    hbox:
+    cbox:
       x: 1
-      y: -0
+      y: 0
       w: 9
       h: 10
     tile: false
@@ -1392,14 +1392,14 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 1
       y: 0
       w: 9
       h: 10
-    hbox:
+    cbox:
       x: 1
-      y: -0
+      y: 0
       w: 9
       h: 10
     tile: false
@@ -1419,12 +1419,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 1
       y: 0
       w: 6
       h: 10
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 7
@@ -1433,9 +1433,9 @@ sprites:
   - path: "entities.png"
     aabb:
       x: 17
-      y: 139
-      w: 6
-      h: 5
+      y: 137
+      w: 8
+      h: 7
     name: "live_grenade"
     frame: 0
     duration: 1
@@ -1446,14 +1446,14 @@ sprites:
       x: 2
       y: 3
     tags: []
-    cbox:
+    pbox:
       x: 0
-      y: 1
+      y: 3
       w: 4
       h: 4
-    hbox:
-      x: -0
-      y: 1
+    cbox:
+      x: 0
+      y: 3
       w: 4
       h: 4
     tile: false
@@ -1468,17 +1468,17 @@ sprites:
     duration: 1
     offset:
       x: 0
-      y: 0
+      y: 2
     center:
       x: 2
       y: 4
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 3
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 2
       w: 5
@@ -1500,12 +1500,12 @@ sprites:
       x: 2
       y: 3
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 1
       w: 4
       h: 4
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1527,12 +1527,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 1
       w: 6
       h: 9
-    hbox:
+    cbox:
       x: 0
       y: 1
       w: 6
@@ -1554,16 +1554,16 @@ sprites:
       x: 6
       y: 8
     tags: []
+    pbox:
+      x: 3
+      y: 6
+      w: 6
+      h: 4
     cbox:
       x: 3
-      y: 6
+      y: 5
       w: 6
-      h: 4
-    hbox:
-      x: 3
-      y: 6
-      w: 6
-      h: 4
+      h: 5
     tile: false
   - path: "entities.png"
     aabb:
@@ -1581,16 +1581,16 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 1
       y: 1
       w: 6
       h: 4
-    hbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+    cbox:
+      x: 1
+      y: 1
+      w: 6
+      h: 5
     tile: false
   - path: "entities.png"
     aabb:
@@ -1608,12 +1608,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 1
       w: 13
       h: 3
-    hbox:
+    cbox:
       x: 0
       y: 1
       w: 13
@@ -1635,12 +1635,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1662,12 +1662,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1689,12 +1689,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1716,12 +1716,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1743,12 +1743,12 @@ sprites:
       x: 4
       y: 3
     tags: []
-    cbox:
+    pbox:
       x: 1
       y: 1
       w: 6
       h: 5
-    hbox:
+    cbox:
       x: 1
       y: 1
       w: 6
@@ -1770,12 +1770,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1797,12 +1797,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1824,12 +1824,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1851,12 +1851,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1878,12 +1878,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1905,12 +1905,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1932,12 +1932,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1959,12 +1959,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -1986,12 +1986,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2013,12 +2013,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2040,12 +2040,12 @@ sprites:
       x: 8
       y: 8
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 16
       h: 16
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2067,12 +2067,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2094,12 +2094,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2121,12 +2121,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2148,12 +2148,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2175,12 +2175,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2202,12 +2202,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2229,12 +2229,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2256,12 +2256,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2283,12 +2283,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2310,12 +2310,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2337,12 +2337,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2364,12 +2364,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2391,12 +2391,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2418,12 +2418,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2445,12 +2445,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2472,12 +2472,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2499,12 +2499,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2526,12 +2526,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2553,12 +2553,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 16
       h: 16
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2580,12 +2580,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2607,12 +2607,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2634,12 +2634,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2661,12 +2661,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2688,12 +2688,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2715,12 +2715,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2742,12 +2742,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2769,12 +2769,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2796,12 +2796,12 @@ sprites:
       x: 8
       y: 8
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 16
       h: 16
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2823,12 +2823,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2850,12 +2850,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2877,12 +2877,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2904,12 +2904,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2931,12 +2931,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2958,12 +2958,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -2985,12 +2985,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3012,12 +3012,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3039,12 +3039,12 @@ sprites:
       x: 8
       y: 8
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 16
       h: 16
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3066,12 +3066,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3093,12 +3093,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3120,12 +3120,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3147,12 +3147,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3174,12 +3174,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3201,12 +3201,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3228,12 +3228,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3255,12 +3255,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 0
       h: 0
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0
@@ -3282,12 +3282,12 @@ sprites:
       x: 0
       y: 0
     tags: []
-    cbox:
+    pbox:
       x: 0
       y: 0
       w: 16
       h: 16
-    hbox:
+    cbox:
       x: 0
       y: 0
       w: 0

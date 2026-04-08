@@ -23,6 +23,8 @@ struct RawFrameData {
     IVec2 offset = IVec2::New(0, 0);
     IVec2 center = IVec2::New(0, 0);
     std::vector<std::string> tags;
+    FrameRect pbox;
+    bool has_pbox = false;
     FrameRect cbox;
     bool has_cbox = false;
     bool tile = false;

@@ -14,6 +14,12 @@ namespace splonks::entities::rope {
 
 void SetEntityRope(Entity& entity);
 void StepEntityLogicAsRope(std::size_t entity_idx, State& state, Audio& audio, Graphics& graphics);
-void StepEntityPhysicsAsRope(std::size_t entity_idx, State& state, Audio& audio, float dt);
+void StepEntityPhysicsAsRope(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 
 } // namespace splonks::entities::rope

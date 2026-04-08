@@ -1,6 +1,7 @@
 #include "render_debug.hpp"
 
 #include "entity.hpp"
+#include "entities/common.hpp"
 #include "graphics.hpp"
 #include "room.hpp"
 #include "state.hpp"
@@ -220,19 +221,29 @@ void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, cons
             continue;
         }
 
-        const AABB aabb = entity.GetAABB();
-        const Vec2 size = aabb.br - aabb.tl + Vec2::New(1.0F, 1.0F);
-        const SDL_FRect rect = WorldRectToScreen(graphics, presentation, aabb.tl, size);
+        const AABB pbox_aabb = entity.GetAABB();
+        const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
+        const SDL_FRect pbox_rect =
+            WorldRectToScreen(graphics, presentation, pbox_aabb.tl, pbox_size);
+        const AABB cbox_aabb = entities::common::GetContactAabbForEntity(entity, graphics);
+        const Vec2 cbox_size = cbox_aabb.br - cbox_aabb.tl + Vec2::New(1.0F, 1.0F);
+        const SDL_FRect cbox_rect =
+            WorldRectToScreen(graphics, presentation, cbox_aabb.tl, cbox_size);
 
-        SDL_Color color = SDL_Color{255, 255, 0, 255};
+        SDL_Color pbox_color = SDL_Color{255, 255, 0, 255};
+        SDL_Color cbox_color = SDL_Color{64, 224, 255, 255};
         if (entity.type_ == EntityType::Player) {
-            color = SDL_Color{64, 255, 64, 255};
+            pbox_color = SDL_Color{64, 255, 64, 255};
+            cbox_color = SDL_Color{64, 160, 255, 255};
         } else if (!entity.can_collide) {
-            color = SDL_Color{255, 180, 64, 255};
+            pbox_color = SDL_Color{255, 180, 64, 255};
+            cbox_color = SDL_Color{255, 96, 224, 255};
         }
 
-        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-        SDL_RenderRect(renderer, &rect);
+        SDL_SetRenderDrawColor(renderer, pbox_color.r, pbox_color.g, pbox_color.b, pbox_color.a);
+        SDL_RenderRect(renderer, &pbox_rect);
+        SDL_SetRenderDrawColor(renderer, cbox_color.r, cbox_color.g, cbox_color.b, cbox_color.a);
+        SDL_RenderRect(renderer, &cbox_rect);
     }
 }
 

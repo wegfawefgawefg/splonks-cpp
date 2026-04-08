@@ -5,6 +5,7 @@
 namespace splonks {
 
 struct Audio;
+struct Graphics;
 struct State;
 
 }
@@ -15,7 +16,13 @@ constexpr IVec2 kSize = {8, 8};
 
 void SetEntityMoney(Entity& entity, EntityType type_);
 void StepEntityLogicAsMoney(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsMoney(std::size_t entity_idx, State& state, Audio& audio, float dt);
+void StepEntityPhysicsAsMoney(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 Vec2 GetSize(EntityType type_);
 
 } // namespace splonks::entities::money

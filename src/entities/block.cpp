@@ -144,12 +144,13 @@ void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) 
 void StepEntityPhysicsAsBlock(
     std::size_t entity_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     common::ApplyGravity(entity_idx, state, dt);
     common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, audio);
+    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
     common::ApplyGroundFriction(entity_idx, state);
     common::PostPartialEulerStep(entity_idx, state, dt);
 }

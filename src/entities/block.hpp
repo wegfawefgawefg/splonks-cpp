@@ -5,6 +5,7 @@
 namespace splonks {
 
 struct Audio;
+struct Graphics;
 struct State;
 
 }
@@ -15,6 +16,12 @@ constexpr float kBlockPushAcc = 0.4F;
 
 void SetEntityBlock(Entity& entity);
 void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsBlock(std::size_t entity_idx, State& state, Audio& audio, float dt);
+void StepEntityPhysicsAsBlock(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 
 } // namespace splonks::entities::block

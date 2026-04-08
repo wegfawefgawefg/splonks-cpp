@@ -37,6 +37,7 @@ State State::New() {
     state.next_stage = StageType::Test1;
     state.player_vid.reset();
     state.mouse_trailer_vid.reset();
+    state.contact_cooldowns.clear();
     return state;
 }
 
@@ -53,6 +54,51 @@ void State::RebuildSid() {
             sid.Insert(entity.vid, entity.pos, entity.size);
         }
     }
+}
+
+void State::StepContactCooldowns() {
+    std::vector<ContactCooldownEntry> kept_cooldowns;
+    kept_cooldowns.reserve(contact_cooldowns.size());
+    for (const ContactCooldownEntry& entry : contact_cooldowns) {
+        if (entry.expires_on_stage_frame > stage_frame) {
+            kept_cooldowns.push_back(entry);
+        }
+    }
+    contact_cooldowns = std::move(kept_cooldowns);
+}
+
+bool State::HasContactCooldown(
+    const VID& source_vid,
+    const VID& target_vid,
+    ContactInteractionKind kind
+) const {
+    for (const ContactCooldownEntry& entry : contact_cooldowns) {
+        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void State::AddContactCooldown(
+    const VID& source_vid,
+    const VID& target_vid,
+    ContactInteractionKind kind,
+    std::uint32_t duration
+) {
+    for (ContactCooldownEntry& entry : contact_cooldowns) {
+        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
+            entry.expires_on_stage_frame = stage_frame + duration;
+            return;
+        }
+    }
+
+    contact_cooldowns.push_back(ContactCooldownEntry{
+        .source_vid = source_vid,
+        .target_vid = target_vid,
+        .kind = kind,
+        .expires_on_stage_frame = stage_frame + duration,
+    });
 }
 
 bool IsStageWon(const State& state) {

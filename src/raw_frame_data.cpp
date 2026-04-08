@@ -14,6 +14,7 @@ enum class NestedField {
     Aabb,
     Offset,
     Center,
+    Pbox,
     Cbox,
 };
 
@@ -50,6 +51,10 @@ std::string StripQuotes(const std::string& value) {
         return value.substr(1, value.size() - 2);
     }
     return value;
+}
+
+std::string ParseTrimmedString(const std::string& value) {
+    return Trim(StripQuotes(value));
 }
 
 std::pair<std::string, std::string> SplitKeyValue(
@@ -118,7 +123,7 @@ std::vector<std::string> ParseTags(
     while (std::getline(stream, part, ',')) {
         const std::string tag = StripQuotes(Trim(part));
         if (!tag.empty()) {
-            tags.push_back(tag);
+            tags.push_back(Trim(tag));
         }
     }
     return tags;
@@ -156,6 +161,18 @@ void AssignNestedInt(
             frame_data.center.y = value;
         }
         break;
+    case NestedField::Pbox:
+        frame_data.has_pbox = true;
+        if (key == "x") {
+            frame_data.pbox.x = value;
+        } else if (key == "y") {
+            frame_data.pbox.y = value;
+        } else if (key == "w") {
+            frame_data.pbox.w = value;
+        } else if (key == "h") {
+            frame_data.pbox.h = value;
+        }
+        break;
     case NestedField::Cbox:
         frame_data.has_cbox = true;
         if (key == "x") {
@@ -181,9 +198,9 @@ void AssignFrameField(
     int line_number
 ) {
     if (key == "path") {
-        frame_data.path = StripQuotes(value);
+        frame_data.path = ParseTrimmedString(value);
     } else if (key == "name") {
-        frame_data.name = StripQuotes(value);
+        frame_data.name = ParseTrimmedString(value);
     } else if (key == "frame") {
         frame_data.frame = ParseInt(value, yaml_path, line_number);
     } else if (key == "duration") {
@@ -260,6 +277,8 @@ RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
                     nested_field = NestedField::Offset;
                 } else if (key == "center") {
                     nested_field = NestedField::Center;
+                } else if (key == "pbox") {
+                    nested_field = NestedField::Pbox;
                 } else if (key == "cbox") {
                     nested_field = NestedField::Cbox;
                 } else {

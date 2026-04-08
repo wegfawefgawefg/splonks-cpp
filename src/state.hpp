@@ -29,6 +29,17 @@ enum class Mode {
 
 constexpr std::uint32_t kStageSettleFrames = 100;
 
+enum class ContactInteractionKind {
+    Harm,
+};
+
+struct ContactCooldownEntry {
+    VID source_vid;
+    VID target_vid;
+    ContactInteractionKind kind = ContactInteractionKind::Harm;
+    std::uint32_t expires_on_stage_frame = 0;
+};
+
 struct State {
     Mode mode = Mode::Title;
     Settings settings;
@@ -64,10 +75,23 @@ struct State {
     Stage stage;
     std::optional<VID> player_vid;
     std::optional<VID> mouse_trailer_vid;
+    std::vector<ContactCooldownEntry> contact_cooldowns;
 
     static State New();
     void SetMode(Mode new_mode);
     void RebuildSid();
+    void StepContactCooldowns();
+    bool HasContactCooldown(
+        const VID& source_vid,
+        const VID& target_vid,
+        ContactInteractionKind kind
+    ) const;
+    void AddContactCooldown(
+        const VID& source_vid,
+        const VID& target_vid,
+        ContactInteractionKind kind,
+        std::uint32_t duration
+    );
 };
 
 bool IsStageWon(const State& state);

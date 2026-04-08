@@ -1,6 +1,7 @@
 #include "render_tiles_and_entities.hpp"
 
 #include "entity.hpp"
+#include "entities/common.hpp"
 #include "graphics.hpp"
 #include "special_effects/special_effect.hpp"
 #include "state.hpp"
@@ -188,30 +189,8 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                 );
                 const Vec2 sprite_scaled_size =
                     sprite_world_size * entity.frame_data_animator.scale;
-                const Vec2 collider_tl = entity.GetAABB().tl;
-
-                const Vec2 draw_offset = Vec2::New(
-                    static_cast<float>(frame_data.draw_offset.x),
-                    static_cast<float>(frame_data.draw_offset.y)
-                );
-                const Vec2 cbox_offset = Vec2::New(
-                    static_cast<float>(frame_data.cbox.x),
-                    static_cast<float>(frame_data.cbox.y)
-                );
-                Vec2 render_position = collider_tl;
-                if (entity.facing == LeftOrRight::Left) {
-                    render_position = collider_tl - cbox_offset + draw_offset;
-                } else {
-                    const float mirrored_cbox_x =
-                        static_cast<float>(frame_data.sample_rect.w - frame_data.cbox.x -
-                                           frame_data.cbox.w);
-                    render_position = collider_tl -
-                                      Vec2::New(
-                                          mirrored_cbox_x,
-                                          static_cast<float>(frame_data.cbox.y)
-                                      ) +
-                                      draw_offset;
-                }
+                const Vec2 render_position =
+                    entities::common::GetSpriteTopLeftForEntity(entity, frame_data);
 
                 const SDL_FRect src{
                     static_cast<float>(frame_data.sample_rect.x),

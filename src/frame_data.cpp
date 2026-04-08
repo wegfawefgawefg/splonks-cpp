@@ -7,7 +7,7 @@ namespace splonks {
 
 namespace {
 
-FrameRect DefaultCboxFromSampleRect(const FrameRect& sample_rect) {
+FrameRect DefaultBoxFromSampleRect(const FrameRect& sample_rect) {
     return FrameRect{
         .x = 0,
         .y = 0,
@@ -47,8 +47,9 @@ FrameData ToFrameData(const RawFrameData& raw_frame_data) {
     frame_data.draw_offset = raw_frame_data.offset;
     frame_data.center = raw_frame_data.center;
     frame_data.tags = raw_frame_data.tags;
-    frame_data.cbox =
-        raw_frame_data.has_cbox ? raw_frame_data.cbox : DefaultCboxFromSampleRect(raw_frame_data.aabb);
+    frame_data.pbox =
+        raw_frame_data.has_pbox ? raw_frame_data.pbox : DefaultBoxFromSampleRect(raw_frame_data.aabb);
+    frame_data.cbox = raw_frame_data.has_cbox ? raw_frame_data.cbox : frame_data.pbox;
     frame_data.tile = raw_frame_data.tile;
     return frame_data;
 }

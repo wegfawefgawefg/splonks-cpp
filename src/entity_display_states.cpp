@@ -47,14 +47,10 @@ std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplaySta
     case EntityType::BaseballBat:
         switch (entity.display_state) {
         case EntityDisplayState::Neutral:
-            return DisplayStateFrameDataSelection{
-                frame_data_ids::BaseballBatSwing, false, true, 0};
         case EntityDisplayState::NeutralHolding:
-            return DisplayStateFrameDataSelection{
-                frame_data_ids::BaseballBatSwing, false, true, 1};
         case EntityDisplayState::Walk:
             return DisplayStateFrameDataSelection{
-                frame_data_ids::BaseballBatSwing, false, true, 2};
+                frame_data_ids::BaseballBatSwing, true, false, 0};
         default:
             return std::nullopt;
         }

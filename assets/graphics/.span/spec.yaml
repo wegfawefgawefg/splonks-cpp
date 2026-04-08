@@ -9,6 +9,6 @@
   properties:
     center: point
     tags: string[]
+    pbox: rect
     cbox: rect
-    hbox: rect
     tile: boolean

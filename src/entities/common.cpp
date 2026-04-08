@@ -1,5 +1,6 @@
 #include "entities/common.hpp"
 
+#include "entities/baseball_bat.hpp"
 #include "entity_display_states.hpp"
 #include "entities/player.hpp"
 #include "on_damage_effects.hpp"
@@ -13,7 +14,7 @@
 
 namespace splonks::entities::common {
 
-namespace {
+constexpr std::uint32_t kHarmContactCooldownFrames = 8;
 
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics) {
     if (!entity.frame_data_animator.HasAnimation()) {
@@ -34,6 +35,59 @@ const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphi
     return &graphics.frame_data_db.frames[animation->frame_indices[frame_index]];
 }
 
+Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data) {
+    const Vec2 draw_offset = Vec2::New(
+        static_cast<float>(frame_data.draw_offset.x),
+        static_cast<float>(frame_data.draw_offset.y)
+    );
+    const Vec2 pbox_offset = Vec2::New(
+        static_cast<float>(frame_data.pbox.x),
+        static_cast<float>(frame_data.pbox.y)
+    );
+
+    if (entity.facing == LeftOrRight::Left) {
+        return entity.pos - pbox_offset + draw_offset;
+    }
+
+    const float mirrored_pbox_x =
+        static_cast<float>(frame_data.sample_rect.w - frame_data.pbox.x - frame_data.pbox.w);
+    Vec2 facing_adjusted_draw_offset = draw_offset;
+    if (entity.type_ == EntityType::BaseballBat) {
+        facing_adjusted_draw_offset = Vec2::New(-draw_offset.x, draw_offset.y);
+    }
+    return entity.pos - Vec2::New(mirrored_pbox_x, static_cast<float>(frame_data.pbox.y)) +
+           facing_adjusted_draw_offset;
+}
+
+AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics) {
+    const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
+    if (frame_data == nullptr) {
+        return entity.GetAABB();
+    }
+    if (frame_data->cbox.w <= 0 || frame_data->cbox.h <= 0) {
+        return entity.GetAABB();
+    }
+
+    const Vec2 sprite_tl = GetSpriteTopLeftForEntity(entity, *frame_data);
+    float contact_x = static_cast<float>(frame_data->cbox.x);
+    if (entity.facing == LeftOrRight::Right) {
+        contact_x =
+            static_cast<float>(frame_data->sample_rect.w - frame_data->cbox.x - frame_data->cbox.w);
+    }
+
+    const Vec2 contact_tl = sprite_tl + Vec2::New(contact_x, static_cast<float>(frame_data->cbox.y));
+    return AABB::New(
+        contact_tl,
+        contact_tl + Vec2::New(
+                         static_cast<float>(frame_data->cbox.w),
+                         static_cast<float>(frame_data->cbox.h)
+                     ) -
+            Vec2::New(1.0F, 1.0F)
+    );
+}
+
+namespace {
+
 void ApplyFrameDataGeometryToEntity(std::size_t entity_idx, State& state, const Graphics& graphics) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
@@ -41,17 +95,22 @@ void ApplyFrameDataGeometryToEntity(std::size_t entity_idx, State& state, const 
         return;
     }
 
-    if (frame_data->cbox.w <= 0 || frame_data->cbox.h <= 0) {
+    if (frame_data->pbox.w <= 0 || frame_data->pbox.h <= 0) {
         return;
     }
 
     entity.size = Vec2::New(
-        static_cast<float>(frame_data->cbox.w),
-        static_cast<float>(frame_data->cbox.h)
+        static_cast<float>(frame_data->pbox.w),
+        static_cast<float>(frame_data->pbox.h)
     );
 }
 
-bool MaybeHurtAndStunOnContactAsProjectile(std::size_t entity_idx, State& state, Audio& audio);
+bool MaybeHurtAndStunOnContactAsProjectile(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+);
 
 AABB GetAabbAtPosition(const Entity& entity, const Vec2& pos) {
     return AABB::New(pos, pos + entity.size - Vec2::New(1.0F, 1.0F));
@@ -201,11 +260,55 @@ void ResolveBlockingOverlap(
     }
 }
 
+void ApplySweptContactInteractions(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!entity.active) {
+        return;
+    }
+
+    for (std::size_t other_entity_idx = 0; other_entity_idx < state.entity_manager.entities.size();
+         ++other_entity_idx) {
+        if (other_entity_idx == entity_idx) {
+            continue;
+        }
+        const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
+        if (!other_entity.active) {
+            continue;
+        }
+
+        if (entity.type_ == EntityType::BaseballBat) {
+            baseball_bat::TryApplyBatContactToEntity(
+                entity_idx,
+                other_entity_idx,
+                state,
+                graphics,
+                audio
+            );
+        }
+        if (other_entity.type_ == EntityType::BaseballBat) {
+            baseball_bat::TryApplyBatContactToEntity(
+                other_entity_idx,
+                entity_idx,
+                state,
+                graphics,
+                audio
+            );
+        }
+    }
+}
+
 void MoveEntityPixelStep(
     std::size_t entity_idx,
     State& state,
     bool check_tiles,
-    bool check_entities
+    bool check_entities,
+    Graphics* graphics,
+    Audio* audio
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     const Vec2 start_pos = entity.pos;
@@ -225,6 +328,9 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr && audio != nullptr) {
+                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+            }
         }
     } else if (move_x < 0) {
         for (int i = 0; i < -move_x; ++i) {
@@ -236,6 +342,9 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr && audio != nullptr) {
+                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+            }
         }
     }
 
@@ -249,6 +358,9 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr && audio != nullptr) {
+                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+            }
         }
     } else if (move_y < 0) {
         for (int i = 0; i < -move_y; ++i) {
@@ -260,6 +372,9 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr && audio != nullptr) {
+                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+            }
         }
     }
 
@@ -334,11 +449,16 @@ void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
     }
 }
 
-void MaybeHurtAndStunOnContact(std::size_t entity_idx, State& state, Audio& audio) {
+void MaybeHurtAndStunOnContact(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
     // HURT and/or STUN ON CONTACT
     const Entity& entity = state.entity_manager.entities[entity_idx];
     const VID entity_vid = entity.vid;
-    const AABB entity_aabb = entity.GetAABB();
+    const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
     const Vec2 entity_pos = entity.pos;
     const EntitySuperState super_state = entity.super_state;
     const bool hurt_on_contact = entity.hurt_on_contact;
@@ -360,9 +480,13 @@ void MaybeHurtAndStunOnContact(std::size_t entity_idx, State& state, Audio& audi
                 continue;
             }
             if (Entity* const other_entity = state.entity_manager.GetEntityMut(vid)) {
+                const AABB other_aabb = GetContactAabbForEntity(*other_entity, graphics);
+                if (!AabbsIntersect(entity_aabb, other_aabb)) {
+                    continue;
+                }
                 // skip a player, if collision with bottom quarter of players body
                 if (other_entity->type_ == EntityType::Player) {
-                    const AABB player_aabb = other_entity->GetAABB();
+                    const AABB player_aabb = other_aabb;
                     const AABB player_foot = {
                         .tl = Vec2::New(player_aabb.tl.x, player_aabb.br.y - 4.0F),
                         .br = player_aabb.br,
@@ -380,11 +504,24 @@ void MaybeHurtAndStunOnContact(std::size_t entity_idx, State& state, Audio& audi
                          other_entity->alignment == Alignment::Ally) ||
                         (alignment == Alignment::Neutral);
                     if (has_correct_alignment) {
+                        if (state.HasContactCooldown(
+                                entity.vid,
+                                other_entity->vid,
+                                ContactInteractionKind::Harm
+                            )) {
+                            continue;
+                        }
                         const DamageResult damage_result =
                             TryToDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, 1);
                         switch (damage_result) {
                         case DamageResult::Died:
                         case DamageResult::Hurt:
+                            state.AddContactCooldown(
+                                entity.vid,
+                                other_entity->vid,
+                                ContactInteractionKind::Harm,
+                                kHarmContactCooldownFrames
+                            );
                             break;
                         case DamageResult::None:
                             break;
@@ -404,24 +541,30 @@ void MaybeHurtAndStunOnContact(std::size_t entity_idx, State& state, Audio& audi
 void MaybeHurtAndStunAsOnContactHurtfulEntityBodyOrProjectile(
     std::size_t entity_idx,
     State& state,
+    const Graphics& graphics,
     Audio& audio
 ) {
-    MaybeHurtAndStunOnContact(entity_idx, state, audio);
+    MaybeHurtAndStunOnContact(entity_idx, state, graphics, audio);
     const Entity& entity = state.entity_manager.entities[entity_idx];
     if (entity.super_state == EntitySuperState::Dead ||
         entity.super_state == EntitySuperState::Stunned) {
-        MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, audio);
+        MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, graphics, audio);
     }
 }
 
-void ApplyHurtOnContact(std::size_t entity_idx, State& state, Audio& audio) {
+void ApplyHurtOnContact(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
     //TODO: subdivide into living and nonliving or something to simplify this
     if (entity.hurt_on_contact) {
-        MaybeHurtAndStunAsOnContactHurtfulEntityBodyOrProjectile(entity_idx, state, audio);
+        MaybeHurtAndStunAsOnContactHurtfulEntityBodyOrProjectile(entity_idx, state, graphics, audio);
     } else if (entity.alignment == Alignment::Ally) {
     } else {
-        MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, audio);
+        MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, graphics, audio);
     }
 }
 
@@ -531,7 +674,12 @@ SoundEffect GetProjectileCollisionSound(EntityType type_) {
     }
 }
 
-bool MaybeHurtAndStunOnContactAsProjectile(std::size_t entity_idx, State& state, Audio& audio) {
+bool MaybeHurtAndStunOnContactAsProjectile(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
     if (state.stage_frame < kStageSettleFrames) {
         return false;
     }
@@ -539,7 +687,7 @@ bool MaybeHurtAndStunOnContactAsProjectile(std::size_t entity_idx, State& state,
     // HURT and/or STUN ON CONTACT
     const Entity& entity = state.entity_manager.entities[entity_idx];
     const VID entity_vid = entity.vid;
-    const AABB entity_aabb = entity.GetAABB();
+    const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
     const EntityType entity_type = entity.type_;
     const std::optional<VID> thrown_by = entity.thrown_by;
     const Vec2 entity_vel = entity.vel;
@@ -562,13 +710,30 @@ bool MaybeHurtAndStunOnContactAsProjectile(std::size_t entity_idx, State& state,
             continue;
         }
         if (Entity* const other_entity = state.entity_manager.GetEntityMut(vid)) {
+            const AABB other_aabb = GetContactAabbForEntity(*other_entity, graphics);
+            if (!AabbsIntersect(entity_aabb, other_aabb)) {
+                continue;
+            }
             if (other_entity->can_collide) {
+                if (state.HasContactCooldown(
+                        entity.vid,
+                        other_entity->vid,
+                        ContactInteractionKind::Harm
+                    )) {
+                    continue;
+                }
                 hit = true;
                 const DamageResult damage_result =
                     TryToDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, 1);
                 switch (damage_result) {
                 case DamageResult::Hurt:
                 case DamageResult::Died: {
+                    state.AddContactCooldown(
+                        entity.vid,
+                        other_entity->vid,
+                        ContactInteractionKind::Harm,
+                        kHarmContactCooldownFrames
+                    );
                     const SoundEffect sound_effect = GetProjectileCollisionSound(entity_type);
                     audio.PlaySoundEffect(sound_effect);
                     break;
@@ -599,11 +764,10 @@ void CommonStep(
     DieIfDead(entity_idx, state, audio);
     StepStunTimer(entity_idx, state);
     DoThrownByStep(entity_idx, state); // TODO REVIEW THIS
-    ApplyHurtOnContact(entity_idx, state, audio);
+    ApplyHurtOnContact(entity_idx, state, graphics, audio);
     DieIfFootInSpikes(entity_idx, state, audio);
     DoDamagedEffect(entity_idx, state, audio);
     DoSuperStateChangedEffect(entity_idx, state, audio);
-    (void)graphics;
     (void)dt;
 }
 
@@ -722,7 +886,7 @@ void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& gr
 
 void EulerStep(std::size_t entity_idx, State& state, float dt) {
     PrePartialEulerStep(entity_idx, state, dt);
-    MoveEntityPixelStep(entity_idx, state, false, false);
+    MoveEntityPixelStep(entity_idx, state, false, false, nullptr, nullptr);
     PostPartialEulerStep(entity_idx, state, dt);
 }
 
@@ -1104,13 +1268,17 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     }
 }
 
-void DoTileAndEntityCollisions(std::size_t entity_idx, State& state, Audio& audio) {
-    (void)audio;
+void DoTileAndEntityCollisions(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
     Entity& entity = state.entity_manager.entities[entity_idx];
 
     entity.collided_last_frame = entity.collided;
     entity.collided = false;
-    MoveEntityPixelStep(entity_idx, state, true, true);
+    MoveEntityPixelStep(entity_idx, state, true, true, &graphics, &audio);
     entity.collided |= entity.grounded;
 }
 
@@ -1118,7 +1286,7 @@ void DoTileCollisions(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.collided_last_frame = entity.collided;
     entity.collided = false;
-    MoveEntityPixelStep(entity_idx, state, true, false);
+    MoveEntityPixelStep(entity_idx, state, true, false, nullptr, nullptr);
 }
 
 void DoExplosion(std::size_t entity_idx, Vec2 center, float size, State& state, Audio& audio) {
