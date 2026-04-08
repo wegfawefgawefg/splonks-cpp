@@ -15,6 +15,10 @@
 namespace splonks::entities::common {
 
 constexpr std::uint32_t kHarmContactCooldownFrames = 8;
+constexpr std::uint32_t kHangCountMax = 3;
+constexpr std::uint32_t kHangDropCooldownFrames = 5;
+constexpr std::uint32_t kHangGloveDropCooldownFrames = 10;
+constexpr std::uint32_t kHangWallReleaseCooldownFrames = 4;
 
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics) {
     if (!entity.frame_data_animator.HasAnimation()) {
@@ -197,16 +201,6 @@ bool IsBlockingAabbForEntity(
     return false;
 }
 
-HangHandBounds GetHangHandBoundsAtPosition(const Entity& entity, const Vec2& pos) {
-    const Vec2 right_edge = pos + Vec2::New(entity.size.x, 0.0F);
-    HangHandBounds hang_hands;
-    hang_hands.left_tl = pos - Entity::kHangHandSize;
-    hang_hands.left_br = pos;
-    hang_hands.right_tl = right_edge - Vec2::New(0.0F, Entity::kHangHandSize.y);
-    hang_hands.right_br = right_edge + Vec2::New(Entity::kHangHandSize.x, 0.0F);
-    return hang_hands;
-}
-
 bool IsImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
     for (const Entity& other : state.entity_manager.entities) {
         if (!other.active || other.vid == self_vid || !other.impassable) {
@@ -241,41 +235,36 @@ bool IsBlockedForHangProbe(
     return false;
 }
 
-std::optional<int> FindFirstBlockedHangRow(
-    const Vec2& tl,
-    const Vec2& br,
-    const State& state,
-    bool check_tiles,
-    bool check_entities,
-    VID self_vid
-) {
-    const int start_y = static_cast<int>(std::floor(tl.y));
-    const int end_y = static_cast<int>(std::ceil(br.y));
-    for (int y = start_y; y <= end_y; ++y) {
-        const Vec2 row_tl = Vec2::New(tl.x, static_cast<float>(y));
-        const Vec2 row_br = Vec2::New(br.x, static_cast<float>(y));
-        if (IsBlockedForHangProbe(row_tl, row_br, state, check_tiles, check_entities, self_vid)) {
-            return y;
-        }
+bool EntityHasHangGloves(const Entity& entity, const State& state) {
+    if (entity.can_hang_wall) {
+        return true;
     }
-    return std::nullopt;
+    if (entity.type_ == EntityType::Player && state.debug_level.player_has_gloves) {
+        return true;
+    }
+    return false;
 }
 
-bool CanHangOnSideAtPosition(
+bool IsTryingToHangOnSide(const Entity& entity, bool left_side) {
+    if (left_side) {
+        return entity.trying_to_go_left && !entity.trying_to_go_right;
+    }
+    return entity.trying_to_go_right && !entity.trying_to_go_left;
+}
+
+bool IsSideBlockedForHang(
     const Entity& entity,
     const State& state,
-    const Vec2& pos,
     bool left_side,
     bool check_tiles,
-    bool check_entities,
-    std::optional<int>* blocked_row_out
+    bool check_entities
 ) {
-    const AABB aabb = GetAabbAtPosition(entity, pos);
+    const AABB aabb = entity.GetAABB();
     const Vec2 wall_tl = left_side ? Vec2::New(aabb.tl.x - 1.0F, aabb.tl.y)
                                    : Vec2::New(aabb.br.x, aabb.tl.y);
     const Vec2 wall_br = left_side ? Vec2::New(aabb.tl.x, aabb.br.y)
                                    : Vec2::New(aabb.br.x + 1.0F, aabb.br.y);
-    const bool side_blocked = IsBlockedForHangProbe(
+    return IsBlockedForHangProbe(
         wall_tl,
         wall_br,
         state,
@@ -283,76 +272,87 @@ bool CanHangOnSideAtPosition(
         check_entities,
         entity.vid
     );
-    if (!side_blocked) {
-        return false;
-    }
+}
 
-    const HangHandBounds hanghands = GetHangHandBoundsAtPosition(entity, pos);
-    if (left_side) {
-        const bool hh_blocked = IsBlockedForHangProbe(
-            hanghands.left_tl,
-            hanghands.left_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-        const Vec2 under_tl = Vec2::New(hanghands.left_tl.x, hanghands.left_br.y);
-        const Vec2 under_br = hanghands.left_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
-        const std::optional<int> blocked_row = FindFirstBlockedHangRow(
-            under_tl,
-            under_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-        if (!hh_blocked && blocked_row.has_value()) {
-            if (blocked_row_out != nullptr) {
-                *blocked_row_out = *blocked_row;
-            }
-            return true;
-        }
-        return false;
-    }
+bool IsHdHangProbeBlocked(
+    const Entity& entity,
+    State& state,
+    float x,
+    float y,
+    bool check_tiles,
+    bool check_entities
+) {
+    return IsBlockedForHangProbe(
+        Vec2::New(x, y),
+        Vec2::New(x, y),
+        state,
+        check_tiles,
+        check_entities,
+        entity.vid
+    );
+}
 
-    const bool hh_blocked = IsBlockedForHangProbe(
-            hanghands.right_tl,
-            hanghands.right_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-    const Vec2 under_tl = Vec2::New(hanghands.right_tl.x, hanghands.right_br.y);
-    const Vec2 under_br = hanghands.right_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
-    const std::optional<int> blocked_row = FindFirstBlockedHangRow(
-            under_tl,
-            under_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-    if (!hh_blocked && blocked_row.has_value()) {
-        if (blocked_row_out != nullptr) {
-            *blocked_row_out = *blocked_row;
+bool CanCornerHangOnSide(
+    const Entity& entity,
+    State& state,
+    bool left_side,
+    bool check_tiles,
+    bool check_entities
+) {
+    const AABB aabb = entity.GetAABB();
+    const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
+    const float upper_probe_y_a = aabb.tl.y + 2.0F;
+    const float upper_probe_y_b = aabb.tl.y + 3.0F;
+    const float center_x = aabb.tl.x + std::floor(entity.size.x / 2.0F);
+    const float below_probe_y = aabb.br.y + 1.0F;
+
+    const bool upper_probe_blocked =
+        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities) ||
+        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities);
+    const bool above_probe_blocked =
+        IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities);
+    const bool below_probe_blocked =
+        IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities);
+
+    return upper_probe_blocked && !above_probe_blocked && !below_probe_blocked;
+}
+
+bool CanGloveHangBelowCorner(
+    const Entity& entity,
+    State& state,
+    bool left_side,
+    bool check_tiles,
+    bool check_entities
+) {
+    const AABB aabb = entity.GetAABB();
+    const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
+    const int start_y = static_cast<int>(std::floor(aabb.tl.y)) - 1;
+    const int end_y = static_cast<int>(std::floor(aabb.br.y));
+
+    for (int y = start_y; y <= end_y; ++y) {
+        if (IsHdHangProbeBlocked(
+                entity,
+                state,
+                side_x,
+                static_cast<float>(y),
+                check_tiles,
+                check_entities
+            )) {
+            return aabb.tl.y >= static_cast<float>(y);
         }
-        return true;
     }
 
     return false;
 }
 
-bool TryCaptureHangDuringFall(
+bool TryCaptureHdHang(
     std::size_t entity_idx,
     State& state,
-    const Vec2& next_pos,
     bool check_tiles,
     bool check_entities
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.can_hang_ledge) {
+    if (!entity.can_hang_ledge && !EntityHasHangGloves(entity, state)) {
         return false;
     }
     if (entity.no_hang || entity.hang_count > 0) {
@@ -365,17 +365,76 @@ bool TryCaptureHangDuringFall(
     if (entity.vel.y <= 0.0F) {
         return false;
     }
+    if (entity.grounded || entity.climbing || entity.IsHanging()) {
+        return false;
+    }
 
-    const bool try_left = entity.trying_to_go_left && !entity.trying_to_go_right;
-    const bool try_right = entity.trying_to_go_right && !entity.trying_to_go_left;
+    const bool try_left = IsTryingToHangOnSide(entity, true);
+    const bool try_right = IsTryingToHangOnSide(entity, false);
     if (!try_left && !try_right) {
         return false;
     }
 
-    std::optional<int> blocked_row;
-    if (try_left &&
-        CanHangOnSideAtPosition(entity, state, next_pos, true, check_tiles, check_entities, &blocked_row)) {
-        entity.pos = Vec2::New(next_pos.x, static_cast<float>(*blocked_row));
+    const AABB aabb = entity.GetAABB();
+    const bool top_blocked = IsBlockedForHangProbe(
+        Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
+        Vec2::New(aabb.br.x, aabb.tl.y - 1.0F),
+        state,
+        check_tiles,
+        check_entities,
+        entity.vid
+    );
+    if (top_blocked) {
+        return false;
+    }
+
+    const bool has_gloves = EntityHasHangGloves(entity, state);
+    const float center_x = aabb.tl.x + std::floor(entity.size.x / 2.0F);
+    const float upper_probe_y_a = aabb.tl.y + 2.0F;
+    const float upper_probe_y_b = aabb.tl.y + 3.0F;
+    const float below_probe_y = aabb.br.y + 1.0F;
+
+    if (try_left && IsSideBlockedForHang(entity, state, true, check_tiles, check_entities)) {
+        const float side_x = aabb.tl.x - 1.0F;
+        if (has_gloves) {
+            if (CanCornerHangOnSide(entity, state, true, check_tiles, check_entities)) {
+                entity.pos.y =
+                    std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+                entity.left_hanging = true;
+                entity.right_hanging = false;
+                entity.facing = LeftOrRight::Left;
+                entity.vel.y = 0.0F;
+                entity.acc.y = 0.0F;
+                entity.grounded = false;
+                return true;
+            }
+            if (!CanGloveHangBelowCorner(entity, state, true, check_tiles, check_entities)) {
+                return false;
+            }
+            entity.left_hanging = true;
+            entity.right_hanging = false;
+            entity.facing = LeftOrRight::Left;
+            entity.vel.y = 0.0F;
+            entity.acc.y = 0.0F;
+            entity.grounded = false;
+            return true;
+        }
+        const bool upper_probe_blocked =
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities) ||
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities);
+        const bool above_probe_blocked =
+            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities);
+        const bool below_probe_blocked =
+            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities);
+        if (!upper_probe_blocked) {
+            return false;
+        }
+        if (!has_gloves && (above_probe_blocked || below_probe_blocked)) {
+            return false;
+        }
+
+        entity.pos.y =
+            std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
         entity.left_hanging = true;
         entity.right_hanging = false;
         entity.facing = LeftOrRight::Left;
@@ -385,9 +444,47 @@ bool TryCaptureHangDuringFall(
         return true;
     }
 
-    if (try_right &&
-        CanHangOnSideAtPosition(entity, state, next_pos, false, check_tiles, check_entities, &blocked_row)) {
-        entity.pos = Vec2::New(next_pos.x, static_cast<float>(*blocked_row));
+    if (try_right && IsSideBlockedForHang(entity, state, false, check_tiles, check_entities)) {
+        const float side_x = aabb.br.x + 1.0F;
+        if (has_gloves) {
+            if (CanCornerHangOnSide(entity, state, false, check_tiles, check_entities)) {
+                entity.pos.y =
+                    std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+                entity.left_hanging = false;
+                entity.right_hanging = true;
+                entity.facing = LeftOrRight::Right;
+                entity.vel.y = 0.0F;
+                entity.acc.y = 0.0F;
+                entity.grounded = false;
+                return true;
+            }
+            if (!CanGloveHangBelowCorner(entity, state, false, check_tiles, check_entities)) {
+                return false;
+            }
+            entity.left_hanging = false;
+            entity.right_hanging = true;
+            entity.facing = LeftOrRight::Right;
+            entity.vel.y = 0.0F;
+            entity.acc.y = 0.0F;
+            entity.grounded = false;
+            return true;
+        }
+        const bool upper_probe_blocked =
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities) ||
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities);
+        const bool above_probe_blocked =
+            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities);
+        const bool below_probe_blocked =
+            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities);
+        if (!upper_probe_blocked) {
+            return false;
+        }
+        if (!has_gloves && (above_probe_blocked || below_probe_blocked)) {
+            return false;
+        }
+
+        entity.pos.y =
+            std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
         entity.left_hanging = false;
         entity.right_hanging = true;
         entity.facing = LeftOrRight::Right;
@@ -566,11 +663,6 @@ void MoveEntityPixelStep(
     if (move_y > 0) {
         for (int i = 0; i < move_y; ++i) {
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, 1.0F);
-            if (TryCaptureHangDuringFall(entity_idx, state, next_pos, check_tiles, check_entities)) {
-                entity.collided = true;
-                StoreDistanceTraveled(entity_idx, state, start_pos);
-                return;
-            }
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
             if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
                 entity.vel.y = 0.0F;
@@ -1192,7 +1284,7 @@ void GroundedCheck(
         if (entity.vel.y > 0.0F) {
             entity.vel.y = 0.0F;
         }
-        entity.coyote_time = 6;
+        entity.coyote_time = player::kCoyoteTimeFrames;
     } else if (entity.coyote_time > 0) {
         entity.coyote_time -= 1;
     }
@@ -1249,35 +1341,32 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
     }
 
     if (mutable_entity.left_hanging) {
-        if (!CanHangOnSideAtPosition(
-                mutable_entity,
-                state,
-                mutable_entity.pos,
-                true,
-                true,
-                true,
-                nullptr
-            )) {
+        const bool has_gloves = EntityHasHangGloves(mutable_entity, state);
+        const bool still_trying = IsTryingToHangOnSide(mutable_entity, true);
+        if ((has_gloves && !still_trying) ||
+            !IsSideBlockedForHang(mutable_entity, state, true, true, true)) {
             mutable_entity.left_hanging = false;
+            mutable_entity.hang_count = kHangWallReleaseCooldownFrames;
         }
     } else if (mutable_entity.right_hanging) {
-        if (!CanHangOnSideAtPosition(
-                mutable_entity,
-                state,
-                mutable_entity.pos,
-                false,
-                true,
-                true,
-                nullptr
-            )) {
+        const bool has_gloves = EntityHasHangGloves(mutable_entity, state);
+        const bool still_trying = IsTryingToHangOnSide(mutable_entity, false);
+        if ((has_gloves && !still_trying) ||
+            !IsSideBlockedForHang(mutable_entity, state, false, true, true)) {
             mutable_entity.right_hanging = false;
+            mutable_entity.hang_count = kHangWallReleaseCooldownFrames;
         }
+    }
+
+    if (!mutable_entity.IsHanging()) {
+        TryCaptureHdHang(entity_idx, state, true, true);
     }
 
     if (mutable_entity.IsHanging()) {
         mutable_entity.vel.y = 0.0F;
         mutable_entity.acc.y = 0.0F;
         mutable_entity.grounded = false;
+        mutable_entity.coyote_time = player::kCoyoteTimeFrames;
     }
 }
 
@@ -1419,19 +1508,30 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     }
 
     if (entity.jumping) {
-        if ((entity.grounded && (entity.jump_delay_frame_count == 0)) || entity.coyote_time > 0) {
+        if (entity.IsHanging()) {
+            const bool jumping_away =
+                (entity.right_hanging && entity.trying_to_go_left) ||
+                (entity.left_hanging && entity.trying_to_go_right);
+            const bool has_gloves = EntityHasHangGloves(entity, state);
+            entity.left_hanging = false;
+            entity.right_hanging = false;
+            entity.grounded = false;
+            if (entity.trying_to_go_down) {
+                entity.hang_count =
+                    has_gloves ? kHangGloveDropCooldownFrames : kHangDropCooldownFrames;
+            } else if (jumping_away) {
+                entity.hang_count = kHangCountMax;
+            } else {
+                entity.vel.y = -player::kJumpImpulse;
+                entity.hang_count = kHangCountMax;
+            }
+        } else if ((entity.grounded && (entity.jump_delay_frame_count == 0)) || entity.coyote_time > 0) {
             entity.jumped_this_frame = true;
             entity.vel.y = -player::kJumpImpulse;
             entity.coyote_time = 0;
             entity.grounded = false;
             entity.jump_delay_frame_count = player::kJumpDelayFrames;
             audio.PlaySoundEffect(SoundEffect::Jump);
-        }
-        if (entity.IsHanging()) {
-            entity.vel.y = -player::kJumpImpulse;
-            entity.left_hanging = false;
-            entity.right_hanging = false;
-            entity.grounded = false;
         }
     }
     entity.jumping = false;

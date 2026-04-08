@@ -33,6 +33,7 @@ struct Stage {
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
     float gravity = 0.3F;
+    Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
 
     static const UVec2 kShape;
     static const UVec2 kRoomShape;

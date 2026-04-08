@@ -276,25 +276,30 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 const Vec2 delta = player->pos - graphics.play_cam.pos;
                 graphics.play_cam.pos += delta * 0.075F;
 
-                const Vec2 half_room_dims = ToVec2(state.stage.GetRoomDims()) / 2.0F;
-                const UVec2 room_layout_dims = state.stage.GetRoomLayoutDims();
-                const Vec2 map_tl_bound =
-                    ToVec2(state.stage.GetRoomTlWc(IVec2::New(0, 0))) + half_room_dims;
-                const Vec2 map_br_bound =
-                    ToVec2(state.stage.GetRoomTlWc(IVec2::New(
-                        static_cast<int>(room_layout_dims.x) - 1,
-                        static_cast<int>(room_layout_dims.y) - 1
-                    ))) + half_room_dims;
-                graphics.play_cam.pos.x = graphics.play_cam.pos.x < map_tl_bound.x
-                                              ? map_tl_bound.x
-                                              : (graphics.play_cam.pos.x > map_br_bound.x
-                                                     ? map_br_bound.x
-                                                     : graphics.play_cam.pos.x);
-                graphics.play_cam.pos.y = graphics.play_cam.pos.y < map_tl_bound.y
-                                              ? map_tl_bound.y
-                                              : (graphics.play_cam.pos.y > map_br_bound.y
-                                                     ? map_br_bound.y
-                                                     : graphics.play_cam.pos.y);
+                const Vec2 stage_dims = ToVec2(state.stage.GetStageDims());
+                const Vec2 margin = state.stage.camera_clamp_margin;
+                const Vec2 map_tl_bound = margin;
+                const Vec2 map_br_bound = stage_dims - margin;
+
+                if (stage_dims.x <= margin.x * 2.0F) {
+                    graphics.play_cam.pos.x = stage_dims.x / 2.0F;
+                } else {
+                    graphics.play_cam.pos.x = graphics.play_cam.pos.x < map_tl_bound.x
+                                                  ? map_tl_bound.x
+                                                  : (graphics.play_cam.pos.x > map_br_bound.x
+                                                         ? map_br_bound.x
+                                                         : graphics.play_cam.pos.x);
+                }
+
+                if (stage_dims.y <= margin.y * 2.0F) {
+                    graphics.play_cam.pos.y = stage_dims.y / 2.0F;
+                } else {
+                    graphics.play_cam.pos.y = graphics.play_cam.pos.y < map_tl_bound.y
+                                                  ? map_tl_bound.y
+                                                  : (graphics.play_cam.pos.y > map_br_bound.y
+                                                         ? map_br_bound.y
+                                                         : graphics.play_cam.pos.y);
+                }
             }
 
             graphics.camera.target = graphics.play_cam.pos;

@@ -22,6 +22,7 @@ constexpr float kMaxWalkSpeed = 2.5F;
 constexpr float kMaxRunSpeed = 4.0F;
 constexpr float kMaxSpeed = 9.0F;
 constexpr float kJumpImpulse = 4.5F;
+constexpr unsigned int kCoyoteTimeFrames = 6;
 constexpr unsigned int kJumpDelayFrames = 1;
 constexpr unsigned int kBombThrowDelay = 8;
 constexpr unsigned int kRopeThrowDelay = 8;

@@ -41,6 +41,7 @@ Stage Stage::NewBlank() {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
+    stage.camera_clamp_margin = Vec2::New(0.0F, 0.0F);
     return stage;
 }
 
@@ -141,6 +142,7 @@ Stage Stage::New(StageType stage_type) {
     stage.rooms = std::move(rooms);
     stage.path = std::move(path);
     stage.gravity = 0.3F;
+    stage.camera_clamp_margin = ToVec2(kRoomShape * kTileSize) / 2.0F;
     return stage;
 }
 

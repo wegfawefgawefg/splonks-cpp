@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "58d9428d-800d-4c2b-9993-a29d11216497",
+  "selectedAnnotationId": "2d9ec3d1-8d9d-4b1c-879f-97010b12a951",
   "sheets": [
     {
       "path": "images/title.png",
@@ -1953,16 +1953,16 @@
             "tags": [],
             "pbox": {
               "x": 0,
-              "y": 0,
+              "y": 3,
               "w": 8,
-              "h": 14
+              "h": 13
             },
             "tile": false,
             "cbox": {
               "x": 0,
-              "y": 0,
-              "w": 0,
-              "h": 0
+              "y": 2,
+              "w": 8,
+              "h": 14
             }
           }
         },
@@ -1982,26 +1982,26 @@
             "frame": 0,
             "duration": 1,
             "offset": {
-              "x": 0,
+              "x": -1,
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 8,
+              "y": 9
             },
             "tags": [],
             "pbox": {
-              "x": 2,
+              "x": 5,
               "y": 2,
               "w": 8,
               "h": 14
             },
             "tile": false,
             "cbox": {
-              "x": 0,
-              "y": 0,
-              "w": 0,
-              "h": 0
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
             }
           }
         },
@@ -2030,17 +2030,17 @@
             },
             "tags": [],
             "pbox": {
-              "x": 2,
+              "x": 4,
               "y": 2,
               "w": 8,
               "h": 14
             },
             "tile": false,
             "cbox": {
-              "x": 0,
-              "y": 0,
-              "w": 0,
-              "h": 0
+              "x": 4,
+              "y": 2,
+              "w": 8,
+              "h": 14
             }
           }
         },
@@ -2372,8 +2372,8 @@
             "frame": 1,
             "duration": 6,
             "offset": {
-              "x": 2,
-              "y": 4
+              "x": 0,
+              "y": 0
             },
             "center": {
               "x": 0,
@@ -2712,9 +2712,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 10.533,
-        "centerX": 50.697806892623184,
-        "centerY": 251.54277034083358
+        "zoom": 13.166,
+        "centerX": 29.925565851435515,
+        "centerY": 14.507063648792343
       }
     },
     {

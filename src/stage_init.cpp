@@ -17,6 +17,10 @@ namespace splonks {
 
 namespace {
 
+constexpr int kHangTestStageWidthTiles = 10;
+constexpr int kHangTestWallX = 4;
+constexpr int kHangTestTopY = 4;
+
 unsigned int RandomPercent() {
     static std::random_device device;
     static std::mt19937 generator(device());
@@ -34,7 +38,7 @@ int RandomMoneyType() {
 Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     Stage stage;
     stage.stage_type = StageType::Test1;
-    const int stage_width = std::clamp(config.stage_width_tiles, 8, 64);
+    const int stage_width = kHangTestStageWidthTiles;
     const int stage_height = std::clamp(config.stage_height_tiles, 16, 512);
     stage.tiles = std::vector<std::vector<Tile>>(
         static_cast<std::size_t>(stage_height),
@@ -43,16 +47,16 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
 
-    const int wall_x = std::clamp(config.wall_x, 4, stage_width - 6);
-    const int top_y = std::clamp(config.top_y, 2, stage_height - 8);
+    const int wall_x = std::clamp(kHangTestWallX, 1, stage_width - 2);
+    const int top_y = std::clamp(kHangTestTopY, 2, stage_height - 8);
     const int cutout_drop_tiles =
         std::clamp(config.cutout_drop_tiles, 2, stage_height - top_y - 4);
-    const int cutout_width_tiles = std::clamp(config.cutout_width_tiles, 1, wall_x + 1);
     const int cutout_height_tiles =
         std::clamp(config.cutout_height_tiles, 1, stage_height - top_y - cutout_drop_tiles - 1);
     const int cutout_top_y = top_y + cutout_drop_tiles;
-    const int cutout_left_x = wall_x - cutout_width_tiles + 1;
+    const int cutout_left_x = wall_x;
 
     for (int y = top_y; y < stage_height; ++y) {
         for (int x = 0; x <= wall_x; ++x) {
@@ -61,9 +65,8 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     }
 
     for (int y = cutout_top_y; y < cutout_top_y + cutout_height_tiles; ++y) {
-        for (int x = cutout_left_x; x <= wall_x; ++x) {
-            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = Tile::Air;
-        }
+        stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(cutout_left_x)] =
+            Tile::Air;
     }
 
     return stage;
@@ -89,11 +92,9 @@ void InitHangTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
 
-    const HangTestLevelConfig& config = state.debug_level.hang_test;
-    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
     const int stage_height = static_cast<int>(state.stage.GetTileHeight());
-    const int wall_x = std::clamp(config.wall_x, 4, stage_width - 6);
-    const int top_y = std::clamp(config.top_y, 2, stage_height - 8);
+    const int wall_x = std::clamp(kHangTestWallX, 1, kHangTestStageWidthTiles - 2);
+    const int top_y = std::clamp(kHangTestTopY, 2, stage_height - 8);
 
     const float spawn_x = static_cast<float>((wall_x + 1) * static_cast<int>(kTileSize) - 8);
     const float spawn_y = static_cast<float>(top_y * static_cast<int>(kTileSize) - 14);

@@ -1286,14 +1286,14 @@ sprites:
     tags: []
     pbox:
       x: 0
-      y: 0
+      y: 3
       w: 8
-      h: 14
+      h: 13
     cbox:
       x: 0
-      y: 0
-      w: 0
-      h: 0
+      y: 2
+      w: 8
+      h: 14
     tile: false
   - path: "entities.png"
     aabb:
@@ -1305,22 +1305,22 @@ sprites:
     frame: 0
     duration: 1
     offset:
-      x: 0
+      x: -1
       y: 0
     center:
-      x: 0
-      y: 0
+      x: 8
+      y: 9
     tags: []
     pbox:
-      x: 2
+      x: 5
       y: 2
       w: 8
       h: 14
     cbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+      x: 5
+      y: 2
+      w: 8
+      h: 14
     tile: false
   - path: "entities.png"
     aabb:
@@ -1339,15 +1339,15 @@ sprites:
       y: 0
     tags: []
     pbox:
-      x: 2
+      x: 4
       y: 2
       w: 8
       h: 14
     cbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+      x: 4
+      y: 2
+      w: 8
+      h: 14
     tile: false
   - path: "entities.png"
     aabb:
@@ -1575,8 +1575,8 @@ sprites:
     frame: 1
     duration: 6
     offset:
-      x: 2
-      y: 4
+      x: 0
+      y: 0
     center:
       x: 0
       y: 0
