@@ -21,3 +21,7 @@ make double jetpack deliberate
 fix held object not flipping to match ur facing
 split up common.cpp in entities. 
 fix ropes adding to their length 
+stomping on enemies isnt swept. 
+picking up coins isnt swept.
+did we make hanging swept?
+    add adjustable max speed. for hang test.

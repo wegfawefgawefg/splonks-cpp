@@ -56,6 +56,24 @@ void CollectTouchingPickups(
     const Graphics& graphics,
     Audio& audio
 );
+void UpdateCarryAndBackItems(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+);
+bool TryStompEntitiesBelow(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio,
+    float bounce_velocity
+);
+void TryPushBlocks(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics
+);
 
 enum class DamageResult {
     None,
