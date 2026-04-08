@@ -7,7 +7,10 @@
 * jump playing twice
 * per pixel physics
 * pass through contact logic
-hanging doesnt work, clone the spelunky hd hanging. 
+* hanging doesnt work, clone the spelunky hd hanging. 
+* hang gloves item. nice. 
+fix jumping too rapidly
+maybe copy spelunky physics better?
 player blurry bc cam not aligned on pixel. 
 throw depen
 throw not hit self logic
