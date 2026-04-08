@@ -166,11 +166,8 @@ void ProcessInputPlaying(
 
     // randomize the stage tiles
     if (KeyPressedEdge(SDL_SCANCODE_R) || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK)) {
-        if (state.next_stage) {
-            state.stage = Stage::New(*state.next_stage);
-            InitStage(state);
-            graphics.ResetTileVariations();
-        }
+        InitDebugLevel(state);
+        graphics.ResetTileVariations();
     }
     (void)window;
     (void)graphics;

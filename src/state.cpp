@@ -1,10 +1,11 @@
 #include "state.hpp"
+#include "stage_init.hpp"
 
 namespace splonks {
 
 State State::New() {
     State state;
-    state.mode = Mode::Title;
+    state.mode = Mode::Playing;
     state.settings = Settings::New();
     state.menu_inputs = MenuInputs::New();
     state.menu_input_debounce_timers = MenuInputDebounceTimers::New();
@@ -33,11 +34,11 @@ State State::New() {
     state.entity_manager = EntityManager::New();
     state.special_effects.clear();
     state.sid = SID::New();
-    state.stage = Stage::NewBlank();
     state.next_stage = StageType::Test1;
     state.player_vid.reset();
     state.mouse_trailer_vid.reset();
     state.contact_cooldowns.clear();
+    InitDebugLevel(state);
     return state;
 }
 

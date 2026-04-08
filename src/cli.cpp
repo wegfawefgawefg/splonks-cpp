@@ -1,5 +1,6 @@
 #include "cli.hpp"
 
+#include "debug_playback.hpp"
 #include "frame_data.hpp"
 #include "raw_frame_data.hpp"
 #include "tile_source_data.hpp"
@@ -42,6 +43,15 @@ void PrintTileSourceDataSummary() {
     }
 }
 
+bool DumpRecordingAsText(const std::string& input_path, const std::string& output_path) {
+    const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
+    const FrameDataDb frame_data_db = FrameDataDb::FromRaw(raw_file);
+    std::string status;
+    const bool ok = ConvertRecordingFileToText(input_path, output_path, frame_data_db, &status);
+    std::cout << status << '\n';
+    return ok;
+}
+
 } // namespace
 
 bool RunCliCommand(int argc, char** argv) {
@@ -58,6 +68,14 @@ bool RunCliCommand(int argc, char** argv) {
     if (command == "--check-tile-source-data") {
         PrintTileSourceDataSummary();
         return true;
+    }
+
+    if (command == "--dump-recording-text") {
+        if (argc < 4) {
+            std::cerr << "usage: --dump-recording-text <input.splrec> <output.txt>\n";
+            return true;
+        }
+        return DumpRecordingAsText(argv[2], argv[3]);
     }
 
     return false;

@@ -1,8 +1,16 @@
-misaligned bat
-slidy physics. 
-dear imgui
-juttery camera
+* misaligned bat
+* bat not working
+* slidy physics. 
+* dear imgui
+* juttery camera
+* breakables breaking after hitting stuff at certain speeds?
+* jump playing twice
+* per pixel physics
+* pass through contact logic
+hanging doesnt work, clone the spelunky hd hanging. 
+player blurry bc cam not aligned on pixel. 
 throw depen
 throw not hit self logic
-breakables breaking after hitting stuff at certain speeds?
-jump playing twice
+make double jetpack deliberate
+fix held object not flipping to match ur facing
+split up common.cpp in entities. 

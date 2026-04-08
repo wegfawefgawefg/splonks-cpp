@@ -31,3 +31,5 @@ CMakeUserPresets.json
 *.la
 .ninja_deps
 .ninja_log
+
+debug_recording.*

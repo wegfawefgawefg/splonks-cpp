@@ -42,6 +42,7 @@ struct GameplaySnapshot {
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t frame_pause = 0;
+    DebugLevelConfig debug_level;
     EntityManager entity_manager;
     Stage stage;
     std::optional<VID> player_vid;
@@ -73,6 +74,12 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
 
 void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawDebugPlaybackInspector(DebugPlayback& debug, const State& state, const Graphics& graphics);
+bool ConvertRecordingFileToText(
+    const std::string& input_path,
+    const std::string& output_path,
+    const FrameDataDb& frame_data_db,
+    std::string* status_out
+);
 void RunSimulationWithDebugControls(
     SDL_Window* window,
     SDL_Renderer* renderer,

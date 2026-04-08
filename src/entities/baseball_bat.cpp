@@ -117,12 +117,14 @@ bool TryApplyBatContactToEntity(
 
     if (Entity* const other_entity = state.entity_manager.GetEntityMut(other_entity_const.vid)) {
         constexpr float kKnockBackImpulse = 10.0F;
-        Vec2 knock_back_vel = Vec2::New(0.0F, 0.0F);
+        constexpr float kAirKnockBackLift = 4.0F;
+        const bool should_lift_target = !other_entity->grounded || other_entity->vel.y > 0.0F;
+        Vec2 knock_back_vel = other_entity->vel;
         switch (swing_stage) {
         case SwingStage::Back:
             knock_back_vel = bat_facing == LeftOrRight::Left
-                                 ? Vec2::New(kKnockBackImpulse, 0.0F)
-                                 : Vec2::New(-kKnockBackImpulse, 0.0F);
+                                 ? Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F)
+                                 : Vec2::New(-kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
             break;
         case SwingStage::Above:
             knock_back_vel = bat_facing == LeftOrRight::Left
@@ -131,15 +133,12 @@ bool TryApplyBatContactToEntity(
             break;
         case SwingStage::Swing:
             knock_back_vel = bat_facing == LeftOrRight::Left
-                                 ? Vec2::New(-kKnockBackImpulse, 0.0F)
-                                 : Vec2::New(kKnockBackImpulse, 0.0F);
+                                 ? Vec2::New(-kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F)
+                                 : Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
             break;
         }
-
-        if (other_entity->vel.y > 0.0F) {
-            other_entity->vel.y = 0.0F;
-        }
-        other_entity->acc += knock_back_vel;
+        other_entity->vel = knock_back_vel;
+        other_entity->acc = Vec2::New(0.0F, 0.0F);
         other_entity->thrown_by = held_by_vid;
         other_entity->thrown_immunity_timer = common::kThrownByImmunityDuration;
         state.AddContactCooldown(

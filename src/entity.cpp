@@ -33,7 +33,10 @@ Entity Entity::New() {
     entity.jumped_this_frame = false;
     entity.left_hanging = false;
     entity.right_hanging = false;
+    entity.can_hang_ledge = false;
+    entity.can_hang_wall = false;
     entity.no_hang = false;
+    entity.hang_count = 0;
     entity.running = false;
     entity.holding = false;
     entity.climbing = false;

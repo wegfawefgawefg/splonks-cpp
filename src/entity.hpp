@@ -42,7 +42,10 @@ struct Entity {
     bool jumped_this_frame = false;
     bool left_hanging = false;
     bool right_hanging = false;
+    bool can_hang_ledge = false;
+    bool can_hang_wall = false;
     bool no_hang = false;
+    std::uint32_t hang_count = 0;
     bool running = false;
     bool holding = false;
     bool climbing = false;

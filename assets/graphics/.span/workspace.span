@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "11cdfaea-d00f-473f-81bd-9f906098f20f",
+  "selectedAnnotationId": "58d9428d-800d-4c2b-9993-a29d11216497",
   "sheets": [
     {
       "path": "images/title.png",
@@ -511,7 +511,7 @@
             },
             "offset": {
               "x": 15,
-              "y": 13
+              "y": 14
             },
             "duration": 5,
             "tile": false,
@@ -2712,9 +2712,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.209,
-        "centerX": 226.79945676776822,
-        "centerY": 182.20914440923494
+        "zoom": 10.533,
+        "centerX": 50.697806892623184,
+        "centerY": 251.54277034083358
       }
     },
     {

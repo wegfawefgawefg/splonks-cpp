@@ -4,6 +4,7 @@
 #include "frame_data.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
+#include "stage_init.hpp"
 #include "step.hpp"
 
 #include <imgui.h>
@@ -23,7 +24,7 @@ constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 1;
+constexpr std::uint32_t kRecordingVersion = 2;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -109,6 +110,16 @@ const char* ModeToString(Mode mode) {
         return "GameOver";
     case Mode::Win:
         return "Win";
+    }
+    return "Unknown";
+}
+
+const char* DebugLevelKindToString(DebugLevelKind kind) {
+    switch (kind) {
+    case DebugLevelKind::Test1:
+        return "Test1";
+    case DebugLevelKind::HangTest:
+        return "HangTest";
     }
     return "Unknown";
 }
@@ -392,6 +403,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.points);
     WritePod(out, snapshot.deaths);
     WritePod(out, snapshot.frame_pause);
+    WritePod(out, snapshot.debug_level);
     WriteEntityManager(out, snapshot.entity_manager);
     WriteStage(out, snapshot.stage);
     WriteOptionalPod(out, snapshot.player_vid);
@@ -427,6 +439,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.points) &&
            ReadPod(in, snapshot.deaths) &&
            ReadPod(in, snapshot.frame_pause) &&
+           ReadPod(in, snapshot.debug_level) &&
            ReadEntityManager(in, snapshot.entity_manager) &&
            ReadStage(in, snapshot.stage) &&
            ReadOptionalPod(in, snapshot.player_vid) &&
@@ -738,20 +751,6 @@ void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphi
         ImGui::TextWrapped("%s", debug.io_status.c_str());
     }
 
-    ImGui::Separator();
-    ImGui::TextUnformatted("Tuning");
-    ImGui::DragFloat2(
-        "Bat Hold Offset",
-        &graphics.debug_baseball_bat_hold_offset.x,
-        0.25F,
-        -32.0F,
-        32.0F,
-        "%.2f"
-    );
-    if (ImGui::Button("Reset Bat Hold Offset")) {
-        graphics.debug_baseball_bat_hold_offset = Vec2::New(5.0F, -10.0F);
-    }
-
     if (debug.playback_active && !debug.recorded_snapshots.empty()) {
         ClampPlaybackIndex(debug);
         int playback_index = static_cast<int>(debug.playback_index);
@@ -780,6 +779,49 @@ void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphi
             debug.playback_index = static_cast<std::size_t>(playback_index);
         }
         ImGui::Text("Frame %zu / %zu", debug.playback_index, debug.recorded_snapshots.size() - 1);
+    }
+
+    ImGui::End();
+}
+
+void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.ui_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(360.0F, 12.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Level")) {
+        ImGui::End();
+        return;
+    }
+
+    if (debug.playback_active) {
+        ImGui::BeginDisabled();
+    }
+
+    int level_kind = static_cast<int>(state.debug_level.kind);
+    const char* level_names[] = {"Test1", "HangTest"};
+    ImGui::Combo("Preset", &level_kind, level_names, IM_ARRAYSIZE(level_names));
+    state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
+    ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
+
+    if (state.debug_level.kind == DebugLevelKind::HangTest) {
+        HangTestLevelConfig& hang_test = state.debug_level.hang_test;
+        ImGui::SliderInt("Wall X", &hang_test.wall_x, 4, 24);
+        ImGui::SliderInt("Top Y", &hang_test.top_y, 2, 12);
+        ImGui::SliderInt("Cutout Drop", &hang_test.cutout_drop_tiles, 2, 26);
+        ImGui::SliderInt("Cutout Width", &hang_test.cutout_width_tiles, 1, 6);
+        ImGui::SliderInt("Cutout Height", &hang_test.cutout_height_tiles, 1, 6);
+    }
+
+    if (ImGui::Button("Regenerate")) {
+        InitDebugLevel(state);
+        graphics.ResetTileVariations();
+    }
+
+    if (debug.playback_active) {
+        ImGui::EndDisabled();
     }
 
     ImGui::End();
@@ -969,6 +1011,26 @@ DebugPlayback DebugPlayback::New() {
     return result;
 }
 
+bool ConvertRecordingFileToText(
+    const std::string& input_path,
+    const std::string& output_path,
+    const FrameDataDb& frame_data_db,
+    std::string* status_out
+) {
+    DebugPlayback debug = DebugPlayback::New();
+    std::strncpy(debug.file_path.data(), input_path.c_str(), debug.file_path.size() - 1);
+    debug.file_path[debug.file_path.size() - 1] = '\0';
+    if (!LoadRecordingFromFile(debug, status_out)) {
+        return false;
+    }
+
+    Graphics graphics{};
+    graphics.frame_data_db = frame_data_db;
+    std::strncpy(debug.file_path.data(), output_path.c_str(), debug.file_path.size() - 1);
+    debug.file_path[debug.file_path.size() - 1] = '\0';
+    return ExportRecordingToTextFile(debug, graphics, status_out);
+}
+
 GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphics) {
     GameplaySnapshot snapshot;
     snapshot.mode = state.mode;
@@ -998,6 +1060,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.points = state.points;
     snapshot.deaths = state.deaths;
     snapshot.frame_pause = state.frame_pause;
+    snapshot.debug_level = state.debug_level;
     snapshot.entity_manager = state.entity_manager;
     snapshot.stage = state.stage;
     snapshot.player_vid = state.player_vid;
@@ -1034,6 +1097,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.points = snapshot.points;
     state.deaths = snapshot.deaths;
     state.frame_pause = snapshot.frame_pause;
+    state.debug_level = snapshot.debug_level;
     state.entity_manager = snapshot.entity_manager;
     state.special_effects.clear();
     state.stage = snapshot.stage;
@@ -1045,6 +1109,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
 
 void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     DrawSimulationControls(debug, state, graphics);
+    DrawLevelControls(debug, state, graphics);
 }
 
 void DrawDebugPlaybackInspector(DebugPlayback& debug, const State& state, const Graphics& graphics) {

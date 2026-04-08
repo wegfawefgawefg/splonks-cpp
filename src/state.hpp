@@ -33,6 +33,24 @@ enum class ContactInteractionKind {
     Harm,
 };
 
+enum class DebugLevelKind {
+    Test1,
+    HangTest,
+};
+
+struct HangTestLevelConfig {
+    int wall_x = 10;
+    int top_y = 4;
+    int cutout_drop_tiles = 8;
+    int cutout_width_tiles = 2;
+    int cutout_height_tiles = 2;
+};
+
+struct DebugLevelConfig {
+    DebugLevelKind kind = DebugLevelKind::Test1;
+    HangTestLevelConfig hang_test;
+};
+
 struct ContactCooldownEntry {
     VID source_vid;
     VID target_vid;
@@ -69,6 +87,7 @@ struct State {
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t frame_pause = 0;
+    DebugLevelConfig debug_level;
     EntityManager entity_manager;
     std::vector<std::unique_ptr<SpecialEffect>> special_effects;
     SID sid;

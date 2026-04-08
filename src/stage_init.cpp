@@ -8,6 +8,7 @@
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 
+#include <algorithm>
 #include <random>
 
 #include <stdexcept>
@@ -30,22 +31,88 @@ int RandomMoneyType() {
     return distribution(generator);
 }
 
+Stage MakeHangTestStage(const HangTestLevelConfig& config) {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(Stage::kShape.y),
+        std::vector<Tile>(static_cast<std::size_t>(Stage::kShape.x), Tile::Air)
+    );
+    stage.rooms = std::vector<std::vector<int>>(
+        static_cast<std::size_t>(Stage::kRoomLayout.y),
+        std::vector<int>(static_cast<std::size_t>(Stage::kRoomLayout.x), 0)
+    );
+    stage.path = {IVec2::New(0, 0)};
+    stage.gravity = 0.3F;
+
+    const int stage_width = static_cast<int>(Stage::kShape.x);
+    const int stage_height = static_cast<int>(Stage::kShape.y);
+    const int wall_x = std::clamp(config.wall_x, 4, stage_width - 6);
+    const int top_y = std::clamp(config.top_y, 2, stage_height - 8);
+    const int cutout_drop_tiles =
+        std::clamp(config.cutout_drop_tiles, 2, stage_height - top_y - 4);
+    const int cutout_width_tiles = std::clamp(config.cutout_width_tiles, 1, wall_x + 1);
+    const int cutout_height_tiles =
+        std::clamp(config.cutout_height_tiles, 1, stage_height - top_y - cutout_drop_tiles - 1);
+    const int cutout_top_y = top_y + cutout_drop_tiles;
+    const int cutout_left_x = wall_x - cutout_width_tiles + 1;
+
+    for (int y = top_y; y < stage_height; ++y) {
+        for (int x = 0; x <= wall_x; ++x) {
+            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = Tile::Dirt;
+        }
+    }
+
+    for (int y = cutout_top_y; y < cutout_top_y + cutout_height_tiles; ++y) {
+        for (int x = cutout_left_x; x <= wall_x; ++x) {
+            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = Tile::Air;
+        }
+    }
+
+    return stage;
+}
+
+void InitCommonStageState(State& state) {
+    state.stage_frame = 0;
+    state.entity_manager.ClearAllEntities();
+}
+
+void SpawnPlayer(State& state, const Vec2& pos) {
+    if (const std::optional<VID> player_vid = state.entity_manager.NewEntity()) {
+        state.player_vid = player_vid;
+        if (Entity* const player = state.entity_manager.GetEntityMut(*player_vid)) {
+            entities::player::SetEntityPlayer(*player);
+            player->pos = pos;
+            player->vel = Vec2::New(0.0F, 0.0F);
+        }
+    }
+}
+
+void InitHangTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const HangTestLevelConfig& config = state.debug_level.hang_test;
+    const int stage_width = static_cast<int>(Stage::kShape.x);
+    const int stage_height = static_cast<int>(Stage::kShape.y);
+    const int wall_x = std::clamp(config.wall_x, 4, stage_width - 6);
+    const int top_y = std::clamp(config.top_y, 2, stage_height - 8);
+
+    const float spawn_x = static_cast<float>((wall_x + 1) * static_cast<int>(kTileSize) - 8);
+    const float spawn_y = static_cast<float>(top_y * static_cast<int>(kTileSize) - 14);
+    SpawnPlayer(state, Vec2::New(spawn_x, spawn_y));
+}
+
 } // namespace
 
 void InitStage(State& state) {
-    state.stage_frame = 0;
-    state.entity_manager.ClearAllEntities();
+    InitCommonStageState(state);
 
     const IVec2 starting_room = state.stage.GetStartingRoom();
     const UVec2 starting_room_tl = ToUVec2(starting_room) * Stage::kRoomShape;
     const UVec2 starting_room_br = starting_room_tl + Stage::kRoomShape;
 
-    if (const std::optional<VID> player_vid = state.entity_manager.NewEntity()) {
-        state.player_vid = player_vid;
-        if (Entity* const player = state.entity_manager.GetEntityMut(*player_vid)) {
-            entities::player::SetEntityPlayer(*player);
-        }
-    }
+    SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
 
     // This mirrors the old Rust stage init population pass.
     for (int i = 0; i < 2; ++i) {
@@ -145,6 +212,19 @@ void InitStage(State& state) {
         throw std::runtime_error(
             "No door found in starting room. You have a game breaking bug in the map generation "
             "code. Don't ship with this in.");
+    }
+}
+
+void InitDebugLevel(State& state) {
+    switch (state.debug_level.kind) {
+    case DebugLevelKind::Test1:
+        state.stage = Stage::New(StageType::Test1);
+        InitStage(state);
+        break;
+    case DebugLevelKind::HangTest:
+        state.stage = MakeHangTestStage(state.debug_level.hang_test);
+        InitHangTestStage(state);
+        break;
     }
 }
 

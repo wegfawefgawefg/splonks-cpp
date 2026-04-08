@@ -197,6 +197,168 @@ bool IsBlockingAabbForEntity(
     return false;
 }
 
+HangHandBounds GetHangHandBoundsAtPosition(const Entity& entity, const Vec2& pos) {
+    const Vec2 right_edge = pos + Vec2::New(entity.size.x, 0.0F);
+    HangHandBounds hang_hands;
+    hang_hands.left_tl = pos - Entity::kHangHandSize;
+    hang_hands.left_br = pos;
+    hang_hands.right_tl = right_edge - Vec2::New(0.0F, Entity::kHangHandSize.y);
+    hang_hands.right_br = right_edge + Vec2::New(Entity::kHangHandSize.x, 0.0F);
+    return hang_hands;
+}
+
+bool IsImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
+    for (const Entity& other : state.entity_manager.entities) {
+        if (!other.active || other.vid == self_vid || !other.impassable) {
+            continue;
+        }
+        if (AabbsIntersect(AABB::New(tl, br), other.GetAABB())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsBlockedForHangProbe(
+    const Vec2& tl,
+    const Vec2& br,
+    const State& state,
+    bool check_tiles,
+    bool check_entities,
+    VID self_vid
+) {
+    if (check_tiles) {
+        const std::vector<const Tile*> tiles = state.stage.GetTilesInRectWc(ToIVec2(tl), ToIVec2(br));
+        if (CollidableTileInList(tiles)) {
+            return true;
+        }
+    }
+
+    if (check_entities && IsImpassableInRect(tl, br, state, self_vid)) {
+        return true;
+    }
+
+    return false;
+}
+
+bool TryCaptureHangDuringFall(
+    std::size_t entity_idx,
+    State& state,
+    const Vec2& next_pos,
+    bool check_tiles,
+    bool check_entities
+) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!entity.can_hang_ledge) {
+        return false;
+    }
+    if (entity.no_hang || entity.hang_count > 0) {
+        return false;
+    }
+    if (entity.super_state == EntitySuperState::Stunned ||
+        entity.super_state == EntitySuperState::Dead) {
+        return false;
+    }
+    if (entity.vel.y <= 0.0F) {
+        return false;
+    }
+
+    const bool try_left = entity.trying_to_go_left && !entity.trying_to_go_right;
+    const bool try_right = entity.trying_to_go_right && !entity.trying_to_go_left;
+    if (!try_left && !try_right) {
+        return false;
+    }
+
+    const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+    const Vec2 left_wall_tl = Vec2::New(next_aabb.tl.x - 1.0F, next_aabb.tl.y);
+    const Vec2 left_wall_br = Vec2::New(next_aabb.tl.x, next_aabb.br.y);
+    const Vec2 right_wall_tl = Vec2::New(next_aabb.br.x, next_aabb.tl.y);
+    const Vec2 right_wall_br = Vec2::New(next_aabb.br.x + 1.0F, next_aabb.br.y);
+
+    const bool col_left = IsBlockedForHangProbe(
+        left_wall_tl,
+        left_wall_br,
+        state,
+        check_tiles,
+        check_entities,
+        entity.vid
+    );
+    const bool col_right = IsBlockedForHangProbe(
+        right_wall_tl,
+        right_wall_br,
+        state,
+        check_tiles,
+        check_entities,
+        entity.vid
+    );
+
+    const HangHandBounds hanghands = GetHangHandBoundsAtPosition(entity, next_pos);
+
+    if (try_left && col_left) {
+        const bool hh_blocked = IsBlockedForHangProbe(
+            hanghands.left_tl,
+            hanghands.left_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+        const Vec2 under_tl = Vec2::New(hanghands.left_tl.x, hanghands.left_br.y);
+        const Vec2 under_br = hanghands.left_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
+        const bool uhh_blocked = IsBlockedForHangProbe(
+            under_tl,
+            under_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+        if (!hh_blocked && uhh_blocked) {
+            entity.pos = next_pos;
+            entity.left_hanging = true;
+            entity.right_hanging = false;
+            entity.facing = LeftOrRight::Left;
+            entity.vel.y = 0.0F;
+            entity.acc.y = 0.0F;
+            entity.grounded = false;
+            return true;
+        }
+    }
+
+    if (try_right && col_right) {
+        const bool hh_blocked = IsBlockedForHangProbe(
+            hanghands.right_tl,
+            hanghands.right_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+        const Vec2 under_tl = Vec2::New(hanghands.right_tl.x, hanghands.right_br.y);
+        const Vec2 under_br = hanghands.right_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
+        const bool uhh_blocked = IsBlockedForHangProbe(
+            under_tl,
+            under_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+        if (!hh_blocked && uhh_blocked) {
+            entity.pos = next_pos;
+            entity.left_hanging = false;
+            entity.right_hanging = true;
+            entity.facing = LeftOrRight::Right;
+            entity.vel.y = 0.0F;
+            entity.acc.y = 0.0F;
+            entity.grounded = false;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int GetIntegerStepDistance(float distance, unsigned int time) {
     const float abs_distance = std::abs(distance);
     int integer_distance = static_cast<int>(std::floor(abs_distance));
@@ -260,7 +422,7 @@ void ResolveBlockingOverlap(
     }
 }
 
-void ApplySweptContactInteractions(
+bool ApplySweptContactInteractions(
     std::size_t entity_idx,
     State& state,
     const Graphics& graphics,
@@ -268,7 +430,7 @@ void ApplySweptContactInteractions(
 ) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
     if (!entity.active) {
-        return;
+        return false;
     }
 
     for (std::size_t other_entity_idx = 0; other_entity_idx < state.entity_manager.entities.size();
@@ -282,24 +444,30 @@ void ApplySweptContactInteractions(
         }
 
         if (entity.type_ == EntityType::BaseballBat) {
-            baseball_bat::TryApplyBatContactToEntity(
+            if (baseball_bat::TryApplyBatContactToEntity(
                 entity_idx,
                 other_entity_idx,
                 state,
                 graphics,
                 audio
-            );
+            )) {
+                return true;
+            }
         }
         if (other_entity.type_ == EntityType::BaseballBat) {
-            baseball_bat::TryApplyBatContactToEntity(
+            if (baseball_bat::TryApplyBatContactToEntity(
                 other_entity_idx,
                 entity_idx,
                 state,
                 graphics,
                 audio
-            );
+            )) {
+                return true;
+            }
         }
     }
+
+    return false;
 }
 
 void MoveEntityPixelStep(
@@ -329,7 +497,10 @@ void MoveEntityPixelStep(
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
             }
         }
     } else if (move_x < 0) {
@@ -343,7 +514,10 @@ void MoveEntityPixelStep(
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
             }
         }
     }
@@ -351,6 +525,11 @@ void MoveEntityPixelStep(
     if (move_y > 0) {
         for (int i = 0; i < move_y; ++i) {
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, 1.0F);
+            if (TryCaptureHangDuringFall(entity_idx, state, next_pos, check_tiles, check_entities)) {
+                entity.collided = true;
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
+            }
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
             if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
                 entity.vel.y = 0.0F;
@@ -359,7 +538,10 @@ void MoveEntityPixelStep(
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
             }
         }
     } else if (move_y < 0) {
@@ -373,7 +555,10 @@ void MoveEntityPixelStep(
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                ApplySweptContactInteractions(entity_idx, state, *graphics, *audio);
+                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
             }
         }
     }
@@ -763,6 +948,12 @@ void CommonStep(
     CrushIfCanBeCrushed(entity_idx, state, audio);
     DieIfDead(entity_idx, state, audio);
     StepStunTimer(entity_idx, state);
+    {
+        Entity& entity = state.entity_manager.entities[entity_idx];
+        if (entity.hang_count > 0) {
+            entity.hang_count -= 1;
+        }
+    }
     DoThrownByStep(entity_idx, state); // TODO REVIEW THIS
     ApplyHurtOnContact(entity_idx, state, graphics, audio);
     DieIfFootInSpikes(entity_idx, state, audio);
@@ -899,6 +1090,12 @@ void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt) {
 void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
     (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (entity.grounded) {
+        if (entity.vel.y > 0.0F) {
+            entity.vel.y = 0.0F;
+        }
+        return;
+    }
     entity.acc.y += state.stage.gravity;
 }
 
@@ -1263,7 +1460,7 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
         entity.jump_delay_frame_count -= 1;
     }
 
-    if (!entity.climbing) {
+    if (!entity.climbing && !entity.grounded && !entity.IsHanging()) {
         entity.acc.y += state.stage.gravity;
     }
 }

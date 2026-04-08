@@ -31,6 +31,7 @@ void SetEntityPlayer(Entity& entity) {
     entity.has_physics = true;
     entity.can_collide = true;
     entity.impassable = false;
+    entity.can_hang_ledge = true;
     entity.draw_layer = DrawLayer::Middle;
     entity.can_be_stunned = true;
     entity.alignment = Alignment::Ally;
