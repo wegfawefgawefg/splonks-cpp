@@ -4,6 +4,7 @@
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
+#include "systems/controls.hpp"
 #include "tile.hpp"
 
 #include <algorithm>
@@ -39,6 +40,9 @@ IAABB GetAreaAbove(const Entity& bat) {
 
 bool IsAtPerchOrRoof(const Entity& bat, const State& state) {
     const IAABB area_above = GetAreaAbove(bat);
+    if (area_above.tl.y < 0) {
+        return true;
+    }
     const std::vector<const Tile*> tiles_above_you =
         state.stage.GetTilesInRectWc(area_above.tl, area_above.br);
     return CollidableTileInList(tiles_above_you);
@@ -84,6 +88,56 @@ void SetEntityBat(Entity& entity) {
  */
 void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& bat = state.entity_manager.entities[entity_idx];
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(bat, state);
+    const bool controlled =
+        state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;
+    const bool steering = control.left || control.right || control.up || control.down;
+
+    if (controlled && bat.super_state != EntitySuperState::Dead &&
+        bat.super_state != EntitySuperState::Crushed) {
+        if (!steering && IsAtPerchOrRoof(bat, state)) {
+            bat.super_state = EntitySuperState::Idle;
+            bat.display_state = EntityDisplayState::Neutral;
+            bat.acc = Vec2::New(0.0F, 0.0F);
+            bat.vel = Vec2::New(0.0F, 0.0F);
+            return;
+        }
+
+        if (control.use_pressed) {
+            audio.PlaySoundEffect(SoundEffect::BatSqueak);
+        }
+        if (bat.super_state == EntitySuperState::Idle && steering) {
+            audio.PlaySoundEffect(SoundEffect::BatSqueak);
+        }
+
+        bat.super_state = EntitySuperState::Pursuing;
+        bat.display_state = EntityDisplayState::Fly;
+        bat.acc = Vec2::New(0.0F, 0.0F);
+        if (control.left) {
+            bat.acc.x -= kChaseSpeed;
+        }
+        if (control.right) {
+            bat.acc.x += kChaseSpeed;
+        }
+        if (control.up) {
+            bat.acc.y -= kChaseSpeed;
+        }
+        if (control.down) {
+            bat.acc.y += kChaseSpeed;
+        }
+        if (!steering) {
+            bat.vel = bat.vel * 0.8F;
+        }
+        if (bat.vel.x < 0.0F) {
+            bat.facing = LeftOrRight::Left;
+        }
+        if (bat.vel.x > 0.0F) {
+            bat.facing = LeftOrRight::Right;
+        }
+        return;
+    }
+
     if (bat.super_state != EntitySuperState::Dead) {
         constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
         constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
@@ -156,6 +210,8 @@ void StepEntityPhysicsAsBat(
     float dt
 ) {
     Entity& bat = state.entity_manager.entities[entity_idx];
+    const bool controlled =
+        state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;
     const EntitySuperState bat_super_state = bat.super_state;
     const bool entered_idle_this_frame =
         bat_super_state == EntitySuperState::Idle && bat.last_super_state != EntitySuperState::Idle;
@@ -167,12 +223,15 @@ void StepEntityPhysicsAsBat(
     if (bat_super_state == EntitySuperState::Idle) {
         bat.acc = Vec2::New(0.0F, 0.0F);
         bat.vel = Vec2::New(0.0F, 0.0F);
-    } else {
+    } else if (!controlled) {
         common::ApplyGravity(entity_idx, state, dt);
     }
 
     common::PrePartialEulerStep(entity_idx, state, dt);
-    if (bat.super_state == EntitySuperState::Pursuing ||
+    if (controlled) {
+        bat.vel.x = std::clamp(bat.vel.x, -kChaseMaxSpeed, kChaseMaxSpeed);
+        bat.vel.y = std::clamp(bat.vel.y, -kChaseMaxSpeed, kChaseMaxSpeed);
+    } else if (bat.super_state == EntitySuperState::Pursuing ||
         bat.super_state == EntitySuperState::Returning) {
         bat.vel.x = std::clamp(bat.vel.x, -kChaseMaxSpeed, kChaseMaxSpeed);
         bat.vel.y = std::clamp(bat.vel.y, -kChaseMaxSpeed, kChaseMaxSpeed);

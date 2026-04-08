@@ -6,6 +6,7 @@
 #include "frame_data_id.hpp"
 #include "entities/money.hpp"
 #include "state.hpp"
+#include "systems/controls.hpp"
 
 #include <cmath>
 #include <random>
@@ -13,6 +14,15 @@
 namespace splonks::entities::breakaway_container {
 
 namespace {
+
+constexpr float kControlledPotMoveAcc = 0.07F;
+constexpr float kControlledBoxMoveAcc = 0.1F;
+constexpr float kControlledAirMoveAcc = 0.04F;
+constexpr float kControlledPotJumpVel = 3.0F;
+constexpr float kControlledBoxJumpVel = 2.25F;
+constexpr float kControlledPotSlideVel = 3.0F;
+constexpr float kControlledBoxSlideVel = 3.75F;
+constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 
 unsigned int RandomPercent() {
     static std::random_device device;
@@ -34,6 +44,47 @@ bool EntityJustCollided(Entity& entity) {
     }
 
     return trigger;
+}
+
+bool IsControlled(const Entity& entity, const State& state) {
+    return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
+}
+
+void StepControlledBreakawayContainer(
+    Entity& breakaway_container,
+    EntityType type_,
+    const systems::controls::ControlIntent& control
+) {
+    if (breakaway_container.attack_delay_countdown > 0) {
+        breakaway_container.attack_delay_countdown -= 1;
+    }
+
+    const float move_acc = type_ == EntityType::Pot ? kControlledPotMoveAcc : kControlledBoxMoveAcc;
+    const float jump_vel = type_ == EntityType::Pot ? kControlledPotJumpVel : kControlledBoxJumpVel;
+    const float slide_vel =
+        type_ == EntityType::Pot ? kControlledPotSlideVel : kControlledBoxSlideVel;
+
+    if (control.left && !control.right) {
+        breakaway_container.acc.x -=
+            breakaway_container.grounded ? move_acc : kControlledAirMoveAcc;
+        breakaway_container.facing = LeftOrRight::Left;
+    } else if (control.right && !control.left) {
+        breakaway_container.acc.x +=
+            breakaway_container.grounded ? move_acc : kControlledAirMoveAcc;
+        breakaway_container.facing = LeftOrRight::Right;
+    }
+
+    if (control.jump_pressed && breakaway_container.grounded) {
+        breakaway_container.vel.y = -jump_vel;
+        breakaway_container.grounded = false;
+    }
+
+    if (control.attack_pressed && breakaway_container.grounded &&
+        breakaway_container.attack_delay_countdown == 0) {
+        breakaway_container.vel.x =
+            breakaway_container.facing == LeftOrRight::Left ? -slide_vel : slide_vel;
+        breakaway_container.attack_delay_countdown = kControlledSlideCooldownFrames;
+    }
 }
 
 } // namespace
@@ -126,6 +177,17 @@ void StepEntityLogicAsBreakawayContainer(
         }
 
         return;
+    }
+
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(breakaway_container, state);
+    if (IsControlled(breakaway_container, state) &&
+        breakaway_container_super_state != EntitySuperState::Crushed) {
+        StepControlledBreakawayContainer(
+            breakaway_container,
+            breakaway_container_type,
+            control
+        );
     }
 
     const bool just_collided = EntityJustCollided(breakaway_container);

@@ -1,9 +1,42 @@
 #include "step.hpp"
 
+#include "inputs.hpp"
 #include "systems/controls.hpp"
 #include "step_entities.hpp"
 
 namespace splonks {
+
+namespace {
+
+void UpdateControlledEntity(State& state) {
+    if (!state.controlled_entity_vid.has_value()) {
+        state.controlled_entity_vid = state.player_vid;
+        return;
+    }
+
+    const Entity* controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid);
+    const bool invalid_controlled =
+        controlled == nullptr || !controlled->active ||
+        controlled->super_state == EntitySuperState::Dead ||
+        controlled->super_state == EntitySuperState::Crushed;
+    if (!invalid_controlled) {
+        return;
+    }
+
+    if (state.player_vid.has_value()) {
+        const Entity* player = state.entity_manager.GetEntity(*state.player_vid);
+        if (player != nullptr && player->active &&
+            player->super_state != EntitySuperState::Dead &&
+            player->super_state != EntitySuperState::Crushed) {
+            state.controlled_entity_vid = state.player_vid;
+            return;
+        }
+    }
+
+    state.controlled_entity_vid.reset();
+}
+
+} // namespace
 
 void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
     state.time_since_last_update += frame_dt;
@@ -56,6 +89,8 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[Song::Playing as usize]);
 
+    UpdateControlledEntity(state);
+    LatchPlayingInputsForTick(state);
     if (state.player_vid.has_value()) {
         systems::controls::ControlEntityAsPlayer(*state.player_vid, state);
     }

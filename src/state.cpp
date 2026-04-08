@@ -8,8 +8,14 @@ State State::New() {
     state.mode = Mode::Playing;
     state.settings = Settings::New();
     state.menu_inputs = MenuInputs::New();
+    state.menu_input_snapshot = MenuInputSnapshot::New();
+    state.previous_menu_input_snapshot = MenuInputSnapshot::New();
     state.menu_input_debounce_timers = MenuInputDebounceTimers::New();
     state.playing_inputs = PlayingInputs::New();
+    state.immediate_playing_inputs = PlayingInputs::New();
+    state.playing_input_snapshot = PlayingInputSnapshot::New();
+    state.previous_playing_input_snapshot = PlayingInputSnapshot::New();
+    state.previous_immediate_playing_input_snapshot = PlayingInputSnapshot::New();
     state.title_menu_selection = TitleMenuOption::Start;
     state.settings_menu_selection = SettingsMenuOption::Video;
     state.video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
@@ -36,6 +42,7 @@ State State::New() {
     state.sid = SID::New();
     state.next_stage = StageType::Test1;
     state.player_vid.reset();
+    state.controlled_entity_vid.reset();
     state.mouse_trailer_vid.reset();
     state.contact_cooldowns.clear();
     InitDebugLevel(state);

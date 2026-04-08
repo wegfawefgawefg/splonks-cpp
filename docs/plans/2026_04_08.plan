@@ -14,6 +14,9 @@ maybe copy spelunky physics better?
 player blurry bc cam not aligned on pixel. 
 throw depen
 throw not hit self logic
+fix throw direction issue where it sometimes throws wrong direction
+fix objects cant currently be crushed bc thats probably not happening in the physics step
+try a moving platform entity - probably its own level. and test edge hanging on it. try 4 tiles wide, two tall. 
 make double jetpack deliberate
 fix held object not flipping to match ur facing
 split up common.cpp in entities. 

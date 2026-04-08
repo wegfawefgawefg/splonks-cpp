@@ -80,6 +80,7 @@ void InitCommonStageState(State& state) {
 void SpawnPlayer(State& state, const Vec2& pos) {
     if (const std::optional<VID> player_vid = state.entity_manager.NewEntity()) {
         state.player_vid = player_vid;
+        state.controlled_entity_vid = player_vid;
         if (Entity* const player = state.entity_manager.GetEntityMut(*player_vid)) {
             entities::player::SetEntityPlayer(*player);
             player->pos = pos;

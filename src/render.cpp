@@ -270,10 +270,10 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
         graphics.camera.zoom = base;
     }
 
-    if (state.player_vid.has_value()) {
-        if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
+    if (state.controlled_entity_vid.has_value()) {
+        if (const Entity* const controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid)) {
             if (!graphics.debug_lock_play_camera) {
-                const Vec2 delta = player->pos - graphics.play_cam.pos;
+                const Vec2 delta = controlled->pos - graphics.play_cam.pos;
                 graphics.play_cam.pos += delta * 0.075F;
 
                 const Vec2 stage_dims = ToVec2(state.stage.GetStageDims());

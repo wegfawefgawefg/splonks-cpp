@@ -91,10 +91,48 @@ bool GamepadAxisPressed(SDL_GamepadAxis axis) {
 
 namespace {
 
-void SetMenuInputs(State& state, float dt) {
+ButtonState BuildButtonState(bool down, bool previous_down) {
+    return ButtonState{
+        .down = down,
+        .pressed = down && !previous_down,
+        .released = !down && previous_down,
+    };
+}
+
+PlayingInputs BuildPlayingInputs(
+    const PlayingInputSnapshot& current,
+    const PlayingInputSnapshot& previous
+) {
+    PlayingInputs inputs = PlayingInputs::New();
+    inputs.left = BuildButtonState(current.left, previous.left);
+    inputs.right = BuildButtonState(current.right, previous.right);
+    inputs.up = BuildButtonState(current.up, previous.up);
+    inputs.down = BuildButtonState(current.down, previous.down);
+    inputs.jump = BuildButtonState(current.jump, previous.jump);
+    inputs.run = BuildButtonState(current.run, previous.run);
+    inputs.use_button = BuildButtonState(current.use_button, previous.use_button);
+    inputs.equip_button = BuildButtonState(current.equip_button, previous.equip_button);
+    inputs.pick_up_drop = BuildButtonState(current.pick_up_drop, previous.pick_up_drop);
+    inputs.stop = BuildButtonState(current.stop, previous.stop);
+    inputs.bomb = BuildButtonState(current.bomb, previous.bomb);
+    inputs.rope = BuildButtonState(current.rope, previous.rope);
+    inputs.attack = BuildButtonState(current.attack, previous.attack);
+    inputs.quit = BuildButtonState(current.quit, previous.quit);
+    inputs.toggle_collision_boxes = BuildButtonState(
+        current.toggle_collision_boxes,
+        previous.toggle_collision_boxes
+    );
+    inputs.regenerate_level = BuildButtonState(
+        current.regenerate_level,
+        previous.regenerate_level
+    );
+    inputs.mouse_pos = current.mouse_pos;
+    return inputs;
+}
+
+void SetMenuInputSnapshot(State& state) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
-    const MenuInputs last_inputs = state.menu_inputs;
-    MenuInputs new_inputs = MenuInputs::New();
+    MenuInputSnapshot new_inputs = MenuInputSnapshot::New();
 
     new_inputs.left =
         keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A] ||
@@ -114,16 +152,12 @@ void SetMenuInputs(State& state, float dt) {
     new_inputs.back =
         keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_BACKSPACE] ||
         GamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST);
-
-    state.menu_input_debounce_timers.Step(dt);
-    new_inputs = state.menu_input_debounce_timers.Debounce(new_inputs);
-    state.menu_input_debounce_timers.ResetOnDiff(last_inputs, new_inputs);
-    state.menu_inputs = new_inputs;
+    state.menu_input_snapshot = new_inputs;
 }
 
-void SetPlayingInputs(State& state) {
+void SetPlayingInputSnapshot(State& state) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
-    PlayingInputs new_inputs = PlayingInputs::New();
+    PlayingInputSnapshot new_inputs = PlayingInputSnapshot::New();
     new_inputs.left = keys[SDL_SCANCODE_A] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
     new_inputs.right = keys[SDL_SCANCODE_D] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
     new_inputs.up = keys[SDL_SCANCODE_W] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP);
@@ -140,11 +174,15 @@ void SetPlayingInputs(State& state) {
     new_inputs.rope = keys[SDL_SCANCODE_O] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_NORTH);
     new_inputs.attack =
         keys[SDL_SCANCODE_H] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
+    new_inputs.quit = keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_Q];
+    new_inputs.toggle_collision_boxes = keys[SDL_SCANCODE_F1];
+    new_inputs.regenerate_level =
+        keys[SDL_SCANCODE_R] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK);
     float mx = 0.0F;
     float my = 0.0F;
     SDL_GetMouseState(&mx, &my);
     new_inputs.mouse_pos = UVec2::New(static_cast<unsigned int>(mx), static_cast<unsigned int>(my));
-    state.playing_inputs = new_inputs;
+    state.playing_input_snapshot = new_inputs;
 }
 
 void ProcessInputPlaying(
@@ -156,16 +194,16 @@ void ProcessInputPlaying(
 ) {
     (void)audio;
     (void)dt;
-    if (KeyPressedEdge(SDL_SCANCODE_ESCAPE) || KeyPressedEdge(SDL_SCANCODE_Q)) {
+    const PlayingInputs& inputs = state.immediate_playing_inputs;
+    if (inputs.quit.pressed) {
         state.running = false;
     }
 
-    if (KeyPressedEdge(SDL_SCANCODE_F1)) {
+    if (inputs.toggle_collision_boxes.pressed) {
         state.show_entity_collision_boxes = !state.show_entity_collision_boxes;
     }
 
-    // randomize the stage tiles
-    if (KeyPressedEdge(SDL_SCANCODE_R) || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK)) {
+    if (inputs.regenerate_level.pressed) {
         InitDebugLevel(state);
         graphics.ResetTileVariations();
     }
@@ -183,15 +221,11 @@ void ProcessInputStageTransition(
     (void)window;
     (void)audio;
     (void)dt;
-    const bool* keys = SDL_GetKeyboardState(nullptr);
-    if (KeyPressedEdge(SDL_SCANCODE_ESCAPE) || KeyPressedEdge(SDL_SCANCODE_Q)) {
+    if (state.menu_inputs.back.pressed) {
         state.running = false;
     }
 
-    const bool proceed =
-        keys[SDL_SCANCODE_SPACE] || keys[SDL_SCANCODE_RETURN] ||
-        GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH);
-    if (proceed && state.scene_frame >= 60) {
+    if (state.menu_inputs.confirm.down && state.scene_frame >= 60) {
         if (state.next_stage) {
             state.stage = Stage::New(*state.next_stage);
             InitStage(state);
@@ -215,8 +249,7 @@ void ProcessInputGameOver(
     (void)window;
     (void)audio;
     (void)dt;
-    const bool* keys = SDL_GetKeyboardState(nullptr);
-    if (keys[SDL_SCANCODE_SPACE] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH)) {
+    if (state.menu_inputs.confirm.down) {
         if (state.next_stage != std::optional<StageType>(StageType::Test1)) {
             state.next_stage = StageType::Cave1;
         }
@@ -235,8 +268,7 @@ void ProcessInputWin(
     (void)window;
     (void)audio;
     (void)dt;
-    const bool* keys = SDL_GetKeyboardState(nullptr);
-    if ((keys[SDL_SCANCODE_SPACE] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH)) &&
+    if (state.menu_inputs.confirm.down &&
         state.scene_frame >= (60 * 5)) {
         state.stage = Stage::NewBlank();
         graphics.ResetTileVariations();
@@ -251,8 +283,18 @@ MenuInputs MenuInputs::New() {
     return MenuInputs{};
 }
 
+MenuInputSnapshot MenuInputSnapshot::New() {
+    return MenuInputSnapshot{};
+}
+
 PlayingInputs PlayingInputs::New() {
     PlayingInputs inputs;
+    inputs.mouse_pos = UVec2::New(0, 0);
+    return inputs;
+}
+
+PlayingInputSnapshot PlayingInputSnapshot::New() {
+    PlayingInputSnapshot inputs;
     inputs.mouse_pos = UVec2::New(0, 0);
     return inputs;
 }
@@ -268,29 +310,21 @@ void MenuInputDebounceTimers::Step(float dt) {
     down = Max(down - dt, 0.0F);
 }
 
-MenuInputs MenuInputDebounceTimers::Debounce(const MenuInputs& menu_inputs) const {
-    MenuInputs result;
-    result.left = left <= 0.0F && menu_inputs.left;
-    result.right = right <= 0.0F && menu_inputs.right;
-    result.up = up <= 0.0F && menu_inputs.up;
-    result.down = down <= 0.0F && menu_inputs.down;
-    result.confirm = menu_inputs.confirm;
-    result.back = menu_inputs.back;
-    return result;
-}
-
-void MenuInputDebounceTimers::ResetOnDiff(const MenuInputs& last_inputs,
-                                          const MenuInputs& new_inputs) {
-    if (new_inputs.left && !last_inputs.left) {
+void MenuInputDebounceTimers::ApplyRepeat(MenuInputs& menu_inputs) {
+    if (menu_inputs.left.down && left <= 0.0F) {
+        menu_inputs.left.pressed = true;
         left = kKeyDebounceInterval;
     }
-    if (new_inputs.right && !last_inputs.right) {
+    if (menu_inputs.right.down && right <= 0.0F) {
+        menu_inputs.right.pressed = true;
         right = kKeyDebounceInterval;
     }
-    if (new_inputs.up && !last_inputs.up) {
+    if (menu_inputs.up.down && up <= 0.0F) {
+        menu_inputs.up.pressed = true;
         up = kKeyDebounceInterval;
     }
-    if (new_inputs.down && !last_inputs.down) {
+    if (menu_inputs.down.down && down <= 0.0F) {
+        menu_inputs.down.pressed = true;
         down = kKeyDebounceInterval;
     }
 }
@@ -308,10 +342,16 @@ void ProcessInput(
 
     switch (state.mode) {
     case Mode::Playing:
-        SetPlayingInputs(state);
+        SetPlayingInputSnapshot(state);
+        state.immediate_playing_inputs = BuildPlayingInputs(
+            state.playing_input_snapshot,
+            state.previous_immediate_playing_input_snapshot
+        );
+        state.previous_immediate_playing_input_snapshot = state.playing_input_snapshot;
         break;
     default:
-        SetMenuInputs(state, dt);
+        SetMenuInputSnapshot(state);
+        LatchMenuInputsForFrame(state, dt);
         break;
     }
 
@@ -338,6 +378,31 @@ void ProcessInput(
         ProcessInputWin(window, state, audio, graphics, dt);
         break;
     }
+}
+
+void LatchMenuInputsForFrame(State& state, float dt) {
+    const MenuInputSnapshot current = state.menu_input_snapshot;
+    const MenuInputSnapshot previous = state.previous_menu_input_snapshot;
+
+    MenuInputs inputs = MenuInputs::New();
+    inputs.left = BuildButtonState(current.left, previous.left);
+    inputs.right = BuildButtonState(current.right, previous.right);
+    inputs.up = BuildButtonState(current.up, previous.up);
+    inputs.down = BuildButtonState(current.down, previous.down);
+    inputs.confirm = BuildButtonState(current.confirm, previous.confirm);
+    inputs.back = BuildButtonState(current.back, previous.back);
+
+    state.menu_input_debounce_timers.Step(dt);
+    state.menu_input_debounce_timers.ApplyRepeat(inputs);
+
+    state.menu_inputs = inputs;
+    state.previous_menu_input_snapshot = current;
+}
+
+void LatchPlayingInputsForTick(State& state) {
+    const PlayingInputSnapshot current = state.playing_input_snapshot;
+    state.playing_inputs = BuildPlayingInputs(current, state.previous_playing_input_snapshot);
+    state.previous_playing_input_snapshot = current;
 }
 
 } // namespace splonks

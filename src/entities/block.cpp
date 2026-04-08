@@ -4,6 +4,7 @@
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
+#include "systems/controls.hpp"
 #include "tile.hpp"
 
 #include <cmath>
@@ -12,6 +13,10 @@
 namespace splonks::entities::block {
 
 namespace {
+
+constexpr float kControlledBlockMoveAcc = 0.18F;
+constexpr float kControlledBlockSlideVel = 3.25F;
+constexpr std::uint32_t kControlledBlockSlideCooldownFrames = 120;
 
 Vec2 NormalizeOrZero(const Vec2& value) {
     const float length = Length(value);
@@ -48,12 +53,37 @@ FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
     return frame_data_ids::CaveBlock;
 }
 
+bool IsControlled(const Entity& entity, const State& state) {
+    return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
+}
+
+void StepControlledBlock(Entity& block, const systems::controls::ControlIntent& control) {
+    if (block.attack_delay_countdown > 0) {
+        block.attack_delay_countdown -= 1;
+    }
+
+    if (control.left && !control.right) {
+        block.acc.x -= kControlledBlockMoveAcc;
+        block.facing = LeftOrRight::Left;
+    } else if (control.right && !control.left) {
+        block.acc.x += kControlledBlockMoveAcc;
+        block.facing = LeftOrRight::Right;
+    }
+
+    if (control.attack_pressed && block.grounded && block.attack_delay_countdown == 0) {
+        block.vel.x =
+            block.facing == LeftOrRight::Left ? -kControlledBlockSlideVel : kControlledBlockSlideVel;
+        block.attack_delay_countdown = kControlledBlockSlideCooldownFrames;
+    }
+}
+
 } // namespace
 
 void SetEntityBlock(Entity& entity) {
     entity.Reset();
     entity.active = true;
     entity.type_ = EntityType::Block;
+    entity.health = 1;
     entity.size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize));
     entity.has_physics = true;
     entity.damage_vulnerability = DamageVulnerability::Immune;
@@ -73,6 +103,16 @@ void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) 
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
         entity.frame_data_animator.SetAnimation(BlockFrameDataIdForStageType(state.stage.stage_type));
+    }
+
+    {
+        Entity& block = state.entity_manager.entities[entity_idx];
+        const systems::controls::ControlIntent control =
+            systems::controls::GetControlIntentForEntity(block, state);
+        if (IsControlled(block, state) && block.super_state != EntitySuperState::Dead &&
+            block.super_state != EntitySuperState::Crushed) {
+            StepControlledBlock(block, control);
+        }
     }
 
     //TODO: if you hit the ground, do a clunky sound

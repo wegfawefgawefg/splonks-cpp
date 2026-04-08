@@ -18,8 +18,14 @@ struct GameplaySnapshot {
     Mode mode = Mode::Title;
     Settings settings;
     MenuInputs menu_inputs;
+    MenuInputSnapshot menu_input_snapshot;
+    MenuInputSnapshot previous_menu_input_snapshot;
     MenuInputDebounceTimers menu_input_debounce_timers;
     PlayingInputs playing_inputs;
+    PlayingInputs immediate_playing_inputs;
+    PlayingInputSnapshot playing_input_snapshot;
+    PlayingInputSnapshot previous_playing_input_snapshot;
+    PlayingInputSnapshot previous_immediate_playing_input_snapshot;
     TitleMenuOption title_menu_selection = TitleMenuOption::Start;
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
@@ -46,6 +52,7 @@ struct GameplaySnapshot {
     EntityManager entity_manager;
     Stage stage;
     std::optional<VID> player_vid;
+    std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
     Vec2 play_cam_pos;
 };
@@ -73,7 +80,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
 void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Graphics& graphics);
 
 void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Graphics& graphics);
-void DrawDebugPlaybackInspector(DebugPlayback& debug, const State& state, const Graphics& graphics);
+void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
 bool ConvertRecordingFileToText(
     const std::string& input_path,
     const std::string& output_path,

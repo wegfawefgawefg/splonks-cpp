@@ -32,15 +32,9 @@ void ProcessInputTitle(
     (void)dt;
     (void)window;
 
-    const bool confirm_pressed =
-        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_START) ||
-        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_SOUTH) ||
-        KeyPressedEdge(SDL_SCANCODE_SPACE) || KeyPressedEdge(SDL_SCANCODE_RETURN) ||
-        KeyPressedEdge(SDL_SCANCODE_KP_ENTER);
-    const bool up_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_UP) ||
-                            KeyPressedEdge(SDL_SCANCODE_UP) || KeyPressedEdge(SDL_SCANCODE_W);
-    const bool down_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_DOWN) ||
-                              KeyPressedEdge(SDL_SCANCODE_DOWN) || KeyPressedEdge(SDL_SCANCODE_S);
+    const bool confirm_pressed = state.menu_inputs.confirm.pressed;
+    const bool up_pressed = state.menu_inputs.up.pressed;
+    const bool down_pressed = state.menu_inputs.down.pressed;
 
     //  TITLE MENU STATE MACHINE
     switch (state.title_menu_selection) {

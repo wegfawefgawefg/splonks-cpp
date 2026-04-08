@@ -61,8 +61,14 @@ struct State {
     Mode mode = Mode::Title;
     Settings settings;
     MenuInputs menu_inputs;
+    MenuInputSnapshot menu_input_snapshot;
+    MenuInputSnapshot previous_menu_input_snapshot;
     MenuInputDebounceTimers menu_input_debounce_timers;
     PlayingInputs playing_inputs;
+    PlayingInputs immediate_playing_inputs;
+    PlayingInputSnapshot playing_input_snapshot;
+    PlayingInputSnapshot previous_playing_input_snapshot;
+    PlayingInputSnapshot previous_immediate_playing_input_snapshot;
     TitleMenuOption title_menu_selection = TitleMenuOption::Start;
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
@@ -92,6 +98,7 @@ struct State {
     SID sid;
     Stage stage;
     std::optional<VID> player_vid;
+    std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
     std::vector<ContactCooldownEntry> contact_cooldowns;
 

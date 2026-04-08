@@ -8,6 +8,7 @@
 #include "entities/rope.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
+#include "systems/controls.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -91,6 +92,11 @@ void StepEntityLogicAsPlayer(
 
     const bool loss_of_control =
         state.entity_manager.entities[entity_idx].super_state == EntitySuperState::Stunned;
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(
+            state.entity_manager.entities[entity_idx],
+            state
+        );
 
     // SET ANIMATIONS AND DISPLAY STATES
     {
@@ -147,7 +153,7 @@ void StepEntityLogicAsPlayer(
         std::optional<std::vector<VID>> trying_to_pick_up_these;
         {
             Entity& player = state.entity_manager.entities[entity_idx];
-            if (player.trying_pick_up_drop) {
+            if (control.pick_up_drop_pressed) {
                 if (player.holding_vid.has_value()) {
                     if (player.holding_timer == 0) {
                         thrown_vid = player.holding_vid;
@@ -205,10 +211,10 @@ void StepEntityLogicAsPlayer(
             const Entity& player = state.entity_manager.entities[entity_idx];
             const VID player_vid = player.vid;
             const Vec2 player_center = player.GetCenter();
-            const bool trying_to_go_down = player.trying_to_go_down;
-            const bool trying_to_go_up = player.trying_to_go_up;
-            const bool trying_to_go_left = player.trying_to_go_left;
-            const bool trying_to_go_right = player.trying_to_go_right;
+            const bool trying_to_go_down = control.down;
+            const bool trying_to_go_up = control.up;
+            const bool trying_to_go_left = control.left;
+            const bool trying_to_go_right = control.right;
             const Vec2 player_size = player.size;
 
             if (thrown_vid.has_value()) {
@@ -256,7 +262,7 @@ void StepEntityLogicAsPlayer(
         bool equip_action_was_made = false;
         {
             const Entity& player = state.entity_manager.entities[entity_idx];
-            if (player.trying_to_equip && player.equip_delay_countdown == 0) {
+            if (control.equip_pressed && player.equip_delay_countdown == 0) {
                 equip_action_was_made = true;
                 if (player.back_vid.has_value()) {
                     take_off_back_vid = player.back_vid;
@@ -315,7 +321,7 @@ void StepEntityLogicAsPlayer(
         const LeftOrRight player_facing = player.facing;
         const Vec2 player_center = player.GetCenter() + Vec2::New(0.0F, 1.0F);
         const EntityDisplayState player_display_state = player.display_state;
-        const bool player_trying_to_use = player.trying_to_use;
+        const bool player_trying_to_use = control.use_held;
 
         if (player_holding_vid.has_value()) {
             if (Entity* const holding = state.entity_manager.GetEntityMut(*player_holding_vid)) {
@@ -348,7 +354,7 @@ void StepEntityLogicAsPlayer(
         const LeftOrRight player_facing = player.facing;
         const Vec2 player_center = player.GetCenter();
         const EntityDisplayState player_display_state = player.display_state;
-        const bool player_trying_to_use = player.trying_to_use;
+        const bool player_trying_to_use = control.use_held;
 
         if (player_back_vid.has_value()) {
             if (Entity* const back_item = state.entity_manager.GetEntityMut(*player_back_vid)) {
@@ -393,11 +399,11 @@ void StepEntityLogicAsPlayer(
         }
 
         const Entity& player = state.entity_manager.entities[entity_idx];
-        const bool trying_to_bomb = player.trying_to_bomb;
-        const bool trying_to_go_up = player.trying_to_go_up;
-        const bool trying_to_go_down = player.trying_to_go_down;
-        const bool trying_to_go_left = player.trying_to_go_left;
-        const bool trying_to_go_right = player.trying_to_go_right;
+        const bool trying_to_bomb = control.bomb_pressed;
+        const bool trying_to_go_up = control.up;
+        const bool trying_to_go_down = control.down;
+        const bool trying_to_go_left = control.left;
+        const bool trying_to_go_right = control.right;
         const Vec2 player_center = player.GetCenter();
         const unsigned int bomb_count = player.bombs;
         const unsigned int bomb_throw_delay = player.bomb_throw_delay_countdown;
@@ -457,11 +463,11 @@ void StepEntityLogicAsPlayer(
         }
 
         const Entity& player = state.entity_manager.entities[entity_idx];
-        const bool trying_to_rope = player.trying_to_rope;
-        const bool trying_to_go_up = player.trying_to_go_up;
-        const bool trying_to_go_down = player.trying_to_go_down;
-        const bool trying_to_go_left = player.trying_to_go_left;
-        const bool trying_to_go_right = player.trying_to_go_right;
+        const bool trying_to_rope = control.rope_pressed;
+        const bool trying_to_go_up = control.up;
+        const bool trying_to_go_down = control.down;
+        const bool trying_to_go_left = control.left;
+        const bool trying_to_go_right = control.right;
         const Vec2 player_center = player.GetCenter();
         const unsigned int rope_count = player.ropes;
         const unsigned int rope_throw_delay = player.rope_throw_delay_countdown;
@@ -521,7 +527,7 @@ void StepEntityLogicAsPlayer(
     if (!loss_of_control) {
         const Entity& player = state.entity_manager.entities[entity_idx];
         const Vec2 player_pos = player.pos;
-        const bool trying_to_attack = player.trying_to_attack;
+        const bool trying_to_attack = control.attack_pressed;
         const VID player_vid = player.vid;
         const unsigned int attack_delay_countdown = player.attack_delay_countdown;
 
@@ -688,7 +694,9 @@ void StepEntityPhysicsAsPlayer(
     // custom pre partial euler step for player to apply special velocity clamping.
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.vel += entity.acc;
-    if (entity.running) {
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(entity, state);
+    if (control.run) {
         entity.vel.x = std::clamp(entity.vel.x, -kMaxRunSpeed, kMaxRunSpeed);
     } else {
         entity.vel.x = std::clamp(entity.vel.x, -kMaxWalkSpeed, kMaxWalkSpeed);

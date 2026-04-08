@@ -51,19 +51,11 @@ void ProcessInputVideoSettingsMenu(
     float dt
 ) {
     (void)dt;
-    const bool confirm_pressed =
-        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_START) ||
-        GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_SOUTH) ||
-        KeyPressedEdge(SDL_SCANCODE_SPACE) || KeyPressedEdge(SDL_SCANCODE_RETURN) ||
-        KeyPressedEdge(SDL_SCANCODE_KP_ENTER);
-    const bool up_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_UP) ||
-                            KeyPressedEdge(SDL_SCANCODE_UP) || KeyPressedEdge(SDL_SCANCODE_W);
-    const bool down_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_DOWN) ||
-                              KeyPressedEdge(SDL_SCANCODE_DOWN) || KeyPressedEdge(SDL_SCANCODE_S);
-    const bool left_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_LEFT) ||
-                              KeyPressedEdge(SDL_SCANCODE_LEFT) || KeyPressedEdge(SDL_SCANCODE_A);
-    const bool right_pressed = GamepadButtonPressedEdge(SDL_GAMEPAD_BUTTON_DPAD_RIGHT) ||
-                               KeyPressedEdge(SDL_SCANCODE_RIGHT) || KeyPressedEdge(SDL_SCANCODE_D);
+    const bool confirm_pressed = state.menu_inputs.confirm.pressed;
+    const bool up_pressed = state.menu_inputs.up.pressed;
+    const bool down_pressed = state.menu_inputs.down.pressed;
+    const bool left_pressed = state.menu_inputs.left.pressed;
+    const bool right_pressed = state.menu_inputs.right.pressed;
     const VideoUpOrDownOrNeither up_down = up_pressed ? VideoUpOrDownOrNeither::Up
                                                       : (down_pressed ? VideoUpOrDownOrNeither::Down
                                                                       : VideoUpOrDownOrNeither::Neither);

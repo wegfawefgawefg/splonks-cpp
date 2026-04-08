@@ -4,6 +4,7 @@
 #include "entity_display_states.hpp"
 #include "entities/player.hpp"
 #include "on_damage_effects.hpp"
+#include "systems/controls.hpp"
 #include "tile.hpp"
 
 #include <algorithm>
@@ -245,11 +246,13 @@ bool EntityHasHangGloves(const Entity& entity, const State& state) {
     return false;
 }
 
-bool IsTryingToHangOnSide(const Entity& entity, bool left_side) {
+bool IsTryingToHangOnSide(const Entity& entity, const State& state, bool left_side) {
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(entity, state);
     if (left_side) {
-        return entity.trying_to_go_left && !entity.trying_to_go_right;
+        return control.left && !control.right;
     }
-    return entity.trying_to_go_right && !entity.trying_to_go_left;
+    return control.right && !control.left;
 }
 
 bool IsSideBlockedForHang(
@@ -355,7 +358,9 @@ bool TryCaptureHdHang(
     if (!entity.can_hang_ledge && !EntityHasHangGloves(entity, state)) {
         return false;
     }
-    if (entity.no_hang || entity.hang_count > 0) {
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(entity, state);
+    if (control.no_hang || entity.hang_count > 0) {
         return false;
     }
     if (entity.super_state == EntitySuperState::Stunned ||
@@ -369,8 +374,8 @@ bool TryCaptureHdHang(
         return false;
     }
 
-    const bool try_left = IsTryingToHangOnSide(entity, true);
-    const bool try_right = IsTryingToHangOnSide(entity, false);
+    const bool try_left = IsTryingToHangOnSide(entity, state, true);
+    const bool try_right = IsTryingToHangOnSide(entity, state, false);
     if (!try_left && !try_right) {
         return false;
     }
@@ -1330,7 +1335,9 @@ void DoThrownByStep(std::size_t entity_idx, State& state) {
 
 void HangHandsStep(std::size_t entity_idx, State& state) {
     Entity& mutable_entity = state.entity_manager.entities[entity_idx];
-    if (mutable_entity.no_hang) {
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(mutable_entity, state);
+    if (control.no_hang) {
         mutable_entity.left_hanging = false;
         mutable_entity.right_hanging = false;
     }
@@ -1342,7 +1349,7 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
 
     if (mutable_entity.left_hanging) {
         const bool has_gloves = EntityHasHangGloves(mutable_entity, state);
-        const bool still_trying = IsTryingToHangOnSide(mutable_entity, true);
+        const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, true);
         if ((has_gloves && !still_trying) ||
             !IsSideBlockedForHang(mutable_entity, state, true, true, true)) {
             mutable_entity.left_hanging = false;
@@ -1350,7 +1357,7 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
         }
     } else if (mutable_entity.right_hanging) {
         const bool has_gloves = EntityHasHangGloves(mutable_entity, state);
-        const bool still_trying = IsTryingToHangOnSide(mutable_entity, false);
+        const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, false);
         if ((has_gloves && !still_trying) ||
             !IsSideBlockedForHang(mutable_entity, state, false, true, true)) {
             mutable_entity.right_hanging = false;
@@ -1474,6 +1481,8 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     GroundedCheck(entity_idx, state, audio, true, true);
 
     Entity& entity = state.entity_manager.entities[entity_idx];
+    const systems::controls::ControlIntent control =
+        systems::controls::GetControlIntentForEntity(entity, state);
     Stage& stage = state.stage;
     const auto [player_tl, player_br] = entity.GetBounds();
     const std::vector<const Tile*> newly_collided_tiles =
@@ -1481,17 +1490,17 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     const bool can_climb = ClimbableTileInList(newly_collided_tiles);
 
         if (can_climb) {
-        if (entity.trying_to_go_up) {
+        if (control.up) {
             entity.climbing = true;
             entity.grounded = false;
             entity.vel.y = -player::kClimbSpeed;
-        } else if (entity.climbing && !entity.trying_to_go_down) {
+        } else if (entity.climbing && !control.down) {
             entity.vel.y = 0.0F;
         }
-        if (entity.climbing && !entity.trying_to_go_up && entity.trying_to_go_down) {
+        if (entity.climbing && !control.up && control.down) {
             entity.vel.y = player::kClimbSpeed;
         }
-        if (entity.climbing && entity.trying_to_jump && entity.trying_to_go_down) {
+        if (entity.climbing && control.jump_pressed && control.down) {
             entity.climbing = false;
         }
     } else {
@@ -1507,16 +1516,16 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
         entity.climbing = false;
     }
 
-    if (entity.jumping) {
+    if (control.jump_pressed) {
         if (entity.IsHanging()) {
             const bool jumping_away =
-                (entity.right_hanging && entity.trying_to_go_left) ||
-                (entity.left_hanging && entity.trying_to_go_right);
+                (entity.right_hanging && control.left) ||
+                (entity.left_hanging && control.right);
             const bool has_gloves = EntityHasHangGloves(entity, state);
             entity.left_hanging = false;
             entity.right_hanging = false;
             entity.grounded = false;
-            if (entity.trying_to_go_down) {
+            if (control.down) {
                 entity.hang_count =
                     has_gloves ? kHangGloveDropCooldownFrames : kHangDropCooldownFrames;
             } else if (jumping_away) {
@@ -1534,7 +1543,6 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
             audio.PlaySoundEffect(SoundEffect::Jump);
         }
     }
-    entity.jumping = false;
 
     // reset the jump delay frame count
     if (entity.jump_delay_frame_count > 0) {

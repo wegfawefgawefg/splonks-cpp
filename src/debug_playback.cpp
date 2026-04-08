@@ -24,7 +24,7 @@ constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 6;
+constexpr std::uint32_t kRecordingVersion = 9;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -382,8 +382,14 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.mode);
     WriteSettings(out, snapshot.settings);
     WritePod(out, snapshot.menu_inputs);
+    WritePod(out, snapshot.menu_input_snapshot);
+    WritePod(out, snapshot.previous_menu_input_snapshot);
     WritePod(out, snapshot.menu_input_debounce_timers);
     WritePod(out, snapshot.playing_inputs);
+    WritePod(out, snapshot.immediate_playing_inputs);
+    WritePod(out, snapshot.playing_input_snapshot);
+    WritePod(out, snapshot.previous_playing_input_snapshot);
+    WritePod(out, snapshot.previous_immediate_playing_input_snapshot);
     WritePod(out, snapshot.title_menu_selection);
     WritePod(out, snapshot.settings_menu_selection);
     WritePod(out, snapshot.video_settings_menu_selection);
@@ -410,6 +416,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteEntityManager(out, snapshot.entity_manager);
     WriteStage(out, snapshot.stage);
     WriteOptionalPod(out, snapshot.player_vid);
+    WriteOptionalPod(out, snapshot.controlled_entity_vid);
     WriteOptionalPod(out, snapshot.mouse_trailer_vid);
     WritePod(out, snapshot.play_cam_pos);
 }
@@ -418,8 +425,14 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
     return ReadPod(in, snapshot.mode) &&
            ReadSettings(in, snapshot.settings) &&
            ReadPod(in, snapshot.menu_inputs) &&
+           ReadPod(in, snapshot.menu_input_snapshot) &&
+           ReadPod(in, snapshot.previous_menu_input_snapshot) &&
            ReadPod(in, snapshot.menu_input_debounce_timers) &&
            ReadPod(in, snapshot.playing_inputs) &&
+           ReadPod(in, snapshot.immediate_playing_inputs) &&
+           ReadPod(in, snapshot.playing_input_snapshot) &&
+           ReadPod(in, snapshot.previous_playing_input_snapshot) &&
+           ReadPod(in, snapshot.previous_immediate_playing_input_snapshot) &&
            ReadPod(in, snapshot.title_menu_selection) &&
            ReadPod(in, snapshot.settings_menu_selection) &&
            ReadPod(in, snapshot.video_settings_menu_selection) &&
@@ -446,6 +459,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadEntityManager(in, snapshot.entity_manager) &&
            ReadStage(in, snapshot.stage) &&
            ReadOptionalPod(in, snapshot.player_vid) &&
+           ReadOptionalPod(in, snapshot.controlled_entity_vid) &&
            ReadOptionalPod(in, snapshot.mouse_trailer_vid) &&
            ReadPod(in, snapshot.play_cam_pos);
 }
@@ -603,7 +617,6 @@ bool ExportRecordingToTextFile(const DebugPlayback& debug, const Graphics& graph
             out << "    grounded: " << (entity.grounded ? "true" : "false") << "\n";
             out << "    climbing: " << (entity.climbing ? "true" : "false") << "\n";
             out << "    holding: " << (entity.holding ? "true" : "false") << "\n";
-            out << "    running: " << (entity.running ? "true" : "false") << "\n";
             out << "    coyote_time: " << entity.coyote_time << "\n";
             out << "    pos: (" << entity.pos.x << ", " << entity.pos.y << ")\n";
             out << "    vel: (" << entity.vel.x << ", " << entity.vel.y << ")\n";
@@ -834,7 +847,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     ImGui::End();
 }
 
-void DrawEntityInspector(DebugPlayback& debug, const State& state, const Graphics& graphics) {
+void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics) {
     if (!debug.ui_visible) {
         return;
     }
@@ -895,6 +908,19 @@ void DrawEntityInspector(DebugPlayback& debug, const State& state, const Graphic
     const AABB aabb = entity.GetAABB();
     ImGui::Separator();
     ImGui::Text("Type: %s", EntityTypeToString(entity.type_));
+    ImGui::Text("Controlled: %s",
+                state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid
+                    ? "true"
+                    : "false");
+    if (ImGui::Button("Control Selected")) {
+        state.controlled_entity_vid = entity.vid;
+    }
+    if (state.player_vid.has_value()) {
+        ImGui::SameLine();
+        if (ImGui::Button("Control Player")) {
+            state.controlled_entity_vid = *state.player_vid;
+        }
+    }
     ImGui::Text("Display: %s", DisplayStateToString(entity.display_state));
     ImGui::Text("Super: %s", SuperStateToString(entity.super_state));
     ImGui::Text("Facing: %s", LeftOrRightToString(entity.facing));
@@ -912,7 +938,6 @@ void DrawEntityInspector(DebugPlayback& debug, const State& state, const Graphic
     ImGui::Text("Ropes: %u", entity.ropes);
     ImGui::Text("Climbing: %s", entity.climbing ? "true" : "false");
     ImGui::Text("Holding: %s", entity.holding ? "true" : "false");
-    ImGui::Text("Running: %s", entity.running ? "true" : "false");
     ImGui::Text("Horiz Controlled: %s", entity.IsHorizontallyControlled() ? "true" : "false");
 
     if (entity.frame_data_animator.HasAnimation()) {
@@ -1043,8 +1068,15 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.mode = state.mode;
     snapshot.settings = state.settings;
     snapshot.menu_inputs = state.menu_inputs;
+    snapshot.menu_input_snapshot = state.menu_input_snapshot;
+    snapshot.previous_menu_input_snapshot = state.previous_menu_input_snapshot;
     snapshot.menu_input_debounce_timers = state.menu_input_debounce_timers;
     snapshot.playing_inputs = state.playing_inputs;
+    snapshot.immediate_playing_inputs = state.immediate_playing_inputs;
+    snapshot.playing_input_snapshot = state.playing_input_snapshot;
+    snapshot.previous_playing_input_snapshot = state.previous_playing_input_snapshot;
+    snapshot.previous_immediate_playing_input_snapshot =
+        state.previous_immediate_playing_input_snapshot;
     snapshot.title_menu_selection = state.title_menu_selection;
     snapshot.settings_menu_selection = state.settings_menu_selection;
     snapshot.video_settings_menu_selection = state.video_settings_menu_selection;
@@ -1071,6 +1103,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.entity_manager = state.entity_manager;
     snapshot.stage = state.stage;
     snapshot.player_vid = state.player_vid;
+    snapshot.controlled_entity_vid = state.controlled_entity_vid;
     snapshot.mouse_trailer_vid = state.mouse_trailer_vid;
     snapshot.play_cam_pos = graphics.play_cam.pos;
     return snapshot;
@@ -1080,8 +1113,15 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.mode = snapshot.mode;
     state.settings = snapshot.settings;
     state.menu_inputs = snapshot.menu_inputs;
+    state.menu_input_snapshot = snapshot.menu_input_snapshot;
+    state.previous_menu_input_snapshot = snapshot.previous_menu_input_snapshot;
     state.menu_input_debounce_timers = snapshot.menu_input_debounce_timers;
     state.playing_inputs = snapshot.playing_inputs;
+    state.immediate_playing_inputs = snapshot.immediate_playing_inputs;
+    state.playing_input_snapshot = snapshot.playing_input_snapshot;
+    state.previous_playing_input_snapshot = snapshot.previous_playing_input_snapshot;
+    state.previous_immediate_playing_input_snapshot =
+        snapshot.previous_immediate_playing_input_snapshot;
     state.title_menu_selection = snapshot.title_menu_selection;
     state.settings_menu_selection = snapshot.settings_menu_selection;
     state.video_settings_menu_selection = snapshot.video_settings_menu_selection;
@@ -1109,6 +1149,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.special_effects.clear();
     state.stage = snapshot.stage;
     state.player_vid = snapshot.player_vid;
+    state.controlled_entity_vid = snapshot.controlled_entity_vid;
     state.mouse_trailer_vid = snapshot.mouse_trailer_vid;
     state.RebuildSid();
     graphics.play_cam.pos = snapshot.play_cam_pos;
@@ -1119,7 +1160,7 @@ void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Graphics& gra
     DrawLevelControls(debug, state, graphics);
 }
 
-void DrawDebugPlaybackInspector(DebugPlayback& debug, const State& state, const Graphics& graphics) {
+void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphics& graphics) {
     DrawEntityInspector(debug, state, graphics);
 }
 

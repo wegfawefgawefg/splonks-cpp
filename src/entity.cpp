@@ -29,28 +29,14 @@ Entity Entity::New() {
     entity.display_state = EntityDisplayState::Neutral;
     entity.frame_data_animator = FrameDataAnimator{};
     entity.jump_delay_frame_count = kJumpDelayFrames;
-    entity.jumping = false;
     entity.jumped_this_frame = false;
     entity.left_hanging = false;
     entity.right_hanging = false;
     entity.can_hang_ledge = false;
     entity.can_hang_wall = false;
-    entity.no_hang = false;
     entity.hang_count = 0;
-    entity.running = false;
     entity.holding = false;
     entity.climbing = false;
-    entity.trying_to_jump = false;
-    entity.trying_to_use = false;
-    entity.trying_to_go_left = false;
-    entity.trying_to_go_right = false;
-    entity.trying_to_equip = false;
-    entity.trying_pick_up_drop = false;
-    entity.trying_to_go_up = false;
-    entity.trying_to_go_down = false;
-    entity.trying_to_bomb = false;
-    entity.trying_to_rope = false;
-    entity.trying_to_attack = false;
     entity.money = 0;
     entity.bombs = 4;
     entity.ropes = 4;
@@ -187,7 +173,7 @@ bool Entity::IsHanging() const {
 }
 
 bool Entity::IsHorizontallyControlled() const {
-    return trying_to_go_left || trying_to_go_right;
+    return was_horizontally_controlled_this_frame;
 }
 
 AABB Entity::GetFeet() const {
