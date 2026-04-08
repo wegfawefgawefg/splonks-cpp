@@ -3,6 +3,7 @@
 #include "audio.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
+#include "settings.hpp"
 #include "state.hpp"
 
 namespace splonks {
@@ -177,11 +178,13 @@ void ProcessInputVideoSettingsMenu(
         if (confirm_pressed) {
             if (state.video_settings_target_resolution_index) {
                 graphics.dims = kResolutions[*state.video_settings_target_resolution_index];
+                state.settings.video.resolution = graphics.dims;
                 state.rebuild_render_texture = true;
                 state.video_settings_target_resolution_index.reset();
             }
             if (state.video_settings_target_fullscreen) {
                 graphics.fullscreen = *state.video_settings_target_fullscreen;
+                state.settings.video.fullscreen = graphics.fullscreen;
                 SDL_SetWindowFullscreen(window, graphics.fullscreen);
                 state.video_settings_target_fullscreen.reset();
             }
@@ -190,6 +193,7 @@ void ProcessInputVideoSettingsMenu(
                 SDL_SetWindowSize(window, static_cast<int>(graphics.window_dims.x), static_cast<int>(graphics.window_dims.y));
                 state.video_settings_target_window_size_index.reset();
             }
+            SaveSettings(state.settings);
             PlayMenuSoundConfirm(audio);
         } else if (up_down == VideoUpOrDownOrNeither::Up) {
             state.video_settings_menu_selection = VideoSettingsMenuOption::Fullscreen;

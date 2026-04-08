@@ -2,6 +2,7 @@
 
 #include "frame_data.hpp"
 #include "imgui_layer.hpp"
+#include "settings.hpp"
 #include "stage_init.hpp"
 
 #include <imgui.h>
@@ -17,24 +18,104 @@ constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 
-} // namespace
-
-void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphics) {
-    if (!debug.ui_visible) {
-        if (ImGui::IsKeyPressed(ImGuiKey_F2)) {
-            debug.ui_visible = true;
-        }
-        return;
+const char* ToolKindToString(ToolKind tool_kind) {
+    switch (tool_kind) {
+    case ToolKind::ThrowPot:
+        return "ThrowPot";
+    case ToolKind::ThrowBomb:
+        return "ThrowBomb";
+    case ToolKind::ThrowRope:
+        return "ThrowRope";
     }
 
+    return "Unknown";
+}
+
+bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
+    bool changed = false;
+
+    if (state.settings.debug_ui.menu_visible != debug.ui_visible) {
+        state.settings.debug_ui.menu_visible = debug.ui_visible;
+        changed = true;
+    }
+    if (state.settings.debug_ui.playback_visible != debug.playback_window_visible) {
+        state.settings.debug_ui.playback_visible = debug.playback_window_visible;
+        changed = true;
+    }
+    if (state.settings.debug_ui.level_visible != debug.level_window_visible) {
+        state.settings.debug_ui.level_visible = debug.level_window_visible;
+        changed = true;
+    }
+    if (state.settings.debug_ui.entities_visible != debug.entity_inspector_visible) {
+        state.settings.debug_ui.entities_visible = debug.entity_inspector_visible;
+        changed = true;
+    }
+    if (state.settings.debug_ui.entity_annotations_visible != debug.entity_annotations_visible) {
+        state.settings.debug_ui.entity_annotations_visible = debug.entity_annotations_visible;
+        changed = true;
+    }
+    if (state.settings.debug_ui.ui_settings_visible != debug.ui_settings_window_visible) {
+        state.settings.debug_ui.ui_settings_visible = debug.ui_settings_window_visible;
+        changed = true;
+    }
+
+    if (changed) {
+        SaveSettings(state.settings);
+    }
+
+    return changed;
+}
+
+} // namespace
+
+void DrawDebugMenu(DebugPlayback& debug, State& state) {
+    if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
+        debug.ui_visible = !debug.ui_visible;
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_F2)) {
-        debug.ui_visible = false;
+        debug.playback_window_visible = !debug.playback_window_visible;
+    }
+
+    if (!debug.ui_visible) {
+        SyncDebugUiSettings(debug, state);
         return;
     }
 
     ImGui::SetNextWindowBgAlpha(0.9F);
     ImGui::SetNextWindowPos(ImVec2(12.0F, 12.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Debug: Playback")) {
+    if (!ImGui::Begin("Debug: Menu", &debug.ui_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::TextUnformatted("Window Toggles");
+    ImGui::Checkbox("Playback", &debug.playback_window_visible);
+    ImGui::Checkbox("Level", &debug.level_window_visible);
+    ImGui::Checkbox("Entities", &debug.entity_inspector_visible);
+    ImGui::Checkbox("Entity Annotations", &debug.entity_annotations_visible);
+    ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
+    ImGui::Separator();
+    ImGui::TextUnformatted("Shortcuts");
+    ImGui::TextUnformatted("F1: Toggle this menu");
+    ImGui::TextUnformatted("F2: Toggle playback window");
+    ImGui::TextUnformatted("Collision boxes moved to Entity Annotations.");
+    ImGui::Separator();
+    ImGui::Text("Playback Active: %s", debug.playback_active ? "true" : "false");
+    ImGui::Text("Selected Entity: %zu", debug.selected_entity_id);
+    ImGui::Text("Entity P/C boxes: %s", state.show_entity_collision_boxes ? "on" : "off");
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.playback_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(12.0F, 120.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Playback", &debug.playback_window_visible)) {
         ImGui::End();
         return;
     }
@@ -145,16 +226,17 @@ void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphi
     }
 
     ImGui::End();
+    SyncDebugUiSettings(debug, state);
 }
 
 void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
-    if (!debug.ui_visible) {
+    if (!debug.level_window_visible) {
         return;
     }
 
     ImGui::SetNextWindowBgAlpha(0.9F);
     ImGui::SetNextWindowPos(ImVec2(360.0F, 12.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Debug: Level")) {
+    if (!ImGui::Begin("Debug: Level", &debug.level_window_visible)) {
         ImGui::End();
         return;
     }
@@ -196,16 +278,86 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     }
 
     ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawEntityAnnotations(DebugPlayback& debug, State& state) {
+    if (!debug.entity_annotations_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(620.0F, 12.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Entity Annotations", &debug.entity_annotations_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::Checkbox("Show Entity P/C Boxes", &state.show_entity_collision_boxes);
+    ImGui::TextUnformatted("PBox/CBox overlay uses render debug colors.");
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawUiSettingsWindow(DebugPlayback& debug, State& state) {
+    if (!debug.ui_settings_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(860.0F, 12.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: UI Settings", &debug.ui_settings_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    bool changed = false;
+    changed |= ImGui::SliderFloat(
+        "Icon Scale",
+        &state.settings.ui.icon_scale,
+        0.25F,
+        1.50F,
+        "%.2fx"
+    );
+    changed |= ImGui::SliderFloat(
+        "Status Icon Scale",
+        &state.settings.ui.status_icon_scale,
+        0.25F,
+        1.50F,
+        "%.2fx"
+    );
+    changed |= ImGui::SliderFloat(
+        "Tool Slot Scale",
+        &state.settings.ui.tool_slot_scale,
+        0.25F,
+        1.50F,
+        "%.2fx"
+    );
+    changed |= ImGui::SliderFloat(
+        "Tool Icon Scale",
+        &state.settings.ui.tool_icon_scale,
+        0.25F,
+        1.50F,
+        "%.2fx"
+    );
+
+    if (changed) {
+        SaveSettings(state.settings);
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
 }
 
 void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics) {
-    if (!debug.ui_visible) {
+    if (!debug.entity_inspector_visible) {
         return;
     }
 
     ImGui::SetNextWindowBgAlpha(0.9F);
     ImGui::SetNextWindowPos(ImVec2(12.0F, 300.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Debug: Entities")) {
+    if (!ImGui::Begin("Debug: Entities", &debug.entity_inspector_visible)) {
         ImGui::End();
         return;
     }
@@ -287,8 +439,55 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("Coyote: %u", entity.coyote_time);
     ImGui::Text("Health: %u", entity.health);
     ImGui::Text("Money: %u", entity.money);
-    ImGui::Text("Bombs: %u", entity.bombs);
-    ImGui::Text("Ropes: %u", entity.ropes);
+    ImGui::Separator();
+    ImGui::TextUnformatted("Tools");
+    if (debug.playback_active) {
+        ImGui::TextDisabled("Tool editing disabled during playback.");
+    } else {
+        const char* tool_kind_names[] = {"ThrowPot", "ThrowBomb", "ThrowRope"};
+        for (std::size_t slot_index = 0; slot_index < kToolSlotCount; ++slot_index) {
+            ToolSlot preview_slot{};
+            preview_slot.kind = slot_index == 0 ? ToolKind::ThrowBomb : ToolKind::ThrowRope;
+            ToolSlot* slot = state.FindToolSlotMut(entity.vid, slot_index);
+            if (slot == nullptr) {
+                slot = &preview_slot;
+            }
+            ImGui::PushID(static_cast<int>(slot_index));
+            ImGui::SeparatorText(slot_index == 0 ? "Tool Slot 1" : "Tool Slot 2");
+            bool active = slot->active;
+            if (ImGui::Checkbox("Active", &active)) {
+                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                owned_slot = *slot;
+                owned_slot.active = active;
+                slot = &owned_slot;
+            }
+
+            int kind_index = static_cast<int>(slot->kind);
+            if (ImGui::Combo("Kind", &kind_index, tool_kind_names, IM_ARRAYSIZE(tool_kind_names))) {
+                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                owned_slot = *slot;
+                owned_slot.kind = static_cast<ToolKind>(kind_index);
+                slot = &owned_slot;
+            }
+
+            int count = static_cast<int>(slot->count);
+            int cooldown = static_cast<int>(slot->cooldown);
+            ImGui::SetNextItemWidth(120.0F);
+            if (ImGui::InputInt("Count", &count)) {
+                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                owned_slot = *slot;
+                owned_slot.count = static_cast<std::uint16_t>(std::clamp(count, 0, 65535));
+                slot = &owned_slot;
+            }
+            ImGui::SetNextItemWidth(120.0F);
+            if (ImGui::InputInt("Cooldown", &cooldown)) {
+                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                owned_slot = *slot;
+                owned_slot.cooldown = static_cast<std::uint16_t>(std::clamp(cooldown, 0, 65535));
+            }
+            ImGui::PopID();
+        }
+    }
     ImGui::Text("Climbing: %s", entity.climbing ? "true" : "false");
     ImGui::Text("Holding: %s", entity.holding ? "true" : "false");
     ImGui::Text("Horiz Controlled: %s", entity.IsHorizontallyControlled() ? "true" : "false");
@@ -340,6 +539,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     }
 
     ImGui::End();
+    SyncDebugUiSettings(debug, state);
 }
 
 } // namespace splonks::debug_playback_internal

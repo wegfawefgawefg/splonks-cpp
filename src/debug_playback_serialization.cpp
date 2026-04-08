@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 9;
+constexpr std::uint32_t kRecordingVersion = 12;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -96,6 +96,10 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
     WritePod(out, settings.audio.sfx_volume);
     WritePod(out, settings.controls.jump);
     WritePod(out, settings.controls.shoot);
+    WritePod(out, settings.ui.icon_scale);
+    WritePod(out, settings.ui.status_icon_scale);
+    WritePod(out, settings.ui.tool_slot_scale);
+    WritePod(out, settings.ui.tool_icon_scale);
 }
 
 bool ReadSettings(std::istream& in, Settings& settings) {
@@ -107,7 +111,11 @@ bool ReadSettings(std::istream& in, Settings& settings) {
         !ReadPod(in, settings.audio.music_volume) ||
         !ReadPod(in, settings.audio.sfx_volume) ||
         !ReadPod(in, settings.controls.jump) ||
-        !ReadPod(in, settings.controls.shoot)) {
+        !ReadPod(in, settings.controls.shoot) ||
+        !ReadPod(in, settings.ui.icon_scale) ||
+        !ReadPod(in, settings.ui.status_icon_scale) ||
+        !ReadPod(in, settings.ui.tool_slot_scale) ||
+        !ReadPod(in, settings.ui.tool_icon_scale)) {
         return false;
     }
     return true;
@@ -189,6 +197,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.title_menu_selection);
     WritePod(out, snapshot.settings_menu_selection);
     WritePod(out, snapshot.video_settings_menu_selection);
+    WritePod(out, snapshot.ui_settings_menu_selection);
     WriteOptionalPod(out, snapshot.video_settings_target_window_size_index);
     WriteOptionalPod(out, snapshot.video_settings_target_resolution_index);
     WriteOptionalPod(out, snapshot.video_settings_target_fullscreen);
@@ -214,6 +223,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteOptionalPod(out, snapshot.player_vid);
     WriteOptionalPod(out, snapshot.controlled_entity_vid);
     WriteOptionalPod(out, snapshot.mouse_trailer_vid);
+    WriteVectorPod(out, snapshot.entity_tool_states);
     WritePod(out, snapshot.play_cam_pos);
 }
 
@@ -232,6 +242,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.title_menu_selection) &&
            ReadPod(in, snapshot.settings_menu_selection) &&
            ReadPod(in, snapshot.video_settings_menu_selection) &&
+           ReadPod(in, snapshot.ui_settings_menu_selection) &&
            ReadOptionalPod(in, snapshot.video_settings_target_window_size_index) &&
            ReadOptionalPod(in, snapshot.video_settings_target_resolution_index) &&
            ReadOptionalPod(in, snapshot.video_settings_target_fullscreen) &&
@@ -257,6 +268,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadOptionalPod(in, snapshot.player_vid) &&
            ReadOptionalPod(in, snapshot.controlled_entity_vid) &&
            ReadOptionalPod(in, snapshot.mouse_trailer_vid) &&
+           ReadVectorPod(in, snapshot.entity_tool_states) &&
            ReadPod(in, snapshot.play_cam_pos);
 }
 
@@ -270,6 +282,8 @@ const char* ModeToString(Mode mode) {
         return "Settings";
     case Mode::VideoSettings:
         return "VideoSettings";
+    case Mode::UiSettings:
+        return "UiSettings";
     case Mode::Playing:
         return "Playing";
     case Mode::StageTransition:
@@ -660,6 +674,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.title_menu_selection = state.title_menu_selection;
     snapshot.settings_menu_selection = state.settings_menu_selection;
     snapshot.video_settings_menu_selection = state.video_settings_menu_selection;
+    snapshot.ui_settings_menu_selection = state.ui_settings_menu_selection;
     snapshot.video_settings_target_window_size_index = state.video_settings_target_window_size_index;
     snapshot.video_settings_target_resolution_index = state.video_settings_target_resolution_index;
     snapshot.video_settings_target_fullscreen = state.video_settings_target_fullscreen;
@@ -685,6 +700,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.player_vid = state.player_vid;
     snapshot.controlled_entity_vid = state.controlled_entity_vid;
     snapshot.mouse_trailer_vid = state.mouse_trailer_vid;
+    snapshot.entity_tool_states = state.entity_tool_states;
     snapshot.play_cam_pos = graphics.play_cam.pos;
     return snapshot;
 }
@@ -705,6 +721,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.title_menu_selection = snapshot.title_menu_selection;
     state.settings_menu_selection = snapshot.settings_menu_selection;
     state.video_settings_menu_selection = snapshot.video_settings_menu_selection;
+    state.ui_settings_menu_selection = snapshot.ui_settings_menu_selection;
     state.video_settings_target_window_size_index = snapshot.video_settings_target_window_size_index;
     state.video_settings_target_resolution_index = snapshot.video_settings_target_resolution_index;
     state.video_settings_target_fullscreen = snapshot.video_settings_target_fullscreen;
@@ -731,6 +748,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.player_vid = snapshot.player_vid;
     state.controlled_entity_vid = snapshot.controlled_entity_vid;
     state.mouse_trailer_vid = snapshot.mouse_trailer_vid;
+    state.entity_tool_states = snapshot.entity_tool_states;
     state.RebuildSid();
     graphics.play_cam.pos = snapshot.play_cam_pos;
 }

@@ -27,8 +27,11 @@ bool ExportRecordingToTextFile(
 );
 
 void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphics);
+void DrawDebugMenu(DebugPlayback& debug, State& state);
 void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
+void DrawEntityAnnotations(DebugPlayback& debug, State& state);
+void DrawUiSettingsWindow(DebugPlayback& debug, State& state);
 
 void AdvanceLiveSimulation(
     SDL_Window* window,

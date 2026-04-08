@@ -342,4 +342,21 @@ bool MeasureText(
     return true;
 }
 
+bool MeasureText(
+    Graphics& graphics,
+    int point_size,
+    LoadedFont& loaded_font,
+    const char* text,
+    int* width,
+    int* height
+) {
+    (void)graphics;
+    (void)loaded_font;
+    EnsureGlyphRects();
+    const MeasuredText measured = MeasureTextInternal(point_size, text);
+    *width = static_cast<int>(measured.width);
+    *height = static_cast<int>(measured.height);
+    return true;
+}
+
 } // namespace splonks

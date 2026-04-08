@@ -17,28 +17,21 @@
 
 namespace {
 
-constexpr int kWindowWidth = 1280;
-constexpr int kWindowHeight = 720;
-constexpr const char* kX11DialogWindowType = "_NET_WM_WINDOW_TYPE_DIALOG";
+constexpr int kWindowWidth = 1920;
+constexpr int kWindowHeight = 1080;
 
 [[noreturn]] void ThrowSdlError(const char* message) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
 }
 
-void CenterWindowOnPrimaryDisplay(SDL_Window* window) {
-    const SDL_DisplayID primary_display = SDL_GetPrimaryDisplay();
-    if (primary_display == 0) {
-        return;
-    }
-
-    SDL_Rect bounds{};
-    if (!SDL_GetDisplayBounds(primary_display, &bounds)) {
-        return;
-    }
-
-    const int x = bounds.x + (bounds.w - kWindowWidth) / 2;
-    const int y = bounds.y + (bounds.h - kWindowHeight) / 2;
-    SDL_SetWindowPosition(window, x, y);
+splonks::UVec2 GetWindowDims(SDL_Window* window) {
+    int window_width = 0;
+    int window_height = 0;
+    SDL_GetWindowSize(window, &window_width, &window_height);
+    return splonks::UVec2::New(
+        static_cast<unsigned int>(std::max(window_width, 1)),
+        static_cast<unsigned int>(std::max(window_height, 1))
+    );
 }
 
 void RebaseCwdToRepoRoot() {
@@ -84,22 +77,28 @@ int main(int argc, char** argv) {
             ThrowSdlError("TTF_Init failed");
         }
 
-        SDL_SetHint(SDL_HINT_X11_WINDOW_TYPE, kX11DialogWindowType);
+        const splonks::Settings loaded_settings = splonks::LoadSettings();
 
         const SDL_WindowFlags window_flags =
-            SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_UTILITY;
-        window = SDL_CreateWindow("Splonks", kWindowWidth, kWindowHeight, window_flags);
+            (loaded_settings.video.fullscreen ? SDL_WINDOW_FULLSCREEN : 0) |
+            SDL_WINDOW_HIGH_PIXEL_DENSITY | (!loaded_settings.video.fullscreen ? SDL_WINDOW_RESIZABLE : 0);
+        const int startup_width = static_cast<int>(loaded_settings.video.resolution.x);
+        const int startup_height = static_cast<int>(loaded_settings.video.resolution.y);
+        window = SDL_CreateWindow(
+            "Splonks",
+            startup_width > 0 ? startup_width : kWindowWidth,
+            startup_height > 0 ? startup_height : kWindowHeight,
+            window_flags
+        );
         if (window == nullptr) {
             ThrowSdlError("SDL_CreateWindow failed");
         }
-
-        CenterWindowOnPrimaryDisplay(window);
 
         renderer = SDL_CreateRenderer(window, nullptr);
         if (renderer == nullptr) {
             ThrowSdlError("SDL_CreateRenderer failed");
         }
-        if (!SDL_SetRenderVSync(renderer, 1)) {
+        if (!SDL_SetRenderVSync(renderer, loaded_settings.video.vsync ? 1 : 0)) {
             ThrowSdlError("SDL_SetRenderVSync failed");
         }
 
@@ -113,6 +112,9 @@ int main(int argc, char** argv) {
         } catch (const std::exception&) {
             graphics = splonks::Graphics{};
         }
+        graphics.dims = loaded_settings.video.resolution;
+        graphics.fullscreen = loaded_settings.video.fullscreen;
+        graphics.window_dims = GetWindowDims(window);
 
         const auto rebuild_render_texture = [&]() {
             if (render_texture != nullptr) {
@@ -150,6 +152,12 @@ int main(int argc, char** argv) {
         ////////////////        MAIN LOOP        ////////////////
         splonks::State state = splonks::State::New();
         state.running = true;
+        debug.ui_visible = state.settings.debug_ui.menu_visible;
+        debug.playback_window_visible = state.settings.debug_ui.playback_visible;
+        debug.level_window_visible = state.settings.debug_ui.level_visible;
+        debug.entity_inspector_visible = state.settings.debug_ui.entities_visible;
+        debug.entity_annotations_visible = state.settings.debug_ui.entity_annotations_visible;
+        debug.ui_settings_window_visible = state.settings.debug_ui.ui_settings_visible;
 
         std::uint64_t last_ticks = SDL_GetTicks();
 
@@ -159,6 +167,9 @@ int main(int argc, char** argv) {
                 splonks::ImGuiLayerProcessEvent(event);
                 if (event.type == SDL_EVENT_QUIT) {
                     state.running = false;
+                } else if (event.type == SDL_EVENT_WINDOW_RESIZED ||
+                           event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+                    graphics.window_dims = GetWindowDims(window);
                 } else if (event.type == SDL_EVENT_KEY_DOWN &&
                            event.key.scancode == SDL_SCANCODE_ESCAPE &&
                            !event.key.repeat) {

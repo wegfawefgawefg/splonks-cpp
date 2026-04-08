@@ -7,7 +7,6 @@ namespace splonks {
 struct Graphics;
 struct State;
 
-void PrintCtrlsHelp(SDL_Renderer* renderer, Graphics& graphics, unsigned int screen_bottom);
 void RenderStageLayout(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, const State& state);

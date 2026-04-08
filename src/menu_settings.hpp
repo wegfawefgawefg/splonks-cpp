@@ -12,6 +12,7 @@ enum class SettingsMenuOption {
     Video,
     Audio,
     Controls,
+    Ui,
     Back,
 };
 

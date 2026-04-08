@@ -64,6 +64,8 @@ constexpr FrameDataId HeartUiIcon = HashFrameDataIdConstexpr("heart_ui_icon");
 constexpr FrameDataId GrenadeUiIcon = HashFrameDataIdConstexpr("grenade_ui_icon");
 constexpr FrameDataId RopeUiIcon = HashFrameDataIdConstexpr("rope_ui_icon");
 constexpr FrameDataId GoldIcon = HashFrameDataIdConstexpr("gold_icon");
+constexpr FrameDataId ToolSlot1 = HashFrameDataIdConstexpr("tool_slot_1");
+constexpr FrameDataId ToolSlot2 = HashFrameDataIdConstexpr("tool_slot_2");
 
 } // namespace frame_data_ids
 

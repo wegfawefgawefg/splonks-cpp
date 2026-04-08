@@ -26,6 +26,7 @@ constexpr unsigned int kCoyoteTimeFrames = 6;
 constexpr unsigned int kJumpDelayFrames = 1;
 constexpr unsigned int kBombThrowDelay = 8;
 constexpr unsigned int kRopeThrowDelay = 8;
+constexpr unsigned int kPotThrowDelay = 12;
 constexpr unsigned int kAttackDelay = 24;
 constexpr unsigned int kEquipDelay = 8;
 

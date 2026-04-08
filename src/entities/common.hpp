@@ -5,6 +5,10 @@
 #include "graphics.hpp"
 #include "state.hpp"
 
+namespace splonks::systems::controls {
+struct ControlIntent;
+}
+
 namespace splonks::entities::common {
 
 constexpr float kMaxSpeed = 7.0F;
@@ -73,6 +77,25 @@ void TryPushBlocks(
     std::size_t entity_idx,
     State& state,
     const Graphics& graphics
+);
+using ToolThrowVelocityBuilder = Vec2 (*)(const systems::controls::ControlIntent&);
+bool TrySpawnAndThrowEntityFromTool(
+    std::size_t thrower_idx,
+    State& state,
+    Audio& audio,
+    std::size_t tool_slot_index,
+    bool trigger_pressed,
+    std::uint16_t cooldown_frames,
+    std::uint32_t thrown_immunity_timer,
+    void (*setup_entity)(Entity&),
+    ToolThrowVelocityBuilder build_throw_velocity = nullptr
+);
+bool TryUseToolSlot(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    std::size_t tool_slot_index,
+    bool trigger_pressed
 );
 
 enum class DamageResult {

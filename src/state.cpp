@@ -6,7 +6,7 @@ namespace splonks {
 State State::New() {
     State state;
     state.mode = Mode::Playing;
-    state.settings = Settings::New();
+    state.settings = LoadSettings();
     state.menu_inputs = MenuInputs::New();
     state.menu_input_snapshot = MenuInputSnapshot::New();
     state.previous_menu_input_snapshot = MenuInputSnapshot::New();
@@ -19,6 +19,7 @@ State State::New() {
     state.title_menu_selection = TitleMenuOption::Start;
     state.settings_menu_selection = SettingsMenuOption::Video;
     state.video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
+    state.ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
     state.video_settings_target_window_size_index.reset();
     state.video_settings_target_resolution_index.reset();
     state.video_settings_target_fullscreen.reset();
@@ -45,6 +46,7 @@ State State::New() {
     state.controlled_entity_vid.reset();
     state.mouse_trailer_vid.reset();
     state.contact_cooldowns.clear();
+    state.entity_tool_states.clear();
     InitDebugLevel(state);
     return state;
 }
@@ -107,6 +109,63 @@ void State::AddContactCooldown(
         .kind = kind,
         .expires_on_stage_frame = stage_frame + duration,
     });
+}
+
+void State::StepEntityToolStates() {
+    for (EntityToolState& tool_state : entity_tool_states) {
+        for (ToolSlot& slot : tool_state.slots) {
+            if (!slot.active) {
+                continue;
+            }
+            if (slot.cooldown > 0) {
+                slot.cooldown -= 1;
+            }
+        }
+    }
+}
+
+EntityToolState* State::FindEntityToolStateMut(const VID& owner_vid) {
+    for (EntityToolState& tool_state : entity_tool_states) {
+        if (tool_state.owner_vid == owner_vid) {
+            return &tool_state;
+        }
+    }
+    return nullptr;
+}
+
+const EntityToolState* State::FindEntityToolState(const VID& owner_vid) const {
+    for (const EntityToolState& tool_state : entity_tool_states) {
+        if (tool_state.owner_vid == owner_vid) {
+            return &tool_state;
+        }
+    }
+    return nullptr;
+}
+
+ToolSlot* State::FindToolSlotMut(const VID& owner_vid, std::size_t slot_index) {
+    EntityToolState* const tool_state = FindEntityToolStateMut(owner_vid);
+    if (tool_state == nullptr || slot_index >= tool_state->slots.size()) {
+        return nullptr;
+    }
+    return &tool_state->slots[slot_index];
+}
+
+const ToolSlot* State::FindToolSlot(const VID& owner_vid, std::size_t slot_index) const {
+    const EntityToolState* const tool_state = FindEntityToolState(owner_vid);
+    if (tool_state == nullptr || slot_index >= tool_state->slots.size()) {
+        return nullptr;
+    }
+    return &tool_state->slots[slot_index];
+}
+
+ToolSlot& State::EnsureToolSlot(const VID& owner_vid, std::size_t slot_index) {
+    if (EntityToolState* existing = FindEntityToolStateMut(owner_vid)) {
+        return existing->slots[slot_index];
+    }
+    EntityToolState tool_state{};
+    tool_state.owner_vid = owner_vid;
+    entity_tool_states.push_back(tool_state);
+    return entity_tool_states.back().slots[slot_index];
 }
 
 bool IsStageWon(const State& state) {

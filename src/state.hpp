@@ -4,6 +4,7 @@
 #include "inputs.hpp"
 #include "menu_settings.hpp"
 #include "menu_title.hpp"
+#include "menu_ui.hpp"
 #include "menu_video.hpp"
 #include "settings.hpp"
 #include "sid.hpp"
@@ -11,6 +12,7 @@
 #include "stage.hpp"
 
 #include <cstdint>
+#include <array>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -21,6 +23,7 @@ enum class Mode {
     Title,
     Settings,
     VideoSettings,
+    UiSettings,
     Playing,
     StageTransition,
     GameOver,
@@ -57,6 +60,26 @@ struct ContactCooldownEntry {
     std::uint32_t expires_on_stage_frame = 0;
 };
 
+enum class ToolKind : std::uint8_t {
+    ThrowPot,
+    ThrowBomb,
+    ThrowRope,
+};
+
+constexpr std::size_t kToolSlotCount = 2;
+
+struct ToolSlot {
+    ToolKind kind = ToolKind::ThrowPot;
+    std::uint16_t count = 0;
+    std::uint16_t cooldown = 0;
+    bool active = false;
+};
+
+struct EntityToolState {
+    VID owner_vid;
+    std::array<ToolSlot, kToolSlotCount> slots{};
+};
+
 struct State {
     Mode mode = Mode::Title;
     Settings settings;
@@ -72,6 +95,7 @@ struct State {
     TitleMenuOption title_menu_selection = TitleMenuOption::Start;
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
+    UiSettingsMenuOption ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
     std::optional<std::size_t> video_settings_target_window_size_index;
     std::optional<std::size_t> video_settings_target_resolution_index;
     std::optional<bool> video_settings_target_fullscreen;
@@ -101,6 +125,7 @@ struct State {
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
     std::vector<ContactCooldownEntry> contact_cooldowns;
+    std::vector<EntityToolState> entity_tool_states;
 
     static State New();
     void SetMode(Mode new_mode);
@@ -117,6 +142,12 @@ struct State {
         ContactInteractionKind kind,
         std::uint32_t duration
     );
+    void StepEntityToolStates();
+    EntityToolState* FindEntityToolStateMut(const VID& owner_vid);
+    const EntityToolState* FindEntityToolState(const VID& owner_vid) const;
+    ToolSlot* FindToolSlotMut(const VID& owner_vid, std::size_t slot_index);
+    const ToolSlot* FindToolSlot(const VID& owner_vid, std::size_t slot_index) const;
+    ToolSlot& EnsureToolSlot(const VID& owner_vid, std::size_t slot_index);
 };
 
 bool IsStageWon(const State& state);

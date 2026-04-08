@@ -3,6 +3,7 @@
 #include "graphics.hpp"
 #include "menu_settings.hpp"
 #include "menu_title.hpp"
+#include "menu_ui.hpp"
 #include "menu_video.hpp"
 #include "render_debug.hpp"
 #include "render_tiles_and_entities.hpp"
@@ -179,10 +180,110 @@ void RenderSettingsMenu(SDL_Renderer* renderer, State& state, Graphics& graphics
         graphics,
         x,
         y,
+        "UI",
+        state.settings_menu_selection == SettingsMenuOption::Ui ? 230 : 255,
+        state.settings_menu_selection == SettingsMenuOption::Ui ? 41 : 255,
+        state.settings_menu_selection == SettingsMenuOption::Ui ? 55 : 255
+    );
+    y += ten_percent;
+    RenderMenuLine(
+        renderer,
+        graphics,
+        x,
+        y,
         "Back",
         state.settings_menu_selection == SettingsMenuOption::Back ? 230 : 255,
         state.settings_menu_selection == SettingsMenuOption::Back ? 41 : 255,
         state.settings_menu_selection == SettingsMenuOption::Back ? 55 : 255
+    );
+}
+
+void RenderUiSettingsMenu(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    SDL_SetRenderDrawColor(renderer, 44, 50, 36, 255);
+    SDL_RenderClear(renderer);
+    DrawMenuTitle(renderer, graphics, "UI Settings");
+
+    const float ten_percent = static_cast<float>(graphics.dims.y) * 0.10F;
+    const float x = static_cast<float>(graphics.dims.x) * 0.15F;
+    float y = static_cast<float>(graphics.dims.y) * 0.4F;
+
+    char line[128];
+    std::snprintf(line, sizeof(line), "Icon Scale: %.2fx", state.settings.ui.icon_scale);
+    RenderMenuLine(
+        renderer,
+        graphics,
+        x,
+        y,
+        line,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::IconScale ? 230 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::IconScale ? 41 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::IconScale ? 55 : 255
+    );
+    y += ten_percent;
+
+    std::snprintf(
+        line,
+        sizeof(line),
+        "Status Icon Scale: %.2fx",
+        state.settings.ui.status_icon_scale
+    );
+    RenderMenuLine(
+        renderer,
+        graphics,
+        x,
+        y,
+        line,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::StatusIconScale ? 230 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::StatusIconScale ? 41 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::StatusIconScale ? 55 : 255
+    );
+    y += ten_percent;
+
+    std::snprintf(
+        line,
+        sizeof(line),
+        "Tool Slot Scale: %.2fx",
+        state.settings.ui.tool_slot_scale
+    );
+    RenderMenuLine(
+        renderer,
+        graphics,
+        x,
+        y,
+        line,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::ToolSlotScale ? 230 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::ToolSlotScale ? 41 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::ToolSlotScale ? 55 : 255
+    );
+    y += ten_percent;
+
+    std::snprintf(
+        line,
+        sizeof(line),
+        "Tool Icon Scale: %.2fx",
+        state.settings.ui.tool_icon_scale
+    );
+    RenderMenuLine(
+        renderer,
+        graphics,
+        x,
+        y,
+        line,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::ToolIconScale ? 230 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::ToolIconScale ? 41 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::ToolIconScale ? 55 : 255
+    );
+    y += ten_percent;
+
+    RenderMenuLine(
+        renderer,
+        graphics,
+        x,
+        y,
+        "Back",
+        state.ui_settings_menu_selection == UiSettingsMenuOption::Back ? 230 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::Back ? 41 : 255,
+        state.ui_settings_menu_selection == UiSettingsMenuOption::Back ? 55 : 255
     );
 }
 
@@ -490,6 +591,9 @@ void Render(SDL_Renderer* renderer, SDL_Texture* render_texture, State& state, G
     case Mode::VideoSettings:
         RenderVideoSettingsMenu(renderer, state, graphics);
         break;
+    case Mode::UiSettings:
+        RenderUiSettingsMenu(renderer, state, graphics);
+        break;
     case Mode::Playing:
         RenderPlaying(renderer, state, graphics);
         break;
@@ -528,11 +632,6 @@ void Render(SDL_Renderer* renderer, SDL_Texture* render_texture, State& state, G
         if (state.show_entity_collision_boxes) {
             RenderEntityCollisionBoxes(renderer, graphics, state);
         }
-        PrintCtrlsHelp(
-            renderer,
-            graphics,
-            static_cast<unsigned int>(output_height > 56 ? output_height - 56 : 0)
-        );
     }
 }
 

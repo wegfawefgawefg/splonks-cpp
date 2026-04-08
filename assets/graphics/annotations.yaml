@@ -1808,6 +1808,60 @@ sprites:
       w: 0
       h: 0
     tile: false
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 96
+      w: 16
+      h: 16
+    name: "tool_slot_1"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    cbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 96
+      w: 16
+      h: 16
+    name: "tool_slot_2"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    cbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    tile: false
   - path: "boss.png"
     aabb:
       x: 0

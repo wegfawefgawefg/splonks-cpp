@@ -60,6 +60,8 @@ void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
         break;
     case Mode::VideoSettings:
         break;
+    case Mode::UiSettings:
+        break;
     case Mode::Playing:
         StepPlaying(state, audio, graphics, kTimestep);
         break;
@@ -95,6 +97,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         systems::controls::ControlEntityAsPlayer(*state.player_vid, state);
     }
     state.StepContactCooldowns();
+    state.StepEntityToolStates();
     state.RebuildSid();
     StepEntities(state, audio, graphics, dt);
     StepSpecialEffects(state);

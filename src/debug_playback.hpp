@@ -29,6 +29,7 @@ struct GameplaySnapshot {
     TitleMenuOption title_menu_selection = TitleMenuOption::Start;
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
+    UiSettingsMenuOption ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
     std::optional<std::size_t> video_settings_target_window_size_index;
     std::optional<std::size_t> video_settings_target_resolution_index;
     std::optional<bool> video_settings_target_fullscreen;
@@ -54,11 +55,17 @@ struct GameplaySnapshot {
     std::optional<VID> player_vid;
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
+    std::vector<EntityToolState> entity_tool_states;
     Vec2 play_cam_pos;
 };
 
 struct DebugPlayback {
     bool ui_visible = true;
+    bool playback_window_visible = true;
+    bool level_window_visible = true;
+    bool entity_inspector_visible = true;
+    bool entity_annotations_visible = false;
+    bool ui_settings_window_visible = false;
     bool recording = false;
     bool playback_active = false;
     bool pause_live_simulation = false;

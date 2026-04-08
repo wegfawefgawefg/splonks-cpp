@@ -3,9 +3,7 @@
 #include "audio.hpp"
 #include "entities/baseball_bat.hpp"
 #include "entities/block.hpp"
-#include "entities/bomb.hpp"
 #include "entities/common.hpp"
-#include "entities/rope.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
 #include "systems/controls.hpp"
@@ -149,132 +147,14 @@ void StepEntityLogicAsPlayer(
 
     common::UpdateCarryAndBackItems(entity_idx, state, graphics, audio);
 
-    // PLAYER BOMB SECTION
+    // PLAYER TOOL SLOT 1
     if (!loss_of_control) {
-        {
-            Entity& player = state.entity_manager.entities[entity_idx];
-            if (player.bomb_throw_delay_countdown > 0) {
-                player.bomb_throw_delay_countdown -= 1;
-            }
-        }
-
-        const Entity& player = state.entity_manager.entities[entity_idx];
-        const bool trying_to_bomb = control.bomb_pressed;
-        const bool trying_to_go_up = control.up;
-        const bool trying_to_go_down = control.down;
-        const bool trying_to_go_left = control.left;
-        const bool trying_to_go_right = control.right;
-        const Vec2 player_center = player.GetCenter();
-        const unsigned int bomb_count = player.bombs;
-        const unsigned int bomb_throw_delay = player.bomb_throw_delay_countdown;
-        const VID player_vid = player.vid;
-
-        bool used_bomb = false;
-        if (trying_to_bomb && bomb_count > 0 && bomb_throw_delay == 0) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const bomb = state.entity_manager.GetEntityMut(*vid)) {
-                    bomb::SetEntityBomb(*bomb);
-                    bomb->has_physics = true;
-                    bomb->can_collide = true;
-                    bomb->state = EntityState::InUse;
-                    bomb->thrown_by = player_vid;
-                    bomb->thrown_immunity_timer = common::kThrownByImmunityDuration;
-
-                    Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
-                    if (trying_to_go_left) {
-                        throw_vel.x = -10.0F;
-                    } else if (trying_to_go_right) {
-                        throw_vel.x = 10.0F;
-                    }
-                    if (trying_to_go_up) {
-                        throw_vel.y = -10.0F;
-                    }
-                    if (trying_to_go_down) {
-                        throw_vel.y = 10.0F;
-                    }
-                    if (!trying_to_go_up && !trying_to_go_down &&
-                        (trying_to_go_left || trying_to_go_right)) {
-                        throw_vel.y = -2.0F;
-                    }
-                    bomb->SetCenter(player_center);
-                    bomb->acc += throw_vel;
-                    audio.PlaySoundEffect(SoundEffect::Throw);
-                    used_bomb = true;
-                }
-            }
-        }
-
-        if (used_bomb) {
-            Entity& mutable_player = state.entity_manager.entities[entity_idx];
-            if (mutable_player.bombs > 0) {
-                mutable_player.bombs -= 1;
-            }
-            mutable_player.bomb_throw_delay_countdown = kBombThrowDelay;
-        }
+        common::TryUseToolSlot(entity_idx, state, audio, 0, control.bomb_pressed);
     }
 
-    // PLAYER ROPE SECTION
+    // PLAYER TOOL SLOT 2
     if (!loss_of_control) {
-        {
-            Entity& player = state.entity_manager.entities[entity_idx];
-            if (player.rope_throw_delay_countdown > 0) {
-                player.rope_throw_delay_countdown -= 1;
-            }
-        }
-
-        const Entity& player = state.entity_manager.entities[entity_idx];
-        const bool trying_to_rope = control.rope_pressed;
-        const bool trying_to_go_up = control.up;
-        const bool trying_to_go_down = control.down;
-        const bool trying_to_go_left = control.left;
-        const bool trying_to_go_right = control.right;
-        const Vec2 player_center = player.GetCenter();
-        const unsigned int rope_count = player.ropes;
-        const unsigned int rope_throw_delay = player.rope_throw_delay_countdown;
-        const VID player_vid = player.vid;
-
-        bool used_rope = false;
-        if (trying_to_rope && rope_count > 0 && rope_throw_delay == 0) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const rope_entity = state.entity_manager.GetEntityMut(*vid)) {
-                    rope::SetEntityRope(*rope_entity);
-                    rope_entity->has_physics = true;
-                    rope_entity->can_collide = true;
-                    rope_entity->state = EntityState::InUse;
-                    rope_entity->thrown_by = player_vid;
-                    rope_entity->thrown_immunity_timer = common::kThrownByImmunityDuration * 2;
-
-                    Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
-                    if (trying_to_go_left) {
-                        throw_vel.x = -10.0F;
-                    } else if (trying_to_go_right) {
-                        throw_vel.x = 10.0F;
-                    }
-                    if (trying_to_go_up) {
-                        throw_vel.y = -10.0F;
-                    }
-                    if (trying_to_go_down) {
-                        throw_vel.y = 10.0F;
-                    }
-                    if (!trying_to_go_up && !trying_to_go_down &&
-                        (trying_to_go_left || trying_to_go_right)) {
-                        throw_vel.y = -2.0F;
-                    }
-                    rope_entity->SetCenter(player_center);
-                    rope_entity->acc += throw_vel;
-                    audio.PlaySoundEffect(SoundEffect::Throw);
-                    used_rope = true;
-                }
-            }
-        }
-
-        if (used_rope) {
-            Entity& mutable_player = state.entity_manager.entities[entity_idx];
-            if (mutable_player.ropes > 0) {
-                mutable_player.ropes -= 1;
-            }
-            mutable_player.rope_throw_delay_countdown = kRopeThrowDelay;
-        }
+        common::TryUseToolSlot(entity_idx, state, audio, 1, control.rope_pressed);
     }
 
     // PLAYER SWING BAT SECTION

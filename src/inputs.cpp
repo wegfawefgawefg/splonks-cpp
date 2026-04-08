@@ -4,6 +4,7 @@
 #include "graphics.hpp"
 #include "menu_settings.hpp"
 #include "menu_title.hpp"
+#include "menu_ui.hpp"
 #include "menu_video.hpp"
 #include "settings.hpp"
 #include "stage.hpp"
@@ -175,7 +176,7 @@ void SetPlayingInputSnapshot(State& state) {
     new_inputs.attack =
         keys[SDL_SCANCODE_H] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
     new_inputs.quit = keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_Q];
-    new_inputs.toggle_collision_boxes = keys[SDL_SCANCODE_F1];
+    new_inputs.toggle_collision_boxes = false;
     new_inputs.regenerate_level =
         keys[SDL_SCANCODE_R] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK);
     float mx = 0.0F;
@@ -197,10 +198,6 @@ void ProcessInputPlaying(
     const PlayingInputs& inputs = state.immediate_playing_inputs;
     if (inputs.quit.pressed) {
         state.running = false;
-    }
-
-    if (inputs.toggle_collision_boxes.pressed) {
-        state.show_entity_collision_boxes = !state.show_entity_collision_boxes;
     }
 
     if (inputs.regenerate_level.pressed) {
@@ -364,6 +361,9 @@ void ProcessInput(
         break;
     case Mode::VideoSettings:
         ProcessInputVideoSettingsMenu(window, state, audio, graphics, dt);
+        break;
+    case Mode::UiSettings:
+        ProcessInputUiSettingsMenu(window, state, audio, graphics, dt);
         break;
     case Mode::Playing:
         ProcessInputPlaying(window, state, audio, graphics, dt);

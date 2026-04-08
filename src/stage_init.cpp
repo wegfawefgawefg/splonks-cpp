@@ -85,6 +85,18 @@ void SpawnPlayer(State& state, const Vec2& pos) {
             entities::player::SetEntityPlayer(*player);
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
+
+            ToolSlot& bomb_tool = state.EnsureToolSlot(*player_vid, 0);
+            bomb_tool.active = true;
+            bomb_tool.kind = ToolKind::ThrowBomb;
+            bomb_tool.count = static_cast<std::uint16_t>(player->bombs);
+            bomb_tool.cooldown = 0;
+
+            ToolSlot& rope_tool = state.EnsureToolSlot(*player_vid, 1);
+            rope_tool.active = true;
+            rope_tool.kind = ToolKind::ThrowRope;
+            rope_tool.count = static_cast<std::uint16_t>(player->ropes);
+            rope_tool.cooldown = 0;
         }
     }
 }

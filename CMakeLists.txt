@@ -146,6 +146,8 @@ add_executable(splonks-cpp
     src/entities/common_stomp.cpp
     src/entities/common_push.cpp
     src/entities/common_carry.cpp
+    src/entities/common_throw.cpp
+    src/entities/common_tool_use.cpp
     src/entities/ghost_ball.cpp
     src/entities/jetpack.cpp
     src/entities/mod.cpp
@@ -162,6 +164,7 @@ add_executable(splonks-cpp
     src/main.cpp
     src/menu_settings.cpp
     src/menu_title.cpp
+    src/menu_ui.cpp
     src/menu_video.cpp
     src/on_damage_effects.cpp
     src/room.cpp

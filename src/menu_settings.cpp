@@ -3,6 +3,7 @@
 #include "audio.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
+#include "menu_ui.hpp"
 #include "state.hpp"
 
 namespace splonks {
@@ -15,6 +16,8 @@ const char* GetSettingsMenuOptionName(SettingsMenuOption option) {
         return "Audio";
     case SettingsMenuOption::Controls:
         return "Controls";
+    case SettingsMenuOption::Ui:
+        return "UI";
     case SettingsMenuOption::Back:
         return "Back";
     }
@@ -73,6 +76,19 @@ void ProcessInputSettingsMenu(
             state.settings_menu_selection = SettingsMenuOption::Audio;
             PlayMenuSoundCursorMove(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Down) {
+            state.settings_menu_selection = SettingsMenuOption::Ui;
+            PlayMenuSoundCursorMove(audio);
+        }
+        break;
+    case SettingsMenuOption::Ui:
+        if (confirm_pressed) {
+            state.SetMode(Mode::UiSettings);
+            state.ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
+            PlayMenuSoundConfirm(audio);
+        } else if (direction == SettingsUpOrDownOrNeither::Up) {
+            state.settings_menu_selection = SettingsMenuOption::Controls;
+            PlayMenuSoundCursorMove(audio);
+        } else if (direction == SettingsUpOrDownOrNeither::Down) {
             state.settings_menu_selection = SettingsMenuOption::Back;
             PlayMenuSoundCursorMove(audio);
         }
@@ -82,7 +98,7 @@ void ProcessInputSettingsMenu(
             state.SetMode(Mode::Title);
             PlayMenuSoundCant(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Up) {
-            state.settings_menu_selection = SettingsMenuOption::Controls;
+            state.settings_menu_selection = SettingsMenuOption::Ui;
             PlayMenuSoundCursorMove(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Down) {
             PlayMenuSoundCant(audio);

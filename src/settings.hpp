@@ -36,15 +36,40 @@ struct ControlsSettings {
     static ControlsSettings New();
 };
 
+struct UiSettings {
+    float icon_scale = 1.0F;
+    float status_icon_scale = 1.0F;
+    float tool_slot_scale = 1.0F;
+    float tool_icon_scale = 1.0F;
+
+    static UiSettings New();
+};
+
+struct DebugUiSettings {
+    bool menu_visible = true;
+    bool playback_visible = true;
+    bool level_visible = true;
+    bool entities_visible = true;
+    bool entity_annotations_visible = false;
+    bool ui_settings_visible = false;
+
+    static DebugUiSettings New();
+};
+
 struct Settings {
     SettingsMode mode = SettingsMode::Main;
     VideoSettings video;
     AudioSettings audio;
     ControlsSettings controls;
+    UiSettings ui;
+    DebugUiSettings debug_ui;
 
     static Settings New();
 };
 
 constexpr float kKeyDebounceInterval = 0.2F;
+
+Settings LoadSettings();
+bool SaveSettings(const Settings& settings);
 
 } // namespace splonks

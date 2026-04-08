@@ -62,30 +62,6 @@ void RenderPlus(SDL_Renderer* renderer, Vec2 pos, float length, SDL_Color color)
 
 } // namespace
 
-void PrintCtrlsHelp(SDL_Renderer* renderer, Graphics& graphics, unsigned int screen_bottom) {
-    // print character hanging
-    DrawText(
-        renderer,
-        graphics,
-        18,
-        graphics.ui_font,
-        "ctrls: wasd, 3 to regen map, r to warp to entrance. d while hanging drops.",
-        0.0F,
-        static_cast<float>(screen_bottom),
-        SDL_Color{255, 255, 255, 255}
-    );
-    DrawText(
-        renderer,
-        graphics,
-        18,
-        graphics.ui_font,
-        "get to exit to reset.",
-        0.0F,
-        static_cast<float>(screen_bottom + 18),
-        SDL_Color{255, 255, 255, 255}
-    );
-}
-
 void RenderStageLayout(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
     // draw the origin with lines going in all directions
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);

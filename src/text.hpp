@@ -38,4 +38,13 @@ bool MeasureText(
     int* height
 );
 
+bool MeasureText(
+    Graphics& graphics,
+    int point_size,
+    LoadedFont& loaded_font,
+    const char* text,
+    int* width,
+    int* height
+);
+
 } // namespace splonks

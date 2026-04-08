@@ -138,8 +138,11 @@ DebugPlayback DebugPlayback::New() {
 }
 
 void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Graphics& graphics) {
+    debug_playback_internal::DrawDebugMenu(debug, state);
     debug_playback_internal::DrawSimulationControls(debug, state, graphics);
     debug_playback_internal::DrawLevelControls(debug, state, graphics);
+    debug_playback_internal::DrawEntityAnnotations(debug, state);
+    debug_playback_internal::DrawUiSettingsWindow(debug, state);
 }
 
 void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphics& graphics) {
