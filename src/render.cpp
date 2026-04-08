@@ -277,10 +277,14 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 graphics.play_cam.pos += delta * 0.075F;
 
                 const Vec2 half_room_dims = ToVec2(state.stage.GetRoomDims()) / 2.0F;
+                const UVec2 room_layout_dims = state.stage.GetRoomLayoutDims();
                 const Vec2 map_tl_bound =
                     ToVec2(state.stage.GetRoomTlWc(IVec2::New(0, 0))) + half_room_dims;
                 const Vec2 map_br_bound =
-                    ToVec2(state.stage.GetRoomTlWc(IVec2::New(3, 3))) + half_room_dims;
+                    ToVec2(state.stage.GetRoomTlWc(IVec2::New(
+                        static_cast<int>(room_layout_dims.x) - 1,
+                        static_cast<int>(room_layout_dims.y) - 1
+                    ))) + half_room_dims;
                 graphics.play_cam.pos.x = graphics.play_cam.pos.x < map_tl_bound.x
                                               ? map_tl_bound.x
                                               : (graphics.play_cam.pos.x > map_br_bound.x

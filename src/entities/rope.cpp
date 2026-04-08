@@ -65,8 +65,8 @@ void StepEntityLogicAsRope(
         if (state.stage.TileCoordAtWcExists(ToIVec2(rope_center))) {
             for (unsigned int y_offset = 0; y_offset < kRopeLength; ++y_offset) {
                 IVec2 p = IVec2::New(tile_pos.x, tile_pos.y + static_cast<int>(y_offset));
-                if (p.y >= static_cast<int>(Stage::kShape.y)) {
-                    p.y = static_cast<int>(Stage::kShape.y) - 1;
+                if (p.y >= static_cast<int>(state.stage.GetTileHeight())) {
+                    p.y = static_cast<int>(state.stage.GetTileHeight()) - 1;
                 }
                 const Tile& tile = state.stage.GetTile(static_cast<unsigned int>(p.x), static_cast<unsigned int>(p.y));
                 // if the tile is air, set it to rope

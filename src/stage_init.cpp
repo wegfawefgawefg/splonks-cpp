@@ -34,19 +34,16 @@ int RandomMoneyType() {
 Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     Stage stage;
     stage.stage_type = StageType::Test1;
+    const int stage_width = std::clamp(config.stage_width_tiles, 8, 64);
+    const int stage_height = std::clamp(config.stage_height_tiles, 16, 512);
     stage.tiles = std::vector<std::vector<Tile>>(
-        static_cast<std::size_t>(Stage::kShape.y),
-        std::vector<Tile>(static_cast<std::size_t>(Stage::kShape.x), Tile::Air)
+        static_cast<std::size_t>(stage_height),
+        std::vector<Tile>(static_cast<std::size_t>(stage_width), Tile::Air)
     );
-    stage.rooms = std::vector<std::vector<int>>(
-        static_cast<std::size_t>(Stage::kRoomLayout.y),
-        std::vector<int>(static_cast<std::size_t>(Stage::kRoomLayout.x), 0)
-    );
-    stage.path = {IVec2::New(0, 0)};
+    stage.rooms = {};
+    stage.path = {};
     stage.gravity = 0.3F;
 
-    const int stage_width = static_cast<int>(Stage::kShape.x);
-    const int stage_height = static_cast<int>(Stage::kShape.y);
     const int wall_x = std::clamp(config.wall_x, 4, stage_width - 6);
     const int top_y = std::clamp(config.top_y, 2, stage_height - 8);
     const int cutout_drop_tiles =
@@ -93,8 +90,8 @@ void InitHangTestStage(State& state) {
     state.mouse_trailer_vid.reset();
 
     const HangTestLevelConfig& config = state.debug_level.hang_test;
-    const int stage_width = static_cast<int>(Stage::kShape.x);
-    const int stage_height = static_cast<int>(Stage::kShape.y);
+    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
     const int wall_x = std::clamp(config.wall_x, 4, stage_width - 6);
     const int top_y = std::clamp(config.top_y, 2, stage_height - 8);
 
@@ -109,8 +106,8 @@ void InitStage(State& state) {
     InitCommonStageState(state);
 
     const IVec2 starting_room = state.stage.GetStartingRoom();
-    const UVec2 starting_room_tl = ToUVec2(starting_room) * Stage::kRoomShape;
-    const UVec2 starting_room_br = starting_room_tl + Stage::kRoomShape;
+    const auto [starting_room_tl, starting_room_br] =
+        state.stage.GetRoomCorners(ToUVec2(starting_room));
 
     SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
 

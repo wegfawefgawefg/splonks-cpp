@@ -101,17 +101,22 @@ void RenderStageLayout(SDL_Renderer* renderer, Graphics& graphics, const State& 
         static_cast<float>(state.stage.GetStageDims().y),
     };
     SDL_RenderRect(renderer, &stage_rect);
+    const UVec2 room_layout_dims = state.stage.GetRoomLayoutDims();
+    if (state.stage.rooms.empty()) {
+        return;
+    }
+
     // draw the boundaries of every room in the current stage
-    for (unsigned int y = 0; y < Stage::kRoomLayout.y; ++y) {
-        for (unsigned int x = 0; x < Stage::kRoomLayout.x; ++x) {
+    for (unsigned int y = 0; y < room_layout_dims.y; ++y) {
+        for (unsigned int x = 0; x < room_layout_dims.x; ++x) {
             const UVec2 room_pos = UVec2::New(x, y) * state.stage.GetRoomDims();
 
             SDL_SetRenderDrawColor(renderer, 255, 105, 180, 255);
             const SDL_FRect room_rect{
                 static_cast<float>(room_pos.x),
                 static_cast<float>(room_pos.y),
-                static_cast<float>(Stage::kRoomShape.x * kTileSize),
-                static_cast<float>(Stage::kRoomShape.y * kTileSize),
+                static_cast<float>(state.stage.GetRoomDims().x),
+                static_cast<float>(state.stage.GetRoomDims().y),
             };
             SDL_RenderRect(renderer, &room_rect);
 
@@ -146,8 +151,13 @@ void RenderStageLayout(SDL_Renderer* renderer, Graphics& graphics, const State& 
 }
 
 void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
-    for (unsigned int y = 0; y < Stage::kRoomLayout.y; ++y) {
-        for (unsigned int x = 0; x < Stage::kRoomLayout.x; ++x) {
+    const UVec2 room_layout_dims = state.stage.GetRoomLayoutDims();
+    if (state.stage.rooms.empty()) {
+        return;
+    }
+
+    for (unsigned int y = 0; y < room_layout_dims.y; ++y) {
+        for (unsigned int x = 0; x < room_layout_dims.x; ++x) {
             const UVec2 room_pos = UVec2::New(x, y) * state.stage.GetRoomDims();
             const UVec2 room_shape = state.stage.GetRoomDims();
             const RoomType room_type =

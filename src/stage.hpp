@@ -41,6 +41,7 @@ struct Stage {
     static Stage NewBlank();
     static Stage New(StageType stage_type);
     UVec2 GetStageDims() const;
+    UVec2 GetRoomLayoutDims() const;
     UVec2 GetRoomDims() const;
     IVec2 GetRoomTlWc(const IVec2& room) const;
     const Tile& GetTile(unsigned int x, unsigned int y) const;

@@ -241,6 +241,109 @@ bool IsBlockedForHangProbe(
     return false;
 }
 
+std::optional<int> FindFirstBlockedHangRow(
+    const Vec2& tl,
+    const Vec2& br,
+    const State& state,
+    bool check_tiles,
+    bool check_entities,
+    VID self_vid
+) {
+    const int start_y = static_cast<int>(std::floor(tl.y));
+    const int end_y = static_cast<int>(std::ceil(br.y));
+    for (int y = start_y; y <= end_y; ++y) {
+        const Vec2 row_tl = Vec2::New(tl.x, static_cast<float>(y));
+        const Vec2 row_br = Vec2::New(br.x, static_cast<float>(y));
+        if (IsBlockedForHangProbe(row_tl, row_br, state, check_tiles, check_entities, self_vid)) {
+            return y;
+        }
+    }
+    return std::nullopt;
+}
+
+bool CanHangOnSideAtPosition(
+    const Entity& entity,
+    const State& state,
+    const Vec2& pos,
+    bool left_side,
+    bool check_tiles,
+    bool check_entities,
+    std::optional<int>* blocked_row_out
+) {
+    const AABB aabb = GetAabbAtPosition(entity, pos);
+    const Vec2 wall_tl = left_side ? Vec2::New(aabb.tl.x - 1.0F, aabb.tl.y)
+                                   : Vec2::New(aabb.br.x, aabb.tl.y);
+    const Vec2 wall_br = left_side ? Vec2::New(aabb.tl.x, aabb.br.y)
+                                   : Vec2::New(aabb.br.x + 1.0F, aabb.br.y);
+    const bool side_blocked = IsBlockedForHangProbe(
+        wall_tl,
+        wall_br,
+        state,
+        check_tiles,
+        check_entities,
+        entity.vid
+    );
+    if (!side_blocked) {
+        return false;
+    }
+
+    const HangHandBounds hanghands = GetHangHandBoundsAtPosition(entity, pos);
+    if (left_side) {
+        const bool hh_blocked = IsBlockedForHangProbe(
+            hanghands.left_tl,
+            hanghands.left_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+        const Vec2 under_tl = Vec2::New(hanghands.left_tl.x, hanghands.left_br.y);
+        const Vec2 under_br = hanghands.left_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
+        const std::optional<int> blocked_row = FindFirstBlockedHangRow(
+            under_tl,
+            under_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+        if (!hh_blocked && blocked_row.has_value()) {
+            if (blocked_row_out != nullptr) {
+                *blocked_row_out = *blocked_row;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    const bool hh_blocked = IsBlockedForHangProbe(
+            hanghands.right_tl,
+            hanghands.right_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+    const Vec2 under_tl = Vec2::New(hanghands.right_tl.x, hanghands.right_br.y);
+    const Vec2 under_br = hanghands.right_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
+    const std::optional<int> blocked_row = FindFirstBlockedHangRow(
+            under_tl,
+            under_br,
+            state,
+            check_tiles,
+            check_entities,
+            entity.vid
+        );
+    if (!hh_blocked && blocked_row.has_value()) {
+        if (blocked_row_out != nullptr) {
+            *blocked_row_out = *blocked_row;
+        }
+        return true;
+    }
+
+    return false;
+}
+
 bool TryCaptureHangDuringFall(
     std::size_t entity_idx,
     State& state,
@@ -269,91 +372,29 @@ bool TryCaptureHangDuringFall(
         return false;
     }
 
-    const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-    const Vec2 left_wall_tl = Vec2::New(next_aabb.tl.x - 1.0F, next_aabb.tl.y);
-    const Vec2 left_wall_br = Vec2::New(next_aabb.tl.x, next_aabb.br.y);
-    const Vec2 right_wall_tl = Vec2::New(next_aabb.br.x, next_aabb.tl.y);
-    const Vec2 right_wall_br = Vec2::New(next_aabb.br.x + 1.0F, next_aabb.br.y);
-
-    const bool col_left = IsBlockedForHangProbe(
-        left_wall_tl,
-        left_wall_br,
-        state,
-        check_tiles,
-        check_entities,
-        entity.vid
-    );
-    const bool col_right = IsBlockedForHangProbe(
-        right_wall_tl,
-        right_wall_br,
-        state,
-        check_tiles,
-        check_entities,
-        entity.vid
-    );
-
-    const HangHandBounds hanghands = GetHangHandBoundsAtPosition(entity, next_pos);
-
-    if (try_left && col_left) {
-        const bool hh_blocked = IsBlockedForHangProbe(
-            hanghands.left_tl,
-            hanghands.left_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-        const Vec2 under_tl = Vec2::New(hanghands.left_tl.x, hanghands.left_br.y);
-        const Vec2 under_br = hanghands.left_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
-        const bool uhh_blocked = IsBlockedForHangProbe(
-            under_tl,
-            under_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-        if (!hh_blocked && uhh_blocked) {
-            entity.pos = next_pos;
-            entity.left_hanging = true;
-            entity.right_hanging = false;
-            entity.facing = LeftOrRight::Left;
-            entity.vel.y = 0.0F;
-            entity.acc.y = 0.0F;
-            entity.grounded = false;
-            return true;
-        }
+    std::optional<int> blocked_row;
+    if (try_left &&
+        CanHangOnSideAtPosition(entity, state, next_pos, true, check_tiles, check_entities, &blocked_row)) {
+        entity.pos = Vec2::New(next_pos.x, static_cast<float>(*blocked_row));
+        entity.left_hanging = true;
+        entity.right_hanging = false;
+        entity.facing = LeftOrRight::Left;
+        entity.vel.y = 0.0F;
+        entity.acc.y = 0.0F;
+        entity.grounded = false;
+        return true;
     }
 
-    if (try_right && col_right) {
-        const bool hh_blocked = IsBlockedForHangProbe(
-            hanghands.right_tl,
-            hanghands.right_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-        const Vec2 under_tl = Vec2::New(hanghands.right_tl.x, hanghands.right_br.y);
-        const Vec2 under_br = hanghands.right_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
-        const bool uhh_blocked = IsBlockedForHangProbe(
-            under_tl,
-            under_br,
-            state,
-            check_tiles,
-            check_entities,
-            entity.vid
-        );
-        if (!hh_blocked && uhh_blocked) {
-            entity.pos = next_pos;
-            entity.left_hanging = false;
-            entity.right_hanging = true;
-            entity.facing = LeftOrRight::Right;
-            entity.vel.y = 0.0F;
-            entity.acc.y = 0.0F;
-            entity.grounded = false;
-            return true;
-        }
+    if (try_right &&
+        CanHangOnSideAtPosition(entity, state, next_pos, false, check_tiles, check_entities, &blocked_row)) {
+        entity.pos = Vec2::New(next_pos.x, static_cast<float>(*blocked_row));
+        entity.left_hanging = false;
+        entity.right_hanging = true;
+        entity.facing = LeftOrRight::Right;
+        entity.vel.y = 0.0F;
+        entity.acc.y = 0.0F;
+        entity.grounded = false;
+        return true;
     }
 
     return false;
@@ -1196,106 +1237,46 @@ void DoThrownByStep(std::size_t entity_idx, State& state) {
 }
 
 void HangHandsStep(std::size_t entity_idx, State& state) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const VID vid = entity.vid;
-    const Vec2 vel = entity.vel;
-    bool no_hang = entity.no_hang;
-    if (entity.super_state == EntitySuperState::Stunned ||
-        entity.super_state == EntitySuperState::Dead) {
-        no_hang = true;
-    }
-    Stage& stage = state.stage;
-    const HangHandBounds hanghands = entity.GetHangHandsBounds();
-
-    bool left_hanging = false;
-    bool right_hanging = false;
-    if (!no_hang) {
-        if (vel.y >= 0.0F) {
-            const std::vector<const Tile*> hanghand_collided_tiles =
-                stage.GetTilesInRectWc(ToIVec2(hanghands.left_tl), ToIVec2(hanghands.left_br));
-            const bool on_collidable_tiles = CollidableTileInList(hanghand_collided_tiles);
-
-            const std::vector<VID> entities_at_hang_hands =
-                state.sid.QueryExclude(hanghands.left_tl, hanghands.left_br, vid);
-            const bool on_impassable_entities = std::any_of(
-                entities_at_hang_hands.begin(),
-                entities_at_hang_hands.end(),
-                [&](const VID& test_vid) {
-                    return state.entity_manager.entities[test_vid.id].impassable;
-                });
-
-            const bool hh_blocked = on_collidable_tiles || on_impassable_entities;
-
-            const Vec2 under_tl = Vec2::New(hanghands.left_tl.x, hanghands.left_br.y);
-            const Vec2 under_br = hanghands.left_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
-            const std::vector<const Tile*> under_hanghand_collided_tiles =
-                stage.GetTilesInRectWc(ToIVec2(under_tl), ToIVec2(under_br));
-            const bool on_collidable_under_tiles =
-                CollidableTileInList(under_hanghand_collided_tiles);
-
-            const std::vector<VID> entities_under_hang_hands =
-                state.sid.QueryExclude(under_tl, under_br, vid);
-            const bool on_impassable_under_entities = std::any_of(
-                entities_under_hang_hands.begin(),
-                entities_under_hang_hands.end(),
-                [&](const VID& test_vid) {
-                    return state.entity_manager.entities[test_vid.id].impassable;
-                });
-
-            const bool uhh_blocked = on_collidable_under_tiles || on_impassable_under_entities;
-            left_hanging = !hh_blocked && uhh_blocked;
-        }
-
-        if (vel.y >= 0.0F) {
-            const std::vector<const Tile*> hanghand_collided_tiles =
-                stage.GetTilesInRectWc(ToIVec2(hanghands.right_tl), ToIVec2(hanghands.right_br));
-            const bool on_collidable_tiles = CollidableTileInList(hanghand_collided_tiles);
-
-            const std::vector<VID> entities_at_hang_hands =
-                state.sid.QueryExclude(hanghands.right_tl, hanghands.right_br, vid);
-            const bool on_impassable_entities = std::any_of(
-                entities_at_hang_hands.begin(),
-                entities_at_hang_hands.end(),
-                [&](const VID& test_vid) {
-                    return state.entity_manager.entities[test_vid.id].impassable;
-                });
-
-            const bool hh_blocked = on_collidable_tiles || on_impassable_entities;
-
-            const Vec2 under_tl = Vec2::New(hanghands.right_tl.x, hanghands.right_br.y);
-            const Vec2 under_br = hanghands.right_br + Vec2::New(0.0F, Entity::kHangHandSize.y);
-            const std::vector<const Tile*> under_hanghand_collided_tiles =
-                stage.GetTilesInRectWc(ToIVec2(under_tl), ToIVec2(under_br));
-            const bool on_collidable_under_tiles =
-                CollidableTileInList(under_hanghand_collided_tiles);
-
-            const std::vector<VID> entities_under_hang_hands =
-                state.sid.QueryExclude(under_tl, under_br, vid);
-            const bool on_impassable_under_entities = std::any_of(
-                entities_under_hang_hands.begin(),
-                entities_under_hang_hands.end(),
-                [&](const VID& test_vid) {
-                    return state.entity_manager.entities[test_vid.id].impassable;
-                });
-
-            const bool uhh_blocked = on_collidable_under_tiles || on_impassable_under_entities;
-            right_hanging = !hh_blocked && uhh_blocked;
-        }
-    }
-
     Entity& mutable_entity = state.entity_manager.entities[entity_idx];
-    mutable_entity.left_hanging = left_hanging;
-    mutable_entity.right_hanging = right_hanging;
-
-    if (mutable_entity.left_hanging || mutable_entity.right_hanging) {
-        mutable_entity.grounded = false;
-    }
     if (mutable_entity.no_hang) {
         mutable_entity.left_hanging = false;
         mutable_entity.right_hanging = false;
     }
+    if (mutable_entity.super_state == EntitySuperState::Stunned ||
+        mutable_entity.super_state == EntitySuperState::Dead) {
+        mutable_entity.left_hanging = false;
+        mutable_entity.right_hanging = false;
+    }
+
+    if (mutable_entity.left_hanging) {
+        if (!CanHangOnSideAtPosition(
+                mutable_entity,
+                state,
+                mutable_entity.pos,
+                true,
+                true,
+                true,
+                nullptr
+            )) {
+            mutable_entity.left_hanging = false;
+        }
+    } else if (mutable_entity.right_hanging) {
+        if (!CanHangOnSideAtPosition(
+                mutable_entity,
+                state,
+                mutable_entity.pos,
+                false,
+                true,
+                true,
+                nullptr
+            )) {
+            mutable_entity.right_hanging = false;
+        }
+    }
+
     if (mutable_entity.IsHanging()) {
         mutable_entity.vel.y = 0.0F;
+        mutable_entity.acc.y = 0.0F;
         mutable_entity.grounded = false;
     }
 }

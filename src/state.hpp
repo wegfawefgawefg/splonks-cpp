@@ -39,6 +39,8 @@ enum class DebugLevelKind {
 };
 
 struct HangTestLevelConfig {
+    int stage_width_tiles = 12;
+    int stage_height_tiles = 128;
     int wall_x = 10;
     int top_y = 4;
     int cutout_drop_tiles = 8;

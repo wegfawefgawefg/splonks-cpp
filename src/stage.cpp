@@ -21,6 +21,13 @@ bool RandomBool() {
     return RandomIntExclusive(0, 2) == 0;
 }
 
+unsigned int GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
+    if (tiles.empty()) {
+        return 0;
+    }
+    return static_cast<unsigned int>(tiles.front().size());
+}
+
 } // namespace
 
 const UVec2 Stage::kShape = UVec2::New(40, 32);
@@ -30,8 +37,8 @@ const UVec2 Stage::kRoomLayout = UVec2::New(4, 4);
 Stage Stage::NewBlank() {
     Stage stage;
     stage.stage_type = StageType::Blank;
-    stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>{});
-    stage.rooms = std::vector<std::vector<int>>(1, std::vector<int>{});
+    stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>(1, Tile::Air));
+    stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
     return stage;
@@ -138,15 +145,36 @@ Stage Stage::New(StageType stage_type) {
 }
 
 UVec2 Stage::GetStageDims() const {
-    return kShape * kTileSize;
+    return UVec2::New(GetTileWidth(), GetTileHeight()) * kTileSize;
+}
+
+UVec2 Stage::GetRoomLayoutDims() const {
+    if (rooms.empty() || rooms.front().empty()) {
+        return UVec2::New(1, 1);
+    }
+    return UVec2::New(
+        static_cast<unsigned int>(rooms.front().size()),
+        static_cast<unsigned int>(rooms.size())
+    );
 }
 
 UVec2 Stage::GetRoomDims() const {
-    return kRoomShape * kTileSize;
+    const UVec2 room_layout_dims = GetRoomLayoutDims();
+    if (room_layout_dims.x == 0 || room_layout_dims.y == 0) {
+        return GetStageDims();
+    }
+    return UVec2::New(
+        GetTileWidth() / room_layout_dims.x,
+        GetTileHeight() / room_layout_dims.y
+    ) * kTileSize;
 }
 
 IVec2 Stage::GetRoomTlWc(const IVec2& room) const {
-    return room * static_cast<int>(kRoomShape.x) * static_cast<int>(kTileSize);
+    const UVec2 room_dims = GetRoomDims();
+    return IVec2::New(
+        room.x * static_cast<int>(room_dims.x),
+        room.y * static_cast<int>(room_dims.y)
+    );
 }
 
 const Tile& Stage::GetTile(unsigned int x, unsigned int y) const {
@@ -160,7 +188,7 @@ const Tile* Stage::GetTileAtWc(const IVec2& pos) const {
 
     const UVec2 upos = ToUVec2(pos);
     const UVec2 stage_dims = GetStageDims();
-    if (upos.x > stage_dims.x || upos.y > stage_dims.y) {
+    if (upos.x >= stage_dims.x || upos.y >= stage_dims.y) {
         return nullptr;
     }
 
@@ -173,7 +201,7 @@ std::vector<const Tile*> Stage::GetTilesInRectWc(const IVec2& tl, const IVec2& b
 }
 
 std::vector<const Tile*> Stage::GetTilesInRect(const IVec2& tl, const IVec2& br) const {
-    if (tl.x > static_cast<int>(GetTileWidth()) || tl.y > static_cast<int>(GetTileHeight())) {
+    if (tl.x >= static_cast<int>(GetTileWidth()) || tl.y >= static_cast<int>(GetTileHeight())) {
         return {};
     }
 
@@ -197,7 +225,7 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
     if (pos.x < 0 || pos.y < 0) {
         return;
     }
-    if (pos.x >= static_cast<int>(kShape.x) || pos.y >= static_cast<int>(kShape.y)) {
+    if (pos.x >= static_cast<int>(GetTileWidth()) || pos.y >= static_cast<int>(GetTileHeight())) {
         return;
     }
     tiles[static_cast<std::size_t>(pos.y)][static_cast<std::size_t>(pos.x)] = tile;
@@ -259,9 +287,10 @@ std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,
 }
 
 UVec2 Stage::GetRandomRoom() const {
+    const UVec2 room_layout_dims = GetRoomLayoutDims();
     return UVec2::New(
-        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(kRoomLayout.x))),
-        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(kRoomLayout.y)))
+        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
+        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(room_layout_dims.y)))
     );
 }
 
@@ -308,24 +337,29 @@ std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRoom(const UVec2& ro
 }
 
 unsigned int Stage::GetWidth() const {
-    return kRoomLayout.x * kRoomShape.x * kTileSize;
+    return GetTileWidth() * kTileSize;
 }
 
 unsigned int Stage::GetHeight() const {
-    return kRoomLayout.y * kRoomShape.y * kTileSize;
+    return GetTileHeight() * kTileSize;
 }
 
 unsigned int Stage::GetTileWidth() const {
-    return kRoomLayout.x * kRoomShape.x;
+    return GetTileRowWidth(tiles);
 }
 
 unsigned int Stage::GetTileHeight() const {
-    return kRoomLayout.y * kRoomShape.y;
+    return static_cast<unsigned int>(tiles.size());
 }
 
 std::pair<UVec2, UVec2> Stage::GetRoomCorners(const UVec2& room) const {
-    const UVec2 tl = room * kRoomShape;
-    const UVec2 br = tl + kRoomShape;
+    const UVec2 room_layout_dims = GetRoomLayoutDims();
+    const UVec2 room_tile_dims = UVec2::New(
+        room_layout_dims.x == 0 ? GetTileWidth() : GetTileWidth() / room_layout_dims.x,
+        room_layout_dims.y == 0 ? GetTileHeight() : GetTileHeight() / room_layout_dims.y
+    );
+    const UVec2 tl = room * room_tile_dims;
+    const UVec2 br = tl + room_tile_dims - UVec2::New(1, 1);
     return {tl, br};
 }
 

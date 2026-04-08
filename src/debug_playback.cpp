@@ -24,7 +24,7 @@ constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 2;
+constexpr std::uint32_t kRecordingVersion = 3;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -808,11 +808,21 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
 
     if (state.debug_level.kind == DebugLevelKind::HangTest) {
         HangTestLevelConfig& hang_test = state.debug_level.hang_test;
-        ImGui::SliderInt("Wall X", &hang_test.wall_x, 4, 24);
-        ImGui::SliderInt("Top Y", &hang_test.top_y, 2, 12);
-        ImGui::SliderInt("Cutout Drop", &hang_test.cutout_drop_tiles, 2, 26);
-        ImGui::SliderInt("Cutout Width", &hang_test.cutout_width_tiles, 1, 6);
-        ImGui::SliderInt("Cutout Height", &hang_test.cutout_height_tiles, 1, 6);
+        ImGui::SliderInt("Stage Width", &hang_test.stage_width_tiles, 8, 64);
+        ImGui::SliderInt("Stage Height", &hang_test.stage_height_tiles, 16, 512);
+        const int wall_x_max = std::max(4, hang_test.stage_width_tiles - 6);
+        const int top_y_max = std::max(2, hang_test.stage_height_tiles - 8);
+        const int cutout_drop_max =
+            std::max(2, hang_test.stage_height_tiles - hang_test.top_y - 4);
+        const int cutout_width_max = std::max(1, hang_test.wall_x + 1);
+        const int cutout_height_max =
+            std::max(1, hang_test.stage_height_tiles - hang_test.top_y - hang_test.cutout_drop_tiles - 1);
+
+        ImGui::SliderInt("Wall X", &hang_test.wall_x, 4, wall_x_max);
+        ImGui::SliderInt("Top Y", &hang_test.top_y, 2, top_y_max);
+        ImGui::SliderInt("Cutout Drop", &hang_test.cutout_drop_tiles, 2, cutout_drop_max);
+        ImGui::SliderInt("Cutout Width", &hang_test.cutout_width_tiles, 1, cutout_width_max);
+        ImGui::SliderInt("Cutout Height", &hang_test.cutout_height_tiles, 1, cutout_height_max);
     }
 
     if (ImGui::Button("Regenerate")) {
