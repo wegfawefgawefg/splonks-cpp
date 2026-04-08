@@ -135,7 +135,11 @@ add_executable(splonks-cpp
     src/entities/block.cpp
     src/entities/bomb.cpp
     src/entities/breakaway_container.cpp
-    src/entities/common.cpp
+    src/entities/common_damage.cpp
+    src/entities/common_frame.cpp
+    src/entities/common_hang.cpp
+    src/entities/common_physics.cpp
+    src/entities/common_step.cpp
     src/entities/ghost_ball.cpp
     src/entities/jetpack.cpp
     src/entities/mod.cpp

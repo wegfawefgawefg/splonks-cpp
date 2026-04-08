@@ -33,3 +33,4 @@ CMakeUserPresets.json
 .ninja_log
 
 debug_recording.*
+.codex
