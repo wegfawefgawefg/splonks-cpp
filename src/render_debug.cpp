@@ -233,4 +233,42 @@ void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, cons
     }
 }
 
+void RenderEntityIds(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
+    int output_width = static_cast<int>(graphics.window_dims.x);
+    int output_height = static_cast<int>(graphics.window_dims.y);
+    if (graphics.fullscreen) {
+        SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+    }
+    const SDL_FRect presentation = GetPresentationRect(graphics, output_width, output_height);
+
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!entity.active) {
+            continue;
+        }
+
+        const AABB pbox_aabb = entity.GetAABB();
+        const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
+        const SDL_FRect pbox_rect =
+            WorldRectToScreen(graphics, presentation, pbox_aabb.tl, pbox_size);
+
+        char label[32];
+        std::snprintf(
+            label,
+            sizeof(label),
+            "%zu",
+            entity.vid.id
+        );
+        DrawText(
+            renderer,
+            graphics,
+            10,
+            graphics.ui_font,
+            label,
+            pbox_rect.x + (pbox_rect.w * 0.5F) - 4.0F,
+            pbox_rect.y + (pbox_rect.h * 0.5F) - 5.0F,
+            SDL_Color{255, 255, 255, 255}
+        );
+    }
+}
+
 } // namespace splonks

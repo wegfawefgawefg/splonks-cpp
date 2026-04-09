@@ -10,5 +10,6 @@ struct State;
 void RenderStageLayout(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, const State& state);
+void RenderEntityIds(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 
 } // namespace splonks

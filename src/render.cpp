@@ -1475,6 +1475,9 @@ void Render(
         if (state.show_entity_collision_boxes) {
             RenderEntityCollisionBoxes(renderer, graphics, state);
         }
+        if (state.show_entity_ids) {
+            RenderEntityIds(renderer, graphics, state);
+        }
     }
 }
 

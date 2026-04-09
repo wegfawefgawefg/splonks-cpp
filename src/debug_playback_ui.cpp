@@ -304,6 +304,7 @@ void DrawEntityAnnotations(DebugPlayback& debug, State& state) {
     }
 
     ImGui::Checkbox("Show Entity P/C Boxes", &state.show_entity_collision_boxes);
+    ImGui::Checkbox("Show Entity IDs", &state.show_entity_ids);
     ImGui::TextUnformatted("PBox/CBox overlay uses render debug colors.");
 
     ImGui::End();

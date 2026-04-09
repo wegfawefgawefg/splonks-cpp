@@ -178,6 +178,7 @@ add_executable(splonks-cpp
     src/render_postfx.cpp
     src/render_terrain_lighting.cpp
     src/render_debug.cpp
+    src/render_stone_overlay.cpp
     src/render_tiles_and_entities.cpp
     src/render_ui.cpp
     src/raw_frame_data.cpp

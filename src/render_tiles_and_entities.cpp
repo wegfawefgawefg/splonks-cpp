@@ -3,6 +3,7 @@
 #include "entity.hpp"
 #include "entities/common.hpp"
 #include "graphics.hpp"
+#include "render_stone_overlay.hpp"
 #include "render_terrain_lighting.hpp"
 #include "special_effects/special_effect.hpp"
 #include "state.hpp"
@@ -245,6 +246,16 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                     nullptr,
                     flip
                 );
+                if (entity.stone) {
+                    const AABB stone_overlay_aabb = entity.GetAABB();
+                    RenderStoneEntityOverlay(
+                        renderer,
+                        state,
+                        graphics,
+                        stone_overlay_aabb.tl,
+                        stone_overlay_aabb.br - stone_overlay_aabb.tl + Vec2::New(1.0F, 1.0F)
+                    );
+                }
                 continue;
             }
 
