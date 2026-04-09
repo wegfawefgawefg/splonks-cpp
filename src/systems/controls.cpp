@@ -9,6 +9,7 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
         return ControlIntent{};
     }
     if (entity.super_state == EntitySuperState::Dead ||
+        entity.super_state == EntitySuperState::Stunned ||
         entity.super_state == EntitySuperState::Crushed) {
         return ControlIntent{};
     }

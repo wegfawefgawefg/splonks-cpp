@@ -52,6 +52,12 @@ bool IsBlockedForHangProbe(
     VID self_vid
 ) {
     if (check_tiles) {
+        if (state.settings.post_process.terrain_face_enclosed_stage_bounds) {
+            if (tl.x < 0.0F || br.x >= static_cast<float>(state.stage.GetWidth())) {
+                return true;
+            }
+        }
+
         const std::vector<const Tile*> tiles = state.stage.GetTilesInRectWc(ToIVec2(tl), ToIVec2(br));
         if (CollidableTileInList(tiles)) {
             return true;
