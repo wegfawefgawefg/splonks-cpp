@@ -9,6 +9,9 @@ enum class Tile {
     Dirt,
     Gold,
     Block,
+    ShopWall,
+    SmoothWall,
+    Glass,
     LadderTop,
     Ladder,
     Spikes,
@@ -18,7 +21,7 @@ enum class Tile {
 };
 
 constexpr unsigned int kTileSize = 16;
-constexpr std::size_t kTileCount = 10;
+constexpr std::size_t kTileCount = 13;
 
 Tile RandomTile();
 bool IsTileCollidable(Tile tile);

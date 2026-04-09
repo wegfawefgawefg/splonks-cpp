@@ -112,11 +112,9 @@ int main(int argc, char** argv) {
             ThrowSdlError("InitImGuiLayer failed");
         }
 
-        try {
+        {
             const std::string sprite_assets_folder = "assets/graphics/aseprite";
             graphics = splonks::Graphics::New(renderer, sprite_assets_folder);
-        } catch (const std::exception&) {
-            graphics = splonks::Graphics{};
         }
         graphics.dims = loaded_settings.video.resolution;
         graphics.fullscreen = loaded_settings.video.fullscreen;

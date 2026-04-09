@@ -1,6 +1,7 @@
 #include "stage.hpp"
 
 #include "room.hpp"
+#include "stage_gen/hd_mines.hpp"
 
 #include <algorithm>
 #include <random>
@@ -46,6 +47,10 @@ Stage Stage::NewBlank() {
 }
 
 Stage Stage::New(StageType stage_type) {
+    if (stage_gen::hd_mines::UsesHdMinesGenerator(stage_type)) {
+        return stage_gen::hd_mines::GenerateStage(stage_type);
+    }
+
     std::vector<std::vector<int>> rooms(
         static_cast<std::size_t>(kRoomLayout.y),
         std::vector<int>(static_cast<std::size_t>(kRoomLayout.x),

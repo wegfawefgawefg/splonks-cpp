@@ -1,13 +1,21 @@
 #pragma once
 
+#include "entity_core_types.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"
 #include "utils.hpp"
 
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace splonks {
+
+struct StageEntitySpawn {
+    EntityType type_ = EntityType::None;
+    Vec2 pos = Vec2::New(0.0F, 0.0F);
+    LeftOrRight facing = LeftOrRight::Left;
+};
 
 enum class StageType : int {
     Blank,
@@ -32,6 +40,7 @@ struct Stage {
     std::vector<std::vector<Tile>> tiles;
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
+    std::vector<StageEntitySpawn> entity_spawns;
     float gravity = 0.3F;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
 

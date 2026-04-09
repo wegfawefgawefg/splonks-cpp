@@ -50,6 +50,12 @@ bool IsTileCollidable(Tile tile) {
         return true;
     case Tile::Gold:
         return true;
+    case Tile::ShopWall:
+        return true;
+    case Tile::SmoothWall:
+        return true;
+    case Tile::Glass:
+        return true;
     default:
         return false;
     }

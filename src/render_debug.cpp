@@ -4,6 +4,7 @@
 #include "entities/common.hpp"
 #include "graphics.hpp"
 #include "room.hpp"
+#include "stage_gen/hd_mines.hpp"
 #include "state.hpp"
 #include "text.hpp"
 #include "tile.hpp"
@@ -136,10 +137,27 @@ void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
         for (unsigned int x = 0; x < room_layout_dims.x; ++x) {
             const UVec2 room_pos = UVec2::New(x, y) * state.stage.GetRoomDims();
             const UVec2 room_shape = state.stage.GetRoomDims();
+            const UVec2 room_center = room_pos + (room_shape / 2U);
+
+            if (stage_gen::hd_mines::UsesHdMinesGenerator(state.stage.stage_type)) {
+                const int room_code = state.stage.rooms[static_cast<std::size_t>(y)]
+                                                     [static_cast<std::size_t>(x)];
+                DrawText(
+                    renderer,
+                    graphics,
+                    static_cast<int>(kTileSize),
+                    graphics.ui_font,
+                    stage_gen::hd_mines::GetRoomCodeDebugLabel(room_code),
+                    static_cast<float>(room_center.x - room_shape.x / 4U),
+                    static_cast<float>(room_center.y - kTileSize / 2U),
+                    SDL_Color{255, 0, 0, 255}
+                );
+                continue;
+            }
+
             const RoomType room_type =
                 static_cast<RoomType>(state.stage.rooms[static_cast<std::size_t>(y)]
                                                       [static_cast<std::size_t>(x)]);
-            const UVec2 room_center = room_pos + (room_shape / 2U);
             const float arrow_length = static_cast<float>(kTileSize);
             const SDL_Color col{255, 0, 0, 255};
             switch (room_type) {

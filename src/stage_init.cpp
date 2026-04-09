@@ -5,9 +5,11 @@
 #include "entities/breakaway_container.hpp"
 #include "entities/jetpack.hpp"
 #include "entities/money.hpp"
+#include "entities/mod.hpp"
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 #include "entities/stomp_pad.hpp"
+#include "stage_gen/hd_mines.hpp"
 
 #include <algorithm>
 #include <random>
@@ -124,6 +126,27 @@ void SpawnPlayer(State& state, const Vec2& pos) {
     }
 }
 
+void SpawnAuthoredStageEntities(State& state) {
+    for (const StageEntitySpawn& spawn : state.stage.entity_spawns) {
+        if (spawn.type_ == EntityType::None) {
+            continue;
+        }
+        const std::optional<VID> vid = state.entity_manager.NewEntity();
+        if (!vid) {
+            continue;
+        }
+        Entity* const entity = state.entity_manager.GetEntityMut(*vid);
+        if (entity == nullptr) {
+            continue;
+        }
+
+        entities::SetEntityByType(*entity, spawn.type_);
+        entity->pos = spawn.pos;
+        entity->facing = spawn.facing;
+        entity->vel = Vec2::New(0.0F, 0.0F);
+    }
+}
+
 void InitHangTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
@@ -168,79 +191,82 @@ void InitStage(State& state) {
         state.stage.GetRoomCorners(ToUVec2(starting_room));
 
     SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
+    SpawnAuthoredStageEntities(state);
 
-    // This mirrors the old Rust stage init population pass.
-    for (int i = 0; i < 2; ++i) {
-        (void)i;
-        if (const std::optional<IVec2> random_available_position =
-                state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
-                    entities::jetpack::SetEntityJetpack(*entity);
-                    entity->pos = ToVec2(*random_available_position);
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < 32; ++i) {
-        (void)i;
-        if (const std::optional<IVec2> random_available_position =
-                state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const money = state.entity_manager.GetEntityMut(*vid)) {
-                    const EntityType money_type =
-                        RandomMoneyType() == 0 ? EntityType::Gold : EntityType::GoldStack;
-                    entities::money::SetEntityMoney(*money, money_type);
-                    money->pos = ToVec2(*random_available_position);
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < 8; ++i) {
-        (void)i;
-        if (const std::optional<IVec2> random_available_position =
-                state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const bat = state.entity_manager.GetEntityMut(*vid)) {
-                    entities::bat::SetEntityBat(*bat);
-                    bat->pos = ToVec2(*random_available_position);
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < 32; ++i) {
-        (void)i;
-        if (const std::optional<IVec2> random_available_position =
-                state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
-                    const unsigned int random_number = RandomPercent();
-                    if (random_number >= 61 && random_number <= 90) {
-                        entities::breakaway_container::SetEntityBreakawayContainer(
-                            *entity, EntityType::Pot);
-                    } else if (random_number >= 91) {
-                        entities::breakaway_container::SetEntityBreakawayContainer(
-                            *entity, EntityType::Box);
-                    } else {
-                        entities::rock::SetEntityRock(*entity);
+    if (!stage_gen::hd_mines::UsesHdMinesGenerator(state.stage.stage_type)) {
+        // This mirrors the old Rust stage init population pass.
+        for (int i = 0; i < 2; ++i) {
+            (void)i;
+            if (const std::optional<IVec2> random_available_position =
+                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
+                    if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
+                        entities::jetpack::SetEntityJetpack(*entity);
+                        entity->pos = ToVec2(*random_available_position);
                     }
-                    entity->pos = ToVec2(*random_available_position);
                 }
             }
         }
-    }
 
-    for (int i = 0; i < 32; ++i) {
-        (void)i;
-        if (const std::optional<IVec2> random_available_position =
-                state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const block = state.entity_manager.GetEntityMut(*vid)) {
-                    entities::block::SetEntityBlock(*block);
-                    block->pos = ToVec2(*random_available_position);
+        for (int i = 0; i < 32; ++i) {
+            (void)i;
+            if (const std::optional<IVec2> random_available_position =
+                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
+                    if (Entity* const money = state.entity_manager.GetEntityMut(*vid)) {
+                        const EntityType money_type =
+                            RandomMoneyType() == 0 ? EntityType::Gold : EntityType::GoldStack;
+                        entities::money::SetEntityMoney(*money, money_type);
+                        money->pos = ToVec2(*random_available_position);
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < 8; ++i) {
+            (void)i;
+            if (const std::optional<IVec2> random_available_position =
+                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
+                    if (Entity* const bat = state.entity_manager.GetEntityMut(*vid)) {
+                        entities::bat::SetEntityBat(*bat);
+                        bat->pos = ToVec2(*random_available_position);
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < 32; ++i) {
+            (void)i;
+            if (const std::optional<IVec2> random_available_position =
+                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
+                    if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
+                        const unsigned int random_number = RandomPercent();
+                        if (random_number >= 61 && random_number <= 90) {
+                            entities::breakaway_container::SetEntityBreakawayContainer(
+                                *entity, EntityType::Pot);
+                        } else if (random_number >= 91) {
+                            entities::breakaway_container::SetEntityBreakawayContainer(
+                                *entity, EntityType::Box);
+                        } else {
+                            entities::rock::SetEntityRock(*entity);
+                        }
+                        entity->pos = ToVec2(*random_available_position);
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < 32; ++i) {
+            (void)i;
+            if (const std::optional<IVec2> random_available_position =
+                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
+                    if (Entity* const block = state.entity_manager.GetEntityMut(*vid)) {
+                        entities::block::SetEntityBlock(*block);
+                        block->pos = ToVec2(*random_available_position);
+                    }
                 }
             }
         }
@@ -272,8 +298,8 @@ void InitStage(State& state) {
 
 void InitDebugLevel(State& state) {
     switch (state.debug_level.kind) {
-    case DebugLevelKind::Test1:
-        state.stage = Stage::New(StageType::Test1);
+    case DebugLevelKind::Cave1:
+        state.stage = Stage::New(StageType::Cave1);
         InitStage(state);
         break;
     case DebugLevelKind::HangTest:

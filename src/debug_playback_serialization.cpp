@@ -376,8 +376,8 @@ const char* ModeToString(Mode mode) {
 
 const char* DebugLevelKindToString(DebugLevelKind kind) {
     switch (kind) {
-    case DebugLevelKind::Test1:
-        return "Test1";
+    case DebugLevelKind::Cave1:
+        return "Cave1";
     case DebugLevelKind::HangTest:
         return "HangTest";
     case DebugLevelKind::StompTest:

@@ -39,3 +39,7 @@ item idea: hard hat, prevents getting damaged on head in some circumstances. mos
 if i throw something directly at a wall, it hops up and then imediatly hits and stunns th eplayer. this doesnt seem right...
 gloves dont work on the screen right boundary. didnt try the left one but should check that too
 more thrown and breakables swept contact logic to their dispatcher. rather than in their step code. 
+rip out: 
+    is tile transparent
+    is tile light?
+

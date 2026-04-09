@@ -40,7 +40,7 @@ enum class Mode {
 constexpr std::uint32_t kStageSettleFrames = 100;
 
 enum class DebugLevelKind {
-    Test1,
+    Cave1,
     HangTest,
     StompTest,
 };
@@ -52,7 +52,7 @@ struct HangTestLevelConfig {
 };
 
 struct DebugLevelConfig {
-    DebugLevelKind kind = DebugLevelKind::Test1;
+    DebugLevelKind kind = DebugLevelKind::Cave1;
     bool player_has_gloves = false;
     HangTestLevelConfig hang_test;
 };

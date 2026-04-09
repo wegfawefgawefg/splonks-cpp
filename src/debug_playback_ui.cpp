@@ -255,7 +255,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     }
 
     int level_kind = static_cast<int>(state.debug_level.kind);
-    const char* level_names[] = {"Test1", "HangTest", "StompTest"};
+    const char* level_names[] = {"Cave1", "HangTest", "StompTest"};
     ImGui::Combo("Preset", &level_kind, level_names, IM_ARRAYSIZE(level_names));
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));

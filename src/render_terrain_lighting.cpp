@@ -23,6 +23,9 @@ bool IsTerrainLightingTile(Tile tile) {
     case Tile::Dirt:
     case Tile::Gold:
     case Tile::Block:
+    case Tile::ShopWall:
+    case Tile::SmoothWall:
+    case Tile::Glass:
         return true;
     default:
         return false;

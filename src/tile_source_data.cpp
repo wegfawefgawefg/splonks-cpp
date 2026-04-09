@@ -33,11 +33,14 @@ struct TileSourceNameGroup {
     std::uint32_t count = 0;
 };
 
-constexpr std::array<TileSourceNameGroup, 50> kTileSourceNameGroups{{
+constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
     {TileSet::Cave, Tile::Air, {HashFrameDataIdConstexpr("cave_air_0"), HashFrameDataIdConstexpr("cave_air_1"), HashFrameDataIdConstexpr("cave_air_2")}, 3},
     {TileSet::Cave, Tile::Dirt, {HashFrameDataIdConstexpr("cave_dirt_0"), HashFrameDataIdConstexpr("cave_dirt_1"), HashFrameDataIdConstexpr("cave_dirt_2")}, 3},
     {TileSet::Cave, Tile::Gold, {HashFrameDataIdConstexpr("cave_gold_0"), 0, 0}, 1},
     {TileSet::Cave, Tile::Block, {HashFrameDataIdConstexpr("cave_block_0"), 0, 0}, 1},
+    {TileSet::Cave, Tile::ShopWall, {HashFrameDataIdConstexpr("cave_shop_wall"), 0, 0}, 1},
+    {TileSet::Cave, Tile::SmoothWall, {HashFrameDataIdConstexpr("cave_smooth_wall"), 0, 0}, 1},
+    {TileSet::Cave, Tile::Glass, {HashFrameDataIdConstexpr("glass"), 0, 0}, 1},
     {TileSet::Cave, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
     {TileSet::Cave, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
     {TileSet::Cave, Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},

@@ -136,8 +136,8 @@ sprites:
     tile: false
   - path: "entities.png"
     aabb:
-      x: 4
-      y: 233
+      x: 290
+      y: 41
       w: 8
       h: 7
     name: "pot"
@@ -244,8 +244,8 @@ sprites:
     tile: false
   - path: "entities.png"
     aabb:
-      x: 2
-      y: 244
+      x: 288
+      y: 52
       w: 12
       h: 12
     name: "box"
@@ -271,8 +271,8 @@ sprites:
     tile: false
   - path: "entities.png"
     aabb:
-      x: 2
-      y: 262
+      x: 288
+      y: 70
       w: 12
       h: 4
     name: "baseball_bat_swing"
@@ -298,8 +298,8 @@ sprites:
     tile: false
   - path: "entities.png"
     aabb:
-      x: 18
-      y: 261
+      x: 304
+      y: 69
       w: 13
       h: 5
     name: "baseball_bat_swing"
@@ -325,8 +325,8 @@ sprites:
     tile: false
   - path: "entities.png"
     aabb:
-      x: 34
-      y: 264
+      x: 320
+      y: 72
       w: 12
       h: 2
     name: "baseball_bat_swing"
@@ -1862,6 +1862,897 @@ sprites:
       w: 14
       h: 14
     tile: false
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 160
+      w: 16
+      h: 16
+    name: "sac_altar_left"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 9
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 160
+      w: 16
+      h: 16
+    name: "sac_altar_right"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 114
+      y: 163
+      w: 12
+      h: 13
+    name: "gold_idol"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 6
+    tags: []
+    pbox:
+      x: 0
+      y: 1
+      w: 12
+      h: 12
+    cbox:
+      x: 0
+      y: 1
+      w: 12
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 129
+      y: 165
+      w: 14
+      h: 11
+    name: "chest"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 11
+    cbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 11
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 305
+      y: 90
+      w: 8
+      h: 6
+    name: "dice"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 6
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 6
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 36
+      y: 167
+      w: 8
+      h: 9
+    name: "ruby_big"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 128
+      w: 16
+      h: 16
+    name: "altar_left"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 10
+      y: 10
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 13
+      h: 16
+    cbox:
+      x: 3
+      y: 0
+      w: 13
+      h: 16
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 128
+      w: 16
+      h: 16
+    name: "altar_right"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 9
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 16
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 96
+      w: 16
+      h: 16
+    name: "tiki_arm_right_0"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 96
+      w: 16
+      h: 16
+    name: "tiki_arm_right_1"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 176
+      y: 96
+      w: 16
+      h: 16
+    name: "tiki_arm_right_2"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 176
+      y: 112
+      w: 16
+      h: 16
+    name: "tiki_arm_left_2"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 112
+      w: 16
+      h: 16
+    name: "tiki_arm_left_1"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 112
+      w: 16
+      h: 16
+    name: "tiki_arm_left_0"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 192
+      y: 64
+      w: 32
+      h: 64
+    name: "tiki_body"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 192
+      y: 32
+      w: 32
+      h: 32
+    name: "giant_tiki_head"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 224
+      w: 16
+      h: 16
+    name: "damsel"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 7
+    tags: []
+    pbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 16
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 16
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 224
+      w: 16
+      h: 16
+    name: "shopkeeper_icon"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 34
+      y: 225
+      w: 12
+      h: 15
+    name: "shopkeeper"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 8
+    tags: []
+    pbox:
+      x: 2
+      y: 0
+      w: 9
+      h: 15
+    cbox:
+      x: 2
+      y: 0
+      w: 9
+      h: 15
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 240
+      w: 16
+      h: 16
+    name: "arrow_trap"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 240
+      w: 16
+      h: 16
+    name: "sign"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 10
+    tags: []
+    pbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    cbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 240
+      w: 16
+      h: 16
+    name: "sign_general"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 240
+      w: 16
+      h: 16
+    name: "sign_bomb"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 240
+      w: 16
+      h: 16
+    name: "sign_weapon"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 240
+      w: 16
+      h: 16
+    name: "sign_rare"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 240
+      w: 16
+      h: 16
+    name: "sign_clothing"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 240
+      w: 16
+      h: 16
+    name: "sign_craps"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 240
+      w: 16
+      h: 16
+    name: "sign_kissing"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    cbox:
+      x: 1
+      y: 3
+      w: 14
+      h: 12
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 256
+      w: 16
+      h: 16
+    name: "lantern"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 2
+      y: 3
+      w: 12
+      h: 13
+    cbox:
+      x: 2
+      y: 3
+      w: 12
+      h: 13
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 256
+      w: 48
+      h: 32
+    name: "dice_sign"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 24
+      y: 16
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 48
+      h: 32
+    cbox:
+      x: 0
+      y: 0
+      w: 48
+      h: 32
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 272
+      w: 16
+      h: 16
+    name: "lantern_red"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 1
+      y: 292
+      w: 11
+      h: 10
+    name: "mattock"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 9
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 11
+      h: 10
+    cbox:
+      x: 0
+      y: 0
+      w: 11
+      h: 10
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 288
+      w: 32
+      h: 32
+    name: "wanted_poster"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
   - path: "boss.png"
     aabb:
       x: 0
@@ -2618,6 +3509,114 @@ sprites:
       w: 0
       h: 0
     tile: false
+  - path: "cave.png"
+    aabb:
+      x: 80
+      y: 0
+      w: 16
+      h: 16
+    name: "cave_shop_wall"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "cave.png"
+    aabb:
+      x: 48
+      y: 0
+      w: 16
+      h: 16
+    name: "cave_smooth_wall"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "cave.png"
+    aabb:
+      x: 64
+      y: 0
+      w: 16
+      h: 16
+    name: "cave_shop_solid"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "cave.png"
+    aabb:
+      x: 0
+      y: 160
+      w: 16
+      h: 16
+    name: "glass"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: true
   - path: "ice.png"
     aabb:
       x: 0

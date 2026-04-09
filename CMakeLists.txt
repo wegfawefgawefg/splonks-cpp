@@ -187,6 +187,7 @@ add_executable(splonks-cpp
     src/stage.cpp
     src/stage_init.cpp
     src/stage_gen/cave.cpp
+    src/stage_gen/hd_mines.cpp
     src/stage_gen/mod.cpp
     src/stage_gen/test.cpp
     src/state.cpp
