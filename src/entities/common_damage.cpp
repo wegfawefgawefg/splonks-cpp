@@ -471,7 +471,14 @@ DamageResult TryToDamageEntity(
     return DamageResult::None;
 }
 
-void DoExplosion(std::size_t entity_idx, Vec2 center, float size, State& state, Audio& audio) {
+void DoExplosion(
+    std::size_t entity_idx,
+    Vec2 center,
+    float size,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
     audio.PlaySoundEffect(SoundEffect::BombExplosion);
     const float explosion_size = size * static_cast<float>(kTileSize);
     const AABB area = {
@@ -479,6 +486,7 @@ void DoExplosion(std::size_t entity_idx, Vec2 center, float size, State& state, 
         .br = center + (Vec2::New(1.0F, 1.0F) * explosion_size),
     };
     state.stage.SetTilesInRectWc(area, Tile::Air);
+    InvalidateTerrainLightingCache(graphics);
 
     const VID this_vid = state.entity_manager.GetVid(entity_idx);
     const std::vector<VID> results = state.sid.QueryExclude(area.tl, area.br, this_vid);

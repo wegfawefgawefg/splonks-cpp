@@ -62,6 +62,7 @@ void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
         break;
     case Mode::UiSettings:
     case Mode::PostFxSettings:
+    case Mode::LightingSettings:
         break;
     case Mode::Playing:
         StepPlaying(state, audio, graphics, kTimestep);

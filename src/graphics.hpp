@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frame_data.hpp"
+#include "terrain_lighting.hpp"
 #include "tile.hpp"
 #include "tile_source_data.hpp"
 
@@ -62,6 +63,8 @@ struct Graphics {
     FrameDataDb frame_data_db;
     std::vector<SDL_Texture*> frame_data_images;
     TileSourceDb tile_source_db;
+    TerrainLightingCache terrain_lighting_cache;
+    BackwallLightingCache backwall_lighting_cache;
     SDL_Texture* special_effects_texture = nullptr;
     std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
     std::string font_path = "assets/fonts/DejaVuSans.ttf";

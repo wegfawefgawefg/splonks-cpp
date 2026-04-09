@@ -6,6 +6,7 @@
 #include "graphics.hpp"
 #include "stage.hpp"
 #include "state.hpp"
+#include "terrain_lighting.hpp"
 #include "tile.hpp"
 
 namespace splonks::entities::rope {
@@ -73,6 +74,7 @@ void StepEntityLogicAsRope(
                 if (tile == Tile::Air || tile == Tile::Rope || tile == Tile::Entrance) {
                     state.stage.SetTile(p, Tile::Rope);
                     graphics.ResetTileVariation(p);
+                    UpdateTerrainLightingCacheForTileChange(state, graphics, p);
                     atleast_one_tile_converted = true;
                 } else {
                     break;

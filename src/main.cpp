@@ -8,6 +8,7 @@
 #include "render_postfx.hpp"
 #include "state.hpp"
 #include "step.hpp"
+#include "terrain_lighting.hpp"
 #include "text.hpp"
 
 #include <SDL3/SDL.h>
@@ -167,8 +168,10 @@ int main(int argc, char** argv) {
         debug.entity_annotations_visible = state.settings.debug_ui.entity_annotations_visible;
         debug.ui_settings_window_visible = state.settings.debug_ui.ui_settings_visible;
         debug.post_fx_settings_window_visible = state.settings.debug_ui.post_fx_settings_visible;
+        debug.lighting_settings_window_visible = state.settings.debug_ui.lighting_settings_visible;
         debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
+        splonks::RebuildTerrainLightingCache(state, graphics);
 
         std::uint64_t last_ticks = SDL_GetTicks();
 

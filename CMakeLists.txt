@@ -162,6 +162,7 @@ add_executable(splonks-cpp
     src/imgui_layer.cpp
     src/inputs.cpp
     src/main.cpp
+    src/menu_lighting.cpp
     src/menu_settings.cpp
     src/menu_postfx.cpp
     src/menu_title.cpp
@@ -171,6 +172,7 @@ add_executable(splonks-cpp
     src/room.cpp
     src/render.cpp
     src/render_postfx.cpp
+    src/render_terrain_lighting.cpp
     src/render_debug.cpp
     src/render_tiles_and_entities.cpp
     src/render_ui.cpp
@@ -186,6 +188,7 @@ add_executable(splonks-cpp
     src/step.cpp
     src/step_entities.cpp
     src/text.cpp
+    src/terrain_lighting.cpp
     src/special_effects/dynamic_effect.cpp
     src/special_effects/mod.cpp
     src/special_effects/special_effect.cpp

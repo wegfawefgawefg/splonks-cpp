@@ -14,6 +14,7 @@ enum class SettingsMenuOption {
     Controls,
     Ui,
     PostFx,
+    Lighting,
     Back,
 };
 

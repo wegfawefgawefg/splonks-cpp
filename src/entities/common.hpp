@@ -50,7 +50,14 @@ void DoTileAndEntityCollisions(
     Graphics& graphics,
     Audio& audio
 );
-void DoExplosion(std::size_t entity_idx, Vec2 center, float size, State& state, Audio& audio);
+void DoExplosion(
+    std::size_t entity_idx,
+    Vec2 center,
+    float size,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+);
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);

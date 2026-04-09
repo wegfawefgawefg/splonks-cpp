@@ -3,6 +3,7 @@
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
 #include "step.hpp"
+#include "terrain_lighting.hpp"
 
 #include <imgui.h>
 
@@ -69,6 +70,7 @@ void ExitPlayback(DebugPlayback& debug, State& state, Graphics& graphics) {
         RestoreGameplaySnapshot(*debug.live_resume_snapshot, state, graphics);
         debug.live_resume_snapshot.reset();
     }
+    InvalidateTerrainLightingCache(graphics);
 }
 
 namespace {
@@ -164,6 +166,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawEntityAnnotations(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
     debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);
+    debug_playback_internal::DrawLightingSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawGraphicsSettingsWindow(debug, state, graphics, window, renderer);
 }
 
@@ -188,6 +191,7 @@ void RunSimulationWithDebugControls(
         debug_playback_internal::ClampPlaybackIndex(debug);
         if (!debug.recorded_snapshots.empty()) {
             RestoreGameplaySnapshot(debug.recorded_snapshots[debug.playback_index], state, graphics);
+            InvalidateTerrainLightingCache(graphics);
         }
         graphics.debug_lock_play_camera = true;
         return;

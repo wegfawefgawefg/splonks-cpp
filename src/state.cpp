@@ -21,6 +21,7 @@ State State::New() {
     state.video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
     state.ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
     state.post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
+    state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainLighting;
     state.video_settings_target_window_size_index.reset();
     state.video_settings_target_resolution_index.reset();
     state.video_settings_target_fullscreen.reset();

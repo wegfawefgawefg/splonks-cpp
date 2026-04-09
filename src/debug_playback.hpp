@@ -31,6 +31,8 @@ struct GameplaySnapshot {
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
     UiSettingsMenuOption ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
     PostFxSettingsMenuOption post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
+    LightingSettingsMenuOption lighting_settings_menu_selection =
+        LightingSettingsMenuOption::TerrainFaceShading;
     std::optional<std::size_t> video_settings_target_window_size_index;
     std::optional<std::size_t> video_settings_target_resolution_index;
     std::optional<bool> video_settings_target_fullscreen;
@@ -69,6 +71,7 @@ struct DebugPlayback {
     bool entity_annotations_visible = false;
     bool ui_settings_window_visible = false;
     bool post_fx_settings_window_visible = false;
+    bool lighting_settings_window_visible = false;
     bool graphics_settings_window_visible = false;
     bool recording = false;
     bool playback_active = false;

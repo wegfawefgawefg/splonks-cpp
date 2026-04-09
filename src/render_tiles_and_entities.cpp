@@ -3,12 +3,14 @@
 #include "entity.hpp"
 #include "entities/common.hpp"
 #include "graphics.hpp"
+#include "render_terrain_lighting.hpp"
 #include "special_effects/special_effect.hpp"
 #include "state.hpp"
+#include "terrain_lighting.hpp"
 #include "tile.hpp"
 
+#include <algorithm>
 #include <cmath>
-#include <cstdint>
 
 namespace splonks {
 
@@ -37,6 +39,7 @@ SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, con
 } // namespace
 
 void RenderStageTiles(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+    EnsureTerrainLightingCache(state, graphics);
     const TileSet tile_set = TileSetForStageType(state.stage.stage_type);
     for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
         for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
@@ -66,6 +69,7 @@ void RenderStageTiles(SDL_Renderer* renderer, const State& state, Graphics& grap
                 Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
 
+            const bool is_air_tile = tile == Tile::Air;
             if (IsTileTransparent(tile)) {
                 const TileSourceData* const air_source_data =
                     GetTileSourceData(graphics, tile_set, Tile::Air, tile_pos);
@@ -78,17 +82,46 @@ void RenderStageTiles(SDL_Renderer* renderer, const State& state, Graphics& grap
                             static_cast<float>(air_source_data->sample_rect.w),
                             static_cast<float>(air_source_data->sample_rect.h),
                         };
+                        ApplyBackwallTileBrightness(
+                            air_texture,
+                            state,
+                            graphics,
+                            static_cast<int>(x),
+                            static_cast<int>(y)
+                        );
                         SDL_RenderTexture(renderer, air_texture, &air_src, &dst);
+                        ResetTerrainTileBrightness(air_texture);
                     }
                 }
             }
 
+            if (is_air_tile) {
+                continue;
+            }
+
+            ApplyTerrainTileBrightness(
+                tile_texture,
+                state,
+                graphics,
+                static_cast<int>(x),
+                static_cast<int>(y)
+            );
             SDL_RenderTexture(renderer, tile_texture, &src, &dst);
+            ResetTerrainTileBrightness(tile_texture);
+            RenderTerrainTileLighting(
+                renderer,
+                state,
+                graphics,
+                static_cast<int>(x),
+                static_cast<int>(y),
+                dst
+            );
         }
     }
 }
 
 void RenderStageTileWrapper(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+    EnsureTerrainLightingCache(state, graphics);
     const TileSet tile_set = TileSetForStageType(state.stage.stage_type);
     const Vec2 visible_tl_wc = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom);
     const Vec2 visible_br_wc =
@@ -136,7 +169,10 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, const State& state, Graphics
                     ToVec2(tile_pos),
                     Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
+                ApplyTerrainTileBrightness(tile_texture, state, graphics, tile_x, tile_y);
                 SDL_RenderTexture(renderer, tile_texture, &src, &dst);
+                ResetTerrainTileBrightness(tile_texture);
+                RenderTerrainTileLighting(renderer, state, graphics, tile_x, tile_y, dst);
             }
         }
     }

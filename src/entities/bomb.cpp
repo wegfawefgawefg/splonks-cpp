@@ -24,12 +24,12 @@ void SetEntityBomb(Entity& entity) {
     entity.frame_data_animator.SetAnimation(frame_data_ids::Grenade);
 }
 
-void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
+void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
     Entity& bomb = state.entity_manager.entities[entity_idx];
     const Vec2 bomb_center = bomb.GetCenter();
     if (bomb.super_state == EntitySuperState::Dead) {
         const Vec2 center = bomb_center;
-        common::DoExplosion(entity_idx, center, 2.0F, state, audio);
+        common::DoExplosion(entity_idx, center, 2.0F, state, graphics, audio);
         return;
     }
 
@@ -49,7 +49,7 @@ void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
         if (bomb.counter_a <= 0.0F) {
             // do explosion
             const Vec2 center = bomb.GetCenter();
-            common::DoExplosion(entity_idx, center, 2.0F, state, audio);
+            common::DoExplosion(entity_idx, center, 2.0F, state, graphics, audio);
             bomb.health = 0;
         }
     }

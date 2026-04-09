@@ -33,6 +33,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
 void DrawEntityAnnotations(DebugPlayback& debug, State& state);
 void DrawUiSettingsWindow(DebugPlayback& debug, State& state);
 void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics& graphics);
+void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawGraphicsSettingsWindow(
     DebugPlayback& debug,
     State& state,

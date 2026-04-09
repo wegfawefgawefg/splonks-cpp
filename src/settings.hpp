@@ -53,6 +53,29 @@ enum class PostProcessEffect : std::uint8_t {
 
 struct PostProcessSettings {
     PostProcessEffect effect = PostProcessEffect::Crt;
+    bool terrain_lighting = true;
+    bool terrain_face_shading = true;
+    bool terrain_face_enclosed_stage_bounds = true;
+    bool terrain_seam_ao = true;
+    bool terrain_exposure_lighting = true;
+    bool backwall_lighting = true;
+    float terrain_face_top_highlight = 0.18F;
+    float terrain_face_side_shade = 0.12F;
+    float terrain_face_bottom_shade = 0.20F;
+    float terrain_face_band_size = 0.22F;
+    float terrain_face_gradient_softness = 0.75F;
+    float terrain_face_corner_rounding = 0.80F;
+    float terrain_seam_ao_amount = 0.18F;
+    float terrain_seam_ao_size = 0.20F;
+    float terrain_exposure_amount = 0.12F;
+    float terrain_exposure_min_brightness = 0.50F;
+    float terrain_exposure_max_brightness = 1.50F;
+    float terrain_exposure_diagonal_weight = 0.50F;
+    float terrain_exposure_smoothing = 0.70F;
+    float backwall_brightness = 0.85F;
+    float backwall_min_brightness = 0.55F;
+    float backwall_max_brightness = 1.00F;
+    float backwall_smoothing = 0.85F;
     float crt_scanline_amount = 0.5F;
     float crt_scanline_edge_start = 0.35F;
     float crt_scanline_edge_falloff = 0.25F;
@@ -75,6 +98,7 @@ struct DebugUiSettings {
     bool entity_annotations_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;
+    bool lighting_settings_visible = false;
     bool graphics_settings_visible = false;
 
     static DebugUiSettings New();

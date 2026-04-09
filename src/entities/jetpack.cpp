@@ -54,7 +54,12 @@ void SetEntityJetpack(Entity& entity) {
  *      if yes, move towards the player right now.
  *  If no, give up and fly back to the ceiling.
  */
-void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
+void StepEntityLogicAsJetpack(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
     Entity& jetpack = state.entity_manager.entities[entity_idx];
     if (jetpack.super_state == EntitySuperState::EquippedToBack) {
         FrameDataId equipped_animation = frame_data_ids::JetpackBack;
@@ -76,7 +81,7 @@ void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio
 
     if (jetpack.super_state == EntitySuperState::Dead) {
         const Vec2 center = jetpack.GetCenter();
-        common::DoExplosion(entity_idx, center, 2.0F, state, audio);
+        common::DoExplosion(entity_idx, center, 2.0F, state, graphics, audio);
         return;
     }
 

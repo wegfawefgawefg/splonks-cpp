@@ -10,6 +10,11 @@ struct State;
 
 enum class PostFxSettingsMenuOption {
     Effect,
+    TerrainFaceShading,
+    TerrainTopHighlight,
+    TerrainSideShade,
+    TerrainBottomShade,
+    TerrainBandSize,
     CrtScanlines,
     CrtScanlineEdgeStart,
     CrtScanlineEdgeFalloff,

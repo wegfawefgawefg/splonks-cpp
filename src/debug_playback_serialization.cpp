@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 16;
+constexpr std::uint32_t kRecordingVersion = 25;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -101,6 +101,29 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
     WritePod(out, settings.ui.tool_slot_scale);
     WritePod(out, settings.ui.tool_icon_scale);
     WritePod(out, settings.post_process.effect);
+    WritePod(out, settings.post_process.terrain_lighting);
+    WritePod(out, settings.post_process.terrain_face_shading);
+    WritePod(out, settings.post_process.terrain_face_enclosed_stage_bounds);
+    WritePod(out, settings.post_process.terrain_seam_ao);
+    WritePod(out, settings.post_process.terrain_exposure_lighting);
+    WritePod(out, settings.post_process.backwall_lighting);
+    WritePod(out, settings.post_process.terrain_face_top_highlight);
+    WritePod(out, settings.post_process.terrain_face_side_shade);
+    WritePod(out, settings.post_process.terrain_face_bottom_shade);
+    WritePod(out, settings.post_process.terrain_face_band_size);
+    WritePod(out, settings.post_process.terrain_face_gradient_softness);
+    WritePod(out, settings.post_process.terrain_face_corner_rounding);
+    WritePod(out, settings.post_process.terrain_seam_ao_amount);
+    WritePod(out, settings.post_process.terrain_seam_ao_size);
+    WritePod(out, settings.post_process.terrain_exposure_amount);
+    WritePod(out, settings.post_process.terrain_exposure_min_brightness);
+    WritePod(out, settings.post_process.terrain_exposure_max_brightness);
+    WritePod(out, settings.post_process.terrain_exposure_diagonal_weight);
+    WritePod(out, settings.post_process.terrain_exposure_smoothing);
+    WritePod(out, settings.post_process.backwall_brightness);
+    WritePod(out, settings.post_process.backwall_min_brightness);
+    WritePod(out, settings.post_process.backwall_max_brightness);
+    WritePod(out, settings.post_process.backwall_smoothing);
     WritePod(out, settings.post_process.crt_scanline_amount);
     WritePod(out, settings.post_process.crt_scanline_edge_start);
     WritePod(out, settings.post_process.crt_scanline_edge_falloff);
@@ -128,6 +151,29 @@ bool ReadSettings(std::istream& in, Settings& settings) {
         !ReadPod(in, settings.ui.tool_slot_scale) ||
         !ReadPod(in, settings.ui.tool_icon_scale) ||
         !ReadPod(in, settings.post_process.effect) ||
+        !ReadPod(in, settings.post_process.terrain_lighting) ||
+        !ReadPod(in, settings.post_process.terrain_face_shading) ||
+        !ReadPod(in, settings.post_process.terrain_face_enclosed_stage_bounds) ||
+        !ReadPod(in, settings.post_process.terrain_seam_ao) ||
+        !ReadPod(in, settings.post_process.terrain_exposure_lighting) ||
+        !ReadPod(in, settings.post_process.backwall_lighting) ||
+        !ReadPod(in, settings.post_process.terrain_face_top_highlight) ||
+        !ReadPod(in, settings.post_process.terrain_face_side_shade) ||
+        !ReadPod(in, settings.post_process.terrain_face_bottom_shade) ||
+        !ReadPod(in, settings.post_process.terrain_face_band_size) ||
+        !ReadPod(in, settings.post_process.terrain_face_gradient_softness) ||
+        !ReadPod(in, settings.post_process.terrain_face_corner_rounding) ||
+        !ReadPod(in, settings.post_process.terrain_seam_ao_amount) ||
+        !ReadPod(in, settings.post_process.terrain_seam_ao_size) ||
+        !ReadPod(in, settings.post_process.terrain_exposure_amount) ||
+        !ReadPod(in, settings.post_process.terrain_exposure_min_brightness) ||
+        !ReadPod(in, settings.post_process.terrain_exposure_max_brightness) ||
+        !ReadPod(in, settings.post_process.terrain_exposure_diagonal_weight) ||
+        !ReadPod(in, settings.post_process.terrain_exposure_smoothing) ||
+        !ReadPod(in, settings.post_process.backwall_brightness) ||
+        !ReadPod(in, settings.post_process.backwall_min_brightness) ||
+        !ReadPod(in, settings.post_process.backwall_max_brightness) ||
+        !ReadPod(in, settings.post_process.backwall_smoothing) ||
         !ReadPod(in, settings.post_process.crt_scanline_amount) ||
         !ReadPod(in, settings.post_process.crt_scanline_edge_start) ||
         !ReadPod(in, settings.post_process.crt_scanline_edge_falloff) ||
@@ -221,6 +267,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.video_settings_menu_selection);
     WritePod(out, snapshot.ui_settings_menu_selection);
     WritePod(out, snapshot.post_fx_settings_menu_selection);
+    WritePod(out, snapshot.lighting_settings_menu_selection);
     WriteOptionalPod(out, snapshot.video_settings_target_window_size_index);
     WriteOptionalPod(out, snapshot.video_settings_target_resolution_index);
     WriteOptionalPod(out, snapshot.video_settings_target_fullscreen);
@@ -267,6 +314,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.video_settings_menu_selection) &&
            ReadPod(in, snapshot.ui_settings_menu_selection) &&
            ReadPod(in, snapshot.post_fx_settings_menu_selection) &&
+           ReadPod(in, snapshot.lighting_settings_menu_selection) &&
            ReadOptionalPod(in, snapshot.video_settings_target_window_size_index) &&
            ReadOptionalPod(in, snapshot.video_settings_target_resolution_index) &&
            ReadOptionalPod(in, snapshot.video_settings_target_fullscreen) &&
@@ -310,6 +358,8 @@ const char* ModeToString(Mode mode) {
         return "UiSettings";
     case Mode::PostFxSettings:
         return "PostFxSettings";
+    case Mode::LightingSettings:
+        return "LightingSettings";
     case Mode::Playing:
         return "Playing";
     case Mode::StageTransition:
@@ -702,6 +752,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.video_settings_menu_selection = state.video_settings_menu_selection;
     snapshot.ui_settings_menu_selection = state.ui_settings_menu_selection;
     snapshot.post_fx_settings_menu_selection = state.post_fx_settings_menu_selection;
+    snapshot.lighting_settings_menu_selection = state.lighting_settings_menu_selection;
     snapshot.video_settings_target_window_size_index = state.video_settings_target_window_size_index;
     snapshot.video_settings_target_resolution_index = state.video_settings_target_resolution_index;
     snapshot.video_settings_target_fullscreen = state.video_settings_target_fullscreen;
@@ -750,6 +801,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.video_settings_menu_selection = snapshot.video_settings_menu_selection;
     state.ui_settings_menu_selection = snapshot.ui_settings_menu_selection;
     state.post_fx_settings_menu_selection = snapshot.post_fx_settings_menu_selection;
+    state.lighting_settings_menu_selection = snapshot.lighting_settings_menu_selection;
     state.video_settings_target_window_size_index = snapshot.video_settings_target_window_size_index;
     state.video_settings_target_resolution_index = snapshot.video_settings_target_resolution_index;
     state.video_settings_target_fullscreen = snapshot.video_settings_target_fullscreen;

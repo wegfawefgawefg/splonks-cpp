@@ -3,6 +3,7 @@
 #include "audio.hpp"
 #include "graphics.hpp"
 #include "menu_postfx.hpp"
+#include "menu_lighting.hpp"
 #include "menu_settings.hpp"
 #include "menu_title.hpp"
 #include "menu_ui.hpp"
@@ -11,6 +12,7 @@
 #include "stage.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
+#include "terrain_lighting.hpp"
 
 namespace splonks {
 
@@ -204,6 +206,7 @@ void ProcessInputPlaying(
     if (inputs.regenerate_level.pressed) {
         InitDebugLevel(state);
         graphics.ResetTileVariations();
+        InvalidateTerrainLightingCache(graphics);
     }
     (void)window;
     (void)graphics;
@@ -228,6 +231,7 @@ void ProcessInputStageTransition(
             state.stage = Stage::New(*state.next_stage);
             InitStage(state);
             graphics.ResetTileVariations();
+            InvalidateTerrainLightingCache(graphics);
             state.scene_frame = 0;
             state.SetMode(Mode::Playing);
         } else {
@@ -252,6 +256,7 @@ void ProcessInputGameOver(
             state.next_stage = StageType::Cave1;
         }
         graphics.camera.rotation = 0.0F;
+        InvalidateTerrainLightingCache(graphics);
         state.SetMode(Mode::StageTransition);
     }
 }
@@ -270,6 +275,7 @@ void ProcessInputWin(
         state.scene_frame >= (60 * 5)) {
         state.stage = Stage::NewBlank();
         graphics.ResetTileVariations();
+        InvalidateTerrainLightingCache(graphics);
         state.SetMode(Mode::Title);
     }
     (void)graphics;
@@ -368,6 +374,9 @@ void ProcessInput(
         break;
     case Mode::PostFxSettings:
         ProcessInputPostFxSettingsMenu(window, state, audio, graphics, dt);
+        break;
+    case Mode::LightingSettings:
+        ProcessInputLightingSettingsMenu(window, state, audio, graphics, dt);
         break;
     case Mode::Playing:
         ProcessInputPlaying(window, state, audio, graphics, dt);

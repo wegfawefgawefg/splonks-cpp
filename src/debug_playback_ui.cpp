@@ -4,6 +4,7 @@
 #include "imgui_layer.hpp"
 #include "settings.hpp"
 #include "stage_init.hpp"
+#include "terrain_lighting.hpp"
 
 #include <imgui.h>
 
@@ -62,6 +63,10 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.post_fx_settings_visible = debug.post_fx_settings_window_visible;
         changed = true;
     }
+    if (state.settings.debug_ui.lighting_settings_visible != debug.lighting_settings_window_visible) {
+        state.settings.debug_ui.lighting_settings_visible = debug.lighting_settings_window_visible;
+        changed = true;
+    }
     if (state.settings.debug_ui.graphics_settings_visible != debug.graphics_settings_window_visible) {
         state.settings.debug_ui.graphics_settings_visible = debug.graphics_settings_window_visible;
         changed = true;
@@ -96,6 +101,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Entity Annotations", &debug.entity_annotations_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
     ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
+    ImGui::Checkbox("Lighting Settings", &debug.lighting_settings_window_visible);
     ImGui::Checkbox("Graphics Settings", &debug.graphics_settings_window_visible);
     ImGui::Separator();
     ImGui::TextUnformatted("Shortcuts");
@@ -274,6 +280,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     if (ImGui::Button("Regenerate")) {
         InitDebugLevel(state);
         graphics.ResetTileVariations();
+        InvalidateTerrainLightingCache(graphics);
     }
 
     if (debug.playback_active) {
@@ -453,6 +460,164 @@ void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics
     );
 
     if (changed) {
+        SaveSettings(state.settings);
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.lighting_settings_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(1100.0F, 280.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Lighting Settings", &debug.lighting_settings_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    bool changed = false;
+    changed |=
+        ImGui::Checkbox("Terrain Lighting", &state.settings.post_process.terrain_lighting);
+    changed |= ImGui::Checkbox(
+        "Terrain Face Shading",
+        &state.settings.post_process.terrain_face_shading
+    );
+    changed |= ImGui::Checkbox(
+        "Enclosed Stage Bounds",
+        &state.settings.post_process.terrain_face_enclosed_stage_bounds
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Top Highlight",
+        &state.settings.post_process.terrain_face_top_highlight,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Side Shade",
+        &state.settings.post_process.terrain_face_side_shade,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Bottom Shade",
+        &state.settings.post_process.terrain_face_bottom_shade,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Band Size",
+        &state.settings.post_process.terrain_face_band_size,
+        0.05F,
+        0.50F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Gradient Softness",
+        &state.settings.post_process.terrain_face_gradient_softness,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Corner Rounding",
+        &state.settings.post_process.terrain_face_corner_rounding,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::Checkbox("Terrain Seam AO", &state.settings.post_process.terrain_seam_ao);
+    changed |= ImGui::SliderFloat(
+        "Terrain Seam AO Amount",
+        &state.settings.post_process.terrain_seam_ao_amount,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Seam AO Size",
+        &state.settings.post_process.terrain_seam_ao_size,
+        0.05F,
+        0.50F,
+        "%.2f"
+    );
+    changed |= ImGui::Checkbox(
+        "Terrain Exposure Lighting",
+        &state.settings.post_process.terrain_exposure_lighting
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Amount",
+        &state.settings.post_process.terrain_exposure_amount,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Min Brightness",
+        &state.settings.post_process.terrain_exposure_min_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Max Brightness",
+        &state.settings.post_process.terrain_exposure_max_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Diagonal Weight",
+        &state.settings.post_process.terrain_exposure_diagonal_weight,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Smoothing",
+        &state.settings.post_process.terrain_exposure_smoothing,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::Checkbox("Backwall Lighting", &state.settings.post_process.backwall_lighting);
+    changed |= ImGui::SliderFloat(
+        "Backwall Brightness",
+        &state.settings.post_process.backwall_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Backwall Min Brightness",
+        &state.settings.post_process.backwall_min_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Backwall Max Brightness",
+        &state.settings.post_process.backwall_max_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Backwall Smoothing",
+        &state.settings.post_process.backwall_smoothing,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+
+    if (changed) {
+        InvalidateTerrainLightingCache(graphics);
         SaveSettings(state.settings);
     }
 

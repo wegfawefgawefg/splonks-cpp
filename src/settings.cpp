@@ -78,6 +78,29 @@ UiSettings UiSettings::New() {
 PostProcessSettings PostProcessSettings::New() {
     PostProcessSettings result;
     result.effect = PostProcessEffect::Crt;
+    result.terrain_lighting = true;
+    result.terrain_face_shading = true;
+    result.terrain_face_enclosed_stage_bounds = true;
+    result.terrain_seam_ao = true;
+    result.terrain_exposure_lighting = true;
+    result.backwall_lighting = true;
+    result.terrain_face_top_highlight = 0.18F;
+    result.terrain_face_side_shade = 0.12F;
+    result.terrain_face_bottom_shade = 0.20F;
+    result.terrain_face_band_size = 0.22F;
+    result.terrain_face_gradient_softness = 0.75F;
+    result.terrain_face_corner_rounding = 0.80F;
+    result.terrain_seam_ao_amount = 0.18F;
+    result.terrain_seam_ao_size = 0.20F;
+    result.terrain_exposure_amount = 0.12F;
+    result.terrain_exposure_min_brightness = 0.50F;
+    result.terrain_exposure_max_brightness = 1.50F;
+    result.terrain_exposure_diagonal_weight = 0.50F;
+    result.terrain_exposure_smoothing = 0.70F;
+    result.backwall_brightness = 0.85F;
+    result.backwall_min_brightness = 0.55F;
+    result.backwall_max_brightness = 1.00F;
+    result.backwall_smoothing = 0.85F;
     result.crt_scanline_amount = 0.5F;
     result.crt_scanline_edge_start = 0.35F;
     result.crt_scanline_edge_falloff = 0.25F;
@@ -100,6 +123,7 @@ DebugUiSettings DebugUiSettings::New() {
     result.entity_annotations_visible = false;
     result.ui_settings_visible = false;
     result.post_fx_settings_visible = false;
+    result.lighting_settings_visible = false;
     result.graphics_settings_visible = false;
     return result;
 }
@@ -169,6 +193,75 @@ Settings LoadSettings() {
                     value,
                     static_cast<unsigned int>(settings.post_process.effect)
                 ));
+        } else if (key == "post_process.terrain_lighting") {
+            settings.post_process.terrain_lighting =
+                ParseBool(value, settings.post_process.terrain_lighting);
+        } else if (key == "post_process.terrain_face_shading") {
+            settings.post_process.terrain_face_shading =
+                ParseBool(value, settings.post_process.terrain_face_shading);
+        } else if (key == "post_process.terrain_face_enclosed_stage_bounds") {
+            settings.post_process.terrain_face_enclosed_stage_bounds =
+                ParseBool(value, settings.post_process.terrain_face_enclosed_stage_bounds);
+        } else if (key == "post_process.terrain_seam_ao") {
+            settings.post_process.terrain_seam_ao =
+                ParseBool(value, settings.post_process.terrain_seam_ao);
+        } else if (key == "post_process.terrain_exposure_lighting") {
+            settings.post_process.terrain_exposure_lighting =
+                ParseBool(value, settings.post_process.terrain_exposure_lighting);
+        } else if (key == "post_process.backwall_lighting") {
+            settings.post_process.backwall_lighting =
+                ParseBool(value, settings.post_process.backwall_lighting);
+        } else if (key == "post_process.terrain_face_top_highlight") {
+            settings.post_process.terrain_face_top_highlight =
+                ParseFloat(value, settings.post_process.terrain_face_top_highlight);
+        } else if (key == "post_process.terrain_face_side_shade") {
+            settings.post_process.terrain_face_side_shade =
+                ParseFloat(value, settings.post_process.terrain_face_side_shade);
+        } else if (key == "post_process.terrain_face_bottom_shade") {
+            settings.post_process.terrain_face_bottom_shade =
+                ParseFloat(value, settings.post_process.terrain_face_bottom_shade);
+        } else if (key == "post_process.terrain_face_band_size") {
+            settings.post_process.terrain_face_band_size =
+                ParseFloat(value, settings.post_process.terrain_face_band_size);
+        } else if (key == "post_process.terrain_face_gradient_softness") {
+            settings.post_process.terrain_face_gradient_softness =
+                ParseFloat(value, settings.post_process.terrain_face_gradient_softness);
+        } else if (key == "post_process.terrain_face_corner_rounding") {
+            settings.post_process.terrain_face_corner_rounding =
+                ParseFloat(value, settings.post_process.terrain_face_corner_rounding);
+        } else if (key == "post_process.terrain_seam_ao_amount") {
+            settings.post_process.terrain_seam_ao_amount =
+                ParseFloat(value, settings.post_process.terrain_seam_ao_amount);
+        } else if (key == "post_process.terrain_seam_ao_size") {
+            settings.post_process.terrain_seam_ao_size =
+                ParseFloat(value, settings.post_process.terrain_seam_ao_size);
+        } else if (key == "post_process.terrain_exposure_amount") {
+            settings.post_process.terrain_exposure_amount =
+                ParseFloat(value, settings.post_process.terrain_exposure_amount);
+        } else if (key == "post_process.terrain_exposure_min_brightness") {
+            settings.post_process.terrain_exposure_min_brightness =
+                ParseFloat(value, settings.post_process.terrain_exposure_min_brightness);
+        } else if (key == "post_process.terrain_exposure_max_brightness") {
+            settings.post_process.terrain_exposure_max_brightness =
+                ParseFloat(value, settings.post_process.terrain_exposure_max_brightness);
+        } else if (key == "post_process.terrain_exposure_diagonal_weight") {
+            settings.post_process.terrain_exposure_diagonal_weight =
+                ParseFloat(value, settings.post_process.terrain_exposure_diagonal_weight);
+        } else if (key == "post_process.terrain_exposure_smoothing") {
+            settings.post_process.terrain_exposure_smoothing =
+                ParseFloat(value, settings.post_process.terrain_exposure_smoothing);
+        } else if (key == "post_process.backwall_brightness") {
+            settings.post_process.backwall_brightness =
+                ParseFloat(value, settings.post_process.backwall_brightness);
+        } else if (key == "post_process.backwall_min_brightness") {
+            settings.post_process.backwall_min_brightness =
+                ParseFloat(value, settings.post_process.backwall_min_brightness);
+        } else if (key == "post_process.backwall_max_brightness") {
+            settings.post_process.backwall_max_brightness =
+                ParseFloat(value, settings.post_process.backwall_max_brightness);
+        } else if (key == "post_process.backwall_smoothing") {
+            settings.post_process.backwall_smoothing =
+                ParseFloat(value, settings.post_process.backwall_smoothing);
         } else if (key == "post_process.crt_scanline_amount") {
             settings.post_process.crt_scanline_amount =
                 ParseFloat(value, settings.post_process.crt_scanline_amount);
@@ -216,6 +309,9 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.post_fx_settings_visible") {
             settings.debug_ui.post_fx_settings_visible =
                 ParseBool(value, settings.debug_ui.post_fx_settings_visible);
+        } else if (key == "debug_ui.lighting_settings_visible") {
+            settings.debug_ui.lighting_settings_visible =
+                ParseBool(value, settings.debug_ui.lighting_settings_visible);
         } else if (key == "debug_ui.graphics_settings_visible") {
             settings.debug_ui.graphics_settings_visible =
                 ParseBool(value, settings.debug_ui.graphics_settings_visible);
@@ -246,6 +342,52 @@ bool SaveSettings(const Settings& settings) {
     output << "ui.tool_slot_scale=" << settings.ui.tool_slot_scale << "\n";
     output << "ui.tool_icon_scale=" << settings.ui.tool_icon_scale << "\n";
     output << "post_process.effect=" << static_cast<unsigned int>(settings.post_process.effect) << "\n";
+    output << "post_process.terrain_lighting="
+           << (settings.post_process.terrain_lighting ? 1 : 0) << "\n";
+    output << "post_process.terrain_face_shading="
+           << (settings.post_process.terrain_face_shading ? 1 : 0) << "\n";
+    output << "post_process.terrain_face_enclosed_stage_bounds="
+           << (settings.post_process.terrain_face_enclosed_stage_bounds ? 1 : 0) << "\n";
+    output << "post_process.terrain_seam_ao="
+           << (settings.post_process.terrain_seam_ao ? 1 : 0) << "\n";
+    output << "post_process.terrain_exposure_lighting="
+           << (settings.post_process.terrain_exposure_lighting ? 1 : 0) << "\n";
+    output << "post_process.backwall_lighting="
+           << (settings.post_process.backwall_lighting ? 1 : 0) << "\n";
+    output << "post_process.terrain_face_top_highlight="
+           << settings.post_process.terrain_face_top_highlight << "\n";
+    output << "post_process.terrain_face_side_shade="
+           << settings.post_process.terrain_face_side_shade << "\n";
+    output << "post_process.terrain_face_bottom_shade="
+           << settings.post_process.terrain_face_bottom_shade << "\n";
+    output << "post_process.terrain_face_band_size="
+           << settings.post_process.terrain_face_band_size << "\n";
+    output << "post_process.terrain_face_gradient_softness="
+           << settings.post_process.terrain_face_gradient_softness << "\n";
+    output << "post_process.terrain_face_corner_rounding="
+           << settings.post_process.terrain_face_corner_rounding << "\n";
+    output << "post_process.terrain_seam_ao_amount="
+           << settings.post_process.terrain_seam_ao_amount << "\n";
+    output << "post_process.terrain_seam_ao_size="
+           << settings.post_process.terrain_seam_ao_size << "\n";
+    output << "post_process.terrain_exposure_amount="
+           << settings.post_process.terrain_exposure_amount << "\n";
+    output << "post_process.terrain_exposure_min_brightness="
+           << settings.post_process.terrain_exposure_min_brightness << "\n";
+    output << "post_process.terrain_exposure_max_brightness="
+           << settings.post_process.terrain_exposure_max_brightness << "\n";
+    output << "post_process.terrain_exposure_diagonal_weight="
+           << settings.post_process.terrain_exposure_diagonal_weight << "\n";
+    output << "post_process.terrain_exposure_smoothing="
+           << settings.post_process.terrain_exposure_smoothing << "\n";
+    output << "post_process.backwall_brightness="
+           << settings.post_process.backwall_brightness << "\n";
+    output << "post_process.backwall_min_brightness="
+           << settings.post_process.backwall_min_brightness << "\n";
+    output << "post_process.backwall_max_brightness="
+           << settings.post_process.backwall_max_brightness << "\n";
+    output << "post_process.backwall_smoothing="
+           << settings.post_process.backwall_smoothing << "\n";
     output << "post_process.crt_scanline_amount=" << settings.post_process.crt_scanline_amount << "\n";
     output << "post_process.crt_scanline_edge_start="
            << settings.post_process.crt_scanline_edge_start << "\n";
@@ -269,6 +411,8 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.ui_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.post_fx_settings_visible="
            << (settings.debug_ui.post_fx_settings_visible ? 1 : 0) << "\n";
+    output << "debug_ui.lighting_settings_visible="
+           << (settings.debug_ui.lighting_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.graphics_settings_visible="
            << (settings.debug_ui.graphics_settings_visible ? 1 : 0) << "\n";
     return output.good();

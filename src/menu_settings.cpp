@@ -21,6 +21,8 @@ const char* GetSettingsMenuOptionName(SettingsMenuOption option) {
         return "UI";
     case SettingsMenuOption::PostFx:
         return "Post FX";
+    case SettingsMenuOption::Lighting:
+        return "Lighting";
     case SettingsMenuOption::Back:
         return "Back";
     }
@@ -105,6 +107,19 @@ void ProcessInputSettingsMenu(
             state.settings_menu_selection = SettingsMenuOption::Ui;
             PlayMenuSoundCursorMove(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Down) {
+            state.settings_menu_selection = SettingsMenuOption::Lighting;
+            PlayMenuSoundCursorMove(audio);
+        }
+        break;
+    case SettingsMenuOption::Lighting:
+        if (confirm_pressed) {
+            state.SetMode(Mode::LightingSettings);
+            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainLighting;
+            PlayMenuSoundConfirm(audio);
+        } else if (direction == SettingsUpOrDownOrNeither::Up) {
+            state.settings_menu_selection = SettingsMenuOption::PostFx;
+            PlayMenuSoundCursorMove(audio);
+        } else if (direction == SettingsUpOrDownOrNeither::Down) {
             state.settings_menu_selection = SettingsMenuOption::Back;
             PlayMenuSoundCursorMove(audio);
         }
@@ -114,7 +129,7 @@ void ProcessInputSettingsMenu(
             state.SetMode(Mode::Title);
             PlayMenuSoundCant(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Up) {
-            state.settings_menu_selection = SettingsMenuOption::PostFx;
+            state.settings_menu_selection = SettingsMenuOption::Lighting;
             PlayMenuSoundCursorMove(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Down) {
             PlayMenuSoundCant(audio);

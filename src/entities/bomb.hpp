@@ -13,7 +13,7 @@ struct State;
 namespace splonks::entities::bomb {
 
 void SetEntityBomb(Entity& entity);
-void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio);
+void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
 void StepEntityPhysicsAsBomb(
     std::size_t entity_idx,
     State& state,

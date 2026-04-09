@@ -53,6 +53,12 @@ const char* GetPostFxSettingsMenuOptionName(PostFxSettingsMenuOption option) {
     switch (option) {
     case PostFxSettingsMenuOption::Effect:
         return "Effect";
+    case PostFxSettingsMenuOption::TerrainFaceShading:
+    case PostFxSettingsMenuOption::TerrainTopHighlight:
+    case PostFxSettingsMenuOption::TerrainSideShade:
+    case PostFxSettingsMenuOption::TerrainBottomShade:
+    case PostFxSettingsMenuOption::TerrainBandSize:
+        return "Moved To Lighting";
     case PostFxSettingsMenuOption::CrtScanlines:
         return "CRT Scanlines";
     case PostFxSettingsMenuOption::CrtScanlineEdgeStart:
@@ -98,6 +104,14 @@ void ProcessInputPostFxSettingsMenu(
     const bool right_pressed = state.menu_inputs.right.pressed;
 
     switch (state.post_fx_settings_menu_selection) {
+    case PostFxSettingsMenuOption::TerrainFaceShading:
+    case PostFxSettingsMenuOption::TerrainTopHighlight:
+    case PostFxSettingsMenuOption::TerrainSideShade:
+    case PostFxSettingsMenuOption::TerrainBottomShade:
+    case PostFxSettingsMenuOption::TerrainBandSize:
+        state.post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
+        PlayMenuSoundCursorMove(audio);
+        break;
     case PostFxSettingsMenuOption::Effect:
         if (up_pressed) {
             PlayMenuSoundCant(audio);

@@ -98,10 +98,10 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 entities::block::StepEntityLogicAsBlock(entity_idx, state, audio);
                 break;
             case EntityType::Bomb:
-                entities::bomb::StepEntityLogicAsBomb(entity_idx, state, audio);
+                entities::bomb::StepEntityLogicAsBomb(entity_idx, state, graphics, audio);
                 break;
             case EntityType::JetPack:
-                entities::jetpack::StepEntityLogicAsJetpack(entity_idx, state, audio);
+                entities::jetpack::StepEntityLogicAsJetpack(entity_idx, state, graphics, audio);
                 break;
             case EntityType::Rope:
                 entities::rope::StepEntityLogicAsRope(entity_idx, state, audio, graphics);
