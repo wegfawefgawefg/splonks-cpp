@@ -81,12 +81,26 @@ bool DispatchPostSweepEntityOverlapContacts(
     std::size_t entity_idx,
     State& state,
     Graphics* graphics,
-    Audio* audio
+    Audio* audio,
+    BlockingImpactAxis impact_axis,
+    int direction
 ) {
     if (graphics == nullptr || audio == nullptr) {
         return false;
     }
-    return TryDispatchEntityEntityOverlapContacts(entity_idx, state, *graphics, *audio);
+    return TryDispatchEntityEntityOverlapContacts(
+        entity_idx,
+        state,
+        *graphics,
+        *audio,
+        ContactContext{
+            .phase = ContactPhase::SweptEntered,
+            .has_impact = false,
+            .impact_axis = impact_axis,
+            .direction = direction,
+            .mover_vid = state.entity_manager.entities[entity_idx].vid,
+        }
+    );
 }
 
 void MoveEntityPixelStep(
@@ -125,6 +139,7 @@ void MoveEntityPixelStep(
                     .impact_surface = BlockingImpactSurface::Tiles,
                     .impact_velocity = entity.vel.x,
                     .direction = 1,
+                    .mover_vid = entity.vid,
                 };
                 const ContactResolution tile_resolution =
                     TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
@@ -147,7 +162,13 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+            if (DispatchPostSweepEntityOverlapContacts(
+                    entity_idx,
+                    state,
+                    graphics,
+                    audio,
+                    BlockingImpactAxis::Horizontal,
+                    1)) {
                 StoreDistanceTraveled(entity_idx, state, start_pos);
                 return;
             }
@@ -172,6 +193,7 @@ void MoveEntityPixelStep(
                     .impact_surface = BlockingImpactSurface::Tiles,
                     .impact_velocity = entity.vel.x,
                     .direction = -1,
+                    .mover_vid = entity.vid,
                 };
                 const ContactResolution tile_resolution =
                     TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
@@ -194,7 +216,13 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+            if (DispatchPostSweepEntityOverlapContacts(
+                    entity_idx,
+                    state,
+                    graphics,
+                    audio,
+                    BlockingImpactAxis::Horizontal,
+                    -1)) {
                 StoreDistanceTraveled(entity_idx, state, start_pos);
                 return;
             }
@@ -221,6 +249,7 @@ void MoveEntityPixelStep(
                     .impact_surface = BlockingImpactSurface::Tiles,
                     .impact_velocity = entity.vel.y,
                     .direction = 1,
+                    .mover_vid = entity.vid,
                 };
                 const ContactResolution tile_resolution =
                     TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
@@ -243,7 +272,13 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+            if (DispatchPostSweepEntityOverlapContacts(
+                    entity_idx,
+                    state,
+                    graphics,
+                    audio,
+                    BlockingImpactAxis::Vertical,
+                    1)) {
                 StoreDistanceTraveled(entity_idx, state, start_pos);
                 return;
             }
@@ -268,6 +303,7 @@ void MoveEntityPixelStep(
                     .impact_surface = BlockingImpactSurface::Tiles,
                     .impact_velocity = entity.vel.y,
                     .direction = -1,
+                    .mover_vid = entity.vid,
                 };
                 const ContactResolution tile_resolution =
                     TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
@@ -290,14 +326,26 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+            if (DispatchPostSweepEntityOverlapContacts(
+                    entity_idx,
+                    state,
+                    graphics,
+                    audio,
+                    BlockingImpactAxis::Vertical,
+                    -1)) {
                 StoreDistanceTraveled(entity_idx, state, start_pos);
                 return;
             }
         }
     }
 
-    if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+    if (DispatchPostSweepEntityOverlapContacts(
+            entity_idx,
+            state,
+            graphics,
+            audio,
+            BlockingImpactAxis::Horizontal,
+            0)) {
         StoreDistanceTraveled(entity_idx, state, start_pos);
         return;
     }

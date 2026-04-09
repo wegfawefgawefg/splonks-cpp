@@ -38,6 +38,7 @@ struct ContactContext {
     BlockingImpactSurface impact_surface = BlockingImpactSurface::Tiles;
     float impact_velocity = 0.0F;
     int direction = 0;
+    std::optional<VID> mover_vid = std::nullopt;
     std::optional<VID> other_vid = std::nullopt;
 };
 
@@ -112,6 +113,7 @@ bool TryCollectEntityFromContact(
     const Graphics& graphics,
     Audio& audio
 );
+void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state);
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
     State& state,
@@ -128,6 +130,13 @@ void TryPushBlocks(
     std::size_t entity_idx,
     State& state,
     const Graphics& graphics
+);
+bool TryDisplaceEntityByOnePixel(
+    std::size_t entity_idx,
+    const IVec2& direction,
+    State& state,
+    const Graphics& graphics,
+    Audio* audio
 );
 using ToolThrowVelocityBuilder = Vec2 (*)(const systems::controls::ControlIntent&);
 bool TrySpawnAndThrowEntityFromTool(
@@ -190,7 +199,8 @@ bool TryDispatchEntityEntityOverlapContacts(
     std::size_t entity_idx,
     State& state,
     const Graphics& graphics,
-    Audio& audio
+    Audio& audio,
+    const ContactContext& context
 );
 std::vector<VID> GatherTouchedEntityContactsForAabb(
     std::size_t entity_idx,

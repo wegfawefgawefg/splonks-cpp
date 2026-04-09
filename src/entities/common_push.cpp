@@ -54,4 +54,50 @@ void TryPushBlocks(
     }
 }
 
+bool TryDisplaceEntityByOnePixel(
+    std::size_t entity_idx,
+    const IVec2& direction,
+    State& state,
+    const Graphics& graphics,
+    Audio* audio
+) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+    if (direction.x == 0 && direction.y == 0) {
+        return false;
+    }
+
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!entity.active) {
+        return false;
+    }
+
+    const Vec2 candidate_pos = entity.pos + ToVec2(direction);
+    const AABB candidate_aabb = AABB::New(
+        candidate_pos, candidate_pos + entity.size - Vec2::New(1.0F, 1.0F));
+    const BlockingContactSet contacts =
+        GatherBlockingContactsForAabb(entity_idx, candidate_aabb, state, true, true);
+    if (ResolveBlockingContactSet(entity_idx, contacts, state).blocks_movement) {
+        return false;
+    }
+
+    entity.pos = candidate_pos;
+    state.UpdateSidForEntity(entity_idx, graphics);
+    if (audio != nullptr) {
+        TryDispatchEntityEntityOverlapContacts(
+            entity_idx,
+            state,
+            graphics,
+            *audio,
+            ContactContext{
+                .phase = ContactPhase::SweptEntered,
+                .has_impact = false,
+                .mover_vid = entity.vid,
+            }
+        );
+    }
+    return true;
+}
+
 } // namespace splonks::entities::common

@@ -1,6 +1,7 @@
 #include "entities/common.hpp"
 
 #include "entities/baseball_bat.hpp"
+#include "entities/block.hpp"
 #include "entities/breakaway_container.hpp"
 
 namespace splonks::entities::common {
@@ -91,6 +92,18 @@ ContactResolution TryDispatchEntityEntityContactByType(
             .blocks_movement = false,
             .stop_sweep = true,
         };
+    case EntityType::Block:
+        if (graphics == nullptr || audio == nullptr ||
+            !block::TryApplyBlockContactToEntity(
+                participant_idx,
+                other_entity_idx,
+                context,
+                state,
+                *graphics,
+                *audio)) {
+            return ContactResolution{};
+        }
+        return ContactResolution{};
     case EntityType::BaseballBat: {
         if (graphics == nullptr || audio == nullptr) {
             return ContactResolution{};
@@ -113,7 +126,6 @@ ContactResolution TryDispatchEntityEntityContactByType(
             .stop_sweep = true,
         };
     case EntityType::None:
-    case EntityType::Block:
     case EntityType::GhostBall:
     case EntityType::Bat:
     case EntityType::Rock:
@@ -277,7 +289,8 @@ bool TryDispatchEntityEntityOverlapContacts(
     std::size_t entity_idx,
     State& state,
     const Graphics& graphics,
-    Audio& audio
+    Audio& audio,
+    const ContactContext& context
 ) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return false;
@@ -297,10 +310,7 @@ bool TryDispatchEntityEntityOverlapContacts(
     return TryDispatchEntityEntityContacts(
                entity_idx,
                touched_vids,
-               ContactContext{
-                   .phase = ContactPhase::SweptEntered,
-                   .has_impact = false,
-               },
+               context,
                state,
                &graphics,
                &audio

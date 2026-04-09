@@ -57,7 +57,7 @@ void SetEntityRock(Entity& entity) {
     entity.has_physics = true;
     entity.can_collide = true;
     entity.can_be_picked_up = true;
-    entity.damage_vulnerability = DamageVulnerability::Immune;
+    entity.damage_vulnerability = DamageVulnerability::CrushingOnly;
     entity.hurt_on_contact = false;
     entity.super_state = EntitySuperState::Idle;
     entity.state = EntityState::Projectile;

@@ -34,13 +34,12 @@ Why:
 
 ### `block.cpp`
 
-The crush section is really collision behavior:
-
-- `CRUSH ZONE`
+The old step-time crush/repel logic has been moved onto contact-driven block shove:
 
 Why:
-- this is damage from contact/overlap under a moving block
-- it does not really belong in free-form block step logic
+- moving blocks now shove contacted entities one pixel at a time
+- if the shove fails, they apply crush damage
+- this is the reusable shape future crushers / shields / pushers want
 
 ## Good Candidates
 
@@ -67,13 +66,12 @@ Current lean:
 
 ### `block.cpp`
 
-The repel section is contact-ish, but less urgent:
-
-- `REPEL THINGS FROM CENTER`
+Block shove/crush is now contact-driven, but the general reusable pusher/crusher
+surface still wants follow-up:
 
 Why:
-- it behaves more like a persistent field/zone than a sharp collision impact
-- it may stay as a step-time query if that reads better
+- future directional pushers should be able to reuse the same 1-pixel shove path
+- the current generic helper is small, but the behavior surface is still block-first
 
 ### `common_carry.cpp`
 
@@ -124,6 +122,7 @@ Why:
 1. `common_collect.cpp`
    - done: moved to collector-driven entity contact
 2. `common_stomp.cpp`
-3. `common_damage.cpp`
-4. `block.cpp` crush behavior
-5. reassess `block.cpp` repel and `common_carry.cpp`
+3. `block.cpp` shove/crush
+   - done: moved to contact-driven 1-pixel shove + crush on failed shove
+4. `common_damage.cpp`
+5. reassess future generic pushers and `common_carry.cpp`

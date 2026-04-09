@@ -8,7 +8,6 @@
 #include "tile.hpp"
 
 #include <cmath>
-#include <vector>
 
 namespace splonks::entities::block {
 
@@ -18,12 +17,61 @@ constexpr float kControlledBlockMoveAcc = 0.18F;
 constexpr float kControlledBlockSlideVel = 3.25F;
 constexpr std::uint32_t kControlledBlockSlideCooldownFrames = 120;
 
-Vec2 NormalizeOrZero(const Vec2& value) {
-    const float length = Length(value);
-    if (length == 0.0F) {
-        return Vec2::New(0.0F, 0.0F);
+std::optional<IVec2> GetPushDirectionForBlockContact(const common::ContactContext& context) {
+    if (context.impact_axis == common::BlockingImpactAxis::Horizontal) {
+        if (context.direction > 0) {
+            return IVec2::New(1, 0);
+        }
+        if (context.direction < 0) {
+            return IVec2::New(-1, 0);
+        }
+        return std::nullopt;
     }
-    return value / length;
+
+    if (context.direction > 0) {
+        return IVec2::New(0, 1);
+    }
+    if (context.direction < 0) {
+        return IVec2::New(0, -1);
+    }
+    return std::nullopt;
+}
+
+bool IsBlockPushTarget(const Entity& entity) {
+    if (!entity.active || !entity.can_collide || entity.impassable) {
+        return false;
+    }
+    if (entity.super_state == EntitySuperState::Crushed) {
+        return false;
+    }
+    return true;
+}
+
+bool IsAtBlockLeadingFace(const Entity& block, const Entity& other_entity, const IVec2& push_direction) {
+    const AABB block_aabb = block.GetAABB();
+    const AABB other_aabb = other_entity.GetAABB();
+    const Vec2 block_center = block.GetCenter();
+    const Vec2 other_center = other_entity.GetCenter();
+
+    const float overlap_x =
+        std::min(block_aabb.br.x, other_aabb.br.x) - std::max(block_aabb.tl.x, other_aabb.tl.x);
+    const float overlap_y =
+        std::min(block_aabb.br.y, other_aabb.br.y) - std::max(block_aabb.tl.y, other_aabb.tl.y);
+
+    if (push_direction.x > 0) {
+        return overlap_y >= 0.0F && other_center.x >= block_center.x;
+    }
+    if (push_direction.x < 0) {
+        return overlap_y >= 0.0F && other_center.x <= block_center.x;
+    }
+    if (push_direction.y > 0) {
+        return overlap_x >= 0.0F && other_center.y >= block_center.y;
+    }
+    if (push_direction.y < 0) {
+        return overlap_x >= 0.0F && other_center.y <= block_center.y;
+    }
+
+    return false;
 }
 
 FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
@@ -99,6 +147,50 @@ void SetEntityBlock(Entity& entity) {
     entity.alignment = Alignment::Neutral;
 }
 
+bool TryApplyBlockContactToEntity(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext& context,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    if (entity_idx >= state.entity_manager.entities.size() ||
+        other_entity_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    const Entity& block = state.entity_manager.entities[entity_idx];
+    if (!context.mover_vid.has_value() || block.vid != *context.mover_vid) {
+        return false;
+    }
+
+    const std::optional<IVec2> push_direction = GetPushDirectionForBlockContact(context);
+    if (!push_direction.has_value()) {
+        return false;
+    }
+
+    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
+    if (!IsBlockPushTarget(other_entity)) {
+        return false;
+    }
+    if (!IsAtBlockLeadingFace(block, other_entity, *push_direction)) {
+        return false;
+    }
+
+    if (common::TryDisplaceEntityByOnePixel(
+            other_entity_idx,
+            *push_direction,
+            state,
+            graphics,
+            &audio)) {
+        return true;
+    }
+
+    common::TryToDamageEntity(other_entity_idx, state, audio, DamageType::Crush, 1);
+    return true;
+}
+
 void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) {
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
@@ -115,54 +207,8 @@ void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) 
         }
     }
 
-    //TODO: if you hit the ground, do a clunky sound
-    // if you hit something, do block damage and try to stun probs
-
-    const Entity& block = state.entity_manager.entities[entity_idx];
-    // REPEL THINGS FROM CENTER
-    const AABB aabb = block.GetAABB();
-    const VID block_vid = block.vid;
-    const AABB repel_zone = {
-        .tl = aabb.tl + Vec2::New(1.0F, 1.0F),
-        .br = aabb.br - Vec2::New(1.0F, 1.0F),
-    };
-    const Vec2 center = block.GetCenter();
-    const std::vector<VID> results = state.sid.QueryExclude(repel_zone.tl, repel_zone.br, block_vid);
-    for (const VID& vid : results) {
-        if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {
-            const Vec2 entity_center = entity->GetCenter();
-            const Vec2 repel_force = NormalizeOrZero(entity_center - center) * 4.0F;
-            entity->acc += repel_force;
-        }
-    }
-
-    // CRUSH ZONE
-    const Entity& updated_block = state.entity_manager.entities[entity_idx];
-    const AABB updated_aabb = updated_block.GetAABB();
-    const AABB block_body_and_foot = {
-        .tl = updated_aabb.tl + (Vec2::New(1.0F, 1.0F) * 4.0F),
-        .br = updated_aabb.br - (Vec2::New(1.0F, 1.0F) * 4.0F),
-    };
-
-    // BLOW UP ANYTHING INSIDE OR UNDER YOU
-    const std::vector<VID> crush_results =
-        state.sid.QueryExclude(block_body_and_foot.tl, block_body_and_foot.br, updated_block.vid);
-    for (const VID& vid : crush_results) {
-        if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {
-            if (!entity->impassable && entity->can_collide &&
-                !(entity->super_state == EntitySuperState::Dead)) {
-                const common::DamageResult damage_result =
-                    common::TryToDamageEntity(entity->vid.id, state, audio, DamageType::Crush, 1);
-                switch (damage_result) {
-                case common::DamageResult::Hurt:
-                case common::DamageResult::Died:
-                    break;
-                case common::DamageResult::None:
-                    break;
-                }
-            }
-        }
-    }
+    // TODO: if you hit the ground, do a clunky sound
+    // TODO: if you hit something hard, do a block thunk sound
 
     Entity& entity = state.entity_manager.entities[entity_idx];
     if (entity.grounded) {

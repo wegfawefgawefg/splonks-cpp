@@ -87,6 +87,7 @@ void StepEntityLogicAsPlayer(
 
     // TODO: probably put a check for dead or stunned up here lol
     common::StepTravelSoundWalkerClimber(entity_idx, state, audio);
+    common::CleanupInactiveCarryReferences(entity_idx, state);
 
     const bool loss_of_control =
         state.entity_manager.entities[entity_idx].super_state == EntitySuperState::Stunned;

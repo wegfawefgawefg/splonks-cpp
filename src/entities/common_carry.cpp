@@ -8,12 +8,37 @@
 
 namespace splonks::entities::common {
 
+void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    if (entity.holding_vid.has_value()) {
+        const Entity* const holding = state.entity_manager.GetEntity(*entity.holding_vid);
+        if (holding == nullptr || !holding->active) {
+            entity.holding_vid.reset();
+            entity.holding = false;
+            entity.holding_timer = kDefaultHoldingTimer;
+        }
+    }
+
+    if (entity.back_vid.has_value()) {
+        const Entity* const back_item = state.entity_manager.GetEntity(*entity.back_vid);
+        if (back_item == nullptr || !back_item->active) {
+            entity.back_vid.reset();
+        }
+    }
+}
+
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
+    CleanupInactiveCarryReferences(entity_idx, state);
+
     const bool loss_of_control =
         state.entity_manager.entities[entity_idx].super_state == EntitySuperState::Stunned;
     const systems::controls::ControlIntent control =
@@ -200,6 +225,7 @@ void UpdateCarryAndBackItems(
             if (Entity* const holding = state.entity_manager.GetEntityMut(*entity_holding_vid)) {
                 holding->has_physics = false;
                 holding->can_collide = false;
+                holding->facing = entity_facing;
                 const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
                 if (entity_display_state == EntityDisplayState::Climbing) {
                     holding->draw_layer = DrawLayer::Background;

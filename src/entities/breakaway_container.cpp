@@ -35,7 +35,19 @@ bool IsControlled(const Entity& entity, const State& state) {
     return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
 }
 
-constexpr float kBreakawayImpactSpeed = 1.0F;
+constexpr float kPotBreakawayImpactSpeed = 1.0F;
+constexpr float kBoxBreakawayImpactSpeed = 2.0F;
+
+float BreakawayImpactSpeedForType(EntityType type_) {
+    switch (type_) {
+    case EntityType::Pot:
+        return kPotBreakawayImpactSpeed;
+    case EntityType::Box:
+        return kBoxBreakawayImpactSpeed;
+    default:
+        return kPotBreakawayImpactSpeed;
+    }
+}
 
 void StepControlledBreakawayContainer(
     Entity& breakaway_container,
@@ -221,7 +233,7 @@ bool TryApplyBreakawayContainerImpact(
     if (context.phase != common::ContactPhase::AttemptedBlocked || !context.has_impact) {
         return false;
     }
-    if (std::abs(context.impact_velocity) <= kBreakawayImpactSpeed) {
+    if (std::abs(context.impact_velocity) <= BreakawayImpactSpeedForType(entity.type_)) {
         return false;
     }
 

@@ -205,7 +205,17 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, A
                                     : swinger_center + graphics.debug_baseball_bat_hold_offset;
     baseball_bat.SetCenter(mounted_center);
     state.UpdateSidForEntity(entity_idx, graphics);
-    common::TryDispatchEntityEntityOverlapContacts(entity_idx, state, graphics, audio);
+    common::TryDispatchEntityEntityOverlapContacts(
+        entity_idx,
+        state,
+        graphics,
+        audio,
+        common::ContactContext{
+            .phase = common::ContactPhase::SweptEntered,
+            .has_impact = false,
+            .mover_vid = baseball_bat.vid,
+        }
+    );
 }
 
 /** generalize this to all square or rectangular entities somehow */
