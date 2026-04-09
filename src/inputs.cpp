@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "graphics.hpp"
+#include "menu_postfx.hpp"
 #include "menu_settings.hpp"
 #include "menu_title.hpp"
 #include "menu_ui.hpp"
@@ -364,6 +365,9 @@ void ProcessInput(
         break;
     case Mode::UiSettings:
         ProcessInputUiSettingsMenu(window, state, audio, graphics, dt);
+        break;
+    case Mode::PostFxSettings:
+        ProcessInputPostFxSettingsMenu(window, state, audio, graphics, dt);
         break;
     case Mode::Playing:
         ProcessInputPlaying(window, state, audio, graphics, dt);

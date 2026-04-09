@@ -3,6 +3,7 @@
 #include "entity_manager.hpp"
 #include "inputs.hpp"
 #include "menu_settings.hpp"
+#include "menu_postfx.hpp"
 #include "menu_title.hpp"
 #include "menu_ui.hpp"
 #include "menu_video.hpp"
@@ -24,6 +25,7 @@ enum class Mode {
     Settings,
     VideoSettings,
     UiSettings,
+    PostFxSettings,
     Playing,
     StageTransition,
     GameOver,
@@ -96,6 +98,7 @@ struct State {
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
     UiSettingsMenuOption ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
+    PostFxSettingsMenuOption post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
     std::optional<std::size_t> video_settings_target_window_size_index;
     std::optional<std::size_t> video_settings_target_resolution_index;
     std::optional<bool> video_settings_target_fullscreen;

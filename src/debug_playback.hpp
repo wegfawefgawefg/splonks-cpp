@@ -30,6 +30,7 @@ struct GameplaySnapshot {
     SettingsMenuOption settings_menu_selection = SettingsMenuOption::Video;
     VideoSettingsMenuOption video_settings_menu_selection = VideoSettingsMenuOption::Resolution;
     UiSettingsMenuOption ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
+    PostFxSettingsMenuOption post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
     std::optional<std::size_t> video_settings_target_window_size_index;
     std::optional<std::size_t> video_settings_target_resolution_index;
     std::optional<bool> video_settings_target_fullscreen;
@@ -60,12 +61,15 @@ struct GameplaySnapshot {
 };
 
 struct DebugPlayback {
+    bool imgui_visible = true;
     bool ui_visible = true;
     bool playback_window_visible = true;
     bool level_window_visible = true;
     bool entity_inspector_visible = true;
     bool entity_annotations_visible = false;
     bool ui_settings_window_visible = false;
+    bool post_fx_settings_window_visible = false;
+    bool graphics_settings_window_visible = false;
     bool recording = false;
     bool playback_active = false;
     bool pause_live_simulation = false;
@@ -86,7 +90,13 @@ struct DebugPlayback {
 GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphics);
 void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Graphics& graphics);
 
-void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Graphics& graphics);
+void DrawDebugPlaybackControls(
+    DebugPlayback& debug,
+    State& state,
+    Graphics& graphics,
+    SDL_Window* window,
+    SDL_Renderer* renderer
+);
 void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
 bool ConvertRecordingFileToText(
     const std::string& input_path,

@@ -58,6 +58,14 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.ui_settings_visible = debug.ui_settings_window_visible;
         changed = true;
     }
+    if (state.settings.debug_ui.post_fx_settings_visible != debug.post_fx_settings_window_visible) {
+        state.settings.debug_ui.post_fx_settings_visible = debug.post_fx_settings_window_visible;
+        changed = true;
+    }
+    if (state.settings.debug_ui.graphics_settings_visible != debug.graphics_settings_window_visible) {
+        state.settings.debug_ui.graphics_settings_visible = debug.graphics_settings_window_visible;
+        changed = true;
+    }
 
     if (changed) {
         SaveSettings(state.settings);
@@ -69,13 +77,6 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
 } // namespace
 
 void DrawDebugMenu(DebugPlayback& debug, State& state) {
-    if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
-        debug.ui_visible = !debug.ui_visible;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_F2)) {
-        debug.playback_window_visible = !debug.playback_window_visible;
-    }
-
     if (!debug.ui_visible) {
         SyncDebugUiSettings(debug, state);
         return;
@@ -94,10 +95,12 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Entities", &debug.entity_inspector_visible);
     ImGui::Checkbox("Entity Annotations", &debug.entity_annotations_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
+    ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
+    ImGui::Checkbox("Graphics Settings", &debug.graphics_settings_window_visible);
     ImGui::Separator();
     ImGui::TextUnformatted("Shortcuts");
-    ImGui::TextUnformatted("F1: Toggle this menu");
-    ImGui::TextUnformatted("F2: Toggle playback window");
+    ImGui::TextUnformatted("F1: Toggle all ImGui");
+    ImGui::TextUnformatted("F2: Toggle debug menu");
     ImGui::TextUnformatted("Collision boxes moved to Entity Annotations.");
     ImGui::Separator();
     ImGui::Text("Playback Active: %s", debug.playback_active ? "true" : "false");
@@ -341,6 +344,172 @@ void DrawUiSettingsWindow(DebugPlayback& debug, State& state) {
         1.50F,
         "%.2fx"
     );
+
+    if (changed) {
+        SaveSettings(state.settings);
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics& graphics) {
+    if (!debug.post_fx_settings_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(1100.0F, 12.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Post FX Settings", &debug.post_fx_settings_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    bool changed = false;
+    int effect = static_cast<int>(state.settings.post_process.effect);
+    const char* effect_names[] = {"None", "CRT"};
+    if (ImGui::Combo("Effect", &effect, effect_names, IM_ARRAYSIZE(effect_names))) {
+        state.settings.post_process.effect = static_cast<PostProcessEffect>(effect);
+        changed = true;
+    }
+
+    if (state.settings.post_process.effect == PostProcessEffect::Crt) {
+        changed |= ImGui::SliderFloat(
+            "Scanlines",
+            &state.settings.post_process.crt_scanline_amount,
+            0.0F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Scanline Edge Start",
+            &state.settings.post_process.crt_scanline_edge_start,
+            0.0F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Scanline Edge Falloff",
+            &state.settings.post_process.crt_scanline_edge_falloff,
+            0.01F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Scanline Edge Strength",
+            &state.settings.post_process.crt_scanline_edge_strength,
+            0.0F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Zoom",
+            &state.settings.post_process.crt_zoom,
+            0.50F,
+            1.50F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Warp",
+            &state.settings.post_process.crt_warp_amount,
+            0.0F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Vignette",
+            &state.settings.post_process.crt_vignette_amount,
+            0.0F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Vignette Intensity",
+            &state.settings.post_process.crt_vignette_intensity,
+            0.0F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Grille",
+            &state.settings.post_process.crt_grille_amount,
+            0.0F,
+            1.0F,
+            "%.2f"
+        );
+        changed |= ImGui::SliderFloat(
+            "Brightness",
+            &state.settings.post_process.crt_brightness_boost,
+            1.0F,
+            2.0F,
+            "%.2f"
+        );
+    }
+
+    ImGui::TextUnformatted(
+        graphics.gpu_renderer_active
+            ? "Renderer: SDL GPU"
+            : "Renderer: fallback (post FX unavailable)"
+    );
+
+    if (changed) {
+        SaveSettings(state.settings);
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawGraphicsSettingsWindow(
+    DebugPlayback& debug,
+    State& state,
+    Graphics& graphics,
+    SDL_Window* window,
+    SDL_Renderer* renderer
+) {
+    (void)window;
+
+    if (!debug.graphics_settings_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(1340.0F, 12.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Graphics Settings", &debug.graphics_settings_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    bool changed = false;
+
+    ImGui::TextUnformatted(graphics.gpu_renderer_active ? "Renderer: SDL GPU" : "Renderer: SDL Renderer");
+    ImGui::Text(
+        "Window Size: %u x %u",
+        static_cast<unsigned int>(graphics.window_dims.x),
+        static_cast<unsigned int>(graphics.window_dims.y)
+    );
+    ImGui::Text(
+        "Internal Resolution: %u x %u",
+        static_cast<unsigned int>(graphics.dims.x),
+        static_cast<unsigned int>(graphics.dims.y)
+    );
+    ImGui::Text("Fullscreen: %s", graphics.fullscreen ? "On" : "Off");
+
+    bool vsync = state.settings.video.vsync;
+    if (ImGui::Checkbox("VSync", &vsync)) {
+        state.settings.video.vsync = vsync;
+        if (renderer != nullptr) {
+            SDL_SetRenderVSync(renderer, vsync ? 1 : 0);
+        }
+        changed = true;
+    }
+
+    if (ImGui::Button("Match Internal To Window")) {
+        graphics.dims = graphics.window_dims;
+        state.settings.video.resolution = graphics.dims;
+        state.rebuild_render_texture = true;
+        changed = true;
+    }
 
     if (changed) {
         SaveSettings(state.settings);

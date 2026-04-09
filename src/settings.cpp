@@ -44,7 +44,7 @@ VideoSettings VideoSettings::New() {
     VideoSettings result;
     result.resolution = UVec2::New(1920, 1080);
     result.fullscreen = true;
-    result.vsync = false;
+    result.vsync = true;
     result.resolution_options = {
         UVec2::New(800, 600),   UVec2::New(1024, 768),  UVec2::New(1280, 720),
         UVec2::New(1280, 1024), UVec2::New(1920, 1080),
@@ -75,6 +75,22 @@ UiSettings UiSettings::New() {
     return result;
 }
 
+PostProcessSettings PostProcessSettings::New() {
+    PostProcessSettings result;
+    result.effect = PostProcessEffect::Crt;
+    result.crt_scanline_amount = 0.5F;
+    result.crt_scanline_edge_start = 0.35F;
+    result.crt_scanline_edge_falloff = 0.25F;
+    result.crt_scanline_edge_strength = 1.0F;
+    result.crt_zoom = 1.0F;
+    result.crt_warp_amount = 0.05F;
+    result.crt_vignette_amount = 0.5F;
+    result.crt_vignette_intensity = 0.3F;
+    result.crt_grille_amount = 0.05F;
+    result.crt_brightness_boost = 1.2F;
+    return result;
+}
+
 DebugUiSettings DebugUiSettings::New() {
     DebugUiSettings result;
     result.menu_visible = true;
@@ -83,6 +99,8 @@ DebugUiSettings DebugUiSettings::New() {
     result.entities_visible = true;
     result.entity_annotations_visible = false;
     result.ui_settings_visible = false;
+    result.post_fx_settings_visible = false;
+    result.graphics_settings_visible = false;
     return result;
 }
 
@@ -93,6 +111,7 @@ Settings Settings::New() {
     result.audio = AudioSettings::New();
     result.controls = ControlsSettings::New();
     result.ui = UiSettings::New();
+    result.post_process = PostProcessSettings::New();
     result.debug_ui = DebugUiSettings::New();
     return result;
 }
@@ -144,6 +163,42 @@ Settings LoadSettings() {
             settings.ui.tool_slot_scale = ParseFloat(value, settings.ui.tool_slot_scale);
         } else if (key == "ui.tool_icon_scale") {
             settings.ui.tool_icon_scale = ParseFloat(value, settings.ui.tool_icon_scale);
+        } else if (key == "post_process.effect") {
+            settings.post_process.effect =
+                static_cast<PostProcessEffect>(ParseUnsigned(
+                    value,
+                    static_cast<unsigned int>(settings.post_process.effect)
+                ));
+        } else if (key == "post_process.crt_scanline_amount") {
+            settings.post_process.crt_scanline_amount =
+                ParseFloat(value, settings.post_process.crt_scanline_amount);
+        } else if (key == "post_process.crt_scanline_edge_start") {
+            settings.post_process.crt_scanline_edge_start =
+                ParseFloat(value, settings.post_process.crt_scanline_edge_start);
+        } else if (key == "post_process.crt_scanline_edge_falloff") {
+            settings.post_process.crt_scanline_edge_falloff =
+                ParseFloat(value, settings.post_process.crt_scanline_edge_falloff);
+        } else if (key == "post_process.crt_scanline_edge_strength") {
+            settings.post_process.crt_scanline_edge_strength =
+                ParseFloat(value, settings.post_process.crt_scanline_edge_strength);
+        } else if (key == "post_process.crt_zoom") {
+            settings.post_process.crt_zoom =
+                ParseFloat(value, settings.post_process.crt_zoom);
+        } else if (key == "post_process.crt_warp_amount") {
+            settings.post_process.crt_warp_amount =
+                ParseFloat(value, settings.post_process.crt_warp_amount);
+        } else if (key == "post_process.crt_vignette_amount") {
+            settings.post_process.crt_vignette_amount =
+                ParseFloat(value, settings.post_process.crt_vignette_amount);
+        } else if (key == "post_process.crt_vignette_intensity") {
+            settings.post_process.crt_vignette_intensity =
+                ParseFloat(value, settings.post_process.crt_vignette_intensity);
+        } else if (key == "post_process.crt_grille_amount") {
+            settings.post_process.crt_grille_amount =
+                ParseFloat(value, settings.post_process.crt_grille_amount);
+        } else if (key == "post_process.crt_brightness_boost") {
+            settings.post_process.crt_brightness_boost =
+                ParseFloat(value, settings.post_process.crt_brightness_boost);
         } else if (key == "debug_ui.menu_visible") {
             settings.debug_ui.menu_visible = ParseBool(value, settings.debug_ui.menu_visible);
         } else if (key == "debug_ui.playback_visible") {
@@ -158,6 +213,12 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.ui_settings_visible") {
             settings.debug_ui.ui_settings_visible =
                 ParseBool(value, settings.debug_ui.ui_settings_visible);
+        } else if (key == "debug_ui.post_fx_settings_visible") {
+            settings.debug_ui.post_fx_settings_visible =
+                ParseBool(value, settings.debug_ui.post_fx_settings_visible);
+        } else if (key == "debug_ui.graphics_settings_visible") {
+            settings.debug_ui.graphics_settings_visible =
+                ParseBool(value, settings.debug_ui.graphics_settings_visible);
         }
     }
 
@@ -184,6 +245,20 @@ bool SaveSettings(const Settings& settings) {
     output << "ui.status_icon_scale=" << settings.ui.status_icon_scale << "\n";
     output << "ui.tool_slot_scale=" << settings.ui.tool_slot_scale << "\n";
     output << "ui.tool_icon_scale=" << settings.ui.tool_icon_scale << "\n";
+    output << "post_process.effect=" << static_cast<unsigned int>(settings.post_process.effect) << "\n";
+    output << "post_process.crt_scanline_amount=" << settings.post_process.crt_scanline_amount << "\n";
+    output << "post_process.crt_scanline_edge_start="
+           << settings.post_process.crt_scanline_edge_start << "\n";
+    output << "post_process.crt_scanline_edge_falloff="
+           << settings.post_process.crt_scanline_edge_falloff << "\n";
+    output << "post_process.crt_scanline_edge_strength="
+           << settings.post_process.crt_scanline_edge_strength << "\n";
+    output << "post_process.crt_zoom=" << settings.post_process.crt_zoom << "\n";
+    output << "post_process.crt_warp_amount=" << settings.post_process.crt_warp_amount << "\n";
+    output << "post_process.crt_vignette_amount=" << settings.post_process.crt_vignette_amount << "\n";
+    output << "post_process.crt_vignette_intensity=" << settings.post_process.crt_vignette_intensity << "\n";
+    output << "post_process.crt_grille_amount=" << settings.post_process.crt_grille_amount << "\n";
+    output << "post_process.crt_brightness_boost=" << settings.post_process.crt_brightness_boost << "\n";
     output << "debug_ui.menu_visible=" << (settings.debug_ui.menu_visible ? 1 : 0) << "\n";
     output << "debug_ui.playback_visible=" << (settings.debug_ui.playback_visible ? 1 : 0) << "\n";
     output << "debug_ui.level_visible=" << (settings.debug_ui.level_visible ? 1 : 0) << "\n";
@@ -192,6 +267,10 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.entity_annotations_visible ? 1 : 0) << "\n";
     output << "debug_ui.ui_settings_visible="
            << (settings.debug_ui.ui_settings_visible ? 1 : 0) << "\n";
+    output << "debug_ui.post_fx_settings_visible="
+           << (settings.debug_ui.post_fx_settings_visible ? 1 : 0) << "\n";
+    output << "debug_ui.graphics_settings_visible="
+           << (settings.debug_ui.graphics_settings_visible ? 1 : 0) << "\n";
     return output.good();
 }
 

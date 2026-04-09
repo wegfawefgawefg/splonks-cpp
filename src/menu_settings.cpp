@@ -3,6 +3,7 @@
 #include "audio.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
+#include "menu_postfx.hpp"
 #include "menu_ui.hpp"
 #include "state.hpp"
 
@@ -18,6 +19,8 @@ const char* GetSettingsMenuOptionName(SettingsMenuOption option) {
         return "Controls";
     case SettingsMenuOption::Ui:
         return "UI";
+    case SettingsMenuOption::PostFx:
+        return "Post FX";
     case SettingsMenuOption::Back:
         return "Back";
     }
@@ -89,6 +92,19 @@ void ProcessInputSettingsMenu(
             state.settings_menu_selection = SettingsMenuOption::Controls;
             PlayMenuSoundCursorMove(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Down) {
+            state.settings_menu_selection = SettingsMenuOption::PostFx;
+            PlayMenuSoundCursorMove(audio);
+        }
+        break;
+    case SettingsMenuOption::PostFx:
+        if (confirm_pressed) {
+            state.SetMode(Mode::PostFxSettings);
+            state.post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
+            PlayMenuSoundConfirm(audio);
+        } else if (direction == SettingsUpOrDownOrNeither::Up) {
+            state.settings_menu_selection = SettingsMenuOption::Ui;
+            PlayMenuSoundCursorMove(audio);
+        } else if (direction == SettingsUpOrDownOrNeither::Down) {
             state.settings_menu_selection = SettingsMenuOption::Back;
             PlayMenuSoundCursorMove(audio);
         }
@@ -98,7 +114,7 @@ void ProcessInputSettingsMenu(
             state.SetMode(Mode::Title);
             PlayMenuSoundCant(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Up) {
-            state.settings_menu_selection = SettingsMenuOption::Ui;
+            state.settings_menu_selection = SettingsMenuOption::PostFx;
             PlayMenuSoundCursorMove(audio);
         } else if (direction == SettingsUpOrDownOrNeither::Down) {
             PlayMenuSoundCant(audio);

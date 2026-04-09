@@ -32,6 +32,14 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
 void DrawEntityAnnotations(DebugPlayback& debug, State& state);
 void DrawUiSettingsWindow(DebugPlayback& debug, State& state);
+void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics& graphics);
+void DrawGraphicsSettingsWindow(
+    DebugPlayback& debug,
+    State& state,
+    Graphics& graphics,
+    SDL_Window* window,
+    SDL_Renderer* renderer
+);
 
 void AdvanceLiveSimulation(
     SDL_Window* window,

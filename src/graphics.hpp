@@ -53,6 +53,7 @@ struct Graphics {
     UVec2 window_dims = UVec2::New(1920, 1080);
     UVec2 dims = UVec2::New(1920, 1080);
     bool fullscreen = true;
+    bool gpu_renderer_active = false;
     bool debug_lock_play_camera = false;
     Vec2 debug_baseball_bat_hold_offset = Vec2::New(5.0F, -10.0F);
     Camera2D camera;

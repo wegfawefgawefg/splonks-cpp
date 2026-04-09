@@ -163,12 +163,14 @@ add_executable(splonks-cpp
     src/inputs.cpp
     src/main.cpp
     src/menu_settings.cpp
+    src/menu_postfx.cpp
     src/menu_title.cpp
     src/menu_ui.cpp
     src/menu_video.cpp
     src/on_damage_effects.cpp
     src/room.cpp
     src/render.cpp
+    src/render_postfx.cpp
     src/render_debug.cpp
     src/render_tiles_and_entities.cpp
     src/render_ui.cpp

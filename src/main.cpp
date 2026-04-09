@@ -5,6 +5,7 @@
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
 #include "render.hpp"
+#include "render_postfx.hpp"
 #include "state.hpp"
 #include "step.hpp"
 #include "text.hpp"
@@ -65,6 +66,7 @@ int main(int argc, char** argv) {
     SDL_Renderer* renderer = nullptr;
     SDL_Texture* render_texture = nullptr;
     splonks::Graphics graphics;
+    splonks::RenderPostFx post_fx = splonks::RenderPostFx::New();
     splonks::Audio audio;
     splonks::DebugPlayback debug = splonks::DebugPlayback::New();
 
@@ -94,7 +96,10 @@ int main(int argc, char** argv) {
             ThrowSdlError("SDL_CreateWindow failed");
         }
 
-        renderer = SDL_CreateRenderer(window, nullptr);
+        renderer = SDL_CreateRenderer(window, SDL_GPU_RENDERER);
+        if (renderer == nullptr) {
+            renderer = SDL_CreateRenderer(window, nullptr);
+        }
         if (renderer == nullptr) {
             ThrowSdlError("SDL_CreateRenderer failed");
         }
@@ -136,9 +141,12 @@ int main(int argc, char** argv) {
             SDL_SetTextureBlendMode(render_texture, SDL_BLENDMODE_BLEND);
             SDL_SetTextureScaleMode(render_texture, SDL_SCALEMODE_NEAREST);
             graphics.camera.offset = splonks::ToVec2(graphics.dims / 2U);
+            splonks::RefreshRenderPostFx(post_fx, render_texture, loaded_settings.post_process);
         };
 
         rebuild_render_texture();
+        splonks::InitRenderPostFx(post_fx, renderer, render_texture, loaded_settings.post_process);
+        graphics.gpu_renderer_active = post_fx.gpu_renderer_active;
 
         ////////////////        AUDIO INIT        ////////////////
         try {
@@ -158,6 +166,9 @@ int main(int argc, char** argv) {
         debug.entity_inspector_visible = state.settings.debug_ui.entities_visible;
         debug.entity_annotations_visible = state.settings.debug_ui.entity_annotations_visible;
         debug.ui_settings_window_visible = state.settings.debug_ui.ui_settings_visible;
+        debug.post_fx_settings_window_visible = state.settings.debug_ui.post_fx_settings_visible;
+        debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
+        splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
 
         std::uint64_t last_ticks = SDL_GetTicks();
 
@@ -187,7 +198,7 @@ int main(int argc, char** argv) {
             }
 
             splonks::ImGuiLayerNewFrame();
-            splonks::DrawDebugPlaybackControls(debug, state, graphics);
+            splonks::DrawDebugPlaybackControls(debug, state, graphics, window, renderer);
             splonks::RunSimulationWithDebugControls(
                 window,
                 renderer,
@@ -198,7 +209,8 @@ int main(int argc, char** argv) {
                 dt
             );
             splonks::DrawDebugPlaybackInspector(debug, state, graphics);
-            splonks::Render(renderer, render_texture, state, graphics);
+            splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
+            splonks::Render(renderer, render_texture, post_fx, state, graphics);
             splonks::ImGuiLayerRender();
             SDL_RenderPresent(renderer);
             audio.UpdateCurrentSongStreamData();
@@ -208,6 +220,7 @@ int main(int argc, char** argv) {
             SDL_DestroyTexture(render_texture);
             render_texture = nullptr;
         }
+        post_fx.Shutdown();
         if (renderer != nullptr) {
             SDL_DestroyRenderer(renderer);
             renderer = nullptr;
@@ -230,6 +243,7 @@ int main(int argc, char** argv) {
         if (render_texture != nullptr) {
             SDL_DestroyTexture(render_texture);
         }
+        post_fx.Shutdown();
         if (renderer != nullptr) {
             SDL_DestroyRenderer(renderer);
         }

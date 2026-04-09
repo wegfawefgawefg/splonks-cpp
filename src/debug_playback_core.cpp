@@ -4,6 +4,8 @@
 #include "inputs.hpp"
 #include "step.hpp"
 
+#include <imgui.h>
+
 #include <algorithm>
 #include <cstring>
 
@@ -137,15 +139,39 @@ DebugPlayback DebugPlayback::New() {
     return result;
 }
 
-void DrawDebugPlaybackControls(DebugPlayback& debug, State& state, Graphics& graphics) {
+void DrawDebugPlaybackControls(
+    DebugPlayback& debug,
+    State& state,
+    Graphics& graphics,
+    SDL_Window* window,
+    SDL_Renderer* renderer
+) {
+    if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
+        debug.imgui_visible = !debug.imgui_visible;
+    }
+
+    if (!debug.imgui_visible) {
+        return;
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_F2)) {
+        debug.ui_visible = !debug.ui_visible;
+    }
+
     debug_playback_internal::DrawDebugMenu(debug, state);
     debug_playback_internal::DrawSimulationControls(debug, state, graphics);
     debug_playback_internal::DrawLevelControls(debug, state, graphics);
     debug_playback_internal::DrawEntityAnnotations(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
+    debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);
+    debug_playback_internal::DrawGraphicsSettingsWindow(debug, state, graphics, window, renderer);
 }
 
 void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphics& graphics) {
+    if (!debug.imgui_visible) {
+        return;
+    }
+
     debug_playback_internal::DrawEntityInspector(debug, state, graphics);
 }
 

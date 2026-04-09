@@ -20,6 +20,7 @@ try a moving platform entity - probably its own level. and test edge hanging on 
 make double jetpack deliberate
 fix held object not flipping to match ur facing
 split up common.cpp in entities. 
+* split up player code
 fix ropes adding to their length 
 stomping on enemies isnt swept. 
 picking up coins isnt swept.
@@ -31,5 +32,9 @@ bats shouldnt keep chasing you down through blocks probably.
 debuff idea: clumsy - you drop bombs sometimes on tool use
 item idea: randomizes tool on use, but does let you see whats coming up next
 
-adjust the ui a bit for tools
-remove that random ctrls: wasd text lol. 
+* adjust the ui a bit for tools
+* remove that random ctrls: wasd text lol. 
+add a sld_gpu layer for doing shader pass
+item idea: hard hat, prevents getting damaged on head in some circumstances. mostly things falling on head. youll still get contact damaged and squished
+if i throw something directly at a wall, it hops up and then imediatly hits and stunns th eplayer. this doesnt seem right...
+gloves dont work on the screen right boundary. didnt try the left one but should check that too

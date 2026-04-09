@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 12;
+constexpr std::uint32_t kRecordingVersion = 16;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -100,6 +100,17 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
     WritePod(out, settings.ui.status_icon_scale);
     WritePod(out, settings.ui.tool_slot_scale);
     WritePod(out, settings.ui.tool_icon_scale);
+    WritePod(out, settings.post_process.effect);
+    WritePod(out, settings.post_process.crt_scanline_amount);
+    WritePod(out, settings.post_process.crt_scanline_edge_start);
+    WritePod(out, settings.post_process.crt_scanline_edge_falloff);
+    WritePod(out, settings.post_process.crt_scanline_edge_strength);
+    WritePod(out, settings.post_process.crt_zoom);
+    WritePod(out, settings.post_process.crt_warp_amount);
+    WritePod(out, settings.post_process.crt_vignette_amount);
+    WritePod(out, settings.post_process.crt_vignette_intensity);
+    WritePod(out, settings.post_process.crt_grille_amount);
+    WritePod(out, settings.post_process.crt_brightness_boost);
 }
 
 bool ReadSettings(std::istream& in, Settings& settings) {
@@ -115,7 +126,18 @@ bool ReadSettings(std::istream& in, Settings& settings) {
         !ReadPod(in, settings.ui.icon_scale) ||
         !ReadPod(in, settings.ui.status_icon_scale) ||
         !ReadPod(in, settings.ui.tool_slot_scale) ||
-        !ReadPod(in, settings.ui.tool_icon_scale)) {
+        !ReadPod(in, settings.ui.tool_icon_scale) ||
+        !ReadPod(in, settings.post_process.effect) ||
+        !ReadPod(in, settings.post_process.crt_scanline_amount) ||
+        !ReadPod(in, settings.post_process.crt_scanline_edge_start) ||
+        !ReadPod(in, settings.post_process.crt_scanline_edge_falloff) ||
+        !ReadPod(in, settings.post_process.crt_scanline_edge_strength) ||
+        !ReadPod(in, settings.post_process.crt_zoom) ||
+        !ReadPod(in, settings.post_process.crt_warp_amount) ||
+        !ReadPod(in, settings.post_process.crt_vignette_amount) ||
+        !ReadPod(in, settings.post_process.crt_vignette_intensity) ||
+        !ReadPod(in, settings.post_process.crt_grille_amount) ||
+        !ReadPod(in, settings.post_process.crt_brightness_boost)) {
         return false;
     }
     return true;
@@ -198,6 +220,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.settings_menu_selection);
     WritePod(out, snapshot.video_settings_menu_selection);
     WritePod(out, snapshot.ui_settings_menu_selection);
+    WritePod(out, snapshot.post_fx_settings_menu_selection);
     WriteOptionalPod(out, snapshot.video_settings_target_window_size_index);
     WriteOptionalPod(out, snapshot.video_settings_target_resolution_index);
     WriteOptionalPod(out, snapshot.video_settings_target_fullscreen);
@@ -243,6 +266,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.settings_menu_selection) &&
            ReadPod(in, snapshot.video_settings_menu_selection) &&
            ReadPod(in, snapshot.ui_settings_menu_selection) &&
+           ReadPod(in, snapshot.post_fx_settings_menu_selection) &&
            ReadOptionalPod(in, snapshot.video_settings_target_window_size_index) &&
            ReadOptionalPod(in, snapshot.video_settings_target_resolution_index) &&
            ReadOptionalPod(in, snapshot.video_settings_target_fullscreen) &&
@@ -284,6 +308,8 @@ const char* ModeToString(Mode mode) {
         return "VideoSettings";
     case Mode::UiSettings:
         return "UiSettings";
+    case Mode::PostFxSettings:
+        return "PostFxSettings";
     case Mode::Playing:
         return "Playing";
     case Mode::StageTransition:
@@ -675,6 +701,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.settings_menu_selection = state.settings_menu_selection;
     snapshot.video_settings_menu_selection = state.video_settings_menu_selection;
     snapshot.ui_settings_menu_selection = state.ui_settings_menu_selection;
+    snapshot.post_fx_settings_menu_selection = state.post_fx_settings_menu_selection;
     snapshot.video_settings_target_window_size_index = state.video_settings_target_window_size_index;
     snapshot.video_settings_target_resolution_index = state.video_settings_target_resolution_index;
     snapshot.video_settings_target_fullscreen = state.video_settings_target_fullscreen;
@@ -722,6 +749,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.settings_menu_selection = snapshot.settings_menu_selection;
     state.video_settings_menu_selection = snapshot.video_settings_menu_selection;
     state.ui_settings_menu_selection = snapshot.ui_settings_menu_selection;
+    state.post_fx_settings_menu_selection = snapshot.post_fx_settings_menu_selection;
     state.video_settings_target_window_size_index = snapshot.video_settings_target_window_size_index;
     state.video_settings_target_resolution_index = snapshot.video_settings_target_resolution_index;
     state.video_settings_target_fullscreen = snapshot.video_settings_target_fullscreen;

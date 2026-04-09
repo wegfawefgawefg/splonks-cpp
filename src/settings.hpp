@@ -2,6 +2,7 @@
 
 #include "math_types.hpp"
 
+#include <cstdint>
 #include <vector>
 
 namespace splonks {
@@ -45,6 +46,27 @@ struct UiSettings {
     static UiSettings New();
 };
 
+enum class PostProcessEffect : std::uint8_t {
+    None,
+    Crt,
+};
+
+struct PostProcessSettings {
+    PostProcessEffect effect = PostProcessEffect::Crt;
+    float crt_scanline_amount = 0.5F;
+    float crt_scanline_edge_start = 0.35F;
+    float crt_scanline_edge_falloff = 0.25F;
+    float crt_scanline_edge_strength = 1.0F;
+    float crt_zoom = 1.0F;
+    float crt_warp_amount = 0.05F;
+    float crt_vignette_amount = 0.5F;
+    float crt_vignette_intensity = 0.3F;
+    float crt_grille_amount = 0.05F;
+    float crt_brightness_boost = 1.2F;
+
+    static PostProcessSettings New();
+};
+
 struct DebugUiSettings {
     bool menu_visible = true;
     bool playback_visible = true;
@@ -52,6 +74,8 @@ struct DebugUiSettings {
     bool entities_visible = true;
     bool entity_annotations_visible = false;
     bool ui_settings_visible = false;
+    bool post_fx_settings_visible = false;
+    bool graphics_settings_visible = false;
 
     static DebugUiSettings New();
 };
@@ -62,6 +86,7 @@ struct Settings {
     AudioSettings audio;
     ControlsSettings controls;
     UiSettings ui;
+    PostProcessSettings post_process;
     DebugUiSettings debug_ui;
 
     static Settings New();

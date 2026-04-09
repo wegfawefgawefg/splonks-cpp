@@ -73,6 +73,7 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     graphics.window_dims = UVec2::New(1920, 1080);
     graphics.dims = UVec2::New(1920, 1080);
     graphics.fullscreen = true;
+    graphics.gpu_renderer_active = false;
 
     const Vec2 screen_center = ToVec2(graphics.dims / 2U);
     graphics.camera.target = Vec2::New(0.0F, 0.0F);

@@ -13,6 +13,7 @@ enum class SettingsMenuOption {
     Audio,
     Controls,
     Ui,
+    PostFx,
     Back,
 };
 
