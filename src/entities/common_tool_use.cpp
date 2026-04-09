@@ -17,6 +17,7 @@ constexpr std::uint16_t kPotThrowDelayFrames = 12;
 bool TryUseToolSlot(
     std::size_t entity_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
     bool trigger_pressed
@@ -32,6 +33,7 @@ bool TryUseToolSlot(
         return TrySpawnAndThrowEntityFromTool(
             entity_idx,
             state,
+            graphics,
             audio,
             tool_slot_index,
             trigger_pressed,
@@ -43,6 +45,7 @@ bool TryUseToolSlot(
         return TrySpawnAndThrowEntityFromTool(
             entity_idx,
             state,
+            graphics,
             audio,
             tool_slot_index,
             trigger_pressed,
@@ -54,6 +57,7 @@ bool TryUseToolSlot(
         return TrySpawnAndThrowEntityFromTool(
             entity_idx,
             state,
+            graphics,
             audio,
             tool_slot_index,
             trigger_pressed,

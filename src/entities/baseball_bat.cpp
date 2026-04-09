@@ -204,21 +204,8 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, A
                                           )
                                     : swinger_center + graphics.debug_baseball_bat_hold_offset;
     baseball_bat.SetCenter(mounted_center);
-
-    const std::vector<VID> touched_vids =
-        common::GatherTouchedEntityContactsForAabb(
-            entity_idx, common::GetContactAabbForEntity(baseball_bat, graphics), state);
-    common::TryDispatchEntityEntityContacts(
-        entity_idx,
-        touched_vids,
-        common::ContactContext{
-            .phase = common::ContactPhase::SweptEntered,
-            .has_impact = false,
-        },
-        state,
-        &graphics,
-        &audio
-    );
+    state.UpdateSidForEntity(entity_idx, graphics);
+    common::TryDispatchEntityEntityOverlapContacts(entity_idx, state, graphics, audio);
 }
 
 /** generalize this to all square or rectangular entities somehow */

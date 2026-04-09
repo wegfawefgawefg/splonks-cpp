@@ -104,6 +104,7 @@ void DoExplosion(
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);
+AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics);
 void CollectTouchingPickups(
     std::size_t entity_idx,
     State& state,
@@ -132,6 +133,7 @@ using ToolThrowVelocityBuilder = Vec2 (*)(const systems::controls::ControlIntent
 bool TrySpawnAndThrowEntityFromTool(
     std::size_t thrower_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
     bool trigger_pressed,
@@ -143,6 +145,7 @@ bool TrySpawnAndThrowEntityFromTool(
 bool TryUseToolSlot(
     std::size_t entity_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
     bool trigger_pressed
@@ -179,9 +182,20 @@ ContactResolution TryDispatchEntityEntityContacts(
     const Graphics* graphics,
     Audio* audio
 );
+// Use this after an entity's contact shape was moved outside DoTileAndEntityCollisions().
+// Typical use is manually positioned entities with has_physics == false, like held/swinging items.
+// Do not call this for entities that still go through the normal physics collision path, even when
+// their velocity is zero, because MoveEntityPixelStep already does a final overlap dispatch for them.
+bool TryDispatchEntityEntityOverlapContacts(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+);
 std::vector<VID> GatherTouchedEntityContactsForAabb(
     std::size_t entity_idx,
     const AABB& aabb,
+    const Graphics& graphics,
     State& state
 );
 BlockingContactSet GatherBlockingContactsForAabb(

@@ -30,6 +30,7 @@ Vec2 BuildThrowVelocity(const systems::controls::ControlIntent& control) {
 bool TrySpawnAndThrowEntityFromTool(
     std::size_t thrower_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
     bool trigger_pressed,
@@ -71,6 +72,7 @@ bool TrySpawnAndThrowEntityFromTool(
         build_throw_velocity == nullptr ? BuildThrowVelocity : build_throw_velocity;
     spawned_entity->SetCenter(thrower.GetCenter());
     spawned_entity->acc += velocity_builder(control);
+    state.UpdateSidForEntity(vid->id, graphics);
 
     tool_slot->count -= 1;
     tool_slot->cooldown = cooldown_frames;

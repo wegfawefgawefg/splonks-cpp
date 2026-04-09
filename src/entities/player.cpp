@@ -149,12 +149,12 @@ void StepEntityLogicAsPlayer(
 
     // PLAYER TOOL SLOT 1
     if (!loss_of_control) {
-        common::TryUseToolSlot(entity_idx, state, audio, 0, control.bomb_pressed);
+        common::TryUseToolSlot(entity_idx, state, graphics, audio, 0, control.bomb_pressed);
     }
 
     // PLAYER TOOL SLOT 2
     if (!loss_of_control) {
-        common::TryUseToolSlot(entity_idx, state, audio, 1, control.rope_pressed);
+        common::TryUseToolSlot(entity_idx, state, graphics, audio, 1, control.rope_pressed);
     }
 
     // PLAYER SWING BAT SECTION
@@ -178,6 +178,7 @@ void StepEntityLogicAsPlayer(
                     baseball_bat::SetEntityBaseballBat(*entity);
                     entity->pos = player_pos;
                     entity->held_by_vid = player_vid;
+                    state.UpdateSidForEntity(vid->id, graphics);
                     attacked = true;
                     audio.PlaySoundEffect(SoundEffect::BaseballBatSwing);
                 }

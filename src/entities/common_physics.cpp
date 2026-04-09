@@ -77,6 +77,18 @@ int GetIntegerStepDistance(float distance, unsigned int time) {
     return integer_distance;
 }
 
+bool DispatchPostSweepEntityOverlapContacts(
+    std::size_t entity_idx,
+    State& state,
+    Graphics* graphics,
+    Audio* audio
+) {
+    if (graphics == nullptr || audio == nullptr) {
+        return false;
+    }
+    return TryDispatchEntityEntityOverlapContacts(entity_idx, state, *graphics, *audio);
+}
+
 void MoveEntityPixelStep(
     std::size_t entity_idx,
     State& state,
@@ -135,27 +147,9 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (graphics != nullptr && audio != nullptr) {
-                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
-                    entity_idx,
-                    GetContactAabbForEntity(entity, *graphics),
-                    state
-                );
-                if (TryDispatchEntityEntityContacts(
-                        entity_idx,
-                        touched_vids,
-                        ContactContext{
-                            .phase = ContactPhase::SweptEntered,
-                            .has_impact = false,
-                        },
-                        state,
-                        graphics,
-                        audio
-                    )
-                        .stop_sweep) {
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
-                    return;
-                }
+            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
             }
         }
     } else if (move_x < 0) {
@@ -200,27 +194,9 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (graphics != nullptr && audio != nullptr) {
-                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
-                    entity_idx,
-                    GetContactAabbForEntity(entity, *graphics),
-                    state
-                );
-                if (TryDispatchEntityEntityContacts(
-                        entity_idx,
-                        touched_vids,
-                        ContactContext{
-                            .phase = ContactPhase::SweptEntered,
-                            .has_impact = false,
-                        },
-                        state,
-                        graphics,
-                        audio
-                    )
-                        .stop_sweep) {
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
-                    return;
-                }
+            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
             }
         }
     }
@@ -267,27 +243,9 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (graphics != nullptr && audio != nullptr) {
-                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
-                    entity_idx,
-                    GetContactAabbForEntity(entity, *graphics),
-                    state
-                );
-                if (TryDispatchEntityEntityContacts(
-                        entity_idx,
-                        touched_vids,
-                        ContactContext{
-                            .phase = ContactPhase::SweptEntered,
-                            .has_impact = false,
-                        },
-                        state,
-                        graphics,
-                        audio
-                    )
-                        .stop_sweep) {
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
-                    return;
-                }
+            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
             }
         }
     } else if (move_y < 0) {
@@ -332,29 +290,16 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
-            if (graphics != nullptr && audio != nullptr) {
-                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
-                    entity_idx,
-                    GetContactAabbForEntity(entity, *graphics),
-                    state
-                );
-                if (TryDispatchEntityEntityContacts(
-                        entity_idx,
-                        touched_vids,
-                        ContactContext{
-                            .phase = ContactPhase::SweptEntered,
-                            .has_impact = false,
-                        },
-                        state,
-                        graphics,
-                        audio
-                    )
-                        .stop_sweep) {
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
-                    return;
-                }
+            if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
             }
         }
+    }
+
+    if (DispatchPostSweepEntityOverlapContacts(entity_idx, state, graphics, audio)) {
+        StoreDistanceTraveled(entity_idx, state, start_pos);
+        return;
     }
 
     StoreDistanceTraveled(entity_idx, state, start_pos);

@@ -123,6 +123,7 @@ void UpdateCarryAndBackItems(
                         thrown->SetCenter(entity_center);
                     }
                     thrown->acc += throw_vel;
+                    state.UpdateSidForEntity(thrown->vid.id, graphics);
                     audio.PlaySoundEffect(SoundEffect::Throw);
                 }
             }
@@ -213,6 +214,7 @@ void UpdateCarryAndBackItems(
                                                  : entity_center + hold_offset;
                 holding->SetCenter(held_pos_target);
                 holding->grounded = false;
+                state.UpdateSidForEntity(holding->vid.id, graphics);
             }
         }
     }
@@ -255,6 +257,7 @@ void UpdateCarryAndBackItems(
                                                  : entity_center + back_offset;
                 back_item->SetCenter(held_pos_target);
                 back_item->grounded = false;
+                state.UpdateSidForEntity(back_item->vid.id, graphics);
             }
         }
     }

@@ -2,6 +2,8 @@
 
 #include "entity_display_states.hpp"
 
+#include <algorithm>
+
 namespace splonks::entities::common {
 
 namespace {
@@ -92,6 +94,15 @@ AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics) {
                          static_cast<float>(frame_data->cbox.h)
                      ) -
             Vec2::New(1.0F, 1.0F)
+    );
+}
+
+AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics) {
+    const AABB pbox = entity.GetAABB();
+    const AABB cbox = GetContactAabbForEntity(entity, graphics);
+    return AABB::New(
+        Vec2::New(std::min(pbox.tl.x, cbox.tl.x), std::min(pbox.tl.y, cbox.tl.y)),
+        Vec2::New(std::max(pbox.br.x, cbox.br.x), std::max(pbox.br.y, cbox.br.y))
     );
 }
 

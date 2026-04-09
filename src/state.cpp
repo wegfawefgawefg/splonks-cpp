@@ -1,7 +1,41 @@
 #include "state.hpp"
+
+#include "entities/common.hpp"
 #include "stage_init.hpp"
 
 namespace splonks {
+
+namespace {
+
+EntityContactDispatchEntry NormalizeEntityContactDispatchEntry(
+    const VID& first_vid,
+    const VID& second_vid
+) {
+    if (first_vid.id < second_vid.id) {
+        return EntityContactDispatchEntry{
+            .first_vid = first_vid,
+            .second_vid = second_vid,
+        };
+    }
+    if (first_vid.id > second_vid.id) {
+        return EntityContactDispatchEntry{
+            .first_vid = second_vid,
+            .second_vid = first_vid,
+        };
+    }
+    if (first_vid.version <= second_vid.version) {
+        return EntityContactDispatchEntry{
+            .first_vid = first_vid,
+            .second_vid = second_vid,
+        };
+    }
+    return EntityContactDispatchEntry{
+        .first_vid = second_vid,
+        .second_vid = first_vid,
+    };
+}
+
+}
 
 State State::New() {
     State state;
@@ -50,6 +84,7 @@ State State::New() {
     state.mouse_trailer_vid.reset();
     state.contact_cooldowns.clear();
     state.interaction_cooldowns.clear();
+    state.entity_contact_dispatches_this_tick.clear();
     state.entity_tool_states.clear();
     InitDebugLevel(state);
     return state;
@@ -60,14 +95,57 @@ void State::SetMode(Mode new_mode) {
     scene_frame = 0;
 }
 
-void State::RebuildSid() {
-    sid = SID::New();
+void State::RebuildSid(const Graphics& graphics) {
+    sid.Clear();
 
-    for (const Entity& entity : entity_manager.entities) {
-        if (entity.active) {
-            sid.Insert(entity.vid, entity.pos, entity.size);
+    for (std::size_t entity_id = 0; entity_id < entity_manager.entities.size(); ++entity_id) {
+        UpdateSidForEntity(entity_id, graphics);
+    }
+}
+
+void State::UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics) {
+    if (entity_id >= entity_manager.entities.size()) {
+        return;
+    }
+
+    const Entity& entity = entity_manager.entities[entity_id];
+    sid.Remove(entity.vid);
+    if (!entity.active) {
+        return;
+    }
+
+    const AABB broadphase_aabb = entities::common::GetEntityBroadphaseAabb(entity, graphics);
+    sid.Upsert(entity.vid, broadphase_aabb);
+}
+
+void State::ClearEntityContactDispatchesThisTick() {
+    entity_contact_dispatches_this_tick.clear();
+}
+
+bool State::HasEntityContactPairDispatchedThisTick(
+    const VID& first_vid,
+    const VID& second_vid
+) const {
+    const EntityContactDispatchEntry normalized =
+        NormalizeEntityContactDispatchEntry(first_vid, second_vid);
+    for (const EntityContactDispatchEntry& entry : entity_contact_dispatches_this_tick) {
+        if (entry.first_vid == normalized.first_vid && entry.second_vid == normalized.second_vid) {
+            return true;
         }
     }
+    return false;
+}
+
+void State::RecordEntityContactPairDispatchedThisTick(
+    const VID& first_vid,
+    const VID& second_vid
+) {
+    const EntityContactDispatchEntry normalized =
+        NormalizeEntityContactDispatchEntry(first_vid, second_vid);
+    if (HasEntityContactPairDispatchedThisTick(normalized.first_vid, normalized.second_vid)) {
+        return;
+    }
+    entity_contact_dispatches_this_tick.push_back(normalized);
 }
 
 void State::StepContactCooldowns() {

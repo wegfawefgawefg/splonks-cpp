@@ -829,7 +829,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.controlled_entity_vid = snapshot.controlled_entity_vid;
     state.mouse_trailer_vid = snapshot.mouse_trailer_vid;
     state.entity_tool_states = snapshot.entity_tool_states;
-    state.RebuildSid();
+    state.RebuildSid(graphics);
     graphics.play_cam.pos = snapshot.play_cam_pos;
 }
 

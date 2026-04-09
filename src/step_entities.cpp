@@ -64,6 +64,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 );
             }
             entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
+            state.UpdateSidForEntity(state.player_vid->id, graphics);
         }
     }
 
@@ -164,6 +165,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 }
             }
             entities::common::ApplyDeactivateConditions(entity_idx, state);
+            state.UpdateSidForEntity(entity_idx, graphics);
         }
     }
 }

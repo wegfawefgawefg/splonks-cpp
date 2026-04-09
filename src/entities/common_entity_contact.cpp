@@ -7,6 +7,22 @@ namespace splonks::entities::common {
 
 namespace {
 
+bool AabbsIntersect(const AABB& left, const AABB& right) {
+    if (left.br.x < right.tl.x) {
+        return false;
+    }
+    if (left.tl.x > right.br.x) {
+        return false;
+    }
+    if (left.br.y < right.tl.y) {
+        return false;
+    }
+    if (left.tl.y > right.br.y) {
+        return false;
+    }
+    return true;
+}
+
 struct ParticipantContactDispatch {
     ContactResolution resolution;
     bool write_cooldown = false;
@@ -19,9 +35,10 @@ std::optional<ParticipantContactDispatch> GetEntityEntityContactCooldownSpec(
     const Graphics* graphics,
     Audio* audio
 ) {
+    (void)context;
     switch (participant.type_) {
     case EntityType::BaseballBat:
-        if (context.phase != ContactPhase::SweptEntered || graphics == nullptr || audio == nullptr) {
+        if (graphics == nullptr || audio == nullptr) {
             return std::nullopt;
         }
         return ParticipantContactDispatch{
@@ -129,6 +146,7 @@ ParticipantContactDispatch TryDispatchEntityEntityContactForParticipant(
 std::vector<VID> GatherTouchedEntityContactsForAabb(
     std::size_t entity_idx,
     const AABB& aabb,
+    const Graphics& graphics,
     State& state
 ) {
     if (entity_idx >= state.entity_manager.entities.size()) {
@@ -140,7 +158,20 @@ std::vector<VID> GatherTouchedEntityContactsForAabb(
         return {};
     }
 
-    return state.sid.QueryExclude(aabb.tl, aabb.br, entity.vid);
+    std::vector<VID> touched_vids;
+    for (const VID& other_vid : state.sid.QueryExclude(aabb.tl, aabb.br, entity.vid)) {
+        const Entity* const other_entity = state.entity_manager.GetEntity(other_vid);
+        if (other_entity == nullptr || !other_entity->active) {
+            continue;
+        }
+
+        const AABB other_contact_aabb = GetContactAabbForEntity(*other_entity, graphics);
+        if (!AabbsIntersect(aabb, other_contact_aabb)) {
+            continue;
+        }
+        touched_vids.push_back(other_vid);
+    }
+    return touched_vids;
 }
 
 ContactResolution TryDispatchEntityEntityContactPair(
@@ -164,6 +195,10 @@ ContactResolution TryDispatchEntityEntityContactPair(
     if (!entity.active || !other_entity.active) {
         return ContactResolution{};
     }
+    if (state.HasEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid)) {
+        return ContactResolution{};
+    }
+    state.RecordEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid);
 
     ContactResolution result{};
     if (context.phase == ContactPhase::AttemptedBlocked && other_entity.impassable) {
@@ -213,6 +248,41 @@ ContactResolution TryDispatchEntityEntityContacts(
         aggregate.stop_sweep |= pair_resolution.stop_sweep;
     }
     return aggregate;
+}
+
+bool TryDispatchEntityEntityOverlapContacts(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!entity.active) {
+        return false;
+    }
+
+    const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
+        entity_idx,
+        GetContactAabbForEntity(entity, graphics),
+        graphics,
+        state
+    );
+    return TryDispatchEntityEntityContacts(
+               entity_idx,
+               touched_vids,
+               ContactContext{
+                   .phase = ContactPhase::SweptEntered,
+                   .has_impact = false,
+               },
+               state,
+               &graphics,
+               &audio
+           )
+        .stop_sweep;
 }
 
 } // namespace splonks::entities::common

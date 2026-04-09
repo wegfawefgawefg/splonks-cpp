@@ -12,7 +12,7 @@ struct State;
 
 namespace splonks::entities::baseball_bat {
 
-constexpr std::uint32_t kBatContactCooldownFrames = 8;
+constexpr std::uint32_t kBatContactCooldownFrames = 9;
 
 enum class SwingStage {
     Back,

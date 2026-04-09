@@ -22,6 +22,8 @@
 
 namespace splonks {
 
+struct Graphics;
+
 enum class Mode {
     Title,
     Settings,
@@ -69,6 +71,11 @@ struct InteractionCooldownEntry {
     VID target_vid;
     InteractionCooldownKind kind = InteractionCooldownKind::Harm;
     std::uint32_t expires_on_stage_frame = 0;
+};
+
+struct EntityContactDispatchEntry {
+    VID first_vid;
+    VID second_vid;
 };
 
 enum class ToolKind : std::uint8_t {
@@ -141,11 +148,22 @@ struct State {
     std::optional<VID> mouse_trailer_vid;
     std::vector<ContactCooldownEntry> contact_cooldowns;
     std::vector<InteractionCooldownEntry> interaction_cooldowns;
+    std::vector<EntityContactDispatchEntry> entity_contact_dispatches_this_tick;
     std::vector<EntityToolState> entity_tool_states;
 
     static State New();
     void SetMode(Mode new_mode);
-    void RebuildSid();
+    void RebuildSid(const Graphics& graphics);
+    void UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics);
+    void ClearEntityContactDispatchesThisTick();
+    bool HasEntityContactPairDispatchedThisTick(
+        const VID& first_vid,
+        const VID& second_vid
+    ) const;
+    void RecordEntityContactPairDispatchedThisTick(
+        const VID& first_vid,
+        const VID& second_vid
+    );
     void StepContactCooldowns();
     void StepInteractionCooldowns();
     bool HasContactCooldown(
