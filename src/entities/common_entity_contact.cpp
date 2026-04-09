@@ -1,7 +1,6 @@
 #include "entities/common.hpp"
 
 #include "entities/baseball_bat.hpp"
-#include "entities/block.hpp"
 #include "entities/breakaway_container.hpp"
 
 namespace splonks::entities::common {
@@ -22,6 +21,10 @@ bool AabbsIntersect(const AABB& left, const AABB& right) {
         return false;
     }
     return true;
+}
+
+bool ShouldDeduplicatePairThisTick(const ContactContext& context) {
+    return context.direction == 0;
 }
 
 struct ParticipantContactDispatch {
@@ -71,6 +74,20 @@ ContactResolution TryDispatchEntityEntityContactByType(
         return ContactResolution{};
     }
 
+    if (participant.crusher_pusher) {
+        if (graphics != nullptr && audio != nullptr) {
+            TryApplyCrusherPusherContact(
+                participant_idx,
+                other_entity_idx,
+                context,
+                state,
+                *graphics,
+                *audio
+            );
+        }
+        return ContactResolution{};
+    }
+
     if (graphics != nullptr && audio != nullptr &&
         TryCollectEntityFromContact(
             participant_idx,
@@ -92,18 +109,6 @@ ContactResolution TryDispatchEntityEntityContactByType(
             .blocks_movement = false,
             .stop_sweep = true,
         };
-    case EntityType::Block:
-        if (graphics == nullptr || audio == nullptr ||
-            !block::TryApplyBlockContactToEntity(
-                participant_idx,
-                other_entity_idx,
-                context,
-                state,
-                *graphics,
-                *audio)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{};
     case EntityType::BaseballBat: {
         if (graphics == nullptr || audio == nullptr) {
             return ContactResolution{};
@@ -132,6 +137,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::MouseTrailer:
     case EntityType::JetPack:
     case EntityType::Bomb:
+    case EntityType::Block:
     case EntityType::Gold:
     case EntityType::GoldStack:
     case EntityType::StompPad:
@@ -230,7 +236,8 @@ ContactResolution TryDispatchEntityEntityContactPair(
     if (!entity.active || !other_entity.active) {
         return ContactResolution{};
     }
-    if (state.HasEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid)) {
+    if (ShouldDeduplicatePairThisTick(context) &&
+        state.HasEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid)) {
         return ContactResolution{};
     }
     state.RecordEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid);

@@ -1,6 +1,28 @@
 #include "entity.hpp"
 
+#include "entities/mod.hpp"
+
 namespace splonks {
+
+namespace {
+
+struct StoneBaseFields {
+    bool crusher_pusher = false;
+    bool impassable = false;
+    DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
+};
+
+StoneBaseFields BuildStoneBaseFieldsForEntityType(EntityType type_) {
+    Entity base_entity;
+    entities::SetEntityByType(base_entity, type_);
+    return StoneBaseFields{
+        .crusher_pusher = base_entity.crusher_pusher,
+        .impassable = base_entity.impassable,
+        .damage_vulnerability = base_entity.damage_vulnerability,
+    };
+}
+
+} // namespace
 
 Entity Entity::New() {
     Entity entity;
@@ -11,6 +33,8 @@ Entity Entity::New() {
     entity.was_horizontally_controlled_this_frame = false;
     entity.has_physics = true;
     entity.can_collide = true;
+    entity.stone = false;
+    entity.crusher_pusher = false;
     entity.grounded = false;
     entity.coyote_time = 0;
     entity.stun_timer = 0;
@@ -236,6 +260,21 @@ bool CanGoOnBack(EntityType type_) {
     default:
         return false;
     }
+}
+
+void EnableStone(Entity& entity) {
+    entity.stone = true;
+    entity.crusher_pusher = true;
+    entity.impassable = true;
+    entity.damage_vulnerability = DamageVulnerability::ExplosionOnly;
+}
+
+void DisableStone(Entity& entity) {
+    const StoneBaseFields base_fields = BuildStoneBaseFieldsForEntityType(entity.type_);
+    entity.stone = false;
+    entity.crusher_pusher = base_fields.crusher_pusher;
+    entity.impassable = base_fields.impassable;
+    entity.damage_vulnerability = base_fields.damage_vulnerability;
 }
 
 } // namespace splonks

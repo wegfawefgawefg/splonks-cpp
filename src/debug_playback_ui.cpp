@@ -728,9 +728,9 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         debug.selected_entity_id = 0;
     }
 
-    const Entity* selected_entity = nullptr;
+    Entity* selected_entity = nullptr;
     if (!state.entity_manager.entities.empty()) {
-        const Entity& entity = state.entity_manager.entities[debug.selected_entity_id];
+        Entity& entity = state.entity_manager.entities[debug.selected_entity_id];
         if (entity.active) {
             selected_entity = &entity;
         }
@@ -742,7 +742,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         return;
     }
 
-    const Entity& entity = *selected_entity;
+    Entity& entity = *selected_entity;
     const AABB aabb = entity.GetAABB();
     ImGui::Separator();
     ImGui::Text("Type: %s", EntityTypeToString(entity.type_));
@@ -763,6 +763,15 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     }
     ImGui::Text("Display: %s", DisplayStateToString(entity.display_state));
     ImGui::Text("Super: %s", SuperStateToString(entity.super_state));
+    bool stone = entity.stone;
+    if (ImGui::Checkbox("Stone", &stone)) {
+        if (stone) {
+            EnableStone(entity);
+        } else {
+            DisableStone(entity);
+        }
+    }
+    ImGui::Checkbox("Crusher/Pusher", &entity.crusher_pusher);
     ImGui::Text("Facing: %s", LeftOrRightToString(entity.facing));
     ImGui::Text("Grounded: %s", entity.grounded ? "true" : "false");
     ImGui::Text("Pos: (%.2f, %.2f)", entity.pos.x, entity.pos.y);

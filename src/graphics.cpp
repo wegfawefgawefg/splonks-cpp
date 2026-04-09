@@ -49,6 +49,7 @@ SDL_Texture* LoadFrameDataTexture(SDL_Renderer* renderer, const std::string& fil
 
     throw std::runtime_error("Missing frame data texture for " + filename);
 }
+
 } // namespace
 
 Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_folder) {

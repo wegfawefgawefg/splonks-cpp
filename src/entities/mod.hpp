@@ -14,3 +14,12 @@
 #include "entities/rock.hpp"
 #include "entities/rope.hpp"
 #include "entities/stomp_pad.hpp"
+
+namespace splonks::entities {
+
+using EntitySetupFn = void (*)(Entity&);
+
+EntitySetupFn GetEntitySetupFn(EntityType type_);
+void SetEntityByType(Entity& entity, EntityType type_);
+
+} // namespace splonks::entities

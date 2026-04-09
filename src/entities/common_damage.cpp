@@ -68,19 +68,23 @@ void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
     }
     if (entity.super_state == EntitySuperState::Dead) {
         std::optional<SoundEffect> sound_effect;
-        switch (entity.type_) {
-        case EntityType::Bomb:
-        case EntityType::JetPack:
-            sound_effect = SoundEffect::BombExplosion;
-            break;
-        case EntityType::Pot:
+        if (entity.stone) {
             sound_effect = SoundEffect::PotShatter;
-            break;
-        case EntityType::Box:
-            sound_effect = SoundEffect::BoxBreak;
-            break;
-        default:
-            break;
+        } else {
+            switch (entity.type_) {
+            case EntityType::Bomb:
+            case EntityType::JetPack:
+                sound_effect = SoundEffect::BombExplosion;
+                break;
+            case EntityType::Pot:
+                sound_effect = SoundEffect::PotShatter;
+                break;
+            case EntityType::Box:
+                sound_effect = SoundEffect::BoxBreak;
+                break;
+            default:
+                break;
+            }
         }
         if (sound_effect.has_value()) {
             audio.PlaySoundEffect(*sound_effect);
@@ -427,6 +431,10 @@ DamageResult TryToDamageEntity(
         break;
     }
     if (can_damage) {
+        if (entity.stone && damage_type == DamageType::Explosion) {
+            entity.health = 0;
+            return DamageResult::Died;
+        }
         bool do_damage_calculation = false;
         if (damage_type == DamageType::Crush) {
             entity.health = 0;

@@ -138,6 +138,14 @@ bool TryDisplaceEntityByOnePixel(
     const Graphics& graphics,
     Audio* audio
 );
+bool TryApplyCrusherPusherContact(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const ContactContext& context,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+);
 using ToolThrowVelocityBuilder = Vec2 (*)(const systems::controls::ControlIntent&);
 bool TrySpawnAndThrowEntityFromTool(
     std::size_t thrower_idx,

@@ -20,6 +20,8 @@ struct Entity {
     bool was_horizontally_controlled_this_frame = false;
     bool has_physics = true;
     bool can_collide = true;
+    bool stone = false;
+    bool crusher_pusher = false;
     bool grounded = false;
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;
@@ -119,5 +121,7 @@ struct Entity {
 };
 
 bool CanGoOnBack(EntityType type_);
+void EnableStone(Entity& entity);
+void DisableStone(Entity& entity);
 
 } // namespace splonks

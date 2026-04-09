@@ -106,6 +106,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
         state.controlled_entity_vid = player_vid;
         if (Entity* const player = state.entity_manager.GetEntityMut(*player_vid)) {
             entities::player::SetEntityPlayer(*player);
+            EnableStone(*player);
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
 

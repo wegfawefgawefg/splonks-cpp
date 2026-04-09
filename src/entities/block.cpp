@@ -17,63 +17,6 @@ constexpr float kControlledBlockMoveAcc = 0.18F;
 constexpr float kControlledBlockSlideVel = 3.25F;
 constexpr std::uint32_t kControlledBlockSlideCooldownFrames = 120;
 
-std::optional<IVec2> GetPushDirectionForBlockContact(const common::ContactContext& context) {
-    if (context.impact_axis == common::BlockingImpactAxis::Horizontal) {
-        if (context.direction > 0) {
-            return IVec2::New(1, 0);
-        }
-        if (context.direction < 0) {
-            return IVec2::New(-1, 0);
-        }
-        return std::nullopt;
-    }
-
-    if (context.direction > 0) {
-        return IVec2::New(0, 1);
-    }
-    if (context.direction < 0) {
-        return IVec2::New(0, -1);
-    }
-    return std::nullopt;
-}
-
-bool IsBlockPushTarget(const Entity& entity) {
-    if (!entity.active || !entity.can_collide || entity.impassable) {
-        return false;
-    }
-    if (entity.super_state == EntitySuperState::Crushed) {
-        return false;
-    }
-    return true;
-}
-
-bool IsAtBlockLeadingFace(const Entity& block, const Entity& other_entity, const IVec2& push_direction) {
-    const AABB block_aabb = block.GetAABB();
-    const AABB other_aabb = other_entity.GetAABB();
-    const Vec2 block_center = block.GetCenter();
-    const Vec2 other_center = other_entity.GetCenter();
-
-    const float overlap_x =
-        std::min(block_aabb.br.x, other_aabb.br.x) - std::max(block_aabb.tl.x, other_aabb.tl.x);
-    const float overlap_y =
-        std::min(block_aabb.br.y, other_aabb.br.y) - std::max(block_aabb.tl.y, other_aabb.tl.y);
-
-    if (push_direction.x > 0) {
-        return overlap_y >= 0.0F && other_center.x >= block_center.x;
-    }
-    if (push_direction.x < 0) {
-        return overlap_y >= 0.0F && other_center.x <= block_center.x;
-    }
-    if (push_direction.y > 0) {
-        return overlap_x >= 0.0F && other_center.y >= block_center.y;
-    }
-    if (push_direction.y < 0) {
-        return overlap_x >= 0.0F && other_center.y <= block_center.y;
-    }
-
-    return false;
-}
-
 FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
     switch (stage_type) {
     case StageType::Ice1:
@@ -134,6 +77,7 @@ void SetEntityBlock(Entity& entity) {
     entity.health = 1;
     entity.size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize));
     entity.has_physics = true;
+    entity.crusher_pusher = true;
     entity.damage_vulnerability = DamageVulnerability::Immune;
     entity.can_collide = true;
     entity.can_be_picked_up = false;
@@ -155,40 +99,14 @@ bool TryApplyBlockContactToEntity(
     const Graphics& graphics,
     Audio& audio
 ) {
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
-        return false;
-    }
-
-    const Entity& block = state.entity_manager.entities[entity_idx];
-    if (!context.mover_vid.has_value() || block.vid != *context.mover_vid) {
-        return false;
-    }
-
-    const std::optional<IVec2> push_direction = GetPushDirectionForBlockContact(context);
-    if (!push_direction.has_value()) {
-        return false;
-    }
-
-    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!IsBlockPushTarget(other_entity)) {
-        return false;
-    }
-    if (!IsAtBlockLeadingFace(block, other_entity, *push_direction)) {
-        return false;
-    }
-
-    if (common::TryDisplaceEntityByOnePixel(
-            other_entity_idx,
-            *push_direction,
-            state,
-            graphics,
-            &audio)) {
-        return true;
-    }
-
-    common::TryToDamageEntity(other_entity_idx, state, audio, DamageType::Crush, 1);
-    return true;
+    return common::TryApplyCrusherPusherContact(
+        entity_idx,
+        other_entity_idx,
+        context,
+        state,
+        graphics,
+        audio
+    );
 }
 
 void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) {

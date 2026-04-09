@@ -8,7 +8,6 @@
 #include "state.hpp"
 #include "terrain_lighting.hpp"
 #include "tile.hpp"
-
 #include <algorithm>
 #include <cmath>
 

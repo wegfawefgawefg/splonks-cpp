@@ -2,7 +2,74 @@
 
 #include "entities/block.hpp"
 
+#include <algorithm>
+
 namespace splonks::entities::common {
+
+namespace {
+
+std::optional<IVec2> GetPushDirectionForCrusherContact(const ContactContext& context) {
+    if (context.impact_axis == BlockingImpactAxis::Horizontal) {
+        if (context.direction > 0) {
+            return IVec2::New(1, 0);
+        }
+        if (context.direction < 0) {
+            return IVec2::New(-1, 0);
+        }
+        return std::nullopt;
+    }
+
+    if (context.direction > 0) {
+        return IVec2::New(0, 1);
+    }
+    if (context.direction < 0) {
+        return IVec2::New(0, -1);
+    }
+    return std::nullopt;
+}
+
+bool IsCrusherPushTarget(const Entity& entity) {
+    if (!entity.active || !entity.can_collide || entity.impassable) {
+        return false;
+    }
+    if (entity.super_state == EntitySuperState::Crushed) {
+        return false;
+    }
+    return true;
+}
+
+bool IsAtCrusherLeadingFace(
+    const Entity& crusher,
+    const Entity& other_entity,
+    const IVec2& push_direction
+) {
+    const AABB crusher_aabb = crusher.GetAABB();
+    const AABB other_aabb = other_entity.GetAABB();
+    const Vec2 crusher_center = crusher.GetCenter();
+    const Vec2 other_center = other_entity.GetCenter();
+
+    const float overlap_x = std::min(crusher_aabb.br.x, other_aabb.br.x) -
+                            std::max(crusher_aabb.tl.x, other_aabb.tl.x);
+    const float overlap_y = std::min(crusher_aabb.br.y, other_aabb.br.y) -
+                            std::max(crusher_aabb.tl.y, other_aabb.tl.y);
+
+    if (push_direction.x > 0) {
+        return overlap_y >= 0.0F && other_center.x >= crusher_center.x;
+    }
+    if (push_direction.x < 0) {
+        return overlap_y >= 0.0F && other_center.x <= crusher_center.x;
+    }
+    if (push_direction.y > 0) {
+        return overlap_x >= 0.0F && other_center.y >= crusher_center.y;
+    }
+    if (push_direction.y < 0) {
+        return overlap_x >= 0.0F && other_center.y <= crusher_center.y;
+    }
+
+    return false;
+}
+
+} // namespace
 
 void TryPushBlocks(
     std::size_t entity_idx,
@@ -97,6 +164,45 @@ bool TryDisplaceEntityByOnePixel(
             }
         );
     }
+    return true;
+}
+
+bool TryApplyCrusherPusherContact(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const ContactContext& context,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    if (entity_idx >= state.entity_manager.entities.size() ||
+        other_entity_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    const Entity& crusher = state.entity_manager.entities[entity_idx];
+    if (!context.mover_vid.has_value() || crusher.vid != *context.mover_vid) {
+        return false;
+    }
+
+    const std::optional<IVec2> push_direction = GetPushDirectionForCrusherContact(context);
+    if (!push_direction.has_value()) {
+        return false;
+    }
+
+    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
+    if (!IsCrusherPushTarget(other_entity)) {
+        return false;
+    }
+    if (!IsAtCrusherLeadingFace(crusher, other_entity, *push_direction)) {
+        return false;
+    }
+
+    if (TryDisplaceEntityByOnePixel(other_entity_idx, *push_direction, state, graphics, &audio)) {
+        return true;
+    }
+
+    TryToDamageEntity(other_entity_idx, state, audio, DamageType::Crush, 1);
     return true;
 }
 

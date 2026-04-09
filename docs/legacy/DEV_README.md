@@ -21,8 +21,14 @@
 - Debounce is implemented for the directional inputs in the menu controls to give repeat on directional holding, but not for button presses.
   - This means that the player can press a button and hold it, and the game will only register the press once.
   - However the directions can be held and will repeat, hence the manual debounce.
-  
+
 ## Systems
 
 - Try to keep systems generic. This wont always be avoidable, but the systems are itterating through all the entities,
-  so if you can make a generic system you reduce the full num_system * num_entities steps.
+  so if you can make a generic system you reduce the full num_system \* num_entities steps.
+
+## QUIRKS
+
+if a swept contact behavior should only happen once per approach, it now needs to say so explicitly with cooldown
+or stop_sweep. thats bc to make pusher/crusher work during sweep we disabled the sweep contact same frame dedupe logic.
+basically use cooldowns on non blocking contacts.
