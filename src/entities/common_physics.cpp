@@ -1,6 +1,5 @@
 #include "entities/common.hpp"
 
-#include "entities/baseball_bat.hpp"
 #include "entities/player.hpp"
 #include "tile.hpp"
 
@@ -15,87 +14,6 @@ namespace {
 
 AABB GetAabbAtPosition(const Entity& entity, const Vec2& pos) {
     return AABB::New(pos, pos + entity.size - Vec2::New(1.0F, 1.0F));
-}
-
-bool AabbsIntersect(const AABB& left, const AABB& right) {
-    if (left.br.x < right.tl.x) {
-        return false;
-    }
-    if (left.tl.x > right.br.x) {
-        return false;
-    }
-    if (left.br.y < right.tl.y) {
-        return false;
-    }
-    if (left.tl.y > right.br.y) {
-        return false;
-    }
-    return true;
-}
-
-bool IsBlockedByStageBounds(const AABB& aabb, const Stage& stage) {
-    if (aabb.tl.x < 0.0F || aabb.tl.y < 0.0F) {
-        return true;
-    }
-    if (aabb.br.x > static_cast<float>(stage.GetWidth() - 1)) {
-        return true;
-    }
-    if (aabb.br.y > static_cast<float>(stage.GetHeight() - 1)) {
-        return true;
-    }
-    return false;
-}
-
-bool IsBlockedByTiles(const AABB& aabb, const Stage& stage) {
-    const std::vector<const Tile*> collided_tiles =
-        stage.GetTilesInRectWc(ToIVec2(aabb.tl), ToIVec2(aabb.br));
-    return CollidableTileInList(collided_tiles);
-}
-
-bool IsBlockedByImpassableEntities(
-    std::size_t entity_idx,
-    const AABB& aabb,
-    const State& state
-) {
-    const VID self_vid = state.entity_manager.entities[entity_idx].vid;
-    for (const Entity& other : state.entity_manager.entities) {
-        if (!other.active) {
-            continue;
-        }
-        if (other.vid.id == self_vid.id) {
-            continue;
-        }
-        if (!other.impassable) {
-            continue;
-        }
-        if (AabbsIntersect(aabb, other.GetAABB())) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool IsBlockingAabbForEntity(
-    std::size_t entity_idx,
-    const AABB& aabb,
-    const State& state,
-    bool check_tiles,
-    bool check_entities
-) {
-    if (check_tiles) {
-        if (IsBlockedByStageBounds(aabb, state.stage)) {
-            return true;
-        }
-        if (IsBlockedByTiles(aabb, state.stage)) {
-            return true;
-        }
-    }
-
-    if (check_entities && IsBlockedByImpassableEntities(entity_idx, aabb, state)) {
-        return true;
-    }
-
-    return false;
 }
 
 void StoreDistanceTraveled(std::size_t entity_idx, State& state, const Vec2& start_pos) {
@@ -115,7 +33,9 @@ void ResolveBlockingOverlap(
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     const AABB current_aabb = entity.GetAABB();
-    if (!IsBlockingAabbForEntity(entity_idx, current_aabb, state, check_tiles, check_entities)) {
+    const BlockingContactSet current_contacts =
+        GatherBlockingContactsForAabb(entity_idx, current_aabb, state, check_tiles, check_entities);
+    if (!ResolveBlockingContactSet(entity_idx, current_contacts, state).blocks_movement) {
         return;
     }
 
@@ -131,66 +51,14 @@ void ResolveBlockingOverlap(
         for (const IVec2& direction : candidates) {
             const Vec2 candidate_pos = entity.pos + ToVec2(direction * distance);
             const AABB candidate_aabb = GetAabbAtPosition(entity, candidate_pos);
-            if (!IsBlockingAabbForEntity(
-                    entity_idx,
-                    candidate_aabb,
-                    state,
-                    check_tiles,
-                    check_entities
-                )) {
+            const BlockingContactSet candidate_contacts = GatherBlockingContactsForAabb(
+                entity_idx, candidate_aabb, state, check_tiles, check_entities);
+            if (!ResolveBlockingContactSet(entity_idx, candidate_contacts, state).blocks_movement) {
                 entity.pos = candidate_pos;
                 return;
             }
         }
     }
-}
-
-bool ApplySweptContactInteractions(
-    std::size_t entity_idx,
-    State& state,
-    const Graphics& graphics,
-    Audio& audio
-) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.active) {
-        return false;
-    }
-
-    for (std::size_t other_entity_idx = 0; other_entity_idx < state.entity_manager.entities.size();
-         ++other_entity_idx) {
-        if (other_entity_idx == entity_idx) {
-            continue;
-        }
-        const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-        if (!other_entity.active) {
-            continue;
-        }
-
-        if (entity.type_ == EntityType::BaseballBat) {
-            if (baseball_bat::TryApplyBatContactToEntity(
-                    entity_idx,
-                    other_entity_idx,
-                    state,
-                    graphics,
-                    audio
-                )) {
-                return true;
-            }
-        }
-        if (other_entity.type_ == EntityType::BaseballBat) {
-            if (baseball_bat::TryApplyBatContactToEntity(
-                    other_entity_idx,
-                    entity_idx,
-                    state,
-                    graphics,
-                    audio
-                )) {
-                return true;
-            }
-        }
-    }
-
-    return false;
 }
 
 int GetIntegerStepDistance(float distance, unsigned int time) {
@@ -229,14 +97,62 @@ void MoveEntityPixelStep(
         for (int i = 0; i < move_x; ++i) {
             const Vec2 next_pos = entity.pos + Vec2::New(1.0F, 0.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+            const BlockingContactSet contacts =
+                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const ContactResolution contact_resolution =
+                ResolveBlockingContactSet(entity_idx, contacts, state);
+            if (contact_resolution.stop_sweep) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
+            }
+            if (contact_resolution.blocks_movement) {
+                const ContactContext blocked_context = {
+                    .phase = ContactPhase::AttemptedBlocked,
+                    .has_impact = true,
+                    .impact_axis = BlockingImpactAxis::Horizontal,
+                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_velocity = entity.vel.x,
+                    .direction = 1,
+                };
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
+                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
+                    entity_idx,
+                    contacts.entity_vids,
+                    blocked_context,
+                    state,
+                    graphics,
+                    audio
+                );
+                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.x = 0.0F;
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
                 entity.vel.x = 0.0F;
                 entity.collided = true;
                 break;
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
+                    entity_idx,
+                    GetContactAabbForEntity(entity, *graphics),
+                    state
+                );
+                if (TryDispatchEntityEntityContacts(
+                        entity_idx,
+                        touched_vids,
+                        ContactContext{
+                            .phase = ContactPhase::SweptEntered,
+                            .has_impact = false,
+                        },
+                        state,
+                        graphics,
+                        audio
+                    )
+                        .stop_sweep) {
                     StoreDistanceTraveled(entity_idx, state, start_pos);
                     return;
                 }
@@ -246,14 +162,62 @@ void MoveEntityPixelStep(
         for (int i = 0; i < -move_x; ++i) {
             const Vec2 next_pos = entity.pos + Vec2::New(-1.0F, 0.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+            const BlockingContactSet contacts =
+                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const ContactResolution contact_resolution =
+                ResolveBlockingContactSet(entity_idx, contacts, state);
+            if (contact_resolution.stop_sweep) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
+            }
+            if (contact_resolution.blocks_movement) {
+                const ContactContext blocked_context = {
+                    .phase = ContactPhase::AttemptedBlocked,
+                    .has_impact = true,
+                    .impact_axis = BlockingImpactAxis::Horizontal,
+                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_velocity = entity.vel.x,
+                    .direction = -1,
+                };
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
+                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
+                    entity_idx,
+                    contacts.entity_vids,
+                    blocked_context,
+                    state,
+                    graphics,
+                    audio
+                );
+                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.x = 0.0F;
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
                 entity.vel.x = 0.0F;
                 entity.collided = true;
                 break;
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
+                    entity_idx,
+                    GetContactAabbForEntity(entity, *graphics),
+                    state
+                );
+                if (TryDispatchEntityEntityContacts(
+                        entity_idx,
+                        touched_vids,
+                        ContactContext{
+                            .phase = ContactPhase::SweptEntered,
+                            .has_impact = false,
+                        },
+                        state,
+                        graphics,
+                        audio
+                    )
+                        .stop_sweep) {
                     StoreDistanceTraveled(entity_idx, state, start_pos);
                     return;
                 }
@@ -265,14 +229,62 @@ void MoveEntityPixelStep(
         for (int i = 0; i < move_y; ++i) {
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, 1.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+            const BlockingContactSet contacts =
+                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const ContactResolution contact_resolution =
+                ResolveBlockingContactSet(entity_idx, contacts, state);
+            if (contact_resolution.stop_sweep) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
+            }
+            if (contact_resolution.blocks_movement) {
+                const ContactContext blocked_context = {
+                    .phase = ContactPhase::AttemptedBlocked,
+                    .has_impact = true,
+                    .impact_axis = BlockingImpactAxis::Vertical,
+                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_velocity = entity.vel.y,
+                    .direction = 1,
+                };
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
+                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
+                    entity_idx,
+                    contacts.entity_vids,
+                    blocked_context,
+                    state,
+                    graphics,
+                    audio
+                );
+                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.y = 0.0F;
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
                 entity.vel.y = 0.0F;
                 entity.collided = true;
                 break;
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
+                    entity_idx,
+                    GetContactAabbForEntity(entity, *graphics),
+                    state
+                );
+                if (TryDispatchEntityEntityContacts(
+                        entity_idx,
+                        touched_vids,
+                        ContactContext{
+                            .phase = ContactPhase::SweptEntered,
+                            .has_impact = false,
+                        },
+                        state,
+                        graphics,
+                        audio
+                    )
+                        .stop_sweep) {
                     StoreDistanceTraveled(entity_idx, state, start_pos);
                     return;
                 }
@@ -282,14 +294,62 @@ void MoveEntityPixelStep(
         for (int i = 0; i < -move_y; ++i) {
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, -1.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            if (IsBlockingAabbForEntity(entity_idx, next_aabb, state, check_tiles, check_entities)) {
+            const BlockingContactSet contacts =
+                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const ContactResolution contact_resolution =
+                ResolveBlockingContactSet(entity_idx, contacts, state);
+            if (contact_resolution.stop_sweep) {
+                StoreDistanceTraveled(entity_idx, state, start_pos);
+                return;
+            }
+            if (contact_resolution.blocks_movement) {
+                const ContactContext blocked_context = {
+                    .phase = ContactPhase::AttemptedBlocked,
+                    .has_impact = true,
+                    .impact_axis = BlockingImpactAxis::Vertical,
+                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_velocity = entity.vel.y,
+                    .direction = -1,
+                };
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
+                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
+                    entity_idx,
+                    contacts.entity_vids,
+                    blocked_context,
+                    state,
+                    graphics,
+                    audio
+                );
+                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.y = 0.0F;
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
                 entity.vel.y = 0.0F;
                 entity.collided = true;
                 break;
             }
             entity.pos = next_pos;
             if (graphics != nullptr && audio != nullptr) {
-                if (ApplySweptContactInteractions(entity_idx, state, *graphics, *audio)) {
+                const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
+                    entity_idx,
+                    GetContactAabbForEntity(entity, *graphics),
+                    state
+                );
+                if (TryDispatchEntityEntityContacts(
+                        entity_idx,
+                        touched_vids,
+                        ContactContext{
+                            .phase = ContactPhase::SweptEntered,
+                            .has_impact = false,
+                        },
+                        state,
+                        graphics,
+                        audio
+                    )
+                        .stop_sweep) {
                     StoreDistanceTraveled(entity_idx, state, start_pos);
                     return;
                 }

@@ -37,10 +37,6 @@ enum class Mode {
 
 constexpr std::uint32_t kStageSettleFrames = 100;
 
-enum class ContactInteractionKind {
-    Harm,
-};
-
 enum class DebugLevelKind {
     Test1,
     HangTest,
@@ -61,7 +57,17 @@ struct DebugLevelConfig {
 struct ContactCooldownEntry {
     VID source_vid;
     VID target_vid;
-    ContactInteractionKind kind = ContactInteractionKind::Harm;
+    std::uint32_t expires_on_stage_frame = 0;
+};
+
+enum class InteractionCooldownKind {
+    Harm,
+};
+
+struct InteractionCooldownEntry {
+    VID source_vid;
+    VID target_vid;
+    InteractionCooldownKind kind = InteractionCooldownKind::Harm;
     std::uint32_t expires_on_stage_frame = 0;
 };
 
@@ -134,21 +140,32 @@ struct State {
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
     std::vector<ContactCooldownEntry> contact_cooldowns;
+    std::vector<InteractionCooldownEntry> interaction_cooldowns;
     std::vector<EntityToolState> entity_tool_states;
 
     static State New();
     void SetMode(Mode new_mode);
     void RebuildSid();
     void StepContactCooldowns();
+    void StepInteractionCooldowns();
     bool HasContactCooldown(
         const VID& source_vid,
-        const VID& target_vid,
-        ContactInteractionKind kind
+        const VID& target_vid
     ) const;
     void AddContactCooldown(
         const VID& source_vid,
         const VID& target_vid,
-        ContactInteractionKind kind,
+        std::uint32_t duration
+    );
+    bool HasInteractionCooldown(
+        const VID& source_vid,
+        const VID& target_vid,
+        InteractionCooldownKind kind
+    ) const;
+    void AddInteractionCooldown(
+        const VID& source_vid,
+        const VID& target_vid,
+        InteractionCooldownKind kind,
         std::uint32_t duration
     );
     void StepEntityToolStates();

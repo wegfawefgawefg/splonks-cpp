@@ -49,6 +49,7 @@ State State::New() {
     state.controlled_entity_vid.reset();
     state.mouse_trailer_vid.reset();
     state.contact_cooldowns.clear();
+    state.interaction_cooldowns.clear();
     state.entity_tool_states.clear();
     InitDebugLevel(state);
     return state;
@@ -82,11 +83,10 @@ void State::StepContactCooldowns() {
 
 bool State::HasContactCooldown(
     const VID& source_vid,
-    const VID& target_vid,
-    ContactInteractionKind kind
+    const VID& target_vid
 ) const {
     for (const ContactCooldownEntry& entry : contact_cooldowns) {
-        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
+        if (entry.source_vid == source_vid && entry.target_vid == target_vid) {
             return true;
         }
     }
@@ -96,17 +96,60 @@ bool State::HasContactCooldown(
 void State::AddContactCooldown(
     const VID& source_vid,
     const VID& target_vid,
-    ContactInteractionKind kind,
     std::uint32_t duration
 ) {
     for (ContactCooldownEntry& entry : contact_cooldowns) {
-        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
+        if (entry.source_vid == source_vid && entry.target_vid == target_vid) {
             entry.expires_on_stage_frame = stage_frame + duration;
             return;
         }
     }
 
     contact_cooldowns.push_back(ContactCooldownEntry{
+        .source_vid = source_vid,
+        .target_vid = target_vid,
+        .expires_on_stage_frame = stage_frame + duration,
+    });
+}
+
+void State::StepInteractionCooldowns() {
+    std::vector<InteractionCooldownEntry> kept_cooldowns;
+    kept_cooldowns.reserve(interaction_cooldowns.size());
+    for (const InteractionCooldownEntry& entry : interaction_cooldowns) {
+        if (entry.expires_on_stage_frame > stage_frame) {
+            kept_cooldowns.push_back(entry);
+        }
+    }
+    interaction_cooldowns = std::move(kept_cooldowns);
+}
+
+bool State::HasInteractionCooldown(
+    const VID& source_vid,
+    const VID& target_vid,
+    InteractionCooldownKind kind
+) const {
+    for (const InteractionCooldownEntry& entry : interaction_cooldowns) {
+        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void State::AddInteractionCooldown(
+    const VID& source_vid,
+    const VID& target_vid,
+    InteractionCooldownKind kind,
+    std::uint32_t duration
+) {
+    for (InteractionCooldownEntry& entry : interaction_cooldowns) {
+        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
+            entry.expires_on_stage_frame = stage_frame + duration;
+            return;
+        }
+    }
+
+    interaction_cooldowns.push_back(InteractionCooldownEntry{
         .source_vid = source_vid,
         .target_vid = target_vid,
         .kind = kind,

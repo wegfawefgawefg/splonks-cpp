@@ -31,24 +31,11 @@ unsigned int RandomPercent() {
     return distribution(generator);
 }
 
-bool EntityJustCollided(Entity& entity) {
-    constexpr unsigned int kCollidedTriggerCooldown = 4;
-
-    const bool trigger =
-        !entity.collided_last_frame && entity.collided && entity.collided_trigger_cooldown == 0;
-
-    if (entity.collided) {
-        entity.collided_trigger_cooldown = kCollidedTriggerCooldown;
-    } else if (entity.collided_trigger_cooldown > 0) {
-        entity.collided_trigger_cooldown -= 1;
-    }
-
-    return trigger;
-}
-
 bool IsControlled(const Entity& entity, const State& state) {
     return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
 }
+
+constexpr float kBreakawayImpactSpeed = 1.0F;
 
 void StepControlledBreakawayContainer(
     Entity& breakaway_container,
@@ -190,15 +177,6 @@ void StepEntityLogicAsBreakawayContainer(
         );
     }
 
-    const bool just_collided = EntityJustCollided(breakaway_container);
-    const bool moving_fast =
-        std::abs(breakaway_container.vel.x) > 1.0F || std::abs(breakaway_container.vel.y) > 1.0F;
-    const bool was_thrown = breakaway_container.thrown_by.has_value();
-    const bool fell_far = breakaway_container.fall_distance >= static_cast<float>(kTileSize);
-
-    if (just_collided && (was_thrown || moving_fast || fell_far)) {
-        breakaway_container.health = 0;
-    }
 }
 
 /** generalize this to all square or rectangular entities somehow */
@@ -225,6 +203,30 @@ Vec2 GetBreakawayContainerSize(EntityType type_) {
     default:
         return Vec2::New(1.0F, 1.0F);
     }
+}
+
+bool TryApplyBreakawayContainerImpact(
+    std::size_t entity_idx,
+    const common::ContactContext& context,
+    State& state
+) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    if (entity.type_ != EntityType::Pot && entity.type_ != EntityType::Box) {
+        return false;
+    }
+    if (context.phase != common::ContactPhase::AttemptedBlocked || !context.has_impact) {
+        return false;
+    }
+    if (std::abs(context.impact_velocity) <= kBreakawayImpactSpeed) {
+        return false;
+    }
+
+    entity.health = 0;
+    return true;
 }
 
 } // namespace splonks::entities::breakaway_container

@@ -10,6 +10,10 @@ struct State;
 
 }
 
+namespace splonks::entities::common {
+struct ContactContext;
+}
+
 namespace splonks::entities::breakaway_container {
 
 void SetEntityBreakawayContainer(Entity& entity, EntityType type_);
@@ -22,5 +26,10 @@ void StepEntityPhysicsAsBreakawayContainer(
     float dt
 );
 Vec2 GetBreakawayContainerSize(EntityType type_);
+bool TryApplyBreakawayContainerImpact(
+    std::size_t entity_idx,
+    const common::ContactContext& context,
+    State& state
+);
 
 } // namespace splonks::entities::breakaway_container

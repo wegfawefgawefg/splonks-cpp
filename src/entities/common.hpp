@@ -15,6 +15,50 @@ constexpr float kMaxSpeed = 7.0F;
 constexpr unsigned int kDefaultStunTimer = 60;
 constexpr unsigned int kThrownByImmunityDuration = 16;
 
+enum class BlockingImpactAxis {
+    Horizontal,
+    Vertical,
+};
+
+enum class BlockingImpactSurface {
+    StageBounds,
+    Tiles,
+    ImpassableEntity,
+};
+
+enum class ContactPhase {
+    SweptEntered,
+    AttemptedBlocked,
+};
+
+struct ContactContext {
+    ContactPhase phase = ContactPhase::SweptEntered;
+    bool has_impact = false;
+    BlockingImpactAxis impact_axis = BlockingImpactAxis::Horizontal;
+    BlockingImpactSurface impact_surface = BlockingImpactSurface::Tiles;
+    float impact_velocity = 0.0F;
+    int direction = 0;
+    std::optional<VID> other_vid = std::nullopt;
+};
+
+struct ContactResolution {
+    // The attempted pixel move may not be entered.
+    bool blocks_movement = false;
+    // Stop all further movement processing in the current MoveEntityPixelStep call.
+    bool stop_sweep = false;
+};
+
+struct TileContact {
+    IVec2 tile_pos = IVec2::New(0, 0);
+    const Tile* tile = nullptr;
+};
+
+struct BlockingContactSet {
+    bool touches_stage_bounds = false;
+    std::vector<TileContact> tile_contacts;
+    std::vector<VID> entity_vids;
+};
+
 void CommonStep(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 void CommonPostStep(
     std::size_t entity_idx,
@@ -119,5 +163,45 @@ DamageResult TryToDamageEntity(
 );
 
 void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio);
+ContactResolution TryDispatchEntityEntityContactPair(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+);
+ContactResolution TryDispatchEntityEntityContacts(
+    std::size_t entity_idx,
+    const std::vector<VID>& touched_vids,
+    const ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+);
+std::vector<VID> GatherTouchedEntityContactsForAabb(
+    std::size_t entity_idx,
+    const AABB& aabb,
+    State& state
+);
+BlockingContactSet GatherBlockingContactsForAabb(
+    std::size_t entity_idx,
+    const AABB& aabb,
+    const State& state,
+    bool check_tiles,
+    bool check_entities
+);
+ContactResolution ResolveBlockingContactSet(
+    std::size_t entity_idx,
+    const BlockingContactSet& contacts,
+    const State& state
+);
+ContactResolution TryDispatchEntityTileContacts(
+    std::size_t entity_idx,
+    const BlockingContactSet& contacts,
+    const ContactContext& context,
+    State& state,
+    Audio* audio
+);
 
 } // namespace splonks::entities::common

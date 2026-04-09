@@ -141,6 +141,9 @@ add_executable(splonks-cpp
     src/entities/common_frame.cpp
     src/entities/common_hang.cpp
     src/entities/common_physics.cpp
+    src/entities/common_blocking_contact.cpp
+    src/entities/common_entity_contact.cpp
+    src/entities/common_tile_contact.cpp
     src/entities/common_step.cpp
     src/entities/common_collect.cpp
     src/entities/common_stomp.cpp

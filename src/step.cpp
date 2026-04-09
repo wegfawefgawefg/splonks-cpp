@@ -99,6 +99,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         systems::controls::ControlEntityAsPlayer(*state.player_vid, state);
     }
     state.StepContactCooldowns();
+    state.StepInteractionCooldowns();
     state.StepEntityToolStates();
     state.RebuildSid();
     StepEntities(state, audio, graphics, dt);
@@ -202,6 +203,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[Song::GameOver as usize]);
     state.StepContactCooldowns();
+    state.StepInteractionCooldowns();
     state.RebuildSid();
     StepEntities(state, audio, graphics, dt);
     StepSpecialEffects(state);

@@ -141,10 +141,10 @@ void MaybeHurtAndStunOnContact(
                          other_entity->alignment == Alignment::Ally) ||
                         (alignment == Alignment::Neutral);
                     if (has_correct_alignment) {
-                        if (state.HasContactCooldown(
+                        if (state.HasInteractionCooldown(
                                 entity.vid,
                                 other_entity->vid,
-                                ContactInteractionKind::Harm
+                                InteractionCooldownKind::Harm
                             )) {
                             continue;
                         }
@@ -153,10 +153,10 @@ void MaybeHurtAndStunOnContact(
                         switch (damage_result) {
                         case DamageResult::Died:
                         case DamageResult::Hurt:
-                            state.AddContactCooldown(
+                            state.AddInteractionCooldown(
                                 entity.vid,
                                 other_entity->vid,
-                                ContactInteractionKind::Harm,
+                                InteractionCooldownKind::Harm,
                                 kHarmContactCooldownFrames
                             );
                             break;
@@ -218,10 +218,10 @@ bool MaybeHurtAndStunOnContactAsProjectile(
                 continue;
             }
             if (other_entity->can_collide) {
-                if (state.HasContactCooldown(
+                if (state.HasInteractionCooldown(
                         entity.vid,
                         other_entity->vid,
-                        ContactInteractionKind::Harm
+                        InteractionCooldownKind::Harm
                     )) {
                     continue;
                 }
@@ -231,10 +231,10 @@ bool MaybeHurtAndStunOnContactAsProjectile(
                 switch (damage_result) {
                 case DamageResult::Hurt:
                 case DamageResult::Died: {
-                    state.AddContactCooldown(
+                    state.AddInteractionCooldown(
                         entity.vid,
                         other_entity->vid,
-                        ContactInteractionKind::Harm,
+                        InteractionCooldownKind::Harm,
                         kHarmContactCooldownFrames
                     );
                     const SoundEffect sound_effect = GetProjectileCollisionSound(entity_type);

@@ -13,8 +13,6 @@ namespace splonks::entities::baseball_bat {
 
 namespace {
 
-constexpr std::uint32_t kBatContactCooldownFrames = 8;
-
 int RandomIntInclusive(int minimum, int maximum) {
     static std::random_device device;
     static std::mt19937 generator(device());
@@ -103,14 +101,6 @@ bool TryApplyBatContactToEntity(
         return false;
     }
 
-    if (state.HasContactCooldown(
-            bat_entity.vid,
-            other_entity_const.vid,
-            ContactInteractionKind::Harm
-        )) {
-        return false;
-    }
-
     const LeftOrRight bat_facing = bat_entity.facing;
     const std::optional<VID> held_by_vid = bat_entity.held_by_vid;
     const SwingStage swing_stage = GetSwingStage(bat_entity);
@@ -141,12 +131,6 @@ bool TryApplyBatContactToEntity(
         other_entity->acc = Vec2::New(0.0F, 0.0F);
         other_entity->thrown_by = held_by_vid;
         other_entity->thrown_immunity_timer = common::kThrownByImmunityDuration;
-        state.AddContactCooldown(
-            bat_entity.vid,
-            other_entity->vid,
-            ContactInteractionKind::Harm,
-            kBatContactCooldownFrames
-        );
 
         const common::DamageResult damage_result = common::TryToDamageEntity(
             other_entity->vid.id, state, audio, DamageType::Attack, 1);
@@ -221,13 +205,20 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, A
                                     : swinger_center + graphics.debug_baseball_bat_hold_offset;
     baseball_bat.SetCenter(mounted_center);
 
-    for (std::size_t other_entity_idx = 0; other_entity_idx < state.entity_manager.entities.size();
-         ++other_entity_idx) {
-        if (other_entity_idx == entity_idx) {
-            continue;
-        }
-        TryApplyBatContactToEntity(entity_idx, other_entity_idx, state, graphics, audio);
-    }
+    const std::vector<VID> touched_vids =
+        common::GatherTouchedEntityContactsForAabb(
+            entity_idx, common::GetContactAabbForEntity(baseball_bat, graphics), state);
+    common::TryDispatchEntityEntityContacts(
+        entity_idx,
+        touched_vids,
+        common::ContactContext{
+            .phase = common::ContactPhase::SweptEntered,
+            .has_impact = false,
+        },
+        state,
+        &graphics,
+        &audio
+    );
 }
 
 /** generalize this to all square or rectangular entities somehow */
