@@ -13,3 +13,4 @@
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 #include "entities/rope.hpp"
+#include "entities/stomp_pad.hpp"

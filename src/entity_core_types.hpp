@@ -34,6 +34,7 @@ enum class EntityType {
     Rope,
     Pot,
     Box,
+    StompPad,
     BaseballBat,
 };
 

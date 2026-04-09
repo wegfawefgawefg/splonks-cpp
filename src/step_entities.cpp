@@ -13,6 +13,7 @@
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 #include "entities/rope.hpp"
+#include "entities/stomp_pad.hpp"
 
 namespace splonks {
 
@@ -117,6 +118,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             case EntityType::GoldStack:
                 entities::money::StepEntityLogicAsMoney(entity_idx, state, audio);
                 break;
+            case EntityType::StompPad:
+                entities::stomp_pad::StepEntityLogicAsStompPad(entity_idx, state, audio);
+                break;
             }
             entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
 
@@ -161,6 +165,15 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 case EntityType::Gold:
                 case EntityType::GoldStack:
                     entities::money::StepEntityPhysicsAsMoney(entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::StompPad:
+                    entities::stomp_pad::StepEntityPhysicsAsStompPad(
+                        entity_idx,
+                        state,
+                        graphics,
+                        audio,
+                        dt
+                    );
                     break;
                 }
             }

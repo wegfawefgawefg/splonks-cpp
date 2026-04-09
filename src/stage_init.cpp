@@ -7,6 +7,7 @@
 #include "entities/money.hpp"
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
+#include "entities/stomp_pad.hpp"
 
 #include <algorithm>
 #include <random>
@@ -20,6 +21,8 @@ namespace {
 constexpr int kHangTestStageWidthTiles = 10;
 constexpr int kHangTestWallX = 4;
 constexpr int kHangTestTopY = 4;
+constexpr int kStompTestStageWidthTiles = 10;
+constexpr int kStompTestStageHeightTiles = 8;
 
 unsigned int RandomPercent() {
     static std::random_device device;
@@ -72,6 +75,26 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     return stage;
 }
 
+Stage MakeStompTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kStompTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kStompTestStageWidthTiles), Tile::Air)
+    );
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+
+    for (int x = 0; x < kStompTestStageWidthTiles; ++x) {
+        stage.tiles[static_cast<std::size_t>(kStompTestStageHeightTiles - 1)][static_cast<std::size_t>(x)] =
+            Tile::Dirt;
+    }
+
+    return stage;
+}
+
 void InitCommonStageState(State& state) {
     state.stage_frame = 0;
     state.entity_manager.ClearAllEntities();
@@ -112,6 +135,27 @@ void InitHangTestStage(State& state) {
     const float spawn_x = static_cast<float>((wall_x + 1) * static_cast<int>(kTileSize) - 8);
     const float spawn_y = static_cast<float>(top_y * static_cast<int>(kTileSize) - 14);
     SpawnPlayer(state, Vec2::New(spawn_x, spawn_y));
+}
+
+void InitStompTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x =
+        static_cast<float>(4 * static_cast<int>(kTileSize) - 3);
+    const float player_spawn_y =
+        static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+
+    if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
+        if (Entity* const stomp_pad = state.entity_manager.GetEntityMut(*vid)) {
+            entities::stomp_pad::SetEntityStompPad(*stomp_pad);
+            stomp_pad->pos = Vec2::New(
+                static_cast<float>(4 * static_cast<int>(kTileSize)),
+                static_cast<float>(4 * static_cast<int>(kTileSize) - 7)
+            );
+        }
+    }
 }
 
 } // namespace
@@ -235,6 +279,10 @@ void InitDebugLevel(State& state) {
     case DebugLevelKind::HangTest:
         state.stage = MakeHangTestStage(state.debug_level.hang_test);
         InitHangTestStage(state);
+        break;
+    case DebugLevelKind::StompTest:
+        state.stage = MakeStompTestStage();
+        InitStompTestStage(state);
         break;
     }
 }

@@ -2,39 +2,91 @@
 
 namespace splonks::entities::common {
 
-void CollectTouchingPickups(
+namespace {
+
+bool CanCollectPickups(const Entity& entity) {
+    switch (entity.type_) {
+    case EntityType::Player:
+        return true;
+    case EntityType::None:
+    case EntityType::Block:
+    case EntityType::GhostBall:
+    case EntityType::Bat:
+    case EntityType::Rock:
+    case EntityType::MouseTrailer:
+    case EntityType::JetPack:
+    case EntityType::Bomb:
+    case EntityType::Gold:
+    case EntityType::GoldStack:
+    case EntityType::StompPad:
+    case EntityType::Rope:
+    case EntityType::Pot:
+    case EntityType::Box:
+    case EntityType::BaseballBat:
+        return false;
+    }
+
+    return false;
+}
+
+unsigned int GetPickupMoneyValue(EntityType type_) {
+    switch (type_) {
+    case EntityType::Gold:
+        return 1;
+    case EntityType::GoldStack:
+        return 2;
+    default:
+        return 0;
+    }
+}
+
+std::optional<SoundEffect> GetPickupSound(EntityType type_) {
+    switch (type_) {
+    case EntityType::Gold:
+        return SoundEffect::Gold;
+    case EntityType::GoldStack:
+        return SoundEffect::GoldStack;
+    default:
+        return std::nullopt;
+    }
+}
+
+} // namespace
+
+bool TryCollectEntityFromContact(
     std::size_t entity_idx,
+    std::size_t other_entity_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const AABB aabb = GetContactAabbForEntity(entity, graphics);
-    const VID entity_vid = entity.vid;
-    const std::vector<VID> search_results = state.sid.QueryExclude(aabb.tl, aabb.br, entity_vid);
-    unsigned int money_gained = 0;
-    for (const VID& e_vid : search_results) {
-        if (const Entity* const pickup = state.entity_manager.GetEntity(e_vid)) {
-            switch (pickup->type_) {
-            case EntityType::Gold:
-                money_gained = 1;
-                audio.PlaySoundEffect(SoundEffect::Gold);
-                break;
-            case EntityType::GoldStack:
-                money_gained = 2;
-                audio.PlaySoundEffect(SoundEffect::GoldStack);
-                break;
-            default:
-                money_gained = 0;
-                break;
-            }
-        }
-        if (money_gained > 0) {
-            state.entity_manager.SetInactiveVid(e_vid);
-        }
-        Entity& mutable_entity = state.entity_manager.entities[entity_idx];
-        mutable_entity.money += money_gained;
+    if (entity_idx >= state.entity_manager.entities.size() ||
+        other_entity_idx >= state.entity_manager.entities.size()) {
+        return false;
     }
+
+    Entity& collector = state.entity_manager.entities[entity_idx];
+    if (!collector.active || !CanCollectPickups(collector)) {
+        return false;
+    }
+
+    const Entity* const pickup = state.entity_manager.GetEntity(state.entity_manager.entities[other_entity_idx].vid);
+    if (pickup == nullptr) {
+        return false;
+    }
+
+    const unsigned int money_gained = GetPickupMoneyValue(pickup->type_);
+    if (money_gained == 0) {
+        return false;
+    }
+
+    collector.money += money_gained;
+    if (const std::optional<SoundEffect> sound_effect = GetPickupSound(pickup->type_)) {
+        audio.PlaySoundEffect(*sound_effect);
+    }
+    state.entity_manager.SetInactive(other_entity_idx);
+    state.UpdateSidForEntity(other_entity_idx, graphics);
+    return true;
 }
 
 } // namespace splonks::entities::common

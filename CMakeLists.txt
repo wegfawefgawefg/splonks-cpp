@@ -159,6 +159,7 @@ add_executable(splonks-cpp
     src/entities/player.cpp
     src/entities/rock.cpp
     src/entities/rope.cpp
+    src/entities/stomp_pad.cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp
     src/graphics.cpp

@@ -378,6 +378,8 @@ const char* DebugLevelKindToString(DebugLevelKind kind) {
         return "Test1";
     case DebugLevelKind::HangTest:
         return "HangTest";
+    case DebugLevelKind::StompTest:
+        return "StompTest";
     }
     return "Unknown";
 }
@@ -414,6 +416,8 @@ const char* EntityTypeToString(EntityType type) {
         return "Gold";
     case EntityType::GoldStack:
         return "GoldStack";
+    case EntityType::StompPad:
+        return "StompPad";
     }
     return "Unknown";
 }

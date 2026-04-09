@@ -42,6 +42,7 @@ constexpr std::uint32_t kStageSettleFrames = 100;
 enum class DebugLevelKind {
     Test1,
     HangTest,
+    StompTest,
 };
 
 struct HangTestLevelConfig {

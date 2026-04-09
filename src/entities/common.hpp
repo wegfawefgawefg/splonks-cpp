@@ -105,8 +105,9 @@ const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphi
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);
 AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics);
-void CollectTouchingPickups(
+bool TryCollectEntityFromContact(
     std::size_t entity_idx,
+    std::size_t other_entity_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -117,12 +118,11 @@ void UpdateCarryAndBackItems(
     const Graphics& graphics,
     Audio& audio
 );
-bool TryStompEntitiesBelow(
+bool TryApplyStompContactToEntity(
     std::size_t entity_idx,
+    std::size_t other_entity_idx,
     State& state,
-    const Graphics& graphics,
-    Audio& audio,
-    float bounce_velocity
+    Audio& audio
 );
 void TryPushBlocks(
     std::size_t entity_idx,

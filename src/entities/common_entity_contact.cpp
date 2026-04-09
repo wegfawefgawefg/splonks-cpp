@@ -70,8 +70,31 @@ ContactResolution TryDispatchEntityEntityContactByType(
         return ContactResolution{};
     }
 
+    if (graphics != nullptr && audio != nullptr &&
+        TryCollectEntityFromContact(
+            participant_idx,
+            other_entity_idx,
+            state,
+            *graphics,
+            *audio
+        )) {
+        return ContactResolution{};
+    }
+
     switch (participant.type_) {
+    case EntityType::Player:
+        if (audio == nullptr ||
+            !TryApplyStompContactToEntity(participant_idx, other_entity_idx, state, *audio)) {
+            return ContactResolution{};
+        }
+        return ContactResolution{
+            .blocks_movement = false,
+            .stop_sweep = true,
+        };
     case EntityType::BaseballBat: {
+        if (graphics == nullptr || audio == nullptr) {
+            return ContactResolution{};
+        }
         const bool applied = baseball_bat::TryApplyBatContactToEntity(
             participant_idx, other_entity_idx, state, *graphics, *audio);
         return ContactResolution{
@@ -90,7 +113,6 @@ ContactResolution TryDispatchEntityEntityContactByType(
             .stop_sweep = true,
         };
     case EntityType::None:
-    case EntityType::Player:
     case EntityType::Block:
     case EntityType::GhostBall:
     case EntityType::Bat:
@@ -100,6 +122,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::Bomb:
     case EntityType::Gold:
     case EntityType::GoldStack:
+    case EntityType::StompPad:
     case EntityType::Rope:
         return ContactResolution{};
     }

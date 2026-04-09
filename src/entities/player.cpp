@@ -195,13 +195,6 @@ void StepEntityLogicAsPlayer(
         common::TryPushBlocks(entity_idx, state, graphics);
     }
 
-    if (!loss_of_control) {
-        common::TryStompEntitiesBelow(entity_idx, state, graphics, audio, kJumpImpulse);
-    }
-
-    //  PICK UPS: MONEY, ETC
-    common::CollectTouchingPickups(entity_idx, state, graphics, audio);
-
 }
 
 /** generalize this to all square or rectangular entities somehow */
