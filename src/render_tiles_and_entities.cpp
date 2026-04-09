@@ -38,8 +38,8 @@ SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, con
 
 } // namespace
 
-void RenderStageTiles(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
-    EnsureTerrainLightingCache(state, graphics);
+void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    EnsureTerrainLightingCache(state);
     const TileSet tile_set = TileSetForStageType(state.stage.stage_type);
     for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
         for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
@@ -120,8 +120,8 @@ void RenderStageTiles(SDL_Renderer* renderer, const State& state, Graphics& grap
     }
 }
 
-void RenderStageTileWrapper(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
-    EnsureTerrainLightingCache(state, graphics);
+void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    EnsureTerrainLightingCache(state);
     const TileSet tile_set = TileSetForStageType(state.stage.stage_type);
     const Vec2 visible_tl_wc = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom);
     const Vec2 visible_br_wc =

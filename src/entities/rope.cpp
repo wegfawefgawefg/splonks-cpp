@@ -34,6 +34,7 @@ void StepEntityLogicAsRope(
     Audio& audio,
     Graphics& graphics
 ) {
+    (void)graphics;
     Entity& rope = state.entity_manager.entities[entity_idx];
 
     // if rope is in use, initialize its timer, and set state to winding up
@@ -74,7 +75,7 @@ void StepEntityLogicAsRope(
                 if (tile == Tile::Air || tile == Tile::Rope || tile == Tile::Entrance) {
                     state.stage.SetTile(p, Tile::Rope);
                     graphics.ResetTileVariation(p);
-                    UpdateTerrainLightingCacheForTileChange(state, graphics, p);
+                    UpdateTerrainLightingCacheForTileChange(state, p);
                     atleast_one_tile_converted = true;
                 } else {
                     break;

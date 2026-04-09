@@ -116,6 +116,7 @@ void ApplyTerrainTileBrightness(
     int tile_x,
     int tile_y
 ) {
+    (void)graphics;
     if (texture == nullptr) {
         return;
     }
@@ -126,7 +127,7 @@ void ApplyTerrainTileBrightness(
         return;
     }
 
-    const TerrainLightingTile lighting = GetTerrainLightingTileForRender(state, graphics, tile_x, tile_y);
+    const TerrainLightingTile lighting = GetTerrainLightingTileForRender(state, tile_x, tile_y);
     SDL_SetTextureColorModFloat(
         texture,
         lighting.brightness,
@@ -142,12 +143,12 @@ void ApplyBackwallTileBrightness(
     int tile_x,
     int tile_y
 ) {
+    (void)graphics;
     if (texture == nullptr) {
         return;
     }
 
-    const BackwallLightingTile lighting =
-        GetBackwallLightingTileForRender(state, graphics, tile_x, tile_y);
+    const BackwallLightingTile lighting = GetBackwallLightingTileForRender(state, tile_x, tile_y);
     SDL_SetTextureColorModFloat(
         texture,
         lighting.brightness,
@@ -171,6 +172,7 @@ void RenderTerrainTileLighting(
     int tile_y,
     const SDL_FRect& dst
 ) {
+    (void)graphics;
     const PostProcessSettings& settings = state.settings.post_process;
     if (!settings.terrain_lighting) {
         return;
@@ -181,7 +183,7 @@ void RenderTerrainTileLighting(
         return;
     }
 
-    const TerrainLightingTile lighting = GetTerrainLightingTileForRender(state, graphics, tile_x, tile_y);
+    const TerrainLightingTile lighting = GetTerrainLightingTileForRender(state, tile_x, tile_y);
 
     if (settings.terrain_face_shading) {
         const float band_ratio = std::clamp(settings.terrain_face_band_size, 0.05F, 0.50F);

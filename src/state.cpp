@@ -44,6 +44,7 @@ State State::New() {
     state.special_effects.clear();
     state.sid = SID::New();
     state.next_stage = StageType::Test1;
+    state.stage_lighting = StageLighting::New();
     state.player_vid.reset();
     state.controlled_entity_vid.reset();
     state.mouse_trailer_vid.reset();

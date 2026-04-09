@@ -16,12 +16,7 @@ constexpr float kTravelSoundDistInterval = 8.0F;
 constexpr float kFuel = 120.0F;
 
 void SetEntityJetpack(Entity& entity);
-void StepEntityLogicAsJetpack(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio
-);
+void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsJetpack(
     std::size_t entity_idx,
     State& state,

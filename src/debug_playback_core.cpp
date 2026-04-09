@@ -70,7 +70,7 @@ void ExitPlayback(DebugPlayback& debug, State& state, Graphics& graphics) {
         RestoreGameplaySnapshot(*debug.live_resume_snapshot, state, graphics);
         debug.live_resume_snapshot.reset();
     }
-    InvalidateTerrainLightingCache(graphics);
+    InvalidateTerrainLightingCache(state);
 }
 
 namespace {
@@ -191,7 +191,7 @@ void RunSimulationWithDebugControls(
         debug_playback_internal::ClampPlaybackIndex(debug);
         if (!debug.recorded_snapshots.empty()) {
             RestoreGameplaySnapshot(debug.recorded_snapshots[debug.playback_index], state, graphics);
-            InvalidateTerrainLightingCache(graphics);
+            InvalidateTerrainLightingCache(state);
         }
         graphics.debug_lock_play_camera = true;
         return;

@@ -12,6 +12,7 @@
 #include "sid.hpp"
 #include "special_effects/special_effect.hpp"
 #include "stage.hpp"
+#include "stage_lighting.hpp"
 
 #include <cstdint>
 #include <array>
@@ -128,6 +129,7 @@ struct State {
     std::vector<std::unique_ptr<SpecialEffect>> special_effects;
     SID sid;
     Stage stage;
+    StageLighting stage_lighting;
     std::optional<VID> player_vid;
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;

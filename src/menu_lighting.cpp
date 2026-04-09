@@ -98,6 +98,7 @@ void ProcessInputLightingSettingsMenu(
     float dt
 ) {
     (void)window;
+    (void)graphics;
     (void)dt;
 
     const bool confirm_pressed = state.menu_inputs.confirm.pressed;
@@ -711,7 +712,7 @@ void ProcessInputLightingSettingsMenu(
     }
 
     if (invalidate_terrain_lighting_cache) {
-        InvalidateTerrainLightingCache(graphics);
+        InvalidateTerrainLightingCache(state);
     }
 }
 

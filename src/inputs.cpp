@@ -206,7 +206,7 @@ void ProcessInputPlaying(
     if (inputs.regenerate_level.pressed) {
         InitDebugLevel(state);
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(graphics);
+        InvalidateTerrainLightingCache(state);
     }
     (void)window;
     (void)graphics;
@@ -231,7 +231,7 @@ void ProcessInputStageTransition(
             state.stage = Stage::New(*state.next_stage);
             InitStage(state);
             graphics.ResetTileVariations();
-            InvalidateTerrainLightingCache(graphics);
+            InvalidateTerrainLightingCache(state);
             state.scene_frame = 0;
             state.SetMode(Mode::Playing);
         } else {
@@ -256,7 +256,7 @@ void ProcessInputGameOver(
             state.next_stage = StageType::Cave1;
         }
         graphics.camera.rotation = 0.0F;
-        InvalidateTerrainLightingCache(graphics);
+        InvalidateTerrainLightingCache(state);
         state.SetMode(Mode::StageTransition);
     }
 }
@@ -275,7 +275,7 @@ void ProcessInputWin(
         state.scene_frame >= (60 * 5)) {
         state.stage = Stage::NewBlank();
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(graphics);
+        InvalidateTerrainLightingCache(state);
         state.SetMode(Mode::Title);
     }
     (void)graphics;

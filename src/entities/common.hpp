@@ -55,7 +55,6 @@ void DoExplosion(
     Vec2 center,
     float size,
     State& state,
-    Graphics& graphics,
     Audio& audio
 );
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);

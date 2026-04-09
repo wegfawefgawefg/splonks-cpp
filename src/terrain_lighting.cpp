@@ -1,6 +1,5 @@
 #include "terrain_lighting.hpp"
 
-#include "graphics.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 
@@ -277,32 +276,32 @@ BackwallLightingTile BuildBackwallLightingTile(const State& state, int tile_x, i
     return result;
 }
 
-void EnsureTerrainLightingCacheShape(const State& state, Graphics& graphics) {
+void EnsureTerrainLightingCacheShape(State& state) {
     const std::size_t tile_height = state.stage.tiles.size();
     const std::size_t tile_width =
         tile_height == 0 ? 0 : state.stage.tiles.front().size();
     const bool terrain_shape_matches =
-        graphics.terrain_lighting_cache.tiles.size() == tile_height &&
+        state.stage_lighting.terrain.tiles.size() == tile_height &&
         (tile_height == 0 ||
-         graphics.terrain_lighting_cache.tiles.front().size() == tile_width);
+         state.stage_lighting.terrain.tiles.front().size() == tile_width);
     const bool backwall_shape_matches =
-        graphics.backwall_lighting_cache.tiles.size() == tile_height &&
+        state.stage_lighting.backwall.tiles.size() == tile_height &&
         (tile_height == 0 ||
-         graphics.backwall_lighting_cache.tiles.front().size() == tile_width);
+         state.stage_lighting.backwall.tiles.front().size() == tile_width);
     if (terrain_shape_matches && backwall_shape_matches) {
         return;
     }
 
-    graphics.terrain_lighting_cache.tiles.assign(
+    state.stage_lighting.terrain.tiles.assign(
         tile_height,
         std::vector<TerrainLightingTile>(tile_width)
     );
-    graphics.backwall_lighting_cache.tiles.assign(
+    state.stage_lighting.backwall.tiles.assign(
         tile_height,
         std::vector<BackwallLightingTile>(tile_width)
     );
-    graphics.terrain_lighting_cache.valid = false;
-    graphics.backwall_lighting_cache.valid = false;
+    state.stage_lighting.terrain.valid = false;
+    state.stage_lighting.backwall.valid = false;
 }
 
 } // namespace
@@ -315,22 +314,29 @@ BackwallLightingCache BackwallLightingCache::New() {
     return BackwallLightingCache{};
 }
 
-void InvalidateTerrainLightingCache(Graphics& graphics) {
-    graphics.terrain_lighting_cache.valid = false;
-    graphics.backwall_lighting_cache.valid = false;
+StageLighting StageLighting::New() {
+    StageLighting lighting;
+    lighting.terrain = TerrainLightingCache::New();
+    lighting.backwall = BackwallLightingCache::New();
+    return lighting;
 }
 
-void RebuildTerrainLightingCache(const State& state, Graphics& graphics) {
-    EnsureTerrainLightingCacheShape(state, graphics);
+void InvalidateTerrainLightingCache(State& state) {
+    state.stage_lighting.terrain.valid = false;
+    state.stage_lighting.backwall.valid = false;
+}
 
-    for (std::size_t y = 0; y < graphics.terrain_lighting_cache.tiles.size(); ++y) {
-        for (std::size_t x = 0; x < graphics.terrain_lighting_cache.tiles[y].size(); ++x) {
-            graphics.terrain_lighting_cache.tiles[y][x] = BuildTerrainLightingTile(
+void RebuildTerrainLightingCache(State& state) {
+    EnsureTerrainLightingCacheShape(state);
+
+    for (std::size_t y = 0; y < state.stage_lighting.terrain.tiles.size(); ++y) {
+        for (std::size_t x = 0; x < state.stage_lighting.terrain.tiles[y].size(); ++x) {
+            state.stage_lighting.terrain.tiles[y][x] = BuildTerrainLightingTile(
                 state,
                 static_cast<int>(x),
                 static_cast<int>(y)
             );
-            graphics.backwall_lighting_cache.tiles[y][x] = BuildBackwallLightingTile(
+            state.stage_lighting.backwall.tiles[y][x] = BuildBackwallLightingTile(
                 state,
                 static_cast<int>(x),
                 static_cast<int>(y)
@@ -338,25 +344,21 @@ void RebuildTerrainLightingCache(const State& state, Graphics& graphics) {
         }
     }
 
-    graphics.terrain_lighting_cache.valid = true;
-    graphics.backwall_lighting_cache.valid = true;
+    state.stage_lighting.terrain.valid = true;
+    state.stage_lighting.backwall.valid = true;
 }
 
-void EnsureTerrainLightingCache(const State& state, Graphics& graphics) {
-    EnsureTerrainLightingCacheShape(state, graphics);
-    if (!graphics.terrain_lighting_cache.valid || !graphics.backwall_lighting_cache.valid) {
-        RebuildTerrainLightingCache(state, graphics);
+void EnsureTerrainLightingCache(State& state) {
+    EnsureTerrainLightingCacheShape(state);
+    if (!state.stage_lighting.terrain.valid || !state.stage_lighting.backwall.valid) {
+        RebuildTerrainLightingCache(state);
     }
 }
 
-void UpdateTerrainLightingCacheForTileChange(
-    const State& state,
-    Graphics& graphics,
-    const IVec2& tile_pos
-) {
-    EnsureTerrainLightingCacheShape(state, graphics);
-    if (!graphics.terrain_lighting_cache.valid) {
-        RebuildTerrainLightingCache(state, graphics);
+void UpdateTerrainLightingCacheForTileChange(State& state, const IVec2& tile_pos) {
+    EnsureTerrainLightingCacheShape(state);
+    if (!state.stage_lighting.terrain.valid || !state.stage_lighting.backwall.valid) {
+        RebuildTerrainLightingCache(state);
         return;
     }
 
@@ -373,49 +375,39 @@ void UpdateTerrainLightingCacheForTileChange(
 
     for (int y = min_y; y <= max_y; ++y) {
         for (int x = min_x; x <= max_x; ++x) {
-            graphics.terrain_lighting_cache.tiles[static_cast<std::size_t>(y)]
-                                               [static_cast<std::size_t>(x)] =
+            state.stage_lighting.terrain.tiles[static_cast<std::size_t>(y)]
+                                             [static_cast<std::size_t>(x)] =
                 BuildTerrainLightingTile(state, x, y);
-            graphics.backwall_lighting_cache.tiles[static_cast<std::size_t>(y)]
-                                                 [static_cast<std::size_t>(x)] =
+            state.stage_lighting.backwall.tiles[static_cast<std::size_t>(y)]
+                                              [static_cast<std::size_t>(x)] =
                 BuildBackwallLightingTile(state, x, y);
         }
     }
 }
 
-TerrainLightingTile GetTerrainLightingTileForRender(
-    const State& state,
-    const Graphics& graphics,
-    int tile_x,
-    int tile_y
-) {
+TerrainLightingTile GetTerrainLightingTileForRender(const State& state, int tile_x, int tile_y) {
     if (tile_x >= 0 && tile_y >= 0 &&
-        tile_x < static_cast<int>(graphics.terrain_lighting_cache.tiles.empty()
+        tile_x < static_cast<int>(state.stage_lighting.terrain.tiles.empty()
                                       ? 0
-                                      : graphics.terrain_lighting_cache.tiles.front().size()) &&
-        tile_y < static_cast<int>(graphics.terrain_lighting_cache.tiles.size()) &&
-        graphics.terrain_lighting_cache.valid) {
-        return graphics.terrain_lighting_cache.tiles[static_cast<std::size_t>(tile_y)]
-                                                  [static_cast<std::size_t>(tile_x)];
+                                      : state.stage_lighting.terrain.tiles.front().size()) &&
+        tile_y < static_cast<int>(state.stage_lighting.terrain.tiles.size()) &&
+        state.stage_lighting.terrain.valid) {
+        return state.stage_lighting.terrain.tiles[static_cast<std::size_t>(tile_y)]
+                                               [static_cast<std::size_t>(tile_x)];
     }
 
     return BuildTerrainLightingTile(state, tile_x, tile_y);
 }
 
-BackwallLightingTile GetBackwallLightingTileForRender(
-    const State& state,
-    const Graphics& graphics,
-    int tile_x,
-    int tile_y
-) {
+BackwallLightingTile GetBackwallLightingTileForRender(const State& state, int tile_x, int tile_y) {
     if (tile_x >= 0 && tile_y >= 0 &&
-        tile_x < static_cast<int>(graphics.backwall_lighting_cache.tiles.empty()
+        tile_x < static_cast<int>(state.stage_lighting.backwall.tiles.empty()
                                       ? 0
-                                      : graphics.backwall_lighting_cache.tiles.front().size()) &&
-        tile_y < static_cast<int>(graphics.backwall_lighting_cache.tiles.size()) &&
-        graphics.backwall_lighting_cache.valid) {
-        return graphics.backwall_lighting_cache.tiles[static_cast<std::size_t>(tile_y)]
-                                                   [static_cast<std::size_t>(tile_x)];
+                                      : state.stage_lighting.backwall.tiles.front().size()) &&
+        tile_y < static_cast<int>(state.stage_lighting.backwall.tiles.size()) &&
+        state.stage_lighting.backwall.valid) {
+        return state.stage_lighting.backwall.tiles[static_cast<std::size_t>(tile_y)]
+                                                [static_cast<std::size_t>(tile_x)];
     }
 
     return BuildBackwallLightingTile(state, tile_x, tile_y);

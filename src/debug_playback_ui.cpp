@@ -280,7 +280,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     if (ImGui::Button("Regenerate")) {
         InitDebugLevel(state);
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(graphics);
+        InvalidateTerrainLightingCache(state);
     }
 
     if (debug.playback_active) {
@@ -468,6 +468,7 @@ void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics
 }
 
 void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+    (void)graphics;
     if (!debug.lighting_settings_window_visible) {
         return;
     }
@@ -617,7 +618,7 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
     );
 
     if (changed) {
-        InvalidateTerrainLightingCache(graphics);
+        InvalidateTerrainLightingCache(state);
         SaveSettings(state.settings);
     }
 
