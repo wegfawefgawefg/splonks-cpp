@@ -98,7 +98,7 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
         bat.super_state != EntitySuperState::Crushed) {
         if (!steering && IsAtPerchOrRoof(bat, state)) {
             bat.super_state = EntitySuperState::Idle;
-            bat.display_state = EntityDisplayState::Neutral;
+            TrySetDisplayState(bat, EntityDisplayState::Neutral);
             bat.acc = Vec2::New(0.0F, 0.0F);
             bat.vel = Vec2::New(0.0F, 0.0F);
             return;
@@ -112,7 +112,7 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
         }
 
         bat.super_state = EntitySuperState::Pursuing;
-        bat.display_state = EntityDisplayState::Fly;
+        TrySetDisplayState(bat, EntityDisplayState::Fly);
         bat.acc = Vec2::New(0.0F, 0.0F);
         if (control.left) {
             bat.acc.x -= kChaseSpeed;
@@ -173,7 +173,7 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
             //  go to the target
             mutable_bat.super_state = EntitySuperState::Pursuing;
             mutable_bat.acc += NormalizeOrZero(*target_position - mutable_bat.pos) * kChaseSpeed;
-            mutable_bat.display_state = EntityDisplayState::Fly;
+            TrySetDisplayState(mutable_bat, EntityDisplayState::Fly);
         } else {
             //  Go Back To Your Perch, (straight up from here lol)
             mutable_bat.super_state = EntitySuperState::Returning;
@@ -183,12 +183,12 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
                 mutable_bat.super_state = EntitySuperState::Idle;
                 mutable_bat.acc = Vec2::New(0.0F, 0.0F);
                 mutable_bat.vel = Vec2::New(0.0F, 0.0F);
-                mutable_bat.display_state = EntityDisplayState::Neutral;
+                TrySetDisplayState(mutable_bat, EntityDisplayState::Neutral);
             } else {
                 //  keep going up till you get there
                 mutable_bat.acc += Vec2::New(0.0F, -2.0F);
                 mutable_bat.vel.x = 0.0F;
-                mutable_bat.display_state = EntityDisplayState::Fly;
+                TrySetDisplayState(mutable_bat, EntityDisplayState::Fly);
             }
         }
         if (mutable_bat.vel.x < 0.0F) {

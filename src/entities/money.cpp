@@ -11,7 +11,7 @@ void SetEntityMoney(Entity& entity, EntityType type_) {
     entity.Reset();
     entity.type_ = type_;
     entity.super_state = EntitySuperState::Idle;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.size = GetSize(type_);
     entity.health = 1;
     entity.damage_vulnerability = DamageVulnerability::CrushingOnly;

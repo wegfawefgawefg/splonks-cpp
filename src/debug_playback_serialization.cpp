@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 26;
+constexpr std::uint32_t kRecordingVersion = 27;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -420,6 +420,60 @@ const char* EntityTypeToString(EntityType type) {
         return "GoldStack";
     case EntityType::StompPad:
         return "StompPad";
+    case EntityType::AltarLeft:
+        return "AltarLeft";
+    case EntityType::AltarRight:
+        return "AltarRight";
+    case EntityType::SacAltarLeft:
+        return "SacAltarLeft";
+    case EntityType::SacAltarRight:
+        return "SacAltarRight";
+    case EntityType::GoldIdol:
+        return "GoldIdol";
+    case EntityType::Chest:
+        return "Chest";
+    case EntityType::Mattock:
+        return "Mattock";
+    case EntityType::Dice:
+        return "Dice";
+    case EntityType::RubyBig:
+        return "RubyBig";
+    case EntityType::Shopkeeper:
+        return "Shopkeeper";
+    case EntityType::Damsel:
+        return "Damsel";
+    case EntityType::SignGeneral:
+        return "SignGeneral";
+    case EntityType::SignBomb:
+        return "SignBomb";
+    case EntityType::SignWeapon:
+        return "SignWeapon";
+    case EntityType::SignRare:
+        return "SignRare";
+    case EntityType::SignClothing:
+        return "SignClothing";
+    case EntityType::SignCraps:
+        return "SignCraps";
+    case EntityType::SignKissing:
+        return "SignKissing";
+    case EntityType::Lantern:
+        return "Lantern";
+    case EntityType::LanternRed:
+        return "LanternRed";
+    case EntityType::GiantTikiHead:
+        return "GiantTikiHead";
+    case EntityType::ArrowTrap:
+        return "ArrowTrap";
+    case EntityType::Snake:
+        return "Snake";
+    case EntityType::Caveman:
+        return "Caveman";
+    case EntityType::SpiderHang:
+        return "SpiderHang";
+    case EntityType::GiantSpiderHang:
+        return "GiantSpiderHang";
+    case EntityType::Scarab:
+        return "Scarab";
     }
     return "Unknown";
 }

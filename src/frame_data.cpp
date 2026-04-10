@@ -1,4 +1,5 @@
 #include "frame_data.hpp"
+#include "tile.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -6,6 +7,34 @@
 namespace splonks {
 
 namespace {
+
+std::string FormatRawFrameDataLocation(const RawFrameData& raw_frame_data) {
+    const int cell_x = raw_frame_data.aabb.x / static_cast<int>(kTileSize);
+    const int cell_y = raw_frame_data.aabb.y / static_cast<int>(kTileSize);
+    const int in_cell_x = raw_frame_data.aabb.x % static_cast<int>(kTileSize);
+    const int in_cell_y = raw_frame_data.aabb.y % static_cast<int>(kTileSize);
+
+    std::string details;
+    if (!raw_frame_data.path.empty()) {
+        details += raw_frame_data.path;
+        details += " ";
+    }
+    details += "aabb(" + std::to_string(raw_frame_data.aabb.x) + "," +
+               std::to_string(raw_frame_data.aabb.y) + "," +
+               std::to_string(raw_frame_data.aabb.w) + "," +
+               std::to_string(raw_frame_data.aabb.h) + ")";
+    details += " cell(" + std::to_string(cell_x) + "," + std::to_string(cell_y) + ")";
+    details += " offset(" + std::to_string(in_cell_x) + "," + std::to_string(in_cell_y) + ")";
+
+    if (!raw_frame_data.source_yaml_path.empty() && raw_frame_data.source_line > 0) {
+        return raw_frame_data.source_yaml_path + ":" +
+               std::to_string(raw_frame_data.source_line) + " [" + details + "]";
+    }
+    if (raw_frame_data.source_line > 0) {
+        return "line " + std::to_string(raw_frame_data.source_line) + " [" + details + "]";
+    }
+    return "unknown location [" + details + "]";
+}
 
 FrameRect DefaultBoxFromSampleRect(const FrameRect& sample_rect) {
     return FrameRect{
@@ -18,19 +47,28 @@ FrameRect DefaultBoxFromSampleRect(const FrameRect& sample_rect) {
 
 void ValidateRawFrameData(const RawFrameData& raw_frame_data) {
     if (raw_frame_data.path.empty()) {
-        throw std::runtime_error("FrameData conversion error: frame path is empty");
+        throw std::runtime_error(
+            "FrameData conversion error at " + FormatRawFrameDataLocation(raw_frame_data) +
+            ": frame path is empty"
+        );
     }
     if (raw_frame_data.name.empty()) {
-        throw std::runtime_error("FrameData conversion error: frame name is empty");
+        throw std::runtime_error(
+            "FrameData conversion error at " + FormatRawFrameDataLocation(raw_frame_data) +
+            ": frame name is empty"
+        );
     }
     if (raw_frame_data.frame < 0) {
         throw std::runtime_error(
-            "FrameData conversion error: frame index is negative for " + raw_frame_data.name);
+            "FrameData conversion error at " + FormatRawFrameDataLocation(raw_frame_data) +
+            ": frame index is negative for " + raw_frame_data.name
+        );
     }
     if (raw_frame_data.aabb.w <= 0 || raw_frame_data.aabb.h <= 0) {
         throw std::runtime_error(
-            "FrameData conversion error: sample rect has non-positive size for " +
-            raw_frame_data.name);
+            "FrameData conversion error at " + FormatRawFrameDataLocation(raw_frame_data) +
+            ": sample rect has non-positive size for " + raw_frame_data.name
+        );
     }
 }
 
@@ -97,11 +135,17 @@ FrameDataDb FrameDataDb::FromRaw(const RawFrameDataFile& raw_file) {
             if (previous.frame == current.frame) {
                 throw std::runtime_error(
                     "FrameData conversion error: duplicate frame index " +
-                    std::to_string(current.frame) + " for " + name);
+                    std::to_string(current.frame) + " for " + name + " at " +
+                    FormatRawFrameDataLocation(raw_file.sprites[frame_indices[i - 1]]) + " and " +
+                    FormatRawFrameDataLocation(raw_file.sprites[frame_indices[i]])
+                );
             }
             if (previous.tile != current.tile) {
                 throw std::runtime_error(
-                    "FrameData conversion error: mixed tile flag values for " + name);
+                    "FrameData conversion error: mixed tile flag values for " + name + " at " +
+                    FormatRawFrameDataLocation(raw_file.sprites[frame_indices[i - 1]]) + " and " +
+                    FormatRawFrameDataLocation(raw_file.sprites[frame_indices[i]])
+                );
             }
         }
 
@@ -115,7 +159,9 @@ FrameDataDb FrameDataDb::FromRaw(const RawFrameDataFile& raw_file) {
         const auto animation_id_found = database.animation_indices_by_id.find(animation.animation_id);
         if (animation_id_found != database.animation_indices_by_id.end() &&
             database.animations[animation_id_found->second].name != animation.name) {
-            throw std::runtime_error("FrameData conversion error: animation id collision for " + name);
+            throw std::runtime_error(
+                "FrameData conversion error: animation id collision for " + name
+            );
         }
         database.animation_indices_by_id[animation.animation_id] = database.animations.size();
         database.animations.push_back(std::move(animation));

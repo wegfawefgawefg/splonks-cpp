@@ -20,7 +20,7 @@ void SetEntityMouseTrailer(Entity& entity) {
     entity.damage_vulnerability = DamageVulnerability::Immune;
     entity.super_state = EntitySuperState::Idle;
     entity.state = EntityState::Projectile;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.facing = LeftOrRight::Left;
     entity.alignment = Alignment::Neutral;
     entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);

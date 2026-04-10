@@ -132,11 +132,15 @@ add_executable(splonks-cpp
     src/entity.cpp
     src/entity_display_states.cpp
     src/entity_manager.cpp
+    src/entities/altar.cpp
+    src/entities/arrow_trap.cpp
     src/entities/baseball_bat.cpp
     src/entities/bat.cpp
     src/entities/block.cpp
     src/entities/bomb.cpp
     src/entities/breakaway_container.cpp
+    src/entities/caveman.cpp
+    src/entities/chest.cpp
     src/entities/common_damage.cpp
     src/entities/common_frame.cpp
     src/entities/common_hang.cpp
@@ -151,14 +155,27 @@ add_executable(splonks-cpp
     src/entities/common_carry.cpp
     src/entities/common_throw.cpp
     src/entities/common_tool_use.cpp
+    src/entities/damsel.cpp
+    src/entities/dice.cpp
     src/entities/ghost_ball.cpp
+    src/entities/giant_tiki_head.cpp
+    src/entities/gold_idol.cpp
     src/entities/jetpack.cpp
+    src/entities/lantern.cpp
+    src/entities/mattock.cpp
     src/entities/mod.cpp
     src/entities/money.cpp
     src/entities/mouse_trailer.cpp
     src/entities/player.cpp
     src/entities/rock.cpp
     src/entities/rope.cpp
+    src/entities/ruby_big.cpp
+    src/entities/sac_altar.cpp
+    src/entities/scarab.cpp
+    src/entities/shopkeeper.cpp
+    src/entities/sign.cpp
+    src/entities/snake.cpp
+    src/entities/spider_hang.cpp
     src/entities/stomp_pad.cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp

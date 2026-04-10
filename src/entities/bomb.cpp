@@ -10,7 +10,7 @@ namespace splonks::entities::bomb {
 void SetEntityBomb(Entity& entity) {
     entity.Reset();
     entity.type_ = EntityType::Bomb;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.size = Vec2::New(8.0F, 6.0F);
     entity.health = 1;
     entity.has_physics = true;
@@ -37,7 +37,7 @@ void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
     if (bomb.state == EntityState::InUse) {
         bomb.counter_a = 144.0F;
         bomb.state = EntityState::WindingUp;
-        bomb.display_state = EntityDisplayState::Stunned;
+        TrySetDisplayState(bomb, EntityDisplayState::Stunned);
         bomb.frame_data_animator.SetAnimation(frame_data_ids::LiveGrenade);
     }
 

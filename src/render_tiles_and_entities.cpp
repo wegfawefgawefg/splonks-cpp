@@ -36,6 +36,22 @@ SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, con
     };
 }
 
+bool ShouldRenderBackgroundStamp(const State& state, const BackgroundStamp& stamp) {
+    switch (stamp.condition) {
+    case BackgroundStampCondition::None:
+        return true;
+    case BackgroundStampCondition::Wanted:
+        for (const Entity& entity : state.entity_manager.entities) {
+            if (entity.active && entity.wanted) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    return true;
+}
+
 } // namespace
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -178,6 +194,55 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
     }
 }
 
+void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    EnsureTerrainLightingCache(state);
+    for (const BackgroundStamp& stamp : state.stage.background_stamps) {
+        if (stamp.animation_id == kInvalidFrameDataId) {
+            continue;
+        }
+        if (!ShouldRenderBackgroundStamp(state, stamp)) {
+            continue;
+        }
+
+        const FrameDataAnimation* const animation =
+            graphics.frame_data_db.FindAnimation(stamp.animation_id);
+        if (animation == nullptr || animation->frame_indices.empty()) {
+            continue;
+        }
+
+        const FrameData& frame_data = graphics.frame_data_db.frames[animation->frame_indices[0]];
+        SDL_Texture* const sprite_texture = graphics.GetFrameDataTexture(frame_data.image_id);
+        if (sprite_texture == nullptr) {
+            continue;
+        }
+
+        const SDL_FRect src{
+            static_cast<float>(frame_data.sample_rect.x),
+            static_cast<float>(frame_data.sample_rect.y),
+            static_cast<float>(frame_data.sample_rect.w),
+            static_cast<float>(frame_data.sample_rect.h),
+        };
+        const SDL_FRect dst = WorldRectToScreen(
+            graphics,
+            stamp.pos,
+            Vec2::New(
+                static_cast<float>(frame_data.sample_rect.w),
+                static_cast<float>(frame_data.sample_rect.h)
+            )
+        );
+
+        const int tile_x =
+            static_cast<int>((stamp.pos.x + (static_cast<float>(frame_data.sample_rect.w) * 0.5F)) /
+                             static_cast<float>(kTileSize));
+        const int tile_y =
+            static_cast<int>((stamp.pos.y + (static_cast<float>(frame_data.sample_rect.h) * 0.5F)) /
+                             static_cast<float>(kTileSize));
+        ApplyBackwallTileBrightness(sprite_texture, state, graphics, tile_x, tile_y);
+        SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
+        ResetTerrainTileBrightness(sprite_texture);
+    }
+}
+
 void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
     std::vector<std::size_t> draw_queue;
     std::vector<std::size_t> next_draw_queue;
@@ -200,64 +265,56 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                 continue;
             }
 
-            if (entity.frame_data_animator.HasAnimation()) {
-                const FrameDataAnimation* const animation =
-                    graphics.frame_data_db.FindAnimation(entity.frame_data_animator.animation_id);
-                if (animation == nullptr || animation->frame_indices.empty()) {
-                    continue;
-                }
-
-                std::size_t frame_index = entity.frame_data_animator.current_frame;
-                if (frame_index >= animation->frame_indices.size()) {
-                    frame_index = 0;
-                }
-                const FrameData& frame_data =
-                    graphics.frame_data_db.frames[animation->frame_indices[frame_index]];
-                SDL_Texture* const sprite_texture =
-                    graphics.GetFrameDataTexture(frame_data.image_id);
-                if (sprite_texture == nullptr) {
-                    continue;
-                }
-
-                const Vec2 sprite_world_size = Vec2::New(
-                    static_cast<float>(frame_data.sample_rect.w),
-                    static_cast<float>(frame_data.sample_rect.h)
-                );
-                const Vec2 sprite_scaled_size =
-                    sprite_world_size * entity.frame_data_animator.scale;
-                const Vec2 render_position =
-                    entities::common::GetSpriteTopLeftForEntity(entity, frame_data);
-
-                const SDL_FRect src{
-                    static_cast<float>(frame_data.sample_rect.x),
-                    static_cast<float>(frame_data.sample_rect.y),
-                    static_cast<float>(frame_data.sample_rect.w),
-                    static_cast<float>(frame_data.sample_rect.h),
-                };
-                SDL_FRect dst = WorldRectToScreen(graphics, render_position, sprite_scaled_size);
-                const SDL_FlipMode flip =
-                    entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-                SDL_RenderTextureRotated(
-                    renderer,
-                    sprite_texture,
-                    &src,
-                    &dst,
-                    0.0,
-                    nullptr,
-                    flip
-                );
-                if (entity.stone) {
-                    const AABB stone_overlay_aabb = entity.GetAABB();
-                    RenderStoneEntityOverlay(
-                        renderer,
-                        state,
-                        graphics,
-                        stone_overlay_aabb.tl,
-                        stone_overlay_aabb.br - stone_overlay_aabb.tl + Vec2::New(1.0F, 1.0F)
-                    );
-                }
+            const FrameData* const frame_data =
+                entities::common::GetCurrentFrameDataForEntity(entity, graphics);
+            if (frame_data == nullptr) {
                 continue;
             }
+
+            SDL_Texture* const sprite_texture =
+                graphics.GetFrameDataTexture(frame_data->image_id);
+            if (sprite_texture == nullptr) {
+                continue;
+            }
+
+            const Vec2 sprite_world_size = Vec2::New(
+                static_cast<float>(frame_data->sample_rect.w),
+                static_cast<float>(frame_data->sample_rect.h)
+            );
+            const Vec2 sprite_scaled_size =
+                sprite_world_size * entity.frame_data_animator.scale;
+            const Vec2 render_position =
+                entities::common::GetSpriteTopLeftForEntity(entity, *frame_data);
+
+            const SDL_FRect src{
+                static_cast<float>(frame_data->sample_rect.x),
+                static_cast<float>(frame_data->sample_rect.y),
+                static_cast<float>(frame_data->sample_rect.w),
+                static_cast<float>(frame_data->sample_rect.h),
+            };
+            SDL_FRect dst = WorldRectToScreen(graphics, render_position, sprite_scaled_size);
+            const SDL_FlipMode flip =
+                entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+            SDL_RenderTextureRotated(
+                renderer,
+                sprite_texture,
+                &src,
+                &dst,
+                0.0,
+                nullptr,
+                flip
+            );
+            if (entity.stone) {
+                const AABB stone_overlay_aabb = entity.GetAABB();
+                RenderStoneEntityOverlay(
+                    renderer,
+                    state,
+                    graphics,
+                    stone_overlay_aabb.tl,
+                    stone_overlay_aabb.br - stone_overlay_aabb.tl + Vec2::New(1.0F, 1.0F)
+                );
+            }
+            continue;
 
         }
     }

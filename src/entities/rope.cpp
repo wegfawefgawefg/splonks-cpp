@@ -41,7 +41,7 @@ void StepEntityLogicAsRope(
     if (rope.state == EntityState::InUse) {
         rope.counter_a = 16.0F;
         rope.state = EntityState::WindingUp;
-        rope.display_state = EntityDisplayState::Neutral;
+        TrySetDisplayState(rope, EntityDisplayState::Neutral);
         rope.frame_data_animator.SetAnimation(frame_data_ids::UnfoldingRope);
     }
 

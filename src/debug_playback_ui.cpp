@@ -772,6 +772,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             DisableStone(entity);
         }
     }
+    ImGui::Checkbox("Wanted", &entity.wanted);
     ImGui::Checkbox("Crusher/Pusher", &entity.crusher_pusher);
     ImGui::Text("Facing: %s", LeftOrRightToString(entity.facing));
     ImGui::Text("Grounded: %s", entity.grounded ? "true" : "false");

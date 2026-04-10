@@ -1,18 +1,35 @@
 #include "step_entities.hpp"
 
+#include "entities/altar.hpp"
+#include "entities/arrow_trap.hpp"
 #include "entities/baseball_bat.hpp"
 #include "entities/bat.hpp"
 #include "entities/block.hpp"
 #include "entities/bomb.hpp"
 #include "entities/breakaway_container.hpp"
+#include "entities/caveman.hpp"
+#include "entities/chest.hpp"
 #include "entities/common.hpp"
+#include "entities/damsel.hpp"
+#include "entities/dice.hpp"
 #include "entities/ghost_ball.hpp"
+#include "entities/giant_tiki_head.hpp"
+#include "entities/gold_idol.hpp"
 #include "entities/jetpack.hpp"
+#include "entities/lantern.hpp"
+#include "entities/mattock.hpp"
 #include "entities/money.hpp"
 #include "entities/mouse_trailer.hpp"
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 #include "entities/rope.hpp"
+#include "entities/ruby_big.hpp"
+#include "entities/sac_altar.hpp"
+#include "entities/scarab.hpp"
+#include "entities/shopkeeper.hpp"
+#include "entities/sign.hpp"
+#include "entities/snake.hpp"
+#include "entities/spider_hang.hpp"
 #include "entities/stomp_pad.hpp"
 
 namespace splonks {
@@ -121,6 +138,67 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             case EntityType::StompPad:
                 entities::stomp_pad::StepEntityLogicAsStompPad(entity_idx, state, audio);
                 break;
+            case EntityType::AltarLeft:
+            case EntityType::AltarRight:
+                entities::altar::StepEntityLogicAsAltar(entity_idx, state, audio);
+                break;
+            case EntityType::SacAltarLeft:
+            case EntityType::SacAltarRight:
+                entities::sac_altar::StepEntityLogicAsSacAltar(entity_idx, state, audio);
+                break;
+            case EntityType::GoldIdol:
+                entities::gold_idol::StepEntityLogicAsGoldIdol(entity_idx, state, audio);
+                break;
+            case EntityType::Chest:
+                entities::chest::StepEntityLogicAsChest(entity_idx, state, audio);
+                break;
+            case EntityType::Mattock:
+                entities::mattock::StepEntityLogicAsMattock(entity_idx, state, audio);
+                break;
+            case EntityType::Dice:
+                entities::dice::StepEntityLogicAsDice(entity_idx, state, audio);
+                break;
+            case EntityType::RubyBig:
+                entities::ruby_big::StepEntityLogicAsRubyBig(entity_idx, state, audio);
+                break;
+            case EntityType::Shopkeeper:
+                entities::shopkeeper::StepEntityLogicAsShopkeeper(entity_idx, state, audio);
+                break;
+            case EntityType::Damsel:
+                entities::damsel::StepEntityLogicAsDamsel(entity_idx, state, audio);
+                break;
+            case EntityType::SignGeneral:
+            case EntityType::SignBomb:
+            case EntityType::SignWeapon:
+            case EntityType::SignRare:
+            case EntityType::SignClothing:
+            case EntityType::SignCraps:
+            case EntityType::SignKissing:
+                entities::sign::StepEntityLogicAsSign(entity_idx, state, audio);
+                break;
+            case EntityType::Lantern:
+            case EntityType::LanternRed:
+                entities::lantern::StepEntityLogicAsLantern(entity_idx, state, audio);
+                break;
+            case EntityType::GiantTikiHead:
+                entities::giant_tiki_head::StepEntityLogicAsGiantTikiHead(entity_idx, state, audio);
+                break;
+            case EntityType::ArrowTrap:
+                entities::arrow_trap::StepEntityLogicAsArrowTrap(entity_idx, state, audio);
+                break;
+            case EntityType::Snake:
+                entities::snake::StepEntityLogicAsSnake(entity_idx, state, audio);
+                break;
+            case EntityType::Caveman:
+                entities::caveman::StepEntityLogicAsCaveman(entity_idx, state, audio);
+                break;
+            case EntityType::SpiderHang:
+            case EntityType::GiantSpiderHang:
+                entities::spider_hang::StepEntityLogicAsSpiderHang(entity_idx, state, audio);
+                break;
+            case EntityType::Scarab:
+                entities::scarab::StepEntityLogicAsScarab(entity_idx, state, audio);
+                break;
             }
             entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
 
@@ -174,6 +252,64 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                         audio,
                         dt
                     );
+                    break;
+                case EntityType::AltarLeft:
+                case EntityType::AltarRight:
+                case EntityType::SacAltarLeft:
+                case EntityType::SacAltarRight:
+                case EntityType::SignGeneral:
+                case EntityType::SignBomb:
+                case EntityType::SignWeapon:
+                case EntityType::SignRare:
+                case EntityType::SignClothing:
+                case EntityType::SignCraps:
+                case EntityType::SignKissing:
+                case EntityType::Lantern:
+                case EntityType::LanternRed:
+                case EntityType::GiantTikiHead:
+                case EntityType::ArrowTrap:
+                    break;
+                case EntityType::GoldIdol:
+                    entities::gold_idol::StepEntityPhysicsAsGoldIdol(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Chest:
+                    entities::chest::StepEntityPhysicsAsChest(entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Mattock:
+                    entities::mattock::StepEntityPhysicsAsMattock(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Dice:
+                    entities::dice::StepEntityPhysicsAsDice(entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::RubyBig:
+                    entities::ruby_big::StepEntityPhysicsAsRubyBig(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Shopkeeper:
+                    entities::shopkeeper::StepEntityPhysicsAsShopkeeper(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Damsel:
+                    entities::damsel::StepEntityPhysicsAsDamsel(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Snake:
+                    entities::snake::StepEntityPhysicsAsSnake(entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Caveman:
+                    entities::caveman::StepEntityPhysicsAsCaveman(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::SpiderHang:
+                case EntityType::GiantSpiderHang:
+                    entities::spider_hang::StepEntityPhysicsAsSpiderHang(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Scarab:
+                    entities::scarab::StepEntityPhysicsAsScarab(
+                        entity_idx, state, graphics, audio, dt);
                     break;
                 }
             }

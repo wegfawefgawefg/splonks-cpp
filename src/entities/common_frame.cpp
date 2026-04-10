@@ -1,6 +1,7 @@
 #include "entities/common.hpp"
 
 #include "entity_display_states.hpp"
+#include "frame_data_id.hpp"
 
 #include <algorithm>
 
@@ -29,13 +30,21 @@ void ApplyFrameDataGeometryToEntity(std::size_t entity_idx, State& state, const 
 
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics) {
     if (!entity.frame_data_animator.HasAnimation()) {
-        return nullptr;
+        const FrameDataAnimation* const fallback_animation =
+            graphics.frame_data_db.FindAnimation(frame_data_ids::NoSprite);
+        if (fallback_animation == nullptr || fallback_animation->frame_indices.empty()) {
+            return nullptr;
+        }
+        return &graphics.frame_data_db.frames[fallback_animation->frame_indices[0]];
     }
 
-    const FrameDataAnimation* const animation =
+    const FrameDataAnimation* animation =
         graphics.frame_data_db.FindAnimation(entity.frame_data_animator.animation_id);
     if (animation == nullptr || animation->frame_indices.empty()) {
-        return nullptr;
+        animation = graphics.frame_data_db.FindAnimation(frame_data_ids::NoSprite);
+        if (animation == nullptr || animation->frame_indices.empty()) {
+            return nullptr;
+        }
     }
 
     std::size_t frame_index = entity.frame_data_animator.current_frame;

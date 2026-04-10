@@ -10,7 +10,7 @@ void SetEntityStompPad(Entity& entity) {
     entity.type_ = EntityType::StompPad;
     entity.super_state = EntitySuperState::Idle;
     entity.state = EntityState::Idle;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.size = Vec2::New(8.0F, 7.0F);
     entity.health = 1000;
     entity.damage_vulnerability = DamageVulnerability::Vulnerable;

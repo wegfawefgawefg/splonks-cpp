@@ -111,14 +111,14 @@ void StepEntityLogicAsPlayer(
         // skip all actions
         if (!loss_of_control) {
             if (Length(player.vel) < 1.0F) {
-                player.display_state = EntityDisplayState::Neutral;
+                TrySetDisplayState(player, EntityDisplayState::Neutral);
                 if (player.holding_vid.has_value() || player.state == EntityState::Pushing) {
-                    player.display_state = EntityDisplayState::NeutralHolding;
+                    TrySetDisplayState(player, EntityDisplayState::NeutralHolding);
                 }
             } else if (Length(player.vel) > 1.0F) {
-                player.display_state = EntityDisplayState::Walk;
+                TrySetDisplayState(player, EntityDisplayState::Walk);
                 if (player.holding_vid.has_value() || player.state == EntityState::Pushing) {
-                    player.display_state = EntityDisplayState::WalkHolding;
+                    TrySetDisplayState(player, EntityDisplayState::WalkHolding);
                 }
             }
             // TODO: variable locomotion animation speed should be a common system
@@ -131,17 +131,17 @@ void StepEntityLogicAsPlayer(
             // if player hanging right set hanging display state and right
 
             if (player.left_hanging) {
-                player.display_state = EntityDisplayState::Hanging;
+                TrySetDisplayState(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Left;
             } else if (player.right_hanging) {
-                player.display_state = EntityDisplayState::Hanging;
+                TrySetDisplayState(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Right;
             } else if (player.climbing) {
-                player.display_state = EntityDisplayState::Climbing;
+                TrySetDisplayState(player, EntityDisplayState::Climbing);
             }
             if (player.vel.y > 2.0F && !player.climbing) {
                 // TODO: make an actual fall state
-                player.display_state = EntityDisplayState::Falling;
+                TrySetDisplayState(player, EntityDisplayState::Falling);
             }
         }
     }

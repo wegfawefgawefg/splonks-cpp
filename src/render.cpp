@@ -1239,6 +1239,7 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     SDL_RenderClear(renderer);
     RenderStageTileWrapper(renderer, state, graphics);
     RenderStageTiles(renderer, state, graphics);
+    RenderBackgroundStamps(renderer, state, graphics);
     RenderEntities(renderer, state, graphics);
     RenderSpecialEffects(renderer, state, graphics);
 }

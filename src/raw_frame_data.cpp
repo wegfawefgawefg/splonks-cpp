@@ -250,6 +250,8 @@ RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
                 result.sprites.push_back(current_frame_data);
             }
             current_frame_data = RawFrameData{};
+            current_frame_data.source_yaml_path = yaml_path;
+            current_frame_data.source_line = line_number;
             have_current_frame_data = true;
             nested_field = NestedField::None;
 

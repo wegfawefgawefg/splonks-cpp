@@ -61,7 +61,7 @@ void SetEntityRock(Entity& entity) {
     entity.hurt_on_contact = false;
     entity.super_state = EntitySuperState::Idle;
     entity.state = EntityState::Projectile;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.facing = LeftOrRight::Left;
     entity.impassable = false;
     entity.draw_layer = DrawLayer::Foreground;

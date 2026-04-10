@@ -1,5 +1,7 @@
 #include "stage_gen/hd_mines.hpp"
 
+#include "frame_data_id.hpp"
+
 #include <array>
 #include <random>
 #include <string>
@@ -83,6 +85,7 @@ struct RoomTemplateSelection {
 struct ResolvedRoom {
     std::vector<std::vector<Tile>> tiles;
     std::vector<StageEntitySpawn> entity_spawns;
+    std::vector<BackgroundStamp> background_stamps;
 };
 
 std::vector<IVec2> BuildPathFromRoomCodes(const std::array<std::array<int, 4>, 4>& room_codes,
@@ -549,11 +552,252 @@ Tile RandomBrickOrBlockTile() {
     return RandomIntInclusive(1, 10) == 1 ? Tile::Block : Tile::Dirt;
 }
 
+EntityType GetShopSignEntityType(ShopType shop_type) {
+    switch (shop_type) {
+    case ShopType::General:
+        return EntityType::SignGeneral;
+    case ShopType::Bomb:
+        return EntityType::SignBomb;
+    case ShopType::Weapon:
+        return EntityType::SignWeapon;
+    case ShopType::Rare:
+        return EntityType::SignRare;
+    case ShopType::Clothing:
+        return EntityType::SignClothing;
+    case ShopType::Craps:
+        return EntityType::SignCraps;
+    case ShopType::Kissing:
+        return EntityType::SignKissing;
+    case ShopType::None:
+        return EntityType::None;
+    }
+
+    return EntityType::None;
+}
+
+const char* PickRightTikiArmFrameName() {
+    switch (RandomIntInclusive(0, 2)) {
+    case 0:
+        return "tiki_arm_right_0";
+    case 1:
+        return "tiki_arm_right_1";
+    default:
+        return "tiki_arm_right_2";
+    }
+}
+
+const char* PickLeftTikiArmFrameName() {
+    switch (RandomIntInclusive(0, 2)) {
+    case 0:
+        return "tiki_arm_left_0";
+    case 1:
+        return "tiki_arm_left_1";
+    default:
+        return "tiki_arm_left_2";
+    }
+}
+
+bool TileCoordExists(const Stage& stage, int tile_x, int tile_y) {
+    return tile_x >= 0 && tile_y >= 0 &&
+           tile_x < static_cast<int>(stage.GetTileWidth()) &&
+           tile_y < static_cast<int>(stage.GetTileHeight());
+}
+
+bool IsCollidableTileAt(const Stage& stage, int tile_x, int tile_y) {
+    if (!TileCoordExists(stage, tile_x, tile_y)) {
+        return false;
+    }
+    return IsTileCollidable(stage.GetTile(static_cast<unsigned int>(tile_x),
+                                          static_cast<unsigned int>(tile_y)));
+}
+
+IVec2 GetRoomAtTileCoord(int tile_x, int tile_y) {
+    return IVec2::New(
+        tile_x / static_cast<int>(Stage::kRoomShape.x),
+        tile_y / static_cast<int>(Stage::kRoomShape.y)
+    );
+}
+
+bool IsShopRoomCode(int room_code) {
+    return room_code == static_cast<int>(RoomCode::ShopLeft) ||
+           room_code == static_cast<int>(RoomCode::ShopRight);
+}
+
+bool IsShopRoomAt(const Stage& stage, int tile_x, int tile_y) {
+    const IVec2 room = GetRoomAtTileCoord(tile_x, tile_y);
+    if (room.x < 0 || room.y < 0 ||
+        room.x >= static_cast<int>(Stage::kRoomLayout.x) ||
+        room.y >= static_cast<int>(Stage::kRoomLayout.y)) {
+        return false;
+    }
+    return IsShopRoomCode(
+        stage.rooms[static_cast<std::size_t>(room.y)][static_cast<std::size_t>(room.x)]
+    );
+}
+
+bool IsStartRoomAt(const Stage& stage, int tile_x, int tile_y) {
+    return GetRoomAtTileCoord(tile_x, tile_y) == stage.GetStartingRoom();
+}
+
+bool HasSpawnAtWorldPos(const Stage& stage, const Vec2& pos) {
+    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+        if (spawn.pos == pos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::optional<Vec2> FindEntrancePos(const Stage& stage) {
+    for (unsigned int y = 0; y < stage.GetTileHeight(); ++y) {
+        for (unsigned int x = 0; x < stage.GetTileWidth(); ++x) {
+            if (stage.GetTile(x, y) != Tile::Entrance) {
+                continue;
+            }
+            return Vec2::New(
+                static_cast<float>(x * kTileSize),
+                static_cast<float>(y * kTileSize)
+            );
+        }
+    }
+    return std::nullopt;
+}
+
+void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
+                     LeftOrRight facing = LeftOrRight::Left) {
+    if (HasSpawnAtWorldPos(stage, pos)) {
+        return;
+    }
+    stage.entity_spawns.push_back(StageEntitySpawn{
+        .type_ = type_,
+        .pos = pos,
+        .facing = facing,
+    });
+}
+
+void ConvertBlocksToArrowTraps(Stage& stage) {
+    const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
+
+    for (StageEntitySpawn& spawn : stage.entity_spawns) {
+        if (spawn.type_ != EntityType::Block) {
+            continue;
+        }
+
+        const int tile_x = static_cast<int>(spawn.pos.x) / static_cast<int>(kTileSize);
+        const int tile_y = static_cast<int>(spawn.pos.y) / static_cast<int>(kTileSize);
+
+        if (IsShopRoomAt(stage, tile_x, tile_y)) {
+            continue;
+        }
+        if (RandomIntInclusive(1, 4) != 1) {
+            continue;
+        }
+
+        if (entrance_pos.has_value()) {
+            const float dist = Length(spawn.pos - *entrance_pos);
+            if (dist <= 48.0F) {
+                continue;
+            }
+            if (static_cast<int>(spawn.pos.y) == static_cast<int>(entrance_pos->y) && dist < 144.0F) {
+                continue;
+            }
+        }
+
+        const bool solid_right = IsCollidableTileAt(stage, tile_x + 1, tile_y);
+        const bool left_open = !IsCollidableTileAt(stage, tile_x - 1, tile_y) &&
+                               !IsCollidableTileAt(stage, tile_x - 2, tile_y);
+        if (solid_right && left_open) {
+            spawn.type_ = EntityType::ArrowTrap;
+            spawn.facing = LeftOrRight::Left;
+            continue;
+        }
+
+        const bool solid_left = IsCollidableTileAt(stage, tile_x - 1, tile_y);
+        const bool right_open = !IsCollidableTileAt(stage, tile_x + 1, tile_y) &&
+                                !IsCollidableTileAt(stage, tile_x + 2, tile_y);
+        if (solid_left && right_open) {
+            spawn.type_ = EntityType::ArrowTrap;
+            spawn.facing = LeftOrRight::Right;
+        }
+    }
+}
+
+void AddAmbientMinesEntities(Stage& stage) {
+    const int stage_width = static_cast<int>(stage.GetTileWidth());
+    const int stage_height = static_cast<int>(stage.GetTileHeight());
+    const bool gen_giant_spider = RandomIntInclusive(1, 6) == 1;
+    bool giant_spider_spawned = false;
+
+    for (int tile_y = 0; tile_y < stage_height; ++tile_y) {
+        for (int tile_x = 0; tile_x < stage_width; ++tile_x) {
+            if (!IsCollidableTileAt(stage, tile_x, tile_y)) {
+                continue;
+            }
+            if (IsShopRoomAt(stage, tile_x, tile_y)) {
+                continue;
+            }
+
+            const Vec2 tile_pos = Vec2::New(
+                static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+                static_cast<float>(tile_y * static_cast<int>(kTileSize))
+            );
+
+            if (!IsStartRoomAt(stage, tile_x, tile_y)) {
+                const bool open_below = !IsCollidableTileAt(stage, tile_x, tile_y + 1) &&
+                                        !IsCollidableTileAt(stage, tile_x, tile_y + 2);
+                if (tile_y < stage_height - 4 && open_below) {
+                    const Vec2 ceiling_spawn_pos =
+                        tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
+                    const Vec2 ceiling_spawn_pos_2 =
+                        tile_pos + Vec2::New(static_cast<float>(kTileSize),
+                                             static_cast<float>(kTileSize));
+                    const bool open_below_right =
+                        !IsCollidableTileAt(stage, tile_x + 1, tile_y + 1) &&
+                        !IsCollidableTileAt(stage, tile_x + 1, tile_y + 2);
+
+                    if (gen_giant_spider && !giant_spider_spawned && open_below_right &&
+                        !HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
+                        !HasSpawnAtWorldPos(stage, ceiling_spawn_pos_2) &&
+                        RandomIntInclusive(1, 40) == 1) {
+                        AddAmbientSpawn(stage, EntityType::GiantSpiderHang, ceiling_spawn_pos);
+                        giant_spider_spawned = true;
+                    } else if (RandomIntInclusive(1, 60) == 1) {
+                        AddAmbientSpawn(stage, EntityType::Bat, ceiling_spawn_pos);
+                    } else if (RandomIntInclusive(1, 80) == 1) {
+                        AddAmbientSpawn(stage, EntityType::SpiderHang, ceiling_spawn_pos);
+                    }
+                }
+
+                const bool open_above = !IsCollidableTileAt(stage, tile_x, tile_y - 1);
+                const bool spikes_above = tile_y > 0 &&
+                                          stage.GetTile(
+                                              static_cast<unsigned int>(tile_x),
+                                              static_cast<unsigned int>(tile_y - 1)
+                                          ) == Tile::Spikes;
+                if (tile_y > 0 && open_above) {
+                    const Vec2 floor_spawn_pos =
+                        tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
+                    if (!spikes_above && RandomIntInclusive(1, 60) == 1) {
+                        AddAmbientSpawn(stage, EntityType::Snake, floor_spawn_pos);
+                    } else if (RandomIntInclusive(1, 800) == 1) {
+                        AddAmbientSpawn(stage, EntityType::Caveman, floor_spawn_pos);
+                    }
+                }
+            }
+        }
+    }
+}
+
 ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, int room_code_above) {
     const RoomTemplateSelection selection =
         SelectRoomTemplate(room_code, is_start_room, is_end_room, room_code_above);
     const std::string glyphs = ExpandObstacles(selection.glyphs);
 
+    // Glyph markers are authored on the room's 10x8 tile grid. We anchor imported
+    // entities and background stamps from that tile grid directly into our top-left
+    // world-space positions, then only add explicit whole-tile layout offsets that
+    // come from the room design itself, like the right altar half living one tile to
+    // the right. We do not port HD sprite-origin offsets directly here.
     ResolvedRoom room;
     room.tiles = std::vector<std::vector<Tile>>(
         static_cast<std::size_t>(Stage::kRoomShape.y),
@@ -605,15 +849,137 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
             case '+':
                 tile = Tile::Glass;
                 break;
+            case 'A':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::AltarLeft,
+                    .pos = tile_pos,
+                });
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::AltarRight,
+                    .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
+                });
+                break;
+            case 'x':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::SacAltarLeft,
+                    .pos = tile_pos,
+                });
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::SacAltarRight,
+                    .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
+                });
+                break;
+            case 'a':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::Chest,
+                    .pos = tile_pos,
+                });
+                break;
+            case 'I':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::GoldIdol,
+                    .pos = tile_pos,
+                });
+                break;
+            case 'B':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::GiantTikiHead,
+                    .pos = tile_pos,
+                });
+                room.background_stamps.push_back(BackgroundStamp{
+                    .animation_id = HashFrameDataIdConstexpr("tiki_body"),
+                    .pos = tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize * 2)),
+                });
+                room.background_stamps.push_back(BackgroundStamp{
+                    .animation_id = HashFrameDataIdConstexpr(PickRightTikiArmFrameName()),
+                    .pos = tile_pos + Vec2::New(
+                        static_cast<float>(kTileSize * 2),
+                        static_cast<float>(kTileSize * 2)
+                    ),
+                });
+                room.background_stamps.push_back(BackgroundStamp{
+                    .animation_id = HashFrameDataIdConstexpr(PickLeftTikiArmFrameName()),
+                    .pos = tile_pos + Vec2::New(
+                        -static_cast<float>(kTileSize),
+                        static_cast<float>(kTileSize * 2)
+                    ),
+                });
+                break;
+            case 'Q':
+                if (selection.shop_type == ShopType::Craps) {
+                    room.background_stamps.push_back(BackgroundStamp{
+                        .animation_id = HashFrameDataIdConstexpr("dice_sign"),
+                        .pos = tile_pos,
+                    });
+                }
+                break;
             case 'W':
+                room.background_stamps.push_back(BackgroundStamp{
+                    .animation_id = HashFrameDataIdConstexpr("wanted_poster"),
+                    .pos = tile_pos,
+                    .condition = BackgroundStampCondition::Wanted,
+                });
+                break;
+            case 'l':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = selection.shop_type == ShopType::Kissing
+                                 ? EntityType::LanternRed
+                                 : EntityType::Lantern,
+                    .pos = tile_pos,
+                });
+                break;
+            case 'K':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::Shopkeeper,
+                    .pos = tile_pos,
+                });
+                break;
+            case 'k':
+            {
+                const EntityType sign_type = GetShopSignEntityType(selection.shop_type);
+                if (sign_type != EntityType::None) {
+                    room.entity_spawns.push_back(StageEntitySpawn{
+                        .type_ = sign_type,
+                        .pos = tile_pos,
+                    });
+                }
+                break;
+            }
+            case 'd':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::Dice,
+                    .pos = tile_pos,
+                });
+                break;
+            case 'D':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::Damsel,
+                    .pos = tile_pos,
+                });
                 break;
             case 's':
                 if (RandomIntInclusive(1, 10) != 1 && RandomIntInclusive(1, 2) == 1) {
                     tile = Tile::Dirt;
                 }
                 break;
+            case 'S':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::Snake,
+                    .pos = tile_pos,
+                });
+                break;
+            case 'T':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::RubyBig,
+                    .pos = tile_pos,
+                });
+                break;
             case 'M':
                 tile = Tile::Dirt;
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::Mattock,
+                    .pos = tile_pos,
+                });
                 break;
             default:
                 break;
@@ -680,6 +1046,10 @@ Stage GenerateStage(StageType stage_type) {
                 spawn.pos += room_pos_wc;
                 stage.entity_spawns.push_back(std::move(spawn));
             }
+            for (BackgroundStamp& stamp : room.background_stamps) {
+                stamp.pos += room_pos_wc;
+                stage.background_stamps.push_back(std::move(stamp));
+            }
         }
     }
 
@@ -689,6 +1059,8 @@ Stage GenerateStage(StageType stage_type) {
     stage.path = layout.path;
     stage.gravity = 0.3F;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    ConvertBlocksToArrowTraps(stage);
+    AddAmbientMinesEntities(stage);
     return stage;
 }
 

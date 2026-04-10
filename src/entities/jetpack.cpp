@@ -33,7 +33,7 @@ void SetEntityJetpack(Entity& entity) {
     entity.Reset();
     entity.type_ = EntityType::JetPack;
     entity.super_state = EntitySuperState::Idle;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.health = 1;
     entity.damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion;
@@ -106,7 +106,7 @@ void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio
                         holder->acc.y = -0.6F;
                         holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
                     }
-                    holder->display_state = EntityDisplayState::Neutral;
+                    TrySetDisplayState(*holder, EntityDisplayState::Neutral);
                 }
             }
 

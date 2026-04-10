@@ -1,5 +1,6 @@
 #include "entity.hpp"
 
+#include "entity_display_states.hpp"
 #include "entities/mod.hpp"
 
 namespace splonks {
@@ -50,7 +51,7 @@ Entity Entity::New() {
     entity.facing = LeftOrRight::Left;
     entity.vertical_flip = false;
     entity.draw_layer = DrawLayer::Middle;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.frame_data_animator = FrameDataAnimator{};
     entity.jump_delay_frame_count = kJumpDelayFrames;
     entity.jumped_this_frame = false;
@@ -260,6 +261,19 @@ bool CanGoOnBack(EntityType type_) {
     default:
         return false;
     }
+}
+
+bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state) {
+    const auto selection = GetFrameDataSelectionForDisplayState(EntityDisplayInput{
+        .type_ = entity.type_,
+        .display_state = display_state,
+    });
+    if (!selection.has_value()) {
+        return false;
+    }
+
+    entity.display_state = display_state;
+    return true;
 }
 
 void EnableStone(Entity& entity) {

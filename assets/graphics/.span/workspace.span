@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "88ece5b9-5080-4414-8918-1cdd0af91d27",
+  "selectedAnnotationId": "1253dafb-b864-48d5-8580-0f43bca76f5b",
   "sheets": [
     {
       "path": "images/title.png",
@@ -2649,22 +2649,22 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 8,
+              "y": 8
             },
             "tags": [],
             "pbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 16,
+              "h": 16
             },
             "tile": false,
             "cbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 16,
+              "h": 16
             }
           }
         },
@@ -2942,45 +2942,6 @@
           }
         },
         {
-          "id": "f1181df6-6cfe-4145-af9a-174421ce6e6c",
-          "entityType": "Sprite",
-          "aabb": {
-            "x": 288,
-            "y": 85,
-            "w": 10,
-            "h": 9
-          },
-          "point": null,
-          "chromaKey": null,
-          "properties": {
-            "name": "",
-            "frame": 0,
-            "duration": 1,
-            "offset": {
-              "x": 0,
-              "y": 0
-            },
-            "center": {
-              "x": 1,
-              "y": 8
-            },
-            "tags": [],
-            "pbox": {
-              "x": 0,
-              "y": 0,
-              "w": 10,
-              "h": 9
-            },
-            "cbox": {
-              "x": 0,
-              "y": 0,
-              "w": 10,
-              "h": 9
-            },
-            "tile": false
-          }
-        },
-        {
           "id": "57e0fe7d-9d03-4f49-b85d-1d4a087a5773",
           "entityType": "Sprite",
           "aabb": {
@@ -3083,15 +3044,15 @@
             },
             "tags": [],
             "pbox": {
-              "x": 3,
+              "x": 0,
               "y": 0,
-              "w": 13,
+              "w": 16,
               "h": 16
             },
             "cbox": {
-              "x": 3,
+              "x": 0,
               "y": 0,
-              "w": 13,
+              "w": 16,
               "h": 16
             },
             "tile": false
@@ -3124,13 +3085,13 @@
             "pbox": {
               "x": 0,
               "y": 0,
-              "w": 14,
+              "w": 16,
               "h": 16
             },
             "cbox": {
               "x": 0,
               "y": 0,
-              "w": 14,
+              "w": 16,
               "h": 16
             },
             "tile": false
@@ -3429,21 +3390,21 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 16,
+              "y": 16
             },
             "tags": [],
             "pbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 32,
+              "h": 32
             },
             "cbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 32,
+              "h": 32
             },
             "tile": false
           }
@@ -4116,9 +4077,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 1.414,
-        "centerX": 254.24328147100425,
-        "centerY": 194.4837340876945
+        "zoom": 10.533,
+        "centerX": 33.65612835849236,
+        "centerY": 6.93059906959081
       }
     },
     {
@@ -4480,9 +4441,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 16.064,
-        "centerX": 22.62823705179283,
-        "centerY": 50.610059760956176
+        "zoom": 3.369,
+        "centerX": 112.94152567527456,
+        "centerY": 61.44256455921638
       }
     },
     {
@@ -5390,9 +5351,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 12.851,
-        "centerX": 26.02910279355692,
-        "centerY": 166.290561045833
+        "zoom": 2.695,
+        "centerX": 143.0426716141002,
+        "centerY": 87.569573283859
       }
     },
     {
@@ -5755,8 +5716,8 @@
         "gridWidth": 16,
         "gridHeight": 16,
         "zoom": 6.58,
-        "centerX": 33.43465045592705,
-        "centerY": 61.32218844984802
+        "centerX": 33.358662613981764,
+        "centerY": 61.246200607902736
       }
     },
     {

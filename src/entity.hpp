@@ -21,6 +21,7 @@ struct Entity {
     bool has_physics = true;
     bool can_collide = true;
     bool stone = false;
+    bool wanted = false;
     bool crusher_pusher = false;
     bool grounded = false;
     std::uint32_t coyote_time = 0;
@@ -121,6 +122,7 @@ struct Entity {
 };
 
 bool CanGoOnBack(EntityType type_);
+bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state);
 void EnableStone(Entity& entity);
 void DisableStone(Entity& entity);
 

@@ -9,6 +9,7 @@ struct State;
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics);
 void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics);
+void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& graphics);
 void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphics);
 void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& graphics);
 

@@ -15,6 +15,8 @@ struct FrameRect {
 };
 
 struct RawFrameData {
+    std::string source_yaml_path;
+    int source_line = 0;
     std::string path;
     FrameRect aabb;
     std::string name;

@@ -142,6 +142,33 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::GoldStack:
     case EntityType::StompPad:
     case EntityType::Rope:
+    case EntityType::AltarLeft:
+    case EntityType::AltarRight:
+    case EntityType::SacAltarLeft:
+    case EntityType::SacAltarRight:
+    case EntityType::GoldIdol:
+    case EntityType::Chest:
+    case EntityType::Mattock:
+    case EntityType::Dice:
+    case EntityType::RubyBig:
+    case EntityType::Shopkeeper:
+    case EntityType::Damsel:
+    case EntityType::SignGeneral:
+    case EntityType::SignBomb:
+    case EntityType::SignWeapon:
+    case EntityType::SignRare:
+    case EntityType::SignClothing:
+    case EntityType::SignCraps:
+    case EntityType::SignKissing:
+    case EntityType::Lantern:
+    case EntityType::LanternRed:
+    case EntityType::GiantTikiHead:
+    case EntityType::ArrowTrap:
+    case EntityType::Snake:
+    case EntityType::Caveman:
+    case EntityType::SpiderHang:
+    case EntityType::GiantSpiderHang:
+    case EntityType::Scarab:
         return ContactResolution{};
     }
 

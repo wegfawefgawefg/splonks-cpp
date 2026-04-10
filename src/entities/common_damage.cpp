@@ -63,7 +63,7 @@ void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
         entity.super_state = EntitySuperState::Dead;
         entity.state = EntityState::Dead;
         if (!entity.marked_for_destruction) {
-            entity.display_state = EntityDisplayState::Dead;
+            TrySetDisplayState(entity, EntityDisplayState::Dead);
         }
     }
     if (entity.super_state == EntitySuperState::Dead) {
@@ -452,13 +452,13 @@ DamageResult TryToDamageEntity(
                 do_damage_calculation = true;
                 if (entity.super_state != EntitySuperState::Stunned) {
                     entity.super_state = EntitySuperState::Stunned;
-                    entity.display_state = EntityDisplayState::Stunned;
+                    TrySetDisplayState(entity, EntityDisplayState::Stunned);
                     entity.stun_timer = kDefaultStunTimer;
                 }
             } else if (entity.can_be_stunned) {
                 if (entity.super_state != EntitySuperState::Stunned) {
                     entity.super_state = EntitySuperState::Stunned;
-                    entity.display_state = EntityDisplayState::Stunned;
+                    TrySetDisplayState(entity, EntityDisplayState::Stunned);
                     entity.stun_timer = kDefaultStunTimer;
                     do_damage_calculation = true;
                 } else {

@@ -238,6 +238,7 @@ int main(int argc, char** argv) {
         SDL_Quit();
         return 0;
     } catch (const std::exception& exception) {
+        const std::string error_message = exception.what();
         graphics.ShutdownTextures();
         graphics.ShutdownText();
         splonks::ShutdownImGuiLayer();
@@ -254,7 +255,11 @@ int main(int argc, char** argv) {
         audio.Shutdown();
         splonks::ShutdownTextSubsystem();
         SDL_Quit();
-        std::cerr << exception.what() << '\n';
+        std::cerr << "\n=== Splonks startup failed ===\n";
+        std::cerr << error_message << '\n';
+        std::cerr << "If this is frame-data or tile-source data, run:\n";
+        std::cerr << "  ./build-debug/splonks-cpp --check-frame-data\n";
+        std::cerr << "  ./build-debug/splonks-cpp --check-tile-source-data\n\n";
         return 1;
     }
 }

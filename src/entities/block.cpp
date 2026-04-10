@@ -84,7 +84,7 @@ void SetEntityBlock(Entity& entity) {
     entity.impassable = true;
     entity.super_state = EntitySuperState::Idle;
     entity.state = EntityState::Projectile;
-    entity.display_state = EntityDisplayState::Neutral;
+    TrySetDisplayState(entity, EntityDisplayState::Neutral);
     entity.facing = LeftOrRight::Left;
     entity.frame_data_animator.SetAnimation(frame_data_ids::CaveBlock);
     entity.can_be_stunned = false;

@@ -32,7 +32,7 @@ constexpr std::size_t EntityTypeIndex(EntityType type_) {
 }
 
 constexpr std::size_t kEntityTypeCount =
-    static_cast<std::size_t>(EntityType::BaseballBat) + 1;
+    static_cast<std::size_t>(EntityType::Scarab) + 1;
 
 constexpr std::array<EntitySetupFn, kEntityTypeCount> kEntitySetupFns{{
     &SetEntityNone,                 // None
@@ -51,6 +51,33 @@ constexpr std::array<EntitySetupFn, kEntityTypeCount> kEntitySetupFns{{
     &SetEntityBox,                  // Box
     &stomp_pad::SetEntityStompPad,  // StompPad
     &baseball_bat::SetEntityBaseballBat, // BaseballBat
+    &altar::SetEntityAltarLeft,     // AltarLeft
+    &altar::SetEntityAltarRight,    // AltarRight
+    &sac_altar::SetEntitySacAltarLeft, // SacAltarLeft
+    &sac_altar::SetEntitySacAltarRight, // SacAltarRight
+    &gold_idol::SetEntityGoldIdol,  // GoldIdol
+    &chest::SetEntityChest,         // Chest
+    &mattock::SetEntityMattock,     // Mattock
+    &dice::SetEntityDice,           // Dice
+    &ruby_big::SetEntityRubyBig,    // RubyBig
+    &shopkeeper::SetEntityShopkeeper, // Shopkeeper
+    &damsel::SetEntityDamsel,       // Damsel
+    &sign::SetEntitySignGeneral,    // SignGeneral
+    &sign::SetEntitySignBomb,       // SignBomb
+    &sign::SetEntitySignWeapon,     // SignWeapon
+    &sign::SetEntitySignRare,       // SignRare
+    &sign::SetEntitySignClothing,   // SignClothing
+    &sign::SetEntitySignCraps,      // SignCraps
+    &sign::SetEntitySignKissing,    // SignKissing
+    &lantern::SetEntityLantern,     // Lantern
+    &lantern::SetEntityLanternRed,  // LanternRed
+    &giant_tiki_head::SetEntityGiantTikiHead, // GiantTikiHead
+    &arrow_trap::SetEntityArrowTrap, // ArrowTrap
+    &snake::SetEntitySnake,         // Snake
+    &caveman::SetEntityCaveman,     // Caveman
+    &spider_hang::SetEntitySpiderHang, // SpiderHang
+    &spider_hang::SetEntityGiantSpiderHang, // GiantSpiderHang
+    &scarab::SetEntityScarab,       // Scarab
 }};
 
 } // namespace

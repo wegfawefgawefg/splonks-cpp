@@ -1,6 +1,7 @@
 #pragma once
 
 #include "entity_core_types.hpp"
+#include "frame_data_id.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"
 #include "utils.hpp"
@@ -15,6 +16,17 @@ struct StageEntitySpawn {
     EntityType type_ = EntityType::None;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     LeftOrRight facing = LeftOrRight::Left;
+};
+
+enum class BackgroundStampCondition {
+    None,
+    Wanted,
+};
+
+struct BackgroundStamp {
+    FrameDataId animation_id = kInvalidFrameDataId;
+    Vec2 pos = Vec2::New(0.0F, 0.0F);
+    BackgroundStampCondition condition = BackgroundStampCondition::None;
 };
 
 enum class StageType : int {
@@ -41,6 +53,7 @@ struct Stage {
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
     std::vector<StageEntitySpawn> entity_spawns;
+    std::vector<BackgroundStamp> background_stamps;
     float gravity = 0.3F;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
 
