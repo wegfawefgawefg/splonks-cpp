@@ -66,6 +66,28 @@ constexpr FrameDataId RopeUiIcon = HashFrameDataIdConstexpr("rope_ui_icon");
 constexpr FrameDataId GoldIcon = HashFrameDataIdConstexpr("gold_icon");
 constexpr FrameDataId ToolSlot1 = HashFrameDataIdConstexpr("tool_slot_1");
 constexpr FrameDataId ToolSlot2 = HashFrameDataIdConstexpr("tool_slot_2");
+constexpr FrameDataId GoldIdol = HashFrameDataIdConstexpr("gold_idol");
+constexpr FrameDataId Mattock = HashFrameDataIdConstexpr("mattock");
+constexpr FrameDataId CapePickup = HashFrameDataIdConstexpr("cape_pickup");
+constexpr FrameDataId Shotgun = HashFrameDataIdConstexpr("shotgun");
+constexpr FrameDataId Teleporter = HashFrameDataIdConstexpr("teleporter");
+constexpr FrameDataId Gloves = HashFrameDataIdConstexpr("gloves");
+constexpr FrameDataId Spectacles = HashFrameDataIdConstexpr("spectacles");
+constexpr FrameDataId WebCannon = HashFrameDataIdConstexpr("web_cannon");
+constexpr FrameDataId Pistol = HashFrameDataIdConstexpr("pistol");
+constexpr FrameDataId Mitt = HashFrameDataIdConstexpr("mitt");
+constexpr FrameDataId Paste = HashFrameDataIdConstexpr("paste");
+constexpr FrameDataId SpringShoes = HashFrameDataIdConstexpr("spring_shoes");
+constexpr FrameDataId SpikeShoes = HashFrameDataIdConstexpr("spike_shoes");
+constexpr FrameDataId Machete = HashFrameDataIdConstexpr("machete");
+constexpr FrameDataId BombBox = HashFrameDataIdConstexpr("bomb_box");
+constexpr FrameDataId Bow = HashFrameDataIdConstexpr("bow");
+constexpr FrameDataId Compass = HashFrameDataIdConstexpr("compass");
+constexpr FrameDataId Parachute = HashFrameDataIdConstexpr("parachute");
+constexpr FrameDataId RopePile = HashFrameDataIdConstexpr("rope_pile");
+constexpr FrameDataId EmeraldBig = HashFrameDataIdConstexpr("emerald_big");
+constexpr FrameDataId SapphireBig = HashFrameDataIdConstexpr("sapphire_big");
+constexpr FrameDataId RubyBig = HashFrameDataIdConstexpr("ruby_big");
 
 } // namespace frame_data_ids
 

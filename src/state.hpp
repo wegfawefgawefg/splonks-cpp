@@ -53,7 +53,6 @@ struct HangTestLevelConfig {
 
 struct DebugLevelConfig {
     DebugLevelKind kind = DebugLevelKind::Cave1;
-    bool player_has_gloves = false;
     HangTestLevelConfig hang_test;
 };
 

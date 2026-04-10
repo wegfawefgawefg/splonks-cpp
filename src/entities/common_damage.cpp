@@ -1,4 +1,5 @@
 #include "entities/common.hpp"
+#include "entities/mod.hpp"
 
 #include "on_damage_effects.hpp"
 #include "terrain_lighting.hpp"
@@ -26,6 +27,76 @@ bool AabbsIntersect(const AABB& left, const AABB& right) {
         return false;
     }
     return true;
+}
+
+void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
+    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    if (!vid.has_value()) {
+        return;
+    }
+
+    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
+    if (entity == nullptr) {
+        return;
+    }
+
+    entities::SetEntityByType(*entity, type_);
+    entity->SetCenter(center);
+    entity->vel = Vec2::New(0.0F, 0.0F);
+}
+
+void SpawnGoldVeinPayout(Tile tile, const IVec2& tile_pos, State& state) {
+    const Vec2 tile_tl = Vec2::New(
+        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
+        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
+    );
+    const Vec2 center = tile_tl + Vec2::New(8.0F, 8.0F);
+
+    if (tile == Tile::Gold) {
+        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(-3.0F, -1.0F), state);
+        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(0.0F, 0.0F), state);
+        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(3.0F, 1.0F), state);
+        return;
+    }
+
+    if (tile == Tile::GoldBig) {
+        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(-4.0F, -1.0F), state);
+        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(0.0F, 1.0F), state);
+        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(4.0F, -1.0F), state);
+        SpawnEntityAtCenter(EntityType::GoldStack, center, state);
+    }
+}
+
+void BreakStageTilesInRectWc(const AABB& area, State& state) {
+    const int max_x = static_cast<int>(state.stage.GetTileWidth()) - 1;
+    const int max_y = static_cast<int>(state.stage.GetTileHeight()) - 1;
+    const IVec2 tl = ToIVec2(area.tl / static_cast<float>(kTileSize));
+    const IVec2 br = ToIVec2(area.br / static_cast<float>(kTileSize));
+
+    for (int y = std::max(0, tl.y); y <= std::min(br.y, max_y); ++y) {
+        for (int x = std::max(0, tl.x); x <= std::min(br.x, max_x); ++x) {
+            const IVec2 tile_pos = IVec2::New(x, y);
+            const Tile tile = state.stage.GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+            if (tile == Tile::Exit) {
+                continue;
+            }
+
+            if (tile == Tile::Gold || tile == Tile::GoldBig) {
+                SpawnGoldVeinPayout(tile, tile_pos, state);
+            }
+
+            const EntityType embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
+            if (embedded_treasure != EntityType::None) {
+                const Vec2 center = Vec2::New(
+                    static_cast<float>(x * static_cast<int>(kTileSize) + 8),
+                    static_cast<float>(y * static_cast<int>(kTileSize) + 8)
+                );
+                SpawnEntityAtCenter(embedded_treasure, center, state);
+            }
+
+            state.stage.SetTile(tile_pos, Tile::Air);
+        }
+    }
 }
 
 void CrushIfCanBeCrushed(std::size_t entity_idx, State& state, Audio& audio) {
@@ -493,7 +564,7 @@ void DoExplosion(
         .tl = center - (Vec2::New(1.0F, 1.0F) * explosion_size),
         .br = center + (Vec2::New(1.0F, 1.0F) * explosion_size),
     };
-    state.stage.SetTilesInRectWc(area, Tile::Air);
+    BreakStageTilesInRectWc(area, state);
     InvalidateTerrainLightingCache(state);
 
     const VID this_vid = state.entity_manager.GetVid(entity_idx);

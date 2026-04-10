@@ -15,6 +15,7 @@ bool IsTerrainLightingTile(Tile tile) {
     switch (tile) {
     case Tile::Dirt:
     case Tile::Gold:
+    case Tile::GoldBig:
     case Tile::Block:
         return true;
     default:

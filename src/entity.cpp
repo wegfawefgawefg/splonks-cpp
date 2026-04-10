@@ -1,6 +1,7 @@
 #include "entity.hpp"
 
 #include "entity_display_states.hpp"
+#include "frame_data_id.hpp"
 #include "entities/mod.hpp"
 
 namespace splonks {
@@ -21,6 +22,10 @@ StoneBaseFields BuildStoneBaseFieldsForEntityType(EntityType type_) {
         .impassable = base_entity.impassable,
         .damage_vulnerability = base_entity.damage_vulnerability,
     };
+}
+
+constexpr std::uint64_t PassiveItemBit(EntityPassiveItem passive_item) {
+    return 1ULL << static_cast<unsigned int>(passive_item);
 }
 
 } // namespace
@@ -62,6 +67,7 @@ Entity Entity::New() {
     entity.hang_count = 0;
     entity.holding = false;
     entity.climbing = false;
+    entity.passive_item_flags = 0;
     entity.money = 0;
     entity.bombs = 4;
     entity.ropes = 4;
@@ -274,6 +280,136 @@ bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state) {
 
     entity.display_state = display_state;
     return true;
+}
+
+const char* PassiveItemToString(EntityPassiveItem passive_item) {
+    switch (passive_item) {
+    case EntityPassiveItem::Gloves:
+        return "Gloves";
+    case EntityPassiveItem::Spectacles:
+        return "Spectacles";
+    case EntityPassiveItem::Compass:
+        return "Compass";
+    case EntityPassiveItem::Mitt:
+        return "Mitt";
+    case EntityPassiveItem::Paste:
+        return "Paste";
+    case EntityPassiveItem::SpringShoes:
+        return "SpringShoes";
+    case EntityPassiveItem::SpikeShoes:
+        return "SpikeShoes";
+    case EntityPassiveItem::Count:
+        return "Count";
+    }
+
+    return "Unknown";
+}
+
+std::optional<EntityPassiveItem> PassiveItemForEntityType(EntityType type_) {
+    switch (type_) {
+    case EntityType::Gloves:
+        return EntityPassiveItem::Gloves;
+    case EntityType::Spectacles:
+        return EntityPassiveItem::Spectacles;
+    case EntityType::Compass:
+        return EntityPassiveItem::Compass;
+    case EntityType::Mitt:
+        return EntityPassiveItem::Mitt;
+    case EntityType::Paste:
+        return EntityPassiveItem::Paste;
+    case EntityType::SpringShoes:
+        return EntityPassiveItem::SpringShoes;
+    case EntityType::SpikeShoes:
+        return EntityPassiveItem::SpikeShoes;
+    default:
+        return std::nullopt;
+    }
+}
+
+bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item) {
+    return (entity.passive_item_flags & PassiveItemBit(passive_item)) != 0;
+}
+
+void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled) {
+    if (enabled) {
+        entity.passive_item_flags |= PassiveItemBit(passive_item);
+        return;
+    }
+
+    entity.passive_item_flags &= ~PassiveItemBit(passive_item);
+}
+
+bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type) {
+    const std::optional<EntityPassiveItem> passive_item = PassiveItemForEntityType(pickup_type);
+    if (!passive_item.has_value()) {
+        return false;
+    }
+
+    SetPassiveItem(entity, *passive_item, true);
+    return true;
+}
+
+bool CanRevealEmbeddedTreasure(const Entity& entity) {
+    return HasPassiveItem(entity, EntityPassiveItem::Spectacles);
+}
+
+FrameDataId GetDefaultAnimationIdForEntityType(EntityType type_) {
+    switch (type_) {
+    case EntityType::Gold:
+        return frame_data_ids::GoldCoin;
+    case EntityType::GoldStack:
+        return frame_data_ids::GoldStack;
+    case EntityType::Rock:
+        return frame_data_ids::Rock;
+    case EntityType::JetPack:
+        return frame_data_ids::Jetpack;
+    case EntityType::GoldIdol:
+        return frame_data_ids::GoldIdol;
+    case EntityType::Mattock:
+        return frame_data_ids::Mattock;
+    case EntityType::Cape:
+        return frame_data_ids::CapePickup;
+    case EntityType::Shotgun:
+        return frame_data_ids::Shotgun;
+    case EntityType::Teleporter:
+        return frame_data_ids::Teleporter;
+    case EntityType::Gloves:
+        return frame_data_ids::Gloves;
+    case EntityType::Spectacles:
+        return frame_data_ids::Spectacles;
+    case EntityType::WebCannon:
+        return frame_data_ids::WebCannon;
+    case EntityType::Pistol:
+        return frame_data_ids::Pistol;
+    case EntityType::Mitt:
+        return frame_data_ids::Mitt;
+    case EntityType::Paste:
+        return frame_data_ids::Paste;
+    case EntityType::SpringShoes:
+        return frame_data_ids::SpringShoes;
+    case EntityType::SpikeShoes:
+        return frame_data_ids::SpikeShoes;
+    case EntityType::Machete:
+        return frame_data_ids::Machete;
+    case EntityType::BombBox:
+        return frame_data_ids::BombBox;
+    case EntityType::Bow:
+        return frame_data_ids::Bow;
+    case EntityType::Compass:
+        return frame_data_ids::Compass;
+    case EntityType::Parachute:
+        return frame_data_ids::Parachute;
+    case EntityType::RopePile:
+        return frame_data_ids::RopePile;
+    case EntityType::EmeraldBig:
+        return frame_data_ids::EmeraldBig;
+    case EntityType::SapphireBig:
+        return frame_data_ids::SapphireBig;
+    case EntityType::RubyBig:
+        return frame_data_ids::RubyBig;
+    default:
+        return frame_data_ids::NoSprite;
+    }
 }
 
 void EnableStone(Entity& entity) {

@@ -29,6 +29,19 @@ unsigned int GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
     return static_cast<unsigned int>(tiles.front().size());
 }
 
+std::vector<std::vector<EntityType>> MakeEmptyEmbeddedTreasures(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<EntityType>> embedded_treasures;
+    embedded_treasures.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        embedded_treasures.push_back(
+            std::vector<EntityType>(row.size(), EntityType::None)
+        );
+    }
+    return embedded_treasures;
+}
+
 } // namespace
 
 const UVec2 Stage::kShape = UVec2::New(40, 32);
@@ -39,6 +52,7 @@ Stage Stage::NewBlank() {
     Stage stage;
     stage.stage_type = StageType::Blank;
     stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>(1, Tile::Air));
+    stage.embedded_treasures = MakeEmptyEmbeddedTreasures(stage.tiles);
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
@@ -144,6 +158,7 @@ Stage Stage::New(StageType stage_type) {
     Stage stage;
     stage.stage_type = stage_type;
     stage.tiles = std::move(tiles);
+    stage.embedded_treasures = MakeEmptyEmbeddedTreasures(stage.tiles);
     stage.rooms = std::move(rooms);
     stage.path = std::move(path);
     stage.gravity = 0.3F;
@@ -186,6 +201,10 @@ IVec2 Stage::GetRoomTlWc(const IVec2& room) const {
 
 const Tile& Stage::GetTile(unsigned int x, unsigned int y) const {
     return tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+}
+
+EntityType Stage::GetEmbeddedTreasure(unsigned int x, unsigned int y) const {
+    return embedded_treasures[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 }
 
 const Tile* Stage::GetTileAtWc(const IVec2& pos) const {
@@ -236,6 +255,31 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
         return;
     }
     tiles[static_cast<std::size_t>(pos.y)][static_cast<std::size_t>(pos.x)] = tile;
+}
+
+void Stage::SetEmbeddedTreasure(const IVec2& pos, EntityType type_) {
+    if (pos.x < 0 || pos.y < 0) {
+        return;
+    }
+    if (pos.x >= static_cast<int>(GetTileWidth()) || pos.y >= static_cast<int>(GetTileHeight())) {
+        return;
+    }
+    embedded_treasures[static_cast<std::size_t>(pos.y)][static_cast<std::size_t>(pos.x)] = type_;
+}
+
+EntityType Stage::TakeEmbeddedTreasure(const IVec2& pos) {
+    if (pos.x < 0 || pos.y < 0) {
+        return EntityType::None;
+    }
+    if (pos.x >= static_cast<int>(GetTileWidth()) || pos.y >= static_cast<int>(GetTileHeight())) {
+        return EntityType::None;
+    }
+
+    EntityType& treasure =
+        embedded_treasures[static_cast<std::size_t>(pos.y)][static_cast<std::size_t>(pos.x)];
+    const EntityType result = treasure;
+    treasure = EntityType::None;
+    return result;
 }
 
 void Stage::SetTilesInRectWc(const AABB& area, Tile tile_type) {

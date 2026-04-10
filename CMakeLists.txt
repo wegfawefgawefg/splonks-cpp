@@ -158,6 +158,7 @@ add_executable(splonks-cpp
     src/entities/damsel.cpp
     src/entities/dice.cpp
     src/entities/emerald_big.cpp
+    src/entities/gear_items.cpp
     src/entities/ghost_ball.cpp
     src/entities/giant_tiki_head.cpp
     src/entities/gold_idol.cpp

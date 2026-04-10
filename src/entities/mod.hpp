@@ -13,6 +13,7 @@
 #include "entities/damsel.hpp"
 #include "entities/dice.hpp"
 #include "entities/emerald_big.hpp"
+#include "entities/gear_items.hpp"
 #include "entities/ghost_ball.hpp"
 #include "entities/giant_tiki_head.hpp"
 #include "entities/gold_idol.hpp"

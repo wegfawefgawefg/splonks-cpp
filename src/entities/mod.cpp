@@ -58,6 +58,23 @@ constexpr std::array<EntitySetupFn, kEntityTypeCount> kEntitySetupFns{{
     &gold_idol::SetEntityGoldIdol,  // GoldIdol
     &chest::SetEntityChest,         // Chest
     &mattock::SetEntityMattock,     // Mattock
+    &gear_items::SetEntityCape,     // Cape
+    &gear_items::SetEntityShotgun,  // Shotgun
+    &gear_items::SetEntityTeleporter, // Teleporter
+    &gear_items::SetEntityGloves,   // Gloves
+    &gear_items::SetEntitySpectacles, // Spectacles
+    &gear_items::SetEntityWebCannon, // WebCannon
+    &gear_items::SetEntityPistol,   // Pistol
+    &gear_items::SetEntityMitt,     // Mitt
+    &gear_items::SetEntityPaste,    // Paste
+    &gear_items::SetEntitySpringShoes, // SpringShoes
+    &gear_items::SetEntitySpikeShoes, // SpikeShoes
+    &gear_items::SetEntityMachete,  // Machete
+    &gear_items::SetEntityBombBox,  // BombBox
+    &gear_items::SetEntityBow,      // Bow
+    &gear_items::SetEntityCompass,  // Compass
+    &gear_items::SetEntityParachute, // Parachute
+    &gear_items::SetEntityRopePile, // RopePile
     &dice::SetEntityDice,           // Dice
     &ruby_big::SetEntityRubyBig,    // RubyBig
     &emerald_big::SetEntityEmeraldBig, // EmeraldBig

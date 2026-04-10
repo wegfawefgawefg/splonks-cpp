@@ -1,2 +1,3 @@
 jewish golem
-2
+debuff idea: clumsy - you drop bombs sometimes on tool use
+item idea: randomizes tool on use, but does let you see whats coming up next

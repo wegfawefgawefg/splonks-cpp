@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 27;
+constexpr std::uint32_t kRecordingVersion = 28;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -434,6 +434,40 @@ const char* EntityTypeToString(EntityType type) {
         return "Chest";
     case EntityType::Mattock:
         return "Mattock";
+    case EntityType::Cape:
+        return "Cape";
+    case EntityType::Shotgun:
+        return "Shotgun";
+    case EntityType::Teleporter:
+        return "Teleporter";
+    case EntityType::Gloves:
+        return "Gloves";
+    case EntityType::Spectacles:
+        return "Spectacles";
+    case EntityType::WebCannon:
+        return "WebCannon";
+    case EntityType::Pistol:
+        return "Pistol";
+    case EntityType::Mitt:
+        return "Mitt";
+    case EntityType::Paste:
+        return "Paste";
+    case EntityType::SpringShoes:
+        return "SpringShoes";
+    case EntityType::SpikeShoes:
+        return "SpikeShoes";
+    case EntityType::Machete:
+        return "Machete";
+    case EntityType::BombBox:
+        return "BombBox";
+    case EntityType::Bow:
+        return "Bow";
+    case EntityType::Compass:
+        return "Compass";
+    case EntityType::Parachute:
+        return "Parachute";
+    case EntityType::RopePile:
+        return "RopePile";
     case EntityType::Dice:
         return "Dice";
     case EntityType::RubyBig:

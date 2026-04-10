@@ -33,10 +33,11 @@ struct TileSourceNameGroup {
     std::uint32_t count = 0;
 };
 
-constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
+constexpr std::array<TileSourceNameGroup, 58> kTileSourceNameGroups{{
     {TileSet::Cave, Tile::Air, {HashFrameDataIdConstexpr("cave_air_0"), HashFrameDataIdConstexpr("cave_air_1"), HashFrameDataIdConstexpr("cave_air_2")}, 3},
     {TileSet::Cave, Tile::Dirt, {HashFrameDataIdConstexpr("cave_dirt_0"), HashFrameDataIdConstexpr("cave_dirt_1"), HashFrameDataIdConstexpr("cave_dirt_2")}, 3},
     {TileSet::Cave, Tile::Gold, {HashFrameDataIdConstexpr("cave_gold_0"), 0, 0}, 1},
+    {TileSet::Cave, Tile::GoldBig, {HashFrameDataIdConstexpr("cave_gold_1"), 0, 0}, 1},
     {TileSet::Cave, Tile::Block, {HashFrameDataIdConstexpr("cave_block_0"), 0, 0}, 1},
     {TileSet::Cave, Tile::ShopWall, {HashFrameDataIdConstexpr("cave_shop_wall"), 0, 0}, 1},
     {TileSet::Cave, Tile::SmoothWall, {HashFrameDataIdConstexpr("cave_smooth_wall"), 0, 0}, 1},
@@ -51,6 +52,7 @@ constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
     {TileSet::Ice, Tile::Air, {HashFrameDataIdConstexpr("ice_air_0"), HashFrameDataIdConstexpr("ice_air_1"), HashFrameDataIdConstexpr("ice_air_2")}, 3},
     {TileSet::Ice, Tile::Dirt, {HashFrameDataIdConstexpr("ice_dirt_0"), HashFrameDataIdConstexpr("ice_dirt_1"), HashFrameDataIdConstexpr("ice_dirt_2")}, 3},
     {TileSet::Ice, Tile::Gold, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
+    {TileSet::Ice, Tile::GoldBig, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
     {TileSet::Ice, Tile::Block, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
     {TileSet::Ice, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
     {TileSet::Ice, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
@@ -62,6 +64,7 @@ constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
     {TileSet::Jungle, Tile::Air, {HashFrameDataIdConstexpr("jungle_air_0"), HashFrameDataIdConstexpr("jungle_air_1"), HashFrameDataIdConstexpr("jungle_air_2")}, 3},
     {TileSet::Jungle, Tile::Dirt, {HashFrameDataIdConstexpr("jungle_dirt_0"), HashFrameDataIdConstexpr("jungle_dirt_1"), HashFrameDataIdConstexpr("jungle_dirt_2")}, 3},
     {TileSet::Jungle, Tile::Gold, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
+    {TileSet::Jungle, Tile::GoldBig, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
     {TileSet::Jungle, Tile::Block, {HashFrameDataIdConstexpr("jungle_block_0"), 0, 0}, 1},
     {TileSet::Jungle, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
     {TileSet::Jungle, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
@@ -73,6 +76,7 @@ constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
     {TileSet::Temple, Tile::Air, {HashFrameDataIdConstexpr("temple_air_0"), HashFrameDataIdConstexpr("temple_air_1"), HashFrameDataIdConstexpr("temple_air_2")}, 3},
     {TileSet::Temple, Tile::Dirt, {HashFrameDataIdConstexpr("temple_dirt_0"), HashFrameDataIdConstexpr("temple_dirt_1"), HashFrameDataIdConstexpr("temple_dirt_2")}, 3},
     {TileSet::Temple, Tile::Gold, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
+    {TileSet::Temple, Tile::GoldBig, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
     {TileSet::Temple, Tile::Block, {HashFrameDataIdConstexpr("temple_block_0"), 0, 0}, 1},
     {TileSet::Temple, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
     {TileSet::Temple, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
@@ -84,6 +88,7 @@ constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
     {TileSet::Boss, Tile::Air, {HashFrameDataIdConstexpr("boss_air_0"), HashFrameDataIdConstexpr("boss_air_1"), HashFrameDataIdConstexpr("boss_air_2")}, 3},
     {TileSet::Boss, Tile::Dirt, {HashFrameDataIdConstexpr("boss_dirt_0"), HashFrameDataIdConstexpr("boss_dirt_1"), HashFrameDataIdConstexpr("boss_dirt_2")}, 3},
     {TileSet::Boss, Tile::Gold, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},
+    {TileSet::Boss, Tile::GoldBig, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},
     {TileSet::Boss, Tile::Block, {HashFrameDataIdConstexpr("boss_block_0"), 0, 0}, 1},
     {TileSet::Boss, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
     {TileSet::Boss, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},

@@ -71,11 +71,11 @@ bool IsBlockedForHangProbe(
     return false;
 }
 
-bool EntityHasHangGloves(const Entity& entity, const State& state) {
+bool EntityHasHangGloves(const Entity& entity) {
     if (entity.can_hang_wall) {
         return true;
     }
-    if (entity.type_ == EntityType::Player && state.debug_level.player_has_gloves) {
+    if (HasPassiveItem(entity, EntityPassiveItem::Gloves)) {
         return true;
     }
     return false;
@@ -190,7 +190,7 @@ bool TryCaptureHdHang(
     bool check_entities
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.can_hang_ledge && !EntityHasHangGloves(entity, state)) {
+    if (!entity.can_hang_ledge && !EntityHasHangGloves(entity)) {
         return false;
     }
     const systems::controls::ControlIntent control =
@@ -228,7 +228,7 @@ bool TryCaptureHdHang(
         return false;
     }
 
-    const bool has_gloves = EntityHasHangGloves(entity, state);
+    const bool has_gloves = EntityHasHangGloves(entity);
     const float center_x = aabb.tl.x + std::floor(entity.size.x / 2.0F);
     const float upper_probe_y_a = aabb.tl.y + 2.0F;
     const float upper_probe_y_b = aabb.tl.y + 3.0F;
@@ -354,7 +354,7 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
     }
 
     if (mutable_entity.left_hanging) {
-        const bool has_gloves = EntityHasHangGloves(mutable_entity, state);
+        const bool has_gloves = EntityHasHangGloves(mutable_entity);
         const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, true);
         if ((has_gloves && !still_trying) ||
             !IsSideBlockedForHang(mutable_entity, state, true, true, true)) {
@@ -362,7 +362,7 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
             mutable_entity.hang_count = kHangWallReleaseCooldownFrames;
         }
     } else if (mutable_entity.right_hanging) {
-        const bool has_gloves = EntityHasHangGloves(mutable_entity, state);
+        const bool has_gloves = EntityHasHangGloves(mutable_entity);
         const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, false);
         if ((has_gloves && !still_trying) ||
             !IsSideBlockedForHang(mutable_entity, state, false, true, true)) {
@@ -427,7 +427,7 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
             const bool jumping_away =
                 (entity.right_hanging && control.left) ||
                 (entity.left_hanging && control.right);
-            const bool has_gloves = EntityHasHangGloves(entity, state);
+            const bool has_gloves = EntityHasHangGloves(entity);
             entity.left_hanging = false;
             entity.right_hanging = false;
             entity.grounded = false;

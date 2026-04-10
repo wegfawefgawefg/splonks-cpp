@@ -2,6 +2,7 @@
 
 #include "entity.hpp"
 #include "entities/common.hpp"
+#include "frame_data_id.hpp"
 #include "graphics.hpp"
 #include "render_stone_overlay.hpp"
 #include "render_terrain_lighting.hpp"
@@ -50,6 +51,32 @@ bool ShouldRenderBackgroundStamp(const State& state, const BackgroundStamp& stam
     }
 
     return true;
+}
+
+bool ShouldRevealEmbeddedTreasure(const State& state) {
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!entity.active) {
+            continue;
+        }
+        if (CanRevealEmbeddedTreasure(entity)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+const FrameData* GetFirstFrameForAnimationOrFallback(
+    const Graphics& graphics,
+    FrameDataId animation_id
+) {
+    const FrameDataAnimation* animation = graphics.frame_data_db.FindAnimation(animation_id);
+    if (animation == nullptr || animation->frame_indices.empty()) {
+        animation = graphics.frame_data_db.FindAnimation(frame_data_ids::NoSprite);
+        if (animation == nullptr || animation->frame_indices.empty()) {
+            return nullptr;
+        }
+    }
+    return &graphics.frame_data_db.frames[animation->frame_indices[0]];
 }
 
 } // namespace
@@ -204,42 +231,107 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
             continue;
         }
 
-        const FrameDataAnimation* const animation =
-            graphics.frame_data_db.FindAnimation(stamp.animation_id);
-        if (animation == nullptr || animation->frame_indices.empty()) {
+        const FrameData* const frame_data =
+            GetFirstFrameForAnimationOrFallback(graphics, stamp.animation_id);
+        if (frame_data == nullptr) {
             continue;
         }
-
-        const FrameData& frame_data = graphics.frame_data_db.frames[animation->frame_indices[0]];
-        SDL_Texture* const sprite_texture = graphics.GetFrameDataTexture(frame_data.image_id);
+        SDL_Texture* const sprite_texture = graphics.GetFrameDataTexture(frame_data->image_id);
         if (sprite_texture == nullptr) {
             continue;
         }
 
         const SDL_FRect src{
-            static_cast<float>(frame_data.sample_rect.x),
-            static_cast<float>(frame_data.sample_rect.y),
-            static_cast<float>(frame_data.sample_rect.w),
-            static_cast<float>(frame_data.sample_rect.h),
+            static_cast<float>(frame_data->sample_rect.x),
+            static_cast<float>(frame_data->sample_rect.y),
+            static_cast<float>(frame_data->sample_rect.w),
+            static_cast<float>(frame_data->sample_rect.h),
         };
         const SDL_FRect dst = WorldRectToScreen(
             graphics,
             stamp.pos,
             Vec2::New(
-                static_cast<float>(frame_data.sample_rect.w),
-                static_cast<float>(frame_data.sample_rect.h)
+                static_cast<float>(frame_data->sample_rect.w),
+                static_cast<float>(frame_data->sample_rect.h)
             )
         );
 
         const int tile_x =
-            static_cast<int>((stamp.pos.x + (static_cast<float>(frame_data.sample_rect.w) * 0.5F)) /
+            static_cast<int>((stamp.pos.x + (static_cast<float>(frame_data->sample_rect.w) * 0.5F)) /
                              static_cast<float>(kTileSize));
         const int tile_y =
-            static_cast<int>((stamp.pos.y + (static_cast<float>(frame_data.sample_rect.h) * 0.5F)) /
+            static_cast<int>((stamp.pos.y + (static_cast<float>(frame_data->sample_rect.h) * 0.5F)) /
                              static_cast<float>(kTileSize));
         ApplyBackwallTileBrightness(sprite_texture, state, graphics, tile_x, tile_y);
         SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
         ResetTerrainTileBrightness(sprite_texture);
+    }
+}
+
+void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    if (!ShouldRevealEmbeddedTreasure(state)) {
+        return;
+    }
+
+    EnsureTerrainLightingCache(state);
+    for (std::size_t y = 0; y < state.stage.embedded_treasures.size(); ++y) {
+        for (std::size_t x = 0; x < state.stage.embedded_treasures[y].size(); ++x) {
+            const EntityType embedded_treasure = state.stage.embedded_treasures[y][x];
+            if (embedded_treasure == EntityType::None) {
+                continue;
+            }
+
+            const FrameData* const frame_data = GetFirstFrameForAnimationOrFallback(
+                graphics,
+                GetDefaultAnimationIdForEntityType(embedded_treasure)
+            );
+            if (frame_data == nullptr) {
+                continue;
+            }
+
+            SDL_Texture* const sprite_texture = graphics.GetFrameDataTexture(frame_data->image_id);
+            if (sprite_texture == nullptr) {
+                continue;
+            }
+
+            const Vec2 tile_world_pos = Vec2::New(
+                static_cast<float>(x * kTileSize),
+                static_cast<float>(y * kTileSize)
+            );
+            const int render_offset_x =
+                (static_cast<int>(kTileSize) - frame_data->sample_rect.w) / 2;
+            const int render_offset_y =
+                (static_cast<int>(kTileSize) - frame_data->sample_rect.h) / 2;
+            const Vec2 render_world_pos = tile_world_pos + Vec2::New(
+                static_cast<float>(render_offset_x),
+                static_cast<float>(render_offset_y)
+            );
+            const SDL_FRect src{
+                static_cast<float>(frame_data->sample_rect.x),
+                static_cast<float>(frame_data->sample_rect.y),
+                static_cast<float>(frame_data->sample_rect.w),
+                static_cast<float>(frame_data->sample_rect.h),
+            };
+            const SDL_FRect dst = WorldRectToScreen(
+                graphics,
+                render_world_pos,
+                Vec2::New(
+                    static_cast<float>(frame_data->sample_rect.w),
+                    static_cast<float>(frame_data->sample_rect.h)
+                )
+            );
+            ApplyTerrainTileBrightness(
+                sprite_texture,
+                state,
+                graphics,
+                static_cast<int>(x),
+                static_cast<int>(y)
+            );
+            SDL_SetTextureAlphaMod(sprite_texture, 224);
+            SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
+            SDL_SetTextureAlphaMod(sprite_texture, 255);
+            ResetTerrainTileBrightness(sprite_texture);
+        }
     }
 }
 

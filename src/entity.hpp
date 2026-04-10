@@ -6,11 +6,23 @@
 #include "utils.hpp"
 
 #include <optional>
+#include <cstdint>
 #include <tuple>
 
 namespace splonks {
 
 constexpr unsigned int kJumpDelayFrames = 1;
+
+enum class EntityPassiveItem : std::uint8_t {
+    Gloves,
+    Spectacles,
+    Compass,
+    Mitt,
+    Paste,
+    SpringShoes,
+    SpikeShoes,
+    Count,
+};
 
 struct Entity {
     bool active = false;
@@ -49,6 +61,7 @@ struct Entity {
     std::uint32_t hang_count = 0;
     bool holding = false;
     bool climbing = false;
+    std::uint64_t passive_item_flags = 0;
     std::uint32_t money = 0;
     std::uint32_t bombs = 4;
     std::uint32_t ropes = 4;
@@ -123,6 +136,13 @@ struct Entity {
 
 bool CanGoOnBack(EntityType type_);
 bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state);
+const char* PassiveItemToString(EntityPassiveItem passive_item);
+std::optional<EntityPassiveItem> PassiveItemForEntityType(EntityType type_);
+bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
+void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);
+bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type);
+bool CanRevealEmbeddedTreasure(const Entity& entity);
+FrameDataId GetDefaultAnimationIdForEntityType(EntityType type_);
 void EnableStone(Entity& entity);
 void DisableStone(Entity& entity);
 

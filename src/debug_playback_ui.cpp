@@ -259,7 +259,14 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     ImGui::Combo("Preset", &level_kind, level_names, IM_ARRAYSIZE(level_names));
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
-    ImGui::Checkbox("Players Have Gloves", &state.debug_level.player_has_gloves);
+    if (ImGui::Button("Give Players Gloves")) {
+        for (Entity& entity : state.entity_manager.entities) {
+            if (!entity.active || entity.type_ != EntityType::Player) {
+                continue;
+            }
+            SetPassiveItem(entity, EntityPassiveItem::Gloves, true);
+        }
+    }
 
     if (state.debug_level.kind == DebugLevelKind::HangTest) {
         HangTestLevelConfig& hang_test = state.debug_level.hang_test;
@@ -785,6 +792,14 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("Coyote: %u", entity.coyote_time);
     ImGui::Text("Health: %u", entity.health);
     ImGui::Text("Money: %u", entity.money);
+    ImGui::SeparatorText("Passive Items");
+    for (std::uint8_t i = 0; i < static_cast<std::uint8_t>(EntityPassiveItem::Count); ++i) {
+        const EntityPassiveItem passive_item = static_cast<EntityPassiveItem>(i);
+        bool has_passive_item = HasPassiveItem(entity, passive_item);
+        if (ImGui::Checkbox(PassiveItemToString(passive_item), &has_passive_item)) {
+            SetPassiveItem(entity, passive_item, has_passive_item);
+        }
+    }
     ImGui::Separator();
     ImGui::TextUnformatted("Tools");
     if (debug.playback_active) {

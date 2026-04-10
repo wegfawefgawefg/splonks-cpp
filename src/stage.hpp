@@ -50,6 +50,7 @@ enum class StageType : int {
 struct Stage {
     StageType stage_type = StageType::Blank;
     std::vector<std::vector<Tile>> tiles;
+    std::vector<std::vector<EntityType>> embedded_treasures;
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
     std::vector<StageEntitySpawn> entity_spawns;
@@ -68,10 +69,13 @@ struct Stage {
     UVec2 GetRoomDims() const;
     IVec2 GetRoomTlWc(const IVec2& room) const;
     const Tile& GetTile(unsigned int x, unsigned int y) const;
+    EntityType GetEmbeddedTreasure(unsigned int x, unsigned int y) const;
     const Tile* GetTileAtWc(const IVec2& pos) const;
     std::vector<const Tile*> GetTilesInRectWc(const IVec2& tl, const IVec2& br) const;
     std::vector<const Tile*> GetTilesInRect(const IVec2& tl, const IVec2& br) const;
     void SetTile(const IVec2& pos, Tile tile);
+    void SetEmbeddedTreasure(const IVec2& pos, EntityType type_);
+    EntityType TakeEmbeddedTreasure(const IVec2& pos);
     void SetTilesInRectWc(const AABB& area, Tile tile_type);
     void SetTilesInRect(const AABB& area, Tile tile_type);
     std::vector<IAABB> GetAabbsForAllCollidableTilesInRect(const IVec2& tl, const IVec2& br) const;

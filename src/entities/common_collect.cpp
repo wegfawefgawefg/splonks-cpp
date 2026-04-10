@@ -30,6 +30,23 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::GoldIdol:
     case EntityType::Chest:
     case EntityType::Mattock:
+    case EntityType::Cape:
+    case EntityType::Shotgun:
+    case EntityType::Teleporter:
+    case EntityType::Gloves:
+    case EntityType::Spectacles:
+    case EntityType::WebCannon:
+    case EntityType::Pistol:
+    case EntityType::Mitt:
+    case EntityType::Paste:
+    case EntityType::SpringShoes:
+    case EntityType::SpikeShoes:
+    case EntityType::Machete:
+    case EntityType::BombBox:
+    case EntityType::Bow:
+    case EntityType::Compass:
+    case EntityType::Parachute:
+    case EntityType::RopePile:
     case EntityType::Dice:
     case EntityType::RubyBig:
     case EntityType::EmeraldBig:
@@ -115,14 +132,20 @@ bool TryCollectEntityFromContact(
     }
 
     const unsigned int money_gained = GetPickupMoneyValue(pickup->type_);
-    if (money_gained == 0) {
+    if (money_gained != 0) {
+        collector.money += money_gained;
+        if (const std::optional<SoundEffect> sound_effect = GetPickupSound(pickup->type_)) {
+            audio.PlaySoundEffect(*sound_effect);
+        }
+        state.entity_manager.SetInactive(other_entity_idx);
+        state.UpdateSidForEntity(other_entity_idx, graphics);
+        return true;
+    }
+
+    if (!TryCollectPassiveItem(collector, pickup->type_)) {
         return false;
     }
 
-    collector.money += money_gained;
-    if (const std::optional<SoundEffect> sound_effect = GetPickupSound(pickup->type_)) {
-        audio.PlaySoundEffect(*sound_effect);
-    }
     state.entity_manager.SetInactive(other_entity_idx);
     state.UpdateSidForEntity(other_entity_idx, graphics);
     return true;

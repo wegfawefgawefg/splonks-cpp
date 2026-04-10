@@ -149,6 +149,23 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::GoldIdol:
     case EntityType::Chest:
     case EntityType::Mattock:
+    case EntityType::Cape:
+    case EntityType::Shotgun:
+    case EntityType::Teleporter:
+    case EntityType::Gloves:
+    case EntityType::Spectacles:
+    case EntityType::WebCannon:
+    case EntityType::Pistol:
+    case EntityType::Mitt:
+    case EntityType::Paste:
+    case EntityType::SpringShoes:
+    case EntityType::SpikeShoes:
+    case EntityType::Machete:
+    case EntityType::BombBox:
+    case EntityType::Bow:
+    case EntityType::Compass:
+    case EntityType::Parachute:
+    case EntityType::RopePile:
     case EntityType::Dice:
     case EntityType::RubyBig:
     case EntityType::EmeraldBig:

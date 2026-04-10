@@ -13,6 +13,7 @@
 #include "entities/damsel.hpp"
 #include "entities/dice.hpp"
 #include "entities/emerald_big.hpp"
+#include "entities/gear_items.hpp"
 #include "entities/ghost_ball.hpp"
 #include "entities/giant_tiki_head.hpp"
 #include "entities/gold_idol.hpp"
@@ -154,6 +155,25 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             case EntityType::Chest:
                 entities::chest::StepEntityLogicAsChest(entity_idx, state, audio);
                 break;
+            case EntityType::Cape:
+            case EntityType::Shotgun:
+            case EntityType::Teleporter:
+            case EntityType::Gloves:
+            case EntityType::Spectacles:
+            case EntityType::WebCannon:
+            case EntityType::Pistol:
+            case EntityType::Mitt:
+            case EntityType::Paste:
+            case EntityType::SpringShoes:
+            case EntityType::SpikeShoes:
+            case EntityType::Machete:
+            case EntityType::BombBox:
+            case EntityType::Bow:
+            case EntityType::Compass:
+            case EntityType::Parachute:
+            case EntityType::RopePile:
+                entities::gear_items::StepEntityLogicAsGearItem(entity_idx, state, audio);
+                break;
             case EntityType::Mattock:
                 entities::mattock::StepEntityLogicAsMattock(entity_idx, state, audio);
                 break;
@@ -283,6 +303,26 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                     break;
                 case EntityType::Chest:
                     entities::chest::StepEntityPhysicsAsChest(entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Cape:
+                case EntityType::Shotgun:
+                case EntityType::Teleporter:
+                case EntityType::Gloves:
+                case EntityType::Spectacles:
+                case EntityType::WebCannon:
+                case EntityType::Pistol:
+                case EntityType::Mitt:
+                case EntityType::Paste:
+                case EntityType::SpringShoes:
+                case EntityType::SpikeShoes:
+                case EntityType::Machete:
+                case EntityType::BombBox:
+                case EntityType::Bow:
+                case EntityType::Compass:
+                case EntityType::Parachute:
+                case EntityType::RopePile:
+                    entities::gear_items::StepEntityPhysicsAsGearItem(
+                        entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::Mattock:
                     entities::mattock::StepEntityPhysicsAsMattock(

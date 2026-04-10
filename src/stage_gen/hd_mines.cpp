@@ -711,6 +711,91 @@ void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
     });
 }
 
+EntityType PickUndergroundItemType() {
+    switch (RandomIntInclusive(0, 18)) {
+    case 0:
+        return EntityType::JetPack;
+    case 1:
+        return EntityType::Cape;
+    case 2:
+        return EntityType::Shotgun;
+    case 3:
+        return EntityType::Mattock;
+    case 4:
+        return EntityType::Teleporter;
+    case 5:
+        return EntityType::Gloves;
+    case 6:
+        return EntityType::Spectacles;
+    case 7:
+        return EntityType::WebCannon;
+    case 8:
+        return EntityType::Pistol;
+    case 9:
+        return EntityType::Mitt;
+    case 10:
+        return EntityType::Paste;
+    case 11:
+        return EntityType::SpringShoes;
+    case 12:
+        return EntityType::SpikeShoes;
+    case 13:
+        return EntityType::Machete;
+    case 14:
+        return EntityType::BombBox;
+    case 15:
+        return EntityType::Bow;
+    case 16:
+        return EntityType::Compass;
+    case 17:
+        return EntityType::Parachute;
+    default:
+        return EntityType::RopePile;
+    }
+}
+
+void AddMinesEmbeddedTreasure(Stage& stage) {
+    const int stage_width = static_cast<int>(stage.GetTileWidth());
+    const int stage_height = static_cast<int>(stage.GetTileHeight());
+
+    for (int tile_y = 0; tile_y < stage_height; ++tile_y) {
+        for (int tile_x = 0; tile_x < stage_width; ++tile_x) {
+            const IVec2 tile_pos = IVec2::New(tile_x, tile_y);
+            if (stage.GetTile(static_cast<unsigned int>(tile_x), static_cast<unsigned int>(tile_y)) !=
+                Tile::Dirt) {
+                continue;
+            }
+
+            const int visible_gold_roll = RandomIntInclusive(1, 100);
+            if (visible_gold_roll < 20) {
+                stage.SetTile(tile_pos, Tile::Gold);
+                continue;
+            }
+            if (visible_gold_roll < 30) {
+                stage.SetTile(tile_pos, Tile::GoldBig);
+                continue;
+            }
+
+            const bool interior_tile =
+                tile_x > 0 && tile_x < stage_width - 1 &&
+                tile_y > 0 && tile_y < stage_height - 1;
+            if (!interior_tile) {
+                continue;
+            }
+
+            if (RandomIntInclusive(1, 100) == 1) {
+                stage.SetEmbeddedTreasure(tile_pos, EntityType::SapphireBig);
+            } else if (RandomIntInclusive(1, 120) == 1) {
+                stage.SetEmbeddedTreasure(tile_pos, EntityType::EmeraldBig);
+            } else if (RandomIntInclusive(1, 140) == 1) {
+                stage.SetEmbeddedTreasure(tile_pos, EntityType::RubyBig);
+            } else if (RandomIntInclusive(1, 1200) == 1) {
+                stage.SetEmbeddedTreasure(tile_pos, PickUndergroundItemType());
+            }
+        }
+    }
+}
+
 void AddMinesTreasure(Stage& stage) {
     const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
     const std::optional<Vec2> exit_pos = FindExitPos(stage);
@@ -1193,10 +1278,18 @@ Stage GenerateStage(StageType stage_type) {
 
     stage.stage_type = stage_type;
     stage.tiles = std::move(tiles);
+    stage.embedded_treasures = std::vector<std::vector<EntityType>>(
+        stage.tiles.size(),
+        std::vector<EntityType>(
+            stage.tiles.empty() ? 0U : stage.tiles.front().size(),
+            EntityType::None
+        )
+    );
     stage.rooms = std::move(room_codes);
     stage.path = layout.path;
     stage.gravity = 0.3F;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    AddMinesEmbeddedTreasure(stage);
     AddMinesTreasure(stage);
     ConvertBlocksToArrowTraps(stage);
     AddAmbientMinesEntities(stage);
