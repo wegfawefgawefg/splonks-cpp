@@ -17,6 +17,7 @@ void SetEntitySpringShoes(Entity& entity);
 void SetEntitySpikeShoes(Entity& entity);
 void SetEntityMachete(Entity& entity);
 void SetEntityBombBox(Entity& entity);
+void SetEntityBombBag(Entity& entity);
 void SetEntityBow(Entity& entity);
 void SetEntityCompass(Entity& entity);
 void SetEntityParachute(Entity& entity);

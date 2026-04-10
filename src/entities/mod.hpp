@@ -18,6 +18,7 @@
 #include "entities/giant_tiki_head.hpp"
 #include "entities/gold_idol.hpp"
 #include "entities/jetpack.hpp"
+#include "entities/kali_head.hpp"
 #include "entities/lantern.hpp"
 #include "entities/mattock.hpp"
 #include "entities/money.hpp"

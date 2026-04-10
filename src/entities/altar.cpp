@@ -30,11 +30,11 @@ void SetEntityAltar(Entity& entity, EntityType type_, FrameDataId animation_id) 
 } // namespace
 
 void SetEntityAltarLeft(Entity& entity) {
-    SetEntityAltar(entity, EntityType::AltarLeft, HashFrameDataIdConstexpr("altar_left"));
+    SetEntityAltar(entity, EntityType::AltarLeft, frame_data_ids::AltarLeft);
 }
 
 void SetEntityAltarRight(Entity& entity) {
-    SetEntityAltar(entity, EntityType::AltarRight, HashFrameDataIdConstexpr("altar_right"));
+    SetEntityAltar(entity, EntityType::AltarRight, frame_data_ids::AltarRight);
 }
 
 void StepEntityLogicAsAltar(std::size_t entity_idx, State& state, Audio& audio) {

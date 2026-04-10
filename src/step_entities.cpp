@@ -18,6 +18,7 @@
 #include "entities/giant_tiki_head.hpp"
 #include "entities/gold_idol.hpp"
 #include "entities/jetpack.hpp"
+#include "entities/kali_head.hpp"
 #include "entities/lantern.hpp"
 #include "entities/mattock.hpp"
 #include "entities/money.hpp"
@@ -168,6 +169,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             case EntityType::SpikeShoes:
             case EntityType::Machete:
             case EntityType::BombBox:
+            case EntityType::BombBag:
             case EntityType::Bow:
             case EntityType::Compass:
             case EntityType::Parachute:
@@ -210,6 +212,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 break;
             case EntityType::GiantTikiHead:
                 entities::giant_tiki_head::StepEntityLogicAsGiantTikiHead(entity_idx, state, audio);
+                break;
+            case EntityType::KaliHead:
+                entities::kali_head::StepEntityLogicAsKaliHead(entity_idx, state, audio);
                 break;
             case EntityType::ArrowTrap:
                 entities::arrow_trap::StepEntityLogicAsArrowTrap(entity_idx, state, audio);
@@ -295,6 +300,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 case EntityType::Lantern:
                 case EntityType::LanternRed:
                 case EntityType::GiantTikiHead:
+                case EntityType::KaliHead:
                 case EntityType::ArrowTrap:
                     break;
                 case EntityType::GoldIdol:
@@ -317,6 +323,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 case EntityType::SpikeShoes:
                 case EntityType::Machete:
                 case EntityType::BombBox:
+                case EntityType::BombBag:
                 case EntityType::Bow:
                 case EntityType::Compass:
                 case EntityType::Parachute:

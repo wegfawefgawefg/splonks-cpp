@@ -1,12 +1,10 @@
 #include "entities/gear_items.hpp"
 
-#include "frame_data_id.hpp"
-
 namespace splonks::entities::gear_items {
 
 namespace {
 
-void SetCommonGearItem(Entity& entity, EntityType type_, FrameDataId animation_id) {
+void SetCommonGearItem(Entity& entity, EntityType type_) {
     entity.Reset();
     entity.type_ = type_;
     entity.super_state = EntitySuperState::Idle;
@@ -23,77 +21,81 @@ void SetCommonGearItem(Entity& entity, EntityType type_, FrameDataId animation_i
     entity.draw_layer = DrawLayer::Foreground;
     entity.can_be_stunned = false;
     entity.alignment = Alignment::Neutral;
-    entity.frame_data_animator.SetAnimation(animation_id);
+    entity.frame_data_animator.SetAnimation(GetDefaultAnimationIdForEntityType(type_));
 }
 
 } // namespace
 
 void SetEntityCape(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Cape, HashFrameDataIdConstexpr("cape_pickup"));
+    SetCommonGearItem(entity, EntityType::Cape);
 }
 
 void SetEntityShotgun(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Shotgun, HashFrameDataIdConstexpr("shotgun"));
+    SetCommonGearItem(entity, EntityType::Shotgun);
 }
 
 void SetEntityTeleporter(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Teleporter, HashFrameDataIdConstexpr("teleporter"));
+    SetCommonGearItem(entity, EntityType::Teleporter);
 }
 
 void SetEntityGloves(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Gloves, HashFrameDataIdConstexpr("gloves"));
+    SetCommonGearItem(entity, EntityType::Gloves);
 }
 
 void SetEntitySpectacles(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Spectacles, HashFrameDataIdConstexpr("spectacles"));
+    SetCommonGearItem(entity, EntityType::Spectacles);
 }
 
 void SetEntityWebCannon(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::WebCannon, HashFrameDataIdConstexpr("web_cannon"));
+    SetCommonGearItem(entity, EntityType::WebCannon);
 }
 
 void SetEntityPistol(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Pistol, HashFrameDataIdConstexpr("pistol"));
+    SetCommonGearItem(entity, EntityType::Pistol);
 }
 
 void SetEntityMitt(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Mitt, HashFrameDataIdConstexpr("mitt"));
+    SetCommonGearItem(entity, EntityType::Mitt);
 }
 
 void SetEntityPaste(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Paste, HashFrameDataIdConstexpr("paste"));
+    SetCommonGearItem(entity, EntityType::Paste);
 }
 
 void SetEntitySpringShoes(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::SpringShoes, HashFrameDataIdConstexpr("spring_shoes"));
+    SetCommonGearItem(entity, EntityType::SpringShoes);
 }
 
 void SetEntitySpikeShoes(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::SpikeShoes, HashFrameDataIdConstexpr("spike_shoes"));
+    SetCommonGearItem(entity, EntityType::SpikeShoes);
 }
 
 void SetEntityMachete(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Machete, HashFrameDataIdConstexpr("machete"));
+    SetCommonGearItem(entity, EntityType::Machete);
 }
 
 void SetEntityBombBox(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::BombBox, HashFrameDataIdConstexpr("bomb_box"));
+    SetCommonGearItem(entity, EntityType::BombBox);
+}
+
+void SetEntityBombBag(Entity& entity) {
+    SetCommonGearItem(entity, EntityType::BombBag);
 }
 
 void SetEntityBow(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Bow, HashFrameDataIdConstexpr("bow"));
+    SetCommonGearItem(entity, EntityType::Bow);
 }
 
 void SetEntityCompass(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Compass, HashFrameDataIdConstexpr("compass"));
+    SetCommonGearItem(entity, EntityType::Compass);
 }
 
 void SetEntityParachute(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::Parachute, HashFrameDataIdConstexpr("parachute"));
+    SetCommonGearItem(entity, EntityType::Parachute);
 }
 
 void SetEntityRopePile(Entity& entity) {
-    SetCommonGearItem(entity, EntityType::RopePile, HashFrameDataIdConstexpr("rope_pile"));
+    SetCommonGearItem(entity, EntityType::RopePile);
 }
 
 void StepEntityLogicAsGearItem(std::size_t entity_idx, State& state, Audio& audio) {

@@ -699,6 +699,19 @@ float DistanceToNearestSpawnType(const Stage& stage, EntityType type_, const Vec
     return nearest;
 }
 
+bool HasSpawnType(const std::vector<StageEntitySpawn>& spawns, EntityType type_) {
+    for (const StageEntitySpawn& spawn : spawns) {
+        if (spawn.type_ == type_) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool HasSpawnType(const Stage& stage, const std::vector<StageEntitySpawn>& spawns, EntityType type_) {
+    return HasSpawnType(stage, type_) || HasSpawnType(spawns, type_);
+}
+
 void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
                      LeftOrRight facing = LeftOrRight::Left) {
     if (HasSpawnAtWorldPos(stage, pos)) {
@@ -751,6 +764,217 @@ EntityType PickUndergroundItemType() {
         return EntityType::Parachute;
     default:
         return EntityType::RopePile;
+    }
+}
+
+EntityType PickHighEndShopItemType() {
+    if (RandomIntInclusive(1, 40) == 1) {
+        return EntityType::JetPack;
+    }
+    if (RandomIntInclusive(1, 25) == 1) {
+        return EntityType::Cape;
+    }
+    if (RandomIntInclusive(1, 20) == 1) {
+        return EntityType::Shotgun;
+    }
+    if (RandomIntInclusive(1, 10) == 1) {
+        return EntityType::Gloves;
+    }
+    if (RandomIntInclusive(1, 10) == 1) {
+        return EntityType::Teleporter;
+    }
+    if (RandomIntInclusive(1, 8) == 1) {
+        return EntityType::Mattock;
+    }
+    if (RandomIntInclusive(1, 8) == 1) {
+        return EntityType::Paste;
+    }
+    if (RandomIntInclusive(1, 8) == 1) {
+        return EntityType::SpringShoes;
+    }
+    if (RandomIntInclusive(1, 8) == 1) {
+        return EntityType::SpikeShoes;
+    }
+    if (RandomIntInclusive(1, 8) == 1) {
+        return EntityType::Compass;
+    }
+    if (RandomIntInclusive(1, 8) == 1) {
+        return EntityType::Pistol;
+    }
+    if (RandomIntInclusive(1, 8) == 1) {
+        return EntityType::Machete;
+    }
+    return EntityType::BombBox;
+}
+
+EntityType PickShopItemType(
+    ShopType shop_type,
+    const Stage& stage,
+    const std::vector<StageEntitySpawn>& room_spawns
+) {
+    if (shop_type == ShopType::Bomb) {
+        while (true) {
+            if (RandomIntInclusive(1, 5) == 1) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Paste)) {
+                    return EntityType::Paste;
+                }
+            } else if (RandomIntInclusive(1, 4) == 1) {
+                return EntityType::BombBox;
+            } else {
+                return EntityType::BombBag;
+            }
+        }
+    }
+
+    if (shop_type == ShopType::Weapon) {
+        int attempts_remaining = 20;
+        while (true) {
+            const int n = RandomIntInclusive(1, 4);
+            if (attempts_remaining <= 0) {
+                return EntityType::BombBag;
+            }
+            if (RandomIntInclusive(1, 12) == 1) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::WebCannon)) {
+                    return EntityType::WebCannon;
+                }
+            } else if (RandomIntInclusive(1, 10) == 1) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Shotgun)) {
+                    return EntityType::Shotgun;
+                }
+            } else if (RandomIntInclusive(1, 6) == 1) {
+                return EntityType::BombBox;
+            } else if (n == 1) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Pistol)) {
+                    return EntityType::Pistol;
+                }
+            } else if (n == 2) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Machete)) {
+                    return EntityType::Machete;
+                }
+            } else if (n == 3) {
+                return EntityType::BombBag;
+            } else if (n == 4) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Bow)) {
+                    return EntityType::Bow;
+                }
+            }
+            attempts_remaining -= 1;
+        }
+    }
+
+    if (shop_type == ShopType::Clothing) {
+        int attempts_remaining = 20;
+        while (true) {
+            const int n = RandomIntInclusive(1, 6);
+            if (RandomIntInclusive(1, attempts_remaining) == 1) {
+                return EntityType::RopePile;
+            }
+            if (n == 1) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::SpringShoes)) {
+                    return EntityType::SpringShoes;
+                }
+            } else if (n == 2) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Spectacles)) {
+                    return EntityType::Spectacles;
+                }
+            } else if (n == 3) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Gloves)) {
+                    return EntityType::Gloves;
+                }
+            } else if (n == 4) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Mitt)) {
+                    return EntityType::Mitt;
+                }
+            } else if (n == 5) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Cape)) {
+                    return EntityType::Cape;
+                }
+            } else if (n == 6) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::SpikeShoes)) {
+                    return EntityType::SpikeShoes;
+                }
+            }
+            attempts_remaining -= 1;
+        }
+    }
+
+    if (shop_type == ShopType::Rare) {
+        int attempts_remaining = 20;
+        while (true) {
+            const int n = RandomIntInclusive(1, 11);
+            if (RandomIntInclusive(1, attempts_remaining) == 1) {
+                return EntityType::BombBox;
+            }
+            if (n == 1) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::SpringShoes)) {
+                    return EntityType::SpringShoes;
+                }
+            } else if (n == 2) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Compass)) {
+                    return EntityType::Compass;
+                }
+            } else if (n == 3) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Mattock)) {
+                    return EntityType::Mattock;
+                }
+            } else if (n == 4) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Spectacles)) {
+                    return EntityType::Spectacles;
+                }
+            } else if (n == 5) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::JetPack)) {
+                    return EntityType::JetPack;
+                }
+            } else if (n == 6) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Gloves)) {
+                    return EntityType::Gloves;
+                }
+            } else if (n == 7) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Mitt)) {
+                    return EntityType::Mitt;
+                }
+            } else if (n == 8) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::WebCannon)) {
+                    return EntityType::WebCannon;
+                }
+            } else if (n == 9) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Cape)) {
+                    return EntityType::Cape;
+                }
+            } else if (n == 10) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::Teleporter)) {
+                    return EntityType::Teleporter;
+                }
+            } else if (n == 11) {
+                if (!HasSpawnType(stage, room_spawns, EntityType::SpikeShoes)) {
+                    return EntityType::SpikeShoes;
+                }
+            }
+            attempts_remaining -= 1;
+        }
+    }
+
+    while (true) {
+        const int n = RandomIntInclusive(1, 3);
+        if (RandomIntInclusive(1, 20) == 1) {
+            if (!HasSpawnType(stage, room_spawns, EntityType::Mattock)) {
+                return EntityType::Mattock;
+            }
+        } else if (RandomIntInclusive(1, 10) == 1) {
+            if (!HasSpawnType(stage, room_spawns, EntityType::Gloves)) {
+                return EntityType::Gloves;
+            }
+        } else if (RandomIntInclusive(1, 10) == 1) {
+            if (!HasSpawnType(stage, room_spawns, EntityType::Compass)) {
+                return EntityType::Compass;
+            }
+        } else if (n == 1) {
+            return EntityType::BombBag;
+        } else if (n == 2) {
+            return EntityType::RopePile;
+        } else {
+            return EntityType::Parachute;
+        }
     }
 }
 
@@ -1011,7 +1235,13 @@ void AddAmbientMinesEntities(Stage& stage) {
     }
 }
 
-ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, int room_code_above) {
+ResolvedRoom ResolveRoom(
+    int room_code,
+    bool is_start_room,
+    bool is_end_room,
+    int room_code_above,
+    const Stage& existing_stage
+) {
     const RoomTemplateSelection selection =
         SelectRoomTemplate(room_code, is_start_room, is_end_room, room_code_above);
     const std::string glyphs = ExpandObstacles(selection.glyphs);
@@ -1091,6 +1321,20 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                     .type_ = EntityType::SacAltarRight,
                     .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
                 });
+                room.background_stamps.push_back(BackgroundStamp{
+                    .animation_id = frame_data_ids::KaliBody,
+                    .pos = tile_pos + Vec2::New(
+                        -static_cast<float>(kTileSize),
+                        -static_cast<float>(kTileSize * 3)
+                    ),
+                });
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::KaliHead,
+                    .pos = tile_pos + Vec2::New(
+                        static_cast<float>(kTileSize),
+                        -static_cast<float>(kTileSize * 4)
+                    ),
+                });
                 break;
             case 'a':
                 room.entity_spawns.push_back(StageEntitySpawn{
@@ -1136,6 +1380,12 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                     });
                 }
                 break;
+            case 'q':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = PickHighEndShopItemType(),
+                    .pos = tile_pos,
+                });
+                break;
             case 'W':
                 room.background_stamps.push_back(BackgroundStamp{
                     .animation_id = HashFrameDataIdConstexpr("wanted_poster"),
@@ -1168,6 +1418,12 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                 }
                 break;
             }
+            case 'i':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = PickShopItemType(selection.shop_type, existing_stage, room.entity_spawns),
+                    .pos = tile_pos,
+                });
+                break;
             case 'd':
                 room.entity_spawns.push_back(StageEntitySpawn{
                     .type_ = EntityType::Dice,
@@ -1248,8 +1504,13 @@ Stage GenerateStage(StageType stage_type) {
             const int room_code_above =
                 room_y == 0 ? -1 : layout.room_codes[room_y - 1][room_x];
 
-            ResolvedRoom room =
-                ResolveRoom(room_code, is_start_room, is_end_room, room_code_above);
+            ResolvedRoom room = ResolveRoom(
+                room_code,
+                is_start_room,
+                is_end_room,
+                room_code_above,
+                stage
+            );
 
             const UVec2 room_pos = UVec2::New(room_x, room_y) * Stage::kRoomShape;
             const Vec2 room_pos_wc = Vec2::New(

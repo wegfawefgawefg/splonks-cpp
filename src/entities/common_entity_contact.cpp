@@ -162,6 +162,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::SpikeShoes:
     case EntityType::Machete:
     case EntityType::BombBox:
+    case EntityType::BombBag:
     case EntityType::Bow:
     case EntityType::Compass:
     case EntityType::Parachute:
@@ -182,6 +183,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::Lantern:
     case EntityType::LanternRed:
     case EntityType::GiantTikiHead:
+    case EntityType::KaliHead:
     case EntityType::ArrowTrap:
     case EntityType::Snake:
     case EntityType::Caveman:

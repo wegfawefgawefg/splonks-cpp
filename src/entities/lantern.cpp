@@ -30,11 +30,11 @@ void SetEntityLanternCommon(Entity& entity, EntityType type_, FrameDataId animat
 } // namespace
 
 void SetEntityLantern(Entity& entity) {
-    SetEntityLanternCommon(entity, EntityType::Lantern, HashFrameDataIdConstexpr("lantern"));
+    SetEntityLanternCommon(entity, EntityType::Lantern, frame_data_ids::Lantern);
 }
 
 void SetEntityLanternRed(Entity& entity) {
-    SetEntityLanternCommon(entity, EntityType::LanternRed, HashFrameDataIdConstexpr("lantern_red"));
+    SetEntityLanternCommon(entity, EntityType::LanternRed, frame_data_ids::LanternRed);
 }
 
 void StepEntityLogicAsLantern(std::size_t entity_idx, State& state, Audio& audio) {

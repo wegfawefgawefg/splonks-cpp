@@ -32,14 +32,14 @@ void SetEntitySpider(Entity& entity, EntityType type_, FrameDataId animation_id)
 } // namespace
 
 void SetEntitySpiderHang(Entity& entity) {
-    SetEntitySpider(entity, EntityType::SpiderHang, HashFrameDataIdConstexpr("spider_hang"));
+    SetEntitySpider(entity, EntityType::SpiderHang, frame_data_ids::SpiderHang);
 }
 
 void SetEntityGiantSpiderHang(Entity& entity) {
     SetEntitySpider(
         entity,
         EntityType::GiantSpiderHang,
-        HashFrameDataIdConstexpr("giant_spider_hang")
+        frame_data_ids::GiantSpiderHang
     );
 }
 

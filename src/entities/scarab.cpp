@@ -24,7 +24,7 @@ void SetEntityScarab(Entity& entity) {
     entity.draw_layer = DrawLayer::Foreground;
     entity.can_be_stunned = true;
     entity.alignment = Alignment::Enemy;
-    entity.frame_data_animator.SetAnimation(HashFrameDataIdConstexpr("scarab"));
+    entity.frame_data_animator.SetAnimation(frame_data_ids::Scarab);
 }
 
 void StepEntityLogicAsScarab(std::size_t entity_idx, State& state, Audio& audio) {

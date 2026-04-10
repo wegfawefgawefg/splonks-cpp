@@ -71,6 +71,7 @@ constexpr std::array<EntitySetupFn, kEntityTypeCount> kEntitySetupFns{{
     &gear_items::SetEntitySpikeShoes, // SpikeShoes
     &gear_items::SetEntityMachete,  // Machete
     &gear_items::SetEntityBombBox,  // BombBox
+    &gear_items::SetEntityBombBag,  // BombBag
     &gear_items::SetEntityBow,      // Bow
     &gear_items::SetEntityCompass,  // Compass
     &gear_items::SetEntityParachute, // Parachute
@@ -91,6 +92,7 @@ constexpr std::array<EntitySetupFn, kEntityTypeCount> kEntitySetupFns{{
     &lantern::SetEntityLantern,     // Lantern
     &lantern::SetEntityLanternRed,  // LanternRed
     &giant_tiki_head::SetEntityGiantTikiHead, // GiantTikiHead
+    &kali_head::SetEntityKaliHead,  // KaliHead
     &arrow_trap::SetEntityArrowTrap, // ArrowTrap
     &snake::SetEntitySnake,         // Snake
     &caveman::SetEntityCaveman,     // Caveman

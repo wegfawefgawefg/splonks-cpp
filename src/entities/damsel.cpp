@@ -24,7 +24,7 @@ void SetEntityDamsel(Entity& entity) {
     entity.draw_layer = DrawLayer::Foreground;
     entity.can_be_stunned = true;
     entity.alignment = Alignment::Ally;
-    entity.frame_data_animator.SetAnimation(HashFrameDataIdConstexpr("damsel"));
+    entity.frame_data_animator.SetAnimation(frame_data_ids::Damsel);
 }
 
 void StepEntityLogicAsDamsel(std::size_t entity_idx, State& state, Audio& audio) {

@@ -43,6 +43,7 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::SpikeShoes:
     case EntityType::Machete:
     case EntityType::BombBox:
+    case EntityType::BombBag:
     case EntityType::Bow:
     case EntityType::Compass:
     case EntityType::Parachute:
@@ -63,6 +64,7 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::Lantern:
     case EntityType::LanternRed:
     case EntityType::GiantTikiHead:
+    case EntityType::KaliHead:
     case EntityType::ArrowTrap:
     case EntityType::Snake:
     case EntityType::Caveman:

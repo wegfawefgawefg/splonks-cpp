@@ -393,6 +393,8 @@ FrameDataId GetDefaultAnimationIdForEntityType(EntityType type_) {
         return frame_data_ids::Machete;
     case EntityType::BombBox:
         return frame_data_ids::BombBox;
+    case EntityType::BombBag:
+        return frame_data_ids::BombBag;
     case EntityType::Bow:
         return frame_data_ids::Bow;
     case EntityType::Compass:

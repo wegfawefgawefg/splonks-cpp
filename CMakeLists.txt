@@ -163,6 +163,7 @@ add_executable(splonks-cpp
     src/entities/giant_tiki_head.cpp
     src/entities/gold_idol.cpp
     src/entities/jetpack.cpp
+    src/entities/kali_head.cpp
     src/entities/lantern.cpp
     src/entities/mattock.cpp
     src/entities/mod.cpp

@@ -30,14 +30,14 @@ void SetEntitySacAltar(Entity& entity, EntityType type_, FrameDataId animation_i
 } // namespace
 
 void SetEntitySacAltarLeft(Entity& entity) {
-    SetEntitySacAltar(entity, EntityType::SacAltarLeft, HashFrameDataIdConstexpr("sac_altar_left"));
+    SetEntitySacAltar(entity, EntityType::SacAltarLeft, frame_data_ids::SacAltarLeft);
 }
 
 void SetEntitySacAltarRight(Entity& entity) {
     SetEntitySacAltar(
         entity,
         EntityType::SacAltarRight,
-        HashFrameDataIdConstexpr("sac_altar_right")
+        frame_data_ids::SacAltarRight
     );
 }
 

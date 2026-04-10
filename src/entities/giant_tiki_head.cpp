@@ -22,7 +22,7 @@ void SetEntityGiantTikiHead(Entity& entity) {
     entity.draw_layer = DrawLayer::Middle;
     entity.can_be_stunned = false;
     entity.alignment = Alignment::Enemy;
-    entity.frame_data_animator.SetAnimation(HashFrameDataIdConstexpr("giant_tiki_head"));
+    entity.frame_data_animator.SetAnimation(frame_data_ids::GiantTikiHead);
 }
 
 void StepEntityLogicAsGiantTikiHead(std::size_t entity_idx, State& state, Audio& audio) {

@@ -24,7 +24,7 @@ void SetEntityDice(Entity& entity) {
     entity.draw_layer = DrawLayer::Foreground;
     entity.can_be_stunned = false;
     entity.alignment = Alignment::Neutral;
-    entity.frame_data_animator.SetAnimation(HashFrameDataIdConstexpr("dice"));
+    entity.frame_data_animator.SetAnimation(frame_data_ids::Dice);
 }
 
 void StepEntityLogicAsDice(std::size_t entity_idx, State& state, Audio& audio) {
