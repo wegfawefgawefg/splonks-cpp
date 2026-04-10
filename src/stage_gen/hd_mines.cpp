@@ -3,6 +3,7 @@
 #include "frame_data_id.hpp"
 
 #include <array>
+#include <limits>
 #include <random>
 #include <string>
 #include <string_view>
@@ -663,6 +664,41 @@ std::optional<Vec2> FindEntrancePos(const Stage& stage) {
     return std::nullopt;
 }
 
+std::optional<Vec2> FindExitPos(const Stage& stage) {
+    for (unsigned int y = 0; y < stage.GetTileHeight(); ++y) {
+        for (unsigned int x = 0; x < stage.GetTileWidth(); ++x) {
+            if (stage.GetTile(x, y) != Tile::Exit) {
+                continue;
+            }
+            return Vec2::New(
+                static_cast<float>(x * kTileSize),
+                static_cast<float>(y * kTileSize)
+            );
+        }
+    }
+    return std::nullopt;
+}
+
+bool HasSpawnType(const Stage& stage, EntityType type_) {
+    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+        if (spawn.type_ == type_) {
+            return true;
+        }
+    }
+    return false;
+}
+
+float DistanceToNearestSpawnType(const Stage& stage, EntityType type_, const Vec2& pos) {
+    float nearest = std::numeric_limits<float>::infinity();
+    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+        if (spawn.type_ != type_) {
+            continue;
+        }
+        nearest = std::min(nearest, Length(spawn.pos - pos));
+    }
+    return nearest;
+}
+
 void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
                      LeftOrRight facing = LeftOrRight::Left) {
     if (HasSpawnAtWorldPos(stage, pos)) {
@@ -673,6 +709,108 @@ void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
         .pos = pos,
         .facing = facing,
     });
+}
+
+void AddMinesTreasure(Stage& stage) {
+    const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
+    const std::optional<Vec2> exit_pos = FindExitPos(stage);
+    const int stage_width = static_cast<int>(stage.GetTileWidth());
+    const int stage_height = static_cast<int>(stage.GetTileHeight());
+
+    for (int tile_y = 0; tile_y < stage_height; ++tile_y) {
+        for (int tile_x = 0; tile_x < stage_width; ++tile_x) {
+            if (!IsCollidableTileAt(stage, tile_x, tile_y) ||
+                IsShopRoomAt(stage, tile_x, tile_y)) {
+                continue;
+            }
+
+            const Vec2 tile_pos = Vec2::New(
+                static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+                static_cast<float>(tile_y * static_cast<int>(kTileSize))
+            );
+
+            if (entrance_pos.has_value() && Length(tile_pos - *entrance_pos) < 32.0F) {
+                continue;
+            }
+            if (exit_pos.has_value() && Length(tile_pos - *exit_pos) < 32.0F) {
+                continue;
+            }
+            if (DistanceToNearestSpawnType(stage, EntityType::GoldIdol, tile_pos) < 64.0F) {
+                continue;
+            }
+
+            if (tile_y <= 0 || IsCollidableTileAt(stage, tile_x, tile_y - 1)) {
+                continue;
+            }
+
+            const Tile tile_above = stage.GetTile(
+                static_cast<unsigned int>(tile_x),
+                static_cast<unsigned int>(tile_y - 1)
+            );
+            if (tile_above == Tile::Spikes || tile_above == Tile::Entrance ||
+                tile_above == Tile::Exit) {
+                continue;
+            }
+
+            const Vec2 item_pos = tile_pos + Vec2::New(8.0F, -4.0F);
+            const Vec2 stack_pos = tile_pos + Vec2::New(8.0F, -8.0F);
+            if (HasSpawnAtWorldPos(stage, item_pos) || HasSpawnAtWorldPos(stage, stack_pos)) {
+                continue;
+            }
+
+            if (RandomIntInclusive(1, 100) == 1) {
+                AddAmbientSpawn(stage, EntityType::Rock, item_pos);
+                continue;
+            }
+
+            const bool ceiling_above = tile_y >= 2 && IsCollidableTileAt(stage, tile_x, tile_y - 2);
+            const bool side_support = IsCollidableTileAt(stage, tile_x - 1, tile_y - 1) ||
+                                      IsCollidableTileAt(stage, tile_x + 1, tile_y - 1);
+            const bool tunnel_support = IsCollidableTileAt(stage, tile_x - 1, tile_y - 1) &&
+                                        IsCollidableTileAt(stage, tile_x + 1, tile_y - 1);
+
+            if (ceiling_above && side_support) {
+                if (RandomIntInclusive(1, 15) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Chest, stack_pos);
+                } else if (!HasSpawnType(stage, EntityType::Damsel) &&
+                           RandomIntInclusive(1, 8) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Damsel, stack_pos);
+                } else if (RandomIntInclusive(1, 3) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Gold, item_pos);
+                } else if (RandomIntInclusive(1, 6) == 1) {
+                    AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
+                } else if (RandomIntInclusive(1, 6) == 1) {
+                    AddAmbientSpawn(stage, EntityType::EmeraldBig, item_pos);
+                } else if (RandomIntInclusive(1, 8) == 1) {
+                    AddAmbientSpawn(stage, EntityType::SapphireBig, item_pos);
+                } else if (RandomIntInclusive(1, 10) == 1) {
+                    AddAmbientSpawn(stage, EntityType::RubyBig, item_pos);
+                }
+                continue;
+            }
+
+            if (tunnel_support) {
+                if (RandomIntInclusive(1, 4) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Gold, item_pos);
+                } else if (RandomIntInclusive(1, 8) == 1) {
+                    AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
+                } else if (RandomIntInclusive(1, 8) == 1) {
+                    AddAmbientSpawn(stage, EntityType::EmeraldBig, item_pos);
+                } else if (RandomIntInclusive(1, 9) == 1) {
+                    AddAmbientSpawn(stage, EntityType::SapphireBig, item_pos);
+                } else if (RandomIntInclusive(1, 10) == 1) {
+                    AddAmbientSpawn(stage, EntityType::RubyBig, item_pos);
+                }
+                continue;
+            }
+
+            if (RandomIntInclusive(1, 40) == 1) {
+                AddAmbientSpawn(stage, EntityType::Gold, item_pos);
+            } else if (RandomIntInclusive(1, 50) == 1) {
+                AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
+            }
+        }
+    }
 }
 
 void ConvertBlocksToArrowTraps(Stage& stage) {
@@ -1059,6 +1197,7 @@ Stage GenerateStage(StageType stage_type) {
     stage.path = layout.path;
     stage.gravity = 0.3F;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    AddMinesTreasure(stage);
     ConvertBlocksToArrowTraps(stage);
     AddAmbientMinesEntities(stage);
     return stage;

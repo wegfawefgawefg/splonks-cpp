@@ -151,6 +151,8 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::Mattock:
     case EntityType::Dice:
     case EntityType::RubyBig:
+    case EntityType::EmeraldBig:
+    case EntityType::SapphireBig:
     case EntityType::Shopkeeper:
     case EntityType::Damsel:
     case EntityType::SignGeneral:

@@ -60,6 +60,8 @@ constexpr std::array<EntitySetupFn, kEntityTypeCount> kEntitySetupFns{{
     &mattock::SetEntityMattock,     // Mattock
     &dice::SetEntityDice,           // Dice
     &ruby_big::SetEntityRubyBig,    // RubyBig
+    &emerald_big::SetEntityEmeraldBig, // EmeraldBig
+    &sapphire_big::SetEntitySapphireBig, // SapphireBig
     &shopkeeper::SetEntityShopkeeper, // Shopkeeper
     &damsel::SetEntityDamsel,       // Damsel
     &sign::SetEntitySignGeneral,    // SignGeneral

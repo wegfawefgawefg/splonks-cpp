@@ -3617,6 +3617,33 @@ sprites:
       w: 0
       h: 0
     tile: true
+  - path: "cave.png"
+    aabb:
+      x: 16
+      y: 32
+      w: 16
+      h: 16
+    name: "cave_gold_1"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: true
   - path: "ice.png"
     aabb:
       x: 0

@@ -438,6 +438,10 @@ const char* EntityTypeToString(EntityType type) {
         return "Dice";
     case EntityType::RubyBig:
         return "RubyBig";
+    case EntityType::EmeraldBig:
+        return "EmeraldBig";
+    case EntityType::SapphireBig:
+        return "SapphireBig";
     case EntityType::Shopkeeper:
         return "Shopkeeper";
     case EntityType::Damsel:

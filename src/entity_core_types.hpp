@@ -45,6 +45,8 @@ enum class EntityType {
     Mattock,
     Dice,
     RubyBig,
+    EmeraldBig,
+    SapphireBig,
     Shopkeeper,
     Damsel,
     SignGeneral,

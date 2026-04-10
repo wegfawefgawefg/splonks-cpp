@@ -157,6 +157,7 @@ add_executable(splonks-cpp
     src/entities/common_tool_use.cpp
     src/entities/damsel.cpp
     src/entities/dice.cpp
+    src/entities/emerald_big.cpp
     src/entities/ghost_ball.cpp
     src/entities/giant_tiki_head.cpp
     src/entities/gold_idol.cpp
@@ -174,6 +175,7 @@ add_executable(splonks-cpp
     src/entities/scarab.cpp
     src/entities/shopkeeper.cpp
     src/entities/sign.cpp
+    src/entities/sapphire_big.cpp
     src/entities/snake.cpp
     src/entities/spider_hang.cpp
     src/entities/stomp_pad.cpp

@@ -12,6 +12,7 @@
 #include "entities/common.hpp"
 #include "entities/damsel.hpp"
 #include "entities/dice.hpp"
+#include "entities/emerald_big.hpp"
 #include "entities/ghost_ball.hpp"
 #include "entities/giant_tiki_head.hpp"
 #include "entities/gold_idol.hpp"
@@ -28,6 +29,7 @@
 #include "entities/scarab.hpp"
 #include "entities/shopkeeper.hpp"
 #include "entities/sign.hpp"
+#include "entities/sapphire_big.hpp"
 #include "entities/snake.hpp"
 #include "entities/spider_hang.hpp"
 #include "entities/stomp_pad.hpp"
@@ -161,6 +163,12 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             case EntityType::RubyBig:
                 entities::ruby_big::StepEntityLogicAsRubyBig(entity_idx, state, audio);
                 break;
+            case EntityType::EmeraldBig:
+                entities::emerald_big::StepEntityLogicAsEmeraldBig(entity_idx, state, audio);
+                break;
+            case EntityType::SapphireBig:
+                entities::sapphire_big::StepEntityLogicAsSapphireBig(entity_idx, state, audio);
+                break;
             case EntityType::Shopkeeper:
                 entities::shopkeeper::StepEntityLogicAsShopkeeper(entity_idx, state, audio);
                 break;
@@ -285,6 +293,14 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                     break;
                 case EntityType::RubyBig:
                     entities::ruby_big::StepEntityPhysicsAsRubyBig(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::EmeraldBig:
+                    entities::emerald_big::StepEntityPhysicsAsEmeraldBig(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::SapphireBig:
+                    entities::sapphire_big::StepEntityPhysicsAsSapphireBig(
                         entity_idx, state, graphics, audio, dt);
                     break;
                 case EntityType::Shopkeeper:
