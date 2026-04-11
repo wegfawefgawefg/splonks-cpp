@@ -1,6 +1,7 @@
 #include "entities/bat.hpp"
 
 #include "audio.hpp"
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
@@ -63,22 +64,26 @@ void SnapBatToRoof(Entity& bat, const State& state) {
 
 } // namespace
 
-void SetEntityBat(Entity& entity) {
-    entity.Reset();
-    entity.type_ = EntityType::Bat;
-    entity.size = Vec2::New(8.0F, 8.0F);
-    entity.health = 1;
-    entity.hurt_on_contact = true;
-    entity.damage_vulnerability = DamageVulnerability::Vulnerable;
-    entity.has_physics = true;
-    entity.can_collide = true;
-    entity.entity_a.reset();
-    entity.entity_label_a = EntityLabel::AttackThis;
-    entity.impassable = false;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::HangingBat);
-    entity.can_be_stunned = true;
-    entity.alignment = Alignment::Enemy;
-}
+extern const EntityArchetype kBatArchetype{
+    .type_ = EntityType::Bat,
+    .size = Vec2::New(8.0F, 8.0F),
+    .health = 1,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = true,
+    .impassable = false,
+    .hurt_on_contact = true,
+    .can_be_stunned = true,
+    .draw_layer = DrawLayer::Middle,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .entity_label_a = EntityLabel::AttackThis,
+    .alignment = Alignment::Enemy,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::HangingBat),
+};
 
 /** Bat goes up by default, and idles if it hits the ceiling.
  *  If the bat detects the player is beneath it,

@@ -1,6 +1,7 @@
 #include "audio.hpp"
 #include "cli.hpp"
 #include "debug_playback.hpp"
+#include "entity_archetype.hpp"
 #include "graphics.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
@@ -157,6 +158,7 @@ int main(int argc, char** argv) {
         }
 
         ////////////////        MAIN LOOP        ////////////////
+        splonks::PopulateEntityArchetypesTable();
         splonks::State state = splonks::State::New();
         state.running = true;
         debug.ui_visible = state.settings.debug_ui.menu_visible;

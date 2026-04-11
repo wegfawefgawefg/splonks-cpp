@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::snake {
 
-void SetEntitySnake(Entity& entity);
+extern const EntityArchetype kSnakeArchetype;
+
 void StepEntityLogicAsSnake(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsSnake(
     std::size_t entity_idx,

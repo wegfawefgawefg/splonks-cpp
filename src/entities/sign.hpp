@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -11,13 +11,14 @@ struct State;
 
 namespace splonks::entities::sign {
 
-void SetEntitySignGeneral(Entity& entity);
-void SetEntitySignBomb(Entity& entity);
-void SetEntitySignWeapon(Entity& entity);
-void SetEntitySignRare(Entity& entity);
-void SetEntitySignClothing(Entity& entity);
-void SetEntitySignCraps(Entity& entity);
-void SetEntitySignKissing(Entity& entity);
+extern const EntityArchetype kSignGeneralArchetype;
+extern const EntityArchetype kSignBombArchetype;
+extern const EntityArchetype kSignWeaponArchetype;
+extern const EntityArchetype kSignRareArchetype;
+extern const EntityArchetype kSignClothingArchetype;
+extern const EntityArchetype kSignCrapsArchetype;
+extern const EntityArchetype kSignKissingArchetype;
+
 void StepEntityLogicAsSign(std::size_t entity_idx, State& state, Audio& audio);
 
 } // namespace splonks::entities::sign

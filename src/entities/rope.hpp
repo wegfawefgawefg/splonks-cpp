@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::rope {
 
-void SetEntityRope(Entity& entity);
+extern const EntityArchetype kRopeArchetype;
+
 void StepEntityLogicAsRope(std::size_t entity_idx, State& state, Audio& audio, Graphics& graphics);
 void StepEntityPhysicsAsRope(
     std::size_t entity_idx,

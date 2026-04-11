@@ -1,5 +1,6 @@
 #include "entities/ghost_ball.hpp"
 
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
@@ -18,15 +19,19 @@ Vec2 NormalizeOrZero(const Vec2& value) {
 
 } // namespace
 
-void SetEntityGhostBall(Entity& entity) {
-    entity.active = true;
-    entity.type_ = EntityType::GhostBall;
-    entity.size = Vec2::New(1.0F, 1.0F);
-    entity.has_physics = true;
-    entity.can_collide = false;
-    entity.entity_label_a = EntityLabel::GoToThis;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);
-}
+extern const EntityArchetype kGhostBallArchetype{
+    .type_ = EntityType::GhostBall,
+    .size = Vec2::New(1.0F, 1.0F),
+    .has_physics = true,
+    .can_collide = false,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .entity_label_a = EntityLabel::GoToThis,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+};
 
 void StepEntityLogicAsGhostBall(std::size_t entity_idx, State& state) {
     // the ghostball should always chase the player.

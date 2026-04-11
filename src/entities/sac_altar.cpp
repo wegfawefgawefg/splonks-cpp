@@ -1,45 +1,48 @@
 #include "entities/sac_altar.hpp"
 
+#include "entity_archetype.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::sac_altar {
 
-namespace {
-
-void SetEntitySacAltar(Entity& entity, EntityType type_, FrameDataId animation_id) {
-    entity.Reset();
-    entity.type_ = type_;
-    entity.super_state = EntitySuperState::Idle;
-    entity.state = EntityState::Idle;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
-    entity.size = Vec2::New(16.0F, 16.0F);
-    entity.health = 1;
-    entity.damage_vulnerability = DamageVulnerability::Immune;
-    entity.has_physics = false;
-    entity.can_collide = true;
-    entity.can_be_picked_up = false;
-    entity.impassable = true;
-    entity.hurt_on_contact = false;
-    entity.facing = LeftOrRight::Left;
-    entity.draw_layer = DrawLayer::Middle;
-    entity.can_be_stunned = false;
-    entity.alignment = Alignment::Neutral;
-    entity.frame_data_animator.SetAnimation(animation_id);
-}
-
-} // namespace
-
-void SetEntitySacAltarLeft(Entity& entity) {
-    SetEntitySacAltar(entity, EntityType::SacAltarLeft, frame_data_ids::SacAltarLeft);
-}
-
-void SetEntitySacAltarRight(Entity& entity) {
-    SetEntitySacAltar(
-        entity,
-        EntityType::SacAltarRight,
-        frame_data_ids::SacAltarRight
-    );
-}
+extern const EntityArchetype kSacAltarLeftArchetype{
+    .type_ = EntityType::SacAltarLeft,
+    .size = Vec2::New(16.0F, 16.0F),
+    .health = 1,
+    .has_physics = false,
+    .can_collide = true,
+    .can_be_picked_up = false,
+    .impassable = true,
+    .hurt_on_contact = false,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Middle,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Immune,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SacAltarLeft),
+};
+extern const EntityArchetype kSacAltarRightArchetype{
+    .type_ = EntityType::SacAltarRight,
+    .size = Vec2::New(16.0F, 16.0F),
+    .health = 1,
+    .has_physics = false,
+    .can_collide = true,
+    .can_be_picked_up = false,
+    .impassable = true,
+    .hurt_on_contact = false,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Middle,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Immune,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SacAltarRight),
+};
 
 void StepEntityLogicAsSacAltar(std::size_t entity_idx, State& state, Audio& audio) {
     (void)entity_idx;

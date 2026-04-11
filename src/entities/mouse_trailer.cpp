@@ -1,6 +1,7 @@
 #include "entities/mouse_trailer.hpp"
 
 #include "audio.hpp"
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
@@ -8,23 +9,24 @@
 
 namespace splonks::entities::mouse_trailer {
 
-void SetEntityMouseTrailer(Entity& entity) {
-    entity.Reset();
-    entity.active = true;
-    entity.type_ = EntityType::MouseTrailer;
-    entity.size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize));
-    entity.has_physics = true;
-    entity.can_collide = true;
-    entity.can_be_picked_up = false;
-    entity.impassable = false;
-    entity.damage_vulnerability = DamageVulnerability::Immune;
-    entity.super_state = EntitySuperState::Idle;
-    entity.state = EntityState::Projectile;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
-    entity.facing = LeftOrRight::Left;
-    entity.alignment = Alignment::Neutral;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);
-}
+extern const EntityArchetype kMouseTrailerArchetype{
+    .type_ = EntityType::MouseTrailer,
+    .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = false,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Middle,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Projectile,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Immune,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+};
 
 /** mouse_trailer does nothing, if falling, it should instakill if it hits an entity, and that entity is also grounded.
  * It should be a little bit bouncier than normal entities, also,

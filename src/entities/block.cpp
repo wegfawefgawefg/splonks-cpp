@@ -1,6 +1,7 @@
 #include "entities/block.hpp"
 
 #include "audio.hpp"
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
@@ -70,26 +71,26 @@ void StepControlledBlock(Entity& block, const systems::controls::ControlIntent& 
 
 } // namespace
 
-void SetEntityBlock(Entity& entity) {
-    entity.Reset();
-    entity.active = true;
-    entity.type_ = EntityType::Block;
-    entity.health = 1;
-    entity.size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize));
-    entity.has_physics = true;
-    entity.crusher_pusher = true;
-    entity.damage_vulnerability = DamageVulnerability::Immune;
-    entity.can_collide = true;
-    entity.can_be_picked_up = false;
-    entity.impassable = true;
-    entity.super_state = EntitySuperState::Idle;
-    entity.state = EntityState::Projectile;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
-    entity.facing = LeftOrRight::Left;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::CaveBlock);
-    entity.can_be_stunned = false;
-    entity.alignment = Alignment::Neutral;
-}
+extern const EntityArchetype kBlockArchetype{
+    .type_ = EntityType::Block,
+    .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
+    .health = 1,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = false,
+    .impassable = true,
+    .hurt_on_contact = false,
+    .crusher_pusher = true,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Middle,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Projectile,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Immune,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CaveBlock),
+};
 
 bool TryApplyBlockContactToEntity(
     std::size_t entity_idx,

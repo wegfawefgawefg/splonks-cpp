@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::ruby_big {
 
-void SetEntityRubyBig(Entity& entity);
+extern const EntityArchetype kRubyBigArchetype;
+
 void StepEntityLogicAsRubyBig(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsRubyBig(
     std::size_t entity_idx,

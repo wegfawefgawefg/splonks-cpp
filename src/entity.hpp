@@ -35,6 +35,7 @@ struct Entity {
     bool stone = false;
     bool wanted = false;
     bool crusher_pusher = false;
+    bool can_go_on_back = false;
     bool grounded = false;
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;
@@ -134,15 +135,12 @@ struct Entity {
     HangHandBounds GetHangHandsBounds() const;
 };
 
-bool CanGoOnBack(EntityType type_);
 bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state);
 const char* PassiveItemToString(EntityPassiveItem passive_item);
-std::optional<EntityPassiveItem> PassiveItemForEntityType(EntityType type_);
 bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
 void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);
 bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type);
 bool CanRevealEmbeddedTreasure(const Entity& entity);
-FrameDataId GetDefaultAnimationIdForEntityType(EntityType type_);
 void EnableStone(Entity& entity);
 void DisableStone(Entity& entity);
 

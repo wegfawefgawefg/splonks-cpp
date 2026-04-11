@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 #include <cstddef>
 
@@ -30,7 +30,8 @@ constexpr unsigned int kPotThrowDelay = 12;
 constexpr unsigned int kAttackDelay = 24;
 constexpr unsigned int kEquipDelay = 8;
 
-void SetEntityPlayer(Entity& entity);
+extern const EntityArchetype kPlayerArchetype;
+
 void StepEntityLogicAsPlayer(
     std::size_t entity_idx,
     State& state,

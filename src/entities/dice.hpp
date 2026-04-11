@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::dice {
 
-void SetEntityDice(Entity& entity);
+extern const EntityArchetype kDiceArchetype;
+
 void StepEntityLogicAsDice(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsDice(
     std::size_t entity_idx,

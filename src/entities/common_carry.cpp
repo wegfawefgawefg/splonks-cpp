@@ -168,7 +168,7 @@ void UpdateCarryAndBackItems(
                 }
                 if (entity.holding_vid.has_value()) {
                     const Entity* const held_thing = state.entity_manager.GetEntity(*entity.holding_vid);
-                    if (held_thing != nullptr && CanGoOnBack(held_thing->type_)) {
+                    if (held_thing != nullptr && held_thing->can_go_on_back) {
                         put_held_on_back = true;
                         audio.PlaySoundEffect(SoundEffect::Equip);
                     }

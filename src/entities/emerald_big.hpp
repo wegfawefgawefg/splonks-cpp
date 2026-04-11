@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::emerald_big {
 
-void SetEntityEmeraldBig(Entity& entity);
+extern const EntityArchetype kEmeraldBigArchetype;
+
 void StepEntityLogicAsEmeraldBig(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsEmeraldBig(
     std::size_t entity_idx,

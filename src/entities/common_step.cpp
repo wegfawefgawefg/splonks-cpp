@@ -1,15 +1,13 @@
 #include "entities/common.hpp"
 
+#include "entity_archetype.hpp"
 #include "tile.hpp"
 
 namespace splonks::entities::common {
 
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    const bool vanish_on_death =
-        entity.type_ == EntityType::Bomb || entity.type_ == EntityType::JetPack ||
-        entity.type_ == EntityType::Pot || entity.type_ == EntityType::Box ||
-        entity.type_ == EntityType::Rope;
+    const bool vanish_on_death = splonks::GetEntityArchetype(entity.type_).vanish_on_death;
     if ((vanish_on_death && entity.super_state == EntitySuperState::Dead) ||
         entity.marked_for_destruction) {
         state.entity_manager.SetInactive(entity_idx);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::bomb {
 
-void SetEntityBomb(Entity& entity);
+extern const EntityArchetype kBombArchetype;
+
 void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsBomb(
     std::size_t entity_idx,

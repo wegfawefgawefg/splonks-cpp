@@ -1,31 +1,31 @@
 #include "entities/shopkeeper.hpp"
 
 #include "audio.hpp"
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::shopkeeper {
 
-void SetEntityShopkeeper(Entity& entity) {
-    entity.Reset();
-    entity.type_ = EntityType::Shopkeeper;
-    entity.super_state = EntitySuperState::Idle;
-    entity.state = EntityState::Idle;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
-    entity.size = Vec2::New(16.0F, 16.0F);
-    entity.health = 4;
-    entity.damage_vulnerability = DamageVulnerability::Vulnerable;
-    entity.has_physics = true;
-    entity.can_collide = true;
-    entity.can_be_picked_up = false;
-    entity.impassable = false;
-    entity.hurt_on_contact = false;
-    entity.facing = LeftOrRight::Left;
-    entity.draw_layer = DrawLayer::Foreground;
-    entity.can_be_stunned = true;
-    entity.alignment = Alignment::Enemy;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::Shopkeeper);
-}
+extern const EntityArchetype kShopkeeperArchetype{
+    .type_ = EntityType::Shopkeeper,
+    .size = Vec2::New(16.0F, 16.0F),
+    .health = 4,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = false,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .can_be_stunned = true,
+    .draw_layer = DrawLayer::Foreground,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .alignment = Alignment::Enemy,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Shopkeeper),
+};
 
 void StepEntityLogicAsShopkeeper(std::size_t entity_idx, State& state, Audio& audio) {
     (void)entity_idx;

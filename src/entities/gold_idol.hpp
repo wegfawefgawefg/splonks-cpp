@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::gold_idol {
 
-void SetEntityGoldIdol(Entity& entity);
+extern const EntityArchetype kGoldIdolArchetype;
+
 void StepEntityLogicAsGoldIdol(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsGoldIdol(
     std::size_t entity_idx,

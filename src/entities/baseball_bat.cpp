@@ -1,6 +1,7 @@
 #include "entities/baseball_bat.hpp"
 
 #include "audio.hpp"
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
@@ -49,24 +50,34 @@ SwingStage GetSwingStage(const Entity& baseball_bat) {
 
 } // namespace
 
-void SetEntityBaseballBat(Entity& entity) {
-    entity.Reset();
-    entity.type_ = EntityType::BaseballBat;
-    entity.size = Vec2::New(12.0F, 4.0F);
-    entity.health = 1;
-    entity.damage_vulnerability = DamageVulnerability::Immune;
-    entity.can_be_picked_up = false;
-    entity.has_physics = false;
-    entity.can_collide = false;
-    entity.impassable = false;
-    entity.facing = LeftOrRight::Left;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::BaseballBatSwing);
-    entity.frame_data_animator.animate = true;
-    entity.frame_data_animator.loop = false;
-    entity.draw_layer = DrawLayer::Foreground;
-    entity.can_be_stunned = false;
-    entity.alignment = Alignment::Neutral;
-}
+extern const EntityArchetype kBaseballBatArchetype{
+    .type_ = EntityType::BaseballBat,
+    .size = Vec2::New(12.0F, 4.0F),
+    .health = 1,
+    .has_physics = false,
+    .can_collide = false,
+    .can_be_picked_up = false,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Foreground,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Immune,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator{
+        .animation_id = frame_data_ids::BaseballBatSwing,
+        .current_frame = 0,
+        .current_time = 0.0F,
+        .scale = 1.0F,
+        .speed = 1.0F,
+        .animate = true,
+        .loop = false,
+        .finished = false,
+    },
+};
 
 bool TryApplyBatContactToEntity(
     std::size_t bat_entity_idx,

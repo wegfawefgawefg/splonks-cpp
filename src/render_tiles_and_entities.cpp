@@ -1,5 +1,6 @@
 #include "render_tiles_and_entities.hpp"
 
+#include "entity_archetype.hpp"
 #include "entity.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
@@ -283,7 +284,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
 
             const FrameData* const frame_data = GetFirstFrameForAnimationOrFallback(
                 graphics,
-                GetDefaultAnimationIdForEntityType(embedded_treasure)
+                GetDefaultAnimationIdForArchetype(embedded_treasure)
             );
             if (frame_data == nullptr) {
                 continue;

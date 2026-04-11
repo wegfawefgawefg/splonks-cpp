@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -16,7 +16,9 @@ struct ContactContext;
 
 namespace splonks::entities::breakaway_container {
 
-void SetEntityBreakawayContainer(Entity& entity, EntityType type_);
+extern const EntityArchetype kPotArchetype;
+extern const EntityArchetype kBoxArchetype;
+
 void StepEntityLogicAsBreakawayContainer(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsBreakawayContainer(
     std::size_t entity_idx,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -20,7 +20,8 @@ enum class SwingStage {
     Swing,
 };
 
-void SetEntityBaseballBat(Entity& entity);
+extern const EntityArchetype kBaseballBatArchetype;
+
 bool TryApplyBatContactToEntity(
     std::size_t bat_entity_idx,
     std::size_t other_entity_idx,

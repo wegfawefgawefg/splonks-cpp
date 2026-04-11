@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 29;
+constexpr std::uint32_t kRecordingVersion = 30;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {

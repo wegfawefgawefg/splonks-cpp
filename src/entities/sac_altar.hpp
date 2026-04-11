@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -11,8 +11,9 @@ struct State;
 
 namespace splonks::entities::sac_altar {
 
-void SetEntitySacAltarLeft(Entity& entity);
-void SetEntitySacAltarRight(Entity& entity);
+extern const EntityArchetype kSacAltarLeftArchetype;
+extern const EntityArchetype kSacAltarRightArchetype;
+
 void StepEntityLogicAsSacAltar(std::size_t entity_idx, State& state, Audio& audio);
 
 } // namespace splonks::entities::sac_altar

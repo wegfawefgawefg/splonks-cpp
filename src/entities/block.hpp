@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -17,7 +17,8 @@ namespace splonks::entities::block {
 
 constexpr float kBlockPushAcc = 0.2F;
 
-void SetEntityBlock(Entity& entity);
+extern const EntityArchetype kBlockArchetype;
+
 bool TryApplyBlockContactToEntity(
     std::size_t entity_idx,
     std::size_t other_entity_idx,

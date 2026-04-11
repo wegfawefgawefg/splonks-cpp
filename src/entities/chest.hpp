@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::chest {
 
-void SetEntityChest(Entity& entity);
+extern const EntityArchetype kChestArchetype;
+
 void StepEntityLogicAsChest(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsChest(
     std::size_t entity_idx,

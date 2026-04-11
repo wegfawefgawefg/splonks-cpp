@@ -15,12 +15,11 @@ struct StoneBaseFields {
 };
 
 StoneBaseFields BuildStoneBaseFieldsForEntityType(EntityType type_) {
-    Entity base_entity;
-    entities::SetEntityByType(base_entity, type_);
+    const EntityArchetype& archetype = GetEntityArchetype(type_);
     return StoneBaseFields{
-        .crusher_pusher = base_entity.crusher_pusher,
-        .impassable = base_entity.impassable,
-        .damage_vulnerability = base_entity.damage_vulnerability,
+        .crusher_pusher = archetype.crusher_pusher,
+        .impassable = archetype.impassable,
+        .damage_vulnerability = archetype.damage_vulnerability,
     };
 }
 
@@ -260,15 +259,6 @@ HangHandBounds Entity::GetHangHandsBounds() const {
     return hang_hands;
 }
 
-bool CanGoOnBack(EntityType type_) {
-    switch (type_) {
-    case EntityType::JetPack:
-        return true;
-    default:
-        return false;
-    }
-}
-
 bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state) {
     const auto selection = GetFrameDataSelectionForDisplayState(EntityDisplayInput{
         .type_ = entity.type_,
@@ -305,27 +295,6 @@ const char* PassiveItemToString(EntityPassiveItem passive_item) {
     return "Unknown";
 }
 
-std::optional<EntityPassiveItem> PassiveItemForEntityType(EntityType type_) {
-    switch (type_) {
-    case EntityType::Gloves:
-        return EntityPassiveItem::Gloves;
-    case EntityType::Spectacles:
-        return EntityPassiveItem::Spectacles;
-    case EntityType::Compass:
-        return EntityPassiveItem::Compass;
-    case EntityType::Mitt:
-        return EntityPassiveItem::Mitt;
-    case EntityType::Paste:
-        return EntityPassiveItem::Paste;
-    case EntityType::SpringShoes:
-        return EntityPassiveItem::SpringShoes;
-    case EntityType::SpikeShoes:
-        return EntityPassiveItem::SpikeShoes;
-    default:
-        return std::nullopt;
-    }
-}
-
 bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item) {
     return (entity.passive_item_flags & PassiveItemBit(passive_item)) != 0;
 }
@@ -340,7 +309,8 @@ void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled
 }
 
 bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type) {
-    const std::optional<EntityPassiveItem> passive_item = PassiveItemForEntityType(pickup_type);
+    const std::optional<EntityPassiveItem> passive_item =
+        GetEntityArchetype(pickup_type).passive_item;
     if (!passive_item.has_value()) {
         return false;
     }
@@ -351,67 +321,6 @@ bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type) {
 
 bool CanRevealEmbeddedTreasure(const Entity& entity) {
     return HasPassiveItem(entity, EntityPassiveItem::Spectacles);
-}
-
-FrameDataId GetDefaultAnimationIdForEntityType(EntityType type_) {
-    switch (type_) {
-    case EntityType::Gold:
-        return frame_data_ids::GoldCoin;
-    case EntityType::GoldStack:
-        return frame_data_ids::GoldStack;
-    case EntityType::Rock:
-        return frame_data_ids::Rock;
-    case EntityType::JetPack:
-        return frame_data_ids::Jetpack;
-    case EntityType::GoldIdol:
-        return frame_data_ids::GoldIdol;
-    case EntityType::Mattock:
-        return frame_data_ids::Mattock;
-    case EntityType::Cape:
-        return frame_data_ids::CapePickup;
-    case EntityType::Shotgun:
-        return frame_data_ids::Shotgun;
-    case EntityType::Teleporter:
-        return frame_data_ids::Teleporter;
-    case EntityType::Gloves:
-        return frame_data_ids::Gloves;
-    case EntityType::Spectacles:
-        return frame_data_ids::Spectacles;
-    case EntityType::WebCannon:
-        return frame_data_ids::WebCannon;
-    case EntityType::Pistol:
-        return frame_data_ids::Pistol;
-    case EntityType::Mitt:
-        return frame_data_ids::Mitt;
-    case EntityType::Paste:
-        return frame_data_ids::Paste;
-    case EntityType::SpringShoes:
-        return frame_data_ids::SpringShoes;
-    case EntityType::SpikeShoes:
-        return frame_data_ids::SpikeShoes;
-    case EntityType::Machete:
-        return frame_data_ids::Machete;
-    case EntityType::BombBox:
-        return frame_data_ids::BombBox;
-    case EntityType::BombBag:
-        return frame_data_ids::BombBag;
-    case EntityType::Bow:
-        return frame_data_ids::Bow;
-    case EntityType::Compass:
-        return frame_data_ids::Compass;
-    case EntityType::Parachute:
-        return frame_data_ids::Parachute;
-    case EntityType::RopePile:
-        return frame_data_ids::RopePile;
-    case EntityType::EmeraldBig:
-        return frame_data_ids::EmeraldBig;
-    case EntityType::SapphireBig:
-        return frame_data_ids::SapphireBig;
-    case EntityType::RubyBig:
-        return frame_data_ids::RubyBig;
-    default:
-        return frame_data_ids::NoSprite;
-    }
 }
 
 void EnableStone(Entity& entity) {

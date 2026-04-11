@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::sapphire_big {
 
-void SetEntitySapphireBig(Entity& entity);
+extern const EntityArchetype kSapphireBigArchetype;
+
 void StepEntityLogicAsSapphireBig(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsSapphireBig(
     std::size_t entity_idx,

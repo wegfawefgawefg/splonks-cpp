@@ -2,6 +2,7 @@
 
 #include "entities/bomb.hpp"
 #include "entities/breakaway_container.hpp"
+#include "entities/mod.hpp"
 #include "entities/rope.hpp"
 
 namespace splonks::entities::common {
@@ -39,7 +40,7 @@ bool TryUseToolSlot(
             trigger_pressed,
             kBombThrowDelayFrames,
             kThrownByImmunityDuration,
-            [](Entity& spawned_entity) { bomb::SetEntityBomb(spawned_entity); }
+            [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Bomb); }
         );
     case ToolKind::ThrowRope:
         return TrySpawnAndThrowEntityFromTool(
@@ -51,7 +52,7 @@ bool TryUseToolSlot(
             trigger_pressed,
             kRopeThrowDelayFrames,
             kThrownByImmunityDuration * 2,
-            [](Entity& spawned_entity) { rope::SetEntityRope(spawned_entity); }
+            [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Rope); }
         );
     case ToolKind::ThrowPot:
         return TrySpawnAndThrowEntityFromTool(
@@ -63,12 +64,7 @@ bool TryUseToolSlot(
             trigger_pressed,
             kPotThrowDelayFrames,
             kThrownByImmunityDuration,
-            [](Entity& spawned_entity) {
-                breakaway_container::SetEntityBreakawayContainer(
-                    spawned_entity,
-                    EntityType::Pot
-                );
-            }
+            [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Pot); }
         );
     }
 

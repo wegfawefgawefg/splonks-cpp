@@ -6,6 +6,7 @@
 #include "entities/bat.hpp"
 #include "entities/block.hpp"
 #include "entities/bomb.hpp"
+#include "entities/bow.hpp"
 #include "entities/breakaway_container.hpp"
 #include "entities/caveman.hpp"
 #include "entities/chest.hpp"
@@ -20,6 +21,7 @@
 #include "entities/jetpack.hpp"
 #include "entities/kali_head.hpp"
 #include "entities/lantern.hpp"
+#include "entities/machete.hpp"
 #include "entities/mattock.hpp"
 #include "entities/money.hpp"
 #include "entities/mouse_trailer.hpp"
@@ -29,12 +31,16 @@
 #include "entities/ruby_big.hpp"
 #include "entities/sac_altar.hpp"
 #include "entities/scarab.hpp"
+#include "entities/shotgun.hpp"
 #include "entities/shopkeeper.hpp"
 #include "entities/sign.hpp"
 #include "entities/sapphire_big.hpp"
 #include "entities/snake.hpp"
 #include "entities/spider_hang.hpp"
 #include "entities/stomp_pad.hpp"
+#include "entities/teleporter.hpp"
+#include "entities/web_cannon.hpp"
+#include "entities/pistol.hpp"
 
 namespace splonks {
 
@@ -158,19 +164,31 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 break;
             case EntityType::Cape:
             case EntityType::Shotgun:
+                entities::shotgun::StepEntityLogicAsShotgun(entity_idx, state, audio);
+                break;
             case EntityType::Teleporter:
+                entities::teleporter::StepEntityLogicAsTeleporter(entity_idx, state, audio);
+                break;
+            case EntityType::WebCannon:
+                entities::web_cannon::StepEntityLogicAsWebCannon(entity_idx, state, audio);
+                break;
+            case EntityType::Pistol:
+                entities::pistol::StepEntityLogicAsPistol(entity_idx, state, audio);
+                break;
+            case EntityType::Machete:
+                entities::machete::StepEntityLogicAsMachete(entity_idx, state, audio);
+                break;
+            case EntityType::Bow:
+                entities::bow::StepEntityLogicAsBow(entity_idx, state, audio);
+                break;
             case EntityType::Gloves:
             case EntityType::Spectacles:
-            case EntityType::WebCannon:
-            case EntityType::Pistol:
             case EntityType::Mitt:
             case EntityType::Paste:
             case EntityType::SpringShoes:
             case EntityType::SpikeShoes:
-            case EntityType::Machete:
             case EntityType::BombBox:
             case EntityType::BombBag:
-            case EntityType::Bow:
             case EntityType::Compass:
             case EntityType::Parachute:
             case EntityType::RopePile:
@@ -312,19 +330,37 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                     break;
                 case EntityType::Cape:
                 case EntityType::Shotgun:
+                    entities::shotgun::StepEntityPhysicsAsShotgun(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
                 case EntityType::Teleporter:
+                    entities::teleporter::StepEntityPhysicsAsTeleporter(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::WebCannon:
+                    entities::web_cannon::StepEntityPhysicsAsWebCannon(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Pistol:
+                    entities::pistol::StepEntityPhysicsAsPistol(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Machete:
+                    entities::machete::StepEntityPhysicsAsMachete(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
+                case EntityType::Bow:
+                    entities::bow::StepEntityPhysicsAsBow(
+                        entity_idx, state, graphics, audio, dt);
+                    break;
                 case EntityType::Gloves:
                 case EntityType::Spectacles:
-                case EntityType::WebCannon:
-                case EntityType::Pistol:
                 case EntityType::Mitt:
                 case EntityType::Paste:
                 case EntityType::SpringShoes:
                 case EntityType::SpikeShoes:
-                case EntityType::Machete:
                 case EntityType::BombBox:
                 case EntityType::BombBag:
-                case EntityType::Bow:
                 case EntityType::Compass:
                 case EntityType::Parachute:
                 case EntityType::RopePile:

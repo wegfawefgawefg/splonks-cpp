@@ -40,7 +40,7 @@ void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
         return;
     }
 
-    entities::SetEntityByType(*entity, type_);
+    SetEntityAs(*entity, type_);
     entity->SetCenter(center);
     entity->vel = Vec2::New(0.0F, 0.0F);
 }

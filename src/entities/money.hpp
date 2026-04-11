@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -14,7 +14,9 @@ namespace splonks::entities::money {
 
 constexpr IVec2 kSize = {8, 8};
 
-void SetEntityMoney(Entity& entity, EntityType type_);
+extern const EntityArchetype kGoldArchetype;
+extern const EntityArchetype kGoldStackArchetype;
+
 void StepEntityLogicAsMoney(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsMoney(
     std::size_t entity_idx,
@@ -23,6 +25,5 @@ void StepEntityPhysicsAsMoney(
     Audio& audio,
     float dt
 );
-Vec2 GetSize(EntityType type_);
 
 } // namespace splonks::entities::money

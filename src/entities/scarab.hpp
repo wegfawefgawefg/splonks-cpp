@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::scarab {
 
-void SetEntityScarab(Entity& entity);
+extern const EntityArchetype kScarabArchetype;
+
 void StepEntityLogicAsScarab(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsScarab(
     std::size_t entity_idx,

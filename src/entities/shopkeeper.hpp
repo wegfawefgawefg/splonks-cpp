@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -12,7 +12,8 @@ struct State;
 
 namespace splonks::entities::shopkeeper {
 
-void SetEntityShopkeeper(Entity& entity);
+extern const EntityArchetype kShopkeeperArchetype;
+
 void StepEntityLogicAsShopkeeper(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsShopkeeper(
     std::size_t entity_idx,

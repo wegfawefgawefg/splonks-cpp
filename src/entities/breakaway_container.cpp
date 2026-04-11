@@ -1,8 +1,10 @@
 #include "entities/breakaway_container.hpp"
 
 #include "audio.hpp"
+#include "entity_archetype.hpp"
 #include "entities/bat.hpp"
 #include "entities/common.hpp"
+#include "entities/mod.hpp"
 #include "frame_data_id.hpp"
 #include "entities/money.hpp"
 #include "state.hpp"
@@ -88,37 +90,46 @@ void StepControlledBreakawayContainer(
 
 } // namespace
 
-void SetEntityBreakawayContainer(Entity& entity, EntityType type_) {
-    entity.Reset();
-    entity.health = 1;
-    entity.active = true;
-    entity.type_ = type_;
-    entity.size = GetBreakawayContainerSize(type_);
-    entity.has_physics = true;
-    entity.can_collide = true;
-    entity.can_be_picked_up = true;
-    entity.damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn;
-    entity.hurt_on_contact = false;
-    entity.super_state = EntitySuperState::Idle;
-    entity.state = EntityState::Projectile;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
-    entity.facing = LeftOrRight::Left;
-    entity.impassable = false;
-    entity.draw_layer = DrawLayer::Foreground;
-    entity.can_be_stunned = false;
-    entity.alignment = Alignment::Neutral;
-    switch (type_) {
-    case EntityType::Pot:
-        entity.frame_data_animator.SetAnimation(frame_data_ids::Pot);
-        break;
-    case EntityType::Box:
-        entity.frame_data_animator.SetAnimation(frame_data_ids::Box);
-        break;
-    default:
-        entity.frame_data_animator.SetAnimation(frame_data_ids::NoSprite);
-        break;
-    }
-}
+extern const EntityArchetype kPotArchetype{
+    .type_ = EntityType::Pot,
+    .size = Vec2::New(8.0F, 7.0F),
+    .health = 1,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = true,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .vanish_on_death = true,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Foreground,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Projectile,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pot),
+};
+extern const EntityArchetype kBoxArchetype{
+    .type_ = EntityType::Box,
+    .size = Vec2::New(12.0F, 12.0F),
+    .health = 1,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = true,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .vanish_on_death = true,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Foreground,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Projectile,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Box),
+};
 
 void StepEntityLogicAsBreakawayContainer(
     std::size_t entity_idx,
@@ -138,7 +149,7 @@ void StepEntityLogicAsBreakawayContainer(
                 // spawn a bat
                 if (const std::optional<VID> bat_vid = state.entity_manager.NewEntity()) {
                     if (Entity* const bat = state.entity_manager.GetEntityMut(*bat_vid)) {
-                        bat::SetEntityBat(*bat);
+                        SetEntityAs(*bat, EntityType::Bat);
                         bat->pos = breakaway_container_pos;
                     }
                 }
@@ -146,7 +157,7 @@ void StepEntityLogicAsBreakawayContainer(
                 // spawn a gold
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const new_entity = state.entity_manager.GetEntityMut(*vid)) {
-                        money::SetEntityMoney(*new_entity, EntityType::Gold);
+                        SetEntityAs(*new_entity, EntityType::Gold);
                         new_entity->pos = breakaway_container_pos;
                     }
                 }
@@ -157,7 +168,7 @@ void StepEntityLogicAsBreakawayContainer(
                 // spawn a big gold
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const new_entity = state.entity_manager.GetEntityMut(*vid)) {
-                        money::SetEntityMoney(*new_entity, EntityType::GoldStack);
+                        SetEntityAs(*new_entity, EntityType::GoldStack);
                         new_entity->pos = breakaway_container_pos;
                     }
                 }
@@ -165,7 +176,7 @@ void StepEntityLogicAsBreakawayContainer(
                 // spawn a gold
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const new_entity = state.entity_manager.GetEntityMut(*vid)) {
-                        money::SetEntityMoney(*new_entity, EntityType::Gold);
+                        SetEntityAs(*new_entity, EntityType::Gold);
                         new_entity->pos = breakaway_container_pos;
                     }
                 }

@@ -4,6 +4,7 @@
 #include "entities/baseball_bat.hpp"
 #include "entities/block.hpp"
 #include "entities/common.hpp"
+#include "entities/mod.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
 #include "systems/controls.hpp"
@@ -14,29 +15,28 @@
 
 namespace splonks::entities::player {
 
-void SetEntityPlayer(Entity& entity) {
-    entity.Reset();
-    entity.type_ = EntityType::Player;
-    entity.super_state = EntitySuperState::Idle;
-    entity.state = EntityState::Idle;
-    entity.pos = Vec2::New(0.0F, 0.0F);
-    entity.vel = Vec2::New(0.0F, 0.0F);
-    entity.acc = Vec2::New(0.0F, 0.0F);
-    entity.damage_vulnerability = DamageVulnerability::Vulnerable;
-    entity.health = 400;
-    entity.bombs = 400;
-    entity.ropes = 400;
-    entity.size = Vec2::New(10.0F, 10.0F);
-    entity.has_physics = true;
-    entity.can_collide = true;
-    entity.impassable = false;
-    entity.can_hang_ledge = true;
-    entity.draw_layer = DrawLayer::Middle;
-    entity.can_be_stunned = true;
-    entity.alignment = Alignment::Ally;
-    entity.hurt_on_contact = false;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::PlayerStanding);
-}
+extern const EntityArchetype kPlayerArchetype{
+    .type_ = EntityType::Player,
+    .size = Vec2::New(10.0F, 10.0F),
+    .health = 400,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = true,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .can_hang_ledge = true,
+    .can_be_stunned = true,
+    .draw_layer = DrawLayer::Middle,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .bombs = 400,
+    .ropes = 400,
+    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .alignment = Alignment::Ally,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::PlayerStanding),
+};
 
 void StepEntityLogicAsPlayer(
     std::size_t entity_idx,
@@ -176,7 +176,7 @@ void StepEntityLogicAsPlayer(
         if (trying_to_attack && attack_delay_countdown == 0) {
             if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                 if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
-                    baseball_bat::SetEntityBaseballBat(*entity);
+                    SetEntityAs(*entity, EntityType::BaseballBat);
                     entity->pos = player_pos;
                     entity->held_by_vid = player_vid;
                     state.UpdateSidForEntity(vid->id, graphics);

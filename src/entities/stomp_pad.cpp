@@ -1,30 +1,30 @@
 #include "entities/stomp_pad.hpp"
 
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::stomp_pad {
 
-void SetEntityStompPad(Entity& entity) {
-    entity.Reset();
-    entity.type_ = EntityType::StompPad;
-    entity.super_state = EntitySuperState::Idle;
-    entity.state = EntityState::Idle;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
-    entity.size = Vec2::New(8.0F, 7.0F);
-    entity.health = 1000;
-    entity.damage_vulnerability = DamageVulnerability::Vulnerable;
-    entity.has_physics = false;
-    entity.can_collide = true;
-    entity.can_be_picked_up = false;
-    entity.impassable = false;
-    entity.hurt_on_contact = true;
-    entity.facing = LeftOrRight::Left;
-    entity.draw_layer = DrawLayer::Foreground;
-    entity.can_be_stunned = false;
-    entity.alignment = Alignment::Enemy;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::Pot);
-}
+extern const EntityArchetype kStompPadArchetype{
+    .type_ = EntityType::StompPad,
+    .size = Vec2::New(8.0F, 7.0F),
+    .health = 1000,
+    .has_physics = false,
+    .can_collide = true,
+    .can_be_picked_up = false,
+    .impassable = false,
+    .hurt_on_contact = true,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Foreground,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .alignment = Alignment::Enemy,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pot),
+};
 
 void StepEntityLogicAsStompPad(std::size_t entity_idx, State& state, Audio& audio) {
     (void)entity_idx;

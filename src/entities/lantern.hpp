@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "entity_archetype.hpp"
 
 namespace splonks {
 
@@ -11,8 +11,9 @@ struct State;
 
 namespace splonks::entities::lantern {
 
-void SetEntityLantern(Entity& entity);
-void SetEntityLanternRed(Entity& entity);
+extern const EntityArchetype kLanternArchetype;
+extern const EntityArchetype kLanternRedArchetype;
+
 void StepEntityLogicAsLantern(std::size_t entity_idx, State& state, Audio& audio);
 
 } // namespace splonks::entities::lantern

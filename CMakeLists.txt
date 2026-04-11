@@ -130,6 +130,8 @@ add_executable(splonks-cpp
     src/debug_playback_ui.cpp
     src/direction.cpp
     src/entity.cpp
+    src/entity_archetype.cpp
+    src/entity_archetype_registry.cpp
     src/entity_display_states.cpp
     src/entity_manager.cpp
     src/entities/altar.cpp
@@ -138,6 +140,7 @@ add_executable(splonks-cpp
     src/entities/bat.cpp
     src/entities/block.cpp
     src/entities/bomb.cpp
+    src/entities/bow.cpp
     src/entities/breakaway_container.cpp
     src/entities/caveman.cpp
     src/entities/chest.cpp
@@ -165,6 +168,7 @@ add_executable(splonks-cpp
     src/entities/jetpack.cpp
     src/entities/kali_head.cpp
     src/entities/lantern.cpp
+    src/entities/machete.cpp
     src/entities/mattock.cpp
     src/entities/mod.cpp
     src/entities/money.cpp
@@ -175,12 +179,16 @@ add_executable(splonks-cpp
     src/entities/ruby_big.cpp
     src/entities/sac_altar.cpp
     src/entities/scarab.cpp
+    src/entities/shotgun.cpp
     src/entities/shopkeeper.cpp
     src/entities/sign.cpp
     src/entities/sapphire_big.cpp
     src/entities/snake.cpp
     src/entities/spider_hang.cpp
     src/entities/stomp_pad.cpp
+    src/entities/teleporter.cpp
+    src/entities/web_cannon.cpp
+    src/entities/pistol.cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp
     src/graphics.cpp

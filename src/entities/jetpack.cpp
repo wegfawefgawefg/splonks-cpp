@@ -1,6 +1,7 @@
 #include "entities/jetpack.hpp"
 
 #include "audio.hpp"
+#include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "special_effects/ultra_dynamic_effect.hpp"
@@ -29,24 +30,28 @@ float RandomFloat(float minimum, float maximum) {
 
 } // namespace
 
-void SetEntityJetpack(Entity& entity) {
-    entity.Reset();
-    entity.type_ = EntityType::JetPack;
-    entity.super_state = EntitySuperState::Idle;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
-    entity.size = Vec2::New(8.0F, 8.0F);
-    entity.health = 1;
-    entity.damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion;
-    entity.has_physics = true;
-    entity.can_collide = true;
-    entity.impassable = false;
-    entity.facing = LeftOrRight::Left;
-    entity.counter_a = kFuel; // fuel lol
-    entity.draw_layer = DrawLayer::Foreground;
-    entity.can_be_stunned = false;
-    entity.alignment = Alignment::Neutral;
-    entity.frame_data_animator.SetAnimation(frame_data_ids::Jetpack);
-}
+extern const EntityArchetype kJetPackArchetype{
+    .type_ = EntityType::JetPack,
+    .size = Vec2::New(8.0F, 8.0F),
+    .health = 1,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = true,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .vanish_on_death = true,
+    .can_go_on_back = true,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Foreground,
+    .facing = LeftOrRight::Left,
+    .super_state = EntitySuperState::Idle,
+    .state = EntityState::Idle,
+    .display_state = EntityDisplayState::Neutral,
+    .counter_a = kFuel,
+    .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Jetpack),
+};
 
 /** jetpack goes up by default, and idles if it hits the ceiling.
  *  If the jetpack detects the player is beneath it,
