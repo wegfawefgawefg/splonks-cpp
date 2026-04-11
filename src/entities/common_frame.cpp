@@ -1,6 +1,5 @@
 #include "entities/common.hpp"
 
-#include "entity_display_states.hpp"
 #include "frame_data_id.hpp"
 
 #include <algorithm>
@@ -117,18 +116,6 @@ AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics) {
 
 void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& graphics, float dt) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    const auto selection = GetFrameDataSelectionForDisplayState(EntityDisplayInput{
-        .type_ = entity.type_,
-        .display_state = entity.display_state,
-    });
-    if (selection.has_value()) {
-        entity.frame_data_animator.SetAnimation(selection->animation_id);
-        entity.frame_data_animator.animate = selection->animate;
-        if (selection->has_forced_frame) {
-            entity.frame_data_animator.SetForcedFrame(selection->forced_frame);
-        }
-    }
-
     entity.frame_data_animator.Step(graphics.frame_data_db, dt);
 }
 

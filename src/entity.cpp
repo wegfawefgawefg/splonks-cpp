@@ -269,6 +269,11 @@ bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state) {
     }
 
     entity.display_state = display_state;
+    entity.frame_data_animator.SetAnimation(selection->animation_id);
+    entity.frame_data_animator.animate = selection->animate;
+    if (selection->has_forced_frame) {
+        entity.frame_data_animator.SetForcedFrame(selection->forced_frame);
+    }
     return true;
 }
 
