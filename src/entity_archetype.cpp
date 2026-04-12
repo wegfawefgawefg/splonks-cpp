@@ -21,7 +21,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.size = archetype.size;
     entity.facing = archetype.facing;
     entity.draw_layer = archetype.draw_layer;
-    TrySetDisplayState(entity, archetype.display_state);
+    TrySetAnimation(entity, archetype.display_state);
     entity.super_state = archetype.super_state;
     entity.state = archetype.state;
     entity.health = archetype.health;

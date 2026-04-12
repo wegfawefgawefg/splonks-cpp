@@ -193,7 +193,7 @@ void UpdateCarryAndBackItems(
                 item_taken_off_back->state = EntityState::Idle;
                 item_taken_off_back->has_physics = true;
                 item_taken_off_back->can_collide = true;
-                TrySetDisplayState(*item_taken_off_back, EntityDisplayState::Neutral);
+                TrySetAnimation(*item_taken_off_back, EntityDisplayState::Neutral);
                 item_taken_off_back->held_by_vid.reset();
                 item_taken_off_back->thrown_by = entity_vid;
                 item_taken_off_back->thrown_immunity_timer = kThrownByImmunityDuration;
@@ -231,7 +231,7 @@ void UpdateCarryAndBackItems(
                     holding->draw_layer = DrawLayer::Background;
                 } else {
                     holding->draw_layer = DrawLayer::Foreground;
-                    TrySetDisplayState(*holding, EntityDisplayState::Neutral);
+                    TrySetAnimation(*holding, EntityDisplayState::Neutral);
                 }
                 holding->state = entity_trying_to_use ? EntityState::InUse : EntityState::Idle;
                 const Vec2 held_pos_target = entity_facing == LeftOrRight::Left
@@ -266,15 +266,15 @@ void UpdateCarryAndBackItems(
                 Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
                 if (entity_display_state == EntityDisplayState::Climbing) {
                     back_offset = Vec2::New(-2.0F, 0.0F);
-                    TrySetDisplayState(*back_item, EntityDisplayState::Climbing);
+                    TrySetAnimation(*back_item, EntityDisplayState::Climbing);
                     back_item->draw_layer = DrawLayer::Foreground;
                 } else if (entity_display_state == EntityDisplayState::Hanging) {
                     back_offset = Vec2::New(-7.0F, 4.0F);
-                    TrySetDisplayState(*back_item, EntityDisplayState::Hanging);
+                    TrySetAnimation(*back_item, EntityDisplayState::Hanging);
                     back_item->draw_layer = DrawLayer::Foreground;
                 } else {
                     back_item->draw_layer = DrawLayer::Background;
-                    TrySetDisplayState(*back_item, EntityDisplayState::Neutral);
+                    TrySetAnimation(*back_item, EntityDisplayState::Neutral);
                 }
 
                 const Vec2 held_pos_target = entity_facing == LeftOrRight::Left

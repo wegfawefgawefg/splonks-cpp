@@ -103,7 +103,8 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
         bat.super_state != EntitySuperState::Crushed) {
         if (!steering && IsAtPerchOrRoof(bat, state)) {
             bat.super_state = EntitySuperState::Idle;
-            TrySetDisplayState(bat, EntityDisplayState::Neutral);
+            bat.display_state = EntityDisplayState::Neutral;
+            SetAnimation(bat, frame_data_ids::HangingBat);
             bat.acc = Vec2::New(0.0F, 0.0F);
             bat.vel = Vec2::New(0.0F, 0.0F);
             return;
@@ -117,7 +118,8 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
         }
 
         bat.super_state = EntitySuperState::Pursuing;
-        TrySetDisplayState(bat, EntityDisplayState::Fly);
+        bat.display_state = EntityDisplayState::Fly;
+        SetAnimation(bat, frame_data_ids::FlyingBat);
         bat.acc = Vec2::New(0.0F, 0.0F);
         if (control.left) {
             bat.acc.x -= kChaseSpeed;
@@ -178,7 +180,8 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
             //  go to the target
             mutable_bat.super_state = EntitySuperState::Pursuing;
             mutable_bat.acc += NormalizeOrZero(*target_position - mutable_bat.pos) * kChaseSpeed;
-            TrySetDisplayState(mutable_bat, EntityDisplayState::Fly);
+            mutable_bat.display_state = EntityDisplayState::Fly;
+            SetAnimation(mutable_bat, frame_data_ids::FlyingBat);
         } else {
             //  Go Back To Your Perch, (straight up from here lol)
             mutable_bat.super_state = EntitySuperState::Returning;
@@ -188,12 +191,14 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
                 mutable_bat.super_state = EntitySuperState::Idle;
                 mutable_bat.acc = Vec2::New(0.0F, 0.0F);
                 mutable_bat.vel = Vec2::New(0.0F, 0.0F);
-                TrySetDisplayState(mutable_bat, EntityDisplayState::Neutral);
+                mutable_bat.display_state = EntityDisplayState::Neutral;
+                SetAnimation(mutable_bat, frame_data_ids::HangingBat);
             } else {
                 //  keep going up till you get there
                 mutable_bat.acc += Vec2::New(0.0F, -2.0F);
                 mutable_bat.vel.x = 0.0F;
-                TrySetDisplayState(mutable_bat, EntityDisplayState::Fly);
+                mutable_bat.display_state = EntityDisplayState::Fly;
+                SetAnimation(mutable_bat, frame_data_ids::FlyingBat);
             }
         }
         if (mutable_bat.vel.x < 0.0F) {

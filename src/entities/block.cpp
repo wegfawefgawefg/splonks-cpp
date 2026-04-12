@@ -113,7 +113,7 @@ bool TryApplyBlockContactToEntity(
 void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) {
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
-        entity.frame_data_animator.SetAnimation(BlockFrameDataIdForStageType(state.stage.stage_type));
+        SetAnimation(entity, BlockFrameDataIdForStageType(state.stage.stage_type));
     }
 
     {

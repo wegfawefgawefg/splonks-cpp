@@ -55,7 +55,7 @@ Entity Entity::New() {
     entity.facing = LeftOrRight::Left;
     entity.vertical_flip = false;
     entity.draw_layer = DrawLayer::Middle;
-    TrySetDisplayState(entity, EntityDisplayState::Neutral);
+    TrySetAnimation(entity, EntityDisplayState::Neutral);
     entity.frame_data_animator = FrameDataAnimator{};
     entity.jump_delay_frame_count = kJumpDelayFrames;
     entity.jumped_this_frame = false;
@@ -259,7 +259,7 @@ HangHandBounds Entity::GetHangHandsBounds() const {
     return hang_hands;
 }
 
-bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state) {
+bool TrySetAnimation(Entity& entity, EntityDisplayState display_state) {
     const auto selection = GetFrameDataSelectionForDisplayState(EntityDisplayInput{
         .type_ = entity.type_,
         .display_state = display_state,
@@ -269,12 +269,16 @@ bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state) {
     }
 
     entity.display_state = display_state;
-    entity.frame_data_animator.SetAnimation(selection->animation_id);
+    SetAnimation(entity, selection->animation_id);
     entity.frame_data_animator.animate = selection->animate;
     if (selection->has_forced_frame) {
         entity.frame_data_animator.SetForcedFrame(selection->forced_frame);
     }
     return true;
+}
+
+void SetAnimation(Entity& entity, FrameDataId animation_id) {
+    entity.frame_data_animator.SetAnimation(animation_id);
 }
 
 const char* PassiveItemToString(EntityPassiveItem passive_item) {

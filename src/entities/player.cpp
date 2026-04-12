@@ -111,14 +111,14 @@ void StepEntityLogicAsPlayer(
         // skip all actions
         if (!loss_of_control) {
             if (Length(player.vel) < 1.0F) {
-                TrySetDisplayState(player, EntityDisplayState::Neutral);
+                TrySetAnimation(player, EntityDisplayState::Neutral);
                 if (player.holding_vid.has_value() || player.state == EntityState::Pushing) {
-                    TrySetDisplayState(player, EntityDisplayState::NeutralHolding);
+                    TrySetAnimation(player, EntityDisplayState::NeutralHolding);
                 }
             } else if (Length(player.vel) > 1.0F) {
-                TrySetDisplayState(player, EntityDisplayState::Walk);
+                TrySetAnimation(player, EntityDisplayState::Walk);
                 if (player.holding_vid.has_value() || player.state == EntityState::Pushing) {
-                    TrySetDisplayState(player, EntityDisplayState::WalkHolding);
+                    TrySetAnimation(player, EntityDisplayState::WalkHolding);
                 }
             }
             // TODO: variable locomotion animation speed should be a common system
@@ -131,17 +131,17 @@ void StepEntityLogicAsPlayer(
             // if player hanging right set hanging display state and right
 
             if (player.left_hanging) {
-                TrySetDisplayState(player, EntityDisplayState::Hanging);
+                TrySetAnimation(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Left;
             } else if (player.right_hanging) {
-                TrySetDisplayState(player, EntityDisplayState::Hanging);
+                TrySetAnimation(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Right;
             } else if (player.climbing) {
-                TrySetDisplayState(player, EntityDisplayState::Climbing);
+                TrySetAnimation(player, EntityDisplayState::Climbing);
             }
             if (player.vel.y > 2.0F && !player.climbing) {
                 // TODO: make an actual fall state
-                TrySetDisplayState(player, EntityDisplayState::Falling);
+                TrySetAnimation(player, EntityDisplayState::Falling);
             }
         }
     }

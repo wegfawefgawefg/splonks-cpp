@@ -135,7 +135,14 @@ struct Entity {
     HangHandBounds GetHangHandsBounds() const;
 };
 
-bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state);
+// Raw animation path.
+// Use this when entity-owned logic knows the exact authored animation id it wants.
+// This does not change semantic display state.
+void SetAnimation(Entity& entity, FrameDataId animation_id);
+// Semantic animation path.
+// Use this from shared/external gameplay code that only knows a generic display state
+// like Neutral, Walk, Hanging, or Stunned rather than an exact authored animation id.
+bool TrySetAnimation(Entity& entity, EntityDisplayState display_state);
 const char* PassiveItemToString(EntityPassiveItem passive_item);
 bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
 void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);

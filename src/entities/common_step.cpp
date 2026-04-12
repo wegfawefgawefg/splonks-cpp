@@ -24,7 +24,7 @@ void StepStunTimer(std::size_t entity_idx, State& state) {
     if (entity.super_state == EntitySuperState::Stunned) {
         if (entity.stun_timer == 0) {
             entity.super_state = EntitySuperState::Idle;
-            TrySetDisplayState(entity, EntityDisplayState::Neutral);
+            TrySetAnimation(entity, EntityDisplayState::Neutral);
         } else {
             if (entity.stun_timer > 0) {
                 entity.stun_timer -= 1;

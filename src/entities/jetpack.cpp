@@ -72,11 +72,11 @@ void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio
                 }
             }
         }
-        jetpack.frame_data_animator.SetAnimation(equipped_animation);
+        SetAnimation(jetpack, equipped_animation);
     } else if (jetpack.held_by_vid.has_value()) {
-        jetpack.frame_data_animator.SetAnimation(frame_data_ids::JetpackSide);
+        SetAnimation(jetpack, frame_data_ids::JetpackSide);
     } else {
-        jetpack.frame_data_animator.SetAnimation(frame_data_ids::Jetpack);
+        SetAnimation(jetpack, frame_data_ids::Jetpack);
     }
 
     if (jetpack.super_state == EntitySuperState::Dead) {
@@ -111,7 +111,7 @@ void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio
                         holder->acc.y = -0.6F;
                         holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
                     }
-                    TrySetDisplayState(*holder, EntityDisplayState::Neutral);
+                    TrySetAnimation(*holder, EntityDisplayState::Neutral);
                 }
             }
 

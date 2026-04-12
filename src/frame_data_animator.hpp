@@ -18,6 +18,8 @@ struct FrameDataAnimator {
 
     bool HasAnimation() const;
     bool IsFinished() const;
+    // Raw animation control path.
+    // Use this when entity-owned logic knows the exact authored animation id it wants.
     void SetAnimation(FrameDataId animation_id_value);
     void SetForcedFrame(std::size_t frame_index);
     void SetSpeed(float speed_value);

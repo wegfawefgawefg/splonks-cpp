@@ -206,7 +206,8 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, A
     }
 
     baseball_bat.facing = swinger_facing;
-    TrySetDisplayState(baseball_bat, EntityDisplayState::Neutral);
+    baseball_bat.display_state = EntityDisplayState::Neutral;
+    SetAnimation(baseball_bat, frame_data_ids::BaseballBatSwing);
     const Vec2 mounted_center = swinger_facing == LeftOrRight::Left
                                     ? swinger_center +
                                           Vec2::New(

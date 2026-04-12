@@ -42,8 +42,8 @@ void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
     if (bomb.state == EntityState::InUse) {
         bomb.counter_a = 144.0F;
         bomb.state = EntityState::WindingUp;
-        TrySetDisplayState(bomb, EntityDisplayState::Stunned);
-        bomb.frame_data_animator.SetAnimation(frame_data_ids::LiveGrenade);
+        TrySetAnimation(bomb, EntityDisplayState::Stunned);
+        SetAnimation(bomb, frame_data_ids::LiveGrenade);
     }
 
     // if bomb is in winding up
