@@ -80,6 +80,8 @@ extern const EntityArchetype kBatArchetype{
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .step_logic = StepEntityLogicAsBat,
+    .step_physics = StepEntityPhysicsAsBat,
     .entity_label_a = EntityLabel::AttackThis,
     .alignment = Alignment::Enemy,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::HangingBat),
@@ -91,15 +93,24 @@ extern const EntityArchetype kBatArchetype{
  *      if yes, move towards the player right now.
  *  If no, give up and fly back to the ceiling.
  */
-void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
+void StepEntityLogicAsBat(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)dt;
     Entity& bat = state.entity_manager.entities[entity_idx];
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(bat, state);
     const bool controlled =
         state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;
     const bool steering = control.left || control.right || control.up || control.down;
+    const EntityCondition bat_condition = bat.condition;
 
-    if (controlled && bat.condition != EntityCondition::Dead) {
+    if (controlled && bat_condition == EntityCondition::Normal) {
         if (!steering && IsAtPerchOrRoof(bat, state)) {
             bat.ai_state = EntityAiState::Idle;
             bat.display_state = EntityDisplayState::Neutral;
@@ -144,7 +155,7 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
         return;
     }
 
-    if (bat.condition != EntityCondition::Dead) {
+    if (bat_condition == EntityCondition::Normal) {
         constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
         constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
 
@@ -157,8 +168,7 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
                     if (player->pos.y > bat_pos.y &&
                         std::abs(player->pos.y - bat_pos.y) < static_cast<float>(kVerticalDetectDist) &&
                         std::abs(player->pos.x - bat_pos.x) < static_cast<float>(kHorizontalChaseDist) &&
-                        player->condition != EntityCondition::Stunned &&
-                        player->condition != EntityCondition::Dead) {
+                        player->condition == EntityCondition::Normal) {
                         target_position = player->pos;
                     }
                 }
@@ -221,15 +231,19 @@ void StepEntityPhysicsAsBat(
     Entity& bat = state.entity_manager.entities[entity_idx];
     const bool controlled =
         state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;
+    const EntityCondition bat_condition = bat.condition;
     const EntityAiState bat_ai_state = bat.ai_state;
     const bool entered_idle_this_frame =
-        bat_ai_state == EntityAiState::Idle && bat.last_ai_state != EntityAiState::Idle;
+        bat_condition == EntityCondition::Normal && bat_ai_state == EntityAiState::Idle &&
+        bat.last_ai_state != EntityAiState::Idle;
 
     if (entered_idle_this_frame) {
         SnapBatToRoof(bat, state);
     }
 
-    if (bat_ai_state == EntityAiState::Idle) {
+    if (bat_condition != EntityCondition::Normal) {
+        common::ApplyGravity(entity_idx, state, dt);
+    } else if (bat_ai_state == EntityAiState::Idle) {
         bat.acc = Vec2::New(0.0F, 0.0F);
         bat.vel = Vec2::New(0.0F, 0.0F);
     } else if (!controlled) {
@@ -237,16 +251,15 @@ void StepEntityPhysicsAsBat(
     }
 
     common::PrePartialEulerStep(entity_idx, state, dt);
-    if (controlled) {
+    if (bat_condition != EntityCondition::Normal) {
+        common::ApplyArchetypeGroundFriction(entity_idx, state);
+    } else if (controlled) {
         bat.vel.x = std::clamp(bat.vel.x, -kChaseMaxSpeed, kChaseMaxSpeed);
         bat.vel.y = std::clamp(bat.vel.y, -kChaseMaxSpeed, kChaseMaxSpeed);
     } else if (bat.ai_state == EntityAiState::Pursuing ||
         bat.ai_state == EntityAiState::Returning) {
         bat.vel.x = std::clamp(bat.vel.x, -kChaseMaxSpeed, kChaseMaxSpeed);
         bat.vel.y = std::clamp(bat.vel.y, -kChaseMaxSpeed, kChaseMaxSpeed);
-    } else if (bat.condition == EntityCondition::Dead ||
-               bat.condition == EntityCondition::Stunned) {
-        common::ApplyGroundFriction(entity_idx, state);
     }
     common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
     if (bat_ai_state != EntityAiState::Pursuing) {

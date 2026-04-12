@@ -29,8 +29,7 @@ bool TryApplyBatContactToEntity(
     const Graphics& graphics,
     Audio& audio
 );
-void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
-void StepEntityPhysicsAsBaseballBat(
+void StepBaseballBat(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,

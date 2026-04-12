@@ -235,9 +235,14 @@ void UpdateCarryAndBackItems(
                     holding->draw_layer = DrawLayer::Background;
                 } else {
                     holding->draw_layer = DrawLayer::Foreground;
-                    TrySetAnimation(*holding, EntityDisplayState::Neutral);
                 }
-                holding->state = entity_trying_to_use ? EntityState::InUse : EntityState::Idle;
+                if (entity_trying_to_use) {
+                    if (holding->state == EntityState::Idle) {
+                        holding->state = EntityState::InUse;
+                    }
+                } else if (holding->state == EntityState::InUse) {
+                    holding->state = EntityState::Idle;
+                }
                 const Vec2 held_pos_target = entity_facing == LeftOrRight::Left
                                                  ? entity_center +
                                                        Vec2::New(-hold_offset.x, hold_offset.y)
@@ -256,7 +261,7 @@ void UpdateCarryAndBackItems(
         const LeftOrRight entity_facing = entity.facing;
         const Vec2 entity_center = entity.GetCenter();
         const EntityDisplayState entity_display_state = entity.display_state;
-        const bool entity_trying_to_use = control.use_held;
+        const bool entity_trying_to_use = control.use_back;
 
         if (entity_back_vid.has_value()) {
             if (Entity* const back_item = state.entity_manager.GetEntityMut(*entity_back_vid)) {
@@ -265,7 +270,13 @@ void UpdateCarryAndBackItems(
                 back_item->facing = entity_facing;
                 back_item->held_by_vid = entity_vid;
                 back_item->attachment_mode = AttachmentMode::Back;
-                back_item->state = entity_trying_to_use ? EntityState::InUse : EntityState::Idle;
+                if (entity_trying_to_use) {
+                    if (back_item->state == EntityState::Idle) {
+                        back_item->state = EntityState::InUse;
+                    }
+                } else if (back_item->state == EntityState::InUse) {
+                    back_item->state = EntityState::Idle;
+                }
 
                 Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
                 if (entity_display_state == EntityDisplayState::Climbing) {

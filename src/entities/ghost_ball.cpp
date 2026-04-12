@@ -1,5 +1,6 @@
 #include "entities/ghost_ball.hpp"
 
+#include "audio.hpp"
 #include "entity_archetype.hpp"
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
@@ -28,12 +29,23 @@ extern const EntityArchetype kGhostBallArchetype{
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .step_logic = StepEntityLogicAsGhostBall,
+    .step_physics = StepEntityPhysicsAsGhostBall,
     .entity_label_a = EntityLabel::GoToThis,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
 };
 
-void StepEntityLogicAsGhostBall(std::size_t entity_idx, State& state) {
+void StepEntityLogicAsGhostBall(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
     // the ghostball should always chase the player.
 
     {
@@ -60,7 +72,15 @@ void StepEntityLogicAsGhostBall(std::size_t entity_idx, State& state) {
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsGhostBall(std::size_t entity_idx, State& state, float dt) {
+void StepEntityPhysicsAsGhostBall(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
     common::EulerStep(entity_idx, state, dt);
 }
 

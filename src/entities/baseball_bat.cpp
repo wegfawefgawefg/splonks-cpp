@@ -66,6 +66,7 @@ extern const EntityArchetype kBaseballBatArchetype{
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
+    .step_logic = StepBaseballBat,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator{
         .animation_id = frame_data_ids::BaseballBatSwing,
@@ -182,7 +183,14 @@ bool TryApplyBatContactToEntity(
     return false;
 }
 
-void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+void StepBaseballBat(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)dt;
     // delete conditions
     //  //  held by is gone // player die or seomthing, stunned, etc
     Entity& baseball_bat = state.entity_manager.entities[entity_idx];
@@ -207,7 +215,6 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, A
 
     baseball_bat.facing = swinger_facing;
     baseball_bat.display_state = EntityDisplayState::Neutral;
-    SetAnimation(baseball_bat, frame_data_ids::BaseballBatSwing);
     const Vec2 mounted_center = swinger_facing == LeftOrRight::Left
                                     ? swinger_center +
                                           Vec2::New(
@@ -231,19 +238,6 @@ void StepBaseballBat(std::size_t entity_idx, State& state, Graphics& graphics, A
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsBaseballBat(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-) {
-    common::ApplyGravity(entity_idx, state, dt);
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::PostPartialEulerStep(entity_idx, state, dt);
-}
-
 bool IsStuff(EntityType type_) {
     switch (type_) {
     case EntityType::Pot:

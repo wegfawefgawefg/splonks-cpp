@@ -33,9 +33,7 @@ bool TryApplyStompContactToEntity(
         return false;
     }
     if (stomped->impassable || !stomped->can_collide ||
-        stomped->condition == EntityCondition::Dead ||
-        stomped->condition == EntityCondition::Stunned ||
-        stomped->alignment != Alignment::Enemy) {
+        stomped->condition != EntityCondition::Normal || stomped->alignment != Alignment::Enemy) {
         return false;
     }
 

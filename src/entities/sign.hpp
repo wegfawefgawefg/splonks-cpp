@@ -19,6 +19,4 @@ extern const EntityArchetype kSignClothingArchetype;
 extern const EntityArchetype kSignCrapsArchetype;
 extern const EntityArchetype kSignKissingArchetype;
 
-void StepEntityLogicAsSign(std::size_t entity_idx, State& state, Audio& audio);
-
 } // namespace splonks::entities::sign

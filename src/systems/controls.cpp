@@ -8,8 +8,7 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
     if (!state.controlled_entity_vid.has_value() || entity.vid != *state.controlled_entity_vid) {
         return ControlIntent{};
     }
-    if (entity.condition == EntityCondition::Dead ||
-        entity.condition == EntityCondition::Stunned) {
+    if (entity.condition != EntityCondition::Normal) {
         return ControlIntent{};
     }
 
@@ -21,8 +20,10 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
         .down = inputs.down.down,
         .jump_pressed = inputs.jump.pressed,
         .run = inputs.run.down,
-        .use_held = inputs.use_button.down,
-        .use_pressed = inputs.use_button.pressed,
+        .use_held = inputs.attack.down,
+        .use_pressed = inputs.attack.pressed,
+        .use_back = inputs.use_button.down,
+        .use_back_pressed = inputs.use_button.pressed,
         .equip_pressed = inputs.equip_button.pressed,
         .pick_up_drop_pressed = inputs.pick_up_drop.pressed,
         .bomb_pressed = inputs.bomb.pressed,
@@ -36,8 +37,7 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
 void ControlEntityAsPlayer(const VID& entity_vid, State& state) {
     if (Entity* const player = state.entity_manager.GetEntityMut(entity_vid)) {
         const ControlIntent intent = GetControlIntentForEntity(*player, state);
-        if (player->condition == EntityCondition::Dead ||
-            player->condition == EntityCondition::Stunned) {
+        if (player->condition != EntityCondition::Normal) {
             player->was_horizontally_controlled_this_frame = false;
             return;
         }

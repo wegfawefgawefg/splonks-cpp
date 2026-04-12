@@ -18,14 +18,4 @@ extern const EntityArchetype kCompassArchetype;
 extern const EntityArchetype kParachuteArchetype;
 extern const EntityArchetype kRopePileArchetype;
 
-
-void StepEntityLogicAsGearItem(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsGearItem(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-);
-
 } // namespace splonks::entities::gear_items

@@ -14,13 +14,4 @@ namespace splonks::entities::mattock {
 
 extern const EntityArchetype kMattockArchetype;
 
-void StepEntityLogicAsMattock(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsMattock(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-);
-
 } // namespace splonks::entities::mattock

@@ -16,6 +16,7 @@ struct StageEntitySpawn {
     EntityType type_ = EntityType::None;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     LeftOrRight facing = LeftOrRight::Left;
+    FrameDataId animation_id = kInvalidFrameDataId;
 };
 
 enum class BackgroundStampCondition {

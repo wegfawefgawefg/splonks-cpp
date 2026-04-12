@@ -50,6 +50,7 @@ extern const EntityArchetype kJetPackArchetype{
     .counter_a = kFuel,
     .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
     .on_death = OnDeathAsJetpack,
+    .step_logic = StepEntityLogicAsJetpack,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Jetpack),
 };
@@ -64,7 +65,15 @@ void OnDeathAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
  *      if yes, move towards the player right now.
  *  If no, give up and fly back to the ceiling.
  */
-void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
+void StepEntityLogicAsJetpack(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)dt;
     Entity& jetpack = state.entity_manager.entities[entity_idx];
     if (jetpack.attachment_mode == AttachmentMode::Back) {
         FrameDataId equipped_animation = frame_data_ids::JetpackBack;
@@ -181,18 +190,4 @@ void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsJetpack(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-) {
-    common::ApplyGravity(entity_idx, state, dt);
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::ApplyGroundFriction(entity_idx, state);
-    common::PostPartialEulerStep(entity_idx, state, dt);
-}
-
 } // namespace splonks::entities::jetpack

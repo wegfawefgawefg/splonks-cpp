@@ -1,5 +1,6 @@
 #include "entities/common.hpp"
 
+#include "entity_archetype.hpp"
 #include "entities/player.hpp"
 #include "tile.hpp"
 
@@ -425,6 +426,28 @@ void ApplyGroundFriction(std::size_t entity_idx, State& state) {
     if (entity.grounded) {
         entity.vel.x *= 0.85F;
     }
+}
+
+void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state) {
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!GetEntityArchetype(entity.type_).has_ground_friction) {
+        return;
+    }
+    ApplyGroundFriction(entity_idx, state);
+}
+
+void StepStandardPhysics(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    ApplyGravity(entity_idx, state, dt);
+    PrePartialEulerStep(entity_idx, state, dt);
+    DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
+    ApplyArchetypeGroundFriction(entity_idx, state);
+    PostPartialEulerStep(entity_idx, state, dt);
 }
 
 void GroundedCheck(

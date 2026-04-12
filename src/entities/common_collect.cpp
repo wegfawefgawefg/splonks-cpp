@@ -18,16 +18,18 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::Bomb:
     case EntityType::Gold:
     case EntityType::GoldStack:
+    case EntityType::GoldChunk:
+    case EntityType::GoldNugget:
+    case EntityType::GoldBar:
+    case EntityType::GoldBars:
     case EntityType::StompPad:
     case EntityType::Rope:
     case EntityType::Pot:
     case EntityType::Box:
     case EntityType::BaseballBat:
-    case EntityType::AltarLeft:
-    case EntityType::AltarRight:
-    case EntityType::SacAltarLeft:
-    case EntityType::SacAltarRight:
-    case EntityType::GoldIdol:
+    case EntityType::Altar:
+        case EntityType::SacAltar:
+        case EntityType::GoldIdol:
     case EntityType::Chest:
     case EntityType::Mattock:
     case EntityType::Cape:
@@ -68,6 +70,7 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::ArrowTrap:
     case EntityType::Snake:
     case EntityType::Caveman:
+    case EntityType::Spider:
     case EntityType::SpiderHang:
     case EntityType::GiantSpiderHang:
     case EntityType::Scarab:
@@ -83,6 +86,14 @@ unsigned int GetPickupMoneyValue(EntityType type_) {
         return 1;
     case EntityType::GoldStack:
         return 2;
+    case EntityType::GoldChunk:
+        return 100;
+    case EntityType::GoldNugget:
+        return 500;
+    case EntityType::GoldBar:
+        return 500;
+    case EntityType::GoldBars:
+        return 1000;
     case EntityType::EmeraldBig:
         return 4;
     case EntityType::SapphireBig:
@@ -99,7 +110,12 @@ std::optional<SoundEffect> GetPickupSound(EntityType type_) {
     case EntityType::Gold:
         return SoundEffect::Gold;
     case EntityType::GoldStack:
+    case EntityType::GoldNugget:
+    case EntityType::GoldBar:
+    case EntityType::GoldBars:
         return SoundEffect::GoldStack;
+    case EntityType::GoldChunk:
+        return SoundEffect::Gold;
     case EntityType::EmeraldBig:
     case EntityType::SapphireBig:
     case EntityType::RubyBig:

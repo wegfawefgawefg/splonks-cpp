@@ -14,24 +14,22 @@ namespace splonks::entities::common {
 struct ContactContext;
 }
 
-namespace splonks::entities::breakaway_container {
+namespace splonks::entities::pot {
 
 extern const EntityArchetype kPotArchetype;
-extern const EntityArchetype kBoxArchetype;
 
-void StepEntityLogicAsBreakawayContainer(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsBreakawayContainer(
+void StepEntityLogicAsPot(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-Vec2 GetBreakawayContainerSize(EntityType type_);
-bool TryApplyBreakawayContainerImpact(
+void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio);
+bool TryApplyPotImpact(
     std::size_t entity_idx,
     const common::ContactContext& context,
     State& state
 );
 
-} // namespace splonks::entities::breakaway_container
+} // namespace splonks::entities::pot

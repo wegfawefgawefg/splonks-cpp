@@ -73,17 +73,17 @@ void SpawnGoldVeinPayout(Tile tile, const IVec2& tile_pos, State& state) {
     const Vec2 center = tile_tl + Vec2::New(8.0F, 8.0F);
 
     if (tile == Tile::Gold) {
-        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(-3.0F, -1.0F), state);
-        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(0.0F, 0.0F), state);
-        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(3.0F, 1.0F), state);
+        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-3.0F, -1.0F), state);
+        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 0.0F), state);
+        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(3.0F, 1.0F), state);
         return;
     }
 
     if (tile == Tile::GoldBig) {
-        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(-4.0F, -1.0F), state);
-        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(0.0F, 1.0F), state);
-        SpawnEntityAtCenter(EntityType::Gold, center + Vec2::New(4.0F, -1.0F), state);
-        SpawnEntityAtCenter(EntityType::GoldStack, center, state);
+        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
+        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
+        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
+        SpawnEntityAtCenter(EntityType::GoldNugget, center, state);
     }
 }
 
@@ -127,6 +127,10 @@ std::optional<SoundEffect> GetCrushSoundEffect(EntityType type_) {
         return SoundEffect::AnimalCrush2;
     case EntityType::Gold:
     case EntityType::GoldStack:
+    case EntityType::GoldChunk:
+    case EntityType::GoldNugget:
+    case EntityType::GoldBar:
+    case EntityType::GoldBars:
         return SoundEffect::MoneySmashed;
     case EntityType::Rock:
         return SoundEffect::Thud;
@@ -187,8 +191,7 @@ void MaybeHurtAndStunOnContact(
     const bool hurt_on_contact = entity.hurt_on_contact;
     const std::optional<VID> thrown_by = entity.thrown_by;
     const Alignment alignment = entity.alignment;
-    if (condition != EntityCondition::Dead && condition != EntityCondition::Stunned &&
-        hurt_on_contact) {
+    if (condition == EntityCondition::Normal && hurt_on_contact) {
         const std::vector<VID> search_results =
             state.sid.QueryExclude(entity_aabb.tl, entity_aabb.br, entity_vid);
         std::vector<VID> results;
@@ -342,8 +345,7 @@ void MaybeHurtAndStunAsOnContactHurtfulEntityBodyOrProjectile(
 ) {
     MaybeHurtAndStunOnContact(entity_idx, state, graphics, audio);
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.condition == EntityCondition::Dead ||
-        entity.condition == EntityCondition::Stunned) {
+    if (entity.condition != EntityCondition::Normal) {
         MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, graphics, audio);
     }
 }

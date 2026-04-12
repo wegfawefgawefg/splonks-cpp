@@ -1,8 +1,8 @@
 #include "stage_init.hpp"
 
+#include "entity.hpp"
 #include "entities/bat.hpp"
 #include "entities/block.hpp"
-#include "entities/breakaway_container.hpp"
 #include "entities/jetpack.hpp"
 #include "entities/money.hpp"
 #include "entities/mod.hpp"
@@ -144,6 +144,9 @@ void SpawnAuthoredStageEntities(State& state) {
         entity->pos = spawn.pos;
         entity->facing = spawn.facing;
         entity->vel = Vec2::New(0.0F, 0.0F);
+        if (spawn.animation_id != kInvalidFrameDataId) {
+            SetAnimation(*entity, spawn.animation_id);
+        }
     }
 }
 

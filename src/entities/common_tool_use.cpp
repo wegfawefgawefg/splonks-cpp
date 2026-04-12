@@ -1,7 +1,6 @@
 #include "entities/common.hpp"
 
 #include "entities/bomb.hpp"
-#include "entities/breakaway_container.hpp"
 #include "entities/mod.hpp"
 #include "entities/rope.hpp"
 

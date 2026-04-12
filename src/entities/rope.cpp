@@ -23,12 +23,14 @@ extern const EntityArchetype kRopeArchetype{
     .hurt_on_contact = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
+    .has_ground_friction = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
+    .step_logic = StepEntityLogicAsRope,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RopeBall),
 };
@@ -36,9 +38,11 @@ extern const EntityArchetype kRopeArchetype{
 void StepEntityLogicAsRope(
     std::size_t entity_idx,
     State& state,
+    Graphics& graphics,
     Audio& audio,
-    Graphics& graphics
+    float dt
 ) {
+    (void)dt;
     (void)graphics;
     Entity& rope = state.entity_manager.entities[entity_idx];
 
@@ -95,17 +99,4 @@ void StepEntityLogicAsRope(
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsRope(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-) {
-    common::ApplyGravity(entity_idx, state, dt);
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::PostPartialEulerStep(entity_idx, state, dt);
-}
-
 } // namespace splonks::entities::rope

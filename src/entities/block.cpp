@@ -88,6 +88,7 @@ extern const EntityArchetype kBlockArchetype{
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
+    .step_logic = StepEntityLogicAsBlock,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CaveBlock),
 };
@@ -110,7 +111,15 @@ bool TryApplyBlockContactToEntity(
     );
 }
 
-void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) {
+void StepEntityLogicAsBlock(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)dt;
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
         SetAnimation(entity, BlockFrameDataIdForStageType(state.stage.stage_type));
@@ -145,18 +154,4 @@ void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) 
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsBlock(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-) {
-    common::ApplyGravity(entity_idx, state, dt);
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::ApplyGroundFriction(entity_idx, state);
-    common::PostPartialEulerStep(entity_idx, state, dt);
-}
-
 } // namespace splonks::entities::block

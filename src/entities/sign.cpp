@@ -139,10 +139,4 @@ extern const EntityArchetype kSignKissingArchetype{
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignKissing),
 };
 
-void StepEntityLogicAsSign(std::size_t entity_idx, State& state, Audio& audio) {
-    (void)entity_idx;
-    (void)state;
-    (void)audio;
-}
-
 } // namespace splonks::entities::sign

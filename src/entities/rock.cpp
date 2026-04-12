@@ -65,6 +65,7 @@ extern const EntityArchetype kRockArchetype{
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
+    .step_logic = StepEntityLogicAsRock,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Rock),
 };
@@ -75,7 +76,15 @@ extern const EntityArchetype kRockArchetype{
  * (do we need some material smack sounds: flesh, metal, bang, stone)
  * if grounded and moving, roll?? so set rotation
  */
-void StepEntityLogicAsRock(std::size_t entity_idx, State& state, Audio& audio) {
+void StepEntityLogicAsRock(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)dt;
     Entity& rock = state.entity_manager.entities[entity_idx];
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(rock, state);
@@ -88,18 +97,4 @@ void StepEntityLogicAsRock(std::size_t entity_idx, State& state, Audio& audio) {
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsRock(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-) {
-    common::ApplyGravity(entity_idx, state, dt);
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::ApplyGroundFriction(entity_idx, state);
-    common::PostPartialEulerStep(entity_idx, state, dt);
-}
-
 } // namespace splonks::entities::rock

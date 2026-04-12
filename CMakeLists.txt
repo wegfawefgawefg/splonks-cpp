@@ -141,7 +141,7 @@ add_executable(splonks-cpp
     src/entities/block.cpp
     src/entities/bomb.cpp
     src/entities/bow.cpp
-    src/entities/breakaway_container.cpp
+    src/entities/box.cpp
     src/entities/caveman.cpp
     src/entities/chest.cpp
     src/entities/common_damage.cpp
@@ -163,6 +163,7 @@ add_executable(splonks-cpp
     src/entities/emerald_big.cpp
     src/entities/gear_items.cpp
     src/entities/ghost_ball.cpp
+    src/entities/pot.cpp
     src/entities/giant_tiki_head.cpp
     src/entities/gold_idol.cpp
     src/entities/jetpack.cpp
@@ -184,6 +185,7 @@ add_executable(splonks-cpp
     src/entities/sign.cpp
     src/entities/sapphire_big.cpp
     src/entities/snake.cpp
+    src/entities/spider.cpp
     src/entities/spider_hang.cpp
     src/entities/stomp_pad.cpp
     src/entities/teleporter.cpp

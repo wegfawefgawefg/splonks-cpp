@@ -17,7 +17,13 @@ constexpr float kChaseMaxSpeed = 1.0F;
 
 extern const EntityArchetype kBatArchetype;
 
-void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio);
+void StepEntityLogicAsBat(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 void StepEntityPhysicsAsBat(
     std::size_t entity_idx,
     State& state,

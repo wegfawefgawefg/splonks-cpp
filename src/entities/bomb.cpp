@@ -19,6 +19,7 @@ extern const EntityArchetype kBombArchetype{
     .hurt_on_contact = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
+    .has_ground_friction = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
@@ -26,6 +27,7 @@ extern const EntityArchetype kBombArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingAndSpikes,
     .on_death = OnDeathAsBomb,
+    .step_logic = StepEntityLogicAsBomb,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Grenade),
 };
@@ -34,7 +36,15 @@ void OnDeathAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
     common::OnDeathAsExplosion(entity_idx, state, audio);
 }
 
-void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
+void StepEntityLogicAsBomb(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)dt;
     Entity& bomb = state.entity_manager.entities[entity_idx];
     // if bomb is in use, initialize its timer, and set state to winding up
     if (bomb.state == EntityState::InUse) {
@@ -58,17 +68,4 @@ void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
 }
 
 /** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsBomb(
-    std::size_t entity_idx,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    float dt
-) {
-    common::ApplyGravity(entity_idx, state, dt);
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::PostPartialEulerStep(entity_idx, state, dt);
-}
-
 } // namespace splonks::entities::bomb

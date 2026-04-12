@@ -1,6 +1,7 @@
 #include "entities/common.hpp"
 
-#include "entities/breakaway_container.hpp"
+#include "entities/box.hpp"
+#include "entities/pot.hpp"
 #include "tile.hpp"
 
 namespace splonks::entities::common {
@@ -34,8 +35,15 @@ ContactResolution TryDispatchEntityTileContactByEntityType(
     const Entity& entity = state.entity_manager.entities[entity_idx];
     switch (entity.type_) {
     case EntityType::Pot:
+        if (!pot::TryApplyPotImpact(entity_idx, context, state)) {
+            return ContactResolution{};
+        }
+        return ContactResolution{
+            .blocks_movement = false,
+            .stop_sweep = true,
+        };
     case EntityType::Box:
-        if (!breakaway_container::TryApplyBreakawayContainerImpact(entity_idx, context, state)) {
+        if (!box::TryApplyBoxImpact(entity_idx, context, state)) {
             return ContactResolution{};
         }
         return ContactResolution{

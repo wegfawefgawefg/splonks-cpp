@@ -14,8 +14,7 @@ namespace splonks::entities::rock {
 
 extern const EntityArchetype kRockArchetype;
 
-void StepEntityLogicAsRock(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsRock(
+void StepEntityLogicAsRock(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,

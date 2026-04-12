@@ -24,6 +24,7 @@ extern const EntityArchetype kMouseTrailerArchetype{
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
+    .step_physics = StepEntityPhysicsAsMouseTrailer,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
 };
@@ -33,19 +34,16 @@ extern const EntityArchetype kMouseTrailerArchetype{
  * clunky sound on bounces, smack sound on hit something?
  * (do we need some material smack sounds: flesh, metal, bang, stone)
  * if grounded and moving, roll?? so set rotation
- */
-void StepEntityLogicAsMouseTrailer(
+ *//** generalize this to all square or rectangular entities somehow */
+void StepEntityPhysicsAsMouseTrailer(
     std::size_t entity_idx,
     State& state,
-    Audio& audio
+    Graphics& graphics,
+    Audio& audio,
+    float dt
 ) {
-    (void)entity_idx;
-    (void)state;
+    (void)graphics;
     (void)audio;
-}
-
-/** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsMouseTrailer(std::size_t entity_idx, State& state, float dt) {
     common::PrePartialEulerStep(entity_idx, state, dt);
     common::DoTileCollisions(entity_idx, state);
     common::PostPartialEulerStep(entity_idx, state, dt);

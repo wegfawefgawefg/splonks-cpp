@@ -1,21 +1,20 @@
-#include "entities/stomp_pad.hpp"
+#include "entities/spider.hpp"
 
 #include "entity_archetype.hpp"
-#include "entities/common.hpp"
 #include "frame_data_id.hpp"
 
-namespace splonks::entities::stomp_pad {
+namespace splonks::entities::spider {
 
-extern const EntityArchetype kStompPadArchetype{
-    .type_ = EntityType::StompPad,
-    .size = Vec2::New(8.0F, 7.0F),
-    .health = 1000,
-    .has_physics = false,
+extern const EntityArchetype kSpiderArchetype{
+    .type_ = EntityType::Spider,
+    .size = Vec2::New(16.0F, 16.0F),
+    .health = 1,
+    .has_physics = true,
     .can_collide = true,
     .can_be_picked_up = false,
     .impassable = false,
     .hurt_on_contact = true,
-    .can_be_stunned = false,
+    .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
@@ -23,7 +22,7 @@ extern const EntityArchetype kStompPadArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pot),
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
 };
 
-} // namespace splonks::entities::stomp_pad
+} // namespace splonks::entities::spider

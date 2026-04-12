@@ -27,8 +27,7 @@ bool TryApplyBlockContactToEntity(
     const Graphics& graphics,
     Audio& audio
 );
-void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsBlock(
+void StepEntityLogicAsBlock(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,

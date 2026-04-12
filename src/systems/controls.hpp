@@ -13,6 +13,8 @@ struct ControlIntent {
     bool run = false;
     bool use_held = false;
     bool use_pressed = false;
+    bool use_back = false;
+    bool use_back_pressed = false;
     bool equip_pressed = false;
     bool pick_up_drop_pressed = false;
     bool bomb_pressed = false;

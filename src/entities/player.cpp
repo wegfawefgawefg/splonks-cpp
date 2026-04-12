@@ -34,6 +34,8 @@ extern const EntityArchetype kPlayerArchetype{
     .bombs = 400,
     .ropes = 400,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .step_logic = StepEntityLogicAsPlayer,
+    .step_physics = StepEntityPhysicsAsPlayer,
     .alignment = Alignment::Ally,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::PlayerStanding),
 };
@@ -170,9 +172,10 @@ void StepEntityLogicAsPlayer(
         const bool trying_to_attack = control.attack_pressed;
         const VID player_vid = player.vid;
         const unsigned int attack_delay_countdown = player.attack_delay_countdown;
+        const bool has_held_item = player.holding_vid.has_value();
 
         bool attacked = false;
-        if (trying_to_attack && attack_delay_countdown == 0) {
+        if (trying_to_attack && attack_delay_countdown == 0 && !has_held_item) {
             if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                 if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
                     SetEntityAs(*entity, EntityType::BaseballBat);

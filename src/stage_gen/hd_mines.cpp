@@ -1304,22 +1304,26 @@ ResolvedRoom ResolveRoom(
                 break;
             case 'A':
                 room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::AltarLeft,
+                    .type_ = EntityType::Altar,
                     .pos = tile_pos,
+                    .animation_id = frame_data_ids::AltarLeft,
                 });
                 room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::AltarRight,
+                    .type_ = EntityType::Altar,
                     .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
+                    .animation_id = frame_data_ids::AltarRight,
                 });
                 break;
             case 'x':
                 room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::SacAltarLeft,
+                    .type_ = EntityType::SacAltar,
                     .pos = tile_pos,
+                    .animation_id = frame_data_ids::SacAltarLeft,
                 });
                 room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::SacAltarRight,
+                    .type_ = EntityType::SacAltar,
                     .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
+                    .animation_id = frame_data_ids::SacAltarRight,
                 });
                 room.background_stamps.push_back(BackgroundStamp{
                     .animation_id = frame_data_ids::KaliBody,

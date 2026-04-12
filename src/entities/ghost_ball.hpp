@@ -4,6 +4,8 @@
 
 namespace splonks {
 
+struct Audio;
+struct Graphics;
 struct State;
 
 }
@@ -15,7 +17,19 @@ constexpr float kChaseMaxSpeed = 1.0F;
 
 extern const EntityArchetype kGhostBallArchetype;
 
-void StepEntityLogicAsGhostBall(std::size_t entity_idx, State& state);
-void StepEntityPhysicsAsGhostBall(std::size_t entity_idx, State& state, float dt);
+void StepEntityLogicAsGhostBall(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
+void StepEntityPhysicsAsGhostBall(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 
 } // namespace splonks::entities::ghost_ball

@@ -14,8 +14,7 @@ namespace splonks::entities::rope {
 
 extern const EntityArchetype kRopeArchetype;
 
-void StepEntityLogicAsRope(std::size_t entity_idx, State& state, Audio& audio, Graphics& graphics);
-void StepEntityPhysicsAsRope(
+void StepEntityLogicAsRope(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,

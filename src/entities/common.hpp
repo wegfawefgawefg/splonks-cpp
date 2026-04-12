@@ -79,6 +79,14 @@ void EulerStep(std::size_t entity_idx, State& state, float dt);
 void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt);
 void ApplyGravity(std::size_t entity_idx, State& state, float dt);
 void ApplyGroundFriction(std::size_t entity_idx, State& state);
+void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state);
+void StepStandardPhysics(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt);
 void GroundedCheck(
     std::size_t entity_idx,

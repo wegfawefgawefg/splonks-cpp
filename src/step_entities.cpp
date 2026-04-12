@@ -1,5 +1,6 @@
 #include "step_entities.hpp"
 
+#include "entity_archetype.hpp"
 #include "entities/altar.hpp"
 #include "entities/arrow_trap.hpp"
 #include "entities/baseball_bat.hpp"
@@ -7,7 +8,6 @@
 #include "entities/block.hpp"
 #include "entities/bomb.hpp"
 #include "entities/bow.hpp"
-#include "entities/breakaway_container.hpp"
 #include "entities/caveman.hpp"
 #include "entities/chest.hpp"
 #include "entities/common.hpp"
@@ -69,27 +69,40 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
 
     if (state.player_vid) {
         if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-            const bool has_physics = player->has_physics;
-            const bool active = player->active;
-            if (active) {
+            if (player->active) {
                 entities::common::CommonStep(state.player_vid->id, state, graphics, audio, dt);
-                entities::player::StepEntityLogicAsPlayer(
-                    state.player_vid->id,
-                    state,
-                    graphics,
-                    audio,
-                    dt
-                );
-                entities::common::CommonPostStep(state.player_vid->id, state, graphics, audio, dt);
+                if (state.entity_manager.entities[state.player_vid->id].active) {
+                    const EntityArchetype& archetype =
+                        GetEntityArchetype(state.entity_manager.entities[state.player_vid->id].type_);
+                    if (archetype.step_logic != nullptr) {
+                        archetype.step_logic(state.player_vid->id, state, graphics, audio, dt);
+                    }
+                }
+                if (state.entity_manager.entities[state.player_vid->id].active) {
+                    entities::common::CommonPostStep(
+                        state.player_vid->id,
+                        state,
+                        graphics,
+                        audio,
+                        dt
+                    );
+                }
             }
-            if (has_physics) {
-                entities::player::StepEntityPhysicsAsPlayer(
-                    state.player_vid->id,
-                    state,
-                    graphics,
-                    audio,
-                    dt
-                );
+            if (state.entity_manager.entities[state.player_vid->id].active &&
+                state.entity_manager.entities[state.player_vid->id].has_physics) {
+                const EntityArchetype& archetype =
+                    GetEntityArchetype(state.entity_manager.entities[state.player_vid->id].type_);
+                if (archetype.step_physics != nullptr) {
+                    archetype.step_physics(state.player_vid->id, state, graphics, audio, dt);
+                } else {
+                    entities::common::StepStandardPhysics(
+                        state.player_vid->id,
+                        state,
+                        graphics,
+                        audio,
+                        dt
+                    );
+                }
             }
             entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
             state.UpdateSidForEntity(state.player_vid->id, graphics);
@@ -103,7 +116,6 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
     for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
         const Entity& entity = state.entity_manager.GetEntityById(entity_idx);
         const EntityType type_ = entity.type_;
-        const bool has_physics = entity.has_physics;
 
         if (entity.active) {
             if (type_ == EntityType::Player) {
@@ -113,150 +125,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             if (!state.entity_manager.entities[entity_idx].active) {
                 continue;
             }
-            switch (type_) {
-            case EntityType::None:
-            case EntityType::Player:
-            case EntityType::GhostBall:
-                entities::ghost_ball::StepEntityLogicAsGhostBall(entity_idx, state);
-                break;
-            case EntityType::Bat:
-                entities::bat::StepEntityLogicAsBat(entity_idx, state, audio);
-                break;
-            case EntityType::Rock:
-                entities::rock::StepEntityLogicAsRock(entity_idx, state, audio);
-                break;
-            case EntityType::Pot:
-            case EntityType::Box:
-                entities::breakaway_container::StepEntityLogicAsBreakawayContainer(
-                    entity_idx, state, audio);
-                break;
-            case EntityType::Block:
-                entities::block::StepEntityLogicAsBlock(entity_idx, state, audio);
-                break;
-            case EntityType::Bomb:
-                entities::bomb::StepEntityLogicAsBomb(entity_idx, state, audio);
-                break;
-            case EntityType::JetPack:
-                entities::jetpack::StepEntityLogicAsJetpack(entity_idx, state, audio);
-                break;
-            case EntityType::Rope:
-                entities::rope::StepEntityLogicAsRope(entity_idx, state, audio, graphics);
-                break;
-            case EntityType::BaseballBat:
-                entities::baseball_bat::StepBaseballBat(entity_idx, state, graphics, audio);
-                break;
-            case EntityType::MouseTrailer:
-                entities::mouse_trailer::StepEntityLogicAsMouseTrailer(entity_idx, state, audio);
-                break;
-            case EntityType::Gold:
-            case EntityType::GoldStack:
-                entities::money::StepEntityLogicAsMoney(entity_idx, state, audio);
-                break;
-            case EntityType::StompPad:
-                entities::stomp_pad::StepEntityLogicAsStompPad(entity_idx, state, audio);
-                break;
-            case EntityType::AltarLeft:
-            case EntityType::AltarRight:
-                entities::altar::StepEntityLogicAsAltar(entity_idx, state, audio);
-                break;
-            case EntityType::SacAltarLeft:
-            case EntityType::SacAltarRight:
-                entities::sac_altar::StepEntityLogicAsSacAltar(entity_idx, state, audio);
-                break;
-            case EntityType::GoldIdol:
-                entities::gold_idol::StepEntityLogicAsGoldIdol(entity_idx, state, audio);
-                break;
-            case EntityType::Chest:
-                entities::chest::StepEntityLogicAsChest(entity_idx, state, audio);
-                break;
-            case EntityType::Cape:
-            case EntityType::Shotgun:
-                entities::shotgun::StepEntityLogicAsShotgun(entity_idx, state, audio);
-                break;
-            case EntityType::Teleporter:
-                entities::teleporter::StepEntityLogicAsTeleporter(entity_idx, state, audio);
-                break;
-            case EntityType::WebCannon:
-                entities::web_cannon::StepEntityLogicAsWebCannon(entity_idx, state, audio);
-                break;
-            case EntityType::Pistol:
-                entities::pistol::StepEntityLogicAsPistol(entity_idx, state, audio);
-                break;
-            case EntityType::Machete:
-                entities::machete::StepEntityLogicAsMachete(entity_idx, state, audio);
-                break;
-            case EntityType::Bow:
-                entities::bow::StepEntityLogicAsBow(entity_idx, state, audio);
-                break;
-            case EntityType::Gloves:
-            case EntityType::Spectacles:
-            case EntityType::Mitt:
-            case EntityType::Paste:
-            case EntityType::SpringShoes:
-            case EntityType::SpikeShoes:
-            case EntityType::BombBox:
-            case EntityType::BombBag:
-            case EntityType::Compass:
-            case EntityType::Parachute:
-            case EntityType::RopePile:
-                entities::gear_items::StepEntityLogicAsGearItem(entity_idx, state, audio);
-                break;
-            case EntityType::Mattock:
-                entities::mattock::StepEntityLogicAsMattock(entity_idx, state, audio);
-                break;
-            case EntityType::Dice:
-                entities::dice::StepEntityLogicAsDice(entity_idx, state, audio);
-                break;
-            case EntityType::RubyBig:
-                entities::ruby_big::StepEntityLogicAsRubyBig(entity_idx, state, audio);
-                break;
-            case EntityType::EmeraldBig:
-                entities::emerald_big::StepEntityLogicAsEmeraldBig(entity_idx, state, audio);
-                break;
-            case EntityType::SapphireBig:
-                entities::sapphire_big::StepEntityLogicAsSapphireBig(entity_idx, state, audio);
-                break;
-            case EntityType::Shopkeeper:
-                entities::shopkeeper::StepEntityLogicAsShopkeeper(entity_idx, state, audio);
-                break;
-            case EntityType::Damsel:
-                entities::damsel::StepEntityLogicAsDamsel(entity_idx, state, audio);
-                break;
-            case EntityType::SignGeneral:
-            case EntityType::SignBomb:
-            case EntityType::SignWeapon:
-            case EntityType::SignRare:
-            case EntityType::SignClothing:
-            case EntityType::SignCraps:
-            case EntityType::SignKissing:
-                entities::sign::StepEntityLogicAsSign(entity_idx, state, audio);
-                break;
-            case EntityType::Lantern:
-            case EntityType::LanternRed:
-                entities::lantern::StepEntityLogicAsLantern(entity_idx, state, audio);
-                break;
-            case EntityType::GiantTikiHead:
-                entities::giant_tiki_head::StepEntityLogicAsGiantTikiHead(entity_idx, state, audio);
-                break;
-            case EntityType::KaliHead:
-                entities::kali_head::StepEntityLogicAsKaliHead(entity_idx, state, audio);
-                break;
-            case EntityType::ArrowTrap:
-                entities::arrow_trap::StepEntityLogicAsArrowTrap(entity_idx, state, audio);
-                break;
-            case EntityType::Snake:
-                entities::snake::StepEntityLogicAsSnake(entity_idx, state, audio);
-                break;
-            case EntityType::Caveman:
-                entities::caveman::StepEntityLogicAsCaveman(entity_idx, state, audio);
-                break;
-            case EntityType::SpiderHang:
-            case EntityType::GiantSpiderHang:
-                entities::spider_hang::StepEntityLogicAsSpiderHang(entity_idx, state, audio);
-                break;
-            case EntityType::Scarab:
-                entities::scarab::StepEntityLogicAsScarab(entity_idx, state, audio);
-                break;
+            const EntityArchetype& archetype = GetEntityArchetype(type_);
+            if (archetype.step_logic != nullptr) {
+                archetype.step_logic(entity_idx, state, graphics, audio, dt);
             }
             if (!state.entity_manager.entities[entity_idx].active) {
                 continue;
@@ -266,163 +137,17 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 continue;
             }
 
-            if (has_physics) {
-                switch (type_) {
-                case EntityType::None:
-                case EntityType::Player:
-                case EntityType::GhostBall:
-                    entities::ghost_ball::StepEntityPhysicsAsGhostBall(entity_idx, state, dt);
-                    break;
-                case EntityType::Bat:
-                    entities::bat::StepEntityPhysicsAsBat(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Rock:
-                    entities::rock::StepEntityPhysicsAsRock(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Pot:
-                case EntityType::Box:
-                    entities::breakaway_container::StepEntityPhysicsAsBreakawayContainer(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Block:
-                    entities::block::StepEntityPhysicsAsBlock(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Bomb:
-                    entities::bomb::StepEntityPhysicsAsBomb(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::JetPack:
-                    entities::jetpack::StepEntityPhysicsAsJetpack(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Rope:
-                    entities::rope::StepEntityPhysicsAsRope(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::BaseballBat:
-                    entities::baseball_bat::StepEntityPhysicsAsBaseballBat(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::MouseTrailer:
-                    entities::mouse_trailer::StepEntityPhysicsAsMouseTrailer(entity_idx, state, dt);
-                    break;
-                case EntityType::Gold:
-                case EntityType::GoldStack:
-                    entities::money::StepEntityPhysicsAsMoney(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::StompPad:
-                    entities::stomp_pad::StepEntityPhysicsAsStompPad(
+            if (state.entity_manager.entities[entity_idx].has_physics) {
+                if (archetype.step_physics != nullptr) {
+                    archetype.step_physics(entity_idx, state, graphics, audio, dt);
+                } else {
+                    entities::common::StepStandardPhysics(
                         entity_idx,
                         state,
                         graphics,
                         audio,
                         dt
                     );
-                    break;
-                case EntityType::AltarLeft:
-                case EntityType::AltarRight:
-                case EntityType::SacAltarLeft:
-                case EntityType::SacAltarRight:
-                case EntityType::SignGeneral:
-                case EntityType::SignBomb:
-                case EntityType::SignWeapon:
-                case EntityType::SignRare:
-                case EntityType::SignClothing:
-                case EntityType::SignCraps:
-                case EntityType::SignKissing:
-                case EntityType::Lantern:
-                case EntityType::LanternRed:
-                case EntityType::GiantTikiHead:
-                case EntityType::KaliHead:
-                case EntityType::ArrowTrap:
-                    break;
-                case EntityType::GoldIdol:
-                    entities::gold_idol::StepEntityPhysicsAsGoldIdol(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Chest:
-                    entities::chest::StepEntityPhysicsAsChest(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Cape:
-                case EntityType::Shotgun:
-                    entities::shotgun::StepEntityPhysicsAsShotgun(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Teleporter:
-                    entities::teleporter::StepEntityPhysicsAsTeleporter(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::WebCannon:
-                    entities::web_cannon::StepEntityPhysicsAsWebCannon(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Pistol:
-                    entities::pistol::StepEntityPhysicsAsPistol(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Machete:
-                    entities::machete::StepEntityPhysicsAsMachete(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Bow:
-                    entities::bow::StepEntityPhysicsAsBow(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Gloves:
-                case EntityType::Spectacles:
-                case EntityType::Mitt:
-                case EntityType::Paste:
-                case EntityType::SpringShoes:
-                case EntityType::SpikeShoes:
-                case EntityType::BombBox:
-                case EntityType::BombBag:
-                case EntityType::Compass:
-                case EntityType::Parachute:
-                case EntityType::RopePile:
-                    entities::gear_items::StepEntityPhysicsAsGearItem(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Mattock:
-                    entities::mattock::StepEntityPhysicsAsMattock(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Dice:
-                    entities::dice::StepEntityPhysicsAsDice(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::RubyBig:
-                    entities::ruby_big::StepEntityPhysicsAsRubyBig(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::EmeraldBig:
-                    entities::emerald_big::StepEntityPhysicsAsEmeraldBig(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::SapphireBig:
-                    entities::sapphire_big::StepEntityPhysicsAsSapphireBig(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Shopkeeper:
-                    entities::shopkeeper::StepEntityPhysicsAsShopkeeper(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Damsel:
-                    entities::damsel::StepEntityPhysicsAsDamsel(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Snake:
-                    entities::snake::StepEntityPhysicsAsSnake(entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Caveman:
-                    entities::caveman::StepEntityPhysicsAsCaveman(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::SpiderHang:
-                case EntityType::GiantSpiderHang:
-                    entities::spider_hang::StepEntityPhysicsAsSpiderHang(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
-                case EntityType::Scarab:
-                    entities::scarab::StepEntityPhysicsAsScarab(
-                        entity_idx, state, graphics, audio, dt);
-                    break;
                 }
             }
             entities::common::ApplyDeactivateConditions(entity_idx, state);

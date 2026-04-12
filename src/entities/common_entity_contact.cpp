@@ -1,7 +1,8 @@
 #include "entities/common.hpp"
 
 #include "entities/baseball_bat.hpp"
-#include "entities/breakaway_container.hpp"
+#include "entities/box.hpp"
+#include "entities/pot.hpp"
 
 namespace splonks::entities::common {
 
@@ -121,9 +122,15 @@ ContactResolution TryDispatchEntityEntityContactByType(
         };
     }
     case EntityType::Pot:
+        if (!pot::TryApplyPotImpact(participant_idx, context, state)) {
+            return ContactResolution{};
+        }
+        return ContactResolution{
+            .blocks_movement = false,
+            .stop_sweep = true,
+        };
     case EntityType::Box:
-        if (!breakaway_container::TryApplyBreakawayContainerImpact(
-                participant_idx, context, state)) {
+        if (!box::TryApplyBoxImpact(participant_idx, context, state)) {
             return ContactResolution{};
         }
         return ContactResolution{
@@ -140,13 +147,15 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::Block:
     case EntityType::Gold:
     case EntityType::GoldStack:
+    case EntityType::GoldChunk:
+    case EntityType::GoldNugget:
+    case EntityType::GoldBar:
+    case EntityType::GoldBars:
     case EntityType::StompPad:
     case EntityType::Rope:
-    case EntityType::AltarLeft:
-    case EntityType::AltarRight:
-    case EntityType::SacAltarLeft:
-    case EntityType::SacAltarRight:
-    case EntityType::GoldIdol:
+    case EntityType::Altar:
+        case EntityType::SacAltar:
+        case EntityType::GoldIdol:
     case EntityType::Chest:
     case EntityType::Mattock:
     case EntityType::Cape:
@@ -187,6 +196,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::ArrowTrap:
     case EntityType::Snake:
     case EntityType::Caveman:
+    case EntityType::Spider:
     case EntityType::SpiderHang:
     case EntityType::GiantSpiderHang:
     case EntityType::Scarab:

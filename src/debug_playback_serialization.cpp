@@ -1,5 +1,6 @@
 #include "debug_playback_internal.hpp"
 
+#include "entity_archetype.hpp"
 #include "frame_data.hpp"
 
 #include <cstdio>
@@ -387,137 +388,7 @@ const char* DebugLevelKindToString(DebugLevelKind kind) {
 }
 
 const char* EntityTypeToString(EntityType type) {
-    switch (type) {
-    case EntityType::None:
-        return "None";
-    case EntityType::Player:
-        return "Player";
-    case EntityType::Bat:
-        return "Bat";
-    case EntityType::Rock:
-        return "Rock";
-    case EntityType::Pot:
-        return "Pot";
-    case EntityType::Box:
-        return "Box";
-    case EntityType::Block:
-        return "Block";
-    case EntityType::Bomb:
-        return "Bomb";
-    case EntityType::JetPack:
-        return "JetPack";
-    case EntityType::Rope:
-        return "Rope";
-    case EntityType::BaseballBat:
-        return "BaseballBat";
-    case EntityType::GhostBall:
-        return "GhostBall";
-    case EntityType::MouseTrailer:
-        return "MouseTrailer";
-    case EntityType::Gold:
-        return "Gold";
-    case EntityType::GoldStack:
-        return "GoldStack";
-    case EntityType::StompPad:
-        return "StompPad";
-    case EntityType::AltarLeft:
-        return "AltarLeft";
-    case EntityType::AltarRight:
-        return "AltarRight";
-    case EntityType::SacAltarLeft:
-        return "SacAltarLeft";
-    case EntityType::SacAltarRight:
-        return "SacAltarRight";
-    case EntityType::GoldIdol:
-        return "GoldIdol";
-    case EntityType::Chest:
-        return "Chest";
-    case EntityType::Mattock:
-        return "Mattock";
-    case EntityType::Cape:
-        return "Cape";
-    case EntityType::Shotgun:
-        return "Shotgun";
-    case EntityType::Teleporter:
-        return "Teleporter";
-    case EntityType::Gloves:
-        return "Gloves";
-    case EntityType::Spectacles:
-        return "Spectacles";
-    case EntityType::WebCannon:
-        return "WebCannon";
-    case EntityType::Pistol:
-        return "Pistol";
-    case EntityType::Mitt:
-        return "Mitt";
-    case EntityType::Paste:
-        return "Paste";
-    case EntityType::SpringShoes:
-        return "SpringShoes";
-    case EntityType::SpikeShoes:
-        return "SpikeShoes";
-    case EntityType::Machete:
-        return "Machete";
-    case EntityType::BombBox:
-        return "BombBox";
-    case EntityType::BombBag:
-        return "BombBag";
-    case EntityType::Bow:
-        return "Bow";
-    case EntityType::Compass:
-        return "Compass";
-    case EntityType::Parachute:
-        return "Parachute";
-    case EntityType::RopePile:
-        return "RopePile";
-    case EntityType::Dice:
-        return "Dice";
-    case EntityType::RubyBig:
-        return "RubyBig";
-    case EntityType::EmeraldBig:
-        return "EmeraldBig";
-    case EntityType::SapphireBig:
-        return "SapphireBig";
-    case EntityType::Shopkeeper:
-        return "Shopkeeper";
-    case EntityType::Damsel:
-        return "Damsel";
-    case EntityType::SignGeneral:
-        return "SignGeneral";
-    case EntityType::SignBomb:
-        return "SignBomb";
-    case EntityType::SignWeapon:
-        return "SignWeapon";
-    case EntityType::SignRare:
-        return "SignRare";
-    case EntityType::SignClothing:
-        return "SignClothing";
-    case EntityType::SignCraps:
-        return "SignCraps";
-    case EntityType::SignKissing:
-        return "SignKissing";
-    case EntityType::Lantern:
-        return "Lantern";
-    case EntityType::LanternRed:
-        return "LanternRed";
-    case EntityType::GiantTikiHead:
-        return "GiantTikiHead";
-    case EntityType::KaliHead:
-        return "KaliHead";
-    case EntityType::ArrowTrap:
-        return "ArrowTrap";
-    case EntityType::Snake:
-        return "Snake";
-    case EntityType::Caveman:
-        return "Caveman";
-    case EntityType::SpiderHang:
-        return "SpiderHang";
-    case EntityType::GiantSpiderHang:
-        return "GiantSpiderHang";
-    case EntityType::Scarab:
-        return "Scarab";
-    }
-    return "Unknown";
+    return GetEntityTypeName(type);
 }
 
 const char* DisplayStateToString(EntityDisplayState state) {

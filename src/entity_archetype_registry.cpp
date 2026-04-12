@@ -6,7 +6,7 @@
 #include "entities/block.hpp"
 #include "entities/bomb.hpp"
 #include "entities/bow.hpp"
-#include "entities/breakaway_container.hpp"
+#include "entities/box.hpp"
 #include "entities/caveman.hpp"
 #include "entities/chest.hpp"
 #include "entities/damsel.hpp"
@@ -37,6 +37,8 @@
 #include "entities/snake.hpp"
 #include "entities/spider_hang.hpp"
 #include "entities/stomp_pad.hpp"
+#include "entities/pot.hpp"
+#include "entities/spider.hpp"
 #include "entities/teleporter.hpp"
 #include "entities/web_cannon.hpp"
 #include "entities/pistol.hpp"
@@ -50,6 +52,12 @@ namespace {
 std::array<EntityArchetype, kEntityTypeCount> g_entity_archetypes{};
 bool g_entity_archetypes_populated = false;
 
+void SetArchetype(EntityType type_, const EntityArchetype& archetype, const char* debug_name) {
+    EntityArchetype populated = archetype;
+    populated.debug_name = debug_name;
+    g_entity_archetypes[EntityTypeIndex(type_)] = populated;
+}
+
 } // namespace
 
 const EntityArchetype& GetEntityArchetype(EntityType type_) {
@@ -57,118 +65,83 @@ const EntityArchetype& GetEntityArchetype(EntityType type_) {
     return g_entity_archetypes[EntityTypeIndex(type_)];
 }
 
+const char* GetEntityTypeName(EntityType type_) {
+    if (!g_entity_archetypes_populated) {
+        return "Unknown";
+    }
+
+    const char* const debug_name = g_entity_archetypes[EntityTypeIndex(type_)].debug_name;
+    return debug_name != nullptr ? debug_name : "Unknown";
+}
+
 void PopulateEntityArchetypesTable() {
-    g_entity_archetypes[EntityTypeIndex(EntityType::None)] = kNoneArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Player)] = entities::player::kPlayerArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Block)] = entities::block::kBlockArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::GhostBall)] =
-        entities::ghost_ball::kGhostBallArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Bat)] = entities::bat::kBatArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Rock)] = entities::rock::kRockArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::MouseTrailer)] =
-        entities::mouse_trailer::kMouseTrailerArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::JetPack)] =
-        entities::jetpack::kJetPackArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Bomb)] = entities::bomb::kBombArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Gold)] = entities::money::kGoldArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::GoldStack)] =
-        entities::money::kGoldStackArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Rope)] = entities::rope::kRopeArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Pot)] =
-        entities::breakaway_container::kPotArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Box)] =
-        entities::breakaway_container::kBoxArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::StompPad)] =
-        entities::stomp_pad::kStompPadArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::BaseballBat)] =
-        entities::baseball_bat::kBaseballBatArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::AltarLeft)] =
-        entities::altar::kAltarLeftArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::AltarRight)] =
-        entities::altar::kAltarRightArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SacAltarLeft)] =
-        entities::sac_altar::kSacAltarLeftArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SacAltarRight)] =
-        entities::sac_altar::kSacAltarRightArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::GoldIdol)] =
-        entities::gold_idol::kGoldIdolArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Chest)] = entities::chest::kChestArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Mattock)] =
-        entities::mattock::kMattockArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Cape)] = entities::gear_items::kCapeArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Shotgun)] =
-        entities::shotgun::kShotgunArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Teleporter)] =
-        entities::teleporter::kTeleporterArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Gloves)] =
-        entities::gear_items::kGlovesArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Spectacles)] =
-        entities::gear_items::kSpectaclesArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::WebCannon)] =
-        entities::web_cannon::kWebCannonArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Pistol)] = entities::pistol::kPistolArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Mitt)] = entities::gear_items::kMittArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Paste)] =
-        entities::gear_items::kPasteArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SpringShoes)] =
-        entities::gear_items::kSpringShoesArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SpikeShoes)] =
-        entities::gear_items::kSpikeShoesArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Machete)] =
-        entities::machete::kMacheteArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::BombBox)] =
-        entities::gear_items::kBombBoxArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::BombBag)] =
-        entities::gear_items::kBombBagArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Bow)] = entities::bow::kBowArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Compass)] =
-        entities::gear_items::kCompassArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Parachute)] =
-        entities::gear_items::kParachuteArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::RopePile)] =
-        entities::gear_items::kRopePileArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Dice)] = entities::dice::kDiceArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::RubyBig)] =
-        entities::ruby_big::kRubyBigArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::EmeraldBig)] =
-        entities::emerald_big::kEmeraldBigArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SapphireBig)] =
-        entities::sapphire_big::kSapphireBigArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Shopkeeper)] =
-        entities::shopkeeper::kShopkeeperArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Damsel)] = entities::damsel::kDamselArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SignGeneral)] =
-        entities::sign::kSignGeneralArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SignBomb)] =
-        entities::sign::kSignBombArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SignWeapon)] =
-        entities::sign::kSignWeaponArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SignRare)] =
-        entities::sign::kSignRareArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SignClothing)] =
-        entities::sign::kSignClothingArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SignCraps)] =
-        entities::sign::kSignCrapsArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SignKissing)] =
-        entities::sign::kSignKissingArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Lantern)] =
-        entities::lantern::kLanternArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::LanternRed)] =
-        entities::lantern::kLanternRedArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::GiantTikiHead)] =
-        entities::giant_tiki_head::kGiantTikiHeadArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::KaliHead)] =
-        entities::kali_head::kKaliHeadArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::ArrowTrap)] =
-        entities::arrow_trap::kArrowTrapArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Snake)] = entities::snake::kSnakeArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Caveman)] =
-        entities::caveman::kCavemanArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::SpiderHang)] =
-        entities::spider_hang::kSpiderHangArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::GiantSpiderHang)] =
-        entities::spider_hang::kGiantSpiderHangArchetype;
-    g_entity_archetypes[EntityTypeIndex(EntityType::Scarab)] = entities::scarab::kScarabArchetype;
+    SetArchetype(EntityType::None, kNoneArchetype, "None");
+    SetArchetype(EntityType::Player, entities::player::kPlayerArchetype, "Player");
+    SetArchetype(EntityType::Block, entities::block::kBlockArchetype, "Block");
+    SetArchetype(EntityType::GhostBall, entities::ghost_ball::kGhostBallArchetype, "GhostBall");
+    SetArchetype(EntityType::Bat, entities::bat::kBatArchetype, "Bat");
+    SetArchetype(EntityType::Rock, entities::rock::kRockArchetype, "Rock");
+    SetArchetype(EntityType::MouseTrailer, entities::mouse_trailer::kMouseTrailerArchetype, "MouseTrailer");
+    SetArchetype(EntityType::JetPack, entities::jetpack::kJetPackArchetype, "JetPack");
+    SetArchetype(EntityType::Bomb, entities::bomb::kBombArchetype, "Bomb");
+    SetArchetype(EntityType::Gold, entities::money::kGoldArchetype, "Gold");
+    SetArchetype(EntityType::GoldStack, entities::money::kGoldStackArchetype, "GoldStack");
+    SetArchetype(EntityType::GoldChunk, entities::money::kGoldChunkArchetype, "GoldChunk");
+    SetArchetype(EntityType::GoldNugget, entities::money::kGoldNuggetArchetype, "GoldNugget");
+    SetArchetype(EntityType::GoldBar, entities::money::kGoldBarArchetype, "GoldBar");
+    SetArchetype(EntityType::GoldBars, entities::money::kGoldBarsArchetype, "GoldBars");
+    SetArchetype(EntityType::Rope, entities::rope::kRopeArchetype, "Rope");
+    SetArchetype(EntityType::Pot, entities::pot::kPotArchetype, "Pot");
+    SetArchetype(EntityType::Box, entities::box::kBoxArchetype, "Box");
+    SetArchetype(EntityType::StompPad, entities::stomp_pad::kStompPadArchetype, "StompPad");
+    SetArchetype(EntityType::BaseballBat, entities::baseball_bat::kBaseballBatArchetype, "BaseballBat");
+    SetArchetype(EntityType::Altar, entities::altar::kAltarArchetype, "Altar");
+    SetArchetype(EntityType::SacAltar, entities::sac_altar::kSacAltarArchetype, "SacAltar");
+    SetArchetype(EntityType::GoldIdol, entities::gold_idol::kGoldIdolArchetype, "GoldIdol");
+    SetArchetype(EntityType::Chest, entities::chest::kChestArchetype, "Chest");
+    SetArchetype(EntityType::Mattock, entities::mattock::kMattockArchetype, "Mattock");
+    SetArchetype(EntityType::Cape, entities::gear_items::kCapeArchetype, "Cape");
+    SetArchetype(EntityType::Shotgun, entities::shotgun::kShotgunArchetype, "Shotgun");
+    SetArchetype(EntityType::Teleporter, entities::teleporter::kTeleporterArchetype, "Teleporter");
+    SetArchetype(EntityType::Gloves, entities::gear_items::kGlovesArchetype, "Gloves");
+    SetArchetype(EntityType::Spectacles, entities::gear_items::kSpectaclesArchetype, "Spectacles");
+    SetArchetype(EntityType::WebCannon, entities::web_cannon::kWebCannonArchetype, "WebCannon");
+    SetArchetype(EntityType::Pistol, entities::pistol::kPistolArchetype, "Pistol");
+    SetArchetype(EntityType::Mitt, entities::gear_items::kMittArchetype, "Mitt");
+    SetArchetype(EntityType::Paste, entities::gear_items::kPasteArchetype, "Paste");
+    SetArchetype(EntityType::SpringShoes, entities::gear_items::kSpringShoesArchetype, "SpringShoes");
+    SetArchetype(EntityType::SpikeShoes, entities::gear_items::kSpikeShoesArchetype, "SpikeShoes");
+    SetArchetype(EntityType::Machete, entities::machete::kMacheteArchetype, "Machete");
+    SetArchetype(EntityType::BombBox, entities::gear_items::kBombBoxArchetype, "BombBox");
+    SetArchetype(EntityType::BombBag, entities::gear_items::kBombBagArchetype, "BombBag");
+    SetArchetype(EntityType::Bow, entities::bow::kBowArchetype, "Bow");
+    SetArchetype(EntityType::Compass, entities::gear_items::kCompassArchetype, "Compass");
+    SetArchetype(EntityType::Parachute, entities::gear_items::kParachuteArchetype, "Parachute");
+    SetArchetype(EntityType::RopePile, entities::gear_items::kRopePileArchetype, "RopePile");
+    SetArchetype(EntityType::Dice, entities::dice::kDiceArchetype, "Dice");
+    SetArchetype(EntityType::RubyBig, entities::ruby_big::kRubyBigArchetype, "RubyBig");
+    SetArchetype(EntityType::EmeraldBig, entities::emerald_big::kEmeraldBigArchetype, "EmeraldBig");
+    SetArchetype(EntityType::SapphireBig, entities::sapphire_big::kSapphireBigArchetype, "SapphireBig");
+    SetArchetype(EntityType::Shopkeeper, entities::shopkeeper::kShopkeeperArchetype, "Shopkeeper");
+    SetArchetype(EntityType::Damsel, entities::damsel::kDamselArchetype, "Damsel");
+    SetArchetype(EntityType::SignGeneral, entities::sign::kSignGeneralArchetype, "SignGeneral");
+    SetArchetype(EntityType::SignBomb, entities::sign::kSignBombArchetype, "SignBomb");
+    SetArchetype(EntityType::SignWeapon, entities::sign::kSignWeaponArchetype, "SignWeapon");
+    SetArchetype(EntityType::SignRare, entities::sign::kSignRareArchetype, "SignRare");
+    SetArchetype(EntityType::SignClothing, entities::sign::kSignClothingArchetype, "SignClothing");
+    SetArchetype(EntityType::SignCraps, entities::sign::kSignCrapsArchetype, "SignCraps");
+    SetArchetype(EntityType::SignKissing, entities::sign::kSignKissingArchetype, "SignKissing");
+    SetArchetype(EntityType::Lantern, entities::lantern::kLanternArchetype, "Lantern");
+    SetArchetype(EntityType::LanternRed, entities::lantern::kLanternRedArchetype, "LanternRed");
+    SetArchetype(EntityType::GiantTikiHead, entities::giant_tiki_head::kGiantTikiHeadArchetype, "GiantTikiHead");
+    SetArchetype(EntityType::KaliHead, entities::kali_head::kKaliHeadArchetype, "KaliHead");
+    SetArchetype(EntityType::ArrowTrap, entities::arrow_trap::kArrowTrapArchetype, "ArrowTrap");
+    SetArchetype(EntityType::Snake, entities::snake::kSnakeArchetype, "Snake");
+    SetArchetype(EntityType::Caveman, entities::caveman::kCavemanArchetype, "Caveman");
+    SetArchetype(EntityType::Spider, entities::spider::kSpiderArchetype, "Spider");
+    SetArchetype(EntityType::SpiderHang, entities::spider_hang::kSpiderHangArchetype, "SpiderHang");
+    SetArchetype(EntityType::GiantSpiderHang, entities::spider_hang::kGiantSpiderHangArchetype, "GiantSpiderHang");
+    SetArchetype(EntityType::Scarab, entities::scarab::kScarabArchetype, "Scarab");
     g_entity_archetypes_populated = true;
 }
 

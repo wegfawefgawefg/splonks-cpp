@@ -15,8 +15,7 @@ namespace splonks::entities::bomb {
 extern const EntityArchetype kBombArchetype;
 
 void OnDeathAsBomb(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityPhysicsAsBomb(
+void StepEntityLogicAsBomb(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,
