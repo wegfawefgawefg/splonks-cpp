@@ -79,8 +79,7 @@ void StepEntityLogicAsRock(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& rock = state.entity_manager.entities[entity_idx];
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(rock, state);
-    if (IsControlled(rock, state) && rock.super_state != EntitySuperState::Dead &&
-        rock.super_state != EntitySuperState::Crushed) {
+    if (IsControlled(rock, state) && rock.super_state != EntitySuperState::Dead) {
         StepControlledRock(rock, control);
     }
     (void)audio;

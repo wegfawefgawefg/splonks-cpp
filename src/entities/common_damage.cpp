@@ -99,32 +99,19 @@ void BreakStageTilesInRectWc(const AABB& area, State& state) {
     }
 }
 
-void CrushIfCanBeCrushed(std::size_t entity_idx, State& state, Audio& audio) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.super_state == EntitySuperState::Crushed) {
-        entity.health = 0;
-        entity.marked_for_destruction = true;
-        std::optional<SoundEffect> sound_effect;
-        switch (entity.type_) {
-        case EntityType::Player:
-            sound_effect = SoundEffect::AnimalCrush1;
-            break;
-        case EntityType::Bat:
-            sound_effect = SoundEffect::AnimalCrush2;
-            break;
-        case EntityType::Gold:
-        case EntityType::GoldStack:
-            sound_effect = SoundEffect::MoneySmashed;
-            break;
-        case EntityType::Rock:
-            sound_effect = SoundEffect::Thud;
-            break;
-        default:
-            break;
-        }
-        if (sound_effect.has_value()) {
-            audio.PlaySoundEffect(*sound_effect);
-        }
+std::optional<SoundEffect> GetCrushSoundEffect(EntityType type_) {
+    switch (type_) {
+    case EntityType::Player:
+        return SoundEffect::AnimalCrush1;
+    case EntityType::Bat:
+        return SoundEffect::AnimalCrush2;
+    case EntityType::Gold:
+    case EntityType::GoldStack:
+        return SoundEffect::MoneySmashed;
+    case EntityType::Rock:
+        return SoundEffect::Thud;
+    default:
+        return std::nullopt;
     }
 }
 
@@ -437,7 +424,6 @@ void CommonStep(
     Audio& audio,
     float dt
 ) {
-    CrushIfCanBeCrushed(entity_idx, state, audio);
     DieIfDead(entity_idx, state, audio);
     StepStunTimer(entity_idx, state);
     {
@@ -461,7 +447,6 @@ DamageResult TryToDamageEntity(
     DamageType damage_type,
     unsigned int amount
 ) {
-    (void)audio;
     Entity& entity = state.entity_manager.entities[entity_idx];
     const DamageVulnerability v = entity.damage_vulnerability;
     if (v == DamageVulnerability::Immune) {
@@ -509,7 +494,18 @@ DamageResult TryToDamageEntity(
         bool do_damage_calculation = false;
         if (damage_type == DamageType::Crush) {
             entity.health = 0;
-            entity.super_state = EntitySuperState::Crushed;
+            entity.super_state = EntitySuperState::Dead;
+            entity.state = EntityState::Dead;
+            if (entity.type_ == EntityType::Bomb || entity.type_ == EntityType::JetPack) {
+                OnDeathEffectAsExplosive(entity_idx, state);
+                DoExplosion(entity_idx, entity.GetCenter(), 2.0F, state, audio);
+                state.entity_manager.SetInactive(entity_idx);
+                return DamageResult::Died;
+            }
+            if (const std::optional<SoundEffect> sound_effect = GetCrushSoundEffect(entity.type_)) {
+                audio.PlaySoundEffect(*sound_effect);
+            }
+            entity.marked_for_destruction = true;
             return DamageResult::Died;
         }
         if (entity.super_state == EntitySuperState::Dead) {

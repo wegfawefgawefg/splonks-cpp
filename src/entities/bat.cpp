@@ -99,8 +99,7 @@ void StepEntityLogicAsBat(std::size_t entity_idx, State& state, Audio& audio) {
         state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;
     const bool steering = control.left || control.right || control.up || control.down;
 
-    if (controlled && bat.super_state != EntitySuperState::Dead &&
-        bat.super_state != EntitySuperState::Crushed) {
+    if (controlled && bat.super_state != EntitySuperState::Dead) {
         if (!steering && IsAtPerchOrRoof(bat, state)) {
             bat.super_state = EntitySuperState::Idle;
             bat.display_state = EntityDisplayState::Neutral;

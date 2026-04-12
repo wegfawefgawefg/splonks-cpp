@@ -17,8 +17,7 @@ void UpdateControlledEntity(State& state) {
     const Entity* controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid);
     const bool invalid_controlled =
         controlled == nullptr || !controlled->active ||
-        controlled->super_state == EntitySuperState::Dead ||
-        controlled->super_state == EntitySuperState::Crushed;
+        controlled->super_state == EntitySuperState::Dead;
     if (!invalid_controlled) {
         return;
     }
@@ -26,8 +25,7 @@ void UpdateControlledEntity(State& state) {
     if (state.player_vid.has_value()) {
         const Entity* player = state.entity_manager.GetEntity(*state.player_vid);
         if (player != nullptr && player->active &&
-            player->super_state != EntitySuperState::Dead &&
-            player->super_state != EntitySuperState::Crushed) {
+            player->super_state != EntitySuperState::Dead) {
             state.controlled_entity_vid = state.player_vid;
             return;
         }

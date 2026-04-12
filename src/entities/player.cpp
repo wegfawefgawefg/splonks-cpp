@@ -74,9 +74,6 @@ void StepEntityLogicAsPlayer(
 
             return;
         }
-        if (player.super_state == EntitySuperState::Crushed) {
-            return;
-        }
     }
 
     //  REQUIRED HACK FOR JETPACK TO CATCH GROUND TOUCH ON FRAME JUMP

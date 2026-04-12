@@ -32,7 +32,7 @@ bool IsCrusherPushTarget(const Entity& entity) {
     if (!entity.active || !entity.can_collide || entity.impassable) {
         return false;
     }
-    if (entity.super_state == EntitySuperState::Crushed) {
+    if (entity.super_state == EntitySuperState::Dead) {
         return false;
     }
     return true;

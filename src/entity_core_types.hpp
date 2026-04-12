@@ -103,7 +103,6 @@ enum class TravelSound {
 enum class EntitySuperState {
     Idle,
     Dead,
-    Crushed,
     Stunned,
     Pursuing,
     Attacking,

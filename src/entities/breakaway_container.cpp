@@ -192,7 +192,7 @@ void StepEntityLogicAsBreakawayContainer(
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(breakaway_container, state);
     if (IsControlled(breakaway_container, state) &&
-        breakaway_container_super_state != EntitySuperState::Crushed) {
+        breakaway_container_super_state != EntitySuperState::Dead) {
         StepControlledBreakawayContainer(
             breakaway_container,
             breakaway_container_type,

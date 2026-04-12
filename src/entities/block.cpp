@@ -120,8 +120,7 @@ void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) 
         Entity& block = state.entity_manager.entities[entity_idx];
         const systems::controls::ControlIntent control =
             systems::controls::GetControlIntentForEntity(block, state);
-        if (IsControlled(block, state) && block.super_state != EntitySuperState::Dead &&
-            block.super_state != EntitySuperState::Crushed) {
+        if (IsControlled(block, state) && block.super_state != EntitySuperState::Dead) {
             StepControlledBlock(block, control);
         }
     }
