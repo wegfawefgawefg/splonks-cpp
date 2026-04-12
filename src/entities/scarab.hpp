@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity_archetype.hpp"
+#include "entity/archetype.hpp"
 
 namespace splonks::entities::scarab {
 

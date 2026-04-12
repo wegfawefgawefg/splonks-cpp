@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity_core_types.hpp"
+#include "entity/core_types.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"

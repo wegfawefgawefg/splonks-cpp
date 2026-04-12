@@ -1,6 +1,6 @@
 #include "entities/gear_items.hpp"
 
-#include "entity_archetype.hpp"
+#include "entity/archetype.hpp"
 
 namespace splonks::entities::gear_items {
 

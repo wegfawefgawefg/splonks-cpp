@@ -1,8 +1,8 @@
 #include "entity.hpp"
 
-#include "entity_display_states.hpp"
-#include "entity_display_support.hpp"
-#include "entity_archetype.hpp"
+#include "entity/display_states.hpp"
+#include "entity/display_support.hpp"
+#include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 #include "tile.hpp"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity_origin.hpp"
+#include "origin.hpp"
 #include "math_types.hpp"
 
 #include <cstddef>

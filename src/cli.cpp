@@ -1,6 +1,6 @@
 #include "cli.hpp"
 
-#include "debug_playback.hpp"
+#include "debug/playback.hpp"
 #include "frame_data.hpp"
 #include "raw_frame_data.hpp"
 #include "tile_source_data.hpp"

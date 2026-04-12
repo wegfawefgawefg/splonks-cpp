@@ -1,6 +1,6 @@
 #include "entities/giant_tiki_head.hpp"
 
-#include "entity_archetype.hpp"
+#include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::giant_tiki_head {

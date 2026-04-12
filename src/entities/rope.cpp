@@ -1,13 +1,13 @@
 #include "entities/rope.hpp"
 
 #include "audio.hpp"
-#include "entity_archetype.hpp"
-#include "entities/common.hpp"
+#include "entity/archetype.hpp"
+#include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
 #include "stage.hpp"
 #include "state.hpp"
-#include "terrain_lighting.hpp"
+#include "render/terrain_lighting.hpp"
 #include "tile.hpp"
 
 namespace splonks::entities::rope {

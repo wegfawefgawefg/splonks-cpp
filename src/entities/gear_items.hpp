@@ -1,7 +1,7 @@
 #pragma once
 
-#include "entity_archetype.hpp"
-#include "entities/common.hpp"
+#include "entity/archetype.hpp"
+#include "entities/common/common.hpp"
 
 namespace splonks::entities::gear_items {
 

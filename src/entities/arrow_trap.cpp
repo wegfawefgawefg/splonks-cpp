@@ -1,6 +1,6 @@
 #include "entities/arrow_trap.hpp"
 
-#include "entity_archetype.hpp"
+#include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::arrow_trap {

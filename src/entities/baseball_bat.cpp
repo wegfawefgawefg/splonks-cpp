@@ -1,8 +1,8 @@
 #include "entities/baseball_bat.hpp"
 
 #include "audio.hpp"
-#include "entity_archetype.hpp"
-#include "entities/common.hpp"
+#include "entity/archetype.hpp"
+#include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
 

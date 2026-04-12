@@ -1,10 +1,10 @@
 #include "step_entities.hpp"
 
-#include "entities/common.hpp"
+#include "entities/common/common.hpp"
 #include "entity.hpp"
-#include "entity_archetype.hpp"
-#include "entity_core_types.hpp"
-#include "entity_manager.hpp"
+#include "entity/archetype.hpp"
+#include "entity/core_types.hpp"
+#include "entity/manager.hpp"
 
 #include <cstddef>
 #include <optional>

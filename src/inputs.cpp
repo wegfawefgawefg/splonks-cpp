@@ -2,17 +2,17 @@
 
 #include "audio.hpp"
 #include "graphics.hpp"
-#include "menu_postfx.hpp"
-#include "menu_lighting.hpp"
-#include "menu_settings.hpp"
-#include "menu_title.hpp"
-#include "menu_ui.hpp"
-#include "menu_video.hpp"
+#include "menu/postfx.hpp"
+#include "menu/lighting.hpp"
+#include "menu/settings.hpp"
+#include "menu/title.hpp"
+#include "menu/ui.hpp"
+#include "menu/video.hpp"
 #include "settings.hpp"
 #include "stage.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
-#include "terrain_lighting.hpp"
+#include "render/terrain_lighting.hpp"
 
 namespace splonks {
 

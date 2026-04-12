@@ -1,6 +1,6 @@
 #include "state.hpp"
 
-#include "entities/common.hpp"
+#include "entities/common/common.hpp"
 #include "stage_init.hpp"
 
 namespace splonks {

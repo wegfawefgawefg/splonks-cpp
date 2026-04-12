@@ -1,7 +1,7 @@
 #include "entities/stomp_pad.hpp"
 
-#include "entity_archetype.hpp"
-#include "entities/common.hpp"
+#include "entity/archetype.hpp"
+#include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::stomp_pad {

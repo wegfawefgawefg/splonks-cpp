@@ -125,18 +125,18 @@ FetchContent_MakeAvailable(imgui)
 add_executable(splonks-cpp
     src/audio.cpp
     src/cli.cpp
-    src/debug_playback_core.cpp
-    src/debug_playback_serialization.cpp
-    src/debug_playback_ui_common.cpp
-    src/debug_playback_ui_entities.cpp
-    src/debug_playback_ui_menu.cpp
-    src/debug_playback_ui_settings.cpp
+    src/debug/playback_core.cpp
+    src/debug/playback_serialization.cpp
+    src/debug/playback_ui_common.cpp
+    src/debug/playback_ui_entities.cpp
+    src/debug/playback_ui_menu.cpp
+    src/debug/playback_ui_settings.cpp
     src/direction.cpp
     src/entity.cpp
-    src/entity_archetype.cpp
-    src/entity_archetype_registry.cpp
-    src/entity_display_states.cpp
-    src/entity_manager.cpp
+    src/entity/archetype.cpp
+    src/entity/archetype_registry.cpp
+    src/entity/display_states.cpp
+    src/entity/manager.cpp
     src/entities/altar.cpp
     src/entities/arrow_trap.cpp
     src/entities/baseball_bat.cpp
@@ -147,20 +147,20 @@ add_executable(splonks-cpp
     src/entities/box.cpp
     src/entities/caveman.cpp
     src/entities/chest.cpp
-    src/entities/common_damage.cpp
-    src/entities/common_frame.cpp
-    src/entities/common_hang.cpp
-    src/entities/common_physics.cpp
-    src/entities/common_blocking_contact.cpp
-    src/entities/common_entity_contact.cpp
-    src/entities/common_tile_contact.cpp
-    src/entities/common_step.cpp
-    src/entities/common_collect.cpp
-    src/entities/common_stomp.cpp
-    src/entities/common_push.cpp
-    src/entities/common_carry.cpp
-    src/entities/common_throw.cpp
-    src/entities/common_tool_use.cpp
+    src/entities/common/damage.cpp
+    src/entities/common/frame.cpp
+    src/entities/common/hang.cpp
+    src/entities/common/physics.cpp
+    src/entities/common/blocking_contact.cpp
+    src/entities/common/entity_contact.cpp
+    src/entities/common/tile_contact.cpp
+    src/entities/common/step.cpp
+    src/entities/common/collect.cpp
+    src/entities/common/stomp.cpp
+    src/entities/common/push.cpp
+    src/entities/common/carry.cpp
+    src/entities/common/throw.cpp
+    src/entities/common/tool_use.cpp
     src/entities/damsel.cpp
     src/entities/dice.cpp
     src/entities/emerald_big.cpp
@@ -200,21 +200,26 @@ add_executable(splonks-cpp
     src/imgui_layer.cpp
     src/inputs.cpp
     src/main.cpp
-    src/menu_lighting.cpp
-    src/menu_settings.cpp
-    src/menu_postfx.cpp
-    src/menu_title.cpp
-    src/menu_ui.cpp
-    src/menu_video.cpp
+    src/menu/lighting.cpp
+    src/menu/settings.cpp
+    src/menu/postfx.cpp
+    src/menu/title.cpp
+    src/menu/ui.cpp
+    src/menu/video.cpp
     src/on_damage_effects.cpp
     src/room.cpp
-    src/render.cpp
-    src/render_postfx.cpp
-    src/render_terrain_lighting.cpp
-    src/render_debug.cpp
-    src/render_stone_overlay.cpp
-    src/render_tiles_and_entities.cpp
-    src/render_ui.cpp
+    src/render/render.cpp
+    src/render/menu/common.cpp
+    src/render/menu/top_level.cpp
+    src/render/menu/settings.cpp
+    src/render/menu/lighting.cpp
+    src/render/gameplay.cpp
+    src/render/postfx.cpp
+    src/render/tile_lighting.cpp
+    src/render/debug.cpp
+    src/render/stone_overlay.cpp
+    src/render/tiles_and_entities.cpp
+    src/render/ui.cpp
     src/raw_frame_data.cpp
     src/settings.cpp
     src/sid.cpp
@@ -231,7 +236,7 @@ add_executable(splonks-cpp
     src/tools/throw_bomb.cpp
     src/tools/throw_pot.cpp
     src/tools/throw_rope.cpp
-    src/terrain_lighting.cpp
+    src/render/terrain_lighting.cpp
     src/special_effects/dynamic_effect.cpp
     src/special_effects/special_effect.cpp
     src/special_effects/spline_effect.cpp

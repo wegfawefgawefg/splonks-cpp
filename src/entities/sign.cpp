@@ -1,6 +1,6 @@
 #include "entities/sign.hpp"
 
-#include "entity_archetype.hpp"
+#include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::sign {

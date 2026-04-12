@@ -3,7 +3,7 @@
 #include "audio.hpp"
 #include "entities/baseball_bat.hpp"
 #include "entities/block.hpp"
-#include "entities/common.hpp"
+#include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
 #include "controls.hpp"

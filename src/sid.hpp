@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity_vid.hpp"
+#include "vid.hpp"
 #include "math_types.hpp"
 #include "utils.hpp"
 

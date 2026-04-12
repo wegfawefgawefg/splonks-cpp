@@ -1,6 +1,6 @@
 #include "entities/none_archetype.hpp"
 
-#include "entity_core_types.hpp"
+#include "entity/core_types.hpp"
 
 namespace splonks {
 
