@@ -27,7 +27,6 @@ extern const EntityArchetype kRopeArchetype{
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .on_use = OnUseAsRope,
@@ -40,12 +39,11 @@ void OnUseAsRope(std::size_t entity_idx, State& state, Graphics& graphics, Audio
     (void)graphics;
     (void)audio;
     Entity& rope = state.entity_manager.entities[entity_idx];
-    if (rope.use_state.pressed == false || rope.state != EntityState::Idle) {
+    if (rope.use_state.pressed == false || rope.counter_a > 0.0F) {
         return;
     }
 
     rope.counter_a = 16.0F;
-    rope.state = EntityState::WindingUp;
     SetAnimation(rope, frame_data_ids::UnfoldingRope);
 
     if (rope.use_state.source == AttachmentMode::None) {
@@ -68,7 +66,7 @@ void StepEntityLogicAsRope(
     // set animation and display state
     // start decrementing the counter
     bool rope_popped = false;
-    if (rope.state == EntityState::WindingUp) {
+    if (rope.counter_a > 0.0F) {
         rope.counter_a -= 1.0F;
         if (rope.counter_a <= 0.0F) {
             rope_popped = true;

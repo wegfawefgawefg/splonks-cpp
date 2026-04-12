@@ -242,7 +242,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             state.controlled_entity_vid = *state.player_vid;
         }
     }
-    ImGui::Text("Display: %s", DisplayStateToString(entity.display_state));
+    ImGui::Text("Animation Id: %u", entity.frame_data_animator.animation_id);
     ImGui::Text("Condition: %s", ConditionToString(entity.condition));
     ImGui::Text("AI: %s", AiStateToString(entity.ai_state));
     bool stone = entity.stone;
@@ -337,7 +337,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             ImGui::PopID();
         }
     }
-    ImGui::Text("Climbing: %s", entity.climbing ? "true" : "false");
+    ImGui::Text("Climbing: %s", entity.IsClimbing() ? "true" : "false");
     ImGui::Text("Holding: %s", entity.holding ? "true" : "false");
     ImGui::Text("Horiz Controlled: %s", entity.IsHorizontallyControlled() ? "true" : "false");
 

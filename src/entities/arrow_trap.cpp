@@ -18,7 +18,6 @@ extern const EntityArchetype kArrowTrapArchetype{
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .alignment = Alignment::Enemy,

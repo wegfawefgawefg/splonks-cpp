@@ -606,12 +606,11 @@ bool ExportRecordingToTextFile(
 
             out << "  entity " << entity_id << "\n";
             out << "    type: " << EntityTypeToString(entity.type_) << "\n";
-            out << "    display_state: " << DisplayStateToString(entity.display_state) << "\n";
             out << "    condition: " << ConditionToString(entity.condition) << "\n";
             out << "    ai_state: " << AiStateToString(entity.ai_state) << "\n";
             out << "    facing: " << LeftOrRightToString(entity.facing) << "\n";
             out << "    grounded: " << (entity.grounded ? "true" : "false") << "\n";
-            out << "    climbing: " << (entity.climbing ? "true" : "false") << "\n";
+            out << "    climbing: " << (entity.IsClimbing() ? "true" : "false") << "\n";
             out << "    holding: " << (entity.holding ? "true" : "false") << "\n";
             out << "    coyote_time: " << entity.coyote_time << "\n";
             out << "    pos: (" << entity.pos.x << ", " << entity.pos.y << ")\n";

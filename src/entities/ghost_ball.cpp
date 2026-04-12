@@ -26,7 +26,6 @@ extern const EntityArchetype kGhostBallArchetype{
     .has_physics = true,
     .can_collide = false,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .step_logic = StepEntityLogicAsGhostBall,

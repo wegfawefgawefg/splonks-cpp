@@ -115,25 +115,13 @@ enum class EntityAiState {
     Returning,
 };
 
-enum class EntityState {
-    Idle,
+enum class EntityMovementFlag : std::uint8_t {
     Walking,
     Running,
-    Flying,
-    Jumping,
-    Climbing,
-    WindingUp,
-    Attacking,
-    Guarding,
-    Taunting,
-    PickingUp,
-    Using,
-    Crouching,
-    Dodging,
-    Flinching,
-    Falling,
-    InUse,
     Pushing,
+    Climbing,
+    Hanging,
+    Count,
 };
 
 enum class PointLabel {

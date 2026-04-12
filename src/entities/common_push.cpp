@@ -111,11 +111,7 @@ void TryPushBlocks(
         }
     }
 
-    if (ready_to_push) {
-        entity.state = EntityState::Pushing;
-    } else if (entity.state == EntityState::Pushing) {
-        entity.state = EntityState::Idle;
-    }
+    SetMovementFlag(entity, EntityMovementFlag::Pushing, ready_to_push);
 }
 
 bool TryDisplaceEntityByOnePixel(

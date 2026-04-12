@@ -87,7 +87,6 @@ extern const EntityArchetype kPotArchetype{
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
     .death_sound_effect = SoundEffect::PotShatter,

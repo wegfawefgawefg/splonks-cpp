@@ -24,7 +24,6 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     TrySetAnimation(entity, archetype.display_state);
     entity.condition = archetype.condition;
     entity.ai_state = archetype.ai_state;
-    entity.state = archetype.state;
     entity.health = archetype.health;
     entity.bombs = archetype.bombs;
     entity.ropes = archetype.ropes;

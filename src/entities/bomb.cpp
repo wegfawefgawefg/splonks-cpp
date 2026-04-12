@@ -23,7 +23,6 @@ extern const EntityArchetype kBombArchetype{
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingAndSpikes,
     .on_death = OnDeathAsBomb,
@@ -41,12 +40,11 @@ void OnUseAsBomb(std::size_t entity_idx, State& state, Graphics& graphics, Audio
     (void)graphics;
     (void)audio;
     Entity& bomb = state.entity_manager.entities[entity_idx];
-    if (!bomb.use_state.pressed || bomb.state != EntityState::Idle) {
+    if (!bomb.use_state.pressed || bomb.counter_a > 0.0F) {
         return;
     }
 
     bomb.counter_a = 144.0F;
-    bomb.state = EntityState::WindingUp;
     SetAnimation(bomb, frame_data_ids::LiveGrenade);
 
     if (bomb.use_state.source == AttachmentMode::None) {
@@ -68,7 +66,7 @@ void StepEntityLogicAsBomb(
     // if bomb is in winding up
     // set animation and display state
     // start decrementing the counter
-    if (bomb.state == EntityState::WindingUp) {
+    if (bomb.counter_a > 0.0F) {
         bomb.counter_a -= 1.0F;
         if (bomb.counter_a <= 0.0F) {
             bomb.health = 0;

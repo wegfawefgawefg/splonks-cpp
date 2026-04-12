@@ -61,7 +61,7 @@ void UpdateCarryAndBackItems(
                         entity.holding_timer = kDefaultHoldingTimer;
                     }
                 } else {
-                    if (!entity.IsHanging() && !entity.climbing && entity.holding_timer == 0) {
+                    if (!entity.IsHanging() && !entity.IsClimbing() && entity.holding_timer == 0) {
                         entity.holding_timer = kDefaultHoldingTimer;
                         const AABB aabb = GetContactAabbForEntity(entity, graphics);
                         trying_to_pick_up_these =
@@ -192,7 +192,6 @@ void UpdateCarryAndBackItems(
 
         if (take_off_back_vid.has_value()) {
             if (Entity* const item_taken_off_back = state.entity_manager.GetEntityMut(*take_off_back_vid)) {
-                item_taken_off_back->state = EntityState::Idle;
                 item_taken_off_back->has_physics = true;
                 item_taken_off_back->can_collide = true;
                 TrySetAnimation(*item_taken_off_back, EntityDisplayState::Neutral);
@@ -222,7 +221,7 @@ void UpdateCarryAndBackItems(
         const std::optional<VID> entity_holding_vid = entity.holding_vid;
         const LeftOrRight entity_facing = entity.facing;
         const Vec2 entity_center = entity.GetCenter() + Vec2::New(0.0F, 1.0F);
-        const EntityDisplayState entity_display_state = entity.display_state;
+        const bool entity_climbing = HasMovementFlag(entity, EntityMovementFlag::Climbing);
         const bool entity_trying_to_use = control.use_held;
 
         if (entity_holding_vid.has_value()) {
@@ -233,7 +232,7 @@ void UpdateCarryAndBackItems(
                 holding->attachment_mode = AttachmentMode::Held;
                 holding->facing = entity_facing;
                 const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
-                if (entity_display_state == EntityDisplayState::Climbing) {
+                if (entity_climbing) {
                     holding->draw_layer = DrawLayer::Background;
                 } else {
                     holding->draw_layer = DrawLayer::Foreground;
@@ -260,7 +259,8 @@ void UpdateCarryAndBackItems(
         const std::optional<VID> entity_back_vid = entity.back_vid;
         const LeftOrRight entity_facing = entity.facing;
         const Vec2 entity_center = entity.GetCenter();
-        const EntityDisplayState entity_display_state = entity.display_state;
+        const bool entity_climbing = HasMovementFlag(entity, EntityMovementFlag::Climbing);
+        const bool entity_hanging = HasMovementFlag(entity, EntityMovementFlag::Hanging);
         const bool entity_trying_to_use = control.use_back;
 
         if (entity_back_vid.has_value()) {
@@ -277,11 +277,11 @@ void UpdateCarryAndBackItems(
                 }
 
                 Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
-                if (entity_display_state == EntityDisplayState::Climbing) {
+                if (entity_climbing) {
                     back_offset = Vec2::New(-2.0F, 0.0F);
                     TrySetAnimation(*back_item, EntityDisplayState::Climbing);
                     back_item->draw_layer = DrawLayer::Foreground;
-                } else if (entity_display_state == EntityDisplayState::Hanging) {
+                } else if (entity_hanging) {
                     back_offset = Vec2::New(-7.0F, 4.0F);
                     TrySetAnimation(*back_item, EntityDisplayState::Hanging);
                     back_item->draw_layer = DrawLayer::Foreground;

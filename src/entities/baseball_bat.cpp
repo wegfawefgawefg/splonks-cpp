@@ -63,7 +63,6 @@ extern const EntityArchetype kBaseballBatArchetype{
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .step_logic = StepBaseballBat,
@@ -214,7 +213,6 @@ void StepBaseballBat(
     }
 
     baseball_bat.facing = swinger_facing;
-    baseball_bat.display_state = EntityDisplayState::Neutral;
     const Vec2 mounted_center = swinger_facing == LeftOrRight::Left
                                     ? swinger_center +
                                           Vec2::New(

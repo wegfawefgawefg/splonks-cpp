@@ -15,7 +15,6 @@ extern const EntityArchetype kWebCannonArchetype{
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .alignment = Alignment::Neutral,

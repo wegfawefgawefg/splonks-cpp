@@ -53,6 +53,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
     if (state.player_vid) {
         if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
             if (player->active) {
+                ClearTransientMovementFlags(state.entity_manager.entities[state.player_vid->id]);
                 entities::common::CommonStep(state.player_vid->id, state, graphics, audio, dt);
                 if (state.entity_manager.entities[state.player_vid->id].active) {
                     const EntityArchetype& archetype =
@@ -110,6 +111,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             if (type_ == EntityType::Player) {
                 continue;
             }
+            ClearTransientMovementFlags(state.entity_manager.entities[entity_idx]);
             entities::common::CommonStep(entity_idx, state, graphics, audio, dt);
             if (!state.entity_manager.entities[entity_idx].active) {
                 continue;

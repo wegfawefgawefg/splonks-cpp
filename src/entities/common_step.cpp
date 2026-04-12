@@ -37,7 +37,7 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.travel_sound_countdown -= entity.dist_traveled_this_frame;
 
-    if (!entity.grounded && !entity.climbing) {
+    if (!entity.grounded && !entity.IsClimbing()) {
         return;
     }
 
@@ -45,7 +45,7 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
         entity.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
 
         SoundEffect which_step_sound;
-        if (entity.climbing) {
+        if (entity.IsClimbing()) {
             const auto [entity_tl, entity_br] = entity.GetBounds();
             const std::vector<const Tile*> newly_collided_tiles =
                 state.stage.GetTilesInRectWc(ToIVec2(entity_tl), ToIVec2(entity_br));

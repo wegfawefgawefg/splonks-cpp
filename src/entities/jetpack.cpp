@@ -70,7 +70,6 @@ extern const EntityArchetype kJetPackArchetype{
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .counter_a = kFuel,
     .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
@@ -96,7 +95,7 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
     bool refill_fuel = false;
     if (held_by_vid.has_value()) {
         if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
-            if (holder->grounded || holder->climbing || holder->IsHanging() ||
+            if (holder->grounded || holder->IsClimbing() || holder->IsHanging() ||
                 holder->jumped_this_frame) {
                 refill_fuel = true;
             }
@@ -159,7 +158,7 @@ void StepEntityLogicAsJetpack(
             if (const Entity* const holder = state.entity_manager.GetEntity(*jetpack.held_by_vid)) {
                 if (holder->IsHanging()) {
                     equipped_animation = frame_data_ids::JetpackSide;
-                } else if (holder->climbing) {
+                } else if (holder->IsClimbing()) {
                     equipped_animation = frame_data_ids::JetpackBack;
                 }
             }

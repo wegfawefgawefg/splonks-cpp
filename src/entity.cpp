@@ -31,6 +31,10 @@ constexpr std::uint64_t PassiveItemBit(EntityPassiveItem passive_item) {
     return 1ULL << static_cast<unsigned int>(passive_item);
 }
 
+constexpr std::uint32_t MovementFlagBit(EntityMovementFlag movement_flag) {
+    return 1U << static_cast<unsigned int>(movement_flag);
+}
+
 } // namespace
 
 Entity Entity::New() {
@@ -63,13 +67,11 @@ Entity Entity::New() {
     entity.frame_data_animator = FrameDataAnimator{};
     entity.jump_delay_frame_count = kJumpDelayFrames;
     entity.jumped_this_frame = false;
-    entity.left_hanging = false;
-    entity.right_hanging = false;
+    entity.hang_side.reset();
     entity.can_hang_ledge = false;
     entity.can_hang_wall = false;
     entity.hang_count = 0;
     entity.holding = false;
-    entity.climbing = false;
     entity.passive_item_flags = 0;
     entity.money = 0;
     entity.bombs = 0;
@@ -82,7 +84,7 @@ Entity Entity::New() {
     entity.last_condition = EntityCondition::Normal;
     entity.ai_state = EntityAiState::Idle;
     entity.last_ai_state = EntityAiState::Idle;
-    entity.state = EntityState::Idle;
+    entity.movement_flags = 0;
     entity.health = 0;
     entity.last_health = 0;
     entity.hurt_on_contact = false;
@@ -148,6 +150,25 @@ void StopUsingEntity(Entity& entity) {
     entity.use_state.frames = 0;
     entity.use_state.user_vid.reset();
     entity.use_state.source = AttachmentMode::None;
+}
+
+bool HasMovementFlag(const Entity& entity, EntityMovementFlag movement_flag) {
+    return (entity.movement_flags & MovementFlagBit(movement_flag)) != 0;
+}
+
+void SetMovementFlag(Entity& entity, EntityMovementFlag movement_flag, bool enabled) {
+    if (enabled) {
+        entity.movement_flags |= MovementFlagBit(movement_flag);
+        return;
+    }
+
+    entity.movement_flags &= ~MovementFlagBit(movement_flag);
+}
+
+void ClearTransientMovementFlags(Entity& entity) {
+    SetMovementFlag(entity, EntityMovementFlag::Walking, false);
+    SetMovementFlag(entity, EntityMovementFlag::Running, false);
+    SetMovementFlag(entity, EntityMovementFlag::Pushing, false);
 }
 
 std::tuple<Vec2, Vec2> Entity::GetBounds() const {
@@ -227,7 +248,11 @@ void Entity::IncTravelSound() {
 }
 
 bool Entity::IsHanging() const {
-    return left_hanging != right_hanging;
+    return hang_side.has_value();
+}
+
+bool Entity::IsClimbing() const {
+    return HasMovementFlag(*this, EntityMovementFlag::Climbing);
 }
 
 bool Entity::IsHorizontallyControlled() const {
@@ -296,7 +321,6 @@ bool TrySetAnimation(Entity& entity, EntityDisplayState display_state) {
         return false;
     }
 
-    entity.display_state = display_state;
     SetAnimation(entity, selection->animation_id);
     entity.frame_data_animator.animate = selection->animate;
     if (selection->has_forced_frame) {

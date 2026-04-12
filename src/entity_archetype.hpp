@@ -37,7 +37,6 @@ struct EntityArchetype {
     LeftOrRight facing = LeftOrRight::Left;
     EntityCondition condition = EntityCondition::Normal;
     EntityAiState ai_state = EntityAiState::Idle;
-    EntityState state = EntityState::Idle;
     EntityDisplayState display_state = EntityDisplayState::Neutral;
     std::uint32_t bombs = 0;
     std::uint32_t ropes = 0;

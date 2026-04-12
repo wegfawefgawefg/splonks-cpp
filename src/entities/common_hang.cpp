@@ -204,7 +204,7 @@ bool TryCaptureHdHang(
     if (entity.vel.y <= 0.0F) {
         return false;
     }
-    if (entity.grounded || entity.climbing || entity.IsHanging()) {
+    if (entity.grounded || entity.IsClimbing() || entity.IsHanging()) {
         return false;
     }
 
@@ -239,8 +239,8 @@ bool TryCaptureHdHang(
             if (CanCornerHangOnSide(entity, state, true, check_tiles, check_entities)) {
                 entity.pos.y =
                     std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-                entity.left_hanging = true;
-                entity.right_hanging = false;
+                entity.hang_side = LeftOrRight::Left;
+                SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
                 entity.facing = LeftOrRight::Left;
                 entity.vel.y = 0.0F;
                 entity.acc.y = 0.0F;
@@ -250,8 +250,8 @@ bool TryCaptureHdHang(
             if (!CanGloveHangBelowCorner(entity, state, true, check_tiles, check_entities)) {
                 return false;
             }
-            entity.left_hanging = true;
-            entity.right_hanging = false;
+            entity.hang_side = LeftOrRight::Left;
+            SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
             entity.facing = LeftOrRight::Left;
             entity.vel.y = 0.0F;
             entity.acc.y = 0.0F;
@@ -274,8 +274,8 @@ bool TryCaptureHdHang(
 
         entity.pos.y =
             std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-        entity.left_hanging = true;
-        entity.right_hanging = false;
+        entity.hang_side = LeftOrRight::Left;
+        SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
         entity.facing = LeftOrRight::Left;
         entity.vel.y = 0.0F;
         entity.acc.y = 0.0F;
@@ -289,8 +289,8 @@ bool TryCaptureHdHang(
             if (CanCornerHangOnSide(entity, state, false, check_tiles, check_entities)) {
                 entity.pos.y =
                     std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-                entity.left_hanging = false;
-                entity.right_hanging = true;
+                entity.hang_side = LeftOrRight::Right;
+                SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
                 entity.facing = LeftOrRight::Right;
                 entity.vel.y = 0.0F;
                 entity.acc.y = 0.0F;
@@ -300,8 +300,8 @@ bool TryCaptureHdHang(
             if (!CanGloveHangBelowCorner(entity, state, false, check_tiles, check_entities)) {
                 return false;
             }
-            entity.left_hanging = false;
-            entity.right_hanging = true;
+            entity.hang_side = LeftOrRight::Right;
+            SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
             entity.facing = LeftOrRight::Right;
             entity.vel.y = 0.0F;
             entity.acc.y = 0.0F;
@@ -324,8 +324,8 @@ bool TryCaptureHdHang(
 
         entity.pos.y =
             std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-        entity.left_hanging = false;
-        entity.right_hanging = true;
+        entity.hang_side = LeftOrRight::Right;
+        SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
         entity.facing = LeftOrRight::Right;
         entity.vel.y = 0.0F;
         entity.acc.y = 0.0F;
@@ -343,28 +343,30 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
     const controls::ControlIntent control =
         controls::GetControlIntentForEntity(mutable_entity, state);
     if (control.no_hang) {
-        mutable_entity.left_hanging = false;
-        mutable_entity.right_hanging = false;
+        mutable_entity.hang_side.reset();
+        SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
     }
     if (mutable_entity.condition != EntityCondition::Normal) {
-        mutable_entity.left_hanging = false;
-        mutable_entity.right_hanging = false;
+        mutable_entity.hang_side.reset();
+        SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
     }
 
-    if (mutable_entity.left_hanging) {
+    if (mutable_entity.hang_side == LeftOrRight::Left) {
         const bool has_gloves = EntityHasHangGloves(mutable_entity);
         const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, true);
         if ((has_gloves && !still_trying) ||
             !IsSideBlockedForHang(mutable_entity, state, true, true, true)) {
-            mutable_entity.left_hanging = false;
+            mutable_entity.hang_side.reset();
+            SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
             mutable_entity.hang_count = kHangWallReleaseCooldownFrames;
         }
-    } else if (mutable_entity.right_hanging) {
+    } else if (mutable_entity.hang_side == LeftOrRight::Right) {
         const bool has_gloves = EntityHasHangGloves(mutable_entity);
         const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, false);
         if ((has_gloves && !still_trying) ||
             !IsSideBlockedForHang(mutable_entity, state, false, true, true)) {
-            mutable_entity.right_hanging = false;
+            mutable_entity.hang_side.reset();
+            SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
             mutable_entity.hang_count = kHangWallReleaseCooldownFrames;
         }
     }
@@ -395,38 +397,38 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
 
     if (can_climb) {
         if (control.up) {
-            entity.climbing = true;
+            SetMovementFlag(entity, EntityMovementFlag::Climbing, true);
             entity.grounded = false;
             entity.vel.y = -player::kClimbSpeed;
-        } else if (entity.climbing && !control.down) {
+        } else if (entity.IsClimbing() && !control.down) {
             entity.vel.y = 0.0F;
         }
-        if (entity.climbing && !control.up && control.down) {
+        if (entity.IsClimbing() && !control.up && control.down) {
             entity.vel.y = player::kClimbSpeed;
         }
-        if (entity.climbing && control.jump_pressed && control.down) {
-            entity.climbing = false;
+        if (entity.IsClimbing() && control.jump_pressed && control.down) {
+            SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
         }
     } else {
-        entity.climbing = false;
+        SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
     }
 
-    if (entity.climbing && entity.grounded) {
-        entity.climbing = false;
+    if (entity.IsClimbing() && entity.grounded) {
+        SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
     }
 
     if (entity.condition != EntityCondition::Normal) {
-        entity.climbing = false;
+        SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
     }
 
     if (control.jump_pressed) {
         if (entity.IsHanging()) {
             const bool jumping_away =
-                (entity.right_hanging && control.left) ||
-                (entity.left_hanging && control.right);
+                (entity.hang_side == LeftOrRight::Right && control.left) ||
+                (entity.hang_side == LeftOrRight::Left && control.right);
             const bool has_gloves = EntityHasHangGloves(entity);
-            entity.left_hanging = false;
-            entity.right_hanging = false;
+            entity.hang_side.reset();
+            SetMovementFlag(entity, EntityMovementFlag::Hanging, false);
             entity.grounded = false;
             if (control.down) {
                 entity.hang_count =
@@ -451,7 +453,7 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
         entity.jump_delay_frame_count -= 1;
     }
 
-    if (!entity.climbing && !entity.grounded && !entity.IsHanging()) {
+    if (!entity.IsClimbing() && !entity.grounded && !entity.IsHanging()) {
         entity.acc.y += state.stage.gravity;
     }
 }

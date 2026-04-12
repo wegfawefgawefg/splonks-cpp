@@ -28,7 +28,6 @@ extern const EntityArchetype kPlayerArchetype{
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
-    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .bombs = 400,
     .ropes = 400,
@@ -99,6 +98,22 @@ void StepEntityLogicAsPlayer(
             state
         );
 
+    {
+        Entity& player = state.entity_manager.entities[entity_idx];
+        const bool hanging = player.IsHanging();
+        const bool climbing = player.IsClimbing();
+        const bool walking =
+            !loss_of_control &&
+            (control.left != control.right) &&
+            player.grounded &&
+            !climbing &&
+            !hanging;
+        SetMovementFlag(player, EntityMovementFlag::Walking, walking);
+        SetMovementFlag(player, EntityMovementFlag::Running, walking && control.run);
+        SetMovementFlag(player, EntityMovementFlag::Climbing, climbing);
+        SetMovementFlag(player, EntityMovementFlag::Hanging, hanging);
+    }
+
     // SET ANIMATIONS AND DISPLAY STATES
     {
         Entity& player = state.entity_manager.entities[entity_idx];
@@ -114,12 +129,12 @@ void StepEntityLogicAsPlayer(
         if (!loss_of_control) {
             if (Length(player.vel) < 1.0F) {
                 TrySetAnimation(player, EntityDisplayState::Neutral);
-                if (player.holding_vid.has_value() || player.state == EntityState::Pushing) {
+                if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
                     TrySetAnimation(player, EntityDisplayState::NeutralHolding);
                 }
             } else if (Length(player.vel) > 1.0F) {
                 TrySetAnimation(player, EntityDisplayState::Walk);
-                if (player.holding_vid.has_value() || player.state == EntityState::Pushing) {
+                if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
                     TrySetAnimation(player, EntityDisplayState::WalkHolding);
                 }
             }
@@ -132,16 +147,16 @@ void StepEntityLogicAsPlayer(
             // if player hanging left set hanging display and left
             // if player hanging right set hanging display state and right
 
-            if (player.left_hanging) {
+            if (player.hang_side == LeftOrRight::Left) {
                 TrySetAnimation(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Left;
-            } else if (player.right_hanging) {
+            } else if (player.hang_side == LeftOrRight::Right) {
                 TrySetAnimation(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Right;
-            } else if (player.climbing) {
+            } else if (player.IsClimbing()) {
                 TrySetAnimation(player, EntityDisplayState::Climbing);
             }
-            if (player.vel.y > 2.0F && !player.climbing) {
+            if (player.vel.y > 2.0F && !player.IsClimbing()) {
                 // TODO: make an actual fall state
                 TrySetAnimation(player, EntityDisplayState::Falling);
             }
