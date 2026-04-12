@@ -45,3 +45,6 @@ rip out:
     is tile light?
 
 revisit bool IsTerrainLightingTile(Tile tile)  function. do we need it. all tiles are in it
+on stunned do we drop held?
+free cam mode free zoom
+keep shit on succeed level.

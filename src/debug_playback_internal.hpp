@@ -27,6 +27,8 @@ bool ExportRecordingToTextFile(
     std::string* status_out
 );
 
+bool SyncDebugUiSettings(DebugPlayback& debug, State& state);
+
 void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawDebugMenu(DebugPlayback& debug, State& state);
 void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics);

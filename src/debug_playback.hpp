@@ -85,6 +85,13 @@ struct DebugPlayback {
     std::optional<GameplaySnapshot> live_resume_snapshot;
     std::size_t playback_index = 0;
     std::size_t selected_entity_id = 0;
+    EntityType spawn_entity_type = EntityType::JetPack;
+    std::array<char, 64> spawn_search{};
+    bool spawn_center_on_selected = false;
+    bool spawn_held_by_player = false;
+    bool pending_spawn_at_mouse = false;
+    double pending_spawn_at_mouse_until = 0.0;
+    std::string spawn_status;
     std::array<char, 512> file_path{};
     std::string io_status;
 

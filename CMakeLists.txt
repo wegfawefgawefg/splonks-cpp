@@ -127,7 +127,10 @@ add_executable(splonks-cpp
     src/cli.cpp
     src/debug_playback_core.cpp
     src/debug_playback_serialization.cpp
-    src/debug_playback_ui.cpp
+    src/debug_playback_ui_common.cpp
+    src/debug_playback_ui_entities.cpp
+    src/debug_playback_ui_menu.cpp
+    src/debug_playback_ui_settings.cpp
     src/direction.cpp
     src/entity.cpp
     src/entity_archetype.cpp
