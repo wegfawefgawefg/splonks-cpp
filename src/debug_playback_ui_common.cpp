@@ -1,6 +1,8 @@
 #include "debug_playback_internal.hpp"
 
+#include "debug_playback.hpp"
 #include "settings.hpp"
+#include "state.hpp"
 
 namespace splonks::debug_playback_internal {
 

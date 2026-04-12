@@ -1,5 +1,7 @@
 #include "entities/none_archetype.hpp"
 
+#include "entity_core_types.hpp"
+
 namespace splonks {
 
 const EntityArchetype kNoneArchetype{

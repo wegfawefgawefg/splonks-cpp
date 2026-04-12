@@ -1,8 +1,18 @@
 #include "tools/throw_rope.hpp"
 
+#include "audio.hpp"
 #include "entities/common.hpp"
+#include "entity.hpp"
 #include "entity_archetype.hpp"
+#include "entity_core_types.hpp"
+#include "entity_manager.hpp"
+#include "frame_data_id.hpp"
+#include "graphics.hpp"
 #include "state.hpp"
+
+#include <cstddef>
+#include <optional>
+#include <vector>
 
 namespace splonks::tools::throw_rope {
 

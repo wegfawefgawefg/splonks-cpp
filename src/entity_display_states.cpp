@@ -1,5 +1,7 @@
 #include "entity_display_states.hpp"
 
+#include "entity_core_types.hpp"
+
 namespace splonks {
 
 std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplayState(

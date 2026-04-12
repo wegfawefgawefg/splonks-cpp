@@ -3,7 +3,9 @@
 #include "room.hpp"
 #include "stage.hpp"
 #include "stage_gen/cave.hpp"
+#include "math_types.hpp"
 
+#include <cstddef>
 #include <random>
 #include <vector>
 

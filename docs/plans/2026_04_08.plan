@@ -48,3 +48,4 @@ revisit bool IsTerrainLightingTile(Tile tile)  function. do we need it. all tile
 on stunned do we drop held?
 free cam mode free zoom
 keep shit on succeed level.
+factor out entitystate and entity super state.

@@ -1,9 +1,10 @@
 #include "entities/dice.hpp"
 
-#include "audio.hpp"
 #include "entity_archetype.hpp"
-#include "entities/common.hpp"
+#include "entity_core_types.hpp"
+#include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "math_types.hpp"
 
 namespace splonks::entities::dice {
 
