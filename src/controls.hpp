@@ -2,7 +2,7 @@
 
 #include "state.hpp"
 
-namespace splonks::systems::controls {
+namespace splonks::controls {
 
 struct ControlIntent {
     bool left = false;
@@ -27,4 +27,4 @@ struct ControlIntent {
 ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state);
 void ControlEntityAsPlayer(const VID& entity_vid, State& state);
 
-} // namespace splonks::systems::controls
+} // namespace splonks::controls

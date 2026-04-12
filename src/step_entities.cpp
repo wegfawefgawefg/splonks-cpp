@@ -44,6 +44,21 @@
 
 namespace splonks {
 
+namespace {
+
+bool HasUseActivity(const Entity& entity) {
+    return entity.use_state.down || entity.use_state.pressed || entity.use_state.released;
+}
+
+void ClearUseEdgesAfterFrame(Entity& entity) {
+    entity.use_state.pressed = false;
+    if (!entity.use_state.down) {
+        entity.use_state.released = false;
+    }
+}
+
+} // namespace
+
 /** Step the logic of entities, followed by their physics.  */
 /*  Stepping Entities:
         Your entity must implement the following:
@@ -74,7 +89,12 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 if (state.entity_manager.entities[state.player_vid->id].active) {
                     const EntityArchetype& archetype =
                         GetEntityArchetype(state.entity_manager.entities[state.player_vid->id].type_);
-                    if (archetype.step_logic != nullptr) {
+                    if (HasUseActivity(state.entity_manager.entities[state.player_vid->id]) &&
+                        archetype.on_use != nullptr) {
+                        archetype.on_use(state.player_vid->id, state, graphics, audio);
+                    }
+                    if (state.entity_manager.entities[state.player_vid->id].active &&
+                        archetype.step_logic != nullptr) {
                         archetype.step_logic(state.player_vid->id, state, graphics, audio, dt);
                     }
                 }
@@ -106,9 +126,10 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             }
             entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
             state.UpdateSidForEntity(state.player_vid->id, graphics);
-            if (Entity* const mutable_player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-                mutable_player->last_condition = mutable_player->condition;
-                mutable_player->last_ai_state = mutable_player->ai_state;
+            if (Entity* const mutable_entity = state.entity_manager.GetEntityMut(*state.player_vid)) {
+                ClearUseEdgesAfterFrame(*mutable_entity);
+                mutable_entity->last_condition = mutable_entity->condition;
+                mutable_entity->last_ai_state = mutable_entity->ai_state;
             }
         }
     }
@@ -126,7 +147,12 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 continue;
             }
             const EntityArchetype& archetype = GetEntityArchetype(type_);
-            if (archetype.step_logic != nullptr) {
+            if (HasUseActivity(state.entity_manager.entities[entity_idx]) &&
+                archetype.on_use != nullptr) {
+                archetype.on_use(entity_idx, state, graphics, audio);
+            }
+            if (state.entity_manager.entities[entity_idx].active &&
+                archetype.step_logic != nullptr) {
                 archetype.step_logic(entity_idx, state, graphics, audio, dt);
             }
             if (!state.entity_manager.entities[entity_idx].active) {
@@ -153,6 +179,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             entities::common::ApplyDeactivateConditions(entity_idx, state);
             state.UpdateSidForEntity(entity_idx, graphics);
             Entity& mutable_entity = state.entity_manager.entities[entity_idx];
+            ClearUseEdgesAfterFrame(mutable_entity);
             mutable_entity.last_condition = mutable_entity.condition;
             mutable_entity.last_ai_state = mutable_entity.ai_state;
         }

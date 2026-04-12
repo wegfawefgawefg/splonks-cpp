@@ -5,6 +5,7 @@
 #include "settings.hpp"
 #include "stage_init.hpp"
 #include "terrain_lighting.hpp"
+#include "tools/tool_archetype.hpp"
 
 #include <imgui.h>
 
@@ -20,16 +21,7 @@ constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 
 const char* ToolKindToString(ToolKind tool_kind) {
-    switch (tool_kind) {
-    case ToolKind::ThrowPot:
-        return "ThrowPot";
-    case ToolKind::ThrowBomb:
-        return "ThrowBomb";
-    case ToolKind::ThrowRope:
-        return "ThrowRope";
-    }
-
-    return "Unknown";
+    return GetToolKindName(tool_kind);
 }
 
 bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
@@ -806,10 +798,12 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     if (debug.playback_active) {
         ImGui::TextDisabled("Tool editing disabled during playback.");
     } else {
-        const char* tool_kind_names[] = {"ThrowPot", "ThrowBomb", "ThrowRope"};
         for (std::size_t slot_index = 0; slot_index < kToolSlotCount; ++slot_index) {
             ToolSlot preview_slot{};
-            preview_slot.kind = slot_index == 0 ? ToolKind::ThrowBomb : ToolKind::ThrowRope;
+            if (const std::optional<ToolKind> preferred_tool_kind =
+                    FindPreferredToolKindForSlotIndex(slot_index)) {
+                FillToolSlot(preview_slot, *preferred_tool_kind, 0, false);
+            }
             ToolSlot* slot = state.FindToolSlotMut(entity.vid, slot_index);
             if (slot == nullptr) {
                 slot = &preview_slot;
@@ -825,11 +819,23 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             }
 
             int kind_index = static_cast<int>(slot->kind);
-            if (ImGui::Combo("Kind", &kind_index, tool_kind_names, IM_ARRAYSIZE(tool_kind_names))) {
-                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
-                owned_slot = *slot;
-                owned_slot.kind = static_cast<ToolKind>(kind_index);
-                slot = &owned_slot;
+            const char* current_kind_name = GetToolKindName(static_cast<ToolKind>(kind_index));
+            if (ImGui::BeginCombo("Kind", current_kind_name)) {
+                for (std::size_t tool_index = 0; tool_index < kToolKindCount; ++tool_index) {
+                    const ToolKind tool_kind = static_cast<ToolKind>(tool_index);
+                    const bool selected = static_cast<int>(tool_index) == kind_index;
+                    if (ImGui::Selectable(GetToolKindName(tool_kind), selected)) {
+                        ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                        owned_slot = *slot;
+                        owned_slot.kind = tool_kind;
+                        slot = &owned_slot;
+                        kind_index = static_cast<int>(tool_index);
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
             }
 
             int count = static_cast<int>(slot->count);

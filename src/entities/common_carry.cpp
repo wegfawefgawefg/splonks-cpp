@@ -1,7 +1,7 @@
 #include "entities/common.hpp"
 
 #include "entities/player.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 
 #include <optional>
 #include <vector>
@@ -41,8 +41,8 @@ void UpdateCarryAndBackItems(
 
     const bool loss_of_control =
         state.entity_manager.entities[entity_idx].condition == EntityCondition::Stunned;
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(
             state.entity_manager.entities[entity_idx],
             state
         );
@@ -124,6 +124,7 @@ void UpdateCarryAndBackItems(
                     thrown->thrown_by = entity_vid;
                     thrown->held_by_vid.reset();
                     thrown->attachment_mode = AttachmentMode::None;
+                    StopUsingEntity(*thrown);
                     thrown->thrown_immunity_timer = kThrownByImmunityDuration;
 
                     Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
@@ -197,6 +198,7 @@ void UpdateCarryAndBackItems(
                 TrySetAnimation(*item_taken_off_back, EntityDisplayState::Neutral);
                 item_taken_off_back->held_by_vid.reset();
                 item_taken_off_back->attachment_mode = AttachmentMode::None;
+                StopUsingEntity(*item_taken_off_back);
                 item_taken_off_back->thrown_by = entity_vid;
                 item_taken_off_back->thrown_immunity_timer = kThrownByImmunityDuration;
             }
@@ -237,11 +239,9 @@ void UpdateCarryAndBackItems(
                     holding->draw_layer = DrawLayer::Foreground;
                 }
                 if (entity_trying_to_use) {
-                    if (holding->state == EntityState::Idle) {
-                        holding->state = EntityState::InUse;
-                    }
-                } else if (holding->state == EntityState::InUse) {
-                    holding->state = EntityState::Idle;
+                    UseEntity(*holding, entity.vid, AttachmentMode::Held);
+                } else {
+                    StopUsingEntity(*holding);
                 }
                 const Vec2 held_pos_target = entity_facing == LeftOrRight::Left
                                                  ? entity_center +
@@ -271,11 +271,9 @@ void UpdateCarryAndBackItems(
                 back_item->held_by_vid = entity_vid;
                 back_item->attachment_mode = AttachmentMode::Back;
                 if (entity_trying_to_use) {
-                    if (back_item->state == EntityState::Idle) {
-                        back_item->state = EntityState::InUse;
-                    }
-                } else if (back_item->state == EntityState::InUse) {
-                    back_item->state = EntityState::Idle;
+                    UseEntity(*back_item, entity_vid, AttachmentMode::Back);
+                } else {
+                    StopUsingEntity(*back_item);
                 }
 
                 Vec2 back_offset = Vec2::New(-3.0F, 0.0F);

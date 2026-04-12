@@ -5,7 +5,7 @@
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 #include "tile.hpp"
 
 #include <cmath>
@@ -49,7 +49,7 @@ bool IsControlled(const Entity& entity, const State& state) {
     return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
 }
 
-void StepControlledBlock(Entity& block, const systems::controls::ControlIntent& control) {
+void StepControlledBlock(Entity& block, const controls::ControlIntent& control) {
     if (block.attack_delay_countdown > 0) {
         block.attack_delay_countdown -= 1;
     }
@@ -127,8 +127,8 @@ void StepEntityLogicAsBlock(
 
     {
         Entity& block = state.entity_manager.entities[entity_idx];
-        const systems::controls::ControlIntent control =
-            systems::controls::GetControlIntentForEntity(block, state);
+        const controls::ControlIntent control =
+            controls::GetControlIntentForEntity(block, state);
         if (IsControlled(block, state) && block.condition != EntityCondition::Dead) {
             StepControlledBlock(block, control);
         }

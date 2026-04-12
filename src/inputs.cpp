@@ -170,7 +170,7 @@ void SetPlayingInputSnapshot(State& state) {
     new_inputs.run = keys[SDL_SCANCODE_LSHIFT] || GamepadAxisPressed(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
     new_inputs.use_button = keys[SDL_SCANCODE_J] || GamepadAxisPressed(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
     new_inputs.equip_button =
-        keys[SDL_SCANCODE_I] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK);
+        keys[SDL_SCANCODE_I] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
     new_inputs.pick_up_drop =
         keys[SDL_SCANCODE_K] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_WEST);
     new_inputs.stop = keys[SDL_SCANCODE_LCTRL] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_START);

@@ -3,6 +3,7 @@
 #include "entity.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
+#include "tools/tool_archetype.hpp"
 #include "state.hpp"
 #include "step.hpp"
 #include "text.hpp"
@@ -15,16 +16,7 @@ namespace splonks {
 namespace {
 
 FrameDataId GetToolIconAnimationId(ToolKind kind) {
-    switch (kind) {
-    case ToolKind::ThrowBomb:
-        return frame_data_ids::GrenadeUiIcon;
-    case ToolKind::ThrowRope:
-        return frame_data_ids::RopeUiIcon;
-    case ToolKind::ThrowPot:
-        return frame_data_ids::Pot;
-    }
-
-    return kInvalidFrameDataId;
+    return GetToolArchetype(kind).icon_animation_id;
 }
 
 FrameDataId GetToolSlotBackgroundAnimationId(std::size_t slot_index) {

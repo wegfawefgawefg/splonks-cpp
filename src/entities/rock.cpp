@@ -5,7 +5,7 @@
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 
 namespace splonks::entities::rock {
 
@@ -21,7 +21,7 @@ bool IsControlled(const Entity& entity, const State& state) {
     return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
 }
 
-void StepControlledRock(Entity& rock, const systems::controls::ControlIntent& control) {
+void StepControlledRock(Entity& rock, const controls::ControlIntent& control) {
     if (rock.attack_delay_countdown > 0) {
         rock.attack_delay_countdown -= 1;
     }
@@ -86,8 +86,8 @@ void StepEntityLogicAsRock(
     (void)graphics;
     (void)dt;
     Entity& rock = state.entity_manager.entities[entity_idx];
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(rock, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(rock, state);
     if (IsControlled(rock, state) && rock.condition != EntityCondition::Dead) {
         StepControlledRock(rock, control);
     }

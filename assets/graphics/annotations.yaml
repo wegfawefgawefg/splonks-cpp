@@ -1438,7 +1438,7 @@ sprites:
       h: 7
     name: "live_grenade"
     frame: 0
-    duration: 1
+    duration: 8
     offset:
       x: 0
       y: 2
@@ -1465,7 +1465,7 @@ sprites:
       h: 7
     name: "live_grenade"
     frame: 1
-    duration: 1
+    duration: 8
     offset:
       x: 0
       y: 2
@@ -2735,6 +2735,114 @@ sprites:
     name: "wanted_poster"
     frame: 0
     duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 128
+      w: 16
+      h: 16
+    name: "pistol"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 9
+    tags: []
+    pbox:
+      x: 3
+      y: 7
+      w: 9
+      h: 6
+    cbox:
+      x: 3
+      y: 7
+      w: 9
+      h: 6
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 288
+      w: 16
+      h: 16
+    name: "scarab"
+    frame: 1
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 288
+      w: 16
+      h: 16
+    name: "scarab"
+    frame: 2
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 288
+      w: 16
+      h: 16
+    name: "scarab"
+    frame: 0
+    duration: 8
     offset:
       x: 0
       y: 0

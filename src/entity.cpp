@@ -71,6 +71,7 @@ Entity Entity::New() {
     entity.bombs = 0;
     entity.ropes = 0;
     entity.attachment_mode = AttachmentMode::None;
+    entity.use_state = UseState{};
     entity.travel_sound_countdown = kTravelSoundDistInterval;
     entity.travel_sound = TravelSound::One;
     entity.condition = EntityCondition::Normal;
@@ -123,6 +124,26 @@ void Entity::Reset() {
     *this = Entity::New();
     vid = existing_vid;
     active = true;
+}
+
+void UseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source) {
+    const bool was_down = entity.use_state.down;
+    entity.use_state.down = true;
+    entity.use_state.pressed = !was_down;
+    entity.use_state.released = false;
+    entity.use_state.frames = was_down ? entity.use_state.frames + 1 : 1;
+    entity.use_state.user_vid = user_vid;
+    entity.use_state.source = source;
+}
+
+void StopUsingEntity(Entity& entity) {
+    const bool was_down = entity.use_state.down;
+    entity.use_state.down = false;
+    entity.use_state.pressed = false;
+    entity.use_state.released = was_down;
+    entity.use_state.frames = 0;
+    entity.use_state.user_vid.reset();
+    entity.use_state.source = AttachmentMode::None;
 }
 
 std::tuple<Vec2, Vec2> Entity::GetBounds() const {

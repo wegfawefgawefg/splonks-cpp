@@ -1,7 +1,7 @@
 #include "step.hpp"
 
 #include "inputs.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 #include "step_entities.hpp"
 
 namespace splonks {
@@ -94,7 +94,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     UpdateControlledEntity(state);
     LatchPlayingInputsForTick(state);
     if (state.player_vid.has_value()) {
-        systems::controls::ControlEntityAsPlayer(*state.player_vid, state);
+        controls::ControlEntityAsPlayer(*state.player_vid, state);
     }
     state.ClearEntityContactDispatchesThisTick();
     state.StepContactCooldowns();

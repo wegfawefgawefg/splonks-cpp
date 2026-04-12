@@ -30,10 +30,28 @@ extern const EntityArchetype kRopeArchetype{
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
+    .on_use = OnUseAsRope,
     .step_logic = StepEntityLogicAsRope,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RopeBall),
 };
+
+void OnUseAsRope(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+    (void)graphics;
+    (void)audio;
+    Entity& rope = state.entity_manager.entities[entity_idx];
+    if (rope.use_state.pressed == false || rope.state != EntityState::Idle) {
+        return;
+    }
+
+    rope.counter_a = 16.0F;
+    rope.state = EntityState::WindingUp;
+    SetAnimation(rope, frame_data_ids::UnfoldingRope);
+
+    if (rope.use_state.source == AttachmentMode::None) {
+        StopUsingEntity(rope);
+    }
+}
 
 void StepEntityLogicAsRope(
     std::size_t entity_idx,
@@ -45,14 +63,6 @@ void StepEntityLogicAsRope(
     (void)dt;
     (void)graphics;
     Entity& rope = state.entity_manager.entities[entity_idx];
-
-    // if rope is in use, initialize its timer, and set state to winding up
-    if (rope.state == EntityState::InUse) {
-        rope.counter_a = 16.0F;
-        rope.state = EntityState::WindingUp;
-        TrySetAnimation(rope, EntityDisplayState::Neutral);
-        SetAnimation(rope, frame_data_ids::UnfoldingRope);
-    }
 
     // if rope is in winding up
     // set animation and display state

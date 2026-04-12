@@ -11,6 +11,8 @@ struct Graphics;
 struct State;
 
 using EntityOnDeath = void (*)(std::size_t entity_idx, State& state, Audio& audio);
+using EntityOnUse =
+    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
 using EntityStepLogic =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 using EntityStepPhysics =
@@ -44,6 +46,7 @@ struct EntityArchetype {
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
     std::optional<SoundEffect> death_sound_effect = std::nullopt;
     EntityOnDeath on_death = nullptr;
+    EntityOnUse on_use = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     EntityLabel entity_label_a = EntityLabel::None;

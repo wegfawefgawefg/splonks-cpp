@@ -5,7 +5,7 @@
 #include "entities/mod.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 
 #include <cmath>
 #include <random>
@@ -48,7 +48,7 @@ void SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     entity->vel = Vec2::New(0.0F, 0.0F);
 }
 
-void StepControlledBox(Entity& box, const systems::controls::ControlIntent& control) {
+void StepControlledBox(Entity& box, const controls::ControlIntent& control) {
     if (box.attack_delay_countdown > 0) {
         box.attack_delay_countdown -= 1;
     }
@@ -114,8 +114,8 @@ void StepEntityLogicAsBox(
         return;
     }
 
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(box, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(box, state);
     if (!IsControlled(box, state)) {
         return;
     }

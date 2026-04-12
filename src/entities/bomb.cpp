@@ -27,6 +27,7 @@ extern const EntityArchetype kBombArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingAndSpikes,
     .on_death = OnDeathAsBomb,
+    .on_use = OnUseAsBomb,
     .step_logic = StepEntityLogicAsBomb,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Grenade),
@@ -34,6 +35,23 @@ extern const EntityArchetype kBombArchetype{
 
 void OnDeathAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
     common::OnDeathAsExplosion(entity_idx, state, audio);
+}
+
+void OnUseAsBomb(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+    (void)graphics;
+    (void)audio;
+    Entity& bomb = state.entity_manager.entities[entity_idx];
+    if (!bomb.use_state.pressed || bomb.state != EntityState::Idle) {
+        return;
+    }
+
+    bomb.counter_a = 144.0F;
+    bomb.state = EntityState::WindingUp;
+    SetAnimation(bomb, frame_data_ids::LiveGrenade);
+
+    if (bomb.use_state.source == AttachmentMode::None) {
+        StopUsingEntity(bomb);
+    }
 }
 
 void StepEntityLogicAsBomb(
@@ -46,13 +64,6 @@ void StepEntityLogicAsBomb(
     (void)graphics;
     (void)dt;
     Entity& bomb = state.entity_manager.entities[entity_idx];
-    // if bomb is in use, initialize its timer, and set state to winding up
-    if (bomb.state == EntityState::InUse) {
-        bomb.counter_a = 144.0F;
-        bomb.state = EntityState::WindingUp;
-        TrySetAnimation(bomb, EntityDisplayState::Stunned);
-        SetAnimation(bomb, frame_data_ids::LiveGrenade);
-    }
 
     // if bomb is in winding up
     // set animation and display state

@@ -10,6 +10,7 @@
 #include "state.hpp"
 #include "step.hpp"
 #include "terrain_lighting.hpp"
+#include "tools/tool_archetype.hpp"
 #include "text.hpp"
 
 #include <SDL3/SDL.h>
@@ -159,6 +160,7 @@ int main(int argc, char** argv) {
 
         ////////////////        MAIN LOOP        ////////////////
         splonks::PopulateEntityArchetypesTable();
+        splonks::PopulateToolArchetypesTable();
         splonks::State state = splonks::State::New();
         state.running = true;
         debug.ui_visible = state.settings.debug_ui.menu_visible;

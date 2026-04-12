@@ -5,7 +5,7 @@
 #include "graphics.hpp"
 #include "state.hpp"
 
-namespace splonks::systems::controls {
+namespace splonks::controls {
 struct ControlIntent;
 }
 
@@ -156,13 +156,13 @@ bool TryApplyCrusherPusherContact(
     const Graphics& graphics,
     Audio& audio
 );
-using ToolThrowVelocityBuilder = Vec2 (*)(const systems::controls::ControlIntent&);
-bool TrySpawnAndThrowEntityFromTool(
+using ToolThrowVelocityBuilder = Vec2 (*)(const controls::ControlIntent&);
+bool TrySpawnAndThrowEntityForToolUse(
     std::size_t thrower_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
-    std::size_t tool_slot_index,
+    ToolSlot& tool_slot,
     bool trigger_pressed,
     std::uint16_t cooldown_frames,
     std::uint32_t thrown_immunity_timer,

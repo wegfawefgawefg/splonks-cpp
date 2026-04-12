@@ -28,6 +28,31 @@ float RandomFloat(float minimum, float maximum) {
     return distribution(generator);
 }
 
+void SpawnJetpackSmoke(State& state, const Vec2& pos) {
+    for (int i = 0; i < 16; ++i) {
+        const float vel = RandomFloat(0.1F, 0.5F);
+        const float svel = RandomFloat(vel * 0.1F, vel * 1.0F);
+        const float sacc = RandomFloat(vel * 0.01F, vel * 0.02F);
+        auto effect = std::make_unique<UltraDynamicEffect>();
+        effect->type_ = SpecialEffectType::BasicSmoke;
+        effect->draw_layer = DrawLayer::Foreground;
+        effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(0, 32));
+        effect->pos = pos;
+        effect->size = Vec2::New(1.0F, 1.0F) * 2.0F;
+        effect->rot = RandomFloat(0.0F, 360.0F);
+        effect->alpha = 1.0F;
+        effect->vel = Vec2::New(0.0F, RandomFloat(0.0F, 0.3F));
+        effect->svel = Vec2::New(svel, svel);
+        effect->rotvel = RandomFloat(-0.2F, -0.01F);
+        effect->alpha_vel = vel * 0.001F;
+        effect->acc = Vec2::New(0.0F, 0.0F);
+        effect->sacc = Vec2::New(sacc, sacc);
+        effect->rotacc = 0.0F;
+        effect->alpha_acc = 0.0F;
+        state.special_effects.push_back(std::move(effect));
+    }
+}
+
 } // namespace
 
 extern const EntityArchetype kJetPackArchetype{
@@ -50,6 +75,7 @@ extern const EntityArchetype kJetPackArchetype{
     .counter_a = kFuel,
     .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
     .on_death = OnDeathAsJetpack,
+    .on_use = OnUseAsJetpack,
     .step_logic = StepEntityLogicAsJetpack,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Jetpack),
@@ -57,6 +83,57 @@ extern const EntityArchetype kJetPackArchetype{
 
 void OnDeathAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
     common::OnDeathAsExplosion(entity_idx, state, audio);
+}
+
+void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+    (void)graphics;
+    Entity& jetpack = state.entity_manager.entities[entity_idx];
+    if (jetpack.use_state.down == false) {
+        return;
+    }
+
+    const std::optional<VID> held_by_vid = jetpack.held_by_vid;
+    bool refill_fuel = false;
+    if (held_by_vid.has_value()) {
+        if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
+            if (holder->grounded || holder->climbing || holder->IsHanging() ||
+                holder->jumped_this_frame) {
+                refill_fuel = true;
+            }
+        }
+    }
+    if (refill_fuel) {
+        jetpack.counter_a = kFuel;
+    }
+    if (jetpack.counter_a <= 0.0F) {
+        return;
+    }
+
+    if (held_by_vid.has_value()) {
+        if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
+            const float jetpack_max_upspeed = -2.0F;
+            if (holder->vel.y > jetpack_max_upspeed) {
+                holder->acc.y = -0.6F;
+                holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
+            }
+            TrySetAnimation(*holder, EntityDisplayState::Neutral);
+        }
+    }
+
+    jetpack.travel_sound_countdown -= 1.0F;
+    if (jetpack.travel_sound_countdown < 0.0F) {
+        jetpack.travel_sound_countdown = kTravelSoundDistInterval;
+        const SoundEffect sound_effect =
+            jetpack.travel_sound == TravelSound::One ? SoundEffect::Jetpack1
+                                                     : SoundEffect::Jetpack2;
+        audio.PlaySoundEffect(sound_effect);
+        jetpack.IncTravelSound();
+    }
+    jetpack.counter_a -= 1.0F;
+
+    const Vec2 center = jetpack.GetCenter();
+    SpawnJetpackSmoke(state, center + Vec2::New(3.0F, 3.0F));
+    SpawnJetpackSmoke(state, center + Vec2::New(-3.0F, 3.0F));
 }
 
 /** jetpack goes up by default, and idles if it hits the ceiling.
@@ -73,6 +150,7 @@ void StepEntityLogicAsJetpack(
     float dt
 ) {
     (void)graphics;
+    (void)audio;
     (void)dt;
     Entity& jetpack = state.entity_manager.entities[entity_idx];
     if (jetpack.attachment_mode == AttachmentMode::Back) {
@@ -93,98 +171,7 @@ void StepEntityLogicAsJetpack(
         SetAnimation(jetpack, frame_data_ids::Jetpack);
     }
 
-    // if jetpack is in use, add acc to player
-    const EntityState jetpack_state = jetpack.state;
-    const std::optional<VID> held_by_vid = jetpack.held_by_vid;
-    const float fuel = jetpack.counter_a;
-    if (jetpack_state == EntityState::InUse) {
-        bool refill_fuel = false;
-        if (held_by_vid.has_value()) {
-            if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
-                if (holder->grounded || holder->climbing || holder->IsHanging() ||
-                    holder->jumped_this_frame) {
-                    refill_fuel = true;
-                }
-            }
-        }
-        if (refill_fuel) {
-            jetpack.counter_a = kFuel;
-        }
-        if (fuel > 0.0F) {
-            // make the holder go up
-            if (held_by_vid.has_value()) {
-                if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
-                    const float jetpack_max_upspeed = -2.0F;
-                    if (holder->vel.y > jetpack_max_upspeed) {
-                        holder->acc.y = -0.6F;
-                        holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
-                    }
-                    TrySetAnimation(*holder, EntityDisplayState::Neutral);
-                }
-            }
-
-            // play travel sound
-            jetpack.travel_sound_countdown -= 1.0F;
-
-            if (jetpack.travel_sound_countdown < 0.0F) {
-                jetpack.travel_sound_countdown = kTravelSoundDistInterval;
-                const SoundEffect sound_effect =
-                    jetpack.travel_sound == TravelSound::One ? SoundEffect::Jetpack1
-                                                             : SoundEffect::Jetpack2;
-                audio.PlaySoundEffect(sound_effect);
-                jetpack.IncTravelSound();
-            }
-            if (fuel > 0.0F) {
-                jetpack.counter_a -= 1.0F;
-            }
-
-            const Vec2 center = jetpack.GetCenter();
-            for (int i = 0; i < 16; ++i) {
-                const float vel = RandomFloat(0.1F, 0.5F);
-                const float svel = RandomFloat(vel * 0.1F, vel * 1.0F);
-                const float sacc = RandomFloat(vel * 0.01F, vel * 0.02F);
-                auto effect = std::make_unique<UltraDynamicEffect>();
-                effect->type_ = SpecialEffectType::BasicSmoke;
-                effect->draw_layer = DrawLayer::Foreground;
-                effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(0, 32));
-                effect->pos = center + Vec2::New(3.0F, 3.0F);
-                effect->size = Vec2::New(1.0F, 1.0F) * 2.0F;
-                effect->rot = RandomFloat(0.0F, 360.0F);
-                effect->alpha = 1.0F;
-                effect->vel = Vec2::New(0.0F, RandomFloat(0.0F, 0.3F));
-                effect->svel = Vec2::New(svel, svel);
-                effect->rotvel = RandomFloat(-0.2F, -0.01F);
-                effect->alpha_vel = vel * 0.001F;
-                effect->acc = Vec2::New(0.0F, 0.0F);
-                effect->sacc = Vec2::New(sacc, sacc);
-                effect->rotacc = 0.0F;
-                effect->alpha_acc = 0.0F;
-                state.special_effects.push_back(std::move(effect));
-            }
-            for (int i = 0; i < 16; ++i) {
-                const float vel = RandomFloat(0.1F, 0.5F);
-                const float svel = RandomFloat(vel * 0.1F, vel * 1.0F);
-                const float sacc = RandomFloat(vel * 0.01F, vel * 0.02F);
-                auto effect = std::make_unique<UltraDynamicEffect>();
-                effect->type_ = SpecialEffectType::BasicSmoke;
-                effect->draw_layer = DrawLayer::Foreground;
-                effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(0, 32));
-                effect->pos = center + Vec2::New(-3.0F, 3.0F);
-                effect->size = Vec2::New(1.0F, 1.0F) * 2.0F;
-                effect->rot = RandomFloat(0.0F, 360.0F);
-                effect->alpha = 1.0F;
-                effect->vel = Vec2::New(0.0F, RandomFloat(0.0F, 0.3F));
-                effect->svel = Vec2::New(svel, svel);
-                effect->rotvel = RandomFloat(-0.2F, -0.01F);
-                effect->alpha_vel = vel * 0.001F;
-                effect->acc = Vec2::New(0.0F, 0.0F);
-                effect->sacc = Vec2::New(sacc, sacc);
-                effect->rotacc = 0.0F;
-                effect->alpha_acc = 0.0F;
-                state.special_effects.push_back(std::move(effect));
-            }
-        }
-    } else if (jetpack_state == EntityState::Idle) {
+    if (jetpack.use_state.down == false) {
         jetpack.travel_sound_countdown = 0.0F;
     }
 }

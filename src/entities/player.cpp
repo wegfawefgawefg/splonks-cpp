@@ -7,7 +7,7 @@
 #include "entities/mod.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -60,6 +60,7 @@ void StepEntityLogicAsPlayer(
                 if (Entity* const holding = state.entity_manager.GetEntityMut(*player_holding_vid)) {
                     holding->held_by_vid.reset();
                     holding->attachment_mode = AttachmentMode::None;
+                    StopUsingEntity(*holding);
                     holding->has_physics = true;
                     holding->can_collide = true;
                 }
@@ -70,6 +71,7 @@ void StepEntityLogicAsPlayer(
                 if (Entity* const back = state.entity_manager.GetEntityMut(*player_back_vid)) {
                     back->held_by_vid.reset();
                     back->attachment_mode = AttachmentMode::None;
+                    StopUsingEntity(*back);
                     back->has_physics = true;
                     back->can_collide = true;
                 }
@@ -92,8 +94,8 @@ void StepEntityLogicAsPlayer(
 
     const bool loss_of_control =
         state.entity_manager.entities[entity_idx].condition == EntityCondition::Stunned;
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(
             state.entity_manager.entities[entity_idx],
             state
         );
@@ -215,8 +217,8 @@ void StepEntityPhysicsAsPlayer(
     // custom pre partial euler step for player to apply special velocity clamping.
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.vel += entity.acc;
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(entity, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(entity, state);
     if (control.run) {
         entity.vel.x = std::clamp(entity.vel.x, -kMaxRunSpeed, kMaxRunSpeed);
     } else {

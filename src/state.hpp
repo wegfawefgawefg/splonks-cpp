@@ -11,6 +11,7 @@
 #include "settings.hpp"
 #include "sid.hpp"
 #include "special_effects/special_effect.hpp"
+#include "tools/tool_archetype.hpp"
 #include "stage.hpp"
 #include "stage_lighting.hpp"
 
@@ -76,12 +77,6 @@ struct InteractionCooldownEntry {
 struct EntityContactDispatchEntry {
     VID first_vid;
     VID second_vid;
-};
-
-enum class ToolKind : std::uint8_t {
-    ThrowPot,
-    ThrowBomb,
-    ThrowRope,
 };
 
 constexpr std::size_t kToolSlotCount = 2;

@@ -1,7 +1,7 @@
 #include "entities/common.hpp"
 
 #include "entities/player.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 #include "tile.hpp"
 
 #include <vector>
@@ -82,8 +82,8 @@ bool EntityHasHangGloves(const Entity& entity) {
 }
 
 bool IsTryingToHangOnSide(const Entity& entity, const State& state, bool left_side) {
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(entity, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(entity, state);
     if (left_side) {
         return control.left && !control.right;
     }
@@ -193,8 +193,8 @@ bool TryCaptureHdHang(
     if (!entity.can_hang_ledge && !EntityHasHangGloves(entity)) {
         return false;
     }
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(entity, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(entity, state);
     if (control.no_hang || entity.hang_count > 0) {
         return false;
     }
@@ -340,8 +340,8 @@ bool TryCaptureHdHang(
 
 void HangHandsStep(std::size_t entity_idx, State& state) {
     Entity& mutable_entity = state.entity_manager.entities[entity_idx];
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(mutable_entity, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(mutable_entity, state);
     if (control.no_hang) {
         mutable_entity.left_hanging = false;
         mutable_entity.right_hanging = false;
@@ -385,8 +385,8 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     GroundedCheck(entity_idx, state, audio, true, true);
 
     Entity& entity = state.entity_manager.entities[entity_idx];
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(entity, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(entity, state);
     Stage& stage = state.stage;
     const auto [player_tl, player_br] = entity.GetBounds();
     const std::vector<const Tile*> newly_collided_tiles =

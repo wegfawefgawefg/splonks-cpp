@@ -1,8 +1,8 @@
-#include "systems/controls.hpp"
+#include "controls.hpp"
 
 #include "entities/player.hpp"
 
-namespace splonks::systems::controls {
+namespace splonks::controls {
 
 ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state) {
     if (!state.controlled_entity_vid.has_value() || entity.vid != *state.controlled_entity_vid) {
@@ -68,4 +68,4 @@ void ControlEntityAsPlayer(const VID& entity_vid, State& state) {
     }
 }
 
-} // namespace splonks::systems::controls
+} // namespace splonks::controls

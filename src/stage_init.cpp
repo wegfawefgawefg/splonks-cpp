@@ -1,4 +1,5 @@
 #include "stage_init.hpp"
+#include "tools/tool_archetype.hpp"
 
 #include "entity.hpp"
 #include "entities/bat.hpp"
@@ -111,17 +112,23 @@ void SpawnPlayer(State& state, const Vec2& pos) {
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
 
-            ToolSlot& bomb_tool = state.EnsureToolSlot(*player_vid, 0);
-            bomb_tool.active = true;
-            bomb_tool.kind = ToolKind::ThrowBomb;
-            bomb_tool.count = static_cast<std::uint16_t>(player->bombs);
-            bomb_tool.cooldown = 0;
+            if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
+                FillToolSlot(
+                    state.EnsureToolSlot(*player_vid, 0),
+                    *bomb_tool_kind,
+                    static_cast<std::uint16_t>(player->bombs),
+                    true
+                );
+            }
 
-            ToolSlot& rope_tool = state.EnsureToolSlot(*player_vid, 1);
-            rope_tool.active = true;
-            rope_tool.kind = ToolKind::ThrowRope;
-            rope_tool.count = static_cast<std::uint16_t>(player->ropes);
-            rope_tool.cooldown = 0;
+            if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
+                FillToolSlot(
+                    state.EnsureToolSlot(*player_vid, 1),
+                    *rope_tool_kind,
+                    static_cast<std::uint16_t>(player->ropes),
+                    true
+                );
+            }
         }
     }
 }

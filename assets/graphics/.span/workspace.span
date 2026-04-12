@@ -28,8 +28,8 @@
     }
   ],
   "activePaletteId": null,
-  "lastOpenSheetPath": "tiles/cave.png",
-  "selectedAnnotationId": "d2d67d93-5be0-4fee-bff7-adcbeca06a3d",
+  "lastOpenSheetPath": "sprites/entities.png",
+  "selectedAnnotationId": "a2f54c2e-3ead-497e-aa5b-fd81cf01d96d",
   "sheets": [
     {
       "path": "images/title.png",
@@ -2241,7 +2241,7 @@
           "properties": {
             "name": "live_grenade",
             "frame": 0,
-            "duration": 1,
+            "duration": 8,
             "offset": {
               "x": 0,
               "y": 2
@@ -2281,7 +2281,7 @@
           "properties": {
             "name": "live_grenade",
             "frame": 1,
-            "duration": 1,
+            "duration": 8,
             "offset": {
               "x": 0,
               "y": 2
@@ -4186,15 +4186,171 @@
             "tile": false,
             "hitboxes": []
           }
+        },
+        {
+          "id": "6bb1aa9c-a59f-4815-a2ac-0e0d9d1b2b73",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 48,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "pistol",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 9
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 7,
+              "w": 9,
+              "h": 6
+            },
+            "cbox": {
+              "x": 3,
+              "y": 7,
+              "w": 9,
+              "h": 6
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "1986ec97-cd1b-4ce5-8395-bad944ba7c10",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 48,
+            "y": 288,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "scarab",
+            "frame": 1,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "a2f54c2e-3ead-497e-aa5b-fd81cf01d96d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 64,
+            "y": 288,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "scarab",
+            "frame": 2,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
+        },
+        {
+          "id": "9db34549-5ecc-4135-a4f9-b5ecd78cee49",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 288,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "scarab",
+            "frame": 0,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 1.414,
-        "centerX": 298.0905233380481,
-        "centerY": 132.95615275813296
+        "zoom": 13.108,
+        "centerX": 70.83460482148305,
+        "centerY": 289.8230088495575
       }
     },
     {
@@ -5538,9 +5694,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 8.389,
-        "centerX": 55.13172010966743,
-        "centerY": 25.390392180236024
+        "zoom": 2.199,
+        "centerX": 72.98772169167805,
+        "centerY": 72.76034561164165
       }
     },
     {

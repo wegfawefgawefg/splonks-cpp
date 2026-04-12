@@ -1,12 +1,12 @@
 #include "entities/common.hpp"
 
-#include "systems/controls.hpp"
+#include "controls.hpp"
 
 namespace splonks::entities::common {
 
 namespace {
 
-Vec2 BuildThrowVelocity(const systems::controls::ControlIntent& control) {
+Vec2 BuildThrowVelocity(const controls::ControlIntent& control) {
     Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
     if (control.left) {
         throw_vel.x = -10.0F;
@@ -27,12 +27,12 @@ Vec2 BuildThrowVelocity(const systems::controls::ControlIntent& control) {
 
 } // namespace
 
-bool TrySpawnAndThrowEntityFromTool(
+bool TrySpawnAndThrowEntityForToolUse(
     std::size_t thrower_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
-    std::size_t tool_slot_index,
+    ToolSlot& tool_slot,
     bool trigger_pressed,
     std::uint16_t cooldown_frames,
     std::uint32_t thrown_immunity_timer,
@@ -44,14 +44,12 @@ bool TrySpawnAndThrowEntityFromTool(
     }
 
     const Entity& thrower = state.entity_manager.entities[thrower_idx];
-    ToolSlot* const tool_slot = state.FindToolSlotMut(thrower.vid, tool_slot_index);
-    if (tool_slot == nullptr || !tool_slot->active || tool_slot->count == 0 ||
-        tool_slot->cooldown > 0) {
+    if (!tool_slot.active || tool_slot.count == 0 || tool_slot.cooldown > 0) {
         return false;
     }
 
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(thrower, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(thrower, state);
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
         return false;
@@ -65,7 +63,7 @@ bool TrySpawnAndThrowEntityFromTool(
     setup_entity(*spawned_entity);
     spawned_entity->has_physics = true;
     spawned_entity->can_collide = true;
-    spawned_entity->state = EntityState::InUse;
+    UseEntity(*spawned_entity, thrower.vid, AttachmentMode::None);
     spawned_entity->thrown_by = thrower.vid;
     spawned_entity->thrown_immunity_timer = thrown_immunity_timer;
     const ToolThrowVelocityBuilder velocity_builder =
@@ -74,8 +72,8 @@ bool TrySpawnAndThrowEntityFromTool(
     spawned_entity->acc += velocity_builder(control);
     state.UpdateSidForEntity(vid->id, graphics);
 
-    tool_slot->count -= 1;
-    tool_slot->cooldown = cooldown_frames;
+    tool_slot.count -= 1;
+    tool_slot.cooldown = cooldown_frames;
     audio.PlaySoundEffect(SoundEffect::Throw);
     return true;
 }

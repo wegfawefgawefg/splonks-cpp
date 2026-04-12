@@ -1,18 +1,8 @@
 #include "entities/common.hpp"
 
-#include "entities/bomb.hpp"
-#include "entities/mod.hpp"
-#include "entities/rope.hpp"
+#include "tools/tool_archetype.hpp"
 
 namespace splonks::entities::common {
-
-namespace {
-
-constexpr std::uint16_t kBombThrowDelayFrames = 8;
-constexpr std::uint16_t kRopeThrowDelayFrames = 8;
-constexpr std::uint16_t kPotThrowDelayFrames = 12;
-
-} // namespace
 
 bool TryUseToolSlot(
     std::size_t entity_idx,
@@ -28,46 +18,18 @@ bool TryUseToolSlot(
         return false;
     }
 
-    switch (tool_slot->kind) {
-    case ToolKind::ThrowBomb:
-        return TrySpawnAndThrowEntityFromTool(
-            entity_idx,
-            state,
-            graphics,
-            audio,
-            tool_slot_index,
-            trigger_pressed,
-            kBombThrowDelayFrames,
-            kThrownByImmunityDuration,
-            [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Bomb); }
-        );
-    case ToolKind::ThrowRope:
-        return TrySpawnAndThrowEntityFromTool(
-            entity_idx,
-            state,
-            graphics,
-            audio,
-            tool_slot_index,
-            trigger_pressed,
-            kRopeThrowDelayFrames,
-            kThrownByImmunityDuration * 2,
-            [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Rope); }
-        );
-    case ToolKind::ThrowPot:
-        return TrySpawnAndThrowEntityFromTool(
-            entity_idx,
-            state,
-            graphics,
-            audio,
-            tool_slot_index,
-            trigger_pressed,
-            kPotThrowDelayFrames,
-            kThrownByImmunityDuration,
-            [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Pot); }
-        );
+    const ToolArchetype& tool_archetype = GetToolArchetype(tool_slot->kind);
+    if (tool_archetype.use_fn == nullptr) {
+        return false;
     }
-
-    return false;
+    return tool_archetype.use_fn(
+        entity_idx,
+        state,
+        graphics,
+        audio,
+        tool_slot_index,
+        trigger_pressed
+    );
 }
 
 } // namespace splonks::entities::common

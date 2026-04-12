@@ -219,23 +219,24 @@ add_executable(splonks-cpp
     src/stage_init.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/hd_mines.cpp
-    src/stage_gen/mod.cpp
     src/stage_gen/test.cpp
     src/state.cpp
     src/step.cpp
     src/step_entities.cpp
     src/text.cpp
+    src/tools/tool_archetype.cpp
+    src/tools/throw_bomb.cpp
+    src/tools/throw_pot.cpp
+    src/tools/throw_rope.cpp
     src/terrain_lighting.cpp
     src/special_effects/dynamic_effect.cpp
-    src/special_effects/mod.cpp
     src/special_effects/special_effect.cpp
     src/special_effects/spline_effect.cpp
     src/special_effects/static_effect.cpp
     src/tile.cpp
     src/tile_source_data.cpp
     src/utils.cpp
-    src/systems/controls.cpp
-    src/systems/mod.cpp
+    src/controls.cpp
     src/special_effects/ultra_dynamic_effect.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp

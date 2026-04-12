@@ -5,7 +5,7 @@
 #include "entities/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
-#include "systems/controls.hpp"
+#include "controls.hpp"
 #include "tile.hpp"
 
 #include <algorithm>
@@ -103,8 +103,8 @@ void StepEntityLogicAsBat(
     (void)graphics;
     (void)dt;
     Entity& bat = state.entity_manager.entities[entity_idx];
-    const systems::controls::ControlIntent control =
-        systems::controls::GetControlIntentForEntity(bat, state);
+    const controls::ControlIntent control =
+        controls::GetControlIntentForEntity(bat, state);
     const bool controlled =
         state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;
     const bool steering = control.left || control.right || control.up || control.down;

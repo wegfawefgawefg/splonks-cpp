@@ -24,6 +24,15 @@ enum class EntityPassiveItem : std::uint8_t {
     Count,
 };
 
+struct UseState {
+    bool down = false;
+    bool pressed = false;
+    bool released = false;
+    std::uint32_t frames = 0;
+    std::optional<VID> user_vid;
+    AttachmentMode source = AttachmentMode::None;
+};
+
 struct Entity {
     bool active = false;
     bool marked_for_destruction = false;
@@ -68,6 +77,7 @@ struct Entity {
     std::uint32_t ropes = 4;
     std::optional<VID> back_vid;
     AttachmentMode attachment_mode = AttachmentMode::None;
+    UseState use_state;
     float travel_sound_countdown = kTravelSoundDistInterval;
     TravelSound travel_sound = TravelSound::One;
     EntityCondition condition = EntityCondition::Normal;
@@ -146,6 +156,8 @@ void SetAnimation(Entity& entity, FrameDataId animation_id);
 // Use this from shared/external gameplay code that only knows a generic display state
 // like Neutral, Walk, Hanging, or Stunned rather than an exact authored animation id.
 bool TrySetAnimation(Entity& entity, EntityDisplayState display_state);
+void UseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source);
+void StopUsingEntity(Entity& entity);
 const char* PassiveItemToString(EntityPassiveItem passive_item);
 bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
 void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);
