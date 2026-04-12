@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 31;
+constexpr std::uint32_t kRecordingVersion = 32;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -570,8 +570,6 @@ const char* SuperStateToString(EntitySuperState state) {
         return "Roaming";
     case EntitySuperState::Returning:
         return "Returning";
-    case EntitySuperState::Projectile:
-        return "Projectile";
     case EntitySuperState::EquippedToBack:
         return "EquippedToBack";
     }

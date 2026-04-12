@@ -21,7 +21,7 @@ extern const EntityArchetype kMouseTrailerArchetype{
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
     .super_state = EntitySuperState::Idle,
-    .state = EntityState::Projectile,
+    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .alignment = Alignment::Neutral,

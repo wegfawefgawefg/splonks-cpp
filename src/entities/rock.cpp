@@ -62,7 +62,7 @@ extern const EntityArchetype kRockArchetype{
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .super_state = EntitySuperState::Idle,
-    .state = EntityState::Projectile,
+    .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .alignment = Alignment::Neutral,

@@ -112,7 +112,6 @@ enum class EntitySuperState {
     Patrolling,
     Roaming,
     Returning,
-    Projectile,
     EquippedToBack,
 };
 
@@ -135,7 +134,6 @@ enum class EntityState {
     Dodging,
     Flinching,
     Falling,
-    Projectile,
     InUse,
     Pushing,
 };
