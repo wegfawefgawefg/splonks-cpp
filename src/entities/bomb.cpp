@@ -21,23 +21,21 @@ extern const EntityArchetype kBombArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingAndSpikes,
+    .on_death = OnDeathAsBomb,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Grenade),
 };
 
+void OnDeathAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
+    common::OnDeathAsExplosion(entity_idx, state, audio);
+}
+
 void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& bomb = state.entity_manager.entities[entity_idx];
-    const Vec2 bomb_center = bomb.GetCenter();
-    if (bomb.super_state == EntitySuperState::Dead) {
-        const Vec2 center = bomb_center;
-        common::DoExplosion(entity_idx, center, 2.0F, state, audio);
-        return;
-    }
-
     // if bomb is in use, initialize its timer, and set state to winding up
     if (bomb.state == EntityState::InUse) {
         bomb.counter_a = 144.0F;
@@ -52,10 +50,9 @@ void StepEntityLogicAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
     if (bomb.state == EntityState::WindingUp) {
         bomb.counter_a -= 1.0F;
         if (bomb.counter_a <= 0.0F) {
-            // do explosion
-            const Vec2 center = bomb.GetCenter();
-            common::DoExplosion(entity_idx, center, 2.0F, state, audio);
             bomb.health = 0;
+            common::DieIfDead(entity_idx, state, audio);
+            return;
         }
     }
 }

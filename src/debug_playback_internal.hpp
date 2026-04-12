@@ -8,7 +8,8 @@ const char* ModeToString(Mode mode);
 const char* DebugLevelKindToString(DebugLevelKind kind);
 const char* EntityTypeToString(EntityType type);
 const char* DisplayStateToString(EntityDisplayState state);
-const char* SuperStateToString(EntitySuperState state);
+const char* ConditionToString(EntityCondition condition);
+const char* AiStateToString(EntityAiState ai_state);
 const char* LeftOrRightToString(LeftOrRight facing);
 
 void ClampPlaybackIndex(DebugPlayback& debug);

@@ -61,7 +61,7 @@ extern const EntityArchetype kRockArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
@@ -79,7 +79,7 @@ void StepEntityLogicAsRock(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& rock = state.entity_manager.entities[entity_idx];
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(rock, state);
-    if (IsControlled(rock, state) && rock.super_state != EntitySuperState::Dead) {
+    if (IsControlled(rock, state) && rock.condition != EntityCondition::Dead) {
         StepControlledRock(rock, control);
     }
     (void)audio;

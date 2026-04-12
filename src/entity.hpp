@@ -70,8 +70,10 @@ struct Entity {
     AttachmentMode attachment_mode = AttachmentMode::None;
     float travel_sound_countdown = kTravelSoundDistInterval;
     TravelSound travel_sound = TravelSound::One;
-    EntitySuperState super_state = EntitySuperState::Idle;
-    EntitySuperState last_super_state = EntitySuperState::Idle;
+    EntityCondition condition = EntityCondition::Normal;
+    EntityCondition last_condition = EntityCondition::Normal;
+    EntityAiState ai_state = EntityAiState::Idle;
+    EntityAiState last_ai_state = EntityAiState::Idle;
     EntityState state = EntityState::Idle;
     std::uint32_t health = 0;
     std::uint32_t last_health = 0;

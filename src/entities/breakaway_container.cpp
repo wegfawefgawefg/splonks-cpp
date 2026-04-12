@@ -103,10 +103,11 @@ extern const EntityArchetype kPotArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .death_sound_effect = SoundEffect::PotShatter,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pot),
 };
@@ -123,10 +124,11 @@ extern const EntityArchetype kBoxArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .death_sound_effect = SoundEffect::BoxBreak,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Box),
 };
@@ -138,10 +140,10 @@ void StepEntityLogicAsBreakawayContainer(
 ) {
     (void)audio;
     Entity& breakaway_container = state.entity_manager.entities[entity_idx];
-    const EntitySuperState breakaway_container_super_state = breakaway_container.super_state;
+    const EntityCondition breakaway_container_condition = breakaway_container.condition;
     const Vec2 breakaway_container_pos = breakaway_container.pos;
     const EntityType breakaway_container_type = breakaway_container.type_;
-    if (breakaway_container_super_state == EntitySuperState::Dead) {
+    if (breakaway_container_condition == EntityCondition::Dead) {
         const unsigned int random_number = RandomPercent();
         switch (breakaway_container_type) {
         case EntityType::Pot:
@@ -192,7 +194,7 @@ void StepEntityLogicAsBreakawayContainer(
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(breakaway_container, state);
     if (IsControlled(breakaway_container, state) &&
-        breakaway_container_super_state != EntitySuperState::Dead) {
+        breakaway_container_condition != EntityCondition::Dead) {
         StepControlledBreakawayContainer(
             breakaway_container,
             breakaway_container_type,

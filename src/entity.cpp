@@ -73,8 +73,10 @@ Entity Entity::New() {
     entity.attachment_mode = AttachmentMode::None;
     entity.travel_sound_countdown = kTravelSoundDistInterval;
     entity.travel_sound = TravelSound::One;
-    entity.super_state = EntitySuperState::Idle;
-    entity.last_super_state = EntitySuperState::Idle;
+    entity.condition = EntityCondition::Normal;
+    entity.last_condition = EntityCondition::Normal;
+    entity.ai_state = EntityAiState::Idle;
+    entity.last_ai_state = EntityAiState::Idle;
     entity.state = EntityState::Idle;
     entity.health = 0;
     entity.last_health = 0;

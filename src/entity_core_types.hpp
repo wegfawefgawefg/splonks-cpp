@@ -100,17 +100,15 @@ enum class TravelSound {
     Two,
 };
 
-enum class EntitySuperState {
-    Idle,
+enum class EntityCondition {
+    Normal,
     Dead,
     Stunned,
+};
+
+enum class EntityAiState {
+    Idle,
     Pursuing,
-    Attacking,
-    Defending,
-    Fleeing,
-    Searching,
-    Patrolling,
-    Roaming,
     Returning,
 };
 
@@ -128,8 +126,6 @@ enum class EntityState {
     PickingUp,
     Using,
     Crouching,
-    Dead,
-    Stunned,
     Dodging,
     Flinching,
     Falling,

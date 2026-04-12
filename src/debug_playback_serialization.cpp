@@ -12,7 +12,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 33;
+constexpr std::uint32_t kRecordingVersion = 34;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -546,29 +546,25 @@ const char* DisplayStateToString(EntityDisplayState state) {
     return "Unknown";
 }
 
-const char* SuperStateToString(EntitySuperState state) {
-    switch (state) {
-    case EntitySuperState::Idle:
-        return "Idle";
-    case EntitySuperState::Dead:
+const char* ConditionToString(EntityCondition condition) {
+    switch (condition) {
+    case EntityCondition::Normal:
+        return "Normal";
+    case EntityCondition::Dead:
         return "Dead";
-    case EntitySuperState::Stunned:
+    case EntityCondition::Stunned:
         return "Stunned";
-    case EntitySuperState::Pursuing:
+    }
+    return "Unknown";
+}
+
+const char* AiStateToString(EntityAiState ai_state) {
+    switch (ai_state) {
+    case EntityAiState::Idle:
+        return "Idle";
+    case EntityAiState::Pursuing:
         return "Pursuing";
-    case EntitySuperState::Attacking:
-        return "Attacking";
-    case EntitySuperState::Defending:
-        return "Defending";
-    case EntitySuperState::Fleeing:
-        return "Fleeing";
-    case EntitySuperState::Searching:
-        return "Searching";
-    case EntitySuperState::Patrolling:
-        return "Patrolling";
-    case EntitySuperState::Roaming:
-        return "Roaming";
-    case EntitySuperState::Returning:
+    case EntityAiState::Returning:
         return "Returning";
     }
     return "Unknown";
@@ -740,7 +736,8 @@ bool ExportRecordingToTextFile(
             out << "  entity " << entity_id << "\n";
             out << "    type: " << EntityTypeToString(entity.type_) << "\n";
             out << "    display_state: " << DisplayStateToString(entity.display_state) << "\n";
-            out << "    super_state: " << SuperStateToString(entity.super_state) << "\n";
+            out << "    condition: " << ConditionToString(entity.condition) << "\n";
+            out << "    ai_state: " << AiStateToString(entity.ai_state) << "\n";
             out << "    facing: " << LeftOrRightToString(entity.facing) << "\n";
             out << "    grounded: " << (entity.grounded ? "true" : "false") << "\n";
             out << "    climbing: " << (entity.climbing ? "true" : "false") << "\n";

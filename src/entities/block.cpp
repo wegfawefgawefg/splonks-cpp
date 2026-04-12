@@ -84,7 +84,7 @@ extern const EntityArchetype kBlockArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
@@ -120,7 +120,7 @@ void StepEntityLogicAsBlock(std::size_t entity_idx, State& state, Audio& audio) 
         Entity& block = state.entity_manager.entities[entity_idx];
         const systems::controls::ControlIntent control =
             systems::controls::GetControlIntentForEntity(block, state);
-        if (IsControlled(block, state) && block.super_state != EntitySuperState::Dead) {
+        if (IsControlled(block, state) && block.condition != EntityCondition::Dead) {
             StepControlledBlock(block, control);
         }
     }

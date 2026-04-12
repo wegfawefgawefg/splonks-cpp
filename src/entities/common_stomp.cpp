@@ -33,8 +33,8 @@ bool TryApplyStompContactToEntity(
         return false;
     }
     if (stomped->impassable || !stomped->can_collide ||
-        stomped->super_state == EntitySuperState::Dead ||
-        stomped->super_state == EntitySuperState::Stunned ||
+        stomped->condition == EntityCondition::Dead ||
+        stomped->condition == EntityCondition::Stunned ||
         stomped->alignment != Alignment::Enemy) {
         return false;
     }
@@ -56,7 +56,7 @@ bool TryApplyStompContactToEntity(
         1
     );
     if (stomped->can_be_stunned) {
-        stomped->super_state = EntitySuperState::Stunned;
+        stomped->condition = EntityCondition::Stunned;
         stomped->stun_timer = kDefaultStunTimer;
     }
     if (damage_result == DamageResult::Died || damage_result == DamageResult::Hurt) {

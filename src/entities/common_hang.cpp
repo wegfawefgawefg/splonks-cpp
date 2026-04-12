@@ -198,8 +198,8 @@ bool TryCaptureHdHang(
     if (control.no_hang || entity.hang_count > 0) {
         return false;
     }
-    if (entity.super_state == EntitySuperState::Stunned ||
-        entity.super_state == EntitySuperState::Dead) {
+    if (entity.condition == EntityCondition::Stunned ||
+        entity.condition == EntityCondition::Dead) {
         return false;
     }
     if (entity.vel.y <= 0.0F) {
@@ -347,8 +347,8 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
         mutable_entity.left_hanging = false;
         mutable_entity.right_hanging = false;
     }
-    if (mutable_entity.super_state == EntitySuperState::Stunned ||
-        mutable_entity.super_state == EntitySuperState::Dead) {
+    if (mutable_entity.condition == EntityCondition::Stunned ||
+        mutable_entity.condition == EntityCondition::Dead) {
         mutable_entity.left_hanging = false;
         mutable_entity.right_hanging = false;
     }
@@ -417,8 +417,8 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
         entity.climbing = false;
     }
 
-    if (entity.super_state == EntitySuperState::Stunned ||
-        entity.super_state == EntitySuperState::Dead) {
+    if (entity.condition == EntityCondition::Stunned ||
+        entity.condition == EntityCondition::Dead) {
         entity.climbing = false;
     }
 

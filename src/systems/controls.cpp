@@ -8,8 +8,8 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
     if (!state.controlled_entity_vid.has_value() || entity.vid != *state.controlled_entity_vid) {
         return ControlIntent{};
     }
-    if (entity.super_state == EntitySuperState::Dead ||
-        entity.super_state == EntitySuperState::Stunned) {
+    if (entity.condition == EntityCondition::Dead ||
+        entity.condition == EntityCondition::Stunned) {
         return ControlIntent{};
     }
 
@@ -36,8 +36,8 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
 void ControlEntityAsPlayer(const VID& entity_vid, State& state) {
     if (Entity* const player = state.entity_manager.GetEntityMut(entity_vid)) {
         const ControlIntent intent = GetControlIntentForEntity(*player, state);
-        if (player->super_state == EntitySuperState::Dead ||
-            player->super_state == EntitySuperState::Stunned) {
+        if (player->condition == EntityCondition::Dead ||
+            player->condition == EntityCondition::Stunned) {
             player->was_horizontally_controlled_this_frame = false;
             return;
         }

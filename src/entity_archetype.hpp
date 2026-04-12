@@ -1,9 +1,15 @@
 #pragma once
 
+#include "audio.hpp"
+
 #include <array>
 #include "entity.hpp"
 
 namespace splonks {
+
+struct State;
+
+using EntityOnDeath = void (*)(std::size_t entity_idx, State& state, Audio& audio);
 
 struct EntityArchetype {
     EntityType type_ = EntityType::None;
@@ -21,7 +27,8 @@ struct EntityArchetype {
     bool can_be_stunned = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     LeftOrRight facing = LeftOrRight::Left;
-    EntitySuperState super_state = EntitySuperState::Idle;
+    EntityCondition condition = EntityCondition::Normal;
+    EntityAiState ai_state = EntityAiState::Idle;
     EntityState state = EntityState::Idle;
     EntityDisplayState display_state = EntityDisplayState::Neutral;
     std::uint32_t bombs = 0;
@@ -29,6 +36,8 @@ struct EntityArchetype {
     float counter_a = 0.0F;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
+    std::optional<SoundEffect> death_sound_effect = std::nullopt;
+    EntityOnDeath on_death = nullptr;
     EntityLabel entity_label_a = EntityLabel::None;
     Alignment alignment = Alignment::Neutral;
     FrameDataAnimator frame_data_animator{};

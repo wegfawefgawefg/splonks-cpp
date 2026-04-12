@@ -8,7 +8,7 @@ namespace splonks::entities::common {
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     const bool vanish_on_death = splonks::GetEntityArchetype(entity.type_).vanish_on_death;
-    if ((vanish_on_death && entity.super_state == EntitySuperState::Dead) ||
+    if ((vanish_on_death && entity.condition == EntityCondition::Dead) ||
         entity.marked_for_destruction) {
         state.entity_manager.SetInactive(entity_idx);
     }
@@ -21,9 +21,9 @@ void StoreHealthToLastHealth(std::size_t entity_idx, State& state) {
 
 void StepStunTimer(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.super_state == EntitySuperState::Stunned) {
+    if (entity.condition == EntityCondition::Stunned) {
         if (entity.stun_timer == 0) {
-            entity.super_state = EntitySuperState::Idle;
+            entity.condition = EntityCondition::Normal;
             TrySetAnimation(entity, EntityDisplayState::Neutral);
         } else {
             if (entity.stun_timer > 0) {

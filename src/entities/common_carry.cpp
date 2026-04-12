@@ -40,7 +40,7 @@ void UpdateCarryAndBackItems(
     CleanupInactiveCarryReferences(entity_idx, state);
 
     const bool loss_of_control =
-        state.entity_manager.entities[entity_idx].super_state == EntitySuperState::Stunned;
+        state.entity_manager.entities[entity_idx].condition == EntityCondition::Stunned;
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(
             state.entity_manager.entities[entity_idx],

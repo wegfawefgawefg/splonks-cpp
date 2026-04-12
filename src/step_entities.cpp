@@ -93,6 +93,10 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             }
             entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
             state.UpdateSidForEntity(state.player_vid->id, graphics);
+            if (Entity* const mutable_player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+                mutable_player->last_condition = mutable_player->condition;
+                mutable_player->last_ai_state = mutable_player->ai_state;
+            }
         }
     }
 
@@ -106,6 +110,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 continue;
             }
             entities::common::CommonStep(entity_idx, state, graphics, audio, dt);
+            if (!state.entity_manager.entities[entity_idx].active) {
+                continue;
+            }
             switch (type_) {
             case EntityType::None:
             case EntityType::Player:
@@ -251,7 +258,13 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 entities::scarab::StepEntityLogicAsScarab(entity_idx, state, audio);
                 break;
             }
+            if (!state.entity_manager.entities[entity_idx].active) {
+                continue;
+            }
             entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
+            if (!state.entity_manager.entities[entity_idx].active) {
+                continue;
+            }
 
             if (has_physics) {
                 switch (type_) {
@@ -414,6 +427,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             }
             entities::common::ApplyDeactivateConditions(entity_idx, state);
             state.UpdateSidForEntity(entity_idx, graphics);
+            Entity& mutable_entity = state.entity_manager.entities[entity_idx];
+            mutable_entity.last_condition = mutable_entity.condition;
+            mutable_entity.last_ai_state = mutable_entity.ai_state;
         }
     }
 }

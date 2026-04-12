@@ -24,7 +24,7 @@ extern const EntityArchetype kGhostBallArchetype{
     .size = Vec2::New(1.0F, 1.0F),
     .has_physics = true,
     .can_collide = false,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,

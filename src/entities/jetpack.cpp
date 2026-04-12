@@ -44,14 +44,19 @@ extern const EntityArchetype kJetPackArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .counter_a = kFuel,
     .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
+    .on_death = OnDeathAsJetpack,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Jetpack),
 };
+
+void OnDeathAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
+    common::OnDeathAsExplosion(entity_idx, state, audio);
+}
 
 /** jetpack goes up by default, and idles if it hits the ceiling.
  *  If the jetpack detects the player is beneath it,
@@ -77,12 +82,6 @@ void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio
         SetAnimation(jetpack, frame_data_ids::JetpackSide);
     } else {
         SetAnimation(jetpack, frame_data_ids::Jetpack);
-    }
-
-    if (jetpack.super_state == EntitySuperState::Dead) {
-        const Vec2 center = jetpack.GetCenter();
-        common::DoExplosion(entity_idx, center, 2.0F, state, audio);
-        return;
     }
 
     // if jetpack is in use, add acc to player

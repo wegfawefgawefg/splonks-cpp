@@ -17,6 +17,7 @@ constexpr float kFuel = 120.0F;
 
 extern const EntityArchetype kJetPackArchetype;
 
+void OnDeathAsJetpack(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityPhysicsAsJetpack(
     std::size_t entity_idx,

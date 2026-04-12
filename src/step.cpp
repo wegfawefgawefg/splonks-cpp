@@ -17,7 +17,7 @@ void UpdateControlledEntity(State& state) {
     const Entity* controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid);
     const bool invalid_controlled =
         controlled == nullptr || !controlled->active ||
-        controlled->super_state == EntitySuperState::Dead;
+        controlled->condition == EntityCondition::Dead;
     if (!invalid_controlled) {
         return;
     }
@@ -25,7 +25,7 @@ void UpdateControlledEntity(State& state) {
     if (state.player_vid.has_value()) {
         const Entity* player = state.entity_manager.GetEntity(*state.player_vid);
         if (player != nullptr && player->active &&
-            player->super_state != EntitySuperState::Dead) {
+            player->condition != EntityCondition::Dead) {
             state.controlled_entity_vid = state.player_vid;
             return;
         }
@@ -107,7 +107,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     bool lost = false;
     if (state.player_vid) {
         if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-            if (player->super_state == EntitySuperState::Dead) {
+            if (player->condition == EntityCondition::Dead) {
                 lost = true;
             } else {
                 lost = false;

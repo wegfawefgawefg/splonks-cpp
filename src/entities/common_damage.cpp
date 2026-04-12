@@ -1,10 +1,14 @@
 #include "entities/common.hpp"
 #include "entities/mod.hpp"
 
+#include "entity_archetype.hpp"
 #include "on_damage_effects.hpp"
+#include "special_effects/ultra_dynamic_effect.hpp"
 #include "terrain_lighting.hpp"
 #include "tile.hpp"
 
+#include <memory>
+#include <random>
 #include <vector>
 
 namespace splonks::entities::common {
@@ -12,6 +16,22 @@ namespace splonks::entities::common {
 namespace {
 
 constexpr std::uint32_t kHarmContactCooldownFrames = 8;
+
+int RandomIntExclusive(int minimum, int maximum) {
+    static std::random_device device;
+    static std::mt19937 generator(device());
+
+    std::uniform_int_distribution<int> distribution(minimum, maximum - 1);
+    return distribution(generator);
+}
+
+float RandomFloat(float minimum, float maximum) {
+    static std::random_device device;
+    static std::mt19937 generator(device());
+
+    std::uniform_real_distribution<float> distribution(minimum, maximum);
+    return distribution(generator);
+}
 
 bool AabbsIntersect(const AABB& left, const AABB& right) {
     if (left.br.x < right.tl.x) {
@@ -115,41 +135,43 @@ std::optional<SoundEffect> GetCrushSoundEffect(EntityType type_) {
     }
 }
 
+void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
+    const std::optional<SoundEffect> sound_effect =
+        entity.stone ? std::optional<SoundEffect>(SoundEffect::PotShatter)
+                     : archetype.death_sound_effect;
+    if (sound_effect.has_value()) {
+        audio.PlaySoundEffect(*sound_effect);
+    }
+    if (archetype.on_death != nullptr) {
+        archetype.on_death(entity_idx, state, audio);
+    }
+}
+
+} // namespace
+
+void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    DoExplosion(entity_idx, entity.GetCenter(), 2.0F, state, audio);
+    state.entity_manager.SetInactive(entity_idx);
+}
+
 void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    const bool entered_dead = entity.condition != EntityCondition::Dead && entity.health == 0;
     if (entity.health == 0) {
-        entity.super_state = EntitySuperState::Dead;
-        entity.state = EntityState::Dead;
-        if (!entity.marked_for_destruction) {
+        entity.condition = EntityCondition::Dead;
+        if (entered_dead && !entity.marked_for_destruction) {
             TrySetAnimation(entity, EntityDisplayState::Dead);
         }
     }
-    if (entity.super_state == EntitySuperState::Dead) {
-        std::optional<SoundEffect> sound_effect;
-        if (entity.stone) {
-            sound_effect = SoundEffect::PotShatter;
-        } else {
-            switch (entity.type_) {
-            case EntityType::Bomb:
-            case EntityType::JetPack:
-                sound_effect = SoundEffect::BombExplosion;
-                break;
-            case EntityType::Pot:
-                sound_effect = SoundEffect::PotShatter;
-                break;
-            case EntityType::Box:
-                sound_effect = SoundEffect::BoxBreak;
-                break;
-            default:
-                break;
-            }
-        }
-        if (sound_effect.has_value()) {
-            audio.PlaySoundEffect(*sound_effect);
-            entity.super_state = EntitySuperState::Dead;
-        }
+    if (entered_dead) {
+        OnDeath(entity_idx, state, audio);
     }
 }
+
+namespace {
 
 void MaybeHurtAndStunOnContact(
     std::size_t entity_idx,
@@ -161,11 +183,11 @@ void MaybeHurtAndStunOnContact(
     const VID entity_vid = entity.vid;
     const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
     const Vec2 entity_pos = entity.pos;
-    const EntitySuperState super_state = entity.super_state;
+    const EntityCondition condition = entity.condition;
     const bool hurt_on_contact = entity.hurt_on_contact;
     const std::optional<VID> thrown_by = entity.thrown_by;
     const Alignment alignment = entity.alignment;
-    if (super_state != EntitySuperState::Dead && super_state != EntitySuperState::Stunned &&
+    if (condition != EntityCondition::Dead && condition != EntityCondition::Stunned &&
         hurt_on_contact) {
         const std::vector<VID> search_results =
             state.sid.QueryExclude(entity_aabb.tl, entity_aabb.br, entity_vid);
@@ -320,8 +342,8 @@ void MaybeHurtAndStunAsOnContactHurtfulEntityBodyOrProjectile(
 ) {
     MaybeHurtAndStunOnContact(entity_idx, state, graphics, audio);
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.super_state == EntitySuperState::Dead ||
-        entity.super_state == EntitySuperState::Stunned) {
+    if (entity.condition == EntityCondition::Dead ||
+        entity.condition == EntityCondition::Stunned) {
         MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, graphics, audio);
     }
 }
@@ -385,34 +407,11 @@ void DoDamagedEffect(std::size_t entity_idx, State& state, Audio& audio) {
         case EntityType::Bat:
             OnDamageEffectAsBleedingEntity(entity_idx, state);
             break;
-        case EntityType::JetPack:
-        case EntityType::Bomb:
-            OnDeathEffectAsExplosive(entity_idx, state);
-            break;
         default:
             break;
         }
     }
     entity.last_health = entity.health;
-}
-
-void DoSuperStateChangedEffect(std::size_t entity_idx, State& state, Audio& audio) {
-    (void)audio;
-    Entity& entity = state.entity_manager.entities[entity_idx];
-
-    if (entity.last_super_state != EntitySuperState::Dead &&
-        entity.super_state == EntitySuperState::Dead) {
-        switch (entity.type_) {
-        case EntityType::JetPack:
-        case EntityType::Bomb:
-            OnDeathEffectAsExplosive(entity_idx, state);
-            break;
-        default:
-            break;
-        }
-    }
-
-    entity.last_super_state = entity.super_state;
 }
 
 } // namespace
@@ -436,7 +435,6 @@ void CommonStep(
     ApplyHurtOnContact(entity_idx, state, graphics, audio);
     DieIfFootInSpikes(entity_idx, state, audio);
     DoDamagedEffect(entity_idx, state, audio);
-    DoSuperStateChangedEffect(entity_idx, state, audio);
     (void)dt;
 }
 
@@ -489,17 +487,14 @@ DamageResult TryToDamageEntity(
     if (can_damage) {
         if (entity.stone && damage_type == DamageType::Explosion) {
             entity.health = 0;
+            DieIfDead(entity_idx, state, audio);
             return DamageResult::Died;
         }
         bool do_damage_calculation = false;
         if (damage_type == DamageType::Crush) {
             entity.health = 0;
-            entity.super_state = EntitySuperState::Dead;
-            entity.state = EntityState::Dead;
-            if (entity.type_ == EntityType::Bomb || entity.type_ == EntityType::JetPack) {
-                OnDeathEffectAsExplosive(entity_idx, state);
-                DoExplosion(entity_idx, entity.GetCenter(), 2.0F, state, audio);
-                state.entity_manager.SetInactive(entity_idx);
+            DieIfDead(entity_idx, state, audio);
+            if (!entity.active) {
                 return DamageResult::Died;
             }
             if (const std::optional<SoundEffect> sound_effect = GetCrushSoundEffect(entity.type_)) {
@@ -508,23 +503,23 @@ DamageResult TryToDamageEntity(
             entity.marked_for_destruction = true;
             return DamageResult::Died;
         }
-        if (entity.super_state == EntitySuperState::Dead) {
+        if (entity.condition == EntityCondition::Dead) {
             return DamageResult::None;
         } else {
             if (damage_type == DamageType::Spikes) {
                 entity.health = 0;
-                entity.super_state = EntitySuperState::Dead;
+                DieIfDead(entity_idx, state, audio);
                 return DamageResult::Died;
             } else if (damage_type == DamageType::Explosion) {
                 do_damage_calculation = true;
-                if (entity.can_be_stunned && entity.super_state != EntitySuperState::Stunned) {
-                    entity.super_state = EntitySuperState::Stunned;
+                if (entity.can_be_stunned && entity.condition != EntityCondition::Stunned) {
+                    entity.condition = EntityCondition::Stunned;
                     TrySetAnimation(entity, EntityDisplayState::Stunned);
                     entity.stun_timer = kDefaultStunTimer;
                 }
             } else if (entity.can_be_stunned) {
-                if (entity.super_state != EntitySuperState::Stunned) {
-                    entity.super_state = EntitySuperState::Stunned;
+                if (entity.condition != EntityCondition::Stunned) {
+                    entity.condition = EntityCondition::Stunned;
                     TrySetAnimation(entity, EntityDisplayState::Stunned);
                     entity.stun_timer = kDefaultStunTimer;
                     do_damage_calculation = true;
@@ -541,6 +536,7 @@ DamageResult TryToDamageEntity(
                 return DamageResult::Hurt;
             }
             entity.health = 0;
+            DieIfDead(entity_idx, state, audio);
             return DamageResult::Died;
         }
     }
@@ -554,6 +550,49 @@ void DoExplosion(
     State& state,
     Audio& audio
 ) {
+    const float effect_size = size * 0.5F * static_cast<float>(kTileSize);
+    {
+        auto effect = std::make_unique<UltraDynamicEffect>();
+        effect->type_ = SpecialEffectType::GrenadeBoom;
+        effect->draw_layer = DrawLayer::Foreground;
+        effect->counter = 8;
+        effect->pos = center;
+        effect->size = Vec2::New(effect_size, effect_size);
+        effect->rot = RandomFloat(0.0F, 360.0F);
+        effect->alpha = 1.0F;
+        effect->vel = Vec2::New(0.0F, 0.0F);
+        effect->svel = Vec2::New(2.0F, 2.0F);
+        effect->rotvel = 0.0F;
+        effect->alpha_vel = 0.0F;
+        effect->acc = Vec2::New(0.0F, 0.0F);
+        effect->sacc = Vec2::New(-0.2F, -0.2F);
+        effect->rotacc = 0.0F;
+        effect->alpha_acc = 0.0F;
+        state.special_effects.push_back(std::move(effect));
+    }
+    for (int i = 0; i < 16; ++i) {
+        const float vel = RandomFloat(-0.3F, 0.0F);
+        const float svel = RandomFloat(-vel * 0.1F, -vel * 1.0F);
+        const float sacc = RandomFloat(-vel * 0.01F, -vel * 0.02F);
+
+        auto effect = std::make_unique<UltraDynamicEffect>();
+        effect->type_ = SpecialEffectType::BasicSmoke;
+        effect->draw_layer = DrawLayer::Foreground;
+        effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(64, 128));
+        effect->pos = center;
+        effect->size = Vec2::New(0.0F, 0.0F);
+        effect->rot = RandomFloat(0.0F, 360.0F);
+        effect->alpha = 1.0F;
+        effect->vel = Vec2::New(0.0F, RandomFloat(-0.3F, 0.0F));
+        effect->svel = Vec2::New(svel, svel);
+        effect->rotvel = RandomFloat(-0.2F, -0.01F);
+        effect->alpha_vel = vel * 0.001F;
+        effect->acc = Vec2::New(0.0F, 0.0F);
+        effect->sacc = Vec2::New(sacc, sacc);
+        effect->rotacc = 0.0F;
+        effect->alpha_acc = 0.0F;
+        state.special_effects.push_back(std::move(effect));
+    }
     audio.PlaySoundEffect(SoundEffect::BombExplosion);
     const float explosion_size = size * static_cast<float>(kTileSize);
     const AABB area = {

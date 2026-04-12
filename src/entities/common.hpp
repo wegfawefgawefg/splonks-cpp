@@ -68,6 +68,8 @@ void CommonPostStep(
     Audio& audio,
     float dt
 );
+void DieIfDead(std::size_t entity_idx, State& state, Audio& audio);
+void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio);
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state);
 void StoreHealthToLastHealth(std::size_t entity_idx, State& state);
 void StepStunTimer(std::size_t entity_idx, State& state);

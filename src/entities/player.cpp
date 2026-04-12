@@ -28,7 +28,7 @@ extern const EntityArchetype kPlayerArchetype{
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .bombs = 400,
@@ -49,10 +49,10 @@ void StepEntityLogicAsPlayer(
     {
         // SKIP CONDITIONS
         Entity& player = state.entity_manager.entities[entity_idx];
-        const EntitySuperState player_super_state = player.super_state;
+        const EntityCondition player_condition = player.condition;
         const std::optional<VID> player_holding_vid = player.holding_vid;
         const std::optional<VID> player_back_vid = player.back_vid;
-        if (player_super_state == EntitySuperState::Dead) {
+        if (player_condition == EntityCondition::Dead) {
             // if you are holding something, unhold it
             if (player_holding_vid.has_value()) {
                 if (Entity* const holding = state.entity_manager.GetEntityMut(*player_holding_vid)) {
@@ -89,7 +89,7 @@ void StepEntityLogicAsPlayer(
     common::CleanupInactiveCarryReferences(entity_idx, state);
 
     const bool loss_of_control =
-        state.entity_manager.entities[entity_idx].super_state == EntitySuperState::Stunned;
+        state.entity_manager.entities[entity_idx].condition == EntityCondition::Stunned;
     const systems::controls::ControlIntent control =
         systems::controls::GetControlIntentForEntity(
             state.entity_manager.entities[entity_idx],

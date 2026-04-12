@@ -770,7 +770,8 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         }
     }
     ImGui::Text("Display: %s", DisplayStateToString(entity.display_state));
-    ImGui::Text("Super: %s", SuperStateToString(entity.super_state));
+    ImGui::Text("Condition: %s", ConditionToString(entity.condition));
+    ImGui::Text("AI: %s", AiStateToString(entity.ai_state));
     bool stone = entity.stone;
     if (ImGui::Checkbox("Stone", &stone)) {
         if (stone) {

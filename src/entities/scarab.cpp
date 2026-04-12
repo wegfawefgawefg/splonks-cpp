@@ -19,7 +19,7 @@ extern const EntityArchetype kScarabArchetype{
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
-    .super_state = EntitySuperState::Idle,
+    .condition = EntityCondition::Normal,
     .state = EntityState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
