@@ -21,7 +21,7 @@
 #include "entities/lantern.hpp"
 #include "entities/machete.hpp"
 #include "entities/mattock.hpp"
-#include "entities/mod.hpp"
+#include "entities/none_archetype.hpp"
 #include "entities/money.hpp"
 #include "entities/mouse_trailer.hpp"
 #include "entities/player.hpp"

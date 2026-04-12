@@ -4,7 +4,6 @@
 #include "entities/baseball_bat.hpp"
 #include "entities/block.hpp"
 #include "entities/common.hpp"
-#include "entities/mod.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
 #include "controls.hpp"

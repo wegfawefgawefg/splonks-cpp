@@ -2,7 +2,6 @@
 
 #include "entity_archetype.hpp"
 #include "entities/common.hpp"
-#include "entities/mod.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
 #include "controls.hpp"

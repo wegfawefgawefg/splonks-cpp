@@ -1,7 +1,7 @@
 #include "tools/throw_bomb.hpp"
 
 #include "entities/common.hpp"
-#include "entities/mod.hpp"
+#include "entity_archetype.hpp"
 #include "state.hpp"
 
 namespace splonks::tools::throw_bomb {

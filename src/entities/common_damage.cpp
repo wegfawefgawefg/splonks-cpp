@@ -1,5 +1,4 @@
 #include "entities/common.hpp"
-#include "entities/mod.hpp"
 
 #include "entity_archetype.hpp"
 #include "on_damage_effects.hpp"

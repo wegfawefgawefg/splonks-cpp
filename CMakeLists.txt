@@ -174,7 +174,7 @@ add_executable(splonks-cpp
     src/entities/lantern.cpp
     src/entities/machete.cpp
     src/entities/mattock.cpp
-    src/entities/mod.cpp
+    src/entities/none_archetype.cpp
     src/entities/money.cpp
     src/entities/mouse_trailer.cpp
     src/entities/player.cpp

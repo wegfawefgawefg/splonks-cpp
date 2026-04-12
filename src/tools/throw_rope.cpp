@@ -1,7 +1,7 @@
 #include "tools/throw_rope.hpp"
 
 #include "entities/common.hpp"
-#include "entities/mod.hpp"
+#include "entity_archetype.hpp"
 #include "state.hpp"
 
 namespace splonks::tools::throw_rope {

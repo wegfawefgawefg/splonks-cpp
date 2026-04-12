@@ -6,7 +6,6 @@
 #include "entities/block.hpp"
 #include "entities/jetpack.hpp"
 #include "entities/money.hpp"
-#include "entities/mod.hpp"
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 #include "entities/stomp_pad.hpp"
