@@ -57,6 +57,7 @@ void StepEntityLogicAsPlayer(
             if (player_holding_vid.has_value()) {
                 if (Entity* const holding = state.entity_manager.GetEntityMut(*player_holding_vid)) {
                     holding->held_by_vid.reset();
+                    holding->attachment_mode = AttachmentMode::None;
                     holding->has_physics = true;
                     holding->can_collide = true;
                 }
@@ -66,6 +67,7 @@ void StepEntityLogicAsPlayer(
             if (player_back_vid.has_value()) {
                 if (Entity* const back = state.entity_manager.GetEntityMut(*player_back_vid)) {
                     back->held_by_vid.reset();
+                    back->attachment_mode = AttachmentMode::None;
                     back->has_physics = true;
                     back->can_collide = true;
                 }
@@ -176,6 +178,7 @@ void StepEntityLogicAsPlayer(
                     SetEntityAs(*entity, EntityType::BaseballBat);
                     entity->pos = player_pos;
                     entity->held_by_vid = player_vid;
+                    entity->attachment_mode = AttachmentMode::Held;
                     state.UpdateSidForEntity(vid->id, graphics);
                     attacked = true;
                     audio.PlaySoundEffect(SoundEffect::BaseballBatSwing);

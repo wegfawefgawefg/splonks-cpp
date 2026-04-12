@@ -61,7 +61,7 @@ extern const EntityArchetype kJetPackArchetype{
  */
 void StepEntityLogicAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& jetpack = state.entity_manager.entities[entity_idx];
-    if (jetpack.super_state == EntitySuperState::EquippedToBack) {
+    if (jetpack.attachment_mode == AttachmentMode::Back) {
         FrameDataId equipped_animation = frame_data_ids::JetpackBack;
         if (jetpack.held_by_vid.has_value()) {
             if (const Entity* const holder = state.entity_manager.GetEntity(*jetpack.held_by_vid)) {

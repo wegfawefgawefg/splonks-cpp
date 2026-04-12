@@ -67,6 +67,7 @@ struct Entity {
     std::uint32_t bombs = 4;
     std::uint32_t ropes = 4;
     std::optional<VID> back_vid;
+    AttachmentMode attachment_mode = AttachmentMode::None;
     float travel_sound_countdown = kTravelSoundDistInterval;
     TravelSound travel_sound = TravelSound::One;
     EntitySuperState super_state = EntitySuperState::Idle;

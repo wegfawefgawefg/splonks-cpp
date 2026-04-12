@@ -102,6 +102,7 @@ void UpdateCarryAndBackItems(
                 if (Entity* const pick_up_entity =
                         state.entity_manager.GetEntityMut(*trying_to_pick_this_up_vid)) {
                     pick_up_entity->held_by_vid = entity_vid;
+                    pick_up_entity->attachment_mode = AttachmentMode::Held;
                 }
             }
         }
@@ -122,6 +123,7 @@ void UpdateCarryAndBackItems(
                     thrown->can_collide = true;
                     thrown->thrown_by = entity_vid;
                     thrown->held_by_vid.reset();
+                    thrown->attachment_mode = AttachmentMode::None;
                     thrown->thrown_immunity_timer = kThrownByImmunityDuration;
 
                     Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
@@ -189,12 +191,12 @@ void UpdateCarryAndBackItems(
 
         if (take_off_back_vid.has_value()) {
             if (Entity* const item_taken_off_back = state.entity_manager.GetEntityMut(*take_off_back_vid)) {
-                item_taken_off_back->super_state = EntitySuperState::Idle;
                 item_taken_off_back->state = EntityState::Idle;
                 item_taken_off_back->has_physics = true;
                 item_taken_off_back->can_collide = true;
                 TrySetAnimation(*item_taken_off_back, EntityDisplayState::Neutral);
                 item_taken_off_back->held_by_vid.reset();
+                item_taken_off_back->attachment_mode = AttachmentMode::None;
                 item_taken_off_back->thrown_by = entity_vid;
                 item_taken_off_back->thrown_immunity_timer = kThrownByImmunityDuration;
             }
@@ -225,6 +227,8 @@ void UpdateCarryAndBackItems(
             if (Entity* const holding = state.entity_manager.GetEntityMut(*entity_holding_vid)) {
                 holding->has_physics = false;
                 holding->can_collide = false;
+                holding->held_by_vid = entity.vid;
+                holding->attachment_mode = AttachmentMode::Held;
                 holding->facing = entity_facing;
                 const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
                 if (entity_display_state == EntityDisplayState::Climbing) {
@@ -260,7 +264,7 @@ void UpdateCarryAndBackItems(
                 back_item->can_collide = false;
                 back_item->facing = entity_facing;
                 back_item->held_by_vid = entity_vid;
-                back_item->super_state = EntitySuperState::EquippedToBack;
+                back_item->attachment_mode = AttachmentMode::Back;
                 back_item->state = entity_trying_to_use ? EntityState::InUse : EntityState::Idle;
 
                 Vec2 back_offset = Vec2::New(-3.0F, 0.0F);

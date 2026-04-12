@@ -68,8 +68,9 @@ Entity Entity::New() {
     entity.climbing = false;
     entity.passive_item_flags = 0;
     entity.money = 0;
-    entity.bombs = 4;
-    entity.ropes = 4;
+    entity.bombs = 0;
+    entity.ropes = 0;
+    entity.attachment_mode = AttachmentMode::None;
     entity.travel_sound_countdown = kTravelSoundDistInterval;
     entity.travel_sound = TravelSound::One;
     entity.super_state = EntitySuperState::Idle;

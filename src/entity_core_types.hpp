@@ -112,7 +112,6 @@ enum class EntitySuperState {
     Patrolling,
     Roaming,
     Returning,
-    EquippedToBack,
 };
 
 enum class EntityState {
@@ -216,6 +215,12 @@ enum class EntityDisplayState {
     Climbing,
     Hanging,
     Falling,
+};
+
+enum class AttachmentMode {
+    None,
+    Held,
+    Back,
 };
 
 constexpr std::uint32_t kDefaultHoldingTimer = 8;
