@@ -84,7 +84,7 @@ const FrameData* GetFirstFrameForAnimationOrFallback(
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureTerrainLightingCache(state);
-    const TileSet tile_set = TileSetForStageType(state.stage.stage_type);
+    const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
     for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
         for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
             const Tile tile = state.stage.tiles[y][x];
@@ -93,7 +93,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                 static_cast<int>(y * kTileSize)
             );
             const TileSourceData* const tile_source_data =
-                GetTileSourceData(graphics, tile_set, tile, tile_pos);
+                GetTileSourceData(graphics, tile, tile_pos);
             if (tile_source_data == nullptr) {
                 continue;
             }
@@ -116,7 +116,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
             const bool is_air_tile = tile == Tile::Air;
             if (IsTileTransparent(tile)) {
                 const TileSourceData* const air_source_data =
-                    GetTileSourceData(graphics, tile_set, Tile::Air, tile_pos);
+                    GetAirSourceData(graphics, air_tile_set, tile_pos);
                 if (air_source_data != nullptr) {
                     SDL_Texture* const air_texture = GetTileTexture(graphics, *air_source_data);
                     if (air_texture != nullptr) {
@@ -166,7 +166,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
 
 void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureTerrainLightingCache(state);
-    const TileSet tile_set = TileSetForStageType(state.stage.stage_type);
+    
     const Vec2 visible_tl_wc = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom);
     const Vec2 visible_br_wc =
         graphics.camera.target +
@@ -194,7 +194,7 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                     tile_y * static_cast<int>(kTileSize)
                 );
                 const TileSourceData* const tile_source_data =
-                    GetTileSourceData(graphics, tile_set, Tile::Dirt, tile_pos);
+                    GetTileSourceData(graphics, state.stage.stage_border_tile, tile_pos);
                 if (tile_source_data == nullptr) {
                     continue;
                 }

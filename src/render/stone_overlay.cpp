@@ -49,11 +49,12 @@ void RenderStoneEntityOverlay(
     const Vec2& render_position,
     const Vec2& render_size
 ) {
+    (void)state;
+
     if (render_size.x <= 0.0F || render_size.y <= 0.0F) {
         return;
     }
 
-    const TileSet tile_set = TileSetForStageType(state.stage.stage_type);
     const SDL_FRect overlay_dst = WorldRectToScreen(graphics, render_position, render_size);
     const SDL_Rect clip_rect = ToScreenClipRect(overlay_dst);
     SDL_SetRenderClipRect(renderer, &clip_rect);
@@ -71,8 +72,7 @@ void RenderStoneEntityOverlay(
             const TileSourceData* const tile_source_data =
                 GetTileSourceData(
                     graphics,
-                    tile_set,
-                    Tile::Block,
+                    Tile::CaveBlock,
                     variation_anchor + IVec2::New(tile_x * tile_size, tile_y * tile_size)
                 );
             if (tile_source_data == nullptr) {

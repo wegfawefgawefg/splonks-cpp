@@ -17,85 +17,66 @@ constexpr std::size_t TileSetToIndex(TileSet tile_set) {
     return static_cast<std::size_t>(tile_set);
 }
 
-constexpr std::size_t TileSourceSlotIndex(TileSet tile_set, Tile tile) {
-    return (TileSetToIndex(tile_set) * kTileCount) + TileToIndex(tile);
-}
-
 std::uint64_t TileVariationCacheKey(const IVec2& tile_pos) {
     return (static_cast<std::uint64_t>(static_cast<std::uint32_t>(tile_pos.x)) << 32U) |
            static_cast<std::uint32_t>(tile_pos.y);
 }
 
 struct TileSourceNameGroup {
-    TileSet tile_set;
     Tile tile;
     std::array<std::uint32_t, 3> name_hashes{};
     std::uint32_t count = 0;
 };
 
-constexpr std::array<TileSourceNameGroup, 58> kTileSourceNameGroups{{
-    {TileSet::Cave, Tile::Air, {HashFrameDataIdConstexpr("cave_air_0"), HashFrameDataIdConstexpr("cave_air_1"), HashFrameDataIdConstexpr("cave_air_2")}, 3},
-    {TileSet::Cave, Tile::Dirt, {HashFrameDataIdConstexpr("cave_dirt_0"), HashFrameDataIdConstexpr("cave_dirt_1"), HashFrameDataIdConstexpr("cave_dirt_2")}, 3},
-    {TileSet::Cave, Tile::Gold, {HashFrameDataIdConstexpr("cave_gold_0"), 0, 0}, 1},
-    {TileSet::Cave, Tile::GoldBig, {HashFrameDataIdConstexpr("cave_gold_1"), 0, 0}, 1},
-    {TileSet::Cave, Tile::Block, {HashFrameDataIdConstexpr("cave_block_0"), 0, 0}, 1},
-    {TileSet::Cave, Tile::ShopWall, {HashFrameDataIdConstexpr("cave_shop_wall"), 0, 0}, 1},
-    {TileSet::Cave, Tile::SmoothWall, {HashFrameDataIdConstexpr("cave_smooth_wall"), 0, 0}, 1},
-    {TileSet::Cave, Tile::Glass, {HashFrameDataIdConstexpr("glass"), 0, 0}, 1},
-    {TileSet::Cave, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
-    {TileSet::Cave, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
-    {TileSet::Cave, Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},
-    {TileSet::Cave, Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {TileSet::Cave, Tile::Entrance, {HashFrameDataIdConstexpr("entrance"), 0, 0}, 1},
-    {TileSet::Cave, Tile::Exit, {HashFrameDataIdConstexpr("exit"), 0, 0}, 1},
+struct AirSourceNameGroup {
+    TileSet tile_set;
+    std::array<std::uint32_t, 3> name_hashes{};
+    std::uint32_t count = 0;
+};
 
-    {TileSet::Ice, Tile::Air, {HashFrameDataIdConstexpr("ice_air_0"), HashFrameDataIdConstexpr("ice_air_1"), HashFrameDataIdConstexpr("ice_air_2")}, 3},
-    {TileSet::Ice, Tile::Dirt, {HashFrameDataIdConstexpr("ice_dirt_0"), HashFrameDataIdConstexpr("ice_dirt_1"), HashFrameDataIdConstexpr("ice_dirt_2")}, 3},
-    {TileSet::Ice, Tile::Gold, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
-    {TileSet::Ice, Tile::GoldBig, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
-    {TileSet::Ice, Tile::Block, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
-    {TileSet::Ice, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
-    {TileSet::Ice, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
-    {TileSet::Ice, Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},
-    {TileSet::Ice, Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {TileSet::Ice, Tile::Entrance, {HashFrameDataIdConstexpr("entrance"), 0, 0}, 1},
-    {TileSet::Ice, Tile::Exit, {HashFrameDataIdConstexpr("exit"), 0, 0}, 1},
+constexpr std::array<TileSourceNameGroup, 29> kTileSourceNameGroups{{
+    {Tile::CaveDirt, {HashFrameDataIdConstexpr("cave_dirt_0"), HashFrameDataIdConstexpr("cave_dirt_1"), HashFrameDataIdConstexpr("cave_dirt_2")}, 3},
+    {Tile::CaveGold, {HashFrameDataIdConstexpr("cave_gold_0"), 0, 0}, 1},
+    {Tile::CaveGoldBig, {HashFrameDataIdConstexpr("cave_gold_1"), 0, 0}, 1},
+    {Tile::CaveBlock, {HashFrameDataIdConstexpr("cave_block_0"), 0, 0}, 1},
+    {Tile::CaveShopWall, {HashFrameDataIdConstexpr("cave_shop_wall"), 0, 0}, 1},
+    {Tile::CaveSmoothWall, {HashFrameDataIdConstexpr("cave_smooth_wall"), 0, 0}, 1},
+    {Tile::Glass, {HashFrameDataIdConstexpr("glass"), 0, 0}, 1},
 
-    {TileSet::Jungle, Tile::Air, {HashFrameDataIdConstexpr("jungle_air_0"), HashFrameDataIdConstexpr("jungle_air_1"), HashFrameDataIdConstexpr("jungle_air_2")}, 3},
-    {TileSet::Jungle, Tile::Dirt, {HashFrameDataIdConstexpr("jungle_dirt_0"), HashFrameDataIdConstexpr("jungle_dirt_1"), HashFrameDataIdConstexpr("jungle_dirt_2")}, 3},
-    {TileSet::Jungle, Tile::Gold, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::GoldBig, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::Block, {HashFrameDataIdConstexpr("jungle_block_0"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::Entrance, {HashFrameDataIdConstexpr("entrance"), 0, 0}, 1},
-    {TileSet::Jungle, Tile::Exit, {HashFrameDataIdConstexpr("exit"), 0, 0}, 1},
+    {Tile::IceDirt, {HashFrameDataIdConstexpr("ice_dirt_0"), HashFrameDataIdConstexpr("ice_dirt_1"), HashFrameDataIdConstexpr("ice_dirt_2")}, 3},
+    {Tile::IceGold, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
+    {Tile::IceGoldBig, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
+    {Tile::IceBlock, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
 
-    {TileSet::Temple, Tile::Air, {HashFrameDataIdConstexpr("temple_air_0"), HashFrameDataIdConstexpr("temple_air_1"), HashFrameDataIdConstexpr("temple_air_2")}, 3},
-    {TileSet::Temple, Tile::Dirt, {HashFrameDataIdConstexpr("temple_dirt_0"), HashFrameDataIdConstexpr("temple_dirt_1"), HashFrameDataIdConstexpr("temple_dirt_2")}, 3},
-    {TileSet::Temple, Tile::Gold, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
-    {TileSet::Temple, Tile::GoldBig, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
-    {TileSet::Temple, Tile::Block, {HashFrameDataIdConstexpr("temple_block_0"), 0, 0}, 1},
-    {TileSet::Temple, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
-    {TileSet::Temple, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
-    {TileSet::Temple, Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},
-    {TileSet::Temple, Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {TileSet::Temple, Tile::Entrance, {HashFrameDataIdConstexpr("entrance"), 0, 0}, 1},
-    {TileSet::Temple, Tile::Exit, {HashFrameDataIdConstexpr("exit"), 0, 0}, 1},
+    {Tile::JungleDirt, {HashFrameDataIdConstexpr("jungle_dirt_0"), HashFrameDataIdConstexpr("jungle_dirt_1"), HashFrameDataIdConstexpr("jungle_dirt_2")}, 3},
+    {Tile::JungleGold, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
+    {Tile::JungleGoldBig, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
+    {Tile::JungleBlock, {HashFrameDataIdConstexpr("jungle_block_0"), 0, 0}, 1},
 
-    {TileSet::Boss, Tile::Air, {HashFrameDataIdConstexpr("boss_air_0"), HashFrameDataIdConstexpr("boss_air_1"), HashFrameDataIdConstexpr("boss_air_2")}, 3},
-    {TileSet::Boss, Tile::Dirt, {HashFrameDataIdConstexpr("boss_dirt_0"), HashFrameDataIdConstexpr("boss_dirt_1"), HashFrameDataIdConstexpr("boss_dirt_2")}, 3},
-    {TileSet::Boss, Tile::Gold, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},
-    {TileSet::Boss, Tile::GoldBig, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},
-    {TileSet::Boss, Tile::Block, {HashFrameDataIdConstexpr("boss_block_0"), 0, 0}, 1},
-    {TileSet::Boss, Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
-    {TileSet::Boss, Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
-    {TileSet::Boss, Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},
-    {TileSet::Boss, Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {TileSet::Boss, Tile::Entrance, {HashFrameDataIdConstexpr("entrance"), 0, 0}, 1},
-    {TileSet::Boss, Tile::Exit, {HashFrameDataIdConstexpr("exit"), 0, 0}, 1},
+    {Tile::TempleDirt, {HashFrameDataIdConstexpr("temple_dirt_0"), HashFrameDataIdConstexpr("temple_dirt_1"), HashFrameDataIdConstexpr("temple_dirt_2")}, 3},
+    {Tile::TempleGold, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
+    {Tile::TempleGoldBig, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
+    {Tile::TempleBlock, {HashFrameDataIdConstexpr("temple_block_0"), 0, 0}, 1},
+
+    {Tile::BossDirt, {HashFrameDataIdConstexpr("boss_dirt_0"), HashFrameDataIdConstexpr("boss_dirt_1"), HashFrameDataIdConstexpr("boss_dirt_2")}, 3},
+    {Tile::BossGold, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},
+    {Tile::BossGoldBig, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},
+    {Tile::BossBlock, {HashFrameDataIdConstexpr("boss_block_0"), 0, 0}, 1},
+
+    {Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
+    {Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
+    {Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},
+    {Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
+    {Tile::Entrance, {HashFrameDataIdConstexpr("entrance"), 0, 0}, 1},
+    {Tile::Exit, {HashFrameDataIdConstexpr("exit"), 0, 0}, 1},
+}};
+
+constexpr std::array<AirSourceNameGroup, 5> kAirSourceNameGroups{{
+    {TileSet::Cave, {HashFrameDataIdConstexpr("cave_air_0"), HashFrameDataIdConstexpr("cave_air_1"), HashFrameDataIdConstexpr("cave_air_2")}, 3},
+    {TileSet::Ice, {HashFrameDataIdConstexpr("ice_air_0"), HashFrameDataIdConstexpr("ice_air_1"), HashFrameDataIdConstexpr("ice_air_2")}, 3},
+    {TileSet::Jungle, {HashFrameDataIdConstexpr("jungle_air_0"), HashFrameDataIdConstexpr("jungle_air_1"), HashFrameDataIdConstexpr("jungle_air_2")}, 3},
+    {TileSet::Temple, {HashFrameDataIdConstexpr("temple_air_0"), HashFrameDataIdConstexpr("temple_air_1"), HashFrameDataIdConstexpr("temple_air_2")}, 3},
+    {TileSet::Boss, {HashFrameDataIdConstexpr("boss_air_0"), HashFrameDataIdConstexpr("boss_air_1"), HashFrameDataIdConstexpr("boss_air_2")}, 3},
 }};
 
 const FrameData& RequireSingleFrame(
@@ -115,27 +96,85 @@ const FrameData& RequireSingleFrame(
     return frame_data_db.frames[animation.frame_indices.front()];
 }
 
-const TileSourceSpan* FindTileSourceSpan(const TileSourceDb& tile_source_db, TileSet tile_set, Tile tile) {
-    const std::size_t slot_index = TileSourceSlotIndex(tile_set, tile);
-    if (slot_index >= tile_source_db.spans.size()) {
+const TileSourceSpan* FindTileSourceSpan(const TileSourceDb& tile_source_db, Tile tile) {
+    const std::size_t slot_index = TileToIndex(tile);
+    if (slot_index >= tile_source_db.tile_spans.size()) {
         return nullptr;
     }
-    const TileSourceSpan& span = tile_source_db.spans[slot_index];
+    const TileSourceSpan& span = tile_source_db.tile_spans[slot_index];
     if (span.source_count == 0) {
         return nullptr;
     }
     return &span;
 }
 
+const TileSourceSpan* FindAirSourceSpan(const TileSourceDb& tile_source_db, TileSet tile_set) {
+    const std::size_t slot_index = TileSetToIndex(tile_set);
+    if (slot_index >= tile_source_db.air_spans.size()) {
+        return nullptr;
+    }
+    const TileSourceSpan& span = tile_source_db.air_spans[slot_index];
+    if (span.source_count == 0) {
+        return nullptr;
+    }
+    return &span;
+}
+
+const TileSourceData* GetSourceDataForSpan(
+    Graphics& graphics,
+    const TileSourceSpan* span,
+    const IVec2& tile_pos
+) {
+    if (span == nullptr || span->first_source_index >= graphics.tile_source_db.sources.size()) {
+        return nullptr;
+    }
+
+    std::uint32_t variation = 0;
+    if (span->source_count > 1) {
+        const std::uint64_t key = TileVariationCacheKey(tile_pos);
+        const auto found = graphics.tile_variations_cache.find(key);
+        if (found != graphics.tile_variations_cache.end()) {
+            variation = found->second % span->source_count;
+        } else {
+            const std::uint32_t seed =
+                static_cast<std::uint32_t>(static_cast<std::uint32_t>(tile_pos.x) * 73856093U) ^
+                static_cast<std::uint32_t>(static_cast<std::uint32_t>(tile_pos.y) * 19349663U);
+            variation = seed % span->source_count;
+            graphics.tile_variations_cache.insert({key, variation});
+        }
+    }
+
+    const std::size_t source_index =
+        static_cast<std::size_t>(span->first_source_index + variation);
+    if (source_index >= graphics.tile_source_db.sources.size()) {
+        return nullptr;
+    }
+    return &graphics.tile_source_db.sources[source_index];
+}
+
 } // namespace
 
 TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db) {
     TileSourceDb tile_source_db;
-    tile_source_db.spans.resize(kTileSetCount * kTileCount);
+    tile_source_db.tile_spans.resize(kTileCount);
 
     for (const TileSourceNameGroup& group : kTileSourceNameGroups) {
-        TileSourceSpan& span =
-            tile_source_db.spans[TileSourceSlotIndex(group.tile_set, group.tile)];
+        TileSourceSpan& span = tile_source_db.tile_spans[TileToIndex(group.tile)];
+        span.first_source_index = static_cast<std::uint32_t>(tile_source_db.sources.size());
+        span.source_count = group.count;
+
+        for (std::uint32_t i = 0; i < group.count; ++i) {
+            const FrameData& frame_data =
+                RequireSingleFrame(frame_data_db, frame_data_db.animation_indices_by_id, group.name_hashes[i]);
+            tile_source_db.sources.push_back(TileSourceData{
+                .image_id = frame_data.image_id,
+                .sample_rect = frame_data.sample_rect,
+            });
+        }
+    }
+
+    for (const AirSourceNameGroup& group : kAirSourceNameGroups) {
+        TileSourceSpan& span = tile_source_db.air_spans[TileSetToIndex(group.tile_set)];
         span.first_source_index = static_cast<std::uint32_t>(tile_source_db.sources.size());
         span.source_count = group.count;
 
@@ -179,38 +218,15 @@ TileSet TileSetForStageType(StageType stage_type) {
     return TileSet::Cave;
 }
 
-const TileSourceData* GetTileSourceData(
-    Graphics& graphics,
-    TileSet tile_set,
-    Tile tile,
-    const IVec2& tile_pos
-) {
-    const TileSourceSpan* const span = FindTileSourceSpan(graphics.tile_source_db, tile_set, tile);
-    if (span == nullptr || span->first_source_index >= graphics.tile_source_db.sources.size()) {
+const TileSourceData* GetTileSourceData(Graphics& graphics, Tile tile, const IVec2& tile_pos) {
+    if (tile == Tile::Air) {
         return nullptr;
     }
+    return GetSourceDataForSpan(graphics, FindTileSourceSpan(graphics.tile_source_db, tile), tile_pos);
+}
 
-    std::uint32_t variation = 0;
-    if (span->source_count > 1) {
-        const std::uint64_t key = TileVariationCacheKey(tile_pos);
-        const auto found = graphics.tile_variations_cache.find(key);
-        if (found != graphics.tile_variations_cache.end()) {
-            variation = found->second % span->source_count;
-        } else {
-            const std::uint32_t seed =
-                static_cast<std::uint32_t>(static_cast<std::uint32_t>(tile_pos.x) * 73856093U) ^
-                static_cast<std::uint32_t>(static_cast<std::uint32_t>(tile_pos.y) * 19349663U);
-            variation = seed % span->source_count;
-            graphics.tile_variations_cache.insert({key, variation});
-        }
-    }
-
-    const std::size_t source_index =
-        static_cast<std::size_t>(span->first_source_index + variation);
-    if (source_index >= graphics.tile_source_db.sources.size()) {
-        return nullptr;
-    }
-    return &graphics.tile_source_db.sources[source_index];
+const TileSourceData* GetAirSourceData(Graphics& graphics, TileSet tile_set, const IVec2& tile_pos) {
+    return GetSourceDataForSpan(graphics, FindAirSourceSpan(graphics.tile_source_db, tile_set), tile_pos);
 }
 
 SDL_Texture* GetTileTexture(const Graphics& graphics, const TileSourceData& tile_source_data) {

@@ -52,7 +52,7 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
-    stage.stage_border_tile = Tile::Dirt;
+    stage.stage_border_tile = BorderTileForStageType(stage.stage_type);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
 
     const int wall_x = std::clamp(kHangTestWallX, 1, stage_width - 2);
@@ -66,7 +66,7 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
 
     for (int y = top_y; y < stage_height; ++y) {
         for (int x = 0; x <= wall_x; ++x) {
-            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = Tile::Dirt;
+            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = DirtTileForFamilyTile(stage.stage_border_tile);
         }
     }
 
@@ -88,12 +88,12 @@ Stage MakeStompTestStage() {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
-    stage.stage_border_tile = Tile::Dirt;
+    stage.stage_border_tile = BorderTileForStageType(stage.stage_type);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
 
     for (int x = 0; x < kStompTestStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kStompTestStageHeightTiles - 1)][static_cast<std::size_t>(x)] =
-            Tile::Dirt;
+            DirtTileForFamilyTile(stage.stage_border_tile);
     }
 
     return stage;

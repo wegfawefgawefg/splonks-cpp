@@ -38,11 +38,12 @@ struct Room {
 };
 
 RoomType RandomRoomType();
-std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type);
+std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type, Tile family_tile);
 void PasteTemplate(std::vector<std::vector<TemplateTile>>& parent,
                    const std::vector<std::vector<TemplateTile>>& child, const UVec2& location,
                    bool flip_horizontal, bool flip_vertical);
 std::vector<std::vector<Tile>> ResolveRoomTemplate(
-    const std::vector<std::vector<TemplateTile>>& room_template);
+    const std::vector<std::vector<TemplateTile>>& room_template,
+    Tile family_tile);
 
 } // namespace splonks

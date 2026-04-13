@@ -4,6 +4,7 @@
 #include "stage.hpp"
 #include "tile.hpp"
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
@@ -35,17 +36,14 @@ struct TileSourceSpan {
 
 struct TileSourceDb {
     std::vector<TileSourceData> sources;
-    std::vector<TileSourceSpan> spans;
+    std::vector<TileSourceSpan> tile_spans;
+    std::array<TileSourceSpan, kTileSetCount> air_spans{};
 };
 
 TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db);
 TileSet TileSetForStageType(StageType stage_type);
-const TileSourceData* GetTileSourceData(
-    Graphics& graphics,
-    TileSet tile_set,
-    Tile tile,
-    const IVec2& tile_pos
-);
+const TileSourceData* GetTileSourceData(Graphics& graphics, Tile tile, const IVec2& tile_pos);
+const TileSourceData* GetAirSourceData(Graphics& graphics, TileSet tile_set, const IVec2& tile_pos);
 SDL_Texture* GetTileTexture(const Graphics& graphics, const TileSourceData& tile_source_data);
 
 } // namespace splonks

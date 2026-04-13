@@ -57,7 +57,7 @@ struct Stage {
     std::vector<StageEntitySpawn> entity_spawns;
     std::vector<BackgroundStamp> background_stamps;
     float gravity = 0.3F;
-    Tile stage_border_tile = Tile::Dirt;
+    Tile stage_border_tile = Tile::CaveDirt;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
 
     static const UVec2 kShape;

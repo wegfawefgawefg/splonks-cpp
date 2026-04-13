@@ -541,8 +541,9 @@ RoomTemplateSelection SelectRoomTemplate(int room_code, bool is_start_room, bool
     }
 }
 
-Tile RandomBrickOrBlockTile() {
-    return rng::RandomIntInclusive(1, 10) == 1 ? Tile::Block : Tile::Dirt;
+Tile RandomBrickOrBlockTile(Tile family_tile) {
+    return rng::RandomIntInclusive(1, 10) == 1 ? BlockTileForFamilyTile(family_tile)
+                                              : DirtTileForFamilyTile(family_tile);
 }
 
 EntityType GetShopSignEntityType(ShopType shop_type) {
@@ -978,17 +979,17 @@ void AddMinesEmbeddedTreasure(Stage& stage) {
         for (int tile_x = 0; tile_x < stage_width; ++tile_x) {
             const IVec2 tile_pos = IVec2::New(tile_x, tile_y);
             if (stage.GetTile(static_cast<unsigned int>(tile_x), static_cast<unsigned int>(tile_y)) !=
-                Tile::Dirt) {
+                DirtTileForFamilyTile(stage.stage_border_tile)) {
                 continue;
             }
 
             const int visible_gold_roll = rng::RandomIntInclusive(1, 100);
             if (visible_gold_roll < 20) {
-                stage.SetTile(tile_pos, Tile::Gold);
+                stage.SetTile(tile_pos, GoldTileForFamilyTile(stage.stage_border_tile));
                 continue;
             }
             if (visible_gold_roll < 30) {
-                stage.SetTile(tile_pos, Tile::GoldBig);
+                stage.SetTile(tile_pos, GoldBigTileForFamilyTile(stage.stage_border_tile));
                 continue;
             }
 
@@ -1260,10 +1261,12 @@ ResolvedRoom ResolveRoom(
 
             switch (glyph) {
             case '1':
-                tile = RandomBrickOrBlockTile();
+                tile = RandomBrickOrBlockTile(existing_stage.stage_border_tile);
                 break;
             case '2':
-                tile = rng::RandomIntInclusive(1, 2) == 1 ? RandomBrickOrBlockTile() : Tile::Air;
+                tile = rng::RandomIntInclusive(1, 2) == 1
+                           ? RandomBrickOrBlockTile(existing_stage.stage_border_tile)
+                           : Tile::Air;
                 break;
             case '4':
                 if (rng::RandomIntInclusive(1, 4) == 1) {
@@ -1286,13 +1289,13 @@ ResolvedRoom ResolveRoom(
                 tile = Tile::LadderTop;
                 break;
             case '.':
-                tile = Tile::ShopWall;
+                tile = ShopWallTileForFamilyTile(existing_stage.stage_border_tile);
                 break;
             case 'b':
-                tile = Tile::SmoothWall;
+                tile = SmoothWallTileForFamilyTile(existing_stage.stage_border_tile);
                 break;
             case '+':
-                tile = Tile::Glass;
+                tile = GlassTileForFamilyTile(existing_stage.stage_border_tile);
                 break;
             case 'A':
                 room.entity_spawns.push_back(StageEntitySpawn{
@@ -1434,7 +1437,7 @@ ResolvedRoom ResolveRoom(
                 break;
             case 's':
                 if (rng::RandomIntInclusive(1, 10) != 1 && rng::RandomIntInclusive(1, 2) == 1) {
-                    tile = Tile::Dirt;
+                    tile = DirtTileForFamilyTile(existing_stage.stage_border_tile);
                 }
                 break;
             case 'S':
@@ -1450,7 +1453,7 @@ ResolvedRoom ResolveRoom(
                 });
                 break;
             case 'M':
-                tile = Tile::Dirt;
+                tile = DirtTileForFamilyTile(existing_stage.stage_border_tile);
                 room.entity_spawns.push_back(StageEntitySpawn{
                     .type_ = EntityType::Mattock,
                     .pos = tile_pos,
@@ -1545,7 +1548,6 @@ Stage GenerateStage(StageType stage_type) {
     stage.rooms = std::move(room_codes);
     stage.path = layout.path;
     stage.gravity = 0.3F;
-    stage.stage_border_tile = Tile::Dirt;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     AddMinesEmbeddedTreasure(stage);
     AddMinesTreasure(stage);

@@ -47,7 +47,7 @@ Stage Stage::NewBlank() {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
-    stage.stage_border_tile = Tile::Dirt;
+    stage.stage_border_tile = BorderTileForStageType(stage.stage_type);
     stage.camera_clamp_margin = Vec2::New(0.0F, 0.0F);
     return stage;
 }
@@ -120,6 +120,7 @@ Stage Stage::New(StageType stage_type) {
     std::vector<std::vector<Tile>> tiles(
         static_cast<std::size_t>(kShape.y),
         std::vector<Tile>(static_cast<std::size_t>(kShape.x), Tile::Air));
+    const Tile border_tile = BorderTileForStageType(stage_type);
 
     for (unsigned int room_y = 0; room_y < kRoomLayout.y; ++room_y) {
         for (unsigned int room_x = 0; room_x < kRoomLayout.x; ++room_x) {
@@ -127,7 +128,7 @@ Stage Stage::New(StageType stage_type) {
             const RoomType room_type =
                 static_cast<RoomType>(rooms[static_cast<std::size_t>(room_y)]
                                            [static_cast<std::size_t>(room_x)]);
-            const std::vector<std::vector<Tile>> room = GenRoom(room_type, stage_type);
+            const std::vector<std::vector<Tile>> room = GenRoom(room_type, stage_type, border_tile);
 
             const bool flip = RandomBool();
             for (unsigned int tile_y = 0; tile_y < kRoomShape.y; ++tile_y) {
@@ -154,7 +155,7 @@ Stage Stage::New(StageType stage_type) {
     stage.rooms = std::move(rooms);
     stage.path = std::move(path);
     stage.gravity = 0.3F;
-    stage.stage_border_tile = Tile::Dirt;
+    stage.stage_border_tile = BorderTileForStageType(stage.stage_type);
     stage.camera_clamp_margin = ToVec2(kRoomShape * kTileSize) / 2.0F;
     return stage;
 }

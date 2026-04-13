@@ -38,7 +38,8 @@ void PrintTileSourceDataSummary() {
 
     std::cout << "tile images: " << frame_data_db.image_paths.size() << '\n';
     std::cout << "tile sources: " << tile_source_db.sources.size() << '\n';
-    std::cout << "tile spans: " << tile_source_db.spans.size() << '\n';
+    std::cout << "tile spans: " << tile_source_db.tile_spans.size() << '\n';
+    std::cout << "air spans: " << tile_source_db.air_spans.size() << '\n';
     for (const std::string& image_path : frame_data_db.image_paths) {
         std::cout << "  " << image_path << '\n';
     }
