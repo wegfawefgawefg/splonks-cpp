@@ -85,7 +85,6 @@ struct Entity {
     EntityAiState last_ai_state = EntityAiState::Idle;
     std::uint32_t movement_flags = 0;
     std::uint32_t health = 0;
-    std::uint32_t last_health = 0;
     bool hurt_on_contact = false;
     float attack_weight = 0.0F;
     float weight = 0.0F;

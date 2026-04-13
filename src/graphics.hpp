@@ -62,7 +62,6 @@ struct Graphics {
     FrameDataDb frame_data_db;
     std::vector<SDL_Texture*> frame_data_images;
     TileSourceDb tile_source_db;
-    SDL_Texture* special_effects_texture = nullptr;
     std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
     std::string font_path = "assets/fonts/DejaVuSans.ttf";
     LoadedFont menu_title_font;

@@ -191,6 +191,6 @@ struct State {
 };
 
 bool IsStageWon(const State& state);
-void StepSpecialEffects(State& state);
+void StepSpecialEffects(State& state, const Graphics& graphics, float dt);
 
 } // namespace splonks

@@ -84,6 +84,7 @@ FrameData ToFrameData(const RawFrameData& raw_frame_data) {
     frame_data.duration = raw_frame_data.duration > 0 ? raw_frame_data.duration : 1;
     frame_data.draw_offset = raw_frame_data.offset;
     frame_data.center = raw_frame_data.center;
+    frame_data.emit_point = raw_frame_data.emit_point;
     frame_data.tags = raw_frame_data.tags;
     frame_data.pbox =
         raw_frame_data.has_pbox ? raw_frame_data.pbox : DefaultBoxFromSampleRect(raw_frame_data.aabb);

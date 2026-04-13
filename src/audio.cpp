@@ -100,6 +100,8 @@ std::vector<SoundEffect> AllSoundEffects() {
         SoundEffect::Jetpack2,
         SoundEffect::Equip,
         SoundEffect::Throw,
+        SoundEffect::PistolFire,
+        SoundEffect::GunEmpty,
         SoundEffect::BombExplosion,
         SoundEffect::AnimalCrush1,
         SoundEffect::AnimalCrush2,
@@ -382,6 +384,10 @@ const char* GetSoundFileName(SoundEffect sound_effect) {
         return "equip";
     case SoundEffect::Throw:
         return "throw";
+    case SoundEffect::PistolFire:
+        return "pistol_fire";
+    case SoundEffect::GunEmpty:
+        return "gun_empty";
     case SoundEffect::BombExplosion:
         return "bomb_explosion";
     case SoundEffect::AnimalCrush1:

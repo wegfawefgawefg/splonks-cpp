@@ -14,6 +14,7 @@ enum class NestedField {
     Aabb,
     Offset,
     Center,
+    EmitPoint,
     Pbox,
     Cbox,
 };
@@ -161,6 +162,13 @@ void AssignNestedInt(
             frame_data.center.y = value;
         }
         break;
+    case NestedField::EmitPoint:
+        if (key == "x") {
+            frame_data.emit_point.x = value;
+        } else if (key == "y") {
+            frame_data.emit_point.y = value;
+        }
+        break;
     case NestedField::Pbox:
         frame_data.has_pbox = true;
         if (key == "x") {
@@ -279,6 +287,8 @@ RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
                     nested_field = NestedField::Offset;
                 } else if (key == "center") {
                     nested_field = NestedField::Center;
+                } else if (key == "emit_point") {
+                    nested_field = NestedField::EmitPoint;
                 } else if (key == "pbox") {
                     nested_field = NestedField::Pbox;
                 } else if (key == "cbox") {

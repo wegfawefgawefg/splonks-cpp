@@ -414,37 +414,37 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
 }
 
 void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
-    if (graphics.special_effects_texture == nullptr) {
-        return;
-    }
     for (const auto& special_effect : state.special_effects) {
+        const FrameDataAnimator& animator = special_effect->GetFrameDataAnimator();
+        if (!animator.HasAnimation()) {
+            continue;
+        }
+
+        const FrameData* const frame_data =
+            graphics.frame_data_db.FindFrame(animator.animation_id, animator.current_frame);
+        if (frame_data == nullptr) {
+            continue;
+        }
+        SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
+        if (texture == nullptr) {
+            continue;
+        }
+
         const Vec2 pos = special_effect->GetPos();
         const Vec2 size = special_effect->GetSize();
         const float rotation = special_effect->GetRot();
-        const SampleRegion& sample_region = special_effect->GetSampleRegion();
         const float alpha = special_effect->GetAlpha();
         const Vec2 half_size = size / 2.0F;
-        SDL_SetTextureAlphaMod(
-            graphics.special_effects_texture,
-            static_cast<Uint8>(alpha * 255.0F)
-        );
-        const SDL_FRect src{
-            static_cast<float>(sample_region.pos.x),
-                static_cast<float>(sample_region.pos.y),
-                static_cast<float>(sample_region.size.x),
-                static_cast<float>(sample_region.size.y),
-        };
         const SDL_FRect dst = WorldRectToScreen(graphics, pos - half_size, size);
         const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
-        SDL_RenderTextureRotated(
-            renderer,
-            graphics.special_effects_texture,
-            &src,
-            &dst,
-            rotation,
-            &center,
-            SDL_FLIP_NONE
-        );
+        SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
+        const SDL_FRect src{
+            static_cast<float>(frame_data->sample_rect.x),
+            static_cast<float>(frame_data->sample_rect.y),
+            static_cast<float>(frame_data->sample_rect.w),
+            static_cast<float>(frame_data->sample_rect.h),
+        };
+        SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, SDL_FLIP_NONE);
     }
 }
 

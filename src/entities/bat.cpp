@@ -1,4 +1,5 @@
 #include "entities/bat.hpp"
+#include "on_damage_effects.hpp"
 
 #include "audio.hpp"
 #include "entity/archetype.hpp"
@@ -79,6 +80,8 @@ extern const EntityArchetype kBatArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .damage_animation = frame_data_ids::BloodBall,
+    .damage_sound = SoundEffect::BatSqueak,
     .step_logic = StepEntityLogicAsBat,
     .step_physics = StepEntityPhysicsAsBat,
     .entity_label_a = EntityLabel::AttackThis,

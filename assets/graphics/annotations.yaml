@@ -1,4 +1,364 @@
 sprites:
+  - path: "special_effects.png"
+    aabb:
+      x: 0
+      y: 0
+      w: 45
+      h: 41
+    name: "big_explosion"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 60
+      y: 0
+      w: 10
+      h: 8
+    name: "little_explosion"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 63
+      y: 22
+      w: 7
+      h: 12
+    name: "spark"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 61
+      y: 12
+      w: 9
+      h: 7
+    name: "pow"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 71
+      y: 0
+      w: 10
+      h: 10
+    name: "little_smoke"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 89
+      y: 5
+      w: 2
+      h: 1
+    name: "little_brown_shard"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 63
+      y: 38
+      w: 16
+      h: 17
+    name: "blood_ball"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 0
+      y: 269
+      w: 65
+      h: 61
+    name: "big_smoke"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 0
+      y: 164
+      w: 45
+      h: 42
+    name: "grenade_boom"
+    frame: 0
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 0
+      y: 40
+      w: 62
+      h: 60
+    name: "grenade_boom"
+    frame: 1
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 0
+      y: 101
+      w: 61
+      h: 62
+    name: "grenade_boom"
+    frame: 2
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "special_effects.png"
+    aabb:
+      x: 0
+      y: 206
+      w: 65
+      h: 61
+    name: "grenade_boom"
+    frame: 3
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 0
@@ -26,6 +386,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -53,6 +416,9 @@ sprites:
       w: 8
       h: 13
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 32
@@ -80,6 +446,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 48
@@ -107,6 +476,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 64
@@ -134,6 +506,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 290
@@ -161,6 +536,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 80
@@ -188,6 +566,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 96
@@ -215,6 +596,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 112
@@ -242,6 +626,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 288
@@ -269,6 +656,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 288
@@ -296,6 +686,9 @@ sprites:
       w: 12
       h: 4
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 304
@@ -323,6 +716,9 @@ sprites:
       w: 12
       h: 4
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 320
@@ -350,6 +746,9 @@ sprites:
       w: 12
       h: 2
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 224
@@ -377,6 +776,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 240
@@ -404,6 +806,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 160
@@ -431,6 +836,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 176
@@ -448,8 +856,8 @@ sprites:
       y: 11
     tags: []
     pbox:
-      x: 0
-      y: 7
+      x: 2
+      y: 10
       w: 14
       h: 6
     cbox:
@@ -458,6 +866,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 192
@@ -485,6 +896,9 @@ sprites:
       w: 9
       h: 10
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 208
@@ -512,6 +926,9 @@ sprites:
       w: 9
       h: 10
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 66
@@ -539,6 +956,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 74
@@ -566,6 +986,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 82
@@ -593,6 +1016,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 90
@@ -620,6 +1046,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 98
@@ -647,6 +1076,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 106
@@ -674,6 +1106,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 114
@@ -701,6 +1136,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 17
@@ -728,6 +1166,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 36
@@ -755,6 +1196,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 96
@@ -782,6 +1226,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 104
@@ -809,6 +1256,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 112
@@ -836,6 +1286,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 120
@@ -863,6 +1316,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 128
@@ -890,6 +1346,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 136
@@ -917,6 +1376,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 144
@@ -944,6 +1406,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 152
@@ -971,6 +1436,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 160
@@ -998,6 +1466,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 66
@@ -1025,6 +1496,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 74
@@ -1052,6 +1526,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 82
@@ -1079,6 +1556,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 90
@@ -1106,6 +1586,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -1133,6 +1616,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -1160,6 +1646,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 24
@@ -1187,6 +1676,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 1
@@ -1214,6 +1706,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 9
@@ -1241,6 +1736,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 18
@@ -1268,6 +1766,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 256
@@ -1295,6 +1796,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 288
@@ -1303,7 +1807,7 @@ sprites:
       h: 16
     name: "player_falling"
     frame: 0
-    duration: 1
+    duration: 8
     offset:
       x: -1
       y: 0
@@ -1322,6 +1826,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 304
@@ -1330,7 +1837,7 @@ sprites:
       h: 16
     name: "player_falling"
     frame: 1
-    duration: 1
+    duration: 8
     offset:
       x: 0
       y: 0
@@ -1349,6 +1856,9 @@ sprites:
       w: 8
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 3
@@ -1376,6 +1886,9 @@ sprites:
       w: 9
       h: 10
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 17
@@ -1403,6 +1916,9 @@ sprites:
       w: 9
       h: 10
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 33
@@ -1430,6 +1946,9 @@ sprites:
       w: 7
       h: 10
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 17
@@ -1457,6 +1976,9 @@ sprites:
       w: 4
       h: 4
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 33
@@ -1484,6 +2006,9 @@ sprites:
       w: 5
       h: 5
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 6
@@ -1511,6 +2036,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 6
@@ -1538,6 +2066,9 @@ sprites:
       w: 6
       h: 10
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -1565,6 +2096,9 @@ sprites:
       w: 6
       h: 5
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 34
@@ -1592,6 +2126,9 @@ sprites:
       w: 6
       h: 5
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 49
@@ -1619,6 +2156,9 @@ sprites:
       w: 13
       h: 3
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 35
@@ -1646,6 +2186,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 43
@@ -1673,6 +2216,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 51
@@ -1700,6 +2246,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 59
@@ -1727,6 +2276,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 4
@@ -1754,6 +2306,9 @@ sprites:
       w: 6
       h: 5
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 0
@@ -1781,6 +2336,9 @@ sprites:
       w: 16
       h: 16
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -1808,6 +2366,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 48
@@ -1835,6 +2396,9 @@ sprites:
       w: 14
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 64
@@ -1862,6 +2426,9 @@ sprites:
       w: 14
       h: 14
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 80
@@ -1889,6 +2456,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 96
@@ -1916,6 +2486,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 114
@@ -1943,6 +2516,9 @@ sprites:
       w: 12
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 129
@@ -1970,6 +2546,9 @@ sprites:
       w: 14
       h: 11
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 305
@@ -1997,6 +2576,9 @@ sprites:
       w: 8
       h: 6
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 36
@@ -2024,6 +2606,9 @@ sprites:
       w: 8
       h: 9
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 144
@@ -2051,6 +2636,9 @@ sprites:
       w: 16
       h: 16
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 160
@@ -2078,6 +2666,9 @@ sprites:
       w: 16
       h: 16
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 144
@@ -2105,6 +2696,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 160
@@ -2132,6 +2726,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 176
@@ -2159,6 +2756,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 176
@@ -2186,6 +2786,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 160
@@ -2213,6 +2816,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 144
@@ -2240,6 +2846,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 192
@@ -2267,6 +2876,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 192
@@ -2294,6 +2906,9 @@ sprites:
       w: 32
       h: 32
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 0
@@ -2321,6 +2936,9 @@ sprites:
       w: 8
       h: 16
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -2348,6 +2966,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 34
@@ -2375,6 +2996,9 @@ sprites:
       w: 9
       h: 15
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 0
@@ -2402,6 +3026,9 @@ sprites:
       w: 16
       h: 16
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -2429,6 +3056,9 @@ sprites:
       w: 14
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 32
@@ -2456,6 +3086,9 @@ sprites:
       w: 14
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 48
@@ -2483,6 +3116,9 @@ sprites:
       w: 14
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 64
@@ -2510,6 +3146,9 @@ sprites:
       w: 14
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 80
@@ -2537,6 +3176,9 @@ sprites:
       w: 14
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 96
@@ -2564,6 +3206,9 @@ sprites:
       w: 14
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 112
@@ -2591,6 +3236,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 128
@@ -2618,6 +3266,9 @@ sprites:
       w: 14
       h: 12
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 0
@@ -2645,6 +3296,9 @@ sprites:
       w: 12
       h: 13
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -2672,6 +3326,9 @@ sprites:
       w: 48
       h: 32
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 0
@@ -2699,6 +3356,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 1
@@ -2726,6 +3386,9 @@ sprites:
       w: 11
       h: 10
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 16
@@ -2753,6 +3416,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 48
@@ -2780,6 +3446,9 @@ sprites:
       w: 9
       h: 6
     tile: false
+    emit_point:
+      x: 4
+      y: 9
   - path: "entities.png"
     aabb:
       x: 48
@@ -2807,6 +3476,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 64
@@ -2834,6 +3506,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "entities.png"
     aabb:
       x: 80
@@ -2861,6 +3536,249 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 304
+      w: 16
+      h: 16
+    name: "snake"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 13
+    tags: []
+    pbox:
+      x: 4
+      y: 7
+      w: 9
+      h: 9
+    cbox:
+      x: 4
+      y: 7
+      w: 9
+      h: 9
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 304
+      w: 16
+      h: 16
+    name: "snake_walk"
+    frame: 0
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 13
+    tags: []
+    pbox:
+      x: 3
+      y: 8
+      w: 9
+      h: 8
+    cbox:
+      x: 3
+      y: 8
+      w: 9
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 304
+      w: 16
+      h: 16
+    name: "snake_walk"
+    frame: 1
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 13
+    tags: []
+    pbox:
+      x: 3
+      y: 8
+      w: 9
+      h: 8
+    cbox:
+      x: 3
+      y: 9
+      w: 11
+      h: 7
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 304
+      w: 16
+      h: 16
+    name: "snake_dead"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 13
+    tags: []
+    pbox:
+      x: 4
+      y: 12
+      w: 6
+      h: 4
+    cbox:
+      x: 4
+      y: 12
+      w: 6
+      h: 4
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 320
+      w: 16
+      h: 16
+    name: "spider_hang"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 10
+    tags: []
+    pbox:
+      x: 0
+      y: 6
+      w: 15
+      h: 6
+    cbox:
+      x: 1
+      y: 4
+      w: 13
+      h: 9
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 320
+      w: 16
+      h: 16
+    name: "spider"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 10
+    tags: []
+    pbox:
+      x: 1
+      y: 5
+      w: 13
+      h: 7
+    cbox:
+      x: 1
+      y: 5
+      w: 13
+      h: 7
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 320
+      w: 16
+      h: 16
+    name: "spectacles"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 9
+    tags: []
+    pbox:
+      x: 0
+      y: 5
+      w: 16
+      h: 8
+    cbox:
+      x: 0
+      y: 5
+      w: 16
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 320
+      w: 16
+      h: 16
+    name: "gloves"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 10
+    tags: []
+    pbox:
+      x: 2
+      y: 3
+      w: 10
+      h: 13
+    cbox:
+      x: 2
+      y: 3
+      w: 10
+      h: 13
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0
@@ -2888,6 +3806,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 16
@@ -2915,6 +3836,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 32
@@ -2942,6 +3866,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0
@@ -2969,6 +3896,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 16
@@ -2996,6 +3926,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 32
@@ -3023,6 +3956,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0
@@ -3050,6 +3986,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0
@@ -3077,6 +4016,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 16
@@ -3104,6 +4046,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3131,6 +4076,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 16
@@ -3158,6 +4106,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 32
@@ -3185,6 +4136,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3212,6 +4166,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 16
@@ -3239,6 +4196,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 32
@@ -3266,6 +4226,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3293,6 +4256,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3320,6 +4286,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3347,6 +4316,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3374,6 +4346,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3401,6 +4376,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3428,6 +4406,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3455,6 +4436,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 16
@@ -3482,6 +4466,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 32
@@ -3509,6 +4496,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 48
@@ -3536,6 +4526,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 64
@@ -3563,6 +4556,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3590,6 +4586,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 16
@@ -3617,6 +4616,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 80
@@ -3644,6 +4646,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 48
@@ -3671,6 +4676,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 64
@@ -3698,6 +4706,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 0
@@ -3725,6 +4736,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "cave.png"
     aabb:
       x: 16
@@ -3752,6 +4766,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 0
@@ -3779,6 +4796,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 16
@@ -3806,6 +4826,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 32
@@ -3833,6 +4856,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 32
@@ -3860,6 +4886,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 16
@@ -3887,6 +4916,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 0
@@ -3914,6 +4946,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 0
@@ -3941,6 +4976,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 0
@@ -3968,6 +5006,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 16
@@ -3995,6 +5036,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 0
@@ -4022,6 +5066,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 16
@@ -4049,6 +5096,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 32
@@ -4076,6 +5126,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 0
@@ -4103,6 +5156,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 16
@@ -4130,6 +5186,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 32
@@ -4157,6 +5216,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 0
@@ -4184,6 +5246,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 0
@@ -4211,6 +5276,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "jungle.png"
     aabb:
       x: 16
@@ -4238,6 +5306,9 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 0
@@ -4265,6 +5336,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 16
@@ -4292,6 +5366,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 32
@@ -4319,6 +5396,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 0
@@ -4346,6 +5426,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 16
@@ -4373,6 +5456,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 32
@@ -4400,6 +5486,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 0
@@ -4427,6 +5516,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 0
@@ -4454,6 +5546,9 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "temple.png"
     aabb:
       x: 16
@@ -4481,3 +5576,6 @@ sprites:
       w: 0
       h: 0
     tile: false
+    emit_point:
+      x: 0
+      y: 0

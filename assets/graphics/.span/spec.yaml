@@ -12,3 +12,4 @@
     pbox: rect
     cbox: rect
     tile: boolean
+    emit_point: point

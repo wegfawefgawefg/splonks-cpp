@@ -34,7 +34,7 @@ void SpawnJetpackSmoke(State& state, const Vec2& pos) {
         const float svel = RandomFloat(vel * 0.1F, vel * 1.0F);
         const float sacc = RandomFloat(vel * 0.01F, vel * 0.02F);
         auto effect = std::make_unique<UltraDynamicEffect>();
-        effect->type_ = SpecialEffectType::BasicSmoke;
+        effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
         effect->draw_layer = DrawLayer::Foreground;
         effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(0, 32));
         effect->pos = pos;
@@ -115,7 +115,9 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
                 holder->acc.y = -0.6F;
                 holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
             }
-            TrySetAnimation(*holder, EntityDisplayState::Neutral);
+            if (!holder->IsHanging()) {
+                TrySetAnimation(*holder, EntityDisplayState::Neutral);
+            }
         }
     }
 

@@ -29,6 +29,8 @@ enum class SoundEffect {
     Jetpack2,
     Equip,
     Throw,
+    PistolFire,
+    GunEmpty,
     BombExplosion,
     AnimalCrush1,
     AnimalCrush2,
@@ -61,7 +63,7 @@ enum class SoundEffect {
 };
 
 constexpr std::size_t kSongCount = 2;
-constexpr std::size_t kSoundEffectCount = 43;
+constexpr std::size_t kSoundEffectCount = 45;
 
 struct LoadedSong {
     std::string path;

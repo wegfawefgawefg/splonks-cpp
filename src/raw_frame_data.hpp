@@ -24,6 +24,7 @@ struct RawFrameData {
     int duration = 0;
     IVec2 offset = IVec2::New(0, 0);
     IVec2 center = IVec2::New(0, 0);
+    IVec2 emit_point = IVec2::New(0, 0);
     std::vector<std::string> tags;
     FrameRect pbox;
     bool has_pbox = false;

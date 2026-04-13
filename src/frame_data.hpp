@@ -20,6 +20,7 @@ struct FrameData {
     int duration = 1;
     IVec2 draw_offset = IVec2::New(0, 0);
     IVec2 center = IVec2::New(0, 0);
+    IVec2 emit_point = IVec2::New(0, 0);
     std::vector<std::string> tags;
     FrameRect pbox;
     FrameRect cbox;

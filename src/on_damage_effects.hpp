@@ -1,10 +1,11 @@
 #pragma once
 
+#include "frame_data_id.hpp"
 #include "state.hpp"
 
 namespace splonks {
 
-void OnDamageEffectAsBreakawayContainer(std::size_t entity_idx, State& state);
-void OnDamageEffectAsBleedingEntity(std::size_t entity_idx, State& state);
+void SpawnDamageEffectAnimationBurst(FrameDataId animation_id, const Vec2& center, State& state);
+void SpawnBreakawayContainerShards(const Vec2& center, State& state);
 
 } // namespace splonks

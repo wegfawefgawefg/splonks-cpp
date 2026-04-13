@@ -143,7 +143,7 @@ bool TryApplyBatContactToEntity(
         other_entity->thrown_by = held_by_vid;
         other_entity->thrown_immunity_timer = common::kThrownByImmunityDuration;
 
-        const common::DamageResult damage_result = common::TryToDamageEntity(
+        const common::DamageResult damage_result = common::TryDamageEntity(
             other_entity->vid.id, state, audio, DamageType::Attack, 1);
         switch (damage_result) {
         case common::DamageResult::Died: {

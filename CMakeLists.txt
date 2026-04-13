@@ -197,6 +197,7 @@ add_executable(splonks-cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp
     src/graphics.cpp
+    src/hitscan.cpp
     src/imgui_layer.cpp
     src/inputs.cpp
     src/main.cpp

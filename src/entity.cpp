@@ -86,7 +86,6 @@ Entity Entity::New() {
     entity.last_ai_state = EntityAiState::Idle;
     entity.movement_flags = 0;
     entity.health = 0;
-    entity.last_health = 0;
     entity.hurt_on_contact = false;
     entity.damage_vulnerability = DamageVulnerability::Vulnerable;
     entity.attack_weight = 0.0F;

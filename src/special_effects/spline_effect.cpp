@@ -2,11 +2,12 @@
 
 namespace splonks {
 
-void SplineEffect::Step() {
+void SplineEffect::Step(const FrameDataDb& frame_data_db, float dt) {
     if (counter > 0) {
         counter -= 1;
     }
 
+    frame_data_animator.Step(frame_data_db, dt);
     tvel += tacc;
     svel += sacc;
     rotvel += rotacc;
@@ -24,7 +25,7 @@ void SplineEffect::Step() {
 }
 
 bool SplineEffect::IsFinished() const {
-    return counter <= 0;
+    return counter == 0 || (finish_on_animation_end && frame_data_animator.IsFinished());
 }
 
 Vec2 SplineEffect::GetPos() const {
@@ -39,20 +40,12 @@ float SplineEffect::GetRot() const {
     return rot;
 }
 
-std::uint32_t SplineEffect::GetCounter() const {
-    return counter;
-}
-
-SpecialEffectType SplineEffect::GetType() const {
-    return type_;
-}
-
 float SplineEffect::GetAlpha() const {
     return alpha;
 }
 
-const SampleRegion& SplineEffect::GetSampleRegion() const {
-    return splonks::GetSampleRegion(GetType(), GetCounter());
+const FrameDataAnimator& SplineEffect::GetFrameDataAnimator() const {
+    return frame_data_animator;
 }
 
 Vec2 CalculateBezierPoint(float t, const Vec2& point_1, const Vec2& point_2, const Vec2& point_3) {

@@ -4,6 +4,7 @@
 
 #include <array>
 #include "entity.hpp"
+#include "frame_data_id.hpp"
 
 namespace splonks {
 
@@ -11,6 +12,7 @@ struct Graphics;
 struct State;
 
 using EntityOnDeath = void (*)(std::size_t entity_idx, State& state, Audio& audio);
+using EntityOnDamageEffect = void (*)(std::size_t entity_idx, State& state, Audio& audio);
 using EntityOnUse =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
 using EntityStepLogic =
@@ -41,10 +43,14 @@ struct EntityArchetype {
     std::uint32_t bombs = 0;
     std::uint32_t ropes = 0;
     float counter_a = 0.0F;
+    float counter_b = 0.0F;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
+    std::optional<FrameDataId> damage_animation = std::nullopt;
+    std::optional<SoundEffect> damage_sound = std::nullopt;
     std::optional<SoundEffect> death_sound_effect = std::nullopt;
     EntityOnDeath on_death = nullptr;
+    EntityOnDamageEffect on_damage_effect = nullptr;
     EntityOnUse on_use = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;

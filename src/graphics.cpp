@@ -69,8 +69,6 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
         graphics.frame_data_images.push_back(LoadFrameDataTexture(renderer, image_path));
     }
     graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
-    graphics.special_effects_texture =
-        LoadTexture(renderer, "assets/graphics/special_effects/special_effects.png");
     graphics.window_dims = UVec2::New(1920, 1080);
     graphics.dims = UVec2::New(1920, 1080);
     graphics.fullscreen = true;
@@ -184,10 +182,6 @@ void Graphics::ShutdownTextures() {
     }
     frame_data_images.clear();
 
-    if (special_effects_texture != nullptr) {
-        SDL_DestroyTexture(special_effects_texture);
-        special_effects_texture = nullptr;
-    }
 }
 
 bool IsTileTransparent(Tile tile) {

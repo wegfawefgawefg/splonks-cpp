@@ -1,4 +1,5 @@
 #include "entities/box.hpp"
+#include "on_damage_effects.hpp"
 
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
@@ -126,6 +127,7 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
 
     const Entity& box = state.entity_manager.entities[entity_idx];
     const Vec2 spawn_pos = box.pos;
+    SpawnBreakawayContainerShards(box.GetCenter(), state);
 
     if (RandInclusive(1, 500) == 1) {
         SpawnEntityAtTopLeft(EntityType::JetPack, spawn_pos, state);

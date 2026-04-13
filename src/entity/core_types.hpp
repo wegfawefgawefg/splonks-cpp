@@ -126,7 +126,6 @@ enum class EntityMovementFlag : std::uint8_t {
     Pushing,
     Climbing,
     Hanging,
-    Count,
 };
 
 enum class PointLabel {

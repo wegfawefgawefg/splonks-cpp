@@ -195,7 +195,7 @@ bool TryApplyCrusherPusherContact(
         return true;
     }
 
-    TryToDamageEntity(other_entity_idx, state, audio, DamageType::Crush, 1);
+    TryDamageEntity(other_entity_idx, state, audio, DamageType::Crush, 1);
     return true;
 }
 

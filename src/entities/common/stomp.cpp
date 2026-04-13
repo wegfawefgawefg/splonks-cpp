@@ -46,7 +46,7 @@ bool TryApplyStompContactToEntity(
 
     audio.PlaySoundEffect(SoundEffect::Jump);
 
-    const DamageResult damage_result = TryToDamageEntity(
+    const DamageResult damage_result = TryDamageEntity(
         stomped->vid.id,
         state,
         audio,

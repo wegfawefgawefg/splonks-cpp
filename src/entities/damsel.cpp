@@ -1,4 +1,5 @@
 #include "entities/damsel.hpp"
+#include "on_damage_effects.hpp"
 
 #include "entity/archetype.hpp"
 #include "entity/core_types.hpp"
@@ -23,6 +24,7 @@ extern const EntityArchetype kDamselArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .damage_animation = frame_data_ids::BloodBall,
     .alignment = Alignment::Ally,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Damsel),
 };

@@ -102,7 +102,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.StepEntityToolStates();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
-    StepSpecialEffects(state);
+    StepSpecialEffects(state, graphics, dt);
 
     bool lost = false;
     if (state.player_vid) {
@@ -206,7 +206,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.StepInteractionCooldowns();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
-    StepSpecialEffects(state);
+    StepSpecialEffects(state, graphics, dt);
 }
 
 void StepWin(State& state, Audio& audio, Graphics& graphics) {

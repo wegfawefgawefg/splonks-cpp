@@ -22,4 +22,11 @@ struct IAABB {
 
 Vec2 GetMinDisplacement(const AABB& aabb1, const AABB& aabb2);
 
+namespace rng {
+
+int RandomIntInclusive(int minimum, int maximum);
+float RandomFloat(float minimum, float maximum);
+
+} // namespace rng
+
 } // namespace splonks

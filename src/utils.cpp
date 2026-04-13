@@ -1,5 +1,7 @@
 #include "utils.hpp"
 
+#include <random>
+
 namespace splonks {
 
 AABB AABB::New(const Vec2& top_left, const Vec2& bottom_right) {
@@ -29,6 +31,25 @@ AABB IAABB::AsAABB() const {
     result.br = Vec2::New(static_cast<float>(br.x), static_cast<float>(br.y));
     return result;
 }
+
+
+namespace rng {
+
+int RandomIntInclusive(int minimum, int maximum) {
+    static std::random_device device;
+    static std::mt19937 generator(device());
+    std::uniform_int_distribution<int> distribution(minimum, maximum);
+    return distribution(generator);
+}
+
+float RandomFloat(float minimum, float maximum) {
+    static std::random_device device;
+    static std::mt19937 generator(device());
+    std::uniform_real_distribution<float> distribution(minimum, maximum);
+    return distribution(generator);
+}
+
+} // namespace rng
 
 Vec2 GetMinDisplacement(const AABB& aabb1, const AABB& aabb2) {
     float dx = 0.0F;

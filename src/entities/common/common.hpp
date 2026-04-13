@@ -71,7 +71,6 @@ void CommonPostStep(
 void DieIfDead(std::size_t entity_idx, State& state, Audio& audio);
 void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio);
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state);
-void StoreHealthToLastHealth(std::size_t entity_idx, State& state);
 void StepStunTimer(std::size_t entity_idx, State& state);
 void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio);
 void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& graphics, float dt);
@@ -114,6 +113,7 @@ void DoExplosion(
 );
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
+Vec2 GetEmitPointForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);
 AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics);
 bool TryCollectEntityFromContact(
@@ -184,7 +184,7 @@ enum class DamageResult {
     Died,
 };
 
-DamageResult TryToDamageEntity(
+DamageResult TryDamageEntity(
     std::size_t entity_idx,
     State& state,
     Audio& audio,

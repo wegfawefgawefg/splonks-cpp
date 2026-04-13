@@ -78,6 +78,26 @@ Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data
            facing_adjusted_draw_offset;
 }
 
+Vec2 GetEmitPointForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback) {
+    const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
+    if (frame_data == nullptr) {
+        return fallback;
+    }
+
+    const Vec2 sprite_tl = GetSpriteTopLeftForEntity(entity, *frame_data);
+    float emit_x = static_cast<float>(frame_data->emit_point.x);
+    if (entity.facing == LeftOrRight::Right) {
+        emit_x = static_cast<float>(frame_data->sample_rect.w - 1 - frame_data->emit_point.x);
+    }
+
+    const Vec2 emit_point =
+        sprite_tl + Vec2::New(emit_x, static_cast<float>(frame_data->emit_point.y));
+    if (frame_data->emit_point.x == 0 && frame_data->emit_point.y == 0) {
+        return fallback;
+    }
+    return emit_point;
+}
+
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics) {
     const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
     if (frame_data == nullptr) {

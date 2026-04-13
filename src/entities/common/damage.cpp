@@ -235,7 +235,7 @@ void MaybeHurtAndStunOnContact(
                             continue;
                         }
                         const DamageResult damage_result =
-                            TryToDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, 1);
+                            TryDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, 1);
                         switch (damage_result) {
                         case DamageResult::Died:
                         case DamageResult::Hurt:
@@ -313,7 +313,7 @@ bool MaybeHurtAndStunOnContactAsProjectile(
                 }
                 hit = true;
                 const DamageResult damage_result =
-                    TryToDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, 1);
+                    TryDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, 1);
                 switch (damage_result) {
                 case DamageResult::Hurt:
                 case DamageResult::Died: {
@@ -382,7 +382,7 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Audio& audio) {
     }
     if (fell_into_spikes) {
         const DamageResult damage_result =
-            TryToDamageEntity(entity.vid.id, state, audio, DamageType::Spikes, 1);
+            TryDamageEntity(entity.vid.id, state, audio, DamageType::Spikes, 1);
         switch (damage_result) {
         case DamageResult::Hurt:
         case DamageResult::Died:
@@ -395,24 +395,22 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Audio& audio) {
     }
 }
 
-void DoDamagedEffect(std::size_t entity_idx, State& state, Audio& audio) {
-    (void)audio;
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.last_health > entity.health) {
-        switch (entity.type_) {
-        case EntityType::Box:
-        case EntityType::Pot:
-            OnDamageEffectAsBreakawayContainer(entity_idx, state);
-            break;
-        case EntityType::Player:
-        case EntityType::Bat:
-            OnDamageEffectAsBleedingEntity(entity_idx, state);
-            break;
-        default:
-            break;
-        }
+void ApplyDamageEffect(std::size_t entity_idx, State& state, Audio& audio) {
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    if (entity.stone) {
+        return;
     }
-    entity.last_health = entity.health;
+
+    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
+    if (archetype.damage_animation.has_value()) {
+        SpawnDamageEffectAnimationBurst(*archetype.damage_animation, entity.GetCenter(), state);
+    }
+    if (archetype.damage_sound.has_value()) {
+        audio.PlaySoundEffect(*archetype.damage_sound);
+    }
+    if (archetype.on_damage_effect != nullptr) {
+        archetype.on_damage_effect(entity_idx, state, audio);
+    }
 }
 
 } // namespace
@@ -435,11 +433,10 @@ void CommonStep(
     DoThrownByStep(entity_idx, state);
     ApplyHurtOnContact(entity_idx, state, graphics, audio);
     DieIfFootInSpikes(entity_idx, state, audio);
-    DoDamagedEffect(entity_idx, state, audio);
     (void)dt;
 }
 
-DamageResult TryToDamageEntity(
+DamageResult TryDamageEntity(
     std::size_t entity_idx,
     State& state,
     Audio& audio,
@@ -494,6 +491,7 @@ DamageResult TryToDamageEntity(
         bool do_damage_calculation = false;
         if (damage_type == DamageType::Crush) {
             entity.health = 0;
+            ApplyDamageEffect(entity_idx, state, audio);
             DieIfDead(entity_idx, state, audio);
             if (!entity.active) {
                 return DamageResult::Died;
@@ -509,6 +507,7 @@ DamageResult TryToDamageEntity(
         } else {
             if (damage_type == DamageType::Spikes) {
                 entity.health = 0;
+                ApplyDamageEffect(entity_idx, state, audio);
                 DieIfDead(entity_idx, state, audio);
                 return DamageResult::Died;
             } else if (damage_type == DamageType::Explosion) {
@@ -534,9 +533,11 @@ DamageResult TryToDamageEntity(
         if (do_damage_calculation) {
             if (entity.health > amount) {
                 entity.health -= amount;
+                ApplyDamageEffect(entity_idx, state, audio);
                 return DamageResult::Hurt;
             }
             entity.health = 0;
+            ApplyDamageEffect(entity_idx, state, audio);
             DieIfDead(entity_idx, state, audio);
             return DamageResult::Died;
         }
@@ -554,7 +555,9 @@ void DoExplosion(
     const float effect_size = size * 0.5F * static_cast<float>(kTileSize);
     {
         auto effect = std::make_unique<UltraDynamicEffect>();
-        effect->type_ = SpecialEffectType::GrenadeBoom;
+        effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::GrenadeBoom);
+        effect->frame_data_animator.loop = false;
+        effect->finish_on_animation_end = true;
         effect->draw_layer = DrawLayer::Foreground;
         effect->counter = 8;
         effect->pos = center;
@@ -577,7 +580,7 @@ void DoExplosion(
         const float sacc = RandomFloat(-vel * 0.01F, -vel * 0.02F);
 
         auto effect = std::make_unique<UltraDynamicEffect>();
-        effect->type_ = SpecialEffectType::BasicSmoke;
+        effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
         effect->draw_layer = DrawLayer::Foreground;
         effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(64, 128));
         effect->pos = center;
@@ -609,7 +612,7 @@ void DoExplosion(
         bool impassable = false;
         if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {
             impassable = entity->impassable;
-            TryToDamageEntity(vid.id, state, audio, DamageType::Explosion, 10);
+            TryDamageEntity(vid.id, state, audio, DamageType::Explosion, 10);
         }
         if (impassable) {
             state.entity_manager.SetInactive(vid.id);

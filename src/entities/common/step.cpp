@@ -14,11 +14,6 @@ void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
     }
 }
 
-void StoreHealthToLastHealth(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.last_health = entity.health;
-}
-
 void StepStunTimer(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     if (entity.condition == EntityCondition::Stunned) {

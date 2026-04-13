@@ -28,6 +28,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.bombs = archetype.bombs;
     entity.ropes = archetype.ropes;
     entity.counter_a = archetype.counter_a;
+    entity.counter_b = archetype.counter_b;
     entity.damage_vulnerability = archetype.damage_vulnerability;
     entity.entity_label_a = archetype.entity_label_a;
     entity.alignment = archetype.alignment;

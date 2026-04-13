@@ -1,4 +1,5 @@
 #include "entities/pot.hpp"
+#include "on_damage_effects.hpp"
 
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
@@ -126,6 +127,7 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
 
     const Entity& pot = state.entity_manager.entities[entity_idx];
     const Vec2 spawn_pos = pot.pos;
+    SpawnBreakawayContainerShards(pot.GetCenter(), state);
     const Vec2 spider_spawn_pos = pot.pos + Vec2::New(-8.0F, -8.0F);
 
     Vec2 snake_spawn_pos = pot.pos + Vec2::New(-8.0F, -8.0F);

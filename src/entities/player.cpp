@@ -1,4 +1,5 @@
 #include "entities/player.hpp"
+#include "on_damage_effects.hpp"
 
 #include "audio.hpp"
 #include "entities/baseball_bat.hpp"
@@ -32,6 +33,8 @@ extern const EntityArchetype kPlayerArchetype{
     .bombs = 400,
     .ropes = 400,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .damage_animation = frame_data_ids::BloodBall,
+    .damage_sound = SoundEffect::PlayerOuch,
     .step_logic = StepEntityLogicAsPlayer,
     .step_physics = StepEntityPhysicsAsPlayer,
     .alignment = Alignment::Ally,

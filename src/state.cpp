@@ -317,9 +317,9 @@ bool IsStageWon(const State& state) {
     return false;
 }
 
-void StepSpecialEffects(State& state) {
+void StepSpecialEffects(State& state, const Graphics& graphics, float dt) {
     for (auto& effect : state.special_effects) {
-        effect->Step();
+        effect->Step(graphics.frame_data_db, dt);
     }
 
     std::vector<std::unique_ptr<SpecialEffect>> kept_effects;

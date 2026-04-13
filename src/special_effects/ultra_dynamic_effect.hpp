@@ -6,8 +6,8 @@
 namespace splonks {
 
 struct UltraDynamicEffect final : public SpecialEffect {
-    SpecialEffectType type_ = SpecialEffectType::GrenadeBoom;
     std::uint32_t counter = 0;
+    bool finish_on_animation_end = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     Vec2 pos;
     Vec2 size;
@@ -21,16 +21,15 @@ struct UltraDynamicEffect final : public SpecialEffect {
     Vec2 sacc;
     float rotacc = 0.0F;
     float alpha_acc = 0.0F;
+    FrameDataAnimator frame_data_animator{};
 
-    void Step() override;
+    void Step(const FrameDataDb& frame_data_db, float dt) override;
     bool IsFinished() const override;
     Vec2 GetPos() const override;
     Vec2 GetSize() const override;
     float GetRot() const override;
-    std::uint32_t GetCounter() const override;
-    SpecialEffectType GetType() const override;
     float GetAlpha() const override;
-    const SampleRegion& GetSampleRegion() const override;
+    const FrameDataAnimator& GetFrameDataAnimator() const override;
 };
 
 } // namespace splonks
