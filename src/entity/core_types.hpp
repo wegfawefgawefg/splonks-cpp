@@ -1,6 +1,11 @@
 #pragma once
 
+#include "damage_types.hpp"
+#include "../draw_layer.hpp"
+#include "left_or_right.hpp"
 #include "math_types.hpp"
+#include "origin.hpp"
+#include "vid.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -148,49 +153,6 @@ enum class EntityLabel {
     AttachedToThis,
 };
 
-enum class DrawLayer {
-    Background,
-    Middle,
-    Foreground,
-};
-
-enum class LeftOrRight {
-    Left,
-    Right,
-};
-
-enum class DamageType {
-    Attack,
-    HeavyAttack,
-    JumpOn,
-    Burn,
-    Explosion,
-    Crush,
-    Spikes,
-};
-
-enum class DamageVulnerability {
-    Immune,
-    BurningOnly,
-    CrushingOnly,
-    AttackingOnly,
-    HeavyAttackOnly,
-    ExplosionOnly,
-    CrushingAndSpikes,
-    CrushingSpikesAndExplosion,
-    Vulnerable,
-    AnthingExceptJumpOn,
-};
-
-struct VID {
-    std::size_t id = 0;
-    std::uint32_t version = 0;
-};
-
-inline bool operator==(const VID& left, const VID& right) {
-    return left.id == right.id && left.version == right.version;
-}
-
 enum class EntityDisplayState {
     Neutral,
     NeutralHolding,
@@ -212,11 +174,5 @@ enum class AttachmentMode {
 
 constexpr std::uint32_t kDefaultHoldingTimer = 8;
 constexpr std::uint32_t kCollidedTriggerCooldown = 3;
-
-enum class Origin {
-    TopLeft,
-    Center,
-    Foot,
-};
 
 } // namespace splonks

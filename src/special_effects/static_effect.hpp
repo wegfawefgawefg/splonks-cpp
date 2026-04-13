@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/draw_layer.hpp"
+#include "draw_layer.hpp"
 #include "special_effects/special_effect.hpp"
 
 namespace splonks {

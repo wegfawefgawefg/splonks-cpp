@@ -2,10 +2,9 @@
 
 namespace splonks {
 
-enum class Origin {
-    TopLeft,
-    Center,
-    Foot,
+enum class LeftOrRight {
+    Left,
+    Right,
 };
 
 } // namespace splonks
