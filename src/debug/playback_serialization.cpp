@@ -298,14 +298,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteOptionalPod(out, snapshot.video_settings_target_fullscreen);
     WritePod(out, snapshot.rebuild_render_texture);
     WritePod(out, snapshot.choosing_control_binding);
-    WritePod(out, snapshot.show_entity_collision_boxes);
-    WritePod(out, snapshot.show_entity_ids);
-    WritePod(out, snapshot.show_entity_types);
-    WritePod(out, snapshot.show_void_death_line);
-    WritePod(out, snapshot.show_chunk_boundaries);
-    WritePod(out, snapshot.show_chunk_coords);
-    WritePod(out, snapshot.show_tile_indexes);
-    WritePod(out, snapshot.show_tile_types);
+    WritePod(out, snapshot.debug_overlay);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
@@ -352,14 +345,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadOptionalPod(in, snapshot.video_settings_target_fullscreen) &&
            ReadPod(in, snapshot.rebuild_render_texture) &&
            ReadPod(in, snapshot.choosing_control_binding) &&
-           ReadPod(in, snapshot.show_entity_collision_boxes) &&
-           ReadPod(in, snapshot.show_entity_ids) &&
-           ReadPod(in, snapshot.show_entity_types) &&
-           ReadPod(in, snapshot.show_void_death_line) &&
-           ReadPod(in, snapshot.show_chunk_boundaries) &&
-           ReadPod(in, snapshot.show_chunk_coords) &&
-           ReadPod(in, snapshot.show_tile_indexes) &&
-           ReadPod(in, snapshot.show_tile_types) &&
+           ReadPod(in, snapshot.debug_overlay) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&
@@ -759,14 +745,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.video_settings_target_fullscreen = state.video_settings_target_fullscreen;
     snapshot.rebuild_render_texture = state.rebuild_render_texture;
     snapshot.choosing_control_binding = state.choosing_control_binding;
-    snapshot.show_entity_collision_boxes = state.show_entity_collision_boxes;
-    snapshot.show_entity_ids = state.show_entity_ids;
-    snapshot.show_entity_types = state.show_entity_types;
-    snapshot.show_void_death_line = state.show_void_death_line;
-    snapshot.show_chunk_boundaries = state.show_chunk_boundaries;
-    snapshot.show_chunk_coords = state.show_chunk_coords;
-    snapshot.show_tile_indexes = state.show_tile_indexes;
-    snapshot.show_tile_types = state.show_tile_types;
+    snapshot.debug_overlay = state.debug_overlay;
     snapshot.now = state.now;
     snapshot.time_since_last_update = state.time_since_last_update;
     snapshot.scene_frame = state.scene_frame;
@@ -815,14 +794,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.video_settings_target_fullscreen = snapshot.video_settings_target_fullscreen;
     state.rebuild_render_texture = snapshot.rebuild_render_texture;
     state.choosing_control_binding = snapshot.choosing_control_binding;
-    state.show_entity_collision_boxes = snapshot.show_entity_collision_boxes;
-    state.show_entity_ids = snapshot.show_entity_ids;
-    state.show_entity_types = snapshot.show_entity_types;
-    state.show_void_death_line = snapshot.show_void_death_line;
-    state.show_chunk_boundaries = snapshot.show_chunk_boundaries;
-    state.show_chunk_coords = snapshot.show_chunk_coords;
-    state.show_tile_indexes = snapshot.show_tile_indexes;
-    state.show_tile_types = snapshot.show_tile_types;
+    state.debug_overlay = snapshot.debug_overlay;
     state.now = snapshot.now;
     state.time_since_last_update = snapshot.time_since_last_update;
     state.scene_frame = snapshot.scene_frame;

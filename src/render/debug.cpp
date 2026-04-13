@@ -250,7 +250,7 @@ void RenderEntityLabels(
     const SDL_FRect& presentation,
     const std::vector<Vec2>& render_offsets
 ) {
-    if (!state.show_entity_ids && !state.show_entity_types) {
+    if (!state.debug_overlay.show_entity_ids && !state.debug_overlay.show_entity_types) {
         return;
     }
 
@@ -273,7 +273,7 @@ void RenderEntityLabels(
             }
 
             float text_y = pbox_rect.y + (pbox_rect.h * 0.5F) - 5.0F;
-            if (state.show_entity_ids) {
+            if (state.debug_overlay.show_entity_ids) {
                 char label[32];
                 std::snprintf(label, sizeof(label), "%zu", entity.vid.id);
                 DrawText(
@@ -288,7 +288,7 @@ void RenderEntityLabels(
                 );
                 text_y += 10.0F;
             }
-            if (state.show_entity_types) {
+            if (state.debug_overlay.show_entity_types) {
                 DrawText(
                     renderer,
                     graphics,
@@ -311,7 +311,7 @@ void RenderChunkOverlay(
     const SDL_FRect& presentation,
     const std::vector<Vec2>& render_offsets
 ) {
-    if (!state.show_chunk_boundaries && !state.show_chunk_coords) {
+    if (!state.debug_overlay.show_chunk_boundaries && !state.debug_overlay.show_chunk_coords) {
         return;
     }
     if (state.stage.rooms.empty()) {
@@ -337,11 +337,11 @@ void RenderChunkOverlay(
                     continue;
                 }
 
-                if (state.show_chunk_boundaries) {
+                if (state.debug_overlay.show_chunk_boundaries) {
                     SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
                     SDL_RenderRect(renderer, &room_rect);
                 }
-                if (state.show_chunk_coords) {
+                if (state.debug_overlay.show_chunk_coords) {
                     char label[32];
                     std::snprintf(label, sizeof(label), "(%u,%u)", x, y);
                     DrawText(
@@ -367,7 +367,7 @@ void RenderTileOverlay(
     const SDL_FRect& presentation,
     const std::vector<Vec2>& render_offsets
 ) {
-    if (!state.show_tile_indexes && !state.show_tile_types) {
+    if (!state.debug_overlay.show_tile_indexes && !state.debug_overlay.show_tile_types) {
         return;
     }
 
@@ -396,7 +396,7 @@ void RenderTileOverlay(
             }
 
             float text_y = tile_rect.y + 1.0F;
-            if (state.show_tile_indexes) {
+            if (state.debug_overlay.show_tile_indexes) {
                 char label[32];
                 std::snprintf(
                     label,
@@ -417,7 +417,7 @@ void RenderTileOverlay(
                 );
                 text_y += 10.0F;
             }
-            if (state.show_tile_types) {
+            if (state.debug_overlay.show_tile_types) {
                 DrawText(
                     renderer,
                     graphics,
@@ -436,33 +436,33 @@ void RenderTileOverlay(
 } // namespace
 
 void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
-    if (!state.show_entity_collision_boxes &&
-        !state.show_entity_ids &&
-        !state.show_entity_types &&
-        !state.show_void_death_line &&
-        !state.show_chunk_boundaries &&
-        !state.show_chunk_coords &&
-        !state.show_tile_indexes &&
-        !state.show_tile_types) {
+    if (!state.debug_overlay.show_entity_collision_boxes &&
+        !state.debug_overlay.show_entity_ids &&
+        !state.debug_overlay.show_entity_types &&
+        !state.debug_overlay.show_void_death_line &&
+        !state.debug_overlay.show_chunk_boundaries &&
+        !state.debug_overlay.show_chunk_coords &&
+        !state.debug_overlay.show_tile_indexes &&
+        !state.debug_overlay.show_tile_types) {
         return;
     }
 
     const SDL_FRect presentation = GetDebugPresentationRect(renderer, graphics);
     const std::vector<Vec2> render_offsets =
         GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    if (state.show_entity_collision_boxes) {
+    if (state.debug_overlay.show_entity_collision_boxes) {
         RenderEntityCollisionBoxes(renderer, graphics, state, presentation, render_offsets);
     }
-    if (state.show_entity_ids || state.show_entity_types) {
+    if (state.debug_overlay.show_entity_ids || state.debug_overlay.show_entity_types) {
         RenderEntityLabels(renderer, graphics, state, presentation, render_offsets);
     }
-    if (state.show_void_death_line) {
+    if (state.debug_overlay.show_void_death_line) {
         RenderVoidDeathLine(renderer, graphics, state, presentation, render_offsets);
     }
-    if (state.show_chunk_boundaries || state.show_chunk_coords) {
+    if (state.debug_overlay.show_chunk_boundaries || state.debug_overlay.show_chunk_coords) {
         RenderChunkOverlay(renderer, graphics, state, presentation, render_offsets);
     }
-    if (state.show_tile_indexes || state.show_tile_types) {
+    if (state.debug_overlay.show_tile_indexes || state.debug_overlay.show_tile_types) {
         RenderTileOverlay(renderer, graphics, state, presentation, render_offsets);
     }
 }

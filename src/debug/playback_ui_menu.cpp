@@ -94,8 +94,8 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Separator();
     ImGui::Text("Playback Active: %s", debug.playback_active ? "true" : "false");
     ImGui::Text("Selected Entity: %zu", debug.selected_entity_id);
-    ImGui::Text("Entity P/C boxes: %s", state.show_entity_collision_boxes ? "on" : "off");
-    ImGui::Text("Chunk bounds: %s", state.show_chunk_boundaries ? "on" : "off");
+    ImGui::Text("Entity P/C boxes: %s", state.debug_overlay.show_entity_collision_boxes ? "on" : "off");
+    ImGui::Text("Chunk bounds: %s", state.debug_overlay.show_chunk_boundaries ? "on" : "off");
 
     ImGui::End();
     SyncDebugUiSettings(debug, state);

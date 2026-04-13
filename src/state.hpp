@@ -107,7 +107,19 @@ struct EntityToolState {
     std::array<ToolSlot, kToolSlotCount> slots{};
 };
 
+struct DebugOverlayState {
+    bool show_entity_collision_boxes = false;
+    bool show_entity_ids = false;
+    bool show_entity_types = false;
+    bool show_void_death_line = false;
+    bool show_chunk_boundaries = false;
+    bool show_chunk_coords = false;
+    bool show_tile_indexes = false;
+    bool show_tile_types = false;
+};
+
 struct State {
+    // Menu and input state.
     Mode mode = Mode::Title;
     Settings settings;
     MenuInputs menu_inputs;
@@ -131,20 +143,19 @@ struct State {
     std::optional<bool> video_settings_target_fullscreen;
     bool rebuild_render_texture = false;
     bool choosing_control_binding = false;
-    bool show_entity_collision_boxes = false;
-    bool show_entity_ids = false;
-    bool show_entity_types = false;
-    bool show_void_death_line = false;
-    bool show_chunk_boundaries = false;
-    bool show_chunk_coords = false;
-    bool show_tile_indexes = false;
-    bool show_tile_types = false;
+
+    // Debug state.
+    DebugOverlayState debug_overlay;
     bool running = true;
+
+    // Frame and simulation timing.
     double now = 0.0;
     float time_since_last_update = 0.0F;
     std::uint32_t scene_frame = 0;
     std::uint32_t frame = 0;
     std::uint32_t stage_frame = 0;
+
+    // Session and progression state.
     Mode menu_return_to = Mode::Title;
     bool game_over = false;
     bool pause = false;
@@ -153,18 +164,26 @@ struct State {
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t frame_pause = 0;
+
+    // World and debug level state.
     DebugLevelConfig debug_level;
     EntityManager entity_manager;
     std::vector<std::unique_ptr<SpecialEffect>> special_effects;
     SID sid;
     Stage stage;
     StageLighting stage_lighting;
+
+    // Common entity references.
     std::optional<VID> player_vid;
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
+
+    // Contact and interaction bookkeeping.
     std::vector<ContactCooldownEntry> contact_cooldowns;
     std::vector<InteractionCooldownEntry> interaction_cooldowns;
     std::vector<EntityContactDispatchEntry> entity_contact_dispatches_this_tick;
+
+    // Per-entity owned tool state.
     std::vector<EntityToolState> entity_tool_states;
 
     static State New();

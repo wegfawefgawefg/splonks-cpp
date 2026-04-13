@@ -19,14 +19,14 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state) {
         return;
     }
 
-    ImGui::Checkbox("Show Entity P/C Boxes", &state.show_entity_collision_boxes);
-    ImGui::Checkbox("Show Entity IDs", &state.show_entity_ids);
-    ImGui::Checkbox("Show Entity Types", &state.show_entity_types);
-    ImGui::Checkbox("Show Void Death Line", &state.show_void_death_line);
-    ImGui::Checkbox("Show Chunk Boundaries", &state.show_chunk_boundaries);
-    ImGui::Checkbox("Show Chunk Coords", &state.show_chunk_coords);
-    ImGui::Checkbox("Show Tile Indexes", &state.show_tile_indexes);
-    ImGui::Checkbox("Show Tile Types", &state.show_tile_types);
+    ImGui::Checkbox("Show Entity P/C Boxes", &state.debug_overlay.show_entity_collision_boxes);
+    ImGui::Checkbox("Show Entity IDs", &state.debug_overlay.show_entity_ids);
+    ImGui::Checkbox("Show Entity Types", &state.debug_overlay.show_entity_types);
+    ImGui::Checkbox("Show Void Death Line", &state.debug_overlay.show_void_death_line);
+    ImGui::Checkbox("Show Chunk Boundaries", &state.debug_overlay.show_chunk_boundaries);
+    ImGui::Checkbox("Show Chunk Coords", &state.debug_overlay.show_chunk_coords);
+    ImGui::Checkbox("Show Tile Indexes", &state.debug_overlay.show_tile_indexes);
+    ImGui::Checkbox("Show Tile Types", &state.debug_overlay.show_tile_types);
     ImGui::TextUnformatted("PBox/CBox overlay uses render debug colors.");
 
     ImGui::End();
