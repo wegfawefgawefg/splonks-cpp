@@ -28,8 +28,8 @@
     }
   ],
   "activePaletteId": "sweetie-16-manual",
-  "lastOpenSheetPath": "particles/particles.png",
-  "selectedAnnotationId": "00c17a89-9d7a-427e-adc1-dd6d385b9ad9",
+  "lastOpenSheetPath": "sprites/entities.png",
+  "selectedAnnotationId": "7b1f32ca-1abd-4345-ac32-e9db0d868737",
   "sheets": [
     {
       "path": "images/title.png",
@@ -646,9 +646,9 @@
         "gridEnabled": false,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 16.384,
-        "centerX": 85.479736328125,
-        "centerY": 23.3154296875
+        "zoom": 6.711,
+        "centerX": 106.46699448666368,
+        "centerY": 14.453881686782893
       }
     },
     {
@@ -5713,15 +5713,187 @@
               "y": 6
             }
           }
+        },
+        {
+          "id": "214ef668-b128-46d9-a758-824299695368",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 161,
+            "y": 165,
+            "w": 14,
+            "h": 11
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "key_chest",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 14,
+              "h": 11
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 14,
+              "h": 11
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "12514d50-b484-4544-a43d-612306ece981",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 177,
+            "y": 161,
+            "w": 14,
+            "h": 15
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "key_chest_open",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 9
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 14,
+              "h": 15
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 14,
+              "h": 15
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 7,
+              "y": 5
+            }
+          }
+        },
+        {
+          "id": "9c2f7d36-768b-4609-ae09-4da25865b356",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 195,
+            "y": 172,
+            "w": 8,
+            "h": 4
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "chest_key",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 4
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 1,
+              "y": 2
+            }
+          }
+        },
+        {
+          "id": "7b1f32ca-1abd-4345-ac32-e9db0d868737",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 213,
+            "y": 172,
+            "w": 5,
+            "h": 4
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "udjat_eye",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 4
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 1.759,
-        "centerX": 202.67197271176806,
-        "centerY": 142.6947129050597
+        "zoom": 16.385,
+        "centerX": 226.5791882819652,
+        "centerY": 169.78944156240462
       }
     },
     {

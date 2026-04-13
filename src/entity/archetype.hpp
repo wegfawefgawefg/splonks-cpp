@@ -12,7 +12,18 @@ struct Graphics;
 struct State;
 
 using EntityOnDeath = void (*)(std::size_t entity_idx, State& state, Audio& audio);
-using EntityOnDamageEffect = void (*)(std::size_t entity_idx, State& state, Audio& audio);
+enum class EntityDamageEffectResult {
+    None,
+    Consumed,
+};
+using EntityOnDamageEffect = EntityDamageEffectResult (*)(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    DamageType damage_type,
+    unsigned int amount,
+    bool damage_applied
+);
 using EntityOnUse =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
 using EntityStepLogic =

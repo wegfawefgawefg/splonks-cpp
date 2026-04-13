@@ -31,6 +31,9 @@ bool CanCollectPickups(const Entity& entity) {
         case EntityType::SacAltar:
         case EntityType::GoldIdol:
     case EntityType::Chest:
+    case EntityType::KeyChest:
+    case EntityType::ChestKey:
+    case EntityType::UdjatEye:
     case EntityType::Mattock:
     case EntityType::Cape:
     case EntityType::Shotgun:

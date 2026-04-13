@@ -3839,6 +3839,126 @@ sprites:
     emit_point:
       x: 7
       y: 6
+  - path: "entities.png"
+    aabb:
+      x: 161
+      y: 165
+      w: 14
+      h: 11
+    name: "key_chest"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 5
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 11
+    cbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 11
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 177
+      y: 161
+      w: 14
+      h: 15
+    name: "key_chest_open"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 9
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 15
+    cbox:
+      x: 0
+      y: 0
+      w: 14
+      h: 15
+    tile: false
+    emit_point:
+      x: 7
+      y: 5
+  - path: "entities.png"
+    aabb:
+      x: 195
+      y: 172
+      w: 8
+      h: 4
+    name: "chest_key"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 4
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 4
+    tile: false
+    emit_point:
+      x: 1
+      y: 2
+  - path: "entities.png"
+    aabb:
+      x: 213
+      y: 172
+      w: 5
+      h: 4
+    name: "udjat_eye"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 4
+    cbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 4
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

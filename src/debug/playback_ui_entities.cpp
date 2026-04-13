@@ -7,7 +7,10 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cstring>
+#include <string>
+#include <vector>
 
 namespace splonks::debug_playback_internal {
 
@@ -22,7 +25,52 @@ bool SpawnSearchMatches(const char* query, const char* candidate) {
     if (candidate == nullptr) {
         return false;
     }
-    return std::strstr(candidate, query) != nullptr;
+
+    std::string normalized_query(query);
+    normalized_query.erase(
+        normalized_query.begin(),
+        std::find_if(normalized_query.begin(), normalized_query.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        })
+    );
+    normalized_query.erase(
+        std::find_if(normalized_query.rbegin(), normalized_query.rend(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }).base(),
+        normalized_query.end()
+    );
+    if (normalized_query.empty()) {
+        return true;
+    }
+
+    std::transform(
+        normalized_query.begin(),
+        normalized_query.end(),
+        normalized_query.begin(),
+        [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); }
+    );
+
+    std::string normalized_candidate(candidate);
+    std::transform(
+        normalized_candidate.begin(),
+        normalized_candidate.end(),
+        normalized_candidate.begin(),
+        [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); }
+    );
+    return normalized_candidate.find(normalized_query) != std::string::npos;
+}
+
+std::vector<EntityType> BuildSortedSpawnTypes() {
+    std::vector<EntityType> types;
+    types.reserve(kEntityTypeCount > 0 ? kEntityTypeCount - 1 : 0);
+    for (std::size_t type_index = 1; type_index < kEntityTypeCount; ++type_index) {
+        types.push_back(static_cast<EntityType>(type_index));
+    }
+
+    std::sort(types.begin(), types.end(), [](EntityType left, EntityType right) {
+        return std::strcmp(GetEntityTypeName(left), GetEntityTypeName(right)) < 0;
+    });
+    return types;
 }
 
 bool SpawnDebugEntity(
@@ -154,11 +202,15 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     } else {
         ImGui::SeparatorText("Spawner");
         ImGui::InputText("Search", debug.spawn_search.data(), debug.spawn_search.size());
+        ImGui::SameLine();
+        if (ImGui::Button("Clear Search")) {
+            debug.spawn_search[0] = '\0';
+        }
 
         const char* current_spawn_name = GetEntityTypeName(debug.spawn_entity_type);
         if (ImGui::BeginCombo("Spawn Type", current_spawn_name)) {
-            for (std::size_t type_index = 1; type_index < kEntityTypeCount; ++type_index) {
-                const EntityType type_ = static_cast<EntityType>(type_index);
+            const std::vector<EntityType> sorted_spawn_types = BuildSortedSpawnTypes();
+            for (const EntityType type_ : sorted_spawn_types) {
                 const char* type_name = GetEntityTypeName(type_);
                 if (!SpawnSearchMatches(debug.spawn_search.data(), type_name)) {
                     continue;

@@ -351,6 +351,8 @@ const char* PassiveItemToString(EntityPassiveItem passive_item) {
         return "SpringShoes";
     case EntityPassiveItem::SpikeShoes:
         return "SpikeShoes";
+    case EntityPassiveItem::UdjatEye:
+        return "UdjatEye";
     case EntityPassiveItem::Count:
         return "Count";
     }
@@ -383,7 +385,8 @@ bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type) {
 }
 
 bool CanRevealEmbeddedTreasure(const Entity& entity) {
-    return HasPassiveItem(entity, EntityPassiveItem::Spectacles);
+    return HasPassiveItem(entity, EntityPassiveItem::Spectacles) ||
+           HasPassiveItem(entity, EntityPassiveItem::UdjatEye);
 }
 
 void EnableStone(Entity& entity) {

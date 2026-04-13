@@ -717,6 +717,134 @@ void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
     });
 }
 
+bool IsTreasureSpawnType(EntityType type_) {
+    switch (type_) {
+    case EntityType::Gold:
+    case EntityType::GoldStack:
+    case EntityType::EmeraldBig:
+    case EntityType::SapphireBig:
+    case EntityType::RubyBig:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool IsValidTreasureFloorTile(const Stage& stage, int tile_x, int tile_y) {
+    if (!stage.IsTileCoordInside(tile_x, tile_y) || tile_y <= 0) {
+        return false;
+    }
+    if (stage.GetTile(static_cast<unsigned int>(tile_x), static_cast<unsigned int>(tile_y)) != Tile::Air) {
+        return false;
+    }
+    if (!IsCollidableTileAt(stage, tile_x, tile_y + 1)) {
+        return false;
+    }
+
+    const Tile tile_above = stage.GetTile(
+        static_cast<unsigned int>(tile_x),
+        static_cast<unsigned int>(tile_y - 1)
+    );
+    return tile_above != Tile::Spikes && tile_above != Tile::Entrance && tile_above != Tile::Exit;
+}
+
+std::optional<Vec2> FindKeyChestSpawnPos(const Stage& stage) {
+    const std::optional<Vec2> exit_pos = FindExitPos(stage);
+    if (!exit_pos.has_value()) {
+        return std::nullopt;
+    }
+
+    const int exit_tile_x = static_cast<int>(exit_pos->x) / static_cast<int>(kTileSize);
+    const int exit_tile_y = static_cast<int>(exit_pos->y) / static_cast<int>(kTileSize);
+    const std::array<IVec2, 7> candidates = {
+        IVec2::New(-1, 1),
+        IVec2::New(2, 1),
+        IVec2::New(0, 1),
+        IVec2::New(-2, 1),
+        IVec2::New(1, 1),
+        IVec2::New(-1, 0),
+        IVec2::New(1, 0),
+    };
+
+    for (const IVec2& candidate : candidates) {
+        const int tile_x = exit_tile_x + candidate.x;
+        const int tile_y = exit_tile_y + candidate.y;
+        if (!IsValidTreasureFloorTile(stage, tile_x, tile_y)) {
+            continue;
+        }
+
+        const Vec2 spawn_pos = Vec2::New(
+            static_cast<float>(tile_x * static_cast<int>(kTileSize) + 8),
+            static_cast<float>(tile_y * static_cast<int>(kTileSize) - 8)
+        );
+        if (!HasSpawnAtWorldPos(stage, spawn_pos)) {
+            return spawn_pos;
+        }
+    }
+
+    return std::nullopt;
+}
+
+void AddUdjatKeyChest(Stage& stage) {
+    if (GetLevelNumber(stage.stage_type) < 2) {
+        return;
+    }
+    if (HasSpawnType(stage, EntityType::KeyChest) || HasSpawnType(stage, EntityType::ChestKey)) {
+        return;
+    }
+
+    const std::optional<Vec2> chest_pos = FindKeyChestSpawnPos(stage);
+    if (!chest_pos.has_value()) {
+        return;
+    }
+
+    stage.entity_spawns.push_back(StageEntitySpawn{
+        .type_ = EntityType::KeyChest,
+        .pos = *chest_pos,
+    });
+
+    std::vector<std::size_t> treasure_indices;
+    treasure_indices.reserve(stage.entity_spawns.size());
+    for (std::size_t i = 0; i < stage.entity_spawns.size(); ++i) {
+        const StageEntitySpawn& spawn = stage.entity_spawns[i];
+        if (!IsTreasureSpawnType(spawn.type_)) {
+            continue;
+        }
+        if (Length(spawn.pos - *chest_pos) < 64.0F) {
+            continue;
+        }
+        treasure_indices.push_back(i);
+    }
+
+    if (!treasure_indices.empty()) {
+        const std::size_t pick = treasure_indices[static_cast<std::size_t>(PickIndex(treasure_indices.size()))];
+        stage.entity_spawns[pick].type_ = EntityType::ChestKey;
+        return;
+    }
+
+    for (int y = static_cast<int>(stage.GetTileHeight()) - 2; y >= 1; --y) {
+        for (int x = 0; x < static_cast<int>(stage.GetTileWidth()); ++x) {
+            if (!IsValidTreasureFloorTile(stage, x, y)) {
+                continue;
+            }
+
+            const Vec2 key_pos = Vec2::New(
+                static_cast<float>(x * static_cast<int>(kTileSize) + 8),
+                static_cast<float>(y * static_cast<int>(kTileSize) - 4)
+            );
+            if (Length(key_pos - *chest_pos) < 64.0F || HasSpawnAtWorldPos(stage, key_pos)) {
+                continue;
+            }
+
+            stage.entity_spawns.push_back(StageEntitySpawn{
+                .type_ = EntityType::ChestKey,
+                .pos = key_pos,
+            });
+            return;
+        }
+    }
+}
+
 EntityType PickUndergroundItemType() {
     switch (rng::RandomIntInclusive(0, 18)) {
     case 0:
@@ -1579,6 +1707,7 @@ Stage GenerateStage(StageType stage_type) {
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     AddMinesEmbeddedTreasure(stage);
     AddMinesTreasure(stage);
+    AddUdjatKeyChest(stage);
     ConvertBlocksToArrowTraps(stage);
     AddAmbientMinesEntities(stage);
     return stage;

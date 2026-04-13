@@ -99,6 +99,9 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::SacAltar, entities::sac_altar::kSacAltarArchetype, "SacAltar");
     SetArchetype(EntityType::GoldIdol, entities::gold_idol::kGoldIdolArchetype, "GoldIdol");
     SetArchetype(EntityType::Chest, entities::chest::kChestArchetype, "Chest");
+    SetArchetype(EntityType::KeyChest, entities::chest::kKeyChestArchetype, "KeyChest");
+    SetArchetype(EntityType::ChestKey, entities::chest::kChestKeyArchetype, "ChestKey");
+    SetArchetype(EntityType::UdjatEye, entities::chest::kUdjatEyeArchetype, "UdjatEye");
     SetArchetype(EntityType::Mattock, entities::mattock::kMattockArchetype, "Mattock");
     SetArchetype(EntityType::Cape, entities::gear_items::kCapeArchetype, "Cape");
     SetArchetype(EntityType::Shotgun, entities::shotgun::kShotgunArchetype, "Shotgun");

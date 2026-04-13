@@ -41,22 +41,29 @@ void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
     }
 }
 
-void ApplyDamageEffect(std::size_t entity_idx, State& state, Audio& audio) {
+EntityDamageEffectResult ApplyDamageEffect(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    DamageType damage_type,
+    unsigned int amount,
+    bool damage_applied
+) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.stone) {
-        return;
-    }
-
     const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
-    if (archetype.damage_animation.has_value()) {
-        SpawnDamageEffectAnimationBurst(*archetype.damage_animation, entity.GetCenter(), state);
-    }
-    if (archetype.damage_sound.has_value()) {
-        audio.PlaySoundEffect(*archetype.damage_sound);
+
+    if (damage_applied && !entity.stone) {
+        if (archetype.damage_animation.has_value()) {
+            SpawnDamageEffectAnimationBurst(*archetype.damage_animation, entity.GetCenter(), state);
+        }
+        if (archetype.damage_sound.has_value()) {
+            audio.PlaySoundEffect(*archetype.damage_sound);
+        }
     }
     if (archetype.on_damage_effect != nullptr) {
-        archetype.on_damage_effect(entity_idx, state, audio);
+        return archetype.on_damage_effect(entity_idx, state, audio, damage_type, amount, damage_applied);
     }
+    return EntityDamageEffectResult::None;
 }
 
 } // namespace
@@ -89,6 +96,11 @@ DamageResult TryDamageEntity(
     unsigned int amount
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, false) ==
+        EntityDamageEffectResult::Consumed) {
+        return DamageResult::Hurt;
+    }
+
     const DamageVulnerability v = entity.damage_vulnerability;
     if (v == DamageVulnerability::Immune) {
         return DamageResult::None;
@@ -136,7 +148,7 @@ DamageResult TryDamageEntity(
         bool do_damage_calculation = false;
         if (damage_type == DamageType::Crush) {
             entity.health = 0;
-            ApplyDamageEffect(entity_idx, state, audio);
+            (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
             DieIfDead(entity_idx, state, audio);
             if (!entity.active) {
                 return DamageResult::Died;
@@ -152,7 +164,7 @@ DamageResult TryDamageEntity(
         } else {
             if (damage_type == DamageType::Spikes) {
                 entity.health = 0;
-                ApplyDamageEffect(entity_idx, state, audio);
+                (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
                 DieIfDead(entity_idx, state, audio);
                 return DamageResult::Died;
             } else if (damage_type == DamageType::Explosion) {
@@ -178,11 +190,11 @@ DamageResult TryDamageEntity(
         if (do_damage_calculation) {
             if (entity.health > amount) {
                 entity.health -= amount;
-                ApplyDamageEffect(entity_idx, state, audio);
+                (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
                 return DamageResult::Hurt;
             }
             entity.health = 0;
-            ApplyDamageEffect(entity_idx, state, audio);
+            (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
             DieIfDead(entity_idx, state, audio);
             return DamageResult::Died;
         }
