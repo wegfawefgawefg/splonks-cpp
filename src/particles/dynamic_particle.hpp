@@ -1,11 +1,11 @@
 #pragma once
 
 #include "draw_layer.hpp"
-#include "special_effects/special_effect.hpp"
+#include "particles/particle.hpp"
 
 namespace splonks {
 
-struct UltraDynamicEffect final : public SpecialEffect {
+struct DynamicParticle final : public Particle {
     std::uint32_t counter = 0;
     bool finish_on_animation_end = false;
     DrawLayer draw_layer = DrawLayer::Middle;
@@ -17,10 +17,6 @@ struct UltraDynamicEffect final : public SpecialEffect {
     Vec2 svel;
     float rotvel = 0.0F;
     float alpha_vel = 0.0F;
-    Vec2 acc;
-    Vec2 sacc;
-    float rotacc = 0.0F;
-    float alpha_acc = 0.0F;
     FrameDataAnimator frame_data_animator{};
 
     void Step(const FrameDataDb& frame_data_db, float dt) override;

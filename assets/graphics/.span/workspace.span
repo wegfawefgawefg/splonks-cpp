@@ -28,7 +28,7 @@
     }
   ],
   "activePaletteId": "sweetie-16-manual",
-  "lastOpenSheetPath": "special_effects/special_effects.png",
+  "lastOpenSheetPath": "particles/particles.png",
   "selectedAnnotationId": "5d5dd255-439d-4951-a6da-42bf49acd457",
   "sheets": [
     {
@@ -80,7 +80,7 @@
       }
     },
     {
-      "path": "special_effects/special_effects.png",
+      "path": "particles/particles.png",
       "annotations": [
         {
           "id": "de6a813f-768b-4255-95b3-acb201cb8bc3",

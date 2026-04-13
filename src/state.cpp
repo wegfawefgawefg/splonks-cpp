@@ -44,7 +44,7 @@ State State::New() {
     state.deaths = 0;
     state.frame_pause = 0;
     state.entity_manager = EntityManager::New();
-    state.special_effects.clear();
+    state.particles = ParticleSystem{};
     state.sid = SID::New();
     state.next_stage = StageType::Test1;
     state.stage_lighting = StageLighting::New();
@@ -52,7 +52,7 @@ State State::New() {
     state.controlled_entity_vid.reset();
     state.mouse_trailer_vid.reset();
     state.contact = ContactBookkeeping{};
-    state.entity_tool_states.clear();
+    state.entity_tools = EntityToolInventoryState{};
     InitDebugLevel(state);
     return state;
 }
@@ -85,63 +85,6 @@ void State::UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics) 
     sid.Upsert(entity.vid, broadphase_aabb);
 }
 
-void State::StepEntityToolStates() {
-    for (EntityToolState& tool_state : entity_tool_states) {
-        for (ToolSlot& slot : tool_state.slots) {
-            if (!slot.active) {
-                continue;
-            }
-            if (slot.cooldown > 0) {
-                slot.cooldown -= 1;
-            }
-        }
-    }
-}
-
-EntityToolState* State::FindEntityToolStateMut(const VID& owner_vid) {
-    for (EntityToolState& tool_state : entity_tool_states) {
-        if (tool_state.owner_vid == owner_vid) {
-            return &tool_state;
-        }
-    }
-    return nullptr;
-}
-
-const EntityToolState* State::FindEntityToolState(const VID& owner_vid) const {
-    for (const EntityToolState& tool_state : entity_tool_states) {
-        if (tool_state.owner_vid == owner_vid) {
-            return &tool_state;
-        }
-    }
-    return nullptr;
-}
-
-ToolSlot* State::FindToolSlotMut(const VID& owner_vid, std::size_t slot_index) {
-    EntityToolState* const tool_state = FindEntityToolStateMut(owner_vid);
-    if (tool_state == nullptr || slot_index >= tool_state->slots.size()) {
-        return nullptr;
-    }
-    return &tool_state->slots[slot_index];
-}
-
-const ToolSlot* State::FindToolSlot(const VID& owner_vid, std::size_t slot_index) const {
-    const EntityToolState* const tool_state = FindEntityToolState(owner_vid);
-    if (tool_state == nullptr || slot_index >= tool_state->slots.size()) {
-        return nullptr;
-    }
-    return &tool_state->slots[slot_index];
-}
-
-ToolSlot& State::EnsureToolSlot(const VID& owner_vid, std::size_t slot_index) {
-    if (EntityToolState* existing = FindEntityToolStateMut(owner_vid)) {
-        return existing->slots[slot_index];
-    }
-    EntityToolState tool_state{};
-    tool_state.owner_vid = owner_vid;
-    entity_tool_states.push_back(tool_state);
-    return entity_tool_states.back().slots[slot_index];
-}
-
 bool IsStageWon(const State& state) {
     if (!state.player_vid.has_value()) {
         return false;
@@ -167,19 +110,5 @@ bool IsStageWon(const State& state) {
     return false;
 }
 
-void StepSpecialEffects(State& state, const Graphics& graphics, float dt) {
-    for (auto& effect : state.special_effects) {
-        effect->Step(graphics.frame_data_db, dt);
-    }
-
-    std::vector<std::unique_ptr<SpecialEffect>> kept_effects;
-    kept_effects.reserve(state.special_effects.size());
-    for (auto& effect : state.special_effects) {
-        if (!effect->IsFinished()) {
-            kept_effects.push_back(std::move(effect));
-        }
-    }
-    state.special_effects = std::move(kept_effects);
-}
 
 } // namespace splonks

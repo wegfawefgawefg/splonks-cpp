@@ -35,9 +35,9 @@ Current caveats
      Replace or adapt this shim to `glm` later once the port has enough surface
      area to justify the dependency.
 
-3. `SpecialEffect` trait macro pattern
-   - Rust source: `splonks-rs/src/special_effects/special_effect.rs`
-   - Current C++ port: `splonks-cpp/src/special_effects/special_effect.hpp`
+3. `Particle` trait macro pattern
+   - Rust source: `splonks-rs/src/particles/special_effect.rs`
+   - Current C++ port: `splonks-cpp/src/particles/special_effect.hpp`
    - Caveat:
      Rust uses a trait plus the exported `special_effect_getters!` macro to stamp
      out shared getter implementations on concrete effect types.

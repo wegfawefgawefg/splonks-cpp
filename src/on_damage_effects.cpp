@@ -1,6 +1,6 @@
 #include "on_damage_effects.hpp"
 
-#include "special_effects/dynamic_effect.hpp"
+#include "particles/dynamic_particle.hpp"
 #include "utils.hpp"
 
 #include <memory>
@@ -15,7 +15,7 @@ void SpawnDamageEffectAnimationBurst(FrameDataId animation_id, const Vec2& cente
     constexpr float kVelRange = 8.0F;
 
     for (int i = 0; i < 16; ++i) {
-        auto effect = std::make_unique<DynamicEffect>();
+        auto effect = std::make_unique<DynamicParticle>();
         effect->frame_data_animator = FrameDataAnimator::New(animation_id);
         effect->draw_layer = DrawLayer::Foreground;
         effect->counter = 16;
@@ -27,7 +27,7 @@ void SpawnDamageEffectAnimationBurst(FrameDataId animation_id, const Vec2& cente
         effect->svel = Vec2::New(-1.0F, -1.0F);
         effect->rotvel = 0.0F;
         effect->alpha_vel = -0.1F;
-        state.special_effects.push_back(std::move(effect));
+        state.particles.Add(std::move(effect));
     }
 }
 

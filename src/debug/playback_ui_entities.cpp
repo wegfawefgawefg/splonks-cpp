@@ -285,7 +285,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
                     FindPreferredToolKindForSlotIndex(slot_index)) {
                 FillToolSlot(preview_slot, *preferred_tool_kind, 0, false);
             }
-            ToolSlot* slot = state.FindToolSlotMut(entity.vid, slot_index);
+            ToolSlot* slot = state.entity_tools.FindToolSlotMut(entity.vid, slot_index);
             if (slot == nullptr) {
                 slot = &preview_slot;
             }
@@ -293,7 +293,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             ImGui::SeparatorText(slot_index == 0 ? "Tool Slot 1" : "Tool Slot 2");
             bool active = slot->active;
             if (ImGui::Checkbox("Active", &active)) {
-                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
                 owned_slot = *slot;
                 owned_slot.active = active;
                 slot = &owned_slot;
@@ -306,7 +306,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
                     const ToolKind tool_kind = static_cast<ToolKind>(tool_index);
                     const bool selected = static_cast<int>(tool_index) == kind_index;
                     if (ImGui::Selectable(GetToolKindName(tool_kind), selected)) {
-                        ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                        ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
                         owned_slot = *slot;
                         owned_slot.kind = tool_kind;
                         slot = &owned_slot;
@@ -323,14 +323,14 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             int cooldown = static_cast<int>(slot->cooldown);
             ImGui::SetNextItemWidth(120.0F);
             if (ImGui::InputInt("Count", &count)) {
-                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
                 owned_slot = *slot;
                 owned_slot.count = static_cast<std::uint16_t>(std::clamp(count, 0, 65535));
                 slot = &owned_slot;
             }
             ImGui::SetNextItemWidth(120.0F);
             if (ImGui::InputInt("Cooldown", &cooldown)) {
-                ToolSlot& owned_slot = state.EnsureToolSlot(entity.vid, slot_index);
+                ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
                 owned_slot = *slot;
                 owned_slot.cooldown = static_cast<std::uint16_t>(std::clamp(cooldown, 0, 65535));
             }

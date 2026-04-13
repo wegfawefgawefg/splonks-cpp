@@ -1,18 +1,13 @@
-#include "special_effects/ultra_dynamic_effect.hpp"
+#include "particles/dynamic_particle.hpp"
 
 namespace splonks {
 
-void UltraDynamicEffect::Step(const FrameDataDb& frame_data_db, float dt) {
+void DynamicParticle::Step(const FrameDataDb& frame_data_db, float dt) {
     if (counter > 0) {
         counter -= 1;
     }
 
     frame_data_animator.Step(frame_data_db, dt);
-    vel += acc;
-    svel += sacc;
-    rotvel += rotacc;
-    alpha_vel += alpha_acc;
-
     pos += vel;
     size += svel;
     rot += rotvel;
@@ -22,27 +17,27 @@ void UltraDynamicEffect::Step(const FrameDataDb& frame_data_db, float dt) {
     alpha = Max(Min(alpha, 1.0F), 0.0F);
 }
 
-bool UltraDynamicEffect::IsFinished() const {
+bool DynamicParticle::IsFinished() const {
     return counter == 0 || (finish_on_animation_end && frame_data_animator.IsFinished());
 }
 
-Vec2 UltraDynamicEffect::GetPos() const {
+Vec2 DynamicParticle::GetPos() const {
     return pos;
 }
 
-Vec2 UltraDynamicEffect::GetSize() const {
+Vec2 DynamicParticle::GetSize() const {
     return size;
 }
 
-float UltraDynamicEffect::GetRot() const {
+float DynamicParticle::GetRot() const {
     return rot;
 }
 
-float UltraDynamicEffect::GetAlpha() const {
+float DynamicParticle::GetAlpha() const {
     return alpha;
 }
 
-const FrameDataAnimator& UltraDynamicEffect::GetFrameDataAnimator() const {
+const FrameDataAnimator& DynamicParticle::GetFrameDataAnimator() const {
     return frame_data_animator;
 }
 

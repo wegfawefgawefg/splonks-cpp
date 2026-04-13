@@ -4,7 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "special_effects/ultra_dynamic_effect.hpp"
+#include "particles/ultra_dynamic_particle.hpp"
 #include "state.hpp"
 
 #include <memory>
@@ -18,7 +18,7 @@ void SpawnJetpackSmoke(State& state, const Vec2& pos) {
         const float vel = rng::RandomFloat(0.1F, 0.5F);
         const float svel = rng::RandomFloat(vel * 0.1F, vel * 1.0F);
         const float sacc = rng::RandomFloat(vel * 0.01F, vel * 0.02F);
-        auto effect = std::make_unique<UltraDynamicEffect>();
+        auto effect = std::make_unique<UltraDynamicParticle>();
         effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
         effect->draw_layer = DrawLayer::Foreground;
         effect->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
@@ -34,7 +34,7 @@ void SpawnJetpackSmoke(State& state, const Vec2& pos) {
         effect->sacc = Vec2::New(sacc, sacc);
         effect->rotacc = 0.0F;
         effect->alpha_acc = 0.0F;
-        state.special_effects.push_back(std::move(effect));
+        state.particles.Add(std::move(effect));
     }
 }
 

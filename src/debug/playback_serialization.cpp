@@ -765,7 +765,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.player_vid = state.player_vid;
     snapshot.controlled_entity_vid = state.controlled_entity_vid;
     snapshot.mouse_trailer_vid = state.mouse_trailer_vid;
-    snapshot.entity_tool_states = state.entity_tool_states;
+    snapshot.entity_tool_states = state.entity_tools.tool_states;
     snapshot.play_cam_pos = graphics.play_cam.pos;
     return snapshot;
 }
@@ -810,12 +810,12 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.frame_pause = snapshot.frame_pause;
     state.debug_level = snapshot.debug_level;
     state.entity_manager = snapshot.entity_manager;
-    state.special_effects.clear();
+    state.particles.Clear();
     state.stage = snapshot.stage;
     state.player_vid = snapshot.player_vid;
     state.controlled_entity_vid = snapshot.controlled_entity_vid;
     state.mouse_trailer_vid = snapshot.mouse_trailer_vid;
-    state.entity_tool_states = snapshot.entity_tool_states;
+    state.entity_tools.tool_states = snapshot.entity_tool_states;
     state.RebuildSid(graphics);
     graphics.play_cam.pos = snapshot.play_cam_pos;
 }

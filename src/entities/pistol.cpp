@@ -9,8 +9,8 @@
 #include "state.hpp"
 #include "utils.hpp"
 
-#include "special_effects/dynamic_effect.hpp"
-#include "special_effects/ultra_dynamic_effect.hpp"
+#include "particles/dynamic_particle.hpp"
+#include "particles/ultra_dynamic_particle.hpp"
 
 #include <memory>
 
@@ -24,7 +24,7 @@ constexpr unsigned int kPistolDamage = 4;
 
 void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 4; ++i) {
-        auto effect = std::make_unique<UltraDynamicEffect>();
+        auto effect = std::make_unique<UltraDynamicParticle>();
         effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
         effect->draw_layer = DrawLayer::Foreground;
         effect->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 14));
@@ -43,13 +43,13 @@ void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
         effect->sacc = Vec2::New(0.01F, 0.01F);
         effect->rotacc = 0.0F;
         effect->alpha_acc = -0.003F;
-        state.special_effects.push_back(std::move(effect));
+        state.particles.Add(std::move(effect));
     }
 }
 
 void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 3; ++i) {
-        auto spark = std::make_unique<DynamicEffect>();
+        auto spark = std::make_unique<DynamicParticle>();
         spark->frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
         spark->draw_layer = DrawLayer::Foreground;
         spark->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
@@ -64,11 +64,11 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
         spark->svel = Vec2::New(-0.12F, -0.12F);
         spark->rotvel = rng::RandomFloat(-6.0F, 6.0F);
         spark->alpha_vel = -0.14F;
-        state.special_effects.push_back(std::move(spark));
+        state.particles.Add(std::move(spark));
     }
 
     for (int i = 0; i < 2; ++i) {
-        auto smoke = std::make_unique<UltraDynamicEffect>();
+        auto smoke = std::make_unique<UltraDynamicParticle>();
         smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
         smoke->draw_layer = DrawLayer::Foreground;
         smoke->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
@@ -84,7 +84,7 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
         smoke->sacc = Vec2::New(0.01F, 0.01F);
         smoke->rotacc = 0.0F;
         smoke->alpha_acc = -0.003F;
-        state.special_effects.push_back(std::move(smoke));
+        state.particles.Add(std::move(smoke));
     }
 }
 

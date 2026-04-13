@@ -5,9 +5,9 @@
 
 namespace splonks {
 
-class SpecialEffect {
+class Particle {
   public:
-    virtual ~SpecialEffect() = default;
+    virtual ~Particle() = default;
 
     virtual void Step(const FrameDataDb& frame_data_db, float dt) = 0;
     virtual bool IsFinished() const = 0;

@@ -13,7 +13,7 @@ bool TryUseToolSlot(
     bool trigger_pressed
 ) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    const ToolSlot* const tool_slot = state.FindToolSlot(entity.vid, tool_slot_index);
+    const ToolSlot* const tool_slot = state.entity_tools.FindToolSlot(entity.vid, tool_slot_index);
     if (tool_slot == nullptr || !tool_slot->active) {
         return false;
     }

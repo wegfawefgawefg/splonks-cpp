@@ -157,7 +157,7 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     RenderEmbeddedTreasureOverlays(renderer, state, graphics);
     RenderBackgroundStamps(renderer, state, graphics);
     RenderEntities(renderer, state, graphics);
-    RenderSpecialEffects(renderer, state, graphics);
+    RenderParticles(renderer, state, graphics);
 }
 
 void RenderStageTransition(SDL_Renderer* renderer, State& state, Graphics& graphics) {

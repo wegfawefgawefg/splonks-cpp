@@ -153,7 +153,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
 
             if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
                 FillToolSlot(
-                    state.EnsureToolSlot(*player_vid, 0),
+                    state.entity_tools.EnsureToolSlot(*player_vid, 0),
                     *bomb_tool_kind,
                     static_cast<std::uint16_t>(player->bombs),
                     true
@@ -162,7 +162,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
 
             if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
                 FillToolSlot(
-                    state.EnsureToolSlot(*player_vid, 1),
+                    state.entity_tools.EnsureToolSlot(*player_vid, 1),
                     *rope_tool_kind,
                     static_cast<std::uint16_t>(player->ropes),
                     true

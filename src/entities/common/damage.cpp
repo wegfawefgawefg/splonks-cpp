@@ -2,7 +2,7 @@
 
 #include "entity/archetype.hpp"
 #include "on_damage_effects.hpp"
-#include "special_effects/ultra_dynamic_effect.hpp"
+#include "particles/ultra_dynamic_particle.hpp"
 #include "render/terrain_lighting.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
@@ -540,7 +540,7 @@ void DoExplosion(
 ) {
     const float effect_size = size * 0.5F * static_cast<float>(kTileSize);
     {
-        auto effect = std::make_unique<UltraDynamicEffect>();
+        auto effect = std::make_unique<UltraDynamicParticle>();
         effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::GrenadeBoom);
         effect->frame_data_animator.loop = false;
         effect->finish_on_animation_end = true;
@@ -558,14 +558,14 @@ void DoExplosion(
         effect->sacc = Vec2::New(-0.2F, -0.2F);
         effect->rotacc = 0.0F;
         effect->alpha_acc = 0.0F;
-        state.special_effects.push_back(std::move(effect));
+        state.particles.Add(std::move(effect));
     }
     for (int i = 0; i < 16; ++i) {
         const float vel = rng::RandomFloat(-0.3F, 0.0F);
         const float svel = rng::RandomFloat(-vel * 0.1F, -vel * 1.0F);
         const float sacc = rng::RandomFloat(-vel * 0.01F, -vel * 0.02F);
 
-        auto effect = std::make_unique<UltraDynamicEffect>();
+        auto effect = std::make_unique<UltraDynamicParticle>();
         effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
         effect->draw_layer = DrawLayer::Foreground;
         effect->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(64, 128));
@@ -581,7 +581,7 @@ void DoExplosion(
         effect->sacc = Vec2::New(sacc, sacc);
         effect->rotacc = 0.0F;
         effect->alpha_acc = 0.0F;
-        state.special_effects.push_back(std::move(effect));
+        state.particles.Add(std::move(effect));
     }
     audio.PlaySoundEffect(SoundEffect::BombExplosion);
     const float explosion_size = size * static_cast<float>(kTileSize);

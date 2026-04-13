@@ -18,7 +18,7 @@ True leaves
 - `src/utils.rs`
 - `src/tile.rs`
 - `src/settings.rs`
-- `src/special_effects/special_effect.rs`
+- `src/particles/special_effect.rs`
 
 Near leaves
 -----------
@@ -28,10 +28,10 @@ Near leaves
   - caveat: depended on `entity::Origin`, now peeled into a tiny support type
 - `src/audio.rs`
   - caveat: backend-heavy; now ported with a placeholder backend and preserved surface API
-- `src/special_effects/static_effect.rs`
-- `src/special_effects/dynamic_effect.rs`
-- `src/special_effects/spline_effect.rs`
-- `src/special_effects/ultra_dynamic_effect.rs`
+- `src/particles/static_effect.rs`
+- `src/particles/dynamic_effect.rs`
+- `src/particles/spline_effect.rs`
+- `src/particles/ultra_dynamic_effect.rs`
 
 Not leaves yet
 --------------
@@ -76,7 +76,7 @@ Trivial module wiring
 - `src/stage_gen/mod.rs`
 - `src/systems/mod.rs`
 - `src/entities/mod.rs`
-- `src/special_effects/mod.rs`
+- `src/particles/mod.rs`
 
 Current completed real leaves
 -----------------------------
@@ -84,14 +84,14 @@ Current completed real leaves
 - `src/utils.rs`
 - `src/tile.rs`
 - `src/settings.rs`
-- `src/special_effects/special_effect.rs`
+- `src/particles/special_effect.rs`
 
 Current completed near leaves
 -----------------------------
 - `src/sid.rs`
 - `src/sprite.rs`
 - `src/audio.rs`
-- `src/special_effects/static_effect.rs`
-- `src/special_effects/dynamic_effect.rs`
-- `src/special_effects/spline_effect.rs`
-- `src/special_effects/ultra_dynamic_effect.rs`
+- `src/particles/static_effect.rs`
+- `src/particles/dynamic_effect.rs`
+- `src/particles/spline_effect.rs`
+- `src/particles/ultra_dynamic_effect.rs`

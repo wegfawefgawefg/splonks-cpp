@@ -7,7 +7,7 @@
 #include "graphics.hpp"
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
-#include "special_effects/special_effect.hpp"
+#include "particles/particle.hpp"
 #include "state.hpp"
 #include "render/terrain_lighting.hpp"
 #include "tile.hpp"
@@ -510,10 +510,10 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
     }
 }
 
-void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+void RenderParticles(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const auto& special_effect : state.special_effects) {
-        const FrameDataAnimator& animator = special_effect->GetFrameDataAnimator();
+    for (const auto& particle : state.particles.effects) {
+        const FrameDataAnimator& animator = particle->GetFrameDataAnimator();
         if (!animator.HasAnimation()) {
             continue;
         }
@@ -528,10 +528,10 @@ void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& 
             continue;
         }
 
-        const Vec2 pos = special_effect->GetPos();
-        const Vec2 size = special_effect->GetSize();
-        const float rotation = special_effect->GetRot();
-        const float alpha = special_effect->GetAlpha();
+        const Vec2 pos = particle->GetPos();
+        const Vec2 size = particle->GetSize();
+        const float rotation = particle->GetRot();
+        const float alpha = particle->GetAlpha();
         const Vec2 half_size = size / 2.0F;
         SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
         const SDL_FRect src{

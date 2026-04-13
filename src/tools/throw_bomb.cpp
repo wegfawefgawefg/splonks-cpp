@@ -27,7 +27,7 @@ bool UseThrowBombTool(
     bool trigger_pressed
 ) {
     const VID user_vid = state.entity_manager.entities[entity_idx].vid;
-    ToolSlot* const tool_slot = state.FindToolSlotMut(user_vid, tool_slot_index);
+    ToolSlot* const tool_slot = state.entity_tools.FindToolSlotMut(user_vid, tool_slot_index);
     if (tool_slot == nullptr) {
         return false;
     }

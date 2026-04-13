@@ -99,10 +99,10 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.contact.ClearEntityContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
-    state.StepEntityToolStates();
+    state.entity_tools.Step();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
-    StepSpecialEffects(state, graphics, dt);
+    state.particles.Step(graphics.frame_data_db, dt);
 
     bool lost = false;
     if (state.player_vid) {
@@ -206,7 +206,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.contact.StepInteractionCooldowns(state.stage_frame);
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
-    StepSpecialEffects(state, graphics, dt);
+    state.particles.Step(graphics.frame_data_db, dt);
 }
 
 void StepWin(State& state, Audio& audio, Graphics& graphics) {

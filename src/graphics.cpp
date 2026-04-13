@@ -38,7 +38,7 @@ SDL_Texture* LoadFrameDataTexture(SDL_Renderer* renderer, const std::string& fil
         "assets/graphics/sprites/" + filename,
         "assets/graphics/tiles/" + filename,
         "assets/graphics/images/" + filename,
-        "assets/graphics/special_effects/" + filename,
+        "assets/graphics/particles/" + filename,
     };
 
     for (const std::string& path : candidate_paths) {

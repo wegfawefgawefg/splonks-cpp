@@ -268,7 +268,7 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
                 tool_slot_size
             );
 
-            const ToolSlot* const slot = state.FindToolSlot(*player_vid, slot_index);
+            const ToolSlot* const slot = state.entity_tools.FindToolSlot(*player_vid, slot_index);
             if (slot != nullptr && slot->active) {
                 const IVec2 tool_icon_cursor = IVec2::New(
                     icon_cursor.x + (tool_slot_size.x - tool_icon_size.x) / 2,

@@ -2,6 +2,7 @@
 
 #include "contact_bookkeeping.hpp"
 #include "entity/manager.hpp"
+#include "entity_tool_inventory.hpp"
 #include "inputs.hpp"
 #include "menu/settings.hpp"
 #include "menu/postfx.hpp"
@@ -11,7 +12,7 @@
 #include "menu/video.hpp"
 #include "settings.hpp"
 #include "sid.hpp"
-#include "special_effects/special_effect.hpp"
+#include "particles/system.hpp"
 #include "tools/tool_archetype.hpp"
 #include "stage.hpp"
 #include "stage_lighting.hpp"
@@ -70,20 +71,6 @@ struct DebugLevelConfig {
     DebugLevelKind kind = DebugLevelKind::Cave1;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
-};
-
-constexpr std::size_t kToolSlotCount = 2;
-
-struct ToolSlot {
-    ToolKind kind = ToolKind::ThrowPot;
-    std::uint16_t count = 0;
-    std::uint16_t cooldown = 0;
-    bool active = false;
-};
-
-struct EntityToolState {
-    VID owner_vid;
-    std::array<ToolSlot, kToolSlotCount> slots{};
 };
 
 struct DebugOverlayState {
@@ -147,7 +134,7 @@ struct State {
     // World and debug level state.
     DebugLevelConfig debug_level;
     EntityManager entity_manager;
-    std::vector<std::unique_ptr<SpecialEffect>> special_effects;
+    ParticleSystem particles;
     SID sid;
     Stage stage;
     StageLighting stage_lighting;
@@ -161,21 +148,14 @@ struct State {
     ContactBookkeeping contact;
 
     // Per-entity owned tool state.
-    std::vector<EntityToolState> entity_tool_states;
+    EntityToolInventoryState entity_tools;
 
     static State New();
     void SetMode(Mode new_mode);
     void RebuildSid(const Graphics& graphics);
     void UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics);
-    void StepEntityToolStates();
-    EntityToolState* FindEntityToolStateMut(const VID& owner_vid);
-    const EntityToolState* FindEntityToolState(const VID& owner_vid) const;
-    ToolSlot* FindToolSlotMut(const VID& owner_vid, std::size_t slot_index);
-    const ToolSlot* FindToolSlot(const VID& owner_vid, std::size_t slot_index) const;
-    ToolSlot& EnsureToolSlot(const VID& owner_vid, std::size_t slot_index);
 };
 
 bool IsStageWon(const State& state);
-void StepSpecialEffects(State& state, const Graphics& graphics, float dt);
 
 } // namespace splonks

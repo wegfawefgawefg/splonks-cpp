@@ -1,8 +1,8 @@
-#include "special_effects/spline_effect.hpp"
+#include "particles/spline_particle.hpp"
 
 namespace splonks {
 
-void SplineEffect::Step(const FrameDataDb& frame_data_db, float dt) {
+void SplineParticle::Step(const FrameDataDb& frame_data_db, float dt) {
     if (counter > 0) {
         counter -= 1;
     }
@@ -24,27 +24,27 @@ void SplineEffect::Step(const FrameDataDb& frame_data_db, float dt) {
     pos = CalculateBezierPoint(t, point_1, point_2, point_3);
 }
 
-bool SplineEffect::IsFinished() const {
+bool SplineParticle::IsFinished() const {
     return counter == 0 || (finish_on_animation_end && frame_data_animator.IsFinished());
 }
 
-Vec2 SplineEffect::GetPos() const {
+Vec2 SplineParticle::GetPos() const {
     return pos;
 }
 
-Vec2 SplineEffect::GetSize() const {
+Vec2 SplineParticle::GetSize() const {
     return size;
 }
 
-float SplineEffect::GetRot() const {
+float SplineParticle::GetRot() const {
     return rot;
 }
 
-float SplineEffect::GetAlpha() const {
+float SplineParticle::GetAlpha() const {
     return alpha;
 }
 
-const FrameDataAnimator& SplineEffect::GetFrameDataAnimator() const {
+const FrameDataAnimator& SplineParticle::GetFrameDataAnimator() const {
     return frame_data_animator;
 }
 

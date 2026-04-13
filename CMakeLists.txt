@@ -134,6 +134,7 @@ add_executable(splonks-cpp
     src/debug/playback_ui_settings.cpp
     src/direction.cpp
     src/entity.cpp
+    src/entity_tool_inventory.cpp
     src/entity/archetype.cpp
     src/entity/archetype_registry.cpp
     src/entity/display_states.cpp
@@ -241,16 +242,17 @@ add_executable(splonks-cpp
     src/tools/throw_pot.cpp
     src/tools/throw_rope.cpp
     src/render/terrain_lighting.cpp
-    src/special_effects/dynamic_effect.cpp
-    src/special_effects/special_effect.cpp
-    src/special_effects/spline_effect.cpp
-    src/special_effects/static_effect.cpp
+    src/particles/dynamic_particle.cpp
+    src/particles/system.cpp
+    src/particles/particle.cpp
+    src/particles/spline_particle.cpp
+    src/particles/static_particle.cpp
     src/tile.cpp
     src/tile_archetype.cpp
     src/tile_source_data.cpp
     src/utils.cpp
     src/controls.cpp
-    src/special_effects/ultra_dynamic_effect.cpp
+    src/particles/ultra_dynamic_particle.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
