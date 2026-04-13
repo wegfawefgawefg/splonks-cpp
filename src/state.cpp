@@ -1,4 +1,5 @@
 #include "state.hpp"
+#include "world_query.hpp"
 
 #include "entities/common/common.hpp"
 #include "stage_init.hpp"
@@ -305,11 +306,11 @@ bool IsStageWon(const State& state) {
     const auto [player_tl, player_br] = player->GetBounds();
     const IVec2 player_tl_tile_pos = ToIVec2(player_tl) / static_cast<int>(kTileSize);
     const IVec2 player_br_tile_pos = ToIVec2(player_br) / static_cast<int>(kTileSize);
-    const std::vector<const Tile*> player_tiles =
-        state.stage.GetTilesInRect(player_tl_tile_pos, player_br_tile_pos);
-
-    for (const Tile* tile : player_tiles) {
-        if (*tile == Tile::Exit) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInRect(
+             state.stage,
+             player_tl_tile_pos,
+             player_br_tile_pos)) {
+        if (tile_query.tile != nullptr && *tile_query.tile == Tile::Exit) {
             return true;
         }
     }

@@ -5,6 +5,7 @@
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 #include "tile.hpp"
+#include "world_query.hpp"
 
 #include <vector>
 
@@ -271,9 +272,12 @@ void Entity::SetGrounded(const Stage& stage) {
         return;
     }
 
-    const std::vector<const Tile*> tiles_at_feet =
-        stage.GetTilesInRectWc(ToIVec2(feet.tl), ToIVec2(feet.br));
-    grounded |= CollidableTileInList(tiles_at_feet);
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(stage, feet)) {
+        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
+            grounded = true;
+            return;
+        }
+    }
 }
 
 std::tuple<Vec2, Vec2> Entity::GetTlAndTrCorners() const {

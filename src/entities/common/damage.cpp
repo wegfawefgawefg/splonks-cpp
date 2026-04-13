@@ -6,7 +6,9 @@
 #include "render/terrain_lighting.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
+#include "world_query.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -57,43 +59,42 @@ void SpawnTileBreakAnimation(FrameDataId animation_id, const IVec2& tile_pos, St
 }
 
 void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
-    const int max_x = static_cast<int>(state.stage.GetTileWidth()) - 1;
-    const int max_y = static_cast<int>(state.stage.GetTileHeight()) - 1;
     const IVec2 tl = ToIVec2(area.tl / static_cast<float>(kTileSize));
     const IVec2 br = ToIVec2(area.br / static_cast<float>(kTileSize));
 
     std::optional<SoundEffect> break_sound = std::nullopt;
+    const std::vector<IVec2> tile_positions = GetTileCoordsInRect(state.stage, tl, br);
 
-    for (int y = std::max(0, tl.y); y <= std::min(br.y, max_y); ++y) {
-        for (int x = std::max(0, tl.x); x <= std::min(br.x, max_x); ++x) {
-            const IVec2 tile_pos = IVec2::New(x, y);
-            const Tile tile = state.stage.GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
-            if (tile == Tile::Exit) {
-                continue;
-            }
-
-            const TileArchetype& tile_archetype = GetTileArchetype(tile);
-            if (!break_sound.has_value() && tile_archetype.break_sound.has_value()) {
-                break_sound = tile_archetype.break_sound;
-            }
-            if (tile_archetype.break_animation.has_value()) {
-                SpawnTileBreakAnimation(*tile_archetype.break_animation, tile_pos, state);
-            }
-            if (tile_archetype.on_break != nullptr) {
-                tile_archetype.on_break(tile_pos, state, audio);
-            }
-
-            const EntityType embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
-            if (embedded_treasure != EntityType::None) {
-                const Vec2 center = Vec2::New(
-                    static_cast<float>(x * static_cast<int>(kTileSize) + 8),
-                    static_cast<float>(y * static_cast<int>(kTileSize) + 8)
-                );
-                SpawnEntityAtCenter(embedded_treasure, center, state);
-            }
-
-            state.stage.SetTile(tile_pos, Tile::Air);
+    for (const IVec2& tile_pos : tile_positions) {
+        const Tile tile = state.stage.GetTile(
+            static_cast<unsigned int>(tile_pos.x),
+            static_cast<unsigned int>(tile_pos.y)
+        );
+        if (tile == Tile::Exit) {
+            continue;
         }
+
+        const TileArchetype& tile_archetype = GetTileArchetype(tile);
+        if (!break_sound.has_value() && tile_archetype.break_sound.has_value()) {
+            break_sound = tile_archetype.break_sound;
+        }
+        if (tile_archetype.break_animation.has_value()) {
+            SpawnTileBreakAnimation(*tile_archetype.break_animation, tile_pos, state);
+        }
+        if (tile_archetype.on_break != nullptr) {
+            tile_archetype.on_break(tile_pos, state, audio);
+        }
+
+        const EntityType embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
+        if (embedded_treasure != EntityType::None) {
+            const Vec2 center = Vec2::New(
+                static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+                static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
+            );
+            SpawnEntityAtCenter(embedded_treasure, center, state);
+        }
+
+        state.stage.SetTile(tile_pos, Tile::Air);
     }
 
     if (break_sound.has_value()) {
@@ -175,7 +176,7 @@ void MaybeHurtAndStunOnContact(
     const Alignment alignment = entity.alignment;
     if (condition == EntityCondition::Normal && hurt_on_contact) {
         const std::vector<VID> search_results =
-            state.sid.QueryExclude(entity_aabb.tl, entity_aabb.br, entity_vid);
+            QueryEntitiesInAabb(state, entity_aabb, entity_vid);
         std::vector<VID> results;
         for (const VID& vid : search_results) {
             const Entity& e = state.entity_manager.entities[vid.id];
@@ -188,7 +189,11 @@ void MaybeHurtAndStunOnContact(
                 continue;
             }
             if (Entity* const other_entity = state.entity_manager.GetEntityMut(vid)) {
-                const AABB other_aabb = GetContactAabbForEntity(*other_entity, graphics);
+                const AABB other_aabb = GetNearestWorldAabb(
+                    state.stage,
+                    entity.GetCenter(),
+                    GetContactAabbForEntity(*other_entity, graphics)
+                );
                 if (!AabbsIntersect(entity_aabb, other_aabb)) {
                     continue;
                 }
@@ -260,7 +265,7 @@ bool MaybeHurtAndStunOnContactAsProjectile(
         return false;
     }
     const std::vector<VID> search_results =
-        state.sid.QueryExclude(entity_aabb.tl, entity_aabb.br, entity_vid);
+        QueryEntitiesInAabb(state, entity_aabb, entity_vid);
     std::vector<VID> results;
     for (const VID& vid : search_results) {
         const Entity& e = state.entity_manager.entities[vid.id];
@@ -273,7 +278,11 @@ bool MaybeHurtAndStunOnContactAsProjectile(
             continue;
         }
         if (Entity* const other_entity = state.entity_manager.GetEntityMut(vid)) {
-            const AABB other_aabb = GetContactAabbForEntity(*other_entity, graphics);
+            const AABB other_aabb = GetNearestWorldAabb(
+                    state.stage,
+                    entity.GetCenter(),
+                    GetContactAabbForEntity(*other_entity, graphics)
+                );
             if (!AabbsIntersect(entity_aabb, other_aabb)) {
                 continue;
             }
@@ -348,9 +357,8 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Audio& audio) {
         const bool override_tile_portion_check = entity.vel.y > 4.0F;
         const bool in_top_portion_of_tile = (iaabb.br.y % static_cast<int>(kTileSize)) < 4;
         if (in_top_portion_of_tile || override_tile_portion_check) {
-            const std::vector<const Tile*> tiles_in_body = state.stage.GetTilesInRectWc(iaabb.tl, iaabb.br);
-            for (const Tile* tile : tiles_in_body) {
-                if (*tile == Tile::Spikes) {
+            for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
+                if (tile_query.tile != nullptr && *tile_query.tile == Tile::Spikes) {
                     fell_into_spikes = true;
                 }
             }
@@ -583,7 +591,7 @@ void DoExplosion(
     InvalidateTerrainLightingCache(state);
 
     const VID this_vid = state.entity_manager.GetVid(entity_idx);
-    const std::vector<VID> results = state.sid.QueryExclude(area.tl, area.br, this_vid);
+    const std::vector<VID> results = QueryEntitiesInAabb(state, area, this_vid);
     for (const VID& vid : results) {
         bool impassable = false;
         if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {

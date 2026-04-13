@@ -11,8 +11,11 @@
 #include "settings.hpp"
 #include "stage.hpp"
 #include "stage_init.hpp"
+#include "stage_wrap.hpp"
 #include "state.hpp"
 #include "render/terrain_lighting.hpp"
+
+#include <algorithm>
 
 namespace splonks {
 
@@ -205,6 +208,17 @@ void ProcessInputPlaying(
 
     if (inputs.regenerate_level.pressed) {
         InitDebugLevel(state);
+        if (state.debug_level.kind == DebugLevelKind::BorderTest) {
+            const BorderTestLevelConfig& border_test = state.debug_level.border_test;
+            ApplyToroidalWrapSettings(
+                state,
+                graphics,
+                border_test.wrap_x,
+                border_test.wrap_y,
+                static_cast<unsigned int>(std::max(0, border_test.wrap_padding_chunks)),
+                border_test.camera_clamp_enabled
+            );
+        }
         graphics.ResetTileVariations();
         InvalidateTerrainLightingCache(state);
     }

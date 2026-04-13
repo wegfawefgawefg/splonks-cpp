@@ -226,6 +226,7 @@ add_executable(splonks-cpp
     src/sid.cpp
     src/stage.cpp
     src/stage_init.cpp
+    src/stage_wrap.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/hd_mines.cpp
     src/stage_gen/test.cpp
@@ -233,6 +234,7 @@ add_executable(splonks-cpp
     src/step.cpp
     src/step_entities.cpp
     src/text.cpp
+    src/world_query.cpp
     src/tools/tool_archetype.cpp
     src/tools/throw_bomb.cpp
     src/tools/throw_pot.cpp

@@ -58,8 +58,10 @@ struct BorderTestLevelConfig {
     Tile right_tile = Tile::Air;
     Tile top_tile = Tile::Air;
     Tile bottom_tile = Tile::Air;
-    bool wrap_x = true;
+    bool wrap_x = false;
     bool wrap_y = false;
+    int wrap_padding_chunks = 0;
+    bool camera_clamp_enabled = true;
     std::optional<int> void_death_y = std::nullopt;
 };
 

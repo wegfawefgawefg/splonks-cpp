@@ -3,6 +3,8 @@
 #include "entities/player.hpp"
 #include "controls.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
+#include "world_query.hpp"
 
 #include <vector>
 
@@ -32,11 +34,14 @@ bool AabbsIntersect(const AABB& left, const AABB& right) {
 }
 
 bool IsImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
-    for (const Entity& other : state.entity_manager.entities) {
-        if (!other.active || other.vid == self_vid || !other.impassable) {
+    const AABB area = AABB::New(tl, br);
+    const Vec2 anchor = (tl + br) / 2.0F;
+    for (const VID& other_vid : QueryEntitiesInAabb(state, area, self_vid)) {
+        const Entity* const other = state.entity_manager.GetEntity(other_vid);
+        if (other == nullptr || !other->active || !other->impassable) {
             continue;
         }
-        if (AabbsIntersect(AABB::New(tl, br), other.GetAABB())) {
+        if (AabbsIntersect(area, GetNearestWorldAabb(state.stage, anchor, other->GetAABB()))) {
             return true;
         }
     }
@@ -68,11 +73,15 @@ bool IsBlockedForHangProbe(
                                       : IsTileCollidable(border_tile);
         }
 
-        const std::vector<const Tile*> tiles = state.stage.GetTilesInRectWc(tl_wc, br_wc);
-        const bool tile_blocked = use_hangable_tiles ? HangableTileInList(tiles)
-                                                     : CollidableTileInList(tiles);
-        if (tile_blocked) {
-            return true;
+        for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, tl_wc, br_wc)) {
+            if (tile_query.tile == nullptr) {
+                continue;
+            }
+            const bool tile_blocked = use_hangable_tiles ? IsTileHangable(*tile_query.tile)
+                                                         : IsTileCollidable(*tile_query.tile);
+            if (tile_blocked) {
+                return true;
+            }
         }
     }
 
@@ -408,9 +417,16 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
         controls::GetControlIntentForEntity(entity, state);
     Stage& stage = state.stage;
     const auto [player_tl, player_br] = entity.GetBounds();
-    const std::vector<const Tile*> newly_collided_tiles =
-        stage.GetTilesInRectWc(ToIVec2(player_tl), ToIVec2(player_br));
-    const bool can_climb = ClimbableTileInList(newly_collided_tiles);
+    bool can_climb = false;
+    for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
+             stage,
+             ToIVec2(player_tl),
+             ToIVec2(player_br))) {
+        if (tile_query.tile != nullptr && GetTileArchetype(*tile_query.tile).climbable) {
+            can_climb = true;
+            break;
+        }
+    }
 
     if (can_climb) {
         if (control.up) {

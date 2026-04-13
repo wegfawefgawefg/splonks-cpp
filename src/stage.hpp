@@ -82,7 +82,12 @@ struct Stage {
     std::vector<BackgroundStamp> background_stamps;
     float gravity = 0.3F;
     StageBorder border{};
+    bool camera_clamp_enabled = true;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
+    bool wrap_transform_active = false;
+    unsigned int wrap_padding_chunks = 0;
+    UVec2 wrap_core_origin_tiles = UVec2::New(0, 0);
+    UVec2 wrap_core_size_tiles = UVec2::New(0, 0);
 
     static const UVec2 kShape;
     static const UVec2 kRoomShape;
@@ -125,6 +130,8 @@ struct Stage {
     Tile GetTileOrBorder(int tile_x, int tile_y) const;
     bool IsTileCoordInside(int tile_x, int tile_y) const;
     bool IsWorldPosInside(const IVec2& wc) const;
+    IVec2 WrapTileCoord(const IVec2& tile_coord) const;
+    IVec2 WrapWorldPos(const IVec2& wc) const;
     void NormalizeEntityPositionForWrap(Entity& entity) const;
     std::pair<UVec2, UVec2> GetRoomCorners(const UVec2& room) const;
     std::vector<const Tile*> GetTilesInRoom(const UVec2& room) const;

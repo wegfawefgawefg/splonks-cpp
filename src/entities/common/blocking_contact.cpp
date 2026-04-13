@@ -1,6 +1,7 @@
 #include "entities/common/common.hpp"
 
 #include "tile.hpp"
+#include "world_query.hpp"
 
 #include <cmath>
 
@@ -113,30 +114,24 @@ BlockingContactSet GatherBlockingContactsForAabb(
             FloorDiv(static_cast<int>(std::floor(aabb.br.x)), static_cast<int>(kTileSize)),
             FloorDiv(static_cast<int>(std::floor(aabb.br.y)), static_cast<int>(kTileSize))
         );
-        for (int y = tile_tl.y; y <= tile_br.y; ++y) {
-            for (int x = tile_tl.x; x <= tile_br.x; ++x) {
-                if (!state.stage.IsTileCoordInside(x, y)) {
-                    continue;
-                }
-                contacts.tile_contacts.push_back(TileContact{
-                    .tile_pos = IVec2::New(x, y),
-                    .tile = &state.stage.GetTile(
-                        static_cast<unsigned int>(x),
-                        static_cast<unsigned int>(y)
-                    ),
-                });
-            }
+        for (const WorldTileQueryResult& tile_query : QueryTilesInRect(state.stage, tile_tl, tile_br)) {
+            contacts.tile_contacts.push_back(TileContact{
+                .tile_pos = tile_query.tile_pos,
+                .tile = tile_query.tile,
+            });
         }
     }
 
     if (check_entities) {
         const VID self_vid = state.entity_manager.entities[entity_idx].vid;
-        for (const VID& other_vid : state.sid.QueryExclude(aabb.tl, aabb.br, self_vid)) {
+        const Vec2 anchor = (aabb.tl + aabb.br) / 2.0F;
+        for (const VID& other_vid : QueryEntitiesInAabb(state, aabb, self_vid)) {
             const Entity* const other_entity = state.entity_manager.GetEntity(other_vid);
             if (other_entity == nullptr || !other_entity->active) {
                 continue;
             }
-            if (AabbsIntersect(aabb, other_entity->GetAABB())) {
+            const AABB other_aabb = GetNearestWorldAabb(state.stage, anchor, other_entity->GetAABB());
+            if (AabbsIntersect(aabb, other_aabb)) {
                 contacts.entity_vids.push_back(other_vid);
             }
         }

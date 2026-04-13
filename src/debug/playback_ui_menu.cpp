@@ -2,6 +2,7 @@
 
 #include "imgui_layer.hpp"
 #include "stage_init.hpp"
+#include "stage_wrap.hpp"
 #include "render/terrain_lighting.hpp"
 
 #include <imgui.h>
@@ -45,9 +46,19 @@ void CopyBorderConfigToStage(const BorderTestLevelConfig& config, Stage& stage) 
     stage.border.right.tile = config.right_tile;
     stage.border.top.tile = config.top_tile;
     stage.border.bottom.tile = config.bottom_tile;
-    stage.border.wrap_x = config.wrap_x;
-    stage.border.wrap_y = config.wrap_y;
     stage.border.void_death_y = config.void_death_y;
+}
+
+void ApplyBorderTestWrapConfig(State& state, Graphics& graphics) {
+    const BorderTestLevelConfig& border_test = state.debug_level.border_test;
+    ApplyToroidalWrapSettings(
+        state,
+        graphics,
+        border_test.wrap_x,
+        border_test.wrap_y,
+        static_cast<unsigned int>(std::max(0, border_test.wrap_padding_chunks)),
+        border_test.camera_clamp_enabled
+    );
 }
 
 } // namespace
@@ -260,6 +271,9 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
 
     if (ImGui::Button("Regenerate")) {
         InitDebugLevel(state);
+        if (state.debug_level.kind == DebugLevelKind::BorderTest) {
+            ApplyBorderTestWrapConfig(state, graphics);
+        }
         graphics.ResetTileVariations();
         InvalidateTerrainLightingCache(state);
     }
@@ -288,65 +302,117 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         ImGui::BeginDisabled();
     }
 
-    bool changed = false;
+    bool border_changed = false;
+    bool wrap_settings_changed = false;
+
     if (state.debug_level.kind == DebugLevelKind::BorderTest) {
         BorderTestLevelConfig& border_test = state.debug_level.border_test;
-        changed |= DrawTileCombo("Left Tile", border_test.left_tile);
-        changed |= DrawTileCombo("Right Tile", border_test.right_tile);
-        changed |= DrawTileCombo("Top Tile", border_test.top_tile);
-        changed |= DrawTileCombo("Bottom Tile", border_test.bottom_tile);
-        changed |= ImGui::Checkbox("Wrap X", &border_test.wrap_x);
-        changed |= ImGui::Checkbox("Wrap Y", &border_test.wrap_y);
+        border_changed |= DrawTileCombo("Left Tile", border_test.left_tile);
+        border_changed |= DrawTileCombo("Right Tile", border_test.right_tile);
+        border_changed |= DrawTileCombo("Top Tile", border_test.top_tile);
+        border_changed |= DrawTileCombo("Bottom Tile", border_test.bottom_tile);
+        const bool wrap_x_changed = ImGui::Checkbox("Wrap X", &border_test.wrap_x);
+        const bool wrap_y_changed = ImGui::Checkbox("Wrap Y", &border_test.wrap_y);
+        wrap_settings_changed |= wrap_x_changed;
+        wrap_settings_changed |= wrap_y_changed;
+        if (wrap_x_changed || wrap_y_changed) {
+            border_test.camera_clamp_enabled = !(border_test.wrap_x || border_test.wrap_y);
+        }
+
+        int wrap_padding_chunks = border_test.wrap_padding_chunks;
+        if (ImGui::InputInt("Wrap Padding Chunks", &wrap_padding_chunks)) {
+            border_test.wrap_padding_chunks = std::max(0, wrap_padding_chunks);
+            wrap_settings_changed = true;
+        }
+
+        wrap_settings_changed |= ImGui::Checkbox("Camera Clamp", &border_test.camera_clamp_enabled);
+
         bool has_void_death_y = border_test.void_death_y.has_value();
         if (ImGui::Checkbox("Void Death Enabled", &has_void_death_y)) {
             border_test.void_death_y = has_void_death_y
                                            ? std::optional<int>(DefaultVoidDeathYForStage(state.stage))
                                            : std::nullopt;
-            changed = true;
+            border_changed = true;
         }
         if (border_test.void_death_y.has_value()) {
             int void_death_y = *border_test.void_death_y;
             if (ImGui::InputInt("Void Death Y", &void_death_y)) {
                 border_test.void_death_y = void_death_y;
-                changed = true;
+                border_changed = true;
             }
         }
 
-        if (changed) {
+        if (border_changed) {
             CopyBorderConfigToStage(border_test, state.stage);
         }
+        if (wrap_settings_changed) {
+            ApplyBorderTestWrapConfig(state, graphics);
+        }
     } else {
-        changed |= DrawTileCombo("Left Tile", state.stage.border.left.tile);
-        changed |= DrawTileCombo("Right Tile", state.stage.border.right.tile);
-        changed |= DrawTileCombo("Top Tile", state.stage.border.top.tile);
-        changed |= DrawTileCombo("Bottom Tile", state.stage.border.bottom.tile);
-        changed |= ImGui::Checkbox("Wrap X", &state.stage.border.wrap_x);
-        changed |= ImGui::Checkbox("Wrap Y", &state.stage.border.wrap_y);
+        border_changed |= DrawTileCombo("Left Tile", state.stage.border.left.tile);
+        border_changed |= DrawTileCombo("Right Tile", state.stage.border.right.tile);
+        border_changed |= DrawTileCombo("Top Tile", state.stage.border.top.tile);
+        border_changed |= DrawTileCombo("Bottom Tile", state.stage.border.bottom.tile);
+
+        bool wrap_x = state.stage.border.wrap_x;
+        bool wrap_y = state.stage.border.wrap_y;
+        int wrap_padding_chunks = static_cast<int>(state.stage.wrap_padding_chunks);
+        bool camera_clamp_enabled = state.stage.camera_clamp_enabled;
+        const bool wrap_x_changed = ImGui::Checkbox("Wrap X", &wrap_x);
+        const bool wrap_y_changed = ImGui::Checkbox("Wrap Y", &wrap_y);
+        wrap_settings_changed |= wrap_x_changed;
+        wrap_settings_changed |= wrap_y_changed;
+        if (wrap_x_changed || wrap_y_changed) {
+            camera_clamp_enabled = !(wrap_x || wrap_y);
+        }
+        if (ImGui::InputInt("Wrap Padding Chunks", &wrap_padding_chunks)) {
+            wrap_padding_chunks = std::max(0, wrap_padding_chunks);
+            wrap_settings_changed = true;
+        }
+        wrap_settings_changed |= ImGui::Checkbox("Camera Clamp", &camera_clamp_enabled);
+
         bool has_void_death_y = state.stage.border.void_death_y.has_value();
         if (ImGui::Checkbox("Void Death Enabled", &has_void_death_y)) {
             state.stage.border.void_death_y = has_void_death_y
                                                   ? std::optional<int>(DefaultVoidDeathYForStage(state.stage))
                                                   : std::nullopt;
-            changed = true;
+            border_changed = true;
         }
         if (state.stage.border.void_death_y.has_value()) {
             int void_death_y = *state.stage.border.void_death_y;
             if (ImGui::InputInt("Void Death Y", &void_death_y)) {
                 state.stage.border.void_death_y = void_death_y;
-                changed = true;
+                border_changed = true;
             }
+        }
+
+        if (wrap_settings_changed) {
+            ApplyToroidalWrapSettings(
+                state,
+                graphics,
+                wrap_x,
+                wrap_y,
+                static_cast<unsigned int>(wrap_padding_chunks),
+                camera_clamp_enabled
+            );
         }
     }
 
     ImGui::Separator();
-    ImGui::Text("Current: L=%s R=%s T=%s B=%s",
-                TileToString(state.stage.border.left.tile),
-                TileToString(state.stage.border.right.tile),
-                TileToString(state.stage.border.top.tile),
-                TileToString(state.stage.border.bottom.tile));
-    ImGui::Text("Wrap: X=%s Y=%s",
-                state.stage.border.wrap_x ? "on" : "off",
-                state.stage.border.wrap_y ? "on" : "off");
+    ImGui::Text(
+        "Current: L=%s R=%s T=%s B=%s",
+        TileToString(state.stage.border.left.tile),
+        TileToString(state.stage.border.right.tile),
+        TileToString(state.stage.border.top.tile),
+        TileToString(state.stage.border.bottom.tile)
+    );
+    ImGui::Text(
+        "Wrap: X=%s Y=%s Padding=%u",
+        state.stage.border.wrap_x ? "on" : "off",
+        state.stage.border.wrap_y ? "on" : "off",
+        state.stage.wrap_padding_chunks
+    );
+    ImGui::Text("Camera Clamp: %s", state.stage.camera_clamp_enabled ? "on" : "off");
     ImGui::Text(
         "Void Death Y: %s",
         state.stage.border.void_death_y.has_value()
@@ -354,7 +420,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
             : "off"
     );
 
-    if (changed) {
+    if (border_changed) {
         graphics.ResetTileVariations();
         InvalidateTerrainLightingCache(state);
     }

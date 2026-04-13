@@ -9,6 +9,7 @@
 #include "state.hpp"
 #include "render/terrain_lighting.hpp"
 #include "tile.hpp"
+#include "world_query.hpp"
 
 namespace splonks::entities::rope {
 
@@ -80,14 +81,20 @@ void StepEntityLogicAsRope(
         // get rope tile position,
         const Vec2 rope_center = rope.GetCenter();
         bool atleast_one_tile_converted = false;
-        const IVec2 tile_pos = state.stage.GetTileCoordAtWc(ToIVec2(rope_center));
-        if (state.stage.TileCoordAtWcExists(ToIVec2(rope_center))) {
+        const std::optional<WorldTileQueryResult> rope_tile =
+            QueryTileAtWorldPos(state.stage, ToIVec2(rope_center));
+        if (rope_tile.has_value()) {
             for (unsigned int y_offset = 0; y_offset < kRopeLength; ++y_offset) {
-                IVec2 p = IVec2::New(tile_pos.x, tile_pos.y + static_cast<int>(y_offset));
-                if (p.y >= static_cast<int>(state.stage.GetTileHeight())) {
-                    p.y = static_cast<int>(state.stage.GetTileHeight()) - 1;
+                const std::optional<WorldTileQueryResult> tile_query = QueryTileAtTilePos(
+                    state.stage,
+                    IVec2::New(rope_tile->tile_pos.x, rope_tile->tile_pos.y + static_cast<int>(y_offset))
+                );
+                if (!tile_query.has_value() || tile_query->tile == nullptr) {
+                    break;
                 }
-                const Tile& tile = state.stage.GetTile(static_cast<unsigned int>(p.x), static_cast<unsigned int>(p.y));
+
+                const IVec2 p = tile_query->tile_pos;
+                const Tile tile = *tile_query->tile;
                 // if the tile is air, set it to rope
                 if (tile == Tile::Air || tile == Tile::Rope || tile == Tile::Entrance) {
                     state.stage.SetTile(p, Tile::Rope);

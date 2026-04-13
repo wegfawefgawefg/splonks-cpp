@@ -2,6 +2,7 @@
 
 #include "entity/archetype.hpp"
 #include "tile.hpp"
+#include "world_query.hpp"
 
 namespace splonks::entities::common {
 
@@ -45,15 +46,19 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
         SoundEffect which_step_sound;
         if (entity.IsClimbing()) {
             const auto [entity_tl, entity_br] = entity.GetBounds();
-            const std::vector<const Tile*> newly_collided_tiles =
-                state.stage.GetTilesInRectWc(ToIVec2(entity_tl), ToIVec2(entity_br));
             bool its_rope = false;
             bool its_ladder = false;
-            for (const Tile* tile : newly_collided_tiles) {
-                if (*tile == Tile::Rope) {
+            for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
+                     state.stage,
+                     ToIVec2(entity_tl),
+                     ToIVec2(entity_br))) {
+                if (tile_query.tile == nullptr) {
+                    continue;
+                }
+                if (*tile_query.tile == Tile::Rope) {
                     its_rope = true;
                 }
-                if (*tile == Tile::Ladder) {
+                if (*tile_query.tile == Tile::Ladder) {
                     its_ladder = true;
                 }
             }

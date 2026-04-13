@@ -1,6 +1,7 @@
 #include "entities/common/common.hpp"
 
 #include "entities/block.hpp"
+#include "world_query.hpp"
 
 #include <algorithm>
 
@@ -86,7 +87,7 @@ void TryPushBlocks(
             .br = entity_aabb.br + Vec2::New(6.0F, 0.0F),
         };
         const std::vector<VID> search_results =
-            state.sid.QueryExclude(try_to_push_zone.tl, try_to_push_zone.br, entity_vid);
+            QueryEntitiesInAabb(state, try_to_push_zone, entity_vid);
         for (const VID& vid : search_results) {
             const Entity& candidate = state.entity_manager.entities[vid.id];
             if (candidate.type_ != EntityType::Block) {
@@ -96,7 +97,10 @@ void TryPushBlocks(
                 ready_to_push = true;
                 const float push_zone_left_x = entity_aabb.tl.x - 1.0F;
                 const float push_zone_right_x = entity_aabb.br.x + 1.0F;
-                const auto [block_tl, block_br] = block_entity->GetBounds();
+                const AABB nearest_block_aabb =
+                    GetNearestWorldAabb(state.stage, entity.GetCenter(), block_entity->GetAABB());
+                const Vec2 block_tl = nearest_block_aabb.tl;
+                const Vec2 block_br = nearest_block_aabb.br;
                 float block_x_acc_delta = 0.0F;
                 if (entity_vel.x > 0.0F && block_br.x > push_zone_left_x &&
                     block_tl.x > push_zone_left_x) {

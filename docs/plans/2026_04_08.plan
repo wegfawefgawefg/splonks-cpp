@@ -57,3 +57,10 @@ border fix
 
 make set tiles respect border wrap. 
     thrown rope comes to mind
+
+make ourselves some real query layer
+    raycasts for tiles
+        option for returning the point on the thing
+    raycasts for entities
+        option for returning the point on the thing
+    get/set for tiles in area

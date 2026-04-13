@@ -1,4 +1,5 @@
 #include "entities/common/common.hpp"
+#include "world_query.hpp"
 
 #include "entity/archetype.hpp"
 #include "entities/player.hpp"
@@ -383,7 +384,7 @@ bool IsGroundedOnEntities(std::size_t entity_idx, State& state) {
         .br = feet_br,
     };
     const std::vector<VID> entities_at_feet =
-        state.sid.QueryExclude(feet_aabb.tl, feet_aabb.br, vid);
+        QueryEntitiesInAabb(state, feet_aabb, vid);
 
     const bool impassable_entities = std::any_of(
         entities_at_feet.begin(),
@@ -509,11 +510,13 @@ bool IsGroundedOnTiles(std::size_t entity_idx, State& state) {
         return true;
     }
 
-    const std::vector<const Tile*> tiles_at_feet =
-        state.stage.GetTilesInRectWc(ToIVec2(feet_tl), ToIVec2(feet_br));
-    const bool collided = CollidableTileInList(tiles_at_feet);
-    if (collided) {
-        return true;
+    for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
+             state.stage,
+             ToIVec2(feet_tl),
+             ToIVec2(feet_br))) {
+        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
+            return true;
+        }
     }
     return false;
 }

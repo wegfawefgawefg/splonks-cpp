@@ -3,6 +3,7 @@
 #include "entities/baseball_bat.hpp"
 #include "entities/box.hpp"
 #include "entities/pot.hpp"
+#include "world_query.hpp"
 
 namespace splonks::entities::common {
 
@@ -258,13 +259,18 @@ std::vector<VID> GatherTouchedEntityContactsForAabb(
     }
 
     std::vector<VID> touched_vids;
-    for (const VID& other_vid : state.sid.QueryExclude(aabb.tl, aabb.br, entity.vid)) {
+    const Vec2 anchor = entity.GetCenter();
+    for (const VID& other_vid : QueryEntitiesInAabb(state, aabb, entity.vid)) {
         const Entity* const other_entity = state.entity_manager.GetEntity(other_vid);
         if (other_entity == nullptr || !other_entity->active) {
             continue;
         }
 
-        const AABB other_contact_aabb = GetContactAabbForEntity(*other_entity, graphics);
+        const AABB other_contact_aabb = GetNearestWorldAabb(
+            state.stage,
+            anchor,
+            GetContactAabbForEntity(*other_entity, graphics)
+        );
         if (!AabbsIntersect(aabb, other_contact_aabb)) {
             continue;
         }

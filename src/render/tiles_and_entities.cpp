@@ -18,6 +18,54 @@ namespace splonks {
 
 namespace {
 
+struct VisibleWorldRect {
+    Vec2 tl;
+    Vec2 br;
+};
+
+VisibleWorldRect GetVisibleWorldRect(const Graphics& graphics) {
+    return VisibleWorldRect{
+        .tl = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom),
+        .br = graphics.camera.target +
+              ((ToVec2(graphics.dims) - graphics.camera.offset) / graphics.camera.zoom),
+    };
+}
+
+int FloorDivByFloat(float value, float divisor) {
+    if (divisor <= 0.0F) {
+        return 0;
+    }
+    return static_cast<int>(std::floor(value / divisor));
+}
+
+std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graphics& graphics) {
+    std::vector<Vec2> offsets;
+    offsets.push_back(Vec2::New(0.0F, 0.0F));
+
+    const float stage_width = static_cast<float>(stage.GetWidth());
+    const float stage_height = static_cast<float>(stage.GetHeight());
+    if ((!stage.WrapsX() || stage_width <= 0.0F) && (!stage.WrapsY() || stage_height <= 0.0F)) {
+        return offsets;
+    }
+
+    const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
+    const int min_copy_x = stage.WrapsX() ? FloorDivByFloat(visible.tl.x, stage_width) : 0;
+    const int max_copy_x = stage.WrapsX() ? FloorDivByFloat(visible.br.x, stage_width) : 0;
+    const int min_copy_y = stage.WrapsY() ? FloorDivByFloat(visible.tl.y, stage_height) : 0;
+    const int max_copy_y = stage.WrapsY() ? FloorDivByFloat(visible.br.y, stage_height) : 0;
+
+    offsets.clear();
+    for (int copy_y = min_copy_y; copy_y <= max_copy_y; ++copy_y) {
+        for (int copy_x = min_copy_x; copy_x <= max_copy_x; ++copy_x) {
+            offsets.push_back(Vec2::New(
+                static_cast<float>(copy_x) * stage_width,
+                static_cast<float>(copy_y) * stage_height
+            ));
+        }
+    }
+    return offsets;
+}
+
 Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos) {
     const Vec2 screen =
         ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
@@ -85,82 +133,85 @@ const FrameData* GetFirstFrameForAnimationOrFallback(
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureTerrainLightingCache(state);
     const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
-    for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
-        for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
-            const Tile tile = state.stage.tiles[y][x];
-            const IVec2 tile_pos = IVec2::New(
-                static_cast<int>(x * kTileSize),
-                static_cast<int>(y * kTileSize)
-            );
-            const SDL_FRect dst = WorldRectToScreen(
-                graphics,
-                ToVec2(tile_pos),
-                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
-            );
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const Vec2& render_offset : render_offsets) {
+        for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
+            for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
+                const Tile tile = state.stage.tiles[y][x];
+                const IVec2 tile_pos = IVec2::New(
+                    static_cast<int>(x * kTileSize),
+                    static_cast<int>(y * kTileSize)
+                );
+                const SDL_FRect dst = WorldRectToScreen(
+                    graphics,
+                    ToVec2(tile_pos) + render_offset,
+                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                );
 
-            const bool is_air_tile = tile == Tile::Air;
-            if (IsTileTransparent(tile)) {
-                const TileSourceData* const air_source_data =
-                    GetAirSourceData(graphics, air_tile_set, tile_pos);
-                if (air_source_data != nullptr) {
-                    SDL_Texture* const air_texture = GetTileTexture(graphics, *air_source_data);
-                    if (air_texture != nullptr) {
-                        const SDL_FRect air_src{
-                            static_cast<float>(air_source_data->sample_rect.x),
-                            static_cast<float>(air_source_data->sample_rect.y),
-                            static_cast<float>(air_source_data->sample_rect.w),
-                            static_cast<float>(air_source_data->sample_rect.h),
-                        };
-                        ApplyBackwallTileBrightness(
-                            air_texture,
-                            state,
-                            graphics,
-                            static_cast<int>(x),
-                            static_cast<int>(y)
-                        );
-                        SDL_RenderTexture(renderer, air_texture, &air_src, &dst);
-                        ResetTerrainTileBrightness(air_texture);
+                const bool is_air_tile = tile == Tile::Air;
+                if (IsTileTransparent(tile)) {
+                    const TileSourceData* const air_source_data =
+                        GetAirSourceData(graphics, air_tile_set, tile_pos);
+                    if (air_source_data != nullptr) {
+                        SDL_Texture* const air_texture = GetTileTexture(graphics, *air_source_data);
+                        if (air_texture != nullptr) {
+                            const SDL_FRect air_src{
+                                static_cast<float>(air_source_data->sample_rect.x),
+                                static_cast<float>(air_source_data->sample_rect.y),
+                                static_cast<float>(air_source_data->sample_rect.w),
+                                static_cast<float>(air_source_data->sample_rect.h),
+                            };
+                            ApplyBackwallTileBrightness(
+                                air_texture,
+                                state,
+                                graphics,
+                                static_cast<int>(x),
+                                static_cast<int>(y)
+                            );
+                            SDL_RenderTexture(renderer, air_texture, &air_src, &dst);
+                            ResetTerrainTileBrightness(air_texture);
+                        }
                     }
                 }
-            }
 
-            if (is_air_tile) {
-                continue;
-            }
+                if (is_air_tile) {
+                    continue;
+                }
 
-            const TileSourceData* const tile_source_data =
-                GetTileSourceData(graphics, tile, tile_pos);
-            if (tile_source_data == nullptr) {
-                continue;
-            }
-            SDL_Texture* const tile_texture = GetTileTexture(graphics, *tile_source_data);
-            if (tile_texture == nullptr) {
-                continue;
-            }
-            const SDL_FRect src{
-                static_cast<float>(tile_source_data->sample_rect.x),
-                static_cast<float>(tile_source_data->sample_rect.y),
-                static_cast<float>(tile_source_data->sample_rect.w),
-                static_cast<float>(tile_source_data->sample_rect.h),
-            };
+                const TileSourceData* const tile_source_data =
+                    GetTileSourceData(graphics, tile, tile_pos);
+                if (tile_source_data == nullptr) {
+                    continue;
+                }
+                SDL_Texture* const tile_texture = GetTileTexture(graphics, *tile_source_data);
+                if (tile_texture == nullptr) {
+                    continue;
+                }
+                const SDL_FRect src{
+                    static_cast<float>(tile_source_data->sample_rect.x),
+                    static_cast<float>(tile_source_data->sample_rect.y),
+                    static_cast<float>(tile_source_data->sample_rect.w),
+                    static_cast<float>(tile_source_data->sample_rect.h),
+                };
 
-            ApplyTerrainTileBrightness(
-                tile_texture,
-                state,
-                graphics,
-                static_cast<int>(x),
-                static_cast<int>(y)
-            );
-            SDL_RenderTexture(renderer, tile_texture, &src, &dst);
-            ResetTerrainTileBrightness(tile_texture);
-            RenderTerrainTileLighting(
-                renderer,
-                state,
-                graphics,
-                static_cast<int>(x),
-                static_cast<int>(y),
-                dst
-            );
+                ApplyTerrainTileBrightness(
+                    tile_texture,
+                    state,
+                    graphics,
+                    static_cast<int>(x),
+                    static_cast<int>(y)
+                );
+                SDL_RenderTexture(renderer, tile_texture, &src, &dst);
+                ResetTerrainTileBrightness(tile_texture);
+                RenderTerrainTileLighting(
+                    renderer,
+                    state,
+                    graphics,
+                    static_cast<int>(x),
+                    static_cast<int>(y),
+                    dst
+                );
+            }
         }
     }
 }
@@ -168,11 +219,10 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
 void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureTerrainLightingCache(state);
     const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
-    
-    const Vec2 visible_tl_wc = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom);
-    const Vec2 visible_br_wc =
-        graphics.camera.target +
-        ((ToVec2(graphics.dims) - graphics.camera.offset) / graphics.camera.zoom);
+
+    const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
+    const Vec2 visible_tl_wc = visible.tl;
+    const Vec2 visible_br_wc = visible.br;
 
     const int visible_tl_tile_x =
         static_cast<int>(std::floor(visible_tl_wc.x / static_cast<float>(kTileSize))) - 1;
@@ -191,7 +241,12 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
             const bool inside_stage = tile_x >= 0 && tile_y >= 0 && tile_x < stage_tile_width &&
                                       tile_y < stage_tile_height;
             if (!inside_stage) {
-                const Tile border_tile = state.stage.GetTileOrBorder(tile_x, tile_y);
+                const std::optional<StageBorderSideKind> side =
+                    state.stage.GetOutOfBoundsSideForTileCoord(tile_x, tile_y);
+                if (!side.has_value()) {
+                    continue;
+                }
+                const Tile border_tile = state.stage.GetBorderTile(*side);
                 const IVec2 tile_pos = IVec2::New(
                     tile_x * static_cast<int>(kTileSize),
                     tile_y * static_cast<int>(kTileSize)
@@ -253,6 +308,7 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
 
 void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureTerrainLightingCache(state);
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const BackgroundStamp& stamp : state.stage.background_stamps) {
         if (stamp.animation_id == kInvalidFrameDataId) {
             continue;
@@ -277,14 +333,6 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
             static_cast<float>(frame_data->sample_rect.w),
             static_cast<float>(frame_data->sample_rect.h),
         };
-        const SDL_FRect dst = WorldRectToScreen(
-            graphics,
-            stamp.pos,
-            Vec2::New(
-                static_cast<float>(frame_data->sample_rect.w),
-                static_cast<float>(frame_data->sample_rect.h)
-            )
-        );
 
         const int tile_x =
             static_cast<int>((stamp.pos.x + (static_cast<float>(frame_data->sample_rect.w) * 0.5F)) /
@@ -292,9 +340,19 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
         const int tile_y =
             static_cast<int>((stamp.pos.y + (static_cast<float>(frame_data->sample_rect.h) * 0.5F)) /
                              static_cast<float>(kTileSize));
-        ApplyBackwallTileBrightness(sprite_texture, state, graphics, tile_x, tile_y);
-        SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
-        ResetTerrainTileBrightness(sprite_texture);
+        for (const Vec2& render_offset : render_offsets) {
+            const SDL_FRect dst = WorldRectToScreen(
+                graphics,
+                stamp.pos + render_offset,
+                Vec2::New(
+                    static_cast<float>(frame_data->sample_rect.w),
+                    static_cast<float>(frame_data->sample_rect.h)
+                )
+            );
+            ApplyBackwallTileBrightness(sprite_texture, state, graphics, tile_x, tile_y);
+            SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
+            ResetTerrainTileBrightness(sprite_texture);
+        }
     }
 }
 
@@ -304,6 +362,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
     }
 
     EnsureTerrainLightingCache(state);
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (std::size_t y = 0; y < state.stage.embedded_treasures.size(); ++y) {
         for (std::size_t x = 0; x < state.stage.embedded_treasures[y].size(); ++x) {
             const EntityType embedded_treasure = state.stage.embedded_treasures[y][x];
@@ -342,14 +401,6 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 static_cast<float>(frame_data->sample_rect.w),
                 static_cast<float>(frame_data->sample_rect.h),
             };
-            const SDL_FRect dst = WorldRectToScreen(
-                graphics,
-                render_world_pos,
-                Vec2::New(
-                    static_cast<float>(frame_data->sample_rect.w),
-                    static_cast<float>(frame_data->sample_rect.h)
-                )
-            );
             ApplyTerrainTileBrightness(
                 sprite_texture,
                 state,
@@ -358,7 +409,17 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 static_cast<int>(y)
             );
             SDL_SetTextureAlphaMod(sprite_texture, 224);
-            SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
+            for (const Vec2& render_offset : render_offsets) {
+                const SDL_FRect dst = WorldRectToScreen(
+                    graphics,
+                    render_world_pos + render_offset,
+                    Vec2::New(
+                        static_cast<float>(frame_data->sample_rect.w),
+                        static_cast<float>(frame_data->sample_rect.h)
+                    )
+                );
+                SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
+            }
             SDL_SetTextureAlphaMod(sprite_texture, 255);
             ResetTerrainTileBrightness(sprite_texture);
         }
@@ -366,6 +427,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
 }
 
 void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     std::vector<std::size_t> draw_queue;
     std::vector<std::size_t> next_draw_queue;
     next_draw_queue.reserve(state.entity_manager.entities.size());
@@ -414,27 +476,33 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                 static_cast<float>(frame_data->sample_rect.w),
                 static_cast<float>(frame_data->sample_rect.h),
             };
-            SDL_FRect dst = WorldRectToScreen(graphics, render_position, sprite_scaled_size);
             const SDL_FlipMode flip =
                 entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-            SDL_RenderTextureRotated(
-                renderer,
-                sprite_texture,
-                &src,
-                &dst,
-                0.0,
-                nullptr,
-                flip
-            );
-            if (entity.stone) {
-                const AABB stone_overlay_aabb = entity.GetAABB();
-                RenderStoneEntityOverlay(
-                    renderer,
-                    state,
+            for (const Vec2& render_offset : render_offsets) {
+                SDL_FRect dst = WorldRectToScreen(
                     graphics,
-                    stone_overlay_aabb.tl,
-                    stone_overlay_aabb.br - stone_overlay_aabb.tl + Vec2::New(1.0F, 1.0F)
+                    render_position + render_offset,
+                    sprite_scaled_size
                 );
+                SDL_RenderTextureRotated(
+                    renderer,
+                    sprite_texture,
+                    &src,
+                    &dst,
+                    0.0,
+                    nullptr,
+                    flip
+                );
+                if (entity.stone) {
+                    const AABB stone_overlay_aabb = entity.GetAABB();
+                    RenderStoneEntityOverlay(
+                        renderer,
+                        state,
+                        graphics,
+                        stone_overlay_aabb.tl + render_offset,
+                        stone_overlay_aabb.br - stone_overlay_aabb.tl + Vec2::New(1.0F, 1.0F)
+                    );
+                }
             }
             continue;
 
@@ -443,6 +511,7 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
 }
 
 void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const auto& special_effect : state.special_effects) {
         const FrameDataAnimator& animator = special_effect->GetFrameDataAnimator();
         if (!animator.HasAnimation()) {
@@ -464,8 +533,6 @@ void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& 
         const float rotation = special_effect->GetRot();
         const float alpha = special_effect->GetAlpha();
         const Vec2 half_size = size / 2.0F;
-        const SDL_FRect dst = WorldRectToScreen(graphics, pos - half_size, size);
-        const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
         SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
         const SDL_FRect src{
             static_cast<float>(frame_data->sample_rect.x),
@@ -473,7 +540,11 @@ void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& 
             static_cast<float>(frame_data->sample_rect.w),
             static_cast<float>(frame_data->sample_rect.h),
         };
-        SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, SDL_FLIP_NONE);
+        for (const Vec2& render_offset : render_offsets) {
+            const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
+            const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
+            SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, SDL_FLIP_NONE);
+        }
         SDL_SetTextureAlphaMod(texture, 255);
     }
 }

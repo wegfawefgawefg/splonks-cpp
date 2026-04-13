@@ -2,6 +2,7 @@
 
 #include "entities/player.hpp"
 #include "controls.hpp"
+#include "world_query.hpp"
 
 #include <optional>
 #include <vector>
@@ -65,7 +66,7 @@ void UpdateCarryAndBackItems(
                         entity.holding_timer = kDefaultHoldingTimer;
                         const AABB aabb = GetContactAabbForEntity(entity, graphics);
                         trying_to_pick_up_these =
-                            state.sid.QueryExclude(aabb.tl, aabb.br, entity.vid);
+                            QueryEntitiesInAabb(state, aabb, entity.vid);
                     }
                 }
             }

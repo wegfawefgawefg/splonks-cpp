@@ -8,6 +8,7 @@
 #include "state.hpp"
 #include "controls.hpp"
 #include "tile.hpp"
+#include "world_query.hpp"
 
 #include <algorithm>
 #include <random>
@@ -45,9 +46,12 @@ bool IsAtPerchOrRoof(const Entity& bat, const State& state) {
     if (area_above.tl.y < 0) {
         return true;
     }
-    const std::vector<const Tile*> tiles_above_you =
-        state.stage.GetTilesInRectWc(area_above.tl, area_above.br);
-    return CollidableTileInList(tiles_above_you);
+    for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, area_above.tl, area_above.br)) {
+        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void SnapBatToRoof(Entity& bat, const State& state) {
@@ -166,11 +170,13 @@ void StepEntityLogicAsBat(
             const Vec2 bat_pos = state.entity_manager.entities[entity_idx].pos;
             if (state.player_vid.has_value()) {
                 if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-                    if (player->pos.y > bat_pos.y &&
-                        std::abs(player->pos.y - bat_pos.y) < static_cast<float>(kVerticalDetectDist) &&
-                        std::abs(player->pos.x - bat_pos.x) < static_cast<float>(kHorizontalChaseDist) &&
+                    const Vec2 player_delta =
+                        GetNearestWorldDelta(state.stage, bat_pos, player->pos);
+                    if (player_delta.y > 0.0F &&
+                        std::abs(player_delta.y) < static_cast<float>(kVerticalDetectDist) &&
+                        std::abs(player_delta.x) < static_cast<float>(kHorizontalChaseDist) &&
                         player->condition == EntityCondition::Normal) {
-                        target_position = player->pos;
+                        target_position = bat_pos + player_delta;
                     }
                 }
             }

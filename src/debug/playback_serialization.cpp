@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 35;
+constexpr std::uint32_t kRecordingVersion = 36;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -200,7 +200,12 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WritePod(out, stage.border.wrap_x);
     WritePod(out, stage.border.wrap_y);
     WriteOptionalPod(out, stage.border.void_death_y);
+    WritePod(out, stage.camera_clamp_enabled);
     WritePod(out, stage.camera_clamp_margin);
+    WritePod(out, stage.wrap_transform_active);
+    WritePod(out, stage.wrap_padding_chunks);
+    WritePod(out, stage.wrap_core_origin_tiles);
+    WritePod(out, stage.wrap_core_size_tiles);
     const std::uint32_t tile_rows = static_cast<std::uint32_t>(stage.tiles.size());
     WritePod(out, tile_rows);
     for (const std::vector<Tile>& row : stage.tiles) {
@@ -226,7 +231,12 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadPod(in, stage.border.wrap_x) ||
         !ReadPod(in, stage.border.wrap_y) ||
         !ReadOptionalPod(in, stage.border.void_death_y) ||
-        !ReadPod(in, stage.camera_clamp_margin)) {
+        !ReadPod(in, stage.camera_clamp_enabled) ||
+        !ReadPod(in, stage.camera_clamp_margin) ||
+        !ReadPod(in, stage.wrap_transform_active) ||
+        !ReadPod(in, stage.wrap_padding_chunks) ||
+        !ReadPod(in, stage.wrap_core_origin_tiles) ||
+        !ReadPod(in, stage.wrap_core_size_tiles)) {
         return false;
     }
 

@@ -57,6 +57,7 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
 
     const int wall_x = std::clamp(kHangTestWallX, 1, stage_width - 2);
     const int top_y = std::clamp(kHangTestTopY, 2, stage_height - 8);
@@ -94,6 +95,7 @@ Stage MakeStompTestStage() {
     stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
 
     for (int x = 0; x < kStompTestStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kStompTestStageHeightTiles - 1)][static_cast<std::size_t>(x)] =
@@ -109,8 +111,6 @@ StageBorder MakeStageBorderFromDebugConfig(const BorderTestLevelConfig& config) 
     border.right.tile = config.right_tile;
     border.top.tile = config.top_tile;
     border.bottom.tile = config.bottom_tile;
-    border.wrap_x = config.wrap_x;
-    border.wrap_y = config.wrap_y;
     border.void_death_y = config.void_death_y;
     return border;
 }
@@ -127,6 +127,7 @@ Stage MakeBorderTestStage(const BorderTestLevelConfig& config) {
     stage.gravity = 0.3F;
     stage.border = MakeStageBorderFromDebugConfig(config);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = config.camera_clamp_enabled;
 
     for (int x = 0; x < kBorderTestStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kBorderTestStageHeightTiles - 1)]
