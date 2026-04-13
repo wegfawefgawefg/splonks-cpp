@@ -62,6 +62,25 @@ void ResolveBlockingOverlap(
     }
 }
 
+bool HasBlockingTileContact(const BlockingContactSet& contacts) {
+    for (const TileContact& tile_contact : contacts.tile_contacts) {
+        if (tile_contact.tile != nullptr && IsTileCollidable(*tile_contact.tile)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+BlockingImpactSurface GetImpactSurfaceForBlockedContacts(const BlockingContactSet& contacts) {
+    if (HasBlockingTileContact(contacts)) {
+        return BlockingImpactSurface::Tiles;
+    }
+    if (contacts.touches_stage_bounds) {
+        return BlockingImpactSurface::StageBounds;
+    }
+    return BlockingImpactSurface::ImpassableEntity;
+}
+
 int GetIntegerStepDistance(float distance, unsigned int time) {
     const float abs_distance = std::abs(distance);
     int integer_distance = static_cast<int>(std::floor(abs_distance));
@@ -137,7 +156,7 @@ void MoveEntityPixelStep(
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
-                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
                     .impact_velocity = entity.vel.x,
                     .direction = 1,
                     .mover_vid = entity.vid,
@@ -191,7 +210,7 @@ void MoveEntityPixelStep(
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
-                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
                     .impact_velocity = entity.vel.x,
                     .direction = -1,
                     .mover_vid = entity.vid,
@@ -247,7 +266,7 @@ void MoveEntityPixelStep(
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
-                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
                     .impact_velocity = entity.vel.y,
                     .direction = 1,
                     .mover_vid = entity.vid,
@@ -301,7 +320,7 @@ void MoveEntityPixelStep(
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
-                    .impact_surface = BlockingImpactSurface::Tiles,
+                    .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
                     .impact_velocity = entity.vel.y,
                     .direction = -1,
                     .mover_vid = entity.vid,

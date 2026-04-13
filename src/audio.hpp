@@ -102,7 +102,7 @@ struct Audio {
     void PlaySong(Song song);
     void StopCurrentSong();
     void UpdateCurrentSongStreamData();
-    void PlaySoundEffect(SoundEffect sound_effect);
+    void PlaySoundEffect(SoundEffect sound_effect, float volume_scale = 1.0F);
     void SetCurrentSongVolume(float volume);
 
   private:

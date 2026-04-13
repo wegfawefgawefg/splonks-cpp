@@ -5,6 +5,7 @@
 #include "state.hpp"
 #include "render/terrain_lighting.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
@@ -19,25 +20,15 @@ namespace splonks {
 namespace {
 
 bool IsTerrainLightingTile(Tile tile) {
-    switch (tile) {
-    case Tile::Dirt:
-    case Tile::Gold:
-    case Tile::GoldBig:
-    case Tile::Block:
-    case Tile::ShopWall:
-    case Tile::SmoothWall:
-    case Tile::Glass:
-        return true;
-    default:
-        return false;
-    }
+    return GetTileArchetype(tile).solid;
 }
 
 Tile GetTileForLighting(const State& state, int tile_x, int tile_y) {
     if (tile_x < 0 || tile_y < 0 || tile_x >= static_cast<int>(state.stage.GetTileWidth()) ||
         tile_y >= static_cast<int>(state.stage.GetTileHeight())) {
-        return state.settings.post_process.terrain_face_enclosed_stage_bounds ? Tile::Dirt
-                                                                              : Tile::Air;
+        return state.settings.post_process.terrain_face_enclosed_stage_bounds
+                   ? state.stage.stage_border_tile
+                   : Tile::Air;
     }
     return state.stage.tiles[static_cast<std::size_t>(tile_y)][static_cast<std::size_t>(tile_x)];
 }

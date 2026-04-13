@@ -49,17 +49,21 @@ bool IsBlockedForHangProbe(
     const State& state,
     bool check_tiles,
     bool check_entities,
+    bool use_hangable_tiles,
     VID self_vid
 ) {
     if (check_tiles) {
         if (state.settings.post_process.terrain_face_enclosed_stage_bounds) {
             if (tl.x < 0.0F || br.x >= static_cast<float>(state.stage.GetWidth())) {
-                return true;
+                return use_hangable_tiles ? IsTileHangable(state.stage.stage_border_tile)
+                                          : IsTileCollidable(state.stage.stage_border_tile);
             }
         }
 
         const std::vector<const Tile*> tiles = state.stage.GetTilesInRectWc(ToIVec2(tl), ToIVec2(br));
-        if (CollidableTileInList(tiles)) {
+        const bool tile_blocked = use_hangable_tiles ? HangableTileInList(tiles)
+                                                     : CollidableTileInList(tiles);
+        if (tile_blocked) {
             return true;
         }
     }
@@ -108,6 +112,7 @@ bool IsSideBlockedForHang(
         state,
         check_tiles,
         check_entities,
+        true,
         entity.vid
     );
 }
@@ -118,7 +123,8 @@ bool IsHdHangProbeBlocked(
     float x,
     float y,
     bool check_tiles,
-    bool check_entities
+    bool check_entities,
+    bool use_hangable_tiles
 ) {
     return IsBlockedForHangProbe(
         Vec2::New(x, y),
@@ -126,6 +132,7 @@ bool IsHdHangProbeBlocked(
         state,
         check_tiles,
         check_entities,
+        use_hangable_tiles,
         entity.vid
     );
 }
@@ -145,12 +152,12 @@ bool CanCornerHangOnSide(
     const float below_probe_y = aabb.br.y + 1.0F;
 
     const bool upper_probe_blocked =
-        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities) ||
-        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities);
+        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities, true) ||
+        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities, true);
     const bool above_probe_blocked =
-        IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities);
+        IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities, false);
     const bool below_probe_blocked =
-        IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities);
+        IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities, false);
 
     return upper_probe_blocked && !above_probe_blocked && !below_probe_blocked;
 }
@@ -174,7 +181,8 @@ bool CanGloveHangBelowCorner(
                 side_x,
                 static_cast<float>(y),
                 check_tiles,
-                check_entities
+                check_entities,
+                true
             )) {
             return aabb.tl.y >= static_cast<float>(y);
         }
@@ -221,6 +229,7 @@ bool TryCaptureHdHang(
         state,
         check_tiles,
         check_entities,
+        false,
         entity.vid
     );
     if (top_blocked) {
@@ -259,12 +268,12 @@ bool TryCaptureHdHang(
             return true;
         }
         const bool upper_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities) ||
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities);
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities, true) ||
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities, true);
         const bool above_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities);
+            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities, false);
         const bool below_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities);
+            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities, false);
         if (!upper_probe_blocked) {
             return false;
         }
@@ -309,12 +318,12 @@ bool TryCaptureHdHang(
             return true;
         }
         const bool upper_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities) ||
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities);
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities, true) ||
+            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities, true);
         const bool above_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities);
+            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities, false);
         const bool below_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities);
+            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities, false);
         if (!upper_probe_blocked) {
             return false;
         }

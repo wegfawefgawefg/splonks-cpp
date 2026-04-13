@@ -82,6 +82,7 @@ extern const EntityArchetype kBatArchetype{
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
     .damage_sound = SoundEffect::BatSqueak,
+    .collide_sound = SoundEffect::Thud,
     .step_logic = StepEntityLogicAsBat,
     .step_physics = StepEntityPhysicsAsBat,
     .entity_label_a = EntityLabel::AttackThis,

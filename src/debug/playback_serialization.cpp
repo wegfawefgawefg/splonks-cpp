@@ -193,6 +193,7 @@ bool ReadSettings(std::istream& in, Settings& settings) {
 void WriteStage(std::ostream& out, const Stage& stage) {
     WritePod(out, stage.stage_type);
     WritePod(out, stage.gravity);
+    WritePod(out, stage.stage_border_tile);
     WritePod(out, stage.camera_clamp_margin);
     const std::uint32_t tile_rows = static_cast<std::uint32_t>(stage.tiles.size());
     WritePod(out, tile_rows);
@@ -212,6 +213,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
 bool ReadStage(std::istream& in, Stage& stage) {
     if (!ReadPod(in, stage.stage_type) ||
         !ReadPod(in, stage.gravity) ||
+        !ReadPod(in, stage.stage_border_tile) ||
         !ReadPod(in, stage.camera_clamp_margin)) {
         return false;
     }

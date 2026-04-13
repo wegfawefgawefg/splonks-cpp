@@ -72,8 +72,8 @@ struct Entity {
     bool holding = false;
     std::uint64_t passive_item_flags = 0;
     std::uint32_t money = 0;
-    std::uint32_t bombs = 4;
-    std::uint32_t ropes = 4;
+    std::uint32_t bombs = 0;
+    std::uint32_t ropes = 0;
     std::optional<VID> back_vid;
     AttachmentMode attachment_mode = AttachmentMode::None;
     UseState use_state;
@@ -96,7 +96,7 @@ struct Entity {
     std::uint32_t thrown_immunity_timer = 0;
     bool collided = false;
     bool collided_last_frame = false;
-    std::uint32_t collided_trigger_cooldown = 0;
+    std::uint32_t contact_sound_cooldown = 0;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
     bool can_be_stunned = false;
     IVec2 point_a;

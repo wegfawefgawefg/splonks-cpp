@@ -2,6 +2,7 @@
 
 #include "state.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
 
 #include <algorithm>
 
@@ -12,15 +13,7 @@ namespace {
 constexpr int kTileChangeUpdateRadius = 2;
 
 bool IsTerrainLightingTile(Tile tile) {
-    switch (tile) {
-    case Tile::Dirt:
-    case Tile::Gold:
-    case Tile::GoldBig:
-    case Tile::Block:
-        return true;
-    default:
-        return false;
-    }
+    return GetTileArchetype(tile).solid;
 }
 
 bool StageTileExists(const State& state, int tile_x, int tile_y) {
@@ -31,8 +24,9 @@ bool StageTileExists(const State& state, int tile_x, int tile_y) {
 
 Tile GetTileForLighting(const State& state, int tile_x, int tile_y) {
     if (!StageTileExists(state, tile_x, tile_y)) {
-        return state.settings.post_process.terrain_face_enclosed_stage_bounds ? Tile::Dirt
-                                                                              : Tile::Air;
+        return state.settings.post_process.terrain_face_enclosed_stage_bounds
+                   ? state.stage.stage_border_tile
+                   : Tile::Air;
     }
 
     return state.stage.tiles[static_cast<std::size_t>(tile_y)][static_cast<std::size_t>(tile_x)];

@@ -64,6 +64,7 @@ extern const EntityArchetype kRockArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
+    .collide_sound = SoundEffect::Thud,
     .step_logic = StepEntityLogicAsRock,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Rock),

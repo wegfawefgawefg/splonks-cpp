@@ -1545,6 +1545,7 @@ Stage GenerateStage(StageType stage_type) {
     stage.rooms = std::move(room_codes);
     stage.path = layout.path;
     stage.gravity = 0.3F;
+    stage.stage_border_tile = Tile::Dirt;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     AddMinesEmbeddedTreasure(stage);
     AddMinesTreasure(stage);

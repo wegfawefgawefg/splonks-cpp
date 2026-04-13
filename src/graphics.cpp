@@ -184,29 +184,6 @@ void Graphics::ShutdownTextures() {
 
 }
 
-bool IsTileTransparent(Tile tile) {
-    switch (tile) {
-    case Tile::Air:
-    case Tile::Ladder:
-    case Tile::LadderTop:
-    case Tile::Entrance:
-    case Tile::Exit:
-    case Tile::Spikes:
-    case Tile::Rope:
-        return true;
-    case Tile::Dirt:
-    case Tile::Gold:
-    case Tile::GoldBig:
-    case Tile::Block:
-    case Tile::ShopWall:
-    case Tile::SmoothWall:
-    case Tile::Glass:
-        return false;
-    }
-
-    return false;
-}
-
 int GetReasonableFontScale(const UVec2& dims, TextType text_type) {
     if (dims == UVec2::New(160, 144)) {
         switch (text_type) {

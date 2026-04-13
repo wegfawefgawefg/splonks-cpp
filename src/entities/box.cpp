@@ -90,6 +90,7 @@ extern const EntityArchetype kBoxArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .collide_sound = SoundEffect::Thud,
     .death_sound_effect = SoundEffect::BoxBreak,
     .on_death = OnDeathAsBox,
     .step_logic = StepEntityLogicAsBox,

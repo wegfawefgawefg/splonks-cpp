@@ -52,6 +52,7 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
+    stage.stage_border_tile = Tile::Dirt;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
 
     const int wall_x = std::clamp(kHangTestWallX, 1, stage_width - 2);
@@ -87,6 +88,7 @@ Stage MakeStompTestStage() {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
+    stage.stage_border_tile = Tile::Dirt;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
 
     for (int x = 0; x < kStompTestStageWidthTiles; ++x) {

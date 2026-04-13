@@ -243,6 +243,7 @@ add_executable(splonks-cpp
     src/special_effects/spline_effect.cpp
     src/special_effects/static_effect.cpp
     src/tile.cpp
+    src/tile_archetype.cpp
     src/tile_source_data.cpp
     src/utils.cpp
     src/controls.cpp

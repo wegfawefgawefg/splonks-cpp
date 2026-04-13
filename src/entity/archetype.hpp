@@ -48,6 +48,7 @@ struct EntityArchetype {
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
     std::optional<FrameDataId> damage_animation = std::nullopt;
     std::optional<SoundEffect> damage_sound = std::nullopt;
+    std::optional<SoundEffect> collide_sound = std::nullopt;
     std::optional<SoundEffect> death_sound_effect = std::nullopt;
     EntityOnDeath on_death = nullptr;
     EntityOnDamageEffect on_damage_effect = nullptr;

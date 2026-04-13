@@ -97,7 +97,7 @@ Entity Entity::New() {
     entity.thrown_immunity_timer = 0;
     entity.collided = false;
     entity.collided_last_frame = false;
-    entity.collided_trigger_cooldown = 0;
+    entity.contact_sound_cooldown = 0;
     entity.can_be_stunned = false;
     entity.point_a = IVec2::New(0, 0);
     entity.point_b = IVec2::New(0, 0);

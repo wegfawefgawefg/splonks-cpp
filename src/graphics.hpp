@@ -81,7 +81,6 @@ struct Graphics {
 
 SDL_FRect GetPresentationRect(const Graphics& graphics, int output_width, int output_height);
 
-bool IsTileTransparent(Tile tile);
 
 enum class TextType {
     MenuTitle,

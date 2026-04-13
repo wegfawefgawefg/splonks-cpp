@@ -16,6 +16,9 @@ void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
 
 void StepStunTimer(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (entity.contact_sound_cooldown > 0) {
+        entity.contact_sound_cooldown -= 1;
+    }
     if (entity.condition == EntityCondition::Stunned) {
         if (entity.stun_timer == 0) {
             entity.condition = EntityCondition::Normal;

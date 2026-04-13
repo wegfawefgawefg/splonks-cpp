@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3_mixer/SDL_mixer.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -297,7 +298,7 @@ void Audio::UpdateCurrentSongStreamData() {
     MIX_SetTrackGain(song_track, music_volume);
 }
 
-void Audio::PlaySoundEffect(SoundEffect sound_effect) {
+void Audio::PlaySoundEffect(SoundEffect sound_effect, float volume_scale) {
     if (!initialized || sound_effect_tracks.empty()) {
         return;
     }
@@ -307,7 +308,7 @@ void Audio::PlaySoundEffect(SoundEffect sound_effect) {
         return;
     }
 
-    loaded_sound.volume = sound_effects_volume;
+    loaded_sound.volume = sound_effects_volume * volume_scale;
 
     MIX_Track* track = sound_effect_tracks[next_sound_effect_track];
     next_sound_effect_track = (next_sound_effect_track + 1) % sound_effect_tracks.size();
@@ -315,7 +316,8 @@ void Audio::PlaySoundEffect(SoundEffect sound_effect) {
     if (!MIX_SetTrackAudio(track, loaded_sound.audio)) {
         return;
     }
-    MIX_SetTrackGain(track, sound_effects_volume);
+    const float gain = std::clamp(sound_effects_volume * volume_scale, 0.0F, 1.0F);
+    MIX_SetTrackGain(track, gain);
     MIX_PlayTrack(track, 0);
 }
 

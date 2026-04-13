@@ -5,6 +5,7 @@
 #include "special_effects/ultra_dynamic_effect.hpp"
 #include "render/terrain_lighting.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
 
 #include <memory>
 #include <vector>
@@ -47,33 +48,21 @@ void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
     entity->vel = Vec2::New(0.0F, 0.0F);
 }
 
-void SpawnGoldVeinPayout(Tile tile, const IVec2& tile_pos, State& state) {
-    const Vec2 tile_tl = Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
+void SpawnTileBreakAnimation(FrameDataId animation_id, const IVec2& tile_pos, State& state) {
+    const Vec2 center = Vec2::New(
+        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
-    const Vec2 center = tile_tl + Vec2::New(8.0F, 8.0F);
-
-    if (tile == Tile::Gold) {
-        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-3.0F, -1.0F), state);
-        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 0.0F), state);
-        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(3.0F, 1.0F), state);
-        return;
-    }
-
-    if (tile == Tile::GoldBig) {
-        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
-        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
-        SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
-        SpawnEntityAtCenter(EntityType::GoldNugget, center, state);
-    }
+    SpawnDamageEffectAnimationBurst(animation_id, center, state);
 }
 
-void BreakStageTilesInRectWc(const AABB& area, State& state) {
+void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
     const int max_x = static_cast<int>(state.stage.GetTileWidth()) - 1;
     const int max_y = static_cast<int>(state.stage.GetTileHeight()) - 1;
     const IVec2 tl = ToIVec2(area.tl / static_cast<float>(kTileSize));
     const IVec2 br = ToIVec2(area.br / static_cast<float>(kTileSize));
+
+    std::optional<SoundEffect> break_sound = std::nullopt;
 
     for (int y = std::max(0, tl.y); y <= std::min(br.y, max_y); ++y) {
         for (int x = std::max(0, tl.x); x <= std::min(br.x, max_x); ++x) {
@@ -83,8 +72,15 @@ void BreakStageTilesInRectWc(const AABB& area, State& state) {
                 continue;
             }
 
-            if (tile == Tile::Gold || tile == Tile::GoldBig) {
-                SpawnGoldVeinPayout(tile, tile_pos, state);
+            const TileArchetype& tile_archetype = GetTileArchetype(tile);
+            if (!break_sound.has_value() && tile_archetype.break_sound.has_value()) {
+                break_sound = tile_archetype.break_sound;
+            }
+            if (tile_archetype.break_animation.has_value()) {
+                SpawnTileBreakAnimation(*tile_archetype.break_animation, tile_pos, state);
+            }
+            if (tile_archetype.on_break != nullptr) {
+                tile_archetype.on_break(tile_pos, state, audio);
             }
 
             const EntityType embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
@@ -98,6 +94,10 @@ void BreakStageTilesInRectWc(const AABB& area, State& state) {
 
             state.stage.SetTile(tile_pos, Tile::Air);
         }
+    }
+
+    if (break_sound.has_value()) {
+        audio.PlaySoundEffect(*break_sound);
     }
 }
 
@@ -239,15 +239,6 @@ void MaybeHurtAndStunOnContact(
     }
 }
 
-SoundEffect GetProjectileCollisionSound(EntityType type_) {
-    switch (type_) {
-    case EntityType::Pot:
-        return SoundEffect::PotShatter;
-    default:
-        return SoundEffect::Thud;
-    }
-}
-
 bool MaybeHurtAndStunOnContactAsProjectile(
     std::size_t entity_idx,
     State& state,
@@ -306,8 +297,10 @@ bool MaybeHurtAndStunOnContactAsProjectile(
                         InteractionCooldownKind::Harm,
                         kHarmContactCooldownFrames
                     );
-                    const SoundEffect sound_effect = GetProjectileCollisionSound(entity_type);
-                    audio.PlaySoundEffect(sound_effect);
+                    const EntityArchetype& archetype = GetEntityArchetype(entity_type);
+                    if (archetype.collide_sound.has_value()) {
+                        audio.PlaySoundEffect(*archetype.collide_sound);
+                    }
                     break;
                 }
                 case DamageResult::None:
@@ -586,7 +579,7 @@ void DoExplosion(
         .tl = center - (Vec2::New(1.0F, 1.0F) * explosion_size),
         .br = center + (Vec2::New(1.0F, 1.0F) * explosion_size),
     };
-    BreakStageTilesInRectWc(area, state);
+    BreakStageTilesInRectWc(area, state, audio);
     InvalidateTerrainLightingCache(state);
 
     const VID this_vid = state.entity_manager.GetVid(entity_idx);
