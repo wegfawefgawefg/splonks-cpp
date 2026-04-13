@@ -54,3 +54,6 @@ border fix
     toroidal space
     toroidal seemless
         block and entity quieries need to respect toroidal space... 
+
+make set tiles respect border wrap. 
+    thrown rope comes to mind
