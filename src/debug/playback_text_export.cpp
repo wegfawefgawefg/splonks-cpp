@@ -95,6 +95,8 @@ const char* AiStateToString(EntityAiState ai_state) {
     switch (ai_state) {
     case EntityAiState::Idle:
         return "Idle";
+    case EntityAiState::Patrolling:
+        return "Patrolling";
     case EntityAiState::Pursuing:
         return "Pursuing";
     case EntityAiState::Returning:

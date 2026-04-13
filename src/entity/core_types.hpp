@@ -119,6 +119,7 @@ enum class EntityCondition {
 
 enum class EntityAiState {
     Idle,
+    Patrolling,
     Pursuing,
     Returning,
 };

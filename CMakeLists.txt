@@ -155,6 +155,7 @@ add_executable(splonks-cpp
     src/entities/common/damage.cpp
     src/entities/common/explosion.cpp
     src/entities/common/frame.cpp
+    src/entities/common/ground_walker.cpp
     src/entities/common/hang.cpp
     src/entities/common/physics.cpp
     src/entities/common/blocking_contact.cpp

@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "7b1f32ca-1abd-4345-ac32-e9db0d868737",
+  "selectedAnnotationId": "e1438c1e-b778-4997-9b75-ac0454c70e95",
   "sheets": [
     {
       "path": "images/title.png",
@@ -5885,15 +5885,230 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "97bbb967-5abd-4029-a06a-d209568abf75",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "caveman_walk",
+            "frame": 0,
+            "duration": 12,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 0,
+              "w": 9,
+              "h": 16
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 9,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 12,
+              "y": 13
+            }
+          }
+        },
+        {
+          "id": "361b69e2-64f0-4bd8-8121-3e7fde36c71e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 48,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "caveman_walk",
+            "frame": 1,
+            "duration": 12,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 0,
+              "w": 9,
+              "h": 16
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 9,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 12,
+              "y": 13
+            }
+          }
+        },
+        {
+          "id": "5645cd8d-e555-4e93-8dbd-68e9c163b136",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 64,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "caveman",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 0,
+              "w": 9,
+              "h": 16
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 9,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "dbe46971-e57a-46fa-bbae-311fd64a8850",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "caveman_stunned",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 11
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 10,
+              "h": 13
+            },
+            "cbox": {
+              "x": 3,
+              "y": 3,
+              "w": 10,
+              "h": 13
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 12,
+              "y": 14
+            }
+          }
+        },
+        {
+          "id": "87193c09-52d2-4b6a-8917-ad3264d851a3",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 96,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "caveman_dead",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 9,
+              "w": 15,
+              "h": 7
+            },
+            "cbox": {
+              "x": 1,
+              "y": 9,
+              "w": 15,
+              "h": 7
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 16.385,
-        "centerX": 226.5791882819652,
-        "centerY": 169.78944156240462
+        "zoom": 13.108,
+        "centerX": 95.85749160817821,
+        "centerY": 213.07598413182788
       }
     },
     {

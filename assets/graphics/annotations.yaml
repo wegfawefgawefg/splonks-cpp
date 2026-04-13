@@ -3959,6 +3959,156 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 208
+      w: 16
+      h: 16
+    name: "caveman_walk"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 9
+      h: 16
+    cbox:
+      x: 3
+      y: 0
+      w: 9
+      h: 16
+    tile: false
+    emit_point:
+      x: 12
+      y: 13
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 208
+      w: 16
+      h: 16
+    name: "caveman_walk"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 9
+      h: 16
+    cbox:
+      x: 3
+      y: 0
+      w: 9
+      h: 16
+    tile: false
+    emit_point:
+      x: 12
+      y: 13
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 208
+      w: 16
+      h: 16
+    name: "caveman"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 8
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 9
+      h: 16
+    cbox:
+      x: 3
+      y: 0
+      w: 9
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 208
+      w: 16
+      h: 16
+    name: "caveman_stunned"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 11
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 10
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 10
+      h: 13
+    tile: false
+    emit_point:
+      x: 12
+      y: 14
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 208
+      w: 16
+      h: 16
+    name: "caveman_dead"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 1
+      y: 9
+      w: 15
+      h: 7
+    cbox:
+      x: 1
+      y: 9
+      w: 15
+      h: 7
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0
