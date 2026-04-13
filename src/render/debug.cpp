@@ -36,6 +36,20 @@ SDL_FRect WorldRectToScreen(
     };
 }
 
+Vec2 WorldPointToScreen(
+    const Graphics& graphics,
+    const SDL_FRect& presentation,
+    const Vec2& world_pos
+) {
+    const float presentation_scale = presentation.w / static_cast<float>(graphics.dims.x);
+    const Vec2 relative = world_pos - graphics.camera.target;
+    const Vec2 internal_screen = relative * graphics.camera.zoom + graphics.camera.offset;
+    return Vec2::New(
+        presentation.x + internal_screen.x * presentation_scale,
+        presentation.y + internal_screen.y * presentation_scale
+    );
+}
+
 void RenderArrow(SDL_Renderer* renderer, Vec2 pos, float length, Vec2 dir, SDL_Color color) {
     const Vec2 line_end = pos + (dir * length);
     // draw a tiny rectangle at the center
@@ -249,6 +263,51 @@ void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, cons
         SDL_SetRenderDrawColor(renderer, cbox_color.r, cbox_color.g, cbox_color.b, cbox_color.a);
         SDL_RenderRect(renderer, &cbox_rect);
     }
+}
+
+void RenderBorderGuides(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
+    if (!state.stage.HasVoidDeathY()) {
+        return;
+    }
+
+    int output_width = static_cast<int>(graphics.window_dims.x);
+    int output_height = static_cast<int>(graphics.window_dims.y);
+    if (graphics.fullscreen) {
+        SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+    }
+    const SDL_FRect presentation = GetPresentationRect(graphics, output_width, output_height);
+    const float void_death_y = state.stage.GetVoidDeathY();
+    const Vec2 screen = WorldPointToScreen(
+        graphics,
+        presentation,
+        Vec2::New(graphics.camera.target.x, void_death_y)
+    );
+    if (screen.y < presentation.y - 16.0F ||
+        screen.y > presentation.y + presentation.h + 16.0F) {
+        return;
+    }
+
+    SDL_SetRenderDrawColor(renderer, 255, 96, 96, 255);
+    SDL_RenderLine(
+        renderer,
+        presentation.x,
+        screen.y,
+        presentation.x + presentation.w,
+        screen.y
+    );
+
+    char text[64];
+    std::snprintf(text, sizeof(text), "void y=%d", static_cast<int>(void_death_y));
+    DrawText(
+        renderer,
+        graphics,
+        10,
+        graphics.ui_font,
+        text,
+        presentation.x + 6.0F,
+        screen.y - 12.0F,
+        SDL_Color{255, 96, 96, 255}
+    );
 }
 
 void RenderEntityIds(SDL_Renderer* renderer, Graphics& graphics, const State& state) {

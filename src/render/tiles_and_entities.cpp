@@ -474,6 +474,7 @@ void RenderSpecialEffects(SDL_Renderer* renderer, const State& state, Graphics& 
             static_cast<float>(frame_data->sample_rect.h),
         };
         SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, SDL_FLIP_NONE);
+        SDL_SetTextureAlphaMod(texture, 255);
     }
 }
 

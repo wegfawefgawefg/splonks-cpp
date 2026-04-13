@@ -15,18 +15,6 @@ bool RandomBool() {
     return rng::RandomIntExclusive(0, 2) == 0;
 }
 
-int WrapCoordinate(int value, int size) {
-    if (size <= 0) {
-        return value;
-    }
-
-    int wrapped = value % size;
-    if (wrapped < 0) {
-        wrapped += size;
-    }
-    return wrapped;
-}
-
 int FloorDiv(int value, int divisor) {
     if (divisor == 0) {
         return 0;
@@ -74,7 +62,7 @@ Stage Stage::NewBlank() {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
-    stage.border = MakeUniformBorder(Tile::CaveDirt);
+    stage.border = MakeUniformBorder(Tile::Air);
     stage.camera_clamp_margin = Vec2::New(0.0F, 0.0F);
     return stage;
 }
@@ -265,19 +253,11 @@ EntityType Stage::GetEmbeddedTreasure(unsigned int x, unsigned int y) const {
 }
 
 const Tile* Stage::GetTileAtWc(const IVec2& pos) const {
-    IVec2 sample_pos = pos;
-    if (WrapsX()) {
-        sample_pos.x = WrapCoordinate(sample_pos.x, static_cast<int>(GetWidth()));
-    }
-    if (WrapsY()) {
-        sample_pos.y = WrapCoordinate(sample_pos.y, static_cast<int>(GetHeight()));
-    }
-
-    if (sample_pos.x < 0 || sample_pos.y < 0) {
+    if (pos.x < 0 || pos.y < 0) {
         return nullptr;
     }
 
-    const UVec2 upos = ToUVec2(sample_pos);
+    const UVec2 upos = ToUVec2(pos);
     const UVec2 stage_dims = GetStageDims();
     if (upos.x >= stage_dims.x || upos.y >= stage_dims.y) {
         return nullptr;
@@ -288,29 +268,16 @@ const Tile* Stage::GetTileAtWc(const IVec2& pos) const {
 }
 
 std::vector<const Tile*> Stage::GetTilesInRectWc(const IVec2& tl, const IVec2& br) const {
-    const IVec2 tile_tl = IVec2::New(
-        FloorDiv(tl.x, static_cast<int>(kTileSize)),
-        FloorDiv(tl.y, static_cast<int>(kTileSize))
+    return GetTilesInRect(
+        IVec2::New(
+            FloorDiv(tl.x, static_cast<int>(kTileSize)),
+            FloorDiv(tl.y, static_cast<int>(kTileSize))
+        ),
+        IVec2::New(
+            FloorDiv(br.x, static_cast<int>(kTileSize)),
+            FloorDiv(br.y, static_cast<int>(kTileSize))
+        )
     );
-    const IVec2 tile_br = IVec2::New(
-        FloorDiv(br.x, static_cast<int>(kTileSize)),
-        FloorDiv(br.y, static_cast<int>(kTileSize))
-    );
-
-    std::vector<const Tile*> result;
-    for (int y = tile_tl.y; y <= tile_br.y; ++y) {
-        for (int x = tile_tl.x; x <= tile_br.x; ++x) {
-            const IVec2 wrapped = WrapTileCoord(IVec2::New(x, y));
-            if (!IsTileCoordInside(wrapped.x, wrapped.y)) {
-                continue;
-            }
-            result.push_back(&GetTile(
-                static_cast<unsigned int>(wrapped.x),
-                static_cast<unsigned int>(wrapped.y)
-            ));
-        }
-    }
-    return result;
 }
 
 std::vector<const Tile*> Stage::GetTilesInRect(const IVec2& tl, const IVec2& br) const {
@@ -592,51 +559,42 @@ bool Stage::IsWorldPosInside(const IVec2& wc) const {
            wc.y < static_cast<int>(GetHeight());
 }
 
-IVec2 Stage::WrapTileCoord(const IVec2& tile_coord) const {
-    IVec2 wrapped = tile_coord;
-    if (WrapsX()) {
-        wrapped.x = WrapCoordinate(wrapped.x, static_cast<int>(GetTileWidth()));
-    }
-    if (WrapsY()) {
-        wrapped.y = WrapCoordinate(wrapped.y, static_cast<int>(GetTileHeight()));
-    }
-    return wrapped;
-}
-
-IVec2 Stage::WrapWorldPos(const IVec2& wc) const {
-    IVec2 wrapped = wc;
-    if (WrapsX()) {
-        wrapped.x = WrapCoordinate(wrapped.x, static_cast<int>(GetWidth()));
-    }
-    if (WrapsY()) {
-        wrapped.y = WrapCoordinate(wrapped.y, static_cast<int>(GetHeight()));
-    }
-    return wrapped;
-}
-
 void Stage::NormalizeEntityPositionForWrap(Entity& entity) const {
-    const auto [tl, br] = entity.GetBounds();
     const UVec2 room_dims = GetRoomDims();
 
     if (WrapsX()) {
         const float stage_width = static_cast<float>(GetWidth());
-        const float wrap_padding = static_cast<float>(room_dims.x * 2U);
+        const float wrap_padding = static_cast<float>(room_dims.x);
         const float wrap_span = stage_width + (wrap_padding * 2.0F);
-        if (br.x < -wrap_padding) {
-            entity.pos.x += wrap_span;
-        } else if (tl.x >= stage_width + wrap_padding) {
-            entity.pos.x -= wrap_span;
+        while (true) {
+            const auto [tl, br] = entity.GetBounds();
+            if (br.x < -wrap_padding) {
+                entity.pos.x += wrap_span;
+                continue;
+            }
+            if (tl.x >= stage_width + wrap_padding) {
+                entity.pos.x -= wrap_span;
+                continue;
+            }
+            break;
         }
     }
 
     if (WrapsY()) {
         const float stage_height = static_cast<float>(GetHeight());
-        const float wrap_padding = static_cast<float>(room_dims.y * 2U);
+        const float wrap_padding = static_cast<float>(room_dims.y);
         const float wrap_span = stage_height + (wrap_padding * 2.0F);
-        if (br.y < -wrap_padding) {
-            entity.pos.y += wrap_span;
-        } else if (tl.y >= stage_height + wrap_padding) {
-            entity.pos.y -= wrap_span;
+        while (true) {
+            const auto [tl, br] = entity.GetBounds();
+            if (br.y < -wrap_padding) {
+                entity.pos.y += wrap_span;
+                continue;
+            }
+            if (tl.y >= stage_height + wrap_padding) {
+                entity.pos.y -= wrap_span;
+                continue;
+            }
+            break;
         }
     }
 }
@@ -665,15 +623,14 @@ IVec2 Stage::GetStartingRoom() const {
 }
 
 IVec2 Stage::GetTileCoordAtWc(const IVec2& wc) const {
-    const IVec2 wrapped = WrapWorldPos(wc);
     return IVec2::New(
-        FloorDiv(wrapped.x, static_cast<int>(kTileSize)),
-        FloorDiv(wrapped.y, static_cast<int>(kTileSize))
+        FloorDiv(wc.x, static_cast<int>(kTileSize)),
+        FloorDiv(wc.y, static_cast<int>(kTileSize))
     );
 }
 
 bool Stage::TileCoordAtWcExists(const IVec2& wc) const {
-    return IsWorldPosInside(WrapWorldPos(wc));
+    return IsWorldPosInside(wc);
 }
 
 } // namespace splonks

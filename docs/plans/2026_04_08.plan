@@ -49,3 +49,8 @@ on stunned do we drop held?
 free cam mode free zoom
 keep shit on succeed level.
 factor out entitystate and entity super state.
+
+border fix
+    toroidal space
+    toroidal seemless
+        block and entity quieries need to respect toroidal space... 

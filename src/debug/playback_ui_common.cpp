@@ -9,6 +9,8 @@ namespace splonks::debug_playback_internal {
 bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
     bool changed = false;
 
+    state.show_border_guides = debug.imgui_visible && debug.border_window_visible;
+
     if (state.settings.debug_ui.menu_visible != debug.ui_visible) {
         state.settings.debug_ui.menu_visible = debug.ui_visible;
         changed = true;

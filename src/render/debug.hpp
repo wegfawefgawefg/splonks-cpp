@@ -11,5 +11,6 @@ void RenderStageLayout(SDL_Renderer* renderer, Graphics& graphics, const State& 
 void RenderRoomsOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 void RenderEntityCollisionBoxes(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 void RenderEntityIds(SDL_Renderer* renderer, Graphics& graphics, const State& state);
+void RenderBorderGuides(SDL_Renderer* renderer, Graphics& graphics, const State& state);
 
 } // namespace splonks

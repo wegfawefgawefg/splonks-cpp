@@ -125,8 +125,6 @@ struct Stage {
     Tile GetTileOrBorder(int tile_x, int tile_y) const;
     bool IsTileCoordInside(int tile_x, int tile_y) const;
     bool IsWorldPosInside(const IVec2& wc) const;
-    IVec2 WrapTileCoord(const IVec2& tile_coord) const;
-    IVec2 WrapWorldPos(const IVec2& wc) const;
     void NormalizeEntityPositionForWrap(Entity& entity) const;
     std::pair<UVec2, UVec2> GetRoomCorners(const UVec2& room) const;
     std::vector<const Tile*> GetTilesInRoom(const UVec2& room) const;

@@ -115,15 +115,14 @@ BlockingContactSet GatherBlockingContactsForAabb(
         );
         for (int y = tile_tl.y; y <= tile_br.y; ++y) {
             for (int x = tile_tl.x; x <= tile_br.x; ++x) {
-                const IVec2 tile_pos = state.stage.WrapTileCoord(IVec2::New(x, y));
-                if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+                if (!state.stage.IsTileCoordInside(x, y)) {
                     continue;
                 }
                 contacts.tile_contacts.push_back(TileContact{
-                    .tile_pos = tile_pos,
+                    .tile_pos = IVec2::New(x, y),
                     .tile = &state.stage.GetTile(
-                        static_cast<unsigned int>(tile_pos.x),
-                        static_cast<unsigned int>(tile_pos.y)
+                        static_cast<unsigned int>(x),
+                        static_cast<unsigned int>(y)
                     ),
                 });
             }

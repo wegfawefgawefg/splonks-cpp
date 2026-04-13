@@ -18,10 +18,14 @@ bool HasUseActivity(const Entity& entity) {
     return entity.use_state.down || entity.use_state.pressed || entity.use_state.released;
 }
 
-void ApplyStageWrapAndVoidDeath(Entity& entity, State& state) {
+void ApplyStageWrapAndVoidDeath(std::size_t entity_idx, State& state, Audio& audio) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
     state.stage.NormalizeEntityPositionForWrap(entity);
 
     if (!state.stage.HasVoidDeathY()) {
+        return;
+    }
+    if (entity.health == 0 || entity.condition == EntityCondition::Dead) {
         return;
     }
 
@@ -31,8 +35,8 @@ void ApplyStageWrapAndVoidDeath(Entity& entity, State& state) {
     }
 
     entity.vel = Vec2::New(0.0F, 0.0F);
-    entity.condition = EntityCondition::Dead;
-    TrySetAnimation(entity, EntityDisplayState::Dead);
+    entity.health = 0;
+    entities::common::DieIfDead(entity_idx, state, audio);
 }
 
 void ClearUseEdgesAfterFrame(Entity& entity) {
@@ -110,10 +114,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                     );
                 }
                 if (state.entity_manager.entities[state.player_vid->id].active) {
-                    ApplyStageWrapAndVoidDeath(
-                        state.entity_manager.entities[state.player_vid->id],
-                        state
-                    );
+                    ApplyStageWrapAndVoidDeath(state.player_vid->id, state, audio);
                 }
             }
             entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
@@ -169,7 +170,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                     );
                 }
                 if (state.entity_manager.entities[entity_idx].active) {
-                    ApplyStageWrapAndVoidDeath(state.entity_manager.entities[entity_idx], state);
+                    ApplyStageWrapAndVoidDeath(entity_idx, state, audio);
                 }
             }
             entities::common::ApplyDeactivateConditions(entity_idx, state);

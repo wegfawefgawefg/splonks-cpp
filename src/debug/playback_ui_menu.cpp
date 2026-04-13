@@ -17,6 +17,10 @@ constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 
+int DefaultVoidDeathYForStage(const Stage& stage) {
+    return static_cast<int>(stage.GetHeight() + stage.GetRoomDims().y);
+}
+
 bool DrawTileCombo(const char* label, Tile& tile) {
     bool changed = false;
     if (ImGui::BeginCombo(label, TileToString(tile))) {
@@ -296,7 +300,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         bool has_void_death_y = border_test.void_death_y.has_value();
         if (ImGui::Checkbox("Void Death Enabled", &has_void_death_y)) {
             border_test.void_death_y = has_void_death_y
-                                           ? std::optional<int>(0)
+                                           ? std::optional<int>(DefaultVoidDeathYForStage(state.stage))
                                            : std::nullopt;
             changed = true;
         }
@@ -321,7 +325,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         bool has_void_death_y = state.stage.border.void_death_y.has_value();
         if (ImGui::Checkbox("Void Death Enabled", &has_void_death_y)) {
             state.stage.border.void_death_y = has_void_death_y
-                                                  ? std::optional<int>(0)
+                                                  ? std::optional<int>(DefaultVoidDeathYForStage(state.stage))
                                                   : std::nullopt;
             changed = true;
         }

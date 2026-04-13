@@ -91,6 +91,9 @@ void Render(
         if (state.show_entity_ids) {
             RenderEntityIds(renderer, graphics, state);
         }
+        if (state.show_border_guides) {
+            RenderBorderGuides(renderer, graphics, state);
+        }
     }
 }
 

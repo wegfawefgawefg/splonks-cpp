@@ -88,10 +88,33 @@ That means the side tile can define:
 
 ### Wrapping
 
+There are two distinct wrap modes and they should not be conflated.
+
+#### Delayed wrap through border air
+
+This is the current target.
+
+- leaving the stage does **not** immediately sample tiles from the opposite side
+- outside the authored stage you should see border air plus the stage background
+- collision queries outside the stage should stay outside the stage
+- after the entity travels far enough past the edge, we normalize it back in on the opposite side
+
+This is good for space-style maps.
+
+#### Seamless torus wrap
+
+This is a separate future feature.
+
+- the left edge literally neighbors the right edge for rendering, collision, and entity queries
+- tiles and entities from the opposite edge are visible and interactive at the seam
+- this requires seam-aware rendering and broad collision sampling
+
+That is much more invasive and should not reuse the same implementation path as delayed wrap.
+
 For now:
 
-- `wrap_x` means exiting left enters from right, and exiting right enters from left
-- `wrap_y` means exiting top enters from bottom, and exiting bottom enters from top
+- `wrap_x` means delayed left/right wrap
+- `wrap_y` means delayed top/bottom wrap
 
 If wrapping is enabled on an axis, movement/collision should not treat leaving the map on that axis as a block.
 
