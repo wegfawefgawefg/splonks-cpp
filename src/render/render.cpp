@@ -85,15 +85,7 @@ void Render(
 
     if (state.mode == Mode::Playing) {
         RenderHealthRopeBombs(renderer, state, graphics);
-        if (state.show_entity_collision_boxes) {
-            RenderEntityCollisionBoxes(renderer, graphics, state);
-        }
-        if (state.show_entity_ids) {
-            RenderEntityIds(renderer, graphics, state);
-        }
-        if (state.show_border_guides) {
-            RenderBorderGuides(renderer, graphics, state);
-        }
+        RenderDebugOverlay(renderer, graphics, state);
     }
 }
 

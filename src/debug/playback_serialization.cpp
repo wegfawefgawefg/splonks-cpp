@@ -300,6 +300,12 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.choosing_control_binding);
     WritePod(out, snapshot.show_entity_collision_boxes);
     WritePod(out, snapshot.show_entity_ids);
+    WritePod(out, snapshot.show_entity_types);
+    WritePod(out, snapshot.show_void_death_line);
+    WritePod(out, snapshot.show_chunk_boundaries);
+    WritePod(out, snapshot.show_chunk_coords);
+    WritePod(out, snapshot.show_tile_indexes);
+    WritePod(out, snapshot.show_tile_types);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
@@ -348,6 +354,12 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.choosing_control_binding) &&
            ReadPod(in, snapshot.show_entity_collision_boxes) &&
            ReadPod(in, snapshot.show_entity_ids) &&
+           ReadPod(in, snapshot.show_entity_types) &&
+           ReadPod(in, snapshot.show_void_death_line) &&
+           ReadPod(in, snapshot.show_chunk_boundaries) &&
+           ReadPod(in, snapshot.show_chunk_coords) &&
+           ReadPod(in, snapshot.show_tile_indexes) &&
+           ReadPod(in, snapshot.show_tile_types) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&
@@ -749,6 +761,12 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.choosing_control_binding = state.choosing_control_binding;
     snapshot.show_entity_collision_boxes = state.show_entity_collision_boxes;
     snapshot.show_entity_ids = state.show_entity_ids;
+    snapshot.show_entity_types = state.show_entity_types;
+    snapshot.show_void_death_line = state.show_void_death_line;
+    snapshot.show_chunk_boundaries = state.show_chunk_boundaries;
+    snapshot.show_chunk_coords = state.show_chunk_coords;
+    snapshot.show_tile_indexes = state.show_tile_indexes;
+    snapshot.show_tile_types = state.show_tile_types;
     snapshot.now = state.now;
     snapshot.time_since_last_update = state.time_since_last_update;
     snapshot.scene_frame = state.scene_frame;
@@ -799,6 +817,12 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.choosing_control_binding = snapshot.choosing_control_binding;
     state.show_entity_collision_boxes = snapshot.show_entity_collision_boxes;
     state.show_entity_ids = snapshot.show_entity_ids;
+    state.show_entity_types = snapshot.show_entity_types;
+    state.show_void_death_line = snapshot.show_void_death_line;
+    state.show_chunk_boundaries = snapshot.show_chunk_boundaries;
+    state.show_chunk_coords = snapshot.show_chunk_coords;
+    state.show_tile_indexes = snapshot.show_tile_indexes;
+    state.show_tile_types = snapshot.show_tile_types;
     state.now = snapshot.now;
     state.time_since_last_update = snapshot.time_since_last_update;
     state.scene_frame = snapshot.scene_frame;

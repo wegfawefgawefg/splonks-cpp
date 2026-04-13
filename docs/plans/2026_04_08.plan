@@ -64,3 +64,4 @@ make ourselves some real query layer
     raycasts for entities
         option for returning the point on the thing
     get/set for tiles in area
+camera still snaps when you cross the seem. is there a way to make it seemless?

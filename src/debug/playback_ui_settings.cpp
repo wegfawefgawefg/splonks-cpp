@@ -7,20 +7,26 @@
 
 namespace splonks::debug_playback_internal {
 
-void DrawEntityAnnotations(DebugPlayback& debug, State& state) {
+void DrawDebugOverlayWindow(DebugPlayback& debug, State& state) {
     if (!debug.entity_annotations_visible) {
         return;
     }
 
     ImGui::SetNextWindowBgAlpha(0.9F);
     ImGui::SetNextWindowPos(ImVec2(620.0F, 12.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Debug: Entity Annotations", &debug.entity_annotations_visible)) {
+    if (!ImGui::Begin("Debug: Overlay", &debug.entity_annotations_visible)) {
         ImGui::End();
         return;
     }
 
     ImGui::Checkbox("Show Entity P/C Boxes", &state.show_entity_collision_boxes);
     ImGui::Checkbox("Show Entity IDs", &state.show_entity_ids);
+    ImGui::Checkbox("Show Entity Types", &state.show_entity_types);
+    ImGui::Checkbox("Show Void Death Line", &state.show_void_death_line);
+    ImGui::Checkbox("Show Chunk Boundaries", &state.show_chunk_boundaries);
+    ImGui::Checkbox("Show Chunk Coords", &state.show_chunk_coords);
+    ImGui::Checkbox("Show Tile Indexes", &state.show_tile_indexes);
+    ImGui::Checkbox("Show Tile Types", &state.show_tile_types);
     ImGui::TextUnformatted("PBox/CBox overlay uses render debug colors.");
 
     ImGui::End();

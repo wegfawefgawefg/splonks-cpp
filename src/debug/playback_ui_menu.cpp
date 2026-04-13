@@ -81,7 +81,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Level", &debug.level_window_visible);
     ImGui::Checkbox("Border", &debug.border_window_visible);
     ImGui::Checkbox("Entities", &debug.entity_inspector_visible);
-    ImGui::Checkbox("Entity Annotations", &debug.entity_annotations_visible);
+    ImGui::Checkbox("Overlay", &debug.entity_annotations_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
     ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
     ImGui::Checkbox("Lighting Settings", &debug.lighting_settings_window_visible);
@@ -90,11 +90,12 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::TextUnformatted("Shortcuts");
     ImGui::TextUnformatted("F1: Toggle all ImGui");
     ImGui::TextUnformatted("F2: Toggle debug menu");
-    ImGui::TextUnformatted("Collision boxes moved to Entity Annotations.");
+    ImGui::TextUnformatted("Overlay toggles live in the Overlay window.");
     ImGui::Separator();
     ImGui::Text("Playback Active: %s", debug.playback_active ? "true" : "false");
     ImGui::Text("Selected Entity: %zu", debug.selected_entity_id);
     ImGui::Text("Entity P/C boxes: %s", state.show_entity_collision_boxes ? "on" : "off");
+    ImGui::Text("Chunk bounds: %s", state.show_chunk_boundaries ? "on" : "off");
 
     ImGui::End();
     SyncDebugUiSettings(debug, state);

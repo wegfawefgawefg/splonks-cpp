@@ -5,6 +5,7 @@
 #include "render/tiles_and_entities.hpp"
 #include "state.hpp"
 #include "text.hpp"
+#include "world_query.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -109,7 +110,8 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     if (state.controlled_entity_vid.has_value()) {
         if (const Entity* const controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid)) {
             if (!graphics.debug_lock_play_camera) {
-                const Vec2 delta = controlled->pos - graphics.play_cam.pos;
+                const Vec2 delta =
+                    GetNearestWorldDelta(state.stage, graphics.play_cam.pos, controlled->pos);
                 graphics.play_cam.pos += delta * 0.075F;
 
                 if (state.stage.camera_clamp_enabled) {
