@@ -151,7 +151,9 @@ add_executable(splonks-cpp
     src/entities/box.cpp
     src/entities/caveman.cpp
     src/entities/chest.cpp
+    src/entities/common/contact_damage.cpp
     src/entities/common/damage.cpp
+    src/entities/common/explosion.cpp
     src/entities/common/frame.cpp
     src/entities/common/hang.cpp
     src/entities/common/physics.cpp
@@ -234,6 +236,7 @@ add_executable(splonks-cpp
     src/stage_gen/cave.cpp
     src/stage_gen/hd_mines.cpp
     src/stage_gen/test.cpp
+    src/stage_break.cpp
     src/state.cpp
     src/step.cpp
     src/step_entities.cpp

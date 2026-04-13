@@ -11,22 +11,6 @@ namespace {
 
 constexpr float kSidCellSize = static_cast<float>(kTileSize);
 
-bool Intersects(const AABB& left, const AABB& right) {
-    if (left.br.x < right.tl.x) {
-        return false;
-    }
-    if (left.tl.x > right.br.x) {
-        return false;
-    }
-    if (left.br.y < right.tl.y) {
-        return false;
-    }
-    if (left.tl.y > right.br.y) {
-        return false;
-    }
-    return true;
-}
-
 int GetCellCoord(float value) {
     return static_cast<int>(std::floor(value / kSidCellSize));
 }
@@ -149,7 +133,7 @@ std::vector<VID> SID::Query(const Vec2& top_left, const Vec2& bottom_right) cons
                 }
 
                 const SIDRecord& record = records_[vid.id];
-                if (!record.active || record.vid != vid || !Intersects(record.aabb, query_box)) {
+                if (!record.active || record.vid != vid || !AabbsIntersect(record.aabb, query_box)) {
                     continue;
                 }
 

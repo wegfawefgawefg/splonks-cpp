@@ -80,4 +80,20 @@ Vec2 GetMinDisplacement(const AABB& aabb1, const AABB& aabb2) {
     return Vec2::New(dx, dy);
 }
 
+bool AabbsIntersect(const AABB& left, const AABB& right) {
+    if (left.br.x < right.tl.x) {
+        return false;
+    }
+    if (left.tl.x > right.br.x) {
+        return false;
+    }
+    if (left.br.y < right.tl.y) {
+        return false;
+    }
+    if (left.tl.y > right.br.y) {
+        return false;
+    }
+    return true;
+}
+
 } // namespace splonks

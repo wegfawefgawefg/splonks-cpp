@@ -22,22 +22,6 @@ int FloorDiv(int value, int divisor) {
     return result;
 }
 
-bool AabbsIntersect(const AABB& left, const AABB& right) {
-    if (left.br.x < right.tl.x) {
-        return false;
-    }
-    if (left.tl.x > right.br.x) {
-        return false;
-    }
-    if (left.br.y < right.tl.y) {
-        return false;
-    }
-    if (left.tl.y > right.br.y) {
-        return false;
-    }
-    return true;
-}
-
 bool TouchesStageBounds(const AABB& aabb, const Stage& stage) {
     if (aabb.tl.x < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Left)) {
         return true;

@@ -17,22 +17,6 @@ constexpr std::uint32_t kHangDropCooldownFrames = 5;
 constexpr std::uint32_t kHangGloveDropCooldownFrames = 10;
 constexpr std::uint32_t kHangWallReleaseCooldownFrames = 4;
 
-bool AabbsIntersect(const AABB& left, const AABB& right) {
-    if (left.br.x < right.tl.x) {
-        return false;
-    }
-    if (left.tl.x > right.br.x) {
-        return false;
-    }
-    if (left.br.y < right.tl.y) {
-        return false;
-    }
-    if (left.tl.y > right.br.y) {
-        return false;
-    }
-    return true;
-}
-
 bool IsImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
     const AABB area = AABB::New(tl, br);
     const Vec2 anchor = (tl + br) / 2.0F;

@@ -21,6 +21,7 @@ struct IAABB {
 };
 
 Vec2 GetMinDisplacement(const AABB& aabb1, const AABB& aabb2);
+bool AabbsIntersect(const AABB& left, const AABB& right);
 
 namespace rng {
 
