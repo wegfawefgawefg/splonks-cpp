@@ -96,9 +96,9 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     if (state.player_vid.has_value()) {
         controls::ControlEntityAsPlayer(*state.player_vid, state);
     }
-    state.ClearEntityContactDispatchesThisTick();
-    state.StepContactCooldowns();
-    state.StepInteractionCooldowns();
+    state.contact.ClearEntityContactDispatchesThisTick();
+    state.contact.StepContactCooldowns(state.stage_frame);
+    state.contact.StepInteractionCooldowns(state.stage_frame);
     state.StepEntityToolStates();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
@@ -201,9 +201,9 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     // audio
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[Song::GameOver as usize]);
-    state.ClearEntityContactDispatchesThisTick();
-    state.StepContactCooldowns();
-    state.StepInteractionCooldowns();
+    state.contact.ClearEntityContactDispatchesThisTick();
+    state.contact.StepContactCooldowns(state.stage_frame);
+    state.contact.StepInteractionCooldowns(state.stage_frame);
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
     StepSpecialEffects(state, graphics, dt);

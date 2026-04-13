@@ -225,7 +225,7 @@ ParticipantContactDispatch TryDispatchEntityEntityContactForParticipant(
     const std::optional<ParticipantContactDispatch> cooldown_spec =
         GetEntityEntityContactCooldownSpec(participant, context, graphics, audio);
     if (cooldown_spec.has_value() &&
-        state.HasContactCooldown(participant.vid, other_entity.vid)) {
+        state.contact.HasContactCooldown(participant.vid, other_entity.vid)) {
         return ParticipantContactDispatch{};
     }
 
@@ -301,10 +301,10 @@ ContactResolution TryDispatchEntityEntityContactPair(
         return ContactResolution{};
     }
     if (ShouldDeduplicatePairThisTick(context) &&
-        state.HasEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid)) {
+        state.contact.HasEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid)) {
         return ContactResolution{};
     }
-    state.RecordEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid);
+    state.contact.RecordEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid);
 
     ContactResolution result{};
     if (context.phase == ContactPhase::AttemptedBlocked && other_entity.impassable) {
@@ -316,9 +316,10 @@ ContactResolution TryDispatchEntityEntityContactPair(
     result.blocks_movement |= entity_dispatch.resolution.blocks_movement;
     result.stop_sweep |= entity_dispatch.resolution.stop_sweep;
     if (entity_dispatch.write_cooldown) {
-        state.AddContactCooldown(
+        state.contact.AddContactCooldown(
             entity.vid,
             other_entity.vid,
+            state.stage_frame,
             entity_dispatch.cooldown_duration
         );
     }
@@ -328,9 +329,10 @@ ContactResolution TryDispatchEntityEntityContactPair(
     result.blocks_movement |= other_dispatch.resolution.blocks_movement;
     result.stop_sweep |= other_dispatch.resolution.stop_sweep;
     if (other_dispatch.write_cooldown) {
-        state.AddContactCooldown(
+        state.contact.AddContactCooldown(
             other_entity.vid,
             entity.vid,
+            state.stage_frame,
             other_dispatch.cooldown_duration
         );
     }

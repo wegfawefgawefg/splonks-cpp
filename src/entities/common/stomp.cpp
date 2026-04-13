@@ -61,10 +61,11 @@ bool TryApplyStompContactToEntity(
         stomped->thrown_by = stomper.vid;
         stomped->thrown_immunity_timer = kThrownByImmunityDuration;
     }
-    state.AddInteractionCooldown(
+    state.contact.AddInteractionCooldown(
         stomped->vid,
         stomper.vid,
         InteractionCooldownKind::Harm,
+        state.stage_frame,
         1
     );
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "contact_bookkeeping.hpp"
 #include "entity/manager.hpp"
 #include "inputs.hpp"
 #include "menu/settings.hpp"
@@ -69,28 +70,6 @@ struct DebugLevelConfig {
     DebugLevelKind kind = DebugLevelKind::Cave1;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
-};
-
-struct ContactCooldownEntry {
-    VID source_vid;
-    VID target_vid;
-    std::uint32_t expires_on_stage_frame = 0;
-};
-
-enum class InteractionCooldownKind {
-    Harm,
-};
-
-struct InteractionCooldownEntry {
-    VID source_vid;
-    VID target_vid;
-    InteractionCooldownKind kind = InteractionCooldownKind::Harm;
-    std::uint32_t expires_on_stage_frame = 0;
-};
-
-struct EntityContactDispatchEntry {
-    VID first_vid;
-    VID second_vid;
 };
 
 constexpr std::size_t kToolSlotCount = 2;
@@ -179,9 +158,7 @@ struct State {
     std::optional<VID> mouse_trailer_vid;
 
     // Contact and interaction bookkeeping.
-    std::vector<ContactCooldownEntry> contact_cooldowns;
-    std::vector<InteractionCooldownEntry> interaction_cooldowns;
-    std::vector<EntityContactDispatchEntry> entity_contact_dispatches_this_tick;
+    ContactBookkeeping contact;
 
     // Per-entity owned tool state.
     std::vector<EntityToolState> entity_tool_states;
@@ -190,37 +167,6 @@ struct State {
     void SetMode(Mode new_mode);
     void RebuildSid(const Graphics& graphics);
     void UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics);
-    void ClearEntityContactDispatchesThisTick();
-    bool HasEntityContactPairDispatchedThisTick(
-        const VID& first_vid,
-        const VID& second_vid
-    ) const;
-    void RecordEntityContactPairDispatchedThisTick(
-        const VID& first_vid,
-        const VID& second_vid
-    );
-    void StepContactCooldowns();
-    void StepInteractionCooldowns();
-    bool HasContactCooldown(
-        const VID& source_vid,
-        const VID& target_vid
-    ) const;
-    void AddContactCooldown(
-        const VID& source_vid,
-        const VID& target_vid,
-        std::uint32_t duration
-    );
-    bool HasInteractionCooldown(
-        const VID& source_vid,
-        const VID& target_vid,
-        InteractionCooldownKind kind
-    ) const;
-    void AddInteractionCooldown(
-        const VID& source_vid,
-        const VID& target_vid,
-        InteractionCooldownKind kind,
-        std::uint32_t duration
-    );
     void StepEntityToolStates();
     EntityToolState* FindEntityToolStateMut(const VID& owner_vid);
     const EntityToolState* FindEntityToolState(const VID& owner_vid) const;

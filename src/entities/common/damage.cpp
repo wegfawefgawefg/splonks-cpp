@@ -215,7 +215,7 @@ void MaybeHurtAndStunOnContact(
                          other_entity->alignment == Alignment::Ally) ||
                         (alignment == Alignment::Neutral);
                     if (has_correct_alignment) {
-                        if (state.HasInteractionCooldown(
+                        if (state.contact.HasInteractionCooldown(
                                 entity.vid,
                                 other_entity->vid,
                                 InteractionCooldownKind::Harm
@@ -227,10 +227,11 @@ void MaybeHurtAndStunOnContact(
                         switch (damage_result) {
                         case DamageResult::Died:
                         case DamageResult::Hurt:
-                            state.AddInteractionCooldown(
+                            state.contact.AddInteractionCooldown(
                                 entity.vid,
                                 other_entity->vid,
                                 InteractionCooldownKind::Harm,
+                                state.stage_frame,
                                 kHarmContactCooldownFrames
                             );
                             break;
@@ -287,7 +288,7 @@ bool MaybeHurtAndStunOnContactAsProjectile(
                 continue;
             }
             if (other_entity->can_collide) {
-                if (state.HasInteractionCooldown(
+                if (state.contact.HasInteractionCooldown(
                         entity.vid,
                         other_entity->vid,
                         InteractionCooldownKind::Harm
@@ -300,10 +301,11 @@ bool MaybeHurtAndStunOnContactAsProjectile(
                 switch (damage_result) {
                 case DamageResult::Hurt:
                 case DamageResult::Died: {
-                    state.AddInteractionCooldown(
+                    state.contact.AddInteractionCooldown(
                         entity.vid,
                         other_entity->vid,
                         InteractionCooldownKind::Harm,
+                        state.stage_frame,
                         kHarmContactCooldownFrames
                     );
                     const EntityArchetype& archetype = GetEntityArchetype(entity_type);

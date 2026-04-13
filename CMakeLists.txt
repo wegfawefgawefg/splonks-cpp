@@ -125,6 +125,7 @@ FetchContent_MakeAvailable(imgui)
 add_executable(splonks-cpp
     src/audio.cpp
     src/cli.cpp
+    src/contact_bookkeeping.cpp
     src/debug/playback_core.cpp
     src/debug/playback_serialization.cpp
     src/debug/playback_ui_common.cpp

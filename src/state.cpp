@@ -6,38 +6,6 @@
 
 namespace splonks {
 
-namespace {
-
-EntityContactDispatchEntry NormalizeEntityContactDispatchEntry(
-    const VID& first_vid,
-    const VID& second_vid
-) {
-    if (first_vid.id < second_vid.id) {
-        return EntityContactDispatchEntry{
-            .first_vid = first_vid,
-            .second_vid = second_vid,
-        };
-    }
-    if (first_vid.id > second_vid.id) {
-        return EntityContactDispatchEntry{
-            .first_vid = second_vid,
-            .second_vid = first_vid,
-        };
-    }
-    if (first_vid.version <= second_vid.version) {
-        return EntityContactDispatchEntry{
-            .first_vid = first_vid,
-            .second_vid = second_vid,
-        };
-    }
-    return EntityContactDispatchEntry{
-        .first_vid = second_vid,
-        .second_vid = first_vid,
-    };
-}
-
-}
-
 State State::New() {
     State state;
     state.mode = Mode::Playing;
@@ -83,9 +51,7 @@ State State::New() {
     state.player_vid.reset();
     state.controlled_entity_vid.reset();
     state.mouse_trailer_vid.reset();
-    state.contact_cooldowns.clear();
-    state.interaction_cooldowns.clear();
-    state.entity_contact_dispatches_this_tick.clear();
+    state.contact = ContactBookkeeping{};
     state.entity_tool_states.clear();
     InitDebugLevel(state);
     return state;
@@ -117,123 +83,6 @@ void State::UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics) 
 
     const AABB broadphase_aabb = entities::common::GetEntityBroadphaseAabb(entity, graphics);
     sid.Upsert(entity.vid, broadphase_aabb);
-}
-
-void State::ClearEntityContactDispatchesThisTick() {
-    entity_contact_dispatches_this_tick.clear();
-}
-
-bool State::HasEntityContactPairDispatchedThisTick(
-    const VID& first_vid,
-    const VID& second_vid
-) const {
-    const EntityContactDispatchEntry normalized =
-        NormalizeEntityContactDispatchEntry(first_vid, second_vid);
-    for (const EntityContactDispatchEntry& entry : entity_contact_dispatches_this_tick) {
-        if (entry.first_vid == normalized.first_vid && entry.second_vid == normalized.second_vid) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void State::RecordEntityContactPairDispatchedThisTick(
-    const VID& first_vid,
-    const VID& second_vid
-) {
-    const EntityContactDispatchEntry normalized =
-        NormalizeEntityContactDispatchEntry(first_vid, second_vid);
-    if (HasEntityContactPairDispatchedThisTick(normalized.first_vid, normalized.second_vid)) {
-        return;
-    }
-    entity_contact_dispatches_this_tick.push_back(normalized);
-}
-
-void State::StepContactCooldowns() {
-    std::vector<ContactCooldownEntry> kept_cooldowns;
-    kept_cooldowns.reserve(contact_cooldowns.size());
-    for (const ContactCooldownEntry& entry : contact_cooldowns) {
-        if (entry.expires_on_stage_frame > stage_frame) {
-            kept_cooldowns.push_back(entry);
-        }
-    }
-    contact_cooldowns = std::move(kept_cooldowns);
-}
-
-bool State::HasContactCooldown(
-    const VID& source_vid,
-    const VID& target_vid
-) const {
-    for (const ContactCooldownEntry& entry : contact_cooldowns) {
-        if (entry.source_vid == source_vid && entry.target_vid == target_vid) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void State::AddContactCooldown(
-    const VID& source_vid,
-    const VID& target_vid,
-    std::uint32_t duration
-) {
-    for (ContactCooldownEntry& entry : contact_cooldowns) {
-        if (entry.source_vid == source_vid && entry.target_vid == target_vid) {
-            entry.expires_on_stage_frame = stage_frame + duration;
-            return;
-        }
-    }
-
-    contact_cooldowns.push_back(ContactCooldownEntry{
-        .source_vid = source_vid,
-        .target_vid = target_vid,
-        .expires_on_stage_frame = stage_frame + duration,
-    });
-}
-
-void State::StepInteractionCooldowns() {
-    std::vector<InteractionCooldownEntry> kept_cooldowns;
-    kept_cooldowns.reserve(interaction_cooldowns.size());
-    for (const InteractionCooldownEntry& entry : interaction_cooldowns) {
-        if (entry.expires_on_stage_frame > stage_frame) {
-            kept_cooldowns.push_back(entry);
-        }
-    }
-    interaction_cooldowns = std::move(kept_cooldowns);
-}
-
-bool State::HasInteractionCooldown(
-    const VID& source_vid,
-    const VID& target_vid,
-    InteractionCooldownKind kind
-) const {
-    for (const InteractionCooldownEntry& entry : interaction_cooldowns) {
-        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void State::AddInteractionCooldown(
-    const VID& source_vid,
-    const VID& target_vid,
-    InteractionCooldownKind kind,
-    std::uint32_t duration
-) {
-    for (InteractionCooldownEntry& entry : interaction_cooldowns) {
-        if (entry.source_vid == source_vid && entry.target_vid == target_vid && entry.kind == kind) {
-            entry.expires_on_stage_frame = stage_frame + duration;
-            return;
-        }
-    }
-
-    interaction_cooldowns.push_back(InteractionCooldownEntry{
-        .source_vid = source_vid,
-        .target_vid = target_vid,
-        .kind = kind,
-        .expires_on_stage_frame = stage_frame + duration,
-    });
 }
 
 void State::StepEntityToolStates() {
