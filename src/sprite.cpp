@@ -1,11 +1,11 @@
 #include "sprite.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <random>
 #include <stdexcept>
 
 namespace splonks {
@@ -14,14 +14,6 @@ namespace {
 
 constexpr unsigned int kDefaultFallbackSpriteSize = 8;
 constexpr float kDefaultFallbackFrameDuration = 1.0F;
-
-int RandomIntExclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_int_distribution<int> distribution(minimum, maximum - 1);
-    return distribution(generator);
-}
 
 std::size_t SpriteIndex(Sprite sprite) {
     return static_cast<std::size_t>(sprite);
@@ -268,7 +260,7 @@ void SpriteAnimator::Step(const std::vector<SpriteData>& sprites, float dt) {
 void SpriteAnimator::RandomizeFrame(const std::vector<SpriteData>& sprites) {
     const SpriteData& sprite_data = sprites[SpriteIndex(sprite)];
     current_frame = static_cast<std::size_t>(
-        RandomIntExclusive(0, static_cast<int>(sprite_data.frames.size())));
+        rng::RandomIntExclusive(0, static_cast<int>(sprite_data.frames.size())));
 }
 
 Vec2 SpriteAnimator::GetOrigin(const std::vector<SpriteData>& sprites, Origin origin) const {

@@ -4,22 +4,13 @@
 #include "stage_gen/hd_mines.hpp"
 
 #include <algorithm>
-#include <random>
 
 namespace splonks {
 
 namespace {
 
-int RandomIntExclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_int_distribution<int> distribution(minimum, maximum - 1);
-    return distribution(generator);
-}
-
 bool RandomBool() {
-    return RandomIntExclusive(0, 2) == 0;
+    return rng::RandomIntExclusive(0, 2) == 0;
 }
 
 unsigned int GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
@@ -73,11 +64,11 @@ Stage Stage::New(StageType stage_type) {
 
     {
         IVec2 current_room_pos = IVec2::New(
-            RandomIntExclusive(0, static_cast<int>(kRoomLayout.x)), 0);
+            rng::RandomIntExclusive(0, static_cast<int>(kRoomLayout.x)), 0);
 
         for (unsigned int floor = 0; floor < kRoomLayout.y; ++floor) {
             const int go_down_x =
-                RandomIntExclusive(0, static_cast<int>(kRoomLayout.x));
+                rng::RandomIntExclusive(0, static_cast<int>(kRoomLayout.x));
             const int direction = (current_room_pos.x - go_down_x) > 0
                                       ? 1
                                       : ((current_room_pos.x - go_down_x) < 0 ? -1 : 0);
@@ -340,8 +331,8 @@ std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,
 UVec2 Stage::GetRandomRoom() const {
     const UVec2 room_layout_dims = GetRoomLayoutDims();
     return UVec2::New(
-        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
-        static_cast<unsigned int>(RandomIntExclusive(0, static_cast<int>(room_layout_dims.y)))
+        static_cast<unsigned int>(rng::RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
+        static_cast<unsigned int>(rng::RandomIntExclusive(0, static_cast<int>(room_layout_dims.y)))
     );
 }
 
@@ -382,7 +373,7 @@ std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRoom(const UVec2& ro
     }
 
     const int random_tile_idx =
-        RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
+        rng::RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
     const IVec2 tile_coord = noncollidable_tile_coords[static_cast<std::size_t>(random_tile_idx)];
     return tile_coord * static_cast<int>(kTileSize);
 }

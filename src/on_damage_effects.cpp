@@ -1,21 +1,13 @@
 #include "on_damage_effects.hpp"
 
 #include "special_effects/dynamic_effect.hpp"
+#include "utils.hpp"
 
 #include <memory>
-#include <random>
 
 namespace splonks {
 
 namespace {
-
-float RandomFloat(float minimum, float maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_real_distribution<float> distribution(minimum, maximum);
-    return distribution(generator);
-}
 
 } // namespace
 
@@ -31,7 +23,7 @@ void SpawnDamageEffectAnimationBurst(FrameDataId animation_id, const Vec2& cente
         effect->size = Vec2::New(4.0F, 4.0F);
         effect->rot = 0.0F;
         effect->alpha = 1.0F;
-        effect->vel = Vec2::New(RandomFloat(-kVelRange, kVelRange), RandomFloat(-kVelRange, kVelRange));
+        effect->vel = Vec2::New(rng::RandomFloat(-kVelRange, kVelRange), rng::RandomFloat(-kVelRange, kVelRange));
         effect->svel = Vec2::New(-1.0F, -1.0F);
         effect->rotvel = 0.0F;
         effect->alpha_vel = -0.1F;

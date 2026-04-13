@@ -1,24 +1,16 @@
 #include "tile.hpp"
+#include "utils.hpp"
 
-#include <random>
 #include <stdexcept>
 
 namespace splonks {
 
 namespace {
 
-int RandomIntInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
 } // namespace
 
 Tile RandomTile() {
-    switch (RandomIntInclusive(0, 5)) {
+    switch (rng::RandomIntInclusive(0, 5)) {
     case 0:
         return Tile::Air;
     case 1:

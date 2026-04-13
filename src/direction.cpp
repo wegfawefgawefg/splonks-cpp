@@ -1,24 +1,16 @@
 #include "direction.hpp"
+#include "utils.hpp"
 
-#include <random>
 #include <stdexcept>
 
 namespace splonks {
 
 namespace {
 
-int RandomIntInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
 } // namespace
 
 Direction LeftOrRight() {
-    switch (RandomIntInclusive(0, 1)) {
+    switch (rng::RandomIntInclusive(0, 1)) {
     case 0:
         return Direction::Left;
     case 1:
@@ -29,7 +21,7 @@ Direction LeftOrRight() {
 }
 
 Direction DownOrUp() {
-    switch (RandomIntInclusive(0, 1)) {
+    switch (rng::RandomIntInclusive(0, 1)) {
     case 0:
         return Direction::Down;
     case 1:
@@ -40,7 +32,7 @@ Direction DownOrUp() {
 }
 
 Direction LeftOrRightOrDown() {
-    switch (RandomIntInclusive(0, 2)) {
+    switch (rng::RandomIntInclusive(0, 2)) {
     case 0:
         return Direction::Left;
     case 1:
@@ -53,7 +45,7 @@ Direction LeftOrRightOrDown() {
 }
 
 Direction RandomDirection() {
-    switch (RandomIntInclusive(0, 3)) {
+    switch (rng::RandomIntInclusive(0, 3)) {
     case 0:
         return Direction::Left;
     case 1:

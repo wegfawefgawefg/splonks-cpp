@@ -1,10 +1,10 @@
 #include "stage_gen/hd_mines.hpp"
 
 #include "frame_data_id.hpp"
+#include "utils.hpp"
 
 #include <array>
 #include <limits>
-#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -27,16 +27,8 @@ enum class RoomCode : int {
 using GlyphPatch = std::string_view;
 using GlyphTemplate = std::string_view;
 
-int RandomIntInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
 int PickIndex(std::size_t size) {
-    return RandomIntInclusive(0, static_cast<int>(size) - 1);
+    return rng::RandomIntInclusive(0, static_cast<int>(size) - 1);
 }
 
 int GetLevelNumber(StageType stage_type) {
@@ -165,11 +157,11 @@ StageLayout GenerateLayout(int level_number) {
         int move_roll = 5;
 
         if (room_x == 0) {
-            move_roll = RandomIntInclusive(3, 5);
+            move_roll = rng::RandomIntInclusive(3, 5);
         } else if (room_x == 3) {
-            move_roll = RandomIntInclusive(5, 7);
+            move_roll = rng::RandomIntInclusive(5, 7);
         } else {
-            move_roll = RandomIntInclusive(1, 5);
+            move_roll = rng::RandomIntInclusive(1, 5);
         }
 
         if (move_roll < 3 || move_roll > 5) {
@@ -221,7 +213,7 @@ StageLayout GenerateLayout(int level_number) {
         prev_y = room_y;
     }
 
-    if (level_number > 1 && RandomIntInclusive(1, level_number) <= 2) {
+    if (level_number > 1 && rng::RandomIntInclusive(1, level_number) <= 2) {
         std::array<std::array<int, 4>, 4> room_poss = MakeBlankRoomCodes();
         int candidate_count = 0;
 
@@ -257,7 +249,7 @@ StageLayout GenerateLayout(int level_number) {
         }
 
         if (candidate_count > 0) {
-            int target = RandomIntInclusive(0, candidate_count - 1);
+            int target = rng::RandomIntInclusive(0, candidate_count - 1);
             for (int y = 0; y < 4; ++y) {
                 for (int x = 0; x < 4; ++x) {
                     if (room_poss[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] == 0) {
@@ -472,22 +464,22 @@ RoomTemplateSelection SelectRoomTemplate(int room_code, bool is_start_room, bool
     if (is_start_room) {
         if (room_code == static_cast<int>(RoomCode::Drop)) {
             return RoomTemplateSelection{
-                .glyphs = kStartTemplates[static_cast<std::size_t>(RandomIntInclusive(4, 7))],
+                .glyphs = kStartTemplates[static_cast<std::size_t>(rng::RandomIntInclusive(4, 7))],
             };
         }
         return RoomTemplateSelection{
-            .glyphs = kStartTemplates[static_cast<std::size_t>(RandomIntInclusive(0, 3))],
+            .glyphs = kStartTemplates[static_cast<std::size_t>(rng::RandomIntInclusive(0, 3))],
         };
     }
 
     if (is_end_room) {
         if (room_code_above == static_cast<int>(RoomCode::Drop)) {
             return RoomTemplateSelection{
-                .glyphs = kEndTemplates[static_cast<std::size_t>(RandomIntInclusive(1, 3))],
+                .glyphs = kEndTemplates[static_cast<std::size_t>(rng::RandomIntInclusive(1, 3))],
             };
         }
         return RoomTemplateSelection{
-            .glyphs = kEndTemplates[static_cast<std::size_t>(RandomIntInclusive(2, 5))],
+            .glyphs = kEndTemplates[static_cast<std::size_t>(rng::RandomIntInclusive(2, 5))],
         };
     }
 
@@ -550,7 +542,7 @@ RoomTemplateSelection SelectRoomTemplate(int room_code, bool is_start_room, bool
 }
 
 Tile RandomBrickOrBlockTile() {
-    return RandomIntInclusive(1, 10) == 1 ? Tile::Block : Tile::Dirt;
+    return rng::RandomIntInclusive(1, 10) == 1 ? Tile::Block : Tile::Dirt;
 }
 
 EntityType GetShopSignEntityType(ShopType shop_type) {
@@ -577,7 +569,7 @@ EntityType GetShopSignEntityType(ShopType shop_type) {
 }
 
 const char* PickRightTikiArmFrameName() {
-    switch (RandomIntInclusive(0, 2)) {
+    switch (rng::RandomIntInclusive(0, 2)) {
     case 0:
         return "tiki_arm_right_0";
     case 1:
@@ -588,7 +580,7 @@ const char* PickRightTikiArmFrameName() {
 }
 
 const char* PickLeftTikiArmFrameName() {
-    switch (RandomIntInclusive(0, 2)) {
+    switch (rng::RandomIntInclusive(0, 2)) {
     case 0:
         return "tiki_arm_left_0";
     case 1:
@@ -725,7 +717,7 @@ void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
 }
 
 EntityType PickUndergroundItemType() {
-    switch (RandomIntInclusive(0, 18)) {
+    switch (rng::RandomIntInclusive(0, 18)) {
     case 0:
         return EntityType::JetPack;
     case 1:
@@ -768,40 +760,40 @@ EntityType PickUndergroundItemType() {
 }
 
 EntityType PickHighEndShopItemType() {
-    if (RandomIntInclusive(1, 40) == 1) {
+    if (rng::RandomIntInclusive(1, 40) == 1) {
         return EntityType::JetPack;
     }
-    if (RandomIntInclusive(1, 25) == 1) {
+    if (rng::RandomIntInclusive(1, 25) == 1) {
         return EntityType::Cape;
     }
-    if (RandomIntInclusive(1, 20) == 1) {
+    if (rng::RandomIntInclusive(1, 20) == 1) {
         return EntityType::Shotgun;
     }
-    if (RandomIntInclusive(1, 10) == 1) {
+    if (rng::RandomIntInclusive(1, 10) == 1) {
         return EntityType::Gloves;
     }
-    if (RandomIntInclusive(1, 10) == 1) {
+    if (rng::RandomIntInclusive(1, 10) == 1) {
         return EntityType::Teleporter;
     }
-    if (RandomIntInclusive(1, 8) == 1) {
+    if (rng::RandomIntInclusive(1, 8) == 1) {
         return EntityType::Mattock;
     }
-    if (RandomIntInclusive(1, 8) == 1) {
+    if (rng::RandomIntInclusive(1, 8) == 1) {
         return EntityType::Paste;
     }
-    if (RandomIntInclusive(1, 8) == 1) {
+    if (rng::RandomIntInclusive(1, 8) == 1) {
         return EntityType::SpringShoes;
     }
-    if (RandomIntInclusive(1, 8) == 1) {
+    if (rng::RandomIntInclusive(1, 8) == 1) {
         return EntityType::SpikeShoes;
     }
-    if (RandomIntInclusive(1, 8) == 1) {
+    if (rng::RandomIntInclusive(1, 8) == 1) {
         return EntityType::Compass;
     }
-    if (RandomIntInclusive(1, 8) == 1) {
+    if (rng::RandomIntInclusive(1, 8) == 1) {
         return EntityType::Pistol;
     }
-    if (RandomIntInclusive(1, 8) == 1) {
+    if (rng::RandomIntInclusive(1, 8) == 1) {
         return EntityType::Machete;
     }
     return EntityType::BombBox;
@@ -814,11 +806,11 @@ EntityType PickShopItemType(
 ) {
     if (shop_type == ShopType::Bomb) {
         while (true) {
-            if (RandomIntInclusive(1, 5) == 1) {
+            if (rng::RandomIntInclusive(1, 5) == 1) {
                 if (!HasSpawnType(stage, room_spawns, EntityType::Paste)) {
                     return EntityType::Paste;
                 }
-            } else if (RandomIntInclusive(1, 4) == 1) {
+            } else if (rng::RandomIntInclusive(1, 4) == 1) {
                 return EntityType::BombBox;
             } else {
                 return EntityType::BombBag;
@@ -829,19 +821,19 @@ EntityType PickShopItemType(
     if (shop_type == ShopType::Weapon) {
         int attempts_remaining = 20;
         while (true) {
-            const int n = RandomIntInclusive(1, 4);
+            const int n = rng::RandomIntInclusive(1, 4);
             if (attempts_remaining <= 0) {
                 return EntityType::BombBag;
             }
-            if (RandomIntInclusive(1, 12) == 1) {
+            if (rng::RandomIntInclusive(1, 12) == 1) {
                 if (!HasSpawnType(stage, room_spawns, EntityType::WebCannon)) {
                     return EntityType::WebCannon;
                 }
-            } else if (RandomIntInclusive(1, 10) == 1) {
+            } else if (rng::RandomIntInclusive(1, 10) == 1) {
                 if (!HasSpawnType(stage, room_spawns, EntityType::Shotgun)) {
                     return EntityType::Shotgun;
                 }
-            } else if (RandomIntInclusive(1, 6) == 1) {
+            } else if (rng::RandomIntInclusive(1, 6) == 1) {
                 return EntityType::BombBox;
             } else if (n == 1) {
                 if (!HasSpawnType(stage, room_spawns, EntityType::Pistol)) {
@@ -865,8 +857,8 @@ EntityType PickShopItemType(
     if (shop_type == ShopType::Clothing) {
         int attempts_remaining = 20;
         while (true) {
-            const int n = RandomIntInclusive(1, 6);
-            if (RandomIntInclusive(1, attempts_remaining) == 1) {
+            const int n = rng::RandomIntInclusive(1, 6);
+            if (rng::RandomIntInclusive(1, attempts_remaining) == 1) {
                 return EntityType::RopePile;
             }
             if (n == 1) {
@@ -901,8 +893,8 @@ EntityType PickShopItemType(
     if (shop_type == ShopType::Rare) {
         int attempts_remaining = 20;
         while (true) {
-            const int n = RandomIntInclusive(1, 11);
-            if (RandomIntInclusive(1, attempts_remaining) == 1) {
+            const int n = rng::RandomIntInclusive(1, 11);
+            if (rng::RandomIntInclusive(1, attempts_remaining) == 1) {
                 return EntityType::BombBox;
             }
             if (n == 1) {
@@ -955,16 +947,16 @@ EntityType PickShopItemType(
     }
 
     while (true) {
-        const int n = RandomIntInclusive(1, 3);
-        if (RandomIntInclusive(1, 20) == 1) {
+        const int n = rng::RandomIntInclusive(1, 3);
+        if (rng::RandomIntInclusive(1, 20) == 1) {
             if (!HasSpawnType(stage, room_spawns, EntityType::Mattock)) {
                 return EntityType::Mattock;
             }
-        } else if (RandomIntInclusive(1, 10) == 1) {
+        } else if (rng::RandomIntInclusive(1, 10) == 1) {
             if (!HasSpawnType(stage, room_spawns, EntityType::Gloves)) {
                 return EntityType::Gloves;
             }
-        } else if (RandomIntInclusive(1, 10) == 1) {
+        } else if (rng::RandomIntInclusive(1, 10) == 1) {
             if (!HasSpawnType(stage, room_spawns, EntityType::Compass)) {
                 return EntityType::Compass;
             }
@@ -990,7 +982,7 @@ void AddMinesEmbeddedTreasure(Stage& stage) {
                 continue;
             }
 
-            const int visible_gold_roll = RandomIntInclusive(1, 100);
+            const int visible_gold_roll = rng::RandomIntInclusive(1, 100);
             if (visible_gold_roll < 20) {
                 stage.SetTile(tile_pos, Tile::Gold);
                 continue;
@@ -1007,13 +999,13 @@ void AddMinesEmbeddedTreasure(Stage& stage) {
                 continue;
             }
 
-            if (RandomIntInclusive(1, 100) == 1) {
+            if (rng::RandomIntInclusive(1, 100) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, EntityType::SapphireBig);
-            } else if (RandomIntInclusive(1, 120) == 1) {
+            } else if (rng::RandomIntInclusive(1, 120) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, EntityType::EmeraldBig);
-            } else if (RandomIntInclusive(1, 140) == 1) {
+            } else if (rng::RandomIntInclusive(1, 140) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, EntityType::RubyBig);
-            } else if (RandomIntInclusive(1, 1200) == 1) {
+            } else if (rng::RandomIntInclusive(1, 1200) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, PickUndergroundItemType());
             }
         }
@@ -1067,7 +1059,7 @@ void AddMinesTreasure(Stage& stage) {
                 continue;
             }
 
-            if (RandomIntInclusive(1, 100) == 1) {
+            if (rng::RandomIntInclusive(1, 100) == 1) {
                 AddAmbientSpawn(stage, EntityType::Rock, item_pos);
                 continue;
             }
@@ -1079,43 +1071,43 @@ void AddMinesTreasure(Stage& stage) {
                                         IsCollidableTileAt(stage, tile_x + 1, tile_y - 1);
 
             if (ceiling_above && side_support) {
-                if (RandomIntInclusive(1, 15) == 1) {
+                if (rng::RandomIntInclusive(1, 15) == 1) {
                     AddAmbientSpawn(stage, EntityType::Chest, stack_pos);
                 } else if (!HasSpawnType(stage, EntityType::Damsel) &&
-                           RandomIntInclusive(1, 8) == 1) {
+                           rng::RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntityType::Damsel, stack_pos);
-                } else if (RandomIntInclusive(1, 3) == 1) {
+                } else if (rng::RandomIntInclusive(1, 3) == 1) {
                     AddAmbientSpawn(stage, EntityType::Gold, item_pos);
-                } else if (RandomIntInclusive(1, 6) == 1) {
+                } else if (rng::RandomIntInclusive(1, 6) == 1) {
                     AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
-                } else if (RandomIntInclusive(1, 6) == 1) {
+                } else if (rng::RandomIntInclusive(1, 6) == 1) {
                     AddAmbientSpawn(stage, EntityType::EmeraldBig, item_pos);
-                } else if (RandomIntInclusive(1, 8) == 1) {
+                } else if (rng::RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntityType::SapphireBig, item_pos);
-                } else if (RandomIntInclusive(1, 10) == 1) {
+                } else if (rng::RandomIntInclusive(1, 10) == 1) {
                     AddAmbientSpawn(stage, EntityType::RubyBig, item_pos);
                 }
                 continue;
             }
 
             if (tunnel_support) {
-                if (RandomIntInclusive(1, 4) == 1) {
+                if (rng::RandomIntInclusive(1, 4) == 1) {
                     AddAmbientSpawn(stage, EntityType::Gold, item_pos);
-                } else if (RandomIntInclusive(1, 8) == 1) {
+                } else if (rng::RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
-                } else if (RandomIntInclusive(1, 8) == 1) {
+                } else if (rng::RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntityType::EmeraldBig, item_pos);
-                } else if (RandomIntInclusive(1, 9) == 1) {
+                } else if (rng::RandomIntInclusive(1, 9) == 1) {
                     AddAmbientSpawn(stage, EntityType::SapphireBig, item_pos);
-                } else if (RandomIntInclusive(1, 10) == 1) {
+                } else if (rng::RandomIntInclusive(1, 10) == 1) {
                     AddAmbientSpawn(stage, EntityType::RubyBig, item_pos);
                 }
                 continue;
             }
 
-            if (RandomIntInclusive(1, 40) == 1) {
+            if (rng::RandomIntInclusive(1, 40) == 1) {
                 AddAmbientSpawn(stage, EntityType::Gold, item_pos);
-            } else if (RandomIntInclusive(1, 50) == 1) {
+            } else if (rng::RandomIntInclusive(1, 50) == 1) {
                 AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
             }
         }
@@ -1136,7 +1128,7 @@ void ConvertBlocksToArrowTraps(Stage& stage) {
         if (IsShopRoomAt(stage, tile_x, tile_y)) {
             continue;
         }
-        if (RandomIntInclusive(1, 4) != 1) {
+        if (rng::RandomIntInclusive(1, 4) != 1) {
             continue;
         }
 
@@ -1172,7 +1164,7 @@ void ConvertBlocksToArrowTraps(Stage& stage) {
 void AddAmbientMinesEntities(Stage& stage) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
-    const bool gen_giant_spider = RandomIntInclusive(1, 6) == 1;
+    const bool gen_giant_spider = rng::RandomIntInclusive(1, 6) == 1;
     bool giant_spider_spawned = false;
 
     for (int tile_y = 0; tile_y < stage_height; ++tile_y) {
@@ -1205,12 +1197,12 @@ void AddAmbientMinesEntities(Stage& stage) {
                     if (gen_giant_spider && !giant_spider_spawned && open_below_right &&
                         !HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
                         !HasSpawnAtWorldPos(stage, ceiling_spawn_pos_2) &&
-                        RandomIntInclusive(1, 40) == 1) {
+                        rng::RandomIntInclusive(1, 40) == 1) {
                         AddAmbientSpawn(stage, EntityType::GiantSpiderHang, ceiling_spawn_pos);
                         giant_spider_spawned = true;
-                    } else if (RandomIntInclusive(1, 60) == 1) {
+                    } else if (rng::RandomIntInclusive(1, 60) == 1) {
                         AddAmbientSpawn(stage, EntityType::Bat, ceiling_spawn_pos);
-                    } else if (RandomIntInclusive(1, 80) == 1) {
+                    } else if (rng::RandomIntInclusive(1, 80) == 1) {
                         AddAmbientSpawn(stage, EntityType::SpiderHang, ceiling_spawn_pos);
                     }
                 }
@@ -1224,9 +1216,9 @@ void AddAmbientMinesEntities(Stage& stage) {
                 if (tile_y > 0 && open_above) {
                     const Vec2 floor_spawn_pos =
                         tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
-                    if (!spikes_above && RandomIntInclusive(1, 60) == 1) {
+                    if (!spikes_above && rng::RandomIntInclusive(1, 60) == 1) {
                         AddAmbientSpawn(stage, EntityType::Snake, floor_spawn_pos);
-                    } else if (RandomIntInclusive(1, 800) == 1) {
+                    } else if (rng::RandomIntInclusive(1, 800) == 1) {
                         AddAmbientSpawn(stage, EntityType::Caveman, floor_spawn_pos);
                     }
                 }
@@ -1271,10 +1263,10 @@ ResolvedRoom ResolveRoom(
                 tile = RandomBrickOrBlockTile();
                 break;
             case '2':
-                tile = RandomIntInclusive(1, 2) == 1 ? RandomBrickOrBlockTile() : Tile::Air;
+                tile = rng::RandomIntInclusive(1, 2) == 1 ? RandomBrickOrBlockTile() : Tile::Air;
                 break;
             case '4':
-                if (RandomIntInclusive(1, 4) == 1) {
+                if (rng::RandomIntInclusive(1, 4) == 1) {
                     room.entity_spawns.push_back(StageEntitySpawn{
                         .type_ = EntityType::Block,
                         .pos = tile_pos,
@@ -1282,7 +1274,7 @@ ResolvedRoom ResolveRoom(
                 }
                 break;
             case '7':
-                tile = RandomIntInclusive(1, 3) == 1 ? Tile::Spikes : Tile::Air;
+                tile = rng::RandomIntInclusive(1, 3) == 1 ? Tile::Spikes : Tile::Air;
                 break;
             case '9':
                 tile = is_start_room ? Tile::Entrance : (is_end_room ? Tile::Exit : Tile::Air);
@@ -1441,7 +1433,7 @@ ResolvedRoom ResolveRoom(
                 });
                 break;
             case 's':
-                if (RandomIntInclusive(1, 10) != 1 && RandomIntInclusive(1, 2) == 1) {
+                if (rng::RandomIntInclusive(1, 10) != 1 && rng::RandomIntInclusive(1, 2) == 1) {
                     tile = Tile::Dirt;
                 }
                 break;

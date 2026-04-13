@@ -8,42 +8,27 @@
 #include "state.hpp"
 
 #include <memory>
-#include <random>
 
 namespace splonks::entities::jetpack {
 
 namespace {
 
-int RandomIntExclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_int_distribution<int> distribution(minimum, maximum - 1);
-    return distribution(generator);
-}
-
-float RandomFloat(float minimum, float maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_real_distribution<float> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
 void SpawnJetpackSmoke(State& state, const Vec2& pos) {
     for (int i = 0; i < 16; ++i) {
-        const float vel = RandomFloat(0.1F, 0.5F);
-        const float svel = RandomFloat(vel * 0.1F, vel * 1.0F);
-        const float sacc = RandomFloat(vel * 0.01F, vel * 0.02F);
+        const float vel = rng::RandomFloat(0.1F, 0.5F);
+        const float svel = rng::RandomFloat(vel * 0.1F, vel * 1.0F);
+        const float sacc = rng::RandomFloat(vel * 0.01F, vel * 0.02F);
         auto effect = std::make_unique<UltraDynamicEffect>();
         effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
         effect->draw_layer = DrawLayer::Foreground;
-        effect->counter = static_cast<std::uint32_t>(RandomIntExclusive(0, 32));
+        effect->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
         effect->pos = pos;
         effect->size = Vec2::New(1.0F, 1.0F) * 2.0F;
-        effect->rot = RandomFloat(0.0F, 360.0F);
+        effect->rot = rng::RandomFloat(0.0F, 360.0F);
         effect->alpha = 1.0F;
-        effect->vel = Vec2::New(0.0F, RandomFloat(0.0F, 0.3F));
+        effect->vel = Vec2::New(0.0F, rng::RandomFloat(0.0F, 0.3F));
         effect->svel = Vec2::New(svel, svel);
-        effect->rotvel = RandomFloat(-0.2F, -0.01F);
+        effect->rotvel = rng::RandomFloat(-0.2F, -0.01F);
         effect->alpha_vel = vel * 0.001F;
         effect->acc = Vec2::New(0.0F, 0.0F);
         effect->sacc = Vec2::New(sacc, sacc);

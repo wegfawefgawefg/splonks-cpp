@@ -4,25 +4,16 @@
 #include "stage_gen/cave.hpp"
 #include "stage_gen/test.hpp"
 
-#include <random>
 #include <stdexcept>
 
 namespace splonks {
 
 namespace {
 
-int RandomIntInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
 } // namespace
 
 RoomType RandomRoomType() {
-    switch (RandomIntInclusive(0, 5)) {
+    switch (rng::RandomIntInclusive(0, 5)) {
     case 0:
         return RoomType::Box;
     case 1:
@@ -92,7 +83,7 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
             Tile tile_type = Tile::Air;
             switch (template_tile) {
             case TemplateTile::Solid: {
-                const int chance = RandomIntInclusive(0, 99);
+                const int chance = rng::RandomIntInclusive(0, 99);
                 if (chance < 10) {
                     tile_type = Tile::Gold;
                 } else if (chance < 20) {
@@ -112,17 +103,17 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
                 tile_type = Tile::LadderTop;
                 break;
             case TemplateTile::MaybeSolid: {
-                const int chance = RandomIntInclusive(0, 99);
+                const int chance = rng::RandomIntInclusive(0, 99);
                 tile_type = chance < 50 ? Tile::Dirt : Tile::Air;
                 break;
             }
             case TemplateTile::MaybeSpikes: {
-                const int chance = RandomIntInclusive(0, 99);
+                const int chance = rng::RandomIntInclusive(0, 99);
                 tile_type = chance < 50 ? Tile::Spikes : Tile::Air;
                 break;
             }
             case TemplateTile::MaybeBlock: {
-                const int chance = RandomIntInclusive(0, 99);
+                const int chance = rng::RandomIntInclusive(0, 99);
                 tile_type = chance < 50 ? Tile::Air : Tile::Block;
                 break;
             }

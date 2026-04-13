@@ -5,21 +5,14 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
+#include "utils.hpp"
 
 #include <memory>
-#include <random>
 #include <vector>
 
 namespace splonks::entities::baseball_bat {
 
 namespace {
-
-int RandomIntInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
 
 bool AabbsIntersect(const AABB& left, const AABB& right) {
     if (left.br.x < right.tl.x) {
@@ -147,10 +140,10 @@ bool TryApplyBatContactToEntity(
             other_entity->vid.id, state, audio, DamageType::Attack, 1);
         switch (damage_result) {
         case common::DamageResult::Died: {
-            const int random_number = RandomIntInclusive(0, 10);
+            const int random_number = rng::RandomIntInclusive(0, 10);
             std::optional<SoundEffect> sound_effect;
             if (random_number <= 8) {
-                const int another_random_number = RandomIntInclusive(0, 2);
+                const int another_random_number = rng::RandomIntInclusive(0, 2);
                 switch (another_random_number) {
                 case 0:
                     sound_effect = SoundEffect::BaseballBatKillHit1;

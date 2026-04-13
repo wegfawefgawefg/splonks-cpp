@@ -4,23 +4,14 @@
 #include "stage.hpp"
 #include "stage_gen/cave.hpp"
 
-#include <random>
 #include <vector>
 
 namespace splonks::stage_gen::cave {
 
 namespace {
 
-int RandomIntInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
 bool RandomBool() {
-    return RandomIntInclusive(0, 1) == 0;
+    return rng::RandomIntInclusive(0, 1) == 0;
 }
 
 UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded) {
@@ -32,12 +23,12 @@ UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded) {
     unsigned int y = 0;
     if (available_area.x > size.x) {
         x = static_cast<unsigned int>(
-            RandomIntInclusive(0, static_cast<int>(available_area.x - size.x - 1U)));
+            rng::RandomIntInclusive(0, static_cast<int>(available_area.x - size.x - 1U)));
     }
     if (!grounded) {
         if (available_area.y > size.y) {
             y = static_cast<unsigned int>(
-                RandomIntInclusive(0, static_cast<int>(available_area.y - size.y - 1U)));
+                rng::RandomIntInclusive(0, static_cast<int>(available_area.y - size.y - 1U)));
         }
     } else {
         y = available_area.y - size.y;
@@ -308,7 +299,7 @@ void PasteThreeLong(const UVec2& available_area, const UVec2& at,
 
 void PasteAirSubroom(const UVec2& subroom_shape, const UVec2& at,
                      std::vector<std::vector<TemplateTile>>& target) {
-    const int choice = RandomIntInclusive(0, 5);
+    const int choice = rng::RandomIntInclusive(0, 5);
     if (choice == 0) {
         PasteOHalf(subroom_shape, at, target, false);
     } else if (choice == 1) {
@@ -374,7 +365,7 @@ void PasteMound(const UVec2& available_area, const UVec2& at,
 
 void PasteGroundSubroom(const UVec2& subroom_shape, const UVec2& at,
                         std::vector<std::vector<TemplateTile>>& target) {
-    const int choice = RandomIntInclusive(0, 6);
+    const int choice = rng::RandomIntInclusive(0, 6);
     if (choice == 0) {
         PasteHillsOnSpikes(subroom_shape, at, target, true);
     } else if (choice == 1) {
@@ -476,7 +467,7 @@ void PasteDoorFourblock(const UVec2& available_area, const UVec2& at,
 
 void PasteBottomExitSubroom(const UVec2& subroom_shape, const UVec2& at,
                             std::vector<std::vector<TemplateTile>>& target) {
-    const int choice = RandomIntInclusive(0, 5);
+    const int choice = rng::RandomIntInclusive(0, 5);
     if (choice == 0) {
         PasteDoorFourblock(subroom_shape, at, target, true, false);
     } else if (choice == 1) {
@@ -501,7 +492,7 @@ std::vector<std::vector<TemplateTile>> TwoSubroomsAboveExitTemplate() {
 
     const UVec2 subroom_shape = UVec2::New(5, 3);
     const UVec2 tl_subroom_pos = UVec2::New(0, 0);
-    const int choice_left = RandomIntInclusive(0, 3);
+    const int choice_left = rng::RandomIntInclusive(0, 3);
     if (choice_left == 0) {
         PasteOHalf(subroom_shape, tl_subroom_pos, room, false);
     } else if (choice_left == 1) {
@@ -513,7 +504,7 @@ std::vector<std::vector<TemplateTile>> TwoSubroomsAboveExitTemplate() {
     }
 
     const UVec2 tr_subroom_pos = UVec2::New(5, 0);
-    const int choice_right = RandomIntInclusive(0, 3);
+    const int choice_right = rng::RandomIntInclusive(0, 3);
     if (choice_right == 0) {
         PasteOHalf(subroom_shape, tr_subroom_pos, room, false);
     } else if (choice_right == 1) {
@@ -850,7 +841,7 @@ std::vector<std::vector<TemplateTile>> OpenFourSubroomTemplate() {
 std::vector<std::vector<TemplateTile>> GetRoomTemplate(RoomType room_type) {
     switch (room_type) {
     case RoomType::Box: {
-        const int choice = RandomIntInclusive(0, 6);
+        const int choice = rng::RandomIntInclusive(0, 6);
         if (choice == 0) {
             return BoxDigitEightTemplate();
         }
@@ -872,7 +863,7 @@ std::vector<std::vector<TemplateTile>> GetRoomTemplate(RoomType room_type) {
         return BoxFingerHoleTemplate();
     }
     case RoomType::FourWay:
-        switch (RandomIntInclusive(0, 6)) {
+        switch (rng::RandomIntInclusive(0, 6)) {
         case 0:
             return OpenFourSubroomTemplate();
         case 1:
@@ -891,7 +882,7 @@ std::vector<std::vector<TemplateTile>> GetRoomTemplate(RoomType room_type) {
             return StandinFourWayTemplate();
         }
     case RoomType::LeftDownRight:
-        switch (RandomIntInclusive(0, 2)) {
+        switch (rng::RandomIntInclusive(0, 2)) {
         case 0:
             return AnthillTemplate();
         case 1:
@@ -906,7 +897,7 @@ std::vector<std::vector<TemplateTile>> GetRoomTemplate(RoomType room_type) {
     case RoomType::LeftUpRight:
         return StandinLeftUpRightTemplate();
     case RoomType::Exit:
-        return RandomIntInclusive(0, 99) < 33 ? SidewaysEtExitTemplate() : TwoSubroomsAboveExitTemplate();
+        return rng::RandomIntInclusive(0, 99) < 33 ? SidewaysEtExitTemplate() : TwoSubroomsAboveExitTemplate();
     case RoomType::Entrance:
         return StandinEntranceTemplate();
     }

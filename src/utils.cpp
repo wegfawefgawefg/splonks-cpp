@@ -35,18 +35,29 @@ AABB IAABB::AsAABB() const {
 
 namespace rng {
 
-int RandomIntInclusive(int minimum, int maximum) {
+namespace {
+
+std::mt19937& GetRandomGenerator() {
     static std::random_device device;
     static std::mt19937 generator(device());
+    return generator;
+}
+
+} // namespace
+
+int RandomIntInclusive(int minimum, int maximum) {
     std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
+    return distribution(GetRandomGenerator());
+}
+
+int RandomIntExclusive(int minimum, int maximum) {
+    std::uniform_int_distribution<int> distribution(minimum, maximum - 1);
+    return distribution(GetRandomGenerator());
 }
 
 float RandomFloat(float minimum, float maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
     std::uniform_real_distribution<float> distribution(minimum, maximum);
-    return distribution(generator);
+    return distribution(GetRandomGenerator());
 }
 
 } // namespace rng
