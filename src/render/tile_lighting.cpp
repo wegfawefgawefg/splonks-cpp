@@ -27,7 +27,7 @@ Tile GetTileForLighting(const State& state, int tile_x, int tile_y) {
     if (tile_x < 0 || tile_y < 0 || tile_x >= static_cast<int>(state.stage.GetTileWidth()) ||
         tile_y >= static_cast<int>(state.stage.GetTileHeight())) {
         return state.settings.post_process.terrain_face_enclosed_stage_bounds
-                   ? state.stage.stage_border_tile
+                   ? state.stage.GetTileOrBorder(tile_x, tile_y)
                    : Tile::Air;
     }
     return state.stage.tiles[static_cast<std::size_t>(tile_y)][static_cast<std::size_t>(tile_x)];

@@ -44,6 +44,7 @@ enum class DebugLevelKind {
     Cave1,
     HangTest,
     StompTest,
+    BorderTest,
 };
 
 struct HangTestLevelConfig {
@@ -52,9 +53,20 @@ struct HangTestLevelConfig {
     int cutout_height_tiles = 2;
 };
 
+struct BorderTestLevelConfig {
+    Tile left_tile = Tile::Air;
+    Tile right_tile = Tile::Air;
+    Tile top_tile = Tile::Air;
+    Tile bottom_tile = Tile::Air;
+    bool wrap_x = true;
+    bool wrap_y = false;
+    std::optional<int> void_death_y = 160;
+};
+
 struct DebugLevelConfig {
     DebugLevelKind kind = DebugLevelKind::Cave1;
     HangTestLevelConfig hang_test;
+    BorderTestLevelConfig border_test;
 };
 
 struct ContactCooldownEntry {

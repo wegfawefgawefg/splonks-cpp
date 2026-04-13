@@ -12,6 +12,17 @@ namespace splonks::entities::common {
 
 namespace {
 
+std::optional<StageBorderSideKind> GetBorderSideForContactContext(const ContactContext& context) {
+    if (!context.has_impact) {
+        return std::nullopt;
+    }
+
+    if (context.impact_axis == BlockingImpactAxis::Horizontal) {
+        return context.direction < 0 ? StageBorderSideKind::Left : StageBorderSideKind::Right;
+    }
+    return context.direction < 0 ? StageBorderSideKind::Top : StageBorderSideKind::Bottom;
+}
+
 constexpr std::uint32_t kTileTouchSoundCooldownFrames = 8;
 constexpr float kTileTouchSoundMinImpactVelocity = 1.5F;
 constexpr float kTileTouchSoundVolumeScale = 0.10F;
@@ -150,8 +161,18 @@ void MaybePlayStageBoundsCollisionSounds(
         return;
     }
 
+    const std::optional<StageBorderSideKind> side = GetBorderSideForContactContext(context);
+    if (!side.has_value()) {
+        return;
+    }
+
+    const Tile border_tile = state.stage.GetBorderTile(*side);
+    if (border_tile == Tile::Air) {
+        return;
+    }
+
     const EntityArchetype& entity_archetype = GetEntityArchetype(entity.type_);
-    const TileArchetype& border_archetype = GetTileArchetype(state.stage.stage_border_tile);
+    const TileArchetype& border_archetype = GetTileArchetype(border_tile);
     PlayBlockingCollisionSounds(
         entity,
         *audio,

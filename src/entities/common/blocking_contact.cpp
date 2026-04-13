@@ -2,9 +2,24 @@
 
 #include "tile.hpp"
 
+#include <cmath>
+
 namespace splonks::entities::common {
 
 namespace {
+
+int FloorDiv(int value, int divisor) {
+    if (divisor == 0) {
+        return 0;
+    }
+
+    int result = value / divisor;
+    const int remainder = value % divisor;
+    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
+        result -= 1;
+    }
+    return result;
+}
 
 bool AabbsIntersect(const AABB& left, const AABB& right) {
     if (left.br.x < right.tl.x) {
@@ -23,13 +38,18 @@ bool AabbsIntersect(const AABB& left, const AABB& right) {
 }
 
 bool TouchesStageBounds(const AABB& aabb, const Stage& stage) {
-    if (aabb.tl.x < 0.0F || aabb.tl.y < 0.0F) {
+    if (aabb.tl.x < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Left)) {
         return true;
     }
-    if (aabb.br.x > static_cast<float>(stage.GetWidth() - 1)) {
+    if (aabb.tl.y < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Top)) {
         return true;
     }
-    if (aabb.br.y > static_cast<float>(stage.GetHeight() - 1)) {
+    if (aabb.br.x > static_cast<float>(stage.GetWidth() - 1) &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Right)) {
+        return true;
+    }
+    if (aabb.br.y > static_cast<float>(stage.GetHeight() - 1) &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
         return true;
     }
     return false;
@@ -85,20 +105,26 @@ BlockingContactSet GatherBlockingContactsForAabb(
     if (check_tiles) {
         contacts.touches_stage_bounds = TouchesStageBounds(aabb, state.stage);
 
-        const IVec2 tile_tl = ToIVec2(aabb.tl) / static_cast<int>(kTileSize);
-        const IVec2 tile_br = ToIVec2(aabb.br) / static_cast<int>(kTileSize);
+        const IVec2 tile_tl = IVec2::New(
+            FloorDiv(static_cast<int>(std::floor(aabb.tl.x)), static_cast<int>(kTileSize)),
+            FloorDiv(static_cast<int>(std::floor(aabb.tl.y)), static_cast<int>(kTileSize))
+        );
+        const IVec2 tile_br = IVec2::New(
+            FloorDiv(static_cast<int>(std::floor(aabb.br.x)), static_cast<int>(kTileSize)),
+            FloorDiv(static_cast<int>(std::floor(aabb.br.y)), static_cast<int>(kTileSize))
+        );
         for (int y = tile_tl.y; y <= tile_br.y; ++y) {
             for (int x = tile_tl.x; x <= tile_br.x; ++x) {
-                if (x < 0 || y < 0) {
-                    continue;
-                }
-                if (x >= static_cast<int>(state.stage.GetTileWidth()) ||
-                    y >= static_cast<int>(state.stage.GetTileHeight())) {
+                const IVec2 tile_pos = state.stage.WrapTileCoord(IVec2::New(x, y));
+                if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
                     continue;
                 }
                 contacts.tile_contacts.push_back(TileContact{
-                    .tile_pos = IVec2::New(x, y),
-                    .tile = &state.stage.GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y)),
+                    .tile_pos = tile_pos,
+                    .tile = &state.stage.GetTile(
+                        static_cast<unsigned int>(tile_pos.x),
+                        static_cast<unsigned int>(tile_pos.y)
+                    ),
                 });
             }
         }

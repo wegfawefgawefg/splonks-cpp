@@ -92,21 +92,6 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                 static_cast<int>(x * kTileSize),
                 static_cast<int>(y * kTileSize)
             );
-            const TileSourceData* const tile_source_data =
-                GetTileSourceData(graphics, tile, tile_pos);
-            if (tile_source_data == nullptr) {
-                continue;
-            }
-            SDL_Texture* const tile_texture = GetTileTexture(graphics, *tile_source_data);
-            if (tile_texture == nullptr) {
-                continue;
-            }
-            const SDL_FRect src{
-                static_cast<float>(tile_source_data->sample_rect.x),
-                static_cast<float>(tile_source_data->sample_rect.y),
-                static_cast<float>(tile_source_data->sample_rect.w),
-                static_cast<float>(tile_source_data->sample_rect.h),
-            };
             const SDL_FRect dst = WorldRectToScreen(
                 graphics,
                 ToVec2(tile_pos),
@@ -143,6 +128,22 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                 continue;
             }
 
+            const TileSourceData* const tile_source_data =
+                GetTileSourceData(graphics, tile, tile_pos);
+            if (tile_source_data == nullptr) {
+                continue;
+            }
+            SDL_Texture* const tile_texture = GetTileTexture(graphics, *tile_source_data);
+            if (tile_texture == nullptr) {
+                continue;
+            }
+            const SDL_FRect src{
+                static_cast<float>(tile_source_data->sample_rect.x),
+                static_cast<float>(tile_source_data->sample_rect.y),
+                static_cast<float>(tile_source_data->sample_rect.w),
+                static_cast<float>(tile_source_data->sample_rect.h),
+            };
+
             ApplyTerrainTileBrightness(
                 tile_texture,
                 state,
@@ -166,6 +167,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
 
 void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureTerrainLightingCache(state);
+    const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
     
     const Vec2 visible_tl_wc = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom);
     const Vec2 visible_br_wc =
@@ -189,12 +191,39 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
             const bool inside_stage = tile_x >= 0 && tile_y >= 0 && tile_x < stage_tile_width &&
                                       tile_y < stage_tile_height;
             if (!inside_stage) {
+                const Tile border_tile = state.stage.GetTileOrBorder(tile_x, tile_y);
                 const IVec2 tile_pos = IVec2::New(
                     tile_x * static_cast<int>(kTileSize),
                     tile_y * static_cast<int>(kTileSize)
                 );
+                if (border_tile == Tile::Air) {
+                    const TileSourceData* const air_source_data =
+                        GetAirSourceData(graphics, air_tile_set, tile_pos);
+                    if (air_source_data == nullptr) {
+                        continue;
+                    }
+                    SDL_Texture* const air_texture = GetTileTexture(graphics, *air_source_data);
+                    if (air_texture == nullptr) {
+                        continue;
+                    }
+                    const SDL_FRect air_src{
+                        static_cast<float>(air_source_data->sample_rect.x),
+                        static_cast<float>(air_source_data->sample_rect.y),
+                        static_cast<float>(air_source_data->sample_rect.w),
+                        static_cast<float>(air_source_data->sample_rect.h),
+                    };
+                    const SDL_FRect dst = WorldRectToScreen(
+                        graphics,
+                        ToVec2(tile_pos),
+                        Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                    );
+                    ApplyBackwallTileBrightness(air_texture, state, graphics, tile_x, tile_y);
+                    SDL_RenderTexture(renderer, air_texture, &air_src, &dst);
+                    ResetTerrainTileBrightness(air_texture);
+                    continue;
+                }
                 const TileSourceData* const tile_source_data =
-                    GetTileSourceData(graphics, state.stage.stage_border_tile, tile_pos);
+                    GetTileSourceData(graphics, border_tile, tile_pos);
                 if (tile_source_data == nullptr) {
                     continue;
                 }

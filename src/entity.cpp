@@ -265,15 +265,14 @@ AABB Entity::GetFeet() const {
 
 void Entity::SetGrounded(const Stage& stage) {
     const AABB feet = GetFeet();
-    if (feet.br.y >= static_cast<float>(stage.GetHeight())) {
+    if (feet.br.y >= static_cast<float>(stage.GetHeight()) &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
         grounded |= true;
         return;
     }
 
-    const IVec2 feet_tl_tile_pos = ToIVec2(feet.tl) / static_cast<int>(kTileSize);
-    const IVec2 feet_br_tile_pos = ToIVec2(feet.br) / static_cast<int>(kTileSize);
     const std::vector<const Tile*> tiles_at_feet =
-        stage.GetTilesInRect(feet_tl_tile_pos, feet_br_tile_pos);
+        stage.GetTilesInRectWc(ToIVec2(feet.tl), ToIVec2(feet.br));
     grounded |= CollidableTileInList(tiles_at_feet);
 }
 

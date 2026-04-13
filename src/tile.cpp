@@ -131,31 +131,8 @@ Tile GlassTileForFamilyTile(Tile family_tile) {
     return GetTileFamilyVariantsForTile(family_tile).glass;
 }
 
-Tile BorderTileForStageType(StageType stage_type) {
-    switch (stage_type) {
-    case StageType::Ice1:
-    case StageType::Ice2:
-    case StageType::Ice3:
-        return Tile::IceDirt;
-    case StageType::Desert1:
-    case StageType::Desert2:
-    case StageType::Desert3:
-        return Tile::JungleDirt;
-    case StageType::Temple1:
-    case StageType::Temple2:
-    case StageType::Temple3:
-        return Tile::TempleDirt;
-    case StageType::Boss:
-        return Tile::BossDirt;
-    case StageType::Blank:
-    case StageType::Test1:
-    case StageType::Cave1:
-    case StageType::Cave2:
-    case StageType::Cave3:
-        return Tile::CaveDirt;
-    }
-
-    return Tile::CaveDirt;
+const char* TileToString(Tile tile) {
+    return GetTileArchetype(tile).debug_name;
 }
 
 bool IsDirtTile(Tile tile) {

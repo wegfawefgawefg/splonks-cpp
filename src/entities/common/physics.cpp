@@ -504,14 +504,13 @@ bool IsGroundedOnTiles(std::size_t entity_idx, State& state) {
     const auto [entity_tl, entity_br] = entity.GetBounds();
     const Vec2 feet_tl = Vec2::New(entity_tl.x, entity_br.y);
     const Vec2 feet_br = entity_br + Vec2::New(0.0F, 1.0F);
-    if (feet_br.y >= static_cast<float>(state.stage.GetHeight())) {
+    if (feet_br.y >= static_cast<float>(state.stage.GetHeight()) &&
+        state.stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
         return true;
     }
 
-    const IVec2 feet_tl_tile_pos = ToIVec2(feet_tl) / static_cast<int>(kTileSize);
-    const IVec2 feet_br_tile_pos = ToIVec2(feet_br) / static_cast<int>(kTileSize);
     const std::vector<const Tile*> tiles_at_feet =
-        state.stage.GetTilesInRect(feet_tl_tile_pos, feet_br_tile_pos);
+        state.stage.GetTilesInRectWc(ToIVec2(feet_tl), ToIVec2(feet_br));
     const bool collided = CollidableTileInList(tiles_at_feet);
     if (collided) {
         return true;

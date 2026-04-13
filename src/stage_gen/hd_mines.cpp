@@ -979,17 +979,17 @@ void AddMinesEmbeddedTreasure(Stage& stage) {
         for (int tile_x = 0; tile_x < stage_width; ++tile_x) {
             const IVec2 tile_pos = IVec2::New(tile_x, tile_y);
             if (stage.GetTile(static_cast<unsigned int>(tile_x), static_cast<unsigned int>(tile_y)) !=
-                DirtTileForFamilyTile(stage.stage_border_tile)) {
+                DirtTileForFamilyTile(stage.border.left.tile)) {
                 continue;
             }
 
             const int visible_gold_roll = rng::RandomIntInclusive(1, 100);
             if (visible_gold_roll < 20) {
-                stage.SetTile(tile_pos, GoldTileForFamilyTile(stage.stage_border_tile));
+                stage.SetTile(tile_pos, GoldTileForFamilyTile(stage.border.left.tile));
                 continue;
             }
             if (visible_gold_roll < 30) {
-                stage.SetTile(tile_pos, GoldBigTileForFamilyTile(stage.stage_border_tile));
+                stage.SetTile(tile_pos, GoldBigTileForFamilyTile(stage.border.left.tile));
                 continue;
             }
 
@@ -1261,11 +1261,11 @@ ResolvedRoom ResolveRoom(
 
             switch (glyph) {
             case '1':
-                tile = RandomBrickOrBlockTile(existing_stage.stage_border_tile);
+                tile = RandomBrickOrBlockTile(existing_stage.border.left.tile);
                 break;
             case '2':
                 tile = rng::RandomIntInclusive(1, 2) == 1
-                           ? RandomBrickOrBlockTile(existing_stage.stage_border_tile)
+                           ? RandomBrickOrBlockTile(existing_stage.border.left.tile)
                            : Tile::Air;
                 break;
             case '4':
@@ -1289,13 +1289,13 @@ ResolvedRoom ResolveRoom(
                 tile = Tile::LadderTop;
                 break;
             case '.':
-                tile = ShopWallTileForFamilyTile(existing_stage.stage_border_tile);
+                tile = ShopWallTileForFamilyTile(existing_stage.border.left.tile);
                 break;
             case 'b':
-                tile = SmoothWallTileForFamilyTile(existing_stage.stage_border_tile);
+                tile = SmoothWallTileForFamilyTile(existing_stage.border.left.tile);
                 break;
             case '+':
-                tile = GlassTileForFamilyTile(existing_stage.stage_border_tile);
+                tile = GlassTileForFamilyTile(existing_stage.border.left.tile);
                 break;
             case 'A':
                 room.entity_spawns.push_back(StageEntitySpawn{
@@ -1437,7 +1437,7 @@ ResolvedRoom ResolveRoom(
                 break;
             case 's':
                 if (rng::RandomIntInclusive(1, 10) != 1 && rng::RandomIntInclusive(1, 2) == 1) {
-                    tile = DirtTileForFamilyTile(existing_stage.stage_border_tile);
+                    tile = DirtTileForFamilyTile(existing_stage.border.left.tile);
                 }
                 break;
             case 'S':
@@ -1453,7 +1453,7 @@ ResolvedRoom ResolveRoom(
                 });
                 break;
             case 'M':
-                tile = DirtTileForFamilyTile(existing_stage.stage_border_tile);
+                tile = DirtTileForFamilyTile(existing_stage.border.left.tile);
                 room.entity_spawns.push_back(StageEntitySpawn{
                     .type_ = EntityType::Mattock,
                     .pos = tile_pos,
@@ -1480,6 +1480,35 @@ bool UsesHdMinesGenerator(StageType stage_type) {
 Stage GenerateStage(StageType stage_type) {
     const StageLayout layout = GenerateLayout(GetLevelNumber(stage_type));
     Stage stage;
+    stage.stage_type = stage_type;
+    stage.border = Stage::MakeUniformBorder(Tile::CaveDirt);
+    switch (stage_type) {
+    case StageType::Ice1:
+    case StageType::Ice2:
+    case StageType::Ice3:
+        stage.border = Stage::MakeUniformBorder(Tile::IceDirt);
+        break;
+    case StageType::Desert1:
+    case StageType::Desert2:
+    case StageType::Desert3:
+        stage.border = Stage::MakeUniformBorder(Tile::JungleDirt);
+        break;
+    case StageType::Temple1:
+    case StageType::Temple2:
+    case StageType::Temple3:
+        stage.border = Stage::MakeUniformBorder(Tile::TempleDirt);
+        break;
+    case StageType::Boss:
+        stage.border = Stage::MakeUniformBorder(Tile::BossDirt);
+        break;
+    case StageType::Blank:
+    case StageType::Test1:
+    case StageType::Cave1:
+    case StageType::Cave2:
+    case StageType::Cave3:
+        stage.border = Stage::MakeUniformBorder(Tile::CaveDirt);
+        break;
+    }
 
     std::vector<std::vector<Tile>> tiles(
         static_cast<std::size_t>(Stage::kShape.y),
@@ -1536,7 +1565,6 @@ Stage GenerateStage(StageType stage_type) {
         }
     }
 
-    stage.stage_type = stage_type;
     stage.tiles = std::move(tiles);
     stage.embedded_treasures = std::vector<std::vector<EntityType>>(
         stage.tiles.size(),

@@ -25,6 +25,9 @@ constexpr int kHangTestWallX = 4;
 constexpr int kHangTestTopY = 4;
 constexpr int kStompTestStageWidthTiles = 10;
 constexpr int kStompTestStageHeightTiles = 8;
+constexpr int kBorderTestStageWidthTiles = 10;
+constexpr int kBorderTestStageHeightTiles = 8;
+constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
 
 unsigned int RandomPercent() {
     static std::random_device device;
@@ -52,7 +55,7 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
-    stage.stage_border_tile = BorderTileForStageType(stage.stage_type);
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
 
     const int wall_x = std::clamp(kHangTestWallX, 1, stage_width - 2);
@@ -66,7 +69,8 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
 
     for (int y = top_y; y < stage_height; ++y) {
         for (int x = 0; x <= wall_x; ++x) {
-            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = DirtTileForFamilyTile(stage.stage_border_tile);
+            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                DirtTileForFamilyTile(stage.border.left.tile);
         }
     }
 
@@ -88,12 +92,45 @@ Stage MakeStompTestStage() {
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
-    stage.stage_border_tile = BorderTileForStageType(stage.stage_type);
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
 
     for (int x = 0; x < kStompTestStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kStompTestStageHeightTiles - 1)][static_cast<std::size_t>(x)] =
-            DirtTileForFamilyTile(stage.stage_border_tile);
+            DirtTileForFamilyTile(stage.border.left.tile);
+    }
+
+    return stage;
+}
+
+StageBorder MakeStageBorderFromDebugConfig(const BorderTestLevelConfig& config) {
+    StageBorder border;
+    border.left.tile = config.left_tile;
+    border.right.tile = config.right_tile;
+    border.top.tile = config.top_tile;
+    border.bottom.tile = config.bottom_tile;
+    border.wrap_x = config.wrap_x;
+    border.wrap_y = config.wrap_y;
+    border.void_death_y = config.void_death_y;
+    return border;
+}
+
+Stage MakeBorderTestStage(const BorderTestLevelConfig& config) {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kBorderTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kBorderTestStageWidthTiles), Tile::Air)
+    );
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = MakeStageBorderFromDebugConfig(config);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+
+    for (int x = 0; x < kBorderTestStageWidthTiles; ++x) {
+        stage.tiles[static_cast<std::size_t>(kBorderTestStageHeightTiles - 1)]
+                   [static_cast<std::size_t>(x)] = Tile::CaveDirt;
     }
 
     return stage;
@@ -190,6 +227,17 @@ void InitStompTestStage(State& state) {
             );
         }
     }
+}
+
+void InitBorderTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x =
+        static_cast<float>(4 * static_cast<int>(kTileSize));
+    const float player_spawn_y =
+        static_cast<float>(5 * static_cast<int>(kTileSize) - 10);
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
 }
 
 } // namespace
@@ -318,6 +366,10 @@ void InitDebugLevel(State& state) {
     case DebugLevelKind::StompTest:
         state.stage = MakeStompTestStage();
         InitStompTestStage(state);
+        break;
+    case DebugLevelKind::BorderTest:
+        state.stage = MakeBorderTestStage(state.debug_level.border_test);
+        InitBorderTestStage(state);
         break;
     }
 }

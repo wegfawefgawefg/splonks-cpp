@@ -68,6 +68,7 @@ struct DebugPlayback {
     bool ui_visible = true;
     bool playback_window_visible = true;
     bool level_window_visible = true;
+    bool border_window_visible = true;
     bool entity_inspector_visible = true;
     bool entity_annotations_visible = false;
     bool ui_settings_window_visible = false;

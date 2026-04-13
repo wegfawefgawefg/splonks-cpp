@@ -163,6 +163,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawDebugMenu(debug, state);
     debug_playback_internal::DrawSimulationControls(debug, state, graphics);
     debug_playback_internal::DrawLevelControls(debug, state, graphics);
+    debug_playback_internal::DrawBorderControls(debug, state, graphics);
     debug_playback_internal::DrawEntityAnnotations(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
     debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);

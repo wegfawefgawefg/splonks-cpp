@@ -18,6 +18,23 @@ bool HasUseActivity(const Entity& entity) {
     return entity.use_state.down || entity.use_state.pressed || entity.use_state.released;
 }
 
+void ApplyStageWrapAndVoidDeath(Entity& entity, State& state) {
+    state.stage.NormalizeEntityPositionForWrap(entity);
+
+    if (!state.stage.HasVoidDeathY()) {
+        return;
+    }
+
+    const auto [_tl, br] = entity.GetBounds();
+    if (br.y <= state.stage.GetVoidDeathY()) {
+        return;
+    }
+
+    entity.vel = Vec2::New(0.0F, 0.0F);
+    entity.condition = EntityCondition::Dead;
+    TrySetAnimation(entity, EntityDisplayState::Dead);
+}
+
 void ClearUseEdgesAfterFrame(Entity& entity) {
     entity.use_state.pressed = false;
     if (!entity.use_state.down) {
@@ -92,6 +109,12 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                         dt
                     );
                 }
+                if (state.entity_manager.entities[state.player_vid->id].active) {
+                    ApplyStageWrapAndVoidDeath(
+                        state.entity_manager.entities[state.player_vid->id],
+                        state
+                    );
+                }
             }
             entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
             state.UpdateSidForEntity(state.player_vid->id, graphics);
@@ -144,6 +167,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                         audio,
                         dt
                     );
+                }
+                if (state.entity_manager.entities[entity_idx].active) {
+                    ApplyStageWrapAndVoidDeath(state.entity_manager.entities[entity_idx], state);
                 }
             }
             entities::common::ApplyDeactivateConditions(entity_idx, state);

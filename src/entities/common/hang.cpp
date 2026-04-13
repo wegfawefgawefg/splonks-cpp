@@ -53,14 +53,22 @@ bool IsBlockedForHangProbe(
     VID self_vid
 ) {
     if (check_tiles) {
-        if (state.settings.post_process.terrain_face_enclosed_stage_bounds) {
-            if (tl.x < 0.0F || br.x >= static_cast<float>(state.stage.GetWidth())) {
-                return use_hangable_tiles ? IsTileHangable(state.stage.stage_border_tile)
-                                          : IsTileCollidable(state.stage.stage_border_tile);
-            }
+        const IVec2 tl_wc = ToIVec2(tl);
+        const IVec2 br_wc = ToIVec2(br);
+        if (const std::optional<StageBorderSideKind> tl_side =
+                state.stage.GetOutOfBoundsSideForWorldPos(tl_wc)) {
+            const Tile border_tile = state.stage.GetBorderTile(*tl_side);
+            return use_hangable_tiles ? IsTileHangable(border_tile)
+                                      : IsTileCollidable(border_tile);
+        }
+        if (const std::optional<StageBorderSideKind> br_side =
+                state.stage.GetOutOfBoundsSideForWorldPos(br_wc)) {
+            const Tile border_tile = state.stage.GetBorderTile(*br_side);
+            return use_hangable_tiles ? IsTileHangable(border_tile)
+                                      : IsTileCollidable(border_tile);
         }
 
-        const std::vector<const Tile*> tiles = state.stage.GetTilesInRectWc(ToIVec2(tl), ToIVec2(br));
+        const std::vector<const Tile*> tiles = state.stage.GetTilesInRectWc(tl_wc, br_wc);
         const bool tile_blocked = use_hangable_tiles ? HangableTileInList(tiles)
                                                      : CollidableTileInList(tiles);
         if (tile_blocked) {

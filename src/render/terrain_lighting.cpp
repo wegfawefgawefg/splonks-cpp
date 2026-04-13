@@ -25,7 +25,7 @@ bool StageTileExists(const State& state, int tile_x, int tile_y) {
 Tile GetTileForLighting(const State& state, int tile_x, int tile_y) {
     if (!StageTileExists(state, tile_x, tile_y)) {
         return state.settings.post_process.terrain_face_enclosed_stage_bounds
-                   ? state.stage.stage_border_tile
+                   ? state.stage.GetTileOrBorder(tile_x, tile_y)
                    : Tile::Air;
     }
 

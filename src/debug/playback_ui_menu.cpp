@@ -17,6 +17,35 @@ constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 
+bool DrawTileCombo(const char* label, Tile& tile) {
+    bool changed = false;
+    if (ImGui::BeginCombo(label, TileToString(tile))) {
+        for (std::size_t i = 0; i < kTileCount; ++i) {
+            const Tile candidate = static_cast<Tile>(i);
+            const bool selected = candidate == tile;
+            if (ImGui::Selectable(TileToString(candidate), selected)) {
+                tile = candidate;
+                changed = true;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
+void CopyBorderConfigToStage(const BorderTestLevelConfig& config, Stage& stage) {
+    stage.border.left.tile = config.left_tile;
+    stage.border.right.tile = config.right_tile;
+    stage.border.top.tile = config.top_tile;
+    stage.border.bottom.tile = config.bottom_tile;
+    stage.border.wrap_x = config.wrap_x;
+    stage.border.wrap_y = config.wrap_y;
+    stage.border.void_death_y = config.void_death_y;
+}
+
 } // namespace
 
 void DrawDebugMenu(DebugPlayback& debug, State& state) {
@@ -35,6 +64,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::TextUnformatted("Window Toggles");
     ImGui::Checkbox("Playback", &debug.playback_window_visible);
     ImGui::Checkbox("Level", &debug.level_window_visible);
+    ImGui::Checkbox("Border", &debug.border_window_visible);
     ImGui::Checkbox("Entities", &debug.entity_inspector_visible);
     ImGui::Checkbox("Entity Annotations", &debug.entity_annotations_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
@@ -193,7 +223,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     }
 
     int level_kind = static_cast<int>(state.debug_level.kind);
-    const char* level_names[] = {"Cave1", "HangTest", "StompTest"};
+    const char* level_names[] = {"Cave1", "HangTest", "StompTest", "BorderTest"};
     ImGui::Combo("Preset", &level_kind, level_names, IM_ARRAYSIZE(level_names));
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
@@ -220,10 +250,107 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             1,
             std::min(8, cutout_height_max)
         );
+    } else if (state.debug_level.kind == DebugLevelKind::BorderTest) {
+        ImGui::TextUnformatted("Use the Border window to edit side tiles, wrap, and void death.");
     }
 
     if (ImGui::Button("Regenerate")) {
         InitDebugLevel(state);
+        graphics.ResetTileVariations();
+        InvalidateTerrainLightingCache(state);
+    }
+
+    if (debug.playback_active) {
+        ImGui::EndDisabled();
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.border_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(620.0F, 12.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Border", &debug.border_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    if (debug.playback_active) {
+        ImGui::BeginDisabled();
+    }
+
+    bool changed = false;
+    if (state.debug_level.kind == DebugLevelKind::BorderTest) {
+        BorderTestLevelConfig& border_test = state.debug_level.border_test;
+        changed |= DrawTileCombo("Left Tile", border_test.left_tile);
+        changed |= DrawTileCombo("Right Tile", border_test.right_tile);
+        changed |= DrawTileCombo("Top Tile", border_test.top_tile);
+        changed |= DrawTileCombo("Bottom Tile", border_test.bottom_tile);
+        changed |= ImGui::Checkbox("Wrap X", &border_test.wrap_x);
+        changed |= ImGui::Checkbox("Wrap Y", &border_test.wrap_y);
+        bool has_void_death_y = border_test.void_death_y.has_value();
+        if (ImGui::Checkbox("Void Death Enabled", &has_void_death_y)) {
+            border_test.void_death_y = has_void_death_y
+                                           ? std::optional<int>(0)
+                                           : std::nullopt;
+            changed = true;
+        }
+        if (border_test.void_death_y.has_value()) {
+            int void_death_y = *border_test.void_death_y;
+            if (ImGui::InputInt("Void Death Y", &void_death_y)) {
+                border_test.void_death_y = void_death_y;
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            CopyBorderConfigToStage(border_test, state.stage);
+        }
+    } else {
+        changed |= DrawTileCombo("Left Tile", state.stage.border.left.tile);
+        changed |= DrawTileCombo("Right Tile", state.stage.border.right.tile);
+        changed |= DrawTileCombo("Top Tile", state.stage.border.top.tile);
+        changed |= DrawTileCombo("Bottom Tile", state.stage.border.bottom.tile);
+        changed |= ImGui::Checkbox("Wrap X", &state.stage.border.wrap_x);
+        changed |= ImGui::Checkbox("Wrap Y", &state.stage.border.wrap_y);
+        bool has_void_death_y = state.stage.border.void_death_y.has_value();
+        if (ImGui::Checkbox("Void Death Enabled", &has_void_death_y)) {
+            state.stage.border.void_death_y = has_void_death_y
+                                                  ? std::optional<int>(0)
+                                                  : std::nullopt;
+            changed = true;
+        }
+        if (state.stage.border.void_death_y.has_value()) {
+            int void_death_y = *state.stage.border.void_death_y;
+            if (ImGui::InputInt("Void Death Y", &void_death_y)) {
+                state.stage.border.void_death_y = void_death_y;
+                changed = true;
+            }
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Current: L=%s R=%s T=%s B=%s",
+                TileToString(state.stage.border.left.tile),
+                TileToString(state.stage.border.right.tile),
+                TileToString(state.stage.border.top.tile),
+                TileToString(state.stage.border.bottom.tile));
+    ImGui::Text("Wrap: X=%s Y=%s",
+                state.stage.border.wrap_x ? "on" : "off",
+                state.stage.border.wrap_y ? "on" : "off");
+    ImGui::Text(
+        "Void Death Y: %s",
+        state.stage.border.void_death_y.has_value()
+            ? std::to_string(*state.stage.border.void_death_y).c_str()
+            : "off"
+    );
+
+    if (changed) {
         graphics.ResetTileVariations();
         InvalidateTerrainLightingCache(state);
     }

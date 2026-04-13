@@ -13,7 +13,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 34;
+constexpr std::uint32_t kRecordingVersion = 35;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -193,7 +193,13 @@ bool ReadSettings(std::istream& in, Settings& settings) {
 void WriteStage(std::ostream& out, const Stage& stage) {
     WritePod(out, stage.stage_type);
     WritePod(out, stage.gravity);
-    WritePod(out, stage.stage_border_tile);
+    WritePod(out, stage.border.left.tile);
+    WritePod(out, stage.border.right.tile);
+    WritePod(out, stage.border.top.tile);
+    WritePod(out, stage.border.bottom.tile);
+    WritePod(out, stage.border.wrap_x);
+    WritePod(out, stage.border.wrap_y);
+    WriteOptionalPod(out, stage.border.void_death_y);
     WritePod(out, stage.camera_clamp_margin);
     const std::uint32_t tile_rows = static_cast<std::uint32_t>(stage.tiles.size());
     WritePod(out, tile_rows);
@@ -213,7 +219,13 @@ void WriteStage(std::ostream& out, const Stage& stage) {
 bool ReadStage(std::istream& in, Stage& stage) {
     if (!ReadPod(in, stage.stage_type) ||
         !ReadPod(in, stage.gravity) ||
-        !ReadPod(in, stage.stage_border_tile) ||
+        !ReadPod(in, stage.border.left.tile) ||
+        !ReadPod(in, stage.border.right.tile) ||
+        !ReadPod(in, stage.border.top.tile) ||
+        !ReadPod(in, stage.border.bottom.tile) ||
+        !ReadPod(in, stage.border.wrap_x) ||
+        !ReadPod(in, stage.border.wrap_y) ||
+        !ReadOptionalPod(in, stage.border.void_death_y) ||
         !ReadPod(in, stage.camera_clamp_margin)) {
         return false;
     }
@@ -385,6 +397,8 @@ const char* DebugLevelKindToString(DebugLevelKind kind) {
         return "HangTest";
     case DebugLevelKind::StompTest:
         return "StompTest";
+    case DebugLevelKind::BorderTest:
+        return "BorderTest";
     }
     return "Unknown";
 }

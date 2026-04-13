@@ -8,9 +8,12 @@
 
 #include <optional>
 #include <string>
+#include <cstdint>
 #include <vector>
 
 namespace splonks {
+
+struct Entity;
 
 struct StageEntitySpawn {
     EntityType type_ = EntityType::None;
@@ -48,6 +51,27 @@ enum class StageType : int {
     Boss,
 };
 
+enum class StageBorderSideKind : std::uint8_t {
+    Left,
+    Right,
+    Top,
+    Bottom,
+};
+
+struct StageBorderSide {
+    Tile tile = Tile::Air;
+};
+
+struct StageBorder {
+    StageBorderSide left;
+    StageBorderSide right;
+    StageBorderSide top;
+    StageBorderSide bottom;
+    bool wrap_x = false;
+    bool wrap_y = false;
+    std::optional<int> void_death_y = std::nullopt;
+};
+
 struct Stage {
     StageType stage_type = StageType::Blank;
     std::vector<std::vector<Tile>> tiles;
@@ -57,7 +81,7 @@ struct Stage {
     std::vector<StageEntitySpawn> entity_spawns;
     std::vector<BackgroundStamp> background_stamps;
     float gravity = 0.3F;
-    Tile stage_border_tile = Tile::CaveDirt;
+    StageBorder border{};
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
 
     static const UVec2 kShape;
@@ -66,6 +90,7 @@ struct Stage {
 
     static Stage NewBlank();
     static Stage New(StageType stage_type);
+    static StageBorder MakeUniformBorder(Tile tile);
     UVec2 GetStageDims() const;
     UVec2 GetRoomLayoutDims() const;
     UVec2 GetRoomDims() const;
@@ -88,6 +113,21 @@ struct Stage {
     unsigned int GetHeight() const;
     unsigned int GetTileWidth() const;
     unsigned int GetTileHeight() const;
+    bool WrapsX() const;
+    bool WrapsY() const;
+    bool HasVoidDeathY() const;
+    float GetVoidDeathY() const;
+    const StageBorderSide& GetBorderSide(StageBorderSideKind side) const;
+    Tile GetBorderTile(StageBorderSideKind side) const;
+    bool IsBorderSideBlocking(StageBorderSideKind side) const;
+    std::optional<StageBorderSideKind> GetOutOfBoundsSideForTileCoord(int tile_x, int tile_y) const;
+    std::optional<StageBorderSideKind> GetOutOfBoundsSideForWorldPos(const IVec2& wc) const;
+    Tile GetTileOrBorder(int tile_x, int tile_y) const;
+    bool IsTileCoordInside(int tile_x, int tile_y) const;
+    bool IsWorldPosInside(const IVec2& wc) const;
+    IVec2 WrapTileCoord(const IVec2& tile_coord) const;
+    IVec2 WrapWorldPos(const IVec2& wc) const;
+    void NormalizeEntityPositionForWrap(Entity& entity) const;
     std::pair<UVec2, UVec2> GetRoomCorners(const UVec2& room) const;
     std::vector<const Tile*> GetTilesInRoom(const UVec2& room) const;
     IVec2 GetStartingRoom() const;
