@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "particles/particles.png",
-  "selectedAnnotationId": "5d5dd255-439d-4951-a6da-42bf49acd457",
+  "selectedAnnotationId": "00c17a89-9d7a-427e-adc1-dd6d385b9ad9",
   "sheets": [
     {
       "path": "images/title.png",
@@ -597,15 +597,58 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "00c17a89-9d7a-427e-adc1-dd6d385b9ad9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 74,
+            "y": 24,
+            "w": 5,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sparkle",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 1,
+              "w": 3,
+              "h": 3
+            },
+            "cbox": {
+              "x": 1,
+              "y": 1,
+              "w": 3,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 2
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": false,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 1.28,
-        "centerX": 218.359375,
-        "centerY": 109.375
+        "zoom": 16.384,
+        "centerX": 85.479736328125,
+        "centerY": 23.3154296875
       }
     },
     {
@@ -5627,15 +5670,58 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "bf28070e-c2a5-4cde-8277-9d3cb8283ca3",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 145,
+            "y": 161,
+            "w": 14,
+            "h": 15
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "chest_open",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 14,
+              "h": 15
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 14,
+              "h": 15
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 7,
+              "y": 6
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 8.389,
-        "centerX": 37.48956967457385,
-        "centerY": 47.56228394325903
+        "zoom": 1.759,
+        "centerX": 202.67197271176806,
+        "centerY": 142.6947129050597
       }
     },
     {
