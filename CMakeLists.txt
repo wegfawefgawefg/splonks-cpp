@@ -127,7 +127,9 @@ add_executable(splonks-cpp
     src/cli.cpp
     src/contact_bookkeeping.cpp
     src/debug/playback_core.cpp
-    src/debug/playback_serialization.cpp
+    src/debug/playback_recording_io.cpp
+    src/debug/playback_text_export.cpp
+    src/debug/playback_snapshot_state.cpp
     src/debug/playback_ui_common.cpp
     src/debug/playback_ui_entities.cpp
     src/debug/playback_ui_menu.cpp
