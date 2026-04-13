@@ -3,7 +3,7 @@
 #include "graphics.hpp"
 #include "settings.hpp"
 #include "state.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 
@@ -19,7 +19,7 @@ namespace splonks {
 
 namespace {
 
-bool IsTerrainLightingTile(Tile tile) {
+bool IsForegroundSolidTile(Tile tile) {
     return GetTileArchetype(tile).solid;
 }
 
@@ -117,17 +117,17 @@ void ApplyTerrainTileBrightness(
     }
 
     const Tile tile = GetTileForLighting(state, tile_x, tile_y);
-    if (!IsTerrainLightingTile(tile)) {
+    if (!IsForegroundSolidTile(tile)) {
         SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
         return;
     }
 
-    const TerrainLightingTile lighting = GetTerrainLightingTileForRender(state, tile_x, tile_y);
+    const float brightness = GetForegroundBrightnessForRender(state, tile_x, tile_y);
     SDL_SetTextureColorModFloat(
         texture,
-        lighting.brightness,
-        lighting.brightness,
-        lighting.brightness
+        brightness,
+        brightness,
+        brightness
     );
 }
 
@@ -143,12 +143,12 @@ void ApplyBackwallTileBrightness(
         return;
     }
 
-    const BackwallLightingTile lighting = GetBackwallLightingTileForRender(state, tile_x, tile_y);
+    const float brightness = GetBackwallBrightnessForRender(state, tile_x, tile_y);
     SDL_SetTextureColorModFloat(
         texture,
-        lighting.brightness,
-        lighting.brightness,
-        lighting.brightness
+        brightness,
+        brightness,
+        brightness
     );
 }
 
@@ -174,11 +174,11 @@ void RenderTerrainTileLighting(
     }
 
     const Tile tile = GetTileForLighting(state, tile_x, tile_y);
-    if (!IsTerrainLightingTile(tile)) {
+    if (!IsForegroundSolidTile(tile)) {
         return;
     }
 
-    const TerrainLightingTile lighting = GetTerrainLightingTileForRender(state, tile_x, tile_y);
+    const ForegroundTileTopology topology = GetForegroundTileTopologyForRender(state, tile_x, tile_y);
 
     if (settings.terrain_face_shading) {
         const float band_ratio = std::clamp(settings.terrain_face_band_size, 0.05F, 0.50F);
@@ -197,7 +197,7 @@ void RenderTerrainTileLighting(
         const float bottom_inner_alpha =
             settings.terrain_face_bottom_shade * (1.0F - gradient_softness);
 
-        if (lighting.open_top) {
+        if (topology.open_top) {
             const SDL_FRect top_rect{dst.x, dst.y, dst.w, band_h};
             DrawGradientQuad(
                 renderer,
@@ -209,7 +209,7 @@ void RenderTerrainTileLighting(
                 MakeOverlayColor(255, 255, 255, top_inner_alpha)
             );
         }
-        if (lighting.open_bottom) {
+        if (topology.open_bottom) {
             const SDL_FRect bottom_rect{dst.x, dst.y + dst.h - band_h, dst.w, band_h};
             DrawGradientQuad(
                 renderer,
@@ -221,9 +221,9 @@ void RenderTerrainTileLighting(
                 MakeMultiplyShadeColor(settings.terrain_face_bottom_shade)
             );
         }
-        if (lighting.open_left) {
-            const float top_trim = lighting.open_top ? side_top_trim : 0.0F;
-            const float bottom_trim = lighting.open_bottom ? side_top_trim : 0.0F;
+        if (topology.open_left) {
+            const float top_trim = topology.open_top ? side_top_trim : 0.0F;
+            const float bottom_trim = topology.open_bottom ? side_top_trim : 0.0F;
             const SDL_FRect left_rect{
                 dst.x,
                 dst.y + top_trim,
@@ -240,9 +240,9 @@ void RenderTerrainTileLighting(
                 MakeMultiplyShadeColor(settings.terrain_face_side_shade)
             );
         }
-        if (lighting.open_right) {
-            const float top_trim = lighting.open_top ? side_top_trim : 0.0F;
-            const float bottom_trim = lighting.open_bottom ? side_top_trim : 0.0F;
+        if (topology.open_right) {
+            const float top_trim = topology.open_top ? side_top_trim : 0.0F;
+            const float bottom_trim = topology.open_bottom ? side_top_trim : 0.0F;
             const SDL_FRect right_rect{
                 dst.x + dst.w - band_w,
                 dst.y + top_trim,
@@ -267,7 +267,7 @@ void RenderTerrainTileLighting(
         const SDL_FColor ao_dark = MakeMultiplyShadeColor(settings.terrain_seam_ao_amount);
         const SDL_FColor ao_clear = MakeMultiplyShadeColor(0.0F);
 
-        if (lighting.ao_top_left) {
+        if (topology.ao_top_left) {
             DrawCornerAoQuad(
                 renderer,
                 SDL_FRect{dst.x, dst.y, ao_size, ao_size},
@@ -277,7 +277,7 @@ void RenderTerrainTileLighting(
                 ao_clear
             );
         }
-        if (lighting.ao_top_right) {
+        if (topology.ao_top_right) {
             DrawCornerAoQuad(
                 renderer,
                 SDL_FRect{dst.x + dst.w - ao_size, dst.y, ao_size, ao_size},
@@ -287,7 +287,7 @@ void RenderTerrainTileLighting(
                 ao_clear
             );
         }
-        if (lighting.ao_bottom_left) {
+        if (topology.ao_bottom_left) {
             DrawCornerAoQuad(
                 renderer,
                 SDL_FRect{dst.x, dst.y + dst.h - ao_size, ao_size, ao_size},
@@ -297,7 +297,7 @@ void RenderTerrainTileLighting(
                 ao_dark
             );
         }
-        if (lighting.ao_bottom_right) {
+        if (topology.ao_bottom_right) {
             DrawCornerAoQuad(
                 renderer,
                 SDL_FRect{dst.x + dst.w - ao_size, dst.y + dst.h - ao_size, ao_size, ao_size},

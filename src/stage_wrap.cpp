@@ -2,7 +2,7 @@
 
 #include "entity.hpp"
 #include "graphics.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 #include "room.hpp"
 #include "state.hpp"
 
@@ -288,7 +288,7 @@ void ApplyToroidalWrapSettings(
 
     if (wrap_config_changed) {
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
         state.RebuildSid(graphics);
     }
 }

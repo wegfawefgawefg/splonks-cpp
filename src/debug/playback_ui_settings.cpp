@@ -1,7 +1,7 @@
 #include "debug/playback_internal.hpp"
 
 #include "settings.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 
 #include <imgui.h>
 
@@ -341,7 +341,7 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
     );
 
     if (changed) {
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
         SaveSettings(state.settings);
     }
 

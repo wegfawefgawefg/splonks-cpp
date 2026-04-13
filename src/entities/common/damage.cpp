@@ -3,7 +3,7 @@
 #include "entity/archetype.hpp"
 #include "on_damage_effects.hpp"
 #include "particles/ultra_dynamic_particle.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
@@ -590,7 +590,7 @@ void DoExplosion(
         .br = center + (Vec2::New(1.0F, 1.0F) * explosion_size),
     };
     BreakStageTilesInRectWc(area, state, audio);
-    InvalidateTerrainLightingCache(state);
+    InvalidateStageLighting(state);
 
     const VID this_vid = state.entity_manager.GetVid(entity_idx);
     const std::vector<VID> results = QueryEntitiesInAabb(state, area, this_vid);

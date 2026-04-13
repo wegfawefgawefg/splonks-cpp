@@ -3,7 +3,7 @@
 #include "imgui_layer.hpp"
 #include "stage_init.hpp"
 #include "stage_wrap.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 
 #include <imgui.h>
 
@@ -276,7 +276,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             ApplyBorderTestWrapConfig(state, graphics);
         }
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
     }
 
     if (debug.playback_active) {
@@ -423,7 +423,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
 
     if (border_changed) {
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
     }
 
     if (debug.playback_active) {

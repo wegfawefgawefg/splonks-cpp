@@ -13,7 +13,7 @@
 #include "stage_init.hpp"
 #include "stage_wrap.hpp"
 #include "state.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 
 #include <algorithm>
 
@@ -220,7 +220,7 @@ void ProcessInputPlaying(
             );
         }
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
     }
     (void)window;
     (void)graphics;
@@ -245,7 +245,7 @@ void ProcessInputStageTransition(
             state.stage = Stage::New(*state.next_stage);
             InitStage(state);
             graphics.ResetTileVariations();
-            InvalidateTerrainLightingCache(state);
+            InvalidateStageLighting(state);
             state.scene_frame = 0;
             state.SetMode(Mode::Playing);
         } else {
@@ -270,7 +270,7 @@ void ProcessInputGameOver(
             state.next_stage = StageType::Cave1;
         }
         graphics.camera.rotation = 0.0F;
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
         state.SetMode(Mode::StageTransition);
     }
 }
@@ -289,7 +289,7 @@ void ProcessInputWin(
         state.scene_frame >= (60 * 5)) {
         state.stage = Stage::NewBlank();
         graphics.ResetTileVariations();
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
         state.SetMode(Mode::Title);
     }
     (void)graphics;

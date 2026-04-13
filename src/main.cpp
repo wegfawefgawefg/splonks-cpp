@@ -9,7 +9,7 @@
 #include "render/postfx.hpp"
 #include "state.hpp"
 #include "step.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 #include "tools/tool_archetype.hpp"
 #include "text.hpp"
 
@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
         debug.lighting_settings_window_visible = state.settings.debug_ui.lighting_settings_visible;
         debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
-        splonks::RebuildTerrainLightingCache(state);
+        splonks::RebuildStageLighting(state);
 
         std::uint64_t last_ticks = SDL_GetTicks();
 

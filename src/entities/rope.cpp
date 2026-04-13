@@ -7,7 +7,7 @@
 #include "graphics.hpp"
 #include "stage.hpp"
 #include "state.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 #include "tile.hpp"
 #include "world_query.hpp"
 
@@ -99,7 +99,7 @@ void StepEntityLogicAsRope(
                 if (tile == Tile::Air || tile == Tile::Rope || tile == Tile::Entrance) {
                     state.stage.SetTile(p, Tile::Rope);
                     graphics.ResetTileVariation(p);
-                    UpdateTerrainLightingCacheForTileChange(state, p);
+                    UpdateStageLightingForTileChange(state, p);
                     atleast_one_tile_converted = true;
                 } else {
                     break;

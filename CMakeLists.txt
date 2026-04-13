@@ -241,7 +241,7 @@ add_executable(splonks-cpp
     src/tools/throw_bomb.cpp
     src/tools/throw_pot.cpp
     src/tools/throw_rope.cpp
-    src/render/terrain_lighting.cpp
+    src/stage_lighting.cpp
     src/particles/dynamic_particle.cpp
     src/particles/system.cpp
     src/particles/particle.cpp

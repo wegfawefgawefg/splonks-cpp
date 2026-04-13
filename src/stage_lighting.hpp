@@ -1,11 +1,12 @@
 #pragma once
 
+#include "math_types.hpp"
+
 #include <vector>
 
 namespace splonks {
 
-struct TerrainLightingTile {
-    float brightness = 1.0F;
+struct ForegroundTileTopology {
     bool open_top = false;
     bool open_bottom = false;
     bool open_left = false;
@@ -16,29 +17,46 @@ struct TerrainLightingTile {
     bool ao_bottom_right = false;
 };
 
-struct TerrainLightingCache {
-    std::vector<std::vector<TerrainLightingTile>> tiles;
+struct ForegroundTopologyCache {
+    std::vector<std::vector<ForegroundTileTopology>> tiles;
     bool valid = false;
 
-    static TerrainLightingCache New();
+    static ForegroundTopologyCache New();
 };
 
-struct BackwallLightingTile {
-    float brightness = 1.0F;
-};
-
-struct BackwallLightingCache {
-    std::vector<std::vector<BackwallLightingTile>> tiles;
+struct ForegroundBrightnessCache {
+    std::vector<std::vector<float>> tiles;
     bool valid = false;
 
-    static BackwallLightingCache New();
+    static ForegroundBrightnessCache New();
+};
+
+struct BackwallBrightnessCache {
+    std::vector<std::vector<float>> tiles;
+    bool valid = false;
+
+    static BackwallBrightnessCache New();
 };
 
 struct StageLighting {
-    TerrainLightingCache terrain;
-    BackwallLightingCache backwall;
+    ForegroundTopologyCache foreground_topology;
+    ForegroundBrightnessCache foreground_brightness;
+    BackwallBrightnessCache backwall_brightness;
 
     static StageLighting New();
 };
+
+struct State;
+void InvalidateStageLighting(State& state);
+void RebuildStageLighting(State& state);
+void EnsureStageLighting(State& state);
+void UpdateStageLightingForTileChange(State& state, const IVec2& tile_pos);
+ForegroundTileTopology GetForegroundTileTopologyForRender(
+    const State& state,
+    int tile_x,
+    int tile_y
+);
+float GetForegroundBrightnessForRender(const State& state, int tile_x, int tile_y);
+float GetBackwallBrightnessForRender(const State& state, int tile_x, int tile_y);
 
 } // namespace splonks

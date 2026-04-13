@@ -9,7 +9,7 @@
 #include "render/tile_lighting.hpp"
 #include "particles/particle.hpp"
 #include "state.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 #include "tile.hpp"
 #include <algorithm>
 #include <cmath>
@@ -131,7 +131,7 @@ const FrameData* GetFirstFrameForAnimationOrFallback(
 } // namespace
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    EnsureTerrainLightingCache(state);
+    EnsureStageLighting(state);
     const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const Vec2& render_offset : render_offsets) {
@@ -217,7 +217,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
 }
 
 void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    EnsureTerrainLightingCache(state);
+    EnsureStageLighting(state);
     const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
@@ -307,7 +307,7 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
 }
 
 void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    EnsureTerrainLightingCache(state);
+    EnsureStageLighting(state);
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const BackgroundStamp& stamp : state.stage.background_stamps) {
         if (stamp.animation_id == kInvalidFrameDataId) {
@@ -361,7 +361,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
         return;
     }
 
-    EnsureTerrainLightingCache(state);
+    EnsureStageLighting(state);
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (std::size_t y = 0; y < state.stage.embedded_treasures.size(); ++y) {
         for (std::size_t x = 0; x < state.stage.embedded_treasures[y].size(); ++x) {

@@ -4,7 +4,7 @@
 #include "graphics.hpp"
 #include "settings.hpp"
 #include "state.hpp"
-#include "render/terrain_lighting.hpp"
+#include "stage_lighting.hpp"
 
 #include <algorithm>
 
@@ -712,7 +712,7 @@ void ProcessInputLightingSettingsMenu(
     }
 
     if (invalidate_terrain_lighting_cache) {
-        InvalidateTerrainLightingCache(state);
+        InvalidateStageLighting(state);
     }
 }
 
