@@ -60,8 +60,8 @@ EntityDamageEffectResult ApplyDamageEffect(
             audio.PlaySoundEffect(*archetype.damage_sound);
         }
     }
-    if (archetype.on_damage_effect != nullptr) {
-        return archetype.on_damage_effect(entity_idx, state, audio, damage_type, amount, damage_applied);
+    if (archetype.on_damage != nullptr) {
+        return archetype.on_damage(entity_idx, state, audio, damage_type, amount, damage_applied);
     }
     return EntityDamageEffectResult::None;
 }

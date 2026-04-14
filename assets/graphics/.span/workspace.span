@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "e1438c1e-b778-4997-9b75-ac0454c70e95",
+  "selectedAnnotationId": "0327ab1f-f525-4a6a-877a-68b30f7dac11",
   "sheets": [
     {
       "path": "images/title.png",
@@ -646,9 +646,9 @@
         "gridEnabled": false,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 6.711,
-        "centerX": 106.46699448666368,
-        "centerY": 14.453881686782893
+        "zoom": 2.199,
+        "centerX": 112.09640745793543,
+        "centerY": -34.10641200545703
       }
     },
     {
@@ -4432,13 +4432,13 @@
             },
             "tags": [],
             "pbox": {
-              "x": 2,
+              "x": 4,
               "y": 0,
               "w": 8,
               "h": 16
             },
             "cbox": {
-              "x": 2,
+              "x": 4,
               "y": 0,
               "w": 8,
               "h": 16
@@ -4446,8 +4446,8 @@
             "tile": false,
             "hitboxes": [],
             "emit_point": {
-              "x": 0,
-              "y": 0
+              "x": 6,
+              "y": 8
             }
           }
         },
@@ -4455,8 +4455,8 @@
           "id": "68ef7c16-78e5-4d5e-ad09-3a35b2c77f58",
           "entityType": "Sprite",
           "aabb": {
-            "x": 16,
-            "y": 224,
+            "x": 48,
+            "y": 176,
             "w": 16,
             "h": 16
           },
@@ -4499,8 +4499,8 @@
           "id": "232e3cab-d87b-40c0-8cd8-47d5ea854ef3",
           "entityType": "Sprite",
           "aabb": {
-            "x": 34,
-            "y": 225,
+            "x": 66,
+            "y": 177,
             "w": 12,
             "h": 15
           },
@@ -6100,15 +6100,488 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "c4a5e0f2-8ec9-435d-98e6-5adaa25ae106",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 176,
+            "w": 6,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "kiss",
+            "frame": 0,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "92dbdf04-6b25-438c-b14d-bc9daea40fbf",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 38,
+            "y": 176,
+            "w": 6,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "kiss",
+            "frame": 1,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "1cb3d4be-a00a-4be2-8c73-f841a9de3a6a",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 181,
+            "w": 6,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "kiss",
+            "frame": 2,
+            "duration": 30,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "bdff8a39-1a89-46a7-af70-5c221b891def",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 38,
+            "y": 176,
+            "w": 6,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "kiss",
+            "frame": 3,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "145aaa6e-2350-441a-884a-45bd47f7577d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 176,
+            "w": 6,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "kiss",
+            "frame": 4,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "847391db-d4b7-4383-b6c3-0746c956f8d1",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 224,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "damsel_stunned",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 13
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 7,
+              "w": 15,
+              "h": 9
+            },
+            "cbox": {
+              "x": 0,
+              "y": 7,
+              "w": 15,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 15
+            }
+          }
+        },
+        {
+          "id": "0327ab1f-f525-4a6a-877a-68b30f7dac11",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 64,
+            "y": 224,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "damsel_dead",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 14
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 7,
+              "w": 15,
+              "h": 9
+            },
+            "cbox": {
+              "x": 0,
+              "y": 7,
+              "w": 15,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 15
+            }
+          }
+        },
+        {
+          "id": "8fb9f342-59a0-4b1f-9c71-ac540c72e5df",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 224,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "damsel_walk",
+            "frame": 0,
+            "duration": 12,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 4,
+              "y": 0,
+              "w": 7,
+              "h": 16
+            },
+            "cbox": {
+              "x": 4,
+              "y": 0,
+              "w": 7,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "daee6c6a-2345-4be7-8dbc-d5b9de9bc2b9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 48,
+            "y": 224,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "damsel_walk",
+            "frame": 1,
+            "duration": 12,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 4,
+              "y": 0,
+              "w": 7,
+              "h": 16
+            },
+            "cbox": {
+              "x": 4,
+              "y": 0,
+              "w": 7,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "67e9d8db-96ee-4711-b942-8e65205d1477",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 224,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "damsel_cry",
+            "frame": 0,
+            "duration": 12,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "dc1b58ed-3caa-47a5-9902-7e4fd19fad00",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 96,
+            "y": 224,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "damsel_cry",
+            "frame": 1,
+            "duration": 12,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 13.108,
-        "centerX": 95.85749160817821,
-        "centerY": 213.07598413182788
+        "zoom": 13.107,
+        "centerX": 39.71160448615244,
+        "centerY": 225.2994583047227
       }
     },
     {

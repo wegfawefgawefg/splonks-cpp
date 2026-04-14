@@ -2956,23 +2956,23 @@ sprites:
       y: 7
     tags: []
     pbox:
-      x: 2
+      x: 4
       y: 0
       w: 8
       h: 16
     cbox:
-      x: 2
+      x: 4
       y: 0
       w: 8
       h: 16
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 6
+      y: 8
   - path: "entities.png"
     aabb:
-      x: 16
-      y: 224
+      x: 48
+      y: 176
       w: 16
       h: 16
     name: "shopkeeper_icon"
@@ -3001,8 +3001,8 @@ sprites:
       y: 0
   - path: "entities.png"
     aabb:
-      x: 34
-      y: 225
+      x: 66
+      y: 177
       w: 12
       h: 15
     name: "shopkeeper"
@@ -4105,6 +4105,336 @@ sprites:
       y: 9
       w: 15
       h: 7
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 176
+      w: 6
+      h: 5
+    name: "kiss"
+    frame: 0
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 38
+      y: 176
+      w: 6
+      h: 5
+    name: "kiss"
+    frame: 1
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 181
+      w: 6
+      h: 5
+    name: "kiss"
+    frame: 2
+    duration: 30
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 38
+      y: 176
+      w: 6
+      h: 5
+    name: "kiss"
+    frame: 3
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 176
+      w: 6
+      h: 5
+    name: "kiss"
+    frame: 4
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 224
+      w: 16
+      h: 16
+    name: "damsel_stunned"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 13
+    tags: []
+    pbox:
+      x: 0
+      y: 7
+      w: 15
+      h: 9
+    cbox:
+      x: 0
+      y: 7
+      w: 15
+      h: 9
+    tile: false
+    emit_point:
+      x: 2
+      y: 15
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 224
+      w: 16
+      h: 16
+    name: "damsel_dead"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 14
+    tags: []
+    pbox:
+      x: 0
+      y: 7
+      w: 15
+      h: 9
+    cbox:
+      x: 0
+      y: 7
+      w: 15
+      h: 9
+    tile: false
+    emit_point:
+      x: 2
+      y: 15
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 224
+      w: 16
+      h: 16
+    name: "damsel_walk"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 7
+    tags: []
+    pbox:
+      x: 4
+      y: 0
+      w: 7
+      h: 16
+    cbox:
+      x: 4
+      y: 0
+      w: 7
+      h: 16
+    tile: false
+    emit_point:
+      x: 6
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 224
+      w: 16
+      h: 16
+    name: "damsel_walk"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 4
+      y: 0
+      w: 7
+      h: 16
+    cbox:
+      x: 4
+      y: 0
+      w: 7
+      h: 16
+    tile: false
+    emit_point:
+      x: 6
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 224
+      w: 16
+      h: 16
+    name: "damsel_cry"
+    frame: 0
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 224
+      w: 16
+      h: 16
+    name: "damsel_cry"
+    frame: 1
+    duration: 12
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
     tile: false
     emit_point:
       x: 0

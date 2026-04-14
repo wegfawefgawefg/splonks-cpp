@@ -16,7 +16,7 @@ enum class EntityDamageEffectResult {
     None,
     Consumed,
 };
-using EntityOnDamageEffect = EntityDamageEffectResult (*)(
+using EntityOnDamage = EntityDamageEffectResult (*)(
     std::size_t entity_idx,
     State& state,
     Audio& audio,
@@ -62,7 +62,7 @@ struct EntityArchetype {
     std::optional<SoundEffect> collide_sound = std::nullopt;
     std::optional<SoundEffect> death_sound_effect = std::nullopt;
     EntityOnDeath on_death = nullptr;
-    EntityOnDamageEffect on_damage_effect = nullptr;
+    EntityOnDamage on_damage = nullptr;
     EntityOnUse on_use = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;

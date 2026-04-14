@@ -33,11 +33,14 @@ bool IsOpenWithAnimation(const Entity& entity, FrameDataId animation_id) {
     return entity.frame_data_animator.animation_id == animation_id;
 }
 
-void LaunchChestLoot(Entity& entity) {
+void LaunchChestLoot(Entity& entity, std::optional<VID> opener_vid = std::nullopt) {
     entity.vel = Vec2::New(
         static_cast<float>(rng::RandomIntInclusive(0, 3) - rng::RandomIntInclusive(0, 3)),
         kChestLootLaunchY
     );
+    entity.thrown_by = opener_vid;
+    entity.thrown_immunity_timer =
+        opener_vid.has_value() ? common::kThrownByImmunityDuration : 0;
 }
 
 Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
@@ -113,14 +116,18 @@ void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
     SetAnimation(*bomb, frame_data_ids::LiveGrenade);
 }
 
-void SpawnChestTreasure(const Vec2& spawn_center, State& state) {
+void SpawnChestTreasure(
+    const Vec2& spawn_center,
+    State& state,
+    std::optional<VID> opener_vid = std::nullopt
+) {
     const int gem_count = rng::RandomIntInclusive(kChestTreasureDropMin, kChestTreasureDropMax);
     for (int i = 0; i < gem_count; ++i) {
         Entity* const gem = SpawnEntityAtCenter(RandomChestGemType(), spawn_center, state);
         if (gem == nullptr) {
             return;
         }
-        LaunchChestLoot(*gem);
+        LaunchChestLoot(*gem, opener_vid);
     }
 
     if (rng::RandomIntInclusive(1, kChestBonusGemOdds) != 1) {
@@ -131,7 +138,7 @@ void SpawnChestTreasure(const Vec2& spawn_center, State& state) {
     if (gem == nullptr) {
         return;
     }
-    LaunchChestLoot(*gem);
+    LaunchChestLoot(*gem, opener_vid);
 }
 
 bool CanPlayerUseChestFromContact(
@@ -220,7 +227,8 @@ bool TryOpenTreasureChestAt(
     std::size_t entity_idx,
     const Vec2& emit_pos,
     State& state,
-    Audio& audio
+    Audio& audio,
+    std::optional<VID> opener_vid = std::nullopt
 ) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return false;
@@ -234,6 +242,7 @@ bool TryOpenTreasureChestAt(
 
     SetAnimation(chest, frame_data_ids::ChestOpen);
     SpawnChestSparkles(emit_pos, state);
+    audio.PlaySoundEffect(SoundEffect::ChestOpen);
 
     if (rng::RandomIntInclusive(1, kChestTrapOdds) == 1) {
         SpawnChestTrapBomb(emit_pos, state);
@@ -241,8 +250,7 @@ bool TryOpenTreasureChestAt(
         return true;
     }
 
-    SpawnChestTreasure(emit_pos, state);
-    audio.PlaySoundEffect(SoundEffect::GoldStack);
+    SpawnChestTreasure(emit_pos, state, opener_vid);
     return true;
 }
 
@@ -253,7 +261,7 @@ bool TryOpenTreasureChest(std::size_t entity_idx, State& state, Graphics& graphi
 
     const Entity& chest = state.entity_manager.entities[entity_idx];
     const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
-    return TryOpenTreasureChestAt(entity_idx, emit_pos, state, audio);
+    return TryOpenTreasureChestAt(entity_idx, emit_pos, state, audio, state.player_vid);
 }
 
 EntityDamageEffectResult OnDamageEffectAsChest(
@@ -273,7 +281,7 @@ EntityDamageEffectResult OnDamageEffectAsChest(
     }
 
     const Entity& chest = state.entity_manager.entities[entity_idx];
-    if (!TryOpenTreasureChestAt(entity_idx, chest.GetCenter(), state, audio)) {
+    if (!TryOpenTreasureChestAt(entity_idx, chest.GetCenter(), state, audio, state.player_vid)) {
         return EntityDamageEffectResult::None;
     }
     return EntityDamageEffectResult::Consumed;
@@ -296,14 +304,15 @@ bool TryOpenKeyChest(std::size_t entity_idx, State& state, Graphics& graphics, A
     SetAnimation(chest, frame_data_ids::KeyChestOpen);
     const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
     SpawnChestSparkles(emit_pos, state);
+    audio.PlaySoundEffect(SoundEffect::Unlock);
+    audio.PlaySoundEffect(SoundEffect::ChestOpen);
     Entity* const udjat_eye = SpawnEntityAtCenter(EntityType::UdjatEye, emit_pos, state);
     if (udjat_eye != nullptr) {
-        LaunchChestLoot(*udjat_eye);
+        LaunchChestLoot(*udjat_eye, holder != nullptr ? std::optional<VID>(holder->vid) : state.player_vid);
     }
     if (holder != nullptr && key != nullptr) {
         ConsumeHeldChestKey(holder, *key, state, graphics);
     }
-    audio.PlaySoundEffect(SoundEffect::GoldStack);
     return true;
 }
 
@@ -360,7 +369,7 @@ extern const EntityArchetype kChestArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
-    .on_damage_effect = OnDamageEffectAsChest,
+    .on_damage = OnDamageEffectAsChest,
     .on_use = OnUseAsChest,
     .step_logic = StepEntityLogicAsChest,
     .alignment = Alignment::Neutral,

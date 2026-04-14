@@ -83,7 +83,8 @@ void UpdateCarryAndBackItems(
                 for (const VID& vid : *trying_to_pick_up_these) {
                     const Entity& candidate = state.entity_manager.entities[vid.id];
                     const bool can_pick_up_candidate =
-                        candidate.can_be_picked_up || candidate.condition == EntityCondition::Dead;
+                        candidate.can_be_picked_up || candidate.condition == EntityCondition::Dead ||
+                        candidate.condition == EntityCondition::Stunned;
                     if (!can_pick_up_candidate) {
                         continue;
                     }

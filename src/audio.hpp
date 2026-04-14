@@ -54,6 +54,13 @@ enum class SoundEffect {
     BaseballBatKillHit3,
     BaseballBatMetalDink1,
     BaseballBatBoxSmash,
+    CavemanNotice,
+    CavemanHurt,
+    DamselAmbientCry,
+    DamselHurt,
+    Smooch,
+    ChestOpen,
+    Unlock,
     UiCant,
     UiConfirm,
     UiCursorMove,
@@ -63,7 +70,7 @@ enum class SoundEffect {
 };
 
 constexpr std::size_t kSongCount = 2;
-constexpr std::size_t kSoundEffectCount = 45;
+constexpr std::size_t kSoundEffectCount = 52;
 
 struct LoadedSong {
     std::string path;

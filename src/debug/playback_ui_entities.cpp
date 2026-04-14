@@ -96,6 +96,11 @@ bool SpawnDebugEntity(
         debug.spawn_status = "Spawn failed.";
         return false;
     }
+    if (debug.spawn_center_on_selected && selected_entity == nullptr) {
+        state.entity_manager.SetInactive(vid->id);
+        debug.spawn_status = "No active selected entity to center spawn on.";
+        return false;
+    }
 
     SetEntityAs(*spawned, type_);
     spawned->vel = Vec2::New(0.0F, 0.0F);
@@ -189,12 +194,6 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         }
     }
 
-    if (selected_entity == nullptr) {
-        ImGui::TextUnformatted("No active entity selected.");
-        ImGui::End();
-        return;
-    }
-
     if (debug.playback_active) {
         debug.pending_spawn_at_mouse = false;
         ImGui::SeparatorText("Spawner");
@@ -273,6 +272,12 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         if (!debug.spawn_status.empty()) {
             ImGui::TextWrapped("%s", debug.spawn_status.c_str());
         }
+    }
+
+    if (selected_entity == nullptr) {
+        ImGui::TextUnformatted("No active entity selected.");
+        ImGui::End();
+        return;
     }
 
     Entity& entity = *selected_entity;

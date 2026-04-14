@@ -81,6 +81,19 @@ std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplaySta
         default:
             return std::nullopt;
         }
+    case EntityType::Damsel:
+        switch (entity.display_state) {
+        case EntityDisplayState::Neutral:
+            return DisplayStateFrameDataSelection{frame_data_ids::Damsel, true, false, 0};
+        case EntityDisplayState::Walk:
+            return DisplayStateFrameDataSelection{frame_data_ids::DamselWalk, true, false, 0};
+        case EntityDisplayState::Stunned:
+            return DisplayStateFrameDataSelection{frame_data_ids::DamselStunned, true, false, 0};
+        case EntityDisplayState::Dead:
+            return DisplayStateFrameDataSelection{frame_data_ids::DamselDead, true, false, 0};
+        default:
+            return std::nullopt;
+        }
     default:
         return std::nullopt;
     }

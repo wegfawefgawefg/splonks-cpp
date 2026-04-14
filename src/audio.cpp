@@ -126,6 +126,13 @@ std::vector<SoundEffect> AllSoundEffects() {
         SoundEffect::BaseballBatKillHit3,
         SoundEffect::BaseballBatMetalDink1,
         SoundEffect::BaseballBatBoxSmash,
+        SoundEffect::CavemanNotice,
+        SoundEffect::CavemanHurt,
+        SoundEffect::DamselAmbientCry,
+        SoundEffect::DamselHurt,
+        SoundEffect::Smooch,
+        SoundEffect::ChestOpen,
+        SoundEffect::Unlock,
         SoundEffect::UiCant,
         SoundEffect::UiConfirm,
         SoundEffect::UiCursorMove,
@@ -436,6 +443,20 @@ const char* GetSoundFileName(SoundEffect sound_effect) {
         return "baseball_bat_metal_dink1";
     case SoundEffect::BaseballBatBoxSmash:
         return "baseball_bat_box_smash";
+    case SoundEffect::CavemanNotice:
+        return "caveman_notice";
+    case SoundEffect::CavemanHurt:
+        return "caveman_hurt";
+    case SoundEffect::DamselAmbientCry:
+        return "damsel_ambient_cry";
+    case SoundEffect::DamselHurt:
+        return "damsel_hurt";
+    case SoundEffect::Smooch:
+        return "smooch";
+    case SoundEffect::ChestOpen:
+        return "chest_open";
+    case SoundEffect::Unlock:
+        return "unlock";
     case SoundEffect::UiCant:
         return "ui_cant";
     case SoundEffect::UiConfirm:
