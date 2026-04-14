@@ -604,7 +604,7 @@ void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
 } // namespace
 
 void InitStage(State& state, bool preserve_player_state) {
-    state.respawn_target = StageLoadTarget::ForStageType(state.stage.stage_type);
+    state.respawn_target = StageLoadTarget::ForStageType(StageType::SplkMines1);
     const StageCarryover carryover =
         preserve_player_state ? CaptureStageCarryover(state) : StageCarryover{};
     InitCommonStageState(state);

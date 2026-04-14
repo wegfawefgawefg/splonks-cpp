@@ -1332,7 +1332,10 @@ void AddAmbientMinesEntities(Stage& stage) {
                     } else if (rng::RandomIntInclusive(1, 60) == 1) {
                         AddAmbientSpawn(stage, EntityType::Bat, ceiling_spawn_pos);
                     } else if (rng::RandomIntInclusive(1, 80) == 1) {
-                        AddAmbientSpawn(stage, EntityType::SpiderHang, ceiling_spawn_pos);
+                        const EntityType spider_hang_type =
+                            rng::RandomIntInclusive(1, 4) == 1 ? EntityType::RageSpiderHang
+                                                               : EntityType::SpiderHang;
+                        AddAmbientSpawn(stage, spider_hang_type, ceiling_spawn_pos);
                     }
                 }
 

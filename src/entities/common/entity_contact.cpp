@@ -87,8 +87,8 @@ ContactResolution TryDispatchEntityEntityContactByType(
 
     switch (participant.type_) {
     case EntityType::Player:
-        if (audio == nullptr ||
-            !TryApplyStompContactToEntity(participant_idx, other_entity_idx, state, *audio)) {
+        if (graphics == nullptr || audio == nullptr ||
+            !TryApplyStompContactToEntity(participant_idx, other_entity_idx, state, *graphics, *audio)) {
             return ContactResolution{};
         }
         return ContactResolution{
@@ -187,6 +187,9 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::Caveman:
     case EntityType::Spider:
     case EntityType::SpiderHang:
+    case EntityType::RageSpider:
+    case EntityType::RageSpiderHang:
+    case EntityType::GiantSpider:
     case EntityType::GiantSpiderHang:
     case EntityType::Scarab:
         return ContactResolution{};

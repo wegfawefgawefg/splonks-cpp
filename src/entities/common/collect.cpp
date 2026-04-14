@@ -76,6 +76,9 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::Caveman:
     case EntityType::Spider:
     case EntityType::SpiderHang:
+    case EntityType::RageSpider:
+    case EntityType::RageSpiderHang:
+    case EntityType::GiantSpider:
     case EntityType::GiantSpiderHang:
     case EntityType::Scarab:
         return false;

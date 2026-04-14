@@ -94,6 +94,9 @@ enum class EntityType {
     Caveman,
     Spider,
     SpiderHang,
+    RageSpider,
+    RageSpiderHang,
+    GiantSpider,
     GiantSpiderHang,
     Scarab,
 };

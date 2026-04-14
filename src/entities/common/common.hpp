@@ -134,6 +134,7 @@ bool TryApplyStompContactToEntity(
     std::size_t entity_idx,
     std::size_t other_entity_idx,
     State& state,
+    const Graphics& graphics,
     Audio& audio
 );
 void TryPushBlocks(

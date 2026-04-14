@@ -148,7 +148,8 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
     } else if (RandInclusive(1, 12) == 1) {
         SpawnEntityAtTopLeft(EntityType::RubyBig, spawn_pos, state);
     } else if (RandInclusive(1, 6) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Spider, spider_spawn_pos, state);
+        const EntityType spider_type = RandInclusive(1, 4) == 1 ? EntityType::RageSpider : EntityType::Spider;
+        SpawnEntityAtTopLeft(spider_type, spider_spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
         SpawnEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
     }

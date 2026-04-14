@@ -1,6 +1,7 @@
 #include "entities/common/common.hpp"
 
 #include "entities/player.hpp"
+#include "world_query.hpp"
 
 #include <algorithm>
 
@@ -16,6 +17,7 @@ bool TryApplyStompContactToEntity(
     std::size_t entity_idx,
     std::size_t other_entity_idx,
     State& state,
+    const Graphics& graphics,
     Audio& audio
 ) {
     if (entity_idx >= state.entity_manager.entities.size() ||
@@ -29,7 +31,7 @@ bool TryApplyStompContactToEntity(
         return false;
     }
 
-    if (stomper.vel.y <= 0.0F) {
+    if (stomper.condition != EntityCondition::Normal || stomper.vel.y <= 0.0F) {
         return false;
     }
     if (stomped->impassable || !stomped->can_collide ||
@@ -37,8 +39,12 @@ bool TryApplyStompContactToEntity(
         return false;
     }
 
-    const AABB stomper_aabb = stomper.GetAABB();
-    const AABB stomped_aabb = stomped->GetAABB();
+    const AABB stomper_aabb = GetContactAabbForEntity(stomper, graphics);
+    const AABB stomped_aabb = GetNearestWorldAabb(
+        state.stage,
+        stomper.GetCenter(),
+        GetContactAabbForEntity(*stomped, graphics)
+    );
     const float stomped_head_band_bottom = stomped_aabb.tl.y + kStompHeadHeight;
     if (stomper_aabb.br.y > stomped_head_band_bottom) {
         return false;

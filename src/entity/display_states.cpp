@@ -94,6 +94,35 @@ std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplaySta
         default:
             return std::nullopt;
         }
+    case EntityType::Spider:
+        switch (entity.display_state) {
+        case EntityDisplayState::Neutral:
+        case EntityDisplayState::Walk:
+        case EntityDisplayState::Stunned:
+        case EntityDisplayState::Dead:
+            return DisplayStateFrameDataSelection{frame_data_ids::Spider, true, false, 0};
+        default:
+            return std::nullopt;
+        }
+    case EntityType::RageSpider:
+        switch (entity.display_state) {
+        case EntityDisplayState::Neutral:
+        case EntityDisplayState::Walk:
+        case EntityDisplayState::Stunned:
+        case EntityDisplayState::Dead:
+            return DisplayStateFrameDataSelection{frame_data_ids::RageSpider, true, false, 0};
+        default:
+            return std::nullopt;
+        }
+    case EntityType::GiantSpider:
+        switch (entity.display_state) {
+        case EntityDisplayState::Neutral:
+        case EntityDisplayState::Walk:
+        case EntityDisplayState::Dead:
+            return DisplayStateFrameDataSelection{frame_data_ids::GiantSpider, true, false, 0};
+        default:
+            return std::nullopt;
+        }
     default:
         return std::nullopt;
     }

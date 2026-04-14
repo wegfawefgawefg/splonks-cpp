@@ -2637,8 +2637,8 @@ sprites:
       h: 9
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 4
+      y: 3
   - path: "entities.png"
     aabb:
       x: 144
@@ -4435,6 +4435,306 @@ sprites:
       y: 0
       w: 7
       h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 320
+      w: 22
+      h: 16
+    name: "giant_spider_hang"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 10
+      y: 10
+    tags: []
+    pbox:
+      x: 1
+      y: 6
+      w: 18
+      h: 7
+    cbox:
+      x: 3
+      y: 8
+      w: 14
+      h: 5
+    tile: false
+    emit_point:
+      x: 10
+      y: 10
+  - path: "entities.png"
+    aabb:
+      x: 68
+      y: 286
+      w: 3
+      h: 2
+    name: "gold_nugget"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 1
+      y: 1
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 3
+      h: 2
+    cbox:
+      x: 0
+      y: 0
+      w: 3
+      h: 2
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 74
+      y: 286
+      w: 2
+      h: 2
+    name: "gold_chunk"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 1
+      y: 1
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 2
+      h: 2
+    cbox:
+      x: 0
+      y: 0
+      w: 2
+      h: 2
+    tile: false
+    emit_point:
+      x: 2
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 83
+      y: 285
+      w: 4
+      h: 3
+    name: "gold_bar"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 3
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 3
+    tile: false
+    emit_point:
+      x: 2
+      y: 1
+  - path: "entities.png"
+    aabb:
+      x: 88
+      y: 282
+      w: 8
+      h: 6
+    name: "gold_bars"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 6
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 6
+    tile: false
+    emit_point:
+      x: 4
+      y: 3
+  - path: "entities.png"
+    aabb:
+      x: 46
+      y: 168
+      w: 8
+      h: 8
+    name: "emerald_big"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 8
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 8
+    tile: false
+    emit_point:
+      x: 4
+      y: 3
+  - path: "entities.png"
+    aabb:
+      x: 57
+      y: 168
+      w: 8
+      h: 8
+    name: "sapphire_big"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 8
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 8
+    tile: false
+    emit_point:
+      x: 4
+      y: 3
+  - path: "entities.png"
+    aabb:
+      x: 86
+      y: 320
+      w: 22
+      h: 16
+    name: "giant_spider"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 10
+      y: 10
+    tags: []
+    pbox:
+      x: 1
+      y: 8
+      w: 18
+      h: 7
+    cbox:
+      x: 3
+      y: 8
+      w: 14
+      h: 5
+    tile: false
+    emit_point:
+      x: 10
+      y: 10
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 336
+      w: 16
+      h: 16
+    name: "rage_spider_hang"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 10
+    tags: []
+    pbox:
+      x: 0
+      y: 6
+      w: 15
+      h: 6
+    cbox:
+      x: 1
+      y: 4
+      w: 13
+      h: 9
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 336
+      w: 16
+      h: 16
+    name: "rage_spider"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 10
+    tags: []
+    pbox:
+      x: 1
+      y: 5
+      w: 13
+      h: 7
+    cbox:
+      x: 1
+      y: 5
+      w: 13
+      h: 7
     tile: false
     emit_point:
       x: 0

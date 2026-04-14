@@ -62,7 +62,7 @@ extern const EntityArchetype kGoldChunkArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldChunk),
 };
 
 extern const EntityArchetype kGoldNuggetArchetype{
@@ -81,7 +81,7 @@ extern const EntityArchetype kGoldNuggetArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldNugget),
 };
 
 extern const EntityArchetype kGoldBarArchetype{
@@ -100,7 +100,7 @@ extern const EntityArchetype kGoldBarArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldBar),
 };
 
 extern const EntityArchetype kGoldBarsArchetype{
@@ -119,7 +119,7 @@ extern const EntityArchetype kGoldBarsArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldBars),
 };
 
 } // namespace splonks::entities::money

@@ -145,6 +145,9 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Caveman, entities::caveman::kCavemanArchetype, "Caveman");
     SetArchetype(EntityType::Spider, entities::spider::kSpiderArchetype, "Spider");
     SetArchetype(EntityType::SpiderHang, entities::spider_hang::kSpiderHangArchetype, "SpiderHang");
+    SetArchetype(EntityType::RageSpider, entities::spider::kRageSpiderArchetype, "RageSpider");
+    SetArchetype(EntityType::RageSpiderHang, entities::spider_hang::kRageSpiderHangArchetype, "RageSpiderHang");
+    SetArchetype(EntityType::GiantSpider, entities::spider::kGiantSpiderArchetype, "GiantSpider");
     SetArchetype(EntityType::GiantSpiderHang, entities::spider_hang::kGiantSpiderHangArchetype, "GiantSpiderHang");
     SetArchetype(EntityType::Scarab, entities::scarab::kScarabArchetype, "Scarab");
     g_entity_archetypes_populated = true;
