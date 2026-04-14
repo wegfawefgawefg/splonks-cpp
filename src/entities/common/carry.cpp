@@ -9,6 +9,20 @@
 
 namespace splonks::entities::common {
 
+namespace {
+
+void ApplyHeldState(Entity& entity) {
+    if (entity.type_ != EntityType::Damsel) {
+        return;
+    }
+
+    entity.condition = EntityCondition::Stunned;
+    entity.stun_timer = kDefaultStunTimer;
+    TrySetAnimation(entity, EntityDisplayState::Stunned);
+}
+
+} // namespace
+
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return;
@@ -107,6 +121,7 @@ void UpdateCarryAndBackItems(
                         state.entity_manager.GetEntityMut(*trying_to_pick_this_up_vid)) {
                     pick_up_entity->held_by_vid = entity_vid;
                     pick_up_entity->attachment_mode = AttachmentMode::Held;
+                    ApplyHeldState(*pick_up_entity);
                 }
             }
         }
@@ -234,6 +249,7 @@ void UpdateCarryAndBackItems(
                 holding->can_collide = false;
                 holding->held_by_vid = entity.vid;
                 holding->attachment_mode = AttachmentMode::Held;
+                ApplyHeldState(*holding);
                 holding->facing = entity_facing;
                 const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
                 if (entity_climbing) {

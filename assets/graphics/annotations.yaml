@@ -4392,19 +4392,19 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 0
-      y: 0
+      x: 5
+      y: 8
     tags: []
     pbox:
-      x: 0
+      x: 4
       y: 0
-      w: 0
-      h: 0
+      w: 7
+      h: 16
     cbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+      x: 4
+      y: 1
+      w: 7
+      h: 15
     tile: false
     emit_point:
       x: 0
@@ -4426,15 +4426,15 @@ sprites:
       y: 0
     tags: []
     pbox:
-      x: 0
+      x: 4
       y: 0
-      w: 0
-      h: 0
+      w: 7
+      h: 16
     cbox:
-      x: 0
+      x: 4
       y: 0
-      w: 0
-      h: 0
+      w: 7
+      h: 16
     tile: false
     emit_point:
       x: 0

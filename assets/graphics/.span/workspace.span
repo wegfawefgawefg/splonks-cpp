@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "0327ab1f-f525-4a6a-877a-68b30f7dac11",
+  "selectedAnnotationId": "dc1b58ed-3caa-47a5-9902-7e4fd19fad00",
   "sheets": [
     {
       "path": "images/title.png",
@@ -6508,21 +6508,21 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 5,
+              "y": 8
             },
             "tags": [],
             "pbox": {
-              "x": 0,
+              "x": 4,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 7,
+              "h": 16
             },
             "cbox": {
-              "x": 0,
-              "y": 0,
-              "w": 0,
-              "h": 0
+              "x": 4,
+              "y": 1,
+              "w": 7,
+              "h": 15
             },
             "tile": false,
             "emit_point": {
@@ -6556,16 +6556,16 @@
             },
             "tags": [],
             "pbox": {
-              "x": 0,
+              "x": 4,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 7,
+              "h": 16
             },
             "cbox": {
-              "x": 0,
+              "x": 4,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 7,
+              "h": 16
             },
             "tile": false,
             "emit_point": {
@@ -6579,9 +6579,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 13.107,
-        "centerX": 39.71160448615244,
-        "centerY": 225.2994583047227
+        "zoom": 10.486,
+        "centerX": 94.36391378981499,
+        "centerY": 236.69654777798968
       }
     },
     {
