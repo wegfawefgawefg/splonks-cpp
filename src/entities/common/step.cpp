@@ -24,11 +24,18 @@ void StepStunTimer(std::size_t entity_idx, State& state) {
         if (entity.stun_timer == 0) {
             entity.condition = EntityCondition::Normal;
             TrySetAnimation(entity, EntityDisplayState::Neutral);
-        } else {
-            if (entity.stun_timer > 0) {
-                entity.stun_timer -= 1;
-            }
+            return;
         }
+
+        const bool held = entity.held_by_vid.has_value();
+        const bool can_advance_stun_timer =
+            (entity.stun_recovers_on_ground && entity.grounded) ||
+            (entity.stun_recovers_while_held && held);
+        if (!can_advance_stun_timer) {
+            return;
+        }
+
+        entity.stun_timer -= 1;
     }
 }
 

@@ -26,6 +26,8 @@ extern const EntityArchetype kPlayerArchetype{
     .hurt_on_contact = false,
     .can_hang_ledge = true,
     .can_be_stunned = true,
+    .stun_recovers_on_ground = true,
+    .stun_recovers_while_held = false,
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

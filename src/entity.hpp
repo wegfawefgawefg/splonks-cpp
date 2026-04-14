@@ -51,6 +51,8 @@ struct Entity {
     bool grounded = false;
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;
+    bool stun_recovers_on_ground = true;
+    bool stun_recovers_while_held = true;
     bool can_be_picked_up = true;
     bool impassable = false;
     float fall_distance = 0.0F;

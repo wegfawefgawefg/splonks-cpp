@@ -18,6 +18,8 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.can_go_on_back = archetype.can_go_on_back;
     entity.can_hang_ledge = archetype.can_hang_ledge;
     entity.can_be_stunned = archetype.can_be_stunned;
+    entity.stun_recovers_on_ground = archetype.stun_recovers_on_ground;
+    entity.stun_recovers_while_held = archetype.stun_recovers_while_held;
     entity.size = archetype.size;
     entity.facing = archetype.facing;
     entity.draw_layer = archetype.draw_layer;

@@ -52,6 +52,8 @@ Entity Entity::New() {
     entity.grounded = false;
     entity.coyote_time = 0;
     entity.stun_timer = 0;
+    entity.stun_recovers_on_ground = true;
+    entity.stun_recovers_while_held = true;
     entity.can_be_picked_up = true;
     entity.impassable = false;
     entity.fall_distance = 0.0F;

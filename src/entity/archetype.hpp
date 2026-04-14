@@ -45,6 +45,8 @@ struct EntityArchetype {
     bool can_go_on_back = false;
     bool can_hang_ledge = false;
     bool can_be_stunned = false;
+    bool stun_recovers_on_ground = true;
+    bool stun_recovers_while_held = true;
     bool has_ground_friction = true;
     DrawLayer draw_layer = DrawLayer::Middle;
     LeftOrRight facing = LeftOrRight::Left;

@@ -259,6 +259,8 @@ extern const EntityArchetype kDamselArchetype{
     .impassable = false,
     .hurt_on_contact = false,
     .can_be_stunned = true,
+    .stun_recovers_on_ground = true,
+    .stun_recovers_while_held = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
