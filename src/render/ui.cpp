@@ -36,12 +36,12 @@ const char* GetHudStageLabel(StageType stage_type) {
         return "Blank";
     case StageType::Test1:
         return "Test1";
-    case StageType::Cave1:
-        return "Cave1";
-    case StageType::Cave2:
-        return "Cave2";
-    case StageType::Cave3:
-        return "Cave3";
+    case StageType::SplkMines1:
+        return "Mines";
+    case StageType::SplkMines2:
+        return "Mines 2";
+    case StageType::SplkMines3:
+        return "Mines 3";
     case StageType::Ice1:
         return "Ice1";
     case StageType::Ice2:

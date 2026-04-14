@@ -1,4 +1,4 @@
-#include "stage_gen/hd_mines.hpp"
+#include "stage_gen/splk_mines.hpp"
 
 #include "frame_data_id.hpp"
 #include "utils.hpp"
@@ -9,7 +9,7 @@
 #include <string_view>
 #include <vector>
 
-namespace splonks::stage_gen::hd_mines {
+namespace splonks::stage_gen::splk_mines {
 
 namespace {
 
@@ -33,11 +33,11 @@ int PickIndex(std::size_t size) {
 
 int GetLevelNumber(StageType stage_type) {
     switch (stage_type) {
-    case StageType::Cave1:
+    case StageType::SplkMines1:
         return 1;
-    case StageType::Cave2:
+    case StageType::SplkMines2:
         return 2;
-    case StageType::Cave3:
+    case StageType::SplkMines3:
         return 3;
     default:
         return 1;
@@ -1600,9 +1600,9 @@ ResolvedRoom ResolveRoom(
 
 } // namespace
 
-bool UsesHdMinesGenerator(StageType stage_type) {
-    return stage_type == StageType::Cave1 || stage_type == StageType::Cave2 ||
-           stage_type == StageType::Cave3;
+bool UsesSplkMinesGenerator(StageType stage_type) {
+    return stage_type == StageType::SplkMines1 || stage_type == StageType::SplkMines2 ||
+           stage_type == StageType::SplkMines3;
 }
 
 Stage GenerateStage(StageType stage_type) {
@@ -1631,9 +1631,9 @@ Stage GenerateStage(StageType stage_type) {
         break;
     case StageType::Blank:
     case StageType::Test1:
-    case StageType::Cave1:
-    case StageType::Cave2:
-    case StageType::Cave3:
+    case StageType::SplkMines1:
+    case StageType::SplkMines2:
+    case StageType::SplkMines3:
         stage.border = Stage::MakeUniformBorder(Tile::CaveDirt);
         break;
     }
@@ -1736,4 +1736,4 @@ const char* GetRoomCodeDebugLabel(int room_code) {
     }
 }
 
-} // namespace splonks::stage_gen::hd_mines
+} // namespace splonks::stage_gen::splk_mines

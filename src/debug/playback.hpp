@@ -48,7 +48,7 @@ struct GameplaySnapshot {
     bool game_over = false;
     bool pause = false;
     bool win = false;
-    std::optional<StageType> next_stage = StageType::Test1;
+    std::optional<StageType> next_stage = StageType::SplkMines1;
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t frame_pause = 0;

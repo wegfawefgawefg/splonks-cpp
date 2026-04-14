@@ -36,9 +36,9 @@ struct BackgroundStamp {
 enum class StageType : int {
     Blank,
     Test1,
-    Cave1,
-    Cave2,
-    Cave3,
+    SplkMines1,
+    SplkMines2,
+    SplkMines3,
     Ice1,
     Ice2,
     Ice3,

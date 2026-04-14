@@ -2,6 +2,7 @@
 #include "tools/tool_archetype.hpp"
 
 #include "entity.hpp"
+#include "entities/common/common.hpp"
 #include "entities/bat.hpp"
 #include "entities/block.hpp"
 #include "entities/jetpack.hpp"
@@ -9,7 +10,7 @@
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 #include "entities/stomp_pad.hpp"
-#include "stage_gen/hd_mines.hpp"
+#include "stage_gen/splk_mines.hpp"
 
 #include <algorithm>
 #include <random>
@@ -28,6 +29,13 @@ constexpr int kStompTestStageHeightTiles = 8;
 constexpr int kBorderTestStageWidthTiles = 10;
 constexpr int kBorderTestStageHeightTiles = 8;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
+
+struct StageCarryover {
+    std::optional<Entity> player;
+    std::optional<Entity> held_item;
+    std::optional<Entity> back_item;
+    std::optional<EntityToolState> player_tools;
+};
 
 unsigned int RandomPercent() {
     static std::random_device device;
@@ -140,6 +148,12 @@ Stage MakeBorderTestStage(const BorderTestLevelConfig& config) {
 void InitCommonStageState(State& state) {
     state.stage_frame = 0;
     state.entity_manager.ClearAllEntities();
+    state.entity_tools.tool_states.clear();
+    state.contact = ContactBookkeeping{};
+    state.particles.Clear();
+    state.player_vid.reset();
+    state.controlled_entity_vid.reset();
+    state.mouse_trailer_vid.reset();
 }
 
 void SpawnPlayer(State& state, const Vec2& pos) {
@@ -168,6 +182,190 @@ void SpawnPlayer(State& state, const Vec2& pos) {
                     true
                 );
             }
+        }
+    }
+}
+
+StageCarryover CaptureStageCarryover(const State& state) {
+    StageCarryover carryover;
+    if (!state.player_vid.has_value()) {
+        return carryover;
+    }
+
+    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
+    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+        return carryover;
+    }
+
+    carryover.player = *player;
+    carryover.player->holding = false;
+    carryover.player->holding_vid.reset();
+    carryover.player->back_vid.reset();
+
+    if (player->holding_vid.has_value()) {
+        if (const Entity* const held_item = state.entity_manager.GetEntity(*player->holding_vid)) {
+            if (held_item->active) {
+                carryover.held_item = *held_item;
+                carryover.player->holding_vid = held_item->vid;
+                carryover.player->holding = true;
+            }
+        }
+    }
+
+    if (player->back_vid.has_value()) {
+        if (const Entity* const back_item = state.entity_manager.GetEntity(*player->back_vid)) {
+            if (back_item->active) {
+                carryover.back_item = *back_item;
+                carryover.player->back_vid = back_item->vid;
+            }
+        }
+    }
+
+    if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player->vid)) {
+        carryover.player_tools = *tools;
+    }
+
+    return carryover;
+}
+
+void RestoreEntitySlot(EntityManager& entity_manager, const Entity& entity) {
+    if (entity.vid.id >= entity_manager.entities.size()) {
+        return;
+    }
+
+    entity_manager.entities[entity.vid.id] = entity;
+    entity_manager.entities[entity.vid.id].active = true;
+
+    const auto it = std::find(
+        entity_manager.available_ids.begin(),
+        entity_manager.available_ids.end(),
+        entity.vid.id
+    );
+    if (it != entity_manager.available_ids.end()) {
+        entity_manager.available_ids.erase(it);
+    }
+}
+
+void PrepareEntityForStageEntry(Entity& entity) {
+    entity.marked_for_destruction = false;
+    entity.vel = Vec2::New(0.0F, 0.0F);
+    entity.acc = Vec2::New(0.0F, 0.0F);
+    entity.grounded = false;
+    entity.coyote_time = 0;
+    entity.dist_traveled_this_frame = 0.0F;
+    entity.jumped_this_frame = false;
+    entity.use_state = UseState{};
+    entity.collided = false;
+    entity.collided_last_frame = false;
+    entity.contact_sound_cooldown = 0;
+    entity.thrown_by.reset();
+    entity.thrown_immunity_timer = 0;
+}
+
+void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
+    if (!carryover.player.has_value()) {
+        return;
+    }
+
+    Entity player = *carryover.player;
+    PrepareEntityForStageEntry(player);
+    RestoreEntitySlot(state.entity_manager, player);
+    state.player_vid = player.vid;
+    state.controlled_entity_vid = player.vid;
+
+    if (carryover.player_tools.has_value()) {
+        state.entity_tools.tool_states.push_back(*carryover.player_tools);
+    }
+
+    if (carryover.held_item.has_value()) {
+        Entity held_item = *carryover.held_item;
+        PrepareEntityForStageEntry(held_item);
+        held_item.held_by_vid = player.vid;
+        held_item.attachment_mode = AttachmentMode::Held;
+        held_item.has_physics = false;
+        held_item.can_collide = false;
+        RestoreEntitySlot(state.entity_manager, held_item);
+    }
+
+    if (carryover.back_item.has_value()) {
+        Entity back_item = *carryover.back_item;
+        PrepareEntityForStageEntry(back_item);
+        back_item.held_by_vid = player.vid;
+        back_item.attachment_mode = AttachmentMode::Back;
+        back_item.has_physics = false;
+        back_item.can_collide = false;
+        RestoreEntitySlot(state.entity_manager, back_item);
+    }
+}
+
+void PlacePlayerAtEntrance(State& state) {
+    const IVec2 starting_room = state.stage.GetStartingRoom();
+    const auto [starting_room_tl, starting_room_br] =
+        state.stage.GetRoomCorners(ToUVec2(starting_room));
+
+    bool door_found = false;
+    for (unsigned int y = starting_room_tl.y; y < starting_room_br.y && !door_found; ++y) {
+        for (unsigned int x = starting_room_tl.x; x < starting_room_br.x; ++x) {
+            if (state.stage.GetTile(x, y) != Tile::Entrance) {
+                continue;
+            }
+
+            if (state.player_vid.has_value()) {
+                if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+                    player->pos = Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
+                                  static_cast<float>(kTileSize);
+                    player->vel = Vec2::New(0.0F, 0.0F);
+                    player->acc = Vec2::New(0.0F, 0.0F);
+                }
+            }
+            door_found = true;
+            break;
+        }
+    }
+
+    if (!door_found) {
+        throw std::runtime_error(
+            "No door found in starting room. You have a game breaking bug in the map generation "
+            "code. Don't ship with this in.");
+    }
+}
+
+void SnapAttachedItemsToPlayer(State& state) {
+    if (!state.player_vid.has_value()) {
+        return;
+    }
+
+    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
+    if (player == nullptr) {
+        return;
+    }
+
+    const Vec2 player_center = player->GetCenter();
+
+    if (player->holding_vid.has_value()) {
+        if (Entity* const held_item = state.entity_manager.GetEntityMut(*player->holding_vid)) {
+            const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
+            held_item->facing = player->facing;
+            held_item->draw_layer = DrawLayer::Foreground;
+            held_item->SetCenter(
+                player->facing == LeftOrRight::Left
+                    ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
+                    : player_center + hold_offset
+            );
+        }
+    }
+
+    if (player->back_vid.has_value()) {
+        if (Entity* const back_item = state.entity_manager.GetEntityMut(*player->back_vid)) {
+            const Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
+            back_item->facing = player->facing;
+            back_item->draw_layer = DrawLayer::Background;
+            TrySetAnimation(*back_item, EntityDisplayState::Neutral);
+            back_item->SetCenter(
+                player->facing == LeftOrRight::Left
+                    ? player_center + Vec2::New(-back_offset.x, back_offset.y)
+                    : player_center + back_offset
+            );
         }
     }
 }
@@ -243,17 +441,19 @@ void InitBorderTestStage(State& state) {
 
 } // namespace
 
-void InitStage(State& state) {
+void InitStage(State& state, bool preserve_player_state) {
+    const StageCarryover carryover =
+        preserve_player_state ? CaptureStageCarryover(state) : StageCarryover{};
     InitCommonStageState(state);
 
-    const IVec2 starting_room = state.stage.GetStartingRoom();
-    const auto [starting_room_tl, starting_room_br] =
-        state.stage.GetRoomCorners(ToUVec2(starting_room));
-
-    SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
+    if (carryover.player.has_value()) {
+        RestoreStageCarryover(state, carryover);
+    } else {
+        SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
+    }
     SpawnAuthoredStageEntities(state);
 
-    if (!stage_gen::hd_mines::UsesHdMinesGenerator(state.stage.stage_type)) {
+    if (!stage_gen::splk_mines::UsesSplkMinesGenerator(state.stage.stage_type)) {
         // This mirrors the old Rust stage init population pass.
         for (int i = 0; i < 2; ++i) {
             (void)i;
@@ -330,34 +530,16 @@ void InitStage(State& state) {
         }
     }
 
-    bool door_found = false;
-    for (unsigned int y = starting_room_tl.y; y < starting_room_br.y && !door_found; ++y) {
-        for (unsigned int x = starting_room_tl.x; x < starting_room_br.x; ++x) {
-            if (state.stage.GetTile(x, y) == Tile::Entrance) {
-                if (state.player_vid) {
-                    if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-                        player->pos = Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
-                                      static_cast<float>(kTileSize);
-                        player->vel = Vec2::New(0.0F, 0.0F);
-                    }
-                }
-                door_found = true;
-                break;
-            }
-        }
-    }
-
-    if (!door_found) {
-        throw std::runtime_error(
-            "No door found in starting room. You have a game breaking bug in the map generation "
-            "code. Don't ship with this in.");
+    PlacePlayerAtEntrance(state);
+    if (carryover.player.has_value()) {
+        SnapAttachedItemsToPlayer(state);
     }
 }
 
 void InitDebugLevel(State& state) {
     switch (state.debug_level.kind) {
-    case DebugLevelKind::Cave1:
-        state.stage = Stage::New(StageType::Cave1);
+    case DebugLevelKind::SplkMines1:
+        state.stage = Stage::New(StageType::SplkMines1);
         InitStage(state);
         break;
     case DebugLevelKind::HangTest:

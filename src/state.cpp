@@ -46,7 +46,7 @@ State State::New() {
     state.entity_manager = EntityManager::New();
     state.particles = ParticleSystem{};
     state.sid = SID::New();
-    state.next_stage = StageType::Test1;
+    state.next_stage = StageType::SplkMines1;
     state.stage_lighting = StageLighting::New();
     state.player_vid.reset();
     state.controlled_entity_vid.reset();

@@ -209,9 +209,9 @@ TileSet TileSetForStageType(StageType stage_type) {
         return TileSet::Boss;
     case StageType::Blank:
     case StageType::Test1:
-    case StageType::Cave1:
-    case StageType::Cave2:
-    case StageType::Cave3:
+    case StageType::SplkMines1:
+    case StageType::SplkMines2:
+    case StageType::SplkMines3:
         return TileSet::Cave;
     }
 

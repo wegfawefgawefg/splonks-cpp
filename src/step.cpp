@@ -129,13 +129,13 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         case StageType::Test1:
             state.next_stage = StageType::Test1;
             break;
-        case StageType::Cave1:
-            state.next_stage = StageType::Cave2;
+        case StageType::SplkMines1:
+            state.next_stage = StageType::SplkMines2;
             break;
-        case StageType::Cave2:
-            state.next_stage = StageType::Cave3;
+        case StageType::SplkMines2:
+            state.next_stage = StageType::SplkMines3;
             break;
-        case StageType::Cave3:
+        case StageType::SplkMines3:
             state.next_stage = StageType::Ice1;
             break;
         case StageType::Ice1:

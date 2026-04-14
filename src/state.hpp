@@ -43,7 +43,7 @@ enum class Mode {
 constexpr std::uint32_t kStageSettleFrames = 100;
 
 enum class DebugLevelKind {
-    Cave1,
+    SplkMines1,
     HangTest,
     StompTest,
     BorderTest,
@@ -68,7 +68,7 @@ struct BorderTestLevelConfig {
 };
 
 struct DebugLevelConfig {
-    DebugLevelKind kind = DebugLevelKind::Cave1;
+    DebugLevelKind kind = DebugLevelKind::SplkMines1;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
 };
@@ -126,7 +126,7 @@ struct State {
     bool game_over = false;
     bool pause = false;
     bool win = false;
-    std::optional<StageType> next_stage = StageType::Test1;
+    std::optional<StageType> next_stage = StageType::SplkMines1;
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t frame_pause = 0;

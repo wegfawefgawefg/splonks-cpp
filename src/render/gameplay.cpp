@@ -45,12 +45,12 @@ const char* GetStageTransitionTitle(const State& state) {
         return "Test1";
     case StageType::Blank:
         return "Blank?? Expect crash";
-    case StageType::Cave1:
-        return "Cave";
-    case StageType::Cave2:
-        return "Cave 2";
-    case StageType::Cave3:
-        return "Cave 3";
+    case StageType::SplkMines1:
+        return "Mines";
+    case StageType::SplkMines2:
+        return "Mines 2";
+    case StageType::SplkMines3:
+        return "Mines 3";
     case StageType::Ice1:
         return "Ice";
     case StageType::Ice2:
@@ -81,8 +81,8 @@ const char* GetStageTransitionMessage(const State& state) {
         return "!!!!expect a crash on a press!!!!";
     case StageType::Test1:
         return "You feel like figuring out bugs...";
-    case StageType::Cave1:
-        return "You enter the cave...";
+    case StageType::SplkMines1:
+        return "You enter the mines...";
     case StageType::Ice1:
         return "Its getting cold...";
     case StageType::Desert1:

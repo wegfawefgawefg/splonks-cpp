@@ -2,7 +2,7 @@
 
 #include "entity.hpp"
 #include "room.hpp"
-#include "stage_gen/hd_mines.hpp"
+#include "stage_gen/splk_mines.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -81,8 +81,8 @@ Stage Stage::NewBlank() {
 }
 
 Stage Stage::New(StageType stage_type) {
-    if (stage_gen::hd_mines::UsesHdMinesGenerator(stage_type)) {
-        return stage_gen::hd_mines::GenerateStage(stage_type);
+    if (stage_gen::splk_mines::UsesSplkMinesGenerator(stage_type)) {
+        return stage_gen::splk_mines::GenerateStage(stage_type);
     }
 
     std::vector<std::vector<int>> rooms(
@@ -170,9 +170,9 @@ Stage Stage::New(StageType stage_type) {
         break;
     case StageType::Blank:
     case StageType::Test1:
-    case StageType::Cave1:
-    case StageType::Cave2:
-    case StageType::Cave3:
+    case StageType::SplkMines1:
+    case StageType::SplkMines2:
+    case StageType::SplkMines3:
         border_tile = Tile::CaveDirt;
         break;
     }

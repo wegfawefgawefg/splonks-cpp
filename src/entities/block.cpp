@@ -36,9 +36,9 @@ FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
         return frame_data_ids::BossBlock;
     case StageType::Blank:
     case StageType::Test1:
-    case StageType::Cave1:
-    case StageType::Cave2:
-    case StageType::Cave3:
+    case StageType::SplkMines1:
+    case StageType::SplkMines2:
+    case StageType::SplkMines3:
         return frame_data_ids::CaveBlock;
     }
 

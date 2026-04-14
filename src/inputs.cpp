@@ -243,7 +243,7 @@ void ProcessInputStageTransition(
     if (state.menu_inputs.confirm.down && state.scene_frame >= 60) {
         if (state.next_stage) {
             state.stage = Stage::New(*state.next_stage);
-            InitStage(state);
+            InitStage(state, true);
             graphics.ResetTileVariations();
             InvalidateStageLighting(state);
             state.scene_frame = 0;
@@ -266,9 +266,7 @@ void ProcessInputGameOver(
     (void)audio;
     (void)dt;
     if (state.menu_inputs.confirm.down) {
-        if (state.next_stage != std::optional<StageType>(StageType::Test1)) {
-            state.next_stage = StageType::Cave1;
-        }
+        state.next_stage = StageType::SplkMines1;
         graphics.camera.rotation = 0.0F;
         InvalidateStageLighting(state);
         state.SetMode(Mode::StageTransition);
