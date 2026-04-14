@@ -41,7 +41,6 @@ void StepEntityLogicAsSnake(
     Audio& audio,
     float dt
 ) {
-    (void)graphics;
     (void)audio;
     (void)dt;
 
@@ -64,8 +63,8 @@ void StepEntityLogicAsSnake(
     }
 
     int direction = snake.facing == LeftOrRight::Left ? -1 : 1;
-    if (common::HasWallAheadForGroundWalker(snake, state, direction) ||
-        !common::HasGroundAheadForGroundWalker(snake, state, direction)) {
+    if (common::HasWallAheadForGroundWalker(snake, state, graphics, direction) ||
+        !common::HasGroundAheadForGroundWalker(snake, state, graphics, direction)) {
         snake.facing = snake.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
         direction = -direction;
     }

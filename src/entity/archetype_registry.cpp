@@ -10,6 +10,7 @@
 #include "entities/caveman.hpp"
 #include "entities/chest.hpp"
 #include "entities/damsel.hpp"
+#include "entities/dvdlogo.hpp"
 #include "entities/dice.hpp"
 #include "entities/emerald_big.hpp"
 #include "entities/gear_items.hpp"
@@ -79,6 +80,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Player, entities::player::kPlayerArchetype, "Player");
     SetArchetype(EntityType::Block, entities::block::kBlockArchetype, "Block");
     SetArchetype(EntityType::GhostBall, entities::ghost_ball::kGhostBallArchetype, "GhostBall");
+    SetArchetype(EntityType::DvdLogo, entities::dvdlogo::kDvdLogoArchetype, "DvdLogo");
     SetArchetype(EntityType::Bat, entities::bat::kBatArchetype, "Bat");
     SetArchetype(EntityType::Rock, entities::rock::kRockArchetype, "Rock");
     SetArchetype(EntityType::MouseTrailer, entities::mouse_trailer::kMouseTrailerArchetype, "MouseTrailer");

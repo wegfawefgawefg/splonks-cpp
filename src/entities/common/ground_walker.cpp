@@ -10,20 +10,35 @@ bool IsSolidTileAtWorldPos(const State& state, const IVec2& world_pos) {
     return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);
 }
 
-bool HasWallAheadForGroundWalker(const Entity& entity, const State& state, int direction) {
+bool HasWallAheadForGroundWalker(
+    const Entity& entity,
+    const State& state,
+    const Graphics& graphics,
+    int direction
+) {
     const auto [tl, br] = entity.GetBounds();
-    const int sample_x = direction < 0 ? static_cast<int>(tl.x) - 1 : static_cast<int>(br.x) + 1;
-    const int sample_y_top = static_cast<int>(tl.y) + 1;
-    const int sample_y_bottom = static_cast<int>(br.y) - 1;
-    return IsSolidTileAtWorldPos(state, IVec2::New(sample_x, sample_y_top)) ||
-           IsSolidTileAtWorldPos(state, IVec2::New(sample_x, sample_y_bottom));
+    const float sample_x = direction < 0 ? tl.x - 1.0F : br.x + 1.0F;
+    const AABB probe = AABB::New(
+        Vec2::New(sample_x, tl.y + 1.0F),
+        Vec2::New(sample_x, br.y - 1.0F)
+    );
+    return AabbHitsBlockingWorldGeometryOrImpassableEntities(state, graphics, probe, entity.vid);
 }
 
-bool HasGroundAheadForGroundWalker(const Entity& entity, const State& state, int direction) {
+bool HasGroundAheadForGroundWalker(
+    const Entity& entity,
+    const State& state,
+    const Graphics& graphics,
+    int direction
+) {
     const auto [tl, br] = entity.GetBounds();
-    const int sample_x = direction < 0 ? static_cast<int>(tl.x) - 1 : static_cast<int>(br.x) + 1;
-    const int sample_y = static_cast<int>(br.y) + 1;
-    return IsSolidTileAtWorldPos(state, IVec2::New(sample_x, sample_y));
+    const float sample_x = direction < 0 ? tl.x - 1.0F : br.x + 1.0F;
+    const float sample_y = br.y + 1.0F;
+    const AABB probe = AABB::New(
+        Vec2::New(sample_x, sample_y),
+        Vec2::New(sample_x, sample_y)
+    );
+    return AabbHitsBlockingWorldGeometryOrImpassableEntities(state, graphics, probe, entity.vid);
 }
 
 } // namespace splonks::entities::common

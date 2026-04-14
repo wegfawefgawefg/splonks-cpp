@@ -100,13 +100,13 @@ bool CanSeePlayerAhead(
     return hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() && *hit.entity_vid == player->vid;
 }
 
-void MaybeWallHopWhileIdle(Entity& caveman, const State& state) {
+void MaybeWallHopWhileIdle(Entity& caveman, const State& state, const Graphics& graphics) {
     if (!caveman.grounded) {
         return;
     }
 
-    const bool touching_left_wall = common::HasWallAheadForGroundWalker(caveman, state, -1);
-    const bool touching_right_wall = common::HasWallAheadForGroundWalker(caveman, state, 1);
+    const bool touching_left_wall = common::HasWallAheadForGroundWalker(caveman, state, graphics, -1);
+    const bool touching_right_wall = common::HasWallAheadForGroundWalker(caveman, state, graphics, 1);
     if (!touching_left_wall && !touching_right_wall) {
         return;
     }
@@ -152,7 +152,7 @@ void StepEntityLogicAsCaveman(
 
     if (caveman.ai_state == EntityAiState::Pursuing) {
         int direction = caveman.facing == LeftOrRight::Left ? -1 : 1;
-        if (common::HasWallAheadForGroundWalker(caveman, state, direction)) {
+        if (common::HasWallAheadForGroundWalker(caveman, state, graphics, direction)) {
             caveman.facing = caveman.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
             direction = -direction;
         }
@@ -166,7 +166,7 @@ void StepEntityLogicAsCaveman(
     if (caveman.ai_state == EntityAiState::Idle) {
         caveman.vel.x = 0.0F;
         TrySetAnimation(caveman, EntityDisplayState::Neutral);
-        MaybeWallHopWhileIdle(caveman, state);
+        MaybeWallHopWhileIdle(caveman, state, graphics);
         if (caveman.counter_a > 0.0F) {
             caveman.counter_a -= 1.0F;
             return;
@@ -178,8 +178,8 @@ void StepEntityLogicAsCaveman(
     }
 
     int direction = caveman.facing == LeftOrRight::Left ? -1 : 1;
-    if (common::HasWallAheadForGroundWalker(caveman, state, direction) ||
-        !common::HasGroundAheadForGroundWalker(caveman, state, direction)) {
+    if (common::HasWallAheadForGroundWalker(caveman, state, graphics, direction) ||
+        !common::HasGroundAheadForGroundWalker(caveman, state, graphics, direction)) {
         caveman.facing = caveman.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
         direction = -direction;
     }

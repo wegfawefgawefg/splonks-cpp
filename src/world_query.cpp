@@ -172,6 +172,72 @@ std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AAB
     return QueryTilesInWorldRect(stage, ToIVec2(area.tl), ToIVec2(area.br));
 }
 
+bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area) {
+    if (area.tl.x < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Left)) {
+        return true;
+    }
+    if (area.tl.y < 0.0F && stage.IsBorderSideBlocking(StageBorderSideKind::Top)) {
+        return true;
+    }
+    if (area.br.x > static_cast<float>(stage.GetWidth() - 1) &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Right)) {
+        return true;
+    }
+    if (area.br.y > static_cast<float>(stage.GetHeight() - 1) &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
+        return true;
+    }
+    return false;
+}
+
+bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(stage, area)) {
+        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area) {
+    return AabbTouchesBlockingStageBounds(stage, area) || AabbHitsBlockingTiles(stage, area);
+}
+
+bool AabbHitsImpassableEntities(
+    const State& state,
+    const Graphics& graphics,
+    const AABB& area,
+    std::optional<VID> exclude_vid
+) {
+    const Vec2 anchor = (area.tl + area.br) / 2.0F;
+    for (const VID& vid : QueryEntitiesInAabb(state, area, exclude_vid)) {
+        const Entity* const entity = state.entity_manager.GetEntity(vid);
+        if (entity == nullptr || !entity->active || !entity->impassable) {
+            continue;
+        }
+
+        const AABB entity_aabb = GetNearestWorldAabb(
+            state.stage,
+            anchor,
+            entities::common::GetContactAabbForEntity(*entity, graphics)
+        );
+        if (AabbsIntersect(area, entity_aabb)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AabbHitsBlockingWorldGeometryOrImpassableEntities(
+    const State& state,
+    const Graphics& graphics,
+    const AABB& area,
+    std::optional<VID> exclude_vid
+) {
+    return AabbHitsBlockingWorldGeometry(state.stage, area) ||
+           AabbHitsImpassableEntities(state, graphics, area, exclude_vid);
+}
+
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos) {
     const IVec2 wrapped = stage.WrapTileCoord(tile_pos);
     if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {

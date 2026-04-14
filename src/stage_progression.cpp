@@ -3,6 +3,8 @@
 #include "stage_init.hpp"
 #include "state.hpp"
 
+#include <algorithm>
+
 namespace splonks {
 
 StageLoadTarget StageLoadTarget::ForStageType(StageType stage_type) {
@@ -12,10 +14,11 @@ StageLoadTarget StageLoadTarget::ForStageType(StageType stage_type) {
     return target;
 }
 
-StageLoadTarget StageLoadTarget::ForDebugLevel(DebugLevelKind debug_level) {
+StageLoadTarget StageLoadTarget::ForDebugLevel(DebugLevelKind debug_level, std::uint8_t debug_variant) {
     StageLoadTarget target;
     target.kind = StageLoadTargetKind::DebugLevel;
     target.debug_level = debug_level;
+    target.debug_variant = debug_variant;
     return target;
 }
 
@@ -29,6 +32,8 @@ const char* GetDebugLevelKindName(DebugLevelKind kind) {
         return "StompTest";
     case DebugLevelKind::BorderTest:
         return "BorderTest";
+    case DebugLevelKind::MazeDoorTest:
+        return "MazeDoorTest";
     }
 
     return "Unknown";
@@ -68,7 +73,11 @@ void ApplyPendingStageTransition(State& state) {
         break;
     case StageLoadTargetKind::DebugLevel:
         state.debug_level.kind = target.destination.debug_level;
-        InitDebugLevel(state);
+        if (target.destination.debug_level == DebugLevelKind::MazeDoorTest) {
+            const std::uint8_t room_index = std::min<std::uint8_t>(target.destination.debug_variant, 2);
+            state.debug_level.maze_door_test.room = static_cast<MazeDoorTestRoom>(room_index);
+        }
+        InitDebugLevel(state, target.preserve_player_state);
         break;
     }
 }

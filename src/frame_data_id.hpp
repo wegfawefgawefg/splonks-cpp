@@ -28,6 +28,7 @@ inline FrameDataId HashFrameDataId(const std::string& text) {
 namespace frame_data_ids {
 
 constexpr FrameDataId NoSprite = HashFrameDataIdConstexpr("no_sprite");
+constexpr FrameDataId Exit = HashFrameDataIdConstexpr("exit");
 constexpr FrameDataId PlayerStanding = HashFrameDataIdConstexpr("player_standing");
 constexpr FrameDataId PlayerStandingHolding =
     HashFrameDataIdConstexpr("player_standing_holding");

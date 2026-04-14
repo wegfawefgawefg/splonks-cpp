@@ -11,6 +11,7 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::None:
     case EntityType::Block:
     case EntityType::GhostBall:
+    case EntityType::DvdLogo:
     case EntityType::Bat:
     case EntityType::Rock:
     case EntityType::MouseTrailer:

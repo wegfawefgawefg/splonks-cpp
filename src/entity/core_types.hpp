@@ -29,6 +29,7 @@ enum class EntityType {
     Player,
     Block,
     GhostBall,
+    DvdLogo,
     Bat,
     Rock,
     MouseTrailer,

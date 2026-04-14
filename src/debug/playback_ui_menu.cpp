@@ -239,7 +239,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     }
 
     int level_kind = static_cast<int>(state.debug_level.kind);
-    const char* level_names[] = {"SplkMines1", "HangTest", "StompTest", "BorderTest"};
+    const char* level_names[] = {"SplkMines1", "HangTest", "StompTest", "BorderTest", "MazeDoorTest"};
     ImGui::Combo("Preset", &level_kind, level_names, IM_ARRAYSIZE(level_names));
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
@@ -268,6 +268,11 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         );
     } else if (state.debug_level.kind == DebugLevelKind::BorderTest) {
         ImGui::TextUnformatted("Use the Border window to edit side tiles, wrap, and void death.");
+    } else if (state.debug_level.kind == DebugLevelKind::MazeDoorTest) {
+        int maze_room = static_cast<int>(state.debug_level.maze_door_test.room);
+        const char* maze_room_names[] = {"RoomA", "RoomB", "RoomC"};
+        ImGui::Combo("Maze Room", &maze_room, maze_room_names, IM_ARRAYSIZE(maze_room_names));
+        state.debug_level.maze_door_test.room = static_cast<MazeDoorTestRoom>(maze_room);
     }
 
     if (ImGui::Button("Regenerate")) {

@@ -45,6 +45,8 @@ const char* DebugLevelKindToString(DebugLevelKind kind) {
         return "StompTest";
     case DebugLevelKind::BorderTest:
         return "BorderTest";
+    case DebugLevelKind::MazeDoorTest:
+        return "MazeDoorTest";
     }
     return "Unknown";
 }

@@ -170,6 +170,7 @@ add_executable(splonks-cpp
     src/entities/common/throw.cpp
     src/entities/common/tool_use.cpp
     src/entities/damsel.cpp
+    src/entities/dvdlogo.cpp
     src/entities/dice.cpp
     src/entities/emerald_big.cpp
     src/entities/gear_items.cpp

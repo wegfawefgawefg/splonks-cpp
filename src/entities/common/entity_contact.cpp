@@ -124,6 +124,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
         };
     case EntityType::None:
     case EntityType::GhostBall:
+    case EntityType::DvdLogo:
     case EntityType::Bat:
     case EntityType::Rock:
     case EntityType::MouseTrailer:

@@ -49,6 +49,12 @@ struct HangTestLevelConfig {
     int cutout_height_tiles = 2;
 };
 
+enum class MazeDoorTestRoom : std::uint8_t {
+    RoomA,
+    RoomB,
+    RoomC,
+};
+
 struct BorderTestLevelConfig {
     Tile left_tile = Tile::Air;
     Tile right_tile = Tile::Air;
@@ -61,10 +67,15 @@ struct BorderTestLevelConfig {
     std::optional<int> void_death_y = std::nullopt;
 };
 
+struct MazeDoorTestLevelConfig {
+    MazeDoorTestRoom room = MazeDoorTestRoom::RoomA;
+};
+
 struct DebugLevelConfig {
     DebugLevelKind kind = DebugLevelKind::SplkMines1;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
+    MazeDoorTestLevelConfig maze_door_test;
 };
 
 struct DebugOverlayState {

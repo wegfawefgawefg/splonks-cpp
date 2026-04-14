@@ -28,6 +28,21 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
     const IVec2& br
 );
 std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AABB& area);
+bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area);
+bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area);
+bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area);
+bool AabbHitsImpassableEntities(
+    const State& state,
+    const Graphics& graphics,
+    const AABB& area,
+    std::optional<VID> exclude_vid = std::nullopt
+);
+bool AabbHitsBlockingWorldGeometryOrImpassableEntities(
+    const State& state,
+    const Graphics& graphics,
+    const AABB& area,
+    std::optional<VID> exclude_vid = std::nullopt
+);
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos);
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, const IVec2& world_pos);
 std::vector<VID> QueryEntitiesInAabb(

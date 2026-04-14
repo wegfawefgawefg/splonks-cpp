@@ -5,6 +5,6 @@
 namespace splonks {
 
 void InitStage(State& state, bool preserve_player_state = false);
-void InitDebugLevel(State& state);
+void InitDebugLevel(State& state, bool preserve_player_state = false);
 
 } // namespace splonks

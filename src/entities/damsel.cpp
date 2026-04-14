@@ -168,9 +168,9 @@ bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graph
 }
 
 
-void StepPanicRun(Entity& damsel, const State& state) {
+void StepPanicRun(Entity& damsel, const State& state, const Graphics& graphics) {
     int direction = damsel.facing == LeftOrRight::Left ? -1 : 1;
-    if (common::HasWallAheadForGroundWalker(damsel, state, direction)) {
+    if (common::HasWallAheadForGroundWalker(damsel, state, graphics, direction)) {
         damsel.facing = damsel.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
         direction = -direction;
     }
@@ -236,7 +236,7 @@ void StepEntityLogicAsDamsel(
 
     if (damsel.condition == EntityCondition::Normal &&
         damsel.ai_state == EntityAiState::Patrolling && !damsel.held_by_vid.has_value()) {
-        StepPanicRun(damsel, state);
+        StepPanicRun(damsel, state, graphics);
     }
 
     if (damsel.condition == EntityCondition::Normal &&

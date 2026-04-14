@@ -28,6 +28,8 @@ constexpr int kStompTestStageWidthTiles = 10;
 constexpr int kStompTestStageHeightTiles = 8;
 constexpr int kBorderTestStageWidthTiles = 10;
 constexpr int kBorderTestStageHeightTiles = 8;
+constexpr int kMazeDoorTestStageWidthTiles = 12;
+constexpr int kMazeDoorTestStageHeightTiles = 8;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
 
 struct StageCarryover {
@@ -145,6 +147,67 @@ Stage MakeBorderTestStage(const BorderTestLevelConfig& config) {
     return stage;
 }
 
+
+void SetStageTile(Stage& stage, int x, int y, Tile tile) {
+    if (x < 0 || y < 0 || x >= static_cast<int>(stage.GetTileWidth()) ||
+        y >= static_cast<int>(stage.GetTileHeight())) {
+        return;
+    }
+    stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = tile;
+}
+
+void BuildMazeDoorTestPerimeter(Stage& stage) {
+    for (int x = 0; x < kMazeDoorTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, 0, Tile::CaveDirt);
+        SetStageTile(stage, x, kMazeDoorTestStageHeightTiles - 1, Tile::CaveDirt);
+    }
+    for (int y = 0; y < kMazeDoorTestStageHeightTiles; ++y) {
+        SetStageTile(stage, 0, y, Tile::CaveDirt);
+        SetStageTile(stage, kMazeDoorTestStageWidthTiles - 1, y, Tile::CaveDirt);
+    }
+}
+
+Stage MakeMazeDoorTestStage(MazeDoorTestRoom room) {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kMazeDoorTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kMazeDoorTestStageWidthTiles), Tile::Air)
+    );
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    BuildMazeDoorTestPerimeter(stage);
+    switch (room) {
+    case MazeDoorTestRoom::RoomA:
+        for (int x = 5; x <= 8; ++x) {
+            SetStageTile(stage, x, 4, Tile::CaveDirt);
+        }
+        break;
+    case MazeDoorTestRoom::RoomB:
+        for (int y = 2; y <= 5; ++y) {
+            SetStageTile(stage, 6, y, Tile::CaveDirt);
+        }
+        SetStageTile(stage, 3, 4, Tile::CaveDirt);
+        SetStageTile(stage, 8, 3, Tile::CaveDirt);
+        break;
+    case MazeDoorTestRoom::RoomC:
+        for (int x = 3; x <= 5; ++x) {
+            SetStageTile(stage, x, 4, Tile::CaveDirt);
+        }
+        for (int x = 7; x <= 9; ++x) {
+            SetStageTile(stage, x, 3, Tile::CaveDirt);
+        }
+        break;
+    }
+
+    return stage;
+}
+
 void InitCommonStageState(State& state) {
     state.stage_frame = 0;
     state.entity_manager.ClearAllEntities();
@@ -184,6 +247,54 @@ void SpawnPlayer(State& state, const Vec2& pos) {
             }
         }
     }
+}
+
+
+void PlacePlayerAtPosition(State& state, const Vec2& pos) {
+    if (!state.player_vid.has_value()) {
+        return;
+    }
+    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
+    if (player == nullptr) {
+        return;
+    }
+    player->pos = pos;
+    player->vel = Vec2::New(0.0F, 0.0F);
+    player->acc = Vec2::New(0.0F, 0.0F);
+}
+
+Vec2 GetMazeDoorTestPlayerSpawn(MazeDoorTestRoom room) {
+    switch (room) {
+    case MazeDoorTestRoom::RoomA:
+        return Vec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
+    case MazeDoorTestRoom::RoomB:
+        return Vec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
+    case MazeDoorTestRoom::RoomC:
+        return Vec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
+    }
+    return Vec2::New(2.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize) - 14.0F);
+}
+
+void SpawnMazeDoorLogo(State& state, const Vec2& pos, const Vec2& vel, MazeDoorTestRoom target_room) {
+    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    if (!vid) {
+        return;
+    }
+    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
+    if (entity == nullptr) {
+        return;
+    }
+
+    SetEntityAs(*entity, EntityType::DvdLogo);
+    entity->pos = pos;
+    entity->vel = vel;
+    entity->transition_target = StageTransitionTarget{
+        .destination = StageLoadTarget::ForDebugLevel(
+            DebugLevelKind::MazeDoorTest,
+            static_cast<std::uint8_t>(target_room)
+        ),
+        .preserve_player_state = true,
+    };
 }
 
 StageCarryover CaptureStageCarryover(const State& state) {
@@ -439,6 +550,57 @@ void InitBorderTestStage(State& state) {
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
 }
 
+
+void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
+    const StageCarryover carryover =
+        preserve_player_state ? CaptureStageCarryover(state) : StageCarryover{};
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const MazeDoorTestRoom room = state.debug_level.maze_door_test.room;
+    const Vec2 spawn_pos = GetMazeDoorTestPlayerSpawn(room);
+    if (carryover.player.has_value()) {
+        RestoreStageCarryover(state, carryover);
+        PlacePlayerAtPosition(state, spawn_pos);
+        SnapAttachedItemsToPlayer(state);
+    } else {
+        SpawnPlayer(state, spawn_pos);
+    }
+
+    switch (room) {
+    case MazeDoorTestRoom::RoomA:
+        SpawnMazeDoorLogo(
+            state,
+            Vec2::New(8.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            Vec2::New(-1.0F, 1.0F),
+            MazeDoorTestRoom::RoomB
+        );
+        break;
+    case MazeDoorTestRoom::RoomB:
+        SpawnMazeDoorLogo(
+            state,
+            Vec2::New(2.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            Vec2::New(1.0F, 1.0F),
+            MazeDoorTestRoom::RoomA
+        );
+        SpawnMazeDoorLogo(
+            state,
+            Vec2::New(8.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            Vec2::New(-1.0F, 1.0F),
+            MazeDoorTestRoom::RoomC
+        );
+        break;
+    case MazeDoorTestRoom::RoomC:
+        SpawnMazeDoorLogo(
+            state,
+            Vec2::New(6.0F * static_cast<float>(kTileSize), 2.0F * static_cast<float>(kTileSize)),
+            Vec2::New(1.0F, 1.0F),
+            MazeDoorTestRoom::RoomA
+        );
+        break;
+    }
+}
+
 } // namespace
 
 void InitStage(State& state, bool preserve_player_state) {
@@ -537,12 +699,12 @@ void InitStage(State& state, bool preserve_player_state) {
     }
 }
 
-void InitDebugLevel(State& state) {
+void InitDebugLevel(State& state, bool preserve_player_state) {
     state.respawn_target = StageLoadTarget::ForDebugLevel(state.debug_level.kind);
     switch (state.debug_level.kind) {
     case DebugLevelKind::SplkMines1:
         state.stage = Stage::New(StageType::SplkMines1);
-        InitStage(state);
+        InitStage(state, preserve_player_state);
         break;
     case DebugLevelKind::HangTest:
         state.stage = MakeHangTestStage(state.debug_level.hang_test);
@@ -555,6 +717,14 @@ void InitDebugLevel(State& state) {
     case DebugLevelKind::BorderTest:
         state.stage = MakeBorderTestStage(state.debug_level.border_test);
         InitBorderTestStage(state);
+        break;
+    case DebugLevelKind::MazeDoorTest:
+        state.stage = MakeMazeDoorTestStage(state.debug_level.maze_door_test.room);
+        state.respawn_target = StageLoadTarget::ForDebugLevel(
+            DebugLevelKind::MazeDoorTest,
+            static_cast<std::uint8_t>(MazeDoorTestRoom::RoomA)
+        );
+        InitMazeDoorTestStage(state, preserve_player_state);
         break;
     }
 }
