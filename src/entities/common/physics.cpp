@@ -450,7 +450,7 @@ void ApplyGroundFriction(std::size_t entity_idx, State& state) {
 
 void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!GetEntityArchetype(entity.type_).has_ground_friction) {
+    if (!entity.has_ground_friction) {
         return;
     }
     ApplyGroundFriction(entity_idx, state);

@@ -15,6 +15,7 @@
 #include "particles/system.hpp"
 #include "tools/tool_archetype.hpp"
 #include "stage.hpp"
+#include "stage_progression.hpp"
 #include "stage_lighting.hpp"
 
 #include <cstdint>
@@ -41,13 +42,6 @@ enum class Mode {
 };
 
 constexpr std::uint32_t kStageSettleFrames = 100;
-
-enum class DebugLevelKind {
-    SplkMines1,
-    HangTest,
-    StompTest,
-    BorderTest,
-};
 
 struct HangTestLevelConfig {
     int stage_height_tiles = 128;
@@ -126,7 +120,8 @@ struct State {
     bool game_over = false;
     bool pause = false;
     bool win = false;
-    std::optional<StageType> next_stage = StageType::SplkMines1;
+    StageLoadTarget respawn_target = StageLoadTarget::ForStageType(StageType::SplkMines1);
+    std::optional<StageTransitionTarget> pending_stage_transition;
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t frame_pause = 0;

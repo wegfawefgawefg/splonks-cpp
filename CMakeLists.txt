@@ -138,6 +138,7 @@ add_executable(splonks-cpp
     src/entity.cpp
     src/entity_tool_inventory.cpp
     src/entity/archetype.cpp
+    src/entity/archetype_restore.cpp
     src/entity/archetype_registry.cpp
     src/entity/display_states.cpp
     src/entity/manager.cpp
@@ -238,6 +239,7 @@ add_executable(splonks-cpp
     src/stage_gen/splk_mines.cpp
     src/stage_gen/test.cpp
     src/stage_break.cpp
+    src/stage_progression.cpp
     src/state.cpp
     src/step.cpp
     src/step_entities.cpp

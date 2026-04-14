@@ -1,35 +1,14 @@
 #pragma once
 
-#include "audio.hpp"
-
 #include <array>
 #include "entity.hpp"
+#include "entity/callbacks.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks {
 
 struct Graphics;
 struct State;
-
-using EntityOnDeath = void (*)(std::size_t entity_idx, State& state, Audio& audio);
-enum class EntityDamageEffectResult {
-    None,
-    Consumed,
-};
-using EntityOnDamage = EntityDamageEffectResult (*)(
-    std::size_t entity_idx,
-    State& state,
-    Audio& audio,
-    DamageType damage_type,
-    unsigned int amount,
-    bool damage_applied
-);
-using EntityOnUse =
-    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
-using EntityStepLogic =
-    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
-using EntityStepPhysics =
-    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 
 struct EntityArchetype {
     EntityType type_ = EntityType::None;

@@ -1,9 +1,11 @@
 #pragma once
 
 #include "entity/core_types.hpp"
+#include "entity/callbacks.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
+#include "stage_progression.hpp"
 #include "stage.hpp"
 #include "utils.hpp"
 
@@ -74,6 +76,7 @@ struct Entity {
     std::uint32_t hang_count = 0;
     bool holding = false;
     std::uint64_t passive_item_flags = 0;
+    std::optional<EntityPassiveItem> passive_item = std::nullopt;
     std::uint32_t money = 0;
     std::uint32_t bombs = 0;
     std::uint32_t ropes = 0;
@@ -89,6 +92,18 @@ struct Entity {
     std::uint32_t movement_flags = 0;
     std::uint32_t health = 0;
     bool hurt_on_contact = false;
+    bool vanish_on_death = false;
+    bool has_ground_friction = true;
+    std::optional<FrameDataId> damage_animation = std::nullopt;
+    std::optional<SoundEffect> damage_sound = std::nullopt;
+    std::optional<SoundEffect> collide_sound = std::nullopt;
+    std::optional<SoundEffect> death_sound_effect = std::nullopt;
+    EntityOnDeath on_death = nullptr;
+    EntityOnDamage on_damage = nullptr;
+    EntityOnUse on_use = nullptr;
+    EntityStepLogic step_logic = nullptr;
+    EntityStepPhysics step_physics = nullptr;
+    std::optional<StageTransitionTarget> transition_target;
     float attack_weight = 0.0F;
     float weight = 0.0F;
     std::uint32_t bomb_throw_delay_countdown = 0;
@@ -166,7 +181,7 @@ void ClearTransientMovementFlags(Entity& entity);
 const char* PassiveItemToString(EntityPassiveItem passive_item);
 bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
 void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);
-bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type);
+bool TryCollectPassiveItem(Entity& entity, const Entity& pickup);
 bool CanRevealEmbeddedTreasure(const Entity& entity);
 void EnableStone(Entity& entity);
 void DisableStone(Entity& entity);

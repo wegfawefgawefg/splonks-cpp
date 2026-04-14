@@ -37,7 +37,8 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.game_over = state.game_over;
     snapshot.pause = state.pause;
     snapshot.win = state.win;
-    snapshot.next_stage = state.next_stage;
+    snapshot.respawn_target = state.respawn_target;
+    snapshot.pending_stage_transition = state.pending_stage_transition;
     snapshot.points = state.points;
     snapshot.deaths = state.deaths;
     snapshot.frame_pause = state.frame_pause;
@@ -86,7 +87,8 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.game_over = snapshot.game_over;
     state.pause = snapshot.pause;
     state.win = snapshot.win;
-    state.next_stage = snapshot.next_stage;
+    state.respawn_target = snapshot.respawn_target;
+    state.pending_stage_transition = snapshot.pending_stage_transition;
     state.points = snapshot.points;
     state.deaths = snapshot.deaths;
     state.frame_pause = snapshot.frame_pause;

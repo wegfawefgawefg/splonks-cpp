@@ -304,7 +304,8 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.game_over);
     WritePod(out, snapshot.pause);
     WritePod(out, snapshot.win);
-    WriteOptionalPod(out, snapshot.next_stage);
+    WritePod(out, snapshot.respawn_target);
+    WriteOptionalPod(out, snapshot.pending_stage_transition);
     WritePod(out, snapshot.points);
     WritePod(out, snapshot.deaths);
     WritePod(out, snapshot.frame_pause);
@@ -351,7 +352,8 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.game_over) &&
            ReadPod(in, snapshot.pause) &&
            ReadPod(in, snapshot.win) &&
-           ReadOptionalPod(in, snapshot.next_stage) &&
+           ReadPod(in, snapshot.respawn_target) &&
+           ReadOptionalPod(in, snapshot.pending_stage_transition) &&
            ReadPod(in, snapshot.points) &&
            ReadPod(in, snapshot.deaths) &&
            ReadPod(in, snapshot.frame_pause) &&

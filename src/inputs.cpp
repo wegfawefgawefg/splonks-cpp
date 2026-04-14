@@ -14,6 +14,7 @@
 #include "stage_wrap.hpp"
 #include "state.hpp"
 #include "stage_lighting.hpp"
+#include "stage_progression.hpp"
 
 #include <algorithm>
 
@@ -241,9 +242,8 @@ void ProcessInputStageTransition(
     }
 
     if (state.menu_inputs.confirm.down && state.scene_frame >= 60) {
-        if (state.next_stage) {
-            state.stage = Stage::New(*state.next_stage);
-            InitStage(state, true);
+        if (state.pending_stage_transition.has_value()) {
+            ApplyPendingStageTransition(state);
             graphics.ResetTileVariations();
             InvalidateStageLighting(state);
             state.scene_frame = 0;
@@ -266,7 +266,7 @@ void ProcessInputGameOver(
     (void)audio;
     (void)dt;
     if (state.menu_inputs.confirm.down) {
-        state.next_stage = StageType::SplkMines1;
+        QueueRespawnTransition(state);
         graphics.camera.rotation = 0.0F;
         InvalidateStageLighting(state);
         state.SetMode(Mode::StageTransition);

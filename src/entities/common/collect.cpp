@@ -163,7 +163,7 @@ bool TryCollectEntityFromContact(
         return true;
     }
 
-    if (!TryCollectPassiveItem(collector, pickup->type_)) {
+    if (!TryCollectPassiveItem(collector, *pickup)) {
         return false;
     }
 

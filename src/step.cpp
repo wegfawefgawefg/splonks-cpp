@@ -3,6 +3,7 @@
 #include "inputs.hpp"
 #include "controls.hpp"
 #include "step_entities.hpp"
+#include "stage_progression.hpp"
 
 namespace splonks {
 
@@ -119,63 +120,66 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         lost = false;
     }
     if (lost) {
+        state.pending_stage_transition.reset();
         audio.PlaySoundEffect(SoundEffect::GameOver);
         state.SetMode(Mode::GameOver);
+    } else if (state.pending_stage_transition.has_value()) {
+        state.mode = Mode::StageTransition;
+        state.frame = 0;
     } else if (IsStageWon(state)) {
         // TODO: make this go into a stage transition tree, instead of looping to the begining lol
         audio.PlaySoundEffect(SoundEffect::StageWin);
 
         switch (state.stage.stage_type) {
         case StageType::Test1:
-            state.next_stage = StageType::Test1;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Test1), true);
             break;
         case StageType::SplkMines1:
-            state.next_stage = StageType::SplkMines2;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::SplkMines2), true);
             break;
         case StageType::SplkMines2:
-            state.next_stage = StageType::SplkMines3;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::SplkMines3), true);
             break;
         case StageType::SplkMines3:
-            state.next_stage = StageType::Ice1;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice1), true);
             break;
         case StageType::Ice1:
-            state.next_stage = StageType::Ice2;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice2), true);
             break;
         case StageType::Ice2:
-            state.next_stage = StageType::Ice3;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice3), true);
             break;
         case StageType::Ice3:
-            state.next_stage = StageType::Desert1;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert1), true);
             break;
         case StageType::Desert1:
-            state.next_stage = StageType::Desert2;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert2), true);
             break;
         case StageType::Desert2:
-            state.next_stage = StageType::Desert3;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert3), true);
             break;
         case StageType::Desert3:
-            state.next_stage = StageType::Temple1;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple1), true);
             break;
         case StageType::Temple1:
-            state.next_stage = StageType::Temple2;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple2), true);
             break;
         case StageType::Temple2:
-            state.next_stage = StageType::Temple3;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple3), true);
             break;
         case StageType::Temple3:
-            state.next_stage = StageType::Boss;
+            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Boss), true);
             break;
         case StageType::Boss:
-            state.next_stage.reset();
-            break;
-        case StageType::Blank:
-            state.next_stage.reset();
-            break;
-        }
-        if (!state.next_stage) {
             state.stage = Stage::NewBlank();
             state.mode = Mode::Win;
-        } else {
+            break;
+        case StageType::Blank:
+            state.stage = Stage::NewBlank();
+            state.mode = Mode::Win;
+            break;
+        }
+        if (state.pending_stage_transition.has_value()) {
             state.mode = Mode::StageTransition;
             state.frame = 0;
         }

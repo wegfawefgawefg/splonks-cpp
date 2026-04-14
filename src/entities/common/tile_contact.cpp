@@ -1,6 +1,5 @@
 #include "entities/common/common.hpp"
 
-#include "entity/archetype.hpp"
 #include "entities/box.hpp"
 #include "entities/pot.hpp"
 #include "tile.hpp"
@@ -124,12 +123,11 @@ void MaybePlayTileCollisionSounds(
         return;
     }
 
-    const EntityArchetype& entity_archetype = GetEntityArchetype(entity.type_);
     const TileArchetype& tile_archetype = GetTileArchetype(*tile_contact.tile);
     PlayBlockingCollisionSounds(
         entity,
         *audio,
-        entity_archetype.collide_sound,
+        entity.collide_sound,
         tile_archetype.collide_sound,
         played_collision_sound
     );
@@ -171,12 +169,11 @@ void MaybePlayStageBoundsCollisionSounds(
         return;
     }
 
-    const EntityArchetype& entity_archetype = GetEntityArchetype(entity.type_);
     const TileArchetype& border_archetype = GetTileArchetype(border_tile);
     PlayBlockingCollisionSounds(
         entity,
         *audio,
-        entity_archetype.collide_sound,
+        entity.collide_sound,
         border_archetype.collide_sound,
         played_collision_sound
     );

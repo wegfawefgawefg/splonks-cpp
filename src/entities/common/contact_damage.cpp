@@ -1,6 +1,5 @@
 #include "entities/common/common.hpp"
 
-#include "entity/archetype.hpp"
 #include "world_query.hpp"
 
 #include <vector>
@@ -109,7 +108,6 @@ bool MaybeHurtAndStunOnContactAsProjectile(
     const Entity& entity = state.entity_manager.entities[entity_idx];
     const VID entity_vid = entity.vid;
     const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
-    const EntityType entity_type = entity.type_;
     const std::optional<VID> thrown_by = entity.thrown_by;
     const Vec2 entity_vel = entity.vel;
 
@@ -159,9 +157,8 @@ bool MaybeHurtAndStunOnContactAsProjectile(
                         state.stage_frame,
                         kHarmContactCooldownFrames
                     );
-                    const EntityArchetype& archetype = GetEntityArchetype(entity_type);
-                    if (archetype.collide_sound.has_value()) {
-                        audio.PlaySoundEffect(*archetype.collide_sound);
+                    if (entity.collide_sound.has_value()) {
+                        audio.PlaySoundEffect(*entity.collide_sound);
                     }
                     break;
                 }

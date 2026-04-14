@@ -2,7 +2,7 @@
 
 #include "entity/display_states.hpp"
 #include "entity/display_support.hpp"
-#include "entity/archetype.hpp"
+#include "entity/archetype_restore.hpp"
 #include "frame_data_id.hpp"
 #include "tile.hpp"
 #include "world_query.hpp"
@@ -12,21 +12,6 @@
 namespace splonks {
 
 namespace {
-
-struct StoneBaseFields {
-    bool crusher_pusher = false;
-    bool impassable = false;
-    DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
-};
-
-StoneBaseFields BuildStoneBaseFieldsForEntityType(EntityType type_) {
-    const EntityArchetype& archetype = GetEntityArchetype(type_);
-    return StoneBaseFields{
-        .crusher_pusher = archetype.crusher_pusher,
-        .impassable = archetype.impassable,
-        .damage_vulnerability = archetype.damage_vulnerability,
-    };
-}
 
 constexpr std::uint64_t PassiveItemBit(EntityPassiveItem passive_item) {
     return 1ULL << static_cast<unsigned int>(passive_item);
@@ -76,6 +61,7 @@ Entity Entity::New() {
     entity.hang_count = 0;
     entity.holding = false;
     entity.passive_item_flags = 0;
+    entity.passive_item.reset();
     entity.money = 0;
     entity.bombs = 0;
     entity.ropes = 0;
@@ -90,6 +76,18 @@ Entity Entity::New() {
     entity.movement_flags = 0;
     entity.health = 0;
     entity.hurt_on_contact = false;
+    entity.vanish_on_death = false;
+    entity.has_ground_friction = true;
+    entity.damage_animation.reset();
+    entity.damage_sound.reset();
+    entity.collide_sound.reset();
+    entity.death_sound_effect.reset();
+    entity.on_death = nullptr;
+    entity.on_damage = nullptr;
+    entity.on_use = nullptr;
+    entity.step_logic = nullptr;
+    entity.step_physics = nullptr;
+    entity.transition_target.reset();
     entity.damage_vulnerability = DamageVulnerability::Vulnerable;
     entity.attack_weight = 0.0F;
     entity.weight = 0.0F;
@@ -375,9 +373,8 @@ void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled
     entity.passive_item_flags &= ~PassiveItemBit(passive_item);
 }
 
-bool TryCollectPassiveItem(Entity& entity, EntityType pickup_type) {
-    const std::optional<EntityPassiveItem> passive_item =
-        GetEntityArchetype(pickup_type).passive_item;
+bool TryCollectPassiveItem(Entity& entity, const Entity& pickup) {
+    const std::optional<EntityPassiveItem> passive_item = pickup.passive_item;
     if (!passive_item.has_value()) {
         return false;
     }
@@ -399,11 +396,10 @@ void EnableStone(Entity& entity) {
 }
 
 void DisableStone(Entity& entity) {
-    const StoneBaseFields base_fields = BuildStoneBaseFieldsForEntityType(entity.type_);
     entity.stone = false;
-    entity.crusher_pusher = base_fields.crusher_pusher;
-    entity.impassable = base_fields.impassable;
-    entity.damage_vulnerability = base_fields.damage_vulnerability;
+    RestoreEntityCrusherPusherFromArchetype(entity);
+    RestoreEntityImpassableFromArchetype(entity);
+    RestoreEntityDamageVulnerabilityFromArchetype(entity);
 }
 
 } // namespace splonks

@@ -4,6 +4,7 @@
 #include "graphics.hpp"
 #include "render/tiles_and_entities.hpp"
 #include "state.hpp"
+#include "stage_progression.hpp"
 #include "text.hpp"
 #include "world_query.hpp"
 
@@ -39,8 +40,8 @@ void DrawCenteredText(
     );
 }
 
-const char* GetStageTransitionTitle(const State& state) {
-    switch (state.next_stage.value_or(StageType::Blank)) {
+const char* GetStageTypeTransitionTitle(StageType stage_type) {
+    switch (stage_type) {
     case StageType::Test1:
         return "Test1";
     case StageType::Blank:
@@ -75,8 +76,8 @@ const char* GetStageTransitionTitle(const State& state) {
     return "This shouldnt be possible...???";
 }
 
-const char* GetStageTransitionMessage(const State& state) {
-    switch (state.next_stage.value_or(StageType::Blank)) {
+const char* GetStageTypeTransitionMessage(StageType stage_type) {
+    switch (stage_type) {
     case StageType::Blank:
         return "!!!!expect a crash on a press!!!!";
     case StageType::Test1:
@@ -94,6 +95,30 @@ const char* GetStageTransitionMessage(const State& state) {
     default:
         return "Press [jump] to go deeper...";
     }
+}
+
+const char* GetStageTransitionTitle(const State& state) {
+    if (!state.pending_stage_transition.has_value()) {
+        return "No Transition";
+    }
+
+    const StageLoadTarget& target = state.pending_stage_transition->destination;
+    if (target.kind == StageLoadTargetKind::DebugLevel) {
+        return GetDebugLevelKindName(target.debug_level);
+    }
+    return GetStageTypeTransitionTitle(target.stage_type);
+}
+
+const char* GetStageTransitionMessage(const State& state) {
+    if (!state.pending_stage_transition.has_value()) {
+        return "Press [jump] to continue...";
+    }
+
+    const StageLoadTarget& target = state.pending_stage_transition->destination;
+    if (target.kind == StageLoadTargetKind::DebugLevel) {
+        return "Loading debug level...";
+    }
+    return GetStageTypeTransitionMessage(target.stage_type);
 }
 
 } // namespace

@@ -77,15 +77,13 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
                 ClearTransientMovementFlags(state.entity_manager.entities[state.player_vid->id]);
                 entities::common::CommonStep(state.player_vid->id, state, graphics, audio, dt);
                 if (state.entity_manager.entities[state.player_vid->id].active) {
-                    const EntityArchetype& archetype =
-                        GetEntityArchetype(state.entity_manager.entities[state.player_vid->id].type_);
-                    if (HasUseActivity(state.entity_manager.entities[state.player_vid->id]) &&
-                        archetype.on_use != nullptr) {
-                        archetype.on_use(state.player_vid->id, state, graphics, audio);
+                    const Entity& entity = state.entity_manager.entities[state.player_vid->id];
+                    if (HasUseActivity(entity) && entity.on_use != nullptr) {
+                        entity.on_use(state.player_vid->id, state, graphics, audio);
                     }
                     if (state.entity_manager.entities[state.player_vid->id].active &&
-                        archetype.step_logic != nullptr) {
-                        archetype.step_logic(state.player_vid->id, state, graphics, audio, dt);
+                        entity.step_logic != nullptr) {
+                        entity.step_logic(state.player_vid->id, state, graphics, audio, dt);
                     }
                 }
                 if (state.entity_manager.entities[state.player_vid->id].active) {
@@ -100,10 +98,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             }
             if (state.entity_manager.entities[state.player_vid->id].active &&
                 state.entity_manager.entities[state.player_vid->id].has_physics) {
-                const EntityArchetype& archetype =
-                    GetEntityArchetype(state.entity_manager.entities[state.player_vid->id].type_);
-                if (archetype.step_physics != nullptr) {
-                    archetype.step_physics(state.player_vid->id, state, graphics, audio, dt);
+                const Entity& entity = state.entity_manager.entities[state.player_vid->id];
+                if (entity.step_physics != nullptr) {
+                    entity.step_physics(state.player_vid->id, state, graphics, audio, dt);
                 } else {
                     entities::common::StepStandardPhysics(
                         state.player_vid->id,
@@ -140,14 +137,13 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             if (!state.entity_manager.entities[entity_idx].active) {
                 continue;
             }
-            const EntityArchetype& archetype = GetEntityArchetype(type_);
-            if (HasUseActivity(state.entity_manager.entities[entity_idx]) &&
-                archetype.on_use != nullptr) {
-                archetype.on_use(entity_idx, state, graphics, audio);
+            const Entity& current_entity = state.entity_manager.entities[entity_idx];
+            if (HasUseActivity(current_entity) && current_entity.on_use != nullptr) {
+                current_entity.on_use(entity_idx, state, graphics, audio);
             }
             if (state.entity_manager.entities[entity_idx].active &&
-                archetype.step_logic != nullptr) {
-                archetype.step_logic(entity_idx, state, graphics, audio, dt);
+                current_entity.step_logic != nullptr) {
+                current_entity.step_logic(entity_idx, state, graphics, audio, dt);
             }
             if (!state.entity_manager.entities[entity_idx].active) {
                 continue;
@@ -158,8 +154,8 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             }
 
             if (state.entity_manager.entities[entity_idx].has_physics) {
-                if (archetype.step_physics != nullptr) {
-                    archetype.step_physics(entity_idx, state, graphics, audio, dt);
+                if (current_entity.step_physics != nullptr) {
+                    current_entity.step_physics(entity_idx, state, graphics, audio, dt);
                 } else {
                     entities::common::StepStandardPhysics(
                         entity_idx,

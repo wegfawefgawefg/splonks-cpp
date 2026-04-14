@@ -1,6 +1,5 @@
 #include "entities/common/common.hpp"
 
-#include "entity/archetype.hpp"
 #include "on_damage_effects.hpp"
 
 namespace splonks::entities::common {
@@ -29,15 +28,14 @@ std::optional<SoundEffect> GetCrushSoundEffect(EntityType type_) {
 
 void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
     const std::optional<SoundEffect> sound_effect =
         entity.stone ? std::optional<SoundEffect>(SoundEffect::PotShatter)
-                     : archetype.death_sound_effect;
+                     : entity.death_sound_effect;
     if (sound_effect.has_value()) {
         audio.PlaySoundEffect(*sound_effect);
     }
-    if (archetype.on_death != nullptr) {
-        archetype.on_death(entity_idx, state, audio);
+    if (entity.on_death != nullptr) {
+        entity.on_death(entity_idx, state, audio);
     }
 }
 
@@ -50,18 +48,16 @@ EntityDamageEffectResult ApplyDamageEffect(
     bool damage_applied
 ) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
-
     if (damage_applied && !entity.stone) {
-        if (archetype.damage_animation.has_value()) {
-            SpawnDamageEffectAnimationBurst(*archetype.damage_animation, entity.GetCenter(), state);
+        if (entity.damage_animation.has_value()) {
+            SpawnDamageEffectAnimationBurst(*entity.damage_animation, entity.GetCenter(), state);
         }
-        if (archetype.damage_sound.has_value()) {
-            audio.PlaySoundEffect(*archetype.damage_sound);
+        if (entity.damage_sound.has_value()) {
+            audio.PlaySoundEffect(*entity.damage_sound);
         }
     }
-    if (archetype.on_damage != nullptr) {
-        return archetype.on_damage(entity_idx, state, audio, damage_type, amount, damage_applied);
+    if (entity.on_damage != nullptr) {
+        return entity.on_damage(entity_idx, state, audio, damage_type, amount, damage_applied);
     }
     return EntityDamageEffectResult::None;
 }
