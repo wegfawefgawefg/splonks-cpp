@@ -122,7 +122,22 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
         SpawnPistolImpactEffect(state, ToVec2(hit.point), direction);
     }
     if (hit.type == HitscanHitType::Entity && hit.entity_vid.has_value()) {
-        common::TryDamageEntity(hit.entity_vid->id, state, audio, DamageType::Attack, kPistolDamage);
+        const common::DamageResult damage_result =
+            common::TryDamageEntity(hit.entity_vid->id, state, audio, DamageType::Attack, kPistolDamage);
+        if ((damage_result == common::DamageResult::Hurt ||
+             damage_result == common::DamageResult::Died) &&
+            hit.entity_vid->id < state.entity_manager.entities.size()) {
+            if (Entity* const hit_entity = state.entity_manager.GetEntityMut(*hit.entity_vid)) {
+                common::ApplyKnockback(
+                    *hit_entity,
+                    common::KnockbackSpec{
+                        .velocity = Vec2::New(4.0F * static_cast<float>(direction), -2.0F),
+                        .clear_velocity = true,
+                        .clear_acceleration = true,
+                    }
+                );
+            }
+        }
     }
 }
 

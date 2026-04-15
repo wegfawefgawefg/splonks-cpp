@@ -64,8 +64,21 @@ bool TryApplyStompContactToEntity(
         stomped->stun_timer = kDefaultStunTimer;
     }
     if (damage_result == DamageResult::Died || damage_result == DamageResult::Hurt) {
-        stomped->thrown_by = stomper.vid;
-        stomped->thrown_immunity_timer = kThrownByImmunityDuration;
+        const Vec2 stomp_delta = GetNearestWorldDelta(state.stage, stomper.GetCenter(), stomped->GetCenter());
+        const float stomp_knockback_x = stomp_delta.x < 0.0F ? -1.0F : 1.0F;
+        ApplyKnockback(
+            *stomped,
+            KnockbackSpec{
+                .velocity = Vec2::New(stomp_knockback_x, -6.0F),
+                .clear_velocity = true,
+                .clear_acceleration = true,
+                .thrown_by = stomper.vid,
+                .thrown_immunity_timer = kThrownByImmunityDuration,
+                .projectile_contact_damage_type = DamageType::Attack,
+                .projectile_contact_damage_amount = 1,
+                .projectile_contact_duration = kProjectileContactDuration,
+            }
+        );
     }
     state.contact.AddInteractionCooldown(
         stomped->vid,

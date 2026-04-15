@@ -32,6 +32,18 @@ EntityContactDispatchEntry NormalizeEntityContactDispatchEntry(
     };
 }
 
+ProjectileBodyImpactCooldownEntry MakeProjectileBodyImpactCooldownEntry(
+    const VID& source_vid,
+    const VID& target_vid,
+    std::uint32_t expires_on_stage_frame
+) {
+    return ProjectileBodyImpactCooldownEntry{
+        .first_vid = source_vid,
+        .second_vid = target_vid,
+        .expires_on_stage_frame = expires_on_stage_frame,
+    };
+}
+
 } // namespace
 
 void ContactBookkeeping::ClearEntityContactDispatchesThisTick() {
@@ -151,6 +163,48 @@ void ContactBookkeeping::AddInteractionCooldown(
         .kind = kind,
         .expires_on_stage_frame = stage_frame + duration,
     });
+}
+
+void ContactBookkeeping::StepProjectileBodyImpactCooldowns(std::uint32_t stage_frame) {
+    std::vector<ProjectileBodyImpactCooldownEntry> kept_cooldowns;
+    kept_cooldowns.reserve(projectile_body_impact_cooldowns.size());
+    for (const ProjectileBodyImpactCooldownEntry& entry : projectile_body_impact_cooldowns) {
+        if (entry.expires_on_stage_frame > stage_frame) {
+            kept_cooldowns.push_back(entry);
+        }
+    }
+    projectile_body_impact_cooldowns = std::move(kept_cooldowns);
+}
+
+bool ContactBookkeeping::HasProjectileBodyImpactCooldown(
+    const VID& first_vid,
+    const VID& second_vid
+) const {
+    const ProjectileBodyImpactCooldownEntry ordered =
+        MakeProjectileBodyImpactCooldownEntry(first_vid, second_vid, 0);
+    for (const ProjectileBodyImpactCooldownEntry& entry : projectile_body_impact_cooldowns) {
+        if (entry.first_vid == ordered.first_vid && entry.second_vid == ordered.second_vid) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ContactBookkeeping::AddProjectileBodyImpactCooldown(
+    const VID& first_vid,
+    const VID& second_vid,
+    std::uint32_t stage_frame,
+    std::uint32_t duration
+) {
+    const ProjectileBodyImpactCooldownEntry ordered =
+        MakeProjectileBodyImpactCooldownEntry(first_vid, second_vid, stage_frame + duration);
+    for (ProjectileBodyImpactCooldownEntry& entry : projectile_body_impact_cooldowns) {
+        if (entry.first_vid == ordered.first_vid && entry.second_vid == ordered.second_vid) {
+            entry.expires_on_stage_frame = ordered.expires_on_stage_frame;
+            return;
+        }
+    }
+    projectile_body_impact_cooldowns.push_back(ordered);
 }
 
 } // namespace splonks

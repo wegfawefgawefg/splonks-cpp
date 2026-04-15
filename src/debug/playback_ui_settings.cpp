@@ -7,6 +7,20 @@
 
 namespace splonks::debug_playback_internal {
 
+namespace {
+
+const char* CameraModeToString(CameraMode mode) {
+    switch (mode) {
+    case CameraMode::Follow:
+        return "Follow";
+    case CameraMode::StageFit:
+        return "StageFit";
+    }
+    return "Unknown";
+}
+
+} // namespace
+
 void DrawDebugOverlayWindow(DebugPlayback& debug, State& state) {
     if (!debug.entity_annotations_visible) {
         return;
@@ -77,6 +91,64 @@ void DrawUiSettingsWindow(DebugPlayback& debug, State& state) {
 
     if (changed) {
         SaveSettings(state.settings);
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.camera_settings_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(860.0F, 220.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Camera Settings", &debug.camera_settings_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    if (ImGui::BeginCombo("Mode", CameraModeToString(graphics.camera_mode))) {
+        for (int i = 0; i < 2; ++i) {
+            const CameraMode mode = static_cast<CameraMode>(i);
+            const bool selected = mode == graphics.camera_mode;
+            if (ImGui::Selectable(CameraModeToString(mode), selected)) {
+                graphics.camera_mode = mode;
+                if (mode == CameraMode::StageFit) {
+                    graphics.play_cam.pos = GetStageCameraCenter(state.stage);
+                }
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::Checkbox("Lock Follow Camera", &graphics.debug_lock_play_camera);
+    ImGui::SliderFloat("Follow Zoom", &graphics.follow_camera_zoom, 1.0F, 8.0F, "%.2f");
+    ImGui::SliderFloat("Stage Fit Padding", &graphics.stage_fit_padding, 0.0F, 128.0F, "%.1f");
+    ImGui::SliderFloat("Zoom Multiplier", &graphics.camera_zoom_multiplier, 0.25F, 4.0F, "%.2f");
+    ImGui::SliderFloat("Lerp", &graphics.camera_lerp_factor, 0.01F, 1.0F, "%.2f");
+
+    const Vec2 stage_center = GetStageCameraCenter(state.stage);
+    const float stage_fit_zoom = GetStageFitCameraZoom(state.stage, graphics) * graphics.camera_zoom_multiplier;
+    const float follow_zoom = GetDefaultFollowCameraZoom(graphics) * graphics.camera_zoom_multiplier;
+    ImGui::Text("Current Target: (%.1f, %.1f)", graphics.camera.target.x, graphics.camera.target.y);
+    ImGui::Text("Current Zoom: %.2f", graphics.camera.zoom);
+    ImGui::Text("Follow Zoom: %.2f", follow_zoom);
+    ImGui::Text("Stage Fit Zoom: %.2f", stage_fit_zoom);
+
+    if (ImGui::Button("Snap To Current Mode")) {
+        if (graphics.camera_mode == CameraMode::StageFit) {
+            graphics.camera.target = stage_center;
+            graphics.play_cam.pos = stage_center;
+            graphics.camera.zoom = stage_fit_zoom;
+        } else {
+            graphics.camera.target = graphics.play_cam.pos;
+            graphics.camera.zoom = follow_zoom;
+        }
     }
 
     ImGui::End();

@@ -423,8 +423,8 @@ void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
 void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
     (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.vel.x = std::clamp(entity.vel.x, -kMaxSpeed, kMaxSpeed);
-    entity.vel.y = std::clamp(entity.vel.y, -kMaxSpeed, kMaxSpeed);
+    entity.vel.x = std::clamp(entity.vel.x, -entity.max_speed, entity.max_speed);
+    entity.vel.y = std::clamp(entity.vel.y, -entity.max_speed, entity.max_speed);
     entity.acc = Vec2::New(0.0F, 0.0F);
 }
 

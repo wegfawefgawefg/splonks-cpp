@@ -100,6 +100,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.contact.ClearEntityContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
+    state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
     state.entity_tools.Step();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
@@ -208,6 +209,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.contact.ClearEntityContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
+    state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
     state.particles.Step(graphics.frame_data_db, dt);

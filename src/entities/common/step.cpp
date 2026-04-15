@@ -5,6 +5,12 @@
 
 namespace splonks::entities::common {
 
+namespace {
+
+constexpr float kProjectileSettleSpeedThreshold = 0.5F;
+
+} // namespace
+
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     const bool vanish_on_death = entity.vanish_on_death;
@@ -20,9 +26,19 @@ void StepStunTimer(std::size_t entity_idx, State& state) {
         entity.contact_sound_cooldown -= 1;
     }
     if (entity.condition == EntityCondition::Stunned) {
-        if (entity.stun_timer == 0) {
+        const auto recover_from_stun = [&entity, &state]() {
+            if (entity.held_by_vid.has_value()) {
+                ReleaseEntityFromHolder(entity, state);
+            }
+            entity.projectile_contact_damage_type = DamageType::Attack;
+            entity.projectile_contact_damage_amount = 1;
+            entity.projectile_contact_timer = 0;
             entity.condition = EntityCondition::Normal;
             TrySetAnimation(entity, EntityDisplayState::Neutral);
+        };
+
+        if (entity.stun_timer == 0) {
+            recover_from_stun();
             return;
         }
 
@@ -35,6 +51,9 @@ void StepStunTimer(std::size_t entity_idx, State& state) {
         }
 
         entity.stun_timer -= 1;
+        if (entity.stun_timer == 0) {
+            recover_from_stun();
+        }
     }
 }
 
@@ -98,6 +117,23 @@ void DoThrownByStep(std::size_t entity_idx, State& state) {
     }
     if (entity.thrown_immunity_timer == 0) {
         entity.thrown_by.reset();
+    }
+
+    if (entity.projectile_contact_timer == 0) {
+        return;
+    }
+
+    const bool settled_on_ground =
+        entity.grounded && std::abs(entity.vel.x) <= kProjectileSettleSpeedThreshold &&
+        std::abs(entity.vel.y) <= kProjectileSettleSpeedThreshold;
+    if (settled_on_ground) {
+        entity.projectile_contact_timer -= 1;
+        if (entity.projectile_contact_timer == 0) {
+            entity.projectile_contact_damage_type = DamageType::Attack;
+            entity.projectile_contact_damage_amount = 1;
+        }
+    } else {
+        entity.projectile_contact_timer = kProjectileContactDuration;
     }
 }
 

@@ -44,6 +44,11 @@ struct Camera2D {
     float zoom = 1.0F;
 };
 
+enum class CameraMode {
+    Follow,
+    StageFit,
+};
+
 struct LoadedFont {
     TTF_Font* font = nullptr;
     int point_size = 0;
@@ -56,6 +61,11 @@ struct Graphics {
     bool gpu_renderer_active = false;
     bool debug_lock_play_camera = false;
     Vec2 debug_baseball_bat_hold_offset = Vec2::New(5.0F, -10.0F);
+    CameraMode camera_mode = CameraMode::Follow;
+    float follow_camera_zoom = 5.0F;
+    float stage_fit_padding = 16.0F;
+    float camera_lerp_factor = 0.12F;
+    float camera_zoom_multiplier = 1.0F;
     Camera2D camera;
     PlayCam play_cam;
     std::vector<SDL_Texture*> textures;
@@ -80,7 +90,9 @@ struct Graphics {
 };
 
 SDL_FRect GetPresentationRect(const Graphics& graphics, int output_width, int output_height);
-
+Vec2 GetStageCameraCenter(const Stage& stage);
+float GetDefaultFollowCameraZoom(const Graphics& graphics);
+float GetStageFitCameraZoom(const Stage& stage, const Graphics& graphics);
 
 enum class TextType {
     MenuTitle,

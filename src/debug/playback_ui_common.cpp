@@ -45,6 +45,10 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.graphics_settings_visible = debug.graphics_settings_window_visible;
         changed = true;
     }
+    if (state.settings.debug_ui.camera_settings_visible != debug.camera_settings_window_visible) {
+        state.settings.debug_ui.camera_settings_visible = debug.camera_settings_window_visible;
+        changed = true;
+    }
 
     if (changed) {
         SaveSettings(state.settings);

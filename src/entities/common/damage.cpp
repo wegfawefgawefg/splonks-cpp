@@ -6,6 +6,13 @@ namespace splonks::entities::common {
 
 namespace {
 
+void EnterStunnedState(Entity& entity, State& state) {
+    DropHeldItemFromEntity(entity, state);
+    entity.condition = EntityCondition::Stunned;
+    TrySetAnimation(entity, EntityDisplayState::Stunned);
+    entity.stun_timer = kDefaultStunTimer;
+}
+
 std::optional<SoundEffect> GetCrushSoundEffect(EntityType type_) {
     switch (type_) {
     case EntityType::Player:
@@ -47,7 +54,10 @@ EntityDamageEffectResult ApplyDamageEffect(
     unsigned int amount,
     bool damage_applied
 ) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    if (damage_applied) {
+        DropHeldItemFromEntity(entity, state);
+    }
     if (damage_applied && !entity.stone) {
         if (entity.damage_animation.has_value()) {
             SpawnDamageEffectAnimationBurst(*entity.damage_animation, entity.GetCenter(), state);
@@ -74,6 +84,9 @@ void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     const bool entered_dead = entity.condition != EntityCondition::Dead && entity.health == 0;
     if (entity.health == 0) {
+        if (entered_dead) {
+            DropHeldItemFromEntity(entity, state);
+        }
         entity.condition = EntityCondition::Dead;
         if (entered_dead && !entity.marked_for_destruction) {
             TrySetAnimation(entity, EntityDisplayState::Dead);
@@ -166,15 +179,11 @@ DamageResult TryDamageEntity(
             } else if (damage_type == DamageType::Explosion) {
                 do_damage_calculation = true;
                 if (entity.can_be_stunned && entity.condition != EntityCondition::Stunned) {
-                    entity.condition = EntityCondition::Stunned;
-                    TrySetAnimation(entity, EntityDisplayState::Stunned);
-                    entity.stun_timer = kDefaultStunTimer;
+                    EnterStunnedState(entity, state);
                 }
             } else if (entity.can_be_stunned) {
                 if (entity.condition != EntityCondition::Stunned) {
-                    entity.condition = EntityCondition::Stunned;
-                    TrySetAnimation(entity, EntityDisplayState::Stunned);
-                    entity.stun_timer = kDefaultStunTimer;
+                    EnterStunnedState(entity, state);
                     do_damage_calculation = true;
                 } else {
                     return DamageResult::None;

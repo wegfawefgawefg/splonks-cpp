@@ -66,6 +66,9 @@ bool TrySpawnAndThrowEntityForToolUse(
     UseEntity(*spawned_entity, thrower.vid, AttachmentMode::None);
     spawned_entity->thrown_by = thrower.vid;
     spawned_entity->thrown_immunity_timer = thrown_immunity_timer;
+    spawned_entity->projectile_contact_damage_type = DamageType::Attack;
+    spawned_entity->projectile_contact_damage_amount = 1;
+    spawned_entity->projectile_contact_timer = kProjectileContactDuration;
     const ToolThrowVelocityBuilder velocity_builder =
         build_throw_velocity == nullptr ? BuildThrowVelocity : build_throw_velocity;
     spawned_entity->SetCenter(thrower.GetCenter());

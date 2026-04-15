@@ -61,6 +61,7 @@ struct Entity {
     Vec2 pos;
     Vec2 vel;
     Vec2 acc;
+    float max_speed = 7.0F;
     Vec2 size;
     float dist_traveled_this_frame = 0.0F;
     Origin origin = Origin::TopLeft;
@@ -112,6 +113,9 @@ struct Entity {
     std::uint32_t equip_delay_countdown = 0;
     std::optional<VID> thrown_by;
     std::uint32_t thrown_immunity_timer = 0;
+    DamageType projectile_contact_damage_type = DamageType::Attack;
+    unsigned int projectile_contact_damage_amount = 1;
+    std::uint32_t projectile_contact_timer = 0;
     bool collided = false;
     bool collided_last_frame = false;
     std::uint32_t contact_sound_cooldown = 0;

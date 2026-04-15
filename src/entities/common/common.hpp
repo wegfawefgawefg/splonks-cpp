@@ -1,6 +1,7 @@
 #pragma once
 
 #include "audio.hpp"
+#include "entities/common/knockback.hpp"
 #include "entity.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
@@ -14,6 +15,7 @@ namespace splonks::entities::common {
 constexpr float kMaxSpeed = 7.0F;
 constexpr unsigned int kDefaultStunTimer = 60;
 constexpr unsigned int kThrownByImmunityDuration = 16;
+constexpr unsigned int kProjectileContactDuration = 120;
 
 enum class BlockingImpactAxis {
     Horizontal,
@@ -124,6 +126,8 @@ bool TryCollectEntityFromContact(
     Audio& audio
 );
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state);
+void ReleaseEntityFromHolder(Entity& entity, State& state);
+void DropHeldItemFromEntity(Entity& entity, State& state);
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
     State& state,
@@ -191,6 +195,13 @@ DamageResult TryDamageEntity(
     Audio& audio,
     DamageType damage_type,
     unsigned int amount
+);
+bool TryApplyProjectileContactToEntity(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
 );
 
 void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio);

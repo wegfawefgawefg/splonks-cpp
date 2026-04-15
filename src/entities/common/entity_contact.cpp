@@ -85,6 +85,21 @@ ContactResolution TryDispatchEntityEntityContactByType(
         return ContactResolution{};
     }
 
+    if (graphics != nullptr && audio != nullptr &&
+        context.phase == ContactPhase::SweptEntered &&
+        TryApplyProjectileContactToEntity(
+            participant_idx,
+            other_entity_idx,
+            state,
+            *graphics,
+            *audio
+        )) {
+        return ContactResolution{
+            .blocks_movement = false,
+            .stop_sweep = true,
+        };
+    }
+
     switch (participant.type_) {
     case EntityType::Player:
         if (graphics == nullptr || audio == nullptr ||

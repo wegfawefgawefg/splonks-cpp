@@ -45,6 +45,7 @@ Entity Entity::New() {
     entity.pos = Vec2::New(0.0F, 0.0F);
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
+    entity.max_speed = 7.0F;
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.dist_traveled_this_frame = 0.0F;
     entity.origin = Origin::TopLeft;
@@ -96,6 +97,9 @@ Entity Entity::New() {
     entity.attack_delay_countdown = 0;
     entity.equip_delay_countdown = 0;
     entity.thrown_immunity_timer = 0;
+    entity.projectile_contact_damage_type = DamageType::Attack;
+    entity.projectile_contact_damage_amount = 1;
+    entity.projectile_contact_timer = 0;
     entity.collided = false;
     entity.collided_last_frame = false;
     entity.contact_sound_cooldown = 0;

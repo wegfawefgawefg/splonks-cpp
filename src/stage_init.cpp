@@ -30,6 +30,10 @@ constexpr int kBorderTestStageWidthTiles = 10;
 constexpr int kBorderTestStageHeightTiles = 8;
 constexpr int kMazeDoorTestStageWidthTiles = 12;
 constexpr int kMazeDoorTestStageHeightTiles = 8;
+constexpr int kBowlingTestStageWidthTiles = 80;
+constexpr int kBowlingTestStageHeightTiles = 8;
+constexpr int kOpposingBodySmackStageWidthTiles = 14;
+constexpr int kOpposingBodySmackStageHeightTiles = 8;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
 
 struct StageCarryover {
@@ -165,6 +169,123 @@ void BuildMazeDoorTestPerimeter(Stage& stage) {
         SetStageTile(stage, 0, y, Tile::CaveDirt);
         SetStageTile(stage, kMazeDoorTestStageWidthTiles - 1, y, Tile::CaveDirt);
     }
+}
+
+Stage MakeBowlingTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kBowlingTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kBowlingTestStageWidthTiles), Tile::Air)
+    );
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    for (int x = 0; x < kBowlingTestStageWidthTiles; ++x) {
+        stage.tiles[static_cast<std::size_t>(kBowlingTestStageHeightTiles - 1)][static_cast<std::size_t>(x)] =
+            DirtTileForFamilyTile(stage.border.left.tile);
+    }
+
+    return stage;
+}
+
+Stage MakeOpposingBodySmackStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kOpposingBodySmackStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kOpposingBodySmackStageWidthTiles), Tile::Air)
+    );
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    for (int x = 0; x < kOpposingBodySmackStageWidthTiles; ++x) {
+        stage.tiles[static_cast<std::size_t>(kOpposingBodySmackStageHeightTiles - 1)]
+                   [static_cast<std::size_t>(x)] = DirtTileForFamilyTile(stage.border.left.tile);
+    }
+
+    return stage;
+}
+
+std::optional<VID> SpawnBowlingCaveman(
+    State& state,
+    const Vec2& center,
+    EntityCondition condition,
+    const Vec2& vel
+) {
+    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    if (!vid.has_value()) {
+        return std::nullopt;
+    }
+    if (Entity* const caveman = state.entity_manager.GetEntityMut(*vid)) {
+        SetEntityAs(*caveman, EntityType::Caveman);
+        caveman->SetCenter(center);
+        caveman->condition = condition;
+        caveman->vel = vel;
+        if (condition == EntityCondition::Stunned) {
+            caveman->stun_timer = 600;
+            TrySetAnimation(*caveman, EntityDisplayState::Stunned);
+        }
+    }
+    return vid;
+}
+
+std::optional<VID> SpawnOpposingBodySmackCaveman(State& state, const Vec2& center, const Vec2& vel) {
+    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    if (!vid.has_value()) {
+        return std::nullopt;
+    }
+
+    Entity* const caveman = state.entity_manager.GetEntityMut(*vid);
+    if (caveman == nullptr) {
+        return std::nullopt;
+    }
+
+    SetEntityAs(*caveman, EntityType::Caveman);
+    caveman->SetCenter(center);
+    caveman->condition = EntityCondition::Stunned;
+    caveman->vel = vel;
+    caveman->stun_timer = 600;
+    caveman->projectile_contact_damage_type = DamageType::Attack;
+    caveman->projectile_contact_damage_amount = 1;
+    caveman->projectile_contact_timer = 600;
+    caveman->max_speed = 12.0F;
+    TrySetAnimation(*caveman, EntityDisplayState::Stunned);
+    return vid;
+}
+
+void GiveHeldRockToEntity(State& state, VID holder_vid) {
+    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+    if (holder == nullptr || !holder->active) {
+        return;
+    }
+
+    const std::optional<VID> rock_vid = state.entity_manager.NewEntity();
+    if (!rock_vid.has_value()) {
+        return;
+    }
+
+    Entity* const rock = state.entity_manager.GetEntityMut(*rock_vid);
+    if (rock == nullptr) {
+        return;
+    }
+
+    SetEntityAs(*rock, EntityType::Rock);
+    rock->held_by_vid = holder_vid;
+    rock->attachment_mode = AttachmentMode::Held;
+    rock->has_physics = false;
+    rock->can_collide = false;
+    rock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
+    holder->holding_vid = rock->vid;
+    holder->holding = true;
 }
 
 Stage MakeMazeDoorTestStage(MazeDoorTestRoom room) {
@@ -371,6 +492,9 @@ void PrepareEntityForStageEntry(Entity& entity) {
     entity.contact_sound_cooldown = 0;
     entity.thrown_by.reset();
     entity.thrown_immunity_timer = 0;
+    entity.projectile_contact_damage_type = DamageType::Attack;
+    entity.projectile_contact_damage_amount = 1;
+    entity.projectile_contact_timer = 0;
 }
 
 void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
@@ -551,6 +675,72 @@ void InitBorderTestStage(State& state) {
 }
 
 
+void InitBowlingTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = static_cast<float>(4 * static_cast<int>(kTileSize));
+    const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+
+    const float caveman_center_y =
+        static_cast<float>((kBowlingTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
+    const std::optional<VID> launched_caveman_vid = SpawnBowlingCaveman(
+        state,
+        Vec2::New(8.0F * static_cast<float>(kTileSize), caveman_center_y),
+        EntityCondition::Stunned,
+        Vec2::New(24.0F, 0.0F)
+    );
+    (void)launched_caveman_vid;
+    for (Entity& entity : state.entity_manager.entities) {
+        if (!entity.active || entity.type_ != EntityType::Caveman ||
+            entity.condition != EntityCondition::Stunned) {
+            continue;
+        }
+        entity.max_speed = 24.0F;
+        entity.has_ground_friction = false;
+        entity.projectile_contact_damage_type = DamageType::Attack;
+        entity.projectile_contact_damage_amount = 1;
+        entity.projectile_contact_timer = 600;
+        break;
+    }
+
+    constexpr int kStandingCavemanTileXs[] = {16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49};
+    for (const int tile_x : kStandingCavemanTileXs) {
+        const std::optional<VID> caveman_vid = SpawnBowlingCaveman(
+            state,
+            Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)), caveman_center_y),
+            EntityCondition::Normal,
+            Vec2::New(0.0F, 0.0F)
+        );
+        if (caveman_vid.has_value()) {
+            GiveHeldRockToEntity(state, *caveman_vid);
+        }
+    }
+}
+
+void InitOpposingBodySmackStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = static_cast<float>(2 * static_cast<int>(kTileSize));
+    const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+
+    const float caveman_center_y =
+        static_cast<float>((kOpposingBodySmackStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
+    (void)SpawnOpposingBodySmackCaveman(
+        state,
+        Vec2::New(5.0F * static_cast<float>(kTileSize), caveman_center_y),
+        Vec2::New(8.0F, 0.0F)
+    );
+    (void)SpawnOpposingBodySmackCaveman(
+        state,
+        Vec2::New(9.0F * static_cast<float>(kTileSize), caveman_center_y),
+        Vec2::New(-8.0F, 0.0F)
+    );
+}
+
 void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
     const StageCarryover carryover =
         preserve_player_state ? CaptureStageCarryover(state) : StageCarryover{};
@@ -725,6 +915,14 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
             static_cast<std::uint8_t>(MazeDoorTestRoom::RoomA)
         );
         InitMazeDoorTestStage(state, preserve_player_state);
+        break;
+    case DebugLevelKind::BowlingTest:
+        state.stage = MakeBowlingTestStage();
+        InitBowlingTestStage(state);
+        break;
+    case DebugLevelKind::OpposingBodySmack:
+        state.stage = MakeOpposingBodySmackStage();
+        InitOpposingBodySmackStage(state);
         break;
     }
 }

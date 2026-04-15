@@ -10,9 +10,42 @@
 
 #include <SDL3/SDL.h>
 
+#include <algorithm>
+
 namespace splonks {
 
 namespace {
+
+Vec2 ClampCameraTargetToStage(const Stage& stage, Vec2 target) {
+    if (!stage.camera_clamp_enabled) {
+        return target;
+    }
+
+    const Vec2 stage_dims = ToVec2(stage.GetStageDims());
+    const Vec2 margin = stage.camera_clamp_margin;
+    const Vec2 map_tl_bound = margin;
+    const Vec2 map_br_bound = stage_dims - margin;
+
+    if (stage_dims.x <= margin.x * 2.0F) {
+        target.x = stage_dims.x / 2.0F;
+    } else {
+        target.x = std::clamp(target.x, map_tl_bound.x, map_br_bound.x);
+    }
+
+    if (stage_dims.y <= margin.y * 2.0F) {
+        target.y = stage_dims.y / 2.0F;
+    } else {
+        target.y = std::clamp(target.y, map_tl_bound.y, map_br_bound.y);
+    }
+
+    return target;
+}
+
+void LerpCamera(Graphics& graphics, const Vec2& target, float zoom) {
+    const float t = std::clamp(graphics.camera_lerp_factor, 0.0F, 1.0F);
+    graphics.camera.target += (target - graphics.camera.target) * t;
+    graphics.camera.zoom += (zoom - graphics.camera.zoom) * t;
+}
 
 void DrawCenteredText(
     SDL_Renderer* renderer,
@@ -124,56 +157,25 @@ const char* GetStageTransitionMessage(const State& state) {
 } // namespace
 
 void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    const float base = 5.0F;
-    if (graphics.dims.x < 1280U) {
-        const float ratio = 1280.0F / static_cast<float>(graphics.dims.x);
-        graphics.camera.zoom = base / ratio;
-    } else {
-        graphics.camera.zoom = base;
-    }
+    Vec2 target = GetStageCameraCenter(state.stage);
+    float zoom = GetDefaultFollowCameraZoom(graphics);
 
-    if (state.controlled_entity_vid.has_value()) {
+    if (graphics.camera_mode == CameraMode::StageFit) {
+        zoom = GetStageFitCameraZoom(state.stage, graphics);
+    } else if (state.controlled_entity_vid.has_value()) {
         if (const Entity* const controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid)) {
             if (!graphics.debug_lock_play_camera) {
                 const Vec2 delta =
                     GetNearestWorldDelta(state.stage, graphics.play_cam.pos, controlled->pos);
                 graphics.play_cam.pos += delta * 0.075F;
-
-                if (state.stage.camera_clamp_enabled) {
-                    const Vec2 stage_dims = ToVec2(state.stage.GetStageDims());
-                    const Vec2 margin = state.stage.camera_clamp_margin;
-                    const Vec2 map_tl_bound = margin;
-                    const Vec2 map_br_bound = stage_dims - margin;
-
-                    if (stage_dims.x <= margin.x * 2.0F) {
-                        graphics.play_cam.pos.x = stage_dims.x / 2.0F;
-                    } else {
-                        graphics.play_cam.pos.x = graphics.play_cam.pos.x < map_tl_bound.x
-                                                      ? map_tl_bound.x
-                                                      : (graphics.play_cam.pos.x > map_br_bound.x
-                                                             ? map_br_bound.x
-                                                             : graphics.play_cam.pos.x);
-                    }
-
-                    if (stage_dims.y <= margin.y * 2.0F) {
-                        graphics.play_cam.pos.y = stage_dims.y / 2.0F;
-                    } else {
-                        graphics.play_cam.pos.y = graphics.play_cam.pos.y < map_tl_bound.y
-                                                      ? map_tl_bound.y
-                                                      : (graphics.play_cam.pos.y > map_br_bound.y
-                                                             ? map_br_bound.y
-                                                             : graphics.play_cam.pos.y);
-                    }
-                }
+                graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, graphics.play_cam.pos);
             }
-
-            graphics.camera.target = graphics.play_cam.pos;
-        } else {
-            graphics.camera.target = ToVec2(state.stage.GetStageDims()) / 2.0F;
+            target = graphics.play_cam.pos;
         }
-    } else {
-        graphics.camera.target = ToVec2(state.stage.GetStageDims()) / 2.0F;
     }
+
+    zoom *= graphics.camera_zoom_multiplier;
+    LerpCamera(graphics, target, zoom);
 
     SDL_SetRenderDrawColor(renderer, 38, 43, 68, 255);
     SDL_RenderClear(renderer);

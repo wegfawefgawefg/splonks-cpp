@@ -115,10 +115,19 @@ bool TryApplyBatContactToEntity(
                                  : Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
             break;
         }
-        other_entity->vel = knock_back_vel;
-        other_entity->acc = Vec2::New(0.0F, 0.0F);
-        other_entity->thrown_by = held_by_vid;
-        other_entity->thrown_immunity_timer = common::kThrownByImmunityDuration;
+        common::ApplyKnockback(
+            *other_entity,
+            common::KnockbackSpec{
+                .velocity = knock_back_vel,
+                .clear_velocity = true,
+                .clear_acceleration = true,
+                .thrown_by = held_by_vid,
+                .thrown_immunity_timer = common::kThrownByImmunityDuration,
+                .projectile_contact_damage_type = DamageType::Attack,
+                .projectile_contact_damage_amount = 1,
+                .projectile_contact_duration = common::kProjectileContactDuration,
+            }
+        );
 
         const common::DamageResult damage_result = common::TryDamageEntity(
             other_entity->vid.id, state, audio, DamageType::Attack, 1);

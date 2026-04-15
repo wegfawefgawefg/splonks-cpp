@@ -36,19 +36,7 @@ const char* ModeToString(Mode mode) {
 }
 
 const char* DebugLevelKindToString(DebugLevelKind kind) {
-    switch (kind) {
-    case DebugLevelKind::SplkMines1:
-        return "SplkMines1";
-    case DebugLevelKind::HangTest:
-        return "HangTest";
-    case DebugLevelKind::StompTest:
-        return "StompTest";
-    case DebugLevelKind::BorderTest:
-        return "BorderTest";
-    case DebugLevelKind::MazeDoorTest:
-        return "MazeDoorTest";
-    }
-    return "Unknown";
+    return GetDebugLevelKindName(kind);
 }
 
 const char* EntityTypeToString(EntityType type) {

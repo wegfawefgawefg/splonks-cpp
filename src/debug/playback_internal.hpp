@@ -36,6 +36,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
 void DrawDebugOverlayWindow(DebugPlayback& debug, State& state);
 void DrawUiSettingsWindow(DebugPlayback& debug, State& state);
+void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics& graphics);
 void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawGraphicsSettingsWindow(

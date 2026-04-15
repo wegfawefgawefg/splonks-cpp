@@ -29,10 +29,17 @@ struct EntityContactDispatchEntry {
     VID second_vid;
 };
 
+struct ProjectileBodyImpactCooldownEntry {
+    VID first_vid;
+    VID second_vid;
+    std::uint32_t expires_on_stage_frame = 0;
+};
+
 struct ContactBookkeeping {
     std::vector<ContactCooldownEntry> contact_cooldowns;
     std::vector<InteractionCooldownEntry> interaction_cooldowns;
     std::vector<EntityContactDispatchEntry> entity_contact_dispatches_this_tick;
+    std::vector<ProjectileBodyImpactCooldownEntry> projectile_body_impact_cooldowns;
 
     void ClearEntityContactDispatchesThisTick();
     bool HasEntityContactPairDispatchedThisTick(
@@ -64,6 +71,17 @@ struct ContactBookkeeping {
         const VID& source_vid,
         const VID& target_vid,
         InteractionCooldownKind kind,
+        std::uint32_t stage_frame,
+        std::uint32_t duration
+    );
+    void StepProjectileBodyImpactCooldowns(std::uint32_t stage_frame);
+    bool HasProjectileBodyImpactCooldown(
+        const VID& first_vid,
+        const VID& second_vid
+    ) const;
+    void AddProjectileBodyImpactCooldown(
+        const VID& first_vid,
+        const VID& second_vid,
         std::uint32_t stage_frame,
         std::uint32_t duration
     );

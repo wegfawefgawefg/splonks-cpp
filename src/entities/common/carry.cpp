@@ -1,6 +1,7 @@
 #include "entities/common/common.hpp"
 
 #include "entities/player.hpp"
+#include "entity/archetype_restore.hpp"
 #include "controls.hpp"
 #include "world_query.hpp"
 
@@ -22,6 +23,62 @@ void ApplyHeldState(Entity& entity) {
 }
 
 } // namespace
+
+
+void ReleaseEntityFromHolder(Entity& entity, State& state) {
+    if (!entity.held_by_vid.has_value()) {
+        return;
+    }
+
+    if (Entity* const holder = state.entity_manager.GetEntityMut(*entity.held_by_vid)) {
+        if (holder->holding_vid.has_value() && *holder->holding_vid == entity.vid) {
+            holder->holding_vid.reset();
+            holder->holding = false;
+            holder->holding_timer = kDefaultHoldingTimer;
+        }
+        if (holder->back_vid.has_value() && *holder->back_vid == entity.vid) {
+            holder->back_vid.reset();
+        }
+    }
+
+    entity.held_by_vid.reset();
+    entity.attachment_mode = AttachmentMode::None;
+    StopUsingEntity(entity);
+    RestoreEntityHasPhysicsFromArchetype(entity);
+    RestoreEntityCanCollideFromArchetype(entity);
+    RestoreEntityDrawLayerFromArchetype(entity);
+    entity.grounded = false;
+}
+
+void DropHeldItemFromEntity(Entity& entity, State& state) {
+    if (!entity.holding_vid.has_value()) {
+        return;
+    }
+
+    Entity* const held = state.entity_manager.GetEntityMut(*entity.holding_vid);
+    entity.holding_vid.reset();
+    entity.holding = false;
+    entity.holding_timer = kDefaultHoldingTimer;
+    if (held == nullptr) {
+        return;
+    }
+
+    const float throw_x = entity.facing == LeftOrRight::Left ? -3.0F : 3.0F;
+    held->held_by_vid.reset();
+    held->attachment_mode = AttachmentMode::None;
+    StopUsingEntity(*held);
+    RestoreEntityHasPhysicsFromArchetype(*held);
+    RestoreEntityCanCollideFromArchetype(*held);
+    RestoreEntityDrawLayerFromArchetype(*held);
+    held->grounded = false;
+    held->thrown_by = entity.vid;
+    held->thrown_immunity_timer = kThrownByImmunityDuration;
+    held->projectile_contact_damage_type = DamageType::Attack;
+    held->projectile_contact_damage_amount = 1;
+    held->projectile_contact_timer = kProjectileContactDuration;
+    held->vel = Vec2::New(throw_x, -1.0F);
+    held->acc = Vec2::New(0.0F, 0.0F);
+}
 
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
     if (entity_idx >= state.entity_manager.entities.size()) {
@@ -145,6 +202,9 @@ void UpdateCarryAndBackItems(
                     thrown->attachment_mode = AttachmentMode::None;
                     StopUsingEntity(*thrown);
                     thrown->thrown_immunity_timer = kThrownByImmunityDuration;
+                    thrown->projectile_contact_damage_type = DamageType::Attack;
+                    thrown->projectile_contact_damage_amount = 1;
+                    thrown->projectile_contact_timer = kProjectileContactDuration;
 
                     Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
                     if (trying_to_go_left) {
@@ -219,6 +279,9 @@ void UpdateCarryAndBackItems(
                 StopUsingEntity(*item_taken_off_back);
                 item_taken_off_back->thrown_by = entity_vid;
                 item_taken_off_back->thrown_immunity_timer = kThrownByImmunityDuration;
+                item_taken_off_back->projectile_contact_damage_type = DamageType::Attack;
+                item_taken_off_back->projectile_contact_damage_amount = 1;
+                item_taken_off_back->projectile_contact_timer = kProjectileContactDuration;
             }
 
             Entity& entity = state.entity_manager.entities[entity_idx];

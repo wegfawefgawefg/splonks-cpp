@@ -104,6 +104,28 @@ SDL_FRect GetPresentationRect(const Graphics& graphics, int output_width, int ou
     };
 }
 
+Vec2 GetStageCameraCenter(const Stage& stage) {
+    return ToVec2(stage.GetStageDims()) / 2.0F;
+}
+
+float GetDefaultFollowCameraZoom(const Graphics& graphics) {
+    const float base = graphics.follow_camera_zoom;
+    if (graphics.dims.x < 1280U) {
+        const float ratio = 1280.0F / static_cast<float>(graphics.dims.x);
+        return base / ratio;
+    }
+    return base;
+}
+
+float GetStageFitCameraZoom(const Stage& stage, const Graphics& graphics) {
+    const Vec2 stage_dims = ToVec2(stage.GetStageDims());
+    const float padded_width = std::max(1.0F, stage_dims.x + (graphics.stage_fit_padding * 2.0F));
+    const float padded_height = std::max(1.0F, stage_dims.y + (graphics.stage_fit_padding * 2.0F));
+    const float zoom_x = static_cast<float>(graphics.dims.x) / padded_width;
+    const float zoom_y = static_cast<float>(graphics.dims.y) / padded_height;
+    return std::min(zoom_x, zoom_y);
+}
+
 SDL_Texture* Graphics::GetTexture(TextureName texture) const {
     const std::size_t index = static_cast<std::size_t>(texture);
     if (index >= textures.size()) {

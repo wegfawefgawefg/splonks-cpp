@@ -166,6 +166,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawBorderControls(debug, state, graphics);
     debug_playback_internal::DrawDebugOverlayWindow(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
+    debug_playback_internal::DrawCameraSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawLightingSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawGraphicsSettingsWindow(debug, state, graphics, window, renderer);

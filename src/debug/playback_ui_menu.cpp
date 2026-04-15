@@ -83,6 +83,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Entities", &debug.entity_inspector_visible);
     ImGui::Checkbox("Overlay", &debug.entity_annotations_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
+    ImGui::Checkbox("Camera Settings", &debug.camera_settings_window_visible);
     ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
     ImGui::Checkbox("Lighting Settings", &debug.lighting_settings_window_visible);
     ImGui::Checkbox("Graphics Settings", &debug.graphics_settings_window_visible);
@@ -238,10 +239,20 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         ImGui::BeginDisabled();
     }
 
-    int level_kind = static_cast<int>(state.debug_level.kind);
-    const char* level_names[] = {"SplkMines1", "HangTest", "StompTest", "BorderTest", "MazeDoorTest"};
-    ImGui::Combo("Preset", &level_kind, level_names, IM_ARRAYSIZE(level_names));
+    const DebugLevelKind previous_level_kind = state.debug_level.kind;
+    int level_kind = std::clamp(static_cast<int>(state.debug_level.kind), 0, kDebugLevelKindCount - 1);
+    const char* level_names[kDebugLevelKindCount] = {};
+    for (int i = 0; i < kDebugLevelKindCount; ++i) {
+        level_names[i] = GetDebugLevelKindName(static_cast<DebugLevelKind>(i));
+    }
+    ImGui::Combo("Preset", &level_kind, level_names, kDebugLevelKindCount);
+    level_kind = std::clamp(level_kind, 0, kDebugLevelKindCount - 1);
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
+    if (previous_level_kind != state.debug_level.kind &&
+        (state.debug_level.kind == DebugLevelKind::BowlingTest ||
+         state.debug_level.kind == DebugLevelKind::OpposingBodySmack)) {
+        graphics.camera_mode = CameraMode::StageFit;
+    }
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
     if (ImGui::Button("Give Players Gloves")) {
         for (Entity& entity : state.entity_manager.entities) {
@@ -279,6 +290,13 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         InitDebugLevel(state);
         if (state.debug_level.kind == DebugLevelKind::BorderTest) {
             ApplyBorderTestWrapConfig(state, graphics);
+        } else if (
+            state.debug_level.kind == DebugLevelKind::BowlingTest ||
+            state.debug_level.kind == DebugLevelKind::OpposingBodySmack) {
+            graphics.camera_mode = CameraMode::StageFit;
+            graphics.play_cam.pos = GetStageCameraCenter(state.stage);
+            graphics.camera.target = graphics.play_cam.pos;
+            graphics.camera.zoom = GetStageFitCameraZoom(state.stage, graphics);
         }
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);

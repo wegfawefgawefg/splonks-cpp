@@ -172,6 +172,7 @@ int main(int argc, char** argv) {
         debug.post_fx_settings_window_visible = state.settings.debug_ui.post_fx_settings_visible;
         debug.lighting_settings_window_visible = state.settings.debug_ui.lighting_settings_visible;
         debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
+        debug.camera_settings_window_visible = state.settings.debug_ui.camera_settings_visible;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
         splonks::RebuildStageLighting(state);
 

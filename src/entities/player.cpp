@@ -1,6 +1,4 @@
 #include "entities/player.hpp"
-#include "on_damage_effects.hpp"
-
 #include "audio.hpp"
 #include "entities/baseball_bat.hpp"
 #include "entities/block.hpp"

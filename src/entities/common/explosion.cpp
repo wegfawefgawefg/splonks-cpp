@@ -74,7 +74,24 @@ void DoExplosion(
         bool impassable = false;
         if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {
             impassable = entity->impassable;
-            TryDamageEntity(vid.id, state, audio, DamageType::Explosion, 10);
+            const DamageResult damage_result = TryDamageEntity(vid.id, state, audio, DamageType::Explosion, 10);
+            if ((damage_result == DamageResult::Hurt || damage_result == DamageResult::Died) && entity->active) {
+                const Vec2 delta = GetNearestWorldDelta(state.stage, center, entity->GetCenter());
+                const float knockback_x = delta.x < 0.0F
+                                              ? -static_cast<float>(rng::RandomIntInclusive(4, 6))
+                                              : static_cast<float>(rng::RandomIntInclusive(4, 6));
+                ApplyKnockback(
+                    *entity,
+                    KnockbackSpec{
+                        .velocity = Vec2::New(knockback_x, -6.0F),
+                        .clear_velocity = true,
+                        .clear_acceleration = true,
+                        .projectile_contact_damage_type = DamageType::Attack,
+                        .projectile_contact_damage_amount = 1,
+                        .projectile_contact_duration = kProjectileContactDuration,
+                    }
+                );
+            }
         }
         if (impassable) {
             state.entity_manager.SetInactive(vid.id);
