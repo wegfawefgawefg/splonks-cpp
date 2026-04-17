@@ -197,6 +197,10 @@ bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graph
 
 
 void StepPanicRun(Entity& damsel, const State& state, const Graphics& graphics) {
+    if (!damsel.grounded) {
+        return;
+    }
+
     int direction = damsel.facing == LeftOrRight::Left ? -1 : 1;
     if (common::HasWallAheadForGroundWalker(damsel, state, graphics, direction)) {
         damsel.facing = damsel.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
