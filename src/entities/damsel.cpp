@@ -171,6 +171,13 @@ void RescueDamsel(
     state.UpdateSidForEntity(entity_idx, graphics);
 }
 
+void KissEntity(std::optional<VID> kissed_by_vid, State& state, const Entity& damsel, Audio& audio) {
+    const Vec2 kiss_pos = GetRescueKissPosForEntity(kissed_by_vid, state, damsel);
+    SpawnRescueKissParticle(kiss_pos, state);
+    audio.PlaySoundEffect(SoundEffect::Smooch);
+    AwardDamselRescueHealthToEntity(kissed_by_vid, state);
+}
+
 bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graphics, Audio& audio) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return false;
@@ -233,6 +240,8 @@ bool BuyDamsel(
     Graphics& graphics,
     Audio& audio
 ) {
+    (void)graphics;
+
     if (entity_idx >= state.entity_manager.entities.size() ||
         buyer_idx >= state.entity_manager.entities.size()) {
         return false;
@@ -247,7 +256,7 @@ bool BuyDamsel(
         return false;
     }
 
-    RescueDamsel(entity_idx, state.entity_manager.entities[buyer_idx].vid, state, graphics, audio);
+    KissEntity(state.entity_manager.entities[buyer_idx].vid, state, damsel, audio);
     return true;
 }
 
