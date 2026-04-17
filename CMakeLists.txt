@@ -125,6 +125,7 @@ FetchContent_MakeAvailable(imgui)
 add_executable(splonks-cpp
     src/audio.cpp
     src/cli.cpp
+    src/buying.cpp
     src/contact_bookkeeping.cpp
     src/debug/playback_core.cpp
     src/debug/playback_recording_io.cpp
@@ -194,6 +195,7 @@ add_executable(splonks-cpp
     src/entities/sac_altar.cpp
     src/entities/scarab.cpp
     src/entities/shotgun.cpp
+    src/entities/shop.cpp
     src/entities/shopkeeper.cpp
     src/entities/sign.cpp
     src/entities/sapphire_big.cpp
@@ -201,6 +203,7 @@ add_executable(splonks-cpp
     src/entities/spider.cpp
     src/entities/spider_hang.cpp
     src/entities/stomp_pad.cpp
+    src/entities/store_light.cpp
     src/entities/teleporter.cpp
     src/entities/web_cannon.cpp
     src/entities/pistol.cpp

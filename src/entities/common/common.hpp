@@ -110,11 +110,13 @@ void DoExplosion(
     std::size_t entity_idx,
     Vec2 center,
     float size,
+    float push_magnitude,
     State& state,
     Audio& audio
 );
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
+void SetVisualCenterForEntity(Entity& entity, const Graphics& graphics, const Vec2& center);
 Vec2 GetEmitPointForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);
 AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics);
@@ -133,6 +135,11 @@ void UpdateCarryAndBackItems(
     State& state,
     const Graphics& graphics,
     Audio& audio
+);
+void SyncEntityAttachments(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics
 );
 bool TryApplyStompContactToEntity(
     std::size_t entity_idx,

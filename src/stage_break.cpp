@@ -35,6 +35,26 @@ void SpawnTileBreakAnimation(FrameDataId animation_id, const IVec2& tile_pos, St
     SpawnDamageEffectAnimationBurst(animation_id, center, state);
 }
 
+void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& audio) {
+    const Vec2 tile_center = Vec2::New(
+        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
+    );
+    const AABB tile_point_aabb = AABB::New(tile_center, tile_center);
+
+    for (const VID& vid : QueryEntitiesInAabb(state, tile_point_aabb)) {
+        const Entity* const entity = state.entity_manager.GetEntity(vid);
+        if (entity == nullptr || !entity->active || entity->on_area_tile_changed == nullptr) {
+            continue;
+        }
+        if (!WorldAabbContainsPoint(state.stage, entity->GetAABB(), tile_center)) {
+            continue;
+        }
+
+        entity->on_area_tile_changed(vid.id, tile_pos, state, audio);
+    }
+}
+
 } // namespace
 
 void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
@@ -43,6 +63,7 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
 
     std::optional<SoundEffect> break_sound = std::nullopt;
     bool broke_any_tiles = false;
+    std::vector<IVec2> changed_tiles;
     const std::vector<IVec2> tile_positions = GetTileCoordsInRect(state.stage, tl, br);
 
     for (const IVec2& tile_pos : tile_positions) {
@@ -64,6 +85,7 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
         if (tile_archetype.on_break != nullptr) {
             tile_archetype.on_break(tile_pos, state, audio);
         }
+        NotifyAreaEntitiesTileChanged(tile_pos, state, audio);
 
         const EntityType embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
         if (embedded_treasure != EntityType::None) {
@@ -75,11 +97,12 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
         }
 
         state.stage.SetTile(tile_pos, Tile::Air);
+        changed_tiles.push_back(tile_pos);
         broke_any_tiles = true;
     }
 
     if (broke_any_tiles) {
-        InvalidateStageLighting(state);
+        UpdateStageLightingForTileChanges(state, changed_tiles);
     }
     if (break_sound.has_value()) {
         audio.PlaySoundEffect(*break_sound);

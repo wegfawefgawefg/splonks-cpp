@@ -41,6 +41,10 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Show Chunk Coords", &state.debug_overlay.show_chunk_coords);
     ImGui::Checkbox("Show Tile Indexes", &state.debug_overlay.show_tile_indexes);
     ImGui::Checkbox("Show Tile Types", &state.debug_overlay.show_tile_types);
+    ImGui::Checkbox("Show Lights", &state.debug_overlay.show_lights);
+    ImGui::Checkbox("Show Area Boundaries", &state.debug_overlay.show_area_boundaries);
+    ImGui::Checkbox("Show Area IDs", &state.debug_overlay.show_area_ids);
+    ImGui::Checkbox("Show Area Types", &state.debug_overlay.show_area_types);
     ImGui::TextUnformatted("PBox/CBox overlay uses render debug colors.");
 
     ImGui::End();

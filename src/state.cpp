@@ -4,7 +4,18 @@
 #include "entities/common/common.hpp"
 #include "stage_init.hpp"
 
+#include <algorithm>
+
 namespace splonks {
+
+namespace {
+
+bool HasAnyAreaListenerCallback(const Entity& entity) {
+    return entity.on_area_enter != nullptr || entity.on_area_exit != nullptr ||
+           entity.on_area_tile_changed != nullptr;
+}
+
+} // namespace
 
 State State::New() {
     State state;
@@ -46,6 +57,7 @@ State State::New() {
     state.entity_manager = EntityManager::New();
     state.particles = ParticleSystem{};
     state.sid = SID::New();
+    state.area_listener_vids.clear();
     state.respawn_target = StageLoadTarget::ForStageType(StageType::SplkMines1);
     state.pending_stage_transition.reset();
     state.stage_lighting = StageLighting::New();
@@ -65,6 +77,7 @@ void State::SetMode(Mode new_mode) {
 
 void State::RebuildSid(const Graphics& graphics) {
     sid.Clear();
+    area_listener_vids.clear();
 
     for (std::size_t entity_id = 0; entity_id < entity_manager.entities.size(); ++entity_id) {
         UpdateSidForEntity(entity_id, graphics);
@@ -77,6 +90,7 @@ void State::UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics) 
     }
 
     const Entity& entity = entity_manager.entities[entity_id];
+    UpdateAreaListenerCacheForEntity(entity_id);
     sid.Remove(entity.vid);
     if (!entity.active) {
         return;
@@ -84,6 +98,37 @@ void State::UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics) 
 
     const AABB broadphase_aabb = entities::common::GetEntityBroadphaseAabb(entity, graphics);
     sid.Upsert(entity.vid, broadphase_aabb);
+}
+
+void State::RebuildAreaListenerCache() {
+    area_listener_vids.clear();
+    for (std::size_t entity_id = 0; entity_id < entity_manager.entities.size(); ++entity_id) {
+        UpdateAreaListenerCacheForEntity(entity_id);
+    }
+}
+
+void State::UpdateAreaListenerCacheForEntity(std::size_t entity_id) {
+    if (entity_id >= entity_manager.entities.size()) {
+        return;
+    }
+
+    const Entity& entity = entity_manager.entities[entity_id];
+    area_listener_vids.erase(
+        std::remove_if(
+            area_listener_vids.begin(),
+            area_listener_vids.end(),
+            [&](const VID& candidate) {
+                return candidate.id == entity.vid.id;
+            }
+        ),
+        area_listener_vids.end()
+    );
+
+    if (!entity.active || !HasAnyAreaListenerCallback(entity)) {
+        return;
+    }
+
+    area_listener_vids.push_back(entity.vid);
 }
 
 bool IsStageWon(const State& state) {

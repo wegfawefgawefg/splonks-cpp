@@ -16,10 +16,14 @@ struct EntityArchetype {
     std::uint32_t health = 0;
     bool has_physics = true;
     bool can_collide = true;
+    bool can_be_hit = true;
     bool can_be_picked_up = true;
+    bool can_only_be_picked_up_if_dead_or_stunned = false;
     bool impassable = false;
     bool hurt_on_contact = false;
     bool crusher_pusher = false;
+    bool can_stomp = false;
+    bool can_be_stomped = true;
     bool vanish_on_death = false;
     bool can_go_on_back = false;
     bool can_hang_ledge = false;
@@ -28,6 +32,7 @@ struct EntityArchetype {
     bool stun_recovers_while_held = true;
     bool has_ground_friction = true;
     DrawLayer draw_layer = DrawLayer::Middle;
+    bool render_enabled = true;
     LeftOrRight facing = LeftOrRight::Left;
     EntityCondition condition = EntityCondition::Normal;
     EntityAiState ai_state = EntityAiState::Idle;
@@ -38,6 +43,7 @@ struct EntityArchetype {
     float counter_b = 0.0F;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
+    Buyable buyable{};
     std::optional<FrameDataId> damage_animation = std::nullopt;
     std::optional<SoundEffect> damage_sound = std::nullopt;
     std::optional<SoundEffect> collide_sound = std::nullopt;
@@ -45,6 +51,9 @@ struct EntityArchetype {
     EntityOnDeath on_death = nullptr;
     EntityOnDamage on_damage = nullptr;
     EntityOnUse on_use = nullptr;
+    EntityOnAreaEnter on_area_enter = nullptr;
+    EntityOnAreaExit on_area_exit = nullptr;
+    EntityOnAreaTileChanged on_area_tile_changed = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     EntityLabel entity_label_a = EntityLabel::None;

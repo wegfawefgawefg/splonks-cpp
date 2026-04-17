@@ -13,6 +13,14 @@ namespace splonks::entities::common {
 namespace {
 
 void ApplyHeldState(Entity& entity) {
+    entity.thrown_by.reset();
+    entity.thrown_immunity_timer = 0;
+    entity.projectile_contact_damage_type = DamageType::Attack;
+    entity.projectile_contact_damage_amount = 1;
+    entity.projectile_contact_timer = 0;
+    entity.vel = Vec2::New(0.0F, 0.0F);
+    entity.acc = Vec2::New(0.0F, 0.0F);
+
     if (entity.type_ != EntityType::Damsel) {
         return;
     }
@@ -20,6 +28,88 @@ void ApplyHeldState(Entity& entity) {
     entity.condition = EntityCondition::Stunned;
     entity.stun_timer = kDefaultStunTimer;
     TrySetAnimation(entity, EntityDisplayState::Stunned);
+}
+
+void SyncHeldAttachmentForHolder(
+    const Entity& holder,
+    State& state,
+    const Graphics& graphics
+) {
+    if (!holder.holding_vid.has_value()) {
+        return;
+    }
+
+    Entity* const holding = state.entity_manager.GetEntityMut(*holder.holding_vid);
+    if (holding == nullptr || !holding->active) {
+        return;
+    }
+
+    holding->has_physics = false;
+    holding->can_collide = false;
+    holding->held_by_vid = holder.vid;
+    holding->attachment_mode = AttachmentMode::Held;
+    ApplyHeldState(*holding);
+    holding->facing = holder.facing;
+    holding->draw_layer = HasMovementFlag(holder, EntityMovementFlag::Climbing)
+                              ? DrawLayer::Background
+                              : DrawLayer::Foreground;
+
+    const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
+    const Vec2 holder_center = holder.GetCenter() + Vec2::New(0.0F, 1.0F);
+    const Vec2 held_pos_target =
+        holder.facing == LeftOrRight::Left
+            ? holder_center + Vec2::New(-hold_offset.x, hold_offset.y)
+            : holder_center + hold_offset;
+    SetVisualCenterForEntity(*holding, graphics, held_pos_target);
+    holding->grounded = false;
+    state.UpdateSidForEntity(holding->vid.id, graphics);
+}
+
+void SyncBackAttachmentForHolder(
+    const Entity& holder,
+    State& state,
+    const Graphics& graphics
+) {
+    if (!holder.back_vid.has_value()) {
+        return;
+    }
+
+    Entity* const back_item = state.entity_manager.GetEntityMut(*holder.back_vid);
+    if (back_item == nullptr || !back_item->active) {
+        return;
+    }
+
+    back_item->has_physics = false;
+    back_item->can_collide = false;
+    back_item->facing = holder.facing;
+    back_item->held_by_vid = holder.vid;
+    back_item->attachment_mode = AttachmentMode::Back;
+
+    const bool holder_climbing = HasMovementFlag(holder, EntityMovementFlag::Climbing);
+    const bool holder_hanging = HasMovementFlag(holder, EntityMovementFlag::Hanging);
+
+    Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
+    if (holder_climbing) {
+        back_offset = Vec2::New(-2.0F, 0.0F);
+        TrySetAnimation(*back_item, EntityDisplayState::Climbing);
+        back_item->draw_layer = DrawLayer::Foreground;
+    } else if (holder_hanging) {
+        back_offset = Vec2::New(-7.0F, 4.0F);
+        TrySetAnimation(*back_item, EntityDisplayState::Hanging);
+        back_item->draw_layer = DrawLayer::Foreground;
+    } else {
+        back_item->draw_layer = DrawLayer::Background;
+        TrySetAnimation(*back_item, EntityDisplayState::Neutral);
+    }
+
+    const Vec2 holder_center = holder.GetCenter();
+    const Vec2 held_pos_target =
+        holder.facing == LeftOrRight::Left
+            ? holder_center + Vec2::New(-back_offset.x, back_offset.y)
+            : holder_center + back_offset;
+    back_item->SetCenter(held_pos_target);
+    back_item->grounded = false;
+    state.UpdateSidForEntity(back_item->vid.id, graphics);
 }
 
 } // namespace
@@ -153,9 +243,13 @@ void UpdateCarryAndBackItems(
             if (trying_to_pick_up_these.has_value()) {
                 for (const VID& vid : *trying_to_pick_up_these) {
                     const Entity& candidate = state.entity_manager.entities[vid.id];
-                    const bool can_pick_up_candidate =
-                        candidate.can_be_picked_up || candidate.condition == EntityCondition::Dead ||
+                    const bool dead_or_stunned =
+                        candidate.condition == EntityCondition::Dead ||
                         candidate.condition == EntityCondition::Stunned;
+                    const bool can_pick_up_candidate =
+                        candidate.can_be_picked_up &&
+                        (!candidate.can_only_be_picked_up_if_dead_or_stunned ||
+                         dead_or_stunned);
                     if (!can_pick_up_candidate) {
                         continue;
                     }
@@ -300,89 +394,44 @@ void UpdateCarryAndBackItems(
 
     {
         const Entity& entity = state.entity_manager.entities[entity_idx];
-        const std::optional<VID> entity_holding_vid = entity.holding_vid;
-        const LeftOrRight entity_facing = entity.facing;
-        const Vec2 entity_center = entity.GetCenter() + Vec2::New(0.0F, 1.0F);
-        const bool entity_climbing = HasMovementFlag(entity, EntityMovementFlag::Climbing);
-        const bool entity_trying_to_use = control.use_held;
-
-        if (entity_holding_vid.has_value()) {
-            if (Entity* const holding = state.entity_manager.GetEntityMut(*entity_holding_vid)) {
-                holding->has_physics = false;
-                holding->can_collide = false;
-                holding->held_by_vid = entity.vid;
-                holding->attachment_mode = AttachmentMode::Held;
-                ApplyHeldState(*holding);
-                holding->facing = entity_facing;
-                const Vec2 hold_offset = Vec2::New(4.0F, 0.0F);
-                if (entity_climbing) {
-                    holding->draw_layer = DrawLayer::Background;
-                } else {
-                    holding->draw_layer = DrawLayer::Foreground;
-                }
-                if (entity_trying_to_use) {
+        if (entity.holding_vid.has_value()) {
+            if (Entity* const holding = state.entity_manager.GetEntityMut(*entity.holding_vid)) {
+                if (control.use_held) {
                     UseEntity(*holding, entity.vid, AttachmentMode::Held);
                 } else {
                     StopUsingEntity(*holding);
                 }
-                const Vec2 held_pos_target = entity_facing == LeftOrRight::Left
-                                                 ? entity_center +
-                                                       Vec2::New(-hold_offset.x, hold_offset.y)
-                                                 : entity_center + hold_offset;
-                holding->SetCenter(held_pos_target);
-                holding->grounded = false;
-                state.UpdateSidForEntity(holding->vid.id, graphics);
             }
         }
-    }
-
-    {
-        const Entity& entity = state.entity_manager.entities[entity_idx];
-        const VID entity_vid = entity.vid;
-        const std::optional<VID> entity_back_vid = entity.back_vid;
-        const LeftOrRight entity_facing = entity.facing;
-        const Vec2 entity_center = entity.GetCenter();
-        const bool entity_climbing = HasMovementFlag(entity, EntityMovementFlag::Climbing);
-        const bool entity_hanging = HasMovementFlag(entity, EntityMovementFlag::Hanging);
-        const bool entity_trying_to_use = control.use_back;
-
-        if (entity_back_vid.has_value()) {
-            if (Entity* const back_item = state.entity_manager.GetEntityMut(*entity_back_vid)) {
-                back_item->has_physics = false;
-                back_item->can_collide = false;
-                back_item->facing = entity_facing;
-                back_item->held_by_vid = entity_vid;
-                back_item->attachment_mode = AttachmentMode::Back;
-                if (entity_trying_to_use) {
-                    UseEntity(*back_item, entity_vid, AttachmentMode::Back);
+        if (entity.back_vid.has_value()) {
+            if (Entity* const back_item = state.entity_manager.GetEntityMut(*entity.back_vid)) {
+                if (control.use_back) {
+                    UseEntity(*back_item, entity.vid, AttachmentMode::Back);
                 } else {
                     StopUsingEntity(*back_item);
                 }
-
-                Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
-                if (entity_climbing) {
-                    back_offset = Vec2::New(-2.0F, 0.0F);
-                    TrySetAnimation(*back_item, EntityDisplayState::Climbing);
-                    back_item->draw_layer = DrawLayer::Foreground;
-                } else if (entity_hanging) {
-                    back_offset = Vec2::New(-7.0F, 4.0F);
-                    TrySetAnimation(*back_item, EntityDisplayState::Hanging);
-                    back_item->draw_layer = DrawLayer::Foreground;
-                } else {
-                    back_item->draw_layer = DrawLayer::Background;
-                    TrySetAnimation(*back_item, EntityDisplayState::Neutral);
-                }
-
-                const Vec2 held_pos_target = entity_facing == LeftOrRight::Left
-                                                 ? entity_center +
-                                                       Vec2::New(-back_offset.x, back_offset.y)
-                                                 : entity_center + back_offset;
-                back_item->SetCenter(held_pos_target);
-                back_item->grounded = false;
-                state.UpdateSidForEntity(back_item->vid.id, graphics);
             }
         }
     }
+}
+
+void SyncEntityAttachments(
+    std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics
+) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    CleanupInactiveCarryReferences(entity_idx, state);
+    const Entity& holder = state.entity_manager.entities[entity_idx];
+    if (!holder.active) {
+        return;
+    }
+
+    SyncHeldAttachmentForHolder(holder, state, graphics);
+    SyncBackAttachmentForHolder(holder, state, graphics);
 }
 
 } // namespace splonks::entities::common

@@ -1643,8 +1643,8 @@ sprites:
     cbox:
       x: 0
       y: 0
-      w: 0
-      h: 0
+      w: 3
+      h: 2
     tile: false
     emit_point:
       x: 0
@@ -1662,8 +1662,8 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 0
-      y: 0
+      x: 3
+      y: 2
     tags: []
     pbox:
       x: 0
@@ -1673,8 +1673,8 @@ sprites:
     cbox:
       x: 0
       y: 0
-      w: 0
-      h: 0
+      w: 6
+      h: 4
     tile: false
     emit_point:
       x: 0
@@ -1692,19 +1692,19 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 0
-      y: 0
+      x: 4
+      y: 3
     tags: []
     pbox:
-      x: 1
-      y: 2
-      w: 8
-      h: 4
+      x: 0
+      y: 0
+      w: 9
+      h: 6
     cbox:
       x: 0
       y: 0
-      w: 0
-      h: 0
+      w: 9
+      h: 6
     tile: false
     emit_point:
       x: 0
@@ -5726,6 +5726,246 @@ sprites:
       w: 0
       h: 0
     tile: true
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 0
+      y: 192
+      w: 16
+      h: 16
+    name: "lawson_left_topper"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 32
+      y: 192
+      w: 16
+      h: 16
+    name: "lawson_right_topper"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 16
+      y: 192
+      w: 16
+      h: 16
+    name: "lawson_middle_topper"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 0
+      y: 208
+      w: 16
+      h: 16
+    name: "lawson_wall"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 16
+      y: 208
+      w: 16
+      h: 16
+    name: "lawson_inside"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 36
+      y: 208
+      w: 8
+      h: 3
+    name: "store_light"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 3
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 3
+    tile: false
+    emit_point:
+      x: 4
+      y: 3
+  - path: "cave.png"
+    aabb:
+      x: 36
+      y: 212
+      w: 8
+      h: 3
+    name: "store_light_broken"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 3
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 3
+    tile: false
+    emit_point:
+      x: 4
+      y: 3
+  - path: "cave.png"
+    aabb:
+      x: 0
+      y: 224
+      w: 16
+      h: 16
+    name: "lawson_floor"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    tile: false
     emit_point:
       x: 0
       y: 0

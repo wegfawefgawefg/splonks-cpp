@@ -34,7 +34,10 @@ struct AirSourceNameGroup {
     std::uint32_t count = 0;
 };
 
-constexpr std::array<TileSourceNameGroup, 29> kTileSourceNameGroups{{
+constexpr std::array<TileSourceNameGroup, 50> kTileSourceNameGroups{{
+    {Tile::CaveAir0, {HashFrameDataIdConstexpr("cave_air_0"), 0, 0}, 1},
+    {Tile::CaveAir1, {HashFrameDataIdConstexpr("cave_air_1"), 0, 0}, 1},
+    {Tile::CaveAir2, {HashFrameDataIdConstexpr("cave_air_2"), 0, 0}, 1},
     {Tile::CaveDirt, {HashFrameDataIdConstexpr("cave_dirt_0"), HashFrameDataIdConstexpr("cave_dirt_1"), HashFrameDataIdConstexpr("cave_dirt_2")}, 3},
     {Tile::CaveGold, {HashFrameDataIdConstexpr("cave_gold_0"), 0, 0}, 1},
     {Tile::CaveGoldBig, {HashFrameDataIdConstexpr("cave_gold_1"), 0, 0}, 1},
@@ -42,22 +45,40 @@ constexpr std::array<TileSourceNameGroup, 29> kTileSourceNameGroups{{
     {Tile::CaveShopWall, {HashFrameDataIdConstexpr("cave_shop_wall"), 0, 0}, 1},
     {Tile::CaveSmoothWall, {HashFrameDataIdConstexpr("cave_smooth_wall"), 0, 0}, 1},
     {Tile::Glass, {HashFrameDataIdConstexpr("glass"), 0, 0}, 1},
+    {Tile::LawsonWall, {HashFrameDataIdConstexpr("lawson_wall"), 0, 0}, 1},
+    {Tile::LawsonInside, {HashFrameDataIdConstexpr("lawson_inside"), 0, 0}, 1},
+    {Tile::LawsonLeftTopper, {HashFrameDataIdConstexpr("lawson_left_topper"), 0, 0}, 1},
+    {Tile::LawsonMiddleTopper, {HashFrameDataIdConstexpr("lawson_middle_topper"), 0, 0}, 1},
+    {Tile::LawsonRightTopper, {HashFrameDataIdConstexpr("lawson_right_topper"), 0, 0}, 1},
+    {Tile::LawsonFloor, {HashFrameDataIdConstexpr("lawson_floor"), 0, 0}, 1},
 
+    {Tile::IceAir0, {HashFrameDataIdConstexpr("ice_air_0"), 0, 0}, 1},
+    {Tile::IceAir1, {HashFrameDataIdConstexpr("ice_air_1"), 0, 0}, 1},
+    {Tile::IceAir2, {HashFrameDataIdConstexpr("ice_air_2"), 0, 0}, 1},
     {Tile::IceDirt, {HashFrameDataIdConstexpr("ice_dirt_0"), HashFrameDataIdConstexpr("ice_dirt_1"), HashFrameDataIdConstexpr("ice_dirt_2")}, 3},
     {Tile::IceGold, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
     {Tile::IceGoldBig, {HashFrameDataIdConstexpr("ice_gold"), 0, 0}, 1},
     {Tile::IceBlock, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
 
+    {Tile::JungleAir0, {HashFrameDataIdConstexpr("jungle_air_0"), 0, 0}, 1},
+    {Tile::JungleAir1, {HashFrameDataIdConstexpr("jungle_air_1"), 0, 0}, 1},
+    {Tile::JungleAir2, {HashFrameDataIdConstexpr("jungle_air_2"), 0, 0}, 1},
     {Tile::JungleDirt, {HashFrameDataIdConstexpr("jungle_dirt_0"), HashFrameDataIdConstexpr("jungle_dirt_1"), HashFrameDataIdConstexpr("jungle_dirt_2")}, 3},
     {Tile::JungleGold, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
     {Tile::JungleGoldBig, {HashFrameDataIdConstexpr("jungle_gold_0"), 0, 0}, 1},
     {Tile::JungleBlock, {HashFrameDataIdConstexpr("jungle_block_0"), 0, 0}, 1},
 
+    {Tile::TempleAir0, {HashFrameDataIdConstexpr("temple_air_0"), 0, 0}, 1},
+    {Tile::TempleAir1, {HashFrameDataIdConstexpr("temple_air_1"), 0, 0}, 1},
+    {Tile::TempleAir2, {HashFrameDataIdConstexpr("temple_air_2"), 0, 0}, 1},
     {Tile::TempleDirt, {HashFrameDataIdConstexpr("temple_dirt_0"), HashFrameDataIdConstexpr("temple_dirt_1"), HashFrameDataIdConstexpr("temple_dirt_2")}, 3},
     {Tile::TempleGold, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
     {Tile::TempleGoldBig, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
     {Tile::TempleBlock, {HashFrameDataIdConstexpr("temple_block_0"), 0, 0}, 1},
 
+    {Tile::BossAir0, {HashFrameDataIdConstexpr("boss_air_0"), 0, 0}, 1},
+    {Tile::BossAir1, {HashFrameDataIdConstexpr("boss_air_1"), 0, 0}, 1},
+    {Tile::BossAir2, {HashFrameDataIdConstexpr("boss_air_2"), 0, 0}, 1},
     {Tile::BossDirt, {HashFrameDataIdConstexpr("boss_dirt_0"), HashFrameDataIdConstexpr("boss_dirt_1"), HashFrameDataIdConstexpr("boss_dirt_2")}, 3},
     {Tile::BossGold, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},
     {Tile::BossGoldBig, {HashFrameDataIdConstexpr("boss_gold"), 0, 0}, 1},

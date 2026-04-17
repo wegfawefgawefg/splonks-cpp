@@ -11,12 +11,18 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.type_ = archetype.type_;
     entity.has_physics = archetype.has_physics;
     entity.can_collide = archetype.can_collide;
+    entity.can_be_hit = archetype.can_be_hit;
     entity.can_be_picked_up = archetype.can_be_picked_up;
+    entity.can_only_be_picked_up_if_dead_or_stunned =
+        archetype.can_only_be_picked_up_if_dead_or_stunned;
     entity.impassable = archetype.impassable;
     entity.hurt_on_contact = archetype.hurt_on_contact;
+    entity.can_stomp = archetype.can_stomp;
+    entity.can_be_stomped = archetype.can_be_stomped;
     entity.vanish_on_death = archetype.vanish_on_death;
     entity.has_ground_friction = archetype.has_ground_friction;
     entity.passive_item = archetype.passive_item;
+    entity.buyable = archetype.buyable;
     entity.damage_animation = archetype.damage_animation;
     entity.damage_sound = archetype.damage_sound;
     entity.collide_sound = archetype.collide_sound;
@@ -24,6 +30,9 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.on_death = archetype.on_death;
     entity.on_damage = archetype.on_damage;
     entity.on_use = archetype.on_use;
+    entity.on_area_enter = archetype.on_area_enter;
+    entity.on_area_exit = archetype.on_area_exit;
+    entity.on_area_tile_changed = archetype.on_area_tile_changed;
     entity.step_logic = archetype.step_logic;
     entity.step_physics = archetype.step_physics;
     entity.crusher_pusher = archetype.crusher_pusher;
@@ -35,6 +44,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.size = archetype.size;
     entity.facing = archetype.facing;
     entity.draw_layer = archetype.draw_layer;
+    entity.render_enabled = archetype.render_enabled;
     TrySetAnimation(entity, archetype.display_state);
     entity.condition = archetype.condition;
     entity.ai_state = archetype.ai_state;

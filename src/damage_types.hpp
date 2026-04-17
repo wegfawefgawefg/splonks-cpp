@@ -4,6 +4,7 @@ namespace splonks {
 
 enum class DamageType {
     Attack,
+    IgnitingAttack,
     HeavyAttack,
     JumpOn,
     Burn,

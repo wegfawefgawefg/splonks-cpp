@@ -132,12 +132,12 @@ const FrameData* GetFirstFrameForAnimationOrFallback(
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureStageLighting(state);
-    const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const Vec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const Tile tile = state.stage.tiles[y][x];
+                const Tile backwall_tile = state.stage.backwall_tiles[y][x];
                 const IVec2 tile_pos = IVec2::New(
                     static_cast<int>(x * kTileSize),
                     static_cast<int>(y * kTileSize)
@@ -148,33 +148,33 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
 
-                const bool is_air_tile = tile == Tile::Air;
-                if (IsTileTransparent(tile)) {
-                    const TileSourceData* const air_source_data =
-                        GetAirSourceData(graphics, air_tile_set, tile_pos);
-                    if (air_source_data != nullptr) {
-                        SDL_Texture* const air_texture = GetTileTexture(graphics, *air_source_data);
-                        if (air_texture != nullptr) {
-                            const SDL_FRect air_src{
-                                static_cast<float>(air_source_data->sample_rect.x),
-                                static_cast<float>(air_source_data->sample_rect.y),
-                                static_cast<float>(air_source_data->sample_rect.w),
-                                static_cast<float>(air_source_data->sample_rect.h),
+                if (backwall_tile != Tile::Air) {
+                    const TileSourceData* const backwall_source_data =
+                        GetTileSourceData(graphics, backwall_tile, tile_pos);
+                    if (backwall_source_data != nullptr) {
+                        SDL_Texture* const backwall_texture =
+                            GetTileTexture(graphics, *backwall_source_data);
+                        if (backwall_texture != nullptr) {
+                            const SDL_FRect backwall_src{
+                                static_cast<float>(backwall_source_data->sample_rect.x),
+                                static_cast<float>(backwall_source_data->sample_rect.y),
+                                static_cast<float>(backwall_source_data->sample_rect.w),
+                                static_cast<float>(backwall_source_data->sample_rect.h),
                             };
                             ApplyBackwallTileBrightness(
-                                air_texture,
+                                backwall_texture,
                                 state,
                                 graphics,
                                 static_cast<int>(x),
                                 static_cast<int>(y)
                             );
-                            SDL_RenderTexture(renderer, air_texture, &air_src, &dst);
-                            ResetTerrainTileBrightness(air_texture);
+                            SDL_RenderTexture(renderer, backwall_texture, &backwall_src, &dst);
+                            ResetTerrainTileBrightness(backwall_texture);
                         }
                     }
                 }
 
-                if (is_air_tile) {
+                if (tile == Tile::Air) {
                     continue;
                 }
 
@@ -441,7 +441,7 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
         next_draw_queue.clear();
         for (std::size_t entity_id : draw_queue) {
             const Entity& entity = state.entity_manager.entities[entity_id];
-            if (!entity.active) {
+            if (!entity.active || !entity.render_enabled) {
                 continue;
             }
             if (entity.draw_layer != layer) {

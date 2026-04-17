@@ -8,6 +8,7 @@
 #include "text.hpp"
 #include "tile.hpp"
 #include "world_query.hpp"
+#include "entities/shop.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -81,17 +82,25 @@ SDL_FRect WorldRectToScreen(
     const Vec2& world_size
 ) {
     const float presentation_scale = presentation.w / static_cast<float>(graphics.dims.x);
-    const Vec2 relative = world_pos - graphics.camera.target;
-    const Vec2 internal_screen = relative * graphics.camera.zoom + graphics.camera.offset;
+    const Vec2 internal_screen = Vec2::New(
+        std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
+                   graphics.camera.offset.x),
+        std::round(((world_pos.y - graphics.camera.target.y) * graphics.camera.zoom) +
+                   graphics.camera.offset.y)
+    );
+    const Vec2 internal_size = Vec2::New(
+        std::round(world_size.x * graphics.camera.zoom),
+        std::round(world_size.y * graphics.camera.zoom)
+    );
     const Vec2 screen = Vec2::New(
-        presentation.x + internal_screen.x * presentation_scale,
-        presentation.y + internal_screen.y * presentation_scale
+        std::round(presentation.x + internal_screen.x * presentation_scale),
+        std::round(presentation.y + internal_screen.y * presentation_scale)
     );
     return SDL_FRect{
         screen.x,
         screen.y,
-        world_size.x * graphics.camera.zoom * presentation_scale,
-        world_size.y * graphics.camera.zoom * presentation_scale,
+        std::round(internal_size.x * presentation_scale),
+        std::round(internal_size.y * presentation_scale),
     };
 }
 
@@ -101,11 +110,15 @@ Vec2 WorldPointToScreen(
     const Vec2& world_pos
 ) {
     const float presentation_scale = presentation.w / static_cast<float>(graphics.dims.x);
-    const Vec2 relative = world_pos - graphics.camera.target;
-    const Vec2 internal_screen = relative * graphics.camera.zoom + graphics.camera.offset;
+    const Vec2 internal_screen = Vec2::New(
+        std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
+                   graphics.camera.offset.x),
+        std::round(((world_pos.y - graphics.camera.target.y) * graphics.camera.zoom) +
+                   graphics.camera.offset.y)
+    );
     return Vec2::New(
-        presentation.x + internal_screen.x * presentation_scale,
-        presentation.y + internal_screen.y * presentation_scale
+        std::round(presentation.x + internal_screen.x * presentation_scale),
+        std::round(presentation.y + internal_screen.y * presentation_scale)
     );
 }
 
@@ -433,6 +446,121 @@ void RenderTileOverlay(
     }
 }
 
+void RenderLightOverlay(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation,
+    const std::vector<Vec2>& render_offsets
+) {
+    if (!state.debug_overlay.show_lights) {
+        return;
+    }
+
+    for (const Vec2& render_offset : render_offsets) {
+        for (const StageLight& light : state.stage.lights) {
+            const Vec2 tile_tl = Vec2::New(
+                static_cast<float>(light.tile_pos.x * static_cast<int>(kTileSize)),
+                static_cast<float>(light.tile_pos.y * static_cast<int>(kTileSize))
+            ) + render_offset;
+            const SDL_FRect tile_rect = WorldRectToScreen(
+                graphics,
+                presentation,
+                tile_tl,
+                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+            );
+            if (!IsScreenRectVisible(presentation, tile_rect)) {
+                continue;
+            }
+
+            SDL_SetRenderDrawColor(renderer, 255, 200, 64, 255);
+            SDL_RenderRect(renderer, &tile_rect);
+
+            char label[64];
+            std::snprintf(label, sizeof(label), "L%zu b%d", light.vid.id, light.radius);
+            DrawText(
+                renderer,
+                graphics,
+                10,
+                graphics.ui_font,
+                label,
+                tile_rect.x + 1.0F,
+                tile_rect.y - 10.0F,
+                SDL_Color{255, 200, 64, 255}
+            );
+        }
+    }
+}
+
+void RenderAreaOverlay(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation,
+    const std::vector<Vec2>& render_offsets
+) {
+    if (!state.debug_overlay.show_area_boundaries &&
+        !state.debug_overlay.show_area_ids &&
+        !state.debug_overlay.show_area_types) {
+        return;
+    }
+
+    for (const Vec2& render_offset : render_offsets) {
+        for (const Entity& entity : state.entity_manager.entities) {
+            if (!entity.active || entity.type_ != EntityType::Shop) {
+                continue;
+            }
+
+            const AABB area = entities::shop::GetShopArea(entity);
+            const Vec2 area_size = area.br - area.tl + Vec2::New(1.0F, 1.0F);
+            const SDL_FRect area_rect = WorldRectToScreen(
+                graphics,
+                presentation,
+                area.tl + render_offset,
+                area_size
+            );
+            if (!IsScreenRectVisible(presentation, area_rect)) {
+                continue;
+            }
+
+            if (state.debug_overlay.show_area_boundaries) {
+                SDL_SetRenderDrawColor(renderer, 96, 255, 160, 255);
+                SDL_RenderRect(renderer, &area_rect);
+            }
+
+            float text_y = area_rect.y + 2.0F;
+            if (state.debug_overlay.show_area_ids) {
+                char label[32];
+                std::snprintf(label, sizeof(label), "shop %zu", entity.vid.id);
+                DrawText(
+                    renderer,
+                    graphics,
+                    10,
+                    graphics.ui_font,
+                    label,
+                    area_rect.x + 2.0F,
+                    text_y,
+                    SDL_Color{96, 255, 160, 255}
+                );
+                text_y += 10.0F;
+            }
+
+            if (state.debug_overlay.show_area_types) {
+                DrawText(
+                    renderer,
+                    graphics,
+                    10,
+                    graphics.ui_font,
+                    "Shop",
+                    area_rect.x + 2.0F,
+                    text_y,
+                    SDL_Color{160, 255, 224, 255}
+                );
+            }
+        }
+    }
+}
+
 } // namespace
 
 void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state) {
@@ -443,7 +571,11 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
         !state.debug_overlay.show_chunk_boundaries &&
         !state.debug_overlay.show_chunk_coords &&
         !state.debug_overlay.show_tile_indexes &&
-        !state.debug_overlay.show_tile_types) {
+        !state.debug_overlay.show_tile_types &&
+        !state.debug_overlay.show_lights &&
+        !state.debug_overlay.show_area_boundaries &&
+        !state.debug_overlay.show_area_ids &&
+        !state.debug_overlay.show_area_types) {
         return;
     }
 
@@ -464,6 +596,14 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
     }
     if (state.debug_overlay.show_tile_indexes || state.debug_overlay.show_tile_types) {
         RenderTileOverlay(renderer, graphics, state, presentation, render_offsets);
+    }
+    if (state.debug_overlay.show_lights) {
+        RenderLightOverlay(renderer, graphics, state, presentation, render_offsets);
+    }
+    if (state.debug_overlay.show_area_boundaries ||
+        state.debug_overlay.show_area_ids ||
+        state.debug_overlay.show_area_types) {
+        RenderAreaOverlay(renderer, graphics, state, presentation, render_offsets);
     }
 }
 

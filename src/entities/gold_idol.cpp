@@ -17,6 +17,7 @@ extern const EntityArchetype kGoldIdolArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,

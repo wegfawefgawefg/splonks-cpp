@@ -33,11 +33,13 @@
 #include "entities/sapphire_big.hpp"
 #include "entities/scarab.hpp"
 #include "entities/shotgun.hpp"
+#include "entities/shop.hpp"
 #include "entities/shopkeeper.hpp"
 #include "entities/sign.hpp"
 #include "entities/snake.hpp"
 #include "entities/spider_hang.hpp"
 #include "entities/stomp_pad.hpp"
+#include "entities/store_light.hpp"
 #include "entities/pot.hpp"
 #include "entities/spider.hpp"
 #include "entities/teleporter.hpp"
@@ -127,6 +129,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::RubyBig, entities::ruby_big::kRubyBigArchetype, "RubyBig");
     SetArchetype(EntityType::EmeraldBig, entities::emerald_big::kEmeraldBigArchetype, "EmeraldBig");
     SetArchetype(EntityType::SapphireBig, entities::sapphire_big::kSapphireBigArchetype, "SapphireBig");
+    SetArchetype(EntityType::Shop, entities::shop::kShopArchetype, "Shop");
     SetArchetype(EntityType::Shopkeeper, entities::shopkeeper::kShopkeeperArchetype, "Shopkeeper");
     SetArchetype(EntityType::Damsel, entities::damsel::kDamselArchetype, "Damsel");
     SetArchetype(EntityType::SignGeneral, entities::sign::kSignGeneralArchetype, "SignGeneral");
@@ -136,6 +139,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::SignClothing, entities::sign::kSignClothingArchetype, "SignClothing");
     SetArchetype(EntityType::SignCraps, entities::sign::kSignCrapsArchetype, "SignCraps");
     SetArchetype(EntityType::SignKissing, entities::sign::kSignKissingArchetype, "SignKissing");
+    SetArchetype(EntityType::StoreLight, entities::store_light::kStoreLightArchetype, "StoreLight");
     SetArchetype(EntityType::Lantern, entities::lantern::kLanternArchetype, "Lantern");
     SetArchetype(EntityType::LanternRed, entities::lantern::kLanternRedArchetype, "LanternRed");
     SetArchetype(EntityType::GiantTikiHead, entities::giant_tiki_head::kGiantTikiHeadArchetype, "GiantTikiHead");

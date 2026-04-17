@@ -19,6 +19,7 @@ extern const EntityArchetype kMouseTrailerArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
+    .render_enabled = false,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,

@@ -10,6 +10,8 @@ namespace {
 
 constexpr std::uint32_t kHarmContactCooldownFrames = 8;
 constexpr std::uint32_t kProjectileBodyImpactCooldownFrames = 60;
+constexpr float kProjectileContactVelocityScale = 0.5F;
+constexpr float kProjectileContactMinimumUpwardVelocity = -0.5F;
 
 bool HasContactHarmAlignment(const Entity& source, const Entity& target) {
     return (source.alignment == Alignment::Ally && target.alignment == Alignment::Enemy) ||
@@ -38,13 +40,13 @@ KnockbackSpec BuildBodyContactKnockback(const Entity& source, const Entity& targ
 }
 
 KnockbackSpec BuildProjectileContactKnockback(const Entity& source, const Entity& target, const Stage& stage) {
-    Vec2 velocity = source.vel;
+    Vec2 velocity = source.vel * kProjectileContactVelocityScale;
     if (velocity.x == 0.0F) {
         const Vec2 delta = GetNearestWorldDelta(stage, source.GetCenter(), target.GetCenter());
         velocity.x = delta.x < 0.0F ? -2.0F : 2.0F;
     }
-    if (velocity.y > -1.0F) {
-        velocity.y = -1.0F;
+    if (velocity.y > kProjectileContactMinimumUpwardVelocity) {
+        velocity.y = kProjectileContactMinimumUpwardVelocity;
     }
 
     return KnockbackSpec{
@@ -142,46 +144,6 @@ void MaybeHurtAndStunOnContact(
     }
 }
 
-bool MaybeHurtAndStunOnContactAsProjectile(
-    std::size_t entity_idx,
-    State& state,
-    const Graphics& graphics,
-    Audio& audio
-) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!CanApplyProjectileContact(entity)) {
-        return false;
-    }
-
-    bool hit = false;
-    const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
-    const std::vector<VID> search_results =
-        QueryEntitiesInAabb(state, entity_aabb, entity.vid);
-    for (const VID& vid : search_results) {
-        const Entity* const other_entity = state.entity_manager.GetEntity(vid);
-        if (other_entity == nullptr || other_entity->impassable) {
-            continue;
-        }
-        if (TryApplyProjectileContactToEntity(entity_idx, vid.id, state, graphics, audio)) {
-            hit = true;
-        }
-    }
-    return hit;
-}
-
-void MaybeHurtAndStunAsOnContactHurtfulEntityBodyOrProjectile(
-    std::size_t entity_idx,
-    State& state,
-    const Graphics& graphics,
-    Audio& audio
-) {
-    MaybeHurtAndStunOnContact(entity_idx, state, graphics, audio);
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.condition != EntityCondition::Normal) {
-        MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, graphics, audio);
-    }
-}
-
 void ApplyHurtOnContact(
     std::size_t entity_idx,
     State& state,
@@ -190,9 +152,7 @@ void ApplyHurtOnContact(
 ) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
     if (entity.hurt_on_contact) {
-        MaybeHurtAndStunAsOnContactHurtfulEntityBodyOrProjectile(entity_idx, state, graphics, audio);
-    } else {
-        MaybeHurtAndStunOnContactAsProjectile(entity_idx, state, graphics, audio);
+        MaybeHurtAndStunOnContact(entity_idx, state, graphics, audio);
     }
 }
 
@@ -245,7 +205,16 @@ bool TryApplyProjectileContactToEntity(
     if (!entity.active || !other_entity.active || !CanApplyProjectileContact(entity)) {
         return false;
     }
+    if (!entity.can_collide) {
+        return false;
+    }
+    if (entity.held_by_vid.has_value()) {
+        return false;
+    }
     if (entity.thrown_by.has_value() && other_entity.vid == *entity.thrown_by) {
+        return false;
+    }
+    if (!other_entity.can_be_hit) {
         return false;
     }
     if (!other_entity.can_collide) {
@@ -275,7 +244,8 @@ bool TryApplyProjectileContactToEntity(
         );
     switch (damage_result) {
     case DamageResult::Hurt:
-    case DamageResult::Died: {
+    case DamageResult::Died:
+    case DamageResult::None: {
         Entity& other_entity_mut = state.entity_manager.entities[other_entity_idx];
         ApplyKnockback(
             other_entity_mut,
@@ -292,25 +262,6 @@ bool TryApplyProjectileContactToEntity(
         }
         return true;
     }
-    case DamageResult::None:
-        if (CanProjectileImpactWithoutDamage(other_entity)) {
-            Entity& other_entity_mut = state.entity_manager.entities[other_entity_idx];
-            ApplyKnockback(
-                other_entity_mut,
-                BuildProjectileContactKnockback(entity, other_entity_mut, state.stage)
-            );
-            state.contact.AddProjectileBodyImpactCooldown(
-                entity.vid,
-                other_entity.vid,
-                state.stage_frame,
-                kProjectileBodyImpactCooldownFrames
-            );
-            if (entity.collide_sound.has_value()) {
-                audio.PlaySoundEffect(*entity.collide_sound);
-            }
-            return true;
-        }
-        return false;
     }
 
     return false;

@@ -10,6 +10,8 @@ namespace splonks {
 Vec2 GetNearestWorldDelta(const Stage& stage, const Vec2& from, const Vec2& to);
 Vec2 GetNearestWorldPoint(const Stage& stage, const Vec2& anchor, const Vec2& point);
 AABB GetNearestWorldAabb(const Stage& stage, const Vec2& anchor, const AABB& aabb);
+bool WorldAabbContainsPoint(const Stage& stage, const AABB& area, const Vec2& point);
+bool WorldAabbsIntersect(const Stage& stage, const AABB& area, const AABB& other);
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br);
 
 struct WorldTileQueryResult {

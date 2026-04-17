@@ -1525,9 +1525,7 @@ ResolvedRoom ResolveRoom(
                 break;
             case 'l':
                 room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = selection.shop_type == ShopType::Kissing
-                                 ? EntityType::LanternRed
-                                 : EntityType::Lantern,
+                    .type_ = EntityType::StoreLight,
                     .pos = tile_pos,
                 });
                 break;
@@ -1613,24 +1611,33 @@ Stage GenerateStage(StageType stage_type) {
     Stage stage;
     stage.stage_type = stage_type;
     stage.border = Stage::MakeUniformBorder(Tile::CaveDirt);
+    std::vector<Tile> backwall_fill_tiles{
+        Tile::CaveAir0,
+        Tile::CaveAir1,
+        Tile::CaveAir2,
+    };
     switch (stage_type) {
     case StageType::Ice1:
     case StageType::Ice2:
     case StageType::Ice3:
         stage.border = Stage::MakeUniformBorder(Tile::IceDirt);
+        backwall_fill_tiles = {Tile::IceAir0, Tile::IceAir1, Tile::IceAir2};
         break;
     case StageType::Desert1:
     case StageType::Desert2:
     case StageType::Desert3:
         stage.border = Stage::MakeUniformBorder(Tile::JungleDirt);
+        backwall_fill_tiles = {Tile::JungleAir0, Tile::JungleAir1, Tile::JungleAir2};
         break;
     case StageType::Temple1:
     case StageType::Temple2:
     case StageType::Temple3:
         stage.border = Stage::MakeUniformBorder(Tile::TempleDirt);
+        backwall_fill_tiles = {Tile::TempleAir0, Tile::TempleAir1, Tile::TempleAir2};
         break;
     case StageType::Boss:
         stage.border = Stage::MakeUniformBorder(Tile::BossDirt);
+        backwall_fill_tiles = {Tile::BossAir0, Tile::BossAir1, Tile::BossAir2};
         break;
     case StageType::Blank:
     case StageType::Test1:
@@ -1697,6 +1704,7 @@ Stage GenerateStage(StageType stage_type) {
     }
 
     stage.tiles = std::move(tiles);
+    stage.FillBackwall(backwall_fill_tiles);
     stage.embedded_treasures = std::vector<std::vector<EntityType>>(
         stage.tiles.size(),
         std::vector<EntityType>(

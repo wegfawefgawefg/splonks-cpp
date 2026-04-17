@@ -13,6 +13,11 @@ bool ShouldDeduplicatePairThisTick(const ContactContext& context) {
     return context.direction == 0;
 }
 
+bool AreDirectlyAttached(const Entity& first, const Entity& second) {
+    return (first.held_by_vid.has_value() && *first.held_by_vid == second.vid) ||
+           (second.held_by_vid.has_value() && *second.held_by_vid == first.vid);
+}
+
 struct ParticipantContactDispatch {
     ContactResolution resolution;
     bool write_cooldown = false;
@@ -83,21 +88,6 @@ ContactResolution TryDispatchEntityEntityContactByType(
             *audio
         )) {
         return ContactResolution{};
-    }
-
-    if (graphics != nullptr && audio != nullptr &&
-        context.phase == ContactPhase::SweptEntered &&
-        TryApplyProjectileContactToEntity(
-            participant_idx,
-            other_entity_idx,
-            state,
-            *graphics,
-            *audio
-        )) {
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
     }
 
     switch (participant.type_) {
@@ -184,6 +174,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::RubyBig:
     case EntityType::EmeraldBig:
     case EntityType::SapphireBig:
+    case EntityType::Shop:
     case EntityType::Shopkeeper:
     case EntityType::Damsel:
     case EntityType::SignGeneral:
@@ -193,6 +184,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::SignClothing:
     case EntityType::SignCraps:
     case EntityType::SignKissing:
+    case EntityType::StoreLight:
     case EntityType::Lantern:
     case EntityType::LanternRed:
     case EntityType::GiantTikiHead:
@@ -271,6 +263,9 @@ std::vector<VID> GatherTouchedEntityContactsForAabb(
         if (other_entity == nullptr || !other_entity->active) {
             continue;
         }
+        if (AreDirectlyAttached(entity, *other_entity)) {
+            continue;
+        }
 
         const AABB other_contact_aabb = GetNearestWorldAabb(
             state.stage,
@@ -315,6 +310,24 @@ ContactResolution TryDispatchEntityEntityContactPair(
     ContactResolution result{};
     if (context.phase == ContactPhase::AttemptedBlocked && other_entity.impassable) {
         result.blocks_movement = true;
+    }
+
+    if (graphics != nullptr && audio != nullptr && context.phase == ContactPhase::SweptEntered) {
+        const bool entity_projectile_hit = TryApplyProjectileContactToEntity(
+            entity_idx,
+            other_entity_idx,
+            state,
+            *graphics,
+            *audio
+        );
+        const bool other_entity_projectile_hit = TryApplyProjectileContactToEntity(
+            other_entity_idx,
+            entity_idx,
+            state,
+            *graphics,
+            *audio
+        );
+        result.stop_sweep |= entity_projectile_hit || other_entity_projectile_hit;
     }
 
     const ParticipantContactDispatch entity_dispatch = TryDispatchEntityEntityContactForParticipant(

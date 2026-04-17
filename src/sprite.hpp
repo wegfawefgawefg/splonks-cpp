@@ -1,6 +1,5 @@
 #pragma once
 
-#include "origin.hpp"
 #include "math_types.hpp"
 
 #include <cstddef>
@@ -76,7 +75,6 @@ struct SpriteAnimator {
     Sprite GetSprite() const;
     void Step(const std::vector<SpriteData>& sprites, float dt);
     void RandomizeFrame(const std::vector<SpriteData>& sprites);
-    Vec2 GetOrigin(const std::vector<SpriteData>& sprites, Origin origin) const;
 };
 
 } // namespace splonks

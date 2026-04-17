@@ -276,7 +276,9 @@ EntityDamageEffectResult OnDamageEffectAsChest(
     if (damage_applied) {
         return EntityDamageEffectResult::None;
     }
-    if (damage_type != DamageType::Attack && damage_type != DamageType::HeavyAttack) {
+    if (damage_type != DamageType::Attack &&
+        damage_type != DamageType::IgnitingAttack &&
+        damage_type != DamageType::HeavyAttack) {
         return EntityDamageEffectResult::None;
     }
 

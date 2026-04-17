@@ -1,6 +1,7 @@
 #include "entities/damsel.hpp"
 
 #include "audio.hpp"
+#include "buying.hpp"
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_animator.hpp"
@@ -61,32 +62,42 @@ void SpawnRescueKissParticle(const Vec2& pos, State& state) {
     state.particles.Add(std::move(kiss));
 }
 
-Vec2 GetRescueKissPos(const State& state, const Entity& damsel) {
-    if (!state.player_vid.has_value()) {
+Vec2 GetRescueKissPosForEntity(std::optional<VID> target_vid, const State& state, const Entity& damsel) {
+    if (!target_vid.has_value()) {
         return damsel.GetCenter();
     }
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active) {
+
+    const Entity* const target = state.entity_manager.GetEntity(*target_vid);
+    if (target == nullptr || !target->active) {
         return damsel.GetCenter();
     }
-    const AABB player_aabb = player->GetAABB();
+
+    const AABB target_aabb = target->GetAABB();
     return Vec2::New(
-        (player_aabb.tl.x + player_aabb.br.x) * 0.5F,
-        player_aabb.tl.y + player->size.y * kRescueKissYOffsetFactor
+        (target_aabb.tl.x + target_aabb.br.x) * 0.5F,
+        target_aabb.tl.y + target->size.y * kRescueKissYOffsetFactor
     );
 }
 
+Vec2 GetRescueKissPos(const State& state, const Entity& damsel) {
+    return GetRescueKissPosForEntity(state.player_vid, state, damsel);
+}
+
+void AwardDamselRescueHealthToEntity(std::optional<VID> target_vid, State& state) {
+    if (!target_vid.has_value()) {
+        return;
+    }
+
+    Entity* const target = state.entity_manager.GetEntityMut(*target_vid);
+    if (target == nullptr || !target->active || target->condition == EntityCondition::Dead) {
+        return;
+    }
+
+    target->health += kDamselRescueHealthGain;
+}
+
 void AwardDamselRescueHealth(State& state) {
-    if (!state.player_vid.has_value()) {
-        return;
-    }
-
-    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        return;
-    }
-
-    player->health += kDamselRescueHealthGain;
+    AwardDamselRescueHealthToEntity(state.player_vid, state);
 }
 
 void DetachDamselFromHolder(Entity& damsel, State& state) {
@@ -139,8 +150,28 @@ void MaybeStartPanicRunFromCarryRelease(Entity& damsel) {
     StartPanicRun(damsel);
 }
 
+void RescueDamsel(
+    std::size_t entity_idx,
+    std::optional<VID> rescued_by_vid,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    Entity& damsel = state.entity_manager.entities[entity_idx];
+    const Vec2 kiss_pos = GetRescueKissPosForEntity(rescued_by_vid, state, damsel);
+    SpawnRescueKissParticle(kiss_pos, state);
+    audio.PlaySoundEffect(SoundEffect::Smooch);
+    AwardDamselRescueHealthToEntity(rescued_by_vid, state);
+
+    DetachDamselFromHolder(damsel, state);
+    damsel.damage_vulnerability = DamageVulnerability::Immune;
+    damsel.can_collide = false;
+    damsel.has_physics = false;
+    state.entity_manager.SetInactive(entity_idx);
+    state.UpdateSidForEntity(entity_idx, graphics);
+}
+
 bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graphics, Audio& audio) {
-    (void)graphics;
     if (entity_idx >= state.entity_manager.entities.size()) {
         return false;
     }
@@ -153,17 +184,7 @@ bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graph
         return false;
     }
 
-    const Vec2 kiss_pos = GetRescueKissPos(state, damsel);
-    SpawnRescueKissParticle(kiss_pos, state);
-    audio.PlaySoundEffect(SoundEffect::Smooch);
-    AwardDamselRescueHealth(state);
-
-    DetachDamselFromHolder(damsel, state);
-    damsel.damage_vulnerability = DamageVulnerability::Immune;
-    damsel.can_collide = false;
-    damsel.has_physics = false;
-    state.entity_manager.SetInactive(entity_idx);
-    state.UpdateSidForEntity(entity_idx, graphics);
+    RescueDamsel(entity_idx, state.player_vid, state, graphics, audio);
     return true;
 }
 
@@ -204,6 +225,31 @@ bool ShouldPlayAmbientCry(const Entity& damsel, std::uint64_t stage_frame) {
 }
 
 } // namespace
+
+bool BuyDamsel(
+    std::size_t entity_idx,
+    std::size_t buyer_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
+    if (entity_idx >= state.entity_manager.entities.size() ||
+        buyer_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    Entity& damsel = state.entity_manager.entities[entity_idx];
+    if (!damsel.active || damsel.condition == EntityCondition::Dead) {
+        return false;
+    }
+    const std::uint32_t price = damsel.buyable.display_quantity;
+    if (!TrySpendMoney(buyer_idx, price, state, audio)) {
+        return false;
+    }
+
+    RescueDamsel(entity_idx, state.entity_manager.entities[buyer_idx].vid, state, graphics, audio);
+    return true;
+}
 
 void StepEntityLogicAsDamsel(
     std::size_t entity_idx,

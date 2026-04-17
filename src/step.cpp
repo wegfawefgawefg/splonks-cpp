@@ -2,6 +2,7 @@
 
 #include "inputs.hpp"
 #include "controls.hpp"
+#include "buying.hpp"
 #include "step_entities.hpp"
 #include "stage_progression.hpp"
 
@@ -104,6 +105,9 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.entity_tools.Step();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
+    if (state.player_vid.has_value() && state.playing_inputs.buy_button.pressed) {
+        (void)TryBuyOverlappingEntity(state.player_vid->id, state, graphics, audio);
+    }
     state.particles.Step(graphics.frame_data_db, dt);
 
     bool lost = false;

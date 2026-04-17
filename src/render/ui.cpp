@@ -1,5 +1,6 @@
 #include "render/ui.hpp"
 
+#include "buying.hpp"
 #include "entity.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
@@ -357,6 +358,100 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
         static_cast<float>(hud_margin + status_icon_size.y + hud_gap + 34),
         SDL_Color{255, 255, 255, 255}
     );
+
+    const std::optional<BuyPrompt> buy_prompt = GetBuyPromptForPlayer(state, graphics);
+    if (buy_prompt.has_value()) {
+        const SDL_Color text_color = SDL_Color{255, 255, 255, 255};
+        constexpr int kPromptFontSize = 28;
+        constexpr float kPromptIconYOffset = 4.0F;
+        const bool show_quantity = buy_prompt->quantity > 0;
+        const bool show_icon = buy_prompt->icon_animation_id.has_value();
+
+        char action_text[32];
+        std::snprintf(action_text, sizeof(action_text), "SELECT");
+        char quantity_text[32];
+        std::snprintf(quantity_text, sizeof(quantity_text), "%u", buy_prompt->quantity);
+
+        int action_width = 0;
+        int action_height = 0;
+        int quantity_width = 0;
+        int quantity_height = 0;
+        MeasureText(graphics, kPromptFontSize, graphics.ui_font, action_text, &action_width, &action_height);
+        if (show_quantity) {
+            MeasureText(graphics, kPromptFontSize, graphics.ui_font, quantity_text, &quantity_width, &quantity_height);
+        }
+
+        const int prompt_gap = std::max(8, hud_gap);
+        const IVec2 prompt_icon_size = IVec2::New(
+            std::max(1, status_icon_size.x / 2),
+            std::max(1, status_icon_size.y / 2)
+        );
+
+        int total_width = action_width;
+        if (show_icon || show_quantity) {
+            total_width += prompt_gap;
+        }
+        if (show_icon) {
+            total_width += prompt_icon_size.x;
+        }
+        if (show_icon && show_quantity) {
+            total_width += prompt_gap;
+        }
+        if (show_quantity) {
+            total_width += quantity_width;
+        }
+
+        const float prompt_y = static_cast<float>(graphics.dims.y) - static_cast<float>(hud_margin + 48);
+        float cursor_x = (static_cast<float>(graphics.dims.x) - static_cast<float>(total_width)) / 2.0F;
+
+        DrawText(
+            renderer,
+            graphics,
+            kPromptFontSize,
+            graphics.ui_font,
+            action_text,
+            cursor_x,
+            prompt_y,
+            text_color
+        );
+        cursor_x += static_cast<float>(action_width);
+
+        if (show_icon || show_quantity) {
+            cursor_x += static_cast<float>(prompt_gap);
+        }
+
+        if (show_icon) {
+            DrawFrameDataIcon(
+                renderer,
+                state,
+                graphics,
+                *buy_prompt->icon_animation_id,
+                IVec2::New(
+                    static_cast<int>(cursor_x),
+                    static_cast<int>(prompt_y + kPromptIconYOffset)
+                ),
+                prompt_icon_size
+            );
+            cursor_x += static_cast<float>(prompt_icon_size.x);
+        }
+
+        if (show_icon && show_quantity) {
+            cursor_x += static_cast<float>(prompt_gap);
+        }
+
+        if (show_quantity) {
+            DrawText(
+                renderer,
+                graphics,
+                kPromptFontSize,
+                graphics.ui_font,
+                quantity_text,
+                cursor_x,
+                prompt_y,
+                text_color
+            );
+        }
+    }
 }
 
 } // namespace splonks

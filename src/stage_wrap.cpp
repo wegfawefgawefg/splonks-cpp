@@ -42,6 +42,10 @@ void ShiftStageSpawnsAndStamps(Stage& stage, const Vec2& delta) {
     for (BackgroundStamp& stamp : stage.background_stamps) {
         stamp.pos += delta;
     }
+    const IVec2 tile_delta = ToIVec2(delta / static_cast<float>(kTileSize));
+    for (StageLight& light : stage.lights) {
+        light.tile_pos = light.tile_pos + tile_delta;
+    }
 }
 
 void ShiftStageRoomMetadata(Stage& stage, const IVec2& chunk_offset) {
@@ -112,6 +116,27 @@ void CropStageSpawnsAndStampsAndShiftBack(Stage& stage, const Vec2& delta_wc) {
         WrapPosIntoCore(stage, stamp.pos);
         stamp.pos = stamp.pos - delta_wc;
     }
+    const IVec2 core_origin = ToIVec2(stage.wrap_core_origin_tiles);
+    const IVec2 core_size = ToIVec2(stage.wrap_core_size_tiles);
+    for (StageLight& light : stage.lights) {
+        if (stage.border.wrap_x && core_size.x > 0) {
+            while (light.tile_pos.x < core_origin.x) {
+                light.tile_pos.x += core_size.x;
+            }
+            while (light.tile_pos.x >= core_origin.x + core_size.x) {
+                light.tile_pos.x -= core_size.x;
+            }
+        }
+        if (stage.border.wrap_y && core_size.y > 0) {
+            while (light.tile_pos.y < core_origin.y) {
+                light.tile_pos.y += core_size.y;
+            }
+            while (light.tile_pos.y >= core_origin.y + core_size.y) {
+                light.tile_pos.y -= core_size.y;
+            }
+        }
+        light.tile_pos = light.tile_pos - core_origin;
+    }
 }
 
 void ExpandStageForWrap(
@@ -144,6 +169,10 @@ void ExpandStageForWrap(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<Tile>(static_cast<std::size_t>(new_tile_dims.x), Tile::Air)
     );
+    std::vector<std::vector<Tile>> backwall_tiles(
+        static_cast<std::size_t>(new_tile_dims.y),
+        std::vector<Tile>(static_cast<std::size_t>(new_tile_dims.x), Tile::Air)
+    );
     std::vector<std::vector<EntityType>> embedded_treasures(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<EntityType>(static_cast<std::size_t>(new_tile_dims.x), EntityType::None)
@@ -154,6 +183,10 @@ void ExpandStageForWrap(
             tiles[static_cast<std::size_t>(y + padding_tiles.y)]
                  [static_cast<std::size_t>(x + padding_tiles.x)] =
                      stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            backwall_tiles[static_cast<std::size_t>(y + padding_tiles.y)]
+                          [static_cast<std::size_t>(x + padding_tiles.x)] =
+                              stage.backwall_tiles[static_cast<std::size_t>(y)]
+                                                  [static_cast<std::size_t>(x)];
             embedded_treasures[static_cast<std::size_t>(y + padding_tiles.y)]
                               [static_cast<std::size_t>(x + padding_tiles.x)] =
                                   stage.embedded_treasures[static_cast<std::size_t>(y)]
@@ -162,6 +195,7 @@ void ExpandStageForWrap(
     }
 
     stage.tiles = std::move(tiles);
+    stage.backwall_tiles = std::move(backwall_tiles);
     stage.embedded_treasures = std::move(embedded_treasures);
     stage.wrap_transform_active = true;
     stage.wrap_padding_chunks = padding_chunks;
@@ -192,6 +226,10 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<Tile>(static_cast<std::size_t>(core_size.x), Tile::Air)
     );
+    std::vector<std::vector<Tile>> backwall_tiles(
+        static_cast<std::size_t>(core_size.y),
+        std::vector<Tile>(static_cast<std::size_t>(core_size.x), Tile::Air)
+    );
     std::vector<std::vector<EntityType>> embedded_treasures(
         static_cast<std::size_t>(core_size.y),
         std::vector<EntityType>(static_cast<std::size_t>(core_size.x), EntityType::None)
@@ -201,6 +239,9 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
             tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 stage.tiles[static_cast<std::size_t>(y + core_origin.y)]
                           [static_cast<std::size_t>(x + core_origin.x)];
+            backwall_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                stage.backwall_tiles[static_cast<std::size_t>(y + core_origin.y)]
+                                    [static_cast<std::size_t>(x + core_origin.x)];
             embedded_treasures[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 stage.embedded_treasures[static_cast<std::size_t>(y + core_origin.y)]
                                         [static_cast<std::size_t>(x + core_origin.x)];
@@ -243,6 +284,7 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
     }
 
     stage.tiles = std::move(tiles);
+    stage.backwall_tiles = std::move(backwall_tiles);
     stage.embedded_treasures = std::move(embedded_treasures);
     stage.wrap_transform_active = false;
     stage.wrap_padding_chunks = 0;

@@ -22,6 +22,7 @@ extern const EntityArchetype kPlayerArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_stomp = true,
     .can_hang_ledge = true,
     .can_be_stunned = true,
     .stun_recovers_on_ground = true,

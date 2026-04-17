@@ -10,14 +10,6 @@ namespace splonks::entities::ghost_ball {
 
 namespace {
 
-Vec2 NormalizeOrZero(const Vec2& value) {
-    const float length = Length(value);
-    if (length == 0.0F) {
-        return Vec2::New(0.0F, 0.0F);
-    }
-    return value / length;
-}
-
 } // namespace
 
 extern const EntityArchetype kGhostBallArchetype{
@@ -25,6 +17,7 @@ extern const EntityArchetype kGhostBallArchetype{
     .size = Vec2::New(1.0F, 1.0F),
     .has_physics = true,
     .can_collide = false,
+    .render_enabled = false,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,

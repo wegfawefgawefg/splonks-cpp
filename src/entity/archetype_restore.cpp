@@ -20,6 +20,7 @@ void RestoreEntityHurtOnContactFromArchetype(Entity& entity) { entity.hurt_on_co
 void RestoreEntityVanishOnDeathFromArchetype(Entity& entity) { entity.vanish_on_death = GetArchetypeForEntity(entity).vanish_on_death; }
 void RestoreEntityHasGroundFrictionFromArchetype(Entity& entity) { entity.has_ground_friction = GetArchetypeForEntity(entity).has_ground_friction; }
 void RestoreEntityPassiveItemFromArchetype(Entity& entity) { entity.passive_item = GetArchetypeForEntity(entity).passive_item; }
+void RestoreEntityBuyableFromArchetype(Entity& entity) { entity.buyable = GetArchetypeForEntity(entity).buyable; }
 void RestoreEntityDamageAnimationFromArchetype(Entity& entity) { entity.damage_animation = GetArchetypeForEntity(entity).damage_animation; }
 void RestoreEntityDamageSoundFromArchetype(Entity& entity) { entity.damage_sound = GetArchetypeForEntity(entity).damage_sound; }
 void RestoreEntityCollideSoundFromArchetype(Entity& entity) { entity.collide_sound = GetArchetypeForEntity(entity).collide_sound; }
@@ -38,6 +39,7 @@ void RestoreEntityStunRecoversWhileHeldFromArchetype(Entity& entity) { entity.st
 void RestoreEntitySizeFromArchetype(Entity& entity) { entity.size = GetArchetypeForEntity(entity).size; }
 void RestoreEntityFacingFromArchetype(Entity& entity) { entity.facing = GetArchetypeForEntity(entity).facing; }
 void RestoreEntityDrawLayerFromArchetype(Entity& entity) { entity.draw_layer = GetArchetypeForEntity(entity).draw_layer; }
+void RestoreEntityRenderEnabledFromArchetype(Entity& entity) { entity.render_enabled = GetArchetypeForEntity(entity).render_enabled; }
 void RestoreEntityConditionFromArchetype(Entity& entity) { entity.condition = GetArchetypeForEntity(entity).condition; }
 void RestoreEntityAiStateFromArchetype(Entity& entity) { entity.ai_state = GetArchetypeForEntity(entity).ai_state; }
 void RestoreEntityHealthFromArchetype(Entity& entity) { entity.health = GetArchetypeForEntity(entity).health; }

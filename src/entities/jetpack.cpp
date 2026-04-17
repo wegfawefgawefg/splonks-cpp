@@ -59,6 +59,7 @@ extern const EntityArchetype kJetPackArchetype{
     .counter_a = kFuel,
     .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
     .on_death = OnDeathAsJetpack,
+    .on_damage = OnDamageAsJetpack,
     .on_use = OnUseAsJetpack,
     .step_logic = StepEntityLogicAsJetpack,
     .alignment = Alignment::Neutral,
@@ -67,6 +68,34 @@ extern const EntityArchetype kJetPackArchetype{
 
 void OnDeathAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
     common::OnDeathAsExplosion(entity_idx, state, audio);
+}
+
+EntityDamageEffectResult OnDamageAsJetpack(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    DamageType damage_type,
+    unsigned int amount,
+    bool damage_applied
+) {
+    (void)amount;
+    (void)damage_applied;
+
+    if (damage_type != DamageType::IgnitingAttack) {
+        return EntityDamageEffectResult::None;
+    }
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return EntityDamageEffectResult::None;
+    }
+
+    Entity& jetpack = state.entity_manager.entities[entity_idx];
+    if (!jetpack.active || jetpack.condition == EntityCondition::Dead) {
+        return EntityDamageEffectResult::None;
+    }
+
+    jetpack.health = 0;
+    common::DieIfDead(entity_idx, state, audio);
+    return EntityDamageEffectResult::Consumed;
 }
 
 void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {

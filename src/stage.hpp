@@ -33,6 +33,12 @@ struct BackgroundStamp {
     BackgroundStampCondition condition = BackgroundStampCondition::None;
 };
 
+struct StageLight {
+    VID vid;
+    IVec2 tile_pos = IVec2::New(0, 0);
+    int radius = 0;
+};
+
 enum class StageType : int {
     Blank,
     Test1,
@@ -75,11 +81,13 @@ struct StageBorder {
 struct Stage {
     StageType stage_type = StageType::Blank;
     std::vector<std::vector<Tile>> tiles;
+    std::vector<std::vector<Tile>> backwall_tiles;
     std::vector<std::vector<EntityType>> embedded_treasures;
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
     std::vector<StageEntitySpawn> entity_spawns;
     std::vector<BackgroundStamp> background_stamps;
+    std::vector<StageLight> lights;
     float gravity = 0.3F;
     StageBorder border{};
     bool camera_clamp_enabled = true;
@@ -88,6 +96,7 @@ struct Stage {
     unsigned int wrap_padding_chunks = 0;
     UVec2 wrap_core_origin_tiles = UVec2::New(0, 0);
     UVec2 wrap_core_size_tiles = UVec2::New(0, 0);
+    std::uint32_t next_light_vid = 0;
 
     static const UVec2 kShape;
     static const UVec2 kRoomShape;
@@ -101,13 +110,19 @@ struct Stage {
     UVec2 GetRoomDims() const;
     IVec2 GetRoomTlWc(const IVec2& room) const;
     const Tile& GetTile(unsigned int x, unsigned int y) const;
+    const Tile& GetBackwallTile(unsigned int x, unsigned int y) const;
     EntityType GetEmbeddedTreasure(unsigned int x, unsigned int y) const;
     const Tile* GetTileAtWc(const IVec2& pos) const;
     std::vector<const Tile*> GetTilesInRectWc(const IVec2& tl, const IVec2& br) const;
     std::vector<const Tile*> GetTilesInRect(const IVec2& tl, const IVec2& br) const;
+    void FillBackwall(const std::vector<Tile>& fill_tiles);
     void SetTile(const IVec2& pos, Tile tile);
+    void SetBackwallTile(const IVec2& pos, Tile tile);
     void SetEmbeddedTreasure(const IVec2& pos, EntityType type_);
     EntityType TakeEmbeddedTreasure(const IVec2& pos);
+    VID AddLight(const IVec2& tile_pos, int radius);
+    bool RemoveLight(VID vid);
+    const StageLight* GetLight(VID vid) const;
     void SetTilesInRectWc(const AABB& area, Tile tile_type);
     void SetTilesInRect(const AABB& area, Tile tile_type);
     std::vector<IAABB> GetAabbsForAllCollidableTilesInRect(const IVec2& tl, const IVec2& br) const;

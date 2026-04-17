@@ -12,6 +12,7 @@ void DoExplosion(
     std::size_t entity_idx,
     Vec2 center,
     float size,
+    float push_magnitude,
     State& state,
     Audio& audio
 ) {
@@ -77,13 +78,14 @@ void DoExplosion(
             const DamageResult damage_result = TryDamageEntity(vid.id, state, audio, DamageType::Explosion, 10);
             if ((damage_result == DamageResult::Hurt || damage_result == DamageResult::Died) && entity->active) {
                 const Vec2 delta = GetNearestWorldDelta(state.stage, center, entity->GetCenter());
-                const float knockback_x = delta.x < 0.0F
-                                              ? -static_cast<float>(rng::RandomIntInclusive(4, 6))
-                                              : static_cast<float>(rng::RandomIntInclusive(4, 6));
+                Vec2 knockback_dir = NormalizeOrZero(delta);
+                if (knockback_dir == Vec2::New(0.0F, 0.0F)) {
+                    knockback_dir = Vec2::New(0.0F, -1.0F);
+                }
                 ApplyKnockback(
                     *entity,
                     KnockbackSpec{
-                        .velocity = Vec2::New(knockback_x, -6.0F),
+                        .velocity = knockback_dir * push_magnitude,
                         .clear_velocity = true,
                         .clear_acceleration = true,
                         .projectile_contact_damage_type = DamageType::Attack,

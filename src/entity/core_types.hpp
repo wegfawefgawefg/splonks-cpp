@@ -4,7 +4,6 @@
 #include "../draw_layer.hpp"
 #include "left_or_right.hpp"
 #include "math_types.hpp"
-#include "origin.hpp"
 #include "vid.hpp"
 
 #include <cstddef>
@@ -76,6 +75,7 @@ enum class EntityType {
     RubyBig,
     EmeraldBig,
     SapphireBig,
+    Shop,
     Shopkeeper,
     Damsel,
     SignGeneral,
@@ -85,6 +85,7 @@ enum class EntityType {
     SignClothing,
     SignCraps,
     SignKissing,
+    StoreLight,
     Lantern,
     LanternRed,
     GiantTikiHead,
@@ -123,6 +124,7 @@ enum class EntityCondition {
 
 enum class EntityAiState {
     Idle,
+    Disturbed,
     Patrolling,
     Pursuing,
     Returning,

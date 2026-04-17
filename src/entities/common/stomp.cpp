@@ -1,6 +1,4 @@
 #include "entities/common/common.hpp"
-
-#include "entities/player.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -10,6 +8,50 @@ namespace splonks::entities::common {
 namespace {
 
 constexpr float kStompHeadHeight = 1.0F;
+constexpr float kStompBounceVelocityY = -4.5F;
+constexpr float kStompVictimKnockbackVelocityY = -1.0F;
+constexpr float kStompVictimKnockbackVelocityX = 1.0F;
+
+bool CanEntityAttemptStomp(const Entity& stomper) {
+    if (!stomper.active) {
+        return false;
+    }
+    if (!stomper.can_stomp) {
+        return false;
+    }
+    if (stomper.condition != EntityCondition::Normal) {
+        return false;
+    }
+    if (stomper.vel.y <= 0.0F) {
+        return false;
+    }
+    if (stomper.held_by_vid.has_value()) {
+        return false;
+    }
+    if (HasMovementFlag(stomper, EntityMovementFlag::Hanging)) {
+        return false;
+    }
+    return true;
+}
+
+bool CanEntityBeStomped(const Entity& target) {
+    if (!target.active) {
+        return false;
+    }
+    if (!target.can_be_stomped) {
+        return false;
+    }
+    if (target.impassable || !target.can_collide) {
+        return false;
+    }
+    if (target.condition != EntityCondition::Normal) {
+        return false;
+    }
+    if (HasMovementFlag(target, EntityMovementFlag::Hanging)) {
+        return false;
+    }
+    return true;
+}
 
 } // namespace
 
@@ -27,15 +69,14 @@ bool TryApplyStompContactToEntity(
 
     Entity& stomper = state.entity_manager.entities[entity_idx];
     Entity* const stomped = state.entity_manager.GetEntityMut(state.entity_manager.entities[other_entity_idx].vid);
-    if (!stomper.active || stomped == nullptr || !stomped->active) {
+    if (stomped == nullptr) {
         return false;
     }
 
-    if (stomper.condition != EntityCondition::Normal || stomper.vel.y <= 0.0F) {
+    if (!CanEntityAttemptStomp(stomper)) {
         return false;
     }
-    if (stomped->impassable || !stomped->can_collide ||
-        stomped->condition != EntityCondition::Normal || stomped->alignment != Alignment::Enemy) {
+    if (!CanEntityBeStomped(*stomped)) {
         return false;
     }
 
@@ -65,11 +106,12 @@ bool TryApplyStompContactToEntity(
     }
     if (damage_result == DamageResult::Died || damage_result == DamageResult::Hurt) {
         const Vec2 stomp_delta = GetNearestWorldDelta(state.stage, stomper.GetCenter(), stomped->GetCenter());
-        const float stomp_knockback_x = stomp_delta.x < 0.0F ? -1.0F : 1.0F;
+        const float stomp_knockback_x =
+            stomp_delta.x < 0.0F ? -kStompVictimKnockbackVelocityX : kStompVictimKnockbackVelocityX;
         ApplyKnockback(
             *stomped,
             KnockbackSpec{
-                .velocity = Vec2::New(stomp_knockback_x, -6.0F),
+                .velocity = Vec2::New(stomp_knockback_x, kStompVictimKnockbackVelocityY),
                 .clear_velocity = true,
                 .clear_acceleration = true,
                 .thrown_by = stomper.vid,
@@ -88,7 +130,7 @@ bool TryApplyStompContactToEntity(
         1
     );
 
-    stomper.vel.y = -player::kJumpImpulse;
+    stomper.vel.y = kStompBounceVelocityY;
     return true;
 }
 

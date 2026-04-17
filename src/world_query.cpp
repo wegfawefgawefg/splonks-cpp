@@ -26,14 +26,6 @@ float GetNearestWrappedDelta(float from, float to, float span, bool wraps) {
     return delta;
 }
 
-Vec2 NormalizeOrZero(const Vec2& value) {
-    const float length = Length(value);
-    if (length == 0.0F) {
-        return Vec2::New(0.0F, 0.0F);
-    }
-    return value / length;
-}
-
 AABB ShiftAabb(const AABB& aabb, const Vec2& delta) {
     return AABB{
         .tl = aabb.tl + delta,
@@ -103,6 +95,18 @@ AABB GetNearestWorldAabb(const Stage& stage, const Vec2& anchor, const AABB& aab
     const Vec2 center = GetAabbCenter(aabb);
     const Vec2 nearest_center = GetNearestWorldPoint(stage, anchor, center);
     return ShiftAabb(aabb, nearest_center - center);
+}
+
+bool WorldAabbContainsPoint(const Stage& stage, const AABB& area, const Vec2& point) {
+    const AABB nearest_area = GetNearestWorldAabb(stage, point, area);
+    return point.x >= nearest_area.tl.x && point.x <= nearest_area.br.x &&
+           point.y >= nearest_area.tl.y && point.y <= nearest_area.br.y;
+}
+
+bool WorldAabbsIntersect(const Stage& stage, const AABB& area, const AABB& other) {
+    const Vec2 anchor = GetAabbCenter(area);
+    const AABB nearest_other = GetNearestWorldAabb(stage, anchor, other);
+    return AabbsIntersect(area, nearest_other);
 }
 
 std::vector<IVec2> GetTileCoordsInRect(const Stage& stage, const IVec2& tl, const IVec2& br) {
@@ -310,6 +314,9 @@ std::vector<RaycastTarget> CollectRaycastTargets(
 
         const Entity* const entity = state.entity_manager.GetEntity(vid);
         if (entity == nullptr || !entity->active) {
+            continue;
+        }
+        if (!entity->can_be_hit) {
             continue;
         }
         if (owner_vid.has_value() && entity->held_by_vid.has_value() &&

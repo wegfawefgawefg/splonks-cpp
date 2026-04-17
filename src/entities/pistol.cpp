@@ -105,7 +105,7 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
     const std::optional<VID> owner_vid = pistol.held_by_vid.has_value() ? pistol.held_by_vid
                                                                         : pistol.use_state.user_vid;
 
-    audio.PlaySoundEffect(SoundEffect::PistolFire);
+    audio.PlaySoundEffect(SoundEffect::PistolShoot);
     SpawnPistolMuzzleSmoke(state, muzzle_pos, direction);
 
     const HitscanHit hit = TraceHitscan(
@@ -118,20 +118,18 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
         owner_vid
     );
     if (hit.type == HitscanHitType::Tile ||
+        hit.type == HitscanHitType::StageBounds ||
         hit.type == HitscanHitType::Entity) {
         SpawnPistolImpactEffect(state, ToVec2(hit.point), direction);
     }
     if (hit.type == HitscanHitType::Entity && hit.entity_vid.has_value()) {
-        const common::DamageResult damage_result =
-            common::TryDamageEntity(hit.entity_vid->id, state, audio, DamageType::Attack, kPistolDamage);
-        if ((damage_result == common::DamageResult::Hurt ||
-             damage_result == common::DamageResult::Died) &&
-            hit.entity_vid->id < state.entity_manager.entities.size()) {
+        common::TryDamageEntity(hit.entity_vid->id, state, audio, DamageType::IgnitingAttack, kPistolDamage);
+        if (hit.entity_vid->id < state.entity_manager.entities.size()) {
             if (Entity* const hit_entity = state.entity_manager.GetEntityMut(*hit.entity_vid)) {
                 common::ApplyKnockback(
                     *hit_entity,
                     common::KnockbackSpec{
-                        .velocity = Vec2::New(4.0F * static_cast<float>(direction), -2.0F),
+                        .velocity = Vec2::New(1.0F * static_cast<float>(direction), -1.0F),
                         .clear_velocity = true,
                         .clear_acceleration = true,
                     }

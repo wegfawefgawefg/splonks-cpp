@@ -81,6 +81,7 @@ void StepEntityLogicAsRope(
         // get rope tile position,
         const Vec2 rope_center = rope.GetCenter();
         bool atleast_one_tile_converted = false;
+        std::vector<IVec2> changed_tiles;
         const std::optional<WorldTileQueryResult> rope_tile =
             QueryTileAtWorldPos(state.stage, ToIVec2(rope_center));
         if (rope_tile.has_value()) {
@@ -99,13 +100,15 @@ void StepEntityLogicAsRope(
                 if (tile == Tile::Air || tile == Tile::Rope || tile == Tile::Entrance) {
                     state.stage.SetTile(p, Tile::Rope);
                     graphics.ResetTileVariation(p);
-                    UpdateStageLightingForTileChange(state, p);
+                    changed_tiles.push_back(p);
                     atleast_one_tile_converted = true;
                 } else {
                     break;
                 }
             }
         }
+
+        UpdateStageLightingForTileChanges(state, changed_tiles);
 
         if (atleast_one_tile_converted) {
             audio.PlaySoundEffect(SoundEffect::RopeDeploy);

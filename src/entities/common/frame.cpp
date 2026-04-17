@@ -10,6 +10,10 @@ namespace {
 
 void ApplyFrameDataGeometryToEntity(std::size_t entity_idx, State& state, const Graphics& graphics) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!entity.render_enabled) {
+        return;
+    }
+
     const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
     if (frame_data == nullptr) {
         return;
@@ -28,6 +32,10 @@ void ApplyFrameDataGeometryToEntity(std::size_t entity_idx, State& state, const 
 } // namespace
 
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics) {
+    if (!entity.render_enabled) {
+        return nullptr;
+    }
+
     if (!entity.frame_data_animator.HasAnimation()) {
         const FrameDataAnimation* const fallback_animation =
             graphics.frame_data_db.FindAnimation(frame_data_ids::NoSprite);
@@ -76,6 +84,35 @@ Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data
     }
     return entity.pos - Vec2::New(mirrored_pbox_x, static_cast<float>(frame_data.pbox.y)) +
            facing_adjusted_draw_offset;
+}
+
+void SetVisualCenterForEntity(Entity& entity, const Graphics& graphics, const Vec2& center) {
+    const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
+    if (frame_data == nullptr) {
+        entity.SetCenter(center);
+        return;
+    }
+
+    const Vec2 draw_offset = Vec2::New(
+        static_cast<float>(frame_data->draw_offset.x),
+        static_cast<float>(frame_data->draw_offset.y)
+    );
+    const Vec2 pbox_size = Vec2::New(
+        static_cast<float>(frame_data->pbox.w),
+        static_cast<float>(frame_data->pbox.h)
+    );
+    const Vec2 pbox_center_offset = (pbox_size - Vec2::New(1.0F, 1.0F)) * 0.5F;
+
+    if (entity.facing == LeftOrRight::Left) {
+        entity.pos = center - draw_offset - pbox_center_offset;
+        return;
+    }
+
+    Vec2 facing_adjusted_draw_offset = draw_offset;
+    if (entity.type_ == EntityType::BaseballBat) {
+        facing_adjusted_draw_offset = Vec2::New(-draw_offset.x, draw_offset.y);
+    }
+    entity.pos = center - facing_adjusted_draw_offset - pbox_center_offset;
 }
 
 Vec2 GetEmitPointForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback) {

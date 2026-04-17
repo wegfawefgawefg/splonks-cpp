@@ -18,14 +18,6 @@ namespace splonks::entities::bat {
 
 namespace {
 
-Vec2 NormalizeOrZero(const Vec2& value) {
-    const float length = Length(value);
-    if (length == 0.0F) {
-        return Vec2::New(0.0F, 0.0F);
-    }
-    return value / length;
-}
-
 bool RandomBool() {
     static std::random_device device;
     static std::mt19937 generator(device());

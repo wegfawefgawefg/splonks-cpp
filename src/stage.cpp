@@ -60,6 +60,33 @@ std::vector<std::vector<EntityType>> MakeEmptyEmbeddedTreasures(
     return embedded_treasures;
 }
 
+std::vector<std::vector<Tile>> MakeEmptyBackwallTiles(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<Tile>> backwall_tiles;
+    backwall_tiles.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        backwall_tiles.push_back(std::vector<Tile>(row.size(), Tile::Air));
+    }
+    return backwall_tiles;
+}
+
+bool EmbeddedTreasureCoordExists(
+    const std::vector<std::vector<EntityType>>& embedded_treasures,
+    int tile_x,
+    int tile_y
+) {
+    if (tile_x < 0 || tile_y < 0) {
+        return false;
+    }
+    if (tile_y >= static_cast<int>(embedded_treasures.size())) {
+        return false;
+    }
+    const std::vector<EntityType>& row =
+        embedded_treasures[static_cast<std::size_t>(tile_y)];
+    return tile_x < static_cast<int>(row.size());
+}
+
 } // namespace
 
 const UVec2 Stage::kShape = UVec2::New(40, 32);
@@ -70,9 +97,11 @@ Stage Stage::NewBlank() {
     Stage stage;
     stage.stage_type = StageType::Blank;
     stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>(1, Tile::Air));
+    stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
     stage.embedded_treasures = MakeEmptyEmbeddedTreasures(stage.tiles);
     stage.rooms = {};
     stage.path = {};
+    stage.lights = {};
     stage.gravity = 0.3F;
     stage.border = MakeUniformBorder(Tile::Air);
     stage.camera_clamp_margin = Vec2::New(0.0F, 0.0F);
@@ -149,24 +178,33 @@ Stage Stage::New(StageType stage_type) {
         static_cast<std::size_t>(kShape.y),
         std::vector<Tile>(static_cast<std::size_t>(kShape.x), Tile::Air));
     Tile border_tile = Tile::CaveDirt;
+    std::vector<Tile> backwall_fill_tiles{
+        Tile::CaveAir0,
+        Tile::CaveAir1,
+        Tile::CaveAir2,
+    };
     switch (stage_type) {
     case StageType::Ice1:
     case StageType::Ice2:
     case StageType::Ice3:
         border_tile = Tile::IceDirt;
+        backwall_fill_tiles = {Tile::IceAir0, Tile::IceAir1, Tile::IceAir2};
         break;
     case StageType::Desert1:
     case StageType::Desert2:
     case StageType::Desert3:
         border_tile = Tile::JungleDirt;
+        backwall_fill_tiles = {Tile::JungleAir0, Tile::JungleAir1, Tile::JungleAir2};
         break;
     case StageType::Temple1:
     case StageType::Temple2:
     case StageType::Temple3:
         border_tile = Tile::TempleDirt;
+        backwall_fill_tiles = {Tile::TempleAir0, Tile::TempleAir1, Tile::TempleAir2};
         break;
     case StageType::Boss:
         border_tile = Tile::BossDirt;
+        backwall_fill_tiles = {Tile::BossAir0, Tile::BossAir1, Tile::BossAir2};
         break;
     case StageType::Blank:
     case StageType::Test1:
@@ -206,9 +244,12 @@ Stage Stage::New(StageType stage_type) {
     Stage stage;
     stage.stage_type = stage_type;
     stage.tiles = std::move(tiles);
+    stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
+    stage.FillBackwall(backwall_fill_tiles);
     stage.embedded_treasures = MakeEmptyEmbeddedTreasures(stage.tiles);
     stage.rooms = std::move(rooms);
     stage.path = std::move(path);
+    stage.lights = {};
     stage.gravity = 0.3F;
     stage.border = MakeUniformBorder(border_tile);
     stage.camera_clamp_margin = ToVec2(kRoomShape * kTileSize) / 2.0F;
@@ -262,7 +303,17 @@ const Tile& Stage::GetTile(unsigned int x, unsigned int y) const {
     return tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 }
 
+const Tile& Stage::GetBackwallTile(unsigned int x, unsigned int y) const {
+    return backwall_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+}
+
 EntityType Stage::GetEmbeddedTreasure(unsigned int x, unsigned int y) const {
+    if (!EmbeddedTreasureCoordExists(
+            embedded_treasures,
+            static_cast<int>(x),
+            static_cast<int>(y))) {
+        return EntityType::None;
+    }
     return embedded_treasures[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 }
 
@@ -306,6 +357,21 @@ std::vector<const Tile*> Stage::GetTilesInRect(const IVec2& tl, const IVec2& br)
     return result;
 }
 
+void Stage::FillBackwall(const std::vector<Tile>& fill_tiles) {
+    backwall_tiles = MakeEmptyBackwallTiles(tiles);
+    if (fill_tiles.empty()) {
+        return;
+    }
+
+    for (std::size_t y = 0; y < backwall_tiles.size(); ++y) {
+        for (std::size_t x = 0; x < backwall_tiles[y].size(); ++x) {
+            const int fill_index =
+                rng::RandomIntInclusive(0, static_cast<int>(fill_tiles.size()) - 1);
+            backwall_tiles[y][x] = fill_tiles[static_cast<std::size_t>(fill_index)];
+        }
+    }
+}
+
 void Stage::SetTile(const IVec2& pos, Tile tile) {
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
@@ -314,9 +380,20 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
     tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = tile;
 }
 
+void Stage::SetBackwallTile(const IVec2& pos, Tile tile) {
+    const IVec2 tile_pos = WrapTileCoord(pos);
+    if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+        return;
+    }
+    backwall_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = tile;
+}
+
 void Stage::SetEmbeddedTreasure(const IVec2& pos, EntityType type_) {
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+        return;
+    }
+    if (!EmbeddedTreasureCoordExists(embedded_treasures, tile_pos.x, tile_pos.y)) {
         return;
     }
     embedded_treasures[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = type_;
@@ -327,12 +404,47 @@ EntityType Stage::TakeEmbeddedTreasure(const IVec2& pos) {
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
         return EntityType::None;
     }
+    if (!EmbeddedTreasureCoordExists(embedded_treasures, tile_pos.x, tile_pos.y)) {
+        return EntityType::None;
+    }
 
     EntityType& treasure =
         embedded_treasures[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)];
     const EntityType result = treasure;
     treasure = EntityType::None;
     return result;
+}
+
+VID Stage::AddLight(const IVec2& tile_pos, int radius) {
+    const VID vid = VID{next_light_vid++};
+    lights.push_back(StageLight{
+        .vid = vid,
+        .tile_pos = tile_pos,
+        .radius = radius,
+    });
+    return vid;
+}
+
+bool Stage::RemoveLight(VID vid) {
+    const auto it = std::remove_if(
+        lights.begin(),
+        lights.end(),
+        [vid](const StageLight& light) { return light.vid == vid; }
+    );
+    if (it == lights.end()) {
+        return false;
+    }
+    lights.erase(it, lights.end());
+    return true;
+}
+
+const StageLight* Stage::GetLight(VID vid) const {
+    for (const StageLight& light : lights) {
+        if (light.vid == vid) {
+            return &light;
+        }
+    }
+    return nullptr;
 }
 
 void Stage::SetTilesInRectWc(const AABB& area, Tile tile_type) {

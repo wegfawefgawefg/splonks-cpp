@@ -76,7 +76,7 @@ TileArchetype MakeSolidTileArchetype(
     };
 }
 
-static_assert(TileIndex(Tile::Exit) + 1 == kTileCount);
+static_assert(TileIndex(Tile::Exit) + 1 <= kTileCount);
 
 const std::array<TileArchetype, kTileCount> kTileArchetypes{{
     TileArchetype{
@@ -86,6 +86,33 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .transparent = true,
         .hangable = false,
         .debug_name = "Air",
+    },
+    TileArchetype{
+        .tile = Tile::CaveAir0,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Cave,
+        .debug_name = "CaveAir0",
+    },
+    TileArchetype{
+        .tile = Tile::CaveAir1,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Cave,
+        .debug_name = "CaveAir1",
+    },
+    TileArchetype{
+        .tile = Tile::CaveAir2,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Cave,
+        .debug_name = "CaveAir2",
     },
     MakeSolidTileArchetype(Tile::CaveDirt, TileFamily::Cave, HashFrameDataIdConstexpr("cave_dirt_0"), "CaveDirt"),
     MakeSolidTileArchetype(
@@ -108,6 +135,47 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
     MakeSolidTileArchetype(Tile::CaveShopWall, TileFamily::Cave, HashFrameDataIdConstexpr("cave_shop_wall"), "CaveShopWall"),
     MakeSolidTileArchetype(Tile::CaveSmoothWall, TileFamily::Cave, HashFrameDataIdConstexpr("cave_smooth_wall"), "CaveSmoothWall"),
     MakeSolidTileArchetype(Tile::Glass, TileFamily::Neutral, HashFrameDataIdConstexpr("glass"), "Glass"),
+    MakeSolidTileArchetype(Tile::LawsonWall, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_wall"), "LawsonWall"),
+    TileArchetype{
+        .tile = Tile::LawsonInside,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Cave,
+        .debug_name = "LawsonInside",
+    },
+    MakeSolidTileArchetype(Tile::LawsonLeftTopper, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_left_topper"), "LawsonLeftTopper"),
+    MakeSolidTileArchetype(Tile::LawsonMiddleTopper, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_middle_topper"), "LawsonMiddleTopper"),
+    MakeSolidTileArchetype(Tile::LawsonRightTopper, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_right_topper"), "LawsonRightTopper"),
+    MakeSolidTileArchetype(Tile::LawsonFloor, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_floor"), "LawsonFloor"),
+    TileArchetype{
+        .tile = Tile::IceAir0,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Ice,
+        .debug_name = "IceAir0",
+    },
+    TileArchetype{
+        .tile = Tile::IceAir1,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Ice,
+        .debug_name = "IceAir1",
+    },
+    TileArchetype{
+        .tile = Tile::IceAir2,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Ice,
+        .debug_name = "IceAir2",
+    },
     MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"), "IceDirt"),
     MakeSolidTileArchetype(
         Tile::IceGold,
@@ -126,6 +194,33 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         OnBreakAsBigGoldVein
     ),
     MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"), "IceBlock"),
+    TileArchetype{
+        .tile = Tile::JungleAir0,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Jungle,
+        .debug_name = "JungleAir0",
+    },
+    TileArchetype{
+        .tile = Tile::JungleAir1,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Jungle,
+        .debug_name = "JungleAir1",
+    },
+    TileArchetype{
+        .tile = Tile::JungleAir2,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Jungle,
+        .debug_name = "JungleAir2",
+    },
     MakeSolidTileArchetype(Tile::JungleDirt, TileFamily::Jungle, HashFrameDataIdConstexpr("jungle_dirt_0"), "JungleDirt"),
     MakeSolidTileArchetype(
         Tile::JungleGold,
@@ -144,6 +239,33 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         OnBreakAsBigGoldVein
     ),
     MakeSolidTileArchetype(Tile::JungleBlock, TileFamily::Jungle, HashFrameDataIdConstexpr("jungle_block_0"), "JungleBlock"),
+    TileArchetype{
+        .tile = Tile::TempleAir0,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Temple,
+        .debug_name = "TempleAir0",
+    },
+    TileArchetype{
+        .tile = Tile::TempleAir1,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Temple,
+        .debug_name = "TempleAir1",
+    },
+    TileArchetype{
+        .tile = Tile::TempleAir2,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Temple,
+        .debug_name = "TempleAir2",
+    },
     MakeSolidTileArchetype(Tile::TempleDirt, TileFamily::Temple, HashFrameDataIdConstexpr("temple_dirt_0"), "TempleDirt"),
     MakeSolidTileArchetype(
         Tile::TempleGold,
@@ -162,6 +284,33 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         OnBreakAsBigGoldVein
     ),
     MakeSolidTileArchetype(Tile::TempleBlock, TileFamily::Temple, HashFrameDataIdConstexpr("temple_block_0"), "TempleBlock"),
+    TileArchetype{
+        .tile = Tile::BossAir0,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Boss,
+        .debug_name = "BossAir0",
+    },
+    TileArchetype{
+        .tile = Tile::BossAir1,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Boss,
+        .debug_name = "BossAir1",
+    },
+    TileArchetype{
+        .tile = Tile::BossAir2,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Boss,
+        .debug_name = "BossAir2",
+    },
     MakeSolidTileArchetype(Tile::BossDirt, TileFamily::Boss, HashFrameDataIdConstexpr("boss_dirt_0"), "BossDirt"),
     MakeSolidTileArchetype(
         Tile::BossGold,

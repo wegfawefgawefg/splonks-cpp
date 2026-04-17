@@ -12,6 +12,14 @@ void StepEntityLogicAsDamsel(
     float dt
 );
 
+bool BuyDamsel(
+    std::size_t entity_idx,
+    std::size_t buyer_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+);
+
 extern const EntityArchetype kDamselArchetype;
 
 } // namespace splonks::entities::damsel

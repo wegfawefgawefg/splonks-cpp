@@ -263,21 +263,4 @@ void SpriteAnimator::RandomizeFrame(const std::vector<SpriteData>& sprites) {
         rng::RandomIntExclusive(0, static_cast<int>(sprite_data.frames.size())));
 }
 
-Vec2 SpriteAnimator::GetOrigin(const std::vector<SpriteData>& sprites, Origin origin) const {
-    const SpriteData& sprite_data = sprites[SpriteIndex(sprite)];
-    const Vec2 size =
-        Vec2::New(static_cast<float>(sprite_data.size.x), static_cast<float>(sprite_data.size.y));
-
-    switch (origin) {
-    case Origin::Center:
-        return Vec2::New(size.x / 2.0F, size.y / 2.0F);
-    case Origin::TopLeft:
-        return Vec2::New(0.0F, 0.0F);
-    case Origin::Foot:
-        return Vec2::New(size.x / 2.0F, size.y);
-    }
-
-    return Vec2::New(0.0F, 0.0F);
-}
-
 } // namespace splonks

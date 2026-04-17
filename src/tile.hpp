@@ -9,6 +9,9 @@ enum class StageType : int;
 
 enum class Tile {
     Air,
+    CaveAir0,
+    CaveAir1,
+    CaveAir2,
     CaveDirt,
     CaveGold,
     CaveGoldBig,
@@ -16,18 +19,36 @@ enum class Tile {
     CaveShopWall,
     CaveSmoothWall,
     Glass,
+    LawsonWall,
+    LawsonInside,
+    LawsonLeftTopper,
+    LawsonMiddleTopper,
+    LawsonRightTopper,
+    LawsonFloor,
+    IceAir0,
+    IceAir1,
+    IceAir2,
     IceDirt,
     IceGold,
     IceGoldBig,
     IceBlock,
+    JungleAir0,
+    JungleAir1,
+    JungleAir2,
     JungleDirt,
     JungleGold,
     JungleGoldBig,
     JungleBlock,
+    TempleAir0,
+    TempleAir1,
+    TempleAir2,
     TempleDirt,
     TempleGold,
     TempleGoldBig,
     TempleBlock,
+    BossAir0,
+    BossAir1,
+    BossAir2,
     BossDirt,
     BossGold,
     BossGoldBig,
@@ -41,7 +62,7 @@ enum class Tile {
 };
 
 constexpr unsigned int kTileSize = 16;
-constexpr std::size_t kTileCount = 30;
+constexpr std::size_t kTileCount = 51;
 
 Tile RandomTile();
 Tile DirtTileForFamilyTile(Tile family_tile);

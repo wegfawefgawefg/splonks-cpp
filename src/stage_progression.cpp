@@ -38,6 +38,8 @@ const char* GetDebugLevelKindName(DebugLevelKind kind) {
         return "BowlingTest";
     case DebugLevelKind::OpposingBodySmack:
         return "OpposingBodySmack";
+    case DebugLevelKind::ShopTest:
+        return "ShopTest";
     }
 
     return "Unknown";

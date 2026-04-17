@@ -40,6 +40,11 @@ bool TouchesStageBounds(const AABB& aabb, const Stage& stage) {
     return false;
 }
 
+bool AreDirectlyAttached(const Entity& first, const Entity& second) {
+    return (first.held_by_vid.has_value() && *first.held_by_vid == second.vid) ||
+           (second.held_by_vid.has_value() && *second.held_by_vid == first.vid);
+}
+
 ContactResolution ResolveBlockingTileContacts(const BlockingContactSet& contacts) {
     ContactResolution result{};
     if (contacts.touches_stage_bounds) {
@@ -107,11 +112,15 @@ BlockingContactSet GatherBlockingContactsForAabb(
     }
 
     if (check_entities) {
-        const VID self_vid = state.entity_manager.entities[entity_idx].vid;
+        const Entity& entity = state.entity_manager.entities[entity_idx];
+        const VID self_vid = entity.vid;
         const Vec2 anchor = (aabb.tl + aabb.br) / 2.0F;
         for (const VID& other_vid : QueryEntitiesInAabb(state, aabb, self_vid)) {
             const Entity* const other_entity = state.entity_manager.GetEntity(other_vid);
             if (other_entity == nullptr || !other_entity->active) {
+                continue;
+            }
+            if (AreDirectlyAttached(entity, *other_entity)) {
                 continue;
             }
             const AABB other_aabb = GetNearestWorldAabb(state.stage, anchor, other_entity->GetAABB());

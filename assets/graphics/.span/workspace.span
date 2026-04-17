@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "5009e088-e4c0-4e76-8792-38d2fa9d8790",
+  "selectedAnnotationId": "97bbb967-5abd-4029-a06a-d209568abf75",
   "sheets": [
     {
       "path": "images/title.png",
@@ -2505,8 +2505,8 @@
             "cbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 3,
+              "h": 2
             },
             "hitboxes": [],
             "emit_point": {
@@ -2535,8 +2535,8 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 3,
+              "y": 2
             },
             "tags": [],
             "pbox": {
@@ -2549,8 +2549,8 @@
             "cbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 6,
+              "h": 4
             },
             "hitboxes": [],
             "emit_point": {
@@ -2579,22 +2579,22 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 4,
+              "y": 3
             },
             "tags": [],
             "pbox": {
-              "x": 1,
-              "y": 2,
-              "w": 8,
-              "h": 4
+              "x": 0,
+              "y": 0,
+              "w": 9,
+              "h": 6
             },
             "tile": false,
             "cbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 9,
+              "h": 6
             },
             "hitboxes": [],
             "emit_point": {
@@ -7009,9 +7009,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 10.486,
-        "centerX": 66.23116536334159,
-        "centerY": 331.3942399389662
+        "zoom": 32,
+        "centerX": 82.609375,
+        "centerY": 282
       }
     },
     {
@@ -8481,15 +8481,359 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "1d27b204-0efe-4c73-9ec1-d59e9141bbd9",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 192,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "lawson_left_topper",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "aff99ad5-6401-47ca-a713-50bf98fc13fe",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 192,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "lawson_right_topper",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "be804730-b596-4177-b6ae-841573ff1d0e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 192,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "lawson_middle_topper",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "aaf75e15-6622-4e78-8925-0e40f53bb3b8",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "lawson_wall",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "c2bc2a52-c125-469c-bc8d-5742ed83a5c4",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "lawson_inside",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "91ff57d2-0429-4ccc-a21d-5640ce6a6bd5",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 36,
+            "y": 208,
+            "w": 8,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "store_light",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 4,
+              "y": 3
+            }
+          }
+        },
+        {
+          "id": "43b61d1c-3925-4545-b759-d39ae955c00b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 36,
+            "y": 212,
+            "w": 8,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "store_light_broken",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 4,
+              "y": 3
+            }
+          }
+        },
+        {
+          "id": "3ea52a10-29ae-4d4b-a046-11397900577f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 224,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "lawson_floor",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.199,
-        "centerX": 72.98772169167805,
-        "centerY": 72.76034561164165
+        "zoom": 10.486,
+        "centerX": 68.90139233263399,
+        "centerY": 222.01029944688153
       }
     },
     {

@@ -76,7 +76,7 @@ EntityDamageEffectResult ApplyDamageEffect(
 
 void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    DoExplosion(entity_idx, entity.GetCenter(), 2.0F, state, audio);
+    DoExplosion(entity_idx, entity.GetCenter(), 2.0F, 6.0F, state, audio);
     state.entity_manager.SetInactive(entity_idx);
 }
 
@@ -117,7 +117,8 @@ DamageResult TryDamageEntity(
     bool can_damage = false;
     switch (entity.damage_vulnerability) {
     case DamageVulnerability::AttackingOnly:
-        can_damage = damage_type == DamageType::Attack;
+        can_damage = damage_type == DamageType::Attack ||
+                     damage_type == DamageType::IgnitingAttack;
         break;
     case DamageVulnerability::BurningOnly:
         can_damage = damage_type == DamageType::Burn;

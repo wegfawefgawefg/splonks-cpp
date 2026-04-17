@@ -125,6 +125,7 @@ PlayingInputs BuildPlayingInputs(
     inputs.bomb = BuildButtonState(current.bomb, previous.bomb);
     inputs.rope = BuildButtonState(current.rope, previous.rope);
     inputs.attack = BuildButtonState(current.attack, previous.attack);
+    inputs.buy_button = BuildButtonState(current.buy_button, previous.buy_button);
     inputs.quit = BuildButtonState(current.quit, previous.quit);
     inputs.toggle_collision_boxes = BuildButtonState(
         current.toggle_collision_boxes,
@@ -182,6 +183,8 @@ void SetPlayingInputSnapshot(State& state) {
     new_inputs.rope = keys[SDL_SCANCODE_O] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_NORTH);
     new_inputs.attack =
         keys[SDL_SCANCODE_H] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
+    new_inputs.buy_button =
+        keys[SDL_SCANCODE_U] || GamepadButtonDown(SDL_GAMEPAD_BUTTON_BACK);
     new_inputs.quit = keys[SDL_SCANCODE_ESCAPE] || keys[SDL_SCANCODE_Q];
     new_inputs.toggle_collision_boxes = false;
     new_inputs.regenerate_level =

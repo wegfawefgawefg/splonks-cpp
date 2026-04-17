@@ -101,7 +101,8 @@ std::vector<SoundEffect> AllSoundEffects() {
         SoundEffect::Jetpack2,
         SoundEffect::Equip,
         SoundEffect::Throw,
-        SoundEffect::PistolFire,
+        SoundEffect::PistolShoot,
+        SoundEffect::PistolUnholster,
         SoundEffect::GunEmpty,
         SoundEffect::BombExplosion,
         SoundEffect::AnimalCrush1,
@@ -133,6 +134,9 @@ std::vector<SoundEffect> AllSoundEffects() {
         SoundEffect::Smooch,
         SoundEffect::ChestOpen,
         SoundEffect::Unlock,
+        SoundEffect::LawsonEnter,
+        SoundEffect::ShopkeepAnger0,
+        SoundEffect::LightBreak,
         SoundEffect::UiCant,
         SoundEffect::UiConfirm,
         SoundEffect::UiCursorMove,
@@ -393,8 +397,10 @@ const char* GetSoundFileName(SoundEffect sound_effect) {
         return "equip";
     case SoundEffect::Throw:
         return "throw";
-    case SoundEffect::PistolFire:
-        return "pistol_fire";
+    case SoundEffect::PistolShoot:
+        return "pistol_shoot";
+    case SoundEffect::PistolUnholster:
+        return "pistol_unholster";
     case SoundEffect::GunEmpty:
         return "gun_empty";
     case SoundEffect::BombExplosion:
@@ -457,6 +463,12 @@ const char* GetSoundFileName(SoundEffect sound_effect) {
         return "chest_open";
     case SoundEffect::Unlock:
         return "unlock";
+    case SoundEffect::LawsonEnter:
+        return "lawson_enter";
+    case SoundEffect::ShopkeepAnger0:
+        return "shopkeep_anger_0";
+    case SoundEffect::LightBreak:
+        return "light_break";
     case SoundEffect::UiCant:
         return "ui_cant";
     case SoundEffect::UiConfirm:

@@ -58,6 +58,7 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::RubyBig:
     case EntityType::EmeraldBig:
     case EntityType::SapphireBig:
+    case EntityType::Shop:
     case EntityType::Shopkeeper:
     case EntityType::Damsel:
     case EntityType::SignGeneral:
@@ -67,6 +68,7 @@ bool CanCollectPickups(const Entity& entity) {
     case EntityType::SignClothing:
     case EntityType::SignCraps:
     case EntityType::SignKissing:
+    case EntityType::StoreLight:
     case EntityType::Lantern:
     case EntityType::LanternRed:
     case EntityType::GiantTikiHead:
@@ -153,6 +155,9 @@ bool TryCollectEntityFromContact(
 
     const Entity* const pickup = state.entity_manager.GetEntity(state.entity_manager.entities[other_entity_idx].vid);
     if (pickup == nullptr) {
+        return false;
+    }
+    if (pickup->buyable.active) {
         return false;
     }
 

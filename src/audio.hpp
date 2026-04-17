@@ -29,7 +29,8 @@ enum class SoundEffect {
     Jetpack2,
     Equip,
     Throw,
-    PistolFire,
+    PistolShoot,
+    PistolUnholster,
     GunEmpty,
     BombExplosion,
     AnimalCrush1,
@@ -61,6 +62,9 @@ enum class SoundEffect {
     Smooch,
     ChestOpen,
     Unlock,
+    LawsonEnter,
+    ShopkeepAnger0,
+    LightBreak,
     UiCant,
     UiConfirm,
     UiCursorMove,
@@ -70,7 +74,7 @@ enum class SoundEffect {
 };
 
 constexpr std::size_t kSongCount = 2;
-constexpr std::size_t kSoundEffectCount = 52;
+constexpr std::size_t kSoundEffectCount = 56;
 
 struct LoadedSong {
     std::string path;

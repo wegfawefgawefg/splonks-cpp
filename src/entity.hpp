@@ -12,6 +12,7 @@
 #include <optional>
 #include <cstdint>
 #include <tuple>
+#include <vector>
 
 namespace splonks {
 
@@ -38,6 +39,14 @@ struct UseState {
     AttachmentMode source = AttachmentMode::None;
 };
 
+struct Buyable {
+    bool active = false;
+    std::uint32_t display_quantity = 0;
+    std::optional<FrameDataId> display_icon_animation_id = std::nullopt;
+    std::optional<VID> shop_owner_vid = std::nullopt;
+    EntityOnTryBuy on_try_buy = nullptr;
+};
+
 struct Entity {
     bool active = false;
     bool marked_for_destruction = false;
@@ -46,9 +55,12 @@ struct Entity {
     bool was_horizontally_controlled_this_frame = false;
     bool has_physics = true;
     bool can_collide = true;
+    bool can_be_hit = true;
     bool stone = false;
     bool wanted = false;
     bool crusher_pusher = false;
+    bool can_stomp = false;
+    bool can_be_stomped = true;
     bool can_go_on_back = false;
     bool grounded = false;
     std::uint32_t coyote_time = 0;
@@ -56,6 +68,7 @@ struct Entity {
     bool stun_recovers_on_ground = true;
     bool stun_recovers_while_held = true;
     bool can_be_picked_up = true;
+    bool can_only_be_picked_up_if_dead_or_stunned = false;
     bool impassable = false;
     float fall_distance = 0.0F;
     Vec2 pos;
@@ -64,10 +77,10 @@ struct Entity {
     float max_speed = 7.0F;
     Vec2 size;
     float dist_traveled_this_frame = 0.0F;
-    Origin origin = Origin::TopLeft;
     LeftOrRight facing = LeftOrRight::Left;
     bool vertical_flip = false;
     DrawLayer draw_layer = DrawLayer::Middle;
+    bool render_enabled = true;
     FrameDataAnimator frame_data_animator;
     std::uint32_t jump_delay_frame_count = kJumpDelayFrames;
     bool jumped_this_frame = false;
@@ -79,6 +92,7 @@ struct Entity {
     std::uint64_t passive_item_flags = 0;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
     std::uint32_t money = 0;
+    Buyable buyable;
     std::uint32_t bombs = 0;
     std::uint32_t ropes = 0;
     std::optional<VID> back_vid;
@@ -102,6 +116,9 @@ struct Entity {
     EntityOnDeath on_death = nullptr;
     EntityOnDamage on_damage = nullptr;
     EntityOnUse on_use = nullptr;
+    EntityOnAreaEnter on_area_enter = nullptr;
+    EntityOnAreaExit on_area_exit = nullptr;
+    EntityOnAreaTileChanged on_area_tile_changed = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     std::optional<StageTransitionTarget> transition_target;
@@ -136,6 +153,8 @@ struct Entity {
     std::optional<VID> entity_b;
     std::optional<VID> entity_c;
     std::optional<VID> entity_d;
+    std::optional<std::vector<VID>> child_vids;
+    std::optional<std::vector<VID>> inside_vids;
     EntityLabel entity_label_a = EntityLabel::None;
     EntityLabel entity_label_b = EntityLabel::None;
     EntityLabel entity_label_c = EntityLabel::None;

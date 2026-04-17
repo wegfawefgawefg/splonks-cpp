@@ -1,6 +1,7 @@
 #include "stage_init.hpp"
 #include "tools/tool_archetype.hpp"
 
+#include "buying.hpp"
 #include "entity.hpp"
 #include "entities/common/common.hpp"
 #include "entities/bat.hpp"
@@ -9,10 +10,15 @@
 #include "entities/money.hpp"
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
+#include "entities/shop.hpp"
+#include "entities/store_light.hpp"
+#include "entities/damsel.hpp"
 #include "entities/stomp_pad.hpp"
 #include "stage_gen/splk_mines.hpp"
+#include "tile_archetype.hpp"
 
 #include <algorithm>
+#include <array>
 #include <random>
 
 #include <stdexcept>
@@ -34,7 +40,14 @@ constexpr int kBowlingTestStageWidthTiles = 80;
 constexpr int kBowlingTestStageHeightTiles = 8;
 constexpr int kOpposingBodySmackStageWidthTiles = 14;
 constexpr int kOpposingBodySmackStageHeightTiles = 8;
+constexpr int kShopTestStageWidthTiles = 80;
+constexpr int kShopTestStageHeightTiles = 12;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
+constexpr std::array<Tile, 3> kCaveBackwallFillTiles{{
+    Tile::CaveAir0,
+    Tile::CaveAir1,
+    Tile::CaveAir2,
+}};
 
 struct StageCarryover {
     std::optional<Entity> player;
@@ -57,6 +70,10 @@ int RandomMoneyType() {
     return distribution(generator);
 }
 
+void FillDebugStageBackwall(Stage& stage) {
+    stage.FillBackwall(std::vector<Tile>(kCaveBackwallFillTiles.begin(), kCaveBackwallFillTiles.end()));
+}
+
 Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     Stage stage;
     stage.stage_type = StageType::Test1;
@@ -66,6 +83,7 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
         static_cast<std::size_t>(stage_height),
         std::vector<Tile>(static_cast<std::size_t>(stage_width), Tile::Air)
     );
+    FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
@@ -104,6 +122,7 @@ Stage MakeStompTestStage() {
         static_cast<std::size_t>(kStompTestStageHeightTiles),
         std::vector<Tile>(static_cast<std::size_t>(kStompTestStageWidthTiles), Tile::Air)
     );
+    FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
@@ -136,6 +155,7 @@ Stage MakeBorderTestStage(const BorderTestLevelConfig& config) {
         static_cast<std::size_t>(kBorderTestStageHeightTiles),
         std::vector<Tile>(static_cast<std::size_t>(kBorderTestStageWidthTiles), Tile::Air)
     );
+    FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
@@ -160,6 +180,201 @@ void SetStageTile(Stage& stage, int x, int y, Tile tile) {
     stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = tile;
 }
 
+void SetStageBackwallTile(Stage& stage, int x, int y, Tile tile) {
+    if (x < 0 || y < 0 || x >= static_cast<int>(stage.GetTileWidth()) ||
+        y >= static_cast<int>(stage.GetTileHeight())) {
+        return;
+    }
+    stage.SetBackwallTile(IVec2::New(x, y), tile);
+}
+
+struct ShopTestStallSpec {
+    int left_x = 0;
+    int right_x = 0;
+};
+
+struct ShopTestItemSpec {
+    EntityType type_ = EntityType::None;
+    int tile_x = 0;
+    std::uint32_t price = 0;
+};
+
+std::optional<VID> SpawnStageEntityAtTopLeft(State& state, EntityType type_, const Vec2& pos);
+
+std::optional<Vec2> FindStoreLightTopLeftFromAnchor(
+    const Stage& stage,
+    int anchor_tile_x,
+    int start_tile_y
+) {
+    if (anchor_tile_x < 0 || anchor_tile_x >= static_cast<int>(stage.GetTileWidth())) {
+        return std::nullopt;
+    }
+
+    for (int y = start_tile_y; y >= 0; --y) {
+        if (!GetTileArchetype(stage.GetTile(
+                static_cast<unsigned int>(anchor_tile_x),
+                static_cast<unsigned int>(y)
+            )).solid) {
+            continue;
+        }
+
+        const int light_tile_y = y + 1;
+        if (light_tile_y >= static_cast<int>(stage.GetTileHeight())) {
+            return std::nullopt;
+        }
+
+        return Vec2::New(
+            static_cast<float>(anchor_tile_x * static_cast<int>(kTileSize)),
+            static_cast<float>(light_tile_y * static_cast<int>(kTileSize))
+        );
+    }
+
+    return std::nullopt;
+}
+
+void BuildShopTestStall(Stage& stage, const ShopTestStallSpec& stall) {
+    constexpr int kShopTopY = 4;
+    constexpr int kShopBottomY = 10;
+
+    SetStageTile(stage, stall.left_x, kShopTopY, Tile::LawsonLeftTopper);
+    for (int x = stall.left_x + 1; x < stall.right_x; ++x) {
+        SetStageTile(stage, x, kShopTopY, Tile::LawsonMiddleTopper);
+    }
+    SetStageTile(stage, stall.right_x, kShopTopY, Tile::LawsonRightTopper);
+
+    for (int y = kShopTopY + 1; y <= kShopBottomY - 2; ++y) {
+        SetStageTile(stage, stall.left_x, y, Tile::LawsonWall);
+        SetStageTile(stage, stall.right_x, y, Tile::LawsonWall);
+    }
+    for (int y = kShopTopY + 1; y <= kShopBottomY; ++y) {
+        for (int x = stall.left_x + 1; x < stall.right_x; ++x) {
+            SetStageBackwallTile(stage, x, y, Tile::LawsonInside);
+        }
+    }
+
+    SetStageBackwallTile(stage, stall.left_x, kShopBottomY - 1, Tile::LawsonWall);
+    SetStageBackwallTile(stage, stall.left_x, kShopBottomY, Tile::LawsonWall);
+    SetStageBackwallTile(stage, stall.right_x, kShopBottomY - 1, Tile::LawsonWall);
+    SetStageBackwallTile(stage, stall.right_x, kShopBottomY, Tile::LawsonWall);
+
+    SetStageTile(stage, stall.left_x, kShopBottomY - 1, Tile::Air);
+    SetStageTile(stage, stall.left_x, kShopBottomY, Tile::Air);
+
+    const int floor_y = static_cast<int>(stage.GetTileHeight()) - 1;
+    for (int x = stall.left_x; x <= stall.right_x; ++x) {
+        SetStageTile(stage, x, floor_y, Tile::LawsonFloor);
+    }
+}
+
+AABB MakeShopTestArea(const ShopTestStallSpec& stall) {
+    constexpr int kShopTopY = 4;
+    constexpr int kShopBottomY = 10;
+    return AABB::New(
+        Vec2::New(
+            static_cast<float>(stall.left_x * static_cast<int>(kTileSize)),
+            static_cast<float>(kShopTopY * static_cast<int>(kTileSize))
+        ),
+        Vec2::New(
+            static_cast<float>((stall.right_x + 1) * static_cast<int>(kTileSize) - 1),
+            static_cast<float>((kShopBottomY + 1) * static_cast<int>(kTileSize) - 1)
+        )
+    );
+}
+
+std::optional<VID> SpawnShopTestShop(
+    State& state,
+    const ShopTestStallSpec& stall,
+    int shopkeeper_tile_x
+) {
+    const AABB shop_area = MakeShopTestArea(stall);
+    const std::optional<VID> shop_vid =
+        SpawnStageEntityAtTopLeft(state, EntityType::Shop, shop_area.tl);
+    if (!shop_vid.has_value()) {
+        return std::nullopt;
+    }
+
+    Entity* const shop = state.entity_manager.GetEntityMut(*shop_vid);
+    if (shop == nullptr) {
+        return std::nullopt;
+    }
+    entities::shop::SetShopArea(*shop, shop_area);
+
+    const std::optional<VID> shopkeeper_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::Shopkeeper,
+        Vec2::New(
+            static_cast<float>(shopkeeper_tile_x * static_cast<int>(kTileSize)),
+            9.0F * static_cast<float>(kTileSize) - 16.0F
+        )
+    );
+    if (shopkeeper_vid.has_value()) {
+        shop->entity_a = *shopkeeper_vid;
+        if (Entity* const shopkeeper = state.entity_manager.GetEntityMut(*shopkeeper_vid)) {
+            shopkeeper->entity_a = *shop_vid;
+        }
+    }
+
+    return shop_vid;
+}
+
+void SpawnShopTestOwnedItem(
+    State& state,
+    std::optional<VID> shop_vid,
+    const ShopTestItemSpec& spec
+) {
+    const std::optional<VID> item_vid = SpawnStageEntityAtTopLeft(
+        state,
+        spec.type_,
+        Vec2::New(
+            static_cast<float>(spec.tile_x * static_cast<int>(kTileSize)),
+            10.0F * static_cast<float>(kTileSize) - GetEntityArchetype(spec.type_).size.y
+        )
+    );
+    if (!item_vid.has_value()) {
+        return;
+    }
+
+    Entity* const item = state.entity_manager.GetEntityMut(*item_vid);
+    if (item == nullptr) {
+        return;
+    }
+
+    item->buyable.active = true;
+    item->buyable.display_quantity = spec.price;
+    item->buyable.display_icon_animation_id = frame_data_ids::GoldIcon;
+    item->buyable.shop_owner_vid = shop_vid;
+    item->buyable.on_try_buy = spec.type_ == EntityType::Damsel
+                                 ? entities::damsel::BuyDamsel
+                                 : TryBuyEntityForMoney;
+    if (!shop_vid.has_value()) {
+        return;
+    }
+
+    if (Entity* const shop = state.entity_manager.GetEntityMut(*shop_vid)) {
+        entities::shop::AddShopChild(*shop, *item_vid);
+    }
+}
+
+void SpawnShopTestSign(State& state, EntityType type_, int tile_x) {
+    (void)SpawnStageEntityAtTopLeft(
+        state,
+        type_,
+        Vec2::New(
+            static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+            5.0F * static_cast<float>(kTileSize)
+        )
+    );
+}
+
+void SpawnShopTestStoreLight(State& state, int anchor_tile_x, int start_tile_y) {
+    const std::optional<Vec2> pos =
+        FindStoreLightTopLeftFromAnchor(state.stage, anchor_tile_x, start_tile_y);
+    if (!pos.has_value()) {
+        return;
+    }
+    (void)SpawnStageEntityAtTopLeft(state, EntityType::StoreLight, *pos);
+}
+
 void BuildMazeDoorTestPerimeter(Stage& stage) {
     for (int x = 0; x < kMazeDoorTestStageWidthTiles; ++x) {
         SetStageTile(stage, x, 0, Tile::CaveDirt);
@@ -178,6 +393,7 @@ Stage MakeBowlingTestStage() {
         static_cast<std::size_t>(kBowlingTestStageHeightTiles),
         std::vector<Tile>(static_cast<std::size_t>(kBowlingTestStageWidthTiles), Tile::Air)
     );
+    FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
@@ -200,6 +416,7 @@ Stage MakeOpposingBodySmackStage() {
         static_cast<std::size_t>(kOpposingBodySmackStageHeightTiles),
         std::vector<Tile>(static_cast<std::size_t>(kOpposingBodySmackStageWidthTiles), Tile::Air)
     );
+    FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
@@ -210,6 +427,39 @@ Stage MakeOpposingBodySmackStage() {
     for (int x = 0; x < kOpposingBodySmackStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kOpposingBodySmackStageHeightTiles - 1)]
                    [static_cast<std::size_t>(x)] = DirtTileForFamilyTile(stage.border.left.tile);
+    }
+
+    return stage;
+}
+
+Stage MakeShopTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kShopTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kShopTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    for (int x = 0; x < kShopTestStageWidthTiles; ++x) {
+        stage.tiles[static_cast<std::size_t>(kShopTestStageHeightTiles - 1)]
+                   [static_cast<std::size_t>(x)] = floor_tile;
+    }
+
+    constexpr std::array<ShopTestStallSpec, 3> kStalls{{
+        ShopTestStallSpec{.left_x = 10, .right_x = 24},
+        ShopTestStallSpec{.left_x = 30, .right_x = 46},
+        ShopTestStallSpec{.left_x = 52, .right_x = 68},
+    }};
+    for (const ShopTestStallSpec& stall : kStalls) {
+        BuildShopTestStall(stage, stall);
     }
 
     return stage;
@@ -283,6 +533,13 @@ void GiveHeldRockToEntity(State& state, VID holder_vid) {
     rock->attachment_mode = AttachmentMode::Held;
     rock->has_physics = false;
     rock->can_collide = false;
+    rock->thrown_by.reset();
+    rock->thrown_immunity_timer = 0;
+    rock->projectile_contact_damage_type = DamageType::Attack;
+    rock->projectile_contact_damage_amount = 1;
+    rock->projectile_contact_timer = 0;
+    rock->vel = Vec2::New(0.0F, 0.0F);
+    rock->acc = Vec2::New(0.0F, 0.0F);
     rock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
     holder->holding_vid = rock->vid;
     holder->holding = true;
@@ -295,6 +552,7 @@ Stage MakeMazeDoorTestStage(MazeDoorTestRoom room) {
         static_cast<std::size_t>(kMazeDoorTestStageHeightTiles),
         std::vector<Tile>(static_cast<std::size_t>(kMazeDoorTestStageWidthTiles), Tile::Air)
     );
+    stage.FillBackwall(std::vector<Tile>(kCaveBackwallFillTiles.begin(), kCaveBackwallFillTiles.end()));
     stage.rooms = {};
     stage.path = {};
     stage.gravity = 0.3F;
@@ -623,6 +881,9 @@ void SpawnAuthoredStageEntities(State& state) {
         entity->pos = spawn.pos;
         entity->facing = spawn.facing;
         entity->vel = Vec2::New(0.0F, 0.0F);
+        if (spawn.type_ == EntityType::StoreLight) {
+            entities::store_light::AttachStoreLight(*entity, state);
+        }
         if (spawn.animation_id != kInvalidFrameDataId) {
             SetAnimation(*entity, spawn.animation_id);
         }
@@ -674,6 +935,102 @@ void InitBorderTestStage(State& state) {
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
 }
 
+std::optional<VID> SpawnStageEntityAtTopLeft(State& state, EntityType type_, const Vec2& pos) {
+    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    if (!vid.has_value()) {
+        return std::nullopt;
+    }
+
+    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
+    if (entity == nullptr) {
+        return std::nullopt;
+    }
+
+    SetEntityAs(*entity, type_);
+    entity->pos = pos;
+    entity->vel = Vec2::New(0.0F, 0.0F);
+    if (type_ == EntityType::StoreLight) {
+        entities::store_light::AttachStoreLight(*entity, state);
+    }
+    return vid;
+}
+
+void InitShopTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = static_cast<float>(3 * static_cast<int>(kTileSize));
+    const float player_spawn_y = static_cast<float>(10 * static_cast<int>(kTileSize) - 14);
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    if (state.player_vid.has_value()) {
+        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+            player->money = 50000;
+        }
+    }
+
+    (void)SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::GoldIdol,
+        Vec2::New(4.0F * static_cast<float>(kTileSize), 10.0F * static_cast<float>(kTileSize) - 16.0F)
+    );
+
+    const std::optional<VID> left_shop_vid =
+        SpawnShopTestShop(state, ShopTestStallSpec{.left_x = 10, .right_x = 24}, 12);
+    SpawnShopTestOwnedItem(
+        state,
+        left_shop_vid,
+        ShopTestItemSpec{.type_ = EntityType::Mattock, .tile_x = 16, .price = 2000}
+    );
+    SpawnShopTestOwnedItem(
+        state,
+        left_shop_vid,
+        ShopTestItemSpec{.type_ = EntityType::BombBag, .tile_x = 20, .price = 2500}
+    );
+    SpawnShopTestSign(state, EntityType::SignGeneral, 15);
+    SpawnShopTestSign(state, EntityType::SignBomb, 19);
+    SpawnShopTestStoreLight(state, 14, 9);
+    SpawnShopTestStoreLight(state, 20, 9);
+
+    const std::optional<VID> middle_shop_vid =
+        SpawnShopTestShop(state, ShopTestStallSpec{.left_x = 30, .right_x = 46}, 32);
+    SpawnShopTestOwnedItem(
+        state,
+        middle_shop_vid,
+        ShopTestItemSpec{.type_ = EntityType::Shotgun, .tile_x = 35, .price = 12000}
+    );
+    SpawnShopTestOwnedItem(
+        state,
+        middle_shop_vid,
+        ShopTestItemSpec{.type_ = EntityType::JetPack, .tile_x = 39, .price = 20000}
+    );
+    SpawnShopTestOwnedItem(
+        state,
+        middle_shop_vid,
+        ShopTestItemSpec{.type_ = EntityType::Cape, .tile_x = 43, .price = 8000}
+    );
+    SpawnShopTestSign(state, EntityType::SignWeapon, 34);
+    SpawnShopTestSign(state, EntityType::SignRare, 38);
+    SpawnShopTestSign(state, EntityType::SignClothing, 42);
+    SpawnShopTestStoreLight(state, 34, 9);
+    SpawnShopTestStoreLight(state, 42, 9);
+
+    const std::optional<VID> right_shop_vid =
+        SpawnShopTestShop(state, ShopTestStallSpec{.left_x = 52, .right_x = 68}, 54);
+    SpawnShopTestOwnedItem(
+        state,
+        right_shop_vid,
+        ShopTestItemSpec{.type_ = EntityType::Dice, .tile_x = 57, .price = 5000}
+    );
+    SpawnShopTestOwnedItem(
+        state,
+        right_shop_vid,
+        ShopTestItemSpec{.type_ = EntityType::Damsel, .tile_x = 62, .price = 12000}
+    );
+    SpawnShopTestSign(state, EntityType::SignCraps, 56);
+    SpawnShopTestSign(state, EntityType::SignKissing, 61);
+    SpawnShopTestStoreLight(state, 56, 9);
+    SpawnShopTestStoreLight(state, 64, 9);
+}
 
 void InitBowlingTestStage(State& state) {
     InitCommonStageState(state);
@@ -923,6 +1280,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::OpposingBodySmack:
         state.stage = MakeOpposingBodySmackStage();
         InitOpposingBodySmackStage(state);
+        break;
+    case DebugLevelKind::ShopTest:
+        state.stage = MakeShopTestStage();
+        InitShopTestStage(state);
         break;
     }
 }

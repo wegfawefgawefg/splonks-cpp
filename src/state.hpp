@@ -87,6 +87,10 @@ struct DebugOverlayState {
     bool show_chunk_coords = false;
     bool show_tile_indexes = false;
     bool show_tile_types = false;
+    bool show_lights = false;
+    bool show_area_boundaries = false;
+    bool show_area_ids = false;
+    bool show_area_types = false;
 };
 
 struct State {
@@ -142,6 +146,7 @@ struct State {
     EntityManager entity_manager;
     ParticleSystem particles;
     SID sid;
+    std::vector<VID> area_listener_vids;
     Stage stage;
     StageLighting stage_lighting;
 
@@ -160,6 +165,8 @@ struct State {
     void SetMode(Mode new_mode);
     void RebuildSid(const Graphics& graphics);
     void UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics);
+    void RebuildAreaListenerCache();
+    void UpdateAreaListenerCacheForEntity(std::size_t entity_id);
 };
 
 bool IsStageWon(const State& state);

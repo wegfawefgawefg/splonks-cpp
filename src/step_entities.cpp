@@ -5,7 +5,9 @@
 #include "entity/archetype.hpp"
 #include "entity/core_types.hpp"
 #include "entity/manager.hpp"
+#include "world_query.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <vector>
@@ -16,6 +18,84 @@ namespace {
 
 bool HasUseActivity(const Entity& entity) {
     return entity.use_state.down || entity.use_state.pressed || entity.use_state.released;
+}
+
+bool HasAreaCallbacks(const Entity& entity) {
+    return entity.on_area_enter != nullptr || entity.on_area_exit != nullptr;
+}
+
+std::vector<VID> GetAreaOverlapVids(std::size_t area_idx, const State& state) {
+    const Entity& area_entity = state.entity_manager.entities[area_idx];
+    const AABB area = area_entity.GetAABB();
+
+    std::vector<VID> overlaps;
+    for (const VID& vid : QueryEntitiesInAabb(state, area, area_entity.vid)) {
+        const Entity* const other = state.entity_manager.GetEntity(vid);
+        if (other == nullptr || !other->active) {
+            continue;
+        }
+        if (!WorldAabbsIntersect(state.stage, area, other->GetAABB())) {
+            continue;
+        }
+        overlaps.push_back(vid);
+    }
+    return overlaps;
+}
+
+bool ContainsVid(const std::vector<VID>& vids, VID vid) {
+    return std::find(vids.begin(), vids.end(), vid) != vids.end();
+}
+
+void StepAreaEntityOverlaps(State& state, Graphics& graphics, Audio& audio) {
+    for (const VID& area_vid : state.area_listener_vids) {
+        const Entity* const area_entity_ptr = state.entity_manager.GetEntity(area_vid);
+        if (area_entity_ptr == nullptr) {
+            continue;
+        }
+
+        const std::size_t area_idx = area_vid.id;
+        const Entity& area_entity = *area_entity_ptr;
+        if (!area_entity.active || !HasAreaCallbacks(area_entity)) {
+            continue;
+        }
+
+        const std::vector<VID> previous_overlaps = area_entity.inside_vids.value_or(std::vector<VID>{});
+        const std::vector<VID> current_overlaps = GetAreaOverlapVids(area_idx, state);
+
+        for (const VID& vid : previous_overlaps) {
+            if (ContainsVid(current_overlaps, vid)) {
+                continue;
+            }
+            Entity* const area_mut = state.entity_manager.GetEntityMut(area_entity.vid);
+            if (area_mut == nullptr || !area_mut->active || area_mut->on_area_exit == nullptr) {
+                continue;
+            }
+            if (state.entity_manager.GetEntity(vid) == nullptr) {
+                continue;
+            }
+            area_mut->on_area_exit(area_idx, vid.id, state, graphics, audio);
+        }
+
+        for (const VID& vid : current_overlaps) {
+            if (ContainsVid(previous_overlaps, vid)) {
+                continue;
+            }
+            Entity* const area_mut = state.entity_manager.GetEntityMut(area_entity.vid);
+            if (area_mut == nullptr || !area_mut->active || area_mut->on_area_enter == nullptr) {
+                continue;
+            }
+            if (state.entity_manager.GetEntity(vid) == nullptr) {
+                continue;
+            }
+            area_mut->on_area_enter(area_idx, vid.id, state, graphics, audio);
+        }
+
+        Entity* const area_mut = state.entity_manager.GetEntityMut(area_entity.vid);
+        if (area_mut == nullptr || !area_mut->active) {
+            continue;
+        }
+        area_mut->inside_vids = current_overlaps;
+    }
 }
 
 void ApplyStageWrapAndVoidDeath(std::size_t entity_idx, State& state, Audio& audio) {
@@ -177,6 +257,12 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             mutable_entity.last_ai_state = mutable_entity.ai_state;
         }
     }
+
+    for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
+        entities::common::SyncEntityAttachments(entity_idx, state, graphics);
+    }
+
+    StepAreaEntityOverlaps(state, graphics, audio);
 }
 
 } // namespace splonks

@@ -32,14 +32,18 @@ Entity Entity::New() {
     entity.was_horizontally_controlled_this_frame = false;
     entity.has_physics = true;
     entity.can_collide = true;
+    entity.can_be_hit = true;
     entity.stone = false;
     entity.crusher_pusher = false;
+    entity.can_stomp = false;
+    entity.can_be_stomped = true;
     entity.grounded = false;
     entity.coyote_time = 0;
     entity.stun_timer = 0;
     entity.stun_recovers_on_ground = true;
     entity.stun_recovers_while_held = true;
     entity.can_be_picked_up = true;
+    entity.can_only_be_picked_up_if_dead_or_stunned = false;
     entity.impassable = false;
     entity.fall_distance = 0.0F;
     entity.pos = Vec2::New(0.0F, 0.0F);
@@ -48,10 +52,10 @@ Entity Entity::New() {
     entity.max_speed = 7.0F;
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.dist_traveled_this_frame = 0.0F;
-    entity.origin = Origin::TopLeft;
     entity.facing = LeftOrRight::Left;
     entity.vertical_flip = false;
     entity.draw_layer = DrawLayer::Middle;
+    entity.render_enabled = true;
     TrySetAnimation(entity, EntityDisplayState::Neutral);
     entity.frame_data_animator = FrameDataAnimator{};
     entity.jump_delay_frame_count = kJumpDelayFrames;
@@ -64,6 +68,7 @@ Entity Entity::New() {
     entity.passive_item_flags = 0;
     entity.passive_item.reset();
     entity.money = 0;
+    entity.buyable = Buyable{};
     entity.bombs = 0;
     entity.ropes = 0;
     entity.attachment_mode = AttachmentMode::None;
@@ -86,6 +91,9 @@ Entity Entity::New() {
     entity.on_death = nullptr;
     entity.on_damage = nullptr;
     entity.on_use = nullptr;
+    entity.on_area_enter = nullptr;
+    entity.on_area_exit = nullptr;
+    entity.on_area_tile_changed = nullptr;
     entity.step_logic = nullptr;
     entity.step_physics = nullptr;
     entity.transition_target.reset();
@@ -117,6 +125,8 @@ Entity Entity::New() {
     entity.entity_label_b = EntityLabel::None;
     entity.entity_label_c = EntityLabel::None;
     entity.entity_label_d = EntityLabel::None;
+    entity.child_vids.reset();
+    entity.inside_vids.reset();
     entity.alignment = Alignment::Neutral;
     entity.counter_a = 0.0F;
     entity.counter_b = 0.0F;
@@ -176,68 +186,19 @@ void ClearTransientMovementFlags(Entity& entity) {
 }
 
 std::tuple<Vec2, Vec2> Entity::GetBounds() const {
-    switch (origin) {
-    case Origin::TopLeft:
-        return {pos, pos + size - Vec2::New(1.0F, 1.0F)};
-    case Origin::Center: {
-        const Vec2 tl = pos - size / 2.0F;
-        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
-        return {tl, br};
-    }
-    case Origin::Foot: {
-        const Vec2 tl = pos - Vec2::New(size.x / 2.0F, size.y);
-        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
-        return {tl, br};
-    }
-    }
-
     return {pos, pos + size - Vec2::New(1.0F, 1.0F)};
 }
 
 AABB Entity::GetAABB() const {
-    switch (origin) {
-    case Origin::TopLeft:
-        return AABB::New(pos, pos + size - Vec2::New(1.0F, 1.0F));
-    case Origin::Center: {
-        const Vec2 tl = pos - size / 2.0F;
-        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
-        return AABB::New(tl, br);
-    }
-    case Origin::Foot: {
-        const Vec2 tl = pos - Vec2::New(size.x / 2.0F, size.y);
-        const Vec2 br = tl + size - Vec2::New(1.0F, 1.0F);
-        return AABB::New(tl, br);
-    }
-    }
-
     return AABB::New(pos, pos + size - Vec2::New(1.0F, 1.0F));
 }
 
 Vec2 Entity::GetCenter() const {
-    switch (origin) {
-    case Origin::TopLeft:
-        return pos + size / 2.0F;
-    case Origin::Center:
-        return pos;
-    case Origin::Foot:
-        return pos + Vec2::New(size.x / 2.0F, 0.0F);
-    }
-
-    return pos;
+    return pos + size / 2.0F;
 }
 
 void Entity::SetCenter(const Vec2& center) {
-    switch (origin) {
-    case Origin::TopLeft:
-        pos = center - size / 2.0F;
-        return;
-    case Origin::Center:
-        pos = center;
-        return;
-    case Origin::Foot:
-        pos = center - Vec2::New(size.x / 2.0F, 0.0F);
-        return;
-    }
+    pos = center - size / 2.0F;
 }
 
 void Entity::IncTravelSound() {
@@ -285,18 +246,7 @@ void Entity::SetGrounded(const Stage& stage) {
 }
 
 std::tuple<Vec2, Vec2> Entity::GetTlAndTrCorners() const {
-    switch (origin) {
-    case Origin::TopLeft:
-        return {Vec2::New(pos.x, pos.y), Vec2::New(pos.x + size.x, pos.y)};
-    case Origin::Center:
-        return {Vec2::New(pos.x - size.x / 2.0F, pos.y - size.y / 2.0F),
-                Vec2::New(pos.x + size.x / 2.0F, pos.y - size.y / 2.0F)};
-    case Origin::Foot:
-        return {Vec2::New(pos.x - size.x / 2.0F, pos.y - size.y),
-                Vec2::New(pos.x + size.x / 2.0F, pos.y - size.y)};
-    }
-
-    return {pos, pos};
+    return {Vec2::New(pos.x, pos.y), Vec2::New(pos.x + size.x, pos.y)};
 }
 
 HangHands Entity::GetHangHands() const {
