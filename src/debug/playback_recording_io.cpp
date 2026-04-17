@@ -129,6 +129,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.can_be_picked_up);
     WritePod(out, entity.can_only_be_picked_up_if_dead_or_stunned);
     WritePod(out, entity.impassable);
+    WritePod(out, entity.can_be_hung_on);
     WritePod(out, entity.fall_distance);
     WritePod(out, entity.pos);
     WritePod(out, entity.vel);
@@ -167,7 +168,8 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.health);
     WritePod(out, entity.hurt_on_contact);
     WritePod(out, entity.vanish_on_death);
-    WritePod(out, entity.has_ground_friction);
+    WritePod(out, entity.affected_by_ground_friction);
+    WritePod(out, entity.support_ground_friction);
     WriteOptionalPod(out, entity.damage_animation);
     WriteOptionalPod(out, entity.damage_sound);
     WriteOptionalPod(out, entity.collide_sound);
@@ -252,6 +254,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.can_be_picked_up) &&
            ReadPod(in, entity.can_only_be_picked_up_if_dead_or_stunned) &&
            ReadPod(in, entity.impassable) &&
+           ReadPod(in, entity.can_be_hung_on) &&
            ReadPod(in, entity.fall_distance) &&
            ReadPod(in, entity.pos) &&
            ReadPod(in, entity.vel) &&
@@ -290,7 +293,8 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.health) &&
            ReadPod(in, entity.hurt_on_contact) &&
            ReadPod(in, entity.vanish_on_death) &&
-           ReadPod(in, entity.has_ground_friction) &&
+           ReadPod(in, entity.affected_by_ground_friction) &&
+           ReadPod(in, entity.support_ground_friction) &&
            ReadOptionalPod(in, entity.damage_animation) &&
            ReadOptionalPod(in, entity.damage_sound) &&
            ReadOptionalPod(in, entity.collide_sound) &&

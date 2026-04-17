@@ -45,6 +45,7 @@ Entity Entity::New() {
     entity.can_be_picked_up = true;
     entity.can_only_be_picked_up_if_dead_or_stunned = false;
     entity.impassable = false;
+    entity.can_be_hung_on = true;
     entity.fall_distance = 0.0F;
     entity.pos = Vec2::New(0.0F, 0.0F);
     entity.vel = Vec2::New(0.0F, 0.0F);
@@ -83,7 +84,8 @@ Entity Entity::New() {
     entity.health = 0;
     entity.hurt_on_contact = false;
     entity.vanish_on_death = false;
-    entity.has_ground_friction = true;
+    entity.affected_by_ground_friction = true;
+    entity.support_ground_friction = 0.85F;
     entity.damage_animation.reset();
     entity.damage_sound.reset();
     entity.collide_sound.reset();

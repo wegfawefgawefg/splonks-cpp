@@ -70,6 +70,7 @@ struct Entity {
     bool can_be_picked_up = true;
     bool can_only_be_picked_up_if_dead_or_stunned = false;
     bool impassable = false;
+    bool can_be_hung_on = true;
     float fall_distance = 0.0F;
     Vec2 pos;
     Vec2 vel;
@@ -108,7 +109,8 @@ struct Entity {
     std::uint32_t health = 0;
     bool hurt_on_contact = false;
     bool vanish_on_death = false;
-    bool has_ground_friction = true;
+    bool affected_by_ground_friction = true;
+    float support_ground_friction = 0.85F;
     std::optional<FrameDataId> damage_animation = std::nullopt;
     std::optional<SoundEffect> damage_sound = std::nullopt;
     std::optional<SoundEffect> collide_sound = std::nullopt;

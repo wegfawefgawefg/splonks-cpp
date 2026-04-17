@@ -4,6 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/player.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
 
 #include <algorithm>
 #include <array>
@@ -96,6 +97,61 @@ int GetIntegerStepDistance(float distance, unsigned int time) {
         integer_distance *= -1;
     }
     return integer_distance;
+}
+
+int FloorDiv(int value, int divisor) {
+    const int quotient = value / divisor;
+    const int remainder = value % divisor;
+    if (remainder != 0 && ((remainder < 0) != (divisor < 0))) {
+        return quotient - 1;
+    }
+    return quotient;
+}
+
+float GetGroundFrictionMultiplier(std::size_t entity_idx, State& state) {
+    constexpr float kDefaultGroundFriction = 0.85F;
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    const auto [entity_tl, entity_br] = entity.GetBounds();
+    const int support_y = static_cast<int>(std::floor(entity_br.y + 1.0F));
+    const int min_tile_x = FloorDiv(static_cast<int>(std::floor(entity_tl.x)), static_cast<int>(kTileSize));
+    const int max_tile_x = FloorDiv(static_cast<int>(std::floor(entity_br.x)), static_cast<int>(kTileSize));
+    const int support_tile_y = FloorDiv(support_y, static_cast<int>(kTileSize));
+
+    float friction = 0.0F;
+    bool found_support_surface = false;
+    for (int tile_x = min_tile_x; tile_x <= max_tile_x; ++tile_x) {
+        const Tile tile = state.stage.GetTileOrBorder(tile_x, support_tile_y);
+        if (!IsTileCollidable(tile)) {
+            continue;
+        }
+        const float tile_friction = GetTileFriction(tile);
+        friction = found_support_surface ? std::min(friction, tile_friction) : tile_friction;
+        found_support_surface = true;
+    }
+
+    const VID vid = entity.vid;
+    const AABB feet_aabb = {
+        .tl = Vec2::New(entity_tl.x, entity_br.y),
+        .br = entity_br + Vec2::New(0.0F, 1.0F),
+    };
+    for (const VID& other_vid : QueryEntitiesInAabb(state, feet_aabb, vid)) {
+        const Entity* const other = state.entity_manager.GetEntity(other_vid);
+        if (other == nullptr || !other->active || !other->impassable) {
+            continue;
+        }
+
+        const AABB other_aabb = GetNearestWorldAabb(state.stage, entity.GetCenter(), other->GetAABB());
+        if (!AabbsIntersect(feet_aabb, other_aabb)) {
+            continue;
+        }
+
+        friction = found_support_surface
+                       ? std::min(friction, other->support_ground_friction)
+                       : other->support_ground_friction;
+        found_support_surface = true;
+    }
+
+    return found_support_surface ? friction : kDefaultGroundFriction;
 }
 
 bool DispatchPostSweepEntityOverlapContacts(
@@ -741,10 +797,6 @@ void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
 }
 
 void ApplyGroundFriction(std::size_t entity_idx, State& state) {
-    if (state.stage.stage_type == StageType::Ice1 || state.stage.stage_type == StageType::Ice2 ||
-        state.stage.stage_type == StageType::Ice3) {
-        return;
-    }
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
         entity.grounded = false;
@@ -756,13 +808,13 @@ void ApplyGroundFriction(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.SetGrounded(state.stage);
     if (entity.grounded) {
-        entity.vel.x *= 0.85F;
+        entity.vel.x *= GetGroundFrictionMultiplier(entity_idx, state);
     }
 }
 
 void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.has_ground_friction) {
+    if (!entity.affected_by_ground_friction) {
         return;
     }
     ApplyGroundFriction(entity_idx, state);

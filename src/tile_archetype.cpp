@@ -59,15 +59,18 @@ TileArchetype MakeSolidTileArchetype(
     FrameDataId break_animation,
     const char* debug_name,
     std::optional<SoundEffect> break_sound = SoundEffect::Thud,
-    TileOnBreak on_break = nullptr
+    TileOnBreak on_break = nullptr,
+    float friction = 0.85F,
+    bool hangable = true
 ) {
     return TileArchetype{
         .tile = tile,
         .solid = true,
         .climbable = false,
         .transparent = false,
-        .hangable = true,
+        .hangable = hangable,
         .family = family,
+        .friction = friction,
         .collide_sound = SoundEffect::Thud,
         .break_sound = break_sound,
         .break_animation = break_animation,
@@ -176,14 +179,16 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Ice,
         .debug_name = "IceAir2",
     },
-    MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"), "IceDirt"),
+    MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"), "IceDirt", SoundEffect::Thud, nullptr, 1.0F, false),
     MakeSolidTileArchetype(
         Tile::IceGold,
         TileFamily::Ice,
         HashFrameDataIdConstexpr("ice_gold"),
         "IceGold",
         SoundEffect::MoneySmashed,
-        OnBreakAsGoldVein
+        OnBreakAsGoldVein,
+        1.0F,
+        false
     ),
     MakeSolidTileArchetype(
         Tile::IceGoldBig,
@@ -191,9 +196,11 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         HashFrameDataIdConstexpr("ice_gold"),
         "IceGoldBig",
         SoundEffect::MoneySmashed,
-        OnBreakAsBigGoldVein
+        OnBreakAsBigGoldVein,
+        1.0F,
+        false
     ),
-    MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"), "IceBlock"),
+    MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"), "IceBlock", SoundEffect::Thud, nullptr, 1.0F, false),
     TileArchetype{
         .tile = Tile::JungleAir0,
         .solid = false,
@@ -399,6 +406,10 @@ bool IsTileCollidable(Tile tile) {
 
 bool IsTileHangable(Tile tile) {
     return GetTileArchetype(tile).hangable;
+}
+
+float GetTileFriction(Tile tile) {
+    return GetTileArchetype(tile).friction;
 }
 
 } // namespace splonks

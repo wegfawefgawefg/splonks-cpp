@@ -17,12 +17,12 @@ constexpr std::uint32_t kHangDropCooldownFrames = 5;
 constexpr std::uint32_t kHangGloveDropCooldownFrames = 10;
 constexpr std::uint32_t kHangWallReleaseCooldownFrames = 4;
 
-bool IsImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
+bool IsHangableImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
     const AABB area = AABB::New(tl, br);
     const Vec2 anchor = (tl + br) / 2.0F;
     for (const VID& other_vid : QueryEntitiesInAabb(state, area, self_vid)) {
         const Entity* const other = state.entity_manager.GetEntity(other_vid);
-        if (other == nullptr || !other->active || !other->impassable) {
+        if (other == nullptr || !other->active || !other->impassable || !other->can_be_hung_on) {
             continue;
         }
         if (AabbsIntersect(area, GetNearestWorldAabb(state.stage, anchor, other->GetAABB()))) {
@@ -69,7 +69,7 @@ bool IsBlockedForHangProbe(
         }
     }
 
-    if (check_entities && IsImpassableInRect(tl, br, state, self_vid)) {
+    if (check_entities && IsHangableImpassableInRect(tl, br, state, self_vid)) {
         return true;
     }
 

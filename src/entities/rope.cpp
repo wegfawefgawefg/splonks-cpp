@@ -24,7 +24,7 @@ extern const EntityArchetype kRopeArchetype{
     .hurt_on_contact = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
-    .has_ground_friction = false,
+    .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

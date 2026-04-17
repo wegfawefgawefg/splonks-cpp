@@ -29,6 +29,7 @@ struct TileArchetype {
     bool transparent = true;
     bool hangable = false;
     TileFamily family = TileFamily::Neutral;
+    float friction = 0.85F;
     std::optional<SoundEffect> collide_sound = std::nullopt;
     std::optional<SoundEffect> break_sound = std::nullopt;
     std::optional<FrameDataId> break_animation = std::nullopt;
@@ -37,5 +38,6 @@ struct TileArchetype {
 };
 
 const TileArchetype& GetTileArchetype(Tile tile);
+float GetTileFriction(Tile tile);
 
 } // namespace splonks

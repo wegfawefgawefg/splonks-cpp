@@ -169,7 +169,7 @@ extern const EntityArchetype kBoulderArchetype{
     .can_stomp = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
-    .has_ground_friction = true,
+    .affected_by_ground_friction = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Right,
     .condition = EntityCondition::Normal,

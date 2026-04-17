@@ -539,9 +539,28 @@ Stage MakeMovingPlatformTestStage() {
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
 
-    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const int floor_y = kMovingPlatformTestStageHeightTiles - 1;
+    const Tile dirt_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const Tile ice_tile = Tile::IceDirt;
     for (int x = 0; x < kMovingPlatformTestStageWidthTiles; ++x) {
-        SetStageTile(stage, x, kMovingPlatformTestStageHeightTiles - 1, floor_tile);
+        SetStageTile(stage, x, floor_y, dirt_tile);
+    }
+
+    for (int x = 14; x <= 19; ++x) {
+        SetStageTile(stage, x, floor_y, ice_tile);
+    }
+    for (int x = 31; x <= 36; ++x) {
+        SetStageTile(stage, x, floor_y, ice_tile);
+    }
+
+    for (int y = 10; y <= floor_y - 1; ++y) {
+        SetStageTile(stage, 4, y, dirt_tile);
+    }
+    for (int y = 10; y <= floor_y - 1; ++y) {
+        SetStageTile(stage, 18, y, ice_tile);
+    }
+    for (int y = 8; y <= floor_y - 1; ++y) {
+        SetStageTile(stage, 33, y, dirt_tile);
     }
 
     BuildDebugLadder(stage, 10, 9, kMovingPlatformTestStageHeightTiles - 2);
@@ -1216,7 +1235,7 @@ void InitBowlingTestStage(State& state) {
             continue;
         }
         entity.max_speed = 24.0F;
-        entity.has_ground_friction = false;
+        entity.affected_by_ground_friction = false;
         entity.projectile_contact_damage_type = DamageType::Attack;
         entity.projectile_contact_damage_amount = 1;
         entity.projectile_contact_timer = 600;
@@ -1364,6 +1383,32 @@ void InitMovingPlatformTestStage(State& state) {
             8 * static_cast<int>(kTileSize)
         )
     );
+
+    const Vec2 icy_platform_pos = Vec2::New(
+        14.0F * static_cast<float>(kTileSize),
+        5.0F * static_cast<float>(kTileSize)
+    );
+    const std::optional<VID> icy_platform_vid = SpawnMovingPlatform(
+        state,
+        icy_platform_pos,
+        EntityAiState::Idle,
+        IVec2::New(
+            14 * static_cast<int>(kTileSize),
+            5 * static_cast<int>(kTileSize)
+        ),
+        IVec2::New(
+            22 * static_cast<int>(kTileSize),
+            5 * static_cast<int>(kTileSize)
+        )
+    );
+    if (icy_platform_vid.has_value()) {
+        if (Entity* const icy_platform = state.entity_manager.GetEntityMut(*icy_platform_vid)) {
+            icy_platform->size = Vec2::New(64.0F, 16.0F);
+            icy_platform->support_ground_friction = 1.0F;
+            icy_platform->can_be_hung_on = false;
+            icy_platform->frame_data_animator = FrameDataAnimator::New(frame_data_ids::IceBlock);
+        }
+    }
 
     (void)SpawnMovingPlatform(
         state,

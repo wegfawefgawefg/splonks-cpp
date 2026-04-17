@@ -20,6 +20,7 @@ struct EntityArchetype {
     bool can_be_picked_up = true;
     bool can_only_be_picked_up_if_dead_or_stunned = false;
     bool impassable = false;
+    bool can_be_hung_on = true;
     bool hurt_on_contact = false;
     bool crusher_pusher = false;
     bool can_stomp = false;
@@ -30,7 +31,8 @@ struct EntityArchetype {
     bool can_be_stunned = false;
     bool stun_recovers_on_ground = true;
     bool stun_recovers_while_held = true;
-    bool has_ground_friction = true;
+    bool affected_by_ground_friction = true;
+    float support_ground_friction = 0.85F;
     DrawLayer draw_layer = DrawLayer::Middle;
     bool render_enabled = true;
     LeftOrRight facing = LeftOrRight::Left;

@@ -1,9 +1,12 @@
 #include "entities/moving_platform.hpp"
 
 #include "entities/common/common.hpp"
+#include "particles/ultra_dynamic_particle.hpp"
 #include "frame_data_id.hpp"
+#include "state.hpp"
 
 #include <cmath>
+#include <memory>
 
 namespace splonks::entities::moving_platform {
 
@@ -11,6 +14,41 @@ namespace {
 
 constexpr float kPlatformSpeed = 1.0F;
 constexpr float kCircleAngularSpeed = 0.08F;
+constexpr float kIcyPlatformFriction = 1.0F;
+
+bool IsIcyPlatform(const Entity& platform) {
+    return platform.impassable &&
+           !platform.can_be_hung_on &&
+           platform.support_ground_friction >= kIcyPlatformFriction;
+}
+
+void SpawnIcyPlatformParticles(const Entity& platform, State& state) {
+    if ((state.stage_frame + platform.vid.id) % 8U != 0U) {
+        return;
+    }
+
+    auto shard = std::make_unique<UltraDynamicParticle>();
+    shard->frame_data_animator = FrameDataAnimator::New(frame_data_ids::IceBlock);
+    shard->draw_layer = DrawLayer::Foreground;
+    shard->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(12, 20));
+    shard->pos = platform.GetCenter() + Vec2::New(
+        rng::RandomFloat(-4.0F, 4.0F),
+        rng::RandomFloat(-2.0F, 2.0F)
+    );
+    const float size = rng::RandomFloat(3.0F, 5.0F);
+    shard->size = Vec2::New(size, size);
+    shard->rot = rng::RandomFloat(0.0F, 360.0F);
+    shard->alpha = rng::RandomFloat(0.55F, 0.85F);
+    shard->vel = Vec2::New(rng::RandomFloat(-0.35F, 0.35F), rng::RandomFloat(-0.4F, -0.1F));
+    shard->svel = Vec2::New(0.0F, 0.0F);
+    shard->rotvel = rng::RandomFloat(-0.25F, 0.25F);
+    shard->alpha_vel = -0.03F;
+    shard->acc = Vec2::New(0.0F, 0.02F);
+    shard->sacc = Vec2::New(0.0F, 0.0F);
+    shard->rotacc = 0.0F;
+    shard->alpha_acc = 0.0F;
+    state.particles.Add(std::move(shard));
+}
 
 void StepHorizontalPingPong(Entity& platform) {
     const float min_x = static_cast<float>(platform.point_a.x);
@@ -76,7 +114,7 @@ extern const EntityArchetype kMovingPlatformArchetype{
     .can_stomp = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
-    .has_ground_friction = false,
+    .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Right,
     .condition = EntityCondition::Normal,
@@ -115,6 +153,10 @@ void StepEntityLogicAsMovingPlatform(
     case EntityAiState::Returning:
         platform.vel = Vec2::New(0.0F, 0.0F);
         break;
+    }
+
+    if (IsIcyPlatform(platform)) {
+        SpawnIcyPlatformParticles(platform, state);
     }
 }
 

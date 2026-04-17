@@ -244,18 +244,11 @@ void StepEntityPhysicsAsPlayer(
     }
     entity.vel.y = std::clamp(entity.vel.y, -kMaxSpeed, kMaxSpeed);
 
-    if (!entity.IsHorizontallyControlled()) {
-        if (entity.grounded) {
-            if (state.stage.stage_type != StageType::Ice1 &&
-                state.stage.stage_type != StageType::Ice2 &&
-                state.stage.stage_type != StageType::Ice3) {
-                entity.vel.x *= 0.85F;
-            }
-        } else {
-            entity.vel.x *= 0.85F;
-        }
+    if (!entity.IsHorizontallyControlled() && !entity.grounded) {
+        entity.vel.x *= 0.85F;
     }
     common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
+    common::ApplyArchetypeGroundFriction(entity_idx, state);
     common::PostPartialEulerStep(entity_idx, state, dt);
 }
 

@@ -16,11 +16,13 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.can_only_be_picked_up_if_dead_or_stunned =
         archetype.can_only_be_picked_up_if_dead_or_stunned;
     entity.impassable = archetype.impassable;
+    entity.can_be_hung_on = archetype.can_be_hung_on;
     entity.hurt_on_contact = archetype.hurt_on_contact;
     entity.can_stomp = archetype.can_stomp;
     entity.can_be_stomped = archetype.can_be_stomped;
     entity.vanish_on_death = archetype.vanish_on_death;
-    entity.has_ground_friction = archetype.has_ground_friction;
+    entity.affected_by_ground_friction = archetype.affected_by_ground_friction;
+    entity.support_ground_friction = archetype.support_ground_friction;
     entity.passive_item = archetype.passive_item;
     entity.buyable = archetype.buyable;
     entity.damage_animation = archetype.damage_animation;
