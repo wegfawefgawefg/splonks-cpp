@@ -13,6 +13,8 @@ struct State;
 namespace splonks::entities::boulder {
 
 extern const EntityArchetype kBoulderArchetype;
+void SpawnBoulderBreakEffects(const Vec2& center, State& state);
+void OnDeathAsBoulder(std::size_t entity_idx, State& state, Audio& audio);
 void StepEntityLogicAsBoulder(
     std::size_t entity_idx,
     State& state,

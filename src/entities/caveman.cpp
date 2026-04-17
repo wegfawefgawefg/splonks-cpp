@@ -20,7 +20,8 @@ namespace {
 constexpr float kCavemanWalkSpeed = 0.8F;
 constexpr float kCavemanAttackSpeed = 1.6F;
 constexpr float kCavemanWallHopSpeedX = 1.0F;
-constexpr float kCavemanWallHopSpeedY = -6.0F;
+constexpr float kCavemanWallHopSpeedY = -1.0F;
+constexpr float kCavemanAlertHopSpeedY = -1.0F;
 constexpr float kCavemanSightVerticalTolerance = 12.0F;
 constexpr int kCavemanSightDistance = 100;
 constexpr std::uint64_t kCavemanSightScanIntervalFrames = 30;
@@ -144,6 +145,10 @@ void StepEntityLogicAsCaveman(
             if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
                 FaceTowards(caveman, player->GetCenter(), state.stage);
             }
+        }
+        if (caveman.grounded) {
+            caveman.vel.y = kCavemanAlertHopSpeedY;
+            caveman.grounded = false;
         }
         audio.PlaySoundEffect(SoundEffect::CavemanNotice);
         StartAttacking(caveman);

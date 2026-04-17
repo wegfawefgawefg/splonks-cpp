@@ -4,11 +4,13 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "particles/ultra_dynamic_particle.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "tile.hpp"
 
 #include <cmath>
+#include <memory>
 
 namespace splonks::entities::block {
 
@@ -17,6 +19,7 @@ namespace {
 constexpr float kControlledBlockMoveAcc = 0.18F;
 constexpr float kControlledBlockSlideVel = 3.25F;
 constexpr std::uint32_t kControlledBlockSlideCooldownFrames = 120;
+constexpr float kBlockTrailSmokeDistInterval = 14.0F;
 
 FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
     switch (stage_type) {
@@ -69,6 +72,70 @@ void StepControlledBlock(Entity& block, const controls::ControlIntent& control) 
     }
 }
 
+void SpawnBlockDeathParticles(const Vec2& center, FrameDataId animation_id, State& state) {
+    for (int i = 0; i < 12; ++i) {
+        auto shard = std::make_unique<UltraDynamicParticle>();
+        shard->frame_data_animator = FrameDataAnimator::New(animation_id);
+        shard->draw_layer = DrawLayer::Foreground;
+        shard->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(20, 42));
+        shard->pos = center + Vec2::New(
+                 rng::RandomFloat(-3.0F, 3.0F),
+                 rng::RandomFloat(-3.0F, 3.0F)
+             );
+        const float size = rng::RandomFloat(3.0F, 7.0F);
+        shard->size = Vec2::New(size, size);
+        shard->rot = rng::RandomFloat(0.0F, 360.0F);
+        shard->alpha = 1.0F;
+        shard->vel = Vec2::New(
+            rng::RandomFloat(-2.4F, 2.4F),
+            rng::RandomFloat(-4.2F, -1.2F)
+        );
+        shard->svel = Vec2::New(0.0F, 0.0F);
+        shard->rotvel = rng::RandomFloat(-0.7F, 0.7F);
+        shard->alpha_vel = -0.018F;
+        shard->acc = Vec2::New(0.0F, 0.18F);
+        shard->sacc = Vec2::New(0.0F, 0.0F);
+        shard->rotacc = 0.0F;
+        shard->alpha_acc = -0.003F;
+        state.particles.Add(std::move(shard));
+    }
+}
+
+void SpawnBlockTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
+    auto smoke = std::make_unique<UltraDynamicParticle>();
+    smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+    smoke->draw_layer = DrawLayer::Foreground;
+    smoke->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(16, 28));
+    smoke->pos = pos + Vec2::New(
+             rng::RandomFloat(-1.0F, 1.0F),
+             rng::RandomFloat(-1.0F, 1.0F)
+         );
+    const float size = rng::RandomFloat(3.0F, 5.5F);
+    smoke->size = Vec2::New(size, size);
+    smoke->rot = rng::RandomFloat(0.0F, 360.0F);
+    smoke->alpha = rng::RandomFloat(0.55F, 0.85F);
+    smoke->vel = Vec2::New(
+        facing == LeftOrRight::Right ? rng::RandomFloat(-0.9F, -0.2F)
+                                     : rng::RandomFloat(0.2F, 0.9F),
+        rng::RandomFloat(-0.8F, -0.2F)
+    );
+    smoke->svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
+    smoke->rotvel = rng::RandomFloat(-0.2F, 0.2F);
+    smoke->alpha_vel = -0.02F;
+    smoke->acc = Vec2::New(0.0F, 0.01F);
+    smoke->sacc = Vec2::New(0.0F, 0.0F);
+    smoke->rotacc = 0.0F;
+    smoke->alpha_acc = -0.003F;
+    state.particles.Add(std::move(smoke));
+}
+
+Vec2 GetBlockTrailingBottomCorner(const Entity& block) {
+    const AABB aabb = block.GetAABB();
+    return block.facing == LeftOrRight::Right
+               ? Vec2::New(aabb.tl.x, aabb.br.y)
+               : Vec2::New(aabb.br.x, aabb.br.y);
+}
+
 } // namespace
 
 extern const EntityArchetype kBlockArchetype{
@@ -81,12 +148,14 @@ extern const EntityArchetype kBlockArchetype{
     .impassable = true,
     .hurt_on_contact = false,
     .crusher_pusher = true,
+    .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
+    .on_death = OnDeathAsBlock,
     .step_logic = StepEntityLogicAsBlock,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CaveBlock),
@@ -142,7 +211,7 @@ void StepEntityLogicAsBlock(
     }
 
     // TODO: extract into grounded movement sounds
-    if (entity.travel_sound_countdown < 0.0F) {
+    if (entity.grounded && entity.dist_traveled_this_frame > 0.0F && entity.travel_sound_countdown < 0.0F) {
         entity.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
         const SoundEffect sound =
             entity.travel_sound == TravelSound::One ? SoundEffect::BlockDrag1
@@ -150,6 +219,23 @@ void StepEntityLogicAsBlock(
         audio.PlaySoundEffect(sound);
         entity.IncTravelSound();
     }
+
+    if (entity.grounded && entity.dist_traveled_this_frame > 0.0F) {
+        entity.counter_c -= entity.dist_traveled_this_frame;
+        while (entity.counter_c <= 0.0F) {
+            entity.counter_c += kBlockTrailSmokeDistInterval;
+            SpawnBlockTrailSmoke(state, GetBlockTrailingBottomCorner(entity), entity.facing);
+        }
+    }
+}
+
+void OnDeathAsBlock(std::size_t entity_idx, State& state, Audio& audio) {
+    (void)audio;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+    Entity& block = state.entity_manager.entities[entity_idx];
+    SpawnBlockDeathParticles(block.GetCenter(), BlockFrameDataIdForStageType(state.stage.stage_type), state);
 }
 
 /** generalize this to all square or rectangular entities somehow */

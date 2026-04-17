@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "c9c02ae0-22d0-4cc3-b2be-ae1df8a67824",
+  "selectedAnnotationId": "e3ab6f43-ee83-4ede-ae1a-570638fcacf1",
   "sheets": [
     {
       "path": "images/title.png",
@@ -7008,10 +7008,10 @@
           "id": "7f2cd9ff-d64c-4b95-acc4-7f50dc18da8d",
           "entityType": "Sprite",
           "aabb": {
-            "x": 162,
-            "y": 34,
-            "w": 28,
-            "h": 28
+            "x": 272,
+            "y": 130,
+            "w": 34,
+            "h": 30
           },
           "point": null,
           "chromaKey": null,
@@ -7024,21 +7024,21 @@
               "y": 0
             },
             "center": {
-              "x": 13,
-              "y": 13
+              "x": 17,
+              "y": 16
             },
             "tags": [],
             "pbox": {
-              "x": 0,
-              "y": 0,
-              "w": 28,
-              "h": 28
+              "x": 3,
+              "y": 3,
+              "w": 27,
+              "h": 27
             },
             "cbox": {
-              "x": 0,
-              "y": 0,
+              "x": 3,
+              "y": 3,
               "w": 27,
-              "h": 28
+              "h": 27
             },
             "tile": false,
             "emit_point": {
@@ -7218,15 +7218,144 @@
               "y": 19
             }
           }
+        },
+        {
+          "id": "e3ab6f43-ee83-4ede-ae1a-570638fcacf1",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 416,
+            "y": 130,
+            "w": 34,
+            "h": 30
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boulder_roll",
+            "frame": 0,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 27,
+              "h": 27
+            },
+            "cbox": {
+              "x": 3,
+              "y": 3,
+              "w": 27,
+              "h": 27
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "93d9bc9e-01aa-400b-bd60-c0b8aa4df867",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 320,
+            "y": 130,
+            "w": 34,
+            "h": 30
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boulder_roll",
+            "frame": 1,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 15,
+              "y": 16
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 27,
+              "h": 27
+            },
+            "cbox": {
+              "x": 3,
+              "y": 3,
+              "w": 27,
+              "h": 27
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "d4fceb97-9aa6-4943-80b8-643ea00df997",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 369,
+            "y": 130,
+            "w": 34,
+            "h": 30
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boulder_roll",
+            "frame": 2,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 27,
+              "h": 27
+            },
+            "cbox": {
+              "x": 3,
+              "y": 3,
+              "w": 27,
+              "h": 27
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 5.393,
-        "centerX": 144.7246430558131,
-        "centerY": 34.86000370851104
+        "zoom": 5.369,
+        "centerX": 368.3181225554107,
+        "centerY": 134.28943937418515
       }
     },
     {

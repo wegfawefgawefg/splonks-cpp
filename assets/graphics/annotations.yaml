@@ -4741,10 +4741,10 @@ sprites:
       y: 0
   - path: "entities.png"
     aabb:
-      x: 162
-      y: 34
-      w: 28
-      h: 28
+      x: 272
+      y: 130
+      w: 34
+      h: 30
     name: "boulder"
     frame: 0
     duration: 1
@@ -4752,19 +4752,19 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 13
-      y: 13
+      x: 17
+      y: 16
     tags: []
     pbox:
-      x: 0
-      y: 0
-      w: 28
-      h: 28
-    cbox:
-      x: 0
-      y: 0
+      x: 3
+      y: 3
       w: 27
-      h: 28
+      h: 27
+    cbox:
+      x: 3
+      y: 3
+      w: 27
+      h: 27
     tile: false
     emit_point:
       x: 13
@@ -4889,6 +4889,96 @@ sprites:
     emit_point:
       x: 16
       y: 19
+  - path: "entities.png"
+    aabb:
+      x: 416
+      y: 130
+      w: 34
+      h: 30
+    name: "boulder_roll"
+    frame: 0
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 27
+      h: 27
+    cbox:
+      x: 3
+      y: 3
+      w: 27
+      h: 27
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 320
+      y: 130
+      w: 34
+      h: 30
+    name: "boulder_roll"
+    frame: 1
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 15
+      y: 16
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 27
+      h: 27
+    cbox:
+      x: 3
+      y: 3
+      w: 27
+      h: 27
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 369
+      y: 130
+      w: 34
+      h: 30
+    name: "boulder_roll"
+    frame: 2
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 27
+      h: 27
+    cbox:
+      x: 3
+      y: 3
+      w: 27
+      h: 27
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

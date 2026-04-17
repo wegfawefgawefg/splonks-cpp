@@ -72,9 +72,7 @@ void DoExplosion(
     const VID this_vid = state.entity_manager.GetVid(entity_idx);
     const std::vector<VID> results = QueryEntitiesInAabb(state, area, this_vid);
     for (const VID& vid : results) {
-        bool impassable = false;
         if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {
-            impassable = entity->impassable;
             const DamageResult damage_result = TryDamageEntity(vid.id, state, audio, DamageType::Explosion, 10);
             if ((damage_result == DamageResult::Hurt || damage_result == DamageResult::Died) && entity->active) {
                 const Vec2 delta = GetNearestWorldDelta(state.stage, center, entity->GetCenter());
@@ -94,9 +92,6 @@ void DoExplosion(
                     }
                 );
             }
-        }
-        if (impassable) {
-            state.entity_manager.SetInactive(vid.id);
         }
     }
 }

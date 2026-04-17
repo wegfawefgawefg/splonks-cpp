@@ -124,6 +124,199 @@ bool DispatchPostSweepEntityOverlapContacts(
     );
 }
 
+AABB GetTopCarryStrip(const Entity& entity) {
+    const AABB aabb = entity.GetAABB();
+    return AABB{
+        .tl = Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
+        .br = Vec2::New(aabb.br.x, aabb.tl.y - 1.0F),
+    };
+}
+
+AABB GetTopCarryQueryArea(const Entity& entity, const IVec2& direction) {
+    const AABB carry_strip = GetTopCarryStrip(entity);
+    if (direction.y > 0) {
+        return AABB{
+            .tl = Vec2::New(carry_strip.tl.x, carry_strip.tl.y - 1.0F),
+            .br = carry_strip.br,
+        };
+    }
+    return carry_strip;
+}
+
+bool IsCarryTargetOnTopOfMover(
+    const Entity& mover,
+    const Entity& target,
+    const Stage& stage
+) {
+    if (!target.active || !target.can_collide || target.impassable) {
+        return false;
+    }
+    if (target.held_by_vid.has_value() || target.attachment_mode != AttachmentMode::None) {
+        return false;
+    }
+
+    const AABB carry_strip = GetTopCarryStrip(mover);
+    const AABB target_feet = GetNearestWorldAabb(stage, mover.GetCenter(), target.GetFeet());
+    if (!AabbsIntersect(carry_strip, target_feet)) {
+        return false;
+    }
+
+    const float overlap_x =
+        std::min(carry_strip.br.x, target_feet.br.x) -
+        std::max(carry_strip.tl.x, target_feet.tl.x);
+    return overlap_x > 0.0F;
+}
+
+AABB GetHangCarryStripForMoverSide(const Entity& mover, LeftOrRight mover_side) {
+    const AABB aabb = mover.GetAABB();
+    if (mover_side == LeftOrRight::Right) {
+        return AABB{
+            .tl = Vec2::New(aabb.br.x + 1.0F, aabb.tl.y),
+            .br = Vec2::New(aabb.br.x + 1.0F, aabb.br.y),
+        };
+    }
+    return AABB{
+        .tl = Vec2::New(aabb.tl.x - 1.0F, aabb.tl.y),
+        .br = Vec2::New(aabb.tl.x - 1.0F, aabb.br.y),
+    };
+}
+
+bool IsHangCarryTargetOnMoverSide(
+    const Entity& mover,
+    const Entity& target,
+    const Stage& stage,
+    LeftOrRight mover_side
+) {
+    if (!target.active || !target.can_collide || target.impassable || !target.IsHanging()) {
+        return false;
+    }
+    if (target.held_by_vid.has_value() || target.attachment_mode != AttachmentMode::None) {
+        return false;
+    }
+
+    if (mover_side == LeftOrRight::Left) {
+        if (target.hang_side != LeftOrRight::Right) {
+            return false;
+        }
+    } else {
+        if (target.hang_side != LeftOrRight::Left) {
+            return false;
+        }
+    }
+
+    const AABB mover_aabb = mover.GetAABB();
+    const AABB target_aabb = GetNearestWorldAabb(stage, mover.GetCenter(), target.GetAABB());
+    const float overlap_y =
+        std::min(mover_aabb.br.y, target_aabb.br.y) -
+        std::max(mover_aabb.tl.y, target_aabb.tl.y);
+    if (overlap_y <= 0.0F) {
+        return false;
+    }
+
+    if (mover_side == LeftOrRight::Right) {
+        return target_aabb.tl.x == mover_aabb.br.x + 1.0F;
+    }
+    return target_aabb.br.x == mover_aabb.tl.x - 1.0F;
+}
+
+void AppendHangCarryTargetsOnMoverSide(
+    std::size_t mover_idx,
+    LeftOrRight mover_side,
+    State& state,
+    std::vector<VID>& hanger_vids
+) {
+    if (mover_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    const Entity& mover = state.entity_manager.entities[mover_idx];
+    if (!mover.active || !mover.impassable) {
+        return;
+    }
+
+    for (const VID& vid : QueryEntitiesInAabb(
+             state,
+             GetHangCarryStripForMoverSide(mover, mover_side),
+             mover.vid)) {
+        const Entity* const target = state.entity_manager.GetEntity(vid);
+        if (target == nullptr) {
+            continue;
+        }
+        if (!IsHangCarryTargetOnMoverSide(mover, *target, state.stage, mover_side)) {
+            continue;
+        }
+        if (std::find(hanger_vids.begin(), hanger_vids.end(), vid) == hanger_vids.end()) {
+            hanger_vids.push_back(vid);
+        }
+    }
+}
+
+void TryCarryEntitiesOnTopByOnePixel(
+    std::size_t mover_idx,
+    const IVec2& direction,
+    State& state,
+    const Graphics& graphics,
+    Audio* audio
+) {
+    if (direction.x == 0 && direction.y <= 0) {
+        return;
+    }
+    if (mover_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    const Entity& mover = state.entity_manager.entities[mover_idx];
+    if (!mover.active || !mover.impassable) {
+        return;
+    }
+
+    std::vector<VID> rider_vids;
+    for (const VID& vid : QueryEntitiesInAabb(
+             state,
+             GetTopCarryQueryArea(mover, direction),
+             mover.vid)) {
+        const Entity* const target = state.entity_manager.GetEntity(vid);
+        if (target == nullptr) {
+            continue;
+        }
+        if (!IsCarryTargetOnTopOfMover(mover, *target, state.stage)) {
+            continue;
+        }
+        rider_vids.push_back(vid);
+    }
+
+    std::sort(
+        rider_vids.begin(),
+        rider_vids.end(),
+        [&](const VID& lhs, const VID& rhs) {
+            const Entity* const left = state.entity_manager.GetEntity(lhs);
+            const Entity* const right = state.entity_manager.GetEntity(rhs);
+            if (left == nullptr || right == nullptr) {
+                return false;
+            }
+
+            const float left_x =
+                GetNearestWorldAabb(state.stage, mover.GetCenter(), left->GetAABB()).tl.x;
+            const float right_x =
+                GetNearestWorldAabb(state.stage, mover.GetCenter(), right->GetAABB()).tl.x;
+            if (direction.x > 0) {
+                return left_x > right_x;
+            }
+            if (direction.x < 0) {
+                return left_x < right_x;
+            }
+            return false;
+        }
+    );
+
+    for (const VID& rider_vid : rider_vids) {
+        if (!TryDisplaceEntityByOnePixel(rider_vid.id, direction, state, graphics, audio)) {
+            continue;
+        }
+        SyncEntityAttachments(rider_vid.id, state, graphics);
+    }
+}
+
 void MoveEntityPixelStep(
     std::size_t entity_idx,
     State& state,
@@ -142,6 +335,13 @@ void MoveEntityPixelStep(
 
     if (move_x > 0) {
         for (int i = 0; i < move_x; ++i) {
+            std::vector<VID> hanging_carry_vids;
+            AppendHangCarryTargetsOnMoverSide(
+                entity_idx,
+                LeftOrRight::Left,
+                state,
+                hanging_carry_vids
+            );
             const Vec2 next_pos = entity.pos + Vec2::New(1.0F, 0.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
             const BlockingContactSet contacts =
@@ -183,6 +383,28 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr) {
+                for (const VID& hanging_vid : hanging_carry_vids) {
+                    if (!TryDisplaceEntityByOnePixel(
+                            hanging_vid.id,
+                            IVec2::New(1, 0),
+                            state,
+                            *graphics,
+                            audio)) {
+                        continue;
+                    }
+                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                }
+            }
+            if (graphics != nullptr) {
+                TryCarryEntitiesOnTopByOnePixel(
+                    entity_idx,
+                    IVec2::New(1, 0),
+                    state,
+                    *graphics,
+                    audio
+                );
+            }
             if (DispatchPostSweepEntityOverlapContacts(
                     entity_idx,
                     state,
@@ -196,6 +418,13 @@ void MoveEntityPixelStep(
         }
     } else if (move_x < 0) {
         for (int i = 0; i < -move_x; ++i) {
+            std::vector<VID> hanging_carry_vids;
+            AppendHangCarryTargetsOnMoverSide(
+                entity_idx,
+                LeftOrRight::Right,
+                state,
+                hanging_carry_vids
+            );
             const Vec2 next_pos = entity.pos + Vec2::New(-1.0F, 0.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
             const BlockingContactSet contacts =
@@ -237,6 +466,28 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr) {
+                for (const VID& hanging_vid : hanging_carry_vids) {
+                    if (!TryDisplaceEntityByOnePixel(
+                            hanging_vid.id,
+                            IVec2::New(-1, 0),
+                            state,
+                            *graphics,
+                            audio)) {
+                        continue;
+                    }
+                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                }
+            }
+            if (graphics != nullptr) {
+                TryCarryEntitiesOnTopByOnePixel(
+                    entity_idx,
+                    IVec2::New(-1, 0),
+                    state,
+                    *graphics,
+                    audio
+                );
+            }
             if (DispatchPostSweepEntityOverlapContacts(
                     entity_idx,
                     state,
@@ -252,6 +503,19 @@ void MoveEntityPixelStep(
 
     if (move_y > 0) {
         for (int i = 0; i < move_y; ++i) {
+            std::vector<VID> hanging_carry_vids;
+            AppendHangCarryTargetsOnMoverSide(
+                entity_idx,
+                LeftOrRight::Left,
+                state,
+                hanging_carry_vids
+            );
+            AppendHangCarryTargetsOnMoverSide(
+                entity_idx,
+                LeftOrRight::Right,
+                state,
+                hanging_carry_vids
+            );
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, 1.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
             const BlockingContactSet contacts =
@@ -293,6 +557,28 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr) {
+                for (const VID& hanging_vid : hanging_carry_vids) {
+                    if (!TryDisplaceEntityByOnePixel(
+                            hanging_vid.id,
+                            IVec2::New(0, 1),
+                            state,
+                            *graphics,
+                            audio)) {
+                        continue;
+                    }
+                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                }
+            }
+            if (graphics != nullptr) {
+                TryCarryEntitiesOnTopByOnePixel(
+                    entity_idx,
+                    IVec2::New(0, 1),
+                    state,
+                    *graphics,
+                    audio
+                );
+            }
             if (DispatchPostSweepEntityOverlapContacts(
                     entity_idx,
                     state,
@@ -306,6 +592,19 @@ void MoveEntityPixelStep(
         }
     } else if (move_y < 0) {
         for (int i = 0; i < -move_y; ++i) {
+            std::vector<VID> hanging_carry_vids;
+            AppendHangCarryTargetsOnMoverSide(
+                entity_idx,
+                LeftOrRight::Left,
+                state,
+                hanging_carry_vids
+            );
+            AppendHangCarryTargetsOnMoverSide(
+                entity_idx,
+                LeftOrRight::Right,
+                state,
+                hanging_carry_vids
+            );
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, -1.0F);
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
             const BlockingContactSet contacts =
@@ -347,6 +646,19 @@ void MoveEntityPixelStep(
                 break;
             }
             entity.pos = next_pos;
+            if (graphics != nullptr) {
+                for (const VID& hanging_vid : hanging_carry_vids) {
+                    if (!TryDisplaceEntityByOnePixel(
+                            hanging_vid.id,
+                            IVec2::New(0, -1),
+                            state,
+                            *graphics,
+                            audio)) {
+                        continue;
+                    }
+                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                }
+            }
             if (DispatchPostSweepEntityOverlapContacts(
                     entity_idx,
                     state,

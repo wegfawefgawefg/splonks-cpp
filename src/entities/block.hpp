@@ -19,6 +19,7 @@ constexpr float kBlockPushAcc = 0.2F;
 
 extern const EntityArchetype kBlockArchetype;
 
+void OnDeathAsBlock(std::size_t entity_idx, State& state, Audio& audio);
 bool TryApplyBlockContactToEntity(
     std::size_t entity_idx,
     std::size_t other_entity_idx,
