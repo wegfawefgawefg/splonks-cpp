@@ -188,6 +188,8 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::Lantern:
     case EntityType::LanternRed:
     case EntityType::GiantTikiHead:
+    case EntityType::Boulder:
+    case EntityType::MovingPlatform:
     case EntityType::KaliHead:
     case EntityType::ArrowTrap:
     case EntityType::Snake:

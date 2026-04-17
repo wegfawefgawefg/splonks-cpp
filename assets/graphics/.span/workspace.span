@@ -27,9 +27,9 @@
       ]
     }
   ],
-  "activePaletteId": "sweetie-16-manual",
+  "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "97bbb967-5abd-4029-a06a-d209568abf75",
+  "selectedAnnotationId": "c9c02ae0-22d0-4cc3-b2be-ae1df8a67824",
   "sheets": [
     {
       "path": "images/title.png",
@@ -4402,8 +4402,8 @@
             "tile": false,
             "hitboxes": [],
             "emit_point": {
-              "x": 0,
-              "y": 0
+              "x": 16,
+              "y": 25
             }
           }
         },
@@ -5071,8 +5071,8 @@
           "id": "14953bf7-ae15-4f24-a227-c2cc07328c39",
           "entityType": "Sprite",
           "aabb": {
-            "x": 1,
-            "y": 292,
+            "x": 33,
+            "y": 356,
             "w": 11,
             "h": 10
           },
@@ -7003,15 +7003,230 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "7f2cd9ff-d64c-4b95-acc4-7f50dc18da8d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 162,
+            "y": 34,
+            "w": 28,
+            "h": 28
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "boulder",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 13,
+              "y": 13
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 28,
+              "h": 28
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 27,
+              "h": 28
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 13,
+              "y": 27
+            }
+          }
+        },
+        {
+          "id": "a5fa8b42-f102-4d9d-880d-0dcf4d7ecbdf",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 48,
+            "y": 353,
+            "w": 14,
+            "h": 14
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "mattock_swing",
+            "frame": 0,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "08f56d28-d43f-4d75-93fd-69a5bd924b81",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 63,
+            "y": 355,
+            "w": 14,
+            "h": 14
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "mattock_swing",
+            "frame": 1,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "99c4fe3c-62c9-4369-b045-9cfc301e5451",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 77,
+            "y": 359,
+            "w": 14,
+            "h": 14
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "mattock_swing",
+            "frame": 2,
+            "duration": 12,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "c9c02ae0-22d0-4cc3-b2be-ae1df8a67824",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 224,
+            "y": 32,
+            "w": 32,
+            "h": 32
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "giant_tiki_head_hole",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 15,
+              "y": 18
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 32,
+              "h": 32
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 32,
+              "h": 32
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 16,
+              "y": 19
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 32,
-        "centerX": 82.609375,
-        "centerY": 282
+        "zoom": 5.393,
+        "centerX": 144.7246430558131,
+        "centerY": 34.86000370851104
       }
     },
     {

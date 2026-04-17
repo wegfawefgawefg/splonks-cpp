@@ -40,6 +40,10 @@ constexpr int kBowlingTestStageWidthTiles = 80;
 constexpr int kBowlingTestStageHeightTiles = 8;
 constexpr int kOpposingBodySmackStageWidthTiles = 14;
 constexpr int kOpposingBodySmackStageHeightTiles = 8;
+constexpr int kBoulderTestStageWidthTiles = 40;
+constexpr int kBoulderTestStageHeightTiles = 16;
+constexpr int kMovingPlatformTestStageWidthTiles = 48;
+constexpr int kMovingPlatformTestStageHeightTiles = 18;
 constexpr int kShopTestStageWidthTiles = 80;
 constexpr int kShopTestStageHeightTiles = 12;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
@@ -465,6 +469,88 @@ Stage MakeShopTestStage() {
     return stage;
 }
 
+Stage MakeBoulderTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kBoulderTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kBoulderTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    for (int x = 0; x < 20; ++x) {
+        SetStageTile(stage, x, 7, floor_tile);
+    }
+    for (int x = 20; x < kBoulderTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, kBoulderTestStageHeightTiles - 1, floor_tile);
+    }
+
+    for (int x = 8; x <= 11; ++x) {
+        SetStageTile(stage, x, 3, floor_tile);
+    }
+
+    for (int y = 5; y <= 6; ++y) {
+        SetStageTile(stage, 12, y, floor_tile);
+        SetStageTile(stage, 13, y, floor_tile);
+    }
+    SetStageTile(stage, 16, 6, floor_tile);
+    SetStageTile(stage, 17, 6, floor_tile);
+
+    for (int y = 13; y <= 14; ++y) {
+        SetStageTile(stage, 31, y, floor_tile);
+        SetStageTile(stage, 32, y, floor_tile);
+    }
+    SetStageTile(stage, 35, 14, floor_tile);
+    SetStageTile(stage, 36, 14, floor_tile);
+
+    return stage;
+}
+
+void BuildDebugLadder(Stage& stage, int x, int top_y, int bottom_y) {
+    if (top_y > bottom_y) {
+        return;
+    }
+
+    SetStageTile(stage, x, top_y, Tile::LadderTop);
+    for (int y = top_y + 1; y <= bottom_y; ++y) {
+        SetStageTile(stage, x, y, Tile::Ladder);
+    }
+}
+
+Stage MakeMovingPlatformTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kMovingPlatformTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kMovingPlatformTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    for (int x = 0; x < kMovingPlatformTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, kMovingPlatformTestStageHeightTiles - 1, floor_tile);
+    }
+
+    BuildDebugLadder(stage, 10, 9, kMovingPlatformTestStageHeightTiles - 2);
+    BuildDebugLadder(stage, 24, 7, kMovingPlatformTestStageHeightTiles - 2);
+    BuildDebugLadder(stage, 39, 8, kMovingPlatformTestStageHeightTiles - 2);
+
+    return stage;
+}
+
 std::optional<VID> SpawnBowlingCaveman(
     State& state,
     const Vec2& center,
@@ -864,7 +950,10 @@ void SnapAttachedItemsToPlayer(State& state) {
 }
 
 void SpawnAuthoredStageEntities(State& state) {
-    for (const StageEntitySpawn& spawn : state.stage.entity_spawns) {
+    std::vector<std::optional<VID>> spawned_vids(state.stage.entity_spawns.size(), std::nullopt);
+
+    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
+        const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
         if (spawn.type_ == EntityType::None) {
             continue;
         }
@@ -881,12 +970,38 @@ void SpawnAuthoredStageEntities(State& state) {
         entity->pos = spawn.pos;
         entity->facing = spawn.facing;
         entity->vel = Vec2::New(0.0F, 0.0F);
+        spawned_vids[i] = *vid;
         if (spawn.type_ == EntityType::StoreLight) {
             entities::store_light::AttachStoreLight(*entity, state);
         }
         if (spawn.animation_id != kInvalidFrameDataId) {
             SetAnimation(*entity, spawn.animation_id);
         }
+    }
+
+    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
+        const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
+        if (!spawn.entity_a_spawn_index.has_value()) {
+            continue;
+        }
+        if (i >= spawned_vids.size() || !spawned_vids[i].has_value()) {
+            continue;
+        }
+        if (*spawn.entity_a_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[*spawn.entity_a_spawn_index].has_value()) {
+            continue;
+        }
+
+        Entity* const entity = state.entity_manager.GetEntityMut(*spawned_vids[i]);
+        const Entity* const linked_entity =
+            state.entity_manager.GetEntity(*spawned_vids[*spawn.entity_a_spawn_index]);
+        if (entity == nullptr || linked_entity == nullptr) {
+            continue;
+        }
+
+        entity->entity_a = *spawned_vids[*spawn.entity_a_spawn_index];
+        entity->point_a = ToIVec2(linked_entity->pos);
+        entity->point_label_a = PointLabel::Target;
     }
 }
 
@@ -952,6 +1067,52 @@ std::optional<VID> SpawnStageEntityAtTopLeft(State& state, EntityType type_, con
     if (type_ == EntityType::StoreLight) {
         entities::store_light::AttachStoreLight(*entity, state);
     }
+    return vid;
+}
+
+std::optional<VID> SpawnStageEntityAtCenter(State& state, EntityType type_, const Vec2& center) {
+    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    if (!vid.has_value()) {
+        return std::nullopt;
+    }
+
+    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
+    if (entity == nullptr) {
+        return std::nullopt;
+    }
+
+    SetEntityAs(*entity, type_);
+    entity->SetCenter(center);
+    entity->vel = Vec2::New(0.0F, 0.0F);
+    return vid;
+}
+
+std::optional<VID> SpawnMovingPlatform(
+    State& state,
+    const Vec2& pos,
+    EntityAiState mode,
+    const IVec2& point_a,
+    const IVec2& point_b,
+    float counter_a = 0.0F,
+    float counter_b = 1.0F,
+    float threshold_a = 0.0F
+) {
+    const std::optional<VID> vid = SpawnStageEntityAtTopLeft(state, EntityType::MovingPlatform, pos);
+    if (!vid.has_value()) {
+        return std::nullopt;
+    }
+
+    Entity* const platform = state.entity_manager.GetEntityMut(*vid);
+    if (platform == nullptr) {
+        return std::nullopt;
+    }
+
+    platform->ai_state = mode;
+    platform->point_a = point_a;
+    platform->point_b = point_b;
+    platform->counter_a = counter_a;
+    platform->counter_b = counter_b;
+    platform->threshold_a = threshold_a;
     return vid;
 }
 
@@ -1074,6 +1235,160 @@ void InitBowlingTestStage(State& state) {
             GiveHeldRockToEntity(state, *caveman_vid);
         }
     }
+}
+
+void InitBoulderTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = static_cast<float>(9 * static_cast<int>(kTileSize));
+    const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 14);
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+
+    const std::optional<VID> altar_left_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::Altar,
+        Vec2::New(4.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
+    );
+    if (altar_left_vid.has_value()) {
+        if (Entity* const altar_left = state.entity_manager.GetEntityMut(*altar_left_vid)) {
+            SetAnimation(*altar_left, frame_data_ids::AltarLeft);
+        }
+    }
+
+    const std::optional<VID> altar_right_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::Altar,
+        Vec2::New(5.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
+    );
+    if (altar_right_vid.has_value()) {
+        if (Entity* const altar_right = state.entity_manager.GetEntityMut(*altar_right_vid)) {
+            SetAnimation(*altar_right, frame_data_ids::AltarRight);
+        }
+    }
+
+    const std::optional<VID> giant_tiki_head_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::GiantTikiHead,
+        Vec2::New(4.0F * static_cast<float>(kTileSize), 1.0F * static_cast<float>(kTileSize))
+    );
+    const std::optional<VID> idol_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::GoldIdol,
+        Vec2::New(4.0F * static_cast<float>(kTileSize) + 10.0F, 4.0F * static_cast<float>(kTileSize))
+    );
+    if (giant_tiki_head_vid.has_value() && idol_vid.has_value()) {
+        Entity* const head = state.entity_manager.GetEntityMut(*giant_tiki_head_vid);
+        const Entity* const idol = state.entity_manager.GetEntity(*idol_vid);
+        if (head != nullptr && idol != nullptr) {
+            head->entity_a = *idol_vid;
+            head->point_a = ToIVec2(idol->pos);
+            head->point_label_a = PointLabel::Target;
+        }
+    }
+
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::Rock,
+        Vec2::New(12.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::GoldChunk,
+        Vec2::New(14.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::EmeraldBig,
+        Vec2::New(16.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::Caveman,
+        Vec2::New(18.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::Rock,
+        Vec2::New(31.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::GoldBars,
+        Vec2::New(33.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::SapphireBig,
+        Vec2::New(35.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+    (void)SpawnStageEntityAtCenter(
+        state,
+        EntityType::Caveman,
+        Vec2::New(37.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
+    );
+}
+
+void InitMovingPlatformTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const Vec2 left_platform_pos = Vec2::New(
+        6.0F * static_cast<float>(kTileSize),
+        8.0F * static_cast<float>(kTileSize)
+    );
+    const Vec2 middle_platform_pos = Vec2::New(
+        23.0F * static_cast<float>(kTileSize),
+        10.0F * static_cast<float>(kTileSize)
+    );
+    const Vec2 circle_center = Vec2::New(
+        37.0F * static_cast<float>(kTileSize),
+        8.0F * static_cast<float>(kTileSize)
+    );
+    const float circle_radius = 40.0F;
+    const Vec2 right_platform_pos = circle_center + Vec2::New(circle_radius, 0.0F);
+
+    SpawnPlayer(state, Vec2::New(left_platform_pos.x + 6.0F, left_platform_pos.y - 14.0F));
+
+    (void)SpawnMovingPlatform(
+        state,
+        left_platform_pos,
+        EntityAiState::Idle,
+        IVec2::New(
+            6 * static_cast<int>(kTileSize),
+            8 * static_cast<int>(kTileSize)
+        ),
+        IVec2::New(
+            14 * static_cast<int>(kTileSize),
+            8 * static_cast<int>(kTileSize)
+        )
+    );
+
+    (void)SpawnMovingPlatform(
+        state,
+        middle_platform_pos,
+        EntityAiState::Patrolling,
+        IVec2::New(
+            23 * static_cast<int>(kTileSize),
+            4 * static_cast<int>(kTileSize)
+        ),
+        IVec2::New(
+            23 * static_cast<int>(kTileSize),
+            10 * static_cast<int>(kTileSize)
+        )
+    );
+
+    (void)SpawnMovingPlatform(
+        state,
+        right_platform_pos,
+        EntityAiState::Disturbed,
+        ToIVec2(circle_center),
+        IVec2::New(0, 0),
+        0.0F,
+        0.0F,
+        circle_radius
+    );
 }
 
 void InitOpposingBodySmackStage(State& state) {
@@ -1280,6 +1595,14 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::OpposingBodySmack:
         state.stage = MakeOpposingBodySmackStage();
         InitOpposingBodySmackStage(state);
+        break;
+    case DebugLevelKind::BoulderTest:
+        state.stage = MakeBoulderTestStage();
+        InitBoulderTestStage(state);
+        break;
+    case DebugLevelKind::MovingPlatformTest:
+        state.stage = MakeMovingPlatformTestStage();
+        InitMovingPlatformTestStage(state);
         break;
     case DebugLevelKind::ShopTest:
         state.stage = MakeShopTestStage();

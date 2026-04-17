@@ -148,6 +148,7 @@ add_executable(splonks-cpp
     src/entities/baseball_bat.cpp
     src/entities/bat.cpp
     src/entities/block.cpp
+    src/entities/boulder.cpp
     src/entities/bomb.cpp
     src/entities/bow.cpp
     src/entities/box.cpp
@@ -187,6 +188,7 @@ add_executable(splonks-cpp
     src/entities/mattock.cpp
     src/entities/none_archetype.cpp
     src/entities/money.cpp
+    src/entities/moving_platform.cpp
     src/entities/mouse_trailer.cpp
     src/entities/player.cpp
     src/entities/rock.cpp

@@ -89,6 +89,8 @@ enum class EntityType {
     Lantern,
     LanternRed,
     GiantTikiHead,
+    Boulder,
+    MovingPlatform,
     KaliHead,
     ArrowTrap,
     Snake,

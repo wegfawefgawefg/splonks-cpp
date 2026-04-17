@@ -37,14 +37,16 @@ bool IsCrusherPushTarget(const Entity& entity) {
 }
 
 bool IsAtCrusherLeadingFace(
+    const Stage& stage,
     const Entity& crusher,
     const Entity& other_entity,
     const IVec2& push_direction
 ) {
     const AABB crusher_aabb = crusher.GetAABB();
-    const AABB other_aabb = other_entity.GetAABB();
+    const AABB other_aabb =
+        GetNearestWorldAabb(stage, crusher.GetCenter(), other_entity.GetAABB());
     const Vec2 crusher_center = crusher.GetCenter();
-    const Vec2 other_center = other_entity.GetCenter();
+    const Vec2 other_center = (other_aabb.tl + other_aabb.br) / 2.0F;
 
     const float overlap_x = std::min(crusher_aabb.br.x, other_aabb.br.x) -
                             std::max(crusher_aabb.tl.x, other_aabb.tl.x);
@@ -147,6 +149,7 @@ bool TryDisplaceEntityByOnePixel(
     }
 
     entity.pos = candidate_pos;
+    state.stage.NormalizeEntityPositionForWrap(entity);
     state.UpdateSidForEntity(entity_idx, graphics);
     if (audio != nullptr) {
         TryDispatchEntityEntityOverlapContacts(
@@ -191,7 +194,7 @@ bool TryApplyCrusherPusherContact(
     if (!IsCrusherPushTarget(other_entity)) {
         return false;
     }
-    if (!IsAtCrusherLeadingFace(crusher, other_entity, *push_direction)) {
+    if (!IsAtCrusherLeadingFace(state.stage, crusher, other_entity, *push_direction)) {
         return false;
     }
 

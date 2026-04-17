@@ -23,7 +23,7 @@ extern const EntityArchetype kGoldIdolArchetype{
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldIdol),
 };

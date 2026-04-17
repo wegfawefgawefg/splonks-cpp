@@ -317,6 +317,7 @@ extern const EntityArchetype kDamselArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .can_be_stunned = true,
     .stun_recovers_on_ground = true,
     .stun_recovers_while_held = false,

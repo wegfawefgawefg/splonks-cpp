@@ -58,19 +58,18 @@ void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& a
 } // namespace
 
 void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
-    const IVec2 tl = ToIVec2(area.tl / static_cast<float>(kTileSize));
-    const IVec2 br = ToIVec2(area.br / static_cast<float>(kTileSize));
-
     std::optional<SoundEffect> break_sound = std::nullopt;
     bool broke_any_tiles = false;
     std::vector<IVec2> changed_tiles;
-    const std::vector<IVec2> tile_positions = GetTileCoordsInRect(state.stage, tl, br);
+    const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);
 
-    for (const IVec2& tile_pos : tile_positions) {
-        const Tile tile = state.stage.GetTile(
-            static_cast<unsigned int>(tile_pos.x),
-            static_cast<unsigned int>(tile_pos.y)
-        );
+    for (const WorldTileQueryResult& tile_query : tile_queries) {
+        if (tile_query.tile == nullptr) {
+            continue;
+        }
+
+        const IVec2 tile_pos = tile_query.tile_pos;
+        const Tile tile = *tile_query.tile;
         if (tile == Tile::Exit) {
             continue;
         }

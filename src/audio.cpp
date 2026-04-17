@@ -137,6 +137,10 @@ std::vector<SoundEffect> AllSoundEffects() {
         SoundEffect::LawsonEnter,
         SoundEffect::ShopkeepAnger0,
         SoundEffect::LightBreak,
+        SoundEffect::BoulderLatch,
+        SoundEffect::BoulderHitGround,
+        SoundEffect::BoulderTileCrash,
+        SoundEffect::BoulderRoll,
         SoundEffect::UiCant,
         SoundEffect::UiConfirm,
         SoundEffect::UiCursorMove,
@@ -469,6 +473,14 @@ const char* GetSoundFileName(SoundEffect sound_effect) {
         return "shopkeep_anger_0";
     case SoundEffect::LightBreak:
         return "light_break";
+    case SoundEffect::BoulderLatch:
+        return "boulder_latch";
+    case SoundEffect::BoulderHitGround:
+        return "boulder_hit_ground";
+    case SoundEffect::BoulderTileCrash:
+        return "boulder_tile_crash";
+    case SoundEffect::BoulderRoll:
+        return "boulder_roll";
     case SoundEffect::UiCant:
         return "ui_cant";
     case SoundEffect::UiConfirm:

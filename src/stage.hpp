@@ -20,6 +20,7 @@ struct StageEntitySpawn {
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     LeftOrRight facing = LeftOrRight::Left;
     FrameDataId animation_id = kInvalidFrameDataId;
+    std::optional<std::size_t> entity_a_spawn_index = std::nullopt;
 };
 
 enum class BackgroundStampCondition {

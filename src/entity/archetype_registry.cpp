@@ -4,6 +4,7 @@
 #include "entities/baseball_bat.hpp"
 #include "entities/bat.hpp"
 #include "entities/block.hpp"
+#include "entities/boulder.hpp"
 #include "entities/bomb.hpp"
 #include "entities/bow.hpp"
 #include "entities/box.hpp"
@@ -24,6 +25,7 @@
 #include "entities/mattock.hpp"
 #include "entities/none_archetype.hpp"
 #include "entities/money.hpp"
+#include "entities/moving_platform.hpp"
 #include "entities/mouse_trailer.hpp"
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
@@ -143,6 +145,8 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Lantern, entities::lantern::kLanternArchetype, "Lantern");
     SetArchetype(EntityType::LanternRed, entities::lantern::kLanternRedArchetype, "LanternRed");
     SetArchetype(EntityType::GiantTikiHead, entities::giant_tiki_head::kGiantTikiHeadArchetype, "GiantTikiHead");
+    SetArchetype(EntityType::Boulder, entities::boulder::kBoulderArchetype, "Boulder");
+    SetArchetype(EntityType::MovingPlatform, entities::moving_platform::kMovingPlatformArchetype, "MovingPlatform");
     SetArchetype(EntityType::KaliHead, entities::kali_head::kKaliHeadArchetype, "KaliHead");
     SetArchetype(EntityType::ArrowTrap, entities::arrow_trap::kArrowTrapArchetype, "ArrowTrap");
     SetArchetype(EntityType::Snake, entities::snake::kSnakeArchetype, "Snake");

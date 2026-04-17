@@ -31,6 +31,13 @@ int PickIndex(std::size_t size) {
     return rng::RandomIntInclusive(0, static_cast<int>(size) - 1);
 }
 
+Vec2 GetShrineIdolTopLeft(const Vec2& tile_pos) {
+    // The shrine idol rests on the seam between the two altar base tiles below it.
+    // Spawn it already settled so the tiki head does not false-trigger from the
+    // idol's initial gravity settle on frame one.
+    return tile_pos + Vec2::New(10.0F, 4.0F);
+}
+
 int GetLevelNumber(StageType stage_type) {
     switch (stage_type) {
     case StageType::SplkMines1:
@@ -1380,6 +1387,8 @@ ResolvedRoom ResolveRoom(
         static_cast<std::size_t>(Stage::kRoomShape.y),
         std::vector<Tile>(static_cast<std::size_t>(Stage::kRoomShape.x), Tile::Air)
     );
+    std::vector<std::size_t> pending_gold_idol_spawn_indices;
+    std::vector<std::size_t> pending_giant_tiki_head_spawn_indices;
 
     for (int y = 0; y < 8; ++y) {
         for (int x = 0; x < 10; ++x) {
@@ -1475,14 +1484,29 @@ ResolvedRoom ResolveRoom(
             case 'I':
                 room.entity_spawns.push_back(StageEntitySpawn{
                     .type_ = EntityType::GoldIdol,
-                    .pos = tile_pos,
+                    .pos = GetShrineIdolTopLeft(tile_pos),
                 });
+                if (!pending_giant_tiki_head_spawn_indices.empty()) {
+                    room.entity_spawns[pending_giant_tiki_head_spawn_indices.front()].entity_a_spawn_index =
+                        room.entity_spawns.size() - 1;
+                    pending_giant_tiki_head_spawn_indices.erase(
+                        pending_giant_tiki_head_spawn_indices.begin());
+                } else {
+                    pending_gold_idol_spawn_indices.push_back(room.entity_spawns.size() - 1);
+                }
                 break;
             case 'B':
                 room.entity_spawns.push_back(StageEntitySpawn{
                     .type_ = EntityType::GiantTikiHead,
                     .pos = tile_pos,
                 });
+                if (!pending_gold_idol_spawn_indices.empty()) {
+                    room.entity_spawns.back().entity_a_spawn_index =
+                        pending_gold_idol_spawn_indices.front();
+                    pending_gold_idol_spawn_indices.erase(pending_gold_idol_spawn_indices.begin());
+                } else {
+                    pending_giant_tiki_head_spawn_indices.push_back(room.entity_spawns.size() - 1);
+                }
                 room.background_stamps.push_back(BackgroundStamp{
                     .animation_id = HashFrameDataIdConstexpr("tiki_body"),
                     .pos = tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize * 2)),

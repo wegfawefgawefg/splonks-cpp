@@ -239,6 +239,13 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         ImGui::BeginDisabled();
     }
 
+    const auto apply_stage_fit_camera = [&state, &graphics]() {
+        graphics.camera_mode = CameraMode::StageFit;
+        graphics.play_cam.pos = GetStageCameraCenter(state.stage);
+        graphics.camera.target = graphics.play_cam.pos;
+        graphics.camera.zoom = GetStageFitCameraZoom(state.stage, graphics);
+    };
+
     const DebugLevelKind previous_level_kind = state.debug_level.kind;
     int level_kind = std::clamp(static_cast<int>(state.debug_level.kind), 0, kDebugLevelKindCount - 1);
     const char* level_names[kDebugLevelKindCount] = {};
@@ -250,8 +257,10 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
     if (previous_level_kind != state.debug_level.kind &&
         (state.debug_level.kind == DebugLevelKind::BowlingTest ||
-         state.debug_level.kind == DebugLevelKind::OpposingBodySmack)) {
-        graphics.camera_mode = CameraMode::StageFit;
+         state.debug_level.kind == DebugLevelKind::OpposingBodySmack ||
+         state.debug_level.kind == DebugLevelKind::BoulderTest ||
+         state.debug_level.kind == DebugLevelKind::MovingPlatformTest)) {
+        apply_stage_fit_camera();
     }
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
     if (ImGui::Button("Give Players Gloves")) {
@@ -292,11 +301,10 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             ApplyBorderTestWrapConfig(state, graphics);
         } else if (
             state.debug_level.kind == DebugLevelKind::BowlingTest ||
-            state.debug_level.kind == DebugLevelKind::OpposingBodySmack) {
-            graphics.camera_mode = CameraMode::StageFit;
-            graphics.play_cam.pos = GetStageCameraCenter(state.stage);
-            graphics.camera.target = graphics.play_cam.pos;
-            graphics.camera.zoom = GetStageFitCameraZoom(state.stage, graphics);
+            state.debug_level.kind == DebugLevelKind::OpposingBodySmack ||
+            state.debug_level.kind == DebugLevelKind::BoulderTest ||
+            state.debug_level.kind == DebugLevelKind::MovingPlatformTest) {
+            apply_stage_fit_camera();
         }
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
