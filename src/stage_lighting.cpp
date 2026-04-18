@@ -16,6 +16,33 @@ namespace {
 constexpr int kTileChangeUpdateRadius = 2;
 constexpr float kStageLightBrightnessBoost = 1.0F;
 
+float ApplySignalRemap(float value, bool enabled, float input_min, float input_max, float gamma) {
+    const float clamped_value = std::clamp(value, 0.0F, 1.0F);
+    if (!enabled) {
+        return clamped_value;
+    }
+
+    const float low = std::clamp(std::min(input_min, input_max), 0.0F, 1.0F);
+    const float high = std::clamp(std::max(input_min, input_max), 0.0F, 1.0F);
+    if (high - low <= 0.0001F) {
+        return clamped_value >= high ? 1.0F : 0.0F;
+    }
+
+    const float normalized = std::clamp((clamped_value - low) / (high - low), 0.0F, 1.0F);
+    return std::pow(normalized, std::max(gamma, 0.01F));
+}
+
+float ApplyOutputLevels(float value, bool enabled, float min_value, float max_value) {
+    const float clamped_value = std::clamp(value, 0.0F, 1.0F);
+    if (!enabled) {
+        return clamped_value;
+    }
+
+    const float low = std::min(min_value, max_value);
+    const float high = std::max(min_value, max_value);
+    return std::lerp(low, high, clamped_value);
+}
+
 bool IsForegroundSolidTile(Tile tile) {
     return GetTileArchetype(tile).solid;
 }
@@ -455,6 +482,13 @@ float ComputeForegroundBrightness(const State& state, int tile_x, int tile_y) {
     }
 
     const float openness = GetSmoothedForegroundOpenness(state, tile_x, tile_y);
+    const float remapped_openness = ApplySignalRemap(
+        openness,
+        state.settings.post_process.terrain_exposure_remap_enabled,
+        state.settings.post_process.terrain_exposure_input_min,
+        state.settings.post_process.terrain_exposure_input_max,
+        state.settings.post_process.terrain_exposure_gamma
+    );
     const float amount = std::clamp(state.settings.post_process.terrain_exposure_amount, 0.0F, 1.0F);
     const float min_brightness = std::clamp(
         state.settings.post_process.terrain_exposure_min_brightness,
@@ -466,9 +500,12 @@ float ComputeForegroundBrightness(const State& state, int tile_x, int tile_y) {
         0.0F,
         2.0F
     );
-    const float low = std::min(min_brightness, max_brightness);
-    const float high = std::max(min_brightness, max_brightness);
-    const float target_brightness = std::lerp(low, high, openness);
+    const float target_brightness = ApplyOutputLevels(
+        remapped_openness,
+        state.settings.post_process.terrain_exposure_output_levels_enabled,
+        min_brightness,
+        max_brightness
+    );
     return std::clamp(std::lerp(1.0F, target_brightness, amount), 0.0F, 2.0F);
 }
 
@@ -478,11 +515,20 @@ float ComputeBackwallBrightness(const State& state, int tile_x, int tile_y) {
         return 1.0F;
     }
 
-    if (!IsBackwallLightingTile(state, tile_x, tile_y)) {
-        return 1.0F;
+    // Covered backwall should stay dim so foreground shake reveals wall,
+    // not an incorrectly lit gap behind it.
+    if (IsForegroundSolidTile(GetTileForLighting(state, tile_x, tile_y))) {
+        return 0.4F;
     }
 
     const float openness = GetSmoothedBackwallOpenness(state, tile_x, tile_y);
+    const float remapped_openness = ApplySignalRemap(
+        openness,
+        state.settings.post_process.backwall_remap_enabled,
+        state.settings.post_process.backwall_input_min,
+        state.settings.post_process.backwall_input_max,
+        state.settings.post_process.backwall_gamma
+    );
     const float min_brightness = std::clamp(
         state.settings.post_process.backwall_min_brightness,
         0.0F,
@@ -493,16 +539,18 @@ float ComputeBackwallBrightness(const State& state, int tile_x, int tile_y) {
         0.0F,
         2.0F
     );
-    const float low = std::min(min_brightness, max_brightness);
-    const float high = std::max(min_brightness, max_brightness);
     const float brightness_scale = std::clamp(
         state.settings.post_process.backwall_brightness,
         0.0F,
         2.0F
     );
-    const float base_brightness =
-        std::clamp(std::lerp(low, high, openness) * brightness_scale, 0.0F, 2.0F);
-    return base_brightness;
+    const float base_brightness = ApplyOutputLevels(
+        remapped_openness,
+        state.settings.post_process.backwall_output_levels_enabled,
+        min_brightness,
+        max_brightness
+    );
+    return std::clamp(base_brightness * brightness_scale, 0.0F, 2.0F);
 }
 
 ForegroundTileTopology BuildForegroundTileTopology(const State& state, int tile_x, int tile_y) {

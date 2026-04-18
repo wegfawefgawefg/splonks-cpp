@@ -168,6 +168,7 @@ int main(int argc, char** argv) {
         debug.level_window_visible = state.settings.debug_ui.level_visible;
         debug.entity_inspector_visible = state.settings.debug_ui.entities_visible;
         debug.entity_annotations_visible = state.settings.debug_ui.entity_annotations_visible;
+        debug.shake_brush_window_visible = state.settings.debug_ui.shake_brush_visible;
         debug.ui_settings_window_visible = state.settings.debug_ui.ui_settings_visible;
         debug.post_fx_settings_window_visible = state.settings.debug_ui.post_fx_settings_visible;
         debug.lighting_settings_window_visible = state.settings.debug_ui.lighting_settings_visible;

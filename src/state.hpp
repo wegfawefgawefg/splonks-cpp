@@ -43,6 +43,23 @@ enum class Mode {
 
 constexpr std::uint32_t kStageSettleFrames = 100;
 
+enum class ShakeMask : std::uint8_t {
+    None = 0,
+    ForegroundTiles = 1 << 0,
+    BackgroundTiles = 1 << 1,
+    Entities = 1 << 2,
+    Tiles = 3,
+    All = 7,
+};
+
+constexpr ShakeMask operator|(ShakeMask a, ShakeMask b) {
+    return static_cast<ShakeMask>(static_cast<std::uint8_t>(a) | static_cast<std::uint8_t>(b));
+}
+
+constexpr bool HasShakeMask(ShakeMask mask, ShakeMask flag) {
+    return (static_cast<std::uint8_t>(mask) & static_cast<std::uint8_t>(flag)) != 0;
+}
+
 struct HangTestLevelConfig {
     int stage_height_tiles = 128;
     int cutout_drop_tiles = 8;
@@ -93,6 +110,17 @@ struct DebugOverlayState {
     bool show_area_types = false;
 };
 
+struct DebugShakeBrushState {
+    bool enabled = false;
+    bool affect_foreground_tiles = true;
+    bool affect_background_tiles = false;
+    bool affect_entities = false;
+    float foreground_tile_amount = 1.0F;
+    float background_tile_amount = 1.0F;
+    float entity_amount = 1.0F;
+    float radius_tiles = 2.0F;
+};
+
 struct State {
     // Menu and input state.
     Mode mode = Mode::Title;
@@ -121,6 +149,7 @@ struct State {
 
     // Debug state.
     DebugOverlayState debug_overlay;
+    DebugShakeBrushState debug_shake_brush;
     bool running = true;
 
     // Frame and simulation timing.
@@ -170,5 +199,15 @@ struct State {
 };
 
 bool IsStageWon(const State& state);
+void AddShake(
+    State& state,
+    const Vec2& world_pos,
+    float foreground_tile_amount,
+    float background_tile_amount,
+    float entity_amount,
+    float radius_tiles
+);
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles);
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles, ShakeMask mask);
 
 } // namespace splonks

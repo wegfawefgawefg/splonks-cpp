@@ -7,6 +7,7 @@
 #include "tile.hpp"
 #include "world_query.hpp"
 
+#include <algorithm>
 #include <vector>
 
 namespace splonks {
@@ -38,6 +39,7 @@ Entity Entity::New() {
     entity.can_stomp = false;
     entity.can_be_stomped = true;
     entity.grounded = false;
+    entity.shake = 0.0F;
     entity.coyote_time = 0;
     entity.stun_timer = 0;
     entity.stun_recovers_on_ground = true;
@@ -146,6 +148,15 @@ void Entity::Reset() {
     *this = Entity::New();
     vid = existing_vid;
     active = true;
+}
+
+void AddEntityShake(Entity& entity, float amount) {
+    constexpr float kMaxEntityShake = 8.0F;
+    entity.shake = std::clamp(entity.shake + amount, 0.0F, kMaxEntityShake);
+}
+
+void AttenuateEntityShake(Entity& entity, float amount) {
+    entity.shake = std::max(0.0F, entity.shake - amount);
 }
 
 void UseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source) {

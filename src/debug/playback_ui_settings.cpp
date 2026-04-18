@@ -21,7 +21,7 @@ const char* CameraModeToString(CameraMode mode) {
 
 } // namespace
 
-void DrawDebugOverlayWindow(DebugPlayback& debug, State& state) {
+void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
     if (!debug.entity_annotations_visible) {
         return;
     }
@@ -46,6 +46,54 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Show Area IDs", &state.debug_overlay.show_area_ids);
     ImGui::Checkbox("Show Area Types", &state.debug_overlay.show_area_types);
     ImGui::TextUnformatted("PBox/CBox overlay uses render debug colors.");
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.shake_brush_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(620.0F, 220.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Shake Brush", &debug.shake_brush_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::Checkbox("Enable Shake Brush", &state.debug_shake_brush.enabled);
+    ImGui::Checkbox("Affect FG Tiles", &state.debug_shake_brush.affect_foreground_tiles);
+    ImGui::SliderFloat(
+        "FG Amount (px)",
+        &state.debug_shake_brush.foreground_tile_amount,
+        0.0F,
+        8.0F,
+        "%.2f px"
+    );
+    ImGui::Checkbox("Affect BG Tiles", &state.debug_shake_brush.affect_background_tiles);
+    ImGui::SliderFloat(
+        "BG Amount (px)",
+        &state.debug_shake_brush.background_tile_amount,
+        0.0F,
+        8.0F,
+        "%.2f px"
+    );
+    ImGui::Checkbox("Affect Entities", &state.debug_shake_brush.affect_entities);
+    ImGui::SliderFloat(
+        "Entity Amount (px)",
+        &state.debug_shake_brush.entity_amount,
+        0.0F,
+        8.0F,
+        "%.2f px"
+    );
+    ImGui::SliderFloat("Brush Radius (tiles)", &state.debug_shake_brush.radius_tiles, 0.0F, 12.0F, "%.2f");
+    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
+    ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
+    ImGui::Text("Mouse Tile: (%d, %d)", mouse_tile.x, mouse_tile.y);
+    ImGui::TextUnformatted("Hold left mouse in the world view to paint shake.");
 
     ImGui::End();
     SyncDebugUiSettings(debug, state);
@@ -359,20 +407,6 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
         "%.2f"
     );
     changed |= ImGui::SliderFloat(
-        "Terrain Exposure Min Brightness",
-        &state.settings.post_process.terrain_exposure_min_brightness,
-        0.0F,
-        2.0F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
-        "Terrain Exposure Max Brightness",
-        &state.settings.post_process.terrain_exposure_max_brightness,
-        0.0F,
-        2.0F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
         "Terrain Exposure Diagonal Weight",
         &state.settings.post_process.terrain_exposure_diagonal_weight,
         0.0F,
@@ -386,7 +420,86 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
         1.0F,
         "%.2f"
     );
+    changed |= ImGui::Checkbox(
+        "Terrain Exposure Remap Enabled",
+        &state.settings.post_process.terrain_exposure_remap_enabled
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Input Min",
+        &state.settings.post_process.terrain_exposure_input_min,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Input Max",
+        &state.settings.post_process.terrain_exposure_input_max,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Gamma",
+        &state.settings.post_process.terrain_exposure_gamma,
+        0.10F,
+        4.00F,
+        "%.2f"
+    );
+    changed |= ImGui::Checkbox(
+        "Terrain Exposure Output Levels Enabled",
+        &state.settings.post_process.terrain_exposure_output_levels_enabled
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Min Brightness",
+        &state.settings.post_process.terrain_exposure_min_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Terrain Exposure Max Brightness",
+        &state.settings.post_process.terrain_exposure_max_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
     changed |= ImGui::Checkbox("Backwall Lighting", &state.settings.post_process.backwall_lighting);
+    changed |= ImGui::SliderFloat(
+        "Backwall Smoothing",
+        &state.settings.post_process.backwall_smoothing,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::Checkbox(
+        "Backwall Remap Enabled",
+        &state.settings.post_process.backwall_remap_enabled
+    );
+    changed |= ImGui::SliderFloat(
+        "Backwall Input Min",
+        &state.settings.post_process.backwall_input_min,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Backwall Input Max",
+        &state.settings.post_process.backwall_input_max,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Backwall Gamma",
+        &state.settings.post_process.backwall_gamma,
+        0.10F,
+        4.00F,
+        "%.2f"
+    );
+    changed |= ImGui::Checkbox(
+        "Backwall Output Levels Enabled",
+        &state.settings.post_process.backwall_output_levels_enabled
+    );
     changed |= ImGui::SliderFloat(
         "Backwall Brightness",
         &state.settings.post_process.backwall_brightness,
@@ -406,13 +519,6 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
         &state.settings.post_process.backwall_max_brightness,
         0.0F,
         2.0F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
-        "Backwall Smoothing",
-        &state.settings.post_process.backwall_smoothing,
-        0.0F,
-        1.0F,
         "%.2f"
     );
 

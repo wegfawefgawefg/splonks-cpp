@@ -147,6 +147,7 @@ void ExpandStageForWrap(
     unsigned int padding_chunks
 ) {
     Stage& stage = state.stage;
+    stage.SyncTileShakeGrid();
     const UVec2 old_tile_dims = UVec2::New(stage.GetTileWidth(), stage.GetTileHeight());
     const UVec2 chunk_tile_dims = GetChunkTileDims(stage);
     const UVec2 padding_tiles = UVec2::New(
@@ -173,6 +174,14 @@ void ExpandStageForWrap(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<Tile>(static_cast<std::size_t>(new_tile_dims.x), Tile::Air)
     );
+    std::vector<std::vector<float>> tile_shake(
+        static_cast<std::size_t>(new_tile_dims.y),
+        std::vector<float>(static_cast<std::size_t>(new_tile_dims.x), 0.0F)
+    );
+    std::vector<std::vector<float>> backwall_tile_shake(
+        static_cast<std::size_t>(new_tile_dims.y),
+        std::vector<float>(static_cast<std::size_t>(new_tile_dims.x), 0.0F)
+    );
     std::vector<std::vector<EntityType>> embedded_treasures(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<EntityType>(static_cast<std::size_t>(new_tile_dims.x), EntityType::None)
@@ -187,6 +196,13 @@ void ExpandStageForWrap(
                           [static_cast<std::size_t>(x + padding_tiles.x)] =
                               stage.backwall_tiles[static_cast<std::size_t>(y)]
                                                   [static_cast<std::size_t>(x)];
+            tile_shake[static_cast<std::size_t>(y + padding_tiles.y)]
+                        [static_cast<std::size_t>(x + padding_tiles.x)] =
+                            stage.tile_shake[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            backwall_tile_shake[static_cast<std::size_t>(y + padding_tiles.y)]
+                                 [static_cast<std::size_t>(x + padding_tiles.x)] =
+                                     stage.backwall_tile_shake[static_cast<std::size_t>(y)]
+                                                               [static_cast<std::size_t>(x)];
             embedded_treasures[static_cast<std::size_t>(y + padding_tiles.y)]
                               [static_cast<std::size_t>(x + padding_tiles.x)] =
                                   stage.embedded_treasures[static_cast<std::size_t>(y)]
@@ -196,6 +212,8 @@ void ExpandStageForWrap(
 
     stage.tiles = std::move(tiles);
     stage.backwall_tiles = std::move(backwall_tiles);
+    stage.tile_shake = std::move(tile_shake);
+    stage.backwall_tile_shake = std::move(backwall_tile_shake);
     stage.embedded_treasures = std::move(embedded_treasures);
     stage.wrap_transform_active = true;
     stage.wrap_padding_chunks = padding_chunks;
@@ -216,6 +234,7 @@ void ExpandStageForWrap(
 
 void CollapseWrappedStage(State& state, Graphics& graphics) {
     Stage& stage = state.stage;
+    stage.SyncTileShakeGrid();
     if (!stage.wrap_transform_active) {
         return;
     }
@@ -230,6 +249,14 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<Tile>(static_cast<std::size_t>(core_size.x), Tile::Air)
     );
+    std::vector<std::vector<float>> tile_shake(
+        static_cast<std::size_t>(core_size.y),
+        std::vector<float>(static_cast<std::size_t>(core_size.x), 0.0F)
+    );
+    std::vector<std::vector<float>> backwall_tile_shake(
+        static_cast<std::size_t>(core_size.y),
+        std::vector<float>(static_cast<std::size_t>(core_size.x), 0.0F)
+    );
     std::vector<std::vector<EntityType>> embedded_treasures(
         static_cast<std::size_t>(core_size.y),
         std::vector<EntityType>(static_cast<std::size_t>(core_size.x), EntityType::None)
@@ -242,6 +269,12 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
             backwall_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 stage.backwall_tiles[static_cast<std::size_t>(y + core_origin.y)]
                                     [static_cast<std::size_t>(x + core_origin.x)];
+            tile_shake[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                stage.tile_shake[static_cast<std::size_t>(y + core_origin.y)]
+                                  [static_cast<std::size_t>(x + core_origin.x)];
+            backwall_tile_shake[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                stage.backwall_tile_shake[static_cast<std::size_t>(y + core_origin.y)]
+                                           [static_cast<std::size_t>(x + core_origin.x)];
             embedded_treasures[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 stage.embedded_treasures[static_cast<std::size_t>(y + core_origin.y)]
                                         [static_cast<std::size_t>(x + core_origin.x)];
@@ -285,6 +318,8 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
 
     stage.tiles = std::move(tiles);
     stage.backwall_tiles = std::move(backwall_tiles);
+    stage.tile_shake = std::move(tile_shake);
+    stage.backwall_tile_shake = std::move(backwall_tile_shake);
     stage.embedded_treasures = std::move(embedded_treasures);
     stage.wrap_transform_active = false;
     stage.wrap_padding_chunks = 0;

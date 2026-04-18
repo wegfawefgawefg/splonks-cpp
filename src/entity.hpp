@@ -63,6 +63,7 @@ struct Entity {
     bool can_be_stomped = true;
     bool can_go_on_back = false;
     bool grounded = false;
+    float shake = 0.0F;
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;
     bool stun_recovers_on_ground = true;
@@ -210,5 +211,7 @@ bool TryCollectPassiveItem(Entity& entity, const Entity& pickup);
 bool CanRevealEmbeddedTreasure(const Entity& entity);
 void EnableStone(Entity& entity);
 void DisableStone(Entity& entity);
+void AddEntityShake(Entity& entity, float amount);
+void AttenuateEntityShake(Entity& entity, float amount);
 
 } // namespace splonks

@@ -133,6 +133,113 @@ bool IsScreenRectVisible(const SDL_FRect& presentation, const SDL_FRect& rect) {
            rect.y <= presentation.y + presentation.h;
 }
 
+bool ShouldRenderShakeBrushPreview(const State& state) {
+    const DebugShakeBrushState& brush = state.debug_shake_brush;
+    return brush.enabled &&
+           ((brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F) ||
+            (brush.affect_background_tiles && brush.background_tile_amount > 0.0F) ||
+            (brush.affect_entities && brush.entity_amount > 0.0F));
+}
+
+void RenderWorldCircleOutline(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const SDL_FRect& presentation,
+    const Vec2& center,
+    float radius,
+    const SDL_Color& color
+) {
+    if (radius <= 0.0F) {
+        return;
+    }
+
+    constexpr int kSegments = 24;
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    Vec2 previous = center + Vec2::New(radius, 0.0F);
+    for (int i = 1; i <= kSegments; ++i) {
+        const float t = static_cast<float>(i) / static_cast<float>(kSegments);
+        const float angle = t * 6.28318530718F;
+        const Vec2 current = center + Vec2::New(std::cos(angle) * radius, std::sin(angle) * radius);
+        const Vec2 previous_screen = WorldPointToScreen(graphics, presentation, previous);
+        const Vec2 current_screen = WorldPointToScreen(graphics, presentation, current);
+        SDL_RenderLine(renderer, previous_screen.x, previous_screen.y, current_screen.x, current_screen.y);
+        previous = current;
+    }
+}
+
+void RenderShakeBrushPreview(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation
+) {
+    if (!ShouldRenderShakeBrushPreview(state)) {
+        return;
+    }
+
+    const DebugShakeBrushState& brush = state.debug_shake_brush;
+    const UVec2 mouse_pos = state.immediate_playing_inputs.mouse_pos;
+    const Vec2 mouse_world = graphics.ScreenToWc(mouse_pos);
+    const IVec2 mouse_tile = graphics.ScreenToTileCoords(mouse_pos);
+    const float radius_tiles = std::max(0.0F, brush.radius_tiles);
+
+    const bool affects_fg = brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F;
+    const bool affects_bg = brush.affect_background_tiles && brush.background_tile_amount > 0.0F;
+    if (affects_fg || affects_bg) {
+        const int radius_ceiled = static_cast<int>(std::ceil(radius_tiles));
+        for (int y = mouse_tile.y - radius_ceiled; y <= mouse_tile.y + radius_ceiled; ++y) {
+            for (int x = mouse_tile.x - radius_ceiled; x <= mouse_tile.x + radius_ceiled; ++x) {
+                const float dx = static_cast<float>(x - mouse_tile.x);
+                const float dy = static_cast<float>(y - mouse_tile.y);
+                const float distance = std::sqrt((dx * dx) + (dy * dy));
+                if (distance > radius_tiles) {
+                    continue;
+                }
+
+                const IVec2 wrapped = state.stage.WrapTileCoord(IVec2::New(x, y));
+                if (!state.stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+                    continue;
+                }
+
+                const Vec2 tile_world = Vec2::New(
+                    static_cast<float>(wrapped.x * static_cast<int>(kTileSize)),
+                    static_cast<float>(wrapped.y * static_cast<int>(kTileSize))
+                );
+                const Vec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
+                const SDL_FRect tile_rect = WorldRectToScreen(
+                    graphics,
+                    presentation,
+                    nearest_tile_world,
+                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                );
+                if (!IsScreenRectVisible(presentation, tile_rect)) {
+                    continue;
+                }
+
+                if (affects_fg && affects_bg) {
+                    SDL_SetRenderDrawColor(renderer, 64, 224, 255, 255);
+                } else if (affects_fg) {
+                    SDL_SetRenderDrawColor(renderer, 255, 220, 96, 255);
+                } else {
+                    SDL_SetRenderDrawColor(renderer, 96, 160, 255, 255);
+                }
+                SDL_RenderRect(renderer, &tile_rect);
+            }
+        }
+    }
+
+    if (brush.affect_entities && brush.entity_amount > 0.0F) {
+        RenderWorldCircleOutline(
+            renderer,
+            graphics,
+            presentation,
+            mouse_world,
+            radius_tiles * static_cast<float>(kTileSize),
+            SDL_Color{255, 180, 64, 255}
+        );
+    }
+}
+
 void RenderEntityCollisionBoxes(
     SDL_Renderer* renderer,
     Graphics& graphics,
@@ -575,7 +682,8 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
         !state.debug_overlay.show_lights &&
         !state.debug_overlay.show_area_boundaries &&
         !state.debug_overlay.show_area_ids &&
-        !state.debug_overlay.show_area_types) {
+        !state.debug_overlay.show_area_types &&
+        !ShouldRenderShakeBrushPreview(state)) {
         return;
     }
 
@@ -605,6 +713,7 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
         state.debug_overlay.show_area_types) {
         RenderAreaOverlay(renderer, graphics, state, presentation, render_offsets);
     }
+    RenderShakeBrushPreview(renderer, graphics, state, presentation);
 }
 
 } // namespace splonks

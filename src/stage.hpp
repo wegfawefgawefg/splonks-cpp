@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <vector>
 
+
 namespace splonks {
 
 struct Entity;
@@ -79,9 +80,28 @@ struct StageBorder {
     std::optional<int> void_death_y = std::nullopt;
 };
 
+enum class TileShakeLayerMask : std::uint8_t {
+    None = 0,
+    Foreground = 1 << 0,
+    Background = 1 << 1,
+    Both = 3,
+};
+
+constexpr TileShakeLayerMask operator|(TileShakeLayerMask a, TileShakeLayerMask b) {
+    return static_cast<TileShakeLayerMask>(
+        static_cast<std::uint8_t>(a) | static_cast<std::uint8_t>(b)
+    );
+}
+
+constexpr bool HasTileShakeLayerMask(TileShakeLayerMask mask, TileShakeLayerMask flag) {
+    return (static_cast<std::uint8_t>(mask) & static_cast<std::uint8_t>(flag)) != 0;
+}
+
 struct Stage {
     StageType stage_type = StageType::Blank;
     std::vector<std::vector<Tile>> tiles;
+    std::vector<std::vector<float>> tile_shake;
+    std::vector<std::vector<float>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
     std::vector<std::vector<EntityType>> embedded_treasures;
     std::vector<std::vector<int>> rooms;
@@ -111,13 +131,29 @@ struct Stage {
     UVec2 GetRoomDims() const;
     IVec2 GetRoomTlWc(const IVec2& room) const;
     const Tile& GetTile(unsigned int x, unsigned int y) const;
+    float GetTileShake(unsigned int x, unsigned int y) const;
+    float GetForegroundTileShake(unsigned int x, unsigned int y) const;
+    float GetBackgroundTileShake(unsigned int x, unsigned int y) const;
     const Tile& GetBackwallTile(unsigned int x, unsigned int y) const;
     EntityType GetEmbeddedTreasure(unsigned int x, unsigned int y) const;
     const Tile* GetTileAtWc(const IVec2& pos) const;
     std::vector<const Tile*> GetTilesInRectWc(const IVec2& tl, const IVec2& br) const;
     std::vector<const Tile*> GetTilesInRect(const IVec2& tl, const IVec2& br) const;
     void FillBackwall(const std::vector<Tile>& fill_tiles);
+    void SyncTileShakeGrid();
     void SetTile(const IVec2& pos, Tile tile);
+    void AddTileShake(const IVec2& pos, float amount);
+    void AddForegroundTileShake(const IVec2& pos, float amount);
+    void AddBackgroundTileShake(const IVec2& pos, float amount);
+    void AddTileShake(const IVec2& pos, float amount, TileShakeLayerMask layers);
+    void AddTileShakeArea(const IVec2& pos, float magnitude, float dist);
+    void AddForegroundTileShakeArea(const IVec2& pos, float magnitude, float dist);
+    void AddBackgroundTileShakeArea(const IVec2& pos, float magnitude, float dist);
+    void AddTileShakeArea(const IVec2& pos, float magnitude, float dist, TileShakeLayerMask layers);
+    void AttenuateTileShake(float amount);
+    void AttenuateForegroundTileShake(float amount);
+    void AttenuateBackgroundTileShake(float amount);
+    void AttenuateTileShake(float amount, TileShakeLayerMask layers);
     void SetBackwallTile(const IVec2& pos, Tile tile);
     void SetEmbeddedTreasure(const IVec2& pos, EntityType type_);
     EntityType TakeEmbeddedTreasure(const IVec2& pos);

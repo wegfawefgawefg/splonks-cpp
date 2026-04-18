@@ -9,7 +9,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 45;
+constexpr std::uint32_t kRecordingVersion = 49;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -122,6 +122,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.can_be_stomped);
     WritePod(out, entity.can_go_on_back);
     WritePod(out, entity.grounded);
+    WritePod(out, entity.shake);
     WritePod(out, entity.coyote_time);
     WritePod(out, entity.stun_timer);
     WritePod(out, entity.stun_recovers_on_ground);
@@ -247,6 +248,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.can_be_stomped) &&
            ReadPod(in, entity.can_go_on_back) &&
            ReadPod(in, entity.grounded) &&
+           ReadPod(in, entity.shake) &&
            ReadPod(in, entity.coyote_time) &&
            ReadPod(in, entity.stun_timer) &&
            ReadPod(in, entity.stun_recovers_on_ground) &&
@@ -481,6 +483,19 @@ void WriteStage(std::ostream& out, const Stage& stage) {
         WriteVectorPod(out, row);
     }
 
+    const std::uint32_t tile_shake_rows = static_cast<std::uint32_t>(stage.tile_shake.size());
+    WritePod(out, tile_shake_rows);
+    for (const std::vector<float>& row : stage.tile_shake) {
+        WriteVectorPod(out, row);
+    }
+
+    const std::uint32_t backwall_tile_shake_rows =
+        static_cast<std::uint32_t>(stage.backwall_tile_shake.size());
+    WritePod(out, backwall_tile_shake_rows);
+    for (const std::vector<float>& row : stage.backwall_tile_shake) {
+        WriteVectorPod(out, row);
+    }
+
     const std::uint32_t backwall_rows = static_cast<std::uint32_t>(stage.backwall_tiles.size());
     WritePod(out, backwall_rows);
     for (const std::vector<Tile>& row : stage.backwall_tiles) {
@@ -522,6 +537,28 @@ bool ReadStage(std::istream& in, Stage& stage) {
     stage.tiles.resize(tile_rows);
     for (std::uint32_t i = 0; i < tile_rows; ++i) {
         if (!ReadVectorPod(in, stage.tiles[i])) {
+            return false;
+        }
+    }
+
+    std::uint32_t tile_shake_rows = 0;
+    if (!ReadPod(in, tile_shake_rows)) {
+        return false;
+    }
+    stage.tile_shake.resize(tile_shake_rows);
+    for (std::uint32_t i = 0; i < tile_shake_rows; ++i) {
+        if (!ReadVectorPod(in, stage.tile_shake[i])) {
+            return false;
+        }
+    }
+
+    std::uint32_t backwall_tile_shake_rows = 0;
+    if (!ReadPod(in, backwall_tile_shake_rows)) {
+        return false;
+    }
+    stage.backwall_tile_shake.resize(backwall_tile_shake_rows);
+    for (std::uint32_t i = 0; i < backwall_tile_shake_rows; ++i) {
+        if (!ReadVectorPod(in, stage.backwall_tile_shake[i])) {
             return false;
         }
     }
@@ -600,6 +637,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.rebuild_render_texture);
     WritePod(out, snapshot.choosing_control_binding);
     WritePod(out, snapshot.debug_overlay);
+    WritePod(out, snapshot.debug_shake_brush);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
@@ -648,6 +686,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.rebuild_render_texture) &&
            ReadPod(in, snapshot.choosing_control_binding) &&
            ReadPod(in, snapshot.debug_overlay) &&
+           ReadPod(in, snapshot.debug_shake_brush) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&

@@ -23,12 +23,70 @@ struct VisibleWorldRect {
     Vec2 br;
 };
 
+int WrapCoordinate(int value, int size) {
+    if (size <= 0) {
+        return 0;
+    }
+    int wrapped = value % size;
+    if (wrapped < 0) {
+        wrapped += size;
+    }
+    return wrapped;
+}
+
 VisibleWorldRect GetVisibleWorldRect(const Graphics& graphics) {
     return VisibleWorldRect{
         .tl = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom),
         .br = graphics.camera.target +
               ((ToVec2(graphics.dims) - graphics.camera.offset) / graphics.camera.zoom),
     };
+}
+
+bool IsImmediateBorderRingTile(const Stage& stage, int tile_x, int tile_y) {
+    const int width = static_cast<int>(stage.GetTileWidth());
+    const int height = static_cast<int>(stage.GetTileHeight());
+    if (width <= 0 || height <= 0) {
+        return false;
+    }
+
+    const bool immediate_x = !stage.WrapsX() && (tile_x == -1 || tile_x == width);
+    const bool immediate_y = !stage.WrapsY() && (tile_y == -1 || tile_y == height);
+    const bool inside_x = tile_x >= 0 && tile_x < width;
+    const bool inside_y = tile_y >= 0 && tile_y < height;
+    return (immediate_x && (inside_y || immediate_y)) || (immediate_y && (inside_x || immediate_x));
+}
+
+float GetBorderTileShake(const Stage& stage, int tile_x, int tile_y) {
+    const int width = static_cast<int>(stage.GetTileWidth());
+    const int height = static_cast<int>(stage.GetTileHeight());
+    if (width <= 0 || height <= 0) {
+        return 0.0F;
+    }
+    if (!IsImmediateBorderRingTile(stage, tile_x, tile_y)) {
+        return 0.0F;
+    }
+
+    int resolved_x = tile_x;
+    int resolved_y = tile_y;
+    if (stage.WrapsX()) {
+        resolved_x = WrapCoordinate(resolved_x, width);
+    } else {
+        resolved_x = std::clamp(resolved_x, 0, width - 1);
+    }
+    if (stage.WrapsY()) {
+        resolved_y = WrapCoordinate(resolved_y, height);
+    } else {
+        resolved_y = std::clamp(resolved_y, 0, height - 1);
+    }
+
+    return stage.GetForegroundTileShake(
+        static_cast<unsigned int>(resolved_x),
+        static_cast<unsigned int>(resolved_y)
+    );
+}
+
+bool ShouldRenderImmediateBorderBacking(const Stage& stage, int tile_x, int tile_y) {
+    return IsImmediateBorderRingTile(stage, tile_x, tile_y);
 }
 
 int FloorDivByFloat(float value, float divisor) {
@@ -70,6 +128,17 @@ Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos) {
     const Vec2 screen =
         ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
     return Vec2::New(std::round(screen.x), std::round(screen.y));
+}
+
+Vec2 GetShakeOffset(float shake_pixels) {
+    if (shake_pixels <= 0.0F) {
+        return Vec2::New(0.0F, 0.0F);
+    }
+
+    return Vec2::New(
+        rng::RandomFloat(-shake_pixels, shake_pixels),
+        rng::RandomFloat(-shake_pixels, shake_pixels)
+    );
 }
 
 SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
@@ -132,51 +201,87 @@ const FrameData* GetFirstFrameForAnimationOrFallback(
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureStageLighting(state);
+    state.stage.SyncTileShakeGrid();
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const Vec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
-                const Tile tile = state.stage.tiles[y][x];
                 const Tile backwall_tile = state.stage.backwall_tiles[y][x];
+                if (backwall_tile == Tile::Air) {
+                    continue;
+                }
+
                 const IVec2 tile_pos = IVec2::New(
                     static_cast<int>(x * kTileSize),
                     static_cast<int>(y * kTileSize)
                 );
-                const SDL_FRect dst = WorldRectToScreen(
+                const float background_shake = state.stage.GetBackgroundTileShake(
+                    static_cast<unsigned int>(x),
+                    static_cast<unsigned int>(y)
+                );
+                const Vec2 background_shake_offset = GetShakeOffset(background_shake);
+                const SDL_FRect unshaken_dst = WorldRectToScreen(
                     graphics,
                     ToVec2(tile_pos) + render_offset,
                     Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
+                const SDL_FRect background_dst = WorldRectToScreen(
+                    graphics,
+                    ToVec2(tile_pos) + render_offset + background_shake_offset,
+                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                );
 
-                if (backwall_tile != Tile::Air) {
-                    const TileSourceData* const backwall_source_data =
-                        GetTileSourceData(graphics, backwall_tile, tile_pos);
-                    if (backwall_source_data != nullptr) {
-                        SDL_Texture* const backwall_texture =
-                            GetTileTexture(graphics, *backwall_source_data);
-                        if (backwall_texture != nullptr) {
-                            const SDL_FRect backwall_src{
-                                static_cast<float>(backwall_source_data->sample_rect.x),
-                                static_cast<float>(backwall_source_data->sample_rect.y),
-                                static_cast<float>(backwall_source_data->sample_rect.w),
-                                static_cast<float>(backwall_source_data->sample_rect.h),
-                            };
-                            ApplyBackwallTileBrightness(
-                                backwall_texture,
-                                state,
-                                graphics,
-                                static_cast<int>(x),
-                                static_cast<int>(y)
-                            );
-                            SDL_RenderTexture(renderer, backwall_texture, &backwall_src, &dst);
-                            ResetTerrainTileBrightness(backwall_texture);
-                        }
-                    }
+                const TileSourceData* const backwall_source_data =
+                    GetTileSourceData(graphics, backwall_tile, tile_pos);
+                if (backwall_source_data == nullptr) {
+                    continue;
                 }
+                SDL_Texture* const backwall_texture = GetTileTexture(graphics, *backwall_source_data);
+                if (backwall_texture == nullptr) {
+                    continue;
+                }
+                const SDL_FRect backwall_src{
+                    static_cast<float>(backwall_source_data->sample_rect.x),
+                    static_cast<float>(backwall_source_data->sample_rect.y),
+                    static_cast<float>(backwall_source_data->sample_rect.w),
+                    static_cast<float>(backwall_source_data->sample_rect.h),
+                };
+                ApplyBackwallTileBrightness(
+                    backwall_texture,
+                    state,
+                    graphics,
+                    static_cast<int>(x),
+                    static_cast<int>(y)
+                );
+                if (background_shake > 0.0F) {
+                    SDL_RenderTexture(renderer, backwall_texture, &backwall_src, &unshaken_dst);
+                }
+                SDL_RenderTexture(renderer, backwall_texture, &backwall_src, &background_dst);
+                ResetTerrainTileBrightness(backwall_texture);
+            }
+        }
 
+        for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
+            for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
+                const Tile tile = state.stage.tiles[y][x];
                 if (tile == Tile::Air) {
                     continue;
                 }
+
+                const IVec2 tile_pos = IVec2::New(
+                    static_cast<int>(x * kTileSize),
+                    static_cast<int>(y * kTileSize)
+                );
+                const float foreground_shake = state.stage.GetForegroundTileShake(
+                    static_cast<unsigned int>(x),
+                    static_cast<unsigned int>(y)
+                );
+                const Vec2 foreground_shake_offset = GetShakeOffset(foreground_shake);
+                const SDL_FRect foreground_dst = WorldRectToScreen(
+                    graphics,
+                    ToVec2(tile_pos) + render_offset + foreground_shake_offset,
+                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                );
 
                 const TileSourceData* const tile_source_data =
                     GetTileSourceData(graphics, tile, tile_pos);
@@ -201,7 +306,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     static_cast<int>(x),
                     static_cast<int>(y)
                 );
-                SDL_RenderTexture(renderer, tile_texture, &src, &dst);
+                SDL_RenderTexture(renderer, tile_texture, &src, &foreground_dst);
                 ResetTerrainTileBrightness(tile_texture);
                 RenderTerrainTileLighting(
                     renderer,
@@ -209,7 +314,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     graphics,
                     static_cast<int>(x),
                     static_cast<int>(y),
-                    dst
+                    foreground_dst
                 );
             }
         }
@@ -236,11 +341,22 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
     const int stage_tile_width = static_cast<int>(state.stage.GetTileWidth());
     const int stage_tile_height = static_cast<int>(state.stage.GetTileHeight());
 
-    for (int tile_y = visible_tl_tile_y; tile_y <= visible_br_tile_y; ++tile_y) {
-        for (int tile_x = visible_tl_tile_x; tile_x <= visible_br_tile_x; ++tile_x) {
-            const bool inside_stage = tile_x >= 0 && tile_y >= 0 && tile_x < stage_tile_width &&
-                                      tile_y < stage_tile_height;
-            if (!inside_stage) {
+    for (int border_pass = 0; border_pass < 2; ++border_pass) {
+        const bool render_immediate_border_ring = border_pass == 1;
+        for (int tile_y = visible_tl_tile_y; tile_y <= visible_br_tile_y; ++tile_y) {
+            for (int tile_x = visible_tl_tile_x; tile_x <= visible_br_tile_x; ++tile_x) {
+                const bool inside_stage = tile_x >= 0 && tile_y >= 0 && tile_x < stage_tile_width &&
+                                          tile_y < stage_tile_height;
+                if (inside_stage) {
+                    continue;
+                }
+
+                const bool is_immediate_border_ring =
+                    IsImmediateBorderRingTile(state.stage, tile_x, tile_y);
+                if (render_immediate_border_ring != is_immediate_border_ring) {
+                    continue;
+                }
+
                 const std::optional<StageBorderSideKind> side =
                     state.stage.GetOutOfBoundsSideForTileCoord(tile_x, tile_y);
                 if (!side.has_value()) {
@@ -267,9 +383,11 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                         static_cast<float>(air_source_data->sample_rect.w),
                         static_cast<float>(air_source_data->sample_rect.h),
                     };
+                    const float border_shake = GetBorderTileShake(state.stage, tile_x, tile_y);
+                    const Vec2 border_shake_offset = GetShakeOffset(border_shake);
                     const SDL_FRect dst = WorldRectToScreen(
                         graphics,
-                        ToVec2(tile_pos),
+                        ToVec2(tile_pos) + border_shake_offset,
                         Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                     );
                     ApplyBackwallTileBrightness(air_texture, state, graphics, tile_x, tile_y);
@@ -292,9 +410,42 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                     static_cast<float>(tile_source_data->sample_rect.w),
                     static_cast<float>(tile_source_data->sample_rect.h),
                 };
+                const float border_shake = GetBorderTileShake(state.stage, tile_x, tile_y);
+                const Vec2 border_shake_offset = GetShakeOffset(border_shake);
+                if (border_shake > 0.0F &&
+                    ShouldRenderImmediateBorderBacking(state.stage, tile_x, tile_y)) {
+                    const TileSourceData* const backing_source_data =
+                        GetAirSourceData(graphics, air_tile_set, tile_pos);
+                    if (backing_source_data != nullptr) {
+                        SDL_Texture* const backing_texture =
+                            GetTileTexture(graphics, *backing_source_data);
+                        if (backing_texture != nullptr) {
+                            const SDL_FRect backing_src{
+                                static_cast<float>(backing_source_data->sample_rect.x),
+                                static_cast<float>(backing_source_data->sample_rect.y),
+                                static_cast<float>(backing_source_data->sample_rect.w),
+                                static_cast<float>(backing_source_data->sample_rect.h),
+                            };
+                            const SDL_FRect backing_dst = WorldRectToScreen(
+                                graphics,
+                                ToVec2(tile_pos),
+                                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                            );
+                            ApplyBackwallTileBrightness(
+                                backing_texture,
+                                state,
+                                graphics,
+                                tile_x,
+                                tile_y
+                            );
+                            SDL_RenderTexture(renderer, backing_texture, &backing_src, &backing_dst);
+                            ResetTerrainTileBrightness(backing_texture);
+                        }
+                    }
+                }
                 const SDL_FRect dst = WorldRectToScreen(
                     graphics,
-                    ToVec2(tile_pos),
+                    ToVec2(tile_pos) + border_shake_offset,
                     Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
                 ApplyTerrainTileBrightness(tile_texture, state, graphics, tile_x, tile_y);
@@ -479,9 +630,10 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
             const SDL_FlipMode flip =
                 entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             for (const Vec2& render_offset : render_offsets) {
+                const Vec2 shake_offset = GetShakeOffset(entity.shake);
                 SDL_FRect dst = WorldRectToScreen(
                     graphics,
-                    render_position + render_offset,
+                    render_position + render_offset + shake_offset,
                     sprite_scaled_size
                 );
                 SDL_RenderTextureRotated(

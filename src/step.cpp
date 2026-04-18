@@ -10,6 +10,8 @@ namespace splonks {
 
 namespace {
 
+constexpr float kShakeAttenuationRate = 0.1F;
+
 void UpdateControlledEntity(State& state) {
     if (!state.controlled_entity_vid.has_value()) {
         state.controlled_entity_vid = state.player_vid;
@@ -104,7 +106,15 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
     state.entity_tools.Step();
     state.RebuildSid(graphics);
+    state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
+    for (Entity& entity : state.entity_manager.entities) {
+        if (!entity.active) {
+            continue;
+        }
+        AttenuateEntityShake(entity, kShakeAttenuationRate);
+    }
+    state.stage.AttenuateTileShake(kShakeAttenuationRate);
     if (state.player_vid.has_value() && state.playing_inputs.buy_button.pressed) {
         (void)TryBuyOverlappingEntity(state.player_vid->id, state, graphics, audio);
     }

@@ -39,6 +39,7 @@ struct GameplaySnapshot {
     bool rebuild_render_texture = false;
     bool choosing_control_binding = false;
     DebugOverlayState debug_overlay;
+    DebugShakeBrushState debug_shake_brush;
     double now = 0.0;
     float time_since_last_update = 0.0F;
     std::uint32_t scene_frame = 0;
@@ -71,6 +72,7 @@ struct DebugPlayback {
     bool border_window_visible = true;
     bool entity_inspector_visible = true;
     bool entity_annotations_visible = false;
+    bool shake_brush_window_visible = false;
     bool ui_settings_window_visible = false;
     bool post_fx_settings_window_visible = false;
     bool lighting_settings_window_visible = false;

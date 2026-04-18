@@ -29,6 +29,10 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.entity_annotations_visible = debug.entity_annotations_visible;
         changed = true;
     }
+    if (state.settings.debug_ui.shake_brush_visible != debug.shake_brush_window_visible) {
+        state.settings.debug_ui.shake_brush_visible = debug.shake_brush_window_visible;
+        changed = true;
+    }
     if (state.settings.debug_ui.ui_settings_visible != debug.ui_settings_window_visible) {
         state.settings.debug_ui.ui_settings_visible = debug.ui_settings_window_visible;
         changed = true;

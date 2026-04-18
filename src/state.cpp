@@ -5,6 +5,7 @@
 #include "stage_init.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace splonks {
 
@@ -16,6 +17,83 @@ bool HasAnyAreaListenerCallback(const Entity& entity) {
 }
 
 } // namespace
+
+void AddShake(
+    State& state,
+    const Vec2& world_pos,
+    float foreground_tile_amount,
+    float background_tile_amount,
+    float entity_amount,
+    float radius_tiles
+) {
+    if (foreground_tile_amount <= 0.0F && background_tile_amount <= 0.0F && entity_amount <= 0.0F) {
+        return;
+    }
+
+    const IVec2 world_pixel = IVec2::New(
+        static_cast<int>(std::floor(world_pos.x)),
+        static_cast<int>(std::floor(world_pos.y))
+    );
+    const IVec2 tile_pos = state.stage.GetTileCoordAtWc(world_pixel);
+
+    if (foreground_tile_amount > 0.0F) {
+        state.stage.AddForegroundTileShakeArea(tile_pos, foreground_tile_amount, radius_tiles);
+    }
+    if (background_tile_amount > 0.0F) {
+        state.stage.AddBackgroundTileShakeArea(tile_pos, background_tile_amount, radius_tiles);
+    }
+    if (entity_amount <= 0.0F) {
+        return;
+    }
+
+    const float radius_world = radius_tiles * static_cast<float>(kTileSize);
+    const AABB area = AABB::New(
+        world_pos - Vec2::New(radius_world, radius_world),
+        world_pos + Vec2::New(radius_world, radius_world)
+    );
+    for (const VID& vid : QueryEntitiesInAabb(state, area)) {
+        Entity* const entity = state.entity_manager.GetEntityMut(vid);
+        if (entity == nullptr || !entity->active) {
+            continue;
+        }
+
+        const Vec2 nearest_center = GetNearestWorldPoint(state.stage, world_pos, entity->GetCenter());
+        const Vec2 delta = nearest_center - world_pos;
+        const float distance = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
+        if (radius_world > 0.0F) {
+            if (distance > radius_world) {
+                continue;
+            }
+            AddEntityShake(*entity, entity_amount * (1.0F - (distance / radius_world)));
+            continue;
+        }
+
+        const AABB nearest_aabb = GetNearestWorldAabb(state.stage, world_pos, entity->GetAABB());
+        if (world_pos.x >= nearest_aabb.tl.x && world_pos.x <= nearest_aabb.br.x &&
+            world_pos.y >= nearest_aabb.tl.y && world_pos.y <= nearest_aabb.br.y) {
+            AddEntityShake(*entity, entity_amount);
+        }
+    }
+}
+
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles) {
+    AddShake(state, world_pos, amount, amount, amount, radius_tiles);
+}
+
+void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles, ShakeMask mask) {
+    if (amount <= 0.0F || mask == ShakeMask::None) {
+        return;
+    }
+
+    AddShake(
+        state,
+        world_pos,
+        HasShakeMask(mask, ShakeMask::ForegroundTiles) ? amount : 0.0F,
+        HasShakeMask(mask, ShakeMask::BackgroundTiles) ? amount : 0.0F,
+        HasShakeMask(mask, ShakeMask::Entities) ? amount : 0.0F,
+        radius_tiles
+    );
+}
 
 State State::New() {
     State state;

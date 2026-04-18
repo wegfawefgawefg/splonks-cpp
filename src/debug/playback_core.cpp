@@ -87,6 +87,54 @@ bool ShouldProcessGameplayInput(const DebugPlayback& debug) {
     return true;
 }
 
+bool IsShakeBrushActive(const State& state) {
+    const DebugShakeBrushState& brush = state.debug_shake_brush;
+    return brush.enabled &&
+           ((brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F) ||
+            (brush.affect_background_tiles && brush.background_tile_amount > 0.0F) ||
+            (brush.affect_entities && brush.entity_amount > 0.0F));
+}
+
+void ApplyShakeBrush(State& state, Graphics& graphics) {
+    if (state.mode != Mode::Playing || !IsShakeBrushActive(state) || ImGuiWantsMouse()) {
+        return;
+    }
+
+    float mouse_x = 0.0F;
+    float mouse_y = 0.0F;
+    const SDL_MouseButtonFlags mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
+    if ((mouse_buttons & SDL_BUTTON_LMASK) == 0) {
+        return;
+    }
+
+    const DebugShakeBrushState& brush = state.debug_shake_brush;
+    const UVec2 mouse_pos = state.immediate_playing_inputs.mouse_pos;
+    const Vec2 mouse_world = graphics.ScreenToWc(mouse_pos);
+    const float radius_tiles = std::max(0.0F, brush.radius_tiles);
+
+    if (brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F) {
+        AddShake(
+            state,
+            mouse_world,
+            brush.foreground_tile_amount,
+            radius_tiles,
+            ShakeMask::ForegroundTiles
+        );
+    }
+    if (brush.affect_background_tiles && brush.background_tile_amount > 0.0F) {
+        AddShake(
+            state,
+            mouse_world,
+            brush.background_tile_amount,
+            radius_tiles,
+            ShakeMask::BackgroundTiles
+        );
+    }
+    if (brush.affect_entities && brush.entity_amount > 0.0F) {
+        AddShake(state, mouse_world, brush.entity_amount, radius_tiles, ShakeMask::Entities);
+    }
+}
+
 } // namespace
 
 void AdvanceLiveSimulation(
@@ -108,6 +156,8 @@ void AdvanceLiveSimulation(
     if (ShouldProcessGameplayInput(debug)) {
         ProcessInput(window, renderer, state, audio, graphics, frame_dt);
     }
+
+    ApplyShakeBrush(state, graphics);
 
     if (debug.pause_live_simulation) {
         if (!debug.step_live_simulation_once) {
@@ -164,7 +214,8 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawSimulationControls(debug, state, graphics);
     debug_playback_internal::DrawLevelControls(debug, state, graphics);
     debug_playback_internal::DrawBorderControls(debug, state, graphics);
-    debug_playback_internal::DrawDebugOverlayWindow(debug, state);
+    debug_playback_internal::DrawDebugOverlayWindow(debug, state, graphics);
+    debug_playback_internal::DrawShakeBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
     debug_playback_internal::DrawCameraSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);

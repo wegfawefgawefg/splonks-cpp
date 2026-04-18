@@ -82,6 +82,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Border", &debug.border_window_visible);
     ImGui::Checkbox("Entities", &debug.entity_inspector_visible);
     ImGui::Checkbox("Overlay", &debug.entity_annotations_visible);
+    ImGui::Checkbox("Shake Brush", &debug.shake_brush_window_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
     ImGui::Checkbox("Camera Settings", &debug.camera_settings_window_visible);
     ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
@@ -92,6 +93,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::TextUnformatted("F1: Toggle all ImGui");
     ImGui::TextUnformatted("F2: Toggle debug menu");
     ImGui::TextUnformatted("Overlay toggles live in the Overlay window.");
+    ImGui::TextUnformatted("Shake brush controls live in the Shake Brush window.");
     ImGui::Separator();
     ImGui::Text("Playback Active: %s", debug.playback_active ? "true" : "false");
     ImGui::Text("Selected Entity: %zu", debug.selected_entity_id);
