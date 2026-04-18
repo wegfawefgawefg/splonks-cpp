@@ -21,6 +21,21 @@ constexpr float kBoulderTrailSmokeDistInterval = 12.0F;
 constexpr float kBoulderTrailPebbleDistInterval = 12.0F;
 constexpr float kBoulderImpactSoundCooldownFrames = 8.0F;
 constexpr float kBoulderRollingSpeedThreshold = 0.01F;
+constexpr float kBoulderRollingShakeForegroundAmount = 0.76F;
+constexpr float kBoulderRollingShakeBackgroundAmount = 0.48F;
+constexpr float kBoulderRollingShakeRadiusTiles = 1.6F;
+constexpr float kBoulderBreakShakeForegroundAmount = 1.15F;
+constexpr float kBoulderBreakShakeBackgroundAmount = 0.90F;
+constexpr float kBoulderBreakShakeEntityAmount = 0.95F;
+constexpr float kBoulderBreakShakeRadiusTiles = 2.6F;
+constexpr float kBoulderWallHitShakeForegroundAmount = 1.25F;
+constexpr float kBoulderWallHitShakeBackgroundAmount = 1.00F;
+constexpr float kBoulderWallHitShakeEntityAmount = 1.05F;
+constexpr float kBoulderWallHitShakeRadiusTiles = 2.8F;
+constexpr float kBoulderGroundSlamShakeForegroundAmount = 1.10F;
+constexpr float kBoulderGroundSlamShakeBackgroundAmount = 0.85F;
+constexpr float kBoulderGroundSlamShakeEntityAmount = 1.85F;
+constexpr float kBoulderGroundSlamShakeRadiusTiles = 3.4F;
 constexpr FrameDataId kBoulderAnimationId = HashFrameDataIdConstexpr("boulder");
 constexpr FrameDataId kBoulderRollAnimationId = HashFrameDataIdConstexpr("boulder_roll");
 constexpr FrameDataId kBoulderParticleAnimationId = kBoulderAnimationId;
@@ -46,7 +61,7 @@ bool WouldBreakAnyTiles(const AABB& area, const State& state) {
         }
 
         const Tile tile = *tile_query.tile;
-        if (tile != Tile::Air && tile != Tile::Exit) {
+        if (tile != Tile::Air) {
             return true;
         }
     }
@@ -151,6 +166,90 @@ Vec2 GetBoulderLeadingBottomCorner(const Entity& boulder) {
     return boulder.facing == LeftOrRight::Right
                ? Vec2::New(aabb.br.x, aabb.br.y)
                : Vec2::New(aabb.tl.x, aabb.br.y);
+}
+
+Vec2 GetBoulderBottomCenter(const Entity& boulder) {
+    const AABB aabb = boulder.GetAABB();
+    return Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.br.y);
+}
+
+Vec2 GetBoulderFrontFaceCenter(const Entity& boulder) {
+    const AABB aabb = boulder.GetAABB();
+    return boulder.facing == LeftOrRight::Right
+               ? Vec2::New(aabb.br.x, (aabb.tl.y + aabb.br.y) * 0.5F)
+               : Vec2::New(aabb.tl.x, (aabb.tl.y + aabb.br.y) * 0.5F);
+}
+
+void AddBoulderRollingShake(State& state, const Entity& boulder) {
+    AddShake(
+        state,
+        GetBoulderBottomCenter(boulder),
+        kBoulderRollingShakeForegroundAmount,
+        kBoulderRollingShakeBackgroundAmount,
+        0.0F,
+        kBoulderRollingShakeRadiusTiles
+    );
+}
+
+void AddBoulderBreakShake(State& state, const Entity& boulder) {
+    const Vec2 center = GetBoulderFrontFaceCenter(boulder);
+    AddShake(
+        state,
+        center,
+        kBoulderBreakShakeForegroundAmount,
+        kBoulderBreakShakeBackgroundAmount,
+        0.0F,
+        kBoulderBreakShakeRadiusTiles
+    );
+    AddShake(
+        state,
+        center,
+        0.0F,
+        0.0F,
+        kBoulderBreakShakeEntityAmount,
+        kBoulderBreakShakeRadiusTiles,
+        boulder.vid
+    );
+}
+
+void AddBoulderWallHitShake(State& state, const Entity& boulder) {
+    const Vec2 center = GetBoulderFrontFaceCenter(boulder);
+    AddShake(
+        state,
+        center,
+        kBoulderWallHitShakeForegroundAmount,
+        kBoulderWallHitShakeBackgroundAmount,
+        0.0F,
+        kBoulderWallHitShakeRadiusTiles
+    );
+    AddShake(
+        state,
+        center,
+        0.0F,
+        0.0F,
+        kBoulderWallHitShakeEntityAmount,
+        kBoulderWallHitShakeRadiusTiles
+    );
+}
+
+void AddBoulderGroundSlamShake(State& state, const Entity& boulder) {
+    const Vec2 center = GetBoulderBottomCenter(boulder);
+    AddShake(
+        state,
+        center,
+        kBoulderGroundSlamShakeForegroundAmount,
+        kBoulderGroundSlamShakeBackgroundAmount,
+        0.0F,
+        kBoulderGroundSlamShakeRadiusTiles
+    );
+    AddShake(
+        state,
+        center,
+        0.0F,
+        0.0F,
+        kBoulderGroundSlamShakeEntityAmount,
+        kBoulderGroundSlamShakeRadiusTiles
+    );
 }
 
 } // namespace
@@ -302,23 +401,31 @@ void StepEntityPhysicsAsBoulder(
             boulder.counter_a = kBoulderImpactSoundCooldownFrames;
         }
         if (will_break_tiles) {
+            AddBoulderBreakShake(state, boulder);
             BreakStageTilesInRectWc(break_strip, state, audio);
         }
     }
 
     common::StepStandardPhysics(entity_idx, state, graphics, audio, dt);
 
+    const bool landed_this_frame = !was_grounded && boulder.grounded;
+    if (landed_this_frame) {
+        PlayBoulderImpactSoundIfReady(boulder, state, audio);
+        AddBoulderGroundSlamShake(state, boulder);
+    }
+
     if (boulder.ai_state == EntityAiState::Disturbed) {
-        const bool landed_this_frame = !was_grounded && boulder.grounded;
         const bool hard_stopped_this_frame =
             std::abs(pre_physics_vel_x) > kBoulderRollingSpeedThreshold &&
             std::abs(boulder.vel.x) <= kBoulderRollingSpeedThreshold &&
             boulder.grounded &&
             boulder.dist_traveled_this_frame <= 0.0F;
-        if (landed_this_frame || hard_stopped_this_frame) {
+        if (hard_stopped_this_frame) {
             PlayBoulderImpactSoundIfReady(boulder, state, audio);
+            AddBoulderWallHitShake(state, boulder);
         }
         if (boulder.grounded && boulder.dist_traveled_this_frame > 0.0F) {
+            AddBoulderRollingShake(state, boulder);
             boulder.counter_c -= boulder.dist_traveled_this_frame;
             while (boulder.counter_c <= 0.0F) {
                 boulder.counter_c += kBoulderTrailSmokeDistInterval;

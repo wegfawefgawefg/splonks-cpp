@@ -2,7 +2,6 @@
 
 #include "stage_init.hpp"
 #include "state.hpp"
-
 #include <algorithm>
 
 namespace splonks {

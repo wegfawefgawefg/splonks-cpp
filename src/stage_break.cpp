@@ -70,9 +70,6 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
 
         const IVec2 tile_pos = tile_query.tile_pos;
         const Tile tile = *tile_query.tile;
-        if (tile == Tile::Exit) {
-            continue;
-        }
 
         const TileArchetype& tile_archetype = GetTileArchetype(tile);
         if (!break_sound.has_value() && tile_archetype.break_sound.has_value()) {

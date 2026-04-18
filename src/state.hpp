@@ -3,6 +3,7 @@
 #include "contact_bookkeeping.hpp"
 #include "entity/manager.hpp"
 #include "entity_tool_inventory.hpp"
+#include "frame_data_id.hpp"
 #include "inputs.hpp"
 #include "menu/settings.hpp"
 #include "menu/postfx.hpp"
@@ -121,6 +122,15 @@ struct DebugShakeBrushState {
     float radius_tiles = 2.0F;
 };
 
+struct WorldPrompt {
+    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    const char* action_text = "";
+    const char* message_text = "";
+    bool show_down_arrow = false;
+    std::uint32_t quantity = 0;
+    std::optional<FrameDataId> icon_animation_id = std::nullopt;
+};
+
 struct State {
     // Menu and input state.
     Mode mode = Mode::Title;
@@ -168,7 +178,9 @@ struct State {
     std::optional<StageTransitionTarget> pending_stage_transition;
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
+    std::uint32_t depth = 0;
     std::uint32_t frame_pause = 0;
+    std::vector<VID> interact_claimed_vids_this_frame;
 
     // World and debug level state.
     DebugLevelConfig debug_level;
@@ -189,6 +201,7 @@ struct State {
 
     // Per-entity owned tool state.
     EntityToolInventoryState entity_tools;
+    std::vector<WorldPrompt> world_prompts;
 
     static State New();
     void SetMode(Mode new_mode);
@@ -196,18 +209,36 @@ struct State {
     void UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics);
     void RebuildAreaListenerCache();
     void UpdateAreaListenerCacheForEntity(std::size_t entity_id);
+    void ClearWorldPrompts();
+    void AddWorldPrompt(const WorldPrompt& prompt);
+    void ClearInteractClaims();
+    void ClaimInteractForEntity(VID entity_vid);
+    bool IsInteractClaimedForEntity(VID entity_vid) const;
 };
 
-bool IsStageWon(const State& state);
 void AddShake(
     State& state,
     const Vec2& world_pos,
     float foreground_tile_amount,
     float background_tile_amount,
     float entity_amount,
-    float radius_tiles
+    float radius_tiles,
+    std::optional<VID> exclude_entity_vid = std::nullopt
 );
-void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles);
-void AddShake(State& state, const Vec2& world_pos, float amount, float radius_tiles, ShakeMask mask);
+void AddShake(
+    State& state,
+    const Vec2& world_pos,
+    float amount,
+    float radius_tiles,
+    std::optional<VID> exclude_entity_vid = std::nullopt
+);
+void AddShake(
+    State& state,
+    const Vec2& world_pos,
+    float amount,
+    float radius_tiles,
+    ShakeMask mask,
+    std::optional<VID> exclude_entity_vid = std::nullopt
+);
 
 } // namespace splonks

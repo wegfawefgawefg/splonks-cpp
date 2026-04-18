@@ -20,6 +20,7 @@ extern const EntityArchetype kPlayerArchetype{
     .has_physics = true,
     .can_collide = true,
     .can_be_picked_up = true,
+    .can_collect_pickups = true,
     .impassable = false,
     .hurt_on_contact = false,
     .can_stomp = true,

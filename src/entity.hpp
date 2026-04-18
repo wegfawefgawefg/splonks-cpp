@@ -61,6 +61,7 @@ struct Entity {
     bool crusher_pusher = false;
     bool can_stomp = false;
     bool can_be_stomped = true;
+    bool can_collect_pickups = false;
     bool can_go_on_back = false;
     bool grounded = false;
     float shake = 0.0F;

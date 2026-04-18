@@ -1,6 +1,7 @@
 #include "entities/damsel.hpp"
 
 #include "audio.hpp"
+#include "entities/basic_exit.hpp"
 #include "buying.hpp"
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
@@ -29,16 +30,14 @@ constexpr float kDamselPanicRunSpeed = 1.5F;
 constexpr float kDamselHeldReleaseLatch = 1.0F;
 constexpr int kDamselRescueHealthGain = 1;
 
-bool IsEntityTouchingExit(const Entity& entity, const Stage& stage) {
-    const auto [tl, br] = entity.GetBounds();
-    const IVec2 tl_tile = ToIVec2(tl) / static_cast<int>(kTileSize);
-    const IVec2 br_tile = ToIVec2(br) / static_cast<int>(kTileSize);
-    for (const WorldTileQueryResult& tile_query : QueryTilesInRect(stage, tl_tile, br_tile)) {
-        if (tile_query.tile != nullptr && *tile_query.tile == Tile::Exit) {
-            return true;
-        }
+void RefreshCarryStunWhileHeld(Entity& damsel) {
+    if (damsel.condition == EntityCondition::Dead || !damsel.held_by_vid.has_value()) {
+        return;
     }
-    return false;
+
+    damsel.condition = EntityCondition::Stunned;
+    damsel.stun_timer = common::kDefaultStunTimer;
+    TrySetAnimation(damsel, EntityDisplayState::Stunned);
 }
 
 void SpawnRescueKissParticle(const Vec2& pos, State& state) {
@@ -187,7 +186,7 @@ bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graph
     if (!damsel.active || damsel.condition == EntityCondition::Dead) {
         return false;
     }
-    if (!IsEntityTouchingExit(damsel, state.stage)) {
+    if (!entities::basic_exit::IsEntityTouchingBasicExit(damsel, state, graphics)) {
         return false;
     }
 
@@ -285,6 +284,8 @@ void StepEntityLogicAsDamsel(
     if (TryRescueDamsel(entity_idx, state, graphics, audio)) {
         return;
     }
+
+    RefreshCarryStunWhileHeld(damsel);
 
     if (damsel.last_condition == EntityCondition::Stunned &&
         damsel.condition == EntityCondition::Normal) {

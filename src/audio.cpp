@@ -135,6 +135,7 @@ std::vector<SoundEffect> AllSoundEffects() {
         SoundEffect::ChestOpen,
         SoundEffect::Unlock,
         SoundEffect::LawsonEnter,
+        SoundEffect::CashRegister,
         SoundEffect::ShopkeepAnger0,
         SoundEffect::LightBreak,
         SoundEffect::BoulderLatch,
@@ -469,6 +470,8 @@ const char* GetSoundFileName(SoundEffect sound_effect) {
         return "unlock";
     case SoundEffect::LawsonEnter:
         return "lawson_enter";
+    case SoundEffect::CashRegister:
+        return "cash_register";
     case SoundEffect::ShopkeepAnger0:
         return "shopkeep_anger_0";
     case SoundEffect::LightBreak:

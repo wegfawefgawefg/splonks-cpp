@@ -4,93 +4,6 @@ namespace splonks::entities::common {
 
 namespace {
 
-bool CanCollectPickups(const Entity& entity) {
-    switch (entity.type_) {
-    case EntityType::Player:
-        return true;
-    case EntityType::None:
-    case EntityType::Block:
-    case EntityType::GhostBall:
-    case EntityType::DvdLogo:
-    case EntityType::Bat:
-    case EntityType::Rock:
-    case EntityType::MouseTrailer:
-    case EntityType::JetPack:
-    case EntityType::Bomb:
-    case EntityType::Gold:
-    case EntityType::GoldStack:
-    case EntityType::GoldChunk:
-    case EntityType::GoldNugget:
-    case EntityType::GoldBar:
-    case EntityType::GoldBars:
-    case EntityType::StompPad:
-    case EntityType::Rope:
-    case EntityType::Pot:
-    case EntityType::Box:
-    case EntityType::BaseballBat:
-    case EntityType::Altar:
-        case EntityType::SacAltar:
-        case EntityType::GoldIdol:
-    case EntityType::Chest:
-    case EntityType::KeyChest:
-    case EntityType::ChestKey:
-    case EntityType::UdjatEye:
-    case EntityType::Mattock:
-    case EntityType::Cape:
-    case EntityType::Shotgun:
-    case EntityType::Teleporter:
-    case EntityType::Gloves:
-    case EntityType::Spectacles:
-    case EntityType::WebCannon:
-    case EntityType::Pistol:
-    case EntityType::Mitt:
-    case EntityType::Paste:
-    case EntityType::SpringShoes:
-    case EntityType::SpikeShoes:
-    case EntityType::Machete:
-    case EntityType::BombBox:
-    case EntityType::BombBag:
-    case EntityType::Bow:
-    case EntityType::Compass:
-    case EntityType::Parachute:
-    case EntityType::RopePile:
-    case EntityType::Dice:
-    case EntityType::RubyBig:
-    case EntityType::EmeraldBig:
-    case EntityType::SapphireBig:
-    case EntityType::Shop:
-    case EntityType::Shopkeeper:
-    case EntityType::Damsel:
-    case EntityType::SignGeneral:
-    case EntityType::SignBomb:
-    case EntityType::SignWeapon:
-    case EntityType::SignRare:
-    case EntityType::SignClothing:
-    case EntityType::SignCraps:
-    case EntityType::SignKissing:
-    case EntityType::StoreLight:
-    case EntityType::Lantern:
-    case EntityType::LanternRed:
-    case EntityType::GiantTikiHead:
-    case EntityType::Boulder:
-    case EntityType::MovingPlatform:
-    case EntityType::KaliHead:
-    case EntityType::ArrowTrap:
-    case EntityType::Snake:
-    case EntityType::Caveman:
-    case EntityType::Spider:
-    case EntityType::SpiderHang:
-    case EntityType::RageSpider:
-    case EntityType::RageSpiderHang:
-    case EntityType::GiantSpider:
-    case EntityType::GiantSpiderHang:
-    case EntityType::Scarab:
-        return false;
-    }
-
-    return false;
-}
-
 unsigned int GetPickupMoneyValue(EntityType type_) {
     switch (type_) {
     case EntityType::Gold:
@@ -151,7 +64,7 @@ bool TryCollectEntityFromContact(
     }
 
     Entity& collector = state.entity_manager.entities[entity_idx];
-    if (!collector.active || !CanCollectPickups(collector)) {
+    if (!collector.active || !collector.can_collect_pickups) {
         return false;
     }
 

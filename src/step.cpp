@@ -2,6 +2,7 @@
 
 #include "inputs.hpp"
 #include "controls.hpp"
+#include "entities/basic_exit.hpp"
 #include "buying.hpp"
 #include "step_entities.hpp"
 #include "stage_progression.hpp"
@@ -104,6 +105,8 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
     state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
+    state.ClearWorldPrompts();
+    state.ClearInteractClaims();
     state.entity_tools.Step();
     state.RebuildSid(graphics);
     state.stage.SyncTileShakeGrid();
@@ -115,7 +118,9 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         AttenuateEntityShake(entity, kShakeAttenuationRate);
     }
     state.stage.AttenuateTileShake(kShakeAttenuationRate);
-    if (state.player_vid.has_value() && state.playing_inputs.buy_button.pressed) {
+    AddBuyPromptsForPlayer(state, graphics);
+    if (state.player_vid.has_value() && state.playing_inputs.equip_button.pressed &&
+        !state.IsInteractClaimedForEntity(*state.player_vid)) {
         (void)TryBuyOverlappingEntity(state.player_vid->id, state, graphics, audio);
     }
     state.particles.Step(graphics.frame_data_db, dt);
@@ -141,63 +146,6 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     } else if (state.pending_stage_transition.has_value()) {
         state.mode = Mode::StageTransition;
         state.frame = 0;
-    } else if (IsStageWon(state)) {
-        // TODO: make this go into a stage transition tree, instead of looping to the begining lol
-        audio.PlaySoundEffect(SoundEffect::StageWin);
-
-        switch (state.stage.stage_type) {
-        case StageType::Test1:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Test1), true);
-            break;
-        case StageType::SplkMines1:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::SplkMines2), true);
-            break;
-        case StageType::SplkMines2:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::SplkMines3), true);
-            break;
-        case StageType::SplkMines3:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice1), true);
-            break;
-        case StageType::Ice1:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice2), true);
-            break;
-        case StageType::Ice2:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice3), true);
-            break;
-        case StageType::Ice3:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert1), true);
-            break;
-        case StageType::Desert1:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert2), true);
-            break;
-        case StageType::Desert2:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert3), true);
-            break;
-        case StageType::Desert3:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple1), true);
-            break;
-        case StageType::Temple1:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple2), true);
-            break;
-        case StageType::Temple2:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple3), true);
-            break;
-        case StageType::Temple3:
-            QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Boss), true);
-            break;
-        case StageType::Boss:
-            state.stage = Stage::NewBlank();
-            state.mode = Mode::Win;
-            break;
-        case StageType::Blank:
-            state.stage = Stage::NewBlank();
-            state.mode = Mode::Win;
-            break;
-        }
-        if (state.pending_stage_transition.has_value()) {
-            state.mode = Mode::StageTransition;
-            state.frame = 0;
-        }
     }
 
     // step_camera(rl, rlt, state, graphics);
@@ -224,6 +172,8 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
     state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
+    state.ClearWorldPrompts();
+    state.ClearInteractClaims();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
     state.particles.Step(graphics.frame_data_db, dt);

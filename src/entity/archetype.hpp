@@ -18,6 +18,7 @@ struct EntityArchetype {
     bool can_collide = true;
     bool can_be_hit = true;
     bool can_be_picked_up = true;
+    bool can_collect_pickups = false;
     bool can_only_be_picked_up_if_dead_or_stunned = false;
     bool impassable = false;
     bool can_be_hung_on = true;

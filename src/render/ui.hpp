@@ -7,6 +7,7 @@ namespace splonks {
 struct Graphics;
 struct State;
 
-void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics& graphics);
+void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& graphics);
+void RenderWorldPrompts(SDL_Renderer* renderer, const State& state, Graphics& graphics);
 
 } // namespace splonks

@@ -63,6 +63,7 @@ enum class SoundEffect {
     ChestOpen,
     Unlock,
     LawsonEnter,
+    CashRegister,
     ShopkeepAnger0,
     LightBreak,
     BoulderLatch,
@@ -78,7 +79,7 @@ enum class SoundEffect {
 };
 
 constexpr std::size_t kSongCount = 2;
-constexpr std::size_t kSoundEffectCount = 60;
+constexpr std::size_t kSoundEffectCount = 61;
 
 struct LoadedSong {
     std::string path;

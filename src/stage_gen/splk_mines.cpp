@@ -665,18 +665,35 @@ std::optional<Vec2> FindEntrancePos(const Stage& stage) {
 }
 
 std::optional<Vec2> FindExitPos(const Stage& stage) {
+    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+        if (spawn.type_ == EntityType::BasicExit) {
+            return spawn.pos;
+        }
+    }
+    return std::nullopt;
+}
+
+void ConvertExitTilesToBasicExitSpawns(Stage& stage) {
     for (unsigned int y = 0; y < stage.GetTileHeight(); ++y) {
         for (unsigned int x = 0; x < stage.GetTileWidth(); ++x) {
             if (stage.GetTile(x, y) != Tile::Exit) {
                 continue;
             }
-            return Vec2::New(
+
+            const Vec2 exit_pos = Vec2::New(
                 static_cast<float>(x * kTileSize),
                 static_cast<float>(y * kTileSize)
             );
+            if (!HasSpawnAtWorldPos(stage, exit_pos)) {
+                stage.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::BasicExit,
+                    .pos = exit_pos,
+                    .animation_id = frame_data_ids::Exit,
+                });
+            }
+            stage.SetTile(IVec2::New(static_cast<int>(x), static_cast<int>(y)), Tile::Air);
         }
     }
-    return std::nullopt;
 }
 
 bool HasSpawnType(const Stage& stage, EntityType type_) {
@@ -752,7 +769,7 @@ bool IsValidTreasureFloorTile(const Stage& stage, int tile_x, int tile_y) {
         static_cast<unsigned int>(tile_x),
         static_cast<unsigned int>(tile_y - 1)
     );
-    return tile_above != Tile::Spikes && tile_above != Tile::Entrance && tile_above != Tile::Exit;
+    return tile_above != Tile::Spikes && tile_above != Tile::Entrance;
 }
 
 std::optional<Vec2> FindKeyChestSpawnPos(const Stage& stage) {
@@ -1184,8 +1201,7 @@ void AddMinesTreasure(Stage& stage) {
                 static_cast<unsigned int>(tile_x),
                 static_cast<unsigned int>(tile_y - 1)
             );
-            if (tile_above == Tile::Spikes || tile_above == Tile::Entrance ||
-                tile_above == Tile::Exit) {
+            if (tile_above == Tile::Spikes || tile_above == Tile::Entrance) {
                 continue;
             }
 
@@ -1420,7 +1436,13 @@ ResolvedRoom ResolveRoom(
                 tile = rng::RandomIntInclusive(1, 3) == 1 ? Tile::Spikes : Tile::Air;
                 break;
             case '9':
-                tile = is_start_room ? Tile::Entrance : (is_end_room ? Tile::Exit : Tile::Air);
+                if (is_start_room) {
+                    tile = Tile::Entrance;
+                } else if (is_end_room) {
+                    tile = Tile::Exit;
+                } else {
+                    tile = Tile::Air;
+                }
                 break;
             case 'L':
                 tile = Tile::Ladder;
@@ -1740,6 +1762,7 @@ Stage GenerateStage(StageType stage_type) {
     stage.path = layout.path;
     stage.gravity = 0.3F;
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    ConvertExitTilesToBasicExitSpawns(stage);
     AddMinesEmbeddedTreasure(stage);
     AddMinesTreasure(stage);
     AddUdjatKeyChest(stage);

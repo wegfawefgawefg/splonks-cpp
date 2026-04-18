@@ -10,6 +10,37 @@ namespace splonks::entities::giant_tiki_head {
 namespace {
 
 constexpr float kBoulderReleaseDelayFrames = 60.0F;
+constexpr float kTikiHeadWindupShakeIntervalFrames = 6.0F;
+constexpr float kTikiHeadWindupShakeForegroundAmount = 0.34F;
+constexpr float kTikiHeadWindupShakeBackgroundAmount = 0.24F;
+constexpr float kTikiHeadWindupShakeEntityAmount = 0.32F;
+constexpr float kTikiHeadWindupShakeRadiusTiles = 2.3F;
+constexpr float kTikiHeadReleaseShakeForegroundAmount = 0.95F;
+constexpr float kTikiHeadReleaseShakeBackgroundAmount = 0.72F;
+constexpr float kTikiHeadReleaseShakeEntityAmount = 0.90F;
+constexpr float kTikiHeadReleaseShakeRadiusTiles = 3.0F;
+
+void AddTikiHeadWindupShake(State& state, const Entity& head) {
+    AddShake(
+        state,
+        head.GetCenter(),
+        kTikiHeadWindupShakeForegroundAmount,
+        kTikiHeadWindupShakeBackgroundAmount,
+        kTikiHeadWindupShakeEntityAmount,
+        kTikiHeadWindupShakeRadiusTiles
+    );
+}
+
+void AddTikiHeadReleaseShake(State& state, const Entity& head) {
+    AddShake(
+        state,
+        head.GetCenter(),
+        kTikiHeadReleaseShakeForegroundAmount,
+        kTikiHeadReleaseShakeBackgroundAmount,
+        kTikiHeadReleaseShakeEntityAmount,
+        kTikiHeadReleaseShakeRadiusTiles
+    );
+}
 
 std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
@@ -34,6 +65,7 @@ std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio)
         boulder->facing = LeftOrRight::Right;
     }
 
+    AddTikiHeadReleaseShake(state, head);
     audio.PlaySoundEffect(SoundEffect::BoulderHitGround);
     return vid;
 }
@@ -102,6 +134,14 @@ void StepEntityLogicAsGiantTikiHead(
 
     if (head.counter_a > 0.0F) {
         head.counter_a -= 1.0F;
+        if (head.counter_a < 0.0F) {
+            head.counter_a = 0.0F;
+        }
+        const int shake_interval = static_cast<int>(kTikiHeadWindupShakeIntervalFrames);
+        if (shake_interval > 0 &&
+            static_cast<int>(head.counter_a) % shake_interval == 0) {
+            AddTikiHeadWindupShake(state, head);
+        }
         return;
     }
 

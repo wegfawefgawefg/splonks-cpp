@@ -82,6 +82,7 @@ struct Graphics {
     SDL_Texture* GetTexture(TextureName texture) const;
     SDL_Texture* GetFrameDataTexture(std::uint32_t image_id) const;
     Vec2 ScreenToWc(const UVec2& screen_pos) const;
+    Vec2 WcToScreen(const Vec2& world_pos) const;
     IVec2 ScreenToTileCoords(const UVec2& screen_pos) const;
     void ResetTileVariation(const IVec2& tile_pos);
     void ResetTileVariations();

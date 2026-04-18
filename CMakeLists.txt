@@ -146,6 +146,7 @@ add_executable(splonks-cpp
     src/entities/altar.cpp
     src/entities/arrow_trap.cpp
     src/entities/baseball_bat.cpp
+    src/entities/basic_exit.cpp
     src/entities/bat.cpp
     src/entities/block.cpp
     src/entities/boulder.cpp

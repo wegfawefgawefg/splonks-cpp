@@ -84,7 +84,8 @@ void Render(
     }
 
     if (state.mode == Mode::Playing) {
-        RenderHealthRopeBombs(renderer, state, graphics);
+        RenderPlayingHud(renderer, state, graphics);
+        RenderWorldPrompts(renderer, state, graphics);
         RenderDebugOverlay(renderer, graphics, state);
     }
 }

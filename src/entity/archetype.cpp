@@ -13,6 +13,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.can_collide = archetype.can_collide;
     entity.can_be_hit = archetype.can_be_hit;
     entity.can_be_picked_up = archetype.can_be_picked_up;
+    entity.can_collect_pickups = archetype.can_collect_pickups;
     entity.can_only_be_picked_up_if_dead_or_stunned =
         archetype.can_only_be_picked_up_if_dead_or_stunned;
     entity.impassable = archetype.impassable;

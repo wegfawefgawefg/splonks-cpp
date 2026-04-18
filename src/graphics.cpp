@@ -162,6 +162,10 @@ Vec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
     return screen + camera.target;
 }
 
+Vec2 Graphics::WcToScreen(const Vec2& world_pos) const {
+    return ((world_pos - camera.target) * camera.zoom) + camera.offset;
+}
+
 IVec2 Graphics::ScreenToTileCoords(const UVec2& screen_pos) const {
     return ToIVec2(ScreenToWc(screen_pos)) / static_cast<int>(kTileSize);
 }

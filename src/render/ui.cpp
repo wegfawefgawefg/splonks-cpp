@@ -1,6 +1,7 @@
 #include "render/ui.hpp"
 
 #include "buying.hpp"
+#include "entities/basic_exit.hpp"
 #include "entity.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
@@ -179,13 +180,70 @@ void DrawRightAlignedUiText(
     );
 }
 
+void DrawDownArrowIcon(
+    SDL_Renderer* renderer,
+    float x,
+    float y,
+    float width,
+    float height,
+    SDL_Color color
+) {
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+    const float shaft_width = std::max(2.0F, width * 0.16F);
+    const float head_y = y + (height * 0.58F);
+    const SDL_FRect shaft = SDL_FRect{
+        x + ((width - shaft_width) * 0.5F),
+        y,
+        shaft_width,
+        std::max(2.0F, head_y - y)
+    };
+    SDL_RenderFillRect(renderer, &shaft);
+
+    const float center_x = x + (width * 0.5F);
+    const float left_x = x;
+    const float right_x = x + width;
+    const float tip_y = y + height;
+    SDL_RenderLine(renderer, left_x, head_y, center_x, tip_y);
+    SDL_RenderLine(renderer, center_x, tip_y, right_x, head_y);
+}
+
+void DrawPromptBubble(
+    SDL_Renderer* renderer,
+    const SDL_FRect& bubble_rect,
+    float tip_x,
+    float tip_y,
+    SDL_Color fill_color,
+    SDL_Color outline_color
+) {
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, fill_color.r, fill_color.g, fill_color.b, fill_color.a);
+    SDL_RenderFillRect(renderer, &bubble_rect);
+
+    const float half_base = std::max(6.0F, bubble_rect.h * 0.18F);
+    const float base_y = bubble_rect.y + bubble_rect.h;
+    const int fill_steps = std::max(1, static_cast<int>(std::ceil(tip_y - base_y)));
+    for (int step = 0; step <= fill_steps; ++step) {
+        const float t = fill_steps > 0 ? static_cast<float>(step) / static_cast<float>(fill_steps) : 0.0F;
+        const float y = base_y + ((tip_y - base_y) * t);
+        const float left_x = (tip_x - half_base) + (half_base * t);
+        const float right_x = (tip_x + half_base) - (half_base * t);
+        SDL_RenderLine(renderer, left_x, y, right_x, y);
+    }
+
+    SDL_SetRenderDrawColor(renderer, outline_color.r, outline_color.g, outline_color.b, outline_color.a);
+    SDL_RenderRect(renderer, &bubble_rect);
+    SDL_RenderLine(renderer, tip_x - half_base, base_y, tip_x, tip_y);
+    SDL_RenderLine(renderer, tip_x, tip_y, tip_x + half_base, base_y);
+}
+
 } // namespace
 
 /**
  * Atlas sample row is determined by entity_type,
  * Atlas sample col is determined by entity display state, +1 if animation frame is B
  */
-void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
     unsigned int health = 0;
     unsigned int money = 0;
     std::optional<VID> player_vid;
@@ -359,73 +417,186 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
         SDL_Color{255, 255, 255, 255}
     );
 
-    const std::optional<BuyPrompt> buy_prompt = GetBuyPromptForPlayer(state, graphics);
-    if (buy_prompt.has_value()) {
-        const SDL_Color text_color = SDL_Color{255, 255, 255, 255};
-        constexpr int kPromptFontSize = 28;
-        constexpr float kPromptIconYOffset = 4.0F;
-        const bool show_quantity = buy_prompt->quantity > 0;
-        const bool show_icon = buy_prompt->icon_animation_id.has_value();
+}
 
-        char action_text[32];
-        std::snprintf(action_text, sizeof(action_text), "SELECT");
+void RenderWorldPrompts(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+    const float hud_icon_scale = std::clamp(state.settings.ui.icon_scale, 0.25F, 1.50F);
+    const float status_icon_scale =
+        std::clamp(state.settings.ui.status_icon_scale, 0.25F, 1.50F) * hud_icon_scale;
+    const int base_icon_size = std::max(
+        1,
+        static_cast<int>((static_cast<float>(graphics.dims.x) / 20.0F) * hud_icon_scale)
+    );
+    const int hud_margin = std::max(8, static_cast<int>(graphics.dims.y) / 60);
+    const int hud_gap = std::max(6, hud_margin / 2);
+    const IVec2 status_icon_size = IVec2::New(
+        std::max(1, static_cast<int>(static_cast<float>(base_icon_size) * status_icon_scale)),
+        std::max(1, static_cast<int>(static_cast<float>(base_icon_size) * status_icon_scale))
+    );
+    const SDL_Color prompt_text_color = SDL_Color{255, 255, 255, 255};
+    const SDL_Color prompt_fill_color = SDL_Color{18, 20, 28, 220};
+    const SDL_Color prompt_outline_color = SDL_Color{220, 225, 235, 255};
+    constexpr int kPromptFontSize = 28;
+    constexpr float kPromptIconYOffset = 4.0F;
+    constexpr float kPromptWorldYOffset = 20.0F;
+    constexpr float kPromptPaddingX = 10.0F;
+    constexpr float kPromptPaddingY = 6.0F;
+    constexpr float kPromptTipHeight = 8.0F;
+    const int prompt_gap = std::max(8, hud_gap);
+
+    for (std::size_t prompt_idx = 0; prompt_idx < state.world_prompts.size(); ++prompt_idx) {
+        const WorldPrompt& prompt = state.world_prompts[prompt_idx];
+        const bool show_action = prompt.action_text[0] != '\0';
+        const bool show_message = prompt.message_text[0] != '\0';
+        const bool show_arrow = prompt.show_down_arrow;
+        const bool show_quantity = prompt.quantity > 0;
+        const bool show_icon = prompt.icon_animation_id.has_value();
+        if (!show_action && !show_message && !show_arrow && !show_quantity && !show_icon) {
+            continue;
+        }
+
         char quantity_text[32];
-        std::snprintf(quantity_text, sizeof(quantity_text), "%u", buy_prompt->quantity);
+        quantity_text[0] = '\0';
+        if (show_quantity) {
+            std::snprintf(quantity_text, sizeof(quantity_text), "%u", prompt.quantity);
+        }
 
         int action_width = 0;
         int action_height = 0;
+        int message_width = 0;
+        int message_height = 0;
         int quantity_width = 0;
         int quantity_height = 0;
-        MeasureText(graphics, kPromptFontSize, graphics.ui_font, action_text, &action_width, &action_height);
+        if (show_action) {
+            MeasureText(
+                graphics,
+                kPromptFontSize,
+                graphics.ui_font,
+                prompt.action_text,
+                &action_width,
+                &action_height
+            );
+        }
+        if (show_message) {
+            MeasureText(
+                graphics,
+                kPromptFontSize,
+                graphics.ui_font,
+                prompt.message_text,
+                &message_width,
+                &message_height
+            );
+        }
         if (show_quantity) {
-            MeasureText(graphics, kPromptFontSize, graphics.ui_font, quantity_text, &quantity_width, &quantity_height);
+            MeasureText(
+                graphics,
+                kPromptFontSize,
+                graphics.ui_font,
+                quantity_text,
+                &quantity_width,
+                &quantity_height
+            );
         }
 
-        const int prompt_gap = std::max(8, hud_gap);
         const IVec2 prompt_icon_size = IVec2::New(
             std::max(1, status_icon_size.x / 2),
             std::max(1, status_icon_size.y / 2)
         );
+        const int content_height = std::max(
+            {action_height, message_height, quantity_height, prompt_icon_size.y, 16}
+        );
+        const float down_arrow_width =
+            show_arrow ? std::max(14.0F, static_cast<float>(content_height) * 0.75F) : 0.0F;
+        const float down_arrow_height =
+            show_arrow ? std::max(16.0F, static_cast<float>(content_height)) : 0.0F;
 
-        int total_width = action_width;
-        if (show_icon || show_quantity) {
-            total_width += prompt_gap;
+        float content_width = 0.0F;
+        auto add_segment = [&](float width) {
+            if (width <= 0.0F) {
+                return;
+            }
+            if (content_width > 0.0F) {
+                content_width += static_cast<float>(prompt_gap);
+            }
+            content_width += width;
+        };
+        if (show_action) {
+            add_segment(static_cast<float>(action_width));
+        }
+        if (show_arrow) {
+            add_segment(down_arrow_width);
         }
         if (show_icon) {
-            total_width += prompt_icon_size.x;
-        }
-        if (show_icon && show_quantity) {
-            total_width += prompt_gap;
+            add_segment(static_cast<float>(prompt_icon_size.x));
         }
         if (show_quantity) {
-            total_width += quantity_width;
+            add_segment(static_cast<float>(quantity_width));
+        }
+        if (show_message) {
+            add_segment(static_cast<float>(message_width));
         }
 
-        const float prompt_y = static_cast<float>(graphics.dims.y) - static_cast<float>(hud_margin + 48);
-        float cursor_x = (static_cast<float>(graphics.dims.x) - static_cast<float>(total_width)) / 2.0F;
+        const float bob =
+            std::sin((static_cast<float>(state.scene_frame) * 0.08F) +
+                     static_cast<float>(prompt_idx) * 0.7F) *
+            3.0F;
+        const Vec2 screen_anchor = graphics.WcToScreen(prompt.world_pos) + Vec2::New(0.0F, bob);
+        const float bubble_width = content_width + (kPromptPaddingX * 2.0F);
+        const float bubble_height = static_cast<float>(content_height) + (kPromptPaddingY * 2.0F);
+        const SDL_FRect bubble_rect{
+            std::round(screen_anchor.x - (bubble_width * 0.5F)),
+            std::round(screen_anchor.y - bubble_height - kPromptWorldYOffset),
+            std::round(bubble_width),
+            std::round(bubble_height),
+        };
+        const float tip_x = std::round(screen_anchor.x);
+        const float tip_y = std::round(bubble_rect.y + bubble_rect.h + kPromptTipHeight);
 
-        DrawText(
-            renderer,
-            graphics,
-            kPromptFontSize,
-            graphics.ui_font,
-            action_text,
-            cursor_x,
-            prompt_y,
-            text_color
-        );
-        cursor_x += static_cast<float>(action_width);
+        DrawPromptBubble(renderer, bubble_rect, tip_x, tip_y, prompt_fill_color, prompt_outline_color);
 
-        if (show_icon || show_quantity) {
-            cursor_x += static_cast<float>(prompt_gap);
+        float cursor_x = bubble_rect.x + kPromptPaddingX;
+        const float prompt_y = bubble_rect.y + kPromptPaddingY;
+        auto advance_gap_if_needed = [&](bool& first_segment) {
+            if (!first_segment) {
+                cursor_x += static_cast<float>(prompt_gap);
+            }
+            first_segment = false;
+        };
+
+        bool first_segment = true;
+        if (show_action) {
+            advance_gap_if_needed(first_segment);
+            DrawText(
+                renderer,
+                graphics,
+                kPromptFontSize,
+                graphics.ui_font,
+                prompt.action_text,
+                cursor_x,
+                prompt_y,
+                prompt_text_color
+            );
+            cursor_x += static_cast<float>(action_width);
         }
-
+        if (show_arrow) {
+            advance_gap_if_needed(first_segment);
+            DrawDownArrowIcon(
+                renderer,
+                cursor_x,
+                prompt_y + 2.0F,
+                down_arrow_width,
+                down_arrow_height,
+                prompt_text_color
+            );
+            cursor_x += down_arrow_width;
+        }
         if (show_icon) {
+            advance_gap_if_needed(first_segment);
             DrawFrameDataIcon(
                 renderer,
                 state,
                 graphics,
-                *buy_prompt->icon_animation_id,
+                *prompt.icon_animation_id,
                 IVec2::New(
                     static_cast<int>(cursor_x),
                     static_cast<int>(prompt_y + kPromptIconYOffset)
@@ -434,12 +605,8 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
             );
             cursor_x += static_cast<float>(prompt_icon_size.x);
         }
-
-        if (show_icon && show_quantity) {
-            cursor_x += static_cast<float>(prompt_gap);
-        }
-
         if (show_quantity) {
+            advance_gap_if_needed(first_segment);
             DrawText(
                 renderer,
                 graphics,
@@ -448,7 +615,21 @@ void RenderHealthRopeBombs(SDL_Renderer* renderer, const State& state, Graphics&
                 quantity_text,
                 cursor_x,
                 prompt_y,
-                text_color
+                prompt_text_color
+            );
+            cursor_x += static_cast<float>(quantity_width);
+        }
+        if (show_message) {
+            advance_gap_if_needed(first_segment);
+            DrawText(
+                renderer,
+                graphics,
+                kPromptFontSize,
+                graphics.ui_font,
+                prompt.message_text,
+                cursor_x,
+                prompt_y,
+                prompt_text_color
             );
         }
     }

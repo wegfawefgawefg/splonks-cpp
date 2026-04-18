@@ -120,6 +120,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.crusher_pusher);
     WritePod(out, entity.can_stomp);
     WritePod(out, entity.can_be_stomped);
+    WritePod(out, entity.can_collect_pickups);
     WritePod(out, entity.can_go_on_back);
     WritePod(out, entity.grounded);
     WritePod(out, entity.shake);
@@ -246,6 +247,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.crusher_pusher) &&
            ReadPod(in, entity.can_stomp) &&
            ReadPod(in, entity.can_be_stomped) &&
+           ReadPod(in, entity.can_collect_pickups) &&
            ReadPod(in, entity.can_go_on_back) &&
            ReadPod(in, entity.grounded) &&
            ReadPod(in, entity.shake) &&
@@ -651,6 +653,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WriteOptionalPod(out, snapshot.pending_stage_transition);
     WritePod(out, snapshot.points);
     WritePod(out, snapshot.deaths);
+    WritePod(out, snapshot.depth);
     WritePod(out, snapshot.frame_pause);
     WritePod(out, snapshot.debug_level);
     WriteEntityManager(out, snapshot.entity_manager);
@@ -700,6 +703,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadOptionalPod(in, snapshot.pending_stage_transition) &&
            ReadPod(in, snapshot.points) &&
            ReadPod(in, snapshot.deaths) &&
+           ReadPod(in, snapshot.depth) &&
            ReadPod(in, snapshot.frame_pause) &&
            ReadPod(in, snapshot.debug_level) &&
            ReadEntityManager(in, snapshot.entity_manager) &&

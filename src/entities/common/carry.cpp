@@ -21,13 +21,6 @@ void ApplyHeldState(Entity& entity) {
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
 
-    if (entity.type_ != EntityType::Damsel) {
-        return;
-    }
-
-    entity.condition = EntityCondition::Stunned;
-    entity.stun_timer = kDefaultStunTimer;
-    TrySetAnimation(entity, EntityDisplayState::Stunned);
 }
 
 void SyncHeldAttachmentForHolder(
@@ -337,14 +330,15 @@ void UpdateCarryAndBackItems(
         bool equip_action_was_made = false;
         {
             const Entity& entity = state.entity_manager.entities[entity_idx];
-            if (control.equip_pressed && entity.equip_delay_countdown == 0) {
-                equip_action_was_made = true;
-                if (entity.back_vid.has_value()) {
+            if (entity.equip_delay_countdown == 0) {
+                if (control.buy_pressed && entity.back_vid.has_value()) {
+                    equip_action_was_made = true;
                     take_off_back_vid = entity.back_vid;
                 }
-                if (entity.holding_vid.has_value()) {
+                if (control.equip_pressed && entity.holding_vid.has_value()) {
                     const Entity* const held_thing = state.entity_manager.GetEntity(*entity.holding_vid);
                     if (held_thing != nullptr && held_thing->can_go_on_back) {
+                        equip_action_was_made = true;
                         put_held_on_back = true;
                         audio.PlaySoundEffect(SoundEffect::Equip);
                     }

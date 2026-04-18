@@ -4,7 +4,9 @@
 #include "state.hpp"
 #include "world_query.hpp"
 
+#include <algorithm>
 #include <limits>
+#include <vector>
 
 namespace splonks {
 
@@ -19,26 +21,32 @@ float GetBuyPromptDistanceSq(const Vec2& buyer_center, const Vec2& item_center, 
     return delta.x * delta.x + delta.y * delta.y;
 }
 
-std::optional<std::size_t> FindOverlappingBuyableEntity(
+struct OverlappingBuyableEntity {
+    std::size_t entity_idx = 0;
+    float distance_sq = 0.0F;
+    AABB nearest_aabb = AABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
+};
+
+std::vector<OverlappingBuyableEntity> FindOverlappingBuyableEntities(
     const State& state,
     const Graphics& graphics,
     std::size_t buyer_idx
 ) {
     if (buyer_idx >= state.entity_manager.entities.size()) {
-        return std::nullopt;
+        return {};
     }
 
     const Entity& buyer = state.entity_manager.entities[buyer_idx];
     if (!buyer.active) {
-        return std::nullopt;
+        return {};
     }
 
     const AABB buyer_aabb = entities::common::GetContactAabbForEntity(buyer, graphics);
     const Vec2 buyer_center = GetAabbCenter(buyer_aabb);
     const std::vector<VID> results = QueryEntitiesInAabb(state, buyer_aabb, buyer.vid);
 
-    float best_distance_sq = std::numeric_limits<float>::max();
-    std::optional<std::size_t> best_entity_idx;
+    std::vector<OverlappingBuyableEntity> overlaps;
+    overlaps.reserve(results.size());
     for (const VID& vid : results) {
         const Entity* const item = state.entity_manager.GetEntity(vid);
         if (item == nullptr || !item->active || !item->buyable.active) {
@@ -54,17 +62,37 @@ std::optional<std::size_t> FindOverlappingBuyableEntity(
             continue;
         }
 
-        const float distance_sq = GetBuyPromptDistanceSq(
-            buyer_center,
-            GetAabbCenter(item_aabb),
-            state.stage
-        );
-        if (!best_entity_idx.has_value() || distance_sq < best_distance_sq) {
-            best_distance_sq = distance_sq;
-            best_entity_idx = vid.id;
-        }
+        overlaps.push_back(OverlappingBuyableEntity{
+            .entity_idx = vid.id,
+            .distance_sq = GetBuyPromptDistanceSq(buyer_center, GetAabbCenter(item_aabb), state.stage),
+            .nearest_aabb = item_aabb,
+        });
     }
-    return best_entity_idx;
+
+    std::sort(
+        overlaps.begin(),
+        overlaps.end(),
+        [](const OverlappingBuyableEntity& a, const OverlappingBuyableEntity& b) {
+            if (a.distance_sq != b.distance_sq) {
+                return a.distance_sq < b.distance_sq;
+            }
+            return a.entity_idx < b.entity_idx;
+        }
+    );
+    return overlaps;
+}
+
+std::optional<std::size_t> FindOverlappingBuyableEntity(
+    const State& state,
+    const Graphics& graphics,
+    std::size_t buyer_idx
+) {
+    const std::vector<OverlappingBuyableEntity> overlaps =
+        FindOverlappingBuyableEntities(state, graphics, buyer_idx);
+    if (overlaps.empty()) {
+        return std::nullopt;
+    }
+    return overlaps.front().entity_idx;
 }
 
 } // namespace
@@ -123,31 +151,33 @@ bool TryBuyEntityForMoney(
     return true;
 }
 
-std::optional<BuyPrompt> GetBuyPromptForPlayer(const State& state, const Graphics& graphics) {
+void AddBuyPromptsForPlayer(State& state, const Graphics& graphics) {
     if (!state.player_vid.has_value()) {
-        return std::nullopt;
+        return;
     }
     const std::size_t buyer_idx = state.player_vid->id;
     if (buyer_idx >= state.entity_manager.entities.size()) {
-        return std::nullopt;
+        return;
     }
 
     const Entity& buyer = state.entity_manager.entities[buyer_idx];
     if (!buyer.active) {
-        return std::nullopt;
+        return;
     }
 
-    const std::optional<std::size_t> item_idx = FindOverlappingBuyableEntity(state, graphics, buyer_idx);
-    if (!item_idx.has_value()) {
-        return std::nullopt;
+    const std::vector<OverlappingBuyableEntity> overlaps =
+        FindOverlappingBuyableEntities(state, graphics, buyer_idx);
+    for (const OverlappingBuyableEntity& overlap : overlaps) {
+        const Entity& item = state.entity_manager.entities[overlap.entity_idx];
+        state.AddWorldPrompt(WorldPrompt{
+            .world_pos = Vec2::New((overlap.nearest_aabb.tl.x + overlap.nearest_aabb.br.x) * 0.5F, overlap.nearest_aabb.tl.y - 6.0F),
+            .action_text = "RB",
+            .message_text = "",
+            .show_down_arrow = false,
+            .quantity = item.buyable.display_quantity,
+            .icon_animation_id = item.buyable.display_icon_animation_id,
+        });
     }
-
-    const Entity& item = state.entity_manager.entities[*item_idx];
-    return BuyPrompt{
-        .entity_idx = *item_idx,
-        .quantity = item.buyable.display_quantity,
-        .icon_animation_id = item.buyable.display_icon_animation_id,
-    };
 }
 
 bool TryBuyEntity(

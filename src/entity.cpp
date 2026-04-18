@@ -38,6 +38,7 @@ Entity Entity::New() {
     entity.crusher_pusher = false;
     entity.can_stomp = false;
     entity.can_be_stomped = true;
+    entity.can_collect_pickups = false;
     entity.grounded = false;
     entity.shake = 0.0F;
     entity.coyote_time = 0;

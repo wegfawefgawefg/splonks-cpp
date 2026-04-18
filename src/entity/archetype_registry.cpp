@@ -3,6 +3,7 @@
 #include "entities/arrow_trap.hpp"
 #include "entities/baseball_bat.hpp"
 #include "entities/bat.hpp"
+#include "entities/basic_exit.hpp"
 #include "entities/block.hpp"
 #include "entities/boulder.hpp"
 #include "entities/bomb.hpp"
@@ -84,6 +85,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Player, entities::player::kPlayerArchetype, "Player");
     SetArchetype(EntityType::Block, entities::block::kBlockArchetype, "Block");
     SetArchetype(EntityType::GhostBall, entities::ghost_ball::kGhostBallArchetype, "GhostBall");
+    SetArchetype(EntityType::BasicExit, entities::basic_exit::kBasicExitArchetype, "BasicExit");
     SetArchetype(EntityType::DvdLogo, entities::dvdlogo::kDvdLogoArchetype, "DvdLogo");
     SetArchetype(EntityType::Bat, entities::bat::kBatArchetype, "Bat");
     SetArchetype(EntityType::Rock, entities::rock::kRockArchetype, "Rock");
