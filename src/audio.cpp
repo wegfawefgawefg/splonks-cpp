@@ -3,7 +3,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3_mixer/SDL_mixer.h>
 
-#include <algorithm>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -14,10 +13,6 @@ namespace {
 
 std::size_t SongIndex(Song song) {
     return static_cast<std::size_t>(song);
-}
-
-std::size_t SoundEffectIndex(SoundEffect sound_effect) {
-    return static_cast<std::size_t>(sound_effect);
 }
 
 [[noreturn]] void ThrowAudioError(const char* message) {
@@ -54,22 +49,26 @@ void LoadAudioObjects(Audio& audio) {
     }
 }
 
-void CreateTracks(Audio& audio) {
-    audio.song_track = MIX_CreateTrack(audio.mixer);
-    if (audio.song_track == nullptr) {
+} // namespace
+
+void Audio::CreateTracks() {
+    song_track = MIX_CreateTrack(mixer);
+    if (song_track == nullptr) {
         ThrowAudioError("MIX_CreateTrack for song track failed");
     }
 
-    constexpr std::size_t kSoundEffectTrackCount = 16;
-    audio.sound_effect_tracks.reserve(kSoundEffectTrackCount);
-    for (std::size_t i = 0; i < kSoundEffectTrackCount; ++i) {
-        MIX_Track* track = MIX_CreateTrack(audio.mixer);
+    sound_effect_tracks.reserve(audio_detail::kSoundEffectTrackCount);
+    sound_effect_track_runtimes.reserve(audio_detail::kSoundEffectTrackCount);
+    for (std::size_t i = 0; i < audio_detail::kSoundEffectTrackCount; ++i) {
+        MIX_Track* track = MIX_CreateTrack(mixer);
         if (track == nullptr) {
             ThrowAudioError("MIX_CreateTrack for sound effect track failed");
         }
-        audio.sound_effect_tracks.push_back(track);
+        InitializeSoundEffectTrack(track);
     }
 }
+
+namespace {
 
 SDL_PropertiesID MakeLoopingProperties() {
     SDL_PropertiesID properties = SDL_CreateProperties();
@@ -201,6 +200,7 @@ Audio Audio::New(const std::vector<LoadedSong>& loaded_songs,
     result.sounds = loaded_sounds;
     result.music_volume = 1.0F;
     result.sound_effects_volume = 1.0F;
+    result.pan_half_width_px = 256.0F;
 
     if (!MIX_Init()) {
         ThrowAudioError("MIX_Init failed");
@@ -213,7 +213,7 @@ Audio Audio::New(const std::vector<LoadedSong>& loaded_songs,
     }
 
     try {
-        CreateTracks(result);
+        result.CreateTracks();
         LoadAudioObjects(result);
     } catch (...) {
         result.Shutdown();
@@ -252,6 +252,7 @@ void Audio::Shutdown() {
 
     song_track = nullptr;
     sound_effect_tracks.clear();
+    sound_effect_track_runtimes.clear();
     has_current_song = false;
     initialized = false;
     MIX_Quit();
@@ -312,29 +313,6 @@ void Audio::UpdateCurrentSongStreamData() {
     }
 
     MIX_SetTrackGain(song_track, music_volume);
-}
-
-void Audio::PlaySoundEffect(SoundEffect sound_effect, float volume_scale) {
-    if (!initialized || sound_effect_tracks.empty()) {
-        return;
-    }
-
-    LoadedSound& loaded_sound = sounds[SoundEffectIndex(sound_effect)];
-    if (loaded_sound.audio == nullptr) {
-        return;
-    }
-
-    loaded_sound.volume = sound_effects_volume * volume_scale;
-
-    MIX_Track* track = sound_effect_tracks[next_sound_effect_track];
-    next_sound_effect_track = (next_sound_effect_track + 1) % sound_effect_tracks.size();
-
-    if (!MIX_SetTrackAudio(track, loaded_sound.audio)) {
-        return;
-    }
-    const float gain = std::clamp(sound_effects_volume * volume_scale, 0.0F, 1.0F);
-    MIX_SetTrackGain(track, gain);
-    MIX_PlayTrack(track, 0);
 }
 
 void Audio::SetCurrentSongVolume(float volume) {

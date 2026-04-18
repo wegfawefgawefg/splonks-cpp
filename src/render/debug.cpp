@@ -10,6 +10,7 @@
 #include "world_query.hpp"
 #include "entities/shop.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <vector>
@@ -141,6 +142,10 @@ bool ShouldRenderShakeBrushPreview(const State& state) {
             (brush.affect_entities && brush.entity_amount > 0.0F));
 }
 
+bool ShouldRenderAudioBrushPreview(const State& state) {
+    return state.debug_audio_brush.enabled;
+}
+
 void RenderWorldCircleOutline(
     SDL_Renderer* renderer,
     Graphics& graphics,
@@ -165,6 +170,122 @@ void RenderWorldCircleOutline(
         SDL_RenderLine(renderer, previous_screen.x, previous_screen.y, current_screen.x, current_screen.y);
         previous = current;
     }
+}
+
+void RenderWorldPointMarker(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const SDL_FRect& presentation,
+    const Vec2& world_pos,
+    const SDL_Color& color
+) {
+    const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderLine(renderer, screen.x - 6.0F, screen.y, screen.x + 6.0F, screen.y);
+    SDL_RenderLine(renderer, screen.x, screen.y - 6.0F, screen.x, screen.y + 6.0F);
+}
+
+void RenderWorldVerticalGuide(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const SDL_FRect& presentation,
+    float world_x,
+    const SDL_Color& color
+) {
+    const Vec2 screen = WorldPointToScreen(
+        graphics,
+        presentation,
+        Vec2::New(world_x, graphics.camera.target.y)
+    );
+    if (screen.x < presentation.x - 1.0F ||
+        screen.x > presentation.x + presentation.w + 1.0F) {
+        return;
+    }
+
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderLine(
+        renderer,
+        screen.x,
+        presentation.y,
+        screen.x,
+        presentation.y + presentation.h
+    );
+}
+
+void RenderAudioBrushPreview(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation
+) {
+    if (!ShouldRenderAudioBrushPreview(state)) {
+        return;
+    }
+
+    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    RenderWorldPointMarker(
+        renderer,
+        graphics,
+        presentation,
+        mouse_world,
+        SDL_Color{96, 224, 255, 255}
+    );
+
+    const DebugAudioBrushState& brush = state.debug_audio_brush;
+    if (!brush.source_active) {
+        return;
+    }
+
+    const Vec2 listener_world = graphics.camera.target;
+    const Vec2 source_world =
+        GetNearestWorldPoint(state.stage, listener_world, brush.source_world_pos);
+    const float pan_half_width = std::max(state.settings.audio.pan_half_width_px, 1.0F);
+    RenderWorldVerticalGuide(
+        renderer,
+        graphics,
+        presentation,
+        listener_world.x,
+        SDL_Color{96, 224, 255, 96}
+    );
+    RenderWorldVerticalGuide(
+        renderer,
+        graphics,
+        presentation,
+        listener_world.x - pan_half_width,
+        SDL_Color{96, 160, 255, 160}
+    );
+    RenderWorldVerticalGuide(
+        renderer,
+        graphics,
+        presentation,
+        listener_world.x + pan_half_width,
+        SDL_Color{96, 160, 255, 160}
+    );
+
+    const Vec2 listener_screen = WorldPointToScreen(graphics, presentation, listener_world);
+    const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
+    SDL_SetRenderDrawColor(renderer, 255, 176, 64, 255);
+    SDL_RenderLine(
+        renderer,
+        listener_screen.x,
+        listener_screen.y,
+        source_screen.x,
+        source_screen.y
+    );
+    RenderWorldPointMarker(
+        renderer,
+        graphics,
+        presentation,
+        listener_world,
+        SDL_Color{96, 224, 255, 255}
+    );
+    RenderWorldPointMarker(
+        renderer,
+        graphics,
+        presentation,
+        source_world,
+        SDL_Color{255, 176, 64, 255}
+    );
 }
 
 void RenderShakeBrushPreview(
@@ -683,7 +804,8 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
         !state.debug_overlay.show_area_boundaries &&
         !state.debug_overlay.show_area_ids &&
         !state.debug_overlay.show_area_types &&
-        !ShouldRenderShakeBrushPreview(state)) {
+        !ShouldRenderShakeBrushPreview(state) &&
+        !ShouldRenderAudioBrushPreview(state)) {
         return;
     }
 
@@ -714,6 +836,7 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State&
         RenderAreaOverlay(renderer, graphics, state, presentation, render_offsets);
     }
     RenderShakeBrushPreview(renderer, graphics, state, presentation);
+    RenderAudioBrushPreview(renderer, graphics, state, presentation);
 }
 
 } // namespace splonks

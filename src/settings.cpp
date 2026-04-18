@@ -57,6 +57,7 @@ AudioSettings AudioSettings::New() {
     AudioSettings result;
     result.music_volume = 1.0F;
     result.sfx_volume = 1.0F;
+    result.pan_half_width_px = 256.0F;
     return result;
 }
 
@@ -133,6 +134,7 @@ DebugUiSettings DebugUiSettings::New() {
     result.entities_visible = true;
     result.entity_annotations_visible = false;
     result.shake_brush_visible = false;
+    result.audio_brush_visible = false;
     result.ui_settings_visible = false;
     result.post_fx_settings_visible = false;
     result.lighting_settings_visible = false;
@@ -188,6 +190,8 @@ Settings LoadSettings() {
             settings.audio.music_volume = ParseFloat(value, settings.audio.music_volume);
         } else if (key == "audio.sfx_volume") {
             settings.audio.sfx_volume = ParseFloat(value, settings.audio.sfx_volume);
+        } else if (key == "audio.pan_half_width_px") {
+            settings.audio.pan_half_width_px = ParseFloat(value, settings.audio.pan_half_width_px);
         } else if (key == "controls.jump") {
             settings.controls.jump = ParseUnsigned(value, settings.controls.jump);
         } else if (key == "controls.shoot") {
@@ -349,6 +353,9 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.shake_brush_visible") {
             settings.debug_ui.shake_brush_visible =
                 ParseBool(value, settings.debug_ui.shake_brush_visible);
+        } else if (key == "debug_ui.audio_brush_visible") {
+            settings.debug_ui.audio_brush_visible =
+                ParseBool(value, settings.debug_ui.audio_brush_visible);
         } else if (key == "debug_ui.ui_settings_visible") {
             settings.debug_ui.ui_settings_visible =
                 ParseBool(value, settings.debug_ui.ui_settings_visible);
@@ -384,6 +391,7 @@ bool SaveSettings(const Settings& settings) {
     output << "video.vsync=" << (settings.video.vsync ? 1 : 0) << "\n";
     output << "audio.music_volume=" << settings.audio.music_volume << "\n";
     output << "audio.sfx_volume=" << settings.audio.sfx_volume << "\n";
+    output << "audio.pan_half_width_px=" << settings.audio.pan_half_width_px << "\n";
     output << "controls.jump=" << settings.controls.jump << "\n";
     output << "controls.shoot=" << settings.controls.shoot << "\n";
     output << "ui.icon_scale=" << settings.ui.icon_scale << "\n";
@@ -478,6 +486,8 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.entity_annotations_visible ? 1 : 0) << "\n";
     output << "debug_ui.shake_brush_visible="
            << (settings.debug_ui.shake_brush_visible ? 1 : 0) << "\n";
+    output << "debug_ui.audio_brush_visible="
+           << (settings.debug_ui.audio_brush_visible ? 1 : 0) << "\n";
     output << "debug_ui.ui_settings_visible="
            << (settings.debug_ui.ui_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.post_fx_settings_visible="

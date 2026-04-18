@@ -44,6 +44,8 @@ constexpr int kBoulderTestStageWidthTiles = 40;
 constexpr int kBoulderTestStageHeightTiles = 16;
 constexpr int kMovingPlatformTestStageWidthTiles = 48;
 constexpr int kMovingPlatformTestStageHeightTiles = 18;
+constexpr int kAudioTestStageWidthTiles = 96;
+constexpr int kAudioTestStageHeightTiles = 24;
 constexpr int kShopTestStageWidthTiles = 80;
 constexpr int kShopTestStageHeightTiles = 12;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
@@ -190,6 +192,18 @@ void SetStageBackwallTile(Stage& stage, int x, int y, Tile tile) {
         return;
     }
     stage.SetBackwallTile(IVec2::New(x, y), tile);
+}
+
+void FillStageRect(Stage& stage, int left_x, int top_y, int right_x, int bottom_y, Tile tile) {
+    for (int y = top_y; y <= bottom_y; ++y) {
+        for (int x = left_x; x <= right_x; ++x) {
+            SetStageTile(stage, x, y, tile);
+        }
+    }
+}
+
+void CarveStageRect(Stage& stage, int left_x, int top_y, int right_x, int bottom_y) {
+    FillStageRect(stage, left_x, top_y, right_x, bottom_y, Tile::Air);
 }
 
 struct ShopTestStallSpec {
@@ -522,6 +536,41 @@ void BuildDebugLadder(Stage& stage, int x, int top_y, int bottom_y) {
     for (int y = top_y + 1; y <= bottom_y; ++y) {
         SetStageTile(stage, x, y, Tile::Ladder);
     }
+}
+
+Stage MakeAudioTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kAudioTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kAudioTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile dirt_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const int floor_y = kAudioTestStageHeightTiles - 1;
+    for (int x = 0; x < kAudioTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, floor_y, dirt_tile);
+    }
+
+    FillStageRect(stage, 0, 4, 28, floor_y - 1, dirt_tile);
+    CarveStageRect(stage, 4, 13, 28, 13);
+
+    FillStageRect(stage, 67, 3, kAudioTestStageWidthTiles - 1, floor_y - 1, dirt_tile);
+    CarveStageRect(stage, 67, 8, 72, 18);
+    CarveStageRect(stage, 73, 9, 76, 18);
+    CarveStageRect(stage, 77, 10, 80, 18);
+    CarveStageRect(stage, 81, 11, 84, 17);
+    CarveStageRect(stage, 85, 12, 88, 16);
+    CarveStageRect(stage, 89, 13, 91, 15);
+
+    return stage;
 }
 
 Stage MakeMovingPlatformTestStage() {
@@ -1349,6 +1398,15 @@ void InitBoulderTestStage(State& state) {
     );
 }
 
+void InitAudioTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = 48.0F * static_cast<float>(kTileSize);
+    const float player_spawn_y = 23.0F * static_cast<float>(kTileSize) - 14.0F;
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+}
+
 void InitMovingPlatformTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
@@ -1652,6 +1710,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::MovingPlatformTest:
         state.stage = MakeMovingPlatformTestStage();
         InitMovingPlatformTestStage(state);
+        break;
+    case DebugLevelKind::AudioTest:
+        state.stage = MakeAudioTestStage();
+        InitAudioTestStage(state);
         break;
     case DebugLevelKind::ShopTest:
         state.stage = MakeShopTestStage();

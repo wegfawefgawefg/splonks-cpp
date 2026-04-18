@@ -216,6 +216,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawBorderControls(debug, state, graphics);
     debug_playback_internal::DrawDebugOverlayWindow(debug, state, graphics);
     debug_playback_internal::DrawShakeBrushWindow(debug, state, graphics);
+    debug_playback_internal::DrawAudioBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
     debug_playback_internal::DrawCameraSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);
@@ -230,6 +231,45 @@ void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphi
 
     debug_playback_internal::DrawEntityInspector(debug, state, graphics);
 }
+
+namespace {
+
+void StopDebugAudioBrushLoop(DebugPlayback& debug, Audio& audio) {
+    if (debug.audio_brush_loop_handle.IsValid()) {
+        (void)audio.StopSoundEffectInstance(debug.audio_brush_loop_handle);
+    }
+    debug.audio_brush_loop_handle = {};
+    debug.audio_brush_loop_sound_effect.reset();
+}
+
+SoundEffectPlaybackParams MakeDebugAudioBrushPlaybackParams(const DebugAudioBrushState& brush) {
+    SoundEffectPlaybackParams params;
+    params.volume_scale = brush.volume_scale;
+    params.positional = true;
+    params.world_pos = brush.source_world_pos;
+    params.loops = -1;
+    return params;
+}
+
+void UpdateDebugAudioBrushInput(State& state, const Graphics& graphics) {
+    if (state.mode != Mode::Playing || !state.debug_audio_brush.enabled || ImGuiWantsMouse()) {
+        return;
+    }
+
+    float mouse_x = 0.0F;
+    float mouse_y = 0.0F;
+    const SDL_MouseButtonFlags mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
+    if ((mouse_buttons & SDL_BUTTON_LMASK) != 0) {
+        state.debug_audio_brush.source_world_pos =
+            graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+        state.debug_audio_brush.source_active = true;
+    }
+    if ((mouse_buttons & SDL_BUTTON_RMASK) != 0) {
+        state.debug_audio_brush.source_active = false;
+    }
+}
+
+} // namespace
 
 void RunSimulationWithDebugControls(
     SDL_Window* window,
@@ -259,6 +299,47 @@ void RunSimulationWithDebugControls(
         debug,
         frame_dt
     );
+}
+
+void UpdateDebugAudioBrush(
+    DebugPlayback& debug,
+    State& state,
+    Audio& audio,
+    const Graphics& graphics
+) {
+    audio.SetListenerWorldPos(graphics.camera.target);
+    UpdateDebugAudioBrushInput(state, graphics);
+
+    if (debug.playback_active ||
+        state.mode != Mode::Playing ||
+        !state.debug_audio_brush.enabled ||
+        !state.debug_audio_brush.source_active) {
+        StopDebugAudioBrushLoop(debug, audio);
+        return;
+    }
+
+    const DebugAudioBrushState& brush = state.debug_audio_brush;
+    if (debug.audio_brush_loop_sound_effect.has_value() &&
+        *debug.audio_brush_loop_sound_effect != brush.sound_effect) {
+        StopDebugAudioBrushLoop(debug, audio);
+    }
+
+    const SoundEffectPlaybackParams params =
+        MakeDebugAudioBrushPlaybackParams(brush);
+    if (debug.audio_brush_loop_handle.IsValid() &&
+        audio.UpdateSoundEffectInstance(debug.audio_brush_loop_handle, params)) {
+        debug.audio_brush_loop_sound_effect = brush.sound_effect;
+        return;
+    }
+
+    debug.audio_brush_loop_handle =
+        audio.PlaySoundEffectInstance(brush.sound_effect, params);
+    if (debug.audio_brush_loop_handle.IsValid()) {
+        debug.audio_brush_loop_sound_effect = brush.sound_effect;
+        return;
+    }
+
+    debug.audio_brush_loop_sound_effect.reset();
 }
 
 } // namespace splonks

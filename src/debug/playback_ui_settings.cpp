@@ -99,6 +99,76 @@ void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     SyncDebugUiSettings(debug, state);
 }
 
+void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.audio_brush_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(620.0F, 460.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Audio Brush", &debug.audio_brush_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    DebugAudioBrushState& brush = state.debug_audio_brush;
+    bool save_settings = false;
+    ImGui::Checkbox("Enable Audio Brush", &brush.enabled);
+    save_settings |= ImGui::SliderFloat(
+        "Pan Half-Width (px)",
+        &state.settings.audio.pan_half_width_px,
+        16.0F,
+        1024.0F,
+        "%.0f px"
+    );
+    if (ImGui::BeginCombo("Loop Sound", GetSoundFileName(brush.sound_effect))) {
+        for (std::size_t i = 0; i < kSoundEffectCount; ++i) {
+            const SoundEffect candidate = static_cast<SoundEffect>(i);
+            const bool selected = candidate == brush.sound_effect;
+            if (ImGui::Selectable(GetSoundFileName(candidate), selected)) {
+                brush.sound_effect = candidate;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::SliderFloat("Volume Scale", &brush.volume_scale, 0.0F, 2.0F, "%.2fx");
+
+    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
+    if (brush.source_active) {
+        ImGui::Text(
+            "Source WC: (%.1f, %.1f)",
+            brush.source_world_pos.x,
+            brush.source_world_pos.y
+        );
+    } else {
+        ImGui::TextUnformatted("Source WC: <inactive>");
+    }
+    ImGui::Text(
+        "Listener WC: (%.1f, %.1f)",
+        graphics.camera.target.x,
+        graphics.camera.target.y
+    );
+    ImGui::TextUnformatted("Higher half-width = gentler pan. Lower = more aggressive pan.");
+
+    if (ImGui::Button("Clear Source")) {
+        brush.source_active = false;
+    }
+
+    ImGui::TextUnformatted("Hold left mouse in the world view to place or drag the loop source.");
+    ImGui::TextUnformatted("Hold right mouse in the world view to clear it.");
+
+    if (save_settings) {
+        SaveSettings(state.settings);
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
 void DrawUiSettingsWindow(DebugPlayback& debug, State& state) {
     if (!debug.ui_settings_window_visible) {
         return;

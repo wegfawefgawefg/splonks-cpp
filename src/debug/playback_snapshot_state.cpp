@@ -29,6 +29,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.choosing_control_binding = state.choosing_control_binding;
     snapshot.debug_overlay = state.debug_overlay;
     snapshot.debug_shake_brush = state.debug_shake_brush;
+    snapshot.debug_audio_brush = state.debug_audio_brush;
     snapshot.now = state.now;
     snapshot.time_since_last_update = state.time_since_last_update;
     snapshot.scene_frame = state.scene_frame;
@@ -81,6 +82,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.choosing_control_binding = snapshot.choosing_control_binding;
     state.debug_overlay = snapshot.debug_overlay;
     state.debug_shake_brush = snapshot.debug_shake_brush;
+    state.debug_audio_brush = snapshot.debug_audio_brush;
     state.now = snapshot.now;
     state.time_since_last_update = snapshot.time_since_last_update;
     state.scene_frame = snapshot.scene_frame;

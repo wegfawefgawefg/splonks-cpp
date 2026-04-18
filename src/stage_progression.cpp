@@ -41,6 +41,8 @@ const char* GetDebugLevelKindName(DebugLevelKind kind) {
         return "BoulderTest";
     case DebugLevelKind::MovingPlatformTest:
         return "MovingPlatformTest";
+    case DebugLevelKind::AudioTest:
+        return "AudioTest";
     case DebugLevelKind::ShopTest:
         return "ShopTest";
     }

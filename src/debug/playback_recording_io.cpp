@@ -368,6 +368,7 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
     WriteVectorPod(out, settings.video.resolution_options);
     WritePod(out, settings.audio.music_volume);
     WritePod(out, settings.audio.sfx_volume);
+    WritePod(out, settings.audio.pan_half_width_px);
     WritePod(out, settings.controls.jump);
     WritePod(out, settings.controls.shoot);
     WritePod(out, settings.ui.icon_scale);
@@ -418,6 +419,7 @@ bool ReadSettings(std::istream& in, Settings& settings) {
         !ReadVectorPod(in, settings.video.resolution_options) ||
         !ReadPod(in, settings.audio.music_volume) ||
         !ReadPod(in, settings.audio.sfx_volume) ||
+        !ReadPod(in, settings.audio.pan_half_width_px) ||
         !ReadPod(in, settings.controls.jump) ||
         !ReadPod(in, settings.controls.shoot) ||
         !ReadPod(in, settings.ui.icon_scale) ||
@@ -640,6 +642,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.choosing_control_binding);
     WritePod(out, snapshot.debug_overlay);
     WritePod(out, snapshot.debug_shake_brush);
+    WritePod(out, snapshot.debug_audio_brush);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
@@ -690,6 +693,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.choosing_control_binding) &&
            ReadPod(in, snapshot.debug_overlay) &&
            ReadPod(in, snapshot.debug_shake_brush) &&
+           ReadPod(in, snapshot.debug_audio_brush) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&

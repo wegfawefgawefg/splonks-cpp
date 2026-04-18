@@ -19,6 +19,7 @@ enum class DebugLevelKind {
     OpposingBodySmack,
     BoulderTest,
     MovingPlatformTest,
+    AudioTest,
     ShopTest,
 };
 

@@ -26,6 +26,7 @@ struct VideoSettings {
 struct AudioSettings {
     float music_volume = 1.0F;
     float sfx_volume = 1.0F;
+    float pan_half_width_px = 256.0F;
 
     static AudioSettings New();
 };
@@ -107,6 +108,7 @@ struct DebugUiSettings {
     bool entities_visible = true;
     bool entity_annotations_visible = false;
     bool shake_brush_visible = false;
+    bool audio_brush_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;
     bool lighting_settings_visible = false;

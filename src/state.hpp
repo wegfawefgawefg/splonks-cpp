@@ -1,5 +1,6 @@
 #pragma once
 
+#include "audio.hpp"
 #include "contact_bookkeeping.hpp"
 #include "entity/manager.hpp"
 #include "entity_tool_inventory.hpp"
@@ -90,7 +91,7 @@ struct MazeDoorTestLevelConfig {
 };
 
 struct DebugLevelConfig {
-    DebugLevelKind kind = DebugLevelKind::MovingPlatformTest;
+    DebugLevelKind kind = DebugLevelKind::AudioTest;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
     MazeDoorTestLevelConfig maze_door_test;
@@ -120,6 +121,14 @@ struct DebugShakeBrushState {
     float background_tile_amount = 1.0F;
     float entity_amount = 1.0F;
     float radius_tiles = 2.0F;
+};
+
+struct DebugAudioBrushState {
+    bool enabled = false;
+    SoundEffect sound_effect = SoundEffect::BoulderRoll;
+    float volume_scale = 1.0F;
+    bool source_active = false;
+    Vec2 source_world_pos = Vec2::New(0.0F, 0.0F);
 };
 
 struct WorldPrompt {
@@ -160,6 +169,7 @@ struct State {
     // Debug state.
     DebugOverlayState debug_overlay;
     DebugShakeBrushState debug_shake_brush;
+    DebugAudioBrushState debug_audio_brush;
     bool running = true;
 
     // Frame and simulation timing.

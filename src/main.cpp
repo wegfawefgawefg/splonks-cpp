@@ -154,6 +154,9 @@ int main(int argc, char** argv) {
             const auto songs = splonks::LoadSongs();
             const auto sounds = splonks::LoadSounds();
             audio = splonks::Audio::New(songs, sounds);
+            audio.music_volume = loaded_settings.audio.music_volume;
+            audio.sound_effects_volume = loaded_settings.audio.sfx_volume;
+            audio.SetPanHalfWidthPx(loaded_settings.audio.pan_half_width_px);
         } catch (const std::exception&) {
             audio = splonks::Audio{};
         }
@@ -169,6 +172,7 @@ int main(int argc, char** argv) {
         debug.entity_inspector_visible = state.settings.debug_ui.entities_visible;
         debug.entity_annotations_visible = state.settings.debug_ui.entity_annotations_visible;
         debug.shake_brush_window_visible = state.settings.debug_ui.shake_brush_visible;
+        debug.audio_brush_window_visible = state.settings.debug_ui.audio_brush_visible;
         debug.ui_settings_window_visible = state.settings.debug_ui.ui_settings_visible;
         debug.post_fx_settings_window_visible = state.settings.debug_ui.post_fx_settings_visible;
         debug.lighting_settings_window_visible = state.settings.debug_ui.lighting_settings_visible;
@@ -206,6 +210,9 @@ int main(int argc, char** argv) {
 
             splonks::ImGuiLayerNewFrame();
             splonks::DrawDebugPlaybackControls(debug, state, graphics, window, renderer);
+            audio.music_volume = state.settings.audio.music_volume;
+            audio.sound_effects_volume = state.settings.audio.sfx_volume;
+            audio.SetPanHalfWidthPx(state.settings.audio.pan_half_width_px);
             splonks::RunSimulationWithDebugControls(
                 window,
                 renderer,
@@ -218,6 +225,7 @@ int main(int argc, char** argv) {
             splonks::DrawDebugPlaybackInspector(debug, state, graphics);
             splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
             splonks::Render(renderer, render_texture, post_fx, state, graphics);
+            splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);
             splonks::ImGuiLayerRender();
             SDL_RenderPresent(renderer);
             audio.UpdateCurrentSongStreamData();
