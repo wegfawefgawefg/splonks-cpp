@@ -40,6 +40,7 @@ extern const EntityArchetype kRopeArchetype{
 void OnUseAsRope(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
     (void)graphics;
     (void)audio;
+    (void)audio;
     Entity& rope = state.entity_manager.entities[entity_idx];
     if (rope.use_state.pressed == false || rope.counter_a > 0.0F) {
         return;
@@ -62,6 +63,7 @@ void StepEntityLogicAsRope(
 ) {
     (void)dt;
     (void)graphics;
+    (void)audio;
     Entity& rope = state.entity_manager.entities[entity_idx];
 
     // if rope is in winding up
@@ -113,7 +115,7 @@ void StepEntityLogicAsRope(
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
 
         if (atleast_one_tile_converted) {
-            audio.PlaySoundEffect(SoundEffect::RopeDeploy);
+            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[entity_idx], SoundEffect::RopeDeploy);
         }
     }
 }

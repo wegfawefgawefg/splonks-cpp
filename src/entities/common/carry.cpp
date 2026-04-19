@@ -192,6 +192,7 @@ void UpdateCarryAndBackItems(
     const Graphics& graphics,
     Audio& audio
 ) {
+    (void)audio;
     CleanupInactiveCarryReferences(entity_idx, state);
 
     const bool loss_of_control =
@@ -318,7 +319,7 @@ void UpdateCarryAndBackItems(
                     }
                     thrown->acc += throw_vel;
                     state.UpdateSidForEntity(thrown->vid.id, graphics);
-                    audio.PlaySoundEffect(SoundEffect::Throw);
+                    (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::Throw);
                 }
             }
         }
@@ -340,7 +341,7 @@ void UpdateCarryAndBackItems(
                     if (held_thing != nullptr && held_thing->can_go_on_back) {
                         equip_action_was_made = true;
                         put_held_on_back = true;
-                        audio.PlaySoundEffect(SoundEffect::Equip);
+                        (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::Equip);
                     }
                 }
             }

@@ -62,6 +62,7 @@ bool TryApplyStompContactToEntity(
     const Graphics& graphics,
     Audio& audio
 ) {
+    (void)audio;
     if (entity_idx >= state.entity_manager.entities.size() ||
         other_entity_idx >= state.entity_manager.entities.size()) {
         return false;
@@ -91,7 +92,7 @@ bool TryApplyStompContactToEntity(
         return false;
     }
 
-    audio.PlaySoundEffect(SoundEffect::Jump);
+    (void)PlayEntityCenterSoundEmitter(state, stomper, SoundEffect::Jump);
 
     const DamageResult damage_result = TryDamageEntity(
         stomped->vid.id,

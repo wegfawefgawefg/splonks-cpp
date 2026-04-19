@@ -86,6 +86,20 @@ Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data
            facing_adjusted_draw_offset;
 }
 
+Vec2 GetVisualCenterForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback) {
+    const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
+    if (frame_data == nullptr) {
+        return fallback;
+    }
+
+    const Vec2 sprite_tl = GetSpriteTopLeftForEntity(entity, *frame_data);
+    const Vec2 sprite_world_size = Vec2::New(
+        static_cast<float>(frame_data->sample_rect.w),
+        static_cast<float>(frame_data->sample_rect.h)
+    ) * entity.frame_data_animator.scale;
+    return sprite_tl + (sprite_world_size * 0.5F);
+}
+
 void SetVisualCenterForEntity(Entity& entity, const Graphics& graphics, const Vec2& center) {
     const FrameData* const frame_data = GetCurrentFrameDataForEntity(entity, graphics);
     if (frame_data == nullptr) {

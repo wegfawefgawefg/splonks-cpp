@@ -2,6 +2,7 @@
 
 #include "audio_acoustics.hpp"
 #include "entity.hpp"
+#include "entities/common/common.hpp"
 #include "entity/manager.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
@@ -56,7 +57,7 @@ bool HandleMissingTarget(AudioEmitter& emitter, bool owner_missing) {
     return false;
 }
 
-bool ResolveEmitterWorldPos(State& state, AudioEmitter& emitter) {
+bool ResolveEmitterWorldPos(State& state, const Graphics& graphics, AudioEmitter& emitter) {
     if (emitter.owner_entity_vid.has_value() &&
         state.entity_manager.GetEntity(*emitter.owner_entity_vid) == nullptr) {
         return HandleMissingTarget(emitter, true);
@@ -69,7 +70,9 @@ bool ResolveEmitterWorldPos(State& state, AudioEmitter& emitter) {
 
     const Entity* const attached = state.entity_manager.GetEntity(*emitter.attached_entity_vid);
     if (attached != nullptr) {
-        emitter.world_pos = attached->GetCenter() + emitter.attached_offset;
+        emitter.world_pos =
+            entities::common::GetVisualCenterForEntity(*attached, graphics, attached->GetCenter()) +
+            emitter.attached_offset;
         return true;
     }
 
@@ -81,6 +84,7 @@ SoundEffectPlaybackParams BuildEmitterPlaybackParams(
     const Graphics& graphics,
     const AudioEmitter& emitter
 ) {
+    (void)graphics;
     SoundEffectPlaybackParams params;
     params.volume_scale = emitter.volume_scale;
     params.positional = true;
@@ -88,7 +92,7 @@ SoundEffectPlaybackParams BuildEmitterPlaybackParams(
 
     const PositionalAudioAcoustics acoustics = ComputePositionalAudioAcoustics(
         state,
-        graphics.camera.target,
+        GetAudioListenerWorldPos(state),
         emitter.world_pos
     );
     params.world_pos = acoustics.wrapped_source_world_pos;
@@ -202,6 +206,14 @@ AudioEmitter* GetSoundEmitterMut(State& state, VID emitter_vid) {
     return state.audio_emitters.GetEmitterMut(emitter_vid);
 }
 
+Vec2 GetAudioListenerWorldPos(const State& state) {
+    return state.audio_listener_world_pos;
+}
+
+void SetAudioListenerWorldPos(State& state, const Vec2& world_pos) {
+    state.audio_listener_world_pos = world_pos;
+}
+
 std::optional<VID> FindOwnedSoundEmitter(
     const State& state,
     VID owner_entity_vid,
@@ -278,7 +290,49 @@ std::optional<VID> PlayAttachedSoundEmitter(
     emitter->source_mode = AudioEmitterSourceMode::AttachedEntity;
     emitter->attached_entity_vid = attached_entity_vid;
     emitter->attached_offset = attached_offset;
+    if (const Entity* const attached = state.entity_manager.GetEntity(attached_entity_vid)) {
+        emitter->world_pos = attached->GetCenter() + attached_offset;
+    }
     return emitter->vid;
+}
+
+std::optional<VID> PlayEntitySoundEmitter(
+    State& state,
+    const Entity& entity,
+    SoundEffect sound_effect,
+    const AudioEmitterPlayParams& params,
+    const Vec2& attached_offset
+) {
+    AudioEmitterPlayParams entity_params = params;
+    if (!entity_params.owner_entity_vid.has_value()) {
+        entity_params.owner_entity_vid = entity.vid;
+    }
+    return PlayAttachedSoundEmitter(
+        state,
+        entity.vid,
+        attached_offset,
+        sound_effect,
+        entity_params
+    );
+}
+
+std::optional<VID> PlayEntityCenterSoundEmitter(
+    State& state,
+    const Entity& entity,
+    SoundEffect sound_effect,
+    const AudioEmitterPlayParams& params,
+    const Vec2& world_offset
+) {
+    AudioEmitterPlayParams entity_params = params;
+    if (!entity_params.owner_entity_vid.has_value()) {
+        entity_params.owner_entity_vid = entity.vid;
+    }
+    return PlayWorldSoundEmitter(
+        state,
+        entity.GetCenter() + world_offset,
+        sound_effect,
+        entity_params
+    );
 }
 
 /// Finds or creates one looping attached emitter for the given owner and sound.
@@ -372,14 +426,14 @@ void StopAllSoundEmitters(State& state, Audio& audio) {
 /// Advances the emitter system for one frame: resolve source positions, start pending
 /// instances, update positional/acoustic mix, and reap emitters whose playback ended.
 void UpdateAudioEmitters(State& state, Audio& audio, const Graphics& graphics) {
-    audio.SetListenerWorldPos(graphics.camera.target);
+    audio.SetListenerWorldPos(GetAudioListenerWorldPos(state));
 
     for (AudioEmitter& emitter : state.audio_emitters.emitters) {
         if (!emitter.active) {
             continue;
         }
 
-        if (!ResolveEmitterWorldPos(state, emitter)) {
+        if (!ResolveEmitterWorldPos(state, graphics, emitter)) {
             if (IsValidSoundEffectInstanceVID(emitter.sound_instance_vid)) {
                 (void)audio.StopSoundEffectInstance(emitter.sound_instance_vid);
             }

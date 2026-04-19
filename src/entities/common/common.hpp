@@ -116,6 +116,7 @@ void DoExplosion(
 );
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
+Vec2 GetVisualCenterForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
 void SetVisualCenterForEntity(Entity& entity, const Graphics& graphics, const Vec2& center);
 Vec2 GetEmitPointForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);

@@ -39,6 +39,7 @@ bool TrySpawnAndThrowEntityForToolUse(
     void (*setup_entity)(Entity&),
     ToolThrowVelocityBuilder build_throw_velocity
 ) {
+    (void)audio;
     if (!trigger_pressed) {
         return false;
     }
@@ -77,7 +78,7 @@ bool TrySpawnAndThrowEntityForToolUse(
 
     tool_slot.count -= 1;
     tool_slot.cooldown = cooldown_frames;
-    audio.PlaySoundEffect(SoundEffect::Throw);
+    (void)PlayEntityCenterSoundEmitter(state, thrower, SoundEffect::Throw);
     return true;
 }
 

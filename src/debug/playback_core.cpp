@@ -1,6 +1,7 @@
 #include "debug/playback_internal.hpp"
 
 #include "audio_acoustics.hpp"
+#include "audio_emitters.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
 #include "step.hpp"
@@ -331,7 +332,7 @@ void UpdateDebugAudioBrush(
     Audio& audio,
     const Graphics& graphics
 ) {
-    audio.SetListenerWorldPos(graphics.camera.target);
+    audio.SetListenerWorldPos(GetAudioListenerWorldPos(state));
     UpdateDebugAudioBrushInput(state, graphics);
 
     if (debug.playback_active ||

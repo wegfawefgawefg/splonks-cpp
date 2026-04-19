@@ -55,6 +55,7 @@ void AddShopChild(Entity& shop, VID child_vid) {
 }
 
 void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
+    (void)audio;
     if (shop_idx >= state.entity_manager.entities.size()) {
         return;
     }
@@ -68,7 +69,7 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
     shop.ai_state = EntityAiState::Disturbed;
 
     if (!already_disturbed) {
-        audio.PlaySoundEffect(SoundEffect::ShopkeepAnger0);
+        (void)PlayEntityCenterSoundEmitter(state, shop, SoundEffect::ShopkeepAnger0);
     }
 
     if (state.player_vid.has_value()) {
@@ -162,7 +163,7 @@ void OnShopAreaEnter(
         return;
     }
 
-    audio.PlaySoundEffect(SoundEffect::LawsonEnter);
+    (void)PlayEntityCenterSoundEmitter(state, shop, SoundEffect::LawsonEnter);
 }
 
 void StepEntityLogicAsShop(

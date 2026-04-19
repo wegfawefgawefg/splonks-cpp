@@ -75,7 +75,7 @@ ContactResolution TryDispatchEntityTileContactByEntityType(
 
 void PlayBlockingCollisionSounds(
     Entity& entity,
-    Audio& audio,
+    State& state,
     const std::optional<SoundEffect>& entity_sound,
     const std::optional<SoundEffect>& tile_sound,
     bool& played_collision_sound
@@ -83,12 +83,14 @@ void PlayBlockingCollisionSounds(
     bool played_any_sound = false;
 
     if (entity_sound.has_value()) {
-        audio.PlaySoundEffect(*entity_sound);
+        (void)PlayEntityCenterSoundEmitter(state, entity, *entity_sound);
         played_any_sound = true;
     }
 
     if (tile_sound.has_value() && (!entity_sound.has_value() || *tile_sound != *entity_sound)) {
-        audio.PlaySoundEffect(*tile_sound, kTileTouchSoundVolumeScale);
+        AudioEmitterPlayParams params;
+        params.volume_scale = kTileTouchSoundVolumeScale;
+        (void)PlayEntityCenterSoundEmitter(state, entity, *tile_sound, params);
         played_any_sound = true;
     }
 
@@ -126,7 +128,7 @@ void MaybePlayTileCollisionSounds(
     const TileArchetype& tile_archetype = GetTileArchetype(*tile_contact.tile);
     PlayBlockingCollisionSounds(
         entity,
-        *audio,
+        state,
         entity.collide_sound,
         tile_archetype.collide_sound,
         played_collision_sound
@@ -172,7 +174,7 @@ void MaybePlayStageBoundsCollisionSounds(
     const TileArchetype& border_archetype = GetTileArchetype(border_tile);
     PlayBlockingCollisionSounds(
         entity,
-        *audio,
+        state,
         entity.collide_sound,
         border_archetype.collide_sound,
         played_collision_sound

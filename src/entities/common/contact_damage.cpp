@@ -178,7 +178,7 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Audio& audio) {
         case DamageResult::Hurt:
         case DamageResult::Died:
             entity.vel.x = 0.0F;
-            audio.PlaySoundEffect(SoundEffect::AnimalCrush2);
+            (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::AnimalCrush2);
             break;
         case DamageResult::None:
             break;
@@ -258,7 +258,7 @@ bool TryApplyProjectileContactToEntity(
             kProjectileBodyImpactCooldownFrames
         );
         if (entity.collide_sound.has_value()) {
-            audio.PlaySoundEffect(*entity.collide_sound);
+            (void)PlayEntityCenterSoundEmitter(state, entity, *entity.collide_sound);
         }
         return true;
     }

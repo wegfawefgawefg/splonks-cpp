@@ -118,6 +118,7 @@ void RedeemGoldIdol(
     Graphics& graphics,
     Audio& audio
 ) {
+    (void)audio;
     if (entity_idx >= state.entity_manager.entities.size()) {
         return;
     }
@@ -130,7 +131,7 @@ void RedeemGoldIdol(
     const std::optional<VID> reward_target_vid = GetRewardTargetVid(idol, state);
     SpawnGoldIdolRewardParticles(reward_target_vid, state, idol);
     AwardMoneyToTarget(reward_target_vid, amount, state);
-    audio.PlaySoundEffect(sound_effect);
+    (void)PlayEntityCenterSoundEmitter(state, idol, sound_effect);
 
     common::ReleaseEntityFromHolder(idol, state);
     idol.damage_vulnerability = DamageVulnerability::Immune;
@@ -149,6 +150,7 @@ void StepEntityLogicAsGoldIdol(
     Audio& audio,
     float dt
 ) {
+    (void)audio;
     (void)dt;
 
     if (entity_idx >= state.entity_manager.entities.size()) {

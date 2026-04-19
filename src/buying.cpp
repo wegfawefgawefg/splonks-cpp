@@ -106,6 +106,7 @@ void ClearEntityBuyableState(Entity& entity) {
 }
 
 bool TrySpendMoney(std::size_t buyer_idx, std::uint32_t amount, State& state, Audio& audio) {
+    (void)audio;
     if (buyer_idx >= state.entity_manager.entities.size()) {
         return false;
     }
@@ -117,7 +118,7 @@ bool TrySpendMoney(std::size_t buyer_idx, std::uint32_t amount, State& state, Au
 
     buyer.money -= amount;
     if (amount > 0) {
-        audio.PlaySoundEffect(SoundEffect::Gold);
+        (void)PlayEntityCenterSoundEmitter(state, buyer, SoundEffect::Gold);
     }
     return true;
 }

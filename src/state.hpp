@@ -198,6 +198,7 @@ struct State {
     std::uint32_t depth = 0;
     std::uint32_t frame_pause = 0;
     bool audio_occlusion_enabled = true;
+    Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
     std::vector<VID> interact_claimed_vids_this_frame;
 
     // World and debug level state.

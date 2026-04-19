@@ -413,7 +413,7 @@ void RenderAudioBrushPreview(
         }
     }
 
-    const Vec2 listener_world = graphics.camera.target;
+    const Vec2 listener_world = GetAudioListenerWorldPos(state);
     if (brush.show_occlusion_ray && brush.source_active) {
         const Vec2 source_world =
             GetNearestWorldPoint(state.stage, listener_world, brush.source_world_pos);
@@ -1088,7 +1088,7 @@ void RenderAudioEmitterOverlay(
     const bool show_occlusion_paths =
         state.debug_overlay.show_audio_occlusion_paths &&
         IsAudioOcclusionEnabled(state);
-    const Vec2 listener_world = graphics.camera.target;
+    const Vec2 listener_world = GetAudioListenerWorldPos(state);
 
     for (const AudioEmitter& emitter : state.audio_emitters.emitters) {
         if (!emitter.active) {

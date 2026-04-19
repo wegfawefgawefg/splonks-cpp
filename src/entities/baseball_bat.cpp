@@ -150,16 +150,16 @@ bool TryApplyBatContactToEntity(
                 }
             }
             if (sound_effect.has_value()) {
-                audio.PlaySoundEffect(*sound_effect);
+                (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], *sound_effect);
             }
             break;
         }
         case common::DamageResult::None: {
-            audio.PlaySoundEffect(SoundEffect::BaseballBatMetalDink1);
+            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], SoundEffect::BaseballBatMetalDink1);
             break;
         }
         case common::DamageResult::Hurt:
-            audio.PlaySoundEffect(SoundEffect::Thud);
+            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], SoundEffect::Thud);
             break;
         }
         return true;

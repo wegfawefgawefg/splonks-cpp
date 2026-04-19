@@ -103,7 +103,7 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
     }
     if (break_sound.has_value()) {
-        audio.PlaySoundEffect(*break_sound);
+        (void)PlayWorldSoundEmitter(state, (area.tl + area.br) / 2.0F, *break_sound);
     }
 }
 

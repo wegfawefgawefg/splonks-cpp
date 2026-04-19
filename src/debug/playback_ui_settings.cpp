@@ -1,6 +1,7 @@
 #include "debug/playback_internal.hpp"
 
 #include "audio_acoustics.hpp"
+#include "audio_emitters.hpp"
 #include "settings.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
@@ -151,13 +152,13 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     }
     ImGui::Text(
         "Listener WC: (%.1f, %.1f)",
-        graphics.camera.target.x,
-        graphics.camera.target.y
+        GetAudioListenerWorldPos(state).x,
+        GetAudioListenerWorldPos(state).y
     );
     if (brush.source_active) {
         const PositionalAudioAcoustics acoustics = ComputePositionalAudioAcoustics(
             state,
-            graphics.camera.target,
+            GetAudioListenerWorldPos(state),
             brush.source_world_pos
         );
         ImGui::SeparatorText("Computed Acoustics");
@@ -375,7 +376,6 @@ void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& grap
             const bool selected = mode == graphics.camera_mode;
             if (ImGui::Selectable(CameraModeToString(mode), selected)) {
                 graphics.camera_mode = mode;
-                SetAudioOcclusionEnabled(state, mode == CameraMode::Follow);
                 if (mode == CameraMode::StageFit) {
                     graphics.play_cam.pos = GetStageCameraCenter(state.stage);
                 }

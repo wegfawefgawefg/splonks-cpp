@@ -39,7 +39,7 @@ void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
         entity.stone ? std::optional<SoundEffect>(SoundEffect::PotShatter)
                      : entity.death_sound_effect;
     if (sound_effect.has_value()) {
-        audio.PlaySoundEffect(*sound_effect);
+        (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
     }
     if (entity.on_death != nullptr) {
         entity.on_death(entity_idx, state, audio);
@@ -63,7 +63,7 @@ EntityDamageEffectResult ApplyDamageEffect(
             SpawnDamageEffectAnimationBurst(*entity.damage_animation, entity.GetCenter(), state);
         }
         if (entity.damage_sound.has_value()) {
-            audio.PlaySoundEffect(*entity.damage_sound);
+            (void)PlayEntityCenterSoundEmitter(state, entity, *entity.damage_sound);
         }
     }
     if (entity.on_damage != nullptr) {
@@ -164,7 +164,7 @@ DamageResult TryDamageEntity(
                 return DamageResult::Died;
             }
             if (const std::optional<SoundEffect> sound_effect = GetCrushSoundEffect(entity.type_)) {
-                audio.PlaySoundEffect(*sound_effect);
+                (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
             }
             entity.marked_for_destruction = true;
             return DamageResult::Died;

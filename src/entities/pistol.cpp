@@ -105,7 +105,7 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
     const std::optional<VID> owner_vid = pistol.held_by_vid.has_value() ? pistol.held_by_vid
                                                                         : pistol.use_state.user_vid;
 
-    audio.PlaySoundEffect(SoundEffect::PistolShoot);
+    (void)PlayWorldSoundEmitter(state, muzzle_pos, SoundEffect::PistolShoot);
     SpawnPistolMuzzleSmoke(state, muzzle_pos, direction);
 
     const HitscanHit hit = TraceHitscan(
@@ -148,7 +148,7 @@ void OnUseAsPistol(std::size_t entity_idx, State& state, Graphics& graphics, Aud
     }
 
     if (pistol.counter_b <= 0.0F) {
-        audio.PlaySoundEffect(SoundEffect::GunEmpty);
+        (void)PlayEntitySoundEmitter(state, pistol, SoundEffect::GunEmpty);
         if (pistol.use_state.source == AttachmentMode::None) {
             StopUsingEntity(pistol);
         }

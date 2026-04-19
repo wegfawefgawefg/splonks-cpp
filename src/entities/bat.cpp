@@ -100,6 +100,7 @@ void StepEntityLogicAsBat(
     float dt
 ) {
     (void)graphics;
+    (void)audio;
     (void)dt;
     Entity& bat = state.entity_manager.entities[entity_idx];
     const controls::ControlIntent control =
@@ -119,10 +120,10 @@ void StepEntityLogicAsBat(
         }
 
         if (control.use_pressed) {
-            audio.PlaySoundEffect(SoundEffect::BatSqueak);
+            (void)PlayEntitySoundEmitter(state, bat, SoundEffect::BatSqueak);
         }
         if (bat.ai_state == EntityAiState::Idle && steering) {
-            audio.PlaySoundEffect(SoundEffect::BatSqueak);
+            (void)PlayEntitySoundEmitter(state, bat, SoundEffect::BatSqueak);
         }
 
         bat.ai_state = EntityAiState::Pursuing;
@@ -183,7 +184,7 @@ void StepEntityLogicAsBat(
                 //  squeak
                 const SoundEffect sound_effect =
                     RandomBool() ? SoundEffect::BatSqueak : SoundEffect::BatFlap1;
-                audio.PlaySoundEffect(sound_effect);
+                (void)PlayEntitySoundEmitter(state, mutable_bat, sound_effect);
             }
             //  go to the target
             mutable_bat.ai_state = EntityAiState::Pursuing;
@@ -224,6 +225,7 @@ void StepEntityPhysicsAsBat(
     Audio& audio,
     float dt
 ) {
+    (void)audio;
     Entity& bat = state.entity_manager.entities[entity_idx];
     const bool controlled =
         state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;

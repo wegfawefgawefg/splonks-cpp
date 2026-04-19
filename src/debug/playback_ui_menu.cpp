@@ -249,7 +249,6 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
 
     const auto apply_stage_fit_camera = [&state, &graphics]() {
         graphics.camera_mode = CameraMode::StageFit;
-        SetAudioOcclusionEnabled(state, false);
         graphics.play_cam.pos = GetStageCameraCenter(state.stage);
         graphics.camera.target = graphics.play_cam.pos;
         graphics.camera.zoom = GetStageFitCameraZoom(state.stage, graphics);

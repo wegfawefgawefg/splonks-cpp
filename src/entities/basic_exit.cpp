@@ -138,13 +138,14 @@ bool TryTakeExit(
     const Graphics& graphics,
     Audio& audio
 ) {
+    (void)audio;
     const std::optional<ExitPrompt> prompt = BuildExitPromptForEntity(entity_idx, state, graphics);
     if (!prompt.has_value() || !prompt->allowed) {
         return false;
     }
 
     const Entity& exit_entity = state.entity_manager.entities[entity_idx];
-    audio.PlaySoundEffect(SoundEffect::StageWin);
+    (void)PlayEntityCenterSoundEmitter(state, exit_entity, SoundEffect::StageWin);
     if (exit_entity.transition_target.has_value()) {
         QueueStageTransition(state, *exit_entity.transition_target);
     } else {

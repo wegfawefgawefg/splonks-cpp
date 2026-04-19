@@ -1,6 +1,7 @@
 #include "render/gameplay.hpp"
 
 #include "entity/manager.hpp"
+#include "entities/common/common.hpp"
 #include "graphics.hpp"
 #include "render/tiles_and_entities.hpp"
 #include "state.hpp"
@@ -165,8 +166,13 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     } else if (state.controlled_entity_vid.has_value()) {
         if (const Entity* const controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid)) {
             if (!graphics.debug_lock_play_camera) {
-                const Vec2 delta =
-                    GetNearestWorldDelta(state.stage, graphics.play_cam.pos, controlled->pos);
+                const Vec2 controlled_visual_center =
+                    entities::common::GetVisualCenterForEntity(*controlled, graphics, controlled->GetCenter());
+                const Vec2 delta = GetNearestWorldDelta(
+                    state.stage,
+                    graphics.play_cam.pos,
+                    controlled_visual_center
+                );
                 graphics.play_cam.pos += delta * 0.075F;
                 graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, graphics.play_cam.pos);
             }

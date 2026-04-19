@@ -31,6 +31,7 @@ EntityDamageEffectResult OnDamageAsStoreLight(
     unsigned int amount,
     bool damage_applied
 ) {
+    (void)audio;
     (void)amount;
     (void)damage_applied;
 
@@ -53,7 +54,7 @@ EntityDamageEffectResult OnDamageAsStoreLight(
     light.can_collide = true;
     light.damage_vulnerability = DamageVulnerability::Immune;
     light.collide_sound = SoundEffect::LightBreak;
-    audio.PlaySoundEffect(SoundEffect::LightBreak);
+    (void)PlayEntityCenterSoundEmitter(state, light, SoundEffect::LightBreak);
     return EntityDamageEffectResult::Consumed;
 }
 

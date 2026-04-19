@@ -11,6 +11,7 @@
 namespace splonks {
 
 struct Audio;
+struct Entity;
 struct Graphics;
 struct State;
 
@@ -39,6 +40,7 @@ enum class AudioEmitterTargetLossPolicy : std::uint8_t {
     FinishCurrentPlay,
     KeepPlayingDetached,
 };
+
 
 /// Shared play-time knobs for emitter creation helpers.
 /// owner_entity_vid is optional ownership metadata used for lookup, dedupe, and cleanup.
@@ -84,6 +86,8 @@ struct AudioEmitterManager {
 
 const AudioEmitter* GetSoundEmitter(const State& state, VID emitter_vid);
 AudioEmitter* GetSoundEmitterMut(State& state, VID emitter_vid);
+Vec2 GetAudioListenerWorldPos(const State& state);
+void SetAudioListenerWorldPos(State& state, const Vec2& world_pos);
 std::optional<VID> FindOwnedSoundEmitter(
     const State& state,
     VID owner_entity_vid,
@@ -108,6 +112,24 @@ std::optional<VID> PlayAttachedSoundEmitter(
     const Vec2& attached_offset,
     SoundEffect sound_effect,
     const AudioEmitterPlayParams& params = {}
+);
+/// Spawns a one-shot or loop emitter attached to an entity and default-owned by it.
+/// Use this for sounds that should follow a living entity while they play.
+std::optional<VID> PlayEntitySoundEmitter(
+    State& state,
+    const Entity& entity,
+    SoundEffect sound_effect,
+    const AudioEmitterPlayParams& params = {},
+    const Vec2& attached_offset = Vec2::New(0.0F, 0.0F)
+);
+/// Spawns a fixed world emitter at an entity's current center plus world_offset.
+/// Use this for transient impacts or pickups where the source may disappear immediately.
+std::optional<VID> PlayEntityCenterSoundEmitter(
+    State& state,
+    const Entity& entity,
+    SoundEffect sound_effect,
+    const AudioEmitterPlayParams& params = {},
+    const Vec2& world_offset = Vec2::New(0.0F, 0.0F)
 );
 /// Finds or creates one looping attached emitter for (owner_entity_vid, sound_effect).
 /// Intended for per-step maintenance of persistent loops, e.g. a rolling boulder hum.

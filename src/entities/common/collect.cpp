@@ -58,6 +58,7 @@ bool TryCollectEntityFromContact(
     const Graphics& graphics,
     Audio& audio
 ) {
+    (void)audio;
     if (entity_idx >= state.entity_manager.entities.size() ||
         other_entity_idx >= state.entity_manager.entities.size()) {
         return false;
@@ -80,7 +81,7 @@ bool TryCollectEntityFromContact(
     if (money_gained != 0) {
         collector.money += money_gained;
         if (const std::optional<SoundEffect> sound_effect = GetPickupSound(pickup->type_)) {
-            audio.PlaySoundEffect(*sound_effect);
+            (void)PlayEntityCenterSoundEmitter(state, *pickup, *sound_effect);
         }
         state.entity_manager.SetInactive(other_entity_idx);
         state.UpdateSidForEntity(other_entity_idx, graphics);

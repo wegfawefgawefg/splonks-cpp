@@ -150,7 +150,7 @@ void StepEntityLogicAsCaveman(
             caveman.vel.y = kCavemanAlertHopSpeedY;
             caveman.grounded = false;
         }
-        audio.PlaySoundEffect(SoundEffect::CavemanNotice);
+        (void)PlayEntitySoundEmitter(state, caveman, SoundEffect::CavemanNotice);
         StartAttacking(caveman);
         return;
     }

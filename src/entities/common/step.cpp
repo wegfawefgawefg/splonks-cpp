@@ -58,6 +58,7 @@ void StepStunTimer(std::size_t entity_idx, State& state) {
 }
 
 void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio) {
+    (void)audio;
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.travel_sound_countdown -= entity.dist_traveled_this_frame;
 
@@ -102,7 +103,7 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
             which_step_sound =
                 entity.travel_sound == TravelSound::One ? SoundEffect::Step1 : SoundEffect::Step2;
         }
-        audio.PlaySoundEffect(which_step_sound);
+        (void)PlayEntitySoundEmitter(state, entity, which_step_sound);
         entity.IncTravelSound();
     }
 }

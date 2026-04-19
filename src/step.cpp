@@ -3,6 +3,7 @@
 #include "audio_emitters.hpp"
 #include "inputs.hpp"
 #include "controls.hpp"
+#include "entities/common/common.hpp"
 #include "entities/basic_exit.hpp"
 #include "buying.hpp"
 #include "step_entities.hpp"
@@ -38,6 +39,19 @@ void UpdateControlledEntity(State& state) {
     }
 
     state.controlled_entity_vid.reset();
+}
+
+Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics& graphics) {
+    if (state.controlled_entity_vid.has_value()) {
+        if (const Entity* const controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid)) {
+            return entities::common::GetVisualCenterForEntity(
+                *controlled,
+                graphics,
+                controlled->GetCenter()
+            );
+        }
+    }
+    return graphics.camera.target;
 }
 
 } // namespace
@@ -110,6 +124,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.ClearInteractClaims();
     state.entity_tools.Step();
     state.RebuildSid(graphics);
+    SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
     UpdateAudioEmitters(state, audio, graphics);
@@ -144,7 +159,13 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     if (lost) {
         state.pending_stage_transition.reset();
         StopAllSoundEmitters(state, audio);
-        audio.PlaySoundEffect(SoundEffect::GameOver);
+        Vec2 game_over_pos = graphics.camera.target;
+        if (state.player_vid.has_value()) {
+            if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
+                game_over_pos = player->GetCenter();
+            }
+        }
+        (void)PlayWorldSoundEmitter(state, game_over_pos, SoundEffect::GameOver);
         state.SetMode(Mode::GameOver);
     } else if (state.pending_stage_transition.has_value()) {
         StopAllSoundEmitters(state, audio);
@@ -179,6 +200,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.ClearWorldPrompts();
     state.ClearInteractClaims();
     state.RebuildSid(graphics);
+    SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     StepEntities(state, audio, graphics, dt);
     UpdateAudioEmitters(state, audio, graphics);
     state.particles.Step(graphics.frame_data_db, dt);

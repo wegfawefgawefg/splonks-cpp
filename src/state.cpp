@@ -149,6 +149,7 @@ State State::New() {
     state.depth = 0;
     state.frame_pause = 0;
     state.audio_occlusion_enabled = true;
+    state.audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
     state.interact_claimed_vids_this_frame.clear();
     state.entity_manager = EntityManager::New();
     state.particles = ParticleSystem{};

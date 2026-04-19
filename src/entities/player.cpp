@@ -205,7 +205,7 @@ void StepEntityLogicAsPlayer(
                     entity->attachment_mode = AttachmentMode::Held;
                     state.UpdateSidForEntity(vid->id, graphics);
                     attacked = true;
-                    audio.PlaySoundEffect(SoundEffect::BaseballBatSwing);
+                    (void)PlayEntitySoundEmitter(state, player, SoundEffect::BaseballBatSwing);
                 }
             }
         }

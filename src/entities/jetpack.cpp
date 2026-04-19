@@ -100,6 +100,7 @@ EntityDamageEffectResult OnDamageAsJetpack(
 
 void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
     (void)graphics;
+    (void)audio;
     Entity& jetpack = state.entity_manager.entities[entity_idx];
     if (jetpack.use_state.down == false) {
         return;
@@ -141,7 +142,7 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
         const SoundEffect sound_effect =
             jetpack.travel_sound == TravelSound::One ? SoundEffect::Jetpack1
                                                      : SoundEffect::Jetpack2;
-        audio.PlaySoundEffect(sound_effect);
+        (void)PlayEntitySoundEmitter(state, jetpack, sound_effect);
         jetpack.IncTravelSound();
     }
     jetpack.counter_a -= 1.0F;

@@ -394,6 +394,7 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
 }
 
 void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) {
+    (void)audio;
     GroundedCheck(entity_idx, state, audio, true, true);
 
     Entity& entity = state.entity_manager.entities[entity_idx];
@@ -462,7 +463,7 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
             entity.coyote_time = 0;
             entity.grounded = false;
             entity.jump_delay_frame_count = player::kJumpDelayFrames;
-            audio.PlaySoundEffect(SoundEffect::Jump);
+            (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::Jump);
         }
     }
 

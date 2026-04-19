@@ -187,6 +187,7 @@ void StepEntityLogicAsBlock(
     float dt
 ) {
     (void)graphics;
+    (void)audio;
     (void)dt;
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
@@ -216,7 +217,7 @@ void StepEntityLogicAsBlock(
         const SoundEffect sound =
             entity.travel_sound == TravelSound::One ? SoundEffect::BlockDrag1
                                                     : SoundEffect::BlockDrag2;
-        audio.PlaySoundEffect(sound);
+        (void)PlayEntitySoundEmitter(state, entity, sound);
         entity.IncTravelSound();
     }
 
