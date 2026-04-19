@@ -4,6 +4,7 @@
 #include "stage_init.hpp"
 #include "stage_wrap.hpp"
 #include "stage_lighting.hpp"
+#include "stage_acoustics.hpp"
 
 #include <imgui.h>
 
@@ -314,6 +315,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         }
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
+        InvalidateStageAcoustics(state);
     }
 
     if (debug.playback_active) {
@@ -461,6 +463,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
     if (border_changed) {
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
+        InvalidateStageAcoustics(state);
     }
 
     if (debug.playback_active) {

@@ -8,6 +8,7 @@
 #include "stage.hpp"
 #include "state.hpp"
 #include "stage_lighting.hpp"
+#include "stage_acoustics.hpp"
 #include "tile.hpp"
 #include "world_query.hpp"
 
@@ -109,6 +110,7 @@ void StepEntityLogicAsRope(
         }
 
         UpdateStageLightingForTileChanges(state, changed_tiles);
+        UpdateStageAcousticsForTileChanges(state, changed_tiles);
 
         if (atleast_one_tile_converted) {
             audio.PlaySoundEffect(SoundEffect::RopeDeploy);

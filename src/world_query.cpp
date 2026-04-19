@@ -1,6 +1,8 @@
 #include "world_query.hpp"
 
 #include "entities/common/common.hpp"
+#include "state.hpp"
+
 
 #include <algorithm>
 #include <cmath>
@@ -380,6 +382,57 @@ WorldRayHit QueryWorldRayHitAtPoint(
     }
 
     return WorldRayHit{};
+}
+
+TileStepRaycastResult RaycastTileSteps(
+    const Stage& stage,
+    const IVec2& origin_tile,
+    const IVec2& direction,
+    int max_steps
+) {
+    TileStepRaycastResult result;
+    result.last_open_tile = origin_tile;
+    result.last_open_unwrapped_tile = origin_tile;
+    result.blocker_unwrapped_tile = origin_tile;
+
+    if (max_steps <= 0 || (direction.x == 0 && direction.y == 0) ||
+        !stage.IsTileCoordInside(origin_tile.x, origin_tile.y)) {
+        return result;
+    }
+
+    const Tile origin = stage.GetTile(
+        static_cast<unsigned int>(origin_tile.x),
+        static_cast<unsigned int>(origin_tile.y)
+    );
+    if (IsTileCollidable(origin)) {
+        return result;
+    }
+
+    for (int step = 1; step <= max_steps; ++step) {
+        const IVec2 sample_unwrapped = IVec2::New(
+            origin_tile.x + direction.x * step,
+            origin_tile.y + direction.y * step
+        );
+        const Tile sample_tile = stage.GetTileOrBorder(sample_unwrapped.x, sample_unwrapped.y);
+        if (IsTileCollidable(sample_tile)) {
+            result.blocked = true;
+            result.blocker_unwrapped_tile = sample_unwrapped;
+            const IVec2 blocker_tile = stage.WrapTileCoord(sample_unwrapped);
+            if (stage.IsTileCoordInside(blocker_tile.x, blocker_tile.y)) {
+                result.blocker_tile = blocker_tile;
+            }
+            break;
+        }
+
+        const IVec2 wrapped_sample = stage.WrapTileCoord(sample_unwrapped);
+        if (stage.IsTileCoordInside(wrapped_sample.x, wrapped_sample.y)) {
+            result.last_open_tile = wrapped_sample;
+        }
+        result.last_open_unwrapped_tile = sample_unwrapped;
+        result.open_steps = step;
+    }
+
+    return result;
 }
 
 WorldRayHit RaycastTiles(

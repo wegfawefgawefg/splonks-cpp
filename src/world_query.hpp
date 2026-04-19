@@ -67,6 +67,22 @@ struct WorldRayHit {
     std::optional<VID> entity_vid = std::nullopt;
 };
 
+struct TileStepRaycastResult {
+    IVec2 last_open_tile = IVec2::New(0, 0);
+    IVec2 last_open_unwrapped_tile = IVec2::New(0, 0);
+    std::optional<IVec2> blocker_tile = std::nullopt;
+    IVec2 blocker_unwrapped_tile = IVec2::New(0, 0);
+    bool blocked = false;
+    int open_steps = 0;
+};
+
+TileStepRaycastResult RaycastTileSteps(
+    const Stage& stage,
+    const IVec2& origin_tile,
+    const IVec2& direction,
+    int max_steps
+);
+
 WorldRayHit RaycastTiles(
     const Vec2& start_pos,
     const Vec2& direction,

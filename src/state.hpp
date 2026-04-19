@@ -17,6 +17,7 @@
 #include "particles/system.hpp"
 #include "tools/tool_archetype.hpp"
 #include "stage.hpp"
+#include "stage_acoustics.hpp"
 #include "stage_progression.hpp"
 #include "stage_lighting.hpp"
 
@@ -106,6 +107,7 @@ struct DebugOverlayState {
     bool show_chunk_coords = false;
     bool show_tile_indexes = false;
     bool show_tile_types = false;
+    bool show_tile_openness = false;
     bool show_lights = false;
     bool show_area_boundaries = false;
     bool show_area_ids = false;
@@ -125,6 +127,8 @@ struct DebugShakeBrushState {
 
 struct DebugAudioBrushState {
     bool enabled = false;
+    bool show_openness_rays = false;
+    bool show_occlusion_ray = false;
     SoundEffect sound_effect = SoundEffect::BoulderRoll;
     float volume_scale = 1.0F;
     bool source_active = false;
@@ -199,6 +203,7 @@ struct State {
     SID sid;
     std::vector<VID> area_listener_vids;
     Stage stage;
+    StageAcoustics stage_acoustics;
     StageLighting stage_lighting;
 
     // Common entity references.

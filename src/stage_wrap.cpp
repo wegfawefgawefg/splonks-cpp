@@ -3,6 +3,7 @@
 #include "entity.hpp"
 #include "graphics.hpp"
 #include "stage_lighting.hpp"
+#include "stage_acoustics.hpp"
 #include "room.hpp"
 #include "state.hpp"
 
@@ -366,6 +367,7 @@ void ApplyToroidalWrapSettings(
     if (wrap_config_changed) {
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
+        InvalidateStageAcoustics(state);
         state.RebuildSid(graphics);
     }
 }

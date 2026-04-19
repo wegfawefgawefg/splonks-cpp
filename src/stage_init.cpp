@@ -15,6 +15,7 @@
 #include "entities/damsel.hpp"
 #include "entities/stomp_pad.hpp"
 #include "stage_gen/splk_mines.hpp"
+#include "stage_acoustics.hpp"
 #include "tile_archetype.hpp"
 
 #include <algorithm>
@@ -1720,6 +1721,8 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
         InitShopTestStage(state);
         break;
     }
+
+    state.stage_acoustics = StageAcoustics::New();
 }
 
 } // namespace splonks

@@ -4,6 +4,7 @@
 #include "graphics.hpp"
 #include "menu/postfx.hpp"
 #include "menu/lighting.hpp"
+#include "stage_acoustics.hpp"
 #include "menu/settings.hpp"
 #include "menu/title.hpp"
 #include "menu/ui.hpp"
@@ -225,6 +226,7 @@ void ProcessInputPlaying(
         }
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
+        InvalidateStageAcoustics(state);
     }
     (void)window;
     (void)graphics;
@@ -249,6 +251,7 @@ void ProcessInputStageTransition(
             ApplyPendingStageTransition(state);
             graphics.ResetTileVariations();
             InvalidateStageLighting(state);
+            InvalidateStageAcoustics(state);
             state.scene_frame = 0;
             state.SetMode(Mode::Playing);
         } else {
@@ -272,6 +275,7 @@ void ProcessInputGameOver(
         QueueRespawnTransition(state);
         graphics.camera.rotation = 0.0F;
         InvalidateStageLighting(state);
+        InvalidateStageAcoustics(state);
         state.SetMode(Mode::StageTransition);
     }
 }
@@ -291,6 +295,7 @@ void ProcessInputWin(
         state.stage = Stage::NewBlank();
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
+        InvalidateStageAcoustics(state);
         state.SetMode(Mode::Title);
     }
     (void)graphics;

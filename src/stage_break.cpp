@@ -3,6 +3,7 @@
 #include "entity/archetype.hpp"
 #include "on_damage_effects.hpp"
 #include "stage_lighting.hpp"
+#include "stage_acoustics.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
@@ -99,6 +100,7 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
 
     if (broke_any_tiles) {
         UpdateStageLightingForTileChanges(state, changed_tiles);
+        UpdateStageAcousticsForTileChanges(state, changed_tiles);
     }
     if (break_sound.has_value()) {
         audio.PlaySoundEffect(*break_sound);

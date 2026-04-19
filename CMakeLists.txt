@@ -249,6 +249,7 @@ add_executable(splonks-cpp
     src/stage_gen/splk_mines.cpp
     src/stage_gen/test.cpp
     src/stage_break.cpp
+    src/stage_acoustics.cpp
     src/stage_progression.cpp
     src/state.cpp
     src/step.cpp

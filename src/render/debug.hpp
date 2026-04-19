@@ -7,6 +7,6 @@ namespace splonks {
 struct Graphics;
 struct State;
 
-void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, const State& state);
+void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, State& state);
 
 } // namespace splonks

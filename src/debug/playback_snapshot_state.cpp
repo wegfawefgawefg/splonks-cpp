@@ -1,4 +1,6 @@
 #include "debug/playback.hpp"
+#include "stage_acoustics.hpp"
+#include "stage_lighting.hpp"
 
 namespace splonks {
 
@@ -102,12 +104,15 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.entity_manager = snapshot.entity_manager;
     state.particles.Clear();
     state.stage = snapshot.stage;
+    state.stage_acoustics = StageAcoustics::New();
     state.player_vid = snapshot.player_vid;
     state.controlled_entity_vid = snapshot.controlled_entity_vid;
     state.mouse_trailer_vid = snapshot.mouse_trailer_vid;
     state.entity_tools.tool_states = snapshot.entity_tool_states;
     state.RebuildSid(graphics);
     graphics.play_cam.pos = snapshot.play_cam_pos;
+    InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
 }
 
 } // namespace splonks

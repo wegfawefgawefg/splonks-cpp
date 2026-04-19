@@ -2,6 +2,7 @@
 
 #include "settings.hpp"
 #include "stage_lighting.hpp"
+#include "stage_acoustics.hpp"
 
 #include <imgui.h>
 
@@ -41,6 +42,7 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
     ImGui::Checkbox("Show Chunk Coords", &state.debug_overlay.show_chunk_coords);
     ImGui::Checkbox("Show Tile Indexes", &state.debug_overlay.show_tile_indexes);
     ImGui::Checkbox("Show Tile Types", &state.debug_overlay.show_tile_types);
+    ImGui::Checkbox("Show Tile Openness", &state.debug_overlay.show_tile_openness);
     ImGui::Checkbox("Show Lights", &state.debug_overlay.show_lights);
     ImGui::Checkbox("Show Area Boundaries", &state.debug_overlay.show_area_boundaries);
     ImGui::Checkbox("Show Area IDs", &state.debug_overlay.show_area_ids);
@@ -114,6 +116,9 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     DebugAudioBrushState& brush = state.debug_audio_brush;
     bool save_settings = false;
     ImGui::Checkbox("Enable Audio Brush", &brush.enabled);
+    ImGui::Checkbox("Show Openness Rays", &brush.show_openness_rays);
+    ImGui::SameLine();
+    ImGui::Checkbox("Show Occlusion Ray", &brush.show_occlusion_ray);
     save_settings |= ImGui::SliderFloat(
         "Pan Half-Width (px)",
         &state.settings.audio.pan_half_width_px,
@@ -153,6 +158,7 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         graphics.camera.target.y
     );
     ImGui::TextUnformatted("Higher half-width = gentler pan. Lower = more aggressive pan.");
+    ImGui::Text("Openness Ray Length: %d tiles", kStageOpennessRayLengthTiles);
 
     if (ImGui::Button("Clear Source")) {
         brush.source_active = false;

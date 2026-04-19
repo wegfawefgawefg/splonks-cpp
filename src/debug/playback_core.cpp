@@ -4,6 +4,7 @@
 #include "inputs.hpp"
 #include "step.hpp"
 #include "stage_lighting.hpp"
+#include "stage_acoustics.hpp"
 
 #include <imgui.h>
 
@@ -71,6 +72,7 @@ void ExitPlayback(DebugPlayback& debug, State& state, Graphics& graphics) {
         debug.live_resume_snapshot.reset();
     }
     InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
 }
 
 namespace {
@@ -285,6 +287,7 @@ void RunSimulationWithDebugControls(
         if (!debug.recorded_snapshots.empty()) {
             RestoreGameplaySnapshot(debug.recorded_snapshots[debug.playback_index], state, graphics);
             InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
         }
         graphics.debug_lock_play_camera = true;
         return;
