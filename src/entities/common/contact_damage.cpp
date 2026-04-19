@@ -214,10 +214,6 @@ bool TryApplyProjectileContactToEntity(
     if (entity.thrown_by.has_value() && other_entity.vid == *entity.thrown_by) {
         return false;
     }
-    if (entity.type_ == EntityType::BallAndChainBall && entity.entity_a.has_value() &&
-        other_entity.vid == *entity.entity_a) {
-        return false;
-    }
     if (!other_entity.can_be_hit) {
         return false;
     }
