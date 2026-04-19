@@ -15,7 +15,7 @@ namespace {
 
 void ClearEmitterRuntime(AudioEmitter& emitter) {
     emitter.started = false;
-    emitter.sound_instance_vid = kInvalidSoundEffectInstanceVID;
+    emitter.sound_instance_vid = kInvalidAudioInstanceVID;
 }
 
 void DeactivateEmitter(AudioEmitterManager& manager, AudioEmitter& emitter) {
@@ -79,13 +79,13 @@ bool ResolveEmitterWorldPos(State& state, const Graphics& graphics, AudioEmitter
     return HandleMissingTarget(emitter, false);
 }
 
-SoundEffectPlaybackParams BuildEmitterPlaybackParams(
+AudioPlaybackParams BuildEmitterPlaybackParams(
     State& state,
     const Graphics& graphics,
     const AudioEmitter& emitter
 ) {
     (void)graphics;
-    SoundEffectPlaybackParams params;
+    AudioPlaybackParams params;
     params.volume_scale = emitter.volume_scale;
     params.positional = true;
     params.loops = emitter.playback_mode == AudioEmitterPlaybackMode::Looping ? -1 : 0;
@@ -114,9 +114,9 @@ bool StartEmitterInstance(
     Audio& audio,
     const Graphics& graphics
 ) {
-    const SoundEffectPlaybackParams params = BuildEmitterPlaybackParams(state, graphics, emitter);
-    emitter.sound_instance_vid = audio.PlaySoundEffectInstance(emitter.sound_effect, params);
-    emitter.started = IsValidSoundEffectInstanceVID(emitter.sound_instance_vid);
+    const AudioPlaybackParams params = BuildEmitterPlaybackParams(state, graphics, emitter);
+    emitter.sound_instance_vid = audio.PlayAudioAssetInstance(emitter.audio_asset_id, params);
+    emitter.started = IsValidAudioInstanceVID(emitter.sound_instance_vid);
     return emitter.started;
 }
 
@@ -147,7 +147,7 @@ std::optional<VID> AudioEmitterManager::NewEmitter() {
     emitter.active = true;
     emitter.vid.version += 1;
     emitter.started = false;
-    emitter.sound_instance_vid = kInvalidSoundEffectInstanceVID;
+    emitter.sound_instance_vid = kInvalidAudioInstanceVID;
     emitter.owner_entity_vid.reset();
     emitter.attached_entity_vid.reset();
     emitter.attached_offset = Vec2::New(0.0F, 0.0F);
@@ -217,7 +217,7 @@ void SetAudioListenerWorldPos(State& state, const Vec2& world_pos) {
 std::optional<VID> FindOwnedSoundEmitter(
     const State& state,
     VID owner_entity_vid,
-    SoundEffect sound_effect,
+    AudioAssetId audio_asset_id,
     AudioEmitterPlaybackMode playback_mode
 ) {
     for (const AudioEmitter& emitter : state.audio_emitters.emitters) {
@@ -225,7 +225,7 @@ std::optional<VID> FindOwnedSoundEmitter(
             continue;
         }
         if (*emitter.owner_entity_vid == owner_entity_vid &&
-            emitter.sound_effect == sound_effect &&
+            emitter.audio_asset_id == audio_asset_id &&
             emitter.playback_mode == playback_mode) {
             return emitter.vid;
         }
@@ -239,7 +239,7 @@ std::optional<VID> FindOwnedSoundEmitter(
 std::optional<VID> PlayWorldSoundEmitter(
     State& state,
     const Vec2& world_pos,
-    SoundEffect sound_effect,
+    AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params
 ) {
     const std::optional<VID> emitter_vid = state.audio_emitters.NewEmitter();
@@ -252,7 +252,7 @@ std::optional<VID> PlayWorldSoundEmitter(
         return std::nullopt;
     }
 
-    emitter->sound_effect = sound_effect;
+    emitter->audio_asset_id = audio_asset_id;
     emitter->volume_scale = params.volume_scale;
     emitter->playback_mode = params.playback_mode;
     emitter->target_loss_policy = params.target_loss_policy;
@@ -268,7 +268,7 @@ std::optional<VID> PlayAttachedSoundEmitter(
     State& state,
     VID attached_entity_vid,
     const Vec2& attached_offset,
-    SoundEffect sound_effect,
+    AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params
 ) {
     const std::optional<VID> emitter_vid = state.audio_emitters.NewEmitter();
@@ -281,7 +281,7 @@ std::optional<VID> PlayAttachedSoundEmitter(
         return std::nullopt;
     }
 
-    emitter->sound_effect = sound_effect;
+    emitter->audio_asset_id = audio_asset_id;
     emitter->volume_scale = params.volume_scale;
     emitter->playback_mode = params.playback_mode;
     emitter->target_loss_policy = params.target_loss_policy;
@@ -299,7 +299,7 @@ std::optional<VID> PlayAttachedSoundEmitter(
 std::optional<VID> PlayEntitySoundEmitter(
     State& state,
     const Entity& entity,
-    SoundEffect sound_effect,
+    AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params,
     const Vec2& attached_offset
 ) {
@@ -311,7 +311,7 @@ std::optional<VID> PlayEntitySoundEmitter(
         state,
         entity.vid,
         attached_offset,
-        sound_effect,
+        audio_asset_id,
         entity_params
     );
 }
@@ -319,7 +319,7 @@ std::optional<VID> PlayEntitySoundEmitter(
 std::optional<VID> PlayEntityCenterSoundEmitter(
     State& state,
     const Entity& entity,
-    SoundEffect sound_effect,
+    AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params,
     const Vec2& world_offset
 ) {
@@ -330,7 +330,7 @@ std::optional<VID> PlayEntityCenterSoundEmitter(
     return PlayWorldSoundEmitter(
         state,
         entity.GetCenter() + world_offset,
-        sound_effect,
+        audio_asset_id,
         entity_params
     );
 }
@@ -343,14 +343,14 @@ std::optional<VID> EnsureAttachedLoopingSoundEmitter(
     VID owner_entity_vid,
     VID attached_entity_vid,
     const Vec2& attached_offset,
-    SoundEffect sound_effect,
+    AudioAssetId audio_asset_id,
     float volume_scale,
     AudioEmitterTargetLossPolicy target_loss_policy
 ) {
     const std::optional<VID> existing = FindOwnedSoundEmitter(
         state,
         owner_entity_vid,
-        sound_effect,
+        audio_asset_id,
         AudioEmitterPlaybackMode::Looping
     );
     if (existing.has_value()) {
@@ -374,7 +374,7 @@ std::optional<VID> EnsureAttachedLoopingSoundEmitter(
         state,
         attached_entity_vid,
         attached_offset,
-        sound_effect,
+        audio_asset_id,
         params
     );
 }
@@ -386,8 +386,8 @@ bool StopSoundEmitter(State& state, Audio& audio, VID emitter_vid) {
         return false;
     }
 
-    if (IsValidSoundEffectInstanceVID(emitter->sound_instance_vid)) {
-        (void)audio.StopSoundEffectInstance(emitter->sound_instance_vid);
+    if (IsValidAudioInstanceVID(emitter->sound_instance_vid)) {
+        (void)audio.StopAudioInstance(emitter->sound_instance_vid);
     }
     state.audio_emitters.SetInactiveVid(emitter->vid);
     return true;
@@ -398,11 +398,11 @@ bool StopOwnedSoundEmitter(
     State& state,
     Audio& audio,
     VID owner_entity_vid,
-    SoundEffect sound_effect,
+    AudioAssetId audio_asset_id,
     AudioEmitterPlaybackMode playback_mode
 ) {
     const std::optional<VID> emitter_vid =
-        FindOwnedSoundEmitter(state, owner_entity_vid, sound_effect, playback_mode);
+        FindOwnedSoundEmitter(state, owner_entity_vid, audio_asset_id, playback_mode);
     if (!emitter_vid.has_value()) {
         return false;
     }
@@ -434,8 +434,8 @@ void UpdateAudioEmitters(State& state, Audio& audio, const Graphics& graphics) {
         }
 
         if (!ResolveEmitterWorldPos(state, graphics, emitter)) {
-            if (IsValidSoundEffectInstanceVID(emitter.sound_instance_vid)) {
-                (void)audio.StopSoundEffectInstance(emitter.sound_instance_vid);
+            if (IsValidAudioInstanceVID(emitter.sound_instance_vid)) {
+                (void)audio.StopAudioInstance(emitter.sound_instance_vid);
             }
             DeactivateEmitter(state.audio_emitters, emitter);
             continue;
@@ -447,8 +447,8 @@ void UpdateAudioEmitters(State& state, Audio& audio, const Graphics& graphics) {
         }
 
         const bool playing =
-            IsValidSoundEffectInstanceVID(emitter.sound_instance_vid) &&
-            audio.IsSoundEffectInstancePlaying(emitter.sound_instance_vid);
+            IsValidAudioInstanceVID(emitter.sound_instance_vid) &&
+            audio.IsAudioInstancePlaying(emitter.sound_instance_vid);
         if (!playing) {
             if (emitter.playback_mode == AudioEmitterPlaybackMode::Looping) {
                 ClearEmitterRuntime(emitter);
@@ -460,8 +460,8 @@ void UpdateAudioEmitters(State& state, Audio& audio, const Graphics& graphics) {
             continue;
         }
 
-        const SoundEffectPlaybackParams params = BuildEmitterPlaybackParams(state, graphics, emitter);
-        if (audio.UpdateSoundEffectInstance(emitter.sound_instance_vid, params)) {
+        const AudioPlaybackParams params = BuildEmitterPlaybackParams(state, graphics, emitter);
+        if (audio.UpdateAudioInstance(emitter.sound_instance_vid, params)) {
             continue;
         }
 

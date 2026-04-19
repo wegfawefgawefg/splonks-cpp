@@ -30,8 +30,8 @@ struct TileArchetype {
     bool hangable = false;
     TileFamily family = TileFamily::Neutral;
     float friction = 0.85F;
-    std::optional<SoundEffect> collide_sound = std::nullopt;
-    std::optional<SoundEffect> break_sound = std::nullopt;
+    std::optional<AudioAssetId> collide_sound = std::nullopt;
+    std::optional<AudioAssetId> break_sound = std::nullopt;
     std::optional<FrameDataId> break_animation = std::nullopt;
     TileOnBreak on_break = nullptr;
     const char* debug_name = "Unknown";

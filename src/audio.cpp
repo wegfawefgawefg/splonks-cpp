@@ -11,64 +11,32 @@ namespace splonks {
 
 namespace {
 
-std::size_t SongIndex(Song song) {
-    return static_cast<std::size_t>(song);
-}
-
 [[noreturn]] void ThrowAudioError(const char* message) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
 }
 
-void DestroyLoadedAudio(LoadedSong& song) {
-    if (song.audio != nullptr) {
-        MIX_DestroyAudio(song.audio);
-        song.audio = nullptr;
+std::string BuildAudioAssetPath(const std::string& file) {
+    if (file.rfind("assets/", 0) == 0) {
+        return file;
     }
+    return "assets/" + file;
 }
 
-void DestroyLoadedAudio(LoadedSound& sound) {
-    if (sound.audio != nullptr) {
-        MIX_DestroyAudio(sound.audio);
-        sound.audio = nullptr;
+void DestroyLoadedAudio(LoadedAudioAsset& asset) {
+    if (asset.audio != nullptr) {
+        MIX_DestroyAudio(asset.audio);
+        asset.audio = nullptr;
     }
 }
 
 void LoadAudioObjects(Audio& audio) {
-    for (LoadedSong& song : audio.songs) {
-        song.audio = MIX_LoadAudio(audio.mixer, song.path.c_str(), false);
-        if (song.audio == nullptr) {
-            ThrowAudioError(("MIX_LoadAudio failed for " + song.path).c_str());
-        }
-    }
-
-    for (LoadedSound& sound : audio.sounds) {
-        sound.audio = MIX_LoadAudio(audio.mixer, sound.path.c_str(), true);
-        if (sound.audio == nullptr) {
-            ThrowAudioError(("MIX_LoadAudio failed for " + sound.path).c_str());
+    for (LoadedAudioAsset& asset : audio.loaded_assets) {
+        asset.audio = MIX_LoadAudio(audio.mixer, asset.path.c_str(), !asset.streamed);
+        if (asset.audio == nullptr) {
+            ThrowAudioError(("MIX_LoadAudio failed for " + asset.path).c_str());
         }
     }
 }
-
-} // namespace
-
-void Audio::CreateTracks() {
-    song_track = MIX_CreateTrack(mixer);
-    if (song_track == nullptr) {
-        ThrowAudioError("MIX_CreateTrack for song track failed");
-    }
-
-    sound_effect_tracks.reserve(audio_detail::kSoundEffectTrackCount);
-    sound_effect_track_runtimes.reserve(audio_detail::kSoundEffectTrackCount);
-    for (std::size_t i = 0; i < audio_detail::kSoundEffectTrackCount; ++i) {
-        MIX_Track* track = MIX_CreateTrack(mixer);
-        if (track == nullptr) {
-            ThrowAudioError("MIX_CreateTrack for sound effect track failed");
-        }
-        InitializeSoundEffectTrack(track);
-    }
-}
-
-namespace {
 
 SDL_PropertiesID MakeLoopingProperties() {
     SDL_PropertiesID properties = SDL_CreateProperties();
@@ -80,126 +48,34 @@ SDL_PropertiesID MakeLoopingProperties() {
 
 } // namespace
 
-std::vector<Song> AllSongs() {
-    return {Song::Title, Song::Playing};
-}
-
-std::vector<SoundEffect> AllSoundEffects() {
-    return {
-        SoundEffect::Jump,
-        SoundEffect::Step1,
-        SoundEffect::Step2,
-        SoundEffect::ClimbMetal1,
-        SoundEffect::ClimbMetal2,
-        SoundEffect::BatFlap1,
-        SoundEffect::BatFlap2,
-        SoundEffect::BatSqueak,
-        SoundEffect::Thud,
-        SoundEffect::GameOver,
-        SoundEffect::Jetpack1,
-        SoundEffect::Jetpack2,
-        SoundEffect::Equip,
-        SoundEffect::Throw,
-        SoundEffect::PistolShoot,
-        SoundEffect::PistolUnholster,
-        SoundEffect::GunEmpty,
-        SoundEffect::BombExplosion,
-        SoundEffect::AnimalCrush1,
-        SoundEffect::AnimalCrush2,
-        SoundEffect::Gold,
-        SoundEffect::GoldStack,
-        SoundEffect::MoneySmashed,
-        SoundEffect::PlayerOuch,
-        SoundEffect::BlockDrag1,
-        SoundEffect::BlockDrag2,
-        SoundEffect::BlockLand,
-        SoundEffect::DefaultLand,
-        SoundEffect::RopeDeploy,
-        SoundEffect::ClimbRope1,
-        SoundEffect::ClimbRope2,
-        SoundEffect::StageWin,
-        SoundEffect::PotShatter,
-        SoundEffect::BoxBreak,
-        SoundEffect::BaseballBatSwing,
-        SoundEffect::BaseballBatKillHit1,
-        SoundEffect::BaseballBatKillHit2,
-        SoundEffect::BaseballBatKillHit3,
-        SoundEffect::BaseballBatMetalDink1,
-        SoundEffect::BaseballBatBoxSmash,
-        SoundEffect::CavemanNotice,
-        SoundEffect::CavemanHurt,
-        SoundEffect::DamselAmbientCry,
-        SoundEffect::DamselHurt,
-        SoundEffect::Smooch,
-        SoundEffect::ChestOpen,
-        SoundEffect::Unlock,
-        SoundEffect::LawsonEnter,
-        SoundEffect::CashRegister,
-        SoundEffect::ShopkeepAnger0,
-        SoundEffect::LightBreak,
-        SoundEffect::BoulderLatch,
-        SoundEffect::BoulderHitGround,
-        SoundEffect::BoulderTileCrash,
-        SoundEffect::BoulderRoll,
-        SoundEffect::Sacrifice,
-        SoundEffect::Present,
-        SoundEffect::UiCant,
-        SoundEffect::UiConfirm,
-        SoundEffect::UiCursorMove,
-        SoundEffect::UiLeft,
-        SoundEffect::UiRight,
-        SoundEffect::UiSuperConfirm,
-    };
-}
-
-std::vector<LoadedSong> LoadSongs() {
-    std::vector<LoadedSong> songs;
-    songs.reserve(kSongCount);
-
-    const std::vector<std::string> file_names = {"title", "playing"};
-    for (const std::string& name : file_names) {
-        const std::string path = "assets/music/" + name + ".ogg";
-        if (!std::filesystem::exists(path)) {
-            throw std::runtime_error("Error loading music: missing file " + path);
-        }
-
-        LoadedSong song;
-        song.path = path;
-        song.volume = 1.0F;
-        song.playing = false;
-        songs.push_back(song);
+void Audio::CreateTracks() {
+    music_track = MIX_CreateTrack(mixer);
+    if (music_track == nullptr) {
+        ThrowAudioError("MIX_CreateTrack for music track failed");
     }
 
-    return songs;
-}
-
-std::vector<LoadedSound> LoadSounds() {
-    std::vector<LoadedSound> sounds;
-    sounds.reserve(kSoundEffectCount);
-
-    for (const SoundEffect sound_effect : AllSoundEffects()) {
-        const std::string file_name_prefix = GetSoundFileName(sound_effect);
-        const std::string path = "assets/sounds/" + file_name_prefix + ".ogg";
-        if (!std::filesystem::exists(path)) {
-            throw std::runtime_error("Error loading sound: missing file " + path);
+    audio_instance_tracks.reserve(audio_detail::kAudioInstanceTrackCount);
+    audio_instance_track_runtimes.reserve(audio_detail::kAudioInstanceTrackCount);
+    for (std::size_t i = 0; i < audio_detail::kAudioInstanceTrackCount; ++i) {
+        MIX_Track* track = MIX_CreateTrack(mixer);
+        if (track == nullptr) {
+            ThrowAudioError("MIX_CreateTrack for audio instance track failed");
         }
-
-        LoadedSound sound;
-        sound.path = path;
-        sound.volume = 1.0F;
-        sounds.push_back(sound);
+        InitializeAudioInstanceTrack(track);
     }
-
-    return sounds;
 }
 
-Audio Audio::New(const std::vector<LoadedSong>& loaded_songs,
-                 const std::vector<LoadedSound>& loaded_sounds) {
+Audio Audio::New(const AudioAssetDb& audio_asset_db) {
     Audio result;
-    result.has_current_song = false;
-    result.current_song = Song::Title;
-    result.songs = loaded_songs;
-    result.sounds = loaded_sounds;
+    result.asset_db = audio_asset_db;
+    result.loaded_assets.reserve(result.asset_db.assets.size());
+    for (const AudioAsset& asset : result.asset_db.assets) {
+        LoadedAudioAsset loaded_asset;
+        loaded_asset.path = BuildAudioAssetPath(asset.file);
+        loaded_asset.default_volume = asset.default_volume;
+        loaded_asset.streamed = asset.streamed;
+        result.loaded_assets.push_back(std::move(loaded_asset));
+    }
     result.music_volume = 1.0F;
     result.sound_effects_volume = 1.0F;
     result.pan_half_width_px = 256.0F;
@@ -231,20 +107,17 @@ void Audio::Shutdown() {
         return;
     }
 
-    if (song_track != nullptr) {
-        MIX_StopTrack(song_track, 0);
+    if (music_track != nullptr) {
+        MIX_StopTrack(music_track, 0);
     }
-    for (MIX_Track* track : sound_effect_tracks) {
+    for (MIX_Track* track : audio_instance_tracks) {
         if (track != nullptr) {
             MIX_StopTrack(track, 0);
         }
     }
 
-    for (LoadedSong& song : songs) {
-        DestroyLoadedAudio(song);
-    }
-    for (LoadedSound& sound : sounds) {
-        DestroyLoadedAudio(sound);
+    for (LoadedAudioAsset& asset : loaded_assets) {
+        DestroyLoadedAudio(asset);
     }
 
     if (mixer != nullptr) {
@@ -252,237 +125,137 @@ void Audio::Shutdown() {
         mixer = nullptr;
     }
 
-    song_track = nullptr;
-    sound_effect_tracks.clear();
-    sound_effect_track_runtimes.clear();
-    has_current_song = false;
+    music_track = nullptr;
+    audio_instance_tracks.clear();
+    audio_instance_track_runtimes.clear();
+    has_current_music = false;
+    current_music_asset_id = kInvalidAudioAssetId;
     initialized = false;
     MIX_Quit();
 }
 
-void Audio::PlaySong(Song song) {
-    if (!initialized || song_track == nullptr) {
+const AudioAssetDb& Audio::GetAssetDb() const {
+    return asset_db;
+}
+
+const AudioAsset* Audio::FindAudioAsset(AudioAssetId asset_id) const {
+    return asset_db.Find(asset_id);
+}
+
+const char* Audio::GetAudioAssetNameCStr(AudioAssetId asset_id) const {
+    const AudioAsset* const asset = FindAudioAsset(asset_id);
+    return asset != nullptr ? asset->name.c_str() : "<missing audio asset>";
+}
+
+LoadedAudioAsset* Audio::FindLoadedAudioAsset(AudioAssetId asset_id) {
+    const std::optional<std::size_t> index = asset_db.FindIndex(asset_id);
+    if (!index.has_value() || *index >= loaded_assets.size()) {
+        return nullptr;
+    }
+    return &loaded_assets[*index];
+}
+
+const LoadedAudioAsset* Audio::FindLoadedAudioAsset(AudioAssetId asset_id) const {
+    const std::optional<std::size_t> index = asset_db.FindIndex(asset_id);
+    if (!index.has_value() || *index >= loaded_assets.size()) {
+        return nullptr;
+    }
+    return &loaded_assets[*index];
+}
+
+void Audio::PlayMusic(AudioAssetId asset_id) {
+    if (!initialized || music_track == nullptr) {
         return;
     }
 
-    if (has_current_song && current_song != song) {
-        StopSong(current_song);
+    if (has_current_music && current_music_asset_id != asset_id) {
+        StopMusic(current_music_asset_id);
     }
 
-    LoadedSong& loaded_song = songs[SongIndex(song)];
-    if (loaded_song.audio == nullptr) {
+    LoadedAudioAsset* const loaded_asset = FindLoadedAudioAsset(asset_id);
+    if (loaded_asset == nullptr || loaded_asset->audio == nullptr) {
         return;
     }
 
-    has_current_song = true;
-    current_song = song;
+    has_current_music = true;
+    current_music_asset_id = asset_id;
 
-    loaded_song.volume = music_volume;
-    loaded_song.playing = true;
-
-    if (!MIX_SetTrackAudio(song_track, loaded_song.audio)) {
+    if (!MIX_SetTrackAudio(music_track, loaded_asset->audio)) {
         return;
     }
-    MIX_SetTrackGain(song_track, music_volume);
+    MIX_SetTrackGain(music_track, music_volume * loaded_asset->default_volume);
 
     SDL_PropertiesID properties = MakeLoopingProperties();
-    MIX_PlayTrack(song_track, properties);
+    MIX_PlayTrack(music_track, properties);
     if (properties != 0) {
         SDL_DestroyProperties(properties);
     }
 }
 
-void Audio::StopCurrentSong() {
-    if (has_current_song) {
-        StopSong(current_song);
+void Audio::StopCurrentMusic() {
+    if (has_current_music) {
+        StopMusic(current_music_asset_id);
     }
 }
 
-void Audio::StopSong(Song song) {
-    if (!initialized || song_track == nullptr) {
+void Audio::StopMusic(AudioAssetId asset_id) {
+    (void)asset_id;
+    if (!initialized || music_track == nullptr) {
         return;
     }
 
-    LoadedSong& loaded_song = songs[SongIndex(song)];
-    loaded_song.playing = false;
-    MIX_StopTrack(song_track, 0);
-    has_current_song = false;
+    MIX_StopTrack(music_track, 0);
+    has_current_music = false;
+    current_music_asset_id = kInvalidAudioAssetId;
 }
 
-void Audio::UpdateCurrentSongStreamData() {
-    if (!initialized || !has_current_song || song_track == nullptr) {
+void Audio::UpdateCurrentMusicStreamData() {
+    if (!initialized || !has_current_music || music_track == nullptr) {
         return;
     }
 
-    MIX_SetTrackGain(song_track, music_volume);
+    const LoadedAudioAsset* const loaded_asset = FindLoadedAudioAsset(current_music_asset_id);
+    if (loaded_asset == nullptr) {
+        return;
+    }
+    MIX_SetTrackGain(music_track, music_volume * loaded_asset->default_volume);
 }
 
-void Audio::SetCurrentSongVolume(float volume) {
+void Audio::SetCurrentMusicVolume(float volume) {
     music_volume = volume;
-    if (!initialized || !has_current_song || song_track == nullptr) {
+    if (!initialized || !has_current_music || music_track == nullptr) {
         return;
     }
 
-    LoadedSong& loaded_song = songs[SongIndex(current_song)];
-    loaded_song.volume = volume;
-    MIX_SetTrackGain(song_track, volume);
+    const LoadedAudioAsset* const loaded_asset = FindLoadedAudioAsset(current_music_asset_id);
+    if (loaded_asset == nullptr) {
+        return;
+    }
+    MIX_SetTrackGain(music_track, volume * loaded_asset->default_volume);
 }
 
 void PlayMenuSoundCant(Audio& audio) {
-    audio.PlaySoundEffect(SoundEffect::UiCant);
+    audio.PlayAudioAsset(audio_asset_ids::UiCant);
 }
 
 void PlayMenuSoundConfirm(Audio& audio) {
-    audio.PlaySoundEffect(SoundEffect::UiConfirm);
+    audio.PlayAudioAsset(audio_asset_ids::UiConfirm);
 }
 
 void PlayMenuSoundCursorMove(Audio& audio) {
-    audio.PlaySoundEffect(SoundEffect::UiCursorMove);
+    audio.PlayAudioAsset(audio_asset_ids::UiCursorMove);
 }
 
 void PlayMenuSoundLeft(Audio& audio) {
-    audio.PlaySoundEffect(SoundEffect::UiLeft);
+    audio.PlayAudioAsset(audio_asset_ids::UiLeft);
 }
 
 void PlayMenuSoundRight(Audio& audio) {
-    audio.PlaySoundEffect(SoundEffect::UiRight);
+    audio.PlayAudioAsset(audio_asset_ids::UiRight);
 }
 
 void PlayMenuSoundSuperConfirm(Audio& audio) {
-    audio.PlaySoundEffect(SoundEffect::UiSuperConfirm);
-}
-
-const char* GetSoundFileName(SoundEffect sound_effect) {
-    switch (sound_effect) {
-    case SoundEffect::Jump:
-        return "jump";
-    case SoundEffect::Step1:
-        return "step1";
-    case SoundEffect::Step2:
-        return "step2";
-    case SoundEffect::ClimbMetal1:
-        return "climb_metal1";
-    case SoundEffect::ClimbMetal2:
-        return "climb_metal2";
-    case SoundEffect::BatFlap1:
-        return "bat_flap1";
-    case SoundEffect::BatFlap2:
-        return "bat_flap2";
-    case SoundEffect::BatSqueak:
-        return "bat_squeak";
-    case SoundEffect::Thud:
-        return "thud";
-    case SoundEffect::GameOver:
-        return "game_over";
-    case SoundEffect::Jetpack1:
-        return "jetpack1";
-    case SoundEffect::Jetpack2:
-        return "jetpack2";
-    case SoundEffect::Equip:
-        return "equip";
-    case SoundEffect::Throw:
-        return "throw";
-    case SoundEffect::PistolShoot:
-        return "pistol_shoot";
-    case SoundEffect::PistolUnholster:
-        return "pistol_unholster";
-    case SoundEffect::GunEmpty:
-        return "gun_empty";
-    case SoundEffect::BombExplosion:
-        return "bomb_explosion";
-    case SoundEffect::AnimalCrush1:
-        return "animal_crush1";
-    case SoundEffect::AnimalCrush2:
-        return "animal_crush2";
-    case SoundEffect::Gold:
-        return "gold";
-    case SoundEffect::GoldStack:
-        return "gold_stack";
-    case SoundEffect::MoneySmashed:
-        return "money_smashed";
-    case SoundEffect::PlayerOuch:
-        return "player_ouch";
-    case SoundEffect::BlockDrag1:
-        return "block_drag1";
-    case SoundEffect::BlockDrag2:
-        return "block_drag2";
-    case SoundEffect::BlockLand:
-        return "block_land";
-    case SoundEffect::DefaultLand:
-        return "default_land";
-    case SoundEffect::RopeDeploy:
-        return "rope_deploy";
-    case SoundEffect::ClimbRope1:
-        return "climb_rope1";
-    case SoundEffect::ClimbRope2:
-        return "climb_rope2";
-    case SoundEffect::StageWin:
-        return "stage_win";
-    case SoundEffect::PotShatter:
-        return "pot_shatter";
-    case SoundEffect::BoxBreak:
-        return "box_break";
-    case SoundEffect::BaseballBatSwing:
-        return "baseball_bat_swing";
-    case SoundEffect::BaseballBatKillHit1:
-        return "baseball_bat_kill_hit1";
-    case SoundEffect::BaseballBatKillHit2:
-        return "baseball_bat_kill_hit2";
-    case SoundEffect::BaseballBatKillHit3:
-        return "baseball_bat_kill_hit3";
-    case SoundEffect::BaseballBatMetalDink1:
-        return "baseball_bat_metal_dink1";
-    case SoundEffect::BaseballBatBoxSmash:
-        return "baseball_bat_box_smash";
-    case SoundEffect::CavemanNotice:
-        return "caveman_notice";
-    case SoundEffect::CavemanHurt:
-        return "caveman_hurt";
-    case SoundEffect::DamselAmbientCry:
-        return "damsel_ambient_cry";
-    case SoundEffect::DamselHurt:
-        return "damsel_hurt";
-    case SoundEffect::Smooch:
-        return "smooch";
-    case SoundEffect::ChestOpen:
-        return "chest_open";
-    case SoundEffect::Unlock:
-        return "unlock";
-    case SoundEffect::LawsonEnter:
-        return "lawson_enter";
-    case SoundEffect::CashRegister:
-        return "cash_register";
-    case SoundEffect::ShopkeepAnger0:
-        return "shopkeep_anger_0";
-    case SoundEffect::LightBreak:
-        return "light_break";
-    case SoundEffect::BoulderLatch:
-        return "boulder_latch";
-    case SoundEffect::BoulderHitGround:
-        return "boulder_hit_ground";
-    case SoundEffect::BoulderTileCrash:
-        return "boulder_tile_crash";
-    case SoundEffect::BoulderRoll:
-        return "boulder_roll";
-    case SoundEffect::Sacrifice:
-        return "sacrifice";
-    case SoundEffect::Present:
-        return "present";
-    case SoundEffect::UiCant:
-        return "ui_cant";
-    case SoundEffect::UiConfirm:
-        return "ui_confirm";
-    case SoundEffect::UiCursorMove:
-        return "ui_cursor_move";
-    case SoundEffect::UiLeft:
-        return "ui_left";
-    case SoundEffect::UiRight:
-        return "ui_right";
-    case SoundEffect::UiSuperConfirm:
-        return "ui_super_confirm";
-    }
-
-    return "";
+    audio.PlayAudioAsset(audio_asset_ids::UiSuperConfirm);
 }
 
 } // namespace splonks

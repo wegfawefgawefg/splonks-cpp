@@ -78,7 +78,7 @@ bool TrySpawnAndThrowEntityForToolUse(
 
     tool_slot.count -= 1;
     tool_slot.cooldown = cooldown_frames;
-    (void)PlayEntityCenterSoundEmitter(state, thrower, SoundEffect::Throw);
+    (void)PlayEntityCenterSoundEmitter(state, thrower, audio_asset_ids::Throw);
     return true;
 }
 

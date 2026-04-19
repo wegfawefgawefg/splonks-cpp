@@ -40,7 +40,7 @@ void ProcessInputTitle(
     switch (state.title_menu_selection) {
     case TitleMenuOption::Start:
         if (confirm_pressed) {
-            // audio.PlaySong(Song::Playing);
+            // audio.PlayMusic(audio_asset_ids::Playing);
             PlayMenuSoundSuperConfirm(audio);
             state.SetMode(Mode::StageTransition);
         } else {

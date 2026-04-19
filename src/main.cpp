@@ -151,9 +151,8 @@ int main(int argc, char** argv) {
 
         ////////////////        AUDIO INIT        ////////////////
         try {
-            const auto songs = splonks::LoadSongs();
-            const auto sounds = splonks::LoadSounds();
-            audio = splonks::Audio::New(songs, sounds);
+            const auto audio_asset_db = splonks::LoadAudioAssetDb("assets/audio/annotations.yaml");
+            audio = splonks::Audio::New(audio_asset_db);
             audio.music_volume = loaded_settings.audio.music_volume;
             audio.sound_effects_volume = loaded_settings.audio.sfx_volume;
             audio.SetPanHalfWidthPx(loaded_settings.audio.pan_half_width_px);
@@ -210,7 +209,7 @@ int main(int argc, char** argv) {
             }
 
             splonks::ImGuiLayerNewFrame();
-            splonks::DrawDebugPlaybackControls(debug, state, graphics, window, renderer);
+            splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
             audio.SetPanHalfWidthPx(state.settings.audio.pan_half_width_px);
@@ -225,11 +224,11 @@ int main(int argc, char** argv) {
             );
             splonks::DrawDebugPlaybackInspector(debug, state, graphics);
             splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
-            splonks::Render(renderer, render_texture, post_fx, state, graphics);
+            splonks::Render(renderer, render_texture, post_fx, state, audio, graphics);
             splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);
             splonks::ImGuiLayerRender();
             SDL_RenderPresent(renderer);
-            audio.UpdateCurrentSongStreamData();
+            audio.UpdateCurrentMusicStreamData();
         }
 
         if (render_texture != nullptr) {

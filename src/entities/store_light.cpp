@@ -53,8 +53,8 @@ EntityDamageEffectResult OnDamageAsStoreLight(
     light.has_physics = true;
     light.can_collide = true;
     light.damage_vulnerability = DamageVulnerability::Immune;
-    light.collide_sound = SoundEffect::LightBreak;
-    (void)PlayEntityCenterSoundEmitter(state, light, SoundEffect::LightBreak);
+    light.collide_sound = audio_asset_ids::LightBreak;
+    (void)PlayEntityCenterSoundEmitter(state, light, audio_asset_ids::LightBreak);
     return EntityDamageEffectResult::Consumed;
 }
 
@@ -75,8 +75,8 @@ extern const EntityArchetype kStoreLightArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
-    .damage_sound = SoundEffect::LightBreak,
-    .collide_sound = SoundEffect::LightBreak,
+    .damage_sound = audio_asset_ids::LightBreak,
+    .collide_sound = audio_asset_ids::LightBreak,
     .on_damage = OnDamageAsStoreLight,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::StoreLight),

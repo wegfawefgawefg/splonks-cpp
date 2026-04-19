@@ -104,8 +104,8 @@ struct DebugPlayback {
     std::string spawn_status;
     std::array<char, 512> file_path{};
     std::string io_status;
-    VID audio_brush_loop_handle = kInvalidSoundEffectInstanceVID;
-    std::optional<SoundEffect> audio_brush_loop_sound_effect;
+    VID audio_brush_loop_handle = kInvalidAudioInstanceVID;
+    std::optional<AudioAssetId> audio_brush_loop_audio_asset_id;
 
     static DebugPlayback New();
 };
@@ -116,6 +116,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
 void DrawDebugPlaybackControls(
     DebugPlayback& debug,
     State& state,
+    Audio& audio,
     Graphics& graphics,
     SDL_Window* window,
     SDL_Renderer* renderer

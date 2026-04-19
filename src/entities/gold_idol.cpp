@@ -113,7 +113,7 @@ void AwardMoneyToTarget(std::optional<VID> target_vid, std::uint32_t amount, Sta
 void RedeemGoldIdol(
     std::size_t entity_idx,
     std::uint32_t amount,
-    SoundEffect sound_effect,
+    AudioAssetId sound_effect,
     State& state,
     Graphics& graphics,
     Audio& audio
@@ -165,13 +165,13 @@ void StepEntityLogicAsGoldIdol(
     if (idol.grounded && !idol.held_by_vid.has_value()) {
         if (const std::optional<std::size_t> shop_idx = FindIntersectingShopIdx(idol, state)) {
             (void)shop_idx;
-            RedeemGoldIdol(entity_idx, kGoldIdolShopValue, SoundEffect::CashRegister, state, graphics, audio);
+            RedeemGoldIdol(entity_idx, kGoldIdolShopValue, audio_asset_ids::CashRegister, state, graphics, audio);
             return;
         }
     }
 
     if (entities::basic_exit::IsEntityTouchingBasicExit(idol, state, graphics)) {
-        RedeemGoldIdol(entity_idx, kGoldIdolExitValue, SoundEffect::GoldStack, state, graphics, audio);
+        RedeemGoldIdol(entity_idx, kGoldIdolExitValue, audio_asset_ids::GoldStack, state, graphics, audio);
         return;
     }
 }

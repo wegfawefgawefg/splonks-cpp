@@ -463,7 +463,7 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
             entity.coyote_time = 0;
             entity.grounded = false;
             entity.jump_delay_frame_count = player::kJumpDelayFrames;
-            (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::Jump);
+            (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Jump);
         }
     }
 

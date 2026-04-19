@@ -87,7 +87,7 @@ void StepRollingSound(State& state, Entity& boulder) {
         state,
         boulder.vid,
         Vec2::New(0.0F, boulder.size.y * 0.5F),
-        SoundEffect::BoulderRoll,
+        audio_asset_ids::BoulderRoll,
         params
     );
 }
@@ -165,7 +165,7 @@ void PlayBoulderImpactSoundIfReady(Entity& boulder, State& state) {
     }
     boulder.counter_a = kBoulderImpactSoundCooldownFrames;
     state.frame_pause += 2;
-    (void)PlayWorldSoundEmitter(state, GetBoulderBottomCenter(boulder), SoundEffect::BoulderHitGround);
+    (void)PlayWorldSoundEmitter(state, GetBoulderBottomCenter(boulder), audio_asset_ids::BoulderHitGround);
 }
 
 Vec2 GetBoulderTrailingBottomCorner(const Entity& boulder) {
@@ -414,7 +414,7 @@ void StepEntityPhysicsAsBoulder(
             (void)PlayWorldSoundEmitter(
                 state,
                 GetBoulderFrontFaceCenter(boulder),
-                SoundEffect::BoulderTileCrash
+                audio_asset_ids::BoulderTileCrash
             );
             boulder.counter_a = kBoulderImpactSoundCooldownFrames;
         }

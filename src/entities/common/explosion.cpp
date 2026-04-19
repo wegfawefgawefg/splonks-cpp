@@ -61,7 +61,7 @@ void DoExplosion(
         effect->alpha_acc = 0.0F;
         state.particles.Add(std::move(effect));
     }
-    (void)PlayWorldSoundEmitter(state, center, SoundEffect::BombExplosion);
+    (void)PlayWorldSoundEmitter(state, center, audio_asset_ids::BombExplosion);
     const float explosion_size = size * static_cast<float>(kTileSize);
     const AABB area = {
         .tl = center - (Vec2::New(1.0F, 1.0F) * explosion_size),

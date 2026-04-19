@@ -1,0 +1,281 @@
+audio:
+  - name: title
+    file: music/title.ogg
+    streamed: true
+    default_volume: 1.0
+  - name: playing
+    file: music/playing.ogg
+    streamed: true
+    default_volume: 1.0
+  - name: in_the_cave
+    file: music/in_the_cave.ogg
+    streamed: true
+    default_volume: 1.0
+  - name: jump
+    file: sounds/jump.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: step1
+    file: sounds/step1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: step2
+    file: sounds/step2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: climb_metal1
+    file: sounds/climb_metal1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: climb_metal2
+    file: sounds/climb_metal2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: bat_flap1
+    file: sounds/bat_flap1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: bat_flap2
+    file: sounds/bat_flap2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: bat_squeak
+    file: sounds/bat_squeak.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: thud
+    file: sounds/thud.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: game_over
+    file: sounds/game_over.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: jetpack1
+    file: sounds/jetpack1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: jetpack2
+    file: sounds/jetpack2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: jetpack_start1
+    file: sounds/jetpack_start1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: equip
+    file: sounds/equip.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: throw
+    file: sounds/throw.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: pistol_shoot
+    file: sounds/pistol_shoot.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: pistol_holster
+    file: sounds/pistol_holster.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: pistol_unholster
+    file: sounds/pistol_unholster.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: gun_empty
+    file: sounds/gun_empty.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: bomb_explosion
+    file: sounds/bomb_explosion.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: animal_crush1
+    file: sounds/animal_crush1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: animal_crush2
+    file: sounds/animal_crush2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: gold
+    file: sounds/gold.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: gold_stack
+    file: sounds/gold_stack.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: money_smashed
+    file: sounds/money_smashed.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: ouch1
+    file: sounds/ouch1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: player_ouch
+    file: sounds/player_ouch.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: block_drag1
+    file: sounds/block_drag1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: block_drag2
+    file: sounds/block_drag2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: block_land
+    file: sounds/block_land.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: default_land
+    file: sounds/default_land.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: rope_deploy
+    file: sounds/rope_deploy.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: climb_rope1
+    file: sounds/climb_rope1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: climb_rope2
+    file: sounds/climb_rope2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: stage_win
+    file: sounds/stage_win.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: pot_shatter
+    file: sounds/pot_shatter.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: box_break
+    file: sounds/box_break.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: baseball_bat_swing
+    file: sounds/baseball_bat_swing.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: baseball_bat_kill_hit1
+    file: sounds/baseball_bat_kill_hit1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: baseball_bat_kill_hit2
+    file: sounds/baseball_bat_kill_hit2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: baseball_bat_kill_hit3
+    file: sounds/baseball_bat_kill_hit3.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: baseball_bat_metal_dink1
+    file: sounds/baseball_bat_metal_dink1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: baseball_bat_box_smash
+    file: sounds/baseball_bat_box_smash.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: caveman_notice
+    file: sounds/caveman_notice.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: caveman_hurt
+    file: sounds/caveman_hurt.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: damsel_ambient_cry
+    file: sounds/damsel_ambient_cry.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: damsel_hurt
+    file: sounds/damsel_hurt.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: smooch
+    file: sounds/smooch.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: chest_open
+    file: sounds/chest_open.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: unlock
+    file: sounds/unlock.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: lawson_enter
+    file: sounds/lawson_enter.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: cash_register
+    file: sounds/cash_register.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: shopkeep_anger_0
+    file: sounds/shopkeep_anger_0.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: light_break
+    file: sounds/light_break.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: boulder_latch
+    file: sounds/boulder_latch.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: boulder_hit_ground
+    file: sounds/boulder_hit_ground.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: boulder_tile_crash
+    file: sounds/boulder_tile_crash.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: boulder_roll
+    file: sounds/boulder_roll.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: sacrifice
+    file: sounds/sacrifice.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: present
+    file: sounds/present.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: tube
+    file: sounds/tube.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: ui_cant
+    file: sounds/ui_cant.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: ui_confirm
+    file: sounds/ui_confirm.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: ui_cursor_move
+    file: sounds/ui_cursor_move.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: ui_left
+    file: sounds/ui_left.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: ui_right
+    file: sounds/ui_right.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: ui_super_confirm
+    file: sounds/ui_super_confirm.ogg
+    streamed: false
+    default_volume: 1.0

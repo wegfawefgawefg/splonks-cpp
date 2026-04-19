@@ -4,6 +4,7 @@
 
 namespace splonks {
 
+struct Audio;
 struct Graphics;
 struct RenderPostFx;
 struct State;
@@ -13,6 +14,7 @@ void Render(
     SDL_Texture* render_texture,
     const RenderPostFx& post_fx,
     State& state,
+    const Audio& audio,
     Graphics& graphics
 );
 

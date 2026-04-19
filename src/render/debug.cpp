@@ -1,5 +1,6 @@
 #include "render/debug.hpp"
 
+#include "audio.hpp"
 #include "audio_acoustics.hpp"
 #include "audio_emitters.hpp"
 #include "entity/archetype.hpp"
@@ -1078,6 +1079,7 @@ void RenderAudioEmitterOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     State& state,
+    const Audio& audio,
     const SDL_FRect& presentation,
     const std::vector<Vec2>& render_offsets
 ) {
@@ -1189,7 +1191,7 @@ void RenderAudioEmitterOverlay(
                 sizeof(label),
                 "em %zu %s %s own:%d src:%d %s miss:%s",
                 emitter.vid.id,
-                GetSoundFileName(emitter.sound_effect),
+                audio.GetAudioAssetNameCStr(emitter.audio_asset_id),
                 AudioEmitterPlaybackModeToString(emitter.playback_mode),
                 owner_id,
                 attach_id,
@@ -1210,7 +1212,12 @@ void RenderAudioEmitterOverlay(
     }
 }
 
-void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, State& state) {
+void RenderDebugOverlay(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    State& state,
+    const Audio& audio
+) {
     if (!state.debug_overlay.show_entity_collision_boxes &&
         !state.debug_overlay.show_entity_ids &&
         !state.debug_overlay.show_entity_types &&
@@ -1265,7 +1272,7 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, State& state
         RenderAreaOverlay(renderer, graphics, state, presentation, render_offsets);
     }
     if (state.debug_overlay.show_audio_emitters) {
-        RenderAudioEmitterOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderAudioEmitterOverlay(renderer, graphics, state, audio, presentation, render_offsets);
     }
     RenderShakeBrushPreview(renderer, graphics, state, presentation);
     RenderAudioBrushPreview(renderer, graphics, state, presentation);

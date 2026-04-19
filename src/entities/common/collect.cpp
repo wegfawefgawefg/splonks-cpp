@@ -29,21 +29,21 @@ unsigned int GetPickupMoneyValue(EntityType type_) {
     }
 }
 
-std::optional<SoundEffect> GetPickupSound(EntityType type_) {
+std::optional<AudioAssetId> GetPickupSound(EntityType type_) {
     switch (type_) {
     case EntityType::Gold:
-        return SoundEffect::Gold;
+        return audio_asset_ids::Gold;
     case EntityType::GoldStack:
     case EntityType::GoldNugget:
     case EntityType::GoldBar:
     case EntityType::GoldBars:
-        return SoundEffect::GoldStack;
+        return audio_asset_ids::GoldStack;
     case EntityType::GoldChunk:
-        return SoundEffect::Gold;
+        return audio_asset_ids::Gold;
     case EntityType::EmeraldBig:
     case EntityType::SapphireBig:
     case EntityType::RubyBig:
-        return SoundEffect::GoldStack;
+        return audio_asset_ids::GoldStack;
     default:
         return std::nullopt;
     }
@@ -80,7 +80,7 @@ bool TryCollectEntityFromContact(
     const unsigned int money_gained = GetPickupMoneyValue(pickup->type_);
     if (money_gained != 0) {
         collector.money += money_gained;
-        if (const std::optional<SoundEffect> sound_effect = GetPickupSound(pickup->type_)) {
+        if (const std::optional<AudioAssetId> sound_effect = GetPickupSound(pickup->type_)) {
             (void)PlayEntityCenterSoundEmitter(state, *pickup, *sound_effect);
         }
         state.entity_manager.SetInactive(other_entity_idx);

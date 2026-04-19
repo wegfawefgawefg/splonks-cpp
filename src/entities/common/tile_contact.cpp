@@ -76,8 +76,8 @@ ContactResolution TryDispatchEntityTileContactByEntityType(
 void PlayBlockingCollisionSounds(
     Entity& entity,
     State& state,
-    const std::optional<SoundEffect>& entity_sound,
-    const std::optional<SoundEffect>& tile_sound,
+    const std::optional<AudioAssetId>& entity_sound,
+    const std::optional<AudioAssetId>& tile_sound,
     bool& played_collision_sound
 ) {
     bool played_any_sound = false;

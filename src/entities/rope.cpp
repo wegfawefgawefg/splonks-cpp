@@ -115,7 +115,7 @@ void StepEntityLogicAsRope(
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
 
         if (atleast_one_tile_converted) {
-            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[entity_idx], SoundEffect::RopeDeploy);
+            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[entity_idx], audio_asset_ids::RopeDeploy);
         }
     }
 }

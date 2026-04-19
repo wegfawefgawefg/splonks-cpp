@@ -145,7 +145,7 @@ bool TryTakeExit(
     }
 
     const Entity& exit_entity = state.entity_manager.entities[entity_idx];
-    (void)PlayEntityCenterSoundEmitter(state, exit_entity, SoundEffect::StageWin);
+    (void)PlayEntityCenterSoundEmitter(state, exit_entity, audio_asset_ids::StageWin);
     if (exit_entity.transition_target.has_value()) {
         QueueStageTransition(state, *exit_entity.transition_target);
     } else {

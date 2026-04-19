@@ -69,7 +69,7 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
     shop.ai_state = EntityAiState::Disturbed;
 
     if (!already_disturbed) {
-        (void)PlayEntityCenterSoundEmitter(state, shop, SoundEffect::ShopkeepAnger0);
+        (void)PlayEntityCenterSoundEmitter(state, shop, audio_asset_ids::ShopkeepAnger0);
     }
 
     if (state.player_vid.has_value()) {
@@ -163,7 +163,7 @@ void OnShopAreaEnter(
         return;
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, shop, SoundEffect::LawsonEnter);
+    (void)PlayEntityCenterSoundEmitter(state, shop, audio_asset_ids::LawsonEnter);
 }
 
 void StepEntityLogicAsShop(

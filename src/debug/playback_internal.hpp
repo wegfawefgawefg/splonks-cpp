@@ -36,7 +36,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
 void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics);
-void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics);
+void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Audio& audio, Graphics& graphics);
 void DrawAudioSettingsWindow(DebugPlayback& debug, State& state);
 void DrawUiSettingsWindow(DebugPlayback& debug, State& state);
 void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics);

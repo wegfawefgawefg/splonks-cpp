@@ -68,7 +68,7 @@ std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio)
     }
 
     AddTikiHeadReleaseShake(state, head);
-    (void)PlayWorldSoundEmitter(state, head.GetCenter(), SoundEffect::BoulderHitGround);
+    (void)PlayWorldSoundEmitter(state, head.GetCenter(), audio_asset_ids::BoulderHitGround);
     return vid;
 }
 
@@ -130,7 +130,7 @@ void StepEntityLogicAsGiantTikiHead(
             state,
             head.vid,
             Vec2::New(0.0F, 0.0F),
-            SoundEffect::BoulderLatch
+            audio_asset_ids::BoulderLatch
         );
         return;
     }

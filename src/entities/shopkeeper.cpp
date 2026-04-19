@@ -285,7 +285,7 @@ void StepEntityLogicAsShopkeeper(
     }
 
     if (SpawnShopkeeperPistolIntoHands(entity_idx, state, graphics)) {
-        (void)PlayEntitySoundEmitter(state, shopkeeper, SoundEffect::PistolUnholster);
+        (void)PlayEntitySoundEmitter(state, shopkeeper, audio_asset_ids::PistolUnholster);
     }
     if (TryRecoverDroppedPistol(entity_idx, state, graphics)) {
         SetMovementFlag(shopkeeper, EntityMovementFlag::Running, true);

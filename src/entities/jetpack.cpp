@@ -140,9 +140,9 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
     jetpack.travel_sound_countdown -= 1.0F;
     if (jetpack.travel_sound_countdown < 0.0F) {
         jetpack.travel_sound_countdown = kTravelSoundDistInterval;
-        const SoundEffect sound_effect =
-            jetpack.travel_sound == TravelSound::One ? SoundEffect::Jetpack1
-                                                     : SoundEffect::Jetpack2;
+        const AudioAssetId sound_effect =
+            jetpack.travel_sound == TravelSound::One ? audio_asset_ids::Jetpack1
+                                                     : audio_asset_ids::Jetpack2;
         (void)PlayEntitySoundEmitter(state, jetpack, sound_effect);
         jetpack.IncTravelSound();
     }

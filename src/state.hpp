@@ -132,7 +132,7 @@ struct DebugAudioBrushState {
     bool enabled = false;
     bool show_openness_rays = false;
     bool show_occlusion_ray = false;
-    SoundEffect sound_effect = SoundEffect::BoulderRoll;
+    AudioAssetId audio_asset_id = audio_asset_ids::BoulderRoll;
     float volume_scale = 1.0F;
     bool source_active = false;
     Vec2 source_world_pos = Vec2::New(0.0F, 0.0F);

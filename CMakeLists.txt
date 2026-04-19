@@ -124,6 +124,7 @@ FetchContent_MakeAvailable(imgui)
 
 add_executable(splonks-cpp
     src/audio.cpp
+    src/audio_asset.cpp
     src/audio_acoustics.cpp
     src/audio_emitters.cpp
     src/audio_filter.cpp
@@ -243,6 +244,7 @@ add_executable(splonks-cpp
     src/render/stone_overlay.cpp
     src/render/tiles_and_entities.cpp
     src/render/ui.cpp
+    src/raw_audio_asset.cpp
     src/raw_frame_data.cpp
     src/settings.cpp
     src/sid.cpp

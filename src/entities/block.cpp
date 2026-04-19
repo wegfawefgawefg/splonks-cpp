@@ -214,9 +214,9 @@ void StepEntityLogicAsBlock(
     // TODO: extract into grounded movement sounds
     if (entity.grounded && entity.dist_traveled_this_frame > 0.0F && entity.travel_sound_countdown < 0.0F) {
         entity.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
-        const SoundEffect sound =
-            entity.travel_sound == TravelSound::One ? SoundEffect::BlockDrag1
-                                                    : SoundEffect::BlockDrag2;
+        const AudioAssetId sound =
+            entity.travel_sound == TravelSound::One ? audio_asset_ids::BlockDrag1
+                                                    : audio_asset_ids::BlockDrag2;
         (void)PlayEntitySoundEmitter(state, entity, sound);
         entity.IncTravelSound();
     }

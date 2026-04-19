@@ -18,7 +18,7 @@ void RestoreEntityBuyableFromArchetype(Entity& entity);
 void RestoreEntityDamageAnimationFromArchetype(Entity& entity);
 void RestoreEntityDamageSoundFromArchetype(Entity& entity);
 void RestoreEntityCollideSoundFromArchetype(Entity& entity);
-void RestoreEntityDeathSoundEffectFromArchetype(Entity& entity);
+void RestoreEntityDeathAudioAssetIdFromArchetype(Entity& entity);
 void RestoreEntityOnDeathFromArchetype(Entity& entity);
 void RestoreEntityOnDamageFromArchetype(Entity& entity);
 void RestoreEntityOnUseFromArchetype(Entity& entity);

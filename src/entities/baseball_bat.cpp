@@ -134,18 +134,18 @@ bool TryApplyBatContactToEntity(
         switch (damage_result) {
         case common::DamageResult::Died: {
             const int random_number = rng::RandomIntInclusive(0, 10);
-            std::optional<SoundEffect> sound_effect;
+            std::optional<AudioAssetId> sound_effect;
             if (random_number <= 8) {
                 const int another_random_number = rng::RandomIntInclusive(0, 2);
                 switch (another_random_number) {
                 case 0:
-                    sound_effect = SoundEffect::BaseballBatKillHit1;
+                    sound_effect = audio_asset_ids::BaseballBatKillHit1;
                     break;
                 case 1:
-                    sound_effect = SoundEffect::BaseballBatKillHit2;
+                    sound_effect = audio_asset_ids::BaseballBatKillHit2;
                     break;
                 default:
-                    sound_effect = SoundEffect::BaseballBatKillHit3;
+                    sound_effect = audio_asset_ids::BaseballBatKillHit3;
                     break;
                 }
             }
@@ -155,11 +155,11 @@ bool TryApplyBatContactToEntity(
             break;
         }
         case common::DamageResult::None: {
-            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], SoundEffect::BaseballBatMetalDink1);
+            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::BaseballBatMetalDink1);
             break;
         }
         case common::DamageResult::Hurt:
-            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], SoundEffect::Thud);
+            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::Thud);
             break;
         }
         return true;

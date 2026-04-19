@@ -92,7 +92,7 @@ bool TryApplyStompContactToEntity(
         return false;
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, stomper, SoundEffect::Jump);
+    (void)PlayEntityCenterSoundEmitter(state, stomper, audio_asset_ids::Jump);
 
     const DamageResult damage_result = TryDamageEntity(
         stomped->vid.id,

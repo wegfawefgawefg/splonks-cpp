@@ -198,6 +198,7 @@ DebugPlayback DebugPlayback::New() {
 void DrawDebugPlaybackControls(
     DebugPlayback& debug,
     State& state,
+    Audio& audio,
     Graphics& graphics,
     SDL_Window* window,
     SDL_Renderer* renderer
@@ -220,7 +221,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawBorderControls(debug, state, graphics);
     debug_playback_internal::DrawDebugOverlayWindow(debug, state, graphics);
     debug_playback_internal::DrawShakeBrushWindow(debug, state, graphics);
-    debug_playback_internal::DrawAudioBrushWindow(debug, state, graphics);
+    debug_playback_internal::DrawAudioBrushWindow(debug, state, audio, graphics);
     debug_playback_internal::DrawAudioSettingsWindow(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
     debug_playback_internal::DrawCameraSettingsWindow(debug, state, graphics);
@@ -240,19 +241,19 @@ void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphi
 namespace {
 
 void StopDebugAudioBrushLoop(DebugPlayback& debug, Audio& audio) {
-    if (IsValidSoundEffectInstanceVID(debug.audio_brush_loop_handle)) {
-        (void)audio.StopSoundEffectInstance(debug.audio_brush_loop_handle);
+    if (IsValidAudioInstanceVID(debug.audio_brush_loop_handle)) {
+        (void)audio.StopAudioInstance(debug.audio_brush_loop_handle);
     }
-    debug.audio_brush_loop_handle = kInvalidSoundEffectInstanceVID;
-    debug.audio_brush_loop_sound_effect.reset();
+    debug.audio_brush_loop_handle = kInvalidAudioInstanceVID;
+    debug.audio_brush_loop_audio_asset_id.reset();
 }
 
-SoundEffectPlaybackParams MakeDebugAudioBrushPlaybackParams(
+AudioPlaybackParams MakeDebugAudioBrushPlaybackParams(
     State& state,
     const Graphics& graphics
 ) {
     const DebugAudioBrushState& brush = state.debug_audio_brush;
-    SoundEffectPlaybackParams params;
+    AudioPlaybackParams params;
     params.volume_scale = brush.volume_scale;
     params.positional = true;
     params.loops = -1;
@@ -344,27 +345,27 @@ void UpdateDebugAudioBrush(
     }
 
     const DebugAudioBrushState& brush = state.debug_audio_brush;
-    if (debug.audio_brush_loop_sound_effect.has_value() &&
-        *debug.audio_brush_loop_sound_effect != brush.sound_effect) {
+    if (debug.audio_brush_loop_audio_asset_id.has_value() &&
+        *debug.audio_brush_loop_audio_asset_id != brush.audio_asset_id) {
         StopDebugAudioBrushLoop(debug, audio);
     }
 
-    const SoundEffectPlaybackParams params =
+    const AudioPlaybackParams params =
         MakeDebugAudioBrushPlaybackParams(state, graphics);
-    if (IsValidSoundEffectInstanceVID(debug.audio_brush_loop_handle) &&
-        audio.UpdateSoundEffectInstance(debug.audio_brush_loop_handle, params)) {
-        debug.audio_brush_loop_sound_effect = brush.sound_effect;
+    if (IsValidAudioInstanceVID(debug.audio_brush_loop_handle) &&
+        audio.UpdateAudioInstance(debug.audio_brush_loop_handle, params)) {
+        debug.audio_brush_loop_audio_asset_id = brush.audio_asset_id;
         return;
     }
 
     debug.audio_brush_loop_handle =
-        audio.PlaySoundEffectInstance(brush.sound_effect, params);
-    if (IsValidSoundEffectInstanceVID(debug.audio_brush_loop_handle)) {
-        debug.audio_brush_loop_sound_effect = brush.sound_effect;
+        audio.PlayAudioAssetInstance(brush.audio_asset_id, params);
+    if (IsValidAudioInstanceVID(debug.audio_brush_loop_handle)) {
+        debug.audio_brush_loop_audio_asset_id = brush.audio_asset_id;
         return;
     }
 
-    debug.audio_brush_loop_sound_effect.reset();
+    debug.audio_brush_loop_audio_asset_id.reset();
 }
 
 } // namespace splonks

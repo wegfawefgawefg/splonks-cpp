@@ -98,7 +98,7 @@ extern const EntityArchetype kSnakeArchetype{
     .counter_a = static_cast<float>(kSnakeIdleMinFrames),
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
-    .collide_sound = SoundEffect::Thud,
+    .collide_sound = audio_asset_ids::Thud,
     .step_logic = StepEntityLogicAsSnake,
     .alignment = Alignment::Enemy,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Snake),

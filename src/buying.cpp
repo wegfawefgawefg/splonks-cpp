@@ -118,7 +118,7 @@ bool TrySpendMoney(std::size_t buyer_idx, std::uint32_t amount, State& state, Au
 
     buyer.money -= amount;
     if (amount > 0) {
-        (void)PlayEntityCenterSoundEmitter(state, buyer, SoundEffect::Gold);
+        (void)PlayEntityCenterSoundEmitter(state, buyer, audio_asset_ids::Gold);
     }
     return true;
 }

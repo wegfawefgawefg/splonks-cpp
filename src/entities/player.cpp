@@ -61,7 +61,7 @@ extern const EntityArchetype kPlayerArchetype{
     .ropes = 400,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
-    .damage_sound = SoundEffect::PlayerOuch,
+    .damage_sound = audio_asset_ids::PlayerOuch,
     .step_logic = StepEntityLogicAsPlayer,
     .step_physics = StepEntityPhysicsAsPlayer,
     .alignment = Alignment::Ally,
@@ -230,7 +230,7 @@ void StepEntityLogicAsPlayer(
                     entity->attachment_mode = AttachmentMode::Held;
                     state.UpdateSidForEntity(vid->id, graphics);
                     attacked = true;
-                    (void)PlayEntitySoundEmitter(state, player, SoundEffect::BaseballBatSwing);
+                    (void)PlayEntitySoundEmitter(state, player, audio_asset_ids::BaseballBatSwing);
                 }
             }
         }

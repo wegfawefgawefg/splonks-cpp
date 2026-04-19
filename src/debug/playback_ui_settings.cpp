@@ -107,7 +107,7 @@ void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     SyncDebugUiSettings(debug, state);
 }
 
-void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Audio& audio, Graphics& graphics) {
     if (!debug.audio_brush_window_visible) {
         return;
     }
@@ -124,12 +124,12 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     ImGui::Checkbox("Show Openness Rays", &brush.show_openness_rays);
     ImGui::SameLine();
     ImGui::Checkbox("Show Occlusion Ray", &brush.show_occlusion_ray);
-    if (ImGui::BeginCombo("Loop Sound", GetSoundFileName(brush.sound_effect))) {
-        for (std::size_t i = 0; i < kSoundEffectCount; ++i) {
-            const SoundEffect candidate = static_cast<SoundEffect>(i);
-            const bool selected = candidate == brush.sound_effect;
-            if (ImGui::Selectable(GetSoundFileName(candidate), selected)) {
-                brush.sound_effect = candidate;
+    const char* const selected_name = audio.GetAudioAssetNameCStr(brush.audio_asset_id);
+    if (ImGui::BeginCombo("Loop Sound", selected_name)) {
+        for (const AudioAsset& asset : audio.GetAssetDb().assets) {
+            const bool selected = asset.id == brush.audio_asset_id;
+            if (ImGui::Selectable(asset.name.c_str(), selected)) {
+                brush.audio_asset_id = asset.id;
             }
             if (selected) {
                 ImGui::SetItemDefaultFocus();

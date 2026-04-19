@@ -58,7 +58,7 @@ TileArchetype MakeSolidTileArchetype(
     TileFamily family,
     FrameDataId break_animation,
     const char* debug_name,
-    std::optional<SoundEffect> break_sound = SoundEffect::Thud,
+    std::optional<AudioAssetId> break_sound = audio_asset_ids::Thud,
     TileOnBreak on_break = nullptr,
     float friction = 0.85F,
     bool hangable = true
@@ -71,7 +71,7 @@ TileArchetype MakeSolidTileArchetype(
         .hangable = hangable,
         .family = family,
         .friction = friction,
-        .collide_sound = SoundEffect::Thud,
+        .collide_sound = audio_asset_ids::Thud,
         .break_sound = break_sound,
         .break_animation = break_animation,
         .on_break = on_break,
@@ -123,7 +123,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Cave,
         HashFrameDataIdConstexpr("cave_gold_0"),
         "CaveGold",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsGoldVein
     ),
     MakeSolidTileArchetype(
@@ -131,7 +131,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Cave,
         HashFrameDataIdConstexpr("cave_gold_1"),
         "CaveGoldBig",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsBigGoldVein
     ),
     MakeSolidTileArchetype(Tile::CaveBlock, TileFamily::Cave, HashFrameDataIdConstexpr("cave_block_0"), "CaveBlock"),
@@ -179,13 +179,13 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Ice,
         .debug_name = "IceAir2",
     },
-    MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"), "IceDirt", SoundEffect::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"), "IceDirt", audio_asset_ids::Thud, nullptr, 1.0F, false),
     MakeSolidTileArchetype(
         Tile::IceGold,
         TileFamily::Ice,
         HashFrameDataIdConstexpr("ice_gold"),
         "IceGold",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsGoldVein,
         1.0F,
         false
@@ -195,12 +195,12 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Ice,
         HashFrameDataIdConstexpr("ice_gold"),
         "IceGoldBig",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsBigGoldVein,
         1.0F,
         false
     ),
-    MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"), "IceBlock", SoundEffect::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"), "IceBlock", audio_asset_ids::Thud, nullptr, 1.0F, false),
     TileArchetype{
         .tile = Tile::JungleAir0,
         .solid = false,
@@ -234,7 +234,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Jungle,
         HashFrameDataIdConstexpr("jungle_gold_0"),
         "JungleGold",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsGoldVein
     ),
     MakeSolidTileArchetype(
@@ -242,7 +242,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Jungle,
         HashFrameDataIdConstexpr("jungle_gold_0"),
         "JungleGoldBig",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsBigGoldVein
     ),
     MakeSolidTileArchetype(Tile::JungleBlock, TileFamily::Jungle, HashFrameDataIdConstexpr("jungle_block_0"), "JungleBlock"),
@@ -279,7 +279,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Temple,
         HashFrameDataIdConstexpr("temple_gold"),
         "TempleGold",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsGoldVein
     ),
     MakeSolidTileArchetype(
@@ -287,7 +287,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Temple,
         HashFrameDataIdConstexpr("temple_gold"),
         "TempleGoldBig",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsBigGoldVein
     ),
     MakeSolidTileArchetype(Tile::TempleBlock, TileFamily::Temple, HashFrameDataIdConstexpr("temple_block_0"), "TempleBlock"),
@@ -324,7 +324,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Boss,
         HashFrameDataIdConstexpr("boss_gold"),
         "BossGold",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsGoldVein
     ),
     MakeSolidTileArchetype(
@@ -332,7 +332,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         TileFamily::Boss,
         HashFrameDataIdConstexpr("boss_gold"),
         "BossGoldBig",
-        SoundEffect::MoneySmashed,
+        audio_asset_ids::MoneySmashed,
         OnBreakAsBigGoldVein
     ),
     MakeSolidTileArchetype(Tile::BossBlock, TileFamily::Boss, HashFrameDataIdConstexpr("boss_block_0"), "BossBlock"),

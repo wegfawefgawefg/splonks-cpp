@@ -90,7 +90,7 @@ extern const EntityArchetype kPotArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
-    .death_sound_effect = SoundEffect::PotShatter,
+    .death_sound_effect = audio_asset_ids::PotShatter,
     .on_death = OnDeathAsPot,
     .step_logic = StepEntityLogicAsPot,
     .alignment = Alignment::Neutral,

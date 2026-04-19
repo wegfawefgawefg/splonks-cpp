@@ -243,11 +243,11 @@ bool TryOpenTreasureChestAt(
 
     SetAnimation(chest, frame_data_ids::ChestOpen);
     SpawnChestSparkles(emit_pos, state);
-    (void)PlayWorldSoundEmitter(state, emit_pos, SoundEffect::ChestOpen);
+    (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
 
     if (rng::RandomIntInclusive(1, kChestTrapOdds) == 1) {
         SpawnChestTrapBomb(emit_pos, state);
-        (void)PlayWorldSoundEmitter(state, emit_pos, SoundEffect::Throw);
+        (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Throw);
         return true;
     }
 
@@ -308,8 +308,8 @@ bool TryOpenKeyChest(std::size_t entity_idx, State& state, Graphics& graphics, A
     SetAnimation(chest, frame_data_ids::KeyChestOpen);
     const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
     SpawnChestSparkles(emit_pos, state);
-    (void)PlayWorldSoundEmitter(state, emit_pos, SoundEffect::Unlock);
-    (void)PlayWorldSoundEmitter(state, emit_pos, SoundEffect::ChestOpen);
+    (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Unlock);
+    (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
     Entity* const udjat_eye = SpawnEntityAtCenter(EntityType::UdjatEye, emit_pos, state);
     if (udjat_eye != nullptr) {
         LaunchChestLoot(*udjat_eye, holder != nullptr ? std::optional<VID>(holder->vid) : state.player_vid);

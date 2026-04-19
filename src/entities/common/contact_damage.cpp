@@ -178,7 +178,7 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Audio& audio) {
         case DamageResult::Hurt:
         case DamageResult::Died:
             entity.vel.x = 0.0F;
-            (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::AnimalCrush2);
+            (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::AnimalCrush2);
             break;
         case DamageResult::None:
             break;

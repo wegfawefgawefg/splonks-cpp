@@ -502,7 +502,7 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
 
         reward->vel = Vec2::New(rng::RandomFloat(-0.55F, 0.55F), -1.7F);
         state.sac_altar_reward_tier = 1;
-        (void)PlayWorldSoundEmitter(state, emit_pos, SoundEffect::Present);
+        (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
 
@@ -523,7 +523,7 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
 
         reward->vel = Vec2::New(rng::RandomFloat(-0.45F, 0.45F), -1.85F);
         state.sac_altar_reward_tier = 2;
-        (void)PlayWorldSoundEmitter(state, emit_pos, SoundEffect::Present);
+        (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
 
@@ -535,7 +535,7 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
         }
         SpawnSacrificeSmoke(state, emit_pos);
         state.sac_altar_reward_tier = 3;
-        (void)PlayWorldSoundEmitter(state, emit_pos, SoundEffect::Present);
+        (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
 
@@ -574,7 +574,7 @@ void SacrificeVictim(
     SpawnSacrificeSparks(state, victim_effect_pos);
     SpawnSacrificeBlood(state, victim_effect_pos);
     SpawnDamageEffectAnimationBurst(frame_data_ids::BloodBall, victim_effect_pos, state);
-    (void)PlayWorldSoundEmitter(state, altar_sound, SoundEffect::Sacrifice);
+    (void)PlayWorldSoundEmitter(state, altar_sound, audio_asset_ids::Sacrifice);
 
     while (GrantSacAltarReward(altar, state, graphics)) {
     }
@@ -610,7 +610,7 @@ void OnDeathAsSacAltarPiece(std::size_t entity_idx, State& state, Audio& audio) 
         }
         SpawnAltarBreakEffects(entity, state);
     }
-    (void)PlayWorldSoundEmitter(state, owner_center, SoundEffect::PotShatter);
+    (void)PlayWorldSoundEmitter(state, owner_center, audio_asset_ids::PotShatter);
     AddShake(state, owner_center, 1.4F, 1.8F, ShakeMask::All, owner->vid);
     DeactivateLinkedAltarPieces(*owner, state);
 }

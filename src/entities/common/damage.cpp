@@ -13,21 +13,21 @@ void EnterStunnedState(Entity& entity, State& state) {
     entity.stun_timer = kDefaultStunTimer;
 }
 
-std::optional<SoundEffect> GetCrushSoundEffect(EntityType type_) {
+std::optional<AudioAssetId> GetCrushAudioAssetId(EntityType type_) {
     switch (type_) {
     case EntityType::Player:
-        return SoundEffect::AnimalCrush1;
+        return audio_asset_ids::AnimalCrush1;
     case EntityType::Bat:
-        return SoundEffect::AnimalCrush2;
+        return audio_asset_ids::AnimalCrush2;
     case EntityType::Gold:
     case EntityType::GoldStack:
     case EntityType::GoldChunk:
     case EntityType::GoldNugget:
     case EntityType::GoldBar:
     case EntityType::GoldBars:
-        return SoundEffect::MoneySmashed;
+        return audio_asset_ids::MoneySmashed;
     case EntityType::Rock:
-        return SoundEffect::Thud;
+        return audio_asset_ids::Thud;
     default:
         return std::nullopt;
     }
@@ -35,8 +35,8 @@ std::optional<SoundEffect> GetCrushSoundEffect(EntityType type_) {
 
 void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    const std::optional<SoundEffect> sound_effect =
-        entity.stone ? std::optional<SoundEffect>(SoundEffect::PotShatter)
+    const std::optional<AudioAssetId> sound_effect =
+        entity.stone ? std::optional<AudioAssetId>(audio_asset_ids::PotShatter)
                      : entity.death_sound_effect;
     if (sound_effect.has_value()) {
         (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
@@ -163,7 +163,7 @@ DamageResult TryDamageEntity(
             if (!entity.active) {
                 return DamageResult::Died;
             }
-            if (const std::optional<SoundEffect> sound_effect = GetCrushSoundEffect(entity.type_)) {
+            if (const std::optional<AudioAssetId> sound_effect = GetCrushAudioAssetId(entity.type_)) {
                 (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
             }
             entity.marked_for_destruction = true;

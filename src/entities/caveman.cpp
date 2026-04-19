@@ -150,7 +150,7 @@ void StepEntityLogicAsCaveman(
             caveman.vel.y = kCavemanAlertHopSpeedY;
             caveman.grounded = false;
         }
-        (void)PlayEntitySoundEmitter(state, caveman, SoundEffect::CavemanNotice);
+        (void)PlayEntitySoundEmitter(state, caveman, audio_asset_ids::CavemanNotice);
         StartAttacking(caveman);
         return;
     }
@@ -218,8 +218,8 @@ extern const EntityArchetype kCavemanArchetype{
     .counter_a = static_cast<float>(kCavemanIdleMinFrames),
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
-    .damage_sound = SoundEffect::CavemanHurt,
-    .collide_sound = SoundEffect::Thud,
+    .damage_sound = audio_asset_ids::CavemanHurt,
+    .collide_sound = audio_asset_ids::Thud,
     .step_logic = StepEntityLogicAsCaveman,
     .alignment = Alignment::Enemy,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Caveman),

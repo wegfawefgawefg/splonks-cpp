@@ -77,8 +77,8 @@ extern const EntityArchetype kBatArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
-    .damage_sound = SoundEffect::BatSqueak,
-    .collide_sound = SoundEffect::Thud,
+    .damage_sound = audio_asset_ids::BatSqueak,
+    .collide_sound = audio_asset_ids::Thud,
     .step_logic = StepEntityLogicAsBat,
     .step_physics = StepEntityPhysicsAsBat,
     .entity_label_a = EntityLabel::AttackThis,
@@ -120,10 +120,10 @@ void StepEntityLogicAsBat(
         }
 
         if (control.use_pressed) {
-            (void)PlayEntitySoundEmitter(state, bat, SoundEffect::BatSqueak);
+            (void)PlayEntitySoundEmitter(state, bat, audio_asset_ids::BatSqueak);
         }
         if (bat.ai_state == EntityAiState::Idle && steering) {
-            (void)PlayEntitySoundEmitter(state, bat, SoundEffect::BatSqueak);
+            (void)PlayEntitySoundEmitter(state, bat, audio_asset_ids::BatSqueak);
         }
 
         bat.ai_state = EntityAiState::Pursuing;
@@ -182,8 +182,8 @@ void StepEntityLogicAsBat(
             //  is this the begining of a pursuit?
             if (mutable_bat.ai_state == EntityAiState::Idle) {
                 //  squeak
-                const SoundEffect sound_effect =
-                    RandomBool() ? SoundEffect::BatSqueak : SoundEffect::BatFlap1;
+                const AudioAssetId sound_effect =
+                    RandomBool() ? audio_asset_ids::BatSqueak : audio_asset_ids::BatFlap1;
                 (void)PlayEntitySoundEmitter(state, mutable_bat, sound_effect);
             }
             //  go to the target

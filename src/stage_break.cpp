@@ -59,7 +59,7 @@ void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& a
 } // namespace
 
 void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
-    std::optional<SoundEffect> break_sound = std::nullopt;
+    std::optional<AudioAssetId> break_sound = std::nullopt;
     bool broke_any_tiles = false;
     std::vector<IVec2> changed_tiles;
     const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);

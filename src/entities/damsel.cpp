@@ -154,7 +154,7 @@ void RescueDamsel(
     Entity& damsel = state.entity_manager.entities[entity_idx];
     const Vec2 kiss_pos = GetRescueKissPosForEntity(rescued_by_vid, state, damsel);
     SpawnRescueKissParticle(kiss_pos, state);
-    (void)PlayWorldSoundEmitter(state, kiss_pos, SoundEffect::Smooch);
+    (void)PlayWorldSoundEmitter(state, kiss_pos, audio_asset_ids::Smooch);
     AwardDamselRescueHealthToEntity(rescued_by_vid, state);
 
     DetachDamselFromHolder(damsel, state);
@@ -169,7 +169,7 @@ void KissEntity(std::optional<VID> kissed_by_vid, State& state, const Entity& da
     (void)audio;
     const Vec2 kiss_pos = GetRescueKissPosForEntity(kissed_by_vid, state, damsel);
     SpawnRescueKissParticle(kiss_pos, state);
-    (void)PlayWorldSoundEmitter(state, kiss_pos, SoundEffect::Smooch);
+    (void)PlayWorldSoundEmitter(state, kiss_pos, audio_asset_ids::Smooch);
     AwardDamselRescueHealthToEntity(kissed_by_vid, state);
 }
 
@@ -302,7 +302,7 @@ void StepEntityLogicAsDamsel(
 
     if (damsel.condition == EntityCondition::Normal &&
         ShouldPlayAmbientCry(damsel, state.stage_frame)) {
-        (void)PlayEntitySoundEmitter(state, damsel, SoundEffect::DamselAmbientCry);
+        (void)PlayEntitySoundEmitter(state, damsel, audio_asset_ids::DamselAmbientCry);
         SetAnimation(damsel, frame_data_ids::DamselCry);
         damsel.frame_data_animator.loop = false;
     }
@@ -330,7 +330,7 @@ extern const EntityArchetype kDamselArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
-    .damage_sound = SoundEffect::DamselHurt,
+    .damage_sound = audio_asset_ids::DamselHurt,
     .step_logic = StepEntityLogicAsDamsel,
     .alignment = Alignment::Ally,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Damsel),

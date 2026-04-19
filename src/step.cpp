@@ -103,13 +103,13 @@ void StepTitle(State& state, Audio& audio) {
     (void)audio;
     // audio
     //     .rl_audio_device
-    //     .update_music_stream(&mut audio.songs[Song::Title as usize]);
+    //     .update_music_stream(&mut audio.songs[audio_asset_ids::Title as usize]);
 }
 
 void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     // audio
     //     .rl_audio_device
-    //     .update_music_stream(&mut audio.songs[Song::Playing as usize]);
+    //     .update_music_stream(&mut audio.songs[audio_asset_ids::Playing as usize]);
 
     UpdateControlledEntity(state);
     LatchPlayingInputsForTick(state);
@@ -165,7 +165,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
                 game_over_pos = player->GetCenter();
             }
         }
-        (void)PlayWorldSoundEmitter(state, game_over_pos, SoundEffect::GameOver);
+        (void)PlayWorldSoundEmitter(state, game_over_pos, audio_asset_ids::GameOver);
         state.SetMode(Mode::GameOver);
     } else if (state.pending_stage_transition.has_value()) {
         StopAllSoundEmitters(state, audio);
@@ -192,7 +192,7 @@ void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
 void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     // audio
     //     .rl_audio_device
-    //     .update_music_stream(&mut audio.songs[Song::GameOver as usize]);
+    //     .update_music_stream(&mut audio.songs[audio_asset_ids::GameOver as usize]);
     state.contact.ClearEntityContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);

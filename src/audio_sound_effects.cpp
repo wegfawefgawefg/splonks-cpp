@@ -16,10 +16,6 @@ constexpr float kMinPanHalfWidthPx = 1.0F;
 constexpr float kHalfPi = 1.57079632679F;
 constexpr MIX_StereoGains kUnityStereoGains{1.0F, 1.0F};
 
-std::size_t SoundEffectIndex(SoundEffect sound_effect) {
-    return static_cast<std::size_t>(sound_effect);
-}
-
 [[noreturn]] void ThrowAudioError(const char* message) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
 }
@@ -43,7 +39,7 @@ MIX_StereoGains BuildTrackStereoGains(
     };
 }
 
-SDL_PropertiesID MakeSoundEffectPlayProperties(int loops) {
+SDL_PropertiesID MakeAudioInstancePlayProperties(int loops) {
     if (loops == 0) {
         return 0;
     }
@@ -57,14 +53,17 @@ SDL_PropertiesID MakeSoundEffectPlayProperties(int loops) {
 
 void ApplyPlaybackParamsToTrack(
     MIX_Track* track,
-    audio_detail::SoundEffectTrackRuntime& runtime,
-    const SoundEffectPlaybackParams& params,
+    audio_detail::AudioInstanceTrackRuntime& runtime,
+    const AudioPlaybackParams& params,
     float sound_effects_volume,
     const Vec2& listener_world_pos,
     float pan_half_width_px
 ) {
-    const float gain =
-        std::clamp(sound_effects_volume * params.volume_scale, 0.0F, 1.0F);
+    const float gain = std::clamp(
+        sound_effects_volume * runtime.asset_default_volume * params.volume_scale,
+        0.0F,
+        1.0F
+    );
     MIX_SetTrackGain(track, gain);
 
     const MIX_StereoGains gains =
@@ -120,77 +119,78 @@ void ApplyPlaybackParamsToTrack(
 
 } // namespace
 
-void Audio::InitializeSoundEffectTrack(MIX_Track* track) {
+void Audio::InitializeAudioInstanceTrack(MIX_Track* track) {
     if (!MIX_SetTrackStereo(track, &kUnityStereoGains)) {
-        ThrowAudioError("MIX_SetTrackStereo for sound effect track failed");
+        ThrowAudioError("MIX_SetTrackStereo for audio instance track failed");
     }
 
-    auto runtime = std::make_unique<audio_detail::SoundEffectTrackRuntime>();
+    auto runtime = std::make_unique<audio_detail::AudioInstanceTrackRuntime>();
     runtime->track = track;
     runtime->slot_index =
-        static_cast<std::uint32_t>(sound_effect_track_runtimes.size());
+        static_cast<std::uint32_t>(audio_instance_track_runtimes.size());
 
     if (!MIX_SetTrackCookedCallback(
             track,
-            &Audio::OnSoundEffectTrackCooked,
+            &Audio::OnAudioInstanceTrackCooked,
             runtime.get())) {
-        ThrowAudioError("MIX_SetTrackCookedCallback for sound effect track failed");
+        ThrowAudioError("MIX_SetTrackCookedCallback for audio instance track failed");
     }
     if (!MIX_SetTrackStoppedCallback(
             track,
-            &Audio::OnSoundEffectTrackStopped,
+            &Audio::OnAudioInstanceTrackStopped,
             runtime.get())) {
-        ThrowAudioError("MIX_SetTrackStoppedCallback for sound effect track failed");
+        ThrowAudioError("MIX_SetTrackStoppedCallback for audio instance track failed");
     }
 
-    sound_effect_tracks.push_back(track);
-    sound_effect_track_runtimes.push_back(std::move(runtime));
+    audio_instance_tracks.push_back(track);
+    audio_instance_track_runtimes.push_back(std::move(runtime));
 }
 
-void Audio::PlaySoundEffect(SoundEffect sound_effect, float volume_scale) {
-    SoundEffectPlaybackParams params;
+void Audio::PlayAudioAsset(AudioAssetId asset_id, float volume_scale) {
+    AudioPlaybackParams params;
     params.volume_scale = volume_scale;
-    (void)PlaySoundEffectInstance(sound_effect, params);
+    (void)PlayAudioAssetInstance(asset_id, params);
 }
 
-VID Audio::PlaySoundEffectInstance(
-    SoundEffect sound_effect,
-    const SoundEffectPlaybackParams& params
+VID Audio::PlayAudioAssetInstance(
+    AudioAssetId asset_id,
+    const AudioPlaybackParams& params
 ) {
-    if (!initialized || sound_effect_track_runtimes.empty()) {
-        return kInvalidSoundEffectInstanceVID;
+    if (!initialized || audio_instance_track_runtimes.empty()) {
+        return kInvalidAudioInstanceVID;
     }
 
-    LoadedSound& loaded_sound = sounds[SoundEffectIndex(sound_effect)];
-    if (loaded_sound.audio == nullptr) {
-        return kInvalidSoundEffectInstanceVID;
+    LoadedAudioAsset* const loaded_asset = FindLoadedAudioAsset(asset_id);
+    if (loaded_asset == nullptr || loaded_asset->audio == nullptr) {
+        return kInvalidAudioInstanceVID;
     }
 
-    audio_detail::SoundEffectTrackRuntime* runtime = nullptr;
-    for (std::size_t offset = 0; offset < sound_effect_track_runtimes.size(); ++offset) {
+    audio_detail::AudioInstanceTrackRuntime* runtime = nullptr;
+    for (std::size_t offset = 0; offset < audio_instance_track_runtimes.size(); ++offset) {
         const std::size_t index =
-            (next_sound_effect_track + offset) % sound_effect_track_runtimes.size();
-        audio_detail::SoundEffectTrackRuntime& candidate =
-            *sound_effect_track_runtimes[index];
+            (next_audio_instance_track + offset) % audio_instance_track_runtimes.size();
+        audio_detail::AudioInstanceTrackRuntime& candidate =
+            *audio_instance_track_runtimes[index];
         if (!candidate.active.load(std::memory_order_relaxed) ||
             !MIX_TrackPlaying(candidate.track)) {
             runtime = &candidate;
-            next_sound_effect_track =
-                (index + 1) % sound_effect_track_runtimes.size();
+            next_audio_instance_track =
+                (index + 1) % audio_instance_track_runtimes.size();
             break;
         }
     }
 
     if (runtime == nullptr) {
-        runtime = sound_effect_track_runtimes[next_sound_effect_track].get();
-        next_sound_effect_track =
-            (next_sound_effect_track + 1) % sound_effect_track_runtimes.size();
+        runtime = audio_instance_track_runtimes[next_audio_instance_track].get();
+        next_audio_instance_track =
+            (next_audio_instance_track + 1) % audio_instance_track_runtimes.size();
     }
 
-    if (!MIX_SetTrackAudio(runtime->track, loaded_sound.audio)) {
-        return kInvalidSoundEffectInstanceVID;
+    if (!MIX_SetTrackAudio(runtime->track, loaded_asset->audio)) {
+        return kInvalidAudioInstanceVID;
     }
 
+    runtime->asset_default_volume = loaded_asset->default_volume;
     const std::uint32_t generation =
         runtime->generation.fetch_add(1, std::memory_order_relaxed) + 1;
     runtime->active.store(true, std::memory_order_relaxed);
@@ -203,14 +203,14 @@ VID Audio::PlaySoundEffectInstance(
         pan_half_width_px
     );
 
-    SDL_PropertiesID properties = MakeSoundEffectPlayProperties(params.loops);
+    SDL_PropertiesID properties = MakeAudioInstancePlayProperties(params.loops);
     const bool play_ok = MIX_PlayTrack(runtime->track, properties);
     if (properties != 0) {
         SDL_DestroyProperties(properties);
     }
     if (!play_ok) {
         runtime->active.store(false, std::memory_order_relaxed);
-        return kInvalidSoundEffectInstanceVID;
+        return kInvalidAudioInstanceVID;
     }
 
     return VID{
@@ -219,12 +219,12 @@ VID Audio::PlaySoundEffectInstance(
     };
 }
 
-bool Audio::UpdateSoundEffectInstance(
+bool Audio::UpdateAudioInstance(
     VID handle,
-    const SoundEffectPlaybackParams& params
+    const AudioPlaybackParams& params
 ) {
-    audio_detail::SoundEffectTrackRuntime* const runtime =
-        GetSoundEffectTrackRuntime(handle);
+    audio_detail::AudioInstanceTrackRuntime* const runtime =
+        GetAudioInstanceTrackRuntime(handle);
     if (runtime == nullptr) {
         return false;
     }
@@ -240,9 +240,9 @@ bool Audio::UpdateSoundEffectInstance(
     return true;
 }
 
-bool Audio::StopSoundEffectInstance(VID handle) {
-    audio_detail::SoundEffectTrackRuntime* const runtime =
-        GetSoundEffectTrackRuntime(handle);
+bool Audio::StopAudioInstance(VID handle) {
+    audio_detail::AudioInstanceTrackRuntime* const runtime =
+        GetAudioInstanceTrackRuntime(handle);
     if (runtime == nullptr) {
         return false;
     }
@@ -251,9 +251,9 @@ bool Audio::StopSoundEffectInstance(VID handle) {
     return true;
 }
 
-bool Audio::IsSoundEffectInstancePlaying(VID handle) const {
-    const audio_detail::SoundEffectTrackRuntime* const runtime =
-        GetSoundEffectTrackRuntime(handle);
+bool Audio::IsAudioInstancePlaying(VID handle) const {
+    const audio_detail::AudioInstanceTrackRuntime* const runtime =
+        GetAudioInstanceTrackRuntime(handle);
     return runtime != nullptr;
 }
 
@@ -265,16 +265,16 @@ void Audio::SetPanHalfWidthPx(float half_width_px) {
     this->pan_half_width_px = ClampPanHalfWidthPx(half_width_px);
 }
 
-audio_detail::SoundEffectTrackRuntime* Audio::GetSoundEffectTrackRuntime(
+audio_detail::AudioInstanceTrackRuntime* Audio::GetAudioInstanceTrackRuntime(
     VID handle
 ) {
-    if (!IsValidSoundEffectInstanceVID(handle) ||
-        handle.id >= sound_effect_track_runtimes.size()) {
+    if (!IsValidAudioInstanceVID(handle) ||
+        handle.id >= audio_instance_track_runtimes.size()) {
         return nullptr;
     }
 
-    audio_detail::SoundEffectTrackRuntime* const runtime =
-        sound_effect_track_runtimes[handle.id].get();
+    audio_detail::AudioInstanceTrackRuntime* const runtime =
+        audio_instance_track_runtimes[handle.id].get();
     if (runtime == nullptr ||
         !runtime->active.load(std::memory_order_relaxed) ||
         runtime->generation.load(std::memory_order_relaxed) != handle.version ||
@@ -285,16 +285,16 @@ audio_detail::SoundEffectTrackRuntime* Audio::GetSoundEffectTrackRuntime(
     return runtime;
 }
 
-const audio_detail::SoundEffectTrackRuntime* Audio::GetSoundEffectTrackRuntime(
+const audio_detail::AudioInstanceTrackRuntime* Audio::GetAudioInstanceTrackRuntime(
     VID handle
 ) const {
-    if (!IsValidSoundEffectInstanceVID(handle) ||
-        handle.id >= sound_effect_track_runtimes.size()) {
+    if (!IsValidAudioInstanceVID(handle) ||
+        handle.id >= audio_instance_track_runtimes.size()) {
         return nullptr;
     }
 
-    const audio_detail::SoundEffectTrackRuntime* const runtime =
-        sound_effect_track_runtimes[handle.id].get();
+    const audio_detail::AudioInstanceTrackRuntime* const runtime =
+        audio_instance_track_runtimes[handle.id].get();
     if (runtime == nullptr ||
         !runtime->active.load(std::memory_order_relaxed) ||
         runtime->generation.load(std::memory_order_relaxed) != handle.version ||
@@ -305,16 +305,17 @@ const audio_detail::SoundEffectTrackRuntime* Audio::GetSoundEffectTrackRuntime(
     return runtime;
 }
 
-void SDLCALL Audio::OnSoundEffectTrackStopped(void* userdata, MIX_Track* track) {
+void SDLCALL Audio::OnAudioInstanceTrackStopped(void* userdata, MIX_Track* track) {
     (void)track;
 
     auto* const runtime =
-        static_cast<audio_detail::SoundEffectTrackRuntime*>(userdata);
+        static_cast<audio_detail::AudioInstanceTrackRuntime*>(userdata);
     if (runtime == nullptr) {
         return;
     }
 
     runtime->active.store(false, std::memory_order_relaxed);
+    runtime->asset_default_volume = 1.0F;
     runtime->stereo_target_left.store(1.0F, std::memory_order_relaxed);
     runtime->stereo_target_right.store(1.0F, std::memory_order_relaxed);
     runtime->direct_gain.store(1.0F, std::memory_order_relaxed);
@@ -334,7 +335,7 @@ void SDLCALL Audio::OnSoundEffectTrackStopped(void* userdata, MIX_Track* track) 
     );
 }
 
-void SDLCALL Audio::OnSoundEffectTrackCooked(
+void SDLCALL Audio::OnAudioInstanceTrackCooked(
     void* userdata,
     MIX_Track* track,
     const SDL_AudioSpec* spec,
@@ -344,7 +345,7 @@ void SDLCALL Audio::OnSoundEffectTrackCooked(
     (void)track;
 
     auto* const runtime =
-        static_cast<audio_detail::SoundEffectTrackRuntime*>(userdata);
+        static_cast<audio_detail::AudioInstanceTrackRuntime*>(userdata);
     if (runtime == nullptr || spec == nullptr || pcm == nullptr || samples <= 0) {
         return;
     }

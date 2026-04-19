@@ -319,7 +319,7 @@ void UpdateCarryAndBackItems(
                     }
                     thrown->acc += throw_vel;
                     state.UpdateSidForEntity(thrown->vid.id, graphics);
-                    (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::Throw);
+                    (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Throw);
                 }
             }
         }
@@ -341,7 +341,7 @@ void UpdateCarryAndBackItems(
                     if (held_thing != nullptr && held_thing->can_go_on_back) {
                         equip_action_was_made = true;
                         put_held_on_back = true;
-                        (void)PlayEntityCenterSoundEmitter(state, entity, SoundEffect::Equip);
+                        (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Equip);
                     }
                 }
             }

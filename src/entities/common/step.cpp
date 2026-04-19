@@ -69,7 +69,7 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
     if (entity.travel_sound_countdown < 0.0F) {
         entity.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
 
-        SoundEffect which_step_sound;
+        AudioAssetId which_step_sound;
         if (entity.IsClimbing()) {
             const auto [entity_tl, entity_br] = entity.GetBounds();
             bool its_rope = false;
@@ -90,18 +90,18 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
             }
             if (its_rope) {
                 which_step_sound = entity.travel_sound == TravelSound::One
-                                       ? SoundEffect::ClimbRope1
-                                       : SoundEffect::ClimbRope2;
+                                       ? audio_asset_ids::ClimbRope1
+                                       : audio_asset_ids::ClimbRope2;
             } else if (its_ladder) {
                 which_step_sound = entity.travel_sound == TravelSound::One
-                                       ? SoundEffect::ClimbMetal1
-                                       : SoundEffect::ClimbMetal2;
+                                       ? audio_asset_ids::ClimbMetal1
+                                       : audio_asset_ids::ClimbMetal2;
             } else {
-                which_step_sound = SoundEffect::Step1;
+                which_step_sound = audio_asset_ids::Step1;
             }
         } else {
             which_step_sound =
-                entity.travel_sound == TravelSound::One ? SoundEffect::Step1 : SoundEffect::Step2;
+                entity.travel_sound == TravelSound::One ? audio_asset_ids::Step1 : audio_asset_ids::Step2;
         }
         (void)PlayEntitySoundEmitter(state, entity, which_step_sound);
         entity.IncTravelSound();

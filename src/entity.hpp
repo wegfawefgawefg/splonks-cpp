@@ -114,9 +114,9 @@ struct Entity {
     bool affected_by_ground_friction = true;
     float support_ground_friction = 0.85F;
     std::optional<FrameDataId> damage_animation = std::nullopt;
-    std::optional<SoundEffect> damage_sound = std::nullopt;
-    std::optional<SoundEffect> collide_sound = std::nullopt;
-    std::optional<SoundEffect> death_sound_effect = std::nullopt;
+    std::optional<AudioAssetId> damage_sound = std::nullopt;
+    std::optional<AudioAssetId> collide_sound = std::nullopt;
+    std::optional<AudioAssetId> death_sound_effect = std::nullopt;
     EntityOnDeath on_death = nullptr;
     EntityOnDamage on_damage = nullptr;
     EntityOnUse on_use = nullptr;

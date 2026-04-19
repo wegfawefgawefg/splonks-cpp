@@ -1,5 +1,6 @@
 #include "render/render.hpp"
 
+#include "audio.hpp"
 #include "graphics.hpp"
 #include "render/debug.hpp"
 #include "render/gameplay.hpp"
@@ -15,6 +16,7 @@ void Render(
     SDL_Texture* render_texture,
     const RenderPostFx& post_fx,
     State& state,
+    const Audio& audio,
     Graphics& graphics
 ) {
     if (render_texture == nullptr) {
@@ -86,7 +88,7 @@ void Render(
     if (state.mode == Mode::Playing) {
         RenderPlayingHud(renderer, state, graphics);
         RenderWorldPrompts(renderer, state, graphics);
-        RenderDebugOverlay(renderer, graphics, state);
+        RenderDebugOverlay(renderer, graphics, state, audio);
     }
 }
 
