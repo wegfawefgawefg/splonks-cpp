@@ -246,6 +246,7 @@ void DrawPromptBubble(
 void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
     unsigned int health = 0;
     unsigned int money = 0;
+    const int favor = state.sac_altar_favor;
     std::optional<VID> player_vid;
     if (state.player_vid.has_value()) {
         if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
@@ -395,6 +396,20 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         );
     }
 
+    char favor_text[32];
+    std::snprintf(favor_text, sizeof(favor_text), "Favor: %d", favor);
+    const SDL_Color favor_color = favor > 0 ? SDL_Color{140, 255, 140, 255}
+                                      : favor < 0 ? SDL_Color{255, 120, 120, 255}
+                                                  : SDL_Color{200, 200, 200, 255};
+    DrawRightAlignedUiText(
+        renderer,
+        graphics,
+        favor_text,
+        static_cast<float>(static_cast<int>(graphics.dims.x) - hud_margin),
+        static_cast<float>(hud_margin + status_icon_size.y + hud_gap),
+        favor_color
+    );
+
     char stage_text[32];
     std::snprintf(stage_text, sizeof(stage_text), "%s", GetHudStageLabel(state.stage.stage_type));
     DrawRightAlignedUiText(
@@ -402,7 +417,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         graphics,
         stage_text,
         static_cast<float>(static_cast<int>(graphics.dims.x) - hud_margin),
-        static_cast<float>(hud_margin + status_icon_size.y + hud_gap),
+        static_cast<float>(hud_margin + status_icon_size.y + hud_gap + 34),
         SDL_Color{255, 255, 255, 255}
     );
 
@@ -413,7 +428,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         graphics,
         stage_timer_text,
         static_cast<float>(static_cast<int>(graphics.dims.x) - hud_margin),
-        static_cast<float>(hud_margin + status_icon_size.y + hud_gap + 34),
+        static_cast<float>(hud_margin + status_icon_size.y + hud_gap + 68),
         SDL_Color{255, 255, 255, 255}
     );
 

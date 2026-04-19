@@ -4996,15 +4996,15 @@ sprites:
       y: 10
     tags: []
     pbox:
-      x: 3
+      x: 0
       y: 0
-      w: 28
-      h: 16
+      w: 0
+      h: 0
     cbox:
-      x: 3
+      x: 0
       y: 0
-      w: 28
-      h: 16
+      w: 0
+      h: 0
     tile: false
     emit_point:
       x: 27
@@ -5017,7 +5017,7 @@ sprites:
       h: 16
     name: "sac_altar_sac"
     frame: 0
-    duration: 3
+    duration: 8
     offset:
       x: 0
       y: 0
@@ -5037,8 +5037,8 @@ sprites:
       h: 0
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 26
+      y: 8
   - path: "entities.png"
     aabb:
       x: 192
@@ -5047,7 +5047,7 @@ sprites:
       h: 16
     name: "sac_altar_sac"
     frame: 1
-    duration: 3
+    duration: 8
     offset:
       x: 0
       y: 0
@@ -5067,8 +5067,8 @@ sprites:
       h: 0
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 26
+      y: 8
   - path: "entities.png"
     aabb:
       x: 224
@@ -5077,7 +5077,7 @@ sprites:
       h: 16
     name: "sac_altar_sac"
     frame: 2
-    duration: 3
+    duration: 8
     offset:
       x: 0
       y: 0
@@ -5097,8 +5097,8 @@ sprites:
       h: 0
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 26
+      y: 8
   - path: "entities.png"
     aabb:
       x: 256
@@ -5107,7 +5107,7 @@ sprites:
       h: 16
     name: "sac_altar_sac"
     frame: 3
-    duration: 4
+    duration: 12
     offset:
       x: 0
       y: 0
@@ -5127,8 +5127,8 @@ sprites:
       h: 0
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 26
+      y: 8
   - path: "boss.png"
     aabb:
       x: 0

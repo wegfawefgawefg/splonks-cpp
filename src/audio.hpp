@@ -79,6 +79,8 @@ enum class SoundEffect {
     BoulderHitGround,
     BoulderTileCrash,
     BoulderRoll,
+    Sacrifice,
+    Present,
     UiCant,
     UiConfirm,
     UiCursorMove,
@@ -88,7 +90,7 @@ enum class SoundEffect {
 };
 
 constexpr std::size_t kSongCount = 2;
-constexpr std::size_t kSoundEffectCount = 61;
+constexpr std::size_t kSoundEffectCount = 63;
 
 struct LoadedSong {
     std::string path;

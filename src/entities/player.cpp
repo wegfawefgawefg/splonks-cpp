@@ -13,6 +13,31 @@
 
 namespace splonks::entities::player {
 
+namespace {
+
+constexpr float kPunishBallHeldMaxWalkSpeed = 1.75F;
+constexpr float kPunishBallDraggedMaxWalkSpeed = 2.0F;
+constexpr float kPunishBallHeldMaxRunSpeed = 2.5F;
+constexpr float kPunishBallDraggedMaxRunSpeed = 3.0F;
+constexpr float kPunishBallDraggedExtraGravity = 0.14F;
+constexpr float kPunishBallDraggedJumpImpulse = 3.0F;
+
+bool PlayerHasPunishBall(const Entity& player, const State& state) {
+    if (!player.entity_d.has_value()) {
+        return false;
+    }
+
+    const Entity* const ball = state.entity_manager.GetEntity(*player.entity_d);
+    return ball != nullptr && ball->active && ball->type_ == EntityType::BallAndChainBall;
+}
+
+bool PlayerIsHoldingPunishBall(const Entity& player, const State& state) {
+    return player.holding_vid.has_value() && player.entity_d.has_value() &&
+           *player.holding_vid == *player.entity_d && PlayerHasPunishBall(player, state);
+}
+
+} // namespace
+
 extern const EntityArchetype kPlayerArchetype{
     .type_ = EntityType::Player,
     .size = Vec2::New(10.0F, 10.0F),
@@ -235,13 +260,28 @@ void StepEntityPhysicsAsPlayer(
 
     // custom pre partial euler step for player to apply special velocity clamping.
     Entity& entity = state.entity_manager.entities[entity_idx];
+    const bool has_punish_ball = PlayerHasPunishBall(entity, state);
+    const bool holding_punish_ball = PlayerIsHoldingPunishBall(entity, state);
+    if (has_punish_ball && !holding_punish_ball && !entity.IsClimbing()) {
+        entity.acc.y += kPunishBallDraggedExtraGravity;
+    }
     entity.vel += entity.acc;
+    if (has_punish_ball && !holding_punish_ball && entity.jumped_this_frame &&
+        entity.vel.y < -kPunishBallDraggedJumpImpulse) {
+        entity.vel.y = -kPunishBallDraggedJumpImpulse;
+    }
     const controls::ControlIntent control =
         controls::GetControlIntentForEntity(entity, state);
+    const float max_walk_speed =
+        holding_punish_ball ? kPunishBallHeldMaxWalkSpeed
+                            : (has_punish_ball ? kPunishBallDraggedMaxWalkSpeed : kMaxWalkSpeed);
+    const float max_run_speed =
+        holding_punish_ball ? kPunishBallHeldMaxRunSpeed
+                            : (has_punish_ball ? kPunishBallDraggedMaxRunSpeed : kMaxRunSpeed);
     if (control.run) {
-        entity.vel.x = std::clamp(entity.vel.x, -kMaxRunSpeed, kMaxRunSpeed);
+        entity.vel.x = std::clamp(entity.vel.x, -max_run_speed, max_run_speed);
     } else {
-        entity.vel.x = std::clamp(entity.vel.x, -kMaxWalkSpeed, kMaxWalkSpeed);
+        entity.vel.x = std::clamp(entity.vel.x, -max_walk_speed, max_walk_speed);
     }
     entity.vel.y = std::clamp(entity.vel.y, -kMaxSpeed, kMaxSpeed);
 

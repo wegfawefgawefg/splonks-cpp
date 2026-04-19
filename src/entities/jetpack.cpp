@@ -49,6 +49,7 @@ extern const EntityArchetype kJetPackArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .vanish_on_death = true,
     .can_go_on_back = true,
     .can_be_stunned = false,

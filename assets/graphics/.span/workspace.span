@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": null,
+  "selectedAnnotationId": "4b1783f9-c8fd-4b45-ae79-8eb569b31388",
   "sheets": [
     {
       "path": "images/title.png",
@@ -7373,16 +7373,16 @@
             },
             "tags": [],
             "pbox": {
-              "x": 3,
+              "x": 0,
               "y": 0,
-              "w": 28,
-              "h": 16
+              "w": 0,
+              "h": 0
             },
             "cbox": {
-              "x": 3,
+              "x": 0,
               "y": 0,
-              "w": 28,
-              "h": 16
+              "w": 0,
+              "h": 0
             },
             "tile": false,
             "emit_point": {
@@ -7405,7 +7405,7 @@
           "properties": {
             "name": "sac_altar_sac",
             "frame": 0,
-            "duration": 3,
+            "duration": 8,
             "offset": {
               "x": 0,
               "y": 0
@@ -7448,7 +7448,7 @@
           "properties": {
             "name": "sac_altar_sac",
             "frame": 1,
-            "duration": 3,
+            "duration": 8,
             "offset": {
               "x": 0,
               "y": 0
@@ -7491,7 +7491,7 @@
           "properties": {
             "name": "sac_altar_sac",
             "frame": 2,
-            "duration": 3,
+            "duration": 8,
             "offset": {
               "x": 0,
               "y": 0
@@ -7534,7 +7534,7 @@
           "properties": {
             "name": "sac_altar_sac",
             "frame": 3,
-            "duration": 4,
+            "duration": 12,
             "offset": {
               "x": 0,
               "y": 0
@@ -7569,8 +7569,8 @@
         "gridWidth": 16,
         "gridHeight": 16,
         "zoom": 6.741,
-        "centerX": 222.5930870790684,
-        "centerY": 237.35350838154577
+        "centerX": 235.94422192553034,
+        "centerY": 231.27132472926866
       }
     },
     {

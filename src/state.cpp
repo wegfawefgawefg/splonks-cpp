@@ -147,6 +147,8 @@ State State::New() {
     state.points = 0;
     state.deaths = 0;
     state.depth = 0;
+    state.sac_altar_favor = 0;
+    state.sac_altar_reward_tier = 0;
     state.frame_pause = 0;
     state.audio_occlusion_enabled = true;
     state.audio_listener_world_pos = Vec2::New(0.0F, 0.0F);

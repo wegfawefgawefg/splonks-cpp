@@ -149,6 +149,7 @@ add_executable(splonks-cpp
     src/entity/manager.cpp
     src/entities/altar.cpp
     src/entities/arrow_trap.cpp
+    src/entities/ball_and_chain.cpp
     src/entities/baseball_bat.cpp
     src/entities/basic_exit.cpp
     src/entities/bat.cpp
@@ -200,6 +201,7 @@ add_executable(splonks-cpp
     src/entities/rope.cpp
     src/entities/ruby_big.cpp
     src/entities/sac_altar.cpp
+    src/entities/sac_altar_topper.cpp
     src/entities/scarab.cpp
     src/entities/shotgun.cpp
     src/entities/shop.cpp

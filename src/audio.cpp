@@ -141,6 +141,8 @@ std::vector<SoundEffect> AllSoundEffects() {
         SoundEffect::BoulderHitGround,
         SoundEffect::BoulderTileCrash,
         SoundEffect::BoulderRoll,
+        SoundEffect::Sacrifice,
+        SoundEffect::Present,
         SoundEffect::UiCant,
         SoundEffect::UiConfirm,
         SoundEffect::UiCursorMove,
@@ -462,6 +464,10 @@ const char* GetSoundFileName(SoundEffect sound_effect) {
         return "boulder_tile_crash";
     case SoundEffect::BoulderRoll:
         return "boulder_roll";
+    case SoundEffect::Sacrifice:
+        return "sacrifice";
+    case SoundEffect::Present:
+        return "present";
     case SoundEffect::UiCant:
         return "ui_cant";
     case SoundEffect::UiConfirm:

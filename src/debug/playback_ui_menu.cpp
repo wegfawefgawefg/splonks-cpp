@@ -268,7 +268,8 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
          state.debug_level.kind == DebugLevelKind::OpposingBodySmack ||
          state.debug_level.kind == DebugLevelKind::BoulderTest ||
          state.debug_level.kind == DebugLevelKind::MovingPlatformTest ||
-         state.debug_level.kind == DebugLevelKind::AudioTest)) {
+         state.debug_level.kind == DebugLevelKind::AudioTest ||
+         state.debug_level.kind == DebugLevelKind::SacAltarTest)) {
         apply_stage_fit_camera();
     }
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
@@ -313,7 +314,8 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             state.debug_level.kind == DebugLevelKind::OpposingBodySmack ||
             state.debug_level.kind == DebugLevelKind::BoulderTest ||
             state.debug_level.kind == DebugLevelKind::MovingPlatformTest ||
-            state.debug_level.kind == DebugLevelKind::AudioTest) {
+            state.debug_level.kind == DebugLevelKind::AudioTest ||
+            state.debug_level.kind == DebugLevelKind::SacAltarTest) {
             apply_stage_fit_camera();
         }
         graphics.ResetTileVariations();

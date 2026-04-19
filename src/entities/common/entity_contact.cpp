@@ -146,8 +146,8 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::StompPad:
     case EntityType::Rope:
     case EntityType::Altar:
-        case EntityType::SacAltar:
-        case EntityType::GoldIdol:
+    case EntityType::SacAltar:
+    case EntityType::GoldIdol:
     case EntityType::Chest:
     case EntityType::KeyChest:
     case EntityType::ChestKey:
@@ -191,7 +191,9 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::GiantTikiHead:
     case EntityType::Boulder:
     case EntityType::MovingPlatform:
+    case EntityType::SacAltarTopper:
     case EntityType::KaliHead:
+    case EntityType::BallAndChainBall:
     case EntityType::ArrowTrap:
     case EntityType::Snake:
     case EntityType::Caveman:

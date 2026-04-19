@@ -1,6 +1,7 @@
 #include "entity/archetype.hpp"
 #include "entities/altar.hpp"
 #include "entities/arrow_trap.hpp"
+#include "entities/ball_and_chain.hpp"
 #include "entities/baseball_bat.hpp"
 #include "entities/bat.hpp"
 #include "entities/basic_exit.hpp"
@@ -33,6 +34,7 @@
 #include "entities/rope.hpp"
 #include "entities/ruby_big.hpp"
 #include "entities/sac_altar.hpp"
+#include "entities/sac_altar_topper.hpp"
 #include "entities/sapphire_big.hpp"
 #include "entities/scarab.hpp"
 #include "entities/shotgun.hpp"
@@ -149,7 +151,9 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::GiantTikiHead, entities::giant_tiki_head::kGiantTikiHeadArchetype, "GiantTikiHead");
     SetArchetype(EntityType::Boulder, entities::boulder::kBoulderArchetype, "Boulder");
     SetArchetype(EntityType::MovingPlatform, entities::moving_platform::kMovingPlatformArchetype, "MovingPlatform");
+    SetArchetype(EntityType::SacAltarTopper, entities::sac_altar_topper::kSacAltarTopperArchetype, "SacAltarTopper");
     SetArchetype(EntityType::KaliHead, entities::kali_head::kKaliHeadArchetype, "KaliHead");
+    SetArchetype(EntityType::BallAndChainBall, entities::ball_and_chain::kBallAndChainBallArchetype, "BallAndChainBall");
     SetArchetype(EntityType::ArrowTrap, entities::arrow_trap::kArrowTrapArchetype, "ArrowTrap");
     SetArchetype(EntityType::Snake, entities::snake::kSnakeArchetype, "Snake");
     SetArchetype(EntityType::Caveman, entities::caveman::kCavemanArchetype, "Caveman");

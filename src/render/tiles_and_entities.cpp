@@ -11,6 +11,7 @@
 #include "state.hpp"
 #include "stage_lighting.hpp"
 #include "tile.hpp"
+#include "world_query.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -629,6 +630,22 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
             };
             const SDL_FlipMode flip =
                 entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+            if (entity.type_ == EntityType::BallAndChainBall && entity.entity_a.has_value()) {
+                if (const Entity* const attached = state.entity_manager.GetEntity(*entity.entity_a)) {
+                    if (attached->active) {
+                        SDL_SetRenderDrawColor(renderer, 132, 132, 132, 255);
+                        const Vec2 anchor_world = attached->GetCenter() +
+                                                  Vec2::New(0.0F, (attached->size.y * 0.5F) - 1.0F);
+                        const Vec2 ball_world = GetNearestWorldPoint(state.stage, anchor_world, entity.GetCenter());
+                        for (const Vec2& render_offset : render_offsets) {
+                            const Vec2 anchor_screen = WorldToScreen(graphics, anchor_world + render_offset);
+                            const Vec2 ball_screen = WorldToScreen(graphics, ball_world + render_offset);
+                            SDL_RenderLine(renderer, anchor_screen.x, anchor_screen.y, ball_screen.x, ball_screen.y);
+                            SDL_RenderLine(renderer, anchor_screen.x, anchor_screen.y + 1.0F, ball_screen.x, ball_screen.y + 1.0F);
+                        }
+                    }
+                }
+            }
             for (const Vec2& render_offset : render_offsets) {
                 const Vec2 shake_offset = GetShakeOffset(entity.shake);
                 SDL_FRect dst = WorldRectToScreen(

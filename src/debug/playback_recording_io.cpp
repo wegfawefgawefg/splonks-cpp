@@ -657,6 +657,8 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.points);
     WritePod(out, snapshot.deaths);
     WritePod(out, snapshot.depth);
+    WritePod(out, snapshot.sac_altar_favor);
+    WritePod(out, snapshot.sac_altar_reward_tier);
     WritePod(out, snapshot.frame_pause);
     WritePod(out, snapshot.debug_level);
     WriteEntityManager(out, snapshot.entity_manager);
@@ -708,6 +710,8 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.points) &&
            ReadPod(in, snapshot.deaths) &&
            ReadPod(in, snapshot.depth) &&
+           ReadPod(in, snapshot.sac_altar_favor) &&
+           ReadPod(in, snapshot.sac_altar_reward_tier) &&
            ReadPod(in, snapshot.frame_pause) &&
            ReadPod(in, snapshot.debug_level) &&
            ReadEntityManager(in, snapshot.entity_manager) &&

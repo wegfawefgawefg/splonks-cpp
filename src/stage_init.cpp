@@ -49,6 +49,8 @@ constexpr int kAudioTestStageWidthTiles = 96;
 constexpr int kAudioTestStageHeightTiles = 24;
 constexpr int kShopTestStageWidthTiles = 80;
 constexpr int kShopTestStageHeightTiles = 12;
+constexpr int kSacAltarTestStageWidthTiles = 96;
+constexpr int kSacAltarTestStageHeightTiles = 24;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
 constexpr std::array<Tile, 3> kCaveBackwallFillTiles{{
     Tile::CaveAir0,
@@ -537,6 +539,35 @@ void BuildDebugLadder(Stage& stage, int x, int top_y, int bottom_y) {
     for (int y = top_y + 1; y <= bottom_y; ++y) {
         SetStageTile(stage, x, y, Tile::Ladder);
     }
+}
+
+Stage MakeSacAltarTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kSacAltarTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kSacAltarTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile dirt_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const int floor_y = kSacAltarTestStageHeightTiles - 1;
+    for (int x = 0; x < kSacAltarTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, floor_y, dirt_tile);
+    }
+
+    for (int y = 0; y < kSacAltarTestStageHeightTiles; ++y) {
+        SetStageTile(stage, 0, y, dirt_tile);
+        SetStageTile(stage, kSacAltarTestStageWidthTiles - 1, y, dirt_tile);
+    }
+
+    return stage;
 }
 
 Stage MakeAudioTestStage() {
@@ -1399,6 +1430,142 @@ void InitBoulderTestStage(State& state) {
     );
 }
 
+void SpawnSacAltarTestCorpsePile(State& state) {
+    constexpr int kCorpseColumns = 10;
+    constexpr int kCorpseRows = 5;
+    const float floor_center_y =
+        static_cast<float>((kSacAltarTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
+    const float base_x = 28.0F * static_cast<float>(kTileSize);
+    const float base_y = floor_center_y - 2.0F;
+
+    for (int row = 0; row < kCorpseRows; ++row) {
+        for (int col = 0; col < kCorpseColumns; ++col) {
+            const std::optional<VID> caveman_vid = SpawnStageEntityAtCenter(
+                state,
+                EntityType::Caveman,
+                Vec2::New(
+                    base_x + static_cast<float>(col) * 9.0F + rng::RandomFloat(-1.25F, 1.25F),
+                    base_y - static_cast<float>(row) * 5.5F + rng::RandomFloat(-0.75F, 0.75F)
+                )
+            );
+            if (!caveman_vid.has_value()) {
+                continue;
+            }
+            Entity* const caveman = state.entity_manager.GetEntityMut(*caveman_vid);
+            if (caveman == nullptr) {
+                continue;
+            }
+            caveman->health = 0;
+            caveman->condition = EntityCondition::Dead;
+            caveman->vel = Vec2::New(0.0F, 0.0F);
+            caveman->acc = Vec2::New(0.0F, 0.0F);
+            TrySetAnimation(*caveman, EntityDisplayState::Dead);
+        }
+    }
+}
+
+void SpawnSacAltarTestIdols(State& state) {
+    const float floor_center_y =
+        static_cast<float>((kSacAltarTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
+    constexpr std::array<float, 4> kIdolXTiles{44.0F, 46.5F, 49.0F, 51.5F};
+    for (const float x_tile : kIdolXTiles) {
+        (void)SpawnStageEntityAtCenter(
+            state,
+            EntityType::GoldIdol,
+            Vec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
+        );
+    }
+}
+
+void SpawnSacAltarTestLivingDamsels(State& state) {
+    const float floor_center_y =
+        static_cast<float>((kSacAltarTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
+    constexpr std::array<float, 4> kDamselXTiles{16.5F, 18.5F, 20.5F, 22.5F};
+    for (const float x_tile : kDamselXTiles) {
+        const std::optional<VID> damsel_vid = SpawnStageEntityAtCenter(
+            state,
+            EntityType::Damsel,
+            Vec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
+        );
+        if (!damsel_vid.has_value()) {
+            continue;
+        }
+        Entity* const damsel = state.entity_manager.GetEntityMut(*damsel_vid);
+        if (damsel == nullptr) {
+            continue;
+        }
+        damsel->condition = EntityCondition::Stunned;
+        damsel->stun_timer = 6000;
+        damsel->stun_recovers_on_ground = false;
+        damsel->stun_recovers_while_held = false;
+        damsel->vel = Vec2::New(0.0F, 0.0F);
+        damsel->acc = Vec2::New(0.0F, 0.0F);
+        TrySetAnimation(*damsel, EntityDisplayState::Stunned);
+    }
+}
+
+void SpawnSacAltarTestAltar(State& state, int left_x_tile) {
+    const Vec2 altar_left_pos = Vec2::New(
+        static_cast<float>(left_x_tile) * static_cast<float>(kTileSize),
+        23.0F * static_cast<float>(kTileSize) - 16.0F
+    );
+    const std::optional<VID> altar_left_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::SacAltar,
+        altar_left_pos
+    );
+    const std::optional<VID> altar_right_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::SacAltar,
+        altar_left_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F)
+    );
+    const std::optional<VID> altar_topper_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::SacAltarTopper,
+        altar_left_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize))
+    );
+    if (altar_left_vid.has_value()) {
+        if (Entity* const altar_left = state.entity_manager.GetEntityMut(*altar_left_vid)) {
+            SetAnimation(*altar_left, frame_data_ids::SacAltarLeft);
+            if (altar_topper_vid.has_value()) {
+                altar_left->entity_a = *altar_topper_vid;
+            }
+        }
+    }
+    if (altar_right_vid.has_value()) {
+        if (Entity* const altar_right = state.entity_manager.GetEntityMut(*altar_right_vid)) {
+            SetAnimation(*altar_right, frame_data_ids::SacAltarRight);
+            if (altar_left_vid.has_value()) {
+                altar_right->entity_a = *altar_left_vid;
+            }
+        }
+    }
+    if (altar_topper_vid.has_value()) {
+        if (Entity* const topper = state.entity_manager.GetEntityMut(*altar_topper_vid)) {
+            SetAnimation(*topper, frame_data_ids::SacAltarTopper);
+            if (altar_left_vid.has_value()) {
+                topper->entity_a = *altar_left_vid;
+            }
+        }
+    }
+}
+
+void InitSacAltarTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
+    const float player_spawn_y = 23.0F * static_cast<float>(kTileSize) - 14.0F;
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+
+    SpawnSacAltarTestAltar(state, 6);
+    SpawnSacAltarTestAltar(state, 9);
+    SpawnSacAltarTestAltar(state, 12);
+    SpawnSacAltarTestLivingDamsels(state);
+    SpawnSacAltarTestCorpsePile(state);
+    SpawnSacAltarTestIdols(state);
+}
+
 void InitAudioTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
@@ -1572,6 +1739,8 @@ void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
 void InitStage(State& state, bool preserve_player_state) {
     if (state.stage.stage_type == StageType::SplkMines1) {
         state.depth = 0;
+        state.sac_altar_favor = 0;
+        state.sac_altar_reward_tier = 0;
     }
     state.respawn_target = StageLoadTarget::ForStageType(state.stage.stage_type);
     const StageCarryover carryover =
@@ -1670,6 +1839,8 @@ void InitStage(State& state, bool preserve_player_state) {
 
 void InitDebugLevel(State& state, bool preserve_player_state) {
     state.depth = 0;
+    state.sac_altar_favor = 0;
+    state.sac_altar_reward_tier = 0;
     state.respawn_target = StageLoadTarget::ForDebugLevel(state.debug_level.kind);
     switch (state.debug_level.kind) {
     case DebugLevelKind::SplkMines1:
@@ -1719,6 +1890,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::ShopTest:
         state.stage = MakeShopTestStage();
         InitShopTestStage(state);
+        break;
+    case DebugLevelKind::SacAltarTest:
+        state.stage = MakeSacAltarTestStage();
+        InitSacAltarTestStage(state);
         break;
     }
 

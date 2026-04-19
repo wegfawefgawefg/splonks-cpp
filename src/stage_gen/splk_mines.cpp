@@ -1471,7 +1471,8 @@ ResolvedRoom ResolveRoom(
                     .animation_id = frame_data_ids::AltarRight,
                 });
                 break;
-            case 'x':
+            case 'x': {
+                const std::size_t left_altar_spawn_index = room.entity_spawns.size();
                 room.entity_spawns.push_back(StageEntitySpawn{
                     .type_ = EntityType::SacAltar,
                     .pos = tile_pos,
@@ -1481,22 +1482,18 @@ ResolvedRoom ResolveRoom(
                     .type_ = EntityType::SacAltar,
                     .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
                     .animation_id = frame_data_ids::SacAltarRight,
-                });
-                room.background_stamps.push_back(BackgroundStamp{
-                    .animation_id = frame_data_ids::KaliBody,
-                    .pos = tile_pos + Vec2::New(
-                        -static_cast<float>(kTileSize),
-                        -static_cast<float>(kTileSize * 3)
-                    ),
+                    .entity_a_spawn_index = left_altar_spawn_index,
                 });
                 room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::KaliHead,
-                    .pos = tile_pos + Vec2::New(
-                        static_cast<float>(kTileSize),
-                        -static_cast<float>(kTileSize * 4)
-                    ),
+                    .type_ = EntityType::SacAltarTopper,
+                    .pos = tile_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize)),
+                    .animation_id = frame_data_ids::SacAltarTopper,
+                    .entity_a_spawn_index = left_altar_spawn_index,
                 });
+                room.entity_spawns[left_altar_spawn_index].entity_a_spawn_index =
+                    room.entity_spawns.size() - 1;
                 break;
+            }
             case 'a':
                 room.entity_spawns.push_back(StageEntitySpawn{
                     .type_ = EntityType::Chest,
@@ -1738,8 +1735,12 @@ Stage GenerateStage(StageType stage_type) {
                                       [static_cast<std::size_t>(tile_x)];
                 }
             }
+            const std::size_t room_spawn_base_index = stage.entity_spawns.size();
             for (StageEntitySpawn& spawn : room.entity_spawns) {
                 spawn.pos += room_pos_wc;
+                if (spawn.entity_a_spawn_index.has_value()) {
+                    *spawn.entity_a_spawn_index += room_spawn_base_index;
+                }
                 stage.entity_spawns.push_back(std::move(spawn));
             }
             for (BackgroundStamp& stamp : room.background_stamps) {

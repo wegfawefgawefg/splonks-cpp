@@ -93,7 +93,7 @@ struct MazeDoorTestLevelConfig {
 };
 
 struct DebugLevelConfig {
-    DebugLevelKind kind = DebugLevelKind::AudioTest;
+    DebugLevelKind kind = DebugLevelKind::SacAltarTest;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
     MazeDoorTestLevelConfig maze_door_test;
@@ -196,6 +196,8 @@ struct State {
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t depth = 0;
+    std::int32_t sac_altar_favor = 0;
+    std::uint32_t sac_altar_reward_tier = 0;
     std::uint32_t frame_pause = 0;
     bool audio_occlusion_enabled = true;
     Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);

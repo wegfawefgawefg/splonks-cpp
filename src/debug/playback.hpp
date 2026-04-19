@@ -55,6 +55,8 @@ struct GameplaySnapshot {
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t depth = 0;
+    std::int32_t sac_altar_favor = 0;
+    std::uint32_t sac_altar_reward_tier = 0;
     std::uint32_t frame_pause = 0;
     DebugLevelConfig debug_level;
     EntityManager entity_manager;

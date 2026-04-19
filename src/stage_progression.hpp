@@ -21,9 +21,10 @@ enum class DebugLevelKind {
     MovingPlatformTest,
     AudioTest,
     ShopTest,
+    SacAltarTest,
 };
 
-constexpr int kDebugLevelKindCount = static_cast<int>(DebugLevelKind::ShopTest) + 1;
+constexpr int kDebugLevelKindCount = static_cast<int>(DebugLevelKind::SacAltarTest) + 1;
 
 enum class StageLoadTargetKind {
     StageType,
@@ -33,7 +34,7 @@ enum class StageLoadTargetKind {
 struct StageLoadTarget {
     StageLoadTargetKind kind = StageLoadTargetKind::StageType;
     StageType stage_type = StageType::SplkMines1;
-    DebugLevelKind debug_level = DebugLevelKind::MovingPlatformTest;
+    DebugLevelKind debug_level = DebugLevelKind::SacAltarTest;
     std::uint8_t debug_variant = 0;
 
     static StageLoadTarget ForStageType(StageType stage_type);
