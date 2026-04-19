@@ -29,7 +29,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.damage_animation = archetype.damage_animation;
     entity.damage_sound = archetype.damage_sound;
     entity.collide_sound = archetype.collide_sound;
-    entity.death_sound_effect = archetype.death_sound_effect;
+    entity.death_sound = archetype.death_sound;
     entity.on_death = archetype.on_death;
     entity.on_damage = archetype.on_damage;
     entity.on_use = archetype.on_use;

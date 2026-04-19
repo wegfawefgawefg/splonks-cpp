@@ -116,7 +116,7 @@ struct Entity {
     std::optional<FrameDataId> damage_animation = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
-    std::optional<AudioAssetId> death_sound_effect = std::nullopt;
+    std::optional<AudioAssetId> death_sound = std::nullopt;
     EntityOnDeath on_death = nullptr;
     EntityOnDamage on_damage = nullptr;
     EntityOnUse on_use = nullptr;

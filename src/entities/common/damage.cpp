@@ -37,7 +37,7 @@ void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     const std::optional<AudioAssetId> sound_effect =
         entity.stone ? std::optional<AudioAssetId>(audio_asset_ids::PotShatter)
-                     : entity.death_sound_effect;
+                     : entity.death_sound;
     if (sound_effect.has_value()) {
         (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
     }

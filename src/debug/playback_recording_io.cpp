@@ -175,7 +175,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WriteOptionalPod(out, entity.damage_animation);
     WriteOptionalPod(out, entity.damage_sound);
     WriteOptionalPod(out, entity.collide_sound);
-    WriteOptionalPod(out, entity.death_sound_effect);
+    WriteOptionalPod(out, entity.death_sound);
     WritePod(out, entity.on_death);
     WritePod(out, entity.on_damage);
     WritePod(out, entity.on_use);
@@ -302,7 +302,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadOptionalPod(in, entity.damage_animation) &&
            ReadOptionalPod(in, entity.damage_sound) &&
            ReadOptionalPod(in, entity.collide_sound) &&
-           ReadOptionalPod(in, entity.death_sound_effect) &&
+           ReadOptionalPod(in, entity.death_sound) &&
            ReadPod(in, entity.on_death) &&
            ReadPod(in, entity.on_damage) &&
            ReadPod(in, entity.on_use) &&

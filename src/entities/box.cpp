@@ -91,7 +91,7 @@ extern const EntityArchetype kBoxArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
     .collide_sound = audio_asset_ids::Thud,
-    .death_sound_effect = audio_asset_ids::BoxBreak,
+    .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsBox,
     .step_logic = StepEntityLogicAsBox,
     .alignment = Alignment::Neutral,

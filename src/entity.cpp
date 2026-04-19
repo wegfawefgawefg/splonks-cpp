@@ -92,7 +92,7 @@ Entity Entity::New() {
     entity.damage_animation.reset();
     entity.damage_sound.reset();
     entity.collide_sound.reset();
-    entity.death_sound_effect.reset();
+    entity.death_sound.reset();
     entity.on_death = nullptr;
     entity.on_damage = nullptr;
     entity.on_use = nullptr;
