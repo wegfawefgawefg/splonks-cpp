@@ -27,9 +27,9 @@
       ]
     }
   ],
-  "activePaletteId": null,
+  "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "e3ab6f43-ee83-4ede-ae1a-570638fcacf1",
+  "selectedAnnotationId": null,
   "sheets": [
     {
       "path": "images/title.png",
@@ -7347,15 +7347,230 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "7ca20e1a-a895-4688-90aa-e87bd74bc875",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 144,
+            "w": 32,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sac_altar_topper",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 16,
+              "y": 10
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 0,
+              "w": 28,
+              "h": 16
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 28,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 27,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "bd469b03-cd42-4f63-945d-296cc1009cce",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 160,
+            "y": 240,
+            "w": 32,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sac_altar_sac",
+            "frame": 0,
+            "duration": 3,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 26,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "8fb08d67-3391-4a07-a0fd-b264351add19",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 192,
+            "y": 240,
+            "w": 32,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sac_altar_sac",
+            "frame": 1,
+            "duration": 3,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 26,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "02e16a8c-cc2c-4890-a6a0-d4483a66e62a",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 224,
+            "y": 240,
+            "w": 32,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sac_altar_sac",
+            "frame": 2,
+            "duration": 3,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 26,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "4b1783f9-c8fd-4b45-ae79-8eb569b31388",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 256,
+            "y": 240,
+            "w": 32,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sac_altar_sac",
+            "frame": 3,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 26,
+              "y": 8
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 5.369,
-        "centerX": 368.3181225554107,
-        "centerY": 134.28943937418515
+        "zoom": 6.741,
+        "centerX": 222.5930870790684,
+        "centerY": 237.35350838154577
       }
     },
     {

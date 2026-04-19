@@ -4979,6 +4979,156 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 144
+      w: 32
+      h: 16
+    name: "sac_altar_topper"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 16
+      y: 10
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 28
+      h: 16
+    cbox:
+      x: 3
+      y: 0
+      w: 28
+      h: 16
+    tile: false
+    emit_point:
+      x: 27
+      y: 8
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 240
+      w: 32
+      h: 16
+    name: "sac_altar_sac"
+    frame: 0
+    duration: 3
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 192
+      y: 240
+      w: 32
+      h: 16
+    name: "sac_altar_sac"
+    frame: 1
+    duration: 3
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 224
+      y: 240
+      w: 32
+      h: 16
+    name: "sac_altar_sac"
+    frame: 2
+    duration: 3
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 256
+      y: 240
+      w: 32
+      h: 16
+    name: "sac_altar_sac"
+    frame: 3
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

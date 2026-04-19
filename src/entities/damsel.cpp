@@ -135,13 +135,7 @@ void StartPanicRun(Entity& damsel) {
 }
 
 void MaybeStartPanicRunFromCarryRelease(Entity& damsel) {
-    if (damsel.held_by_vid.has_value()) {
-        damsel.counter_a = kDamselHeldReleaseLatch;
-        StartIdle(damsel);
-        return;
-    }
-
-    if (damsel.counter_a <= 0.0F) {
+    if (damsel.counter_a <= 0.0F || damsel.condition != EntityCondition::Normal) {
         return;
     }
 
@@ -288,6 +282,11 @@ void StepEntityLogicAsDamsel(
     }
 
     RefreshCarryStunWhileHeld(damsel);
+    if (damsel.held_by_vid.has_value()) {
+        damsel.counter_a = kDamselHeldReleaseLatch;
+        damsel.ai_state = EntityAiState::Idle;
+        return;
+    }
 
     if (damsel.last_condition == EntityCondition::Stunned &&
         damsel.condition == EntityCondition::Normal) {
