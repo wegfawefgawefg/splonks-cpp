@@ -93,7 +93,7 @@ struct MazeDoorTestLevelConfig {
 };
 
 struct DebugLevelConfig {
-    DebugLevelKind kind = DebugLevelKind::SacAltarTest;
+    DebugLevelKind kind = DebugLevelKind::SplkMines1;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
     MazeDoorTestLevelConfig maze_door_test;

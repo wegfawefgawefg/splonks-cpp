@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "4b1783f9-c8fd-4b45-ae79-8eb569b31388",
+  "selectedAnnotationId": null,
   "sheets": [
     {
       "path": "images/title.png",
@@ -7562,15 +7562,488 @@
               "y": 8
             }
           }
+        },
+        {
+          "id": "792318ad-78d3-4637-8124-25b72e00d09a",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 116,
+            "y": 316,
+            "w": 7,
+            "h": 4
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "skull",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 7,
+              "h": 4
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 7,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 2
+            }
+          }
+        },
+        {
+          "id": "8f9c2264-ee63-480e-8cae-245034f033c2",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 112,
+            "y": 320,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "skeleton_getting_up",
+            "frame": 0,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 14
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 8,
+              "h": 13
+            },
+            "cbox": {
+              "x": 2,
+              "y": 12,
+              "w": 7,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 7,
+              "y": 14
+            }
+          }
+        },
+        {
+          "id": "7c2feb88-6640-4dff-8ef8-817ba598adb3",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 320,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "skeleton_getting_up",
+            "frame": 1,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 14
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 8,
+              "h": 13
+            },
+            "cbox": {
+              "x": 2,
+              "y": 9,
+              "w": 9,
+              "h": 7
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 8,
+              "y": 13
+            }
+          }
+        },
+        {
+          "id": "f962fe1e-7b97-43ce-b3e0-b31fa1ae5243",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 144,
+            "y": 320,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "skeleton_getting_up",
+            "frame": 2,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 14
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 8,
+              "h": 13
+            },
+            "cbox": {
+              "x": 3,
+              "y": 4,
+              "w": 7,
+              "h": 12
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 9,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "29027a87-c5a6-4202-a3ce-b41495588f16",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 112,
+            "y": 336,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "skeleton_walk ",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 10
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 8,
+              "h": 13
+            },
+            "cbox": {
+              "x": 4,
+              "y": 4,
+              "w": 6,
+              "h": 12
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 9,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "5b7ef2e4-ba9d-422b-87da-f88c3486cba5",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 336,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "skeleton_walk ",
+            "frame": 1,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 9
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 3,
+              "w": 8,
+              "h": 13
+            },
+            "cbox": {
+              "x": 3,
+              "y": 3,
+              "w": 7,
+              "h": 13
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 8,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "faee4a60-8541-4ff8-ab7a-74d1952d1afb",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 304,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cobra",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 11
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 7,
+              "w": 10,
+              "h": 9
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "a824ffeb-2e51-4715-a5b1-f5b63d639d6f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 144,
+            "y": 304,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cobra_walk",
+            "frame": 1,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 11
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 7,
+              "w": 10,
+              "h": 9
+            },
+            "cbox": {
+              "x": 4,
+              "y": 7,
+              "w": 8,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 10
+            }
+          }
+        },
+        {
+          "id": "c67c9aa6-f203-4bcc-9ccb-c3affe1ad45a",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 160,
+            "y": 304,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cobra_walk",
+            "frame": 2,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 11
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 7,
+              "w": 10,
+              "h": 9
+            },
+            "cbox": {
+              "x": 2,
+              "y": 8,
+              "w": 8,
+              "h": 8
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 3,
+              "y": 11
+            }
+          }
+        },
+        {
+          "id": "8e28e733-6372-411f-a26f-f4da1e0a12e1",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 176,
+            "y": 304,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cobra_dead",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 4,
+              "y": 12,
+              "w": 6,
+              "h": 4
+            },
+            "cbox": {
+              "x": 4,
+              "y": 12,
+              "w": 6,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "32804c58-db63-4cdd-933a-2288630ba0c7",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 198,
+            "y": 310,
+            "w": 4,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cobra_spit",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 1,
+              "y": 1
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 4,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 4,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 1,
+              "y": 2
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 6.741,
-        "centerX": 235.94422192553034,
-        "centerY": 231.27132472926866
+        "zoom": 5.369,
+        "centerX": 139.5976904451481,
+        "centerY": 301.9184205624884
       }
     },
     {

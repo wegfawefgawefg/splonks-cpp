@@ -12,6 +12,7 @@
 #include "entities/box.hpp"
 #include "entities/caveman.hpp"
 #include "entities/chest.hpp"
+#include "entities/cobra.hpp"
 #include "entities/damsel.hpp"
 #include "entities/dvdlogo.hpp"
 #include "entities/dice.hpp"
@@ -156,6 +157,8 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::BallAndChainBall, entities::ball_and_chain::kBallAndChainBallArchetype, "BallAndChainBall");
     SetArchetype(EntityType::ArrowTrap, entities::arrow_trap::kArrowTrapArchetype, "ArrowTrap");
     SetArchetype(EntityType::Snake, entities::snake::kSnakeArchetype, "Snake");
+    SetArchetype(EntityType::Cobra, entities::cobra::kCobraArchetype, "Cobra");
+    SetArchetype(EntityType::CobraSpit, entities::cobra::kCobraSpitArchetype, "CobraSpit");
     SetArchetype(EntityType::Caveman, entities::caveman::kCavemanArchetype, "Caveman");
     SetArchetype(EntityType::Spider, entities::spider::kSpiderArchetype, "Spider");
     SetArchetype(EntityType::SpiderHang, entities::spider_hang::kSpiderHangArchetype, "SpiderHang");

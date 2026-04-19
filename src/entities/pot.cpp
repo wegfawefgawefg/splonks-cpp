@@ -151,7 +151,8 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
         const EntityType spider_type = RandInclusive(1, 4) == 1 ? EntityType::RageSpider : EntityType::Spider;
         SpawnEntityAtTopLeft(spider_type, spider_spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
+        const EntityType serpent_type = RandInclusive(1, 4) == 1 ? EntityType::Cobra : EntityType::Snake;
+        SpawnEntityAtTopLeft(serpent_type, snake_spawn_pos, state);
     }
 }
 

@@ -5129,6 +5129,336 @@ sprites:
     emit_point:
       x: 26
       y: 8
+  - path: "entities.png"
+    aabb:
+      x: 116
+      y: 316
+      w: 7
+      h: 4
+    name: "skull"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 7
+      h: 4
+    cbox:
+      x: 0
+      y: 0
+      w: 7
+      h: 4
+    tile: false
+    emit_point:
+      x: 6
+      y: 2
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 320
+      w: 16
+      h: 16
+    name: "skeleton_getting_up"
+    frame: 0
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 14
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 8
+      h: 13
+    cbox:
+      x: 2
+      y: 12
+      w: 7
+      h: 4
+    tile: false
+    emit_point:
+      x: 7
+      y: 14
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 320
+      w: 16
+      h: 16
+    name: "skeleton_getting_up"
+    frame: 1
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 14
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 8
+      h: 13
+    cbox:
+      x: 2
+      y: 9
+      w: 9
+      h: 7
+    tile: false
+    emit_point:
+      x: 8
+      y: 13
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 320
+      w: 16
+      h: 16
+    name: "skeleton_getting_up"
+    frame: 2
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 14
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 8
+      h: 13
+    cbox:
+      x: 3
+      y: 4
+      w: 7
+      h: 12
+    tile: false
+    emit_point:
+      x: 9
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 336
+      w: 16
+      h: 16
+    name: "skeleton_walk"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 10
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 8
+      h: 13
+    cbox:
+      x: 4
+      y: 4
+      w: 6
+      h: 12
+    tile: false
+    emit_point:
+      x: 9
+      y: 8
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 336
+      w: 16
+      h: 16
+    name: "skeleton_walk"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 9
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 8
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 7
+      h: 13
+    tile: false
+    emit_point:
+      x: 8
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 304
+      w: 16
+      h: 16
+    name: "cobra"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 11
+    tags: []
+    pbox:
+      x: 3
+      y: 7
+      w: 10
+      h: 9
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 304
+      w: 16
+      h: 16
+    name: "cobra_walk"
+    frame: 1
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 11
+    tags: []
+    pbox:
+      x: 3
+      y: 7
+      w: 10
+      h: 9
+    cbox:
+      x: 4
+      y: 7
+      w: 8
+      h: 9
+    tile: false
+    emit_point:
+      x: 6
+      y: 10
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 304
+      w: 16
+      h: 16
+    name: "cobra_walk"
+    frame: 2
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 11
+    tags: []
+    pbox:
+      x: 3
+      y: 7
+      w: 10
+      h: 9
+    cbox:
+      x: 2
+      y: 8
+      w: 8
+      h: 8
+    tile: false
+    emit_point:
+      x: 3
+      y: 11
+  - path: "entities.png"
+    aabb:
+      x: 176
+      y: 304
+      w: 16
+      h: 16
+    name: "cobra_dead"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 4
+      y: 12
+      w: 6
+      h: 4
+    cbox:
+      x: 4
+      y: 12
+      w: 6
+      h: 4
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 198
+      y: 310
+      w: 4
+      h: 3
+    name: "cobra_spit"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 1
+      y: 1
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 3
+    cbox:
+      x: 0
+      y: 0
+      w: 4
+      h: 3
+    tile: false
+    emit_point:
+      x: 1
+      y: 2
   - path: "boss.png"
     aabb:
       x: 0

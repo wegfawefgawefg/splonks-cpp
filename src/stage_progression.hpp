@@ -34,7 +34,7 @@ enum class StageLoadTargetKind {
 struct StageLoadTarget {
     StageLoadTargetKind kind = StageLoadTargetKind::StageType;
     StageType stage_type = StageType::SplkMines1;
-    DebugLevelKind debug_level = DebugLevelKind::SacAltarTest;
+    DebugLevelKind debug_level = DebugLevelKind::SplkMines1;
     std::uint8_t debug_variant = 0;
 
     static StageLoadTarget ForStageType(StageType stage_type);

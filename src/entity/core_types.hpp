@@ -97,6 +97,8 @@ enum class EntityType {
     BallAndChainBall,
     ArrowTrap,
     Snake,
+    Cobra,
+    CobraSpit,
     Caveman,
     Spider,
     SpiderHang,

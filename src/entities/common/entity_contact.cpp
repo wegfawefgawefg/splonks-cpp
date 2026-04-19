@@ -196,6 +196,8 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::BallAndChainBall:
     case EntityType::ArrowTrap:
     case EntityType::Snake:
+    case EntityType::Cobra:
+    case EntityType::CobraSpit:
     case EntityType::Caveman:
     case EntityType::Spider:
     case EntityType::SpiderHang:

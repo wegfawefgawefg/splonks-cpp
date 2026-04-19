@@ -1371,7 +1371,9 @@ void AddAmbientMinesEntities(Stage& stage) {
                 if (tile_y > 0 && open_above) {
                     const Vec2 floor_spawn_pos =
                         tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
-                    if (!spikes_above && rng::RandomIntInclusive(1, 60) == 1) {
+                    if (!spikes_above && rng::RandomIntInclusive(1, 180) == 1) {
+                        AddAmbientSpawn(stage, EntityType::Cobra, floor_spawn_pos);
+                    } else if (!spikes_above && rng::RandomIntInclusive(1, 60) == 1) {
                         AddAmbientSpawn(stage, EntityType::Snake, floor_spawn_pos);
                     } else if (rng::RandomIntInclusive(1, 800) == 1) {
                         AddAmbientSpawn(stage, EntityType::Caveman, floor_spawn_pos);
@@ -1614,7 +1616,7 @@ ResolvedRoom ResolveRoom(
                 break;
             case 'S':
                 room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Snake,
+                    .type_ = rng::RandomIntInclusive(1, 5) == 1 ? EntityType::Cobra : EntityType::Snake,
                     .pos = tile_pos,
                 });
                 break;
