@@ -27,6 +27,19 @@ struct AudioSettings {
     float music_volume = 1.0F;
     float sfx_volume = 1.0F;
     float pan_half_width_px = 256.0F;
+    bool acoustics_enabled = true;
+    float acoustics_occlusion_listener_epsilon_px = 4.0F;
+    bool acoustics_reverb_enabled = true;
+    float acoustics_listener_room_weight = 0.65F;
+    float acoustics_direct_min_cutoff_hz = 1200.0F;
+    float acoustics_direct_max_cutoff_hz = 16000.0F;
+    float acoustics_occluded_cutoff_hz = 900.0F;
+    float acoustics_occluded_direct_gain = 0.55F;
+    float acoustics_reverb_send = 0.35F;
+    float acoustics_reverb_delay_ms = 90.0F;
+    float acoustics_reverb_feedback = 0.45F;
+    float acoustics_reverb_min_cutoff_hz = 1200.0F;
+    float acoustics_reverb_max_cutoff_hz = 4200.0F;
 
     static AudioSettings New();
 };
@@ -109,6 +122,7 @@ struct DebugUiSettings {
     bool entity_annotations_visible = false;
     bool shake_brush_visible = false;
     bool audio_brush_visible = false;
+    bool audio_settings_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;
     bool lighting_settings_visible = false;

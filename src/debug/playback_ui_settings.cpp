@@ -1,5 +1,6 @@
 #include "debug/playback_internal.hpp"
 
+#include "audio_acoustics.hpp"
 #include "settings.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
@@ -47,6 +48,10 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
     ImGui::Checkbox("Show Area Boundaries", &state.debug_overlay.show_area_boundaries);
     ImGui::Checkbox("Show Area IDs", &state.debug_overlay.show_area_ids);
     ImGui::Checkbox("Show Area Types", &state.debug_overlay.show_area_types);
+    ImGui::Checkbox("Show Audio Emitters", &state.debug_overlay.show_audio_emitters);
+    ImGui::BeginDisabled(!state.debug_overlay.show_audio_emitters || !IsAudioOcclusionEnabled(state));
+    ImGui::Checkbox("Show Audio Occlusion Paths", &state.debug_overlay.show_audio_occlusion_paths);
+    ImGui::EndDisabled();
     ImGui::TextUnformatted("PBox/CBox overlay uses render debug colors.");
 
     ImGui::End();
@@ -114,18 +119,10 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     }
 
     DebugAudioBrushState& brush = state.debug_audio_brush;
-    bool save_settings = false;
     ImGui::Checkbox("Enable Audio Brush", &brush.enabled);
     ImGui::Checkbox("Show Openness Rays", &brush.show_openness_rays);
     ImGui::SameLine();
     ImGui::Checkbox("Show Occlusion Ray", &brush.show_occlusion_ray);
-    save_settings |= ImGui::SliderFloat(
-        "Pan Half-Width (px)",
-        &state.settings.audio.pan_half_width_px,
-        16.0F,
-        1024.0F,
-        "%.0f px"
-    );
     if (ImGui::BeginCombo("Loop Sound", GetSoundFileName(brush.sound_effect))) {
         for (std::size_t i = 0; i < kSoundEffectCount; ++i) {
             const SoundEffect candidate = static_cast<SoundEffect>(i);
@@ -157,7 +154,25 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         graphics.camera.target.x,
         graphics.camera.target.y
     );
-    ImGui::TextUnformatted("Higher half-width = gentler pan. Lower = more aggressive pan.");
+    if (brush.source_active) {
+        const PositionalAudioAcoustics acoustics = ComputePositionalAudioAcoustics(
+            state,
+            graphics.camera.target,
+            brush.source_world_pos
+        );
+        ImGui::SeparatorText("Computed Acoustics");
+        ImGui::Text("Source Open: %.2f", acoustics.source_openness);
+        ImGui::Text("Listener Open: %.2f", acoustics.listener_openness);
+        ImGui::Text("Direct Open: %.2f", acoustics.direct_open);
+        ImGui::Text("Room Open: %.2f", acoustics.room_open);
+        ImGui::Text("Occluded: %s", acoustics.occluded ? "yes" : "no");
+        ImGui::Text("Listener Epsilon: %.1f px", state.settings.audio.acoustics_occlusion_listener_epsilon_px);
+        ImGui::Text("Direct Gain: %.2f", acoustics.direct_gain);
+        ImGui::Text("Direct Cutoff: %.0f Hz", acoustics.low_pass_cutoff_hz);
+        ImGui::Text("Reverb Wet: %.2f", acoustics.reverb_wet);
+        ImGui::Text("Reverb Feedback: %.2f", acoustics.reverb_feedback);
+        ImGui::Text("Reverb Cutoff: %.0f Hz", acoustics.reverb_low_pass_cutoff_hz);
+    }
     ImGui::Text("Openness Ray Length: %d tiles", kStageOpennessRayLengthTiles);
 
     if (ImGui::Button("Clear Source")) {
@@ -166,6 +181,123 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
 
     ImGui::TextUnformatted("Hold left mouse in the world view to place or drag the loop source.");
     ImGui::TextUnformatted("Hold right mouse in the world view to clear it.");
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawAudioSettingsWindow(DebugPlayback& debug, State& state) {
+    if (!debug.audio_settings_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(860.0F, 460.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Audio Settings", &debug.audio_settings_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    bool save_settings = false;
+    save_settings |= ImGui::SliderFloat(
+        "Pan Half-Width (px)",
+        &state.settings.audio.pan_half_width_px,
+        16.0F,
+        1024.0F,
+        "%.0f px"
+    );
+    save_settings |= ImGui::Checkbox(
+        "Acoustics Enabled",
+        &state.settings.audio.acoustics_enabled
+    );
+    ImGui::Checkbox(
+        "Occlusion Enabled",
+        &state.audio_occlusion_enabled
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Occlusion Listener Epsilon",
+        &state.settings.audio.acoustics_occlusion_listener_epsilon_px,
+        0.0F,
+        32.0F,
+        "%.1f px"
+    );
+    save_settings |= ImGui::Checkbox(
+        "Reverb Enabled",
+        &state.settings.audio.acoustics_reverb_enabled
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Listener Room Weight",
+        &state.settings.audio.acoustics_listener_room_weight,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Direct Min Cutoff",
+        &state.settings.audio.acoustics_direct_min_cutoff_hz,
+        100.0F,
+        8000.0F,
+        "%.0f Hz"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Direct Max Cutoff",
+        &state.settings.audio.acoustics_direct_max_cutoff_hz,
+        1000.0F,
+        20000.0F,
+        "%.0f Hz"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Occluded Cutoff",
+        &state.settings.audio.acoustics_occluded_cutoff_hz,
+        100.0F,
+        8000.0F,
+        "%.0f Hz"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Occluded Direct Gain",
+        &state.settings.audio.acoustics_occluded_direct_gain,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Reverb Send",
+        &state.settings.audio.acoustics_reverb_send,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Reverb Delay",
+        &state.settings.audio.acoustics_reverb_delay_ms,
+        10.0F,
+        300.0F,
+        "%.0f ms"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Reverb Feedback",
+        &state.settings.audio.acoustics_reverb_feedback,
+        0.0F,
+        0.95F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Reverb Min Cutoff",
+        &state.settings.audio.acoustics_reverb_min_cutoff_hz,
+        100.0F,
+        10000.0F,
+        "%.0f Hz"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Reverb Max Cutoff",
+        &state.settings.audio.acoustics_reverb_max_cutoff_hz,
+        500.0F,
+        20000.0F,
+        "%.0f Hz"
+    );
+    ImGui::Separator();
+    ImGui::TextUnformatted("These settings are persisted and affect all positional audio.");
+    ImGui::TextUnformatted("Higher half-width = gentler pan. Lower = more aggressive pan.");
 
     if (save_settings) {
         SaveSettings(state.settings);
@@ -243,6 +375,7 @@ void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& grap
             const bool selected = mode == graphics.camera_mode;
             if (ImGui::Selectable(CameraModeToString(mode), selected)) {
                 graphics.camera_mode = mode;
+                SetAudioOcclusionEnabled(state, mode == CameraMode::Follow);
                 if (mode == CameraMode::StageFit) {
                     graphics.play_cam.pos = GetStageCameraCenter(state.stage);
                 }

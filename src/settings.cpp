@@ -58,6 +58,19 @@ AudioSettings AudioSettings::New() {
     result.music_volume = 1.0F;
     result.sfx_volume = 1.0F;
     result.pan_half_width_px = 256.0F;
+    result.acoustics_enabled = true;
+    result.acoustics_occlusion_listener_epsilon_px = 4.0F;
+    result.acoustics_reverb_enabled = true;
+    result.acoustics_listener_room_weight = 0.65F;
+    result.acoustics_direct_min_cutoff_hz = 1200.0F;
+    result.acoustics_direct_max_cutoff_hz = 16000.0F;
+    result.acoustics_occluded_cutoff_hz = 900.0F;
+    result.acoustics_occluded_direct_gain = 0.55F;
+    result.acoustics_reverb_send = 0.35F;
+    result.acoustics_reverb_delay_ms = 90.0F;
+    result.acoustics_reverb_feedback = 0.45F;
+    result.acoustics_reverb_min_cutoff_hz = 1200.0F;
+    result.acoustics_reverb_max_cutoff_hz = 4200.0F;
     return result;
 }
 
@@ -135,6 +148,7 @@ DebugUiSettings DebugUiSettings::New() {
     result.entity_annotations_visible = false;
     result.shake_brush_visible = false;
     result.audio_brush_visible = false;
+    result.audio_settings_visible = false;
     result.ui_settings_visible = false;
     result.post_fx_settings_visible = false;
     result.lighting_settings_visible = false;
@@ -192,6 +206,45 @@ Settings LoadSettings() {
             settings.audio.sfx_volume = ParseFloat(value, settings.audio.sfx_volume);
         } else if (key == "audio.pan_half_width_px") {
             settings.audio.pan_half_width_px = ParseFloat(value, settings.audio.pan_half_width_px);
+        } else if (key == "audio.acoustics_enabled") {
+            settings.audio.acoustics_enabled =
+                ParseBool(value, settings.audio.acoustics_enabled);
+        } else if (key == "audio.acoustics_occlusion_listener_epsilon_px") {
+            settings.audio.acoustics_occlusion_listener_epsilon_px =
+                ParseFloat(value, settings.audio.acoustics_occlusion_listener_epsilon_px);
+        } else if (key == "audio.acoustics_reverb_enabled") {
+            settings.audio.acoustics_reverb_enabled =
+                ParseBool(value, settings.audio.acoustics_reverb_enabled);
+        } else if (key == "audio.acoustics_listener_room_weight") {
+            settings.audio.acoustics_listener_room_weight =
+                ParseFloat(value, settings.audio.acoustics_listener_room_weight);
+        } else if (key == "audio.acoustics_direct_min_cutoff_hz") {
+            settings.audio.acoustics_direct_min_cutoff_hz =
+                ParseFloat(value, settings.audio.acoustics_direct_min_cutoff_hz);
+        } else if (key == "audio.acoustics_direct_max_cutoff_hz") {
+            settings.audio.acoustics_direct_max_cutoff_hz =
+                ParseFloat(value, settings.audio.acoustics_direct_max_cutoff_hz);
+        } else if (key == "audio.acoustics_occluded_cutoff_hz") {
+            settings.audio.acoustics_occluded_cutoff_hz =
+                ParseFloat(value, settings.audio.acoustics_occluded_cutoff_hz);
+        } else if (key == "audio.acoustics_occluded_direct_gain") {
+            settings.audio.acoustics_occluded_direct_gain =
+                ParseFloat(value, settings.audio.acoustics_occluded_direct_gain);
+        } else if (key == "audio.acoustics_reverb_send") {
+            settings.audio.acoustics_reverb_send =
+                ParseFloat(value, settings.audio.acoustics_reverb_send);
+        } else if (key == "audio.acoustics_reverb_delay_ms") {
+            settings.audio.acoustics_reverb_delay_ms =
+                ParseFloat(value, settings.audio.acoustics_reverb_delay_ms);
+        } else if (key == "audio.acoustics_reverb_feedback") {
+            settings.audio.acoustics_reverb_feedback =
+                ParseFloat(value, settings.audio.acoustics_reverb_feedback);
+        } else if (key == "audio.acoustics_reverb_min_cutoff_hz") {
+            settings.audio.acoustics_reverb_min_cutoff_hz =
+                ParseFloat(value, settings.audio.acoustics_reverb_min_cutoff_hz);
+        } else if (key == "audio.acoustics_reverb_max_cutoff_hz") {
+            settings.audio.acoustics_reverb_max_cutoff_hz =
+                ParseFloat(value, settings.audio.acoustics_reverb_max_cutoff_hz);
         } else if (key == "controls.jump") {
             settings.controls.jump = ParseUnsigned(value, settings.controls.jump);
         } else if (key == "controls.shoot") {
@@ -356,6 +409,9 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.audio_brush_visible") {
             settings.debug_ui.audio_brush_visible =
                 ParseBool(value, settings.debug_ui.audio_brush_visible);
+        } else if (key == "debug_ui.audio_settings_visible") {
+            settings.debug_ui.audio_settings_visible =
+                ParseBool(value, settings.debug_ui.audio_settings_visible);
         } else if (key == "debug_ui.ui_settings_visible") {
             settings.debug_ui.ui_settings_visible =
                 ParseBool(value, settings.debug_ui.ui_settings_visible);
@@ -392,6 +448,31 @@ bool SaveSettings(const Settings& settings) {
     output << "audio.music_volume=" << settings.audio.music_volume << "\n";
     output << "audio.sfx_volume=" << settings.audio.sfx_volume << "\n";
     output << "audio.pan_half_width_px=" << settings.audio.pan_half_width_px << "\n";
+    output << "audio.acoustics_enabled=" << (settings.audio.acoustics_enabled ? 1 : 0) << "\n";
+    output << "audio.acoustics_occlusion_listener_epsilon_px="
+           << settings.audio.acoustics_occlusion_listener_epsilon_px << "\n";
+    output << "audio.acoustics_reverb_enabled="
+           << (settings.audio.acoustics_reverb_enabled ? 1 : 0) << "\n";
+    output << "audio.acoustics_listener_room_weight="
+           << settings.audio.acoustics_listener_room_weight << "\n";
+    output << "audio.acoustics_direct_min_cutoff_hz="
+           << settings.audio.acoustics_direct_min_cutoff_hz << "\n";
+    output << "audio.acoustics_direct_max_cutoff_hz="
+           << settings.audio.acoustics_direct_max_cutoff_hz << "\n";
+    output << "audio.acoustics_occluded_cutoff_hz="
+           << settings.audio.acoustics_occluded_cutoff_hz << "\n";
+    output << "audio.acoustics_occluded_direct_gain="
+           << settings.audio.acoustics_occluded_direct_gain << "\n";
+    output << "audio.acoustics_reverb_send="
+           << settings.audio.acoustics_reverb_send << "\n";
+    output << "audio.acoustics_reverb_delay_ms="
+           << settings.audio.acoustics_reverb_delay_ms << "\n";
+    output << "audio.acoustics_reverb_feedback="
+           << settings.audio.acoustics_reverb_feedback << "\n";
+    output << "audio.acoustics_reverb_min_cutoff_hz="
+           << settings.audio.acoustics_reverb_min_cutoff_hz << "\n";
+    output << "audio.acoustics_reverb_max_cutoff_hz="
+           << settings.audio.acoustics_reverb_max_cutoff_hz << "\n";
     output << "controls.jump=" << settings.controls.jump << "\n";
     output << "controls.shoot=" << settings.controls.shoot << "\n";
     output << "ui.icon_scale=" << settings.ui.icon_scale << "\n";
@@ -488,6 +569,8 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.shake_brush_visible ? 1 : 0) << "\n";
     output << "debug_ui.audio_brush_visible="
            << (settings.debug_ui.audio_brush_visible ? 1 : 0) << "\n";
+    output << "debug_ui.audio_settings_visible="
+           << (settings.debug_ui.audio_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.ui_settings_visible="
            << (settings.debug_ui.ui_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.post_fx_settings_visible="

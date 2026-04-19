@@ -1,5 +1,6 @@
 #include "entities/giant_tiki_head.hpp"
 
+#include "audio_emitters.hpp"
 #include "audio.hpp"
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
@@ -43,6 +44,7 @@ void AddTikiHeadReleaseShake(State& state, const Entity& head) {
 }
 
 std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio) {
+    (void)audio;
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
         return std::nullopt;
@@ -66,7 +68,7 @@ std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio)
     }
 
     AddTikiHeadReleaseShake(state, head);
-    audio.PlaySoundEffect(SoundEffect::BoulderHitGround);
+    (void)PlayWorldSoundEmitter(state, head.GetCenter(), SoundEffect::BoulderHitGround);
     return vid;
 }
 
@@ -124,7 +126,12 @@ void StepEntityLogicAsGiantTikiHead(
         head.ai_state = EntityAiState::Disturbed;
         head.counter_a = kBoulderReleaseDelayFrames;
         SetAnimation(head, HashFrameDataIdConstexpr("giant_tiki_head_hole"));
-        audio.PlaySoundEffect(SoundEffect::BoulderLatch);
+        (void)PlayAttachedSoundEmitter(
+            state,
+            head.vid,
+            Vec2::New(0.0F, 0.0F),
+            SoundEffect::BoulderLatch
+        );
         return;
     }
 

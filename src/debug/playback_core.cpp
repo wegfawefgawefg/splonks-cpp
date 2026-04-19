@@ -1,5 +1,6 @@
 #include "debug/playback_internal.hpp"
 
+#include "audio_acoustics.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
 #include "step.hpp"
@@ -219,6 +220,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawDebugOverlayWindow(debug, state, graphics);
     debug_playback_internal::DrawShakeBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawAudioBrushWindow(debug, state, graphics);
+    debug_playback_internal::DrawAudioSettingsWindow(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
     debug_playback_internal::DrawCameraSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);
@@ -237,19 +239,38 @@ void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphi
 namespace {
 
 void StopDebugAudioBrushLoop(DebugPlayback& debug, Audio& audio) {
-    if (debug.audio_brush_loop_handle.IsValid()) {
+    if (IsValidSoundEffectInstanceVID(debug.audio_brush_loop_handle)) {
         (void)audio.StopSoundEffectInstance(debug.audio_brush_loop_handle);
     }
-    debug.audio_brush_loop_handle = {};
+    debug.audio_brush_loop_handle = kInvalidSoundEffectInstanceVID;
     debug.audio_brush_loop_sound_effect.reset();
 }
 
-SoundEffectPlaybackParams MakeDebugAudioBrushPlaybackParams(const DebugAudioBrushState& brush) {
+SoundEffectPlaybackParams MakeDebugAudioBrushPlaybackParams(
+    State& state,
+    const Graphics& graphics
+) {
+    const DebugAudioBrushState& brush = state.debug_audio_brush;
     SoundEffectPlaybackParams params;
     params.volume_scale = brush.volume_scale;
     params.positional = true;
-    params.world_pos = brush.source_world_pos;
     params.loops = -1;
+
+    const PositionalAudioAcoustics acoustics = ComputePositionalAudioAcoustics(
+        state,
+        graphics.camera.target,
+        brush.source_world_pos
+    );
+    params.world_pos = acoustics.wrapped_source_world_pos;
+    params.direct_gain = acoustics.direct_gain;
+    params.low_pass_enabled = acoustics.low_pass_enabled;
+    params.low_pass_cutoff_hz = acoustics.low_pass_cutoff_hz;
+    params.low_pass_wet = acoustics.low_pass_wet;
+    params.reverb_enabled = acoustics.reverb_enabled;
+    params.reverb_wet = acoustics.reverb_wet;
+    params.reverb_feedback = acoustics.reverb_feedback;
+    params.reverb_delay_ms = acoustics.reverb_delay_ms;
+    params.reverb_low_pass_cutoff_hz = acoustics.reverb_low_pass_cutoff_hz;
     return params;
 }
 
@@ -328,8 +349,8 @@ void UpdateDebugAudioBrush(
     }
 
     const SoundEffectPlaybackParams params =
-        MakeDebugAudioBrushPlaybackParams(brush);
-    if (debug.audio_brush_loop_handle.IsValid() &&
+        MakeDebugAudioBrushPlaybackParams(state, graphics);
+    if (IsValidSoundEffectInstanceVID(debug.audio_brush_loop_handle) &&
         audio.UpdateSoundEffectInstance(debug.audio_brush_loop_handle, params)) {
         debug.audio_brush_loop_sound_effect = brush.sound_effect;
         return;
@@ -337,7 +358,7 @@ void UpdateDebugAudioBrush(
 
     debug.audio_brush_loop_handle =
         audio.PlaySoundEffectInstance(brush.sound_effect, params);
-    if (debug.audio_brush_loop_handle.IsValid()) {
+    if (IsValidSoundEffectInstanceVID(debug.audio_brush_loop_handle)) {
         debug.audio_brush_loop_sound_effect = brush.sound_effect;
         return;
     }

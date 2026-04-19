@@ -1,6 +1,7 @@
 #pragma once
 
 #include "audio.hpp"
+#include "audio_emitters.hpp"
 #include "contact_bookkeeping.hpp"
 #include "entity/manager.hpp"
 #include "entity_tool_inventory.hpp"
@@ -112,6 +113,8 @@ struct DebugOverlayState {
     bool show_area_boundaries = false;
     bool show_area_ids = false;
     bool show_area_types = false;
+    bool show_audio_emitters = false;
+    bool show_audio_occlusion_paths = false;
 };
 
 struct DebugShakeBrushState {
@@ -194,12 +197,14 @@ struct State {
     std::uint32_t deaths = 0;
     std::uint32_t depth = 0;
     std::uint32_t frame_pause = 0;
+    bool audio_occlusion_enabled = true;
     std::vector<VID> interact_claimed_vids_this_frame;
 
     // World and debug level state.
     DebugLevelConfig debug_level;
     EntityManager entity_manager;
     ParticleSystem particles;
+    AudioEmitterManager audio_emitters;
     SID sid;
     std::vector<VID> area_listener_vids;
     Stage stage;

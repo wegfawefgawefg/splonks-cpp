@@ -2,6 +2,7 @@
 
 #include "audio_filter.hpp"
 #include "math_types.hpp"
+#include "vid.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -102,24 +103,31 @@ struct LoadedSound {
     MIX_Audio* audio = nullptr;
 };
 
-struct SoundEffectInstanceHandle {
-    static constexpr std::uint32_t kInvalidSlotIndex =
-        std::numeric_limits<std::uint32_t>::max();
-
-    std::uint32_t slot_index = kInvalidSlotIndex;
-    std::uint32_t generation = 0;
-
-    bool IsValid() const { return slot_index != kInvalidSlotIndex; }
+inline constexpr std::size_t kInvalidSoundEffectInstanceId =
+    std::numeric_limits<std::size_t>::max();
+inline constexpr VID kInvalidSoundEffectInstanceVID{
+    kInvalidSoundEffectInstanceId,
+    0,
 };
+
+inline bool IsValidSoundEffectInstanceVID(const VID& vid) {
+    return vid.id != kInvalidSoundEffectInstanceId;
+}
 
 struct SoundEffectPlaybackParams {
     float volume_scale = 1.0F;
     bool positional = false;
     Vec2 world_pos = Vec2::New(0.0F, 0.0F);
     int loops = 0;
+    float direct_gain = 1.0F;
     bool low_pass_enabled = false;
     float low_pass_cutoff_hz = audio_filter::kMaxLowPassCutoffHz;
     float low_pass_wet = 1.0F;
+    bool reverb_enabled = false;
+    float reverb_wet = 0.0F;
+    float reverb_feedback = 0.0F;
+    float reverb_delay_ms = 80.0F;
+    float reverb_low_pass_cutoff_hz = audio_filter::kMaxLowPassCutoffHz;
 };
 
 namespace audio_detail {
@@ -133,12 +141,22 @@ struct SoundEffectTrackRuntime {
     std::atomic<std::uint32_t> generation = 0;
     std::atomic<float> stereo_target_left = 1.0F;
     std::atomic<float> stereo_target_right = 1.0F;
-    std::atomic<bool> low_pass_enabled = false;
     audio_filter::StereoPanProcessor stereo_pan_processor{};
+    std::atomic<float> direct_gain = 1.0F;
+    audio_filter::GainProcessor gain_processor{};
+    std::atomic<bool> low_pass_enabled = false;
     std::atomic<float> low_pass_target_cutoff_hz =
         audio_filter::kMaxLowPassCutoffHz;
     std::atomic<float> low_pass_target_wet = 0.0F;
     audio_filter::LowPassProcessor low_pass_processor{};
+    std::atomic<bool> reverb_enabled = false;
+    std::atomic<float> reverb_target_wet = 0.0F;
+    std::atomic<float> reverb_target_feedback = 0.0F;
+    std::atomic<float> reverb_target_delay_ms = 80.0F;
+    std::atomic<float> reverb_target_cutoff_hz =
+        audio_filter::kMaxLowPassCutoffHz;
+    audio_filter::DelayReverbProcessor delay_reverb_processor{};
+    std::vector<float> cooked_scratch{};
 };
 
 } // namespace audio_detail
@@ -175,16 +193,16 @@ struct Audio {
     void StopCurrentSong();
     void UpdateCurrentSongStreamData();
     void PlaySoundEffect(SoundEffect sound_effect, float volume_scale = 1.0F);
-    SoundEffectInstanceHandle PlaySoundEffectInstance(
+    VID PlaySoundEffectInstance(
         SoundEffect sound_effect,
         const SoundEffectPlaybackParams& params
     );
     bool UpdateSoundEffectInstance(
-        SoundEffectInstanceHandle handle,
+        VID handle,
         const SoundEffectPlaybackParams& params
     );
-    bool StopSoundEffectInstance(SoundEffectInstanceHandle handle);
-    bool IsSoundEffectInstancePlaying(SoundEffectInstanceHandle handle) const;
+    bool StopSoundEffectInstance(VID handle);
+    bool IsSoundEffectInstancePlaying(VID handle) const;
     void SetListenerWorldPos(const Vec2& world_pos);
     void SetPanHalfWidthPx(float half_width_px);
     void SetCurrentSongVolume(float volume);
@@ -194,10 +212,10 @@ struct Audio {
     void CreateTracks();
     void InitializeSoundEffectTrack(MIX_Track* track);
     audio_detail::SoundEffectTrackRuntime* GetSoundEffectTrackRuntime(
-        SoundEffectInstanceHandle handle
+        VID handle
     );
     const audio_detail::SoundEffectTrackRuntime* GetSoundEffectTrackRuntime(
-        SoundEffectInstanceHandle handle
+        VID handle
     ) const;
     static void SDLCALL OnSoundEffectTrackStopped(void* userdata, MIX_Track* track);
     static void SDLCALL OnSoundEffectTrackCooked(

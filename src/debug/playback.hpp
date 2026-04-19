@@ -76,6 +76,7 @@ struct DebugPlayback {
     bool entity_annotations_visible = false;
     bool shake_brush_window_visible = false;
     bool audio_brush_window_visible = false;
+    bool audio_settings_window_visible = false;
     bool ui_settings_window_visible = false;
     bool post_fx_settings_window_visible = false;
     bool lighting_settings_window_visible = false;
@@ -101,7 +102,7 @@ struct DebugPlayback {
     std::string spawn_status;
     std::array<char, 512> file_path{};
     std::string io_status;
-    SoundEffectInstanceHandle audio_brush_loop_handle{};
+    VID audio_brush_loop_handle = kInvalidSoundEffectInstanceVID;
     std::optional<SoundEffect> audio_brush_loop_sound_effect;
 
     static DebugPlayback New();

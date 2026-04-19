@@ -1,5 +1,7 @@
 #include "render/debug.hpp"
 
+#include "audio_acoustics.hpp"
+#include "audio_emitters.hpp"
 #include "entity/archetype.hpp"
 #include "entity.hpp"
 #include "entities/common/common.hpp"
@@ -423,11 +425,22 @@ void RenderAudioBrushPreview(
             static_cast<int>(std::ceil(ray_length)) + 1,
             state
         );
-        const bool occluded = hit.type == WorldRayHitType::Tile ||
-                              hit.type == WorldRayHitType::StageBounds;
+        const bool occluded = ShouldAudioRayHitCountAsOccluded(state, listener_world, hit);
         const SDL_Color occlusion_color = occluded
             ? SDL_Color{255, 32, 32, 255}
             : SDL_Color{32, 255, 32, 255};
+        const float listener_epsilon_px =
+            std::max(0.0F, state.settings.audio.acoustics_occlusion_listener_epsilon_px);
+        if (listener_epsilon_px > 0.0F) {
+            RenderWorldCircleOutline(
+                renderer,
+                graphics,
+                presentation,
+                listener_world,
+                listener_epsilon_px,
+                SDL_Color{255, 220, 32, 255}
+            );
+        }
         const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
         const Vec2 listener_screen = WorldPointToScreen(graphics, presentation, listener_world);
         RenderScreenLine(
@@ -1061,6 +1074,142 @@ void RenderAreaOverlay(
 
 } // namespace
 
+void RenderAudioEmitterOverlay(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    State& state,
+    const SDL_FRect& presentation,
+    const std::vector<Vec2>& render_offsets
+) {
+    if (!state.debug_overlay.show_audio_emitters) {
+        return;
+    }
+
+    const bool show_occlusion_paths =
+        state.debug_overlay.show_audio_occlusion_paths &&
+        IsAudioOcclusionEnabled(state);
+    const Vec2 listener_world = graphics.camera.target;
+
+    for (const AudioEmitter& emitter : state.audio_emitters.emitters) {
+        if (!emitter.active) {
+            continue;
+        }
+
+        Vec2 anchor_world = emitter.world_pos;
+        if (emitter.attached_entity_vid.has_value()) {
+            const Entity* const attached = state.entity_manager.GetEntity(*emitter.attached_entity_vid);
+            if (attached != nullptr) {
+                anchor_world = GetNearestWorldPoint(state.stage, emitter.world_pos, attached->GetCenter());
+            }
+        }
+
+        for (const Vec2& render_offset : render_offsets) {
+            const Vec2 source_world = emitter.world_pos + render_offset;
+            const SDL_FRect source_rect = WorldRectToScreen(
+                graphics,
+                presentation,
+                source_world - Vec2::New(2.0F, 2.0F),
+                Vec2::New(4.0F, 4.0F)
+            );
+            if (!IsScreenRectVisible(presentation, source_rect)) {
+                continue;
+            }
+
+            SDL_SetRenderDrawColor(
+                renderer,
+                emitter.playback_mode == AudioEmitterPlaybackMode::Looping ? 255 : 120,
+                220,
+                emitter.playback_mode == AudioEmitterPlaybackMode::Looping ? 96 : 255,
+                255
+            );
+            SDL_RenderRect(renderer, &source_rect);
+
+            if (show_occlusion_paths) {
+                const Vec2 listener_for_source =
+                    GetNearestWorldPoint(state.stage, source_world, listener_world);
+                const Vec2 ray_delta =
+                    GetNearestWorldDelta(state.stage, source_world, listener_for_source);
+                const float ray_length =
+                    std::sqrt((ray_delta.x * ray_delta.x) + (ray_delta.y * ray_delta.y));
+                const WorldRayHit hit = RaycastTiles(
+                    source_world,
+                    ray_delta,
+                    static_cast<int>(std::ceil(ray_length)) + 1,
+                    state
+                );
+                const bool occluded =
+                    ShouldAudioRayHitCountAsOccluded(state, listener_for_source, hit);
+                const SDL_Color occlusion_color = occluded
+                    ? SDL_Color{255, 48, 48, 220}
+                    : SDL_Color{64, 255, 96, 220};
+                const float listener_epsilon_px =
+                    std::max(0.0F, state.settings.audio.acoustics_occlusion_listener_epsilon_px);
+                if (listener_epsilon_px > 0.0F) {
+                    RenderWorldCircleOutline(
+                        renderer,
+                        graphics,
+                        presentation,
+                        listener_for_source,
+                        listener_epsilon_px,
+                        SDL_Color{255, 220, 32, 255}
+                    );
+                }
+                const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
+                const Vec2 listener_screen =
+                    WorldPointToScreen(graphics, presentation, listener_for_source);
+                RenderScreenLine(
+                    renderer,
+                    source_screen,
+                    listener_screen,
+                    occlusion_color,
+                    3
+                );
+            }
+
+            if (emitter.attached_entity_vid.has_value()) {
+                const Vec2 anchor_source_world = anchor_world + render_offset;
+                const Vec2 anchor_screen = WorldPointToScreen(graphics, presentation, anchor_source_world);
+                const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
+                SDL_RenderLine(
+                    renderer,
+                    anchor_screen.x,
+                    anchor_screen.y,
+                    source_screen.x,
+                    source_screen.y
+                );
+                SDL_RenderLine(renderer, anchor_screen.x - 4.0F, anchor_screen.y, anchor_screen.x + 4.0F, anchor_screen.y);
+                SDL_RenderLine(renderer, anchor_screen.x, anchor_screen.y - 4.0F, anchor_screen.x, anchor_screen.y + 4.0F);
+            }
+
+            char label[160];
+            const int owner_id = emitter.owner_entity_vid.has_value() ? static_cast<int>(emitter.owner_entity_vid->id) : -1;
+            const int attach_id = emitter.attached_entity_vid.has_value() ? static_cast<int>(emitter.attached_entity_vid->id) : -1;
+            std::snprintf(
+                label,
+                sizeof(label),
+                "em %zu %s %s own:%d src:%d %s miss:%s",
+                emitter.vid.id,
+                GetSoundFileName(emitter.sound_effect),
+                AudioEmitterPlaybackModeToString(emitter.playback_mode),
+                owner_id,
+                attach_id,
+                AudioEmitterSourceModeToString(emitter.source_mode),
+                AudioEmitterTargetLossPolicyToString(emitter.target_loss_policy)
+            );
+            DrawText(
+                renderer,
+                graphics,
+                10,
+                graphics.ui_font,
+                label,
+                source_rect.x + 6.0F,
+                source_rect.y - 12.0F,
+                SDL_Color{255, 220, 96, 255}
+            );
+        }
+    }
+}
+
 void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, State& state) {
     if (!state.debug_overlay.show_entity_collision_boxes &&
         !state.debug_overlay.show_entity_ids &&
@@ -1075,6 +1224,8 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, State& state
         !state.debug_overlay.show_area_boundaries &&
         !state.debug_overlay.show_area_ids &&
         !state.debug_overlay.show_area_types &&
+        !state.debug_overlay.show_audio_emitters &&
+        !state.debug_overlay.show_audio_occlusion_paths &&
         !ShouldRenderShakeBrushPreview(state) &&
         !ShouldRenderAudioBrushPreview(state)) {
         return;
@@ -1112,6 +1263,9 @@ void RenderDebugOverlay(SDL_Renderer* renderer, Graphics& graphics, State& state
         state.debug_overlay.show_area_ids ||
         state.debug_overlay.show_area_types) {
         RenderAreaOverlay(renderer, graphics, state, presentation, render_offsets);
+    }
+    if (state.debug_overlay.show_audio_emitters) {
+        RenderAudioEmitterOverlay(renderer, graphics, state, presentation, render_offsets);
     }
     RenderShakeBrushPreview(renderer, graphics, state, presentation);
     RenderAudioBrushPreview(renderer, graphics, state, presentation);

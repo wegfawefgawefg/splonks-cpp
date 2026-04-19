@@ -148,9 +148,11 @@ State State::New() {
     state.deaths = 0;
     state.depth = 0;
     state.frame_pause = 0;
+    state.audio_occlusion_enabled = true;
     state.interact_claimed_vids_this_frame.clear();
     state.entity_manager = EntityManager::New();
     state.particles = ParticleSystem{};
+    state.audio_emitters = AudioEmitterManager::New();
     state.sid = SID::New();
     state.area_listener_vids.clear();
     state.respawn_target = StageLoadTarget::ForStageType(StageType::SplkMines1);

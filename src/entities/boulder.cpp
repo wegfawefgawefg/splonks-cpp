@@ -1,5 +1,6 @@
 #include "entities/boulder.hpp"
 
+#include "audio_emitters.hpp"
 #include "audio.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
@@ -16,10 +17,11 @@ namespace {
 
 constexpr float kBoulderRollVelocity = 9.0F;
 constexpr float kBoulderRestFrames = 5.0F;
-constexpr float kBoulderRollSoundDistInterval = 96.0F;
 constexpr float kBoulderTrailSmokeDistInterval = 12.0F;
 constexpr float kBoulderTrailPebbleDistInterval = 12.0F;
 constexpr float kBoulderImpactSoundCooldownFrames = 8.0F;
+constexpr float kBoulderRollingSoundVolumeScale = 0.9F;
+constexpr float kBoulderRollSoundDistInterval = 96.0F;
 constexpr float kBoulderRollingSpeedThreshold = 0.01F;
 constexpr float kBoulderRollingShakeForegroundAmount = 0.76F;
 constexpr float kBoulderRollingShakeBackgroundAmount = 0.48F;
@@ -39,6 +41,9 @@ constexpr float kBoulderGroundSlamShakeRadiusTiles = 3.4F;
 constexpr FrameDataId kBoulderAnimationId = HashFrameDataIdConstexpr("boulder");
 constexpr FrameDataId kBoulderRollAnimationId = HashFrameDataIdConstexpr("boulder_roll");
 constexpr FrameDataId kBoulderParticleAnimationId = kBoulderAnimationId;
+
+Vec2 GetBoulderBottomCenter(const Entity& boulder);
+Vec2 GetBoulderFrontFaceCenter(const Entity& boulder);
 
 AABB GetLeadingBreakStrip(const Entity& boulder) {
     const AABB aabb = boulder.GetAABB();
@@ -68,14 +73,23 @@ bool WouldBreakAnyTiles(const AABB& area, const State& state) {
     return false;
 }
 
-void StepRollingSound(Entity& boulder, Audio& audio) {
+void StepRollingSound(State& state, Entity& boulder) {
     boulder.travel_sound_countdown -= boulder.dist_traveled_this_frame;
     if (boulder.travel_sound_countdown >= 0.0F) {
         return;
     }
 
     boulder.travel_sound_countdown = kBoulderRollSoundDistInterval;
-    audio.PlaySoundEffect(SoundEffect::BoulderRoll);
+    AudioEmitterPlayParams params;
+    params.volume_scale = kBoulderRollingSoundVolumeScale;
+    params.owner_entity_vid = boulder.vid;
+    (void)PlayAttachedSoundEmitter(
+        state,
+        boulder.vid,
+        Vec2::New(0.0F, boulder.size.y * 0.5F),
+        SoundEffect::BoulderRoll,
+        params
+    );
 }
 
 void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
@@ -145,13 +159,13 @@ void UpdateBoulderAnimation(Entity& boulder) {
     SetAnimation(boulder, is_rolling ? kBoulderRollAnimationId : kBoulderAnimationId);
 }
 
-void PlayBoulderImpactSoundIfReady(Entity& boulder, State& state, Audio& audio) {
+void PlayBoulderImpactSoundIfReady(Entity& boulder, State& state) {
     if (boulder.counter_a > 0.0F) {
         return;
     }
     boulder.counter_a = kBoulderImpactSoundCooldownFrames;
     state.frame_pause += 2;
-    audio.PlaySoundEffect(SoundEffect::BoulderHitGround);
+    (void)PlayWorldSoundEmitter(state, GetBoulderBottomCenter(boulder), SoundEffect::BoulderHitGround);
 }
 
 Vec2 GetBoulderTrailingBottomCorner(const Entity& boulder) {
@@ -354,6 +368,7 @@ void StepEntityLogicAsBoulder(
     float dt
 ) {
     (void)graphics;
+    (void)audio;
     (void)dt;
     Entity& boulder = state.entity_manager.entities[entity_idx];
     boulder.max_speed = kBoulderRollVelocity;
@@ -373,7 +388,6 @@ void StepEntityLogicAsBoulder(
     }
 
     boulder.vel.x = boulder.facing == LeftOrRight::Right ? kBoulderRollVelocity : -kBoulderRollVelocity;
-    StepRollingSound(boulder, audio);
     UpdateBoulderAnimation(boulder);
 }
 
@@ -397,7 +411,11 @@ void StepEntityPhysicsAsBoulder(
         const AABB break_strip = GetLeadingBreakStrip(boulder);
         const bool will_break_tiles = WouldBreakAnyTiles(break_strip, state);
         if (will_break_tiles && boulder.counter_a <= 0.0F) {
-            audio.PlaySoundEffect(SoundEffect::BoulderTileCrash);
+            (void)PlayWorldSoundEmitter(
+                state,
+                GetBoulderFrontFaceCenter(boulder),
+                SoundEffect::BoulderTileCrash
+            );
             boulder.counter_a = kBoulderImpactSoundCooldownFrames;
         }
         if (will_break_tiles) {
@@ -410,7 +428,7 @@ void StepEntityPhysicsAsBoulder(
 
     const bool landed_this_frame = !was_grounded && boulder.grounded;
     if (landed_this_frame) {
-        PlayBoulderImpactSoundIfReady(boulder, state, audio);
+        PlayBoulderImpactSoundIfReady(boulder, state);
         AddBoulderGroundSlamShake(state, boulder);
     }
 
@@ -421,10 +439,11 @@ void StepEntityPhysicsAsBoulder(
             boulder.grounded &&
             boulder.dist_traveled_this_frame <= 0.0F;
         if (hard_stopped_this_frame) {
-            PlayBoulderImpactSoundIfReady(boulder, state, audio);
+                PlayBoulderImpactSoundIfReady(boulder, state);
             AddBoulderWallHitShake(state, boulder);
         }
         if (boulder.grounded && boulder.dist_traveled_this_frame > 0.0F) {
+            StepRollingSound(state, boulder);
             AddBoulderRollingShake(state, boulder);
             boulder.counter_c -= boulder.dist_traveled_this_frame;
             while (boulder.counter_c <= 0.0F) {
@@ -456,7 +475,7 @@ void StepEntityPhysicsAsBoulder(
         }
 
         if (boulder.counter_b >= kBoulderRestFrames) {
-            boulder.ai_state = EntityAiState::Returning;
+                boulder.ai_state = EntityAiState::Returning;
             boulder.vel.x = 0.0F;
         }
     }

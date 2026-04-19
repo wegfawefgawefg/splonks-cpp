@@ -1,5 +1,6 @@
 #include "step.hpp"
 
+#include "audio_emitters.hpp"
 #include "inputs.hpp"
 #include "controls.hpp"
 #include "entities/basic_exit.hpp"
@@ -111,6 +112,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.RebuildSid(graphics);
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
+    UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
             continue;
@@ -141,9 +143,11 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     }
     if (lost) {
         state.pending_stage_transition.reset();
+        StopAllSoundEmitters(state, audio);
         audio.PlaySoundEffect(SoundEffect::GameOver);
         state.SetMode(Mode::GameOver);
     } else if (state.pending_stage_transition.has_value()) {
+        StopAllSoundEmitters(state, audio);
         state.mode = Mode::StageTransition;
         state.frame = 0;
     }
@@ -176,6 +180,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.ClearInteractClaims();
     state.RebuildSid(graphics);
     StepEntities(state, audio, graphics, dt);
+    UpdateAudioEmitters(state, audio, graphics);
     state.particles.Step(graphics.frame_data_db, dt);
 }
 

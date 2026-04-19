@@ -37,6 +37,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
 void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics);
+void DrawAudioSettingsWindow(DebugPlayback& debug, State& state);
 void DrawUiSettingsWindow(DebugPlayback& debug, State& state);
 void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics& graphics);
