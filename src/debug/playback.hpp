@@ -106,6 +106,8 @@ struct DebugPlayback {
     std::string io_status;
     VID audio_brush_loop_handle = kInvalidAudioInstanceVID;
     std::optional<AudioAssetId> audio_brush_loop_audio_asset_id;
+    bool frame_data_auto_reload = false;
+    std::string frame_data_reload_status;
 
     static DebugPlayback New();
 };

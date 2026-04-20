@@ -27,9 +27,9 @@
       ]
     }
   ],
-  "activePaletteId": "sweetie-16-manual",
+  "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "5b7ef2e4-ba9d-422b-87da-f88c3486cba5",
+  "selectedAnnotationId": "a5fa8b42-f102-4d9d-880d-0dcf4d7ecbdf",
   "sheets": [
     {
       "path": "images/title.png",
@@ -7067,21 +7067,21 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 8,
+              "y": 5
             },
             "tags": [],
             "pbox": {
-              "x": 0,
+              "x": 1,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 13,
+              "h": 13
             },
             "cbox": {
-              "x": 0,
+              "x": -3,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 17,
+              "h": 13
             },
             "tile": false,
             "emit_point": {
@@ -7115,16 +7115,16 @@
             },
             "tags": [],
             "pbox": {
-              "x": 0,
+              "x": 1,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 13,
+              "h": 13
             },
             "cbox": {
-              "x": 0,
+              "x": -3,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 17,
+              "h": 13
             },
             "tile": false,
             "emit_point": {
@@ -7158,16 +7158,16 @@
             },
             "tags": [],
             "pbox": {
-              "x": 0,
+              "x": 1,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 13,
+              "h": 13
             },
             "cbox": {
-              "x": 0,
+              "x": -3,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 17,
+              "h": 13
             },
             "tile": false,
             "emit_point": {
@@ -8035,15 +8035,574 @@
               "y": 2
             }
           }
+        },
+        {
+          "id": "fbdb605c-7f7b-44ab-9b72-30b89da7d7ec",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 0,
+            "y": 80,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "explosive_box",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 8,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "8db684b7-7dd0-4b22-a8f5-a229ea8c89b4",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 17,
+            "y": 376,
+            "w": 11,
+            "h": 7
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "knife",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 9,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 2,
+              "w": 11,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 2,
+              "w": 11,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 1,
+              "y": 3
+            }
+          }
+        },
+        {
+          "id": "b577fcb6-ad12-4e6d-b457-33c1ed15824f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 32,
+            "y": 384,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "knife_swing",
+            "frame": 0,
+            "duration": 3,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 11,
+              "y": 11
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 7,
+              "w": 12,
+              "h": 8
+            },
+            "cbox": {
+              "x": 3,
+              "y": 5,
+              "w": 9,
+              "h": 7
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 3,
+              "y": 5
+            }
+          }
+        },
+        {
+          "id": "f77b0fb1-ec37-4aed-b640-2c00ebb833dc",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 48,
+            "y": 384,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "knife_swing",
+            "frame": 1,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 11,
+              "y": 11
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 7,
+              "w": 12,
+              "h": 8
+            },
+            "cbox": {
+              "x": 1,
+              "y": 10,
+              "w": 11,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 12
+            }
+          }
+        },
+        {
+          "id": "28123067-cffd-47fd-998c-3069b83ac71d",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 64,
+            "y": 384,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "knife_swing",
+            "frame": 2,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 11,
+              "y": 11
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 7,
+              "w": 12,
+              "h": 8
+            },
+            "cbox": {
+              "x": 1,
+              "y": 10,
+              "w": 11,
+              "h": 5
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 3,
+              "y": 13
+            }
+          }
+        },
+        {
+          "id": "a3263a59-1d58-475b-ad9d-df08d4d1b466",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead",
+            "frame": 0,
+            "duration": 16,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 1,
+              "w": 13,
+              "h": 15
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 10,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "6f5e3d3b-4dd6-4f3a-b1c7-8c0a07bf8bbd",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 144,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead",
+            "frame": 1,
+            "duration": 16,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 1,
+              "w": 13,
+              "h": 15
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 10,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "e400245e-7672-49d2-aeaf-fce152fb1254",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 160,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead",
+            "frame": 2,
+            "duration": 16,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 1,
+              "w": 13,
+              "h": 15
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 10,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "ce7fd2f1-e1ab-4081-8a66-4fb8f17233e0",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 176,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead",
+            "frame": 3,
+            "duration": 16,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 1,
+              "w": 13,
+              "h": 15
+            },
+            "cbox": {
+              "x": 3,
+              "y": 0,
+              "w": 10,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "e94b0bdc-0330-4c3e-97d2-c1803061c4ab",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 64,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead_rise",
+            "frame": 0,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "e3d91924-cb7f-4118-bc9d-d14e7b880f04",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead_rise",
+            "frame": 1,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "8ef2bff6-99a0-4a87-bd30-371ac10342b5",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 96,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead_rise",
+            "frame": 2,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "bbc9ae68-763f-47b1-9d6f-08642dabc890",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 112,
+            "y": 48,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meathead_rise",
+            "frame": 3,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 16.385,
-        "centerX": 123.43606957583154,
-        "centerY": 342.3863289594141
+        "zoom": 13.108,
+        "centerX": 252.09795544705523,
+        "centerY": 71.94079951174855
       }
     },
     {

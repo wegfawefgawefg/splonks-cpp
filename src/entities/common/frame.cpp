@@ -190,6 +190,15 @@ void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& gr
     entity.frame_data_animator.Step(graphics.frame_data_db, dt);
 }
 
+void RefreshAllEntityFrameDataGeometry(State& state, const Graphics& graphics) {
+    for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
+        if (!state.entity_manager.entities[entity_idx].active) {
+            continue;
+        }
+        ApplyFrameDataGeometryToEntity(entity_idx, state, graphics);
+    }
+}
+
 void CommonPostStep(
     std::size_t entity_idx,
     State& state,

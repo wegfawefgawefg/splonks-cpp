@@ -4782,19 +4782,19 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 0
-      y: 0
+      x: 8
+      y: 5
     tags: []
     pbox:
-      x: 0
+      x: 1
       y: 0
-      w: 0
-      h: 0
+      w: 13
+      h: 13
     cbox:
-      x: 0
+      x: -3
       y: 0
-      w: 0
-      h: 0
+      w: 17
+      h: 13
     tile: false
     emit_point:
       x: 0
@@ -4816,15 +4816,15 @@ sprites:
       y: 0
     tags: []
     pbox:
-      x: 0
+      x: 1
       y: 0
-      w: 0
-      h: 0
+      w: 13
+      h: 13
     cbox:
-      x: 0
+      x: -3
       y: 0
-      w: 0
-      h: 0
+      w: 17
+      h: 13
     tile: false
     emit_point:
       x: 0
@@ -4846,15 +4846,15 @@ sprites:
       y: 0
     tags: []
     pbox:
-      x: 0
+      x: 1
       y: 0
-      w: 0
-      h: 0
+      w: 13
+      h: 13
     cbox:
-      x: 0
+      x: -3
       y: 0
-      w: 0
-      h: 0
+      w: 17
+      h: 13
     tile: false
     emit_point:
       x: 0
@@ -5459,6 +5459,426 @@ sprites:
     emit_point:
       x: 1
       y: 2
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 80
+      w: 16
+      h: 16
+    name: "explosive_box"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    tile: false
+    emit_point:
+      x: 8
+      y: 8
+  - path: "entities.png"
+    aabb:
+      x: 17
+      y: 376
+      w: 11
+      h: 7
+    name: "knife"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 9
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 2
+      w: 11
+      h: 3
+    cbox:
+      x: 0
+      y: 2
+      w: 11
+      h: 3
+    tile: false
+    emit_point:
+      x: 1
+      y: 3
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 384
+      w: 16
+      h: 16
+    name: "knife_swing"
+    frame: 0
+    duration: 3
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 11
+      y: 11
+    tags: []
+    pbox:
+      x: 0
+      y: 7
+      w: 12
+      h: 8
+    cbox:
+      x: 3
+      y: 5
+      w: 9
+      h: 7
+    tile: false
+    emit_point:
+      x: 3
+      y: 5
+  - path: "entities.png"
+    aabb:
+      x: 48
+      y: 384
+      w: 16
+      h: 16
+    name: "knife_swing"
+    frame: 1
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 11
+      y: 11
+    tags: []
+    pbox:
+      x: 0
+      y: 7
+      w: 12
+      h: 8
+    cbox:
+      x: 1
+      y: 10
+      w: 11
+      h: 3
+    tile: false
+    emit_point:
+      x: 2
+      y: 12
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 384
+      w: 16
+      h: 16
+    name: "knife_swing"
+    frame: 2
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 11
+      y: 11
+    tags: []
+    pbox:
+      x: 0
+      y: 7
+      w: 12
+      h: 8
+    cbox:
+      x: 1
+      y: 10
+      w: 11
+      h: 5
+    tile: false
+    emit_point:
+      x: 3
+      y: 13
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead"
+    frame: 0
+    duration: 16
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 13
+      h: 15
+    cbox:
+      x: 3
+      y: 0
+      w: 10
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead"
+    frame: 1
+    duration: 16
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 13
+      h: 15
+    cbox:
+      x: 3
+      y: 0
+      w: 10
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead"
+    frame: 2
+    duration: 16
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 13
+      h: 15
+    cbox:
+      x: 3
+      y: 0
+      w: 10
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 176
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead"
+    frame: 3
+    duration: 16
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 13
+      h: 15
+    cbox:
+      x: 3
+      y: 0
+      w: 10
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead_rise"
+    frame: 0
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead_rise"
+    frame: 1
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead_rise"
+    frame: 2
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 48
+      w: 16
+      h: 16
+    name: "meathead_rise"
+    frame: 3
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 32
+      w: 16
+      h: 16
+    name: "empty"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

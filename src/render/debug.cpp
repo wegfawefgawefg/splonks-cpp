@@ -140,6 +140,10 @@ bool IsScreenRectVisible(const SDL_FRect& presentation, const SDL_FRect& rect) {
            rect.y <= presentation.y + presentation.h;
 }
 
+SDL_Color ToSdlColor(const DebugAnnotationColor& color) {
+    return SDL_Color{color.r, color.g, color.b, color.a};
+}
+
 bool ShouldRenderShakeBrushPreview(const State& state) {
     const DebugShakeBrushState& brush = state.debug_shake_brush;
     return brush.enabled &&
@@ -764,6 +768,67 @@ void RenderEntityLabels(
     }
 }
 
+void RenderDebugAnnotations(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation,
+    const std::vector<Vec2>& render_offsets
+) {
+    if (!state.debug_overlay.show_debug_annotations) {
+        return;
+    }
+
+    for (const Vec2& render_offset : render_offsets) {
+        for (const DebugRectAnnotation& annotation : state.debug_rect_annotations) {
+            const Vec2 world_size = annotation.area.br - annotation.area.tl + Vec2::New(1.0F, 1.0F);
+            const SDL_FRect rect = WorldRectToScreen(
+                graphics,
+                presentation,
+                annotation.area.tl + render_offset,
+                world_size
+            );
+            if (!IsScreenRectVisible(presentation, rect)) {
+                continue;
+            }
+
+            const SDL_Color color = ToSdlColor(annotation.color);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+            const float left = std::floor(rect.x);
+            const float top = std::floor(rect.y);
+            const float right = std::ceil(rect.x + rect.w);
+            const float bottom = std::ceil(rect.y + rect.h);
+            SDL_RenderLine(renderer, left, top, right, top);
+            SDL_RenderLine(renderer, right, top, right, bottom);
+            SDL_RenderLine(renderer, right, bottom, left, bottom);
+            SDL_RenderLine(renderer, left, bottom, left, top);
+        }
+
+        for (const DebugLabelAnnotation& annotation : state.debug_label_annotations) {
+            const Vec2 world_pos = annotation.world_pos + render_offset;
+            const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
+            if (screen.x < presentation.x - 32.0F || screen.x > presentation.x + presentation.w + 32.0F ||
+                screen.y < presentation.y - 32.0F || screen.y > presentation.y + presentation.h + 32.0F) {
+                continue;
+            }
+
+            const SDL_Color color = ToSdlColor(annotation.color);
+            RenderWorldPointMarker(renderer, graphics, presentation, world_pos, color);
+            DrawText(
+                renderer,
+                graphics,
+                10,
+                graphics.ui_font,
+                annotation.text.c_str(),
+                screen.x + 6.0F,
+                screen.y - 12.0F,
+                color
+            );
+        }
+    }
+}
+
 void RenderChunkOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
@@ -1233,6 +1298,7 @@ void RenderDebugOverlay(
         !state.debug_overlay.show_area_types &&
         !state.debug_overlay.show_audio_emitters &&
         !state.debug_overlay.show_audio_occlusion_paths &&
+        !state.debug_overlay.show_debug_annotations &&
         !ShouldRenderShakeBrushPreview(state) &&
         !ShouldRenderAudioBrushPreview(state)) {
         return;
@@ -1273,6 +1339,9 @@ void RenderDebugOverlay(
     }
     if (state.debug_overlay.show_audio_emitters) {
         RenderAudioEmitterOverlay(renderer, graphics, state, audio, presentation, render_offsets);
+    }
+    if (state.debug_overlay.show_debug_annotations) {
+        RenderDebugAnnotations(renderer, graphics, state, presentation, render_offsets);
     }
     RenderShakeBrushPreview(renderer, graphics, state, presentation);
     RenderAudioBrushPreview(renderer, graphics, state, presentation);

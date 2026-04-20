@@ -168,6 +168,8 @@ State State::New() {
     state.contact = ContactBookkeeping{};
     state.entity_tools = EntityToolInventoryState{};
     state.world_prompts.clear();
+    state.debug_rect_annotations.clear();
+    state.debug_label_annotations.clear();
     InitDebugLevel(state);
     return state;
 }
@@ -176,6 +178,8 @@ void State::SetMode(Mode new_mode) {
     mode = new_mode;
     scene_frame = 0;
     world_prompts.clear();
+    debug_rect_annotations.clear();
+    debug_label_annotations.clear();
     interact_claimed_vids_this_frame.clear();
 }
 
@@ -241,6 +245,19 @@ void State::ClearWorldPrompts() {
 
 void State::AddWorldPrompt(const WorldPrompt& prompt) {
     world_prompts.push_back(prompt);
+}
+
+void State::ClearDebugAnnotations() {
+    debug_rect_annotations.clear();
+    debug_label_annotations.clear();
+}
+
+void State::AddDebugRectAnnotation(const DebugRectAnnotation& annotation) {
+    debug_rect_annotations.push_back(annotation);
+}
+
+void State::AddDebugLabelAnnotation(const DebugLabelAnnotation& annotation) {
+    debug_label_annotations.push_back(annotation);
 }
 
 void State::ClearInteractClaims() {

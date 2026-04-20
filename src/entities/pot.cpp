@@ -74,6 +74,40 @@ void StepControlledPot(Entity& pot, const controls::ControlIntent& control) {
 
 } // namespace
 
+common::ContactResolution BuildPotImpactResolution(
+    bool applied
+) {
+    return common::ContactResolution{
+        .blocks_movement = false,
+        .stop_sweep = applied,
+    };
+}
+
+common::ContactResolution OnEntityContactAsPot(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    (void)other_entity_idx;
+    (void)graphics;
+    (void)audio;
+    if (!context.mover_vid.has_value() || *context.mover_vid != state.entity_manager.entities[entity_idx].vid) {
+        return common::ContactResolution{};
+    }
+    return BuildPotImpactResolution(TryApplyPotImpact(entity_idx, context, state));
+}
+
+common::ContactResolution OnTileContactAsPot(
+    std::size_t entity_idx,
+    const common::ContactContext& context,
+    State& state
+) {
+    return BuildPotImpactResolution(TryApplyPotImpact(entity_idx, context, state));
+}
+
 extern const EntityArchetype kPotArchetype{
     .type_ = EntityType::Pot,
     .size = Vec2::New(8.0F, 7.0F),
@@ -83,6 +117,7 @@ extern const EntityArchetype kPotArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
@@ -93,6 +128,8 @@ extern const EntityArchetype kPotArchetype{
     .death_sound = audio_asset_ids::PotShatter,
     .on_death = OnDeathAsPot,
     .step_logic = StepEntityLogicAsPot,
+    .on_entity_contact = OnEntityContactAsPot,
+    .on_tile_contact = OnTileContactAsPot,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pot),
 };

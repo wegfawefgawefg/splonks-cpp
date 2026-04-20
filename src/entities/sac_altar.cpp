@@ -148,7 +148,7 @@ void ApplySacAltarFavorDelta(State& state, std::int32_t favor_delta) {
     }
 }
 
-std::optional<std::int32_t> GetSacrificeFavor(const Entity& victim) {
+std::optional<std::int32_t> GetSacrificeFavorValueImpl(const Entity& victim, bool alive) {
     if (victim.type_ == EntityType::GoldIdol) {
         return kGoldIdolSacrificeFavor;
     }
@@ -156,11 +156,6 @@ std::optional<std::int32_t> GetSacrificeFavor(const Entity& victim) {
         return std::nullopt;
     }
 
-    if (victim.condition != EntityCondition::Stunned && victim.condition != EntityCondition::Dead) {
-        return std::nullopt;
-    }
-
-    const bool alive = victim.condition == EntityCondition::Stunned;
     switch (victim.type_) {
     case EntityType::Player:
     case EntityType::Damsel:
@@ -548,7 +543,7 @@ void SacrificeVictim(
     State& state,
     const Graphics& graphics
 ) {
-    const std::optional<std::int32_t> favor = GetSacrificeFavor(victim);
+    const std::optional<std::int32_t> favor = GetSacrificeFavorValue(victim);
     if (!favor.has_value()) {
         return;
     }
@@ -581,6 +576,54 @@ void SacrificeVictim(
 }
 
 } // namespace
+
+std::optional<std::int32_t> GetSacrificeFavorValue(const Entity& victim) {
+    if (victim.condition != EntityCondition::Stunned && victim.condition != EntityCondition::Dead) {
+        return std::nullopt;
+    }
+    return GetSacrificeFavorValueImpl(victim, victim.condition == EntityCondition::Stunned);
+}
+
+std::optional<std::int32_t> GetLivingSacrificeFavorValue(const Entity& victim) {
+    return GetSacrificeFavorValueImpl(victim, true);
+}
+
+void SpawnSacrificeGainEffects(State& state, Audio& audio, const Vec2& pos) {
+    (void)audio;
+    SpawnSacrificeBodySmoke(state, pos);
+    SpawnSacrificeSparks(state, pos);
+    SpawnSacrificeBlood(state, pos);
+    SpawnDamageEffectAnimationBurst(frame_data_ids::BloodBall, pos, state);
+    (void)PlayWorldSoundEmitter(state, pos, audio_asset_ids::Sacrifice);
+}
+
+bool TryDepositStoredFavor(
+    Entity& altar_piece,
+    std::int32_t favor,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    (void)audio;
+    if (favor <= 0) {
+        return false;
+    }
+
+    Entity* const owner = GetOwnerAltarMut(altar_piece, state);
+    if (owner == nullptr || !owner->active) {
+        return false;
+    }
+
+    const Vec2 altar_emit = GetAltarEffectPos(*owner, state, graphics);
+    const Vec2 altar_sound = GetAltarSoundPos(*owner, state, graphics);
+    ApplySacAltarFavorDelta(state, favor);
+    TriggerTopperSacAnimation(*owner, state);
+    SpawnSacrificeSmoke(state, altar_emit);
+    (void)PlayWorldSoundEmitter(state, altar_sound, audio_asset_ids::Sacrifice);
+    while (GrantSacAltarReward(*owner, state, graphics)) {
+    }
+    return true;
+}
 
 void OnDeathAsSacAltarPiece(std::size_t entity_idx, State& state, Audio& audio) {
     (void)audio;
@@ -650,7 +693,7 @@ void StepEntityLogicAsSacAltar(
         if (victim->held_by_vid.has_value()) {
             continue;
         }
-        if (!GetSacrificeFavor(*victim).has_value()) {
+        if (!GetSacrificeFavorValue(*victim).has_value()) {
             continue;
         }
         if (!victim->grounded) {

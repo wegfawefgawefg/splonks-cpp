@@ -27,6 +27,32 @@ SwingStage GetSwingStage(const Entity& baseball_bat) {
 
 } // namespace
 
+common::ContactResolution OnEntityContactAsBaseballBat(
+    std::size_t bat_entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    (void)context;
+    if (graphics == nullptr || audio == nullptr) {
+        return common::ContactResolution{};
+    }
+
+    const bool applied = TryApplyBatContactToEntity(
+        bat_entity_idx,
+        other_entity_idx,
+        state,
+        *graphics,
+        *audio
+    );
+    return common::ContactResolution{
+        .blocks_movement = false,
+        .stop_sweep = applied,
+    };
+}
+
 extern const EntityArchetype kBaseballBatArchetype{
     .type_ = EntityType::BaseballBat,
     .size = Vec2::New(12.0F, 4.0F),
@@ -43,6 +69,8 @@ extern const EntityArchetype kBaseballBatArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .step_logic = StepBaseballBat,
+    .on_entity_contact = OnEntityContactAsBaseballBat,
+    .entity_contact_cooldown_duration = kBatContactCooldownFrames,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator{
         .animation_id = frame_data_ids::BaseballBatSwing,

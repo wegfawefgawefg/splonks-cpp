@@ -1,8 +1,8 @@
 #pragma once
 
 #include "audio.hpp"
+#include "entities/common/contact_types.hpp"
 #include "entities/common/knockback.hpp"
-#include "entity.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 
@@ -16,40 +16,6 @@ constexpr float kMaxSpeed = 7.0F;
 constexpr unsigned int kDefaultStunTimer = 60;
 constexpr unsigned int kThrownByImmunityDuration = 16;
 constexpr unsigned int kProjectileContactDuration = 120;
-
-enum class BlockingImpactAxis {
-    Horizontal,
-    Vertical,
-};
-
-enum class BlockingImpactSurface {
-    StageBounds,
-    Tiles,
-    ImpassableEntity,
-};
-
-enum class ContactPhase {
-    SweptEntered,
-    AttemptedBlocked,
-};
-
-struct ContactContext {
-    ContactPhase phase = ContactPhase::SweptEntered;
-    bool has_impact = false;
-    BlockingImpactAxis impact_axis = BlockingImpactAxis::Horizontal;
-    BlockingImpactSurface impact_surface = BlockingImpactSurface::Tiles;
-    float impact_velocity = 0.0F;
-    int direction = 0;
-    std::optional<VID> mover_vid = std::nullopt;
-    std::optional<VID> other_vid = std::nullopt;
-};
-
-struct ContactResolution {
-    // The attempted pixel move may not be entered.
-    bool blocks_movement = false;
-    // Stop all further movement processing in the current MoveEntityPixelStep call.
-    bool stop_sweep = false;
-};
 
 struct TileContact {
     IVec2 tile_pos = IVec2::New(0, 0);
@@ -76,6 +42,7 @@ void ApplyDeactivateConditions(std::size_t entity_idx, State& state);
 void StepStunTimer(std::size_t entity_idx, State& state);
 void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio);
 void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& graphics, float dt);
+void RefreshAllEntityFrameDataGeometry(State& state, const Graphics& graphics);
 void EulerStep(std::size_t entity_idx, State& state, float dt);
 void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt);
 void ApplyGravity(std::size_t entity_idx, State& state, float dt);

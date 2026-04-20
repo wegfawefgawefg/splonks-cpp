@@ -2,6 +2,7 @@
 
 #include "audio_acoustics.hpp"
 #include "audio_emitters.hpp"
+#include "entities/common/common.hpp"
 #include "settings.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
@@ -50,6 +51,7 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
     ImGui::Checkbox("Show Area IDs", &state.debug_overlay.show_area_ids);
     ImGui::Checkbox("Show Area Types", &state.debug_overlay.show_area_types);
     ImGui::Checkbox("Show Audio Emitters", &state.debug_overlay.show_audio_emitters);
+    ImGui::Checkbox("Show Debug Annotations", &state.debug_overlay.show_debug_annotations);
     ImGui::BeginDisabled(!state.debug_overlay.show_audio_emitters || !IsAudioOcclusionEnabled(state));
     ImGui::Checkbox("Show Audio Occlusion Paths", &state.debug_overlay.show_audio_occlusion_paths);
     ImGui::EndDisabled();
@@ -789,6 +791,20 @@ void DrawGraphicsSettingsWindow(
         state.settings.video.resolution = graphics.dims;
         state.rebuild_render_texture = true;
         changed = true;
+    }
+
+    ImGui::SeparatorText("Frame Data");
+    ImGui::Text("Annotations: %s", graphics.frame_data_annotations_path.c_str());
+    if (ImGui::Button("Reload Frame Data")) {
+        if (graphics.ReloadFrameData(renderer, &debug.frame_data_reload_status)) {
+            entities::common::RefreshAllEntityFrameDataGeometry(state, graphics);
+            state.RebuildSid(graphics);
+        }
+    }
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto Reload", &debug.frame_data_auto_reload);
+    if (!debug.frame_data_reload_status.empty()) {
+        ImGui::TextWrapped("%s", debug.frame_data_reload_status.c_str());
     }
 
     if (changed) {

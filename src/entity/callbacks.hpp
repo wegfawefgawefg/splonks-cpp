@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "damage_types.hpp"
+#include "entities/common/contact_types.hpp"
 #include "math_types.hpp"
 
 #include <cstddef>
@@ -57,5 +58,19 @@ using EntityStepLogic =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 using EntityStepPhysics =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
+
+using EntityOnEntityContact = entities::common::ContactResolution (*) (
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const entities::common::ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+);
+using EntityOnTileContact = entities::common::ContactResolution (*) (
+    std::size_t entity_idx,
+    const entities::common::ContactContext& context,
+    State& state
+);
 
 } // namespace splonks

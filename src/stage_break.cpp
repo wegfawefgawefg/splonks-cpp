@@ -58,7 +58,13 @@ void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& a
 
 } // namespace
 
-void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
+void BreakStageTilesInRectWc(
+    const AABB& area,
+    State& state,
+    Audio& audio,
+    std::optional<AudioAssetId> override_break_sound,
+    bool suppress_tile_break_sound
+) {
     std::optional<AudioAssetId> break_sound = std::nullopt;
     bool broke_any_tiles = false;
     std::vector<IVec2> changed_tiles;
@@ -73,7 +79,7 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
         const Tile tile = *tile_query.tile;
 
         const TileArchetype& tile_archetype = GetTileArchetype(tile);
-        if (!break_sound.has_value() && tile_archetype.break_sound.has_value()) {
+        if (!suppress_tile_break_sound && !break_sound.has_value() && tile_archetype.break_sound.has_value()) {
             break_sound = tile_archetype.break_sound;
         }
         if (tile_archetype.break_animation.has_value()) {
@@ -102,7 +108,9 @@ void BreakStageTilesInRectWc(const AABB& area, State& state, Audio& audio) {
         UpdateStageLightingForTileChanges(state, changed_tiles);
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
     }
-    if (break_sound.has_value()) {
+    if (override_break_sound.has_value()) {
+        (void)PlayWorldSoundEmitter(state, (area.tl + area.br) / 2.0F, *override_break_sound);
+    } else if (break_sound.has_value()) {
         (void)PlayWorldSoundEmitter(state, (area.tl + area.br) / 2.0F, *break_sound);
     }
 }

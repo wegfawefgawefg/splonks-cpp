@@ -1,4 +1,5 @@
 #include "entities/common/common.hpp"
+#include "entity/archetype.hpp"
 
 #include "tile.hpp"
 #include "world_query.hpp"
@@ -30,8 +31,9 @@ void StepStunTimer(std::size_t entity_idx, State& state) {
             if (entity.held_by_vid.has_value()) {
                 ReleaseEntityFromHolder(entity, state);
             }
-            entity.projectile_contact_damage_type = DamageType::Attack;
-            entity.projectile_contact_damage_amount = 1;
+            const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
+            entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
+            entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
             entity.projectile_contact_timer = 0;
             entity.condition = EntityCondition::Normal;
             TrySetAnimation(entity, EntityDisplayState::Neutral);
@@ -130,8 +132,9 @@ void DoThrownByStep(std::size_t entity_idx, State& state) {
     if (settled_on_ground) {
         entity.projectile_contact_timer -= 1;
         if (entity.projectile_contact_timer == 0) {
-            entity.projectile_contact_damage_type = DamageType::Attack;
-            entity.projectile_contact_damage_amount = 1;
+            const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
+            entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
+            entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
         }
     } else {
         entity.projectile_contact_timer = kProjectileContactDuration;

@@ -1,8 +1,6 @@
 #include "entities/common/common.hpp"
 
-#include "entities/box.hpp"
-#include "entities/pot.hpp"
-#include "entities/skeleton.hpp"
+#include "entity/archetype.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 
@@ -27,22 +25,7 @@ constexpr std::uint32_t kTileTouchSoundCooldownFrames = 8;
 constexpr float kTileTouchSoundMinImpactVelocity = 1.5F;
 constexpr float kTileTouchSoundVolumeScale = 0.10F;
 
-struct TileEntityContactDispatch {
-    ContactResolution resolution;
-    bool write_cooldown = false;
-    std::uint32_t cooldown_duration = 0;
-};
-
-std::optional<TileEntityContactDispatch> GetEntityTileContactCooldownSpec(
-    const Entity& entity,
-    const ContactContext& context
-) {
-    (void)entity;
-    (void)context;
-    return std::nullopt;
-}
-
-ContactResolution TryDispatchEntityTileContactByEntityType(
+ContactResolution TryDispatchEntityTileContactByArchetype(
     std::size_t entity_idx,
     const ContactContext& context,
     State& state
@@ -52,34 +35,11 @@ ContactResolution TryDispatchEntityTileContactByEntityType(
     }
 
     const Entity& entity = state.entity_manager.entities[entity_idx];
-    switch (entity.type_) {
-    case EntityType::Pot:
-        if (!pot::TryApplyPotImpact(entity_idx, context, state)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
-    case EntityType::Box:
-        if (!box::TryApplyBoxImpact(entity_idx, context, state)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
-    case EntityType::Skull:
-        if (!skeleton::TryApplySkullTileImpact(entity_idx, context, state)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
-    default:
+    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
+    if (archetype.on_tile_contact == nullptr) {
         return ContactResolution{};
     }
+    return archetype.on_tile_contact(entity_idx, context, state);
 }
 
 void PlayBlockingCollisionSounds(
@@ -190,50 +150,6 @@ void MaybePlayStageBoundsCollisionSounds(
     );
 }
 
-TileEntityContactDispatch TryDispatchEntityTileContactForEntityType(
-    std::size_t entity_idx,
-    const ContactContext& context,
-    State& state
-) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
-        return TileEntityContactDispatch{};
-    }
-
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const std::optional<TileEntityContactDispatch> cooldown_spec =
-        GetEntityTileContactCooldownSpec(entity, context);
-    if (cooldown_spec.has_value()) {
-        // Tile contacts do not currently have a stable directional cooldown identity.
-        return TileEntityContactDispatch{};
-    }
-
-    return TileEntityContactDispatch{
-        .resolution = TryDispatchEntityTileContactByEntityType(entity_idx, context, state),
-    };
-}
-
-ContactResolution TryDispatchEntityTileContactForTileType(
-    std::size_t entity_idx,
-    const TileContact& tile_contact,
-    const ContactContext& context,
-    State& state,
-    Audio* audio
-) {
-    (void)entity_idx;
-    (void)context;
-    (void)state;
-    (void)audio;
-
-    if (tile_contact.tile == nullptr) {
-        return ContactResolution{};
-    }
-
-    switch (*tile_contact.tile) {
-    default:
-        return ContactResolution{};
-    }
-}
-
 } // namespace
 
 ContactResolution TryDispatchEntityTileContacts(
@@ -263,20 +179,20 @@ ContactResolution TryDispatchEntityTileContacts(
         MaybePlayTileCollisionSounds(
             entity_idx, tile_contact, context, state, audio, played_collision_sound);
 
-        const ContactResolution tile_resolution = TryDispatchEntityTileContactForTileType(
-            entity_idx, tile_contact, context, state, audio);
-        aggregate.blocks_movement |= tile_resolution.blocks_movement;
-        aggregate.stop_sweep |= tile_resolution.stop_sweep;
+        const ContactResolution entity_tile_resolution =
+            TryDispatchEntityTileContactByArchetype(entity_idx, context, state);
+        aggregate.blocks_movement |= entity_tile_resolution.blocks_movement;
+        aggregate.stop_sweep |= entity_tile_resolution.stop_sweep;
     }
 
     MaybePlayStageBoundsCollisionSounds(
         entity_idx, context, contacts, state, audio, played_collision_sound);
 
     if (contacts.touches_stage_bounds || touched_blocking_tile) {
-        const TileEntityContactDispatch entity_dispatch =
-            TryDispatchEntityTileContactForEntityType(entity_idx, context, state);
-        aggregate.blocks_movement |= entity_dispatch.resolution.blocks_movement;
-        aggregate.stop_sweep |= entity_dispatch.resolution.stop_sweep;
+        const ContactResolution entity_tile_resolution =
+            TryDispatchEntityTileContactByArchetype(entity_idx, context, state);
+        aggregate.blocks_movement |= entity_tile_resolution.blocks_movement;
+        aggregate.stop_sweep |= entity_tile_resolution.stop_sweep;
     }
 
     return aggregate;

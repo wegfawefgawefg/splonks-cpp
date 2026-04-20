@@ -26,6 +26,7 @@
 #include <array>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace splonks {
@@ -115,6 +116,25 @@ struct DebugOverlayState {
     bool show_area_types = false;
     bool show_audio_emitters = false;
     bool show_audio_occlusion_paths = false;
+    bool show_debug_annotations = false;
+};
+
+struct DebugAnnotationColor {
+    std::uint8_t r = 255;
+    std::uint8_t g = 255;
+    std::uint8_t b = 255;
+    std::uint8_t a = 255;
+};
+
+struct DebugRectAnnotation {
+    AABB area = AABB::New(Vec2::New(0.0F, 0.0F), Vec2::New(0.0F, 0.0F));
+    DebugAnnotationColor color{};
+};
+
+struct DebugLabelAnnotation {
+    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    std::string text;
+    DebugAnnotationColor color{};
 };
 
 struct DebugShakeBrushState {
@@ -225,6 +245,8 @@ struct State {
     // Per-entity owned tool state.
     EntityToolInventoryState entity_tools;
     std::vector<WorldPrompt> world_prompts;
+    std::vector<DebugRectAnnotation> debug_rect_annotations;
+    std::vector<DebugLabelAnnotation> debug_label_annotations;
 
     static State New();
     void SetMode(Mode new_mode);
@@ -234,6 +256,9 @@ struct State {
     void UpdateAreaListenerCacheForEntity(std::size_t entity_id);
     void ClearWorldPrompts();
     void AddWorldPrompt(const WorldPrompt& prompt);
+    void ClearDebugAnnotations();
+    void AddDebugRectAnnotation(const DebugRectAnnotation& annotation);
+    void AddDebugLabelAnnotation(const DebugLabelAnnotation& annotation);
     void ClearInteractClaims();
     void ClaimInteractForEntity(VID entity_vid);
     bool IsInteractClaimedForEntity(VID entity_vid) const;

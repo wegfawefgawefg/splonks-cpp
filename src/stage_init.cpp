@@ -1,4 +1,5 @@
 #include "stage_init.hpp"
+#include "entity/archetype.hpp"
 #include "tools/tool_archetype.hpp"
 
 #include "buying.hpp"
@@ -936,8 +937,9 @@ void PrepareEntityForStageEntry(Entity& entity) {
     entity.contact_sound_cooldown = 0;
     entity.thrown_by.reset();
     entity.thrown_immunity_timer = 0;
-    entity.projectile_contact_damage_type = DamageType::Attack;
-    entity.projectile_contact_damage_amount = 1;
+    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
+    entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
+    entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
     entity.projectile_contact_timer = 0;
 }
 

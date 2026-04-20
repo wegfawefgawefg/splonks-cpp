@@ -1,9 +1,6 @@
 #include "entities/common/common.hpp"
 
-#include "entities/baseball_bat.hpp"
-#include "entities/box.hpp"
-#include "entities/pot.hpp"
-#include "entities/skeleton.hpp"
+#include "entity/archetype.hpp"
 #include "world_query.hpp"
 
 namespace splonks::entities::common {
@@ -19,35 +16,7 @@ bool AreDirectlyAttached(const Entity& first, const Entity& second) {
            (second.held_by_vid.has_value() && *second.held_by_vid == first.vid);
 }
 
-struct ParticipantContactDispatch {
-    ContactResolution resolution;
-    bool write_cooldown = false;
-    std::uint32_t cooldown_duration = 0;
-};
-
-std::optional<ParticipantContactDispatch> GetEntityEntityContactCooldownSpec(
-    const Entity& participant,
-    const ContactContext& context,
-    const Graphics* graphics,
-    Audio* audio
-) {
-    (void)context;
-    switch (participant.type_) {
-    case EntityType::BaseballBat:
-        if (graphics == nullptr || audio == nullptr) {
-            return std::nullopt;
-        }
-        return ParticipantContactDispatch{
-            .resolution = ContactResolution{},
-            .write_cooldown = true,
-            .cooldown_duration = baseball_bat::kBatContactCooldownFrames,
-        };
-    default:
-        return std::nullopt;
-    }
-}
-
-ContactResolution TryDispatchEntityEntityContactByType(
+ContactResolution TryDispatchEntityEntityContactForParticipant(
     std::size_t participant_idx,
     std::size_t other_entity_idx,
     const ContactContext& context,
@@ -62,7 +31,9 @@ ContactResolution TryDispatchEntityEntityContactByType(
 
     const Entity& participant = state.entity_manager.entities[participant_idx];
     const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!participant.active || !other_entity.active) {
+    const EntityArchetype& participant_archetype = GetEntityArchetype(participant.type_);
+    if (participant_archetype.entity_contact_cooldown_duration > 0 &&
+        state.contact.HasContactCooldown(participant.vid, other_entity.vid)) {
         return ContactResolution{};
     }
 
@@ -91,169 +62,26 @@ ContactResolution TryDispatchEntityEntityContactByType(
         return ContactResolution{};
     }
 
-    switch (participant.type_) {
-    case EntityType::Player:
-        if (graphics == nullptr || audio == nullptr ||
-            !TryApplyStompContactToEntity(participant_idx, other_entity_idx, state, *graphics, *audio)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
-    case EntityType::BaseballBat: {
-        if (graphics == nullptr || audio == nullptr) {
-            return ContactResolution{};
-        }
-        const bool applied = baseball_bat::TryApplyBatContactToEntity(
-            participant_idx, other_entity_idx, state, *graphics, *audio);
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = applied,
-        };
-    }
-    case EntityType::Pot:
-        if (!pot::TryApplyPotImpact(participant_idx, context, state)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
-    case EntityType::Box:
-        if (!box::TryApplyBoxImpact(participant_idx, context, state)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
-    case EntityType::Skull:
-        if (!skeleton::TryApplySkullEntityImpact(participant_idx, other_entity_idx, context, state)) {
-            return ContactResolution{};
-        }
-        return ContactResolution{
-            .blocks_movement = false,
-            .stop_sweep = true,
-        };
-    case EntityType::None:
-    case EntityType::GhostBall:
-    case EntityType::BasicExit:
-    case EntityType::DvdLogo:
-    case EntityType::Bat:
-    case EntityType::Rock:
-    case EntityType::MouseTrailer:
-    case EntityType::JetPack:
-    case EntityType::Bomb:
-    case EntityType::Block:
-    case EntityType::Gold:
-    case EntityType::GoldStack:
-    case EntityType::GoldChunk:
-    case EntityType::GoldNugget:
-    case EntityType::GoldBar:
-    case EntityType::GoldBars:
-    case EntityType::StompPad:
-    case EntityType::Rope:
-    case EntityType::Altar:
-    case EntityType::SacAltar:
-    case EntityType::GoldIdol:
-    case EntityType::Chest:
-    case EntityType::KeyChest:
-    case EntityType::ChestKey:
-    case EntityType::UdjatEye:
-    case EntityType::Mattock:
-    case EntityType::Cape:
-    case EntityType::Shotgun:
-    case EntityType::Teleporter:
-    case EntityType::Gloves:
-    case EntityType::Spectacles:
-    case EntityType::WebCannon:
-    case EntityType::Pistol:
-    case EntityType::Mitt:
-    case EntityType::Paste:
-    case EntityType::SpringShoes:
-    case EntityType::SpikeShoes:
-    case EntityType::Machete:
-    case EntityType::BombBox:
-    case EntityType::BombBag:
-    case EntityType::Bow:
-    case EntityType::Compass:
-    case EntityType::Parachute:
-    case EntityType::RopePile:
-    case EntityType::Dice:
-    case EntityType::RubyBig:
-    case EntityType::EmeraldBig:
-    case EntityType::SapphireBig:
-    case EntityType::Shop:
-    case EntityType::Shopkeeper:
-    case EntityType::Damsel:
-    case EntityType::SignGeneral:
-    case EntityType::SignBomb:
-    case EntityType::SignWeapon:
-    case EntityType::SignRare:
-    case EntityType::SignClothing:
-    case EntityType::SignCraps:
-    case EntityType::SignKissing:
-    case EntityType::StoreLight:
-    case EntityType::Lantern:
-    case EntityType::LanternRed:
-    case EntityType::GiantTikiHead:
-    case EntityType::Boulder:
-    case EntityType::MovingPlatform:
-    case EntityType::SacAltarTopper:
-    case EntityType::KaliHead:
-    case EntityType::BallAndChainBall:
-    case EntityType::ArrowTrap:
-    case EntityType::Skeleton:
-    case EntityType::Snake:
-    case EntityType::Cobra:
-    case EntityType::CobraSpit:
-    case EntityType::Caveman:
-    case EntityType::Spider:
-    case EntityType::SpiderHang:
-    case EntityType::RageSpider:
-    case EntityType::RageSpiderHang:
-    case EntityType::GiantSpider:
-    case EntityType::GiantSpiderHang:
-    case EntityType::Scarab:
-        return ContactResolution{};
+    ContactResolution resolution{};
+    if (participant.can_stomp && graphics != nullptr && audio != nullptr &&
+        TryApplyStompContactToEntity(participant_idx, other_entity_idx, state, *graphics, *audio)) {
+        resolution.stop_sweep = true;
     }
 
-    return ContactResolution{};
-}
-
-ParticipantContactDispatch TryDispatchEntityEntityContactForParticipant(
-    std::size_t participant_idx,
-    std::size_t other_entity_idx,
-    const ContactContext& context,
-    State& state,
-    const Graphics* graphics,
-    Audio* audio
-) {
-    if (participant_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
-        return ParticipantContactDispatch{};
+    if (participant_archetype.on_entity_contact != nullptr) {
+        const ContactResolution callback_resolution = participant_archetype.on_entity_contact(
+            participant_idx,
+            other_entity_idx,
+            context,
+            state,
+            graphics,
+            audio
+        );
+        resolution.blocks_movement |= callback_resolution.blocks_movement;
+        resolution.stop_sweep |= callback_resolution.stop_sweep;
     }
 
-    const Entity& participant = state.entity_manager.entities[participant_idx];
-    const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    const std::optional<ParticipantContactDispatch> cooldown_spec =
-        GetEntityEntityContactCooldownSpec(participant, context, graphics, audio);
-    if (cooldown_spec.has_value() &&
-        state.contact.HasContactCooldown(participant.vid, other_entity.vid)) {
-        return ParticipantContactDispatch{};
-    }
-
-    const ContactResolution resolution = TryDispatchEntityEntityContactByType(
-        participant_idx, other_entity_idx, context, state, graphics, audio);
-    ParticipantContactDispatch dispatch{
-        .resolution = resolution,
-    };
-    if (cooldown_spec.has_value()) {
-        dispatch.write_cooldown = true;
-        dispatch.cooldown_duration = cooldown_spec->cooldown_duration;
-    }
-    return dispatch;
+    return resolution;
 }
 
 }
@@ -347,29 +175,33 @@ ContactResolution TryDispatchEntityEntityContactPair(
         result.stop_sweep |= entity_projectile_hit || other_entity_projectile_hit;
     }
 
-    const ParticipantContactDispatch entity_dispatch = TryDispatchEntityEntityContactForParticipant(
+    const EntityArchetype& entity_archetype = GetEntityArchetype(entity.type_);
+    const ContactResolution entity_resolution = TryDispatchEntityEntityContactForParticipant(
         entity_idx, other_entity_idx, context, state, graphics, audio);
-    result.blocks_movement |= entity_dispatch.resolution.blocks_movement;
-    result.stop_sweep |= entity_dispatch.resolution.stop_sweep;
-    if (entity_dispatch.write_cooldown) {
+    result.blocks_movement |= entity_resolution.blocks_movement;
+    result.stop_sweep |= entity_resolution.stop_sweep;
+    if (entity_archetype.entity_contact_cooldown_duration > 0 &&
+        (entity_resolution.blocks_movement || entity_resolution.stop_sweep)) {
         state.contact.AddContactCooldown(
             entity.vid,
             other_entity.vid,
             state.stage_frame,
-            entity_dispatch.cooldown_duration
+            entity_archetype.entity_contact_cooldown_duration
         );
     }
 
-    const ParticipantContactDispatch other_dispatch = TryDispatchEntityEntityContactForParticipant(
+    const EntityArchetype& other_archetype = GetEntityArchetype(other_entity.type_);
+    const ContactResolution other_resolution = TryDispatchEntityEntityContactForParticipant(
         other_entity_idx, entity_idx, context, state, graphics, audio);
-    result.blocks_movement |= other_dispatch.resolution.blocks_movement;
-    result.stop_sweep |= other_dispatch.resolution.stop_sweep;
-    if (other_dispatch.write_cooldown) {
+    result.blocks_movement |= other_resolution.blocks_movement;
+    result.stop_sweep |= other_resolution.stop_sweep;
+    if (other_archetype.entity_contact_cooldown_duration > 0 &&
+        (other_resolution.blocks_movement || other_resolution.stop_sweep)) {
         state.contact.AddContactCooldown(
             other_entity.vid,
             entity.vid,
             state.stage_frame,
-            other_dispatch.cooldown_duration
+            other_archetype.entity_contact_cooldown_duration
         );
     }
 

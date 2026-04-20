@@ -1,6 +1,7 @@
 #include "entities/common/common.hpp"
 
 #include "controls.hpp"
+#include "entity/archetype.hpp"
 
 namespace splonks::entities::common {
 
@@ -67,8 +68,9 @@ bool TrySpawnAndThrowEntityForToolUse(
     UseEntity(*spawned_entity, thrower.vid, AttachmentMode::None);
     spawned_entity->thrown_by = thrower.vid;
     spawned_entity->thrown_immunity_timer = thrown_immunity_timer;
-    spawned_entity->projectile_contact_damage_type = DamageType::Attack;
-    spawned_entity->projectile_contact_damage_amount = 1;
+    const EntityArchetype& spawned_archetype = GetEntityArchetype(spawned_entity->type_);
+    spawned_entity->projectile_contact_damage_type = spawned_archetype.projectile_contact_damage_type;
+    spawned_entity->projectile_contact_damage_amount = spawned_archetype.projectile_contact_damage_amount;
     spawned_entity->projectile_contact_timer = kProjectileContactDuration;
     const ToolThrowVelocityBuilder velocity_builder =
         build_throw_velocity == nullptr ? BuildThrowVelocity : build_throw_velocity;

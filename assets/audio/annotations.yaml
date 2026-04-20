@@ -279,3 +279,15 @@ audio:
     file: sounds/ui_super_confirm.ogg
     streamed: false
     default_volume: 1.0
+  - name: pickaxe
+    file: sounds/pickaxe.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: successful_dig
+    file: sounds/successful_dig.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: unbreakable_hit
+    file: sounds/unbreakable_hit.ogg
+    streamed: false
+    default_volume: 1.0

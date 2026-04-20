@@ -1,6 +1,7 @@
 #include "audio.hpp"
 #include "cli.hpp"
 #include "debug/playback.hpp"
+#include "entities/common/common.hpp"
 #include "entity/archetype.hpp"
 #include "graphics.hpp"
 #include "imgui_layer.hpp"
@@ -208,6 +209,14 @@ int main(int argc, char** argv) {
                 state.rebuild_render_texture = false;
             }
 
+            if (debug.frame_data_auto_reload && renderer != nullptr) {
+                if (graphics.ReloadFrameDataIfChanged(renderer, &debug.frame_data_reload_status)) {
+                    splonks::entities::common::RefreshAllEntityFrameDataGeometry(state, graphics);
+                    state.RebuildSid(graphics);
+                }
+            }
+
+            state.ClearDebugAnnotations();
             splonks::ImGuiLayerNewFrame();
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;

@@ -5,6 +5,7 @@
 #include "tile_source_data.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -71,6 +72,9 @@ struct Graphics {
     std::vector<SDL_Texture*> textures;
     FrameDataDb frame_data_db;
     std::vector<SDL_Texture*> frame_data_images;
+    std::string frame_data_annotations_path = "assets/graphics/annotations.yaml";
+    std::filesystem::file_time_type frame_data_annotations_last_loaded_write_time{};
+    std::filesystem::file_time_type frame_data_annotations_last_seen_write_time{};
     TileSourceDb tile_source_db;
     std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
     std::string font_path = "assets/fonts/DejaVuSans.ttf";
@@ -86,6 +90,8 @@ struct Graphics {
     IVec2 ScreenToTileCoords(const UVec2& screen_pos) const;
     void ResetTileVariation(const IVec2& tile_pos);
     void ResetTileVariations();
+    bool ReloadFrameData(SDL_Renderer* renderer, std::string* status_out = nullptr);
+    bool ReloadFrameDataIfChanged(SDL_Renderer* renderer, std::string* status_out = nullptr);
     void ShutdownText();
     void ShutdownTextures();
 };

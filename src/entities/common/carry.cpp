@@ -1,6 +1,7 @@
 #include "entities/common/common.hpp"
 
 #include "entities/player.hpp"
+#include "entity/archetype.hpp"
 #include "entity/archetype_restore.hpp"
 #include "controls.hpp"
 #include "world_query.hpp"
@@ -15,8 +16,9 @@ namespace {
 void ApplyHeldState(Entity& entity) {
     entity.thrown_by.reset();
     entity.thrown_immunity_timer = 0;
-    entity.projectile_contact_damage_type = DamageType::Attack;
-    entity.projectile_contact_damage_amount = 1;
+    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
+    entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
+    entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
     entity.projectile_contact_timer = 0;
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
@@ -156,8 +158,9 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     held->grounded = false;
     held->thrown_by = entity.vid;
     held->thrown_immunity_timer = kThrownByImmunityDuration;
-    held->projectile_contact_damage_type = DamageType::Attack;
-    held->projectile_contact_damage_amount = 1;
+    const EntityArchetype& held_archetype = GetEntityArchetype(held->type_);
+    held->projectile_contact_damage_type = held_archetype.projectile_contact_damage_type;
+    held->projectile_contact_damage_amount = held_archetype.projectile_contact_damage_amount;
     held->projectile_contact_timer = kProjectileContactDuration;
     held->vel = Vec2::New(throw_x, -1.0F);
     held->acc = Vec2::New(0.0F, 0.0F);
@@ -290,8 +293,9 @@ void UpdateCarryAndBackItems(
                     thrown->attachment_mode = AttachmentMode::None;
                     StopUsingEntity(*thrown);
                     thrown->thrown_immunity_timer = kThrownByImmunityDuration;
-                    thrown->projectile_contact_damage_type = DamageType::Attack;
-                    thrown->projectile_contact_damage_amount = 1;
+                    const EntityArchetype& thrown_archetype = GetEntityArchetype(thrown->type_);
+                    thrown->projectile_contact_damage_type = thrown_archetype.projectile_contact_damage_type;
+                    thrown->projectile_contact_damage_amount = thrown_archetype.projectile_contact_damage_amount;
                     thrown->projectile_contact_timer = kProjectileContactDuration;
 
                     Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
@@ -368,8 +372,9 @@ void UpdateCarryAndBackItems(
                 StopUsingEntity(*item_taken_off_back);
                 item_taken_off_back->thrown_by = entity_vid;
                 item_taken_off_back->thrown_immunity_timer = kThrownByImmunityDuration;
-                item_taken_off_back->projectile_contact_damage_type = DamageType::Attack;
-                item_taken_off_back->projectile_contact_damage_amount = 1;
+                const EntityArchetype& back_item_archetype = GetEntityArchetype(item_taken_off_back->type_);
+                item_taken_off_back->projectile_contact_damage_type = back_item_archetype.projectile_contact_damage_type;
+                item_taken_off_back->projectile_contact_damage_amount = back_item_archetype.projectile_contact_damage_amount;
                 item_taken_off_back->projectile_contact_timer = kProjectileContactDuration;
             }
 

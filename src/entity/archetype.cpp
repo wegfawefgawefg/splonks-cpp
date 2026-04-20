@@ -57,6 +57,8 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.counter_a = archetype.counter_a;
     entity.counter_b = archetype.counter_b;
     entity.damage_vulnerability = archetype.damage_vulnerability;
+    entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
+    entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
     entity.entity_label_a = archetype.entity_label_a;
     entity.alignment = archetype.alignment;
     entity.frame_data_animator = archetype.frame_data_animator;

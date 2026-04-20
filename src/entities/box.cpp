@@ -74,6 +74,40 @@ void StepControlledBox(Entity& box, const controls::ControlIntent& control) {
 
 } // namespace
 
+common::ContactResolution BuildBoxImpactResolution(
+    bool applied
+) {
+    return common::ContactResolution{
+        .blocks_movement = false,
+        .stop_sweep = applied,
+    };
+}
+
+common::ContactResolution OnEntityContactAsBox(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    (void)other_entity_idx;
+    (void)graphics;
+    (void)audio;
+    if (!context.mover_vid.has_value() || *context.mover_vid != state.entity_manager.entities[entity_idx].vid) {
+        return common::ContactResolution{};
+    }
+    return BuildBoxImpactResolution(TryApplyBoxImpact(entity_idx, context, state));
+}
+
+common::ContactResolution OnTileContactAsBox(
+    std::size_t entity_idx,
+    const common::ContactContext& context,
+    State& state
+) {
+    return BuildBoxImpactResolution(TryApplyBoxImpact(entity_idx, context, state));
+}
+
 extern const EntityArchetype kBoxArchetype{
     .type_ = EntityType::Box,
     .size = Vec2::New(12.0F, 12.0F),
@@ -83,6 +117,7 @@ extern const EntityArchetype kBoxArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
@@ -94,6 +129,8 @@ extern const EntityArchetype kBoxArchetype{
     .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsBox,
     .step_logic = StepEntityLogicAsBox,
+    .on_entity_contact = OnEntityContactAsBox,
+    .on_tile_contact = OnTileContactAsBox,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Box),
 };

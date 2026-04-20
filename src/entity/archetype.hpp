@@ -45,6 +45,8 @@ struct EntityArchetype {
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
+    DamageType projectile_contact_damage_type = DamageType::Attack;
+    unsigned int projectile_contact_damage_amount = 1;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
     Buyable buyable{};
     std::optional<FrameDataId> damage_animation = std::nullopt;
@@ -59,6 +61,9 @@ struct EntityArchetype {
     EntityOnAreaTileChanged on_area_tile_changed = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
+    EntityOnEntityContact on_entity_contact = nullptr;
+    EntityOnTileContact on_tile_contact = nullptr;
+    std::uint32_t entity_contact_cooldown_duration = 0;
     EntityLabel entity_label_a = EntityLabel::None;
     Alignment alignment = Alignment::Neutral;
     const char* debug_name = "Unknown";

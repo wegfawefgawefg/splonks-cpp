@@ -357,6 +357,36 @@ bool TryApplySkullEntityImpact(
     return BreakSkull(entity_idx, state);
 }
 
+common::ContactResolution OnEntityContactAsSkull(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    (void)graphics;
+    (void)audio;
+    if (!context.mover_vid.has_value() || *context.mover_vid != state.entity_manager.entities[entity_idx].vid) {
+        return common::ContactResolution{};
+    }
+    return common::ContactResolution{
+        .blocks_movement = false,
+        .stop_sweep = TryApplySkullEntityImpact(entity_idx, other_entity_idx, context, state),
+    };
+}
+
+common::ContactResolution OnTileContactAsSkull(
+    std::size_t entity_idx,
+    const common::ContactContext& context,
+    State& state
+) {
+    return common::ContactResolution{
+        .blocks_movement = false,
+        .stop_sweep = TryApplySkullTileImpact(entity_idx, context, state),
+    };
+}
+
 extern const EntityArchetype kSkullArchetype{
     .type_ = EntityType::Skull,
     .size = kSkullSize,
@@ -377,6 +407,8 @@ extern const EntityArchetype kSkullArchetype{
     .collide_sound = audio_asset_ids::Thud,
     .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsSkull,
+    .on_entity_contact = OnEntityContactAsSkull,
+    .on_tile_contact = OnTileContactAsSkull,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Skull),
 };

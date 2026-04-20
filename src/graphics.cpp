@@ -9,10 +9,20 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 namespace splonks {
 
 namespace {
+
+struct LoadedFrameDataResources {
+    FrameDataDb frame_data_db;
+    std::vector<SDL_Texture*> frame_data_images;
+    TileSourceDb tile_source_db;
+    std::filesystem::file_time_type write_time{};
+};
 
 std::uint64_t TileVariationCacheKey(const IVec2& tile_pos) {
     return (static_cast<std::uint64_t>(static_cast<std::uint32_t>(tile_pos.x)) << 32U) |
@@ -50,6 +60,47 @@ SDL_Texture* LoadFrameDataTexture(SDL_Renderer* renderer, const std::string& fil
     throw std::runtime_error("Missing frame data texture for " + filename);
 }
 
+void DestroyTextureList(std::vector<SDL_Texture*>& textures) {
+    for (SDL_Texture* texture : textures) {
+        if (texture != nullptr) {
+            SDL_DestroyTexture(texture);
+        }
+    }
+    textures.clear();
+}
+
+std::filesystem::file_time_type GetFileWriteTimeOrThrow(const std::string& path) {
+    std::error_code ec;
+    const std::filesystem::file_time_type result = std::filesystem::last_write_time(path, ec);
+    if (ec) {
+        throw std::runtime_error("Failed to stat " + path + ": " + ec.message());
+    }
+    return result;
+}
+
+LoadedFrameDataResources LoadFrameDataResources(
+    SDL_Renderer* renderer,
+    const std::string& annotations_path
+) {
+    LoadedFrameDataResources result;
+    const RawFrameDataFile raw_frame_data_file = LoadRawFrameDataFile(annotations_path);
+    result.frame_data_db = FrameDataDb::FromRaw(raw_frame_data_file);
+    result.frame_data_images.reserve(result.frame_data_db.image_paths.size());
+
+    try {
+        for (const std::string& image_path : result.frame_data_db.image_paths) {
+            result.frame_data_images.push_back(LoadFrameDataTexture(renderer, image_path));
+        }
+    } catch (...) {
+        DestroyTextureList(result.frame_data_images);
+        throw;
+    }
+
+    result.tile_source_db = BuildTileSourceDb(result.frame_data_db);
+    result.write_time = GetFileWriteTimeOrThrow(annotations_path);
+    return result;
+}
+
 } // namespace
 
 Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_folder) {
@@ -61,14 +112,14 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
         LoadTexture(renderer, "assets/graphics/images/title_layer_2.png"),
         LoadTexture(renderer, "assets/graphics/images/title_layer_3.png"),
     };
-    const RawFrameDataFile raw_frame_data_file =
-        LoadRawFrameDataFile("assets/graphics/annotations.yaml");
-    graphics.frame_data_db = FrameDataDb::FromRaw(raw_frame_data_file);
-    graphics.frame_data_images.reserve(graphics.frame_data_db.image_paths.size());
-    for (const std::string& image_path : graphics.frame_data_db.image_paths) {
-        graphics.frame_data_images.push_back(LoadFrameDataTexture(renderer, image_path));
-    }
-    graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
+
+    const LoadedFrameDataResources frame_data_resources =
+        LoadFrameDataResources(renderer, graphics.frame_data_annotations_path);
+    graphics.frame_data_db = frame_data_resources.frame_data_db;
+    graphics.frame_data_images = frame_data_resources.frame_data_images;
+    graphics.frame_data_annotations_last_loaded_write_time = frame_data_resources.write_time;
+    graphics.frame_data_annotations_last_seen_write_time = frame_data_resources.write_time;
+    graphics.tile_source_db = frame_data_resources.tile_source_db;
     graphics.window_dims = UVec2::New(1920, 1080);
     graphics.dims = UVec2::New(1920, 1080);
     graphics.fullscreen = true;
@@ -178,6 +229,48 @@ void Graphics::ResetTileVariations() {
     tile_variations_cache.clear();
 }
 
+bool Graphics::ReloadFrameData(SDL_Renderer* renderer, std::string* status_out) {
+    try {
+        LoadedFrameDataResources frame_data_resources =
+            LoadFrameDataResources(renderer, frame_data_annotations_path);
+        std::vector<SDL_Texture*> old_images = std::move(frame_data_images);
+        frame_data_db = std::move(frame_data_resources.frame_data_db);
+        frame_data_images = std::move(frame_data_resources.frame_data_images);
+        tile_source_db = std::move(frame_data_resources.tile_source_db);
+        frame_data_annotations_last_loaded_write_time = frame_data_resources.write_time;
+        frame_data_annotations_last_seen_write_time = frame_data_resources.write_time;
+        ResetTileVariations();
+        DestroyTextureList(old_images);
+        if (status_out != nullptr) {
+            *status_out = "Reloaded frame data from " + frame_data_annotations_path;
+        }
+        return true;
+    } catch (const std::exception& exception) {
+        if (status_out != nullptr) {
+            *status_out = "Frame data reload failed: " + std::string(exception.what());
+        }
+        return false;
+    }
+}
+
+bool Graphics::ReloadFrameDataIfChanged(SDL_Renderer* renderer, std::string* status_out) {
+    std::error_code ec;
+    const std::filesystem::file_time_type current_write_time =
+        std::filesystem::last_write_time(frame_data_annotations_path, ec);
+    if (ec) {
+        if (status_out != nullptr) {
+            *status_out = "Frame data watch failed: " + ec.message();
+        }
+        return false;
+    }
+    if (current_write_time <= frame_data_annotations_last_seen_write_time) {
+        return false;
+    }
+
+    frame_data_annotations_last_seen_write_time = current_write_time;
+    return ReloadFrameData(renderer, status_out);
+}
+
 void Graphics::ShutdownText() {
     if (menu_title_font.font != nullptr) {
         TTF_CloseFont(menu_title_font.font);
@@ -194,20 +287,8 @@ void Graphics::ShutdownText() {
 }
 
 void Graphics::ShutdownTextures() {
-    for (SDL_Texture* texture : textures) {
-        if (texture != nullptr) {
-            SDL_DestroyTexture(texture);
-        }
-    }
-    textures.clear();
-
-    for (SDL_Texture* texture : frame_data_images) {
-        if (texture != nullptr) {
-            SDL_DestroyTexture(texture);
-        }
-    }
-    frame_data_images.clear();
-
+    DestroyTextureList(textures);
+    DestroyTextureList(frame_data_images);
 }
 
 int GetReasonableFontScale(const UVec2& dims, TextType text_type) {
