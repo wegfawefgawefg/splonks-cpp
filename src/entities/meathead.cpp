@@ -27,61 +27,6 @@ enum class MeatheadPopupPhase : std::uint8_t {
     Sinking,
 };
 
-void BeginReverseAnimation(
-    FrameDataAnimator& animator,
-    const FrameDataDb& frame_data_db,
-    FrameDataId animation_id
-) {
-    animator.SetAnimation(animation_id);
-    animator.loop = false;
-    animator.animate = true;
-    animator.finished = false;
-
-    const FrameDataAnimation* const animation = frame_data_db.FindAnimation(animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
-        animator.finished = true;
-        return;
-    }
-
-    animator.current_frame = animation->frame_indices.size() - 1;
-    const FrameData& frame_data =
-        frame_data_db.frames[animation->frame_indices[animator.current_frame]];
-    animator.current_time = static_cast<float>(frame_data.duration);
-}
-
-void StepReverseAnimation(FrameDataAnimator& animator, const FrameDataDb& frame_data_db) {
-    if (!animator.animate || animator.animation_id == kInvalidFrameDataId || animator.finished) {
-        return;
-    }
-
-    const FrameDataAnimation* const animation = frame_data_db.FindAnimation(animator.animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
-        animator.finished = true;
-        return;
-    }
-
-    if (animator.current_frame >= animation->frame_indices.size()) {
-        animator.current_frame = animation->frame_indices.size() - 1;
-        const FrameData& frame_data =
-            frame_data_db.frames[animation->frame_indices[animator.current_frame]];
-        animator.current_time = static_cast<float>(frame_data.duration);
-    }
-
-    animator.current_time -= animator.speed;
-    while (animator.current_time <= 0.0F) {
-        if (animator.current_frame > 0) {
-            animator.current_frame -= 1;
-            const FrameData& frame_data =
-                frame_data_db.frames[animation->frame_indices[animator.current_frame]];
-            animator.current_time += static_cast<float>(frame_data.duration);
-        } else {
-            animator.current_time = 0.0F;
-            animator.finished = true;
-            return;
-        }
-    }
-}
-
 class MeatheadPopupParticle final : public Particle {
   public:
     explicit MeatheadPopupParticle(const Vec2& popup_center, bool horizontal_flip) {
@@ -89,9 +34,7 @@ class MeatheadPopupParticle final : public Particle {
         pos_ = final_pos_;
         size_ = Vec2::New(kMeatheadPopupSize, kMeatheadPopupSize);
         frame_data_animator_ = FrameDataAnimator::New(frame_data_ids::MeatheadRise);
-        frame_data_animator_.loop = false;
-        frame_data_animator_.animate = true;
-        frame_data_animator_.finished = false;
+        frame_data_animator_.PlayOnce(frame_data_ids::MeatheadRise);
         horizontal_flip_ = horizontal_flip;
     }
 
@@ -101,35 +44,26 @@ class MeatheadPopupParticle final : public Particle {
             frame_data_animator_.Step(frame_data_db, dt);
             if (frame_data_animator_.IsFinished()) {
                 phase_ = MeatheadPopupPhase::Wiggling;
-                frame_data_animator_.SetAnimation(frame_data_ids::Meathead);
-                frame_data_animator_.loop = true;
-                frame_data_animator_.animate = true;
-                frame_data_animator_.finished = false;
-                previous_frame_ = frame_data_animator_.current_frame;
+                frame_data_animator_.PlayNTimes(frame_data_ids::Meathead, kMeatheadPopupWiggleLoops);
             }
             break;
         }
         case MeatheadPopupPhase::Wiggling: {
-            const std::size_t frame_before = frame_data_animator_.current_frame;
             frame_data_animator_.Step(frame_data_db, dt);
-            if (frame_data_animator_.current_frame < frame_before) {
-                wiggle_loops_done_ += 1;
-            }
-            if (wiggle_loops_done_ >= kMeatheadPopupWiggleLoops) {
+            if (frame_data_animator_.IsFinished()) {
                 phase_ = MeatheadPopupPhase::Sinking;
-                BeginReverseAnimation(frame_data_animator_, frame_data_db, frame_data_ids::MeatheadRise);
+                frame_data_animator_.PlayOnceReverse(frame_data_ids::MeatheadRise);
             }
             break;
         }
         case MeatheadPopupPhase::Sinking: {
-            StepReverseAnimation(frame_data_animator_, frame_data_db);
+            frame_data_animator_.Step(frame_data_db, dt);
             if (frame_data_animator_.IsFinished()) {
                 finished_ = true;
             }
             break;
         }
         }
-        previous_frame_ = frame_data_animator_.current_frame;
     }
 
     bool IsFinished() const override { return finished_; }
@@ -143,8 +77,6 @@ class MeatheadPopupParticle final : public Particle {
 
   private:
     MeatheadPopupPhase phase_ = MeatheadPopupPhase::Rising;
-    std::uint32_t wiggle_loops_done_ = 0;
-    std::size_t previous_frame_ = 0;
     bool finished_ = false;
     bool horizontal_flip_ = false;
     Vec2 final_pos_{};
