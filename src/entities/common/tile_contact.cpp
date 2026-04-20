@@ -2,6 +2,7 @@
 
 #include "entities/box.hpp"
 #include "entities/pot.hpp"
+#include "entities/skeleton.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 
@@ -62,6 +63,14 @@ ContactResolution TryDispatchEntityTileContactByEntityType(
         };
     case EntityType::Box:
         if (!box::TryApplyBoxImpact(entity_idx, context, state)) {
+            return ContactResolution{};
+        }
+        return ContactResolution{
+            .blocks_movement = false,
+            .stop_sweep = true,
+        };
+    case EntityType::Skull:
+        if (!skeleton::TryApplySkullTileImpact(entity_idx, context, state)) {
             return ContactResolution{};
         }
         return ContactResolution{

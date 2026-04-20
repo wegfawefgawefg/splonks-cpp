@@ -166,10 +166,8 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
         SpawnEntityAtTopLeft(EntityType::Compass, spawn_pos, state);
     } else if (RandInclusive(1, 10) == 1) {
         SpawnEntityAtTopLeft(EntityType::Parachute, spawn_pos, state);
-    } else if (RandInclusive(1, 2) == 1) {
-        SpawnEntityAtTopLeft(EntityType::RopePile, spawn_pos, state);
     } else {
-        SpawnEntityAtTopLeft(EntityType::BombBag, spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::RopePile, spawn_pos, state);
     }
 }
 

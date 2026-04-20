@@ -96,6 +96,8 @@ enum class EntityType {
     KaliHead,
     BallAndChainBall,
     ArrowTrap,
+    Skull,
+    Skeleton,
     Snake,
     Cobra,
     CobraSpit,

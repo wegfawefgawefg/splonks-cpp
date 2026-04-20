@@ -38,6 +38,7 @@
 #include "entities/sac_altar_topper.hpp"
 #include "entities/sapphire_big.hpp"
 #include "entities/scarab.hpp"
+#include "entities/skeleton.hpp"
 #include "entities/shotgun.hpp"
 #include "entities/shop.hpp"
 #include "entities/shopkeeper.hpp"
@@ -156,6 +157,8 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::KaliHead, entities::kali_head::kKaliHeadArchetype, "KaliHead");
     SetArchetype(EntityType::BallAndChainBall, entities::ball_and_chain::kBallAndChainBallArchetype, "BallAndChainBall");
     SetArchetype(EntityType::ArrowTrap, entities::arrow_trap::kArrowTrapArchetype, "ArrowTrap");
+    SetArchetype(EntityType::Skull, entities::skeleton::kSkullArchetype, "Skull");
+    SetArchetype(EntityType::Skeleton, entities::skeleton::kSkeletonArchetype, "Skeleton");
     SetArchetype(EntityType::Snake, entities::snake::kSnakeArchetype, "Snake");
     SetArchetype(EntityType::Cobra, entities::cobra::kCobraArchetype, "Cobra");
     SetArchetype(EntityType::CobraSpit, entities::cobra::kCobraSpitArchetype, "CobraSpit");

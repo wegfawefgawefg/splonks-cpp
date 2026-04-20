@@ -1215,6 +1215,10 @@ void AddMinesTreasure(Stage& stage) {
                 AddAmbientSpawn(stage, EntityType::Rock, item_pos);
                 continue;
             }
+            if (rng::RandomIntInclusive(1, 40) == 1) {
+                AddAmbientSpawn(stage, EntityType::Pot, stack_pos);
+                continue;
+            }
 
             const bool ceiling_above = tile_y >= 2 && IsCollidableTileAt(stage, tile_x, tile_y - 2);
             const bool side_support = IsCollidableTileAt(stage, tile_x - 1, tile_y - 1) ||
@@ -1223,7 +1227,9 @@ void AddMinesTreasure(Stage& stage) {
                                         IsCollidableTileAt(stage, tile_x + 1, tile_y - 1);
 
             if (ceiling_above && side_support) {
-                if (rng::RandomIntInclusive(1, 15) == 1) {
+                if (rng::RandomIntInclusive(1, 10) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Box, stack_pos);
+                } else if (rng::RandomIntInclusive(1, 15) == 1) {
                     AddAmbientSpawn(stage, EntityType::Chest, stack_pos);
                 } else if (!HasSpawnType(stage, EntityType::Damsel) &&
                            rng::RandomIntInclusive(1, 8) == 1) {
@@ -1371,7 +1377,12 @@ void AddAmbientMinesEntities(Stage& stage) {
                 if (tile_y > 0 && open_above) {
                     const Vec2 floor_spawn_pos =
                         tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
-                    if (!spikes_above && rng::RandomIntInclusive(1, 180) == 1) {
+                    const Vec2 skull_spawn_pos = tile_pos + Vec2::New(4.0F, -4.0F);
+                    if (!spikes_above && rng::RandomIntInclusive(1, 220) == 1) {
+                        AddAmbientSpawn(stage, EntityType::Skeleton, skull_spawn_pos);
+                    } else if (!spikes_above && rng::RandomIntInclusive(1, 140) == 1) {
+                        AddAmbientSpawn(stage, EntityType::Skull, skull_spawn_pos);
+                    } else if (!spikes_above && rng::RandomIntInclusive(1, 180) == 1) {
                         AddAmbientSpawn(stage, EntityType::Cobra, floor_spawn_pos);
                     } else if (!spikes_above && rng::RandomIntInclusive(1, 60) == 1) {
                         AddAmbientSpawn(stage, EntityType::Snake, floor_spawn_pos);

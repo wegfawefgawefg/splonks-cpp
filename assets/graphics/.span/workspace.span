@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": null,
+  "selectedAnnotationId": "5b7ef2e4-ba9d-422b-87da-f88c3486cba5",
   "sheets": [
     {
       "path": "images/title.png",
@@ -7749,7 +7749,7 @@
           "properties": {
             "name": "skeleton_walk ",
             "frame": 0,
-            "duration": 1,
+            "duration": 8,
             "offset": {
               "x": 0,
               "y": 0
@@ -7792,7 +7792,7 @@
           "properties": {
             "name": "skeleton_walk ",
             "frame": 1,
-            "duration": 1,
+            "duration": 8,
             "offset": {
               "x": 0,
               "y": 0
@@ -8041,9 +8041,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 5.369,
-        "centerX": 139.5976904451481,
-        "centerY": 301.9184205624884
+        "zoom": 16.385,
+        "centerX": 123.43606957583154,
+        "centerY": 342.3863289594141
       }
     },
     {

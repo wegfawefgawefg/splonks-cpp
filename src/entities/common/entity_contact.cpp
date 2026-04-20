@@ -3,6 +3,7 @@
 #include "entities/baseball_bat.hpp"
 #include "entities/box.hpp"
 #include "entities/pot.hpp"
+#include "entities/skeleton.hpp"
 #include "world_query.hpp"
 
 namespace splonks::entities::common {
@@ -127,6 +128,14 @@ ContactResolution TryDispatchEntityEntityContactByType(
             .blocks_movement = false,
             .stop_sweep = true,
         };
+    case EntityType::Skull:
+        if (!skeleton::TryApplySkullEntityImpact(participant_idx, other_entity_idx, context, state)) {
+            return ContactResolution{};
+        }
+        return ContactResolution{
+            .blocks_movement = false,
+            .stop_sweep = true,
+        };
     case EntityType::None:
     case EntityType::GhostBall:
     case EntityType::BasicExit:
@@ -195,6 +204,7 @@ ContactResolution TryDispatchEntityEntityContactByType(
     case EntityType::KaliHead:
     case EntityType::BallAndChainBall:
     case EntityType::ArrowTrap:
+    case EntityType::Skeleton:
     case EntityType::Snake:
     case EntityType::Cobra:
     case EntityType::CobraSpit:

@@ -162,6 +162,7 @@ add_executable(splonks-cpp
     src/entities/caveman.cpp
     src/entities/chest.cpp
     src/entities/cobra.cpp
+    src/entities/skeleton.cpp
     src/entities/common/contact_damage.cpp
     src/entities/common/damage.cpp
     src/entities/common/explosion.cpp
