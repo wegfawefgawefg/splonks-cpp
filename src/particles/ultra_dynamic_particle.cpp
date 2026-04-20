@@ -42,6 +42,14 @@ float UltraDynamicParticle::GetAlpha() const {
     return alpha;
 }
 
+bool UltraDynamicParticle::GetHorizontalFlip() const {
+    return false;
+}
+
+DrawLayer UltraDynamicParticle::GetDrawLayer() const {
+    return draw_layer;
+}
+
 const FrameDataAnimator& UltraDynamicParticle::GetFrameDataAnimator() const {
     return frame_data_animator;
 }

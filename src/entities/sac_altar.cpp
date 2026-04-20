@@ -502,21 +502,15 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
     }
 
     if (state.sac_altar_reward_tier == 1 && state.sac_altar_favor >= kSecondRewardFavor) {
-        const std::optional<VID> reward_target_vid = GetRewardTargetVid(state);
-        const Entity* reward_target = reward_target_vid.has_value()
-            ? state.entity_manager.GetEntity(*reward_target_vid)
-            : nullptr;
-        const EntityType reward_type =
-            reward_target != nullptr && !reward_target->back_vid.has_value() &&
-                    !PlayerOwnsRewardType(*reward_target, state, EntityType::JetPack)
-                ? EntityType::JetPack
-                : EntityType::BombBox;
-        Entity* const reward = SpawnEntityAtCenter(reward_type, emit_pos + Vec2::New(0.0F, -3.0F), state);
+        Entity* const reward = SpawnEntityAtCenter(EntityType::Meathead, emit_pos + Vec2::New(0.0F, -2.0F), state);
         if (reward == nullptr) {
             return false;
         }
 
-        reward->vel = Vec2::New(rng::RandomFloat(-0.45F, 0.45F), -1.85F);
+        reward->entity_a = altar.vid;
+        reward->draw_layer = DrawLayer::Middle;
+        reward->vel = Vec2::New(0.0F, 0.0F);
+        reward->acc = Vec2::New(0.0F, 0.0F);
         state.sac_altar_reward_tier = 2;
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;

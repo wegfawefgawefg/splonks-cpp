@@ -578,6 +578,54 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
     }
 }
 
+namespace {
+
+void RenderParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const auto& particle : state.particles.effects) {
+        if (particle->GetDrawLayer() != layer) {
+            continue;
+        }
+
+        const FrameDataAnimator& animator = particle->GetFrameDataAnimator();
+        if (!animator.HasAnimation()) {
+            continue;
+        }
+
+        const FrameData* const frame_data =
+            graphics.frame_data_db.FindFrame(animator.animation_id, animator.current_frame);
+        if (frame_data == nullptr) {
+            continue;
+        }
+        SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
+        if (texture == nullptr) {
+            continue;
+        }
+
+        const Vec2 pos = particle->GetPos();
+        const Vec2 size = particle->GetSize();
+        const float rotation = particle->GetRot();
+        const float alpha = particle->GetAlpha();
+        const SDL_FlipMode flip = particle->GetHorizontalFlip() ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+        const Vec2 half_size = size / 2.0F;
+        SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
+        const SDL_FRect src{
+            static_cast<float>(frame_data->sample_rect.x),
+            static_cast<float>(frame_data->sample_rect.y),
+            static_cast<float>(frame_data->sample_rect.w),
+            static_cast<float>(frame_data->sample_rect.h),
+        };
+        for (const Vec2& render_offset : render_offsets) {
+            const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
+            const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
+            SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, flip);
+        }
+        SDL_SetTextureAlphaMod(texture, 255);
+    }
+}
+
+} // namespace
+
 void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     std::vector<std::size_t> draw_queue;
@@ -673,48 +721,8 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                     );
                 }
             }
-            continue;
-
         }
-    }
-}
-
-void RenderParticles(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const auto& particle : state.particles.effects) {
-        const FrameDataAnimator& animator = particle->GetFrameDataAnimator();
-        if (!animator.HasAnimation()) {
-            continue;
-        }
-
-        const FrameData* const frame_data =
-            graphics.frame_data_db.FindFrame(animator.animation_id, animator.current_frame);
-        if (frame_data == nullptr) {
-            continue;
-        }
-        SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
-        if (texture == nullptr) {
-            continue;
-        }
-
-        const Vec2 pos = particle->GetPos();
-        const Vec2 size = particle->GetSize();
-        const float rotation = particle->GetRot();
-        const float alpha = particle->GetAlpha();
-        const Vec2 half_size = size / 2.0F;
-        SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
-        const SDL_FRect src{
-            static_cast<float>(frame_data->sample_rect.x),
-            static_cast<float>(frame_data->sample_rect.y),
-            static_cast<float>(frame_data->sample_rect.w),
-            static_cast<float>(frame_data->sample_rect.h),
-        };
-        for (const Vec2& render_offset : render_offsets) {
-            const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
-            const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
-            SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, SDL_FLIP_NONE);
-        }
-        SDL_SetTextureAlphaMod(texture, 255);
+        RenderParticlesForLayer(renderer, state, graphics, layer);
     }
 }
 

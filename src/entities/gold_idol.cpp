@@ -192,6 +192,7 @@ extern const EntityArchetype kGoldIdolArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
+    .projectile_contact_damage_amount = 0,
     .step_logic = StepEntityLogicAsGoldIdol,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldIdol),

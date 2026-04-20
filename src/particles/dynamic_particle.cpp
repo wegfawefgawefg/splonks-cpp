@@ -37,6 +37,14 @@ float DynamicParticle::GetAlpha() const {
     return alpha;
 }
 
+bool DynamicParticle::GetHorizontalFlip() const {
+    return false;
+}
+
+DrawLayer DynamicParticle::GetDrawLayer() const {
+    return draw_layer;
+}
+
 const FrameDataAnimator& DynamicParticle::GetFrameDataAnimator() const {
     return frame_data_animator;
 }

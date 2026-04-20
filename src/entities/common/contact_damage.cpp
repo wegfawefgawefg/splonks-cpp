@@ -235,13 +235,15 @@ bool TryApplyProjectileContactToEntity(
     }
 
     const DamageResult damage_result =
-        TryDamageEntity(
-            other_entity_idx,
-            state,
-            audio,
-            entity.projectile_contact_damage_type,
-            entity.projectile_contact_damage_amount
-        );
+        entity.projectile_contact_damage_amount > 0
+            ? TryDamageEntity(
+                  other_entity_idx,
+                  state,
+                  audio,
+                  entity.projectile_contact_damage_type,
+                  entity.projectile_contact_damage_amount
+              )
+            : DamageResult::None;
     switch (damage_result) {
     case DamageResult::Hurt:
     case DamageResult::Died:

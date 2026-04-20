@@ -1,5 +1,6 @@
 #pragma once
 
+#include "draw_layer.hpp"
 #include "frame_data_animator.hpp"
 #include "math_types.hpp"
 
@@ -16,6 +17,8 @@ class Particle {
     virtual Vec2 GetSize() const = 0;
     virtual float GetRot() const = 0;
     virtual float GetAlpha() const = 0;
+    virtual bool GetHorizontalFlip() const = 0;
+    virtual DrawLayer GetDrawLayer() const = 0;
     virtual const FrameDataAnimator& GetFrameDataAnimator() const = 0;
 };
 

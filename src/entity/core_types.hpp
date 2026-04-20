@@ -109,13 +109,14 @@ enum class EntityType {
     GiantSpider,
     GiantSpiderHang,
     Scarab,
+    Meathead,
 };
 
 constexpr std::size_t EntityTypeIndex(EntityType type_) {
     return static_cast<std::size_t>(type_);
 }
 
-constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::Scarab) + 1;
+constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::Meathead) + 1;
 
 constexpr float kTravelSoundDistInterval = 24.0F;
 constexpr float kWalkerClimberTravelSoundDistInterval = 24.0F;

@@ -1,4 +1,5 @@
 #include "entities/common/common.hpp"
+#include "entities/meathead.hpp"
 
 #include "on_damage_effects.hpp"
 
@@ -41,6 +42,7 @@ void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
     if (sound_effect.has_value()) {
         (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
     }
+    entities::meathead::OnEntityDeathForMeathead(entity_idx, state, audio);
     if (entity.on_death != nullptr) {
         entity.on_death(entity_idx, state, audio);
     }

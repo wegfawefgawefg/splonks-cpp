@@ -30,6 +30,14 @@ float StaticParticle::GetAlpha() const {
     return alpha;
 }
 
+bool StaticParticle::GetHorizontalFlip() const {
+    return false;
+}
+
+DrawLayer StaticParticle::GetDrawLayer() const {
+    return draw_layer;
+}
+
 const FrameDataAnimator& StaticParticle::GetFrameDataAnimator() const {
     return frame_data_animator;
 }

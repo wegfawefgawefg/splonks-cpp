@@ -29,6 +29,8 @@ struct UltraDynamicParticle final : public Particle {
     Vec2 GetSize() const override;
     float GetRot() const override;
     float GetAlpha() const override;
+    bool GetHorizontalFlip() const override;
+    DrawLayer GetDrawLayer() const override;
     const FrameDataAnimator& GetFrameDataAnimator() const override;
 };
 

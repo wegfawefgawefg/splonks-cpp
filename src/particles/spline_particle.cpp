@@ -44,6 +44,14 @@ float SplineParticle::GetAlpha() const {
     return alpha;
 }
 
+bool SplineParticle::GetHorizontalFlip() const {
+    return false;
+}
+
+DrawLayer SplineParticle::GetDrawLayer() const {
+    return draw_layer;
+}
+
 const FrameDataAnimator& SplineParticle::GetFrameDataAnimator() const {
     return frame_data_animator;
 }

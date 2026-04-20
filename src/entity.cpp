@@ -71,6 +71,7 @@ Entity Entity::New() {
     entity.holding = false;
     entity.passive_item_flags = 0;
     entity.passive_item.reset();
+    entity.meathead_points = 0;
     entity.money = 0;
     entity.buyable = Buyable{};
     entity.bombs = 0;
@@ -321,6 +322,8 @@ const char* PassiveItemToString(EntityPassiveItem passive_item) {
         return "SpikeShoes";
     case EntityPassiveItem::UdjatEye:
         return "UdjatEye";
+    case EntityPassiveItem::Meathead:
+        return "Meathead";
     case EntityPassiveItem::Count:
         return "Count";
     }

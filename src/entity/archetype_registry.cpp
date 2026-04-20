@@ -26,6 +26,7 @@
 #include "entities/lantern.hpp"
 #include "entities/machete.hpp"
 #include "entities/mattock.hpp"
+#include "entities/meathead.hpp"
 #include "entities/none_archetype.hpp"
 #include "entities/money.hpp"
 #include "entities/moving_platform.hpp"
@@ -170,6 +171,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::GiantSpider, entities::spider::kGiantSpiderArchetype, "GiantSpider");
     SetArchetype(EntityType::GiantSpiderHang, entities::spider_hang::kGiantSpiderHangArchetype, "GiantSpiderHang");
     SetArchetype(EntityType::Scarab, entities::scarab::kScarabArchetype, "Scarab");
+    SetArchetype(EntityType::Meathead, entities::meathead::kMeatheadArchetype, "Meathead");
     g_entity_archetypes_populated = true;
 }
 

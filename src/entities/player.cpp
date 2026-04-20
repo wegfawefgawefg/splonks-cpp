@@ -3,6 +3,7 @@
 #include "entities/baseball_bat.hpp"
 #include "entities/block.hpp"
 #include "entities/common/common.hpp"
+#include "entities/meathead.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
 #include "controls.hpp"
@@ -119,6 +120,11 @@ void StepEntityLogicAsPlayer(
     // TODO: probably put a check for dead or stunned up here lol
     common::StepTravelSoundWalkerClimber(entity_idx, state, audio);
     common::CleanupInactiveCarryReferences(entity_idx, state);
+
+    {
+        const Entity& player = state.entity_manager.entities[entity_idx];
+        meathead::MaybePreviewMeatheadPassive(player, state);
+    }
 
     const bool loss_of_control =
         state.entity_manager.entities[entity_idx].condition == EntityCondition::Stunned;

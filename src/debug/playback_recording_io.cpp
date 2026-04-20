@@ -153,6 +153,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.holding);
     WritePod(out, entity.passive_item_flags);
     WriteOptionalPod(out, entity.passive_item);
+    WritePod(out, entity.meathead_points);
     WritePod(out, entity.money);
     WritePod(out, entity.buyable);
     WritePod(out, entity.bombs);
@@ -280,6 +281,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.holding) &&
            ReadPod(in, entity.passive_item_flags) &&
            ReadOptionalPod(in, entity.passive_item) &&
+           ReadPod(in, entity.meathead_points) &&
            ReadPod(in, entity.money) &&
            ReadPod(in, entity.buyable) &&
            ReadPod(in, entity.bombs) &&

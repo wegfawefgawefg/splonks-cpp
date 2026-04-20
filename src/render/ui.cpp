@@ -32,6 +32,33 @@ FrameDataId GetToolSlotBackgroundAnimationId(std::size_t slot_index) {
     }
 }
 
+FrameDataId GetPassiveItemIconAnimationId(EntityPassiveItem passive_item) {
+    switch (passive_item) {
+    case EntityPassiveItem::Gloves:
+        return frame_data_ids::Gloves;
+    case EntityPassiveItem::Spectacles:
+        return frame_data_ids::Spectacles;
+    case EntityPassiveItem::Compass:
+        return frame_data_ids::Compass;
+    case EntityPassiveItem::Mitt:
+        return frame_data_ids::Mitt;
+    case EntityPassiveItem::Paste:
+        return frame_data_ids::Paste;
+    case EntityPassiveItem::SpringShoes:
+        return frame_data_ids::SpringShoes;
+    case EntityPassiveItem::SpikeShoes:
+        return frame_data_ids::SpikeShoes;
+    case EntityPassiveItem::UdjatEye:
+        return frame_data_ids::UdjatEye;
+    case EntityPassiveItem::Meathead:
+        return frame_data_ids::Meathead;
+    case EntityPassiveItem::Count:
+        return kInvalidFrameDataId;
+    }
+
+    return kInvalidFrameDataId;
+}
+
 const char* GetHudStageLabel(StageType stage_type) {
     switch (stage_type) {
     case StageType::Blank:
@@ -248,11 +275,13 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
     unsigned int money = 0;
     const int favor = state.sac_altar_favor;
     std::optional<VID> player_vid;
+    const Entity* player_entity = nullptr;
     if (state.player_vid.has_value()) {
         if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
             health = player->health;
             money = player->money;
             player_vid = player->vid;
+            player_entity = player;
         }
     }
 
@@ -359,6 +388,41 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
             }
 
             cursor = cursor + (tool_cursor_advance * 3);
+        }
+    }
+
+    if (player_entity != nullptr) {
+        IVec2 passive_cursor = IVec2::New(hud_margin, hud_margin + std::max(status_icon_size.y, tool_slot_size.y) + hud_gap);
+        const IVec2 passive_icon_size = IVec2::New(
+            std::max(1, static_cast<int>(static_cast<float>(status_icon_size.x) * 0.8F)),
+            std::max(1, static_cast<int>(static_cast<float>(status_icon_size.y) * 0.8F))
+        );
+        const int passive_gap = std::max(4, hud_gap / 2);
+        for (std::uint8_t i = 0; i < static_cast<std::uint8_t>(EntityPassiveItem::Count); ++i) {
+            const EntityPassiveItem passive_item = static_cast<EntityPassiveItem>(i);
+            if (!HasPassiveItem(*player_entity, passive_item)) {
+                continue;
+            }
+            const FrameDataId icon_animation_id = GetPassiveItemIconAnimationId(passive_item);
+            if (icon_animation_id == kInvalidFrameDataId) {
+                continue;
+            }
+            DrawFrameDataIcon(renderer, state, graphics, icon_animation_id, passive_cursor, passive_icon_size);
+            if (passive_item == EntityPassiveItem::Meathead) {
+                char points_text[16];
+                std::snprintf(points_text, sizeof(points_text), "%u/10", player_entity->meathead_points);
+                DrawText(
+                    renderer,
+                    graphics,
+                    24,
+                    graphics.ui_font,
+                    points_text,
+                    static_cast<float>(passive_cursor.x),
+                    static_cast<float>(passive_cursor.y + passive_icon_size.y),
+                    SDL_Color{255, 255, 255, 255}
+                );
+            }
+            passive_cursor.x += passive_icon_size.x + passive_gap;
         }
     }
 

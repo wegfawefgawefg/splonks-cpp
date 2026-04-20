@@ -27,6 +27,7 @@ enum class EntityPassiveItem : std::uint8_t {
     SpringShoes,
     SpikeShoes,
     UdjatEye,
+    Meathead,
     Count,
 };
 
@@ -94,6 +95,7 @@ struct Entity {
     bool holding = false;
     std::uint64_t passive_item_flags = 0;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
+    std::uint32_t meathead_points = 0;
     std::uint32_t money = 0;
     Buyable buyable;
     std::uint32_t bombs = 0;
