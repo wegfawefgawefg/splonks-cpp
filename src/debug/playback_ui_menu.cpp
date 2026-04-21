@@ -89,6 +89,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Audio Settings", &debug.audio_settings_window_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
     ImGui::Checkbox("Camera Settings", &debug.camera_settings_window_visible);
+    ImGui::Checkbox("Performance", &debug.performance_settings_window_visible);
     ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
     ImGui::Checkbox("Lighting Settings", &debug.lighting_settings_window_visible);
     ImGui::Checkbox("Graphics Settings", &debug.graphics_settings_window_visible);

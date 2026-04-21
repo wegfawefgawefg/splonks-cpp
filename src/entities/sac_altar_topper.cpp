@@ -5,7 +5,7 @@
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 
@@ -18,23 +18,23 @@ namespace {
 constexpr float kIdleSmokeIntervalFrames = 24.0F;
 
 void SpawnTopperSmoke(State& state, const Vec2& pos, float scale_bias) {
-    auto smoke = std::make_unique<UltraDynamicParticle>();
-    smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
-    smoke->draw_layer = DrawLayer::Foreground;
-    smoke->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 30));
-    smoke->pos = pos + Vec2::New(rng::RandomFloat(-2.0F, 2.0F), rng::RandomFloat(-1.0F, 1.0F));
+    SpriteParticle smoke{};
+    smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+    smoke.draw_layer = DrawLayer::Foreground;
+    smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 30));
+    smoke.pos = pos + Vec2::New(rng::RandomFloat(-2.0F, 2.0F), rng::RandomFloat(-1.0F, 1.0F));
     const float size = rng::RandomFloat(4.0F + scale_bias, 7.0F + scale_bias);
-    smoke->size = Vec2::New(size, size);
-    smoke->rot = rng::RandomFloat(0.0F, 360.0F);
-    smoke->alpha = rng::RandomFloat(0.55F, 0.85F);
-    smoke->vel = Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.45F, -0.18F));
-    smoke->svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
-    smoke->rotvel = rng::RandomFloat(-0.2F, 0.2F);
-    smoke->alpha_vel = -0.02F;
-    smoke->acc = Vec2::New(0.0F, -0.005F);
-    smoke->sacc = Vec2::New(0.0F, 0.0F);
-    smoke->rotacc = 0.0F;
-    smoke->alpha_acc = -0.003F;
+    smoke.size = Vec2::New(size, size);
+    smoke.rot = rng::RandomFloat(0.0F, 360.0F);
+    smoke.alpha = rng::RandomFloat(0.55F, 0.85F);
+    smoke.vel = Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.45F, -0.18F));
+    smoke.svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
+    smoke.rotvel = rng::RandomFloat(-0.2F, 0.2F);
+    smoke.alpha_vel = -0.02F;
+    smoke.acc = Vec2::New(0.0F, -0.005F);
+    smoke.sacc = Vec2::New(0.0F, 0.0F);
+    smoke.rotacc = 0.0F;
+    smoke.alpha_acc = -0.003F;
     state.particles.Add(std::move(smoke));
 }
 

@@ -58,25 +58,30 @@ void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& a
 
 } // namespace
 
-void BreakStageTilesInRectWc(
-    const AABB& area,
+namespace {
+
+void BreakStageTilesAtCoordsInternal(
+    const std::vector<IVec2>& tile_positions,
     State& state,
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,
-    bool suppress_tile_break_sound
+    bool suppress_tile_break_sound,
+    std::optional<Vec2> sound_center
 ) {
     std::optional<AudioAssetId> break_sound = std::nullopt;
     bool broke_any_tiles = false;
     std::vector<IVec2> changed_tiles;
-    const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);
 
-    for (const WorldTileQueryResult& tile_query : tile_queries) {
-        if (tile_query.tile == nullptr) {
+    for (const IVec2& tile_pos_raw : tile_positions) {
+        const IVec2 tile_pos = state.stage.WrapTileCoord(tile_pos_raw);
+        if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
             continue;
         }
 
-        const IVec2 tile_pos = tile_query.tile_pos;
-        const Tile tile = *tile_query.tile;
+        const Tile tile = state.stage.GetTile(static_cast<unsigned int>(tile_pos.x), static_cast<unsigned int>(tile_pos.y));
+        if (tile == Tile::Air) {
+            continue;
+        }
 
         const TileArchetype& tile_archetype = GetTileArchetype(tile);
         if (!suppress_tile_break_sound && !break_sound.has_value() && tile_archetype.break_sound.has_value()) {
@@ -108,11 +113,66 @@ void BreakStageTilesInRectWc(
         UpdateStageLightingForTileChanges(state, changed_tiles);
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
     }
+    const Vec2 emitter_center = sound_center.value_or(Vec2::New(0.0F, 0.0F));
     if (override_break_sound.has_value()) {
-        (void)PlayWorldSoundEmitter(state, (area.tl + area.br) / 2.0F, *override_break_sound);
+        (void)PlayWorldSoundEmitter(state, emitter_center, *override_break_sound);
     } else if (break_sound.has_value()) {
-        (void)PlayWorldSoundEmitter(state, (area.tl + area.br) / 2.0F, *break_sound);
+        (void)PlayWorldSoundEmitter(state, emitter_center, *break_sound);
     }
+}
+
+} // namespace
+
+void BreakStageTilesInRectWc(
+    const AABB& area,
+    State& state,
+    Audio& audio,
+    std::optional<AudioAssetId> override_break_sound,
+    bool suppress_tile_break_sound
+) {
+    std::vector<IVec2> tile_positions;
+    const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);
+    tile_positions.reserve(tile_queries.size());
+    for (const WorldTileQueryResult& tile_query : tile_queries) {
+        if (tile_query.tile != nullptr) {
+            tile_positions.push_back(tile_query.tile_pos);
+        }
+    }
+    BreakStageTilesAtCoordsInternal(
+        tile_positions,
+        state,
+        audio,
+        override_break_sound,
+        suppress_tile_break_sound,
+        (area.tl + area.br) / 2.0F
+    );
+}
+
+void BreakStageTilesAtCoords(
+    const std::vector<IVec2>& tile_positions,
+    State& state,
+    Audio& audio,
+    std::optional<AudioAssetId> override_break_sound,
+    bool suppress_tile_break_sound
+) {
+    Vec2 sound_center = Vec2::New(0.0F, 0.0F);
+    if (!tile_positions.empty()) {
+        for (const IVec2& tile_pos : tile_positions) {
+            sound_center += Vec2::New(
+                static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+                static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
+            );
+        }
+        sound_center = sound_center / static_cast<float>(tile_positions.size());
+    }
+    BreakStageTilesAtCoordsInternal(
+        tile_positions,
+        state,
+        audio,
+        override_break_sound,
+        suppress_tile_break_sound,
+        sound_center
+    );
 }
 
 } // namespace splonks

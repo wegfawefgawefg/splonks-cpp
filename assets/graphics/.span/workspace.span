@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "e94b0bdc-0330-4c3e-97d2-c1803061c4ab",
+  "selectedAnnotationId": "313569bd-2b5a-47e5-8f19-f0339c5ac58e",
   "sheets": [
     {
       "path": "images/title.png",
@@ -640,15 +640,58 @@
               "y": 2
             }
           }
+        },
+        {
+          "id": "1dac95bb-ac15-481e-955e-2f8e2d5cd15e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 85,
+            "y": 21,
+            "w": 4,
+            "h": 4
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "trail",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 1,
+              "w": 2,
+              "h": 3
+            },
+            "cbox": {
+              "x": 1,
+              "y": 1,
+              "w": 2,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 3
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": false,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.199,
-        "centerX": 112.09640745793543,
-        "centerY": -34.10641200545703
+        "zoom": 8.389,
+        "centerX": 89.82000238407439,
+        "centerY": 33.37704136369055
       }
     },
     {
@@ -1146,8 +1189,8 @@
             },
             "hitboxes": [],
             "emit_point": {
-              "x": 0,
-              "y": 0
+              "x": 12,
+              "y": 3
             }
           }
         },
@@ -1190,8 +1233,8 @@
             },
             "hitboxes": [],
             "emit_point": {
-              "x": 0,
-              "y": 0
+              "x": 9,
+              "y": 2
             }
           }
         },
@@ -1235,7 +1278,7 @@
             "hitboxes": [],
             "emit_point": {
               "x": 0,
-              "y": 0
+              "y": 1
             }
           }
         },
@@ -8594,15 +8637,58 @@
               "y": 9
             }
           }
+        },
+        {
+          "id": "313569bd-2b5a-47e5-8f19-f0339c5ac58e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 288,
+            "y": 75,
+            "w": 2,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "baseball_bat_trail",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 1,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 2,
+              "h": 5
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 2,
+              "h": 5
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 3.436,
-        "centerX": 133.44004656577417,
-        "centerY": 54.42374854481956
+        "zoom": 32,
+        "centerX": 302.171875,
+        "centerY": 75.8125
       }
     },
     {

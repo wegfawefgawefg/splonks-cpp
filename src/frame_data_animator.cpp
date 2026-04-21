@@ -203,10 +203,12 @@ bool FrameDataAnimator::IsFinished() const {
 }
 
 void FrameDataAnimator::SetAnimation(FrameDataId animation_id_value) {
-    if (animation_id != animation_id_value) {
-        current_frame = 0;
-        current_time = 0.0F;
+    if (animation_id == animation_id_value) {
+        return;
     }
+
+    current_frame = 0;
+    current_time = 0.0F;
     animation_id = animation_id_value;
     ResetPlaybackState(*this);
 }

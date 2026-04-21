@@ -154,6 +154,7 @@ DebugUiSettings DebugUiSettings::New() {
     result.lighting_settings_visible = false;
     result.graphics_settings_visible = false;
     result.camera_settings_visible = false;
+    result.performance_settings_visible = false;
     return result;
 }
 
@@ -427,6 +428,9 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.camera_settings_visible") {
             settings.debug_ui.camera_settings_visible =
                 ParseBool(value, settings.debug_ui.camera_settings_visible);
+        } else if (key == "debug_ui.performance_settings_visible") {
+            settings.debug_ui.performance_settings_visible =
+                ParseBool(value, settings.debug_ui.performance_settings_visible);
         }
     }
 
@@ -581,6 +585,8 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.graphics_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.camera_settings_visible="
            << (settings.debug_ui.camera_settings_visible ? 1 : 0) << "\n";
+    output << "debug_ui.performance_settings_visible="
+           << (settings.debug_ui.performance_settings_visible ? 1 : 0) << "\n";
     return output.good();
 }
 

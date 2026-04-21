@@ -11,7 +11,7 @@ struct EntityManager {
     std::vector<Entity> entities;
     std::vector<std::size_t> available_ids;
 
-    static constexpr std::size_t kMaxNumEntities = 128;
+    static constexpr std::size_t kMaxNumEntities = 1024;
 
     static EntityManager New();
 

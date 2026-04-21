@@ -4,7 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 
 #include <memory>
@@ -18,22 +18,22 @@ void SpawnJetpackSmoke(State& state, const Vec2& pos) {
         const float vel = rng::RandomFloat(0.1F, 0.5F);
         const float svel = rng::RandomFloat(vel * 0.1F, vel * 1.0F);
         const float sacc = rng::RandomFloat(vel * 0.01F, vel * 0.02F);
-        auto effect = std::make_unique<UltraDynamicParticle>();
-        effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
-        effect->draw_layer = DrawLayer::Foreground;
-        effect->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
-        effect->pos = pos;
-        effect->size = Vec2::New(1.0F, 1.0F) * 2.0F;
-        effect->rot = rng::RandomFloat(0.0F, 360.0F);
-        effect->alpha = 1.0F;
-        effect->vel = Vec2::New(0.0F, rng::RandomFloat(0.0F, 0.3F));
-        effect->svel = Vec2::New(svel, svel);
-        effect->rotvel = rng::RandomFloat(-0.2F, -0.01F);
-        effect->alpha_vel = vel * 0.001F;
-        effect->acc = Vec2::New(0.0F, 0.0F);
-        effect->sacc = Vec2::New(sacc, sacc);
-        effect->rotacc = 0.0F;
-        effect->alpha_acc = 0.0F;
+        SpriteParticle effect{};
+        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        effect.draw_layer = DrawLayer::Foreground;
+        effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
+        effect.pos = pos;
+        effect.size = Vec2::New(1.0F, 1.0F) * 2.0F;
+        effect.rot = rng::RandomFloat(0.0F, 360.0F);
+        effect.alpha = 1.0F;
+        effect.vel = Vec2::New(0.0F, rng::RandomFloat(0.0F, 0.3F));
+        effect.svel = Vec2::New(svel, svel);
+        effect.rotvel = rng::RandomFloat(-0.2F, -0.01F);
+        effect.alpha_vel = vel * 0.001F;
+        effect.acc = Vec2::New(0.0F, 0.0F);
+        effect.sacc = Vec2::New(sacc, sacc);
+        effect.rotacc = 0.0F;
+        effect.alpha_acc = 0.0F;
         state.particles.Add(std::move(effect));
     }
 }

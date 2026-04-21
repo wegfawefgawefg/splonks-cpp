@@ -5,8 +5,8 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
+#include "particles/sprite_particle.hpp"
 #include "on_damage_effects.hpp"
-#include "particles/dynamic_particle.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -144,19 +144,19 @@ void SpawnSkullBreakEffects(const Vec2& center, State& state) {
     SpawnBreakawayContainerShards(center, state);
 
     for (int i = 0; i < 2; ++i) {
-        auto smoke = std::make_unique<DynamicParticle>();
-        smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
-        smoke->draw_layer = DrawLayer::Foreground;
-        smoke->counter = 14;
-        smoke->pos = center;
-        smoke->size = Vec2::New(6.0F, 6.0F);
-        smoke->alpha = 0.75F;
-        smoke->vel = Vec2::New(
+        SpriteParticle smoke{};
+        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.draw_layer = DrawLayer::Foreground;
+        smoke.counter = 14;
+        smoke.pos = center;
+        smoke.size = Vec2::New(6.0F, 6.0F);
+        smoke.alpha = 0.75F;
+        smoke.vel = Vec2::New(
             rng::RandomFloat(-0.6F, 0.6F),
             rng::RandomFloat(-1.2F, -0.3F)
         );
-        smoke->svel = Vec2::New(0.2F, 0.2F);
-        smoke->alpha_vel = -0.05F;
+        smoke.svel = Vec2::New(0.2F, 0.2F);
+        smoke.alpha_vel = -0.05F;
         state.particles.Add(std::move(smoke));
     }
 }
@@ -165,19 +165,19 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
     SpawnBreakawayContainerShards(center, state);
 
     for (int i = 0; i < 3; ++i) {
-        auto smoke = std::make_unique<DynamicParticle>();
-        smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
-        smoke->draw_layer = DrawLayer::Foreground;
-        smoke->counter = 12;
-        smoke->pos = center;
-        smoke->size = Vec2::New(5.0F, 5.0F);
-        smoke->alpha = 0.7F;
-        smoke->vel = Vec2::New(
+        SpriteParticle smoke{};
+        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.draw_layer = DrawLayer::Foreground;
+        smoke.counter = 12;
+        smoke.pos = center;
+        smoke.size = Vec2::New(5.0F, 5.0F);
+        smoke.alpha = 0.7F;
+        smoke.vel = Vec2::New(
             rng::RandomFloat(-1.0F, 1.0F),
             rng::RandomFloat(-1.5F, -0.5F)
         );
-        smoke->svel = Vec2::New(0.15F, 0.15F);
-        smoke->alpha_vel = -0.06F;
+        smoke.svel = Vec2::New(0.15F, 0.15F);
+        smoke.alpha_vel = -0.06F;
         state.particles.Add(std::move(smoke));
     }
 }

@@ -8,7 +8,7 @@
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 
@@ -77,27 +77,27 @@ EntityType RandomChestGemType() {
 void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
     const int count = rng::RandomIntInclusive(5, 7);
     for (int i = 0; i < count; ++i) {
-        auto sparkle = std::make_unique<UltraDynamicParticle>();
-        sparkle->frame_data_animator = FrameDataAnimator::New(frame_data_ids::Sparkle);
-        sparkle->draw_layer = DrawLayer::Foreground;
-        sparkle->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(16, 28));
-        sparkle->pos = emit_pos + Vec2::New(
+        SpriteParticle sparkle{};
+        sparkle.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Sparkle);
+        sparkle.draw_layer = DrawLayer::Foreground;
+        sparkle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(16, 28));
+        sparkle.pos = emit_pos + Vec2::New(
             rng::RandomFloat(-2.0F, 2.0F),
             rng::RandomFloat(-1.0F, 1.0F)
         );
-        sparkle->size = Vec2::New(rng::RandomFloat(5.0F, 8.0F), rng::RandomFloat(5.0F, 8.0F));
-        sparkle->rot = rng::RandomFloat(0.0F, 360.0F);
-        sparkle->alpha = rng::RandomFloat(0.75F, 1.0F);
-        sparkle->vel = Vec2::New(
+        sparkle.size = Vec2::New(rng::RandomFloat(5.0F, 8.0F), rng::RandomFloat(5.0F, 8.0F));
+        sparkle.rot = rng::RandomFloat(0.0F, 360.0F);
+        sparkle.alpha = rng::RandomFloat(0.75F, 1.0F);
+        sparkle.vel = Vec2::New(
             rng::RandomFloat(-0.6F, 0.6F),
             rng::RandomFloat(-1.2F, -0.45F)
         );
-        sparkle->svel = Vec2::New(-0.03F, -0.03F);
-        sparkle->rotvel = rng::RandomFloat(-5.0F, 5.0F);
-        sparkle->alpha_vel = kChestSparkleAlphaVel;
-        sparkle->acc = Vec2::New(0.0F, kChestSparkleGravity);
-        sparkle->sacc = Vec2::New(-0.003F, -0.003F);
-        sparkle->alpha_acc = kChestSparkleAlphaAcc;
+        sparkle.svel = Vec2::New(-0.03F, -0.03F);
+        sparkle.rotvel = rng::RandomFloat(-5.0F, 5.0F);
+        sparkle.alpha_vel = kChestSparkleAlphaVel;
+        sparkle.acc = Vec2::New(0.0F, kChestSparkleGravity);
+        sparkle.sacc = Vec2::New(-0.003F, -0.003F);
+        sparkle.alpha_acc = kChestSparkleAlphaAcc;
         state.particles.Add(std::move(sparkle));
     }
 }
@@ -375,6 +375,7 @@ extern const EntityArchetype kChestArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .on_damage = OnDamageEffectAsChest,
     .on_use = OnUseAsChest,
     .step_logic = StepEntityLogicAsChest,
@@ -399,6 +400,7 @@ extern const EntityArchetype kKeyChestArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .step_logic = StepEntityLogicAsKeyChest,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::KeyChest),
@@ -421,6 +423,7 @@ extern const EntityArchetype kChestKeyArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::ChestKey),
 };
@@ -441,6 +444,7 @@ extern const EntityArchetype kUdjatEyeArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .passive_item = EntityPassiveItem::UdjatEye,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::UdjatEye),

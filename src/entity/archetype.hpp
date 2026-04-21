@@ -47,6 +47,7 @@ struct EntityArchetype {
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
     DamageType projectile_contact_damage_type = DamageType::Attack;
     unsigned int projectile_contact_damage_amount = 1;
+    bool can_apply_projectile_contact = true;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;
     Buyable buyable{};
     std::optional<FrameDataId> damage_animation = std::nullopt;

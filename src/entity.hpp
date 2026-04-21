@@ -138,6 +138,7 @@ struct Entity {
     std::uint32_t thrown_immunity_timer = 0;
     DamageType projectile_contact_damage_type = DamageType::Attack;
     unsigned int projectile_contact_damage_amount = 1;
+    bool can_apply_projectile_contact = true;
     std::uint32_t projectile_contact_timer = 0;
     bool collided = false;
     bool collided_last_frame = false;

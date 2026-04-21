@@ -3,7 +3,7 @@
 #include "audio_emitters.hpp"
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
-#include "particles/particle.hpp"
+#include "particles/particle_archetypes.hpp"
 #include "tile_archetype.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
@@ -17,73 +17,8 @@ namespace {
 constexpr float kMeatheadPickupRange = 16.0F;
 constexpr std::uint32_t kMeatheadPointsPerHeal = 10;
 constexpr std::uint32_t kMeatheadPreviewIntervalFrames = 300;
-constexpr std::uint32_t kMeatheadPopupWiggleLoops = 2;
 constexpr float kMeatheadPopupSize = 9.0F;
 constexpr int kMeatheadPopupSearchTiles = 2;
-
-enum class MeatheadPopupPhase : std::uint8_t {
-    Rising,
-    Wiggling,
-    Sinking,
-};
-
-class MeatheadPopupParticle final : public Particle {
-  public:
-    explicit MeatheadPopupParticle(const Vec2& popup_center, bool horizontal_flip) {
-        final_pos_ = popup_center;
-        pos_ = final_pos_;
-        size_ = Vec2::New(kMeatheadPopupSize, kMeatheadPopupSize);
-        frame_data_animator_ = FrameDataAnimator::New(frame_data_ids::MeatheadRise);
-        frame_data_animator_.PlayOnce(frame_data_ids::MeatheadRise);
-        horizontal_flip_ = horizontal_flip;
-    }
-
-    void Step(const FrameDataDb& frame_data_db, float dt) override {
-        switch (phase_) {
-        case MeatheadPopupPhase::Rising: {
-            frame_data_animator_.Step(frame_data_db, dt);
-            if (frame_data_animator_.IsFinished()) {
-                phase_ = MeatheadPopupPhase::Wiggling;
-                frame_data_animator_.PlayNTimes(frame_data_ids::Meathead, kMeatheadPopupWiggleLoops);
-            }
-            break;
-        }
-        case MeatheadPopupPhase::Wiggling: {
-            frame_data_animator_.Step(frame_data_db, dt);
-            if (frame_data_animator_.IsFinished()) {
-                phase_ = MeatheadPopupPhase::Sinking;
-                frame_data_animator_.PlayOnceReverse(frame_data_ids::MeatheadRise);
-            }
-            break;
-        }
-        case MeatheadPopupPhase::Sinking: {
-            frame_data_animator_.Step(frame_data_db, dt);
-            if (frame_data_animator_.IsFinished()) {
-                finished_ = true;
-            }
-            break;
-        }
-        }
-    }
-
-    bool IsFinished() const override { return finished_; }
-    Vec2 GetPos() const override { return pos_; }
-    Vec2 GetSize() const override { return size_; }
-    float GetRot() const override { return 0.0F; }
-    float GetAlpha() const override { return 1.0F; }
-    bool GetHorizontalFlip() const override { return horizontal_flip_; }
-    DrawLayer GetDrawLayer() const override { return DrawLayer::Background; }
-    const FrameDataAnimator& GetFrameDataAnimator() const override { return frame_data_animator_; }
-
-  private:
-    MeatheadPopupPhase phase_ = MeatheadPopupPhase::Rising;
-    bool finished_ = false;
-    bool horizontal_flip_ = false;
-    Vec2 final_pos_{};
-    Vec2 pos_{};
-    Vec2 size_{};
-    FrameDataAnimator frame_data_animator_{};
-};
 
 bool IsSolidTileAt(const Stage& stage, const IVec2& tile_pos) {
     const std::optional<WorldTileQueryResult> query = QueryTileAtTilePos(stage, tile_pos);
@@ -157,7 +92,7 @@ std::optional<Vec2> SpawnMeatheadPopup(State& state, const Entity& player) {
     if (!popup_center.has_value()) {
         return std::nullopt;
     }
-    state.particles.Add(std::make_unique<MeatheadPopupParticle>(*popup_center, rng::RandomIntInclusive(0, 1) == 1));
+    state.particles.AddScripted(scripted_particle_archetype_ids::MeatheadPopup, *popup_center, rng::RandomIntInclusive(0, 1) == 1);
     return popup_center;
 }
 

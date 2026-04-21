@@ -5,12 +5,11 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
+#include "particles/sprite_particle.hpp"
 #include "hitscan.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 
-#include "particles/dynamic_particle.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
 
 #include <memory>
 
@@ -24,66 +23,66 @@ constexpr unsigned int kPistolDamage = 4;
 
 void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 4; ++i) {
-        auto effect = std::make_unique<UltraDynamicParticle>();
-        effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
-        effect->draw_layer = DrawLayer::Foreground;
-        effect->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 14));
-        effect->pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        effect->size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
-        effect->rot = rng::RandomFloat(0.0F, 360.0F);
-        effect->alpha = rng::RandomFloat(0.75F, 0.95F);
-        effect->vel = Vec2::New(
+        SpriteParticle effect{};
+        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        effect.draw_layer = DrawLayer::Foreground;
+        effect.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 14));
+        effect.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        effect.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
+        effect.rot = rng::RandomFloat(0.0F, 360.0F);
+        effect.alpha = rng::RandomFloat(0.75F, 0.95F);
+        effect.vel = Vec2::New(
             rng::RandomFloat(0.05F, 0.25F) * static_cast<float>(direction),
             rng::RandomFloat(-0.18F, -0.04F)
         );
-        effect->svel = Vec2::New(rng::RandomFloat(0.08F, 0.20F), rng::RandomFloat(0.08F, 0.20F));
-        effect->rotvel = rng::RandomFloat(-1.5F, 1.5F);
-        effect->alpha_vel = -0.05F;
-        effect->acc = Vec2::New(0.0F, -0.01F);
-        effect->sacc = Vec2::New(0.01F, 0.01F);
-        effect->rotacc = 0.0F;
-        effect->alpha_acc = -0.003F;
+        effect.svel = Vec2::New(rng::RandomFloat(0.08F, 0.20F), rng::RandomFloat(0.08F, 0.20F));
+        effect.rotvel = rng::RandomFloat(-1.5F, 1.5F);
+        effect.alpha_vel = -0.05F;
+        effect.acc = Vec2::New(0.0F, -0.01F);
+        effect.sacc = Vec2::New(0.01F, 0.01F);
+        effect.rotacc = 0.0F;
+        effect.alpha_acc = -0.003F;
         state.particles.Add(std::move(effect));
     }
 }
 
 void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 3; ++i) {
-        auto spark = std::make_unique<DynamicParticle>();
-        spark->frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
-        spark->draw_layer = DrawLayer::Foreground;
-        spark->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
-        spark->pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        spark->size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));
-        spark->rot = rng::RandomFloat(0.0F, 360.0F);
-        spark->alpha = 1.0F;
-        spark->vel = Vec2::New(
+        SpriteParticle spark{};
+        spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
+        spark.draw_layer = DrawLayer::Foreground;
+        spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
+        spark.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        spark.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));
+        spark.rot = rng::RandomFloat(0.0F, 360.0F);
+        spark.alpha = 1.0F;
+        spark.vel = Vec2::New(
             rng::RandomFloat(-0.45F, -0.10F) * static_cast<float>(direction),
             rng::RandomFloat(-0.18F, 0.18F)
         );
-        spark->svel = Vec2::New(-0.12F, -0.12F);
-        spark->rotvel = rng::RandomFloat(-6.0F, 6.0F);
-        spark->alpha_vel = -0.14F;
+        spark.svel = Vec2::New(-0.12F, -0.12F);
+        spark.rotvel = rng::RandomFloat(-6.0F, 6.0F);
+        spark.alpha_vel = -0.14F;
         state.particles.Add(std::move(spark));
     }
 
     for (int i = 0; i < 2; ++i) {
-        auto smoke = std::make_unique<UltraDynamicParticle>();
-        smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
-        smoke->draw_layer = DrawLayer::Foreground;
-        smoke->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
-        smoke->pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-        smoke->size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
-        smoke->rot = rng::RandomFloat(0.0F, 360.0F);
-        smoke->alpha = rng::RandomFloat(0.75F, 0.95F);
-        smoke->vel = Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.18F, -0.06F));
-        smoke->svel = Vec2::New(rng::RandomFloat(0.06F, 0.14F), rng::RandomFloat(0.06F, 0.14F));
-        smoke->rotvel = rng::RandomFloat(-1.5F, 1.5F);
-        smoke->alpha_vel = -0.05F;
-        smoke->acc = Vec2::New(0.0F, -0.01F);
-        smoke->sacc = Vec2::New(0.01F, 0.01F);
-        smoke->rotacc = 0.0F;
-        smoke->alpha_acc = -0.003F;
+        SpriteParticle smoke{};
+        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.draw_layer = DrawLayer::Foreground;
+        smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
+        smoke.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+        smoke.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(3.0F, 5.0F));
+        smoke.rot = rng::RandomFloat(0.0F, 360.0F);
+        smoke.alpha = rng::RandomFloat(0.75F, 0.95F);
+        smoke.vel = Vec2::New(rng::RandomFloat(-0.08F, 0.08F), rng::RandomFloat(-0.18F, -0.06F));
+        smoke.svel = Vec2::New(rng::RandomFloat(0.06F, 0.14F), rng::RandomFloat(0.06F, 0.14F));
+        smoke.rotvel = rng::RandomFloat(-1.5F, 1.5F);
+        smoke.alpha_vel = -0.05F;
+        smoke.acc = Vec2::New(0.0F, -0.01F);
+        smoke.sacc = Vec2::New(0.01F, 0.01F);
+        smoke.rotacc = 0.0F;
+        smoke.alpha_acc = -0.003F;
         state.particles.Add(std::move(smoke));
     }
 }

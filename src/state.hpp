@@ -167,6 +167,25 @@ struct WorldPrompt {
     std::optional<FrameDataId> icon_animation_id = std::nullopt;
 };
 
+struct PerformanceStats {
+    double frame_budget_ms = 1000.0 / 60.0;
+    double step_ms = 0.0;
+    double render_ms = 0.0;
+    double imgui_ms = 0.0;
+    double present_ms = 0.0;
+    double frame_total_ms = 0.0;
+    double step_smoothed_ms = 0.0;
+    double render_smoothed_ms = 0.0;
+    double imgui_smoothed_ms = 0.0;
+    double present_smoothed_ms = 0.0;
+    double frame_total_smoothed_ms = 0.0;
+    double step_peak_ms = 0.0;
+    double render_peak_ms = 0.0;
+    double imgui_peak_ms = 0.0;
+    double present_peak_ms = 0.0;
+    double frame_total_peak_ms = 0.0;
+};
+
 struct State {
     // Menu and input state.
     Mode mode = Mode::Title;
@@ -222,6 +241,7 @@ struct State {
     bool audio_occlusion_enabled = true;
     Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
     std::vector<VID> interact_claimed_vids_this_frame;
+    PerformanceStats performance_stats;
 
     // World and debug level state.
     DebugLevelConfig debug_level;

@@ -9,7 +9,7 @@
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -27,22 +27,22 @@ constexpr float kRewardParticleFloatSpeed = -0.18F;
 constexpr std::uint32_t kRewardParticleLifetimeFrames = 48;
 
 void SpawnRewardParticle(State& state, const Vec2& pos, FrameDataId animation_id, const Vec2& size) {
-    auto particle = std::make_unique<UltraDynamicParticle>();
-    particle->frame_data_animator = FrameDataAnimator::New(animation_id);
-    particle->draw_layer = DrawLayer::Foreground;
-    particle->counter = kRewardParticleLifetimeFrames;
-    particle->pos = pos;
-    particle->size = size;
-    particle->rot = 0.0F;
-    particle->alpha = 1.0F;
-    particle->vel = Vec2::New(0.0F, kRewardParticleFloatSpeed);
-    particle->svel = Vec2::New(0.0F, 0.0F);
-    particle->rotvel = 0.0F;
-    particle->alpha_vel = -0.01F;
-    particle->acc = Vec2::New(0.0F, 0.0F);
-    particle->sacc = Vec2::New(0.0F, 0.0F);
-    particle->rotacc = 0.0F;
-    particle->alpha_acc = 0.0F;
+    SpriteParticle particle{};
+    particle.frame_data_animator = FrameDataAnimator::New(animation_id);
+    particle.draw_layer = DrawLayer::Foreground;
+    particle.counter = kRewardParticleLifetimeFrames;
+    particle.pos = pos;
+    particle.size = size;
+    particle.rot = 0.0F;
+    particle.alpha = 1.0F;
+    particle.vel = Vec2::New(0.0F, kRewardParticleFloatSpeed);
+    particle.svel = Vec2::New(0.0F, 0.0F);
+    particle.rotvel = 0.0F;
+    particle.alpha_vel = -0.01F;
+    particle.acc = Vec2::New(0.0F, 0.0F);
+    particle.sacc = Vec2::New(0.0F, 0.0F);
+    particle.rotacc = 0.0F;
+    particle.alpha_acc = 0.0F;
     state.particles.Add(std::move(particle));
 }
 

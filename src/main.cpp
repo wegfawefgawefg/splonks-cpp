@@ -16,6 +16,7 @@
 
 #include <SDL3/SDL.h>
 #include <filesystem>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -179,10 +180,18 @@ int main(int argc, char** argv) {
         debug.lighting_settings_window_visible = state.settings.debug_ui.lighting_settings_visible;
         debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
         debug.camera_settings_window_visible = state.settings.debug_ui.camera_settings_visible;
+        debug.performance_settings_window_visible = state.settings.debug_ui.performance_settings_visible;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
         splonks::RebuildStageLighting(state);
 
         std::uint64_t last_ticks = SDL_GetTicks();
+        const double perf_frequency = static_cast<double>(SDL_GetPerformanceFrequency());
+        auto counter_to_ms = [perf_frequency](std::uint64_t start, std::uint64_t end) -> double {
+            if (end <= start || perf_frequency <= 0.0) {
+                return 0.0;
+            }
+            return (static_cast<double>(end - start) * 1000.0) / perf_frequency;
+        };
 
         while (state.running) {
             SDL_Event event{};
@@ -217,11 +226,13 @@ int main(int argc, char** argv) {
             }
 
             state.ClearDebugAnnotations();
+            const std::uint64_t frame_begin_counter = SDL_GetPerformanceCounter();
             splonks::ImGuiLayerNewFrame();
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
             audio.SetPanHalfWidthPx(state.settings.audio.pan_half_width_px);
+            const std::uint64_t step_begin_counter = SDL_GetPerformanceCounter();
             splonks::RunSimulationWithDebugControls(
                 window,
                 renderer,
@@ -231,13 +242,52 @@ int main(int argc, char** argv) {
                 debug,
                 dt
             );
+            const std::uint64_t step_end_counter = SDL_GetPerformanceCounter();
             splonks::DrawDebugPlaybackInspector(debug, state, graphics);
             splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
+            const std::uint64_t render_begin_counter = SDL_GetPerformanceCounter();
             splonks::Render(renderer, render_texture, post_fx, state, audio, graphics);
+            const std::uint64_t render_end_counter = SDL_GetPerformanceCounter();
             splonks::UpdateDebugAudioBrush(debug, state, audio, graphics);
+            const std::uint64_t imgui_begin_counter = SDL_GetPerformanceCounter();
             splonks::ImGuiLayerRender();
+            const std::uint64_t imgui_end_counter = SDL_GetPerformanceCounter();
+            const std::uint64_t present_begin_counter = SDL_GetPerformanceCounter();
             SDL_RenderPresent(renderer);
+            const std::uint64_t present_end_counter = SDL_GetPerformanceCounter();
             audio.UpdateCurrentMusicStreamData();
+            const std::uint64_t frame_end_counter = SDL_GetPerformanceCounter();
+
+            state.performance_stats.frame_budget_ms = 1000.0 / static_cast<double>(splonks::kFramesPerSecond);
+            state.performance_stats.step_ms = counter_to_ms(step_begin_counter, step_end_counter);
+            state.performance_stats.render_ms = counter_to_ms(render_begin_counter, render_end_counter);
+            state.performance_stats.imgui_ms = counter_to_ms(imgui_begin_counter, imgui_end_counter);
+            state.performance_stats.present_ms = counter_to_ms(present_begin_counter, present_end_counter);
+            state.performance_stats.frame_total_ms = counter_to_ms(frame_begin_counter, frame_end_counter);
+            const double smoothing_alpha = 1.0 - std::exp(-static_cast<double>(dt) * 8.0);
+            if (state.performance_stats.step_smoothed_ms == 0.0) {
+                state.performance_stats.step_smoothed_ms = state.performance_stats.step_ms;
+                state.performance_stats.render_smoothed_ms = state.performance_stats.render_ms;
+                state.performance_stats.imgui_smoothed_ms = state.performance_stats.imgui_ms;
+                state.performance_stats.present_smoothed_ms = state.performance_stats.present_ms;
+                state.performance_stats.frame_total_smoothed_ms = state.performance_stats.frame_total_ms;
+            } else {
+                state.performance_stats.step_smoothed_ms +=
+                    (state.performance_stats.step_ms - state.performance_stats.step_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.render_smoothed_ms +=
+                    (state.performance_stats.render_ms - state.performance_stats.render_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.imgui_smoothed_ms +=
+                    (state.performance_stats.imgui_ms - state.performance_stats.imgui_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.present_smoothed_ms +=
+                    (state.performance_stats.present_ms - state.performance_stats.present_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.frame_total_smoothed_ms +=
+                    (state.performance_stats.frame_total_ms - state.performance_stats.frame_total_smoothed_ms) * smoothing_alpha;
+            }
+            state.performance_stats.step_peak_ms = std::max(state.performance_stats.step_peak_ms, state.performance_stats.step_ms);
+            state.performance_stats.render_peak_ms = std::max(state.performance_stats.render_peak_ms, state.performance_stats.render_ms);
+            state.performance_stats.imgui_peak_ms = std::max(state.performance_stats.imgui_peak_ms, state.performance_stats.imgui_ms);
+            state.performance_stats.present_peak_ms = std::max(state.performance_stats.present_peak_ms, state.performance_stats.present_ms);
+            state.performance_stats.frame_total_peak_ms = std::max(state.performance_stats.frame_total_peak_ms, state.performance_stats.frame_total_ms);
         }
 
         if (render_texture != nullptr) {

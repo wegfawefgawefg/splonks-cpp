@@ -5,7 +5,7 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -95,25 +95,25 @@ bool CanSeePlayerAhead(const Entity& cobra, const State& state, const Graphics& 
 }
 
 void SpawnSpitParticle(State& state, const Vec2& pos, const Vec2& vel, float alpha, float size_jitter) {
-    auto particle = std::make_unique<UltraDynamicParticle>();
-    particle->frame_data_animator = FrameDataAnimator::New(frame_data_ids::CobraSpit);
-    particle->draw_layer = DrawLayer::Foreground;
-    particle->counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 16));
-    particle->pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
-    particle->size = Vec2::New(
+    SpriteParticle particle{};
+    particle.frame_data_animator = FrameDataAnimator::New(frame_data_ids::CobraSpit);
+    particle.draw_layer = DrawLayer::Foreground;
+    particle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 16));
+    particle.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
+    particle.size = Vec2::New(
         4.0F + rng::RandomFloat(-size_jitter, size_jitter),
         3.0F + rng::RandomFloat(-size_jitter, size_jitter)
     );
-    particle->rot = rng::RandomFloat(-20.0F, 20.0F);
-    particle->alpha = alpha;
-    particle->vel = vel;
-    particle->svel = Vec2::New(0.03F, 0.03F);
-    particle->rotvel = rng::RandomFloat(-2.0F, 2.0F);
-    particle->alpha_vel = -0.05F;
-    particle->acc = Vec2::New(0.0F, 0.12F);
-    particle->sacc = Vec2::New(0.0F, 0.0F);
-    particle->rotacc = 0.0F;
-    particle->alpha_acc = -0.003F;
+    particle.rot = rng::RandomFloat(-20.0F, 20.0F);
+    particle.alpha = alpha;
+    particle.vel = vel;
+    particle.svel = Vec2::New(0.03F, 0.03F);
+    particle.rotvel = rng::RandomFloat(-2.0F, 2.0F);
+    particle.alpha_vel = -0.05F;
+    particle.acc = Vec2::New(0.0F, 0.12F);
+    particle.sacc = Vec2::New(0.0F, 0.0F);
+    particle.rotacc = 0.0F;
+    particle.alpha_acc = -0.003F;
     state.particles.Add(std::move(particle));
 }
 

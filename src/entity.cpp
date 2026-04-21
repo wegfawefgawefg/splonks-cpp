@@ -113,6 +113,7 @@ Entity Entity::New() {
     entity.thrown_immunity_timer = 0;
     entity.projectile_contact_damage_type = DamageType::Attack;
     entity.projectile_contact_damage_amount = 1;
+    entity.can_apply_projectile_contact = true;
     entity.projectile_contact_timer = 0;
     entity.collided = false;
     entity.collided_last_frame = false;

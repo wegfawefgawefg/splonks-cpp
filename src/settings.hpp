@@ -128,6 +128,7 @@ struct DebugUiSettings {
     bool lighting_settings_visible = false;
     bool graphics_settings_visible = false;
     bool camera_settings_visible = false;
+    bool performance_settings_visible = false;
 
     static DebugUiSettings New();
 };

@@ -4,7 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "tile.hpp"
@@ -74,58 +74,58 @@ void StepControlledBlock(Entity& block, const controls::ControlIntent& control) 
 
 void SpawnBlockDeathParticles(const Vec2& center, FrameDataId animation_id, State& state) {
     for (int i = 0; i < 12; ++i) {
-        auto shard = std::make_unique<UltraDynamicParticle>();
-        shard->frame_data_animator = FrameDataAnimator::New(animation_id);
-        shard->draw_layer = DrawLayer::Foreground;
-        shard->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(20, 42));
-        shard->pos = center + Vec2::New(
+        SpriteParticle shard{};
+        shard.frame_data_animator = FrameDataAnimator::New(animation_id);
+        shard.draw_layer = DrawLayer::Foreground;
+        shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(20, 42));
+        shard.pos = center + Vec2::New(
                  rng::RandomFloat(-3.0F, 3.0F),
                  rng::RandomFloat(-3.0F, 3.0F)
              );
         const float size = rng::RandomFloat(3.0F, 7.0F);
-        shard->size = Vec2::New(size, size);
-        shard->rot = rng::RandomFloat(0.0F, 360.0F);
-        shard->alpha = 1.0F;
-        shard->vel = Vec2::New(
+        shard.size = Vec2::New(size, size);
+        shard.rot = rng::RandomFloat(0.0F, 360.0F);
+        shard.alpha = 1.0F;
+        shard.vel = Vec2::New(
             rng::RandomFloat(-2.4F, 2.4F),
             rng::RandomFloat(-4.2F, -1.2F)
         );
-        shard->svel = Vec2::New(0.0F, 0.0F);
-        shard->rotvel = rng::RandomFloat(-0.7F, 0.7F);
-        shard->alpha_vel = -0.018F;
-        shard->acc = Vec2::New(0.0F, 0.18F);
-        shard->sacc = Vec2::New(0.0F, 0.0F);
-        shard->rotacc = 0.0F;
-        shard->alpha_acc = -0.003F;
+        shard.svel = Vec2::New(0.0F, 0.0F);
+        shard.rotvel = rng::RandomFloat(-0.7F, 0.7F);
+        shard.alpha_vel = -0.018F;
+        shard.acc = Vec2::New(0.0F, 0.18F);
+        shard.sacc = Vec2::New(0.0F, 0.0F);
+        shard.rotacc = 0.0F;
+        shard.alpha_acc = -0.003F;
         state.particles.Add(std::move(shard));
     }
 }
 
 void SpawnBlockTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
-    auto smoke = std::make_unique<UltraDynamicParticle>();
-    smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
-    smoke->draw_layer = DrawLayer::Foreground;
-    smoke->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(16, 28));
-    smoke->pos = pos + Vec2::New(
+    SpriteParticle smoke{};
+    smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+    smoke.draw_layer = DrawLayer::Foreground;
+    smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(16, 28));
+    smoke.pos = pos + Vec2::New(
              rng::RandomFloat(-1.0F, 1.0F),
              rng::RandomFloat(-1.0F, 1.0F)
          );
     const float size = rng::RandomFloat(3.0F, 5.5F);
-    smoke->size = Vec2::New(size, size);
-    smoke->rot = rng::RandomFloat(0.0F, 360.0F);
-    smoke->alpha = rng::RandomFloat(0.55F, 0.85F);
-    smoke->vel = Vec2::New(
+    smoke.size = Vec2::New(size, size);
+    smoke.rot = rng::RandomFloat(0.0F, 360.0F);
+    smoke.alpha = rng::RandomFloat(0.55F, 0.85F);
+    smoke.vel = Vec2::New(
         facing == LeftOrRight::Right ? rng::RandomFloat(-0.9F, -0.2F)
                                      : rng::RandomFloat(0.2F, 0.9F),
         rng::RandomFloat(-0.8F, -0.2F)
     );
-    smoke->svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
-    smoke->rotvel = rng::RandomFloat(-0.2F, 0.2F);
-    smoke->alpha_vel = -0.02F;
-    smoke->acc = Vec2::New(0.0F, 0.01F);
-    smoke->sacc = Vec2::New(0.0F, 0.0F);
-    smoke->rotacc = 0.0F;
-    smoke->alpha_acc = -0.003F;
+    smoke.svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
+    smoke.rotvel = rng::RandomFloat(-0.2F, 0.2F);
+    smoke.alpha_vel = -0.02F;
+    smoke.acc = Vec2::New(0.0F, 0.01F);
+    smoke.sacc = Vec2::New(0.0F, 0.0F);
+    smoke.rotacc = 0.0F;
+    smoke.alpha_acc = -0.003F;
     state.particles.Add(std::move(smoke));
 }
 

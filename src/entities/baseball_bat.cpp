@@ -4,8 +4,10 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "particles/ribbon_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_query.hpp"
 
 #include <memory>
 #include <vector>
@@ -13,6 +15,26 @@
 namespace splonks::entities::baseball_bat {
 
 namespace {
+
+
+constexpr std::uint32_t kBatTrailLifetimeFrames = 6;
+constexpr float kBatTrailMinDistance = 2.0F;
+
+void SpawnBatTrailSegment(State& state, const Vec2& from, const Vec2& to) {
+    const Vec2 wrapped_to = GetNearestWorldPoint(state.stage, from, to);
+    if (Length(wrapped_to - from) < kBatTrailMinDistance) {
+        return;
+    }
+
+    RibbonParticle ribbon{};
+    ribbon.counter = kBatTrailLifetimeFrames;
+    ribbon.archetype_id = ribbon_particle_archetype_ids::BaseballBatTrail;
+    ribbon.alpha = 0.36F;
+    ribbon.point_count = 2;
+    ribbon.points[0] = from;
+    ribbon.points[1] = wrapped_to;
+    state.particles.Add(std::move(ribbon));
+}
 
 SwingStage GetSwingStage(const Entity& baseball_bat) {
     switch (baseball_bat.frame_data_animator.current_frame) {
@@ -235,6 +257,16 @@ void StepBaseballBat(
                                           )
                                     : swinger_center + graphics.debug_baseball_bat_hold_offset;
     baseball_bat.SetCenter(mounted_center);
+
+    const Vec2 bat_emit_point = common::GetEmitPointForEntity(baseball_bat, graphics, baseball_bat.GetCenter());
+    if (baseball_bat.point_label_a != PointLabel::Target) {
+        baseball_bat.point_label_a = PointLabel::Target;
+        baseball_bat.point_a = ToIVec2(bat_emit_point);
+    } else {
+        SpawnBatTrailSegment(state, ToVec2(baseball_bat.point_a), bat_emit_point);
+        baseball_bat.point_a = ToIVec2(GetNearestWorldPoint(state.stage, ToVec2(baseball_bat.point_a), bat_emit_point));
+    }
+
     state.UpdateSidForEntity(entity_idx, graphics);
     common::TryDispatchEntityEntityOverlapContacts(
         entity_idx,

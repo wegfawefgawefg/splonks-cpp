@@ -24,6 +24,7 @@ extern const EntityArchetype kRubyBigArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RubyBig),
 };

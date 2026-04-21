@@ -270,17 +270,17 @@ add_executable(splonks-cpp
     src/tools/throw_pot.cpp
     src/tools/throw_rope.cpp
     src/stage_lighting.cpp
-    src/particles/dynamic_particle.cpp
+    src/particles/particle_archetypes.cpp
+    src/particles/ribbon_particle.cpp
+    src/particles/scripted_particle.cpp
+    src/particles/segmented_sprite_particle.cpp
+    src/particles/sprite_particle.cpp
     src/particles/system.cpp
-    src/particles/particle.cpp
-    src/particles/spline_particle.cpp
-    src/particles/static_particle.cpp
     src/tile.cpp
     src/tile_archetype.cpp
     src/tile_source_data.cpp
     src/utils.cpp
     src/controls.cpp
-    src/particles/ultra_dynamic_particle.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp

@@ -10,8 +10,7 @@ namespace {
 
 constexpr std::uint32_t kHarmContactCooldownFrames = 8;
 constexpr std::uint32_t kProjectileBodyImpactCooldownFrames = 60;
-constexpr float kProjectileContactVelocityScale = 0.5F;
-constexpr float kProjectileContactMinimumUpwardVelocity = -0.5F;
+constexpr float kProjectileContactVelocityScale = 0.35F;
 
 bool HasContactHarmAlignment(const Entity& source, const Entity& target) {
     return (source.alignment == Alignment::Ally && target.alignment == Alignment::Enemy) ||
@@ -20,7 +19,8 @@ bool HasContactHarmAlignment(const Entity& source, const Entity& target) {
 }
 
 bool CanApplyProjectileContact(const Entity& entity) {
-    return entity.projectile_contact_timer > 0 && Length(entity.vel) >= 1.0F;
+    return entity.can_apply_projectile_contact && entity.projectile_contact_timer > 0 &&
+           Length(entity.vel) >= 1.0F;
 }
 
 bool CanProjectileImpactWithoutDamage(const Entity& target) {
@@ -40,14 +40,9 @@ KnockbackSpec BuildBodyContactKnockback(const Entity& source, const Entity& targ
 }
 
 KnockbackSpec BuildProjectileContactKnockback(const Entity& source, const Entity& target, const Stage& stage) {
-    Vec2 velocity = source.vel * kProjectileContactVelocityScale;
-    if (velocity.x == 0.0F) {
-        const Vec2 delta = GetNearestWorldDelta(stage, source.GetCenter(), target.GetCenter());
-        velocity.x = delta.x < 0.0F ? -2.0F : 2.0F;
-    }
-    if (velocity.y > kProjectileContactMinimumUpwardVelocity) {
-        velocity.y = kProjectileContactMinimumUpwardVelocity;
-    }
+    (void)target;
+    (void)stage;
+    const Vec2 velocity = source.vel * kProjectileContactVelocityScale;
 
     return KnockbackSpec{
         .velocity = velocity,

@@ -84,6 +84,7 @@ struct DebugPlayback {
     bool lighting_settings_window_visible = false;
     bool graphics_settings_window_visible = false;
     bool camera_settings_window_visible = false;
+    bool performance_settings_window_visible = false;
     bool recording = false;
     bool playback_active = false;
     bool pause_live_simulation = false;

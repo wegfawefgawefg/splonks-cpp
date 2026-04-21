@@ -24,6 +24,7 @@ extern const EntityArchetype kGoldArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldCoin),
 };
@@ -44,6 +45,7 @@ extern const EntityArchetype kGoldStackArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldStack),
 };
@@ -64,6 +66,7 @@ extern const EntityArchetype kGoldChunkArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldChunk),
 };
@@ -84,6 +87,7 @@ extern const EntityArchetype kGoldNuggetArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldNugget),
 };
@@ -104,6 +108,7 @@ extern const EntityArchetype kGoldBarArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldBar),
 };
@@ -124,6 +129,7 @@ extern const EntityArchetype kGoldBarsArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
+    .can_apply_projectile_contact = false,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldBars),
 };

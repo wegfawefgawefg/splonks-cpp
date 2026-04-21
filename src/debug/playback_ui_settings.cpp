@@ -9,6 +9,8 @@
 
 #include <imgui.h>
 
+#include <cstdio>
+
 namespace splonks::debug_playback_internal {
 
 namespace {
@@ -21,6 +23,28 @@ const char* CameraModeToString(CameraMode mode) {
         return "StageFit";
     }
     return "Unknown";
+}
+
+const char* FormatBytes(std::size_t bytes, char* buffer, std::size_t buffer_size) {
+    constexpr const char* kUnits[] = {"B", "KiB", "MiB", "GiB"};
+    double value = static_cast<double>(bytes);
+    std::size_t unit_index = 0;
+    while (value >= 1024.0 && unit_index < 3) {
+        value /= 1024.0;
+        ++unit_index;
+    }
+    std::snprintf(buffer, buffer_size, "%.2f %s", value, kUnits[unit_index]);
+    return buffer;
+}
+
+void DrawTimingRow(const char* label, double smoothed_ms, double raw_ms, double peak_ms, double budget_ms) {
+    const double smoothed_percent = budget_ms > 0.0 ? (smoothed_ms / budget_ms) * 100.0 : 0.0;
+    const double peak_percent = budget_ms > 0.0 ? (peak_ms / budget_ms) * 100.0 : 0.0;
+    ImGui::Text("%s: %.3f ms avg (raw %.3f)", label, smoothed_ms, raw_ms);
+    ImGui::SameLine(320.0F);
+    ImGui::Text("peak %.3f ms (%.1f%%)", peak_ms, peak_percent);
+    ImGui::SameLine(560.0F);
+    ImGui::Text("avg %.1f%%", smoothed_percent);
 }
 
 } // namespace
@@ -413,6 +437,64 @@ void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& grap
             graphics.camera.zoom = follow_zoom;
         }
     }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
+void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
+    if (!debug.performance_settings_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(1080.0F, 12.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Performance", &debug.performance_settings_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    const PerformanceStats& perf = state.performance_stats;
+    const std::size_t entity_size = sizeof(Entity);
+    const std::size_t entity_slots = state.entity_manager.entities.capacity();
+    const std::size_t available_id_slots = state.entity_manager.available_ids.capacity();
+    const std::size_t entity_storage_bytes = entity_size * entity_slots;
+    const std::size_t available_id_storage_bytes = sizeof(std::size_t) * available_id_slots;
+    const std::size_t entity_manager_total_bytes = entity_storage_bytes + available_id_storage_bytes;
+    const std::size_t particle_count = state.particles.sprite_particles.size() +
+                                       state.particles.scripted_particles.size() +
+                                       state.particles.ribbon_particles.size() +
+                                       state.particles.segmented_sprite_particles.size();
+    char buffer_a[64];
+    char buffer_b[64];
+    char buffer_c[64];
+
+    ImGui::SeparatorText("Frame Timing");
+    ImGui::Text("Frame Budget: %.3f ms (%.0f Hz)", perf.frame_budget_ms, 1000.0 / perf.frame_budget_ms);
+    DrawTimingRow("Step", perf.step_smoothed_ms, perf.step_ms, perf.step_peak_ms, perf.frame_budget_ms);
+    DrawTimingRow("Render", perf.render_smoothed_ms, perf.render_ms, perf.render_peak_ms, perf.frame_budget_ms);
+    DrawTimingRow("ImGui", perf.imgui_smoothed_ms, perf.imgui_ms, perf.imgui_peak_ms, perf.frame_budget_ms);
+    DrawTimingRow("Present", perf.present_smoothed_ms, perf.present_ms, perf.present_peak_ms, perf.frame_budget_ms);
+    DrawTimingRow("Frame Total", perf.frame_total_smoothed_ms, perf.frame_total_ms, perf.frame_total_peak_ms, perf.frame_budget_ms);
+    if (ImGui::Button("Reset Timing Peaks")) {
+        state.performance_stats.step_peak_ms = state.performance_stats.step_ms;
+        state.performance_stats.render_peak_ms = state.performance_stats.render_ms;
+        state.performance_stats.imgui_peak_ms = state.performance_stats.imgui_ms;
+        state.performance_stats.present_peak_ms = state.performance_stats.present_ms;
+        state.performance_stats.frame_total_peak_ms = state.performance_stats.frame_total_ms;
+    }
+
+    ImGui::SeparatorText("Entity Memory");
+    ImGui::Text("Entity Size: %zu bytes", entity_size);
+    ImGui::Text("Entity Pool: %u / %zu active", state.entity_manager.NumActiveEntities(), entity_slots);
+    ImGui::Text("Entity Slots: %zu x %zu = %s", entity_slots, entity_size, FormatBytes(entity_storage_bytes, buffer_a, sizeof(buffer_a)));
+    ImGui::Text("Free ID Stack: %zu x %zu = %s", available_id_slots, sizeof(std::size_t), FormatBytes(available_id_storage_bytes, buffer_b, sizeof(buffer_b)));
+    ImGui::Text("Entity Manager Storage: %s", FormatBytes(entity_manager_total_bytes, buffer_c, sizeof(buffer_c)));
+
+    ImGui::SeparatorText("Other Counts");
+    ImGui::Text("Particles: %zu", particle_count);
+    ImGui::Text("Audio Emitters: %zu", state.audio_emitters.emitters.size());
+    ImGui::Text("World Prompts: %zu", state.world_prompts.size());
 
     ImGui::End();
     SyncDebugUiSettings(debug, state);

@@ -9,7 +9,7 @@
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -41,23 +41,23 @@ void RefreshCarryStunWhileHeld(Entity& damsel) {
 }
 
 void SpawnRescueKissParticle(const Vec2& pos, State& state) {
-    auto kiss = std::make_unique<UltraDynamicParticle>();
-    kiss->frame_data_animator = FrameDataAnimator::New(frame_data_ids::Kiss);
-    kiss->finish_on_animation_end = true;
-    kiss->draw_layer = DrawLayer::Foreground;
-    kiss->counter = kRescueKissLifetimeFrames;
-    kiss->pos = pos;
-    kiss->size = Vec2::New(12.0F, 10.0F);
-    kiss->rot = 0.0F;
-    kiss->alpha = 1.0F;
-    kiss->vel = Vec2::New(0.0F, kRescueKissFloatSpeed);
-    kiss->svel = Vec2::New(0.0F, 0.0F);
-    kiss->rotvel = 0.0F;
-    kiss->alpha_vel = -0.01F;
-    kiss->acc = Vec2::New(0.0F, 0.0F);
-    kiss->sacc = Vec2::New(0.0F, 0.0F);
-    kiss->rotacc = 0.0F;
-    kiss->alpha_acc = 0.0F;
+    SpriteParticle kiss{};
+    kiss.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Kiss);
+    kiss.finish_on_animation_end = true;
+    kiss.draw_layer = DrawLayer::Foreground;
+    kiss.counter = kRescueKissLifetimeFrames;
+    kiss.pos = pos;
+    kiss.size = Vec2::New(12.0F, 10.0F);
+    kiss.rot = 0.0F;
+    kiss.alpha = 1.0F;
+    kiss.vel = Vec2::New(0.0F, kRescueKissFloatSpeed);
+    kiss.svel = Vec2::New(0.0F, 0.0F);
+    kiss.rotvel = 0.0F;
+    kiss.alpha_vel = -0.01F;
+    kiss.acc = Vec2::New(0.0F, 0.0F);
+    kiss.sacc = Vec2::New(0.0F, 0.0F);
+    kiss.rotacc = 0.0F;
+    kiss.alpha_acc = 0.0F;
     state.particles.Add(std::move(kiss));
 }
 

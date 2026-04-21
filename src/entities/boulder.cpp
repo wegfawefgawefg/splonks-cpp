@@ -4,7 +4,7 @@
 #include "audio.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "particles/ultra_dynamic_particle.hpp"
+#include "particles/sprite_particle.hpp"
 #include "stage_break.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -94,29 +94,29 @@ void StepRollingSound(State& state, Entity& boulder) {
 
 void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
     for (int i = 0; i < 2; ++i) {
-        auto effect = std::make_unique<UltraDynamicParticle>();
-        effect->frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
-        effect->draw_layer = DrawLayer::Foreground;
-        effect->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 32));
-        effect->pos = pos + Vec2::New(
+        SpriteParticle effect{};
+        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        effect.draw_layer = DrawLayer::Foreground;
+        effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 32));
+        effect.pos = pos + Vec2::New(
                   rng::RandomFloat(-2.0F, 2.0F),
                   rng::RandomFloat(-2.0F, 2.0F)
               );
-        effect->size = Vec2::New(rng::RandomFloat(3.0F, 6.0F), rng::RandomFloat(3.0F, 6.0F));
-        effect->rot = rng::RandomFloat(0.0F, 360.0F);
-        effect->alpha = rng::RandomFloat(0.6F, 0.9F);
-        effect->vel = Vec2::New(
+        effect.size = Vec2::New(rng::RandomFloat(3.0F, 6.0F), rng::RandomFloat(3.0F, 6.0F));
+        effect.rot = rng::RandomFloat(0.0F, 360.0F);
+        effect.alpha = rng::RandomFloat(0.6F, 0.9F);
+        effect.vel = Vec2::New(
             facing == LeftOrRight::Right ? rng::RandomFloat(-0.8F, -0.2F)
                                          : rng::RandomFloat(0.2F, 0.8F),
             rng::RandomFloat(-1.0F, -0.2F)
         );
-        effect->svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
-        effect->rotvel = rng::RandomFloat(-0.2F, 0.2F);
-        effect->alpha_vel = -0.02F;
-        effect->acc = Vec2::New(0.0F, 0.01F);
-        effect->sacc = Vec2::New(0.0F, 0.0F);
-        effect->rotacc = 0.0F;
-        effect->alpha_acc = -0.003F;
+        effect.svel = Vec2::New(rng::RandomFloat(0.01F, 0.03F), rng::RandomFloat(0.01F, 0.03F));
+        effect.rotvel = rng::RandomFloat(-0.2F, 0.2F);
+        effect.alpha_vel = -0.02F;
+        effect.acc = Vec2::New(0.0F, 0.01F);
+        effect.sacc = Vec2::New(0.0F, 0.0F);
+        effect.rotacc = 0.0F;
+        effect.alpha_acc = -0.003F;
         state.particles.Add(std::move(effect));
     }
 }
@@ -124,30 +124,30 @@ void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
 void SpawnBoulderTrailPebbles(State& state, const Vec2& pos, LeftOrRight facing) {
     const int count = rng::RandomIntExclusive(1, 3);
     for (int i = 0; i < count; ++i) {
-        auto effect = std::make_unique<UltraDynamicParticle>();
-        effect->frame_data_animator = FrameDataAnimator::New(kBoulderParticleAnimationId);
-        effect->draw_layer = DrawLayer::Foreground;
-        effect->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 34));
-        effect->pos = pos + Vec2::New(
+        SpriteParticle effect{};
+        effect.frame_data_animator = FrameDataAnimator::New(kBoulderParticleAnimationId);
+        effect.draw_layer = DrawLayer::Foreground;
+        effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 34));
+        effect.pos = pos + Vec2::New(
                   rng::RandomFloat(-1.0F, 1.0F),
                   rng::RandomFloat(-1.0F, 1.0F)
               );
         const float size = rng::RandomFloat(2.0F, 5.0F);
-        effect->size = Vec2::New(size, size);
-        effect->rot = rng::RandomFloat(0.0F, 360.0F);
-        effect->alpha = 1.0F;
-        effect->vel = Vec2::New(
+        effect.size = Vec2::New(size, size);
+        effect.rot = rng::RandomFloat(0.0F, 360.0F);
+        effect.alpha = 1.0F;
+        effect.vel = Vec2::New(
             facing == LeftOrRight::Right ? rng::RandomFloat(0.8F, 1.8F)
                                          : rng::RandomFloat(-1.8F, -0.8F),
             rng::RandomFloat(-1.8F, -0.6F)
         );
-        effect->svel = Vec2::New(0.0F, 0.0F);
-        effect->rotvel = rng::RandomFloat(-0.5F, 0.5F);
-        effect->alpha_vel = -0.03F;
-        effect->acc = Vec2::New(0.0F, 0.16F);
-        effect->sacc = Vec2::New(0.0F, 0.0F);
-        effect->rotacc = 0.0F;
-        effect->alpha_acc = -0.003F;
+        effect.svel = Vec2::New(0.0F, 0.0F);
+        effect.rotvel = rng::RandomFloat(-0.5F, 0.5F);
+        effect.alpha_vel = -0.03F;
+        effect.acc = Vec2::New(0.0F, 0.16F);
+        effect.sacc = Vec2::New(0.0F, 0.0F);
+        effect.rotacc = 0.0F;
+        effect.alpha_acc = -0.003F;
         state.particles.Add(std::move(effect));
     }
 }
@@ -298,55 +298,55 @@ extern const EntityArchetype kBoulderArchetype{
 
 void SpawnBoulderBreakEffects(const Vec2& center, State& state) {
     for (int i = 0; i < 20; ++i) {
-        auto smoke = std::make_unique<UltraDynamicParticle>();
-        smoke->frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
-        smoke->draw_layer = DrawLayer::Foreground;
-        smoke->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(28, 56));
-        smoke->pos = center + Vec2::New(
+        SpriteParticle smoke{};
+        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        smoke.draw_layer = DrawLayer::Foreground;
+        smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(28, 56));
+        smoke.pos = center + Vec2::New(
                  rng::RandomFloat(-4.0F, 4.0F),
                  rng::RandomFloat(-4.0F, 4.0F)
              );
-        smoke->size = Vec2::New(rng::RandomFloat(6.0F, 14.0F), rng::RandomFloat(6.0F, 14.0F));
-        smoke->rot = rng::RandomFloat(0.0F, 360.0F);
-        smoke->alpha = 1.0F;
-        smoke->vel = Vec2::New(
+        smoke.size = Vec2::New(rng::RandomFloat(6.0F, 14.0F), rng::RandomFloat(6.0F, 14.0F));
+        smoke.rot = rng::RandomFloat(0.0F, 360.0F);
+        smoke.alpha = 1.0F;
+        smoke.vel = Vec2::New(
             rng::RandomFloat(-1.2F, 1.2F),
             rng::RandomFloat(-2.2F, -0.4F)
         );
-        smoke->svel = Vec2::New(rng::RandomFloat(0.05F, 0.12F), rng::RandomFloat(0.05F, 0.12F));
-        smoke->rotvel = rng::RandomFloat(-0.3F, 0.3F);
-        smoke->alpha_vel = -0.015F;
-        smoke->acc = Vec2::New(0.0F, 0.10F);
-        smoke->sacc = Vec2::New(0.0F, 0.0F);
-        smoke->rotacc = 0.0F;
-        smoke->alpha_acc = -0.002F;
+        smoke.svel = Vec2::New(rng::RandomFloat(0.05F, 0.12F), rng::RandomFloat(0.05F, 0.12F));
+        smoke.rotvel = rng::RandomFloat(-0.3F, 0.3F);
+        smoke.alpha_vel = -0.015F;
+        smoke.acc = Vec2::New(0.0F, 0.10F);
+        smoke.sacc = Vec2::New(0.0F, 0.0F);
+        smoke.rotacc = 0.0F;
+        smoke.alpha_acc = -0.002F;
         state.particles.Add(std::move(smoke));
     }
 
     for (int i = 0; i < 16; ++i) {
-        auto shard = std::make_unique<UltraDynamicParticle>();
-        shard->frame_data_animator = FrameDataAnimator::New(kBoulderParticleAnimationId);
-        shard->draw_layer = DrawLayer::Foreground;
-        shard->counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(30, 60));
-        shard->pos = center + Vec2::New(
+        SpriteParticle shard{};
+        shard.frame_data_animator = FrameDataAnimator::New(kBoulderParticleAnimationId);
+        shard.draw_layer = DrawLayer::Foreground;
+        shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(30, 60));
+        shard.pos = center + Vec2::New(
                  rng::RandomFloat(-3.0F, 3.0F),
                  rng::RandomFloat(-3.0F, 3.0F)
              );
         const float size = rng::RandomFloat(5.0F, 16.0F);
-        shard->size = Vec2::New(size, size);
-        shard->rot = rng::RandomFloat(0.0F, 360.0F);
-        shard->alpha = 1.0F;
-        shard->vel = Vec2::New(
+        shard.size = Vec2::New(size, size);
+        shard.rot = rng::RandomFloat(0.0F, 360.0F);
+        shard.alpha = 1.0F;
+        shard.vel = Vec2::New(
             rng::RandomFloat(-3.5F, 3.5F),
             rng::RandomFloat(-5.5F, -1.8F)
         );
-        shard->svel = Vec2::New(0.0F, 0.0F);
-        shard->rotvel = rng::RandomFloat(-0.6F, 0.6F);
-        shard->alpha_vel = -0.012F;
-        shard->acc = Vec2::New(0.0F, 0.22F);
-        shard->sacc = Vec2::New(0.0F, 0.0F);
-        shard->rotacc = 0.0F;
-        shard->alpha_acc = -0.002F;
+        shard.svel = Vec2::New(0.0F, 0.0F);
+        shard.rotvel = rng::RandomFloat(-0.6F, 0.6F);
+        shard.alpha_vel = -0.012F;
+        shard.acc = Vec2::New(0.0F, 0.22F);
+        shard.sacc = Vec2::New(0.0F, 0.0F);
+        shard.rotacc = 0.0F;
+        shard.alpha_acc = -0.002F;
         state.particles.Add(std::move(shard));
     }
 }

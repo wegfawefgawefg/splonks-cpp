@@ -7,7 +7,7 @@
 #include "graphics.hpp"
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
-#include "particles/particle.hpp"
+#include "particles/particle_archetypes.hpp"
 #include "state.hpp"
 #include "stage_lighting.hpp"
 #include "tile.hpp"
@@ -580,48 +580,191 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
 
 namespace {
 
-void RenderParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const auto& particle : state.particles.effects) {
-        if (particle->GetDrawLayer() != layer) {
-            continue;
-        }
-
-        const FrameDataAnimator& animator = particle->GetFrameDataAnimator();
-        if (!animator.HasAnimation()) {
-            continue;
-        }
-
-        const FrameData* const frame_data =
-            graphics.frame_data_db.FindFrame(animator.animation_id, animator.current_frame);
-        if (frame_data == nullptr) {
-            continue;
-        }
-        SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
-        if (texture == nullptr) {
-            continue;
-        }
-
-        const Vec2 pos = particle->GetPos();
-        const Vec2 size = particle->GetSize();
-        const float rotation = particle->GetRot();
-        const float alpha = particle->GetAlpha();
-        const SDL_FlipMode flip = particle->GetHorizontalFlip() ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-        const Vec2 half_size = size / 2.0F;
-        SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
-        const SDL_FRect src{
-            static_cast<float>(frame_data->sample_rect.x),
-            static_cast<float>(frame_data->sample_rect.y),
-            static_cast<float>(frame_data->sample_rect.w),
-            static_cast<float>(frame_data->sample_rect.h),
-        };
-        for (const Vec2& render_offset : render_offsets) {
-            const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
-            const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
-            SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, flip);
-        }
-        SDL_SetTextureAlphaMod(texture, 255);
+const FrameData* GetAnimatedParticleFrameData(
+    Graphics& graphics,
+    const FrameDataAnimator& animator,
+    FrameDataId fallback_animation_id
+) {
+    const FrameDataId animation_id = animator.HasAnimation() ? animator.animation_id : fallback_animation_id;
+    const std::size_t frame_index = animator.HasAnimation() ? animator.current_frame : 0;
+    if (animation_id == kInvalidFrameDataId) {
+        return nullptr;
     }
+    return graphics.frame_data_db.FindFrame(animation_id, frame_index);
+}
+
+void RenderAnimatedParticleSprite(
+    SDL_Renderer* renderer,
+    const State& state,
+    Graphics& graphics,
+    const std::vector<Vec2>& render_offsets,
+    const Vec2& pos,
+    const Vec2& size,
+    float rotation,
+    float alpha,
+    bool horizontal_flip,
+    const FrameDataAnimator& animator,
+    FrameDataId fallback_animation_id = kInvalidFrameDataId
+) {
+    const FrameData* const frame_data =
+        GetAnimatedParticleFrameData(graphics, animator, fallback_animation_id);
+    if (frame_data == nullptr) {
+        return;
+    }
+
+    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
+    if (texture == nullptr) {
+        return;
+    }
+
+    (void)state;
+    const SDL_FlipMode flip = horizontal_flip ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+    const Vec2 half_size = size / 2.0F;
+    SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
+    const SDL_FRect src{
+        static_cast<float>(frame_data->sample_rect.x),
+        static_cast<float>(frame_data->sample_rect.y),
+        static_cast<float>(frame_data->sample_rect.w),
+        static_cast<float>(frame_data->sample_rect.h),
+    };
+    for (const Vec2& render_offset : render_offsets) {
+        const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
+        const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
+        SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, flip);
+    }
+    SDL_SetTextureAlphaMod(texture, 255);
+}
+
+void RenderSpriteParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const SpriteParticle& particle : state.particles.sprite_particles) {
+        if (particle.draw_layer != layer || particle.IsFinished()) {
+            continue;
+        }
+        RenderAnimatedParticleSprite(
+            renderer,
+            state,
+            graphics,
+            render_offsets,
+            particle.pos,
+            particle.size,
+            particle.rot,
+            particle.alpha,
+            particle.horizontal_flip,
+            particle.frame_data_animator
+        );
+    }
+}
+
+void RenderScriptedParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const ScriptedParticle& particle : state.particles.scripted_particles) {
+        if (particle.draw_layer != layer || particle.IsFinished()) {
+            continue;
+        }
+        RenderAnimatedParticleSprite(
+            renderer,
+            state,
+            graphics,
+            render_offsets,
+            particle.pos,
+            particle.size,
+            particle.rot,
+            particle.alpha,
+            particle.horizontal_flip,
+            particle.frame_data_animator
+        );
+    }
+}
+
+void RenderRibbonParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const RibbonParticle& particle : state.particles.ribbon_particles) {
+        if (particle.IsFinished()) {
+            continue;
+        }
+        const RibbonParticleArchetype* const archetype = GetRibbonParticleArchetype(particle.archetype_id);
+        if (archetype == nullptr || archetype->draw_layer != layer) {
+            continue;
+        }
+        for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
+            const Vec2 a = particle.points[i];
+            const Vec2 b = particle.points[i + 1];
+            const Vec2 diff = b - a;
+            const float length = Length(diff);
+            if (length <= 0.01F) {
+                continue;
+            }
+            const float rotation = std::atan2(diff.y, diff.x) * (180.0F / 3.14159265F);
+            RenderAnimatedParticleSprite(
+                renderer,
+                state,
+                graphics,
+                render_offsets,
+                (a + b) * 0.5F,
+                Vec2::New(length, archetype->width),
+                rotation,
+                particle.alpha,
+                false,
+                particle.frame_data_animator,
+                archetype->animation_id
+            );
+        }
+    }
+}
+
+void RenderSegmentedSpriteParticlesForLayer(
+    SDL_Renderer* renderer,
+    const State& state,
+    Graphics& graphics,
+    DrawLayer layer
+) {
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const SegmentedSpriteParticle& particle : state.particles.segmented_sprite_particles) {
+        if (particle.IsFinished()) {
+            continue;
+        }
+        const SegmentedSpriteParticleArchetype* const archetype =
+            GetSegmentedSpriteParticleArchetype(particle.archetype_id);
+        if (archetype == nullptr || archetype->draw_layer != layer) {
+            continue;
+        }
+        const float spacing = archetype->spacing > 0.0F ? archetype->spacing : Max(archetype->segment_size.x, 1.0F);
+        for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
+            const Vec2 a = particle.points[i];
+            const Vec2 b = particle.points[i + 1];
+            const Vec2 diff = b - a;
+            const float length = Length(diff);
+            if (length <= 0.01F) {
+                continue;
+            }
+            const Vec2 dir = diff / length;
+            const float rotation = std::atan2(diff.y, diff.x) * (180.0F / 3.14159265F);
+            for (float distance_along = 0.0F; distance_along < length; distance_along += spacing) {
+                const Vec2 center = a + (dir * distance_along);
+                RenderAnimatedParticleSprite(
+                    renderer,
+                    state,
+                    graphics,
+                    render_offsets,
+                    center,
+                    archetype->segment_size,
+                    rotation,
+                    particle.alpha,
+                    particle.horizontal_flip,
+                    particle.frame_data_animator,
+                    archetype->animation_id
+                );
+            }
+        }
+    }
+}
+
+void RenderParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
+    RenderSpriteParticlesForLayer(renderer, state, graphics, layer);
+    RenderScriptedParticlesForLayer(renderer, state, graphics, layer);
+    RenderRibbonParticlesForLayer(renderer, state, graphics, layer);
+    RenderSegmentedSpriteParticlesForLayer(renderer, state, graphics, layer);
 }
 
 } // namespace
