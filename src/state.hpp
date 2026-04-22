@@ -104,6 +104,7 @@ struct DebugOverlayState {
     bool show_entity_collision_boxes = false;
     bool show_entity_ids = false;
     bool show_entity_types = false;
+    bool show_entity_render_centers = false;
     bool show_void_death_line = false;
     bool show_chunk_boundaries = false;
     bool show_chunk_coords = false;

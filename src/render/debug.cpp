@@ -191,8 +191,10 @@ void RenderWorldPointMarker(
 ) {
     const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderLine(renderer, screen.x - 6.0F, screen.y, screen.x + 6.0F, screen.y);
-    SDL_RenderLine(renderer, screen.x, screen.y - 6.0F, screen.x, screen.y + 6.0F);
+    for (int offset = -1; offset <= 1; ++offset) {
+        SDL_RenderLine(renderer, screen.x - 7.0F, screen.y + static_cast<float>(offset), screen.x + 7.0F, screen.y + static_cast<float>(offset));
+        SDL_RenderLine(renderer, screen.x + static_cast<float>(offset), screen.y - 7.0F, screen.x + static_cast<float>(offset), screen.y + 7.0F);
+    }
 }
 
 void RenderWorldVerticalGuide(
@@ -768,6 +770,34 @@ void RenderEntityLabels(
     }
 }
 
+void RenderEntityRenderCenters(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation,
+    const std::vector<Vec2>& render_offsets
+) {
+    if (!state.debug_overlay.show_entity_render_centers) {
+        return;
+    }
+
+    const SDL_Color color{255, 255, 64, 255};
+    for (const Vec2& render_offset : render_offsets) {
+        for (const Entity& entity : state.entity_manager.entities) {
+            if (!entity.active || !entity.render_enabled) {
+                continue;
+            }
+            RenderWorldPointMarker(
+                renderer,
+                graphics,
+                presentation,
+                entity.GetCenter() + render_offset,
+                color
+            );
+        }
+    }
+}
+
 void RenderDebugAnnotations(
     SDL_Renderer* renderer,
     Graphics& graphics,
@@ -1286,6 +1316,7 @@ void RenderDebugOverlay(
     if (!state.debug_overlay.show_entity_collision_boxes &&
         !state.debug_overlay.show_entity_ids &&
         !state.debug_overlay.show_entity_types &&
+        !state.debug_overlay.show_entity_render_centers &&
         !state.debug_overlay.show_void_death_line &&
         !state.debug_overlay.show_chunk_boundaries &&
         !state.debug_overlay.show_chunk_coords &&
@@ -1316,6 +1347,9 @@ void RenderDebugOverlay(
     }
     if (state.debug_overlay.show_entity_ids || state.debug_overlay.show_entity_types) {
         RenderEntityLabels(renderer, graphics, state, presentation, render_offsets);
+    }
+    if (state.debug_overlay.show_entity_render_centers) {
+        RenderEntityRenderCenters(renderer, graphics, state, presentation, render_offsets);
     }
     if (state.debug_overlay.show_void_death_line) {
         RenderVoidDeathLine(renderer, graphics, state, presentation, render_offsets);

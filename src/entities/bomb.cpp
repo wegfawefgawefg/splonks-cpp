@@ -6,7 +6,32 @@
 #include "frame_data_id.hpp"
 #include "state.hpp"
 
+#include <cmath>
+
 namespace splonks::entities::bomb {
+
+namespace {
+
+constexpr float kBombRotationDegreesPerPixel = 24.0F;
+
+void UpdateBombRotation(Entity& bomb) {
+    if (bomb.held_by_vid.has_value() || bomb.attachment_mode != AttachmentMode::None) {
+        return;
+    }
+    if (std::abs(bomb.vel.x) < 0.01F) {
+        return;
+    }
+
+    bomb.rotation = std::fmod(
+        bomb.rotation + (bomb.vel.x * kBombRotationDegreesPerPixel),
+        360.0F
+    );
+    if (bomb.rotation < 0.0F) {
+        bomb.rotation += 360.0F;
+    }
+}
+
+} // namespace
 
 extern const EntityArchetype kBombArchetype{
     .type_ = EntityType::Bomb,
@@ -74,6 +99,8 @@ void StepEntityLogicAsBomb(
             return;
         }
     }
+
+    UpdateBombRotation(bomb);
 }
 
 /** generalize this to all square or rectangular entities somehow */

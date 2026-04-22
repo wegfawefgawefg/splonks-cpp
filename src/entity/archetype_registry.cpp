@@ -1,4 +1,5 @@
 #include "entity/archetype.hpp"
+#include "graphics.hpp"
 #include "entities/altar.hpp"
 #include "entities/arrow_trap.hpp"
 #include "entities/ball_and_chain.hpp"
@@ -70,6 +71,32 @@ void SetArchetype(EntityType type_, const EntityArchetype& archetype, const char
 }
 
 } // namespace
+
+
+void SyncEntityArchetypeSizesFromFrameData(const Graphics& graphics) {
+    assert(g_entity_archetypes_populated && "PopulateEntityArchetypesTable must run before sync");
+
+    for (EntityArchetype& archetype : g_entity_archetypes) {
+        if (!archetype.render_enabled) {
+            continue;
+        }
+
+        const FrameDataId animation_id = archetype.frame_data_animator.animation_id;
+        if (animation_id == kInvalidFrameDataId) {
+            continue;
+        }
+
+        const FrameData* const frame_data = graphics.frame_data_db.FindFrame(animation_id, 0);
+        if (frame_data == nullptr || frame_data->pbox.w <= 0 || frame_data->pbox.h <= 0) {
+            continue;
+        }
+
+        archetype.size = Vec2::New(
+            static_cast<float>(frame_data->pbox.w),
+            static_cast<float>(frame_data->pbox.h)
+        );
+    }
+}
 
 const EntityArchetype& GetEntityArchetype(EntityType type_) {
     assert(g_entity_archetypes_populated && "PopulateEntityArchetypesTable must run before lookup");

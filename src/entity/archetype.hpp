@@ -74,6 +74,7 @@ struct EntityArchetype {
 const EntityArchetype& GetEntityArchetype(EntityType type_);
 const char* GetEntityTypeName(EntityType type_);
 void PopulateEntityArchetypesTable();
+void SyncEntityArchetypeSizesFromFrameData(const Graphics& graphics);
 void SetEntityAs(Entity& entity, EntityType type_);
 FrameDataId GetDefaultAnimationIdForArchetype(EntityType type_);
 

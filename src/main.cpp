@@ -164,6 +164,7 @@ int main(int argc, char** argv) {
 
         ////////////////        MAIN LOOP        ////////////////
         splonks::PopulateEntityArchetypesTable();
+        splonks::SyncEntityArchetypeSizesFromFrameData(graphics);
         splonks::PopulateToolArchetypesTable();
         splonks::State state = splonks::State::New();
         state.running = true;
@@ -220,6 +221,7 @@ int main(int argc, char** argv) {
 
             if (debug.frame_data_auto_reload && renderer != nullptr) {
                 if (graphics.ReloadFrameDataIfChanged(renderer, &debug.frame_data_reload_status)) {
+                    splonks::SyncEntityArchetypeSizesFromFrameData(graphics);
                     splonks::entities::common::RefreshAllEntityFrameDataGeometry(state, graphics);
                     state.RebuildSid(graphics);
                 }

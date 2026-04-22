@@ -59,12 +59,46 @@ std::array<std::array<int, 4>, 4> MakeBlankRoomCodes() {
     return codes;
 }
 
+constexpr int kProbSnakePit = 8;
+
 struct StageLayout {
     IVec2 start_room = IVec2::New(0, 0);
     IVec2 end_room = IVec2::New(0, 0);
     std::array<std::array<int, 4>, 4> room_codes = MakeBlankRoomCodes();
     std::vector<IVec2> path;
 };
+
+void TryPlaceSnakePit(StageLayout& layout) {
+    for (int y = 0; y < 2; ++y) {
+        for (int x = 0; x < 4; ++x) {
+            if (layout.room_codes[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] != 0 ||
+                layout.room_codes[static_cast<std::size_t>(y + 1)][static_cast<std::size_t>(x)] != 0 ||
+                layout.room_codes[static_cast<std::size_t>(y + 2)][static_cast<std::size_t>(x)] != 0) {
+                continue;
+            }
+            if (rng::RandomIntInclusive(1, kProbSnakePit) != 1) {
+                continue;
+            }
+
+            layout.room_codes[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                static_cast<int>(RoomCode::Drop);
+            layout.room_codes[static_cast<std::size_t>(y + 1)][static_cast<std::size_t>(x)] =
+                static_cast<int>(RoomCode::SnakePitTop);
+
+            if (y == 0 && layout.room_codes[static_cast<std::size_t>(y + 3)][static_cast<std::size_t>(x)] == 0) {
+                layout.room_codes[static_cast<std::size_t>(y + 2)][static_cast<std::size_t>(x)] =
+                    static_cast<int>(RoomCode::SnakePitTop);
+                layout.room_codes[static_cast<std::size_t>(y + 3)][static_cast<std::size_t>(x)] =
+                    static_cast<int>(RoomCode::SnakePitBottom);
+            } else {
+                layout.room_codes[static_cast<std::size_t>(y + 2)][static_cast<std::size_t>(x)] =
+                    static_cast<int>(RoomCode::SnakePitBottom);
+            }
+            return;
+        }
+    }
+}
+
 
 enum class ShopType {
     None,
@@ -219,6 +253,8 @@ StageLayout GenerateLayout(int level_number) {
         prev_x = room_x;
         prev_y = room_y;
     }
+
+    TryPlaceSnakePit(layout);
 
     if (level_number > 1 && rng::RandomIntInclusive(1, level_number) <= 2) {
         std::array<std::array<int, 4>, 4> room_poss = MakeBlankRoomCodes();

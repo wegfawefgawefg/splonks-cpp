@@ -9,7 +9,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 51;
+constexpr std::uint32_t kRecordingVersion = 52;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -124,6 +124,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.can_go_on_back);
     WritePod(out, entity.grounded);
     WritePod(out, entity.shake);
+    WritePod(out, entity.rotation);
     WritePod(out, entity.coyote_time);
     WritePod(out, entity.stun_timer);
     WritePod(out, entity.stun_recovers_on_ground);
@@ -253,6 +254,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.can_go_on_back) &&
            ReadPod(in, entity.grounded) &&
            ReadPod(in, entity.shake) &&
+           ReadPod(in, entity.rotation) &&
            ReadPod(in, entity.coyote_time) &&
            ReadPod(in, entity.stun_timer) &&
            ReadPod(in, entity.stun_recovers_on_ground) &&

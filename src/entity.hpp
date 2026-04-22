@@ -66,6 +66,7 @@ struct Entity {
     bool can_go_on_back = false;
     bool grounded = false;
     float shake = 0.0F;
+    float rotation = 0.0F;
     std::uint32_t coyote_time = 0;
     std::uint32_t stun_timer = 0;
     bool stun_recovers_on_ground = true;

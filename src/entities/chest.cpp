@@ -422,8 +422,8 @@ extern const EntityArchetype kChestKeyArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
-    .projectile_contact_damage_amount = 0,
-    .can_apply_projectile_contact = false,
+    .projectile_contact_damage_amount = 1,
+    .can_apply_projectile_contact = true,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::ChestKey),
 };

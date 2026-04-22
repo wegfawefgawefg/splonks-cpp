@@ -730,7 +730,7 @@ sprites:
     duration: 5
     offset:
       x: 15
-      y: 14
+      y: 8
     center:
       x: 0
       y: 0
@@ -790,7 +790,7 @@ sprites:
     duration: 8
     offset:
       x: -4
-      y: 15
+      y: 12
     center:
       x: 0
       y: 0
@@ -2020,10 +2020,10 @@ sprites:
     duration: 8
     offset:
       x: 0
-      y: 2
+      y: 0
     center:
       x: 2
-      y: 3
+      y: 5
     tags: []
     pbox:
       x: 0
@@ -2037,8 +2037,8 @@ sprites:
       h: 4
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 2
+      y: 5
   - path: "entities.png"
     aabb:
       x: 33
@@ -2050,10 +2050,10 @@ sprites:
     duration: 8
     offset:
       x: 0
-      y: 2
+      y: 0
     center:
       x: 2
-      y: 4
+      y: 5
     tags: []
     pbox:
       x: 0
@@ -2067,14 +2067,14 @@ sprites:
       h: 5
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 2
+      y: 5
   - path: "entities.png"
     aabb:
       x: 6
-      y: 139
-      w: 6
-      h: 5
+      y: 137
+      w: 8
+      h: 7
     name: "grenade"
     frame: 0
     duration: 1
@@ -2083,22 +2083,22 @@ sprites:
       y: 0
     center:
       x: 2
-      y: 3
+      y: 5
     tags: []
     pbox:
       x: 0
-      y: 1
+      y: 3
       w: 4
       h: 4
     cbox:
       x: 0
-      y: 0
-      w: 0
-      h: 0
+      y: 3
+      w: 4
+      h: 4
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 2
+      y: 5
   - path: "entities.png"
     aabb:
       x: 6
@@ -2668,7 +2668,7 @@ sprites:
     tile: false
     emit_point:
       x: 4
-      y: 3
+      y: 5
   - path: "entities.png"
     aabb:
       x: 144
@@ -5909,6 +5909,96 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 272
+      y: 80
+      w: 16
+      h: 16
+    name: "cobweb"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 11
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    tile: false
+    emit_point:
+      x: 7
+      y: 11
+  - path: "entities.png"
+    aabb:
+      x: 256
+      y: 80
+      w: 16
+      h: 16
+    name: "webball"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 9
+    tags: []
+    pbox:
+      x: 4
+      y: 6
+      w: 7
+      h: 6
+    cbox:
+      x: 4
+      y: 6
+      w: 7
+      h: 6
+    tile: false
+    emit_point:
+      x: 8
+      y: 9
+  - path: "entities.png"
+    aabb:
+      x: 240
+      y: 80
+      w: 16
+      h: 16
+    name: "webgun"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 9
+    tags: []
+    pbox:
+      x: 1
+      y: 4
+      w: 11
+      h: 9
+    cbox:
+      x: 1
+      y: 4
+      w: 11
+      h: 9
+    tile: false
+    emit_point:
+      x: 10
+      y: 9
   - path: "boss.png"
     aabb:
       x: 0

@@ -844,15 +844,35 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                     render_position + render_offset + shake_offset,
                     sprite_scaled_size
                 );
-                SDL_RenderTextureRotated(
-                    renderer,
-                    sprite_texture,
-                    &src,
-                    &dst,
-                    0.0,
-                    nullptr,
-                    flip
-                );
+                if (std::abs(entity.rotation) <= 0.01F) {
+                    SDL_RenderTextureRotated(
+                        renderer,
+                        sprite_texture,
+                        &src,
+                        &dst,
+                        0.0,
+                        nullptr,
+                        flip
+                    );
+                } else {
+                    const Vec2 rotation_world =
+                        entities::common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()) +
+                        render_offset + shake_offset;
+                    const Vec2 rotation_screen = WorldToScreen(graphics, rotation_world);
+                    const SDL_FPoint rotation_center{
+                        rotation_screen.x - dst.x,
+                        rotation_screen.y - dst.y
+                    };
+                    SDL_RenderTextureRotated(
+                        renderer,
+                        sprite_texture,
+                        &src,
+                        &dst,
+                        entity.rotation,
+                        &rotation_center,
+                        flip
+                    );
+                }
                 if (entity.stone) {
                     const AABB stone_overlay_aabb = entity.GetAABB();
                     RenderStoneEntityOverlay(

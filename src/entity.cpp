@@ -41,6 +41,7 @@ Entity Entity::New() {
     entity.can_collect_pickups = false;
     entity.grounded = false;
     entity.shake = 0.0F;
+    entity.rotation = 0.0F;
     entity.coyote_time = 0;
     entity.stun_timer = 0;
     entity.stun_recovers_on_ground = true;
