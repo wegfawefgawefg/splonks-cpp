@@ -77,6 +77,33 @@ Vec2 GetTeleportOrtho(const Vec2& axis) {
     return Vec2::New(-axis.y, axis.x);
 }
 
+bool HasTeleportAnimation(const Graphics& graphics, FrameDataId animation_id) {
+    return graphics.frame_data_db.FindFrame(animation_id, 0) != nullptr;
+}
+
+FrameDataId GetTeleporterBackpackAnimation(const Entity& teleporter, const Entity* holder, const Graphics& graphics) {
+    if (teleporter.attachment_mode == AttachmentMode::Back) {
+        if (holder != nullptr) {
+            if (holder->IsHanging() && HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackSide)) {
+                return frame_data_ids::TeleporterBackpackSide;
+            }
+            if (holder->IsClimbing() && HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackBack)) {
+                return frame_data_ids::TeleporterBackpackBack;
+            }
+        }
+        if (HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackBack)) {
+            return frame_data_ids::TeleporterBackpackBack;
+        }
+    }
+    if (teleporter.held_by_vid.has_value() && HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackSide)) {
+        return frame_data_ids::TeleporterBackpackSide;
+    }
+    if (HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpack)) {
+        return frame_data_ids::TeleporterBackpack;
+    }
+    return frame_data_ids::Teleporter;
+}
+
 TeleportAim GetTeleportAim(const Entity& teleporter, const Entity& holder, const State& state) {
     const controls::ControlIntent intent = controls::GetControlIntentForEntity(holder, state);
 
@@ -562,13 +589,23 @@ void StepEntityLogicAsTeleporter(
     if (entity_idx >= state.entity_manager.entities.size()) {
         return;
     }
-    const Entity& teleporter = state.entity_manager.entities[entity_idx];
-    if (!teleporter.active || !teleporter.held_by_vid.has_value()) {
+    Entity& teleporter = state.entity_manager.entities[entity_idx];
+    if (!teleporter.active) {
         return;
     }
 
-    const Entity* const holder = state.entity_manager.GetEntity(*teleporter.held_by_vid);
-    if (holder == nullptr || !holder->active) {
+    const Entity* holder = nullptr;
+    if (teleporter.held_by_vid.has_value()) {
+        holder = state.entity_manager.GetEntity(*teleporter.held_by_vid);
+    }
+
+    if (teleporter.type_ == EntityType::TeleporterBackpack) {
+        SetAnimation(teleporter, GetTeleporterBackpackAnimation(teleporter, holder, graphics));
+    } else {
+        SetAnimation(teleporter, frame_data_ids::Teleporter);
+    }
+
+    if (!teleporter.held_by_vid.has_value() || holder == nullptr || !holder->active) {
         return;
     }
 
@@ -594,6 +631,28 @@ extern const EntityArchetype kTeleporterArchetype{
     .step_logic = StepEntityLogicAsTeleporter,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Teleporter),
+};
+
+extern const EntityArchetype kTeleporterBackpackArchetype{
+    .type_ = EntityType::TeleporterBackpack,
+    .size = Vec2::New(16.0F, 16.0F),
+    .health = 1,
+    .has_physics = true,
+    .can_collide = true,
+    .can_be_picked_up = true,
+    .impassable = false,
+    .hurt_on_contact = false,
+    .can_go_on_back = true,
+    .can_be_stunned = false,
+    .draw_layer = DrawLayer::Foreground,
+    .facing = LeftOrRight::Left,
+    .condition = EntityCondition::Normal,
+    .display_state = EntityDisplayState::Neutral,
+    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .on_use = OnUseAsTeleporter,
+    .step_logic = StepEntityLogicAsTeleporter,
+    .alignment = Alignment::Neutral,
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::TeleporterBackpack),
 };
 
 } // namespace splonks::entities::teleporter

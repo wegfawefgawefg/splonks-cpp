@@ -57,6 +57,7 @@ enum class EntityType {
     Cape,
     Shotgun,
     Teleporter,
+    TeleporterBackpack,
     Gloves,
     Spectacles,
     WebCannon,

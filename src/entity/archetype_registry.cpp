@@ -146,6 +146,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Cape, entities::gear_items::kCapeArchetype, "Cape");
     SetArchetype(EntityType::Shotgun, entities::shotgun::kShotgunArchetype, "Shotgun");
     SetArchetype(EntityType::Teleporter, entities::teleporter::kTeleporterArchetype, "Teleporter");
+    SetArchetype(EntityType::TeleporterBackpack, entities::teleporter::kTeleporterBackpackArchetype, "TeleporterBackpack");
     SetArchetype(EntityType::Gloves, entities::gear_items::kGlovesArchetype, "Gloves");
     SetArchetype(EntityType::Spectacles, entities::gear_items::kSpectaclesArchetype, "Spectacles");
     SetArchetype(EntityType::WebCannon, entities::web_cannon::kWebCannonArchetype, "WebCannon");

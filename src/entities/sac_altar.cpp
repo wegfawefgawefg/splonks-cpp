@@ -175,6 +175,7 @@ bool IsBackItemType(EntityType type_) {
     switch (type_) {
     case EntityType::Cape:
     case EntityType::JetPack:
+    case EntityType::TeleporterBackpack:
     case EntityType::Parachute:
         return true;
     default:

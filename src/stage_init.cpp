@@ -860,6 +860,39 @@ void GivePlayerHeldItem(State& state, EntityType type_) {
     player->holding_timer = kDefaultHoldingTimer;
 }
 
+void GivePlayerBackItem(State& state, EntityType type_) {
+    if (!state.player_vid.has_value()) {
+        return;
+    }
+
+    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
+    if (player == nullptr || player->back_vid.has_value()) {
+        return;
+    }
+
+    const std::optional<VID> back_vid = state.entity_manager.NewEntity();
+    if (!back_vid.has_value()) {
+        return;
+    }
+
+    Entity* const back_item = state.entity_manager.GetEntityMut(*back_vid);
+    if (back_item == nullptr) {
+        return;
+    }
+
+    SetEntityAs(*back_item, type_);
+    back_item->vel = Vec2::New(0.0F, 0.0F);
+    back_item->acc = Vec2::New(0.0F, 0.0F);
+    back_item->held_by_vid = player->vid;
+    back_item->attachment_mode = AttachmentMode::Back;
+    back_item->has_physics = false;
+    back_item->can_collide = false;
+    back_item->facing = player->facing;
+    back_item->SetCenter(player->GetCenter());
+
+    player->back_vid = back_item->vid;
+}
+
 void PlacePlayerAtPosition(State& state, const Vec2& pos) {
     if (!state.player_vid.has_value()) {
         return;
@@ -1889,7 +1922,7 @@ void InitStage(State& state, bool preserve_player_state) {
 
     PlacePlayerAtEntrance(state);
     if (state.stage.stage_type == StageType::SplkMines1 && !carryover.player.has_value()) {
-        GivePlayerHeldItem(state, EntityType::Teleporter);
+        GivePlayerBackItem(state, EntityType::TeleporterBackpack);
         SnapAttachedItemsToPlayer(state);
     } else if (carryover.player.has_value()) {
         SnapAttachedItemsToPlayer(state);

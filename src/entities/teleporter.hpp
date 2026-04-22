@@ -6,5 +6,6 @@
 namespace splonks::entities::teleporter {
 
 extern const EntityArchetype kTeleporterArchetype;
+extern const EntityArchetype kTeleporterBackpackArchetype;
 
 } // namespace splonks::entities::teleporter
