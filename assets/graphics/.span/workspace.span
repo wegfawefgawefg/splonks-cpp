@@ -27,9 +27,9 @@
       ]
     }
   ],
-  "activePaletteId": "sweetie-16-manual",
+  "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "1c917cbc-1827-4d81-9409-b4f7a5206937",
+  "selectedAnnotationId": "18d30c3b-729b-4015-bbd4-0c9228958d2d",
   "sheets": [
     {
       "path": "images/title.png",
@@ -1140,13 +1140,13 @@
             "cbox": {
               "x": 0,
               "y": 0,
-              "w": 0,
-              "h": 0
+              "w": 12,
+              "h": 12
             },
             "hitboxes": [],
             "emit_point": {
-              "x": 0,
-              "y": 0
+              "x": 6,
+              "y": 6
             }
           }
         },
@@ -1287,7 +1287,7 @@
           "entityType": "Sprite",
           "aabb": {
             "x": 224,
-            "y": 192,
+            "y": 208,
             "w": 16,
             "h": 16
           },
@@ -1296,7 +1296,7 @@
           "properties": {
             "name": "player_climbing",
             "frame": 0,
-            "duration": 12,
+            "duration": 6,
             "offset": {
               "x": 0,
               "y": 0
@@ -1315,50 +1315,6 @@
             "tile": false,
             "cbox": {
               "x": 5,
-              "y": 2,
-              "w": 8,
-              "h": 14
-            },
-            "hitboxes": [],
-            "emit_point": {
-              "x": 0,
-              "y": 0
-            }
-          }
-        },
-        {
-          "id": "11cdfaea-d00f-473f-81bd-9f906098f20f",
-          "entityType": "Sprite",
-          "aabb": {
-            "x": 240,
-            "y": 192,
-            "w": 16,
-            "h": 16
-          },
-          "point": null,
-          "chromaKey": "",
-          "properties": {
-            "name": "player_climbing",
-            "frame": 1,
-            "duration": 12,
-            "offset": {
-              "x": 0,
-              "y": 0
-            },
-            "center": {
-              "x": 5,
-              "y": 7
-            },
-            "tags": [],
-            "pbox": {
-              "x": 4,
-              "y": 2,
-              "w": 8,
-              "h": 14
-            },
-            "tile": false,
-            "cbox": {
-              "x": 4,
               "y": 2,
               "w": 8,
               "h": 14
@@ -8981,6 +8937,269 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "b273872c-e28e-4ce5-ae28-45e6beefcd7a",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 240,
+            "y": 102,
+            "w": 12,
+            "h": 10
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "spider_milk",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 4,
+              "y": 2,
+              "w": 6,
+              "h": 8
+            },
+            "cbox": {
+              "x": 4,
+              "y": 2,
+              "w": 6,
+              "h": 8
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 7,
+              "y": 6
+            }
+          }
+        },
+        {
+          "id": "5e104466-ba59-42c2-82c8-cc062013f11f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 240,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": "",
+          "properties": {
+            "name": "player_climbing",
+            "frame": 1,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 5,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "tile": false,
+            "cbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "hitboxes": [],
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "89e26f68-7d68-4d7e-aa40-0c586dd07c85",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 256,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": "",
+          "properties": {
+            "name": "player_climbing",
+            "frame": 2,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 5,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "tile": false,
+            "cbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "hitboxes": [],
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "cf7115ed-824d-4752-8fb9-deada64fb1c5",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 272,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": "",
+          "properties": {
+            "name": "player_climbing",
+            "frame": 3,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 5,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "tile": false,
+            "cbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "hitboxes": [],
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "a1536b0a-445b-4d2e-ab4f-b0f99d85f98b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 288,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": "",
+          "properties": {
+            "name": "player_climbing",
+            "frame": 4,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 5,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "tile": false,
+            "cbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "hitboxes": [],
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "946f65fc-eec9-4e10-a63b-eeeb48f9e1ee",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 304,
+            "y": 208,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": "",
+          "properties": {
+            "name": "player_climbing",
+            "frame": 5,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 5,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "tile": false,
+            "cbox": {
+              "x": 5,
+              "y": 2,
+              "w": 8,
+              "h": 14
+            },
+            "hitboxes": [],
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
@@ -8988,8 +9207,8 @@
         "gridWidth": 16,
         "gridHeight": 16,
         "zoom": 8.389,
-        "centerX": 247.76493026582432,
-        "centerY": 85.58827035403505
+        "centerX": 278.87710096555014,
+        "centerY": 53.28406246274884
       }
     },
     {

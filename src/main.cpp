@@ -227,7 +227,6 @@ int main(int argc, char** argv) {
                 }
             }
 
-            state.ClearDebugAnnotations();
             const std::uint64_t frame_begin_counter = SDL_GetPerformanceCounter();
             splonks::ImGuiLayerNewFrame();
             splonks::DrawDebugPlaybackControls(debug, state, audio, graphics, window, renderer);

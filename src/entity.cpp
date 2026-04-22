@@ -68,6 +68,7 @@ Entity Entity::New() {
     entity.frame_data_animator = FrameDataAnimator{};
     entity.jump_delay_frame_count = kJumpDelayFrames;
     entity.jumped_this_frame = false;
+    entity.climb_detach_cooldown = 0;
     entity.hang_side.reset();
     entity.can_hang_ledge = false;
     entity.can_hang_wall = false;

@@ -43,9 +43,13 @@ void ControlEntityAsPlayer(const VID& entity_vid, State& state) {
             return;
         }
 
-        player->was_horizontally_controlled_this_frame = intent.left || intent.right;
+        const bool climbing = player->IsClimbing();
+        player->was_horizontally_controlled_this_frame = !climbing && (intent.left || intent.right);
 
-        if (!(intent.left && intent.right)) {
+        if (climbing) {
+            player->acc.x = 0.0F;
+            player->vel.x = 0.0F;
+        } else if (!(intent.left && intent.right)) {
             if (intent.run) {
                 if (intent.left) {
                     player->acc.x = -entities::player::kRunAcc;

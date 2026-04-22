@@ -70,6 +70,8 @@ void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
         return;
     }
 
+    state.ClearDebugAnnotations();
+
     switch (state.mode) {
     case Mode::Title:
         StepTitle(state, audio);

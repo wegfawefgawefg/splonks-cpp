@@ -9,6 +9,7 @@
 #include "controls.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <optional>
 #include <vector>
 
@@ -22,6 +23,7 @@ constexpr float kPunishBallHeldMaxRunSpeed = 2.5F;
 constexpr float kPunishBallDraggedMaxRunSpeed = 3.0F;
 constexpr float kPunishBallDraggedExtraGravity = 0.14F;
 constexpr float kPunishBallDraggedJumpImpulse = 3.0F;
+constexpr float kClimbAnimationVelocityEpsilon = 0.01F;
 
 bool PlayerHasPunishBall(const Entity& player, const State& state) {
     if (!player.entity_d.has_value()) {
@@ -35,6 +37,40 @@ bool PlayerHasPunishBall(const Entity& player, const State& state) {
 bool PlayerIsHoldingPunishBall(const Entity& player, const State& state) {
     return player.holding_vid.has_value() && player.entity_d.has_value() &&
            *player.holding_vid == *player.entity_d && PlayerHasPunishBall(player, state);
+}
+
+void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
+    if (player.frame_data_animator.animation_id != frame_data_ids::PlayerClimbing) {
+        return;
+    }
+
+    FrameDataAnimator& animator = player.frame_data_animator;
+    animator.loop = true;
+    animator.ResetSpeed();
+    animator.finished = false;
+
+    if (std::abs(player.vel.y) <= kClimbAnimationVelocityEpsilon) {
+        animator.animate = false;
+        return;
+    }
+
+    animator.animate = true;
+    const AnimationPlaybackMode desired_mode =
+        player.vel.y < 0.0F ? AnimationPlaybackMode::Forward : AnimationPlaybackMode::Reverse;
+    if (animator.playback_mode == desired_mode) {
+        return;
+    }
+
+    const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animator.animation_id);
+    if (animation != nullptr && animator.current_frame < animation->frame_indices.size()) {
+        const FrameData& frame_data =
+            graphics.frame_data_db.frames[animation->frame_indices[animator.current_frame]];
+        const float frame_duration = static_cast<float>(frame_data.duration);
+        animator.current_time = std::clamp(frame_duration - animator.current_time, 0.0F, frame_duration);
+    }
+
+    animator.playback_mode = desired_mode;
+    animator.playback_dirty = false;
 }
 
 } // namespace
@@ -163,26 +199,8 @@ void StepEntityLogicAsPlayer(
 
         // skip all actions
         if (!loss_of_control) {
-            if (Length(player.vel) < 1.0F) {
-                TrySetAnimation(player, EntityDisplayState::Neutral);
-                if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
-                    TrySetAnimation(player, EntityDisplayState::NeutralHolding);
-                }
-            } else if (Length(player.vel) > 1.0F) {
-                TrySetAnimation(player, EntityDisplayState::Walk);
-                if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
-                    TrySetAnimation(player, EntityDisplayState::WalkHolding);
-                }
-            }
-            // TODO: variable locomotion animation speed should be a common system
-            // if player.vel.length() > 3.5 {
-            //     player.animation_speed = DEFAULT_ANIMATION_SPEED / 2.0;
-            // } else {
-            //     player.animation_speed = DEFAULT_ANIMATION_SPEED;
-            // }
-            // if player hanging left set hanging display and left
-            // if player hanging right set hanging display state and right
-
+            // Hanging and climbing must win before locomotion. Otherwise walk/neutral
+            // gets assigned first and the climb animation restarts every tick.
             if (player.hang_side == LeftOrRight::Left) {
                 TrySetAnimation(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Left;
@@ -190,11 +208,26 @@ void StepEntityLogicAsPlayer(
                 TrySetAnimation(player, EntityDisplayState::Hanging);
                 player.facing = LeftOrRight::Right;
             } else if (player.IsClimbing()) {
-                TrySetAnimation(player, EntityDisplayState::Climbing);
-            }
-            if (player.vel.y > 2.0F && !player.IsClimbing()) {
-                // TODO: make an actual fall state
-                TrySetAnimation(player, EntityDisplayState::Falling);
+                if (player.frame_data_animator.animation_id != frame_data_ids::PlayerClimbing) {
+                    player.frame_data_animator.PlayLoop(frame_data_ids::PlayerClimbing);
+                }
+                player.frame_data_animator.loop = true;
+                player.frame_data_animator.finished = false;
+            } else {
+                if (Length(player.vel) < 1.0F) {
+                    TrySetAnimation(player, EntityDisplayState::Neutral);
+                    if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
+                        TrySetAnimation(player, EntityDisplayState::NeutralHolding);
+                    }
+                } else if (Length(player.vel) > 1.0F) {
+                    TrySetAnimation(player, EntityDisplayState::Walk);
+                    if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
+                        TrySetAnimation(player, EntityDisplayState::WalkHolding);
+                    }
+                }
+                if (player.vel.y > 2.0F) {
+                    TrySetAnimation(player, EntityDisplayState::Falling);
+                }
             }
         }
     }
@@ -271,6 +304,11 @@ void StepEntityPhysicsAsPlayer(
     if (has_punish_ball && !holding_punish_ball && !entity.IsClimbing()) {
         entity.acc.y += kPunishBallDraggedExtraGravity;
     }
+
+    if (entity.IsClimbing()) {
+        UpdateClimbAnimationPlayback(entity, graphics);
+    }
+
     entity.vel += entity.acc;
     if (has_punish_ball && !holding_punish_ball && entity.jumped_this_frame &&
         entity.vel.y < -kPunishBallDraggedJumpImpulse) {

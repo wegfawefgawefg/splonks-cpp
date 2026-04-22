@@ -882,7 +882,7 @@ extern const EntityArchetype kCobwebArchetype{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .affected_by_ground_friction = false,
-    .draw_layer = DrawLayer::Foreground,
+    .draw_layer = DrawLayer::Background,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,

@@ -92,6 +92,7 @@ struct Entity {
     FrameDataAnimator frame_data_animator;
     std::uint32_t jump_delay_frame_count = kJumpDelayFrames;
     bool jumped_this_frame = false;
+    std::uint32_t climb_detach_cooldown = 0;
     std::optional<LeftOrRight> hang_side;
     bool can_hang_ledge = false;
     bool can_hang_wall = false;
