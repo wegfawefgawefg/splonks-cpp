@@ -12,7 +12,9 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.has_physics = archetype.has_physics;
     entity.can_collide = archetype.can_collide;
     entity.can_be_hit = archetype.can_be_hit;
+    entity.can_receive_projectile_contact = archetype.can_receive_projectile_contact;
     entity.can_be_picked_up = archetype.can_be_picked_up;
+    entity.affected_by_cobweb = archetype.affected_by_cobweb;
     entity.can_collect_pickups = archetype.can_collect_pickups;
     entity.can_only_be_picked_up_if_dead_or_stunned =
         archetype.can_only_be_picked_up_if_dead_or_stunned;
@@ -24,6 +26,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.vanish_on_death = archetype.vanish_on_death;
     entity.affected_by_ground_friction = archetype.affected_by_ground_friction;
     entity.support_ground_friction = archetype.support_ground_friction;
+    entity.alpha = archetype.alpha;
     entity.passive_item = archetype.passive_item;
     entity.buyable = archetype.buyable;
     entity.damage_animation = archetype.damage_animation;

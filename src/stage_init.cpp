@@ -73,6 +73,15 @@ unsigned int RandomPercent() {
     return distribution(generator);
 }
 
+bool HasAuthoredStageSpawnAt(const State& state, EntityType type_, const Vec2& pos) {
+    for (const StageEntitySpawn& spawn : state.stage.entity_spawns) {
+        if (spawn.type_ == type_ && spawn.pos == pos) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int RandomMoneyType() {
     static std::random_device device;
     static std::mt19937 generator(device());
@@ -1075,6 +1084,16 @@ void SpawnAuthoredStageEntities(State& state) {
         spawned_vids[i] = *vid;
         if (spawn.type_ == EntityType::StoreLight) {
             entities::store_light::AttachStoreLight(*entity, state);
+        }
+        if (spawn.type_ == EntityType::GiantSpiderHang) {
+            const Vec2 left_web_pos = spawn.pos;
+            const Vec2 right_web_pos = spawn.pos + Vec2::New(static_cast<float>(kTileSize), 0.0F);
+            if (!HasAuthoredStageSpawnAt(state, EntityType::Cobweb, left_web_pos)) {
+                (void)SpawnStageEntityAtTopLeft(state, EntityType::Cobweb, left_web_pos);
+            }
+            if (!HasAuthoredStageSpawnAt(state, EntityType::Cobweb, right_web_pos)) {
+                (void)SpawnStageEntityAtTopLeft(state, EntityType::Cobweb, right_web_pos);
+            }
         }
         if (spawn.animation_id != kInvalidFrameDataId) {
             SetAnimation(*entity, spawn.animation_id);

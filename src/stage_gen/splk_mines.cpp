@@ -1680,6 +1680,12 @@ ResolvedRoom ResolveRoom(
                     .pos = tile_pos,
                 });
                 break;
+            case '&':
+                room.entity_spawns.push_back(StageEntitySpawn{
+                    .type_ = EntityType::Cobweb,
+                    .pos = tile_pos,
+                });
+                break;
             default:
                 break;
             }

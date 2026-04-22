@@ -17,7 +17,9 @@ struct EntityArchetype {
     bool has_physics = true;
     bool can_collide = true;
     bool can_be_hit = true;
+    bool can_receive_projectile_contact = true;
     bool can_be_picked_up = true;
+    bool affected_by_cobweb = true;
     bool can_collect_pickups = false;
     bool can_only_be_picked_up_if_dead_or_stunned = false;
     bool impassable = false;
@@ -34,6 +36,7 @@ struct EntityArchetype {
     bool stun_recovers_while_held = true;
     bool affected_by_ground_friction = true;
     float support_ground_friction = 0.85F;
+    float alpha = 1.0F;
     DrawLayer draw_layer = DrawLayer::Middle;
     bool render_enabled = true;
     LeftOrRight facing = LeftOrRight::Left;

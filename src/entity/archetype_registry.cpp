@@ -199,6 +199,8 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::GiantSpiderHang, entities::spider_hang::kGiantSpiderHangArchetype, "GiantSpiderHang");
     SetArchetype(EntityType::Scarab, entities::scarab::kScarabArchetype, "Scarab");
     SetArchetype(EntityType::Meathead, entities::meathead::kMeatheadArchetype, "Meathead");
+    SetArchetype(EntityType::WebBall, entities::web_cannon::kWebBallArchetype, "WebBall");
+    SetArchetype(EntityType::Cobweb, entities::web_cannon::kCobwebArchetype, "Cobweb");
     g_entity_archetypes_populated = true;
 }
 

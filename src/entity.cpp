@@ -34,6 +34,7 @@ Entity Entity::New() {
     entity.has_physics = true;
     entity.can_collide = true;
     entity.can_be_hit = true;
+    entity.can_receive_projectile_contact = true;
     entity.stone = false;
     entity.crusher_pusher = false;
     entity.can_stomp = false;
@@ -42,11 +43,13 @@ Entity Entity::New() {
     entity.grounded = false;
     entity.shake = 0.0F;
     entity.rotation = 0.0F;
+    entity.alpha = 1.0F;
     entity.coyote_time = 0;
     entity.stun_timer = 0;
     entity.stun_recovers_on_ground = true;
     entity.stun_recovers_while_held = true;
     entity.can_be_picked_up = true;
+    entity.affected_by_cobweb = true;
     entity.can_only_be_picked_up_if_dead_or_stunned = false;
     entity.impassable = false;
     entity.can_be_hung_on = true;

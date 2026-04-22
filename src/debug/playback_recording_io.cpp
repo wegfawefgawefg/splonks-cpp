@@ -115,6 +115,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.has_physics);
     WritePod(out, entity.can_collide);
     WritePod(out, entity.can_be_hit);
+    WritePod(out, entity.can_receive_projectile_contact);
     WritePod(out, entity.stone);
     WritePod(out, entity.wanted);
     WritePod(out, entity.crusher_pusher);
@@ -125,11 +126,13 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.grounded);
     WritePod(out, entity.shake);
     WritePod(out, entity.rotation);
+    WritePod(out, entity.alpha);
     WritePod(out, entity.coyote_time);
     WritePod(out, entity.stun_timer);
     WritePod(out, entity.stun_recovers_on_ground);
     WritePod(out, entity.stun_recovers_while_held);
     WritePod(out, entity.can_be_picked_up);
+    WritePod(out, entity.affected_by_cobweb);
     WritePod(out, entity.can_only_be_picked_up_if_dead_or_stunned);
     WritePod(out, entity.impassable);
     WritePod(out, entity.can_be_hung_on);
@@ -245,6 +248,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.has_physics) &&
            ReadPod(in, entity.can_collide) &&
            ReadPod(in, entity.can_be_hit) &&
+           ReadPod(in, entity.can_receive_projectile_contact) &&
            ReadPod(in, entity.stone) &&
            ReadPod(in, entity.wanted) &&
            ReadPod(in, entity.crusher_pusher) &&
@@ -255,11 +259,13 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.grounded) &&
            ReadPod(in, entity.shake) &&
            ReadPod(in, entity.rotation) &&
+           ReadPod(in, entity.alpha) &&
            ReadPod(in, entity.coyote_time) &&
            ReadPod(in, entity.stun_timer) &&
            ReadPod(in, entity.stun_recovers_on_ground) &&
            ReadPod(in, entity.stun_recovers_while_held) &&
            ReadPod(in, entity.can_be_picked_up) &&
+           ReadPod(in, entity.affected_by_cobweb) &&
            ReadPod(in, entity.can_only_be_picked_up_if_dead_or_stunned) &&
            ReadPod(in, entity.impassable) &&
            ReadPod(in, entity.can_be_hung_on) &&

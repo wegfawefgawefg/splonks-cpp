@@ -226,6 +226,11 @@ common::ContactResolution OnEntityContactAsMachete(
         return common::ContactResolution{};
     }
 
+    if (other_entity.type_ == EntityType::Cobweb) {
+        (void)common::TryDamageEntity(other_entity_idx, state, *audio, DamageType::Attack, kMacheteDamage);
+        return common::ContactResolution{.stop_sweep = true};
+    }
+
     if (CanCarveCorpse(other_entity) && other_entity.last_condition == EntityCondition::Dead) {
         CarveCorpse(machete, other_entity, state, *graphics, *audio);
         return common::ContactResolution{.stop_sweep = true};

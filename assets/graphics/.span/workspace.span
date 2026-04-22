@@ -27,7 +27,7 @@
       ]
     }
   ],
-  "activePaletteId": null,
+  "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
   "selectedAnnotationId": "1c917cbc-1827-4d81-9409-b4f7a5206937",
   "sheets": [
@@ -2930,8 +2930,8 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 4,
+              "y": 4
             },
             "tags": [],
             "pbox": {
@@ -2993,8 +2993,8 @@
             },
             "hitboxes": [],
             "emit_point": {
-              "x": 0,
-              "y": 0
+              "x": 6,
+              "y": 7
             }
           }
         },
@@ -8787,26 +8787,198 @@
               "y": 0
             },
             "center": {
-              "x": 6,
+              "x": 10,
               "y": 9
             },
             "tags": [],
             "pbox": {
-              "x": 1,
+              "x": 4,
               "y": 4,
               "w": 11,
               "h": 9
             },
             "cbox": {
-              "x": 1,
+              "x": 4,
               "y": 4,
               "w": 11,
               "h": 9
             },
             "tile": false,
             "emit_point": {
-              "x": 10,
+              "x": 6,
               "y": 9
+            }
+          }
+        },
+        {
+          "id": "3c3a6daa-f74a-498f-88ff-37cbfbba06fc",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 51,
+            "y": 118,
+            "w": 10,
+            "h": 10
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "telepack",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 10
+            },
+            "cbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 5,
+              "y": 5
+            }
+          }
+        },
+        {
+          "id": "626d3822-cd80-428c-82e7-740d8edf5edf",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 65,
+            "y": 118,
+            "w": 10,
+            "h": 10
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "telepack_back",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 10
+            },
+            "cbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 5,
+              "y": 4
+            }
+          }
+        },
+        {
+          "id": "42a75d5e-bb68-40dc-b2be-f7098345b629",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 81,
+            "y": 118,
+            "w": 7,
+            "h": 10
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "telepack_side",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 0,
+              "w": 6,
+              "h": 10
+            },
+            "cbox": {
+              "x": 1,
+              "y": 0,
+              "w": 6,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 4,
+              "y": 5
+            }
+          }
+        },
+        {
+          "id": "d444c2dd-84e0-4fcf-a657-b667f09c131f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 99,
+            "y": 119,
+            "w": 6,
+            "h": 9
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "teleporter",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 6
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 4,
+              "w": 4,
+              "h": 5
+            },
+            "cbox": {
+              "x": 1,
+              "y": 4,
+              "w": 4,
+              "h": 5
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 0
             }
           }
         }
@@ -8815,9 +8987,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 25.601,
-        "centerX": 256.2595211124566,
-        "centerY": 86.79348462950666
+        "zoom": 8.389,
+        "centerX": 247.76493026582432,
+        "centerY": 85.58827035403505
       }
     },
     {

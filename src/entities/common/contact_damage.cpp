@@ -212,6 +212,9 @@ bool TryApplyProjectileContactToEntity(
     if (!other_entity.can_be_hit) {
         return false;
     }
+    if (!other_entity.can_receive_projectile_contact) {
+        return false;
+    }
     if (!other_entity.can_collide) {
         return false;
     }

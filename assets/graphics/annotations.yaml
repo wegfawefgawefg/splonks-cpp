@@ -1932,8 +1932,8 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 0
-      y: 0
+      x: 4
+      y: 4
     tags: []
     pbox:
       x: 1
@@ -1977,8 +1977,8 @@ sprites:
       h: 10
     tile: false
     emit_point:
-      x: 0
-      y: 0
+      x: 6
+      y: 7
   - path: "entities.png"
     aabb:
       x: 33
@@ -5982,23 +5982,143 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 6
+      x: 10
       y: 9
     tags: []
     pbox:
-      x: 1
+      x: 4
       y: 4
       w: 11
       h: 9
     cbox:
-      x: 1
+      x: 4
       y: 4
       w: 11
       h: 9
     tile: false
     emit_point:
-      x: 10
+      x: 6
       y: 9
+  - path: "entities.png"
+    aabb:
+      x: 51
+      y: 118
+      w: 10
+      h: 10
+    name: "telepack"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+    cbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+    tile: false
+    emit_point:
+      x: 5
+      y: 5
+  - path: "entities.png"
+    aabb:
+      x: 65
+      y: 118
+      w: 10
+      h: 10
+    name: "telepack_back"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+    cbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+    tile: false
+    emit_point:
+      x: 5
+      y: 4
+  - path: "entities.png"
+    aabb:
+      x: 81
+      y: 118
+      w: 7
+      h: 10
+    name: "telepack_side"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 1
+      y: 0
+      w: 6
+      h: 10
+    cbox:
+      x: 1
+      y: 0
+      w: 6
+      h: 10
+    tile: false
+    emit_point:
+      x: 4
+      y: 5
+  - path: "entities.png"
+    aabb:
+      x: 99
+      y: 119
+      w: 6
+      h: 9
+    name: "teleporter"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 6
+    tags: []
+    pbox:
+      x: 1
+      y: 4
+      w: 4
+      h: 5
+    cbox:
+      x: 1
+      y: 4
+      w: 4
+      h: 5
+    tile: false
+    emit_point:
+      x: 2
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

@@ -821,6 +821,8 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
             };
             const SDL_FlipMode flip =
                 entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+            const Uint8 entity_alpha = static_cast<Uint8>(std::clamp(entity.alpha, 0.0F, 1.0F) * 255.0F);
+            SDL_SetTextureAlphaMod(sprite_texture, entity_alpha);
             if (entity.type_ == EntityType::BallAndChainBall && entity.entity_a.has_value()) {
                 if (const Entity* const attached = state.entity_manager.GetEntity(*entity.entity_a)) {
                     if (attached->active) {
@@ -884,6 +886,7 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                     );
                 }
             }
+            SDL_SetTextureAlphaMod(sprite_texture, 255);
         }
         RenderParticlesForLayer(renderer, state, graphics, layer);
     }
