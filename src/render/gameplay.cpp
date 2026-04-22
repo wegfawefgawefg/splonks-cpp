@@ -161,23 +161,38 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     Vec2 target = GetStageCameraCenter(state.stage);
     float zoom = GetDefaultFollowCameraZoom(graphics);
 
+    const Entity* camera_target_entity = nullptr;
+    if (state.controlled_entity_vid.has_value()) {
+        camera_target_entity = state.entity_manager.GetEntity(*state.controlled_entity_vid);
+    }
+    if ((camera_target_entity == nullptr || !camera_target_entity->active) &&
+        state.mode == Mode::GameOver && state.player_vid.has_value()) {
+        camera_target_entity = state.entity_manager.GetEntity(*state.player_vid);
+    }
+
     if (graphics.camera_mode == CameraMode::StageFit) {
         zoom = GetStageFitCameraZoom(state.stage, graphics);
-    } else if (state.controlled_entity_vid.has_value()) {
-        if (const Entity* const controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid)) {
-            if (!graphics.debug_lock_play_camera) {
-                const Vec2 controlled_visual_center =
-                    entities::common::GetVisualCenterForEntity(*controlled, graphics, controlled->GetCenter());
-                const Vec2 delta = GetNearestWorldDelta(
-                    state.stage,
-                    graphics.play_cam.pos,
-                    controlled_visual_center
-                );
-                graphics.play_cam.pos += delta * 0.075F;
-                graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, graphics.play_cam.pos);
-            }
-            target = graphics.play_cam.pos;
+    } else if (camera_target_entity != nullptr && camera_target_entity->active) {
+        if (!graphics.debug_lock_play_camera) {
+            const Vec2 controlled_visual_center =
+                entities::common::GetVisualCenterForEntity(*camera_target_entity, graphics, camera_target_entity->GetCenter());
+            const Vec2 delta = GetNearestWorldDelta(
+                state.stage,
+                graphics.play_cam.pos,
+                controlled_visual_center
+            );
+            graphics.play_cam.pos += delta * 0.075F;
+            graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, graphics.play_cam.pos);
         }
+        target = graphics.play_cam.pos;
+    } else if (state.mode == Mode::GameOver && state.gameplay_camera_anchor_world_pos.has_value()) {
+        if (!graphics.debug_lock_play_camera) {
+            graphics.play_cam.pos = ClampCameraTargetToStage(
+                state.stage,
+                *state.gameplay_camera_anchor_world_pos
+            );
+        }
+        target = graphics.play_cam.pos;
     }
 
     zoom *= graphics.camera_zoom_multiplier;
@@ -219,9 +234,18 @@ void RenderStageTransition(SDL_Renderer* renderer, State& state, Graphics& graph
     );
 }
 
-void RenderGameOver(SDL_Renderer* renderer, Graphics& graphics) {
-    SDL_SetRenderDrawColor(renderer, 50, 0, 0, 255);
-    SDL_RenderClear(renderer);
+void RenderGameOver(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    RenderPlaying(renderer, state, graphics);
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 84);
+    SDL_FRect overlay{
+        0.0F,
+        0.0F,
+        static_cast<float>(graphics.dims.x),
+        static_cast<float>(graphics.dims.y),
+    };
+    SDL_RenderFillRect(renderer, &overlay);
 
     const float center_x = static_cast<float>(graphics.dims.x) / 2.0F;
     const float center_y = static_cast<float>(graphics.dims.y) / 2.0F;
@@ -231,17 +255,21 @@ void RenderGameOver(SDL_Renderer* renderer, Graphics& graphics) {
         TextType::MenuTitle,
         "Game Over",
         center_x,
-        center_y,
+        center_y - 24.0F,
         SDL_Color{255, 255, 255, 255}
     );
+
+    const char* prompt = state.scene_frame >= 60
+        ? "Press [jump] to try again..."
+        : "...";
     DrawText(
         renderer,
         graphics,
         30,
         graphics.ui_font,
-        "Press [jump] to try again...",
+        prompt,
         center_x - (static_cast<float>(graphics.dims.x) * 0.15F),
-        center_y + 75.0F,
+        center_y + 48.0F,
         SDL_Color{255, 255, 255, 255}
     );
 }

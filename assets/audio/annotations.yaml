@@ -71,6 +71,10 @@ audio:
     file: sounds/throw.ogg
     streamed: false
     default_volume: 1.0
+  - name: teleport
+    file: sounds/teleport.ogg
+    streamed: false
+    default_volume: 1.0
   - name: pistol_shoot
     file: sounds/pistol_shoot.ogg
     streamed: false

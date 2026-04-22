@@ -271,6 +271,9 @@ void ProcessInputGameOver(
     (void)window;
     (void)audio;
     (void)dt;
+    if (state.scene_frame < 60) {
+        return;
+    }
     if (state.menu_inputs.confirm.down) {
         QueueRespawnTransition(state);
         graphics.camera.rotation = 0.0F;

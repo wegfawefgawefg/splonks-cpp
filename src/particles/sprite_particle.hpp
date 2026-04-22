@@ -16,6 +16,9 @@ struct SpriteParticle {
     Vec2 size{};
     float rot = 0.0F;
     float alpha = 1.0F;
+    float tint_r = 1.0F;
+    float tint_g = 1.0F;
+    float tint_b = 1.0F;
     bool horizontal_flip = false;
     Vec2 vel{};
     Vec2 svel{};

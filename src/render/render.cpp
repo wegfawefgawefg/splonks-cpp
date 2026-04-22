@@ -51,7 +51,7 @@ void Render(
         RenderStageTransition(renderer, state, graphics);
         break;
     case Mode::GameOver:
-        RenderGameOver(renderer, graphics);
+        RenderGameOver(renderer, state, graphics);
         break;
     case Mode::Win:
         RenderWin(renderer, graphics);
@@ -85,9 +85,11 @@ void Render(
         SDL_SetGPURenderState(renderer, nullptr);
     }
 
-    if (state.mode == Mode::Playing) {
+    if (state.mode == Mode::Playing || state.mode == Mode::GameOver) {
         RenderPlayingHud(renderer, state, graphics);
-        RenderWorldPrompts(renderer, state, graphics);
+        if (state.mode == Mode::Playing) {
+            RenderWorldPrompts(renderer, state, graphics);
+        }
         RenderDebugOverlay(renderer, graphics, state, audio);
     }
 }

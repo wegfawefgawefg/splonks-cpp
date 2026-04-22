@@ -152,6 +152,7 @@ State State::New() {
     state.frame_pause = 0;
     state.audio_occlusion_enabled = true;
     state.audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
+    state.gameplay_camera_anchor_world_pos.reset();
     state.interact_claimed_vids_this_frame.clear();
     state.entity_manager = EntityManager::New();
     state.particles = ParticleSystem{};
@@ -176,6 +177,9 @@ State State::New() {
 
 void State::SetMode(Mode new_mode) {
     mode = new_mode;
+    if (new_mode != Mode::GameOver) {
+        gameplay_camera_anchor_world_pos.reset();
+    }
     scene_frame = 0;
     world_prompts.clear();
     debug_rect_annotations.clear();

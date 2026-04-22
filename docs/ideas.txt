@@ -1,2 +1,3 @@
 coyote skin - lengthened coyote time
-spider legs - more hang hands in more parts of your body
+spider legs - more hang hands in more parts of your body (backwall walk? backpack?)
+challenge mode - start with teleporter, walking is disabled.

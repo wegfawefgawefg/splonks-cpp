@@ -791,6 +791,7 @@ void InitCommonStageState(State& state) {
     state.particles.Clear();
     state.player_vid.reset();
     state.controlled_entity_vid.reset();
+    state.gameplay_camera_anchor_world_pos.reset();
     state.mouse_trailer_vid.reset();
 }
 
@@ -824,6 +825,40 @@ void SpawnPlayer(State& state, const Vec2& pos) {
     }
 }
 
+void GivePlayerHeldItem(State& state, EntityType type_) {
+    if (!state.player_vid.has_value()) {
+        return;
+    }
+
+    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
+    if (player == nullptr || player->holding_vid.has_value()) {
+        return;
+    }
+
+    const std::optional<VID> held_vid = state.entity_manager.NewEntity();
+    if (!held_vid.has_value()) {
+        return;
+    }
+
+    Entity* const held_item = state.entity_manager.GetEntityMut(*held_vid);
+    if (held_item == nullptr) {
+        return;
+    }
+
+    SetEntityAs(*held_item, type_);
+    held_item->vel = Vec2::New(0.0F, 0.0F);
+    held_item->acc = Vec2::New(0.0F, 0.0F);
+    held_item->held_by_vid = player->vid;
+    held_item->attachment_mode = AttachmentMode::Held;
+    held_item->has_physics = false;
+    held_item->can_collide = false;
+    held_item->facing = player->facing;
+    held_item->SetCenter(player->GetCenter());
+
+    player->holding_vid = held_item->vid;
+    player->holding = true;
+    player->holding_timer = kDefaultHoldingTimer;
+}
 
 void PlacePlayerAtPosition(State& state, const Vec2& pos) {
     if (!state.player_vid.has_value()) {
@@ -1853,7 +1888,10 @@ void InitStage(State& state, bool preserve_player_state) {
     }
 
     PlacePlayerAtEntrance(state);
-    if (carryover.player.has_value()) {
+    if (state.stage.stage_type == StageType::SplkMines1 && !carryover.player.has_value()) {
+        GivePlayerHeldItem(state, EntityType::Teleporter);
+        SnapAttachedItemsToPlayer(state);
+    } else if (carryover.player.has_value()) {
         SnapAttachedItemsToPlayer(state);
     }
 }

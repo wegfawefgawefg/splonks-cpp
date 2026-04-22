@@ -531,10 +531,10 @@ sprites:
       w: 8
       h: 14
     cbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+      x: 5
+      y: 3
+      w: 8
+      h: 13
     tile: false
     emit_point:
       x: 0

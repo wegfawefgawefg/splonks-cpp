@@ -166,6 +166,7 @@ enum class DamageResult {
     Died,
 };
 
+bool CanEntityTakeDamageType(const Entity& entity, DamageType damage_type);
 DamageResult TryDamageEntity(
     std::size_t entity_idx,
     State& state,

@@ -14,6 +14,15 @@ namespace splonks {
 namespace {
 
 constexpr float kShakeAttenuationRate = 0.1F;
+constexpr std::uint32_t kGameOverHitstopFrames = 8;
+constexpr std::uint32_t kGameOverSlowmoFrames = 60 * 3;
+
+float GetSimulationTickInterval(const State& state) {
+    if (state.mode == Mode::GameOver && state.scene_frame < kGameOverSlowmoFrames) {
+        return kTimestep * 2.0F;
+    }
+    return kTimestep;
+}
 
 void UpdateControlledEntity(State& state) {
     if (!state.controlled_entity_vid.has_value()) {
@@ -51,6 +60,9 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
             );
         }
     }
+    if (state.mode == Mode::GameOver && state.gameplay_camera_anchor_world_pos.has_value()) {
+        return *state.gameplay_camera_anchor_world_pos;
+    }
     return graphics.camera.target;
 }
 
@@ -58,8 +70,8 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
 
 void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
     state.time_since_last_update += frame_dt;
-    while (state.time_since_last_update > kTimestep) {
-        state.time_since_last_update -= kTimestep;
+    while (state.time_since_last_update > GetSimulationTickInterval(state)) {
+        state.time_since_last_update -= GetSimulationTickInterval(state);
         StepSingleTick(state, audio, graphics);
     }
 }
@@ -126,6 +138,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.ClearInteractClaims();
     state.entity_tools.Step();
     state.RebuildSid(graphics);
+    state.gameplay_camera_anchor_world_pos = graphics.camera.target;
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
@@ -160,13 +173,18 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     }
     if (lost) {
         state.pending_stage_transition.reset();
-        StopAllSoundEmitters(state, audio);
-        Vec2 game_over_pos = graphics.camera.target;
+        Vec2 game_over_pos = state.gameplay_camera_anchor_world_pos.value_or(graphics.camera.target);
         if (state.player_vid.has_value()) {
             if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-                game_over_pos = player->GetCenter();
+                if (player->active) {
+                    game_over_pos = entities::common::GetVisualCenterForEntity(*player, graphics, player->GetCenter());
+                    state.controlled_entity_vid = state.player_vid;
+                }
             }
         }
+        state.gameplay_camera_anchor_world_pos = game_over_pos;
+        state.frame_pause += kGameOverHitstopFrames;
+        AddShake(state, game_over_pos, 2.2F, 3.0F, ShakeMask::All);
         (void)PlayWorldSoundEmitter(state, game_over_pos, audio_asset_ids::GameOver);
         state.SetMode(Mode::GameOver);
     } else if (state.pending_stage_transition.has_value()) {
@@ -205,6 +223,13 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     StepEntities(state, audio, graphics, dt);
     UpdateAudioEmitters(state, audio, graphics);
+    for (Entity& entity : state.entity_manager.entities) {
+        if (!entity.active) {
+            continue;
+        }
+        AttenuateEntityShake(entity, kShakeAttenuationRate);
+    }
+    state.stage.AttenuateTileShake(kShakeAttenuationRate);
     state.particles.Step(graphics.frame_data_db, dt);
 }
 

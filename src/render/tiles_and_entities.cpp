@@ -604,7 +604,10 @@ void RenderAnimatedParticleSprite(
     float alpha,
     bool horizontal_flip,
     const FrameDataAnimator& animator,
-    FrameDataId fallback_animation_id = kInvalidFrameDataId
+    FrameDataId fallback_animation_id = kInvalidFrameDataId,
+    float tint_r = 1.0F,
+    float tint_g = 1.0F,
+    float tint_b = 1.0F
 ) {
     const FrameData* const frame_data =
         GetAnimatedParticleFrameData(graphics, animator, fallback_animation_id);
@@ -621,6 +624,7 @@ void RenderAnimatedParticleSprite(
     const SDL_FlipMode flip = horizontal_flip ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     const Vec2 half_size = size / 2.0F;
     SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
+    SDL_SetTextureColorModFloat(texture, std::clamp(tint_r, 0.0F, 1.0F), std::clamp(tint_g, 0.0F, 1.0F), std::clamp(tint_b, 0.0F, 1.0F));
     const SDL_FRect src{
         static_cast<float>(frame_data->sample_rect.x),
         static_cast<float>(frame_data->sample_rect.y),
@@ -633,6 +637,7 @@ void RenderAnimatedParticleSprite(
         SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, flip);
     }
     SDL_SetTextureAlphaMod(texture, 255);
+    SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
 }
 
 void RenderSpriteParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
@@ -651,7 +656,11 @@ void RenderSpriteParticlesForLayer(SDL_Renderer* renderer, const State& state, G
             particle.rot,
             particle.alpha,
             particle.horizontal_flip,
-            particle.frame_data_animator
+            particle.frame_data_animator,
+            kInvalidFrameDataId,
+            particle.tint_r,
+            particle.tint_g,
+            particle.tint_b
         );
     }
 }

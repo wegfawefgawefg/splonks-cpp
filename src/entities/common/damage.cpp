@@ -99,6 +99,34 @@ void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
     }
 }
 
+bool CanEntityTakeDamageType(const Entity& entity, DamageType damage_type) {
+    switch (entity.damage_vulnerability) {
+    case DamageVulnerability::AttackingOnly:
+        return damage_type == DamageType::Attack ||
+               damage_type == DamageType::IgnitingAttack;
+    case DamageVulnerability::BurningOnly:
+        return damage_type == DamageType::Burn;
+    case DamageVulnerability::CrushingOnly:
+        return damage_type == DamageType::Crush;
+    case DamageVulnerability::ExplosionOnly:
+        return damage_type == DamageType::Explosion;
+    case DamageVulnerability::CrushingAndSpikes:
+        return damage_type == DamageType::Crush || damage_type == DamageType::Spikes;
+    case DamageVulnerability::CrushingSpikesAndExplosion:
+        return damage_type == DamageType::Crush || damage_type == DamageType::Spikes ||
+               damage_type == DamageType::Explosion;
+    case DamageVulnerability::HeavyAttackOnly:
+        return damage_type == DamageType::HeavyAttack;
+    case DamageVulnerability::Vulnerable:
+        return true;
+    case DamageVulnerability::Immune:
+        return false;
+    case DamageVulnerability::AnthingExceptJumpOn:
+        return damage_type != DamageType::JumpOn;
+    }
+    return false;
+}
+
 DamageResult TryDamageEntity(
     std::size_t entity_idx,
     State& state,
@@ -112,46 +140,7 @@ DamageResult TryDamageEntity(
         return DamageResult::Hurt;
     }
 
-    const DamageVulnerability v = entity.damage_vulnerability;
-    if (v == DamageVulnerability::Immune) {
-        return DamageResult::None;
-    }
-    bool can_damage = false;
-    switch (entity.damage_vulnerability) {
-    case DamageVulnerability::AttackingOnly:
-        can_damage = damage_type == DamageType::Attack ||
-                     damage_type == DamageType::IgnitingAttack;
-        break;
-    case DamageVulnerability::BurningOnly:
-        can_damage = damage_type == DamageType::Burn;
-        break;
-    case DamageVulnerability::CrushingOnly:
-        can_damage = damage_type == DamageType::Crush;
-        break;
-    case DamageVulnerability::ExplosionOnly:
-        can_damage = damage_type == DamageType::Explosion;
-        break;
-    case DamageVulnerability::CrushingAndSpikes:
-        can_damage = damage_type == DamageType::Crush || damage_type == DamageType::Spikes;
-        break;
-    case DamageVulnerability::CrushingSpikesAndExplosion:
-        can_damage = damage_type == DamageType::Crush || damage_type == DamageType::Spikes ||
-                     damage_type == DamageType::Explosion;
-        break;
-    case DamageVulnerability::HeavyAttackOnly:
-        can_damage = damage_type == DamageType::HeavyAttack;
-        break;
-    case DamageVulnerability::Vulnerable:
-        can_damage = true;
-        break;
-    case DamageVulnerability::Immune:
-        can_damage = false;
-        break;
-    case DamageVulnerability::AnthingExceptJumpOn:
-        can_damage = damage_type != DamageType::JumpOn;
-        break;
-    }
-    if (can_damage) {
+    if (CanEntityTakeDamageType(entity, damage_type)) {
         if (entity.stone && damage_type == DamageType::Explosion) {
             entity.health = 0;
             DieIfDead(entity_idx, state, audio);
