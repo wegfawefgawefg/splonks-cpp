@@ -27,6 +27,7 @@ constexpr float kRescueKissFloatSpeed = -0.18F;
 constexpr std::uint32_t kRescueKissLifetimeFrames = 48;
 constexpr float kDamselWalkMinSpeed = 0.1F;
 constexpr float kDamselPanicRunSpeed = 1.5F;
+constexpr float kDamselRunAcceleration = 0.2F;
 constexpr float kDamselHeldReleaseLatch = 1.0F;
 constexpr int kDamselRescueHealthGain = 1;
 
@@ -123,14 +124,18 @@ void DetachDamselFromHolder(Entity& damsel, State& state) {
 
 void StartIdle(Entity& damsel) {
     damsel.ai_state = EntityAiState::Idle;
-    damsel.vel.x = 0.0F;
+    common::DecelerateHorizontallyToStop(damsel, kDamselRunAcceleration);
     TrySetAnimation(damsel, EntityDisplayState::Neutral);
 }
 
 void StartPanicRun(Entity& damsel) {
     damsel.ai_state = EntityAiState::Patrolling;
     const int direction = damsel.facing == LeftOrRight::Left ? -1 : 1;
-    damsel.vel.x = static_cast<float>(direction) * kDamselPanicRunSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        damsel,
+        static_cast<float>(direction) * kDamselPanicRunSpeed,
+        kDamselRunAcceleration
+    );
     TrySetAnimation(damsel, EntityDisplayState::Walk);
 }
 
@@ -202,7 +207,11 @@ void StepPanicRun(Entity& damsel, const State& state, const Graphics& graphics) 
         direction = -direction;
     }
 
-    damsel.vel.x = static_cast<float>(direction) * kDamselPanicRunSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        damsel,
+        static_cast<float>(direction) * kDamselPanicRunSpeed,
+        kDamselRunAcceleration
+    );
     SetMovementFlag(damsel, EntityMovementFlag::Running, true);
     SetMovementFlag(damsel, EntityMovementFlag::Walking, true);
 }

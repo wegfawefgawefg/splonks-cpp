@@ -25,6 +25,7 @@ constexpr float kWakeVerticalBelow = 32.0F;
 constexpr float kReturnHorizontalDistance = 96.0F;
 constexpr float kReturnVerticalDistance = 64.0F;
 constexpr float kSkeletonWalkSpeed = 1.0F;
+constexpr float kSkeletonWalkAcceleration = 0.2F;
 constexpr float kSkullBreakImpactSpeed = 2.25F;
 
 std::optional<Vec2> GetNearestPlayerDelta(const Entity& entity, const State& state) {
@@ -64,7 +65,7 @@ void EnterGettingUpState(Entity& entity) {
     entity.ai_state = EntityAiState::Disturbed;
     entity.hurt_on_contact = false;
     entity.can_be_stomped = false;
-    entity.vel.x = 0.0F;
+    common::DecelerateHorizontallyToStop(entity, kSkeletonWalkAcceleration);
     entity.frame_data_animator.loop = false;
     SetAnimation(entity, frame_data_ids::SkeletonGettingUp);
 }
@@ -76,7 +77,11 @@ void EnterWalkingState(Entity& entity) {
     entity.can_be_stomped = true;
     entity.frame_data_animator.loop = true;
     TrySetAnimation(entity, EntityDisplayState::Walk);
-    entity.vel.x = entity.facing == LeftOrRight::Left ? -kSkeletonWalkSpeed : kSkeletonWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        entity,
+        entity.facing == LeftOrRight::Left ? -kSkeletonWalkSpeed : kSkeletonWalkSpeed,
+        kSkeletonWalkAcceleration
+    );
 }
 
 bool IsPlayerInWakeRange(const Entity& entity, const State& state) {
@@ -235,7 +240,7 @@ void StepEntityLogicAsSkeleton(
     switch (skeleton.ai_state) {
     case EntityAiState::Idle:
         skeleton.hurt_on_contact = false;
-        skeleton.vel.x = 0.0F;
+        common::DecelerateHorizontallyToStop(skeleton, kSkeletonWalkAcceleration);
         if (IsPlayerInWakeRange(skeleton, state)) {
             FaceNearestPlayerIfAny(skeleton, state);
             EnterGettingUpState(skeleton);
@@ -243,7 +248,7 @@ void StepEntityLogicAsSkeleton(
         return;
     case EntityAiState::Disturbed:
         skeleton.hurt_on_contact = false;
-        skeleton.vel.x = 0.0F;
+        common::DecelerateHorizontallyToStop(skeleton, kSkeletonWalkAcceleration);
         if (skeleton.frame_data_animator.animation_id != frame_data_ids::SkeletonGettingUp) {
             EnterGettingUpState(skeleton);
             return;
@@ -271,7 +276,11 @@ void StepEntityLogicAsSkeleton(
     }
 
     skeleton.hurt_on_contact = true;
-    skeleton.vel.x = static_cast<float>(direction) * kSkeletonWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        skeleton,
+        static_cast<float>(direction) * kSkeletonWalkSpeed,
+        kSkeletonWalkAcceleration
+    );
     SetMovementFlag(skeleton, EntityMovementFlag::Walking, true);
     TrySetAnimation(skeleton, EntityDisplayState::Walk);
 }

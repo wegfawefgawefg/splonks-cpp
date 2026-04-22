@@ -11,6 +11,7 @@
 #include "world_query.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <memory>
 #include <optional>
@@ -36,13 +37,63 @@ constexpr float kCobwebAccelerationDamping = 0.0F;
 constexpr float kCobwebJumpEscapeVelocity = -1.7F;
 constexpr float kCobwebOccupantSpeedThreshold = 0.05F;
 
-Vec2 GetFallbackMuzzlePos(const Entity& weapon) {
-    const float direction = weapon.facing == LeftOrRight::Left ? -1.0F : 1.0F;
-    return weapon.GetCenter() + Vec2::New(8.0F * direction, 0.0F);
+struct WebGunAim {
+    Vec2 direction = Vec2::New(1.0F, 0.0F);
+    LeftOrRight facing = LeftOrRight::Right;
+    float rotation = 0.0F;
+};
+
+float NormalizeDegrees(float degrees) {
+    while (degrees > 180.0F) {
+        degrees -= 360.0F;
+    }
+    while (degrees <= -180.0F) {
+        degrees += 360.0F;
+    }
+    return degrees;
 }
 
-int GetFacingDirection(const Entity& entity) {
-    return entity.facing == LeftOrRight::Left ? -1 : 1;
+WebGunAim GetWebGunAim(const Entity& weapon, const Entity* holder, const State& state) {
+    int aim_x = 0;
+    int aim_y = 0;
+    LeftOrRight facing = holder != nullptr ? holder->facing : weapon.facing;
+    if (holder != nullptr) {
+        const controls::ControlIntent intent = controls::GetControlIntentForEntity(*holder, state);
+        if (intent.left && !intent.right) {
+            aim_x = -1;
+        } else if (intent.right && !intent.left) {
+            aim_x = 1;
+        }
+        if (intent.up && !intent.down) {
+            aim_y = -1;
+        } else if (intent.down && !intent.up) {
+            aim_y = 1;
+        }
+    }
+
+    if (aim_x < 0) {
+        facing = LeftOrRight::Left;
+    } else if (aim_x > 0) {
+        facing = LeftOrRight::Right;
+    }
+
+    Vec2 direction = Vec2::New(
+        static_cast<float>(aim_x),
+        static_cast<float>(aim_y)
+    );
+    if (direction == Vec2::New(0.0F, 0.0F)) {
+        direction = facing == LeftOrRight::Left ? Vec2::New(-1.0F, 0.0F) : Vec2::New(1.0F, 0.0F);
+    } else {
+        direction = NormalizeOrZero(direction);
+    }
+
+    const float world_angle = std::atan2(direction.y, direction.x) * (180.0F / 3.14159265F);
+    const float base_angle = facing == LeftOrRight::Left ? 180.0F : 0.0F;
+    return WebGunAim{
+        .direction = direction,
+        .facing = facing,
+        .rotation = NormalizeDegrees(world_angle - base_angle),
+    };
 }
 
 IVec2 SnapWorldPointToTile(const Vec2& point, const Stage& stage) {
@@ -56,6 +107,87 @@ Vec2 TileCenterToWorld(const IVec2& tile_pos) {
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
+}
+
+bool HasCobwebAtTile(const IVec2& tile_pos, const State& state) {
+    const IVec2 wrapped_tile_pos = state.stage.WrapTileCoord(tile_pos);
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!entity.active || entity.type_ != EntityType::Cobweb) {
+            continue;
+        }
+        if (SnapWorldPointToTile(entity.GetCenter(), state.stage) == wrapped_tile_pos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CanSpawnCobwebAtTile(const IVec2& tile_pos, const State& state) {
+    const std::optional<WorldTileQueryResult> tile_query = QueryTileAtTilePos(state.stage, tile_pos);
+    if (!tile_query.has_value() || tile_query->tile == nullptr) {
+        return false;
+    }
+    return !IsTileCollidable(*tile_query->tile) && !HasCobwebAtTile(tile_query->tile_pos, state);
+}
+
+bool IsWorldPointInsideSolidTile(const Vec2& point, const State& state) {
+    const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, ToIVec2(point));
+    return tile_query.has_value() && tile_query->tile != nullptr && IsTileCollidable(*tile_query->tile);
+}
+
+std::optional<IVec2> GetCobwebGrowthTile(const Entity& web_ball, const Entity& hit_cobweb, const State& state) {
+    const IVec2 hit_tile = SnapWorldPointToTile(hit_cobweb.GetCenter(), state.stage);
+    std::array<IVec2, 4> candidates{};
+    std::size_t candidate_count = 0;
+
+    auto push_candidate = [&](const IVec2& tile_pos) {
+        const IVec2 wrapped = state.stage.WrapTileCoord(tile_pos);
+        if (wrapped == hit_tile) {
+            return;
+        }
+        for (std::size_t i = 0; i < candidate_count; ++i) {
+            if (candidates[i] == wrapped) {
+                return;
+            }
+        }
+        if (candidate_count < candidates.size()) {
+            candidates[candidate_count++] = wrapped;
+        }
+    };
+
+    push_candidate(SnapWorldPointToTile(web_ball.GetCenter(), state.stage));
+
+    Vec2 incoming_dir = web_ball.vel * -1.0F;
+    if (incoming_dir == Vec2::New(0.0F, 0.0F)) {
+        incoming_dir = web_ball.facing == LeftOrRight::Left ? Vec2::New(1.0F, 0.0F) : Vec2::New(-1.0F, 0.0F);
+    }
+
+    const int step_x = incoming_dir.x > 0.0F ? 1 : (incoming_dir.x < 0.0F ? -1 : 0);
+    const int step_y = incoming_dir.y > 0.0F ? 1 : (incoming_dir.y < 0.0F ? -1 : 0);
+    const bool x_dominant = std::abs(incoming_dir.x) >= std::abs(incoming_dir.y);
+
+    if (x_dominant) {
+        if (step_x != 0) {
+            push_candidate(hit_tile + IVec2::New(step_x, 0));
+        }
+        if (step_y != 0) {
+            push_candidate(hit_tile + IVec2::New(0, step_y));
+        }
+    } else {
+        if (step_y != 0) {
+            push_candidate(hit_tile + IVec2::New(0, step_y));
+        }
+        if (step_x != 0) {
+            push_candidate(hit_tile + IVec2::New(step_x, 0));
+        }
+    }
+
+    for (std::size_t i = 0; i < candidate_count; ++i) {
+        if (CanSpawnCobwebAtTile(candidates[i], state)) {
+            return candidates[i];
+        }
+    }
+    return std::nullopt;
 }
 
 bool AabbOverlapsAnyCobweb(const AABB& target_aabb, VID self_vid, const State& state, const Graphics& graphics) {
@@ -106,15 +238,16 @@ void SpawnWebParticle(
     state.particles.Add(std::move(particle));
 }
 
-void SpawnWebSpray(State& state, const Vec2& origin, int direction) {
+void SpawnWebSpray(State& state, const Vec2& origin, const Vec2& direction) {
+    const Vec2 normalized_direction = NormalizeOrZero(direction);
     for (int i = 0; i < 7; ++i) {
+        const Vec2 spray_velocity =
+            (normalized_direction * rng::RandomFloat(0.35F, 1.5F)) +
+            Vec2::New(rng::RandomFloat(-0.45F, 0.45F), rng::RandomFloat(-0.45F, 0.45F));
         SpawnWebParticle(
             state,
             origin,
-            Vec2::New(
-                rng::RandomFloat(0.35F, 1.5F) * static_cast<float>(direction),
-                rng::RandomFloat(-0.9F, 0.25F)
-            ),
+            spray_velocity,
             rng::RandomFloat(0.7F, 0.95F),
             rng::RandomFloat(4.0F, 6.0F),
             rng::RandomFloat(8.0F, 14.0F)
@@ -213,6 +346,26 @@ void TriggerWebBallBurst(std::size_t entity_idx, State& state, bool spawn_cobweb
     const Vec2 impact_center = web_ball.GetCenter();
     if (spawn_cobweb) {
         const IVec2 tile_pos = SnapWorldPointToTile(impact_center, state.stage);
+        if (CanSpawnCobwebAtTile(tile_pos, state)) {
+            (void)SpawnCobwebEntity(state, TileCenterToWorld(tile_pos), true);
+        }
+    }
+    SpawnCobwebBurst(state, impact_center);
+    state.entity_manager.SetInactive(entity_idx);
+}
+
+void TriggerWebBallBurstAtTile(std::size_t entity_idx, State& state, const IVec2& tile_pos) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& web_ball = state.entity_manager.entities[entity_idx];
+    if (!web_ball.active) {
+        return;
+    }
+
+    const Vec2 impact_center = web_ball.GetCenter();
+    if (CanSpawnCobwebAtTile(tile_pos, state)) {
         (void)SpawnCobwebEntity(state, TileCenterToWorld(tile_pos), true);
     }
     SpawnCobwebBurst(state, impact_center);
@@ -220,6 +373,7 @@ void TriggerWebBallBurst(std::size_t entity_idx, State& state, bool spawn_cobweb
 }
 
 void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+    (void)graphics;
     (void)audio;
     Entity& weapon = state.entity_manager.entities[entity_idx];
     Entity* holder = nullptr;
@@ -227,21 +381,32 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
         holder = state.entity_manager.GetEntityMut(*weapon.held_by_vid);
     }
 
-    const int direction = GetFacingDirection(weapon);
-    const Vec2 muzzle_pos = common::GetEmitPointForEntity(
-        weapon,
-        graphics,
-        GetFallbackMuzzlePos(weapon)
-    );
-    const Vec2 spawn_pos = muzzle_pos + Vec2::New(4.0F * static_cast<float>(direction), 0.0F);
+    const WebGunAim aim = GetWebGunAim(weapon, holder, state);
+    weapon.facing = aim.facing;
+    weapon.rotation = aim.rotation;
+
+    const Vec2 muzzle_pos = weapon.GetCenter() + (aim.direction * 8.0F);
+    const Vec2 spawn_pos = muzzle_pos + (aim.direction * 4.0F);
+
+    if (holder != nullptr && IsWorldPointInsideSolidTile(muzzle_pos, state)) {
+        const IVec2 holder_tile = SnapWorldPointToTile(holder->GetCenter(), state.stage);
+        if (CanSpawnCobwebAtTile(holder_tile, state)) {
+            (void)SpawnCobwebEntity(state, TileCenterToWorld(holder_tile), true);
+        }
+        (void)PlayWorldSoundEmitter(state, holder->GetCenter(), audio_asset_ids::PistolShoot);
+        SpawnWebSpray(state, holder->GetCenter(), aim.direction);
+        if (holder != nullptr) {
+            holder->vel.x -= aim.direction.x * 0.12F;
+            holder->vel.y -= aim.direction.y * 0.12F;
+        }
+        return;
+    }
 
     Entity* const web_ball = SpawnWebBallEntity(state, spawn_pos);
     if (web_ball != nullptr) {
-        web_ball->facing = weapon.facing;
-        web_ball->vel = Vec2::New(
-            static_cast<float>(direction) * kWebBallSpeedX + (holder != nullptr ? holder->vel.x * 0.35F : 0.0F),
-            kWebBallSpeedY + (holder != nullptr ? holder->vel.y * 0.15F : 0.0F)
-        );
+        web_ball->facing = aim.facing;
+        web_ball->vel = (aim.direction * kWebBallSpeedX) +
+                        (holder != nullptr ? holder->vel * 0.35F : Vec2::New(0.0F, 0.0F));
         web_ball->acc = Vec2::New(0.0F, 0.0F);
         web_ball->thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : weapon.use_state.user_vid;
         web_ball->thrown_immunity_timer = common::kThrownByImmunityDuration;
@@ -251,9 +416,10 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
     }
 
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
-    SpawnWebSpray(state, muzzle_pos, direction);
+    SpawnWebSpray(state, muzzle_pos, aim.direction);
     if (holder != nullptr) {
-        holder->vel.x -= 0.12F * static_cast<float>(direction);
+        holder->vel.x -= aim.direction.x * 0.12F;
+        holder->vel.y -= aim.direction.y * 0.12F;
     }
 }
 
@@ -341,8 +507,21 @@ common::ContactResolution OnEntityContactAsWebBall(
         }
     }
 
-    const bool spawn_cobweb = other.type_ != EntityType::Cobweb;
-    TriggerWebBallBurst(entity_idx, state, spawn_cobweb);
+    if (other.type_ != EntityType::Cobweb) {
+        if (Entity* const other_mut = state.entity_manager.GetEntityMut(other.vid)) {
+            other_mut->vel = Vec2::New(0.0F, 0.0F);
+            other_mut->acc = Vec2::New(0.0F, 0.0F);
+            other_mut->fall_distance = 0.0F;
+        }
+        TriggerWebBallBurst(entity_idx, state, true);
+        return common::ContactResolution{.stop_sweep = true};
+    }
+
+    if (const std::optional<IVec2> growth_tile = GetCobwebGrowthTile(web_ball, other, state); growth_tile.has_value()) {
+        TriggerWebBallBurstAtTile(entity_idx, state, *growth_tile);
+    } else {
+        TriggerWebBallBurst(entity_idx, state, false);
+    }
     return common::ContactResolution{.stop_sweep = true};
 }
 
@@ -482,7 +661,6 @@ void StepEntityLogicAsWebCannon(
     Audio& audio,
     float dt
 ) {
-    (void)state;
     (void)graphics;
     (void)audio;
     (void)dt;
@@ -493,6 +671,19 @@ void StepEntityLogicAsWebCannon(
             weapon.counter_a = 0.0F;
         }
     }
+
+    const Entity* holder = nullptr;
+    if (weapon.held_by_vid.has_value()) {
+        holder = state.entity_manager.GetEntity(*weapon.held_by_vid);
+    }
+    if (holder == nullptr) {
+        weapon.rotation = 0.0F;
+        return;
+    }
+
+    const WebGunAim aim = GetWebGunAim(weapon, holder, state);
+    weapon.facing = aim.facing;
+    weapon.rotation = aim.rotation;
 }
 
 void StepEntityLogicAsWebBall(
@@ -696,6 +887,7 @@ extern const EntityArchetype kCobwebArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .can_apply_projectile_contact = false,
     .on_damage = OnDamageAsCobweb,
     .step_logic = StepEntityLogicAsCobweb,
     .on_entity_contact = OnEntityContactAsCobweb,

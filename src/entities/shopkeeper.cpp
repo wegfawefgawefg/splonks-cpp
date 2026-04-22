@@ -21,6 +21,8 @@ namespace {
 constexpr float kShopkeeperJumpSpeedY = -5.0F;
 constexpr float kShopkeeperMoveSpeedX = 1.5F;
 constexpr float kShopkeeperRecoverPistolSpeedX = 1.8F;
+constexpr float kShopkeeperMoveAcceleration = 0.24F;
+constexpr float kShopkeeperRecoverAcceleration = 0.28F;
 constexpr float kShopkeeperShootDistance = 160.0F;
 constexpr float kShopkeeperSightVerticalTolerance = 20.0F;
 constexpr float kShopkeeperJumpCooldownFrames = 20.0F;
@@ -189,7 +191,11 @@ bool TryRecoverDroppedPistol(
 
     const int move_direction = delta.x < 0.0F ? -1 : (delta.x > 0.0F ? 1 : 0);
     if (shopkeeper.grounded) {
-        shopkeeper.vel.x = static_cast<float>(move_direction) * kShopkeeperRecoverPistolSpeedX;
+        common::AccelerateHorizontallyTowardSpeed(
+            shopkeeper,
+            static_cast<float>(move_direction) * kShopkeeperRecoverPistolSpeedX,
+            kShopkeeperRecoverAcceleration
+        );
     }
 
     const bool pistol_above = delta.y < -kShopkeeperRecoverPistolJumpHeightThreshold;
@@ -279,7 +285,7 @@ void StepEntityLogicAsShopkeeper(
     }
 
     if (!shopkeeper.wanted) {
-        shopkeeper.vel.x = 0.0F;
+        common::DecelerateHorizontallyToStop(shopkeeper, kShopkeeperMoveAcceleration);
         TrySetAnimation(shopkeeper, EntityDisplayState::Neutral);
         return;
     }
@@ -312,12 +318,20 @@ void StepEntityLogicAsShopkeeper(
 
     if (shopkeeper.grounded && shopkeeper.counter_a <= 0.0F) {
         shopkeeper.vel.y = kShopkeeperJumpSpeedY;
-        shopkeeper.vel.x = delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX;
+        common::AccelerateHorizontallyTowardSpeed(
+            shopkeeper,
+            delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX,
+            kShopkeeperMoveAcceleration
+        );
         shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
     }
 
     if (shopkeeper.grounded) {
-        shopkeeper.vel.x = delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX;
+        common::AccelerateHorizontallyTowardSpeed(
+            shopkeeper,
+            delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX,
+            kShopkeeperMoveAcceleration
+        );
     }
 
     SetMovementFlag(shopkeeper, EntityMovementFlag::Running, true);

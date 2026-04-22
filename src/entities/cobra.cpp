@@ -18,6 +18,7 @@ namespace splonks::entities::cobra {
 namespace {
 
 constexpr float kCobraWalkSpeed = 0.85F;
+constexpr float kCobraWalkAcceleration = 0.18F;
 constexpr int kCobraIdleMinFrames = 18;
 constexpr int kCobraIdleMaxFrames = 42;
 constexpr int kCobraIdleChance = 120;
@@ -35,13 +36,17 @@ constexpr unsigned int kCobraVenomDamage = 1;
 void StartIdle(Entity& cobra, int min_frames = kCobraIdleMinFrames, int max_frames = kCobraIdleMaxFrames) {
     cobra.ai_state = EntityAiState::Idle;
     cobra.counter_a = static_cast<float>(rng::RandomIntInclusive(min_frames, max_frames));
-    cobra.vel.x = 0.0F;
+    common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
     TrySetAnimation(cobra, EntityDisplayState::Neutral);
 }
 
 void StartWalking(Entity& cobra) {
     cobra.ai_state = EntityAiState::Patrolling;
-    cobra.vel.x = cobra.facing == LeftOrRight::Left ? -kCobraWalkSpeed : kCobraWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        cobra,
+        cobra.facing == LeftOrRight::Left ? -kCobraWalkSpeed : kCobraWalkSpeed,
+        kCobraWalkAcceleration
+    );
     TrySetAnimation(cobra, EntityDisplayState::Walk);
 }
 
@@ -248,7 +253,7 @@ void StepEntityLogicAsCobra(
                 FaceTowards(cobra, player->GetCenter(), state.stage);
             }
         }
-        cobra.vel.x = 0.0F;
+        common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnimation(cobra, EntityDisplayState::Walk);
         FireCobraSpit(entity_idx, state, graphics);
         cobra.counter_b = static_cast<float>(rng::RandomIntInclusive(
@@ -260,7 +265,7 @@ void StepEntityLogicAsCobra(
     }
 
     if (cobra.ai_state == EntityAiState::Idle) {
-        cobra.vel.x = 0.0F;
+        common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnimation(cobra, EntityDisplayState::Neutral);
         if (cobra.counter_a > 0.0F) {
             cobra.counter_a -= 1.0F;
@@ -284,7 +289,11 @@ void StepEntityLogicAsCobra(
         return;
     }
 
-    cobra.vel.x = static_cast<float>(direction) * kCobraWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        cobra,
+        static_cast<float>(direction) * kCobraWalkSpeed,
+        kCobraWalkAcceleration
+    );
     SetMovementFlag(cobra, EntityMovementFlag::Walking, true);
     TrySetAnimation(cobra, EntityDisplayState::Walk);
 }

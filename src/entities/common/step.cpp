@@ -4,6 +4,9 @@
 #include "tile.hpp"
 #include "world_query.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 namespace splonks::entities::common {
 
 namespace {
@@ -57,6 +60,19 @@ void StepStunTimer(std::size_t entity_idx, State& state) {
             recover_from_stun();
         }
     }
+}
+
+void AccelerateHorizontallyTowardSpeed(Entity& entity, float target_speed, float max_acceleration) {
+    const float delta = target_speed - entity.vel.x;
+    entity.acc.x += std::clamp(delta, -max_acceleration, max_acceleration);
+}
+
+void DecelerateHorizontallyToStop(Entity& entity, float max_acceleration, float snap_speed) {
+    if (std::abs(entity.vel.x) <= snap_speed) {
+        entity.vel.x = 0.0F;
+        return;
+    }
+    AccelerateHorizontallyTowardSpeed(entity, 0.0F, max_acceleration);
 }
 
 void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio) {

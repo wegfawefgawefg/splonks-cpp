@@ -15,6 +15,7 @@ namespace splonks::entities::snake {
 namespace {
 
 constexpr float kSnakeWalkSpeed = 1.0F;
+constexpr float kSnakeWalkAcceleration = 0.2F;
 constexpr int kSnakeIdleMinFrames = 20;
 constexpr int kSnakeIdleMaxFrames = 50;
 constexpr int kSnakeIdleChance = 100;
@@ -22,13 +23,17 @@ constexpr int kSnakeIdleChance = 100;
 void StartIdle(Entity& snake) {
     snake.ai_state = EntityAiState::Idle;
     snake.counter_a = static_cast<float>(rng::RandomIntInclusive(kSnakeIdleMinFrames, kSnakeIdleMaxFrames));
-    snake.vel.x = 0.0F;
+    common::DecelerateHorizontallyToStop(snake, kSnakeWalkAcceleration);
     TrySetAnimation(snake, EntityDisplayState::Neutral);
 }
 
 void StartWalking(Entity& snake) {
     snake.ai_state = EntityAiState::Patrolling;
-    snake.vel.x = snake.facing == LeftOrRight::Left ? -kSnakeWalkSpeed : kSnakeWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        snake,
+        snake.facing == LeftOrRight::Left ? -kSnakeWalkSpeed : kSnakeWalkSpeed,
+        kSnakeWalkAcceleration
+    );
     TrySetAnimation(snake, EntityDisplayState::Walk);
 }
 
@@ -50,7 +55,7 @@ void StepEntityLogicAsSnake(
     }
 
     if (snake.ai_state == EntityAiState::Idle) {
-        snake.vel.x = 0.0F;
+        common::DecelerateHorizontallyToStop(snake, kSnakeWalkAcceleration);
         TrySetAnimation(snake, EntityDisplayState::Neutral);
         if (snake.counter_a > 0.0F) {
             snake.counter_a -= 1.0F;
@@ -74,7 +79,11 @@ void StepEntityLogicAsSnake(
         return;
     }
 
-    snake.vel.x = static_cast<float>(direction) * kSnakeWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        snake,
+        static_cast<float>(direction) * kSnakeWalkSpeed,
+        kSnakeWalkAcceleration
+    );
     SetMovementFlag(snake, EntityMovementFlag::Walking, true);
     TrySetAnimation(snake, EntityDisplayState::Walk);
 }

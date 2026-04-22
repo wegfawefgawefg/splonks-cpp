@@ -41,6 +41,8 @@ void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio);
 void ApplyDeactivateConditions(std::size_t entity_idx, State& state);
 void StepStunTimer(std::size_t entity_idx, State& state);
 void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio);
+void AccelerateHorizontallyTowardSpeed(Entity& entity, float target_speed, float max_acceleration);
+void DecelerateHorizontallyToStop(Entity& entity, float max_acceleration, float snap_speed = 0.05F);
 void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& graphics, float dt);
 void RefreshAllEntityFrameDataGeometry(State& state, const Graphics& graphics);
 void EulerStep(std::size_t entity_idx, State& state, float dt);

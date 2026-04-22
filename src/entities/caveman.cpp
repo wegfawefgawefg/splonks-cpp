@@ -19,6 +19,8 @@ namespace {
 
 constexpr float kCavemanWalkSpeed = 0.8F;
 constexpr float kCavemanAttackSpeed = 1.6F;
+constexpr float kCavemanWalkAcceleration = 0.18F;
+constexpr float kCavemanAttackAcceleration = 0.24F;
 constexpr float kCavemanWallHopSpeedX = 1.0F;
 constexpr float kCavemanWallHopSpeedY = -1.0F;
 constexpr float kCavemanAlertHopSpeedY = -1.0F;
@@ -41,19 +43,27 @@ void FaceTowards(Entity& caveman, const Vec2& target_pos, const Stage& stage) {
 void StartIdle(Entity& caveman) {
     caveman.ai_state = EntityAiState::Idle;
     caveman.counter_a = static_cast<float>(rng::RandomIntInclusive(kCavemanIdleMinFrames, kCavemanIdleMaxFrames));
-    caveman.vel.x = 0.0F;
+    common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
     TrySetAnimation(caveman, EntityDisplayState::Neutral);
 }
 
 void StartWalking(Entity& caveman) {
     caveman.ai_state = EntityAiState::Patrolling;
-    caveman.vel.x = caveman.facing == LeftOrRight::Left ? -kCavemanWalkSpeed : kCavemanWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        caveman,
+        caveman.facing == LeftOrRight::Left ? -kCavemanWalkSpeed : kCavemanWalkSpeed,
+        kCavemanWalkAcceleration
+    );
     TrySetAnimation(caveman, EntityDisplayState::Walk);
 }
 
 void StartAttacking(Entity& caveman) {
     caveman.ai_state = EntityAiState::Pursuing;
-    caveman.vel.x = caveman.facing == LeftOrRight::Left ? -kCavemanAttackSpeed : kCavemanAttackSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        caveman,
+        caveman.facing == LeftOrRight::Left ? -kCavemanAttackSpeed : kCavemanAttackSpeed,
+        kCavemanAttackAcceleration
+    );
     TrySetAnimation(caveman, EntityDisplayState::Walk);
 }
 
@@ -161,7 +171,11 @@ void StepEntityLogicAsCaveman(
             caveman.facing = caveman.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
             direction = -direction;
         }
-        caveman.vel.x = static_cast<float>(direction) * kCavemanAttackSpeed;
+        common::AccelerateHorizontallyTowardSpeed(
+            caveman,
+            static_cast<float>(direction) * kCavemanAttackSpeed,
+            kCavemanAttackAcceleration
+        );
         SetMovementFlag(caveman, EntityMovementFlag::Running, true);
         SetMovementFlag(caveman, EntityMovementFlag::Walking, true);
         TrySetAnimation(caveman, EntityDisplayState::Walk);
@@ -169,7 +183,7 @@ void StepEntityLogicAsCaveman(
     }
 
     if (caveman.ai_state == EntityAiState::Idle) {
-        caveman.vel.x = 0.0F;
+        common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
         TrySetAnimation(caveman, EntityDisplayState::Neutral);
         MaybeWallHopWhileIdle(caveman, state, graphics);
         if (caveman.counter_a > 0.0F) {
@@ -194,7 +208,11 @@ void StepEntityLogicAsCaveman(
         return;
     }
 
-    caveman.vel.x = static_cast<float>(direction) * kCavemanWalkSpeed;
+    common::AccelerateHorizontallyTowardSpeed(
+        caveman,
+        static_cast<float>(direction) * kCavemanWalkSpeed,
+        kCavemanWalkAcceleration
+    );
     SetMovementFlag(caveman, EntityMovementFlag::Walking, true);
     TrySetAnimation(caveman, EntityDisplayState::Walk);
 }
