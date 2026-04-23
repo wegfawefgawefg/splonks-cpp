@@ -13,6 +13,8 @@ struct State;
 using EntityOnDeath = void (*)(std::size_t entity_idx, State& state, Audio& audio);
 using EntityOnUse =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
+using EntityControlLogic =
+    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 using EntityStepLogic =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 using EntityStepPhysics =
@@ -33,6 +35,7 @@ struct EntityArchetype {
     bool can_hang_ledge = false;
     bool can_be_stunned = false;
     bool has_ground_friction = true;
+    float throw_velocity_scale = 1.0F;
     DrawLayer draw_layer = DrawLayer::Middle;
     LeftOrRight facing = LeftOrRight::Left;
     EntityCondition condition = EntityCondition::Normal;
@@ -44,6 +47,7 @@ struct EntityArchetype {
     std::optional<SoundEffect> death_sound = std::nullopt;
     EntityOnDeath on_death = nullptr;
     EntityOnUse on_use = nullptr;
+    EntityControlLogic control_logic = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     EntityLabel entity_label_a = EntityLabel::None;

@@ -75,6 +75,56 @@ void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
 
 } // namespace
 
+void ControlEntityAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& player = state.entity_manager.entities[entity_idx];
+    const controls::ControlIntent intent = controls::GetControlIntentForEntity(player, state);
+    if (player.condition != EntityCondition::Normal) {
+        player.was_horizontally_controlled_this_frame = false;
+        return;
+    }
+
+    const bool climbing = player.IsClimbing();
+    player.was_horizontally_controlled_this_frame = !climbing && (intent.left || intent.right);
+
+    if (climbing) {
+        player.acc.x = 0.0F;
+        player.vel.x = 0.0F;
+    } else if (!(intent.left && intent.right)) {
+        if (intent.run) {
+            if (intent.left) {
+                player.acc.x = -kRunAcc;
+            }
+            if (intent.right) {
+                player.acc.x = kRunAcc;
+            }
+        } else {
+            if (intent.left) {
+                player.acc.x = -kMoveAcc;
+            }
+            if (intent.right) {
+                player.acc.x = kMoveAcc;
+            }
+        }
+    }
+    if (intent.stop) {
+        player.acc = Vec2::New(0.0F, 0.0F);
+        player.vel = Vec2::New(0.0F, 0.0F);
+    }
+}
+
 extern const EntityArchetype kPlayerArchetype{
     .type_ = EntityType::Player,
     .size = Vec2::New(10.0F, 10.0F),
@@ -97,6 +147,7 @@ extern const EntityArchetype kPlayerArchetype{
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
     .damage_sound = audio_asset_ids::PlayerOuch,
+    .control_logic = ControlEntityAsPlayer,
     .step_logic = StepEntityLogicAsPlayer,
     .step_physics = StepEntityPhysicsAsPlayer,
     .alignment = Alignment::Ally,

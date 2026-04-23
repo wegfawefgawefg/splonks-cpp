@@ -26,6 +26,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.vanish_on_death = archetype.vanish_on_death;
     entity.affected_by_ground_friction = archetype.affected_by_ground_friction;
     entity.support_ground_friction = archetype.support_ground_friction;
+    entity.throw_velocity_scale = archetype.throw_velocity_scale;
     entity.alpha = archetype.alpha;
     entity.passive_item = archetype.passive_item;
     entity.buyable = archetype.buyable;
@@ -39,6 +40,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.on_area_enter = archetype.on_area_enter;
     entity.on_area_exit = archetype.on_area_exit;
     entity.on_area_tile_changed = archetype.on_area_tile_changed;
+    entity.control_logic = archetype.control_logic;
     entity.step_logic = archetype.step_logic;
     entity.step_physics = archetype.step_physics;
     entity.crusher_pusher = archetype.crusher_pusher;

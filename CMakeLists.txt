@@ -185,6 +185,7 @@ add_executable(splonks-cpp
     src/entities/dvdlogo.cpp
     src/entities/dice.cpp
     src/entities/emerald_big.cpp
+    src/entities/flappy_bee.cpp
     src/entities/gear_items.cpp
     src/entities/ghost_ball.cpp
     src/entities/pot.cpp

@@ -54,6 +54,8 @@ using EntityOnAreaTileChanged = void (*) (
     State& state,
     Audio& audio
 );
+using EntityControlLogic =
+    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 using EntityStepLogic =
     void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 using EntityStepPhysics =

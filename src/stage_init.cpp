@@ -785,6 +785,38 @@ Stage MakeMazeDoorTestStage(MazeDoorTestRoom room) {
     return stage;
 }
 
+EntityType GetConfiguredPlayerSpawnType(const State& state) {
+    if (!state.settings.debug_ui.default_spawn_enabled) {
+        return EntityType::Player;
+    }
+
+    const std::uint32_t type_index = state.settings.debug_ui.default_spawn_type;
+    if (type_index == 0 || type_index >= kEntityTypeCount) {
+        return EntityType::Player;
+    }
+    return static_cast<EntityType>(type_index);
+}
+
+void GrantPlayerStarterTools(State& state, const VID& player_vid) {
+    if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
+        FillToolSlot(
+            state.entity_tools.EnsureToolSlot(player_vid, 0),
+            *bomb_tool_kind,
+            kPlayerInitialBombs,
+            true
+        );
+    }
+
+    if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
+        FillToolSlot(
+            state.entity_tools.EnsureToolSlot(player_vid, 1),
+            *rope_tool_kind,
+            kPlayerInitialRopes,
+            true
+        );
+    }
+}
+
 void InitCommonStageState(State& state) {
     state.stage_frame = 0;
     state.entity_manager.ClearAllEntities();
@@ -802,26 +834,14 @@ void SpawnPlayer(State& state, const Vec2& pos) {
         state.player_vid = player_vid;
         state.controlled_entity_vid = player_vid;
         if (Entity* const player = state.entity_manager.GetEntityMut(*player_vid)) {
-            SetEntityAs(*player, EntityType::Player);
+            const EntityType spawn_type = GetConfiguredPlayerSpawnType(state);
+            SetEntityAs(*player, spawn_type);
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
+            player->acc = Vec2::New(0.0F, 0.0F);
 
-            if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
-                FillToolSlot(
-                    state.entity_tools.EnsureToolSlot(*player_vid, 0),
-                    *bomb_tool_kind,
-                    kPlayerInitialBombs,
-                    true
-                );
-            }
-
-            if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
-                FillToolSlot(
-                    state.entity_tools.EnsureToolSlot(*player_vid, 1),
-                    *rope_tool_kind,
-                    kPlayerInitialRopes,
-                    true
-                );
+            if (spawn_type == EntityType::Player) {
+                GrantPlayerStarterTools(state, *player_vid);
             }
         }
     }

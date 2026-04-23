@@ -1,6 +1,5 @@
 #include "controls.hpp"
 
-#include "entities/player.hpp"
 
 namespace splonks::controls {
 
@@ -33,44 +32,6 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
         .stop = inputs.stop.down,
         .no_hang = inputs.down.down,
     };
-}
-
-void ControlEntityAsPlayer(const VID& entity_vid, State& state) {
-    if (Entity* const player = state.entity_manager.GetEntityMut(entity_vid)) {
-        const ControlIntent intent = GetControlIntentForEntity(*player, state);
-        if (player->condition != EntityCondition::Normal) {
-            player->was_horizontally_controlled_this_frame = false;
-            return;
-        }
-
-        const bool climbing = player->IsClimbing();
-        player->was_horizontally_controlled_this_frame = !climbing && (intent.left || intent.right);
-
-        if (climbing) {
-            player->acc.x = 0.0F;
-            player->vel.x = 0.0F;
-        } else if (!(intent.left && intent.right)) {
-            if (intent.run) {
-                if (intent.left) {
-                    player->acc.x = -entities::player::kRunAcc;
-                }
-                if (intent.right) {
-                    player->acc.x = entities::player::kRunAcc;
-                }
-            } else {
-                if (intent.left) {
-                    player->acc.x = -entities::player::kMoveAcc;
-                }
-                if (intent.right) {
-                    player->acc.x = entities::player::kMoveAcc;
-                }
-            }
-        }
-        if (intent.stop) {
-            player->acc = Vec2::New(0.0F, 0.0F);
-            player->vel = Vec2::New(0.0F, 0.0F);
-        }
-    }
 }
 
 } // namespace splonks::controls

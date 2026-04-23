@@ -103,6 +103,16 @@ struct DebugPlayback {
     bool pending_spawn_at_mouse = false;
     double pending_spawn_at_mouse_until = 0.0;
     std::string spawn_status;
+    EntityType character_swap_entity_type = EntityType::Player;
+    EntityType default_spawn_entity_type = EntityType::Player;
+    std::array<char, 64> character_swap_search{};
+    bool default_spawn_enabled = false;
+    bool character_swap_fresh = true;
+    bool character_swap_keep_passives = false;
+    bool character_swap_keep_money = false;
+    bool character_swap_keep_health = false;
+    bool character_swap_keep_tools = false;
+    std::string character_swap_status;
     std::array<char, 512> file_path{};
     std::string io_status;
     VID audio_brush_loop_handle = kInvalidAudioInstanceVID;

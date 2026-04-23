@@ -36,6 +36,7 @@ struct EntityArchetype {
     bool stun_recovers_while_held = true;
     bool affected_by_ground_friction = true;
     float support_ground_friction = 0.85F;
+    float throw_velocity_scale = 1.0F;
     float alpha = 1.0F;
     DrawLayer draw_layer = DrawLayer::Middle;
     bool render_enabled = true;
@@ -61,6 +62,7 @@ struct EntityArchetype {
     EntityOnAreaEnter on_area_enter = nullptr;
     EntityOnAreaExit on_area_exit = nullptr;
     EntityOnAreaTileChanged on_area_tile_changed = nullptr;
+    EntityControlLogic control_logic = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     EntityOnEntityContact on_entity_contact = nullptr;

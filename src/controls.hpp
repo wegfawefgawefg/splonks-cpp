@@ -26,6 +26,5 @@ struct ControlIntent {
 };
 
 ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state);
-void ControlEntityAsPlayer(const VID& entity_vid, State& state);
 
 } // namespace splonks::controls

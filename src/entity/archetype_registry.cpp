@@ -18,6 +18,7 @@
 #include "entities/dvdlogo.hpp"
 #include "entities/dice.hpp"
 #include "entities/emerald_big.hpp"
+#include "entities/flappy_bee.hpp"
 #include "entities/gear_items.hpp"
 #include "entities/ghost_ball.hpp"
 #include "entities/giant_tiki_head.hpp"
@@ -202,6 +203,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Meathead, entities::meathead::kMeatheadArchetype, "Meathead");
     SetArchetype(EntityType::WebBall, entities::web_cannon::kWebBallArchetype, "WebBall");
     SetArchetype(EntityType::Cobweb, entities::web_cannon::kCobwebArchetype, "Cobweb");
+    SetArchetype(EntityType::FlappyBee, entities::flappy_bee::kFlappyBeeArchetype, "FlappyBee");
     g_entity_archetypes_populated = true;
 }
 

@@ -43,6 +43,14 @@ audio:
     file: sounds/bat_squeak.ogg
     streamed: false
     default_volume: 1.0
+  - name: buzz
+    file: sounds/buzz.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: bee_splat
+    file: sounds/bee_splat.ogg
+    streamed: false
+    default_volume: 1.0
   - name: thud
     file: sounds/thud.ogg
     streamed: false

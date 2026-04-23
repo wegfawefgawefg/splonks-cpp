@@ -321,7 +321,7 @@ void UpdateCarryAndBackItems(
                     } else {
                         thrown->SetCenter(entity_center);
                     }
-                    thrown->acc += throw_vel;
+                    thrown->acc += throw_vel * entity.throw_velocity_scale;
                     state.UpdateSidForEntity(thrown->vid.id, graphics);
                     (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Throw);
                 }

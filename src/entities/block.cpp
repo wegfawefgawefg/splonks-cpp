@@ -48,9 +48,6 @@ FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
     return frame_data_ids::CaveBlock;
 }
 
-bool IsControlled(const Entity& entity, const State& state) {
-    return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
-}
 
 void StepControlledBlock(Entity& block, const controls::ControlIntent& control) {
     if (block.attack_delay_countdown > 0) {
@@ -70,6 +67,28 @@ void StepControlledBlock(Entity& block, const controls::ControlIntent& control) 
             block.facing == LeftOrRight::Left ? -kControlledBlockSlideVel : kControlledBlockSlideVel;
         block.attack_delay_countdown = kControlledBlockSlideCooldownFrames;
     }
+}
+
+void ControlEntityAsBlock(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& block = state.entity_manager.entities[entity_idx];
+    if (block.condition == EntityCondition::Dead) {
+        return;
+    }
+
+    StepControlledBlock(block, controls::GetControlIntentForEntity(block, state));
 }
 
 void SpawnBlockDeathParticles(const Vec2& center, FrameDataId animation_id, State& state) {
@@ -156,6 +175,7 @@ extern const EntityArchetype kBlockArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::ExplosionOnly,
     .on_death = OnDeathAsBlock,
+    .control_logic = ControlEntityAsBlock,
     .step_logic = StepEntityLogicAsBlock,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CaveBlock),
@@ -192,15 +212,6 @@ void StepEntityLogicAsBlock(
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
         SetAnimation(entity, BlockFrameDataIdForStageType(state.stage.stage_type));
-    }
-
-    {
-        Entity& block = state.entity_manager.entities[entity_idx];
-        const controls::ControlIntent control =
-            controls::GetControlIntentForEntity(block, state);
-        if (IsControlled(block, state) && block.condition != EntityCondition::Dead) {
-            StepControlledBlock(block, control);
-        }
     }
 
     // TODO: if you hit the ground, do a clunky sound

@@ -206,10 +206,9 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
 
     for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
         const Entity& entity = state.entity_manager.GetEntityById(entity_idx);
-        const EntityType type_ = entity.type_;
 
         if (entity.active) {
-            if (type_ == EntityType::Player) {
+            if (state.player_vid.has_value() && entity.vid == *state.player_vid) {
                 continue;
             }
             ClearTransientMovementFlags(state.entity_manager.entities[entity_idx]);

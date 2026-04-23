@@ -6275,9 +6275,9 @@ sprites:
       y: 256
       w: 16
       h: 16
-    name: "bee"
+    name: "bee_fly"
     frame: 0
-    duration: 1
+    duration: 2
     offset:
       x: 0
       y: 0
@@ -6287,12 +6287,12 @@ sprites:
     tags: []
     pbox:
       x: 6
-      y: 5
+      y: 7
       w: 4
       h: 4
     cbox:
       x: 6
-      y: 5
+      y: 7
       w: 4
       h: 4
     tile: false
@@ -6419,6 +6419,126 @@ sprites:
     emit_point:
       x: 5
       y: 4
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 256
+      w: 16
+      h: 16
+    name: "bee_fly"
+    frame: 1
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 6
+    tags: []
+    pbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    cbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    tile: false
+    emit_point:
+      x: 10
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 256
+      w: 16
+      h: 16
+    name: "bee_fly"
+    frame: 2
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 6
+    tags: []
+    pbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    cbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    tile: false
+    emit_point:
+      x: 10
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 256
+      w: 16
+      h: 16
+    name: "bee_walk"
+    frame: 0
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 9
+      y: 8
+    tags: []
+    pbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    cbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 256
+      w: 16
+      h: 16
+    name: "bee_walk"
+    frame: 1
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    cbox:
+      x: 6
+      y: 7
+      w: 4
+      h: 4
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

@@ -182,6 +182,22 @@ int main(int argc, char** argv) {
         debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
         debug.camera_settings_window_visible = state.settings.debug_ui.camera_settings_visible;
         debug.performance_settings_window_visible = state.settings.debug_ui.performance_settings_visible;
+        if (state.settings.debug_ui.entity_swap_type > 0 &&
+            state.settings.debug_ui.entity_swap_type < splonks::kEntityTypeCount) {
+            debug.character_swap_entity_type =
+                static_cast<splonks::EntityType>(state.settings.debug_ui.entity_swap_type);
+        }
+        if (state.settings.debug_ui.default_spawn_type > 0 &&
+            state.settings.debug_ui.default_spawn_type < splonks::kEntityTypeCount) {
+            debug.default_spawn_entity_type =
+                static_cast<splonks::EntityType>(state.settings.debug_ui.default_spawn_type);
+        }
+        debug.default_spawn_enabled = state.settings.debug_ui.default_spawn_enabled;
+        debug.character_swap_fresh = state.settings.debug_ui.entity_swap_fresh;
+        debug.character_swap_keep_passives = state.settings.debug_ui.entity_swap_keep_passives;
+        debug.character_swap_keep_money = state.settings.debug_ui.entity_swap_keep_money;
+        debug.character_swap_keep_health = state.settings.debug_ui.entity_swap_keep_health;
+        debug.character_swap_keep_tools = state.settings.debug_ui.entity_swap_keep_tools;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
         splonks::RebuildStageLighting(state);
 

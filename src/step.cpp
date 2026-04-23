@@ -127,8 +127,12 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
 
     UpdateControlledEntity(state);
     LatchPlayingInputsForTick(state);
-    if (state.player_vid.has_value()) {
-        controls::ControlEntityAsPlayer(*state.player_vid, state);
+    if (state.controlled_entity_vid.has_value()) {
+        if (Entity* const controlled = state.entity_manager.GetEntityMut(*state.controlled_entity_vid)) {
+            if (controlled->active && controlled->control_logic != nullptr) {
+                controlled->control_logic(controlled->vid.id, state, graphics, audio, dt);
+            }
+        }
     }
     state.contact.ClearEntityContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);

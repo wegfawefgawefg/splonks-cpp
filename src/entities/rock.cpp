@@ -17,9 +17,6 @@ constexpr float kControlledJumpVel = 4.0F;
 constexpr float kControlledSlideVel = 4.5F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 90;
 
-bool IsControlled(const Entity& entity, const State& state) {
-    return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
-}
 
 void StepControlledRock(Entity& rock, const controls::ControlIntent& control) {
     if (rock.attack_delay_countdown > 0) {
@@ -47,6 +44,28 @@ void StepControlledRock(Entity& rock, const controls::ControlIntent& control) {
     }
 }
 
+void ControlEntityAsRock(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& rock = state.entity_manager.entities[entity_idx];
+    if (rock.condition == EntityCondition::Dead) {
+        return;
+    }
+
+    StepControlledRock(rock, controls::GetControlIntentForEntity(rock, state));
+}
+
 } // namespace
 
 extern const EntityArchetype kRockArchetype{
@@ -66,6 +85,7 @@ extern const EntityArchetype kRockArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .collide_sound = audio_asset_ids::Thud,
+    .control_logic = ControlEntityAsRock,
     .step_logic = StepEntityLogicAsRock,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Rock),
@@ -84,15 +104,11 @@ void StepEntityLogicAsRock(
     Audio& audio,
     float dt
 ) {
+    (void)entity_idx;
+    (void)state;
     (void)graphics;
-    (void)dt;
-    Entity& rock = state.entity_manager.entities[entity_idx];
-    const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(rock, state);
-    if (IsControlled(rock, state) && rock.condition != EntityCondition::Dead) {
-        StepControlledRock(rock, control);
-    }
     (void)audio;
+    (void)dt;
     //TODO: if you hit the ground, do a clunky sound
     // if you hit something, do rock damage and try to stun probs
 }

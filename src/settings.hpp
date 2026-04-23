@@ -129,6 +129,14 @@ struct DebugUiSettings {
     bool graphics_settings_visible = false;
     bool camera_settings_visible = false;
     bool performance_settings_visible = false;
+    std::uint32_t entity_swap_type = 1;
+    std::uint32_t default_spawn_type = 1;
+    bool default_spawn_enabled = false;
+    bool entity_swap_fresh = true;
+    bool entity_swap_keep_passives = false;
+    bool entity_swap_keep_money = false;
+    bool entity_swap_keep_health = false;
+    bool entity_swap_keep_tools = false;
 
     static DebugUiSettings New();
 };

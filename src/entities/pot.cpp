@@ -28,9 +28,6 @@ int RandInclusive(int minimum, int maximum) {
     return distribution(generator);
 }
 
-bool IsControlled(const Entity& entity, const State& state) {
-    return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
-}
 
 void SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
@@ -70,6 +67,28 @@ void StepControlledPot(Entity& pot, const controls::ControlIntent& control) {
         pot.vel.x = pot.facing == LeftOrRight::Left ? -kControlledSlideVel : kControlledSlideVel;
         pot.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
+}
+
+void ControlEntityAsPot(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& pot = state.entity_manager.entities[entity_idx];
+    if (pot.condition == EntityCondition::Dead) {
+        return;
+    }
+
+    StepControlledPot(pot, controls::GetControlIntentForEntity(pot, state));
 }
 
 } // namespace
@@ -127,6 +146,7 @@ extern const EntityArchetype kPotArchetype{
     .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
     .death_sound = audio_asset_ids::PotShatter,
     .on_death = OnDeathAsPot,
+    .control_logic = ControlEntityAsPot,
     .step_logic = StepEntityLogicAsPot,
     .on_entity_contact = OnEntityContactAsPot,
     .on_tile_contact = OnTileContactAsPot,
@@ -141,22 +161,11 @@ void StepEntityLogicAsPot(
     Audio& audio,
     float dt
 ) {
+    (void)entity_idx;
+    (void)state;
     (void)graphics;
     (void)audio;
     (void)dt;
-
-    Entity& pot = state.entity_manager.entities[entity_idx];
-    if (pot.condition == EntityCondition::Dead) {
-        return;
-    }
-
-    const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(pot, state);
-    if (!IsControlled(pot, state)) {
-        return;
-    }
-
-    StepControlledPot(pot, control);
 }
 
 void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {

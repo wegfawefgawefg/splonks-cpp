@@ -28,9 +28,6 @@ int RandInclusive(int minimum, int maximum) {
     return distribution(generator);
 }
 
-bool IsControlled(const Entity& entity, const State& state) {
-    return state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
-}
 
 void SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
@@ -70,6 +67,28 @@ void StepControlledBox(Entity& box, const controls::ControlIntent& control) {
         box.vel.x = box.facing == LeftOrRight::Left ? -kControlledSlideVel : kControlledSlideVel;
         box.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
+}
+
+void ControlEntityAsBox(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& box = state.entity_manager.entities[entity_idx];
+    if (box.condition == EntityCondition::Dead) {
+        return;
+    }
+
+    StepControlledBox(box, controls::GetControlIntentForEntity(box, state));
 }
 
 } // namespace
@@ -128,6 +147,7 @@ extern const EntityArchetype kBoxArchetype{
     .collide_sound = audio_asset_ids::Thud,
     .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsBox,
+    .control_logic = ControlEntityAsBox,
     .step_logic = StepEntityLogicAsBox,
     .on_entity_contact = OnEntityContactAsBox,
     .on_tile_contact = OnTileContactAsBox,
@@ -142,22 +162,11 @@ void StepEntityLogicAsBox(
     Audio& audio,
     float dt
 ) {
+    (void)entity_idx;
+    (void)state;
     (void)graphics;
     (void)audio;
     (void)dt;
-
-    Entity& box = state.entity_manager.entities[entity_idx];
-    if (box.condition == EntityCondition::Dead) {
-        return;
-    }
-
-    const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(box, state);
-    if (!IsControlled(box, state)) {
-        return;
-    }
-
-    StepControlledBox(box, control);
 }
 
 void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {

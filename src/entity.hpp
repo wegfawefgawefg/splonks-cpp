@@ -83,6 +83,7 @@ struct Entity {
     Vec2 vel;
     Vec2 acc;
     float max_speed = 7.0F;
+    float throw_velocity_scale = 1.0F;
     Vec2 size;
     float dist_traveled_this_frame = 0.0F;
     LeftOrRight facing = LeftOrRight::Left;
@@ -128,6 +129,7 @@ struct Entity {
     EntityOnAreaEnter on_area_enter = nullptr;
     EntityOnAreaExit on_area_exit = nullptr;
     EntityOnAreaTileChanged on_area_tile_changed = nullptr;
+    EntityControlLogic control_logic = nullptr;
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     std::optional<StageTransitionTarget> transition_target;

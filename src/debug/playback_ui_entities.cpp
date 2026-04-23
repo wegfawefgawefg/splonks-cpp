@@ -1,6 +1,7 @@
 #include "debug/playback_internal.hpp"
 
 #include "entity/archetype.hpp"
+#include "entity/archetype_restore.hpp"
 #include "frame_data.hpp"
 #include "tools/tool_archetype.hpp"
 
@@ -71,6 +72,271 @@ std::vector<EntityType> BuildSortedSpawnTypes() {
         return std::strcmp(GetEntityTypeName(left), GetEntityTypeName(right)) < 0;
     });
     return types;
+}
+
+
+constexpr std::uint16_t kDebugPlayerInitialBombs = 400;
+constexpr std::uint16_t kDebugPlayerInitialRopes = 400;
+
+Entity* FindSwapSourceEntity(State& state, Entity* selected_entity) {
+    if (state.controlled_entity_vid.has_value()) {
+        if (Entity* const controlled = state.entity_manager.GetEntityMut(*state.controlled_entity_vid)) {
+            return controlled;
+        }
+    }
+    if (state.player_vid.has_value()) {
+        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+            return player;
+        }
+    }
+    return selected_entity;
+}
+
+const Entity* FindSwapStatsEntity(const State& state, const Entity* source_entity) {
+    if (state.player_vid.has_value()) {
+        if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
+            return player;
+        }
+    }
+    return source_entity;
+}
+
+std::optional<EntityToolState> CopyToolStateForVid(const State& state, const VID& owner_vid) {
+    if (const EntityToolState* const tool_state = state.entity_tools.FindEntityToolState(owner_vid)) {
+        return *tool_state;
+    }
+    return std::nullopt;
+}
+
+void RemoveToolStateForVid(State& state, const VID& owner_vid) {
+    auto& tool_states = state.entity_tools.tool_states;
+    tool_states.erase(
+        std::remove_if(
+            tool_states.begin(),
+            tool_states.end(),
+            [&owner_vid](const EntityToolState& tool_state) {
+                return tool_state.owner_vid == owner_vid;
+            }
+        ),
+        tool_states.end()
+    );
+}
+
+void DetachEntitiesAttachedToVid(State& state, const VID& owner_vid, const Graphics& graphics) {
+    if (Entity* const holder = state.entity_manager.GetEntityMut(owner_vid)) {
+        holder->holding_vid.reset();
+        holder->holding = false;
+        holder->holding_timer = kDefaultHoldingTimer;
+        holder->back_vid.reset();
+    }
+
+    for (Entity& attached : state.entity_manager.entities) {
+        if (!attached.active || !attached.held_by_vid.has_value() || *attached.held_by_vid != owner_vid) {
+            continue;
+        }
+
+        attached.held_by_vid.reset();
+        attached.attachment_mode = AttachmentMode::None;
+        StopUsingEntity(attached);
+        RestoreEntityHasPhysicsFromArchetype(attached);
+        RestoreEntityCanCollideFromArchetype(attached);
+        RestoreEntityDrawLayerFromArchetype(attached);
+        attached.grounded = false;
+        state.UpdateSidForEntity(attached.vid.id, graphics);
+    }
+}
+
+void GrantFreshStarterTools(State& state, const VID& owner_vid, EntityType type_) {
+    RemoveToolStateForVid(state, owner_vid);
+    if (type_ != EntityType::Player) {
+        return;
+    }
+
+    if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
+        FillToolSlot(
+            state.entity_tools.EnsureToolSlot(owner_vid, 0),
+            *bomb_tool_kind,
+            kDebugPlayerInitialBombs,
+            true
+        );
+    }
+    if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
+        FillToolSlot(
+            state.entity_tools.EnsureToolSlot(owner_vid, 1),
+            *rope_tool_kind,
+            kDebugPlayerInitialRopes,
+            true
+        );
+    }
+}
+
+bool SwapControlledCharacter(
+    DebugPlayback& debug,
+    State& state,
+    const Graphics& graphics,
+    Entity* selected_entity
+) {
+    const EntityType target_type = debug.character_swap_entity_type;
+    if (target_type == EntityType::None) {
+        debug.character_swap_status = "Select a character type first.";
+        return false;
+    }
+
+    Entity* const source_entity = FindSwapSourceEntity(state, selected_entity);
+    if (source_entity == nullptr) {
+        debug.character_swap_status = "No controlled, player, or selected entity to swap.";
+        return false;
+    }
+
+    const Entity* const stats_entity = FindSwapStatsEntity(state, source_entity);
+    const bool keep_passives = !debug.character_swap_fresh || debug.character_swap_keep_passives;
+    const bool keep_money = !debug.character_swap_fresh || debug.character_swap_keep_money;
+    const bool keep_health = !debug.character_swap_fresh || debug.character_swap_keep_health;
+    const bool keep_tools = !debug.character_swap_fresh || debug.character_swap_keep_tools;
+
+    const Vec2 spawn_center = source_entity->GetCenter();
+    const LeftOrRight facing = source_entity->facing;
+    const VID replacement_vid = source_entity->vid;
+    const std::optional<VID> old_player_vid = state.player_vid;
+    const std::uint64_t passive_flags = stats_entity != nullptr ? stats_entity->passive_item_flags : 0;
+    const std::uint32_t meathead_points = stats_entity != nullptr ? stats_entity->meathead_points : 0;
+    const std::uint32_t money = stats_entity != nullptr ? stats_entity->money : 0;
+    const std::uint32_t health = stats_entity != nullptr ? stats_entity->health : 0;
+    const std::optional<EntityToolState> preserved_tools =
+        stats_entity != nullptr ? CopyToolStateForVid(state, stats_entity->vid) : std::nullopt;
+
+    DetachEntitiesAttachedToVid(state, replacement_vid, graphics);
+    if (old_player_vid.has_value() && *old_player_vid != replacement_vid) {
+        DetachEntitiesAttachedToVid(state, *old_player_vid, graphics);
+        state.entity_manager.SetInactiveVid(*old_player_vid);
+        RemoveToolStateForVid(state, *old_player_vid);
+        state.UpdateSidForEntity(old_player_vid->id, graphics);
+    }
+
+    SetEntityAs(*source_entity, target_type);
+    source_entity->vel = Vec2::New(0.0F, 0.0F);
+    source_entity->acc = Vec2::New(0.0F, 0.0F);
+    source_entity->rotation = 0.0F;
+    source_entity->facing = facing;
+    source_entity->SetCenter(spawn_center);
+
+    if (keep_passives) {
+        source_entity->passive_item_flags = passive_flags;
+        source_entity->meathead_points = meathead_points;
+    }
+    if (keep_money) {
+        source_entity->money = money;
+    }
+    if (keep_health) {
+        source_entity->health = health;
+    }
+
+    RemoveToolStateForVid(state, replacement_vid);
+    if (keep_tools && preserved_tools.has_value()) {
+        EntityToolState copied_tools = *preserved_tools;
+        copied_tools.owner_vid = replacement_vid;
+        state.entity_tools.tool_states.push_back(copied_tools);
+    } else {
+        GrantFreshStarterTools(state, replacement_vid, target_type);
+    }
+
+    state.player_vid = replacement_vid;
+    state.controlled_entity_vid = replacement_vid;
+    state.UpdateSidForEntity(replacement_vid.id, graphics);
+    debug.selected_entity_id = replacement_vid.id;
+    debug.character_swap_status = std::string("Swapped to ") + GetEntityTypeName(target_type) + ".";
+    if (source_entity->control_logic == nullptr) {
+        debug.character_swap_status += " Warning: no control callback.";
+    }
+    return true;
+}
+
+void DrawCharacterSwapControls(
+    DebugPlayback& debug,
+    State& state,
+    const Graphics& graphics,
+    Entity* selected_entity
+) {
+    ImGui::SeparatorText("Character Swap");
+    if (debug.playback_active) {
+        ImGui::TextDisabled("Character swapping disabled during playback.");
+        return;
+    }
+
+    ImGui::TextDisabled("Source: controlled entity, then player, then selected entity.");
+    ImGui::InputText(
+        "Search##character_swap_search",
+        debug.character_swap_search.data(),
+        debug.character_swap_search.size()
+    );
+    ImGui::SameLine();
+    if (ImGui::Button("Clear##character_swap_search_clear")) {
+        debug.character_swap_search[0] = '\0';
+    }
+
+    const char* current_swap_name = GetEntityTypeName(debug.character_swap_entity_type);
+    if (ImGui::BeginCombo("Swap Type", current_swap_name)) {
+        const std::vector<EntityType> sorted_spawn_types = BuildSortedSpawnTypes();
+        for (const EntityType type_ : sorted_spawn_types) {
+            const char* type_name = GetEntityTypeName(type_);
+            if (!SpawnSearchMatches(debug.character_swap_search.data(), type_name)) {
+                continue;
+            }
+            const bool selected = debug.character_swap_entity_type == type_;
+            if (ImGui::Selectable(type_name, selected)) {
+                debug.character_swap_entity_type = type_;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::Checkbox("Fresh Spawn", &debug.character_swap_fresh);
+    ImGui::SameLine();
+    ImGui::TextDisabled("fresh uses archetype defaults; keep flags copy selected state after reset");
+    ImGui::Checkbox("Keep Passives", &debug.character_swap_keep_passives);
+    ImGui::SameLine();
+    ImGui::Checkbox("Keep Money", &debug.character_swap_keep_money);
+    ImGui::Checkbox("Keep Health", &debug.character_swap_keep_health);
+    ImGui::SameLine();
+    ImGui::Checkbox("Keep Tools", &debug.character_swap_keep_tools);
+
+    if (ImGui::Button("Swap Controlled Character")) {
+        SwapControlledCharacter(debug, state, graphics, selected_entity);
+    }
+
+    ImGui::SeparatorText("Default Spawn");
+    ImGui::Checkbox("Spawn As Default Type", &debug.default_spawn_enabled);
+    ImGui::SameLine();
+    if (ImGui::Button("Use Swap Type##default_spawn_use_swap_type")) {
+        debug.default_spawn_entity_type = debug.character_swap_entity_type;
+    }
+
+    const char* current_default_spawn_name = GetEntityTypeName(debug.default_spawn_entity_type);
+    if (ImGui::BeginCombo("Default Spawn Type", current_default_spawn_name)) {
+        const std::vector<EntityType> sorted_spawn_types = BuildSortedSpawnTypes();
+        for (const EntityType type_ : sorted_spawn_types) {
+            const char* type_name = GetEntityTypeName(type_);
+            if (!SpawnSearchMatches(debug.character_swap_search.data(), type_name)) {
+                continue;
+            }
+            const bool selected = debug.default_spawn_entity_type == type_;
+            if (ImGui::Selectable(type_name, selected)) {
+                debug.default_spawn_entity_type = type_;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::TextDisabled("Applied when a stage calls the normal player spawn path.");
+
+    if (!debug.character_swap_status.empty()) {
+        ImGui::TextWrapped("%s", debug.character_swap_status.c_str());
+    }
 }
 
 bool SpawnDebugEntity(
@@ -274,9 +540,12 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         }
     }
 
+    DrawCharacterSwapControls(debug, state, graphics, selected_entity);
+
     if (selected_entity == nullptr) {
         ImGui::TextUnformatted("No active entity selected.");
         ImGui::End();
+        SyncDebugUiSettings(debug, state);
         return;
     }
 

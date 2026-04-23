@@ -59,6 +59,68 @@ void SnapBatToRoof(Entity& bat, const State& state) {
     }
 }
 
+void ControlEntityAsBat(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& bat = state.entity_manager.entities[entity_idx];
+    const controls::ControlIntent control = controls::GetControlIntentForEntity(bat, state);
+    const bool steering = control.left || control.right || control.up || control.down;
+    if (bat.condition != EntityCondition::Normal) {
+        return;
+    }
+
+    if (!steering && IsAtPerchOrRoof(bat, state)) {
+        bat.ai_state = EntityAiState::Idle;
+        SetAnimation(bat, frame_data_ids::HangingBat);
+        bat.acc = Vec2::New(0.0F, 0.0F);
+        bat.vel = Vec2::New(0.0F, 0.0F);
+        return;
+    }
+
+    if (control.use_pressed) {
+        (void)PlayEntitySoundEmitter(state, bat, audio_asset_ids::BatSqueak);
+    }
+    if (bat.ai_state == EntityAiState::Idle && steering) {
+        (void)PlayEntitySoundEmitter(state, bat, audio_asset_ids::BatSqueak);
+    }
+
+    bat.ai_state = EntityAiState::Pursuing;
+    SetAnimation(bat, frame_data_ids::FlyingBat);
+    bat.acc = Vec2::New(0.0F, 0.0F);
+    if (control.left) {
+        bat.acc.x -= kChaseSpeed;
+    }
+    if (control.right) {
+        bat.acc.x += kChaseSpeed;
+    }
+    if (control.up) {
+        bat.acc.y -= kChaseSpeed;
+    }
+    if (control.down) {
+        bat.acc.y += kChaseSpeed;
+    }
+    if (!steering) {
+        bat.vel = bat.vel * 0.8F;
+    }
+    if (bat.vel.x < 0.0F) {
+        bat.facing = LeftOrRight::Left;
+    }
+    if (bat.vel.x > 0.0F) {
+        bat.facing = LeftOrRight::Right;
+    }
+}
+
 } // namespace
 
 extern const EntityArchetype kBatArchetype{
@@ -79,6 +141,7 @@ extern const EntityArchetype kBatArchetype{
     .damage_animation = frame_data_ids::BloodBall,
     .damage_sound = audio_asset_ids::BatSqueak,
     .collide_sound = audio_asset_ids::Thud,
+    .control_logic = ControlEntityAsBat,
     .step_logic = StepEntityLogicAsBat,
     .step_physics = StepEntityPhysicsAsBat,
     .entity_label_a = EntityLabel::AttackThis,
@@ -103,55 +166,13 @@ void StepEntityLogicAsBat(
     (void)audio;
     (void)dt;
     Entity& bat = state.entity_manager.entities[entity_idx];
-    const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(bat, state);
     const bool controlled =
         state.controlled_entity_vid.has_value() && bat.vid == *state.controlled_entity_vid;
-    const bool steering = control.left || control.right || control.up || control.down;
-    const EntityCondition bat_condition = bat.condition;
-
-    if (controlled && bat_condition == EntityCondition::Normal) {
-        if (!steering && IsAtPerchOrRoof(bat, state)) {
-            bat.ai_state = EntityAiState::Idle;
-            SetAnimation(bat, frame_data_ids::HangingBat);
-            bat.acc = Vec2::New(0.0F, 0.0F);
-            bat.vel = Vec2::New(0.0F, 0.0F);
-            return;
-        }
-
-        if (control.use_pressed) {
-            (void)PlayEntitySoundEmitter(state, bat, audio_asset_ids::BatSqueak);
-        }
-        if (bat.ai_state == EntityAiState::Idle && steering) {
-            (void)PlayEntitySoundEmitter(state, bat, audio_asset_ids::BatSqueak);
-        }
-
-        bat.ai_state = EntityAiState::Pursuing;
-        SetAnimation(bat, frame_data_ids::FlyingBat);
-        bat.acc = Vec2::New(0.0F, 0.0F);
-        if (control.left) {
-            bat.acc.x -= kChaseSpeed;
-        }
-        if (control.right) {
-            bat.acc.x += kChaseSpeed;
-        }
-        if (control.up) {
-            bat.acc.y -= kChaseSpeed;
-        }
-        if (control.down) {
-            bat.acc.y += kChaseSpeed;
-        }
-        if (!steering) {
-            bat.vel = bat.vel * 0.8F;
-        }
-        if (bat.vel.x < 0.0F) {
-            bat.facing = LeftOrRight::Left;
-        }
-        if (bat.vel.x > 0.0F) {
-            bat.facing = LeftOrRight::Right;
-        }
+    if (controlled) {
         return;
     }
+
+    const EntityCondition bat_condition = bat.condition;
 
     if (bat_condition == EntityCondition::Normal) {
         constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);

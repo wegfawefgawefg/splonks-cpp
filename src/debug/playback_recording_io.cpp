@@ -141,6 +141,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.vel);
     WritePod(out, entity.acc);
     WritePod(out, entity.max_speed);
+    WritePod(out, entity.throw_velocity_scale);
     WritePod(out, entity.size);
     WritePod(out, entity.dist_traveled_this_frame);
     WritePod(out, entity.facing);
@@ -185,6 +186,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.on_area_enter);
     WritePod(out, entity.on_area_exit);
     WritePod(out, entity.on_area_tile_changed);
+    WritePod(out, entity.control_logic);
     WritePod(out, entity.step_logic);
     WritePod(out, entity.step_physics);
     WriteOptionalPod(out, entity.transition_target);
@@ -272,6 +274,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.vel) &&
            ReadPod(in, entity.acc) &&
            ReadPod(in, entity.max_speed) &&
+           ReadPod(in, entity.throw_velocity_scale) &&
            ReadPod(in, entity.size) &&
            ReadPod(in, entity.dist_traveled_this_frame) &&
            ReadPod(in, entity.facing) &&
@@ -316,6 +319,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.on_area_enter) &&
            ReadPod(in, entity.on_area_exit) &&
            ReadPod(in, entity.on_area_tile_changed) &&
+           ReadPod(in, entity.control_logic) &&
            ReadPod(in, entity.step_logic) &&
            ReadPod(in, entity.step_physics) &&
            ReadOptionalPod(in, entity.transition_target) &&

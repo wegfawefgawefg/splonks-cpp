@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "36ee58c9-1c6d-41fe-be24-da64c16dce0b",
+  "selectedAnnotationId": "dbc31221-4968-46b8-81a6-346f6aa8b0de",
   "sheets": [
     {
       "path": "images/title.png",
@@ -9213,9 +9213,9 @@
           "point": null,
           "chromaKey": null,
           "properties": {
-            "name": "bee",
+            "name": "bee_fly",
             "frame": 0,
-            "duration": 1,
+            "duration": 2,
             "offset": {
               "x": 0,
               "y": 0
@@ -9227,13 +9227,13 @@
             "tags": [],
             "pbox": {
               "x": 6,
-              "y": 5,
+              "y": 7,
               "w": 4,
               "h": 4
             },
             "cbox": {
               "x": 6,
-              "y": 5,
+              "y": 7,
               "w": 4,
               "h": 4
             },
@@ -9415,15 +9415,187 @@
               "y": 4
             }
           }
+        },
+        {
+          "id": "220642e0-ee5b-4578-b5af-3714909f5215",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 256,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bee_fly",
+            "frame": 1,
+            "duration": 2,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 6
+            },
+            "tags": [],
+            "pbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 10,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "dbc31221-4968-46b8-81a6-346f6aa8b0de",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 144,
+            "y": 256,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bee_fly",
+            "frame": 2,
+            "duration": 2,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 6
+            },
+            "tags": [],
+            "pbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 10,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "5f3d5568-29eb-435e-93bc-c0b1f943973b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 256,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bee_walk",
+            "frame": 0,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 9,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "94445ccf-ae5e-4cad-a7fd-bf005588e676",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 96,
+            "y": 256,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bee_walk",
+            "frame": 1,
+            "duration": 4,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 6,
+              "y": 7,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 5.369,
-        "centerX": 69.00726392251816,
-        "centerY": 169.67777984727138
+        "zoom": 10.486,
+        "centerX": 116.6793820331871,
+        "centerY": 260.9193209994278
       }
     },
     {

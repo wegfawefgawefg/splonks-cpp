@@ -21,6 +21,7 @@ void RestoreEntityHurtOnContactFromArchetype(Entity& entity) { entity.hurt_on_co
 void RestoreEntityVanishOnDeathFromArchetype(Entity& entity) { entity.vanish_on_death = GetArchetypeForEntity(entity).vanish_on_death; }
 void RestoreEntityAffectedByGroundFrictionFromArchetype(Entity& entity) { entity.affected_by_ground_friction = GetArchetypeForEntity(entity).affected_by_ground_friction; }
 void RestoreEntitySupportGroundFrictionFromArchetype(Entity& entity) { entity.support_ground_friction = GetArchetypeForEntity(entity).support_ground_friction; }
+void RestoreEntityThrowVelocityScaleFromArchetype(Entity& entity) { entity.throw_velocity_scale = GetArchetypeForEntity(entity).throw_velocity_scale; }
 void RestoreEntityPassiveItemFromArchetype(Entity& entity) { entity.passive_item = GetArchetypeForEntity(entity).passive_item; }
 void RestoreEntityBuyableFromArchetype(Entity& entity) { entity.buyable = GetArchetypeForEntity(entity).buyable; }
 void RestoreEntityDamageAnimationFromArchetype(Entity& entity) { entity.damage_animation = GetArchetypeForEntity(entity).damage_animation; }
@@ -30,6 +31,7 @@ void RestoreEntityDeathAudioAssetIdFromArchetype(Entity& entity) { entity.death_
 void RestoreEntityOnDeathFromArchetype(Entity& entity) { entity.on_death = GetArchetypeForEntity(entity).on_death; }
 void RestoreEntityOnDamageFromArchetype(Entity& entity) { entity.on_damage = GetArchetypeForEntity(entity).on_damage; }
 void RestoreEntityOnUseFromArchetype(Entity& entity) { entity.on_use = GetArchetypeForEntity(entity).on_use; }
+void RestoreEntityControlLogicFromArchetype(Entity& entity) { entity.control_logic = GetArchetypeForEntity(entity).control_logic; }
 void RestoreEntityStepLogicFromArchetype(Entity& entity) { entity.step_logic = GetArchetypeForEntity(entity).step_logic; }
 void RestoreEntityStepPhysicsFromArchetype(Entity& entity) { entity.step_physics = GetArchetypeForEntity(entity).step_physics; }
 void RestoreEntityCrusherPusherFromArchetype(Entity& entity) { entity.crusher_pusher = GetArchetypeForEntity(entity).crusher_pusher; }

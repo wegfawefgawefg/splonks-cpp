@@ -75,7 +75,7 @@ bool TrySpawnAndThrowEntityForToolUse(
     const ToolThrowVelocityBuilder velocity_builder =
         build_throw_velocity == nullptr ? BuildThrowVelocity : build_throw_velocity;
     spawned_entity->SetCenter(thrower.GetCenter());
-    spawned_entity->acc += velocity_builder(control);
+    spawned_entity->acc += velocity_builder(control) * thrower.throw_velocity_scale;
     state.UpdateSidForEntity(vid->id, graphics);
 
     tool_slot.count -= 1;

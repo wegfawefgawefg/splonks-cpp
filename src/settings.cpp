@@ -155,6 +155,14 @@ DebugUiSettings DebugUiSettings::New() {
     result.graphics_settings_visible = false;
     result.camera_settings_visible = false;
     result.performance_settings_visible = false;
+    result.entity_swap_type = 1;
+    result.default_spawn_type = 1;
+    result.default_spawn_enabled = false;
+    result.entity_swap_fresh = true;
+    result.entity_swap_keep_passives = false;
+    result.entity_swap_keep_money = false;
+    result.entity_swap_keep_health = false;
+    result.entity_swap_keep_tools = false;
     return result;
 }
 
@@ -431,6 +439,30 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.performance_settings_visible") {
             settings.debug_ui.performance_settings_visible =
                 ParseBool(value, settings.debug_ui.performance_settings_visible);
+        } else if (key == "debug_ui.entity_swap_type") {
+            settings.debug_ui.entity_swap_type =
+                ParseUnsigned(value, settings.debug_ui.entity_swap_type);
+        } else if (key == "debug_ui.default_spawn_type") {
+            settings.debug_ui.default_spawn_type =
+                ParseUnsigned(value, settings.debug_ui.default_spawn_type);
+        } else if (key == "debug_ui.default_spawn_enabled") {
+            settings.debug_ui.default_spawn_enabled =
+                ParseBool(value, settings.debug_ui.default_spawn_enabled);
+        } else if (key == "debug_ui.entity_swap_fresh") {
+            settings.debug_ui.entity_swap_fresh =
+                ParseBool(value, settings.debug_ui.entity_swap_fresh);
+        } else if (key == "debug_ui.entity_swap_keep_passives") {
+            settings.debug_ui.entity_swap_keep_passives =
+                ParseBool(value, settings.debug_ui.entity_swap_keep_passives);
+        } else if (key == "debug_ui.entity_swap_keep_money") {
+            settings.debug_ui.entity_swap_keep_money =
+                ParseBool(value, settings.debug_ui.entity_swap_keep_money);
+        } else if (key == "debug_ui.entity_swap_keep_health") {
+            settings.debug_ui.entity_swap_keep_health =
+                ParseBool(value, settings.debug_ui.entity_swap_keep_health);
+        } else if (key == "debug_ui.entity_swap_keep_tools") {
+            settings.debug_ui.entity_swap_keep_tools =
+                ParseBool(value, settings.debug_ui.entity_swap_keep_tools);
         }
     }
 
@@ -587,6 +619,20 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.camera_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.performance_settings_visible="
            << (settings.debug_ui.performance_settings_visible ? 1 : 0) << "\n";
+    output << "debug_ui.entity_swap_type=" << settings.debug_ui.entity_swap_type << "\n";
+    output << "debug_ui.default_spawn_type=" << settings.debug_ui.default_spawn_type << "\n";
+    output << "debug_ui.default_spawn_enabled="
+           << (settings.debug_ui.default_spawn_enabled ? 1 : 0) << "\n";
+    output << "debug_ui.entity_swap_fresh="
+           << (settings.debug_ui.entity_swap_fresh ? 1 : 0) << "\n";
+    output << "debug_ui.entity_swap_keep_passives="
+           << (settings.debug_ui.entity_swap_keep_passives ? 1 : 0) << "\n";
+    output << "debug_ui.entity_swap_keep_money="
+           << (settings.debug_ui.entity_swap_keep_money ? 1 : 0) << "\n";
+    output << "debug_ui.entity_swap_keep_health="
+           << (settings.debug_ui.entity_swap_keep_health ? 1 : 0) << "\n";
+    output << "debug_ui.entity_swap_keep_tools="
+           << (settings.debug_ui.entity_swap_keep_tools ? 1 : 0) << "\n";
     return output.good();
 }
 

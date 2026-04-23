@@ -32,6 +32,13 @@ constexpr unsigned int kEquipDelay = 8;
 
 extern const EntityArchetype kPlayerArchetype;
 
+void ControlEntityAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+);
 void StepEntityLogicAsPlayer(
     std::size_t entity_idx,
     State& state,

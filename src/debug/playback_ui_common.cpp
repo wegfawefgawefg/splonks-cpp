@@ -65,6 +65,42 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.performance_settings_visible = debug.performance_settings_window_visible;
         changed = true;
     }
+    const std::uint32_t character_swap_type =
+        static_cast<std::uint32_t>(EntityTypeIndex(debug.character_swap_entity_type));
+    if (state.settings.debug_ui.entity_swap_type != character_swap_type) {
+        state.settings.debug_ui.entity_swap_type = character_swap_type;
+        changed = true;
+    }
+    const std::uint32_t default_spawn_type =
+        static_cast<std::uint32_t>(EntityTypeIndex(debug.default_spawn_entity_type));
+    if (state.settings.debug_ui.default_spawn_type != default_spawn_type) {
+        state.settings.debug_ui.default_spawn_type = default_spawn_type;
+        changed = true;
+    }
+    if (state.settings.debug_ui.default_spawn_enabled != debug.default_spawn_enabled) {
+        state.settings.debug_ui.default_spawn_enabled = debug.default_spawn_enabled;
+        changed = true;
+    }
+    if (state.settings.debug_ui.entity_swap_fresh != debug.character_swap_fresh) {
+        state.settings.debug_ui.entity_swap_fresh = debug.character_swap_fresh;
+        changed = true;
+    }
+    if (state.settings.debug_ui.entity_swap_keep_passives != debug.character_swap_keep_passives) {
+        state.settings.debug_ui.entity_swap_keep_passives = debug.character_swap_keep_passives;
+        changed = true;
+    }
+    if (state.settings.debug_ui.entity_swap_keep_money != debug.character_swap_keep_money) {
+        state.settings.debug_ui.entity_swap_keep_money = debug.character_swap_keep_money;
+        changed = true;
+    }
+    if (state.settings.debug_ui.entity_swap_keep_health != debug.character_swap_keep_health) {
+        state.settings.debug_ui.entity_swap_keep_health = debug.character_swap_keep_health;
+        changed = true;
+    }
+    if (state.settings.debug_ui.entity_swap_keep_tools != debug.character_swap_keep_tools) {
+        state.settings.debug_ui.entity_swap_keep_tools = debug.character_swap_keep_tools;
+        changed = true;
+    }
 
     if (changed) {
         SaveSettings(state.settings);

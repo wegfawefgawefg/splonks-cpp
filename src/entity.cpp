@@ -58,6 +58,7 @@ Entity Entity::New() {
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
     entity.max_speed = 7.0F;
+    entity.throw_velocity_scale = 1.0F;
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.dist_traveled_this_frame = 0.0F;
     entity.facing = LeftOrRight::Left;
@@ -103,6 +104,7 @@ Entity Entity::New() {
     entity.on_area_enter = nullptr;
     entity.on_area_exit = nullptr;
     entity.on_area_tile_changed = nullptr;
+    entity.control_logic = nullptr;
     entity.step_logic = nullptr;
     entity.step_physics = nullptr;
     entity.transition_target.reset();
