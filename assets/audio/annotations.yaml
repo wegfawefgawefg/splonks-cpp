@@ -51,6 +51,26 @@ audio:
     file: sounds/bee_splat.ogg
     streamed: false
     default_volume: 1.0
+  - name: fleshguy_step_0
+    file: sounds/fleshguy_step_0.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: fleshguy_step_1
+    file: sounds/fleshguy_step_1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: fleshguy_impact_0
+    file: sounds/fleshguy_impact_0.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: fleshguy_impact_1
+    file: sounds/fleshguy_impact_1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: fleshman_jump
+    file: sounds/fleshman_jump.ogg
+    streamed: false
+    default_volume: 1.0
   - name: thud
     file: sounds/thud.ogg
     streamed: false

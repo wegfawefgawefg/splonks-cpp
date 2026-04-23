@@ -42,6 +42,7 @@ extern const EntityArchetype kBombArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
     .affected_by_ground_friction = false,

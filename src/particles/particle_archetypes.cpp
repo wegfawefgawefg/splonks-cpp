@@ -10,6 +10,10 @@ constexpr ScriptedParticleSequenceStep kMeatheadPopupSequence[] = {
     {frame_data_ids::MeatheadRise, AnimationPlaybackMode::Reverse, 1},
 };
 
+constexpr ScriptedParticleSequenceStep kMeatTileTopperSequence[] = {
+    {frame_data_ids::MeatTileTopper, AnimationPlaybackMode::Forward, 1},
+};
+
 const ScriptedParticleArchetype kScriptedParticleArchetypes[] = {
     {
         .id = scripted_particle_archetype_ids::MeatheadPopup,
@@ -17,6 +21,14 @@ const ScriptedParticleArchetype kScriptedParticleArchetypes[] = {
         .draw_layer = DrawLayer::Background,
         .size = Vec2::New(9.0F, 9.0F),
         .sequence = std::span<const ScriptedParticleSequenceStep>(kMeatheadPopupSequence),
+    },
+    {
+        .id = scripted_particle_archetype_ids::MeatTileTopper,
+        .name = "meat_tile_topper",
+        .draw_layer = DrawLayer::Background,
+        .size = Vec2::New(16.0F, 7.0F),
+        .hold_frames_after_sequence = 20U * 60U,
+        .sequence = std::span<const ScriptedParticleSequenceStep>(kMeatTileTopperSequence),
     },
 };
 

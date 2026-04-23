@@ -6539,6 +6539,216 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 99
+      y: 279
+      w: 8
+      h: 9
+    name: "fleshguy"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    tile: false
+    emit_point:
+      x: 4
+      y: 8
+  - path: "entities.png"
+    aabb:
+      x: 109
+      y: 279
+      w: 8
+      h: 9
+    name: "fleshguy"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    tile: false
+    emit_point:
+      x: 4
+      y: 9
+  - path: "entities.png"
+    aabb:
+      x: 120
+      y: 279
+      w: 8
+      h: 9
+    name: "fleshguy_walk"
+    frame: 2
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    tile: false
+    emit_point:
+      x: 2
+      y: 9
+  - path: "entities.png"
+    aabb:
+      x: 130
+      y: 279
+      w: 8
+      h: 9
+    name: "fleshguy_walk"
+    frame: 3
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 9
+    tile: false
+    emit_point:
+      x: 2
+      y: 9
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 286
+      w: 16
+      h: 7
+    name: "meat_tile_topper"
+    frame: 0
+    duration: 3
+    offset:
+      x: 0
+      y: -1
+    center:
+      x: 8
+      y: 1
+    tags: []
+    pbox:
+      x: 0
+      y: 1
+      w: 16
+      h: 1
+    cbox:
+      x: 0
+      y: 1
+      w: 16
+      h: 1
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 160
+      y: 286
+      w: 16
+      h: 7
+    name: "meat_tile_topper"
+    frame: 1
+    duration: 3
+    offset:
+      x: 0
+      y: -1
+    center:
+      x: 8
+      y: 1
+    tags: []
+    pbox:
+      x: 0
+      y: 1
+      w: 16
+      h: 1
+    cbox:
+      x: 0
+      y: 1
+      w: 16
+      h: 1
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 176
+      y: 286
+      w: 16
+      h: 7
+    name: "meat_tile_topper"
+    frame: 2
+    duration: 3
+    offset:
+      x: 0
+      y: -1
+    center:
+      x: 8
+      y: 1
+    tags: []
+    pbox:
+      x: 0
+      y: 1
+      w: 16
+      h: 1
+    cbox:
+      x: 0
+      y: 1
+      w: 16
+      h: 1
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

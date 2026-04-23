@@ -174,6 +174,9 @@ constexpr FrameDataId KaliHead = HashFrameDataIdConstexpr("kali_head");
 constexpr FrameDataId KaliBody = HashFrameDataIdConstexpr("kali_body");
 constexpr FrameDataId BeeFly = HashFrameDataIdConstexpr("bee_fly");
 constexpr FrameDataId BeeWalk = HashFrameDataIdConstexpr("bee_walk");
+constexpr FrameDataId FleshGuy = HashFrameDataIdConstexpr("fleshguy");
+constexpr FrameDataId FleshGuyWalk = HashFrameDataIdConstexpr("fleshguy_walk");
+constexpr FrameDataId MeatTileTopper = HashFrameDataIdConstexpr("meat_tile_topper");
 
 } // namespace frame_data_ids
 

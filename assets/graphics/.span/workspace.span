@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "dbc31221-4968-46b8-81a6-346f6aa8b0de",
+  "selectedAnnotationId": "bd6581d8-c7e1-4d81-bef2-ff605aca110e",
   "sheets": [
     {
       "path": "images/title.png",
@@ -9587,15 +9587,316 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "64df0236-4f1f-4f7a-a9f0-7bddb3936574",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 99,
+            "y": 279,
+            "w": 8,
+            "h": 9
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "fleshguy",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 4
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 4,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "3135dbe8-5a3b-4227-9f5f-bae523dd75c0",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 109,
+            "y": 279,
+            "w": 8,
+            "h": 9
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "fleshguy",
+            "frame": 1,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 4
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 4,
+              "y": 9
+            }
+          }
+        },
+        {
+          "id": "66bd0c07-9523-41e9-8a56-95d9b109cec6",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 120,
+            "y": 279,
+            "w": 8,
+            "h": 9
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "fleshguy_walk",
+            "frame": 2,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 4
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 9
+            }
+          }
+        },
+        {
+          "id": "89eeb371-e0c0-4be5-bb65-b5421a8109de",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 130,
+            "y": 279,
+            "w": 8,
+            "h": 9
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "fleshguy_walk",
+            "frame": 3,
+            "duration": 6,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 4
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 9
+            }
+          }
+        },
+        {
+          "id": "6b7ad02a-7c10-4521-82be-0e89ca33cf59",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 144,
+            "y": 286,
+            "w": 16,
+            "h": 7
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meat_tile_topper",
+            "frame": 0,
+            "duration": 3,
+            "offset": {
+              "x": 0,
+              "y": -1
+            },
+            "center": {
+              "x": 8,
+              "y": 1
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 1,
+              "w": 16,
+              "h": 1
+            },
+            "cbox": {
+              "x": 0,
+              "y": 1,
+              "w": 16,
+              "h": 1
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "8ad57a29-11f1-42c3-bfa5-53c2b66d7ae0",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 160,
+            "y": 286,
+            "w": 16,
+            "h": 7
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meat_tile_topper",
+            "frame": 1,
+            "duration": 3,
+            "offset": {
+              "x": 0,
+              "y": -1
+            },
+            "center": {
+              "x": 8,
+              "y": 1
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 1,
+              "w": 16,
+              "h": 1
+            },
+            "cbox": {
+              "x": 0,
+              "y": 1,
+              "w": 16,
+              "h": 1
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "bd6581d8-c7e1-4d81-bef2-ff605aca110e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 176,
+            "y": 286,
+            "w": 16,
+            "h": 7
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "meat_tile_topper",
+            "frame": 2,
+            "duration": 3,
+            "offset": {
+              "x": 0,
+              "y": -1
+            },
+            "center": {
+              "x": 8,
+              "y": 1
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 1,
+              "w": 16,
+              "h": 1
+            },
+            "cbox": {
+              "x": 0,
+              "y": 1,
+              "w": 16,
+              "h": 1
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 10.486,
-        "centerX": 116.6793820331871,
-        "centerY": 260.9193209994278
+        "zoom": 8.389,
+        "centerX": 164.2031231374419,
+        "centerY": 278.6982953868161
       }
     },
     {

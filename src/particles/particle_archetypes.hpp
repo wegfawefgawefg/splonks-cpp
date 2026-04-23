@@ -39,6 +39,8 @@ inline std::uint32_t HashParticleArchetypeId(const std::string& text) {
 namespace scripted_particle_archetype_ids {
 constexpr ScriptedParticleArchetypeId MeatheadPopup =
     HashParticleArchetypeIdConstexpr("meathead_popup");
+constexpr ScriptedParticleArchetypeId MeatTileTopper =
+    HashParticleArchetypeIdConstexpr("meat_tile_topper");
 } // namespace scripted_particle_archetype_ids
 
 namespace ribbon_particle_archetype_ids {
@@ -64,6 +66,7 @@ struct ScriptedParticleArchetype {
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
     Vec2 size = Vec2::New(0.0F, 0.0F);
+    std::uint32_t hold_frames_after_sequence = 0;
     std::span<const ScriptedParticleSequenceStep> sequence;
 };
 

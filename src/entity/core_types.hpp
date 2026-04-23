@@ -114,13 +114,14 @@ enum class EntityType {
     WebBall,
     Cobweb,
     FlappyBee,
+    FleshGuy,
 };
 
 constexpr std::size_t EntityTypeIndex(EntityType type_) {
     return static_cast<std::size_t>(type_);
 }
 
-constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::FlappyBee) + 1;
+constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::FleshGuy) + 1;
 
 constexpr float kTravelSoundDistInterval = 24.0F;
 constexpr float kWalkerClimberTravelSoundDistInterval = 24.0F;

@@ -14,6 +14,7 @@ struct ScriptedParticle {
     float alpha = 1.0F;
     bool horizontal_flip = false;
     std::uint32_t sequence_step_index = 0;
+    std::uint32_t hold_frames_remaining = 0;
     FrameDataAnimator frame_data_animator{};
 
     void Step(const FrameDataDb& frame_data_db, float dt);

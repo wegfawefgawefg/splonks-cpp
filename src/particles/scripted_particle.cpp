@@ -10,11 +10,16 @@ void StartSequenceStep(
     std::uint32_t sequence_step_index
 ) {
     if (sequence_step_index >= archetype.sequence.size()) {
+        if (archetype.hold_frames_after_sequence > 0 && particle.hold_frames_remaining == 0) {
+            particle.hold_frames_remaining = archetype.hold_frames_after_sequence;
+            return;
+        }
         particle.active = false;
         return;
     }
 
     particle.sequence_step_index = sequence_step_index;
+    particle.hold_frames_remaining = 0;
     const ScriptedParticleSequenceStep& step = archetype.sequence[sequence_step_index];
     if (step.play_count <= 1) {
         particle.frame_data_animator.Play(step.animation_id, step.playback_mode, false, 1);
@@ -55,6 +60,14 @@ void ScriptedParticle::Step(const FrameDataDb& frame_data_db, float dt) {
     const ScriptedParticleArchetype* const archetype = GetScriptedParticleArchetype(archetype_id);
     if (archetype == nullptr || archetype->sequence.empty()) {
         active = false;
+        return;
+    }
+
+    if (hold_frames_remaining > 0) {
+        hold_frames_remaining -= 1;
+        if (hold_frames_remaining == 0) {
+            active = false;
+        }
         return;
     }
 
