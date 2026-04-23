@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "03cbafc8-e7b1-4754-8f53-9d018d7a5077",
+  "selectedAnnotationId": "36ee58c9-1c6d-41fe-be24-da64c16dce0b",
   "sheets": [
     {
       "path": "images/title.png",
@@ -9200,15 +9200,230 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "d8345050-9ed6-4160-84ee-3bd284554ad2",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 112,
+            "y": 256,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bee",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 6
+            },
+            "tags": [],
+            "pbox": {
+              "x": 6,
+              "y": 5,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 6,
+              "y": 5,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 10,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "f2a4a0b6-c1df-4514-82ac-839a1794c331",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 2,
+            "y": 179,
+            "w": 7,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "rope_one",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 7,
+              "h": 5
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 7,
+              "h": 5
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 3,
+              "y": 3
+            }
+          }
+        },
+        {
+          "id": "7ff72157-03e2-4e04-acd3-4ad430372f24",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 178,
+            "w": 10,
+            "h": 9
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "rope_pile",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 6
+            },
+            "tags": [],
+            "pbox": {
+              "x": 2,
+              "y": 3,
+              "w": 8,
+              "h": 6
+            },
+            "cbox": {
+              "x": 2,
+              "y": 3,
+              "w": 8,
+              "h": 6
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 6
+            }
+          }
+        },
+        {
+          "id": "0706d57b-f9f7-4e5f-9896-dd95ac99bf04",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 98,
+            "y": 179,
+            "w": 10,
+            "h": 11
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bomb_bag",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 5,
+              "y": 7
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 4,
+              "w": 8,
+              "h": 7
+            },
+            "cbox": {
+              "x": 1,
+              "y": 4,
+              "w": 8,
+              "h": 7
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "36ee58c9-1c6d-41fe-be24-da64c16dce0b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 115,
+            "y": 177,
+            "w": 9,
+            "h": 12
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bomb_box",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 5,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 2,
+              "w": 9,
+              "h": 10
+            },
+            "cbox": {
+              "x": 0,
+              "y": 2,
+              "w": 9,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 5,
+              "y": 4
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 13.108,
-        "centerX": 85.78730546231309,
-        "centerY": 123.81751602075069
+        "zoom": 5.369,
+        "centerX": 69.00726392251816,
+        "centerY": 169.67777984727138
       }
     },
     {

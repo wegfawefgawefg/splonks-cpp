@@ -145,7 +145,7 @@ bool TryBuyEntityForMoney(
     }
 
     ClearEntityBuyableState(item);
-    if (TryCollectPassiveItem(buyer, item)) {
+    if (TryCollectInventoryPickup(buyer, item)) {
         state.entity_manager.SetInactive(entity_idx);
         state.UpdateSidForEntity(entity_idx, graphics);
     }

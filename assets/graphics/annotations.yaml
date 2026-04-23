@@ -6269,6 +6269,156 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 256
+      w: 16
+      h: 16
+    name: "bee"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 6
+    tags: []
+    pbox:
+      x: 6
+      y: 5
+      w: 4
+      h: 4
+    cbox:
+      x: 6
+      y: 5
+      w: 4
+      h: 4
+    tile: false
+    emit_point:
+      x: 10
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 2
+      y: 179
+      w: 7
+      h: 5
+    name: "rope_one"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 7
+      h: 5
+    cbox:
+      x: 0
+      y: 0
+      w: 7
+      h: 5
+    tile: false
+    emit_point:
+      x: 3
+      y: 3
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 178
+      w: 10
+      h: 9
+    name: "rope_pile"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 6
+    tags: []
+    pbox:
+      x: 2
+      y: 3
+      w: 8
+      h: 6
+    cbox:
+      x: 2
+      y: 3
+      w: 8
+      h: 6
+    tile: false
+    emit_point:
+      x: 6
+      y: 6
+  - path: "entities.png"
+    aabb:
+      x: 98
+      y: 179
+      w: 10
+      h: 11
+    name: "bomb_bag"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 7
+    tags: []
+    pbox:
+      x: 1
+      y: 4
+      w: 8
+      h: 7
+    cbox:
+      x: 1
+      y: 4
+      w: 8
+      h: 7
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 115
+      y: 177
+      w: 9
+      h: 12
+    name: "bomb_box"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 2
+      w: 9
+      h: 10
+    cbox:
+      x: 0
+      y: 2
+      w: 9
+      h: 10
+    tile: false
+    emit_point:
+      x: 5
+      y: 4
   - path: "boss.png"
     aabb:
       x: 0

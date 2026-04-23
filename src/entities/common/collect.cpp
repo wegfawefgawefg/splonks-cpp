@@ -88,7 +88,7 @@ bool TryCollectEntityFromContact(
         return true;
     }
 
-    if (!TryCollectPassiveItem(collector, *pickup)) {
+    if (!TryCollectInventoryPickup(collector, *pickup)) {
         return false;
     }
 

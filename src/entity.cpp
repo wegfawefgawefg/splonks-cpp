@@ -360,6 +360,22 @@ bool TryCollectPassiveItem(Entity& entity, const Entity& pickup) {
     return true;
 }
 
+bool TryCollectInventoryPickup(Entity& entity, const Entity& pickup) {
+    bool collected = false;
+    if (pickup.bombs != 0) {
+        entity.bombs += pickup.bombs;
+        collected = true;
+    }
+    if (pickup.ropes != 0) {
+        entity.ropes += pickup.ropes;
+        collected = true;
+    }
+    if (TryCollectPassiveItem(entity, pickup)) {
+        collected = true;
+    }
+    return collected;
+}
+
 bool CanRevealEmbeddedTreasure(const Entity& entity) {
     return HasPassiveItem(entity, EntityPassiveItem::Spectacles) ||
            HasPassiveItem(entity, EntityPassiveItem::UdjatEye);

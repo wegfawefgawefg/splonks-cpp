@@ -1921,10 +1921,7 @@ void InitStage(State& state, bool preserve_player_state) {
     }
 
     PlacePlayerAtEntrance(state);
-    if (state.stage.stage_type == StageType::SplkMines1 && !carryover.player.has_value()) {
-        GivePlayerBackItem(state, EntityType::TeleporterBackpack);
-        SnapAttachedItemsToPlayer(state);
-    } else if (carryover.player.has_value()) {
+    if (carryover.player.has_value()) {
         SnapAttachedItemsToPlayer(state);
     }
 }
