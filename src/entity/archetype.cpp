@@ -55,8 +55,6 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.condition = archetype.condition;
     entity.ai_state = archetype.ai_state;
     entity.health = archetype.health;
-    entity.bombs = archetype.bombs;
-    entity.ropes = archetype.ropes;
     entity.counter_a = archetype.counter_a;
     entity.counter_b = archetype.counter_b;
     entity.damage_vulnerability = archetype.damage_vulnerability;

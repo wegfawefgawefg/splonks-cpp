@@ -174,8 +174,6 @@ bool ExportRecordingToTextFile(
             out << "    size: (" << entity.size.x << ", " << entity.size.y << ")\n";
             out << "    health: " << entity.health << "\n";
             out << "    money: " << entity.money << "\n";
-            out << "    bombs: " << entity.bombs << "\n";
-            out << "    ropes: " << entity.ropes << "\n";
 
             if (entity.frame_data_animator.HasAnimation()) {
                 const FrameDataAnimation* animation =

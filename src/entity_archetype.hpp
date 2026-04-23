@@ -38,8 +38,6 @@ struct EntityArchetype {
     EntityCondition condition = EntityCondition::Normal;
     EntityAiState ai_state = EntityAiState::Idle;
     EntityDisplayState display_state = EntityDisplayState::Neutral;
-    std::uint32_t bombs = 0;
-    std::uint32_t ropes = 0;
     float counter_a = 0.0F;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
     std::optional<EntityPassiveItem> passive_item = std::nullopt;

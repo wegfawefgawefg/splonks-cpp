@@ -94,8 +94,6 @@ extern const EntityArchetype kPlayerArchetype{
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
-    .bombs = 400,
-    .ropes = 400,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
     .damage_sound = audio_asset_ids::PlayerOuch,

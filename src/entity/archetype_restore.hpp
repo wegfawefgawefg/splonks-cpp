@@ -37,8 +37,6 @@ void RestoreEntityRenderEnabledFromArchetype(Entity& entity);
 void RestoreEntityConditionFromArchetype(Entity& entity);
 void RestoreEntityAiStateFromArchetype(Entity& entity);
 void RestoreEntityHealthFromArchetype(Entity& entity);
-void RestoreEntityBombsFromArchetype(Entity& entity);
-void RestoreEntityRopesFromArchetype(Entity& entity);
 void RestoreEntityCounterAFromArchetype(Entity& entity);
 void RestoreEntityCounterBFromArchetype(Entity& entity);
 void RestoreEntityDamageVulnerabilityFromArchetype(Entity& entity);

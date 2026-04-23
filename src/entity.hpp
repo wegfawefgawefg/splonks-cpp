@@ -103,8 +103,6 @@ struct Entity {
     std::uint32_t meathead_points = 0;
     std::uint32_t money = 0;
     Buyable buyable;
-    std::uint32_t bombs = 0;
-    std::uint32_t ropes = 0;
     std::optional<VID> back_vid;
     AttachmentMode attachment_mode = AttachmentMode::None;
     UseState use_state;

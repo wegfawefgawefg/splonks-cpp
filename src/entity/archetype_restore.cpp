@@ -45,8 +45,6 @@ void RestoreEntityRenderEnabledFromArchetype(Entity& entity) { entity.render_ena
 void RestoreEntityConditionFromArchetype(Entity& entity) { entity.condition = GetArchetypeForEntity(entity).condition; }
 void RestoreEntityAiStateFromArchetype(Entity& entity) { entity.ai_state = GetArchetypeForEntity(entity).ai_state; }
 void RestoreEntityHealthFromArchetype(Entity& entity) { entity.health = GetArchetypeForEntity(entity).health; }
-void RestoreEntityBombsFromArchetype(Entity& entity) { entity.bombs = GetArchetypeForEntity(entity).bombs; }
-void RestoreEntityRopesFromArchetype(Entity& entity) { entity.ropes = GetArchetypeForEntity(entity).ropes; }
 void RestoreEntityCounterAFromArchetype(Entity& entity) { entity.counter_a = GetArchetypeForEntity(entity).counter_a; }
 void RestoreEntityCounterBFromArchetype(Entity& entity) { entity.counter_b = GetArchetypeForEntity(entity).counter_b; }
 void RestoreEntityDamageVulnerabilityFromArchetype(Entity& entity) { entity.damage_vulnerability = GetArchetypeForEntity(entity).damage_vulnerability; }

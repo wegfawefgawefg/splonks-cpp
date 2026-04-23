@@ -4,8 +4,6 @@
 #include "entity/display_support.hpp"
 #include "entity/archetype_restore.hpp"
 #include "frame_data_id.hpp"
-#include "state.hpp"
-#include "tools/tool_archetype.hpp"
 #include "tile.hpp"
 #include "world_query.hpp"
 
@@ -81,8 +79,6 @@ Entity Entity::New() {
     entity.meathead_points = 0;
     entity.money = 0;
     entity.buyable = Buyable{};
-    entity.bombs = 0;
-    entity.ropes = 0;
     entity.attachment_mode = AttachmentMode::None;
     entity.use_state = UseState{};
     entity.travel_sound_countdown = kTravelSoundDistInterval;
@@ -362,41 +358,20 @@ bool TryCollectPassiveItem(Entity& entity, const Entity& pickup) {
     return true;
 }
 
-void AddToolSlotCount(
-    State& state,
-    const Entity& entity,
-    std::size_t slot_index,
-    ToolKind kind,
-    std::uint32_t amount
-) {
-    if (amount == 0) {
-        return;
-    }
-
-    ToolSlot& slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
-    if (!slot.active || slot.kind != kind) {
-        FillToolSlot(slot, kind, 0, true);
-    }
-
-    constexpr std::uint32_t kMaxToolSlotCount = UINT16_MAX;
-    const std::uint32_t new_count = std::min<std::uint32_t>(
-        kMaxToolSlotCount,
-        static_cast<std::uint32_t>(slot.count) + amount
-    );
-    slot.count = static_cast<std::uint16_t>(new_count);
-}
-
 bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& pickup) {
     bool collected = false;
-    if (pickup.bombs != 0) {
-        entity.bombs += pickup.bombs;
-        AddToolSlotCount(state, entity, 0, ToolKind::ThrowBomb, pickup.bombs);
-        collected = true;
-    }
-    if (pickup.ropes != 0) {
-        entity.ropes += pickup.ropes;
-        AddToolSlotCount(state, entity, 1, ToolKind::ThrowRope, pickup.ropes);
-        collected = true;
+    switch (pickup.type_) {
+    case EntityType::BombBox:
+        collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowBomb, 12);
+        break;
+    case EntityType::BombBag:
+        collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowBomb, 3);
+        break;
+    case EntityType::RopePile:
+        collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowRope, 3);
+        break;
+    default:
+        break;
     }
     if (TryCollectPassiveItem(entity, pickup)) {
         collected = true;

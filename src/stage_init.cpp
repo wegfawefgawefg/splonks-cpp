@@ -53,6 +53,8 @@ constexpr int kShopTestStageHeightTiles = 12;
 constexpr int kSacAltarTestStageWidthTiles = 96;
 constexpr int kSacAltarTestStageHeightTiles = 24;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
+constexpr std::uint16_t kPlayerInitialBombs = 400;
+constexpr std::uint16_t kPlayerInitialRopes = 400;
 constexpr std::array<Tile, 3> kCaveBackwallFillTiles{{
     Tile::CaveAir0,
     Tile::CaveAir1,
@@ -808,7 +810,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
                 FillToolSlot(
                     state.entity_tools.EnsureToolSlot(*player_vid, 0),
                     *bomb_tool_kind,
-                    static_cast<std::uint16_t>(player->bombs),
+                    kPlayerInitialBombs,
                     true
                 );
             }
@@ -817,7 +819,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
                 FillToolSlot(
                     state.entity_tools.EnsureToolSlot(*player_vid, 1),
                     *rope_tool_kind,
-                    static_cast<std::uint16_t>(player->ropes),
+                    kPlayerInitialRopes,
                     true
                 );
             }
