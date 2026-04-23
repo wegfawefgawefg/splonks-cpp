@@ -1,6 +1,7 @@
 #include "entities/meathead.hpp"
 
 #include "audio_emitters.hpp"
+#include "entities/common/common.hpp"
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 #include "particles/particle_archetypes.hpp"
@@ -19,6 +20,30 @@ constexpr std::uint32_t kMeatheadPointsPerHeal = 10;
 constexpr std::uint32_t kMeatheadPreviewIntervalFrames = 300;
 constexpr float kMeatheadPopupSize = 9.0F;
 constexpr int kMeatheadPopupSearchTiles = 2;
+
+common::ContactResolution OnEntityContactAsMeathead(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext&,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    if (graphics == nullptr || audio == nullptr ||
+        !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
+        return common::ContactResolution{};
+    }
+
+    Entity& collector = state.entity_manager.entities[other_entity_idx];
+    const Entity& pickup = state.entity_manager.entities[entity_idx];
+    if (!TryCollectInventoryPickup(state, collector, pickup)) {
+        return common::ContactResolution{};
+    }
+
+    (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Present);
+    common::DeactivateCollectedPickup(entity_idx, state, *graphics);
+    return common::ContactResolution{};
+}
 
 bool IsSolidTileAt(const Stage& stage, const IVec2& tile_pos) {
     const std::optional<WorldTileQueryResult> query = QueryTileAtTilePos(stage, tile_pos);
@@ -237,6 +262,7 @@ extern const EntityArchetype kMeatheadArchetype{
     .damage_vulnerability = DamageVulnerability::Immune,
     .passive_item = EntityPassiveItem::Meathead,
     .step_logic = StepEntityLogicAsMeathead,
+    .on_entity_contact = OnEntityContactAsMeathead,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::MeatheadRise),
 };

@@ -1,6 +1,7 @@
 #include "entities/chest.hpp"
 
 #include "audio.hpp"
+#include "audio_emitters.hpp"
 #include "controls.hpp"
 #include "entities/common/common.hpp"
 #include "entity/archetype.hpp"
@@ -28,6 +29,30 @@ constexpr float kChestSparkleGravity = 0.03F;
 constexpr float kChestSparkleAlphaVel = -0.05F;
 constexpr float kChestSparkleAlphaAcc = -0.002F;
 constexpr float kChestTrapFuseFrames = 40.0F;
+
+common::ContactResolution OnEntityContactAsUdjatEye(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext&,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    if (graphics == nullptr || audio == nullptr ||
+        !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
+        return common::ContactResolution{};
+    }
+
+    Entity& collector = state.entity_manager.entities[other_entity_idx];
+    const Entity& pickup = state.entity_manager.entities[entity_idx];
+    if (!TryCollectInventoryPickup(state, collector, pickup)) {
+        return common::ContactResolution{};
+    }
+
+    (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
+    common::DeactivateCollectedPickup(entity_idx, state, *graphics);
+    return common::ContactResolution{};
+}
 
 bool IsOpenWithAnimation(const Entity& entity, FrameDataId animation_id) {
     return entity.frame_data_animator.animation_id == animation_id;
@@ -446,6 +471,7 @@ extern const EntityArchetype kUdjatEyeArchetype{
     .projectile_contact_damage_amount = 0,
     .can_apply_projectile_contact = false,
     .passive_item = EntityPassiveItem::UdjatEye,
+    .on_entity_contact = OnEntityContactAsUdjatEye,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::UdjatEye),
 };

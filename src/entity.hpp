@@ -217,7 +217,7 @@ const char* PassiveItemToString(EntityPassiveItem passive_item);
 bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
 void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);
 bool TryCollectPassiveItem(Entity& entity, const Entity& pickup);
-bool TryCollectInventoryPickup(Entity& entity, const Entity& pickup);
+bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& pickup);
 bool CanRevealEmbeddedTreasure(const Entity& entity);
 void EnableStone(Entity& entity);
 void DisableStone(Entity& entity);

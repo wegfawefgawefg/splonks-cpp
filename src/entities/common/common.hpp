@@ -90,13 +90,12 @@ void SetVisualCenterForEntity(Entity& entity, const Graphics& graphics, const Ve
 Vec2 GetEmitPointForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
 AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);
 AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics);
-bool TryCollectEntityFromContact(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
-    State& state,
-    const Graphics& graphics,
-    Audio& audio
+bool CanCollectPickupFromContact(
+    std::size_t pickup_idx,
+    std::size_t collector_idx,
+    const State& state
 );
+void DeactivateCollectedPickup(std::size_t pickup_idx, State& state, const Graphics& graphics);
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state);
 void ReleaseEntityFromHolder(Entity& entity, State& state);
 void DropHeldItemFromEntity(Entity& entity, State& state);

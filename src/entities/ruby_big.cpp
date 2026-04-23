@@ -1,5 +1,8 @@
 #include "entities/ruby_big.hpp"
 
+#include "audio_emitters.hpp"
+#include "entities/common/common.hpp"
+
 #include "entity/archetype.hpp"
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
@@ -7,6 +10,31 @@
 #include "math_types.hpp"
 
 namespace splonks::entities::ruby_big {
+
+namespace {
+
+common::ContactResolution OnEntityContactAsRubyBig(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext&,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    if (graphics == nullptr || audio == nullptr ||
+        !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
+        return common::ContactResolution{};
+    }
+
+    Entity& collector = state.entity_manager.entities[other_entity_idx];
+    const Entity& gem = state.entity_manager.entities[entity_idx];
+    collector.money += 8;
+    (void)PlayEntityCenterSoundEmitter(state, gem, audio_asset_ids::GoldStack);
+    common::DeactivateCollectedPickup(entity_idx, state, *graphics);
+    return common::ContactResolution{};
+}
+
+} // namespace
 
 extern const EntityArchetype kRubyBigArchetype{
     .type_ = EntityType::RubyBig,
@@ -25,6 +53,7 @@ extern const EntityArchetype kRubyBigArchetype{
     .damage_vulnerability = DamageVulnerability::Immune,
     .projectile_contact_damage_amount = 0,
     .can_apply_projectile_contact = false,
+    .on_entity_contact = OnEntityContactAsRubyBig,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RubyBig),
 };

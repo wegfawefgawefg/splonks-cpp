@@ -31,6 +31,9 @@ ContactResolution TryDispatchEntityEntityContactForParticipant(
 
     const Entity& participant = state.entity_manager.entities[participant_idx];
     const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
+    if (!participant.active || !other_entity.active) {
+        return ContactResolution{};
+    }
     const EntityArchetype& participant_archetype = GetEntityArchetype(participant.type_);
     if (participant_archetype.entity_contact_cooldown_duration > 0 &&
         state.contact.HasContactCooldown(participant.vid, other_entity.vid)) {
@@ -48,17 +51,6 @@ ContactResolution TryDispatchEntityEntityContactForParticipant(
                 *audio
             );
         }
-        return ContactResolution{};
-    }
-
-    if (graphics != nullptr && audio != nullptr &&
-        TryCollectEntityFromContact(
-            participant_idx,
-            other_entity_idx,
-            state,
-            *graphics,
-            *audio
-        )) {
         return ContactResolution{};
     }
 

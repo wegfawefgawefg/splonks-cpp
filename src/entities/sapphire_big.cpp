@@ -1,5 +1,8 @@
 #include "entities/sapphire_big.hpp"
 
+#include "audio_emitters.hpp"
+#include "entities/common/common.hpp"
+
 #include "entity/archetype.hpp"
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
@@ -7,6 +10,31 @@
 #include "math_types.hpp"
 
 namespace splonks::entities::sapphire_big {
+
+namespace {
+
+common::ContactResolution OnEntityContactAsSapphireBig(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext&,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    if (graphics == nullptr || audio == nullptr ||
+        !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
+        return common::ContactResolution{};
+    }
+
+    Entity& collector = state.entity_manager.entities[other_entity_idx];
+    const Entity& gem = state.entity_manager.entities[entity_idx];
+    collector.money += 6;
+    (void)PlayEntityCenterSoundEmitter(state, gem, audio_asset_ids::GoldStack);
+    common::DeactivateCollectedPickup(entity_idx, state, *graphics);
+    return common::ContactResolution{};
+}
+
+} // namespace
 
 extern const EntityArchetype kSapphireBigArchetype{
     .type_ = EntityType::SapphireBig,
@@ -25,6 +53,7 @@ extern const EntityArchetype kSapphireBigArchetype{
     .damage_vulnerability = DamageVulnerability::Immune,
     .projectile_contact_damage_amount = 0,
     .can_apply_projectile_contact = false,
+    .on_entity_contact = OnEntityContactAsSapphireBig,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SapphireBig),
 };
