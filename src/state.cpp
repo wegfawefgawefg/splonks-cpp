@@ -2,6 +2,7 @@
 #include "world_query.hpp"
 
 #include "entities/common/common.hpp"
+#include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 
 #include <algorithm>
@@ -159,7 +160,7 @@ State State::New() {
     state.audio_emitters = AudioEmitterManager::New();
     state.sid = SID::New();
     state.area_listener_vids.clear();
-    state.respawn_target = StageLoadTarget::ForStageType(StageType::SplkMines1);
+    state.respawn_target = StageLoadTarget::ForQuestStage("classic", "classic_mines_1");
     state.pending_stage_transition.reset();
     state.stage_lighting = StageLighting::New();
     state.stage_acoustics = StageAcoustics::New();
@@ -171,7 +172,7 @@ State State::New() {
     state.world_prompts.clear();
     state.debug_rect_annotations.clear();
     state.debug_label_annotations.clear();
-    InitDebugLevel(state);
+    (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
     return state;
 }
 

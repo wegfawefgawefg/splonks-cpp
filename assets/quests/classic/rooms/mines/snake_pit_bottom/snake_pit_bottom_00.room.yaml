@@ -1,0 +1,13 @@
+id: snake_pit_bottom_00
+pool: snake_pit_bottom
+weight: 1
+size: [10, 8]
+grid: |
+  1110000111
+  11s0000s11
+  1110000111
+  1100S00011
+  11S0110S11
+  111STTS111
+  1111M11111
+  1111111111

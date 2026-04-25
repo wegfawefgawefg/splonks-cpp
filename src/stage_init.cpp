@@ -15,7 +15,7 @@
 #include "entities/store_light.hpp"
 #include "entities/damsel.hpp"
 #include "entities/stomp_pad.hpp"
-#include "stage_gen/splk_mines.hpp"
+#include "quest_stage_loader.hpp"
 #include "stage_acoustics.hpp"
 #include "tile_archetype.hpp"
 
@@ -24,6 +24,8 @@
 #include <random>
 
 #include <stdexcept>
+#include <string>
+#include <string_view>
 
 namespace splonks {
 
@@ -1079,13 +1081,8 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
 }
 
 void PlacePlayerAtEntrance(State& state) {
-    const IVec2 starting_room = state.stage.GetStartingRoom();
-    const auto [starting_room_tl, starting_room_br] =
-        state.stage.GetRoomCorners(ToUVec2(starting_room));
-
-    bool door_found = false;
-    for (unsigned int y = starting_room_tl.y; y < starting_room_br.y && !door_found; ++y) {
-        for (unsigned int x = starting_room_tl.x; x < starting_room_br.x; ++x) {
+    for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
+        for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
             if (state.stage.GetTile(x, y) != Tile::Entrance) {
                 continue;
             }
@@ -1098,16 +1095,12 @@ void PlacePlayerAtEntrance(State& state) {
                     player->acc = Vec2::New(0.0F, 0.0F);
                 }
             }
-            door_found = true;
-            break;
+            return;
         }
     }
 
-    if (!door_found) {
-        throw std::runtime_error(
-            "No door found in starting room. You have a game breaking bug in the map generation "
-            "code. Don't ship with this in.");
-    }
+    throw std::runtime_error(
+        "No entrance tile found. You have a game breaking bug in the map generation code.");
 }
 
 void SnapAttachedItemsToPlayer(State& state) {
@@ -1171,6 +1164,15 @@ void SpawnAuthoredStageEntities(State& state) {
         entity->pos = spawn.pos;
         entity->facing = spawn.facing;
         entity->vel = Vec2::New(0.0F, 0.0F);
+        if (spawn.type_ == EntityType::BasicExit) {
+            const std::string_view exit_id =
+                spawn.exit_id.empty() ? std::string_view("default") : std::string_view(spawn.exit_id);
+            entity->stage_exit_id = state.stage.FindExitId(exit_id);
+            if (!state.stage.exits.empty() && entity->stage_exit_id == kInvalidStageExitId) {
+                throw std::runtime_error("BasicExit spawn references unknown stage exit: " +
+                                         std::string(exit_id));
+            }
+        }
         spawned_vids[i] = *vid;
         if (spawn.type_ == EntityType::StoreLight) {
             entities::store_light::AttachStoreLight(*entity, state);
@@ -1848,12 +1850,17 @@ void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
 } // namespace
 
 void InitStage(State& state, bool preserve_player_state) {
-    if (state.stage.stage_type == StageType::SplkMines1) {
+    if (state.stage.quest_id == "classic" && state.stage.quest_stage_id == "classic_mines_1") {
         state.depth = 0;
         state.sac_altar_favor = 0;
         state.sac_altar_reward_tier = 0;
     }
-    state.respawn_target = StageLoadTarget::ForStageType(state.stage.stage_type);
+    state.respawn_target = state.stage.quest_id.empty()
+                               ? StageLoadTarget::ForStageType(state.stage.stage_type)
+                               : StageLoadTarget::ForQuestStage(
+                                     state.stage.quest_id,
+                                     state.stage.quest_stage_id
+                                 );
     const StageCarryover carryover =
         preserve_player_state ? CaptureStageCarryover(state) : StageCarryover{};
     InitCommonStageState(state);
@@ -1865,12 +1872,12 @@ void InitStage(State& state, bool preserve_player_state) {
     }
     SpawnAuthoredStageEntities(state);
 
-    if (!stage_gen::splk_mines::UsesSplkMinesGenerator(state.stage.stage_type)) {
+    if (state.stage.quest_id.empty()) {
         // This mirrors the old Rust stage init population pass.
         for (int i = 0; i < 2; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                    state.stage.GetRandomNoncollidablePositionInStage()) {
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
                         SetEntityAs(*entity, EntityType::JetPack);
@@ -1883,7 +1890,7 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 32; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                    state.stage.GetRandomNoncollidablePositionInStage()) {
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const money = state.entity_manager.GetEntityMut(*vid)) {
                         const EntityType money_type =
@@ -1898,7 +1905,7 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 8; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                    state.stage.GetRandomNoncollidablePositionInStage()) {
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const bat = state.entity_manager.GetEntityMut(*vid)) {
                         SetEntityAs(*bat, EntityType::Bat);
@@ -1911,7 +1918,7 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 32; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                    state.stage.GetRandomNoncollidablePositionInStage()) {
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
                         const unsigned int random_number = RandomPercent();
@@ -1931,7 +1938,7 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 32; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInRandomRoom()) {
+                    state.stage.GetRandomNoncollidablePositionInStage()) {
                 if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
                     if (Entity* const block = state.entity_manager.GetEntityMut(*vid)) {
                         SetEntityAs(*block, EntityType::Block);
@@ -1954,10 +1961,6 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     state.sac_altar_reward_tier = 0;
     state.respawn_target = StageLoadTarget::ForDebugLevel(state.debug_level.kind);
     switch (state.debug_level.kind) {
-    case DebugLevelKind::SplkMines1:
-        state.stage = Stage::New(StageType::SplkMines1);
-        InitStage(state, preserve_player_state);
-        break;
     case DebugLevelKind::HangTest:
         state.stage = MakeHangTestStage(state.debug_level.hang_test);
         InitHangTestStage(state);

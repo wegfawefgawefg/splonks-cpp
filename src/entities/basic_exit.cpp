@@ -59,77 +59,15 @@ std::optional<ExitPrompt> BuildExitPromptForEntity(
         return std::nullopt;
     }
 
+    const bool allowed = IsStageExitAllowed(state, exit_entity->stage_exit_id);
+
     return ExitPrompt{
         .entity_idx = entity_idx,
         .action_text = "RB",
-        .message_text = "",
+        .message_text = allowed ? "" : "locked",
         .show_down_arrow = true,
-        .allowed = true,
+        .allowed = allowed,
     };
-}
-
-void QueueDefaultExitTransition(State& state) {
-    switch (state.stage.stage_type) {
-    case StageType::Test1:
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Test1), true);
-        break;
-    case StageType::SplkMines1:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::SplkMines2), true);
-        break;
-    case StageType::SplkMines2:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::SplkMines3), true);
-        break;
-    case StageType::SplkMines3:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice1), true);
-        break;
-    case StageType::Ice1:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice2), true);
-        break;
-    case StageType::Ice2:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Ice3), true);
-        break;
-    case StageType::Ice3:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert1), true);
-        break;
-    case StageType::Desert1:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert2), true);
-        break;
-    case StageType::Desert2:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Desert3), true);
-        break;
-    case StageType::Desert3:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple1), true);
-        break;
-    case StageType::Temple1:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple2), true);
-        break;
-    case StageType::Temple2:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Temple3), true);
-        break;
-    case StageType::Temple3:
-        state.depth += 1;
-        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Boss), true);
-        break;
-    case StageType::Boss:
-        state.stage = Stage::NewBlank();
-        state.mode = Mode::Win;
-        break;
-    case StageType::Blank:
-        state.stage = Stage::NewBlank();
-        state.mode = Mode::Win;
-        break;
-    }
 }
 
 bool TryTakeExit(
@@ -149,7 +87,7 @@ bool TryTakeExit(
     if (exit_entity.transition_target.has_value()) {
         QueueStageTransition(state, *exit_entity.transition_target);
     } else {
-        QueueDefaultExitTransition(state);
+        QueueStageExitTransition(state, exit_entity.stage_exit_id);
     }
     return true;
 }

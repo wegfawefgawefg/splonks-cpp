@@ -1,0 +1,133 @@
+glyphs:
+  - char: "0"
+    tile: air
+  - char: "1"
+    action: jungle_ground
+  - char: "2"
+    action: jungle_maybe_ground
+  - char: "3"
+    action: jungle_water_or_lush
+  - char: "4"
+    spawn_chance: push_block
+    chance_denominator: 4
+  - char: "5"
+    patch_pool: ground_obstacle
+  - char: "6"
+    patch_pool: air_obstacle
+  - char: "7"
+    action: maybe_spikes
+  - char: "8"
+    patch_pool: doorway_obstacle
+  - char: "9"
+    action: entrance_or_exit
+    exit_id: default
+  - char: "L"
+    tile: vine
+  - char: "P"
+    tile: vine_top
+  - char: "V"
+    tile: rope
+  - char: "."
+    action: lush_shop_wall
+  - char: "b"
+    action: lush_smooth_wall
+  - char: ":"
+    action: smooth_wall
+  - char: "+"
+    tile: glass
+  - char: "A"
+    action: altar_pair
+  - char: "x"
+    action: sac_altar
+  - char: "a"
+    spawn: chest
+  - char: "I"
+    action: gold_idol
+  - char: "B"
+    spawn: trap_block
+  - char: "Q"
+    action: dice_sign_if_craps
+  - char: "q"
+    action: random_item
+  - char: "W"
+    action: wanted_poster
+  - char: "l"
+    action: lamp_or_red
+  - char: "K"
+    spawn: shopkeeper
+  - char: "k"
+    action: shop_sign
+  - char: "i"
+    action: shop_item_slot
+  - char: "$"
+    action: shop_item_slot
+  - char: "d"
+    tile: water_swim
+    spawn: chest
+  - char: "u"
+    spawn: dice
+  - char: "D"
+    action: shop_damsel
+  - char: "!"
+    spawn: damsel
+  - char: "s"
+    tile: spikes
+  - char: "S"
+    spawn_random:
+      - entity: snake
+        weight: 4
+      - entity: cobra
+        weight: 1
+  - char: "T"
+    action: tree_growth
+  - char: "M"
+    tile: jungle_dirt
+  - char: "&"
+    spawn: cobweb
+  - char: "w"
+    tile: water_swim
+  - char: "v"
+    action: jungle_water_and_lush
+  - char: ","
+    action: jungle_water_and_maybe_lush
+  - char: ";"
+    tile: air
+  - char: "R"
+    tile: air
+  - char: "r"
+    action: jungle_temple_or_lush
+  - char: "t"
+    tile: temple_dirt
+  - char: "c"
+    spawn: chest
+  - char: "C"
+    spawn: crystal_skull
+  - char: "f"
+    tile: jungle_dirt
+  - char: "j"
+    tile: jungle_dirt
+  - char: "F"
+    tile: jungle_dirt
+  - char: "?"
+    tile: jungle_dirt
+  - char: "E"
+    tile: air
+  - char: "G"
+    tile: air
+  - char: "X"
+    tile: air
+  - char: "Y"
+    tile: air
+  - char: "z"
+    tile: air
+  - char: "H"
+    tile: air
+  - char: "p"
+    spawn_random:
+      - entity: skeleton
+        weight: 1
+      - entity: jar
+        weight: 1
+  - char: "J"
+    tile: water_swim
+    spawn: jaws

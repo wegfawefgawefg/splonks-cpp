@@ -1,0 +1,15 @@
+id: shop_left_02
+pool: shop_left
+weight: 1
+size: [10, 8]
+properties:
+  shop_type: kissing
+grid: |
+  1111111111
+  1111111111
+  1111221111
+  111p000211
+  ...000W010
+  ...00000k0
+  ..K00A0000
+  bbbbbbbbbb

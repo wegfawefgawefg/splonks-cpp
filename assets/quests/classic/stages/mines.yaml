@@ -1,0 +1,49 @@
+id: mines
+title: Mines
+generator: classic_room_graph
+room_size: [10, 8]
+layout_size: [4, 4]
+glyphs: glyphs/mines.yaml
+border_tile: cave_dirt
+backwall_tiles: [cave_air0, cave_air1, cave_air2]
+block_animation: cave_block
+
+room_pools:
+  start: rooms/mines/start
+  main: rooms/mines/main
+  side: rooms/mines/side
+  drop: rooms/mines/drop
+  exit: rooms/mines/exit
+  exit_main: rooms/mines/exit_main
+  shop_left: rooms/mines/shop_left
+  shop_right: rooms/mines/shop_right
+  snake_pit_top: rooms/mines/snake_pit_top
+  snake_pit_bottom: rooms/mines/snake_pit_bottom
+
+layout_passes:
+  - name: snake_pit
+    enabled: true
+    properties:
+      chance_denominator: 8
+
+  - name: shop
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_uses_level_number: true
+
+stage_passes:
+  - name: convert_exit_tiles
+    enabled: true
+  - name: embedded_treasure
+    enabled: true
+  - name: floor_treasure
+    enabled: true
+  - name: udjat_key_chest
+    enabled: true
+    properties:
+      min_level_number: 2
+  - name: arrow_trap_conversion
+    enabled: true
+  - name: ambient_mines_entities
+    enabled: true

@@ -32,10 +32,8 @@ void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
 
 void OnBreakAsGoldVein(const IVec2& tile_pos, State& state, Audio& audio) {
     (void)audio;
-    const Vec2 center = Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
-    );
+    const Vec2 center = Vec2::New(static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+                                  static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8));
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-3.0F, -1.0F), state);
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 0.0F), state);
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(3.0F, 1.0F), state);
@@ -43,10 +41,8 @@ void OnBreakAsGoldVein(const IVec2& tile_pos, State& state, Audio& audio) {
 
 void OnBreakAsBigGoldVein(const IVec2& tile_pos, State& state, Audio& audio) {
     (void)audio;
-    const Vec2 center = Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
-    );
+    const Vec2 center = Vec2::New(static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+                                  static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8));
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
@@ -54,15 +50,9 @@ void OnBreakAsBigGoldVein(const IVec2& tile_pos, State& state, Audio& audio) {
 }
 
 TileArchetype MakeSolidTileArchetype(
-    Tile tile,
-    TileFamily family,
-    FrameDataId break_animation,
-    const char* debug_name,
-    std::optional<AudioAssetId> break_sound = audio_asset_ids::Thud,
-    TileOnBreak on_break = nullptr,
-    float friction = 0.85F,
-    bool hangable = true
-) {
+    Tile tile, TileFamily family, FrameDataId break_animation, const char* debug_name,
+    std::optional<AudioAssetId> break_sound = audio_asset_ids::Thud, TileOnBreak on_break = nullptr,
+    float friction = 0.85F, bool hangable = true) {
     return TileArchetype{
         .tile = tile,
         .solid = true,
@@ -117,28 +107,24 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Cave,
         .debug_name = "CaveAir2",
     },
-    MakeSolidTileArchetype(Tile::CaveDirt, TileFamily::Cave, HashFrameDataIdConstexpr("cave_dirt_0"), "CaveDirt"),
-    MakeSolidTileArchetype(
-        Tile::CaveGold,
-        TileFamily::Cave,
-        HashFrameDataIdConstexpr("cave_gold_0"),
-        "CaveGold",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsGoldVein
-    ),
-    MakeSolidTileArchetype(
-        Tile::CaveGoldBig,
-        TileFamily::Cave,
-        HashFrameDataIdConstexpr("cave_gold_1"),
-        "CaveGoldBig",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsBigGoldVein
-    ),
-    MakeSolidTileArchetype(Tile::CaveBlock, TileFamily::Cave, HashFrameDataIdConstexpr("cave_block_0"), "CaveBlock"),
-    MakeSolidTileArchetype(Tile::CaveShopWall, TileFamily::Cave, HashFrameDataIdConstexpr("cave_shop_wall"), "CaveShopWall"),
-    MakeSolidTileArchetype(Tile::CaveSmoothWall, TileFamily::Cave, HashFrameDataIdConstexpr("cave_smooth_wall"), "CaveSmoothWall"),
-    MakeSolidTileArchetype(Tile::Glass, TileFamily::Neutral, HashFrameDataIdConstexpr("glass"), "Glass"),
-    MakeSolidTileArchetype(Tile::LawsonWall, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_wall"), "LawsonWall"),
+    MakeSolidTileArchetype(Tile::CaveDirt, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("cave_dirt_0"), "CaveDirt"),
+    MakeSolidTileArchetype(Tile::CaveGold, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("cave_gold_0"), "CaveGold",
+                           audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
+    MakeSolidTileArchetype(Tile::CaveGoldBig, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("cave_gold_1"), "CaveGoldBig",
+                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
+    MakeSolidTileArchetype(Tile::CaveBlock, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("cave_block_0"), "CaveBlock"),
+    MakeSolidTileArchetype(Tile::CaveShopWall, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("cave_shop_wall"), "CaveShopWall"),
+    MakeSolidTileArchetype(Tile::CaveSmoothWall, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("cave_smooth_wall"), "CaveSmoothWall"),
+    MakeSolidTileArchetype(Tile::Glass, TileFamily::Neutral, HashFrameDataIdConstexpr("glass"),
+                           "Glass"),
+    MakeSolidTileArchetype(Tile::LawsonWall, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("lawson_wall"), "LawsonWall"),
     TileArchetype{
         .tile = Tile::LawsonInside,
         .solid = false,
@@ -148,10 +134,14 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Cave,
         .debug_name = "LawsonInside",
     },
-    MakeSolidTileArchetype(Tile::LawsonLeftTopper, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_left_topper"), "LawsonLeftTopper"),
-    MakeSolidTileArchetype(Tile::LawsonMiddleTopper, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_middle_topper"), "LawsonMiddleTopper"),
-    MakeSolidTileArchetype(Tile::LawsonRightTopper, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_right_topper"), "LawsonRightTopper"),
-    MakeSolidTileArchetype(Tile::LawsonFloor, TileFamily::Cave, HashFrameDataIdConstexpr("lawson_floor"), "LawsonFloor"),
+    MakeSolidTileArchetype(Tile::LawsonLeftTopper, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("lawson_left_topper"), "LawsonLeftTopper"),
+    MakeSolidTileArchetype(Tile::LawsonMiddleTopper, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("lawson_middle_topper"), "LawsonMiddleTopper"),
+    MakeSolidTileArchetype(Tile::LawsonRightTopper, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("lawson_right_topper"), "LawsonRightTopper"),
+    MakeSolidTileArchetype(Tile::LawsonFloor, TileFamily::Cave,
+                           HashFrameDataIdConstexpr("lawson_floor"), "LawsonFloor"),
     TileArchetype{
         .tile = Tile::IceAir0,
         .solid = false,
@@ -179,28 +169,16 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Ice,
         .debug_name = "IceAir2",
     },
-    MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"), "IceDirt", audio_asset_ids::Thud, nullptr, 1.0F, false),
-    MakeSolidTileArchetype(
-        Tile::IceGold,
-        TileFamily::Ice,
-        HashFrameDataIdConstexpr("ice_gold"),
-        "IceGold",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsGoldVein,
-        1.0F,
-        false
-    ),
-    MakeSolidTileArchetype(
-        Tile::IceGoldBig,
-        TileFamily::Ice,
-        HashFrameDataIdConstexpr("ice_gold"),
-        "IceGoldBig",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsBigGoldVein,
-        1.0F,
-        false
-    ),
-    MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"), "IceBlock", audio_asset_ids::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"),
+                           "IceDirt", audio_asset_ids::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::IceGold, TileFamily::Ice, HashFrameDataIdConstexpr("ice_gold"),
+                           "IceGold", audio_asset_ids::MoneySmashed, OnBreakAsGoldVein, 1.0F,
+                           false),
+    MakeSolidTileArchetype(Tile::IceGoldBig, TileFamily::Ice, HashFrameDataIdConstexpr("ice_gold"),
+                           "IceGoldBig", audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein, 1.0F,
+                           false),
+    MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"),
+                           "IceBlock", audio_asset_ids::Thud, nullptr, 1.0F, false),
     TileArchetype{
         .tile = Tile::JungleAir0,
         .solid = false,
@@ -228,24 +206,16 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Jungle,
         .debug_name = "JungleAir2",
     },
-    MakeSolidTileArchetype(Tile::JungleDirt, TileFamily::Jungle, HashFrameDataIdConstexpr("jungle_dirt_0"), "JungleDirt"),
-    MakeSolidTileArchetype(
-        Tile::JungleGold,
-        TileFamily::Jungle,
-        HashFrameDataIdConstexpr("jungle_gold_0"),
-        "JungleGold",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsGoldVein
-    ),
-    MakeSolidTileArchetype(
-        Tile::JungleGoldBig,
-        TileFamily::Jungle,
-        HashFrameDataIdConstexpr("jungle_gold_0"),
-        "JungleGoldBig",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsBigGoldVein
-    ),
-    MakeSolidTileArchetype(Tile::JungleBlock, TileFamily::Jungle, HashFrameDataIdConstexpr("jungle_block_0"), "JungleBlock"),
+    MakeSolidTileArchetype(Tile::JungleDirt, TileFamily::Jungle,
+                           HashFrameDataIdConstexpr("jungle_dirt_0"), "JungleDirt"),
+    MakeSolidTileArchetype(Tile::JungleGold, TileFamily::Jungle,
+                           HashFrameDataIdConstexpr("jungle_gold_0"), "JungleGold",
+                           audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
+    MakeSolidTileArchetype(Tile::JungleGoldBig, TileFamily::Jungle,
+                           HashFrameDataIdConstexpr("jungle_gold_0"), "JungleGoldBig",
+                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
+    MakeSolidTileArchetype(Tile::JungleBlock, TileFamily::Jungle,
+                           HashFrameDataIdConstexpr("jungle_block_0"), "JungleBlock"),
     TileArchetype{
         .tile = Tile::TempleAir0,
         .solid = false,
@@ -273,24 +243,16 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Temple,
         .debug_name = "TempleAir2",
     },
-    MakeSolidTileArchetype(Tile::TempleDirt, TileFamily::Temple, HashFrameDataIdConstexpr("temple_dirt_0"), "TempleDirt"),
-    MakeSolidTileArchetype(
-        Tile::TempleGold,
-        TileFamily::Temple,
-        HashFrameDataIdConstexpr("temple_gold"),
-        "TempleGold",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsGoldVein
-    ),
-    MakeSolidTileArchetype(
-        Tile::TempleGoldBig,
-        TileFamily::Temple,
-        HashFrameDataIdConstexpr("temple_gold"),
-        "TempleGoldBig",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsBigGoldVein
-    ),
-    MakeSolidTileArchetype(Tile::TempleBlock, TileFamily::Temple, HashFrameDataIdConstexpr("temple_block_0"), "TempleBlock"),
+    MakeSolidTileArchetype(Tile::TempleDirt, TileFamily::Temple,
+                           HashFrameDataIdConstexpr("temple_dirt_0"), "TempleDirt"),
+    MakeSolidTileArchetype(Tile::TempleGold, TileFamily::Temple,
+                           HashFrameDataIdConstexpr("temple_gold"), "TempleGold",
+                           audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
+    MakeSolidTileArchetype(Tile::TempleGoldBig, TileFamily::Temple,
+                           HashFrameDataIdConstexpr("temple_gold"), "TempleGoldBig",
+                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
+    MakeSolidTileArchetype(Tile::TempleBlock, TileFamily::Temple,
+                           HashFrameDataIdConstexpr("temple_block_0"), "TempleBlock"),
     TileArchetype{
         .tile = Tile::BossAir0,
         .solid = false,
@@ -318,24 +280,15 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .family = TileFamily::Boss,
         .debug_name = "BossAir2",
     },
-    MakeSolidTileArchetype(Tile::BossDirt, TileFamily::Boss, HashFrameDataIdConstexpr("boss_dirt_0"), "BossDirt"),
-    MakeSolidTileArchetype(
-        Tile::BossGold,
-        TileFamily::Boss,
-        HashFrameDataIdConstexpr("boss_gold"),
-        "BossGold",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsGoldVein
-    ),
-    MakeSolidTileArchetype(
-        Tile::BossGoldBig,
-        TileFamily::Boss,
-        HashFrameDataIdConstexpr("boss_gold"),
-        "BossGoldBig",
-        audio_asset_ids::MoneySmashed,
-        OnBreakAsBigGoldVein
-    ),
-    MakeSolidTileArchetype(Tile::BossBlock, TileFamily::Boss, HashFrameDataIdConstexpr("boss_block_0"), "BossBlock"),
+    MakeSolidTileArchetype(Tile::BossDirt, TileFamily::Boss,
+                           HashFrameDataIdConstexpr("boss_dirt_0"), "BossDirt"),
+    MakeSolidTileArchetype(Tile::BossGold, TileFamily::Boss, HashFrameDataIdConstexpr("boss_gold"),
+                           "BossGold", audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
+    MakeSolidTileArchetype(Tile::BossGoldBig, TileFamily::Boss,
+                           HashFrameDataIdConstexpr("boss_gold"), "BossGoldBig",
+                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
+    MakeSolidTileArchetype(Tile::BossBlock, TileFamily::Boss,
+                           HashFrameDataIdConstexpr("boss_block_0"), "BossBlock"),
     TileArchetype{
         .tile = Tile::LadderTop,
         .solid = false,
@@ -353,6 +306,14 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .debug_name = "Ladder",
     },
     TileArchetype{
+        .tile = Tile::LadderOrange,
+        .solid = false,
+        .climbable = true,
+        .transparent = true,
+        .hangable = false,
+        .debug_name = "LadderOrange",
+    },
+    TileArchetype{
         .tile = Tile::Spikes,
         .solid = false,
         .climbable = false,
@@ -368,6 +329,63 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .hangable = false,
         .debug_name = "Rope",
     },
+    TileArchetype{
+        .tile = Tile::Vine,
+        .solid = false,
+        .climbable = true,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Jungle,
+        .debug_name = "Vine",
+    },
+    TileArchetype{
+        .tile = Tile::VineTop,
+        .solid = false,
+        .climbable = true,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Jungle,
+        .debug_name = "VineTop",
+    },
+    TileArchetype{
+        .tile = Tile::WaterSwim,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .debug_name = "WaterSwim",
+    },
+    TileArchetype{
+        .tile = Tile::Lava,
+        .solid = false,
+        .climbable = false,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Temple,
+        .debug_name = "Lava",
+    },
+    MakeSolidTileArchetype(Tile::Lush, TileFamily::Jungle,
+                           HashFrameDataIdConstexpr("jungle_dirt_0"), "Lush"),
+    TileArchetype{
+        .tile = Tile::Tree,
+        .solid = false,
+        .climbable = true,
+        .transparent = true,
+        .hangable = false,
+        .family = TileFamily::Jungle,
+        .debug_name = "Tree",
+    },
+    MakeSolidTileArchetype(Tile::ThinIce, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"),
+                           "ThinIce", audio_asset_ids::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::Dark, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"),
+                           "Dark", audio_asset_ids::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::DarkFall, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"),
+                           "DarkFall", audio_asset_ids::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::AlienShip, TileFamily::Ice,
+                           HashFrameDataIdConstexpr("ice_block_0"), "AlienShip",
+                           audio_asset_ids::Thud, nullptr, 1.0F, false),
+    MakeSolidTileArchetype(Tile::TempleFake, TileFamily::Temple,
+                           HashFrameDataIdConstexpr("temple_dirt_0"), "TempleFake"),
     TileArchetype{
         .tile = Tile::Entrance,
         .solid = false,

@@ -50,13 +50,14 @@ struct GameplaySnapshot {
     bool game_over = false;
     bool pause = false;
     bool win = false;
-    StageLoadTarget respawn_target = StageLoadTarget::ForStageType(StageType::SplkMines1);
+    StageLoadTarget respawn_target = StageLoadTarget::ForQuestStage("classic", "classic_mines_1");
     std::optional<StageTransitionTarget> pending_stage_transition;
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t depth = 0;
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
+    QuestState quest_state;
     std::uint32_t frame_pause = 0;
     DebugLevelConfig debug_level;
     EntityManager entity_manager;
@@ -118,6 +119,11 @@ struct DebugPlayback {
     VID audio_brush_loop_handle = kInvalidAudioInstanceVID;
     std::optional<AudioAssetId> audio_brush_loop_audio_asset_id;
     bool frame_data_auto_reload = false;
+    int quest_stage_index = 0;
+    bool quest_stage_preserve_player_state = false;
+    bool quest_stage_use_seed = false;
+    int quest_stage_seed = 1;
+    std::string quest_stage_status;
     std::string frame_data_reload_status;
 
     static DebugPlayback New();

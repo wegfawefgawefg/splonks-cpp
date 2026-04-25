@@ -133,6 +133,7 @@ struct Entity {
     EntityStepLogic step_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     std::optional<StageTransitionTarget> transition_target;
+    StageExitId stage_exit_id = kInvalidStageExitId;
     float attack_weight = 0.0F;
     float weight = 0.0F;
     std::uint32_t bomb_throw_delay_countdown = 0;

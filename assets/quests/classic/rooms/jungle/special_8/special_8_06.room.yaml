@@ -1,0 +1,13 @@
+id: special_8_06
+pool: special_8
+weight: 1
+size: [10, 8]
+grid: |
+  6000060000
+  0000000000
+  0000000000
+  wwwvvvvwww
+  wwww,,wwww
+  wwwwwwwwww
+  wwwwwwwwww
+  wwwwwwwwww

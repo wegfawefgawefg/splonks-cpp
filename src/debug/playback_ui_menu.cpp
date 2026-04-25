@@ -2,14 +2,22 @@
 
 #include "audio_acoustics.hpp"
 #include "imgui_layer.hpp"
+#include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 #include "stage_wrap.hpp"
+#include "utils.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 
 #include <imgui.h>
 
 #include <algorithm>
+#include <array>
+#include <cstdint>
+#include <exception>
+#include <optional>
+#include <string>
+#include <vector>
 
 namespace splonks::debug_playback_internal {
 
@@ -21,7 +29,58 @@ constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 
 int DefaultVoidDeathYForStage(const Stage& stage) {
-    return static_cast<int>(stage.GetHeight() + stage.GetRoomDims().y);
+    return static_cast<int>(stage.GetHeight() + 8 * kTileSize);
+}
+
+std::optional<int> GetClassicQuestStageIndex(const QuestDefinition& quest, const State& state) {
+    if (state.stage.quest_id != quest.id) {
+        return std::nullopt;
+    }
+    for (std::size_t i = 0; i < quest.stages.size(); ++i) {
+        if (quest.stages[i].id == state.stage.quest_stage_id) {
+            return static_cast<int>(i);
+        }
+    }
+    return std::nullopt;
+}
+
+std::vector<std::string> BuildQuestStageLabels(const QuestDefinition& quest) {
+    std::vector<std::string> labels;
+    labels.reserve(quest.stages.size());
+    for (const QuestStageDefinition& stage : quest.stages) {
+        labels.push_back(stage.route_label + " " + stage.id);
+    }
+    return labels;
+}
+
+void ResetStageDebugState(State& state, Graphics& graphics) {
+    graphics.ResetTileVariations();
+    InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
+}
+
+void LoadClassicQuestStage(
+    State& state,
+    Graphics& graphics,
+    const QuestDefinition& quest,
+    int stage_index,
+    bool preserve_player_state,
+    std::optional<std::uint32_t> seed
+) {
+    if (quest.stages.empty()) {
+        return;
+    }
+    stage_index = std::clamp(stage_index, 0, static_cast<int>(quest.stages.size()) - 1);
+    if (seed.has_value()) {
+        rng::SetSeed(*seed);
+    }
+    (void)LoadQuestStage(
+        state,
+        quest.id,
+        quest.stages[static_cast<std::size_t>(stage_index)].id,
+        preserve_player_state
+    );
+    ResetStageDebugState(state, graphics);
 }
 
 bool DrawTileCombo(const char* label, Tile& tile) {
@@ -58,7 +117,7 @@ void ApplyBorderTestWrapConfig(State& state, Graphics& graphics) {
         graphics,
         border_test.wrap_x,
         border_test.wrap_y,
-        static_cast<unsigned int>(std::max(0, border_test.wrap_padding_chunks)),
+        static_cast<unsigned int>(std::max(0, border_test.wrap_padding_tiles)),
         border_test.camera_clamp_enabled
     );
 }
@@ -255,6 +314,119 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         graphics.camera.zoom = GetStageFitCameraZoom(state.stage, graphics);
     };
 
+    ImGui::SeparatorText("Quest Stages");
+    QuestDefinition quest;
+    bool quest_loaded = false;
+    try {
+        quest = LoadQuestDefinition(std::string(GetClassicQuestRootPath()) + "/quest.yaml");
+        quest_loaded = true;
+    } catch (const std::exception& e) {
+        ImGui::TextColored(ImVec4(1.0F, 0.25F, 0.2F, 1.0F), "Quest load failed: %s", e.what());
+    }
+
+    if (quest_loaded) {
+        ImGui::Text("Quest: %s", quest.title.c_str());
+        const std::vector<std::string> stage_labels = BuildQuestStageLabels(quest);
+        std::vector<const char*> quest_stage_names;
+        quest_stage_names.reserve(stage_labels.size());
+        for (const std::string& label : stage_labels) {
+            quest_stage_names.push_back(label.c_str());
+        }
+        if (!quest_stage_names.empty()) {
+            debug.quest_stage_index = std::clamp(
+                debug.quest_stage_index,
+                0,
+                static_cast<int>(quest_stage_names.size()) - 1
+            );
+            ImGui::Combo(
+                "Quest Stage",
+                &debug.quest_stage_index,
+                quest_stage_names.data(),
+                static_cast<int>(quest_stage_names.size())
+            );
+            ImGui::Checkbox("Preserve player state", &debug.quest_stage_preserve_player_state);
+            ImGui::Checkbox("Use quest RNG seed", &debug.quest_stage_use_seed);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(120.0F);
+            ImGui::InputInt("Seed", &debug.quest_stage_seed);
+            debug.quest_stage_seed = std::max(0, debug.quest_stage_seed);
+
+            const auto current_seed = [&debug]() -> std::optional<std::uint32_t> {
+                if (!debug.quest_stage_use_seed) {
+                    return std::nullopt;
+                }
+                return static_cast<std::uint32_t>(debug.quest_stage_seed);
+            };
+
+            if (ImGui::Button("Load / Reroll Selected")) {
+                LoadClassicQuestStage(
+                    state,
+                    graphics,
+                    quest,
+                    debug.quest_stage_index,
+                    debug.quest_stage_preserve_player_state,
+                    current_seed()
+                );
+                debug.quest_stage_status = debug.quest_stage_use_seed
+                                             ? "Generated with seed " + std::to_string(debug.quest_stage_seed)
+                                             : "Generated with random RNG state";
+            }
+            const std::optional<int> current_quest_stage = GetClassicQuestStageIndex(quest, state);
+            ImGui::SameLine();
+            if (!current_quest_stage.has_value()) {
+                ImGui::BeginDisabled();
+            }
+            if (ImGui::Button("Reroll Current")) {
+                LoadClassicQuestStage(
+                    state,
+                    graphics,
+                    quest,
+                    current_quest_stage.value_or(debug.quest_stage_index),
+                    debug.quest_stage_preserve_player_state,
+                    current_seed()
+                );
+                debug.quest_stage_status = debug.quest_stage_use_seed
+                                             ? "Rerolled current with seed " + std::to_string(debug.quest_stage_seed)
+                                             : "Rerolled current with random RNG state";
+            }
+            if (!current_quest_stage.has_value()) {
+                ImGui::EndDisabled();
+            }
+            if (debug.quest_stage_use_seed) {
+                ImGui::SameLine();
+                if (ImGui::Button("Next Seed + Reroll")) {
+                    debug.quest_stage_seed += 1;
+                    LoadClassicQuestStage(
+                        state,
+                        graphics,
+                        quest,
+                        current_quest_stage.value_or(debug.quest_stage_index),
+                        debug.quest_stage_preserve_player_state,
+                        static_cast<std::uint32_t>(debug.quest_stage_seed)
+                    );
+                    debug.quest_stage_status = "Rerolled with seed " + std::to_string(debug.quest_stage_seed);
+                }
+            }
+            if (current_quest_stage.has_value()) {
+                ImGui::Text("Active Quest Stage: %s", stage_labels[static_cast<std::size_t>(*current_quest_stage)].c_str());
+            } else {
+                ImGui::TextUnformatted("Active Quest Stage: <none>");
+            }
+            if (!debug.quest_stage_status.empty()) {
+                ImGui::TextWrapped("%s", debug.quest_stage_status.c_str());
+            }
+        }
+    }
+    ImGui::TextUnformatted("Quest and room YAML reload when a quest stage is generated.");
+    ImGui::Checkbox("Show stagegen annotation overlay", &state.debug_overlay.show_stagegen_annotations);
+    ImGui::Text("Stagegen annotations: %zu", state.stage.stagegen_annotations.size());
+    if (ImGui::CollapsingHeader("Stagegen Annotation List")) {
+        for (const StageGenAnnotation& annotation : state.stage.stagegen_annotations) {
+            ImGui::BulletText("(%.0f, %.0f) %s", annotation.world_pos.x, annotation.world_pos.y, annotation.text.c_str());
+        }
+    }
+
+    ImGui::SeparatorText("Debug Presets");
     const DebugLevelKind previous_level_kind = state.debug_level.kind;
     int level_kind = std::clamp(static_cast<int>(state.debug_level.kind), 0, kDebugLevelKindCount - 1);
     const char* level_names[kDebugLevelKindCount] = {};
@@ -365,9 +537,9 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
             border_test.camera_clamp_enabled = !(border_test.wrap_x || border_test.wrap_y);
         }
 
-        int wrap_padding_chunks = border_test.wrap_padding_chunks;
-        if (ImGui::InputInt("Wrap Padding Chunks", &wrap_padding_chunks)) {
-            border_test.wrap_padding_chunks = std::max(0, wrap_padding_chunks);
+        int wrap_padding_tiles = border_test.wrap_padding_tiles;
+        if (ImGui::InputInt("Wrap Padding Tiles", &wrap_padding_tiles)) {
+            border_test.wrap_padding_tiles = std::max(0, wrap_padding_tiles);
             wrap_settings_changed = true;
         }
 
@@ -402,7 +574,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
 
         bool wrap_x = state.stage.border.wrap_x;
         bool wrap_y = state.stage.border.wrap_y;
-        int wrap_padding_chunks = static_cast<int>(state.stage.wrap_padding_chunks);
+        int wrap_padding_tiles = static_cast<int>(state.stage.wrap_padding_tiles);
         bool camera_clamp_enabled = state.stage.camera_clamp_enabled;
         const bool wrap_x_changed = ImGui::Checkbox("Wrap X", &wrap_x);
         const bool wrap_y_changed = ImGui::Checkbox("Wrap Y", &wrap_y);
@@ -411,8 +583,8 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         if (wrap_x_changed || wrap_y_changed) {
             camera_clamp_enabled = !(wrap_x || wrap_y);
         }
-        if (ImGui::InputInt("Wrap Padding Chunks", &wrap_padding_chunks)) {
-            wrap_padding_chunks = std::max(0, wrap_padding_chunks);
+        if (ImGui::InputInt("Wrap Padding Tiles", &wrap_padding_tiles)) {
+            wrap_padding_tiles = std::max(0, wrap_padding_tiles);
             wrap_settings_changed = true;
         }
         wrap_settings_changed |= ImGui::Checkbox("Camera Clamp", &camera_clamp_enabled);
@@ -438,7 +610,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
                 graphics,
                 wrap_x,
                 wrap_y,
-                static_cast<unsigned int>(wrap_padding_chunks),
+                static_cast<unsigned int>(wrap_padding_tiles),
                 camera_clamp_enabled
             );
         }
@@ -456,7 +628,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         "Wrap: X=%s Y=%s Padding=%u",
         state.stage.border.wrap_x ? "on" : "off",
         state.stage.border.wrap_y ? "on" : "off",
-        state.stage.wrap_padding_chunks
+        state.stage.wrap_padding_tiles
     );
     ImGui::Text("Camera Clamp: %s", state.stage.camera_clamp_enabled ? "on" : "off");
     ImGui::Text(

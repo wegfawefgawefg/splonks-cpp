@@ -108,6 +108,7 @@ Entity Entity::New() {
     entity.step_logic = nullptr;
     entity.step_physics = nullptr;
     entity.transition_target.reset();
+    entity.stage_exit_id = kInvalidStageExitId;
     entity.damage_vulnerability = DamageVulnerability::Vulnerable;
     entity.attack_weight = 0.0F;
     entity.weight = 0.0F;

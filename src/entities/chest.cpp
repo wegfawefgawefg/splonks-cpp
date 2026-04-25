@@ -49,6 +49,10 @@ common::ContactResolution OnEntityContactAsUdjatEye(
         return common::ContactResolution{};
     }
 
+    if (state.quest_state.quest_id == QuestId::Classic) {
+        state.quest_state.classic.has_udjat_eye = true;
+    }
+
     (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
     common::DeactivateCollectedPickup(entity_idx, state, *graphics);
     return common::ContactResolution{};

@@ -10,7 +10,7 @@ void ApplyToroidalWrapSettings(
     Graphics& graphics,
     bool wrap_x,
     bool wrap_y,
-    unsigned int padding_chunks,
+    unsigned int padding_tiles,
     bool camera_clamp_enabled
 );
 

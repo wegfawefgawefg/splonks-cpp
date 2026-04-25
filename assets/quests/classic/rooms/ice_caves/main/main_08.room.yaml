@@ -1,0 +1,13 @@
+id: main_08
+pool: main
+weight: 1
+size: [10, 8]
+grid: |
+  0011111100
+  0002222000
+  0000000000
+  0000000000
+  jjjjjjjjjj
+  iiiiiiiiii
+  0000000000
+  1111111111

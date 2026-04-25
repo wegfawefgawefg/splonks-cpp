@@ -11,6 +11,7 @@ struct State;
 
 namespace splonks::entities::sign {
 
+extern const EntityArchetype kSignArchetype;
 extern const EntityArchetype kSignGeneralArchetype;
 extern const EntityArchetype kSignBombArchetype;
 extern const EntityArchetype kSignWeaponArchetype;

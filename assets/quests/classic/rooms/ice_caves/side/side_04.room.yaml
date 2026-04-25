@@ -1,0 +1,13 @@
+id: side_04
+pool: side
+weight: 1
+size: [10, 8]
+grid: |
+  0jiiiiiij0
+  0jij00jij0
+  jjii0jiij0
+  000000jij0
+  jjiij0iij0
+  0jiij0jijj
+  0jiij00000
+  0jjiiiiijj

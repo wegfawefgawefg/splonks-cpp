@@ -1,0 +1,13 @@
+id: special_9_00
+pool: special_9
+weight: 1
+size: [10, 8]
+grid: |
+  0000022221
+  AAAAAAAAA1
+  E0E0Et2211
+  000000X011
+  00000000T1
+  000022ii11
+  BBBbbbbbbb
+  0000222221

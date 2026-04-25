@@ -1,10 +1,21 @@
 #include "stage_progression.hpp"
 
+#include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
 #include <algorithm>
+#include <cstring>
+#include <string>
 
 namespace splonks {
+
+template <std::size_t N>
+void CopyTargetString(std::array<char, N>& target, std::string_view value) {
+    target.fill('\0');
+    const std::size_t copy_size = std::min(value.size(), N - 1);
+    std::memcpy(target.data(), value.data(), copy_size);
+}
+
 
 StageLoadTarget StageLoadTarget::ForStageType(StageType stage_type) {
     StageLoadTarget target;
@@ -21,10 +32,16 @@ StageLoadTarget StageLoadTarget::ForDebugLevel(DebugLevelKind debug_level, std::
     return target;
 }
 
+StageLoadTarget StageLoadTarget::ForQuestStage(std::string_view quest_id, std::string_view quest_stage_id) {
+    StageLoadTarget target;
+    target.kind = StageLoadTargetKind::QuestStage;
+    CopyTargetString(target.quest_id, quest_id);
+    CopyTargetString(target.quest_stage_id, quest_stage_id);
+    return target;
+}
+
 const char* GetDebugLevelKindName(DebugLevelKind kind) {
     switch (kind) {
-    case DebugLevelKind::SplkMines1:
-        return "SplkMines1";
     case DebugLevelKind::HangTest:
         return "HangTest";
     case DebugLevelKind::StompTest:
@@ -71,6 +88,43 @@ void QueueRespawnTransition(State& state) {
     QueueStageTransition(state, state.respawn_target, false);
 }
 
+bool IsStageExitAllowed(const State& state, StageExitId exit_id) {
+    if (state.stage.exits.empty()) {
+        return true;
+    }
+
+    const StageExit* const exit = state.stage.GetExit(exit_id);
+    return exit != nullptr && QuestExitRequirementsMet(state.quest_state, exit->target);
+}
+
+void QueueLegacyStageTypeExitTransition(State& state) {
+    if (state.stage.stage_type == StageType::Test1) {
+        QueueStageTransition(state, StageLoadTarget::ForStageType(StageType::Test1), true);
+        return;
+    }
+    state.stage = Stage::NewBlank();
+    state.mode = Mode::Win;
+}
+
+void QueueStageExitTransition(State& state, StageExitId exit_id) {
+    if (state.stage.exits.empty()) {
+        QueueLegacyStageTypeExitTransition(state);
+        return;
+    }
+
+    const StageExit* const exit = state.stage.GetExit(exit_id);
+    if (exit == nullptr || !QuestExitRequirementsMet(state.quest_state, exit->target)) {
+        return;
+    }
+
+    state.depth += 1;
+    QueueStageTransition(
+        state,
+        StageLoadTarget::ForQuestStage(state.stage.quest_id, exit->target.target_stage_id),
+        true
+    );
+}
+
 void ApplyPendingStageTransition(State& state) {
     if (!state.pending_stage_transition.has_value()) {
         return;
@@ -91,6 +145,14 @@ void ApplyPendingStageTransition(State& state) {
             state.debug_level.maze_door_test.room = static_cast<MazeDoorTestRoom>(room_index);
         }
         InitDebugLevel(state, target.preserve_player_state);
+        break;
+    case StageLoadTargetKind::QuestStage:
+        (void)LoadQuestStage(
+            state,
+            target.destination.quest_id.data(),
+            target.destination.quest_stage_id.data(),
+            target.preserve_player_state
+        );
         break;
     }
 }

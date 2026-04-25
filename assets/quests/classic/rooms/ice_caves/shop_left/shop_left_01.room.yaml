@@ -1,0 +1,15 @@
+id: shop_left_01
+pool: shop_left
+weight: 1
+size: [10, 8]
+properties:
+  shop_type: craps
+grid: |
+  1111111111
+  1111111111
+  1111221111
+  11Kl000211
+  ..:Q00W010
+  .0+00000k0
+  .q+uu00000
+  ::::::::::

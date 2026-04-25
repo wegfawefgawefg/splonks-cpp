@@ -1,0 +1,54 @@
+id: city_of_gold
+title: City of Gold
+generator: classic_room_graph
+room_size: [10, 8]
+layout_size: [4, 4]
+glyphs: glyphs/city_of_gold.yaml
+border_tile: temple_gold
+backwall_tiles: [temple_air0, temple_air1, temple_air2]
+block_animation: temple_block
+
+room_pools:
+  start: rooms/temple/start
+  main: rooms/temple/main
+  side: rooms/temple/side
+  drop: rooms/temple/drop
+  exit: rooms/temple/exit
+  exit_main: rooms/temple/exit_main
+  shop_left: rooms/temple/shop_left
+  shop_right: rooms/temple/shop_right
+  special_6: rooms/temple/special_6
+  special_7: rooms/temple/special_7
+  special_8: rooms/temple/special_8
+  special_9: rooms/temple/special_9
+
+layout_passes:
+  - name: snake_pit
+    enabled: false
+    properties:
+      chance_denominator: 8
+
+  - name: shop
+    enabled: false
+    properties:
+      min_level_number: 2
+      chance_uses_level_number: true
+
+  - name: city_of_gold_xoc
+    enabled: true
+
+stage_passes:
+  - name: convert_exit_tiles
+    enabled: true
+  - name: embedded_treasure
+    enabled: true
+  - name: floor_treasure
+    enabled: true
+  - name: udjat_key_chest
+    enabled: false
+    properties:
+      min_level_number: 2
+  - name: arrow_trap_conversion
+    enabled: true
+  - name: ambient_city_of_gold_entities
+    enabled: true

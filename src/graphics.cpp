@@ -1,6 +1,7 @@
 #include "graphics.hpp"
 
 #include "raw_frame_data.hpp"
+#include "stage.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>

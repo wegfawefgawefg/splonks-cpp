@@ -183,6 +183,8 @@ generator: classic_room_graph
 room_size: [10, 8]
 layout_size: [4, 4]
 glyphs: glyphs/mines.yaml
+border_tile: cave_dirt
+backwall_tiles: [cave_air0, cave_air1, cave_air2]
 
 room_pools:
   start: rooms/mines/start
@@ -430,6 +432,10 @@ shop_types:
 Rooms define where shop slots are. Pools define what can appear. The shop layout
 pass decides whether a shop room exists and which side/orientation it uses.
 
+Classic used tilesets, but this project deliberately uses explicit tile names in
+stage and glyph data. A stage declares its border/backwall tiles directly, and
+glyph maps reference concrete tile ids instead of an indirect tileset index.
+
 ## C++ Shape
 
 ```cpp
@@ -499,6 +505,7 @@ const LayoutPassDefinition kClassicLayoutPasses[] = {
 
 const StagePassDefinition kClassicStagePasses[] = {
     {"convert_exit_tiles", RunConvertExitTilesPass},
+    {"branch_exit", RunBranchExitPass},
     {"embedded_treasure", RunEmbeddedTreasurePass},
     {"floor_treasure", RunFloorTreasurePass},
     {"udjat_key_chest", RunUdjatKeyChestPass},
@@ -553,6 +560,7 @@ Required debug controls:
 - Reroll current stage.
 - Toggle stagegen annotations.
 - Optional: set RNG seed / reroll seed.
+- CLI validation with `--check-classic-quest-stagegen`.
 
 Hotloadable changes:
 
@@ -573,7 +581,7 @@ Requires rebuild:
 
 ## Migration Plan
 
-1. Keep the current `splk_mines.cpp` as the behavior reference.
+1. Keep the current `src/stage_gen/classic/` generator as the behavior reference.
 2. Add `assets/quests/classic` files for Mines only.
 3. Add loader structs for quest, stage, room templates, glyph maps, and pools.
 4. Add `StageDefinition` table/runtime selection while preserving current `StageType` bridge if needed.
@@ -585,3 +593,49 @@ Requires rebuild:
 10. Expand from Mines 1-3 to Mines 1-4.
 11. Port Jungle, Ice Caves, Temple, Olmec using SpelunkyClassicHD scripts as reference.
 12. For missing entities, add archetypes first with placeholder behavior, then refine behavior as assets arrive.
+
+## Implementation Status
+
+Current status:
+
+- Implemented: `assets/quests/classic/quest.yaml` route definition for Mines, Jungle, Ice Caves, Temple, Black Market, Haunted Castle, City of Gold, and Olmec's Lair, with `classic_win` as the current end target.
+- Implemented: stage config files for all listed Classic route stages under `assets/quests/classic/stages`.
+- Implemented: explicit per-stage `border_tile` and `backwall_tiles`, replacing the old implicit tileset assumption for quest-driven stages.
+- Implemented: glyph files for all listed Classic route stages under `assets/quests/classic/glyphs`; glyph ids now resolve to real tile/entity ids, though several of those ids still have placeholder behavior.
+- Implemented: quest loader structs for quest definitions, stage configs, typed Classic quest state, exit requirements, and stage pass properties.
+- Implemented: room template loader for `.room.yaml` pools with id, pool, weight, size, properties, and grid.
+- Implemented: Mines room templates moved into `assets/quests/classic/rooms/mines`.
+- Implemented: imported raw room strings from SpelunkyClassicHD `scrRoomGen2`, `scrRoomGen3`, `scrRoomGen4`, `scrRoomGenMarket`, and `scrRoomGen5` into theme room pools for Jungle, Ice Caves, Temple, Black Market, and Olmec's Lair.
+- Implemented: partially imported stages now point normal room-pool labels at existing theme pools instead of unintentionally falling back to built-in Mines room strings.
+- Implemented: table-backed layout pass dispatch for `snake_pit` and `shop`.
+- Implemented: table-backed stage pass dispatch for `convert_exit_tiles`, `branch_exit`, `embedded_treasure`, `floor_treasure`, `udjat_key_chest`, `arrow_trap_conversion`, and `ambient_mines_entities`.
+- Implemented: data-driven branch exits for Black Market, Haunted Castle, and City of Gold. The shared stage YAML pass no-ops on stages that do not declare the corresponding `exit_id`.
+- Implemented: `StageGeneratorContext`-based call path for the Classic room graph generator.
+- Implemented: glyph map loading/validation and named built-in glyph actions for the current room graph generator.
+- Implemented: generated exit entities carry `exit_id`, and runtime `BasicExit` routing resolves `StageExitTarget` requirement data.
+- Implemented: item/shop pool loading for underground items, high-end shop items, and shop slot selection.
+- Implemented: persistent stagegen annotations on `Stage`, including room source labels, layout summary, branch-exit results, and stage-pass summaries.
+- Implemented: Debug Level window can select/reroll Classic quest stages, optionally seed the quest RNG, increment the seed, and list/toggle stagegen annotations.
+- Implemented: quest stage transitions through `StageLoadTargetKind::QuestStage` and `BasicExit` exit routing.
+- Implemented: playback snapshots preserve quest state and quest-stage transition targets in memory.
+- Implemented: `--check-classic-quest-stagegen` CLI command loads and generates every Classic quest stage without launching the game.
+- Implemented: Udjat Eye pickup sets `ClassicQuestState::has_udjat_eye`; entering the Black Market sets `ClassicQuestState::made_black_market`.
+
+Known limitations:
+
+- Jungle, Ice Caves, Temple, Black Market, Haunted Castle, City of Gold, and Olmec's Lair still use the same generic room-graph algorithm. Their room pools and glyphs load, but theme-specific generation semantics are incomplete.
+- Several Classic tile/entity ids exist only as placeholder archetypes or conservative tile definitions. Examples include water/lava/thin ice/trap blocks/ceiling traps/tomb lord/doors/ankh/yeti/alien ship/alien boss.
+- Haunted Castle and City of Gold currently reuse Temple pools with different explicit tile mappings.
+- Black Market and Olmec's Lair are structurally generateable, but they still need specialized layouts rather than the generic 4x4 room graph.
+- Branch exits are placed and routed, but their final Classic/HD presentation and discovery behavior are not complete.
+- Layout generation still owns the base room-path algorithm in C++; YAML controls pass enablement/properties, not the algorithm itself.
+- Disk recording serialization still stores the old compact stage subset; full quest/stagegen annotation persistence is not part of this pass.
+
+Next recommended implementation order:
+
+1. Replace `ambient_mines_entities` with theme-aware ambient passes or per-theme pass names.
+2. Implement placeholder behaviors for the highest-impact stage blockers: water/lava/thin ice, trap blocks, ceiling traps, tomb lord, doors, ankh, yetis, and Olmec.
+3. Add specialized layout generation for Black Market and Olmec's Lair.
+4. Replace Haunted Castle and City of Gold pool aliases with dedicated pools when their source rooms/entities are ported.
+5. Add more stagegen annotation points for special-room/event decisions as those systems become data-driven.
+6. Decide whether playback recording should serialize full `Stage` quest metadata and stagegen annotations.

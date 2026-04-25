@@ -1,0 +1,47 @@
+id: black_market
+title: Black Market
+generator: classic_room_graph
+room_size: [10, 8]
+layout_size: [4, 4]
+glyphs: glyphs/black_market.yaml
+border_tile: jungle_dirt
+backwall_tiles: [jungle_air0, jungle_air1, jungle_air2]
+block_animation: jungle_block
+
+room_pools:
+  start: rooms/black_market/start
+  main: rooms/black_market/exit_main
+  side: rooms/black_market/drop
+  drop: rooms/black_market/drop
+  exit: rooms/black_market/exit
+  exit_main: rooms/black_market/exit_main
+  shop_left: rooms/black_market/shop_left
+  shop_right: rooms/black_market/shop_right
+
+layout_passes:
+  - name: snake_pit
+    enabled: false
+    properties:
+      chance_denominator: 8
+
+  - name: shop
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_uses_level_number: true
+
+stage_passes:
+  - name: convert_exit_tiles
+    enabled: true
+  - name: embedded_treasure
+    enabled: true
+  - name: floor_treasure
+    enabled: true
+  - name: udjat_key_chest
+    enabled: false
+    properties:
+      min_level_number: 2
+  - name: arrow_trap_conversion
+    enabled: true
+  - name: ambient_black_market_entities
+    enabled: true

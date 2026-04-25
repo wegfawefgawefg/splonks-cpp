@@ -9,7 +9,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 52;
+constexpr std::uint32_t kRecordingVersion = 54;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -190,6 +190,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.step_logic);
     WritePod(out, entity.step_physics);
     WriteOptionalPod(out, entity.transition_target);
+    WritePod(out, entity.stage_exit_id);
     WritePod(out, entity.attack_weight);
     WritePod(out, entity.weight);
     WritePod(out, entity.bomb_throw_delay_countdown);
@@ -323,6 +324,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.step_logic) &&
            ReadPod(in, entity.step_physics) &&
            ReadOptionalPod(in, entity.transition_target) &&
+           ReadPod(in, entity.stage_exit_id) &&
            ReadPod(in, entity.attack_weight) &&
            ReadPod(in, entity.weight) &&
            ReadPod(in, entity.bomb_throw_delay_countdown) &&
@@ -490,7 +492,7 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     WritePod(out, stage.camera_clamp_enabled);
     WritePod(out, stage.camera_clamp_margin);
     WritePod(out, stage.wrap_transform_active);
-    WritePod(out, stage.wrap_padding_chunks);
+    WritePod(out, stage.wrap_padding_tiles);
     WritePod(out, stage.wrap_core_origin_tiles);
     WritePod(out, stage.wrap_core_size_tiles);
     const std::uint32_t tile_rows = static_cast<std::uint32_t>(stage.tiles.size());
@@ -540,7 +542,7 @@ bool ReadStage(std::istream& in, Stage& stage) {
         !ReadPod(in, stage.camera_clamp_enabled) ||
         !ReadPod(in, stage.camera_clamp_margin) ||
         !ReadPod(in, stage.wrap_transform_active) ||
-        !ReadPod(in, stage.wrap_padding_chunks) ||
+        !ReadPod(in, stage.wrap_padding_tiles) ||
         !ReadPod(in, stage.wrap_core_origin_tiles) ||
         !ReadPod(in, stage.wrap_core_size_tiles)) {
         return false;
@@ -671,6 +673,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.depth);
     WritePod(out, snapshot.sac_altar_favor);
     WritePod(out, snapshot.sac_altar_reward_tier);
+    WritePod(out, snapshot.quest_state);
     WritePod(out, snapshot.frame_pause);
     WritePod(out, snapshot.debug_level);
     WriteEntityManager(out, snapshot.entity_manager);
@@ -724,6 +727,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.depth) &&
            ReadPod(in, snapshot.sac_altar_favor) &&
            ReadPod(in, snapshot.sac_altar_reward_tier) &&
+           ReadPod(in, snapshot.quest_state) &&
            ReadPod(in, snapshot.frame_pause) &&
            ReadPod(in, snapshot.debug_level) &&
            ReadEntityManager(in, snapshot.entity_manager) &&

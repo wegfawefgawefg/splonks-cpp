@@ -1,0 +1,59 @@
+id: ice_caves
+title: Ice Caves
+generator: classic_room_graph
+room_size: [10, 8]
+layout_size: [4, 4]
+glyphs: glyphs/ice_caves.yaml
+border_tile: ice_dirt
+backwall_tiles: [ice_air0, ice_air1, ice_air2]
+block_animation: ice_block
+
+room_pools:
+  start: rooms/ice_caves/start
+  main: rooms/ice_caves/main
+  side: rooms/ice_caves/side
+  drop: rooms/ice_caves/side
+  exit: rooms/ice_caves/exit
+  exit_main: rooms/ice_caves/exit
+  special_6: rooms/ice_caves/special_6
+  special_7: rooms/ice_caves/special_7
+  special_8: rooms/ice_caves/special_8
+  special_9: rooms/ice_caves/special_9
+  shop_left: rooms/ice_caves/shop_left
+  shop_right: rooms/ice_caves/shop_right
+
+layout_passes:
+  - name: snake_pit
+    enabled: false
+    properties:
+      chance_denominator: 8
+
+  - name: shop
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_uses_level_number: true
+
+  - name: ice_moai
+    enabled: true
+
+  - name: ice_alien_craft
+    enabled: true
+    properties:
+      chance_denominator: 10
+
+stage_passes:
+  - name: convert_exit_tiles
+    enabled: true
+  - name: embedded_treasure
+    enabled: true
+  - name: floor_treasure
+    enabled: true
+  - name: udjat_key_chest
+    enabled: false
+    properties:
+      min_level_number: 2
+  - name: arrow_trap_conversion
+    enabled: true
+  - name: ambient_ice_entities
+    enabled: true

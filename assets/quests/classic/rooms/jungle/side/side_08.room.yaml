@@ -1,0 +1,13 @@
+id: side_08
+pool: side
+weight: 1
+size: [10, 8]
+grid: |
+  0100000010
+  0000I00000
+  01BBBBBB10
+  1100000011
+  11wwwwww11
+  11wwwwww11
+  113wwww311
+  1111111111

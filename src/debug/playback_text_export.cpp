@@ -141,6 +141,8 @@ bool ExportRecordingToTextFile(
         out << "  stage_type: " << static_cast<int>(snapshot.stage.stage_type) << "\n";
         out << "  points: " << snapshot.points << "\n";
         out << "  deaths: " << snapshot.deaths << "\n";
+        out << "  quest_id: " << QuestIdToString(snapshot.quest_state.quest_id) << "\n";
+        out << "  quest_stage_id: " << snapshot.stage.quest_stage_id << "\n";
         out << "  play_cam_pos: (" << snapshot.play_cam_pos.x << ", " << snapshot.play_cam_pos.y
             << ")\n";
 

@@ -52,8 +52,8 @@ finishing the main route.
 
 ## Generator Direction
 
-The current `splk_mines.cpp` should be treated as the working reference for the
-first generator. A copy was saved at:
+The Classic Quest generator under `src/stage_gen/classic/` should be treated as
+the working reference for the first generator. A pre-refactor copy was saved at:
 
 `docs/stage_gen_reference/splk_mines_2026_04_23_reference.cpp`
 
@@ -69,7 +69,7 @@ Near-term refactor target:
 ## First Implementation Priority
 
 1. Preserve and refactor the current Mines generator instead of replacing it.
-2. Expand Mines from `splk_mines1` to Mines 1-4.
+2. Expand Mines from the current Classic Quest Mines work to Mines 1-4.
 3. Build Jungle 1-4 using the same definition/pass architecture.
 4. Build Ice Caves 1-4.
 5. Build Temple 1-3.

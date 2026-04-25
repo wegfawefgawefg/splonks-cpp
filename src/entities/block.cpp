@@ -21,34 +21,6 @@ constexpr float kControlledBlockSlideVel = 3.25F;
 constexpr std::uint32_t kControlledBlockSlideCooldownFrames = 120;
 constexpr float kBlockTrailSmokeDistInterval = 14.0F;
 
-FrameDataId BlockFrameDataIdForStageType(StageType stage_type) {
-    switch (stage_type) {
-    case StageType::Ice1:
-    case StageType::Ice2:
-    case StageType::Ice3:
-        return frame_data_ids::IceBlock;
-    case StageType::Desert1:
-    case StageType::Desert2:
-    case StageType::Desert3:
-        return frame_data_ids::JungleBlock;
-    case StageType::Temple1:
-    case StageType::Temple2:
-    case StageType::Temple3:
-        return frame_data_ids::TempleBlock;
-    case StageType::Boss:
-        return frame_data_ids::BossBlock;
-    case StageType::Blank:
-    case StageType::Test1:
-    case StageType::SplkMines1:
-    case StageType::SplkMines2:
-    case StageType::SplkMines3:
-        return frame_data_ids::CaveBlock;
-    }
-
-    return frame_data_ids::CaveBlock;
-}
-
-
 void StepControlledBlock(Entity& block, const controls::ControlIntent& control) {
     if (block.attack_delay_countdown > 0) {
         block.attack_delay_countdown -= 1;
@@ -211,7 +183,7 @@ void StepEntityLogicAsBlock(
     (void)dt;
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
-        SetAnimation(entity, BlockFrameDataIdForStageType(state.stage.stage_type));
+        SetAnimation(entity, state.stage.block_animation_id);
     }
 
     // TODO: if you hit the ground, do a clunky sound
@@ -247,7 +219,7 @@ void OnDeathAsBlock(std::size_t entity_idx, State& state, Audio& audio) {
         return;
     }
     Entity& block = state.entity_manager.entities[entity_idx];
-    SpawnBlockDeathParticles(block.GetCenter(), BlockFrameDataIdForStageType(state.stage.stage_type), state);
+    SpawnBlockDeathParticles(block.GetCenter(), state.stage.block_animation_id, state);
 }
 
 /** generalize this to all square or rectangular entities somehow */

@@ -80,32 +80,6 @@ const char* GetStageTypeTransitionTitle(StageType stage_type) {
         return "Test1";
     case StageType::Blank:
         return "Blank?? Expect crash";
-    case StageType::SplkMines1:
-        return "Mines";
-    case StageType::SplkMines2:
-        return "Mines 2";
-    case StageType::SplkMines3:
-        return "Mines 3";
-    case StageType::Ice1:
-        return "Ice";
-    case StageType::Ice2:
-        return "Ice 2";
-    case StageType::Ice3:
-        return "Ice 3";
-    case StageType::Desert1:
-        return "Desert";
-    case StageType::Desert2:
-        return "Desert 2";
-    case StageType::Desert3:
-        return "Desert 3";
-    case StageType::Temple1:
-        return "Temple";
-    case StageType::Temple2:
-        return "Temple 2";
-    case StageType::Temple3:
-        return "Temple 3";
-    case StageType::Boss:
-        return "Boss";
     }
     return "This shouldnt be possible...???";
 }
@@ -116,19 +90,8 @@ const char* GetStageTypeTransitionMessage(StageType stage_type) {
         return "!!!!expect a crash on a press!!!!";
     case StageType::Test1:
         return "You feel like figuring out bugs...";
-    case StageType::SplkMines1:
-        return "You enter the mines...";
-    case StageType::Ice1:
-        return "Its getting cold...";
-    case StageType::Desert1:
-        return "This place looks old...";
-    case StageType::Temple1:
-        return "Cant turn back now...";
-    case StageType::Boss:
-        return "The end is near...";
-    default:
-        return "Press [jump] to go deeper...";
     }
+    return "Press [jump] to go deeper...";
 }
 
 const char* GetStageTransitionTitle(const State& state) {
@@ -139,6 +102,9 @@ const char* GetStageTransitionTitle(const State& state) {
     const StageLoadTarget& target = state.pending_stage_transition->destination;
     if (target.kind == StageLoadTargetKind::DebugLevel) {
         return GetDebugLevelKindName(target.debug_level);
+    }
+    if (target.kind == StageLoadTargetKind::QuestStage) {
+        return target.quest_stage_id.data();
     }
     return GetStageTypeTransitionTitle(target.stage_type);
 }
@@ -151,6 +117,9 @@ const char* GetStageTransitionMessage(const State& state) {
     const StageLoadTarget& target = state.pending_stage_transition->destination;
     if (target.kind == StageLoadTargetKind::DebugLevel) {
         return "Loading debug level...";
+    }
+    if (target.kind == StageLoadTargetKind::QuestStage) {
+        return "Loading quest stage...";
     }
     return GetStageTypeTransitionMessage(target.stage_type);
 }
@@ -278,13 +247,25 @@ void RenderWin(SDL_Renderer* renderer, Graphics& graphics) {
     SDL_SetRenderDrawColor(renderer, 0, 50, 20, 255);
     SDL_RenderClear(renderer);
 
+    const float center_x = static_cast<float>(graphics.dims.x) / 2.0F;
+    const float center_y = static_cast<float>(graphics.dims.y) / 2.0F;
     DrawCenteredText(
         renderer,
         graphics,
         TextType::MenuTitle,
-        "Win! Nice!",
-        static_cast<float>(graphics.dims.x) / 2.0F,
-        static_cast<float>(graphics.dims.y) / 2.0F,
+        "Classic Quest Clear",
+        center_x,
+        center_y - 24.0F,
+        SDL_Color{255, 255, 255, 255}
+    );
+    DrawText(
+        renderer,
+        graphics,
+        30,
+        graphics.ui_font,
+        "Press [jump] to restart Mines 1",
+        center_x - (static_cast<float>(graphics.dims.x) * 0.16F),
+        center_y + 48.0F,
         SDL_Color{255, 255, 255, 255}
     );
 }

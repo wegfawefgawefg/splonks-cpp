@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <string>
 
 namespace splonks {
 
@@ -59,41 +60,17 @@ FrameDataId GetPassiveItemIconAnimationId(EntityPassiveItem passive_item) {
     return kInvalidFrameDataId;
 }
 
-const char* GetHudStageLabel(StageType stage_type) {
-    switch (stage_type) {
-    case StageType::Blank:
-        return "Blank";
-    case StageType::Test1:
-        return "Test1";
-    case StageType::SplkMines1:
-        return "Mines";
-    case StageType::SplkMines2:
-        return "Mines 2";
-    case StageType::SplkMines3:
-        return "Mines 3";
-    case StageType::Ice1:
-        return "Ice1";
-    case StageType::Ice2:
-        return "Ice2";
-    case StageType::Ice3:
-        return "Ice3";
-    case StageType::Desert1:
-        return "Desert1";
-    case StageType::Desert2:
-        return "Desert2";
-    case StageType::Desert3:
-        return "Desert3";
-    case StageType::Temple1:
-        return "Temple1";
-    case StageType::Temple2:
-        return "Temple2";
-    case StageType::Temple3:
-        return "Temple3";
-    case StageType::Boss:
-        return "Boss";
+std::string GetHudStageLabel(const Stage& stage) {
+    if (!stage.route_label.empty()) {
+        return stage.route_label;
     }
-
-    return "Unknown";
+    if (!stage.stage_title.empty()) {
+        return stage.stage_title;
+    }
+    if (!stage.quest_stage_id.empty()) {
+        return stage.quest_stage_id;
+    }
+    return "Debug";
 }
 
 void FormatHudTimer(char* out, std::size_t out_size, std::uint32_t frame_count) {
@@ -474,12 +451,11 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         favor_color
     );
 
-    char stage_text[32];
-    std::snprintf(stage_text, sizeof(stage_text), "%s", GetHudStageLabel(state.stage.stage_type));
+    const std::string stage_text = GetHudStageLabel(state.stage);
     DrawRightAlignedUiText(
         renderer,
         graphics,
-        stage_text,
+        stage_text.c_str(),
         static_cast<float>(static_cast<int>(graphics.dims.x) - hud_margin),
         static_cast<float>(hud_margin + status_icon_size.y + hud_gap + 34),
         SDL_Color{255, 255, 255, 255}

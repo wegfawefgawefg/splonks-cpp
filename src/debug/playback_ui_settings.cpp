@@ -77,6 +77,7 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
     ImGui::Checkbox("Show Area Types", &state.debug_overlay.show_area_types);
     ImGui::Checkbox("Show Audio Emitters", &state.debug_overlay.show_audio_emitters);
     ImGui::Checkbox("Show Debug Annotations", &state.debug_overlay.show_debug_annotations);
+    ImGui::Checkbox("Show Stagegen Annotations", &state.debug_overlay.show_stagegen_annotations);
     ImGui::BeginDisabled(!state.debug_overlay.show_audio_emitters || !IsAudioOcclusionEnabled(state));
     ImGui::Checkbox("Show Audio Occlusion Paths", &state.debug_overlay.show_audio_occlusion_paths);
     ImGui::EndDisabled();

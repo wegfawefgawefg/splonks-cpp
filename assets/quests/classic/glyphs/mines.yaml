@@ -1,0 +1,74 @@
+glyphs:
+  - char: "0"
+    tile: air
+  - char: "1"
+    action: random_brick_or_block
+  - char: "2"
+    action: maybe_random_brick_or_block
+  - char: "4"
+    spawn_chance: block
+    chance_denominator: 4
+  - char: "5"
+    patch_pool: ground_obstacle
+  - char: "6"
+    patch_pool: air_obstacle
+  - char: "7"
+    action: maybe_spikes
+  - char: "8"
+    patch_pool: doorway_obstacle
+  - char: "9"
+    action: entrance_or_exit
+    exit_id: default
+  - char: "L"
+    tile: ladder
+  - char: "P"
+    tile: ladder_top
+  - char: "."
+    action: shop_wall
+  - char: "b"
+    action: smooth_wall
+  - char: "+"
+    tile: glass
+  - char: "A"
+    action: altar_pair
+  - char: "x"
+    action: sac_altar
+  - char: "a"
+    spawn: chest
+  - char: "I"
+    action: gold_idol
+  - char: "B"
+    action: giant_tiki_head
+  - char: "Q"
+    action: dice_sign_if_craps
+  - char: "q"
+    action: random_item
+  - char: "W"
+    action: wanted_poster
+  - char: "l"
+    spawn: store_light
+  - char: "K"
+    spawn: shopkeeper
+  - char: "k"
+    action: shop_sign
+  - char: "i"
+    action: shop_item_slot
+  - char: "d"
+    spawn: dice
+  - char: "D"
+    spawn: damsel
+  - char: "s"
+    action: maybe_solid_dirt
+  - char: "S"
+    spawn_random:
+      - entity: snake
+        weight: 4
+      - entity: cobra
+        weight: 1
+  - char: "T"
+    spawn: ruby_big
+  - char: "M"
+    tile: cave_dirt
+    spawn: mattock
+  - char: "&"
+    spawn: cobweb

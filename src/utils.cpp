@@ -45,6 +45,10 @@ std::mt19937& GetRandomGenerator() {
 
 } // namespace
 
+void SetSeed(std::uint32_t seed) {
+    GetRandomGenerator().seed(seed);
+}
+
 int RandomIntInclusive(int minimum, int maximum) {
     std::uniform_int_distribution<int> distribution(minimum, maximum);
     return distribution(GetRandomGenerator());

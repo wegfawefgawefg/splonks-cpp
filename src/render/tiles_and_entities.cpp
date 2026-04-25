@@ -14,6 +14,7 @@
 #include "world_query.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 namespace splonks {
 
@@ -198,6 +199,17 @@ const FrameData* GetFirstFrameForAnimationOrFallback(
     return &graphics.frame_data_db.frames[animation->frame_indices[0]];
 }
 
+Tile GetBackwallFillTileForTileCoord(const Stage& stage, int tile_x, int tile_y) {
+    if (stage.backwall_fill_tiles.empty()) {
+        return Tile::Air;
+    }
+
+    const std::uint32_t seed =
+        (static_cast<std::uint32_t>(tile_x) * 73856093U) ^
+        (static_cast<std::uint32_t>(tile_y) * 19349663U);
+    return stage.backwall_fill_tiles[seed % stage.backwall_fill_tiles.size()];
+}
+
 } // namespace
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -324,7 +336,6 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
 
 void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     EnsureStageLighting(state);
-    const TileSet air_tile_set = TileSetForStageType(state.stage.stage_type);
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
     const Vec2 visible_tl_wc = visible.tl;
@@ -369,8 +380,9 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                     tile_y * static_cast<int>(kTileSize)
                 );
                 if (border_tile == Tile::Air) {
+                    const Tile air_tile = GetBackwallFillTileForTileCoord(state.stage, tile_x, tile_y);
                     const TileSourceData* const air_source_data =
-                        GetAirSourceData(graphics, air_tile_set, tile_pos);
+                        GetTileSourceData(graphics, air_tile, tile_pos);
                     if (air_source_data == nullptr) {
                         continue;
                     }
@@ -415,8 +427,10 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                 const Vec2 border_shake_offset = GetShakeOffset(border_shake);
                 if (border_shake > 0.0F &&
                     ShouldRenderImmediateBorderBacking(state.stage, tile_x, tile_y)) {
+                    const Tile backing_tile =
+                        GetBackwallFillTileForTileCoord(state.stage, tile_x, tile_y);
                     const TileSourceData* const backing_source_data =
-                        GetAirSourceData(graphics, air_tile_set, tile_pos);
+                        GetTileSourceData(graphics, backing_tile, tile_pos);
                     if (backing_source_data != nullptr) {
                         SDL_Texture* const backing_texture =
                             GetTileTexture(graphics, *backing_source_data);

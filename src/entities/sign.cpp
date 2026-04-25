@@ -1,9 +1,14 @@
 #include "entities/sign.hpp"
 
 #include "entity/archetype.hpp"
+#include "entities/common/unimplemented_archetype.hpp"
 #include "frame_data_id.hpp"
 
 namespace splonks::entities::sign {
+
+// TODO(classic): Sign is not implemented yet. This archetype only keeps Classic Quest data spawnable.
+extern const EntityArchetype kSignArchetype =
+    common::MakeUnimplementedClassicArchetype(EntityType::Sign);
 
 extern const EntityArchetype kSignGeneralArchetype{
     .type_ = EntityType::SignGeneral,

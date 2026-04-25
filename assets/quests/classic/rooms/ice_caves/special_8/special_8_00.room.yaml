@@ -1,0 +1,13 @@
+id: special_8_00
+pool: special_8
+weight: 1
+size: [10, 8]
+grid: |
+  0000000000
+  AAAAAAAAAA
+  E0E0E0E0E0
+  0000000000
+  0000000000
+  0000000000
+  BBBBBBBBBB
+  0000000000

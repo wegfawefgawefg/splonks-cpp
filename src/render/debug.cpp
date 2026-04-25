@@ -856,6 +856,30 @@ void RenderDebugAnnotations(
                 color
             );
         }
+
+        if (state.debug_overlay.show_stagegen_annotations) {
+            const SDL_Color stagegen_color{96, 255, 160, 255};
+            for (const StageGenAnnotation& annotation : state.stage.stagegen_annotations) {
+                const Vec2 world_pos = annotation.world_pos + render_offset;
+                const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
+                if (screen.x < presentation.x - 64.0F || screen.x > presentation.x + presentation.w + 64.0F ||
+                    screen.y < presentation.y - 64.0F || screen.y > presentation.y + presentation.h + 64.0F) {
+                    continue;
+                }
+
+                RenderWorldPointMarker(renderer, graphics, presentation, world_pos, stagegen_color);
+                DrawText(
+                    renderer,
+                    graphics,
+                    10,
+                    graphics.ui_font,
+                    annotation.text.c_str(),
+                    screen.x + 6.0F,
+                    screen.y - 12.0F,
+                    stagegen_color
+                );
+            }
+        }
     }
 }
 
@@ -874,11 +898,11 @@ void RenderChunkOverlay(
     }
 
     const UVec2 room_layout_dims = state.stage.GetRoomLayoutDims();
-    const UVec2 room_dims = state.stage.GetRoomDims();
+    const UVec2 room_dims = state.stage.GetRegularRoomGridRoomDims();
     for (const Vec2& render_offset : render_offsets) {
         for (unsigned int y = 0; y < room_layout_dims.y; ++y) {
             for (unsigned int x = 0; x < room_layout_dims.x; ++x) {
-                const Vec2 room_tl = ToVec2(state.stage.GetRoomTlWc(IVec2::New(
+                const Vec2 room_tl = ToVec2(state.stage.GetRegularRoomGridTlWc(IVec2::New(
                     static_cast<int>(x),
                     static_cast<int>(y)
                 ))) + render_offset;

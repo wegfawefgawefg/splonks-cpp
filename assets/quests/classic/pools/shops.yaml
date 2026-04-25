@@ -1,0 +1,29 @@
+shop_types:
+  - id: general
+    sign: sign_general
+    item_pool: general_shop_items
+    item_slots: 4
+  - id: bomb
+    sign: sign_bomb
+    item_pool: bomb_shop_items
+    item_slots: 4
+  - id: weapon
+    sign: sign_weapon
+    item_pool: weapon_shop_items
+    item_slots: 4
+  - id: rare
+    sign: sign_rare
+    item_pool: rare_shop_items
+    item_slots: 4
+  - id: clothing
+    sign: sign_clothing
+    item_pool: clothing_shop_items
+    item_slots: 4
+  - id: craps
+    sign: sign_craps
+    item_pool: craps_shop_items
+    item_slots: 2
+  - id: kissing
+    sign: sign_kissing
+    item_pool: kissing_shop_items
+    item_slots: 1

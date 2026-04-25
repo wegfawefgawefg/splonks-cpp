@@ -1,0 +1,13 @@
+id: exit_04
+pool: exit
+weight: 1
+size: [10, 8]
+grid: |
+  0000000000
+  0000090000
+  0221111220
+  wwvvvvvvww
+  wwwwwwwwww
+  wwwwwwwwww
+  wwwwwwwwww
+  wwwwwwwwww

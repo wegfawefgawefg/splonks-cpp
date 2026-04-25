@@ -1,0 +1,47 @@
+id: olmec_lair
+title: Olmec's Lair
+generator: classic_room_graph
+room_size: [10, 8]
+layout_size: [4, 4]
+glyphs: glyphs/olmec_lair.yaml
+border_tile: boss_dirt
+backwall_tiles: [boss_air0, boss_air1, boss_air2]
+block_animation: boss_block
+
+room_pools:
+  start: rooms/olmec_lair/main
+  main: rooms/olmec_lair/main
+  side: rooms/olmec_lair/main
+  drop: rooms/olmec_lair/main
+  exit: rooms/olmec_lair/exit_main
+  exit_main: rooms/olmec_lair/exit_main
+  shop_left: rooms/olmec_lair/main
+  shop_right: rooms/olmec_lair/main
+
+layout_passes:
+  - name: snake_pit
+    enabled: false
+    properties:
+      chance_denominator: 8
+
+  - name: shop
+    enabled: false
+    properties:
+      min_level_number: 2
+      chance_uses_level_number: true
+
+stage_passes:
+  - name: convert_exit_tiles
+    enabled: true
+  - name: embedded_treasure
+    enabled: true
+  - name: floor_treasure
+    enabled: true
+  - name: udjat_key_chest
+    enabled: false
+    properties:
+      min_level_number: 2
+  - name: arrow_trap_conversion
+    enabled: true
+  - name: ambient_olmec_entities
+    enabled: true

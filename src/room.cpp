@@ -37,9 +37,6 @@ std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type,
     case StageType::Test1:
         room_template = stage_gen::test::GetRoomTemplate(room_type);
         break;
-    case StageType::SplkMines1:
-        room_template = stage_gen::cave::GetRoomTemplate(room_type);
-        break;
     default:
         room_template = stage_gen::cave::GetRoomTemplate(room_type);
         break;

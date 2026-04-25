@@ -1,0 +1,68 @@
+id: jungle
+title: Jungle
+generator: classic_room_graph
+room_size: [10, 8]
+layout_size: [4, 4]
+path_layout_size: [4, 4]
+glyphs: glyphs/jungle.yaml
+border_tile: jungle_dirt
+backwall_tiles: [jungle_air0, jungle_air1, jungle_air2]
+block_animation: jungle_block
+
+room_pools:
+  start: rooms/jungle/start
+  main: rooms/jungle/main
+  side: rooms/jungle/side
+  drop: rooms/jungle/drop
+  exit: rooms/jungle/exit
+  exit_main: rooms/jungle/exit_main
+  shop_left: rooms/jungle/shop_left
+  shop_right: rooms/jungle/shop_right
+  special_7: rooms/jungle/special_7
+  special_8: rooms/jungle/special_8
+  special_9: rooms/jungle/special_9
+
+layout_passes:
+  - name: snake_pit
+    enabled: false
+    properties:
+      chance_denominator: 8
+
+  - name: shop
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_uses_level_number: true
+
+  - name: jungle_lake
+    enabled: false
+
+stage_passes:
+  - name: convert_exit_tiles
+    enabled: true
+  - name: branch_exit
+    enabled: true
+    properties:
+      exit_id: black_market
+      min_level_number: 6
+      chance_denominator: 1
+
+  - name: branch_exit
+    enabled: true
+    properties:
+      exit_id: haunted_castle
+      min_level_number: 6
+      chance_denominator: 1
+
+  - name: embedded_treasure
+    enabled: true
+  - name: floor_treasure
+    enabled: true
+  - name: udjat_key_chest
+    enabled: false
+    properties:
+      min_level_number: 2
+  - name: arrow_trap_conversion
+    enabled: true
+  - name: ambient_jungle_entities
+    enabled: true

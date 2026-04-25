@@ -1,0 +1,158 @@
+pools:
+  - id: underground_items
+    entries:
+      - entity: jetpack
+        weight: 1
+      - entity: cape
+        weight: 1
+      - entity: shotgun
+        weight: 1
+      - entity: mattock
+        weight: 2
+      - entity: teleporter
+        weight: 1
+      - entity: gloves
+        weight: 1
+      - entity: spectacles
+        weight: 1
+      - entity: web_cannon
+        weight: 1
+      - entity: pistol
+        weight: 1
+      - entity: mitt
+        weight: 1
+      - entity: paste
+        weight: 1
+      - entity: spring_shoes
+        weight: 1
+      - entity: spike_shoes
+        weight: 1
+      - entity: machete
+        weight: 1
+      - entity: bomb_box
+        weight: 2
+      - entity: bow
+        weight: 1
+      - entity: compass
+        weight: 1
+      - entity: parachute
+        weight: 1
+      - entity: rope_pile
+        weight: 4
+  - id: high_end_shop_items
+    entries:
+      - entity: jetpack
+        weight: 1
+      - entity: cape
+        weight: 1
+      - entity: shotgun
+        weight: 1
+      - entity: gloves
+        weight: 2
+      - entity: teleporter
+        weight: 2
+      - entity: mattock
+        weight: 3
+      - entity: paste
+        weight: 3
+      - entity: spring_shoes
+        weight: 3
+      - entity: spike_shoes
+        weight: 3
+      - entity: compass
+        weight: 3
+      - entity: pistol
+        weight: 3
+      - entity: machete
+        weight: 3
+  - id: general_shop_items
+    entries:
+      - entity: mattock
+        weight: 1
+      - entity: gloves
+        weight: 2
+      - entity: compass
+        weight: 2
+      - entity: bomb_bag
+        weight: 8
+      - entity: rope_pile
+        weight: 8
+      - entity: parachute
+        weight: 8
+  - id: bomb_shop_items
+    entries:
+      - entity: paste
+        weight: 1
+      - entity: bomb_box
+        weight: 4
+      - entity: bomb_bag
+        weight: 12
+  - id: weapon_shop_items
+    unique: true
+    entries:
+      - entity: web_cannon
+        weight: 1
+      - entity: shotgun
+        weight: 1
+      - entity: bomb_box
+        weight: 2
+      - entity: pistol
+        weight: 4
+      - entity: machete
+        weight: 4
+      - entity: bomb_bag
+        weight: 4
+      - entity: bow
+        weight: 3
+  - id: clothing_shop_items
+    unique: true
+    entries:
+      - entity: spring_shoes
+        weight: 3
+      - entity: spectacles
+        weight: 3
+      - entity: gloves
+        weight: 3
+      - entity: mitt
+        weight: 3
+      - entity: cape
+        weight: 2
+      - entity: spike_shoes
+        weight: 3
+      - entity: rope_pile
+        weight: 2
+  - id: rare_shop_items
+    unique: true
+    entries:
+      - entity: spring_shoes
+        weight: 3
+      - entity: compass
+        weight: 3
+      - entity: mattock
+        weight: 3
+      - entity: spectacles
+        weight: 3
+      - entity: jetpack
+        weight: 1
+      - entity: gloves
+        weight: 3
+      - entity: mitt
+        weight: 3
+      - entity: web_cannon
+        weight: 2
+      - entity: cape
+        weight: 2
+      - entity: teleporter
+        weight: 2
+      - entity: spike_shoes
+        weight: 3
+      - entity: bomb_box
+        weight: 2
+  - id: craps_shop_items
+    entries:
+      - entity: dice
+        weight: 1
+  - id: kissing_shop_items
+    entries:
+      - entity: damsel
+        weight: 1

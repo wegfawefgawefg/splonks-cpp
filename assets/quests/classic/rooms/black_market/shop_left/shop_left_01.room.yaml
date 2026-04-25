@@ -1,0 +1,15 @@
+id: shop_left_01
+pool: shop_left
+weight: 1
+size: [10, 8]
+properties:
+  shop_type: ankh
+grid: |
+  ..........
+  ..........
+  ....22....
+  ..2l00l2..
+  0.000000.0
+  0k000000k0
+  000iiiiK00
+  bbbbbbbbbb

@@ -2,7 +2,6 @@
 
 #include "entity.hpp"
 #include "room.hpp"
-#include "stage_gen/splk_mines.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -241,10 +240,12 @@ const UVec2 Stage::kRoomLayout = UVec2::New(4, 4);
 Stage Stage::NewBlank() {
     Stage stage;
     stage.stage_type = StageType::Blank;
+    stage.stage_title = "Blank";
     stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>(1, Tile::Air));
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
+    stage.backwall_fill_tiles = {};
     stage.embedded_treasures = MakeEmptyEmbeddedTreasures(stage.tiles);
     stage.rooms = {};
     stage.path = {};
@@ -257,10 +258,6 @@ Stage Stage::NewBlank() {
 }
 
 Stage Stage::New(StageType stage_type) {
-    if (stage_gen::splk_mines::UsesSplkMinesGenerator(stage_type)) {
-        return stage_gen::splk_mines::GenerateStage(stage_type);
-    }
-
     std::vector<std::vector<int>> rooms(
         static_cast<std::size_t>(kRoomLayout.y),
         std::vector<int>(static_cast<std::size_t>(kRoomLayout.x),
@@ -325,39 +322,20 @@ Stage Stage::New(StageType stage_type) {
         static_cast<std::size_t>(kShape.y),
         std::vector<Tile>(static_cast<std::size_t>(kShape.x), Tile::Air));
     Tile border_tile = Tile::CaveDirt;
+    FrameDataId block_animation_id = frame_data_ids::CaveBlock;
+    std::string stage_title = "Debug";
     std::vector<Tile> backwall_fill_tiles{
         Tile::CaveAir0,
         Tile::CaveAir1,
         Tile::CaveAir2,
     };
     switch (stage_type) {
-    case StageType::Ice1:
-    case StageType::Ice2:
-    case StageType::Ice3:
-        border_tile = Tile::IceDirt;
-        backwall_fill_tiles = {Tile::IceAir0, Tile::IceAir1, Tile::IceAir2};
-        break;
-    case StageType::Desert1:
-    case StageType::Desert2:
-    case StageType::Desert3:
-        border_tile = Tile::JungleDirt;
-        backwall_fill_tiles = {Tile::JungleAir0, Tile::JungleAir1, Tile::JungleAir2};
-        break;
-    case StageType::Temple1:
-    case StageType::Temple2:
-    case StageType::Temple3:
-        border_tile = Tile::TempleDirt;
-        backwall_fill_tiles = {Tile::TempleAir0, Tile::TempleAir1, Tile::TempleAir2};
-        break;
-    case StageType::Boss:
-        border_tile = Tile::BossDirt;
-        backwall_fill_tiles = {Tile::BossAir0, Tile::BossAir1, Tile::BossAir2};
-        break;
     case StageType::Blank:
+        stage_title = "Blank";
+        border_tile = Tile::CaveDirt;
+        break;
     case StageType::Test1:
-    case StageType::SplkMines1:
-    case StageType::SplkMines2:
-    case StageType::SplkMines3:
+        stage_title = "Test1";
         border_tile = Tile::CaveDirt;
         break;
     }
@@ -390,6 +368,8 @@ Stage Stage::New(StageType stage_type) {
 
     Stage stage;
     stage.stage_type = stage_type;
+    stage.stage_title = stage_title;
+    stage.block_animation_id = block_animation_id;
     stage.tiles = std::move(tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
@@ -429,7 +409,7 @@ UVec2 Stage::GetRoomLayoutDims() const {
     );
 }
 
-UVec2 Stage::GetRoomDims() const {
+UVec2 Stage::GetRegularRoomGridRoomDims() const {
     const UVec2 room_layout_dims = GetRoomLayoutDims();
     if (room_layout_dims.x == 0 || room_layout_dims.y == 0) {
         return GetStageDims();
@@ -440,8 +420,8 @@ UVec2 Stage::GetRoomDims() const {
     ) * kTileSize;
 }
 
-IVec2 Stage::GetRoomTlWc(const IVec2& room) const {
-    const UVec2 room_dims = GetRoomDims();
+IVec2 Stage::GetRegularRoomGridTlWc(const IVec2& room) const {
+    const UVec2 room_dims = GetRegularRoomGridRoomDims();
     return IVec2::New(
         room.x * static_cast<int>(room_dims.x),
         room.y * static_cast<int>(room_dims.y)
@@ -520,6 +500,7 @@ std::vector<const Tile*> Stage::GetTilesInRect(const IVec2& tl, const IVec2& br)
 
 void Stage::FillBackwall(const std::vector<Tile>& fill_tiles) {
     SyncTileShakeGrid();
+    backwall_fill_tiles = fill_tiles;
     backwall_tiles = MakeEmptyBackwallTiles(tiles);
     if (fill_tiles.empty()) {
         return;
@@ -733,7 +714,7 @@ std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,
     return result;
 }
 
-UVec2 Stage::GetRandomRoom() const {
+UVec2 Stage::GetRandomRegularRoomGridCoord() const {
     const UVec2 room_layout_dims = GetRoomLayoutDims();
     return UVec2::New(
         static_cast<unsigned int>(rng::RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
@@ -741,13 +722,32 @@ UVec2 Stage::GetRandomRoom() const {
     );
 }
 
-std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRandomRoom() const {
-    const UVec2 random_room = GetRandomRoom();
-    return GetRandomNoncollidablePositionInRoom(random_room);
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInStage() const {
+    std::vector<IVec2> noncollidable_tile_coords;
+    for (int y = 0; y < static_cast<int>(GetTileHeight()); ++y) {
+        for (int x = 0; x < static_cast<int>(GetTileWidth()); ++x) {
+            const Tile tile = GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+            if (!IsTileCollidable(tile)) {
+                noncollidable_tile_coords.push_back(IVec2::New(x, y));
+            }
+        }
+    }
+    if (noncollidable_tile_coords.empty()) {
+        return std::nullopt;
+    }
+    const int random_tile_idx =
+        rng::RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
+    const IVec2 tile_coord = noncollidable_tile_coords[static_cast<std::size_t>(random_tile_idx)];
+    return tile_coord * static_cast<int>(kTileSize);
 }
 
-std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRoom(const UVec2& room) const {
-    const auto [room_tl, room_br] = GetRoomCorners(room);
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRandomRegularRoomGridCell() const {
+    const UVec2 random_room = GetRandomRegularRoomGridCoord();
+    return GetRandomNoncollidablePositionInRegularRoomGridCell(random_room);
+}
+
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRegularRoomGridCell(const UVec2& room) const {
+    const auto [room_tl, room_br] = GetRegularRoomGridCorners(room);
 
     if (static_cast<int>(room_tl.x) > static_cast<int>(GetTileWidth()) ||
         static_cast<int>(room_tl.y) > static_cast<int>(GetTileHeight())) {
@@ -902,6 +902,22 @@ bool Stage::IsWorldPosInside(const IVec2& wc) const {
            wc.y < static_cast<int>(GetHeight());
 }
 
+StageExitId Stage::FindExitId(std::string_view id) const {
+    for (std::size_t i = 0; i < exits.size(); ++i) {
+        if (exits[i].id == id) {
+            return static_cast<StageExitId>(i);
+        }
+    }
+    return kInvalidStageExitId;
+}
+
+const StageExit* Stage::GetExit(StageExitId id) const {
+    if (id < 0 || static_cast<std::size_t>(id) >= exits.size()) {
+        return nullptr;
+    }
+    return &exits[static_cast<std::size_t>(id)];
+}
+
 IVec2 Stage::WrapTileCoord(const IVec2& tile_coord) const {
     IVec2 wrapped = tile_coord;
     if (WrapsX()) {
@@ -958,7 +974,7 @@ void Stage::NormalizeEntityPositionForWrap(Entity& entity) const {
     }
 }
 
-std::pair<UVec2, UVec2> Stage::GetRoomCorners(const UVec2& room) const {
+std::pair<UVec2, UVec2> Stage::GetRegularRoomGridCorners(const UVec2& room) const {
     const UVec2 room_layout_dims = GetRoomLayoutDims();
     const UVec2 room_tile_dims = UVec2::New(
         room_layout_dims.x == 0 ? GetTileWidth() : GetTileWidth() / room_layout_dims.x,
@@ -969,8 +985,8 @@ std::pair<UVec2, UVec2> Stage::GetRoomCorners(const UVec2& room) const {
     return {tl, br};
 }
 
-std::vector<const Tile*> Stage::GetTilesInRoom(const UVec2& room) const {
-    const auto [tl, br] = GetRoomCorners(room);
+std::vector<const Tile*> Stage::GetTilesInRegularRoomGridCell(const UVec2& room) const {
+    const auto [tl, br] = GetRegularRoomGridCorners(room);
     return GetTilesInRect(ToIVec2(tl), ToIVec2(br));
 }
 

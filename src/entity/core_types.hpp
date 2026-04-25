@@ -1,7 +1,7 @@
 #pragma once
 
-#include "damage_types.hpp"
 #include "../draw_layer.hpp"
+#include "damage_types.hpp"
 #include "left_or_right.hpp"
 #include "math_types.hpp"
 #include "vid.hpp"
@@ -110,9 +110,43 @@ enum class EntityType {
     GiantSpider,
     GiantSpiderHang,
     Scarab,
+    Mantrap,
+    Frog,
+    FireFrog,
+    Monkey,
+    Piranha,
+    Zombie,
+    Vampire,
+    Ufo,
+    Hawkman,
     Meathead,
     WebBall,
     Cobweb,
+    PushBlock,
+    Jaws,
+    CrystalSkull,
+    Bones,
+    Jar,
+    TrapBlock,
+    CeilingTrap,
+    TombLord,
+    Door,
+    Ankh,
+    Crown,
+    XocBlock,
+    Moai,
+    Moai2,
+    Moai3,
+    MoaiInside,
+    Yeti,
+    AlienShip,
+    AlienBoss,
+    BarrierEmitter,
+    ThwompTrap,
+    Lamp,
+    LampRed,
+    Crate,
+    Sign,
     FlappyBee,
     FleshGuy,
 };

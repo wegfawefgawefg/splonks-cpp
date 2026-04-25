@@ -2,9 +2,13 @@
 
 #include "debug/playback.hpp"
 #include "frame_data.hpp"
+#include "quest.hpp"
 #include "raw_frame_data.hpp"
+#include "stage_gen/classic/stagegen.hpp"
 #include "tile_source_data.hpp"
 
+#include <cstdlib>
+#include <exception>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -39,7 +43,6 @@ void PrintTileSourceDataSummary() {
     std::cout << "tile images: " << frame_data_db.image_paths.size() << '\n';
     std::cout << "tile sources: " << tile_source_db.sources.size() << '\n';
     std::cout << "tile spans: " << tile_source_db.tile_spans.size() << '\n';
-    std::cout << "air spans: " << tile_source_db.air_spans.size() << '\n';
     for (const std::string& image_path : frame_data_db.image_paths) {
         std::cout << "  " << image_path << '\n';
     }
@@ -52,6 +55,23 @@ bool DumpRecordingAsText(const std::string& input_path, const std::string& outpu
     const bool ok = ConvertRecordingFileToText(input_path, output_path, frame_data_db, &status);
     std::cout << status << '\n';
     return ok;
+}
+
+bool CheckClassicQuestStagegen() {
+    try {
+        const QuestDefinition quest = LoadQuestDefinition(std::string(GetClassicQuestRootPath()) + "/quest.yaml");
+        for (const QuestStageDefinition& stage_def : quest.stages) {
+            const StageConfig stage_config = LoadStageConfig(GetClassicQuestRootPath(), stage_def.stage_file);
+            const Stage stage = stage_gen::classic::GenerateStage(quest, stage_def, stage_config);
+            std::cout << stage_def.id << ": "
+                      << stage.entity_spawns.size() << " spawns, "
+                      << stage.stagegen_annotations.size() << " annotations\n";
+        }
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "classic quest stagegen check failed: " << e.what() << '\n';
+        return false;
+    }
 }
 
 } // namespace
@@ -70,6 +90,10 @@ bool RunCliCommand(int argc, char** argv) {
     if (command == "--check-tile-source-data") {
         PrintTileSourceDataSummary();
         return true;
+    }
+
+    if (command == "--check-classic-quest-stagegen") {
+        std::exit(CheckClassicQuestStagegen() ? 0 : 1);
     }
 
     if (command == "--dump-recording-text") {

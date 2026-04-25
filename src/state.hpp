@@ -20,6 +20,7 @@
 #include "stage.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_progression.hpp"
+#include "quest.hpp"
 #include "stage_lighting.hpp"
 
 #include <cstdint>
@@ -84,7 +85,7 @@ struct BorderTestLevelConfig {
     Tile bottom_tile = Tile::Air;
     bool wrap_x = false;
     bool wrap_y = false;
-    int wrap_padding_chunks = 0;
+    int wrap_padding_tiles = 0;
     bool camera_clamp_enabled = true;
     std::optional<int> void_death_y = std::nullopt;
 };
@@ -94,7 +95,7 @@ struct MazeDoorTestLevelConfig {
 };
 
 struct DebugLevelConfig {
-    DebugLevelKind kind = DebugLevelKind::SplkMines1;
+    DebugLevelKind kind = DebugLevelKind::HangTest;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
     MazeDoorTestLevelConfig maze_door_test;
@@ -118,6 +119,7 @@ struct DebugOverlayState {
     bool show_audio_emitters = false;
     bool show_audio_occlusion_paths = false;
     bool show_debug_annotations = false;
+    bool show_stagegen_annotations = false;
 };
 
 struct DebugAnnotationColor {
@@ -231,11 +233,12 @@ struct State {
     bool game_over = false;
     bool pause = false;
     bool win = false;
-    StageLoadTarget respawn_target = StageLoadTarget::ForStageType(StageType::SplkMines1);
+    StageLoadTarget respawn_target = StageLoadTarget::ForQuestStage("classic", "classic_mines_1");
     std::optional<StageTransitionTarget> pending_stage_transition;
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t depth = 0;
+    QuestState quest_state;
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
     std::uint32_t frame_pause = 0;

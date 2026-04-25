@@ -1,0 +1,13 @@
+id: side_05
+pool: side
+weight: 1
+size: [10, 8]
+grid: |
+  0000000000
+  11wwwwww11
+  11wwwwww11
+  113wwww311
+  113wwww311
+  113wwww311
+  1113333111
+  1111111111

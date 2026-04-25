@@ -17,6 +17,8 @@ struct SDL_FRect;
 
 namespace splonks {
 
+struct Stage;
+
 enum class ShaderName {
     Grayscale,
 };

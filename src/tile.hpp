@@ -55,14 +55,26 @@ enum class Tile {
     BossBlock,
     LadderTop,
     Ladder,
+    LadderOrange,
     Spikes,
     Rope,
+    Vine,
+    VineTop,
+    WaterSwim,
+    Lava,
+    Lush,
+    Tree,
+    ThinIce,
+    Dark,
+    DarkFall,
+    AlienShip,
+    TempleFake,
     Entrance,
     Exit,
 };
 
 constexpr unsigned int kTileSize = 16;
-constexpr std::size_t kTileCount = 51;
+constexpr std::size_t kTileCount = 63;
 
 Tile RandomTile();
 Tile DirtTileForFamilyTile(Tile family_tile);

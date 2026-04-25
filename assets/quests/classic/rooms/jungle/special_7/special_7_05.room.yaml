@@ -1,0 +1,13 @@
+id: special_7_05
+pool: special_7
+weight: 1
+size: [10, 8]
+grid: |
+  wwwwwwwwww
+  wwwwwwwwww
+  wwwwwwwwww
+  wwww,,wwww
+  www,vv,www
+  www,vv,www
+  ww,,vv,,ww
+  ,,,vvvv,,,

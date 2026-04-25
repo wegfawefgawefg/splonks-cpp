@@ -16,6 +16,7 @@
 #include "state.hpp"
 #include "stage_lighting.hpp"
 #include "stage_progression.hpp"
+#include "quest_stage_loader.hpp"
 
 #include <algorithm>
 
@@ -220,7 +221,7 @@ void ProcessInputPlaying(
                 graphics,
                 border_test.wrap_x,
                 border_test.wrap_y,
-                static_cast<unsigned int>(std::max(0, border_test.wrap_padding_chunks)),
+                static_cast<unsigned int>(std::max(0, border_test.wrap_padding_tiles)),
                 border_test.camera_clamp_enabled
             );
         }
@@ -293,13 +294,12 @@ void ProcessInputWin(
     (void)window;
     (void)audio;
     (void)dt;
-    if (state.menu_inputs.confirm.down &&
-        state.scene_frame >= (60 * 5)) {
-        state.stage = Stage::NewBlank();
+    if (state.menu_inputs.confirm.down && state.scene_frame >= 60) {
+        (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);
         InvalidateStageAcoustics(state);
-        state.SetMode(Mode::Title);
+        state.SetMode(Mode::Playing);
     }
     (void)graphics;
 }

@@ -130,6 +130,7 @@ add_executable(splonks-cpp
     src/audio_filter.cpp
     src/audio_sound_effects.cpp
     src/cli.cpp
+    src/content_names.cpp
     src/buying.cpp
     src/contact_bookkeeping.cpp
     src/debug/playback_core.cpp
@@ -162,6 +163,34 @@ add_executable(splonks-cpp
     src/entities/caveman.cpp
     src/entities/chest.cpp
     src/entities/cobra.cpp
+    src/entities/push_block.cpp
+    src/entities/jaws.cpp
+    src/entities/crystal_skull.cpp
+    src/entities/bones.cpp
+    src/entities/jar.cpp
+    src/entities/trap_block.cpp
+    src/entities/ceiling_trap.cpp
+    src/entities/tomb_lord.cpp
+    src/entities/door.cpp
+    src/entities/ankh.cpp
+    src/entities/crown.cpp
+    src/entities/xoc_block.cpp
+    src/entities/moai.cpp
+    src/entities/yeti.cpp
+    src/entities/alien_ship.cpp
+    src/entities/alien_boss.cpp
+    src/entities/barrier_emitter.cpp
+    src/entities/thwomp_trap.cpp
+    src/entities/lamp.cpp
+    src/entities/crate.cpp
+    src/entities/mantrap.cpp
+    src/entities/frog.cpp
+    src/entities/monkey.cpp
+    src/entities/piranha.cpp
+    src/entities/zombie.cpp
+    src/entities/vampire.cpp
+    src/entities/ufo.cpp
+    src/entities/hawkman.cpp
     src/entities/skeleton.cpp
     src/entities/common/contact_damage.cpp
     src/entities/common/damage.cpp
@@ -251,13 +280,28 @@ add_executable(splonks-cpp
     src/render/ui.cpp
     src/raw_audio_asset.cpp
     src/raw_frame_data.cpp
+    src/quest.cpp
+    src/quest_glyphs.cpp
+    src/quest_parse_utils.cpp
+    src/quest_pools.cpp
+    src/quest_stage_config.cpp
+    src/quest_stage_loader.cpp
     src/settings.cpp
     src/sid.cpp
     src/stage.cpp
     src/stage_init.cpp
     src/stage_wrap.cpp
     src/stage_gen/cave.cpp
-    src/stage_gen/splk_mines.cpp
+    src/stage_gen/classic/ambient_passes.cpp
+    src/stage_gen/classic/glyph_actions.cpp
+    src/stage_gen/classic/item_pools.cpp
+    src/stage_gen/classic/room_layout.cpp
+    src/stage_gen/classic/room_templates.cpp
+    src/stage_gen/classic/stage_pass_helpers.cpp
+    src/stage_gen/classic/stage_passes.cpp
+    src/stage_gen/classic/treasure_passes.cpp
+    src/stage_gen/room_template_loader.cpp
+    src/stage_gen/classic/stagegen.cpp
     src/stage_gen/test.cpp
     src/stage_break.cpp
     src/stage_acoustics.cpp

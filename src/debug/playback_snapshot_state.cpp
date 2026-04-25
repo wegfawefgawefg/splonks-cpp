@@ -48,6 +48,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.depth = state.depth;
     snapshot.sac_altar_favor = state.sac_altar_favor;
     snapshot.sac_altar_reward_tier = state.sac_altar_reward_tier;
+    snapshot.quest_state = state.quest_state;
     snapshot.frame_pause = state.frame_pause;
     snapshot.debug_level = state.debug_level;
     snapshot.entity_manager = state.entity_manager;
@@ -103,6 +104,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.depth = snapshot.depth;
     state.sac_altar_favor = snapshot.sac_altar_favor;
     state.sac_altar_reward_tier = snapshot.sac_altar_reward_tier;
+    state.quest_state = snapshot.quest_state;
     state.frame_pause = snapshot.frame_pause;
     state.debug_level = snapshot.debug_level;
     state.entity_manager = snapshot.entity_manager;

@@ -8,6 +8,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <cstdint>
 #include <vector>
 
@@ -22,6 +23,25 @@ struct StageEntitySpawn {
     LeftOrRight facing = LeftOrRight::Left;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::optional<std::size_t> entity_a_spawn_index = std::nullopt;
+    std::string exit_id;
+};
+
+struct StageExitRequirement {
+    std::string flag;
+    bool expected = true;
+};
+
+struct StageExitTarget {
+    std::string target_stage_id;
+    std::vector<StageExitRequirement> requirements;
+};
+
+using StageExitId = int;
+constexpr StageExitId kInvalidStageExitId = -1;
+
+struct StageExit {
+    std::string id;
+    StageExitTarget target;
 };
 
 enum class BackgroundStampCondition {
@@ -41,22 +61,14 @@ struct StageLight {
     int radius = 0;
 };
 
+struct StageGenAnnotation {
+    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    std::string text;
+};
+
 enum class StageType : int {
     Blank,
     Test1,
-    SplkMines1,
-    SplkMines2,
-    SplkMines3,
-    Ice1,
-    Ice2,
-    Ice3,
-    Desert1,
-    Desert2,
-    Desert3,
-    Temple1,
-    Temple2,
-    Temple3,
-    Boss,
 };
 
 enum class StageBorderSideKind : std::uint8_t {
@@ -99,22 +111,31 @@ constexpr bool HasTileShakeLayerMask(TileShakeLayerMask mask, TileShakeLayerMask
 
 struct Stage {
     StageType stage_type = StageType::Blank;
+    std::string quest_id;
+    std::string quest_stage_id;
+    std::string route_label;
+    std::string stage_title;
+    int quest_level_number = 0;
+    std::vector<StageExit> exits;
     std::vector<std::vector<Tile>> tiles;
     std::vector<std::vector<float>> tile_shake;
     std::vector<std::vector<float>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
+    std::vector<Tile> backwall_fill_tiles;
     std::vector<std::vector<EntityType>> embedded_treasures;
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
     std::vector<StageEntitySpawn> entity_spawns;
     std::vector<BackgroundStamp> background_stamps;
+    std::vector<StageGenAnnotation> stagegen_annotations;
     std::vector<StageLight> lights;
+    FrameDataId block_animation_id = frame_data_ids::CaveBlock;
     float gravity = 0.3F;
     StageBorder border{};
     bool camera_clamp_enabled = true;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
     bool wrap_transform_active = false;
-    unsigned int wrap_padding_chunks = 0;
+    unsigned int wrap_padding_tiles = 0;
     UVec2 wrap_core_origin_tiles = UVec2::New(0, 0);
     UVec2 wrap_core_size_tiles = UVec2::New(0, 0);
     std::uint32_t next_light_vid = 0;
@@ -128,8 +149,8 @@ struct Stage {
     static StageBorder MakeUniformBorder(Tile tile);
     UVec2 GetStageDims() const;
     UVec2 GetRoomLayoutDims() const;
-    UVec2 GetRoomDims() const;
-    IVec2 GetRoomTlWc(const IVec2& room) const;
+    UVec2 GetRegularRoomGridRoomDims() const;
+    IVec2 GetRegularRoomGridTlWc(const IVec2& room) const;
     const Tile& GetTile(unsigned int x, unsigned int y) const;
     float GetTileShake(unsigned int x, unsigned int y) const;
     float GetForegroundTileShake(unsigned int x, unsigned int y) const;
@@ -163,9 +184,10 @@ struct Stage {
     void SetTilesInRectWc(const AABB& area, Tile tile_type);
     void SetTilesInRect(const AABB& area, Tile tile_type);
     std::vector<IAABB> GetAabbsForAllCollidableTilesInRect(const IVec2& tl, const IVec2& br) const;
-    UVec2 GetRandomRoom() const;
-    std::optional<IVec2> GetRandomNoncollidablePositionInRandomRoom() const;
-    std::optional<IVec2> GetRandomNoncollidablePositionInRoom(const UVec2& room) const;
+    UVec2 GetRandomRegularRoomGridCoord() const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInStage() const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInRandomRegularRoomGridCell() const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInRegularRoomGridCell(const UVec2& room) const;
     unsigned int GetWidth() const;
     unsigned int GetHeight() const;
     unsigned int GetTileWidth() const;
@@ -182,11 +204,13 @@ struct Stage {
     Tile GetTileOrBorder(int tile_x, int tile_y) const;
     bool IsTileCoordInside(int tile_x, int tile_y) const;
     bool IsWorldPosInside(const IVec2& wc) const;
+    StageExitId FindExitId(std::string_view id) const;
+    const StageExit* GetExit(StageExitId id) const;
     IVec2 WrapTileCoord(const IVec2& tile_coord) const;
     IVec2 WrapWorldPos(const IVec2& wc) const;
     void NormalizeEntityPositionForWrap(Entity& entity) const;
-    std::pair<UVec2, UVec2> GetRoomCorners(const UVec2& room) const;
-    std::vector<const Tile*> GetTilesInRoom(const UVec2& room) const;
+    std::pair<UVec2, UVec2> GetRegularRoomGridCorners(const UVec2& room) const;
+    std::vector<const Tile*> GetTilesInRegularRoomGridCell(const UVec2& room) const;
     IVec2 GetStartingRoom() const;
     IVec2 GetTileCoordAtWc(const IVec2& wc) const;
     bool TileCoordAtWcExists(const IVec2& wc) const;
