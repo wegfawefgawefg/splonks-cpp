@@ -19,6 +19,7 @@ enum class RoomCode : int {
     Special9 = 9,
     SnakePitTop = 10,
     SnakePitBottom = 11,
+    Vault = 12,
 };
 
 using RoomCodeGrid = std::vector<std::vector<int>>;
@@ -38,4 +39,3 @@ void ValidateClassicRoomLayoutPasses(const std::vector<StagePassConfig>& passes)
 const char* GetClassicRoomCodeDebugLabel(int room_code);
 
 } // namespace splonks::stage_gen::classic
-

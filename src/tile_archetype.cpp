@@ -30,19 +30,12 @@ void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
     entity->vel = Vec2::New(0.0F, 0.0F);
 }
 
-void OnBreakAsGoldVein(const IVec2& tile_pos, State& state, Audio& audio) {
+void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio) {
     (void)audio;
-    const Vec2 center = Vec2::New(static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-                                  static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8));
-    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-3.0F, -1.0F), state);
-    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 0.0F), state);
-    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(3.0F, 1.0F), state);
-}
-
-void OnBreakAsBigGoldVein(const IVec2& tile_pos, State& state, Audio& audio) {
-    (void)audio;
-    const Vec2 center = Vec2::New(static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-                                  static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8));
+    const Vec2 center = Vec2::New(
+        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
+    );
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
     SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
@@ -109,12 +102,6 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
     },
     MakeSolidTileArchetype(Tile::CaveDirt, TileFamily::Cave,
                            HashFrameDataIdConstexpr("cave_dirt_0"), "CaveDirt"),
-    MakeSolidTileArchetype(Tile::CaveGold, TileFamily::Cave,
-                           HashFrameDataIdConstexpr("cave_gold_0"), "CaveGold",
-                           audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
-    MakeSolidTileArchetype(Tile::CaveGoldBig, TileFamily::Cave,
-                           HashFrameDataIdConstexpr("cave_gold_1"), "CaveGoldBig",
-                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
     MakeSolidTileArchetype(Tile::CaveBlock, TileFamily::Cave,
                            HashFrameDataIdConstexpr("cave_block_0"), "CaveBlock"),
     MakeSolidTileArchetype(Tile::CaveShopWall, TileFamily::Cave,
@@ -171,12 +158,6 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
     },
     MakeSolidTileArchetype(Tile::IceDirt, TileFamily::Ice, HashFrameDataIdConstexpr("ice_dirt_0"),
                            "IceDirt", audio_asset_ids::Thud, nullptr, 1.0F, false),
-    MakeSolidTileArchetype(Tile::IceGold, TileFamily::Ice, HashFrameDataIdConstexpr("ice_gold"),
-                           "IceGold", audio_asset_ids::MoneySmashed, OnBreakAsGoldVein, 1.0F,
-                           false),
-    MakeSolidTileArchetype(Tile::IceGoldBig, TileFamily::Ice, HashFrameDataIdConstexpr("ice_gold"),
-                           "IceGoldBig", audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein, 1.0F,
-                           false),
     MakeSolidTileArchetype(Tile::IceBlock, TileFamily::Ice, HashFrameDataIdConstexpr("ice_block_0"),
                            "IceBlock", audio_asset_ids::Thud, nullptr, 1.0F, false),
     TileArchetype{
@@ -208,12 +189,6 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
     },
     MakeSolidTileArchetype(Tile::JungleDirt, TileFamily::Jungle,
                            HashFrameDataIdConstexpr("jungle_dirt_0"), "JungleDirt"),
-    MakeSolidTileArchetype(Tile::JungleGold, TileFamily::Jungle,
-                           HashFrameDataIdConstexpr("jungle_gold_0"), "JungleGold",
-                           audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
-    MakeSolidTileArchetype(Tile::JungleGoldBig, TileFamily::Jungle,
-                           HashFrameDataIdConstexpr("jungle_gold_0"), "JungleGoldBig",
-                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
     MakeSolidTileArchetype(Tile::JungleBlock, TileFamily::Jungle,
                            HashFrameDataIdConstexpr("jungle_block_0"), "JungleBlock"),
     TileArchetype{
@@ -247,10 +222,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
                            HashFrameDataIdConstexpr("temple_dirt_0"), "TempleDirt"),
     MakeSolidTileArchetype(Tile::TempleGold, TileFamily::Temple,
                            HashFrameDataIdConstexpr("temple_gold"), "TempleGold",
-                           audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
-    MakeSolidTileArchetype(Tile::TempleGoldBig, TileFamily::Temple,
-                           HashFrameDataIdConstexpr("temple_gold"), "TempleGoldBig",
-                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
+                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldMaterial),
     MakeSolidTileArchetype(Tile::TempleBlock, TileFamily::Temple,
                            HashFrameDataIdConstexpr("temple_block_0"), "TempleBlock"),
     TileArchetype{
@@ -282,11 +254,6 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
     },
     MakeSolidTileArchetype(Tile::BossDirt, TileFamily::Boss,
                            HashFrameDataIdConstexpr("boss_dirt_0"), "BossDirt"),
-    MakeSolidTileArchetype(Tile::BossGold, TileFamily::Boss, HashFrameDataIdConstexpr("boss_gold"),
-                           "BossGold", audio_asset_ids::MoneySmashed, OnBreakAsGoldVein),
-    MakeSolidTileArchetype(Tile::BossGoldBig, TileFamily::Boss,
-                           HashFrameDataIdConstexpr("boss_gold"), "BossGoldBig",
-                           audio_asset_ids::MoneySmashed, OnBreakAsBigGoldVein),
     MakeSolidTileArchetype(Tile::BossBlock, TileFamily::Boss,
                            HashFrameDataIdConstexpr("boss_block_0"), "BossBlock"),
     TileArchetype{

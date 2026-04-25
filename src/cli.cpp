@@ -5,12 +5,16 @@
 #include "quest.hpp"
 #include "raw_frame_data.hpp"
 #include "stage_gen/classic/stagegen.hpp"
+#include "stage_gen/room_template_loader.hpp"
 #include "tile_source_data.hpp"
 
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <iostream>
+#include <set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace splonks {
@@ -57,11 +61,47 @@ bool DumpRecordingAsText(const std::string& input_path, const std::string& outpu
     return ok;
 }
 
+void CheckClassicGlyphCoverage(const StageConfig& stage_config) {
+    const GlyphMap glyph_map = LoadGlyphMap(GetClassicQuestRootPath(), stage_config.glyphs_path);
+    std::set<std::string> checked_pool_paths;
+    for (const auto& [pool_name, pool_path] : stage_config.room_pools) {
+        if (!checked_pool_paths.insert(pool_path).second) {
+            continue;
+        }
+
+        const std::filesystem::path absolute_pool_path =
+            std::filesystem::path(GetClassicQuestRootPath()) / pool_path;
+        const std::vector<stage_gen::RoomTemplate> rooms =
+            stage_gen::LoadRoomTemplatePool(absolute_pool_path.string());
+        if (rooms.empty()) {
+            throw std::runtime_error(stage_config.id + " room pool configured but empty: " +
+                                     pool_path);
+        }
+
+        for (const stage_gen::RoomTemplate& room : rooms) {
+            std::unordered_set<char> seen;
+            for (const char glyph : room.grid) {
+                if (glyph == '\n' || glyph == '\r') {
+                    continue;
+                }
+                if (!seen.insert(glyph).second) {
+                    continue;
+                }
+                if (glyph_map.Find(glyph) == nullptr) {
+                    throw std::runtime_error(stage_config.id + " room " + room.source_path +
+                                             " uses unmapped glyph: " + std::string(1, glyph));
+                }
+            }
+        }
+    }
+}
+
 bool CheckClassicQuestStagegen() {
     try {
         const QuestDefinition quest = LoadQuestDefinition(std::string(GetClassicQuestRootPath()) + "/quest.yaml");
         for (const QuestStageDefinition& stage_def : quest.stages) {
             const StageConfig stage_config = LoadStageConfig(GetClassicQuestRootPath(), stage_def.stage_file);
+            CheckClassicGlyphCoverage(stage_config);
             const Stage stage = stage_gen::classic::GenerateStage(quest, stage_def, stage_config);
             std::cout << stage_def.id << ": "
                       << stage.entity_spawns.size() << " spawns, "

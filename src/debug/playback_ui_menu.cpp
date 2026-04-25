@@ -442,6 +442,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
          state.debug_level.kind == DebugLevelKind::BoulderTest ||
          state.debug_level.kind == DebugLevelKind::MovingPlatformTest ||
          state.debug_level.kind == DebugLevelKind::AudioTest ||
+         state.debug_level.kind == DebugLevelKind::ParachuteTest ||
          state.debug_level.kind == DebugLevelKind::SacAltarTest)) {
         apply_stage_fit_camera();
     }
@@ -488,6 +489,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             state.debug_level.kind == DebugLevelKind::BoulderTest ||
             state.debug_level.kind == DebugLevelKind::MovingPlatformTest ||
             state.debug_level.kind == DebugLevelKind::AudioTest ||
+            state.debug_level.kind == DebugLevelKind::ParachuteTest ||
             state.debug_level.kind == DebugLevelKind::SacAltarTest) {
             apply_stage_fit_camera();
         }

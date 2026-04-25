@@ -22,6 +22,7 @@ enum class DebugLevelKind {
     MovingPlatformTest,
     AudioTest,
     ShopTest,
+    ParachuteTest,
     SacAltarTest,
 };
 

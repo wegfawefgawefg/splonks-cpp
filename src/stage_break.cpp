@@ -8,6 +8,8 @@
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
 
+#include <array>
+
 namespace splonks {
 
 namespace {
@@ -26,6 +28,38 @@ void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
     SetEntityAs(*entity, type_);
     entity->SetCenter(center);
     entity->vel = Vec2::New(0.0F, 0.0F);
+}
+
+void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
+    const Vec2 center = Vec2::New(
+        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
+        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
+    );
+    static const std::array<Vec2, 8> kDropOffsets{{
+        Vec2::New(-4.0F, -1.0F),
+        Vec2::New(0.0F, 1.0F),
+        Vec2::New(4.0F, -1.0F),
+        Vec2::New(-2.0F, 3.0F),
+        Vec2::New(2.0F, -3.0F),
+        Vec2::New(-5.0F, 2.0F),
+        Vec2::New(5.0F, 2.0F),
+        Vec2::New(0.0F, -4.0F),
+    }};
+
+    std::size_t offset_index = 0;
+    for (const EmbeddedTreasureDrop& drop : embedded_treasure.drops) {
+        if (drop.type_ == EntityType::None || drop.count <= 0) {
+            continue;
+        }
+        for (int i = 0; i < drop.count; ++i) {
+            SpawnEntityAtCenter(
+                drop.type_,
+                center + kDropOffsets[offset_index % kDropOffsets.size()],
+                state
+            );
+            ++offset_index;
+        }
+    }
 }
 
 void SpawnTileBreakAnimation(FrameDataId animation_id, const IVec2& tile_pos, State& state) {
@@ -95,13 +129,12 @@ void BreakStageTilesAtCoordsInternal(
         }
         NotifyAreaEntitiesTileChanged(tile_pos, state, audio);
 
-        const EntityType embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
-        if (embedded_treasure != EntityType::None) {
-            const Vec2 center = Vec2::New(
-                static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-                static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
-            );
-            SpawnEntityAtCenter(embedded_treasure, center, state);
+        const EmbeddedTreasure embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
+        if (!embedded_treasure.IsEmpty()) {
+            if (embedded_treasure.break_sound != kInvalidAudioAssetId) {
+                break_sound = embedded_treasure.break_sound;
+            }
+            SpawnEmbeddedTreasureDrops(embedded_treasure, tile_pos, state);
         }
 
         state.stage.SetTile(tile_pos, Tile::Air);

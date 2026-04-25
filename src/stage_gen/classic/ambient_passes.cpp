@@ -78,13 +78,17 @@ void AddAmbientMinesEntities(Stage& stage) {
                     rng::RandomIntInclusive(1, 40) == 1) {
                     AddAmbientSpawn(stage, EntityType::GiantSpiderHang, ceiling_spawn_pos);
                     giant_spider_spawned = true;
-                } else if (dark_level && rng::RandomIntInclusive(1, 60) == 1) {
+                } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
+                           dark_level && rng::RandomIntInclusive(1, 60) == 1) {
                     AddAmbientSpawn(stage, EntityType::Lamp, ceiling_spawn_pos);
-                } else if (dark_level && rng::RandomIntInclusive(1, 40) == 1) {
+                } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
+                           dark_level && rng::RandomIntInclusive(1, 40) == 1) {
                     AddAmbientSpawn(stage, EntityType::Scarab, ceiling_spawn_pos);
-                } else if (rng::RandomIntInclusive(1, 60) == 1) {
+                } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
+                           rng::RandomIntInclusive(1, 60) == 1) {
                     AddAmbientSpawn(stage, EntityType::Bat, ceiling_spawn_pos);
-                } else if (rng::RandomIntInclusive(1, 80) == 1) {
+                } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
+                           rng::RandomIntInclusive(1, 80) == 1) {
                     AddAmbientSpawn(stage, EntityType::SpiderHang, ceiling_spawn_pos);
                 }
             }

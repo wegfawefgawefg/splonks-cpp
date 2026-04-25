@@ -13,8 +13,6 @@ enum class Tile {
     CaveAir1,
     CaveAir2,
     CaveDirt,
-    CaveGold,
-    CaveGoldBig,
     CaveBlock,
     CaveShopWall,
     CaveSmoothWall,
@@ -29,29 +27,22 @@ enum class Tile {
     IceAir1,
     IceAir2,
     IceDirt,
-    IceGold,
-    IceGoldBig,
     IceBlock,
     JungleAir0,
     JungleAir1,
     JungleAir2,
     JungleDirt,
-    JungleGold,
-    JungleGoldBig,
     JungleBlock,
     TempleAir0,
     TempleAir1,
     TempleAir2,
     TempleDirt,
     TempleGold,
-    TempleGoldBig,
     TempleBlock,
     BossAir0,
     BossAir1,
     BossAir2,
     BossDirt,
-    BossGold,
-    BossGoldBig,
     BossBlock,
     LadderTop,
     Ladder,
@@ -74,12 +65,10 @@ enum class Tile {
 };
 
 constexpr unsigned int kTileSize = 16;
-constexpr std::size_t kTileCount = 63;
+constexpr std::size_t kTileCount = 54;
 
 Tile RandomTile();
 Tile DirtTileForFamilyTile(Tile family_tile);
-Tile GoldTileForFamilyTile(Tile family_tile);
-Tile GoldBigTileForFamilyTile(Tile family_tile);
 Tile BlockTileForFamilyTile(Tile family_tile);
 Tile ShopWallTileForFamilyTile(Tile family_tile);
 Tile SmoothWallTileForFamilyTile(Tile family_tile);

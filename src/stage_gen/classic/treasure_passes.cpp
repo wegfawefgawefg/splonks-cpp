@@ -159,6 +159,51 @@ std::optional<Vec2> FindKeyChestSpawnPos(const Stage& stage) {
     return std::nullopt;
 }
 
+bool HasSpawnAtTile(const Stage& stage, EntityType type_, int tile_x, int tile_y) {
+    const Vec2 tile_pos =
+        Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+                  static_cast<float>(tile_y * static_cast<int>(kTileSize)));
+    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+        if (spawn.type_ != type_) {
+            continue;
+        }
+        if (static_cast<int>(spawn.pos.x) / static_cast<int>(kTileSize) == tile_x &&
+            static_cast<int>(spawn.pos.y) / static_cast<int>(kTileSize) == tile_y) {
+            return true;
+        }
+        if (Length(spawn.pos - tile_pos) < static_cast<float>(kTileSize)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool HasMinesTreasureSideSupport(const Stage& stage, int tile_x, int tile_y) {
+    return IsCollidableTileAt(stage, tile_x, tile_y) ||
+           HasSpawnAtTile(stage, EntityType::Block, tile_x, tile_y);
+}
+
+EmbeddedTreasure MakeVisibleGoldEmbed(FrameDataId overlay_frame) {
+    EmbeddedTreasure embedded_treasure;
+    embedded_treasure.visibility = EmbeddedTreasureVisibility::Visible;
+    embedded_treasure.overlay_frame = overlay_frame;
+    embedded_treasure.break_sound = audio_asset_ids::MoneySmashed;
+    embedded_treasure.drops[0] = EmbeddedTreasureDrop{
+        .type_ = EntityType::GoldChunk,
+        .count = 3,
+    };
+    return embedded_treasure;
+}
+
+EmbeddedTreasure MakeVisibleBigGoldEmbed(FrameDataId overlay_frame) {
+    EmbeddedTreasure embedded_treasure = MakeVisibleGoldEmbed(overlay_frame);
+    embedded_treasure.drops[1] = EmbeddedTreasureDrop{
+        .type_ = EntityType::GoldNugget,
+        .count = 1,
+    };
+    return embedded_treasure;
+}
+
 void AddUdjatKeyChest(Stage& stage) {
     if (stage.quest_level_number < 2) {
         return;
@@ -235,11 +280,17 @@ void AddMinesEmbeddedTreasure(Stage& stage, const ItemPoolDb& item_db) {
 
             const int visible_gold_roll = rng::RandomIntInclusive(1, 100);
             if (visible_gold_roll < 20) {
-                stage.SetTile(tile_pos, GoldTileForFamilyTile(stage.border.left.tile));
+                stage.SetEmbeddedTreasure(
+                    tile_pos,
+                    MakeVisibleGoldEmbed(HashFrameDataIdConstexpr("embedded_gold"))
+                );
                 continue;
             }
             if (visible_gold_roll < 30) {
-                stage.SetTile(tile_pos, GoldBigTileForFamilyTile(stage.border.left.tile));
+                stage.SetEmbeddedTreasure(
+                    tile_pos,
+                    MakeVisibleBigGoldEmbed(HashFrameDataIdConstexpr("embedded_gold_big"))
+                );
                 continue;
             }
 
@@ -302,10 +353,13 @@ void AddMinesTreasure(Stage& stage, int level_number) {
 
             const Vec2 item_pos = tile_pos + Vec2::New(8.0F, -4.0F);
             const Vec2 stack_pos = tile_pos + Vec2::New(8.0F, -8.0F);
+            const Vec2 box_pos = tile_pos + Vec2::New(2.0F, -12.0F);
+            const Vec2 web_pos = tile_pos + Vec2::New(0.0F, -16.0F);
             const Vec2 bones_pos = tile_pos + Vec2::New(0.0F, -16.0F);
             const Vec2 skull_pos = tile_pos + Vec2::New(12.0F, -4.0F);
             if (HasSpawnAtWorldPos(stage, item_pos) || HasSpawnAtWorldPos(stage, stack_pos) ||
-                HasSpawnAtWorldPos(stage, bones_pos) || HasSpawnAtWorldPos(stage, skull_pos)) {
+                HasSpawnAtWorldPos(stage, box_pos) || HasSpawnAtWorldPos(stage, bones_pos) ||
+                HasSpawnAtWorldPos(stage, skull_pos)) {
                 continue;
             }
 
@@ -319,14 +373,20 @@ void AddMinesTreasure(Stage& stage, int level_number) {
             }
 
             const bool ceiling_above = tile_y >= 2 && IsCollidableTileAt(stage, tile_x, tile_y - 2);
-            const bool side_support = IsCollidableTileAt(stage, tile_x - 1, tile_y - 1) ||
-                                      IsCollidableTileAt(stage, tile_x + 1, tile_y - 1);
-            const bool tunnel_support = IsCollidableTileAt(stage, tile_x - 1, tile_y - 1) &&
-                                        IsCollidableTileAt(stage, tile_x + 1, tile_y - 1);
+            const bool left_support = HasMinesTreasureSideSupport(stage, tile_x - 1, tile_y - 1);
+            const bool right_support = HasMinesTreasureSideSupport(stage, tile_x + 1, tile_y - 1);
+            const bool side_support = left_support || right_support;
+            const bool tunnel_support = left_support && right_support;
 
             if (ceiling_above && side_support) {
-                if (rng::RandomIntInclusive(1, 10) == 1) {
-                    AddAmbientSpawn(stage, EntityType::Box, stack_pos);
+                const int web_denominator =
+                    DistanceToNearestSpawnType(stage, EntityType::GiantSpiderHang, tile_pos) < 100.0F
+                        ? 5
+                        : 60;
+                if (rng::RandomIntInclusive(1, web_denominator) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Cobweb, web_pos);
+                } else if (rng::RandomIntInclusive(1, 10) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Box, box_pos);
                 } else if (rng::RandomIntInclusive(1, 15) == 1) {
                     AddAmbientSpawn(stage, EntityType::Chest, stack_pos);
                 } else if (!HasSpawnType(stage, EntityType::Damsel) &&
@@ -355,7 +415,13 @@ void AddMinesTreasure(Stage& stage, int level_number) {
             }
 
             if (tunnel_support) {
-                if (rng::RandomIntInclusive(1, 4) == 1) {
+                const int web_denominator =
+                    DistanceToNearestSpawnType(stage, EntityType::GiantSpiderHang, tile_pos) < 100.0F
+                        ? 10
+                        : 60;
+                if (rng::RandomIntInclusive(1, web_denominator) == 1) {
+                    AddAmbientSpawn(stage, EntityType::Cobweb, web_pos);
+                } else if (rng::RandomIntInclusive(1, 4) == 1) {
                     AddAmbientSpawn(stage, EntityType::Gold, item_pos);
                 } else if (rng::RandomIntInclusive(1, std::max(1, 80 - curr_level)) <=
                            1 + bones_chance) {

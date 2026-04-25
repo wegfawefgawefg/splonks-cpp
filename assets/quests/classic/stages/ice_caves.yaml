@@ -12,7 +12,7 @@ room_pools:
   start: rooms/ice_caves/start
   main: rooms/ice_caves/main
   side: rooms/ice_caves/side
-  drop: rooms/ice_caves/side
+  drop: rooms/ice_caves/main
   exit: rooms/ice_caves/exit
   exit_main: rooms/ice_caves/exit
   special_6: rooms/ice_caves/special_6
@@ -21,6 +21,7 @@ room_pools:
   special_9: rooms/ice_caves/special_9
   shop_left: rooms/ice_caves/shop_left
   shop_right: rooms/ice_caves/shop_right
+  vault: rooms/ice_caves/vault
 
 layout_passes:
   - name: snake_pit
@@ -33,6 +34,12 @@ layout_passes:
     properties:
       min_level_number: 2
       chance_uses_level_number: true
+
+  - name: vault
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_denominator: 6
 
   - name: ice_moai
     enabled: true

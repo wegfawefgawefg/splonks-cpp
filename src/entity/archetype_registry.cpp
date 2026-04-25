@@ -18,6 +18,7 @@
 #include "entities/ceiling_trap.hpp"
 #include "entities/chest.hpp"
 #include "entities/cobra.hpp"
+#include "entities/craps_table.hpp"
 #include "entities/crate.hpp"
 #include "entities/crown.hpp"
 #include "entities/crystal_skull.hpp"
@@ -198,6 +199,8 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Parachute, entities::gear_items::kParachuteArchetype, "Parachute");
     SetArchetype(EntityType::RopePile, entities::gear_items::kRopePileArchetype, "RopePile");
     SetArchetype(EntityType::Dice, entities::dice::kDiceArchetype, "Dice");
+    SetArchetype(EntityType::CrapsTable, entities::craps_table::kCrapsTableArchetype,
+                 "CrapsTable");
     SetArchetype(EntityType::RubyBig, entities::ruby_big::kRubyBigArchetype, "RubyBig");
     SetArchetype(EntityType::EmeraldBig, entities::emerald_big::kEmeraldBigArchetype, "EmeraldBig");
     SetArchetype(EntityType::SapphireBig, entities::sapphire_big::kSapphireBigArchetype,

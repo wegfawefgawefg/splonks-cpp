@@ -115,33 +115,87 @@ RoomTemplateSelection RequireRoomSelection(const RoomTemplate* room, std::string
     return MakeLoadedRoomSelection(*room);
 }
 
+void RequirePoolSize(std::string_view stage_id, std::string_view pool_name, std::size_t actual,
+                     std::size_t expected) {
+    if (actual == expected) {
+        return;
+    }
+    throw std::runtime_error("Classic " + std::string(stage_id) + " " + std::string(pool_name) +
+                             " pool expected " + std::to_string(expected) + " templates, found " +
+                             std::to_string(actual));
+}
+
+bool IsTempleLikeStage(std::string_view stage_id) {
+    return stage_id == "temple" || stage_id == "city_of_gold" || stage_id == "haunted_castle";
+}
+
 const RoomTemplate* PickStartRoomTemplate(const ClassicRoomTemplateDb& room_templates,
                                           bool starts_with_drop) {
-    if (room_templates.start.empty()) {
+    const std::size_t count = room_templates.start.size();
+    if (count == 0) {
         return nullptr;
     }
-    if (room_templates.start.size() == 4) {
+
+    if (room_templates.stage_id == "mines") {
+        RequirePoolSize(room_templates.stage_id, "start", count, 8);
+        return starts_with_drop ? PickLoadedTemplate(room_templates.start, 4, 8)
+                                : PickLoadedTemplate(room_templates.start, 0, 4);
+    }
+    if (room_templates.stage_id == "jungle" || room_templates.stage_id == "black_market") {
+        RequirePoolSize(room_templates.stage_id, "start", count, 4);
         return starts_with_drop ? PickLoadedTemplate(room_templates.start, 2, 4)
                                 : PickLoadedTemplate(room_templates.start, 0, 2);
     }
-    return starts_with_drop ? PickLoadedTemplate(room_templates.start, 4, 8)
-                            : PickLoadedTemplate(room_templates.start, 0, 4);
+    if (room_templates.stage_id == "ice_caves" || IsTempleLikeStage(room_templates.stage_id)) {
+        RequirePoolSize(room_templates.stage_id, "start", count, 2);
+        return starts_with_drop ? PickLoadedTemplate(room_templates.start, 1, 2)
+                                : PickLoadedTemplate(room_templates.start, 0, 1);
+    }
+    if (room_templates.stage_id == "olmec_lair") {
+        RequirePoolSize(room_templates.stage_id, "start", count, 6);
+        return PickLoadedTemplate(room_templates.start);
+    }
+
+    throw std::runtime_error("Classic room selector missing start rules for stage: " +
+                             room_templates.stage_id);
 }
 
 const RoomTemplate* PickExitRoomTemplate(const ClassicRoomTemplateDb& room_templates,
                                          bool room_above_is_drop, bool jungle_lake_active) {
-    if (room_templates.exit.empty()) {
+    const std::size_t count = room_templates.exit.size();
+    if (count == 0) {
         return nullptr;
     }
-    if (jungle_lake_active) {
-        return PickLoadedTemplate(room_templates.exit, 4, 5);
+
+    if (room_templates.stage_id == "mines") {
+        RequirePoolSize(room_templates.stage_id, "exit", count, 6);
+        return room_above_is_drop ? PickLoadedTemplate(room_templates.exit, 1, 4)
+                                  : PickLoadedTemplate(room_templates.exit, 2, 6);
     }
-    if (room_templates.exit.size() == 5) {
+    if (room_templates.stage_id == "jungle") {
+        RequirePoolSize(room_templates.stage_id, "exit", count, 5);
+        if (jungle_lake_active) {
+            return PickLoadedTemplate(room_templates.exit, 4, 5);
+        }
         return room_above_is_drop ? PickLoadedTemplate(room_templates.exit, 0, 2)
                                   : PickLoadedTemplate(room_templates.exit, 2, 4);
     }
-    return room_above_is_drop ? PickLoadedTemplate(room_templates.exit, 1, 4)
-                              : PickLoadedTemplate(room_templates.exit, 2, 6);
+    if (room_templates.stage_id == "black_market") {
+        RequirePoolSize(room_templates.stage_id, "exit", count, 4);
+        return room_above_is_drop ? PickLoadedTemplate(room_templates.exit, 0, 2)
+                                  : PickLoadedTemplate(room_templates.exit, 2, 4);
+    }
+    if (room_templates.stage_id == "ice_caves" || IsTempleLikeStage(room_templates.stage_id)) {
+        RequirePoolSize(room_templates.stage_id, "exit", count, 1);
+        return PickLoadedTemplate(room_templates.exit);
+    }
+    if (room_templates.stage_id == "olmec_lair") {
+        RequirePoolSize(room_templates.stage_id, "exit", count, 6);
+        return PickLoadedTemplate(room_templates.exit);
+    }
+
+    throw std::runtime_error("Classic room selector missing exit rules for stage: " +
+                             room_templates.stage_id);
 }
 
 const std::array<GlyphPatch, 8> kDoorwayObstaclePatches = {
@@ -198,6 +252,7 @@ void ApplyPatchAt(std::string& glyphs, int top_left_index, GlyphPatch patch) {
 
 ClassicRoomTemplateDb LoadClassicRoomTemplateDb(const StageConfig& config) {
     ClassicRoomTemplateDb db;
+    db.stage_id = config.id;
     db.start = LoadClassicRoomPool(config, "start");
     db.exit = LoadClassicRoomPool(config, "exit");
     db.side = LoadClassicRoomPool(config, "side");
@@ -211,6 +266,7 @@ ClassicRoomTemplateDb LoadClassicRoomTemplateDb(const StageConfig& config) {
     db.special_9 = LoadClassicRoomPool(config, "special_9");
     db.snake_pit_top = LoadClassicRoomPool(config, "snake_pit_top");
     db.snake_pit_bottom = LoadClassicRoomPool(config, "snake_pit_bottom");
+    db.vault = LoadClassicRoomPool(config, "vault");
     db.drop = LoadClassicRoomPool(config, "drop");
     return db;
 }
@@ -273,6 +329,8 @@ RoomTemplateSelection SelectRoomTemplate(int room_code, bool is_start_room, bool
     case static_cast<int>(RoomCode::SnakePitBottom):
         return RequireRoomSelection(PickLoadedTemplate(room_templates.snake_pit_bottom),
                                     "snake_pit_bottom");
+    case static_cast<int>(RoomCode::Vault):
+        return RequireRoomSelection(PickLoadedTemplate(room_templates.vault), "vault");
     default:
         throw std::runtime_error("Unknown classic room code: " + std::to_string(room_code));
     }

@@ -8,7 +8,7 @@ glyphs:
   - char: "3"
     action: jungle_water_or_lush
   - char: "4"
-    spawn_chance: push_block
+    spawn_chance: block
     chance_denominator: 4
   - char: "5"
     patch_pool: ground_obstacle
@@ -29,6 +29,9 @@ glyphs:
     tile: rope
   - char: "."
     action: lush_shop_wall
+  - char: "%"
+    action: vault_wall_or_pushblock
+    chance_denominator: 4
   - char: "b"
     action: lush_smooth_wall
   - char: ":"

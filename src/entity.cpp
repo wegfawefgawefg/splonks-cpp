@@ -331,6 +331,8 @@ const char* PassiveItemToString(EntityPassiveItem passive_item) {
         return "UdjatEye";
     case EntityPassiveItem::Meathead:
         return "Meathead";
+    case EntityPassiveItem::Parachute:
+        return "Parachute";
     case EntityPassiveItem::Count:
         return "Count";
     }

@@ -46,14 +46,14 @@ unsigned int GetTileRowWidth(const std::vector<std::vector<Tile>>& tiles) {
     return static_cast<unsigned int>(tiles.front().size());
 }
 
-std::vector<std::vector<EntityType>> MakeEmptyEmbeddedTreasures(
+std::vector<std::vector<EmbeddedTreasure>> MakeEmptyEmbeddedTreasures(
     const std::vector<std::vector<Tile>>& tiles
 ) {
-    std::vector<std::vector<EntityType>> embedded_treasures;
+    std::vector<std::vector<EmbeddedTreasure>> embedded_treasures;
     embedded_treasures.reserve(tiles.size());
     for (const std::vector<Tile>& row : tiles) {
         embedded_treasures.push_back(
-            std::vector<EntityType>(row.size(), EntityType::None)
+            std::vector<EmbeddedTreasure>(row.size())
         );
     }
     return embedded_treasures;
@@ -216,7 +216,7 @@ void AttenuateTileShakeGrid(TileShakeGrid& grid, const std::vector<std::vector<T
 }
 
 bool EmbeddedTreasureCoordExists(
-    const std::vector<std::vector<EntityType>>& embedded_treasures,
+    const std::vector<std::vector<EmbeddedTreasure>>& embedded_treasures,
     int tile_x,
     int tile_y
 ) {
@@ -226,12 +226,32 @@ bool EmbeddedTreasureCoordExists(
     if (tile_y >= static_cast<int>(embedded_treasures.size())) {
         return false;
     }
-    const std::vector<EntityType>& row =
+    const std::vector<EmbeddedTreasure>& row =
         embedded_treasures[static_cast<std::size_t>(tile_y)];
     return tile_x < static_cast<int>(row.size());
 }
 
 } // namespace
+
+bool EmbeddedTreasure::IsEmpty() const {
+    for (const EmbeddedTreasureDrop& drop : drops) {
+        if (drop.type_ != EntityType::None && drop.count > 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool EmbeddedTreasure::IsVisible() const {
+    return visibility == EmbeddedTreasureVisibility::Visible;
+}
+
+std::optional<FrameDataId> EmbeddedTreasure::GetOverlayFrame() const {
+    if (overlay_frame == kInvalidFrameDataId) {
+        return std::nullopt;
+    }
+    return overlay_frame;
+}
 
 const UVec2 Stage::kShape = UVec2::New(40, 32);
 const UVec2 Stage::kRoomShape = UVec2::New(10, 8);
@@ -448,12 +468,12 @@ const Tile& Stage::GetBackwallTile(unsigned int x, unsigned int y) const {
     return backwall_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 }
 
-EntityType Stage::GetEmbeddedTreasure(unsigned int x, unsigned int y) const {
+EmbeddedTreasure Stage::GetEmbeddedTreasure(unsigned int x, unsigned int y) const {
     if (!EmbeddedTreasureCoordExists(
             embedded_treasures,
             static_cast<int>(x),
             static_cast<int>(y))) {
-        return EntityType::None;
+        return EmbeddedTreasure{};
     }
     return embedded_treasures[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 }
@@ -601,29 +621,39 @@ void Stage::SetBackwallTile(const IVec2& pos, Tile tile) {
 }
 
 void Stage::SetEmbeddedTreasure(const IVec2& pos, EntityType type_) {
-    const IVec2 tile_pos = WrapTileCoord(pos);
-    if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
-        return;
-    }
-    if (!EmbeddedTreasureCoordExists(embedded_treasures, tile_pos.x, tile_pos.y)) {
-        return;
-    }
-    embedded_treasures[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = type_;
+    EmbeddedTreasure embedded_treasure;
+    embedded_treasure.drops[0] = EmbeddedTreasureDrop{
+        .type_ = type_,
+        .count = type_ == EntityType::None ? 0 : 1,
+    };
+    SetEmbeddedTreasure(pos, embedded_treasure);
 }
 
-EntityType Stage::TakeEmbeddedTreasure(const IVec2& pos) {
+void Stage::SetEmbeddedTreasure(const IVec2& pos, const EmbeddedTreasure& embedded_treasure) {
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
-        return EntityType::None;
+        return;
     }
     if (!EmbeddedTreasureCoordExists(embedded_treasures, tile_pos.x, tile_pos.y)) {
-        return EntityType::None;
+        return;
+    }
+    embedded_treasures[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
+        embedded_treasure;
+}
+
+EmbeddedTreasure Stage::TakeEmbeddedTreasure(const IVec2& pos) {
+    const IVec2 tile_pos = WrapTileCoord(pos);
+    if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+        return EmbeddedTreasure{};
+    }
+    if (!EmbeddedTreasureCoordExists(embedded_treasures, tile_pos.x, tile_pos.y)) {
+        return EmbeddedTreasure{};
     }
 
-    EntityType& treasure =
+    EmbeddedTreasure& treasure =
         embedded_treasures[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)];
-    const EntityType result = treasure;
-    treasure = EntityType::None;
+    const EmbeddedTreasure result = treasure;
+    treasure = EmbeddedTreasure{};
     return result;
 }
 

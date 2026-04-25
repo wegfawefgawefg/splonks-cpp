@@ -151,9 +151,9 @@ void ExpandStageForWrap(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<float>(static_cast<std::size_t>(new_tile_dims.x), 0.0F)
     );
-    std::vector<std::vector<EntityType>> embedded_treasures(
+    std::vector<std::vector<EmbeddedTreasure>> embedded_treasures(
         static_cast<std::size_t>(new_tile_dims.y),
-        std::vector<EntityType>(static_cast<std::size_t>(new_tile_dims.x), EntityType::None)
+        std::vector<EmbeddedTreasure>(static_cast<std::size_t>(new_tile_dims.x))
     );
 
     for (unsigned int y = 0; y < old_tile_dims.y; ++y) {
@@ -220,9 +220,9 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<float>(static_cast<std::size_t>(core_size.x), 0.0F)
     );
-    std::vector<std::vector<EntityType>> embedded_treasures(
+    std::vector<std::vector<EmbeddedTreasure>> embedded_treasures(
         static_cast<std::size_t>(core_size.y),
-        std::vector<EntityType>(static_cast<std::size_t>(core_size.x), EntityType::None)
+        std::vector<EmbeddedTreasure>(static_cast<std::size_t>(core_size.x))
     );
     for (unsigned int y = 0; y < core_size.y; ++y) {
         for (unsigned int x = 0; x < core_size.x; ++x) {

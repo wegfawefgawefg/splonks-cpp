@@ -146,6 +146,33 @@ void TryPlaceShop(StageLayout& layout, int level_number, const StagePassConfig& 
     }
 }
 
+void TryPlaceVault(StageLayout& layout, int level_number, const StagePassConfig& pass) {
+    if (!pass.enabled || level_number < pass.GetInt("min_level_number", 2)) {
+        return;
+    }
+    const int chance_denominator = pass.GetInt("chance_denominator", 6);
+    if (chance_denominator <= 0 || rng::RandomIntInclusive(1, chance_denominator) != 1) {
+        return;
+    }
+
+    std::vector<IVec2> candidates;
+    for (int y = 0; y < static_cast<int>(layout.path_layout_size.y); ++y) {
+        for (int x = 0; x < static_cast<int>(layout.path_layout_size.x); ++x) {
+            if (GetRoomCode(layout, x, y) != static_cast<int>(RoomCode::Side)) {
+                continue;
+            }
+            candidates.push_back(IVec2::New(x, y));
+        }
+    }
+    if (candidates.empty()) {
+        return;
+    }
+
+    const IVec2 room = candidates[static_cast<std::size_t>(
+        rng::RandomIntInclusive(0, static_cast<int>(candidates.size()) - 1))];
+    SetRoomCode(layout, room.x, room.y, static_cast<int>(RoomCode::Vault));
+}
+
 using ClassicRoomLayoutPassFn = void (*)(StageLayout&, int, const StagePassConfig&);
 
 struct ClassicRoomLayoutPassDefinition {
@@ -161,6 +188,10 @@ void RunSnakePitLayoutPass(StageLayout& layout, int, const StagePassConfig& pass
 
 void RunShopLayoutPass(StageLayout& layout, int level_number, const StagePassConfig& pass) {
     TryPlaceShop(layout, level_number, pass);
+}
+
+void RunVaultLayoutPass(StageLayout& layout, int level_number, const StagePassConfig& pass) {
+    TryPlaceVault(layout, level_number, pass);
 }
 
 void RunJungleLakeLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
@@ -257,9 +288,10 @@ void RunCityOfGoldXocLayoutPass(StageLayout& layout, int, const StagePassConfig&
                 row, static_cast<int>(RoomCode::Special6));
 }
 
-constexpr std::array<ClassicRoomLayoutPassDefinition, 7> kClassicRoomLayoutPasses = {{
+constexpr std::array<ClassicRoomLayoutPassDefinition, 8> kClassicRoomLayoutPasses = {{
     {"snake_pit", RunSnakePitLayoutPass},
     {"shop", RunShopLayoutPass},
+    {"vault", RunVaultLayoutPass},
     {"jungle_lake", RunJungleLakeLayoutPass},
     {"ice_moai", RunIceMoaiLayoutPass},
     {"ice_alien_craft", RunIceAlienCraftLayoutPass},
@@ -449,10 +481,11 @@ const char* GetClassicRoomCodeDebugLabel(int room_code) {
         return "pit";
     case 11:
         return "pit!";
+    case 12:
+        return "vault";
     default:
         return "?";
     }
 }
 
 } // namespace splonks::stage_gen::classic
-

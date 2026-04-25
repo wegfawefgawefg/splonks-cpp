@@ -163,6 +163,7 @@ add_executable(splonks-cpp
     src/entities/caveman.cpp
     src/entities/chest.cpp
     src/entities/cobra.cpp
+    src/entities/craps_table.cpp
     src/entities/push_block.cpp
     src/entities/jaws.cpp
     src/entities/crystal_skull.cpp

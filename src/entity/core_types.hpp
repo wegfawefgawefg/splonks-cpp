@@ -74,6 +74,7 @@ enum class EntityType {
     Parachute,
     RopePile,
     Dice,
+    CrapsTable,
     RubyBig,
     EmeraldBig,
     SapphireBig,

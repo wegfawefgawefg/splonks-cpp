@@ -25,6 +25,9 @@ glyphs:
     tile: ladder_top
   - char: "."
     action: shop_wall
+  - char: "%"
+    action: vault_wall_or_pushblock
+    chance_denominator: 4
   - char: "b"
     action: smooth_wall
   - char: "+"
@@ -58,7 +61,7 @@ glyphs:
   - char: "D"
     spawn: damsel
   - char: "s"
-    action: maybe_solid_dirt
+    action: maybe_snake_or_solid_dirt
   - char: "S"
     spawn_random:
       - entity: snake

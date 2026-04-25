@@ -8,7 +8,7 @@ pools:
       - entity: shotgun
         weight: 1
       - entity: mattock
-        weight: 2
+        weight: 1
       - entity: teleporter
         weight: 1
       - entity: gloves
@@ -30,7 +30,7 @@ pools:
       - entity: machete
         weight: 1
       - entity: bomb_box
-        weight: 2
+        weight: 1
       - entity: bow
         weight: 1
       - entity: compass
@@ -38,7 +38,7 @@ pools:
       - entity: parachute
         weight: 1
       - entity: rope_pile
-        weight: 4
+        weight: 1
   - id: high_end_shop_items
     entries:
       - entity: jetpack

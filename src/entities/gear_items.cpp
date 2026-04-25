@@ -256,8 +256,10 @@ extern const EntityArchetype kParachuteArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .passive_item = EntityPassiveItem::Parachute,
+    .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Parachute),
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::PackedParachute),
 };
 extern const EntityArchetype kRopePileArchetype{
     .type_ = EntityType::RopePile,

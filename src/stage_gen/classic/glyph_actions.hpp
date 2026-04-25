@@ -17,7 +17,7 @@ struct ResolvedRoom {
     std::string source_path;
 };
 
-ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, int room_code_above,
+ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bool is_end_room, int room_code_above,
                          bool jungle_lake_active, const UVec2& room_size,
                          const Stage& existing_stage, const ClassicRoomTemplateDb& room_templates,
                          const GlyphMap& glyph_map, const ItemPoolDb& item_db,

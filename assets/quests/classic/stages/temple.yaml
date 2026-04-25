@@ -17,6 +17,7 @@ room_pools:
   exit_main: rooms/temple/exit_main
   shop_left: rooms/temple/shop_left
   shop_right: rooms/temple/shop_right
+  vault: rooms/temple/vault
   special_6: rooms/temple/special_6
   special_7: rooms/temple/special_7
   special_8: rooms/temple/special_8
@@ -33,6 +34,12 @@ layout_passes:
     properties:
       min_level_number: 2
       chance_uses_level_number: true
+
+  - name: vault
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_denominator: 6
 
   - name: temple_sac_pit
     enabled: true

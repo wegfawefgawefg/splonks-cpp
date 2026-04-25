@@ -18,6 +18,7 @@ room_pools:
   exit_main: rooms/jungle/exit_main
   shop_left: rooms/jungle/shop_left
   shop_right: rooms/jungle/shop_right
+  vault: rooms/jungle/vault
   special_7: rooms/jungle/special_7
   special_8: rooms/jungle/special_8
   special_9: rooms/jungle/special_9
@@ -33,6 +34,12 @@ layout_passes:
     properties:
       min_level_number: 2
       chance_uses_level_number: true
+
+  - name: vault
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_denominator: 6
 
   - name: jungle_lake
     enabled: false

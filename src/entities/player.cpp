@@ -24,6 +24,9 @@ constexpr float kPunishBallDraggedMaxRunSpeed = 3.0F;
 constexpr float kPunishBallDraggedExtraGravity = 0.14F;
 constexpr float kPunishBallDraggedJumpImpulse = 3.0F;
 constexpr float kClimbAnimationVelocityEpsilon = 0.01F;
+constexpr float kParachuteDeployVelocityY = 3.0F;
+constexpr float kParachuteMaxFallSpeed = 1.35F;
+constexpr float kParachuteVisualOffsetY = -12.0F;
 
 bool PlayerHasPunishBall(const Entity& player, const State& state) {
     if (!player.entity_d.has_value()) {
@@ -71,6 +74,79 @@ void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
 
     animator.playback_mode = desired_mode;
     animator.playback_dirty = false;
+}
+
+Entity* GetOpenParachuteVisual(Entity& player, State& state) {
+    if (!player.entity_b.has_value()) {
+        return nullptr;
+    }
+    Entity* const parachute = state.entity_manager.GetEntityMut(*player.entity_b);
+    if (parachute == nullptr || !parachute->active || parachute->type_ != EntityType::Parachute ||
+        parachute->frame_data_animator.animation_id != frame_data_ids::OpenParachute) {
+        player.entity_b.reset();
+        return nullptr;
+    }
+    return parachute;
+}
+
+void ClearOpenParachuteVisual(Entity& player, State& state, const Graphics& graphics) {
+    Entity* const parachute = GetOpenParachuteVisual(player, state);
+    if (parachute == nullptr) {
+        return;
+    }
+    state.entity_manager.SetInactive(parachute->vid.id);
+    state.UpdateSidForEntity(parachute->vid.id, graphics);
+    player.entity_b.reset();
+}
+
+void UpdateOpenParachuteVisual(Entity& player, State& state, const Graphics& graphics) {
+    Entity* parachute = GetOpenParachuteVisual(player, state);
+    if (parachute == nullptr) {
+        const std::optional<VID> vid = state.entity_manager.NewEntity();
+        if (!vid.has_value()) {
+            return;
+        }
+        parachute = state.entity_manager.GetEntityMut(*vid);
+        if (parachute == nullptr) {
+            return;
+        }
+        SetEntityAs(*parachute, EntityType::Parachute);
+        SetAnimation(*parachute, frame_data_ids::OpenParachute);
+        parachute->has_physics = false;
+        parachute->can_collide = false;
+        parachute->can_be_hit = false;
+        parachute->can_be_picked_up = false;
+        parachute->draw_layer = DrawLayer::Background;
+        player.entity_b = *vid;
+    }
+
+    const Vec2 player_visual_center =
+        common::GetVisualCenterForEntity(player, graphics, player.GetCenter());
+    parachute->SetCenter(player_visual_center + Vec2::New(0.0F, kParachuteVisualOffsetY));
+    parachute->vel = Vec2::New(0.0F, 0.0F);
+    parachute->acc = Vec2::New(0.0F, 0.0F);
+    state.UpdateSidForEntity(parachute->vid.id, graphics);
+}
+
+void StepParachute(Entity& player, State& state, const Graphics& graphics) {
+    if (player.grounded || player.IsClimbing() || player.IsHanging() ||
+        player.condition != EntityCondition::Normal) {
+        ClearOpenParachuteVisual(player, state, graphics);
+        return;
+    }
+
+    const bool already_open = GetOpenParachuteVisual(player, state) != nullptr;
+    if (!already_open) {
+        if (!HasPassiveItem(player, EntityPassiveItem::Parachute) ||
+            player.vel.y < kParachuteDeployVelocityY) {
+            return;
+        }
+        SetPassiveItem(player, EntityPassiveItem::Parachute, false);
+    }
+
+    player.vel.y = std::min(player.vel.y, kParachuteMaxFallSpeed);
+    player.fall_distance = 0.0F;
+    UpdateOpenParachuteVisual(player, state, graphics);
 }
 
 } // namespace
@@ -191,6 +267,7 @@ void StepEntityLogicAsPlayer(
                 }
                 player.back_vid.reset();
             }
+            ClearOpenParachuteVisual(player, state, graphics);
 
             return;
         }
@@ -377,6 +454,7 @@ void StepEntityPhysicsAsPlayer(
         entity.vel.x = std::clamp(entity.vel.x, -max_walk_speed, max_walk_speed);
     }
     entity.vel.y = std::clamp(entity.vel.y, -kMaxSpeed, kMaxSpeed);
+    StepParachute(entity, state, graphics);
 
     if (!entity.IsHorizontallyControlled() && !entity.grounded) {
         entity.vel.x *= 0.85F;

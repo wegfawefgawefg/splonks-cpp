@@ -83,7 +83,7 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
             case TemplateTile::Solid: {
                 const int chance = rng::RandomIntInclusive(0, 99);
                 if (chance < 10) {
-                    tile_type = GoldTileForFamilyTile(family_tile);
+                    tile_type = DirtTileForFamilyTile(family_tile);
                 } else if (chance < 20) {
                     tile_type = BlockTileForFamilyTile(family_tile);
                 } else {

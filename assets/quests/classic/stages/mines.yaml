@@ -19,6 +19,7 @@ room_pools:
   shop_right: rooms/mines/shop_right
   snake_pit_top: rooms/mines/snake_pit_top
   snake_pit_bottom: rooms/mines/snake_pit_bottom
+  vault: rooms/mines/vault
 
 layout_passes:
   - name: snake_pit
@@ -31,6 +32,12 @@ layout_passes:
     properties:
       min_level_number: 2
       chance_uses_level_number: true
+
+  - name: vault
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_denominator: 6
 
 stage_passes:
   - name: convert_exit_tiles

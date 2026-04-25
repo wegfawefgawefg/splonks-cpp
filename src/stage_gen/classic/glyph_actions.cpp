@@ -1,6 +1,7 @@
 #include "stage_gen/classic/glyph_actions.hpp"
 
 #include "frame_data_id.hpp"
+#include "stage_gen/classic/room_layout.hpp"
 #include "utils.hpp"
 
 #include <stdexcept>
@@ -27,6 +28,77 @@ EntityType GetShopSignEntityType(ShopType shop_type, const ShopConfigDb& shop_db
     return config == nullptr ? EntityType::None : config->sign;
 }
 
+bool IsShopRoomCode(int room_code) {
+    return room_code == static_cast<int>(RoomCode::ShopLeft) ||
+           room_code == static_cast<int>(RoomCode::ShopRight);
+}
+
+bool IsShopAreaRoomCode(int room_code) {
+    return IsShopRoomCode(room_code) || room_code == static_cast<int>(RoomCode::Vault);
+}
+
+std::uint32_t GetClassicShopBasePrice(EntityType type_) {
+    switch (type_) {
+    case EntityType::Bow:
+        return 1000;
+    case EntityType::WebCannon:
+        return 2000;
+    case EntityType::Parachute:
+        return 2000;
+    case EntityType::BombBag:
+        return 2500;
+    case EntityType::RopePile:
+        return 2500;
+    case EntityType::Paste:
+        return 3000;
+    case EntityType::Compass:
+        return 3000;
+    case EntityType::SpikeShoes:
+        return 4000;
+    case EntityType::Mitt:
+        return 4000;
+    case EntityType::Pistol:
+        return 5000;
+    case EntityType::SpringShoes:
+        return 5000;
+    case EntityType::Machete:
+        return 7000;
+    case EntityType::Gloves:
+        return 8000;
+    case EntityType::Spectacles:
+        return 8000;
+    case EntityType::Mattock:
+        return 8000;
+    case EntityType::Teleporter:
+        return 10000;
+    case EntityType::BombBox:
+        return 10000;
+    case EntityType::Dice:
+        return 10000;
+    case EntityType::Cape:
+        return 12000;
+    case EntityType::Damsel:
+        return 12000;
+    case EntityType::Shotgun:
+        return 15000;
+    case EntityType::JetPack:
+        return 20000;
+    default:
+        return 0;
+    }
+}
+
+std::uint32_t GetClassicShopPrice(EntityType type_, int level_number) {
+    std::uint32_t price = GetClassicShopBasePrice(type_);
+    if (price == 0) {
+        return 0;
+    }
+    if (level_number > 2) {
+        price += (price / 100U) * 10U * static_cast<std::uint32_t>(level_number - 2);
+    }
+    return price;
+}
+
 const char* PickRightTikiArmFrameName() {
     switch (rng::RandomIntInclusive(0, 2)) {
     case 0:
@@ -51,7 +123,7 @@ const char* PickLeftTikiArmFrameName() {
 
 } // namespace
 
-ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, int room_code_above,
+ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bool is_end_room, int room_code_above,
                          bool jungle_lake_active, const UVec2& room_size,
                          const Stage& existing_stage, const ClassicRoomTemplateDb& room_templates,
                          const GlyphMap& glyph_map, const ItemPoolDb& item_db,
@@ -75,6 +147,44 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
         std::vector<Tile>(static_cast<std::size_t>(room_size.x), Tile::Air));
     std::vector<std::size_t> pending_gold_idol_spawn_indices;
     std::vector<std::size_t> pending_giant_tiki_head_spawn_indices;
+    const bool is_shop_room = IsShopRoomCode(room_code);
+    const bool is_shop_area_room = IsShopAreaRoomCode(room_code);
+    const bool is_craps_shop = is_shop_room && selection.shop_type == ShopType::Craps;
+    const std::optional<std::size_t> shop_spawn_index = [&]() -> std::optional<std::size_t> {
+        if (!is_shop_area_room) {
+            return std::nullopt;
+        }
+        const Vec2 shop_size =
+            Vec2::New(static_cast<float>(room_size.x * kTileSize),
+                      static_cast<float>(room_size.y * kTileSize));
+        room.entity_spawns.push_back(StageEntitySpawn{
+            .type_ = EntityType::Shop,
+            .pos = Vec2::New(0.0F, 0.0F),
+            .size_override = shop_size,
+            .ai_state_override = room_code == static_cast<int>(RoomCode::Vault)
+                                     ? std::optional<EntityAiState>(EntityAiState::Disturbed)
+                                     : std::nullopt,
+            .exit_id = "",
+        });
+        return room.entity_spawns.size() - 1;
+    }();
+    const std::optional<std::size_t> craps_table_spawn_index = [&]() -> std::optional<std::size_t> {
+        if (!is_craps_shop || !shop_spawn_index.has_value()) {
+            return std::nullopt;
+        }
+        const Vec2 shop_size =
+            Vec2::New(static_cast<float>(room_size.x * kTileSize),
+                      static_cast<float>(room_size.y * kTileSize));
+        room.entity_spawns.push_back(StageEntitySpawn{
+            .type_ = EntityType::CrapsTable,
+            .pos = Vec2::New(0.0F, 0.0F),
+            .size_override = shop_size,
+            .entity_a_spawn_index = *shop_spawn_index,
+            .exit_id = "",
+        });
+        return room.entity_spawns.size() - 1;
+    }();
+    std::optional<std::size_t> craps_dice_spawn_index;
 
     for (int y = 0; y < static_cast<int>(room_size.y); ++y) {
         for (int x = 0; x < static_cast<int>(room_size.x); ++x) {
@@ -89,21 +199,51 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                                          std::string(1, glyph));
             }
 
-            const auto spawn_entity_at = [&](EntityType entity_type, Vec2 pos) {
+            const auto spawn_entity_at = [&](EntityType entity_type, Vec2 pos) -> std::optional<std::size_t> {
                 if (entity_type != EntityType::None) {
                     room.entity_spawns.push_back(
                         StageEntitySpawn{.type_ = entity_type, .pos = pos, .exit_id = ""});
+                    return room.entity_spawns.size() - 1;
                 }
+                return std::nullopt;
             };
-            const auto spawn_entity = [&](EntityType entity_type) {
-                spawn_entity_at(entity_type, tile_pos);
+            const auto mark_spawn_buyable = [&](std::optional<std::size_t> spawn_index) {
+                if (!is_shop_room || !shop_spawn_index.has_value() || !spawn_index.has_value()) {
+                    return;
+                }
+                StageEntitySpawn& spawn = room.entity_spawns[*spawn_index];
+                const std::uint32_t price = GetClassicShopPrice(spawn.type_, level_number);
+                if (price == 0) {
+                    return;
+                }
+                spawn.buyable = true;
+                spawn.buy_price = price;
+                spawn.shop_owner_spawn_index = *shop_spawn_index;
+            };
+            const auto spawn_entity = [&](EntityType entity_type) -> std::optional<std::size_t> {
+                return spawn_entity_at(entity_type, tile_pos);
+            };
+            const auto link_craps_prize = [&](std::optional<std::size_t> spawn_index) {
+                if (!is_craps_shop || !craps_table_spawn_index.has_value() ||
+                    !spawn_index.has_value()) {
+                    return;
+                }
+                room.entity_spawns[*craps_table_spawn_index].entity_c_spawn_index = *spawn_index;
+            };
+            const auto spawn_shop_item = [&](EntityType entity_type) {
+                const std::optional<std::size_t> spawn_index = spawn_entity(entity_type);
+                if (is_craps_shop) {
+                    link_craps_prize(spawn_index);
+                    return;
+                }
+                mark_spawn_buyable(spawn_index);
             };
             const auto spawn_entity_offset = [&](EntityType entity_type, int dx_tiles,
-                                                 int dy_tiles) {
+                                                 int dy_tiles) -> std::optional<std::size_t> {
                 constexpr int kSignedTileSize = static_cast<int>(kTileSize);
-                spawn_entity_at(entity_type,
-                                tile_pos + Vec2::New(static_cast<float>(dx_tiles * kSignedTileSize),
-                                                     static_cast<float>(dy_tiles * kSignedTileSize)));
+                return spawn_entity_at(entity_type,
+                                       tile_pos + Vec2::New(static_cast<float>(dx_tiles * kSignedTileSize),
+                                                            static_cast<float>(dy_tiles * kSignedTileSize)));
             };
             const auto set_room_tile = [&](int tile_x, int tile_y, Tile value) {
                 if (tile_x < 0 || tile_y < 0 || tile_x >= static_cast<int>(room_size.x) ||
@@ -125,7 +265,25 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
             tile = rule->tile.value_or(Tile::Air);
 
             if (rule->spawn != EntityType::None) {
-                spawn_entity(rule->spawn);
+                if (is_craps_shop && rule->spawn == EntityType::Dice &&
+                    craps_dice_spawn_index.has_value()) {
+                    room.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = tile;
+                    continue;
+                }
+                const std::optional<std::size_t> spawn_index = spawn_entity(rule->spawn);
+                if (is_craps_shop && rule->spawn == EntityType::Dice &&
+                    spawn_index.has_value() && craps_table_spawn_index.has_value()) {
+                    craps_dice_spawn_index = *spawn_index;
+                    room.entity_spawns[*craps_table_spawn_index].entity_b_spawn_index =
+                        *spawn_index;
+                }
+                if (is_shop_area_room && rule->spawn == EntityType::Shopkeeper &&
+                    shop_spawn_index.has_value() && spawn_index.has_value()) {
+                    room.entity_spawns[*spawn_index].entity_a_spawn_index = *shop_spawn_index;
+                } else if (is_shop_room && !is_craps_shop &&
+                           (rule->spawn == EntityType::Dice || rule->spawn == EntityType::Damsel)) {
+                    mark_spawn_buyable(spawn_index);
+                }
             }
             if (rule->spawn_chance != EntityType::None &&
                 rng::RandomIntInclusive(1, rule->chance_denominator) == 1) {
@@ -202,6 +360,13 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                     }
                 } else if (action == "shop_wall") {
                     tile = ShopWallTileForFamilyTile(existing_stage.border.left.tile);
+                } else if (action == "vault_wall_or_pushblock") {
+                    if (rng::RandomIntInclusive(1, rule->chance_denominator) == 1) {
+                        spawn_entity(EntityType::Block);
+                        tile = Tile::Air;
+                    } else {
+                        tile = ShopWallTileForFamilyTile(existing_stage.border.left.tile);
+                    }
                 } else if (action == "smooth_wall") {
                     tile = SmoothWallTileForFamilyTile(existing_stage.border.left.tile);
                 } else if (action == "lush_shop_wall" || action == "lush_smooth_wall") {
@@ -214,7 +379,7 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                     spawn_entity(selection.shop_type == ShopType::Kissing ? EntityType::LampRed
                                                                           : EntityType::Lamp);
                 } else if (action == "shop_damsel") {
-                    spawn_entity(EntityType::Damsel);
+                    spawn_shop_item(EntityType::Damsel);
                 } else if (action == "tree_growth") {
                     tile = Tile::Tree;
                     int trunk_y = y - 1;
@@ -315,15 +480,25 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                 } else if (action == "dice_sign_if_craps") {
                     if (selection.shop_type == ShopType::Craps) {
                         room.background_stamps.push_back(BackgroundStamp{
-                            .animation_id = HashFrameDataIdConstexpr("dice_sign"),
+                            .animation_id = frame_data_ids::DiceSign,
                             .pos = tile_pos,
                         });
                     }
                 } else if (action == "high_end_shop_item") {
-                    spawn_entity(
+                    spawn_shop_item(
                         PickHighEndShopItemType(item_db, existing_stage, room.entity_spawns));
                 } else if (action == "random_item") {
-                    spawn_entity(PickUndergroundItemType(item_db, existing_stage));
+                    if (is_shop_room) {
+                        const std::optional<std::size_t> item_spawn_index =
+                            spawn_entity(PickUndergroundItemType(item_db, existing_stage));
+                        if (is_craps_shop) {
+                            link_craps_prize(item_spawn_index);
+                        } else {
+                            mark_spawn_buyable(item_spawn_index);
+                        }
+                    } else {
+                        spawn_entity(PickUndergroundItemType(item_db, existing_stage));
+                    }
                 } else if (action == "wanted_poster") {
                     room.background_stamps.push_back(BackgroundStamp{
                         .animation_id = HashFrameDataIdConstexpr("wanted_poster"),
@@ -333,8 +508,8 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                 } else if (action == "shop_sign") {
                     spawn_entity(GetShopSignEntityType(selection.shop_type, shop_db));
                 } else if (action == "shop_item_slot") {
-                    spawn_entity(PickShopItemType(selection.shop_type, existing_stage,
-                                                  room.entity_spawns, item_db, shop_db));
+                    spawn_shop_item(PickShopItemType(selection.shop_type, existing_stage,
+                                                     room.entity_spawns, item_db, shop_db));
                 } else if (action == "ice_dark_ice_or_alien_floor") {
                     if (rng::RandomIntInclusive(1, 2) == 1) {
                         tile = rng::RandomIntInclusive(1, 10) == 1 ? Tile::IceBlock : Tile::Dark;
@@ -393,6 +568,12 @@ ResolvedRoom ResolveRoom(int room_code, bool is_start_room, bool is_end_room, in
                     }
                 } else if (action == "maybe_solid_dirt") {
                     if (rng::RandomIntInclusive(1, 10) != 1 && rng::RandomIntInclusive(1, 2) == 1) {
+                        tile = DirtTileForFamilyTile(existing_stage.border.left.tile);
+                    }
+                } else if (action == "maybe_snake_or_solid_dirt") {
+                    if (rng::RandomIntInclusive(1, 10) == 1) {
+                        spawn_entity(EntityType::Snake);
+                    } else if (rng::RandomIntInclusive(1, 2) == 1) {
                         tile = DirtTileForFamilyTile(existing_stage.border.left.tile);
                     }
                 } else {

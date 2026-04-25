@@ -5161,7 +5161,7 @@ sprites:
       y: 2
   - path: "entities.png"
     aabb:
-      x: 112
+      x: 128
       y: 320
       w: 16
       h: 16
@@ -5191,7 +5191,7 @@ sprites:
       y: 14
   - path: "entities.png"
     aabb:
-      x: 128
+      x: 144
       y: 320
       w: 16
       h: 16
@@ -5221,7 +5221,7 @@ sprites:
       y: 13
   - path: "entities.png"
     aabb:
-      x: 144
+      x: 160
       y: 320
       w: 16
       h: 16
@@ -5251,7 +5251,7 @@ sprites:
       y: 7
   - path: "entities.png"
     aabb:
-      x: 112
+      x: 128
       y: 336
       w: 16
       h: 16
@@ -5281,7 +5281,7 @@ sprites:
       y: 8
   - path: "entities.png"
     aabb:
-      x: 128
+      x: 144
       y: 336
       w: 16
       h: 16
@@ -6749,6 +6749,156 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 113
+      y: 330
+      w: 12
+      h: 6
+    name: "bones"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 5
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 6
+    cbox:
+      x: 0
+      y: 0
+      w: 12
+      h: 6
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 208
+      y: 128
+      w: 16
+      h: 16
+    name: "embedded_gold"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 6
+      y: 4
+  - path: "entities.png"
+    aabb:
+      x: 224
+      y: 128
+      w: 16
+      h: 16
+    name: "embedded_gold_big"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 10
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 177
+      y: 148
+      w: 14
+      h: 12
+    name: "open_parachute"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 9
+    tags: []
+    pbox:
+      x: 4
+      y: 8
+      w: 6
+      h: 2
+    cbox:
+      x: 4
+      y: 8
+      w: 6
+      h: 2
+    tile: false
+    emit_point:
+      x: 7
+      y: 7
+  - path: "entities.png"
+    aabb:
+      x: 179
+      y: 141
+      w: 6
+      h: 3
+    name: "packed_parachute"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 6
+      h: 3
+    cbox:
+      x: 0
+      y: 0
+      w: 6
+      h: 3
+    tile: false
+    emit_point:
+      x: 3
+      y: 1
   - path: "boss.png"
     aabb:
       x: 0

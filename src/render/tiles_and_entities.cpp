@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 
 namespace splonks {
 
@@ -523,23 +524,34 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
 }
 
 void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    if (!ShouldRevealEmbeddedTreasure(state)) {
-        return;
-    }
-
+    const bool reveal_hidden_embeds = ShouldRevealEmbeddedTreasure(state);
     EnsureStageLighting(state);
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (std::size_t y = 0; y < state.stage.embedded_treasures.size(); ++y) {
         for (std::size_t x = 0; x < state.stage.embedded_treasures[y].size(); ++x) {
-            const EntityType embedded_treasure = state.stage.embedded_treasures[y][x];
-            if (embedded_treasure == EntityType::None) {
+            const EmbeddedTreasure& embedded_treasure = state.stage.embedded_treasures[y][x];
+            if (embedded_treasure.IsEmpty()) {
+                continue;
+            }
+            if (!embedded_treasure.IsVisible() && !reveal_hidden_embeds) {
                 continue;
             }
 
-            const FrameData* const frame_data = GetFirstFrameForAnimationOrFallback(
-                graphics,
-                GetDefaultAnimationIdForArchetype(embedded_treasure)
-            );
+            std::optional<FrameDataId> overlay_frame = embedded_treasure.GetOverlayFrame();
+            if (!overlay_frame.has_value()) {
+                for (const EmbeddedTreasureDrop& drop : embedded_treasure.drops) {
+                    if (drop.type_ != EntityType::None && drop.count > 0) {
+                        overlay_frame = GetDefaultAnimationIdForArchetype(drop.type_);
+                        break;
+                    }
+                }
+            }
+            if (!overlay_frame.has_value()) {
+                continue;
+            }
+
+            const FrameData* const frame_data =
+                GetFirstFrameForAnimationOrFallback(graphics, *overlay_frame);
             if (frame_data == nullptr) {
                 continue;
             }

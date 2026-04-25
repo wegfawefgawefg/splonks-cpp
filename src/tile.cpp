@@ -10,8 +10,6 @@ namespace {
 
 struct TileFamilyVariants {
     Tile dirt;
-    Tile gold;
-    Tile gold_big;
     Tile block;
     Tile shop_wall;
     Tile smooth_wall;
@@ -21,8 +19,6 @@ struct TileFamilyVariants {
 const TileFamilyVariants& GetTileFamilyVariants(TileFamily family) {
     static constexpr TileFamilyVariants kNeutralVariants{
         .dirt = Tile::CaveDirt,
-        .gold = Tile::CaveGold,
-        .gold_big = Tile::CaveGoldBig,
         .block = Tile::CaveBlock,
         .shop_wall = Tile::CaveShopWall,
         .smooth_wall = Tile::CaveSmoothWall,
@@ -30,8 +26,6 @@ const TileFamilyVariants& GetTileFamilyVariants(TileFamily family) {
     };
     static constexpr TileFamilyVariants kCaveVariants{
         .dirt = Tile::CaveDirt,
-        .gold = Tile::CaveGold,
-        .gold_big = Tile::CaveGoldBig,
         .block = Tile::CaveBlock,
         .shop_wall = Tile::CaveShopWall,
         .smooth_wall = Tile::CaveSmoothWall,
@@ -39,8 +33,6 @@ const TileFamilyVariants& GetTileFamilyVariants(TileFamily family) {
     };
     static constexpr TileFamilyVariants kIceVariants{
         .dirt = Tile::IceDirt,
-        .gold = Tile::IceGold,
-        .gold_big = Tile::IceGoldBig,
         .block = Tile::IceBlock,
         .shop_wall = Tile::CaveShopWall,
         .smooth_wall = Tile::CaveSmoothWall,
@@ -48,8 +40,6 @@ const TileFamilyVariants& GetTileFamilyVariants(TileFamily family) {
     };
     static constexpr TileFamilyVariants kJungleVariants{
         .dirt = Tile::JungleDirt,
-        .gold = Tile::JungleGold,
-        .gold_big = Tile::JungleGoldBig,
         .block = Tile::JungleBlock,
         .shop_wall = Tile::CaveShopWall,
         .smooth_wall = Tile::CaveSmoothWall,
@@ -57,8 +47,6 @@ const TileFamilyVariants& GetTileFamilyVariants(TileFamily family) {
     };
     static constexpr TileFamilyVariants kTempleVariants{
         .dirt = Tile::TempleDirt,
-        .gold = Tile::TempleGold,
-        .gold_big = Tile::TempleGoldBig,
         .block = Tile::TempleBlock,
         .shop_wall = Tile::CaveShopWall,
         .smooth_wall = Tile::CaveSmoothWall,
@@ -66,8 +54,6 @@ const TileFamilyVariants& GetTileFamilyVariants(TileFamily family) {
     };
     static constexpr TileFamilyVariants kBossVariants{
         .dirt = Tile::BossDirt,
-        .gold = Tile::BossGold,
-        .gold_big = Tile::BossGoldBig,
         .block = Tile::BossBlock,
         .shop_wall = Tile::CaveShopWall,
         .smooth_wall = Tile::CaveSmoothWall,
@@ -105,14 +91,6 @@ Tile RandomTile() {
 
 Tile DirtTileForFamilyTile(Tile family_tile) {
     return GetTileFamilyVariantsForTile(family_tile).dirt;
-}
-
-Tile GoldTileForFamilyTile(Tile family_tile) {
-    return GetTileFamilyVariantsForTile(family_tile).gold;
-}
-
-Tile GoldBigTileForFamilyTile(Tile family_tile) {
-    return GetTileFamilyVariantsForTile(family_tile).gold_big;
 }
 
 Tile BlockTileForFamilyTile(Tile family_tile) {

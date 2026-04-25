@@ -27,6 +27,7 @@ struct RoomTemplateSelection {
 };
 
 struct ClassicRoomTemplateDb {
+    std::string stage_id;
     std::vector<::splonks::stage_gen::RoomTemplate> start;
     std::vector<::splonks::stage_gen::RoomTemplate> exit;
     std::vector<::splonks::stage_gen::RoomTemplate> side;
@@ -40,6 +41,7 @@ struct ClassicRoomTemplateDb {
     std::vector<::splonks::stage_gen::RoomTemplate> special_9;
     std::vector<::splonks::stage_gen::RoomTemplate> snake_pit_top;
     std::vector<::splonks::stage_gen::RoomTemplate> snake_pit_bottom;
+    std::vector<::splonks::stage_gen::RoomTemplate> vault;
     std::vector<::splonks::stage_gen::RoomTemplate> drop;
 };
 

@@ -28,6 +28,7 @@ enum class EntityPassiveItem : std::uint8_t {
     SpikeShoes,
     UdjatEye,
     Meathead,
+    Parachute,
     Count,
 };
 

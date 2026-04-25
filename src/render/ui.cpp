@@ -53,6 +53,8 @@ FrameDataId GetPassiveItemIconAnimationId(EntityPassiveItem passive_item) {
         return frame_data_ids::UdjatEye;
     case EntityPassiveItem::Meathead:
         return frame_data_ids::Meathead;
+    case EntityPassiveItem::Parachute:
+        return frame_data_ids::PackedParachute;
     case EntityPassiveItem::Count:
         return kInvalidFrameDataId;
     }

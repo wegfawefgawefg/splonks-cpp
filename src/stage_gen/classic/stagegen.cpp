@@ -83,7 +83,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
             const int room_code_above = room_y == 0 ? -1 : layout.room_codes[static_cast<std::size_t>(room_y - 1)]
                                                                         [static_cast<std::size_t>(room_x)];
 
-            ResolvedRoom room = ResolveRoom(room_code, is_start_room, is_end_room, room_code_above,
+            ResolvedRoom room = ResolveRoom(room_code, level_number, is_start_room, is_end_room, room_code_above,
                                             layout.jungle_lake, room_size, stage, room_templates,
                                             glyph_map, item_db, shop_db);
 
@@ -110,6 +110,18 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                 if (spawn.entity_a_spawn_index.has_value()) {
                     *spawn.entity_a_spawn_index += room_spawn_base_index;
                 }
+                if (spawn.entity_b_spawn_index.has_value()) {
+                    *spawn.entity_b_spawn_index += room_spawn_base_index;
+                }
+                if (spawn.entity_c_spawn_index.has_value()) {
+                    *spawn.entity_c_spawn_index += room_spawn_base_index;
+                }
+                if (spawn.entity_d_spawn_index.has_value()) {
+                    *spawn.entity_d_spawn_index += room_spawn_base_index;
+                }
+                if (spawn.shop_owner_spawn_index.has_value()) {
+                    *spawn.shop_owner_spawn_index += room_spawn_base_index;
+                }
                 stage.entity_spawns.push_back(std::move(spawn));
             }
             for (BackgroundStamp& stamp : room.background_stamps) {
@@ -121,10 +133,9 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
 
     stage.tiles = std::move(tiles);
     stage.FillBackwall(backwall_fill_tiles);
-    stage.embedded_treasures = std::vector<std::vector<EntityType>>(
+    stage.embedded_treasures = std::vector<std::vector<EmbeddedTreasure>>(
         stage.tiles.size(),
-        std::vector<EntityType>(stage.tiles.empty() ? 0U : stage.tiles.front().size(),
-                                EntityType::None));
+        std::vector<EmbeddedTreasure>(stage.tiles.empty() ? 0U : stage.tiles.front().size()));
     stage.rooms = std::move(room_codes);
     stage.path = layout.path;
     stage.gravity = 0.3F;

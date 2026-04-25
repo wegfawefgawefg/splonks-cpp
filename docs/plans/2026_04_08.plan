@@ -67,3 +67,10 @@ make ourselves some real query layer
 camera still snaps when you cross the seem. is there a way to make it seemless?
 
 explosive boxes
+
+rework parachute. its worthless random
+shops are too broad on tile ownership for sure. need a on break trigger or something that isnt stored per tile. probably in a big list on the room. 
+vault shops dont spawn well. they should be smarter about embedding
+    vault shop blocks often spawn and fall imediatly  
+        shopkeeper is mad from this? should not be
+    vault shopkeepers are... always mad for some reason. 

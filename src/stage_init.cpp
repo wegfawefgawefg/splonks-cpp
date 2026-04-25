@@ -15,6 +15,7 @@
 #include "entities/store_light.hpp"
 #include "entities/damsel.hpp"
 #include "entities/stomp_pad.hpp"
+#include "frame_data_id.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_acoustics.hpp"
 #include "tile_archetype.hpp"
@@ -52,6 +53,8 @@ constexpr int kAudioTestStageWidthTiles = 96;
 constexpr int kAudioTestStageHeightTiles = 24;
 constexpr int kShopTestStageWidthTiles = 80;
 constexpr int kShopTestStageHeightTiles = 12;
+constexpr int kParachuteTestStageWidthTiles = 14;
+constexpr int kParachuteTestStageHeightTiles = 72;
 constexpr int kSacAltarTestStageWidthTiles = 96;
 constexpr int kSacAltarTestStageHeightTiles = 24;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
@@ -390,6 +393,42 @@ void SpawnShopTestOwnedItem(
     }
 }
 
+void SpawnShopTestCrapsTable(
+    State& state,
+    std::optional<VID> shop_vid,
+    const ShopTestStallSpec& stall
+) {
+    const std::optional<VID> dice_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::Dice,
+        Vec2::New(57.0F * static_cast<float>(kTileSize),
+                  10.0F * static_cast<float>(kTileSize) -
+                      GetEntityArchetype(EntityType::Dice).size.y)
+    );
+    const std::optional<VID> prize_vid = SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::JetPack,
+        Vec2::New(62.0F * static_cast<float>(kTileSize),
+                  10.0F * static_cast<float>(kTileSize) -
+                      GetEntityArchetype(EntityType::JetPack).size.y)
+    );
+    const AABB shop_area = MakeShopTestArea(stall);
+    const std::optional<VID> table_vid =
+        SpawnStageEntityAtTopLeft(state, EntityType::CrapsTable, shop_area.tl);
+    if (!table_vid.has_value()) {
+        return;
+    }
+
+    Entity* const table = state.entity_manager.GetEntityMut(*table_vid);
+    if (table == nullptr) {
+        return;
+    }
+    table->size = shop_area.br - shop_area.tl + Vec2::New(1.0F, 1.0F);
+    table->entity_a = shop_vid;
+    table->entity_b = dice_vid;
+    table->entity_c = prize_vid;
+}
+
 void SpawnShopTestSign(State& state, EntityType type_, int tile_x) {
     (void)SpawnStageEntityAtTopLeft(
         state,
@@ -495,6 +534,35 @@ Stage MakeShopTestStage() {
     }};
     for (const ShopTestStallSpec& stall : kStalls) {
         BuildShopTestStall(stage, stall);
+    }
+
+    return stage;
+}
+
+Stage MakeParachuteTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kParachuteTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kParachuteTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    for (int x = 0; x < kParachuteTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, kParachuteTestStageHeightTiles - 1, floor_tile);
+    }
+    for (int x = 4; x <= 8; ++x) {
+        SetStageTile(stage, x, 5, floor_tile);
+    }
+    for (int y = 5; y < kParachuteTestStageHeightTiles; ++y) {
+        SetStageTile(stage, 1, y, floor_tile);
     }
 
     return stage;
@@ -1162,8 +1230,14 @@ void SpawnAuthoredStageEntities(State& state) {
 
         SetEntityAs(*entity, spawn.type_);
         entity->pos = spawn.pos;
+        if (spawn.size_override.has_value()) {
+            entity->size = *spawn.size_override;
+        }
         entity->facing = spawn.facing;
         entity->vel = Vec2::New(0.0F, 0.0F);
+        if (spawn.ai_state_override.has_value()) {
+            entity->ai_state = *spawn.ai_state_override;
+        }
         if (spawn.type_ == EntityType::BasicExit) {
             const std::string_view exit_id =
                 spawn.exit_id.empty() ? std::string_view("default") : std::string_view(spawn.exit_id);
@@ -1192,29 +1266,112 @@ void SpawnAuthoredStageEntities(State& state) {
         }
     }
 
+    const auto resolve_spawn_link = [&](
+        std::size_t entity_spawn_index,
+        std::optional<std::size_t> linked_spawn_index,
+        int slot
+    ) {
+        if (!linked_spawn_index.has_value()) {
+            return;
+        }
+        if (entity_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[entity_spawn_index].has_value()) {
+            return;
+        }
+        if (*linked_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[*linked_spawn_index].has_value()) {
+            return;
+        }
+
+        Entity* const entity = state.entity_manager.GetEntityMut(*spawned_vids[entity_spawn_index]);
+        const Entity* const linked_entity =
+            state.entity_manager.GetEntity(*spawned_vids[*linked_spawn_index]);
+        if (entity == nullptr || linked_entity == nullptr) {
+            return;
+        }
+
+        switch (slot) {
+        case 0:
+            entity->entity_a = *spawned_vids[*linked_spawn_index];
+            entity->point_a = ToIVec2(linked_entity->pos);
+            entity->point_label_a = PointLabel::Target;
+            break;
+        case 1:
+            entity->entity_b = *spawned_vids[*linked_spawn_index];
+            entity->point_b = ToIVec2(linked_entity->pos);
+            entity->point_label_b = PointLabel::Target;
+            break;
+        case 2:
+            entity->entity_c = *spawned_vids[*linked_spawn_index];
+            entity->point_c = ToIVec2(linked_entity->pos);
+            entity->point_label_c = PointLabel::Target;
+            break;
+        case 3:
+            entity->entity_d = *spawned_vids[*linked_spawn_index];
+            entity->point_d = ToIVec2(linked_entity->pos);
+            entity->point_label_d = PointLabel::Target;
+            break;
+        default:
+            break;
+        }
+    };
+
     for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
         const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
-        if (!spawn.entity_a_spawn_index.has_value()) {
-            continue;
-        }
-        if (i >= spawned_vids.size() || !spawned_vids[i].has_value()) {
-            continue;
-        }
-        if (*spawn.entity_a_spawn_index >= spawned_vids.size() ||
-            !spawned_vids[*spawn.entity_a_spawn_index].has_value()) {
-            continue;
-        }
+        resolve_spawn_link(i, spawn.entity_a_spawn_index, 0);
+        resolve_spawn_link(i, spawn.entity_b_spawn_index, 1);
+        resolve_spawn_link(i, spawn.entity_c_spawn_index, 2);
+        resolve_spawn_link(i, spawn.entity_d_spawn_index, 3);
+    }
 
+    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
+        const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
+        if (!spawned_vids[i].has_value()) {
+            continue;
+        }
         Entity* const entity = state.entity_manager.GetEntityMut(*spawned_vids[i]);
-        const Entity* const linked_entity =
-            state.entity_manager.GetEntity(*spawned_vids[*spawn.entity_a_spawn_index]);
-        if (entity == nullptr || linked_entity == nullptr) {
+        if (entity == nullptr) {
             continue;
         }
 
-        entity->entity_a = *spawned_vids[*spawn.entity_a_spawn_index];
-        entity->point_a = ToIVec2(linked_entity->pos);
-        entity->point_label_a = PointLabel::Target;
+        if (spawn.buyable) {
+            entity->buyable.active = true;
+            entity->buyable.display_quantity = spawn.buy_price;
+            entity->buyable.display_icon_animation_id = frame_data_ids::GoldIcon;
+            entity->buyable.on_try_buy = entity->type_ == EntityType::Damsel
+                                             ? entities::damsel::BuyDamsel
+                                             : TryBuyEntityForMoney;
+        }
+
+        if (!spawn.shop_owner_spawn_index.has_value() ||
+            *spawn.shop_owner_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[*spawn.shop_owner_spawn_index].has_value()) {
+            continue;
+        }
+
+        Entity* const shop =
+            state.entity_manager.GetEntityMut(*spawned_vids[*spawn.shop_owner_spawn_index]);
+        if (shop == nullptr || !shop->active || shop->type_ != EntityType::Shop) {
+            continue;
+        }
+
+        entity->buyable.shop_owner_vid = shop->vid;
+        entities::shop::AddShopChild(*shop, entity->vid);
+    }
+
+    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
+        if (!spawned_vids[i].has_value()) {
+            continue;
+        }
+        Entity* const entity = state.entity_manager.GetEntityMut(*spawned_vids[i]);
+        if (entity == nullptr || !entity->active || entity->type_ != EntityType::Shopkeeper ||
+            !entity->entity_a.has_value()) {
+            continue;
+        }
+        Entity* const shop = state.entity_manager.GetEntityMut(*entity->entity_a);
+        if (shop != nullptr && shop->active && shop->type_ == EntityType::Shop) {
+            shop->entity_a = entity->vid;
+        }
     }
 }
 
@@ -1390,20 +1547,31 @@ void InitShopTestStage(State& state) {
 
     const std::optional<VID> right_shop_vid =
         SpawnShopTestShop(state, ShopTestStallSpec{.left_x = 52, .right_x = 68}, 54);
-    SpawnShopTestOwnedItem(
-        state,
-        right_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Dice, .tile_x = 57, .price = 5000}
-    );
-    SpawnShopTestOwnedItem(
-        state,
-        right_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Damsel, .tile_x = 62, .price = 12000}
-    );
+    SpawnShopTestCrapsTable(state, right_shop_vid, ShopTestStallSpec{.left_x = 52, .right_x = 68});
+    state.stage.background_stamps.push_back(BackgroundStamp{
+        .animation_id = frame_data_ids::DiceSign,
+        .pos = Vec2::New(
+            58.0F * static_cast<float>(kTileSize),
+            5.0F * static_cast<float>(kTileSize)
+        ),
+    });
     SpawnShopTestSign(state, EntityType::SignCraps, 56);
-    SpawnShopTestSign(state, EntityType::SignKissing, 61);
     SpawnShopTestStoreLight(state, 56, 9);
     SpawnShopTestStoreLight(state, 64, 9);
+}
+
+void InitParachuteTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
+    const float player_spawn_y = 5.0F * static_cast<float>(kTileSize) - 14.0F;
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+    if (state.player_vid.has_value()) {
+        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+            SetPassiveItem(*player, EntityPassiveItem::Parachute, true);
+        }
+    }
 }
 
 void InitBowlingTestStage(State& state) {
@@ -2004,6 +2172,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::ShopTest:
         state.stage = MakeShopTestStage();
         InitShopTestStage(state);
+        break;
+    case DebugLevelKind::ParachuteTest:
+        state.stage = MakeParachuteTestStage();
+        InitParachuteTestStage(state);
         break;
     case DebugLevelKind::SacAltarTest:
         state.stage = MakeSacAltarTestStage();

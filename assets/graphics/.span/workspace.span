@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "bd6581d8-c7e1-4d81-bef2-ff605aca110e",
+  "selectedAnnotationId": "fda57733-7776-40a3-a032-f036e10d3c7a",
   "sheets": [
     {
       "path": "images/title.png",
@@ -7609,7 +7609,7 @@
           "id": "8f9c2264-ee63-480e-8cae-245034f033c2",
           "entityType": "Sprite",
           "aabb": {
-            "x": 112,
+            "x": 128,
             "y": 320,
             "w": 16,
             "h": 16
@@ -7652,7 +7652,7 @@
           "id": "7c2feb88-6640-4dff-8ef8-817ba598adb3",
           "entityType": "Sprite",
           "aabb": {
-            "x": 128,
+            "x": 144,
             "y": 320,
             "w": 16,
             "h": 16
@@ -7695,7 +7695,7 @@
           "id": "f962fe1e-7b97-43ce-b3e0-b31fa1ae5243",
           "entityType": "Sprite",
           "aabb": {
-            "x": 144,
+            "x": 160,
             "y": 320,
             "w": 16,
             "h": 16
@@ -7738,7 +7738,7 @@
           "id": "29027a87-c5a6-4202-a3ce-b41495588f16",
           "entityType": "Sprite",
           "aabb": {
-            "x": 112,
+            "x": 128,
             "y": 336,
             "w": 16,
             "h": 16
@@ -7781,7 +7781,7 @@
           "id": "5b7ef2e4-ba9d-422b-87da-f88c3486cba5",
           "entityType": "Sprite",
           "aabb": {
-            "x": 128,
+            "x": 144,
             "y": 336,
             "w": 16,
             "h": 16
@@ -9888,15 +9888,230 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "7f0df77f-b607-492e-ae2b-1e31d2ac20ea",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 113,
+            "y": 330,
+            "w": 12,
+            "h": 6
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bones",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 12,
+              "h": 6
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 12,
+              "h": 6
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "bec427de-a2fc-4ab0-ad91-f85f5adc0507",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 208,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "embedded_gold",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 4
+            }
+          }
+        },
+        {
+          "id": "99c45e01-aa61-4a2c-b41c-55616ca0af2b",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 224,
+            "y": 128,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "embedded_gold_big",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 10,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "ec1841c9-16ee-425b-aab3-b83e013a6b06",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 177,
+            "y": 148,
+            "w": 14,
+            "h": 12
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "open_parachute",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 9
+            },
+            "tags": [],
+            "pbox": {
+              "x": 4,
+              "y": 8,
+              "w": 6,
+              "h": 2
+            },
+            "cbox": {
+              "x": 4,
+              "y": 8,
+              "w": 6,
+              "h": 2
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 7,
+              "y": 7
+            }
+          }
+        },
+        {
+          "id": "fda57733-7776-40a3-a032-f036e10d3c7a",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 179,
+            "y": 141,
+            "w": 6,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "packed_parachute",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 6,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 6,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 3,
+              "y": 1
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 8.389,
-        "centerX": 164.2031231374419,
-        "centerY": 278.6982953868161
+        "zoom": 16.385,
+        "centerX": 184.71162648764113,
+        "centerY": 148.61153494049435
       }
     },
     {

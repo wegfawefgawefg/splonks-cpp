@@ -1,11 +1,13 @@
 #pragma once
 
+#include "audio_asset_id.hpp"
 #include "entity/core_types.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"
 #include "utils.hpp"
 
+#include <array>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -20,9 +22,17 @@ struct Entity;
 struct StageEntitySpawn {
     EntityType type_ = EntityType::None;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
+    std::optional<Vec2> size_override = std::nullopt;
     LeftOrRight facing = LeftOrRight::Left;
+    std::optional<EntityAiState> ai_state_override = std::nullopt;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::optional<std::size_t> entity_a_spawn_index = std::nullopt;
+    std::optional<std::size_t> entity_b_spawn_index = std::nullopt;
+    std::optional<std::size_t> entity_c_spawn_index = std::nullopt;
+    std::optional<std::size_t> entity_d_spawn_index = std::nullopt;
+    std::optional<std::size_t> shop_owner_spawn_index = std::nullopt;
+    bool buyable = false;
+    std::uint32_t buy_price = 0;
     std::string exit_id;
 };
 
@@ -59,6 +69,29 @@ struct StageLight {
     VID vid;
     IVec2 tile_pos = IVec2::New(0, 0);
     int radius = 0;
+};
+
+enum class EmbeddedTreasureVisibility : std::uint8_t {
+    Hidden,
+    Visible,
+};
+
+struct EmbeddedTreasureDrop {
+    EntityType type_ = EntityType::None;
+    int count = 0;
+};
+
+constexpr std::size_t kMaxEmbeddedTreasureDrops = 4;
+
+struct EmbeddedTreasure {
+    EmbeddedTreasureVisibility visibility = EmbeddedTreasureVisibility::Hidden;
+    FrameDataId overlay_frame = kInvalidFrameDataId;
+    AudioAssetId break_sound = kInvalidAudioAssetId;
+    std::array<EmbeddedTreasureDrop, kMaxEmbeddedTreasureDrops> drops{};
+
+    bool IsEmpty() const;
+    bool IsVisible() const;
+    std::optional<FrameDataId> GetOverlayFrame() const;
 };
 
 struct StageGenAnnotation {
@@ -122,7 +155,7 @@ struct Stage {
     std::vector<std::vector<float>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
     std::vector<Tile> backwall_fill_tiles;
-    std::vector<std::vector<EntityType>> embedded_treasures;
+    std::vector<std::vector<EmbeddedTreasure>> embedded_treasures;
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
     std::vector<StageEntitySpawn> entity_spawns;
@@ -156,7 +189,7 @@ struct Stage {
     float GetForegroundTileShake(unsigned int x, unsigned int y) const;
     float GetBackgroundTileShake(unsigned int x, unsigned int y) const;
     const Tile& GetBackwallTile(unsigned int x, unsigned int y) const;
-    EntityType GetEmbeddedTreasure(unsigned int x, unsigned int y) const;
+    EmbeddedTreasure GetEmbeddedTreasure(unsigned int x, unsigned int y) const;
     const Tile* GetTileAtWc(const IVec2& pos) const;
     std::vector<const Tile*> GetTilesInRectWc(const IVec2& tl, const IVec2& br) const;
     std::vector<const Tile*> GetTilesInRect(const IVec2& tl, const IVec2& br) const;
@@ -177,7 +210,8 @@ struct Stage {
     void AttenuateTileShake(float amount, TileShakeLayerMask layers);
     void SetBackwallTile(const IVec2& pos, Tile tile);
     void SetEmbeddedTreasure(const IVec2& pos, EntityType type_);
-    EntityType TakeEmbeddedTreasure(const IVec2& pos);
+    void SetEmbeddedTreasure(const IVec2& pos, const EmbeddedTreasure& embedded_treasure);
+    EmbeddedTreasure TakeEmbeddedTreasure(const IVec2& pos);
     VID AddLight(const IVec2& tile_pos, int radius);
     bool RemoveLight(VID vid);
     const StageLight* GetLight(VID vid) const;
