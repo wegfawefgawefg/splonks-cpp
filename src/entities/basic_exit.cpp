@@ -178,13 +178,20 @@ void StepEntityLogicAsBasicExit(
         const Entity* const player = state.player_vid.has_value() ? state.entity_manager.GetEntity(*state.player_vid) : nullptr;
         if (player != nullptr) {
             const AABB player_aabb = common::GetContactAabbForEntity(*player, graphics);
+            const Vec2 player_center = GetAabbCenter(player_aabb);
             const AABB nearest_exit_aabb = GetNearestWorldAabb(
                 state.stage,
-                GetAabbCenter(player_aabb),
+                player_center,
                 common::GetContactAabbForEntity(exit_entity, graphics)
             );
+            const Vec2 prompt_base = GetNearestWorldPoint(
+                state.stage,
+                player_center,
+                Vec2::New((nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) * 0.5F,
+                          nearest_exit_aabb.tl.y)
+            );
             state.AddWorldPrompt(WorldPrompt{
-                .world_pos = Vec2::New((nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) * 0.5F, nearest_exit_aabb.tl.y - 6.0F),
+                .world_pos = prompt_base + Vec2::New(0.0F, -6.0F),
                 .action_text = prompt->action_text,
                 .message_text = prompt->message_text,
                 .show_down_arrow = prompt->show_down_arrow,

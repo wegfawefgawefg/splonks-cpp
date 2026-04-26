@@ -111,13 +111,71 @@ Check a stage only when all applicable items are true:
   - ClassicHD trap sensor behavior was matched: horizontal strip from the trap face toward the first solid, capped at `96 px`, minimum `32 px`, one-shot fire on a moving entity in the strip.
   - `Arrow` is now a normal content entity with projectile damage, gravity, tile sticking, and entity contact cleanup.
 
-- [ ] Altar generation and sacrifice behavior is audited for Mines.
-  - Verify altar spawn odds and room placement.
-  - Verify sac altar and topper behavior works when generated normally.
+- [x] Altar generation and sacrifice behavior is audited for Mines.
+  - Matched Mines altar placement against ClassicHD `scrRoomGen`: side rooms only, `currLevel > 1`, one altar max, sequential `1/16` roll across eligible side rooms.
+  - `classic_mines_1` correctly cannot generate a random altar because ClassicHD gates altars to level 2+.
+  - Empirical sample with `build/splonks-cpp --sample-classic-mines-altars 1000`: `classic_mines_1` `0/1000`, `classic_mines_2` `225/1000`, `classic_mines_3` `269/1000`, `classic_mines_4` `275/1000`.
+  - The altar room is now a dedicated `altar` pool selected by the layout pass, not a normal side-room template with equal weight.
+  - Generated `x` glyphs spawn linked `SacAltar` left/right halves plus a `SacAltarTopper`; authored spawn-link resolution gives generated altars the same owner/topper relationship used by the altar test room.
+  - Sacrifice runtime is content-owned by `sac_altar.cpp`: only the owner left half consumes grounded eligible victims, awards run-level favor, plays sacrifice effects/audio, triggers the topper sacrifice animation, and grants configured reward tiers.
 
-- [ ] Entrances/exits are audited.
-  - Verify `BasicExit` conversion and route target.
-  - Verify prompt/interaction behavior and depth/route transition.
+- [x] Entrances/exits are audited.
+  - Classic glyph `9` matches the intended split: start rooms leave one `Entrance` tile for player placement; end rooms spawn one `BasicExit` entity and leave air under it.
+  - `convert_exit_tiles` remains as a safety pass for legacy `Exit` tiles, but normal Classic room glyph resolution already emits `BasicExit` spawns directly.
+  - Runtime exit behavior is owned by `BasicExit`: overlap prompt, RB interaction, route permission check, and transition queueing.
+  - Route data is owned by quest/stage data; `classic_mines_1 -> 2 -> 3 -> 4 -> classic_jungle_1` is declared in `assets/quests/classic/quest.yaml`.
+  - `build/splonks-cpp --check-classic-quest-stagegen` now hard-validates exactly one entrance tile, exactly one default `BasicExit`, and every generated exit id resolving to declared stage route data for normal non-Olmec Classic stages.
+  - Olmec remains separately unchecked because its entrance/win path is not a normal Classic room-graph entrance.
+
+- [ ] Player core survival mechanics are audited.
+  - [ ] Fall distance tracking is correct for player characters.
+  - [ ] Fall damage/stun thresholds match the intended Classic/HD feel.
+  - [ ] Parachute suppresses fall damage only after valid deploy conditions.
+  - [ ] Spike tile damage interacts correctly with spike shoes.
+  - [ ] Stomp damage and stomp immunity are consistent across enemies, props, and carried/thrown items.
+  - [ ] Crush/telefrag/explosion deaths still route through normal death callbacks so favor, meathead, and effects work.
+
+- [ ] Spelunky player physics are audited.
+  - [ ] Run acceleration, max speed, ground friction, and turnaround feel match the target Spelunky reference.
+  - [ ] Jump impulse, variable jump hold, gravity, max fall speed, and coyote timing are tuned.
+  - [ ] Ladder/rope attach, detach, top latch, climb speed, and climb animation are correct.
+  - [ ] Ledge/wall hang probes, glove wall hang, and hang release behavior are correct.
+  - [ ] Throw strength, pickup/carry movement penalties, and held-item aiming feel correct.
+  - [ ] Camera follow/listener behavior does not hide gameplay issues or introduce jitter.
+
+- [ ] Passive item behavior is audited.
+  - [ ] `Gloves`: wall hang behavior works and does not override normal ledge/climb rules incorrectly.
+  - [ ] `Spectacles`: embedded treasure reveal works.
+  - [ ] `UdjatEye`: key chest pickup sets quest state and reveals embedded treasure.
+  - [x] `Compass`: screen-space arrow indicator exists and points to the default exit.
+  - [ ] `Mitt`: thrown item behavior is implemented and tuned.
+  - [ ] `Paste`: bomb behavior changes to sticky bombs.
+  - [ ] `SpringShoes`: jump height boost is implemented and tuned.
+  - [ ] `SpikeShoes`: spike immunity and stomp damage boost are implemented and tuned.
+  - [ ] `Parachute`: single-use pickup, deploy speed threshold, visual placement, and cleanup are correct.
+  - [ ] `Meathead`: Splonks replacement for Kapala; should appear through Classic sacrifice rewards and stay documented as an intentional adaptation.
+
+- [ ] Back items and movement gear are audited.
+  - [ ] `Cape`: pickup/equip/use behavior exists and matches intended glide/slowfall behavior.
+  - [ ] `JetPack`: pickup/equip/use, fuel feel, explosion damage, and shop/loot placement are correct.
+  - [ ] `TeleporterBackpack`: intentionally Splonks-specific; excluded from Classic pools unless explicitly wanted.
+
+- [ ] Tools, weapons, and held item behavior are audited.
+  - [ ] `BombBox` and `BombBag`: add bombs to the bomb tool slot correctly, including empty-slot acquisition.
+  - [ ] `RopePile`: adds ropes to the rope tool slot correctly, including empty-slot acquisition.
+  - [ ] `Mattock`: dig probes, durability, entity hits, sounds, and wrap/border behavior are correct.
+  - [ ] `Machete`: swing damage, thrown damage, corpse-sac interaction, and altar cash-in are correct.
+  - [ ] `Pistol`: firing, projectiles, ammo/reload behavior if any, and shop/loot placement are correct.
+  - [ ] `Shotgun`: firing, recoil, pellets/projectiles, reload cadence, and shopkeeper use are correct.
+  - [ ] `WebCannon`: webball flight, web placement, web decay, and web interaction are correct.
+  - [ ] `Teleporter`: 8-way target probes, telefrag/splat, wall death, shake, and item/player visual effects are correct.
+
+- [ ] Loot/shop/item pools are audited.
+  - [ ] Chest random item pool matches intended Classic/HD item availability.
+  - [ ] Crate/box contents match intended Classic/HD odds.
+  - [ ] Shop category pools match ClassicHD categories: general, bomb, weapon, rare, clothing, craps, and kissing.
+  - [ ] Sacrifice reward pool and favor thresholds are intentionally documented versus Classic/HD.
+  - [ ] Items that are intentionally Splonks-only are excluded from Classic generation unless explicitly marked as an adaptation.
 
 - [ ] Manual playtest passes.
   - Generate several `classic_mines_1` seeds.

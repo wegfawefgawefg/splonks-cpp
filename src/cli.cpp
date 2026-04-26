@@ -9,14 +9,17 @@
 #include "stage_gen/room_template_loader.hpp"
 #include "tile.hpp"
 #include "tile_source_data.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <map>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <vector>
 
@@ -128,16 +131,137 @@ bool CheckClassicQuestStagegen() {
                 }
                 return count;
             };
+            const auto count_tiles = [&](Tile tile) {
+                std::size_t count = 0;
+                for (unsigned int y = 0; y < stage.GetTileHeight(); ++y) {
+                    for (unsigned int x = 0; x < stage.GetTileWidth(); ++x) {
+                        if (stage.GetTile(x, y) == tile) {
+                            ++count;
+                        }
+                    }
+                }
+                return count;
+            };
+            const auto normalized_exit_id = [](const StageEntitySpawn& spawn) -> std::string_view {
+                return spawn.exit_id.empty() ? std::string_view("default")
+                                             : std::string_view(spawn.exit_id);
+            };
+            const auto count_basic_exit_spawns = [&](std::string_view exit_id) {
+                return static_cast<std::size_t>(
+                    std::count_if(
+                        stage.entity_spawns.begin(),
+                        stage.entity_spawns.end(),
+                        [&](const StageEntitySpawn& spawn) {
+                            return spawn.type_ == EntityType::BasicExit &&
+                                   normalized_exit_id(spawn) == exit_id;
+                        }
+                    )
+                );
+            };
+
+            const std::size_t entrance_tiles = count_tiles(Tile::Entrance);
+            const bool validate_default_entrance_exit = stage_config.id != "olmec_lair";
+            if (validate_default_entrance_exit && entrance_tiles != 1) {
+                throw std::runtime_error(stage_def.id + " expected exactly 1 entrance tile, found " +
+                                         std::to_string(entrance_tiles));
+            }
+            const std::size_t default_exit_spawns = count_basic_exit_spawns("default");
+            if (validate_default_entrance_exit && default_exit_spawns != 1) {
+                throw std::runtime_error(stage_def.id +
+                                         " expected exactly 1 default BasicExit spawn, found " +
+                                         std::to_string(default_exit_spawns));
+            }
+            for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+                if (spawn.type_ != EntityType::BasicExit || stage.exits.empty()) {
+                    continue;
+                }
+                const std::string_view exit_id = normalized_exit_id(spawn);
+                if (stage.FindExitId(exit_id) == kInvalidStageExitId) {
+                    throw std::runtime_error(stage_def.id +
+                                             " BasicExit references undeclared exit id: " +
+                                             std::string(exit_id));
+                }
+            }
+
             std::cout << stage_def.id << ": "
                       << stage.entity_spawns.size() << " spawns, "
                       << stage.stagegen_annotations.size() << " annotations, "
+                      << entrance_tiles << " entrances, "
+                      << default_exit_spawns << " default exits, "
                       << count_block_tiles() << " block tiles, "
                       << count_spawns(EntityType::Block) << " block spawns, "
-                      << count_spawns(EntityType::ArrowTrap) << " arrow traps\n";
+                      << count_spawns(EntityType::ArrowTrap) << " arrow traps, "
+                      << count_spawns(EntityType::SacAltar) / 2 << " sac altars\n";
         }
         return true;
     } catch (const std::exception& e) {
         std::cerr << "classic quest stagegen check failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
+bool SampleClassicMinesAltars(int runs) {
+    try {
+        const QuestDefinition quest =
+            LoadQuestDefinition(std::string(GetClassicQuestRootPath()) + "/quest.yaml");
+        struct StageSample {
+            std::string id;
+            int generated = 0;
+            std::map<int, int> altar_counts;
+        };
+        std::vector<StageSample> samples;
+        for (const QuestStageDefinition& stage_def : quest.stages) {
+            if (stage_def.id == "classic_mines_1" || stage_def.id == "classic_mines_2" ||
+                stage_def.id == "classic_mines_3" || stage_def.id == "classic_mines_4") {
+                samples.push_back(StageSample{
+                    .id = stage_def.id,
+                    .generated = 0,
+                    .altar_counts = {},
+                });
+            }
+        }
+
+        for (int run = 0; run < runs; ++run) {
+            rng::SetSeed(static_cast<std::uint32_t>(run + 1));
+            for (StageSample& sample : samples) {
+                const QuestStageDefinition* const stage_def = quest.FindStage(sample.id);
+                if (stage_def == nullptr) {
+                    continue;
+                }
+                const StageConfig stage_config =
+                    LoadStageConfig(GetClassicQuestRootPath(), stage_def->stage_file);
+                const Stage stage = stage_gen::classic::GenerateStage(quest, *stage_def, stage_config);
+                const auto sac_altar_halves = static_cast<int>(
+                    std::count_if(
+                        stage.entity_spawns.begin(),
+                        stage.entity_spawns.end(),
+                        [](const StageEntitySpawn& spawn) {
+                            return spawn.type_ == EntityType::SacAltar;
+                        }
+                    )
+                );
+                sample.generated += 1;
+                sample.altar_counts[sac_altar_halves / 2] += 1;
+            }
+        }
+
+        for (const StageSample& sample : samples) {
+            const int with_altar = sample.generated -
+                                   (sample.altar_counts.contains(0)
+                                        ? sample.altar_counts.at(0)
+                                        : 0);
+            const double rate =
+                sample.generated == 0 ? 0.0 : static_cast<double>(with_altar) / sample.generated;
+            std::cout << sample.id << ": " << with_altar << "/" << sample.generated
+                      << " = " << rate * 100.0 << "% with altar; counts";
+            for (const auto& [altar_count, count] : sample.altar_counts) {
+                std::cout << " " << altar_count << ":" << count;
+            }
+            std::cout << '\n';
+        }
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "classic mines altar sample failed: " << e.what() << '\n';
         return false;
     }
 }
@@ -162,6 +286,11 @@ bool RunCliCommand(int argc, char** argv) {
 
     if (command == "--check-classic-quest-stagegen") {
         std::exit(CheckClassicQuestStagegen() ? 0 : 1);
+    }
+
+    if (command == "--sample-classic-mines-altars") {
+        const int runs = argc >= 3 ? std::max(1, std::atoi(argv[2])) : 1000;
+        std::exit(SampleClassicMinesAltars(runs) ? 0 : 1);
     }
 
     if (command == "--dump-recording-text") {

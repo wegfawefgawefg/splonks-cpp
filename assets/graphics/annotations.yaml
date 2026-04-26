@@ -6927,8 +6927,68 @@ sprites:
       h: 3
     tile: false
     emit_point:
-      x: 6
+      x: 1
+      y: 2
+  - path: "entities.png"
+    aabb:
+      x: 164
+      y: 263
+      w: 8
+      h: 9
+    name: "compass"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 4
+    tags: []
+    pbox:
+      x: 1
       y: 1
+      w: 6
+      h: 8
+    cbox:
+      x: 1
+      y: 1
+      w: 6
+      h: 8
+    tile: false
+    emit_point:
+      x: 4
+      y: 3
+  - path: "entities.png"
+    aabb:
+      x: 179
+      y: 266
+      w: 5
+      h: 5
+    name: "compass_arrow"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 5
+    cbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 5
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

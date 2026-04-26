@@ -27,9 +27,9 @@
       ]
     }
   ],
-  "activePaletteId": null,
+  "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "239464ad-c33d-4781-aff7-5b5a40a5ab6e",
+  "selectedAnnotationId": "b1b95414-49fb-4b44-9244-4ba74bac24e1",
   "sheets": [
     {
       "path": "images/title.png",
@@ -10146,15 +10146,101 @@
               "y": 2
             }
           }
+        },
+        {
+          "id": "a55bcf13-565b-4434-8fcf-ee0b9fbcbaf5",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 164,
+            "y": 263,
+            "w": 8,
+            "h": 9
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "compass",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 4,
+              "y": 4
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 1,
+              "w": 6,
+              "h": 8
+            },
+            "cbox": {
+              "x": 1,
+              "y": 1,
+              "w": 6,
+              "h": 8
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 4,
+              "y": 3
+            }
+          }
+        },
+        {
+          "id": "b1b95414-49fb-4b44-9244-4ba74bac24e1",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 179,
+            "y": 266,
+            "w": 5,
+            "h": 5
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "compass_arrow",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 3
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 5
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 5
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 20.481,
-        "centerX": 104.21854401640545,
-        "centerY": 392.6566085640349
+        "zoom": 32,
+        "centerX": 180.640625,
+        "centerY": 267.0625
       }
     },
     {

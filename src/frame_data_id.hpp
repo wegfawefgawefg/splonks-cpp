@@ -145,6 +145,7 @@ constexpr FrameDataId BombBox = HashFrameDataIdConstexpr("bomb_box");
 constexpr FrameDataId BombBag = HashFrameDataIdConstexpr("bomb_bag");
 constexpr FrameDataId Bow = HashFrameDataIdConstexpr("bow");
 constexpr FrameDataId Compass = HashFrameDataIdConstexpr("compass");
+constexpr FrameDataId CompassArrow = HashFrameDataIdConstexpr("compass_arrow");
 constexpr FrameDataId PackedParachute = HashFrameDataIdConstexpr("packed_parachute");
 constexpr FrameDataId OpenParachute = HashFrameDataIdConstexpr("open_parachute");
 constexpr FrameDataId Parachute = PackedParachute;

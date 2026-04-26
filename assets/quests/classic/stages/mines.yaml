@@ -21,6 +21,7 @@ room_pools:
   snake_pit_bottom: rooms/mines/snake_pit_bottom
   vault: rooms/mines/vault
   idol: rooms/mines/idol
+  altar: rooms/mines/altar
 
 layout_passes:
   - name: snake_pit
@@ -39,6 +40,12 @@ layout_passes:
     properties:
       min_level_number: 2
       chance_denominator: 6
+
+  - name: altar
+    enabled: true
+    properties:
+      min_level_number: 2
+      chance_denominator: 16
 
   - name: idol
     enabled: true

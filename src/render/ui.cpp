@@ -9,9 +9,12 @@
 #include "state.hpp"
 #include "step.hpp"
 #include "text.hpp"
+#include "world_query.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <optional>
 #include <string>
 
 namespace splonks {
@@ -156,6 +159,60 @@ void DrawFrameDataIcon(
     SDL_RenderTexture(renderer, texture, &src, &dst);
 }
 
+void DrawFrameDataIconRotated(
+    SDL_Renderer* renderer,
+    const State& state,
+    Graphics& graphics,
+    FrameDataId animation_id,
+    const Vec2& center,
+    const IVec2& size,
+    double rotation_degrees
+) {
+    const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animation_id);
+    if (animation == nullptr || animation->frame_indices.empty()) {
+        return;
+    }
+
+    const std::size_t ordered_frame_index =
+        GetUiAnimationFrameIndex(*animation, graphics.frame_data_db, state.scene_frame);
+    if (ordered_frame_index >= animation->frame_indices.size()) {
+        return;
+    }
+
+    const FrameData& frame_data =
+        graphics.frame_data_db.frames[animation->frame_indices[ordered_frame_index]];
+    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data.image_id);
+    if (texture == nullptr) {
+        return;
+    }
+
+    const SDL_FRect src{
+        static_cast<float>(frame_data.sample_rect.x),
+        static_cast<float>(frame_data.sample_rect.y),
+        static_cast<float>(frame_data.sample_rect.w),
+        static_cast<float>(frame_data.sample_rect.h),
+    };
+    const SDL_FRect dst{
+        std::round(center.x - (static_cast<float>(size.x) * 0.5F)),
+        std::round(center.y - (static_cast<float>(size.y) * 0.5F)),
+        static_cast<float>(size.x),
+        static_cast<float>(size.y),
+    };
+    const SDL_FPoint rotation_center{
+        static_cast<float>(size.x) * 0.5F,
+        static_cast<float>(size.y) * 0.5F,
+    };
+    SDL_RenderTextureRotated(
+        renderer,
+        texture,
+        &src,
+        &dst,
+        rotation_degrees,
+        &rotation_center,
+        SDL_FLIP_NONE
+    );
+}
+
 Vec2 GetUiCountTextPosition(const IVec2& icon_cursor, const IVec2& icon_size) {
     return Vec2::New(
         static_cast<float>(icon_cursor.x + icon_size.x),
@@ -241,6 +298,88 @@ void DrawPromptBubble(
     SDL_RenderRect(renderer, &bubble_rect);
     SDL_RenderLine(renderer, tip_x - half_base, base_y, tip_x, tip_y);
     SDL_RenderLine(renderer, tip_x, tip_y, tip_x + half_base, base_y);
+}
+
+std::optional<Vec2> FindDefaultExitCenter(const State& state) {
+    const StageExitId default_exit_id = state.stage.FindExitId("default");
+    const bool should_match_exit_id = !state.stage.exits.empty();
+
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!entity.active || entity.type_ != EntityType::BasicExit) {
+            continue;
+        }
+        if (should_match_exit_id && entity.stage_exit_id != default_exit_id) {
+            continue;
+        }
+        return entity.GetCenter();
+    }
+
+    return std::nullopt;
+}
+
+void RenderCompassArrow(SDL_Renderer* renderer, const State& state, Graphics& graphics, const Entity& player) {
+    if (!HasPassiveItem(player, EntityPassiveItem::Compass)) {
+        return;
+    }
+
+    const std::optional<Vec2> exit_center = FindDefaultExitCenter(state);
+    if (!exit_center.has_value()) {
+        return;
+    }
+
+    const Vec2 nearest_exit_center =
+        graphics.camera.target + GetNearestWorldDelta(state.stage, graphics.camera.target, *exit_center);
+    const Vec2 exit_screen = graphics.WcToScreen(nearest_exit_center);
+    const Vec2 screen_center = graphics.camera.offset;
+    Vec2 direction = exit_screen - screen_center;
+    if ((direction.x * direction.x) + (direction.y * direction.y) < 1.0F) {
+        return;
+    }
+
+    const float min_x = static_cast<float>(graphics.dims.x) * 0.25F;
+    const float max_x = static_cast<float>(graphics.dims.x) * 0.75F;
+    const float min_y = static_cast<float>(graphics.dims.y) * 0.25F;
+    const float max_y = static_cast<float>(graphics.dims.y) * 0.75F;
+    const bool exit_in_safe_rect =
+        exit_screen.x >= min_x && exit_screen.x <= max_x &&
+        exit_screen.y >= min_y && exit_screen.y <= max_y;
+    if (exit_in_safe_rect) {
+        const float bob = std::sin(static_cast<float>(state.scene_frame) * 0.08F) * 3.0F;
+        const Vec2 exit_marker_screen =
+            graphics.WcToScreen(nearest_exit_center + Vec2::New(0.0F, -16.0F)) +
+            Vec2::New(0.0F, bob);
+        const int arrow_size =
+            std::max(16, static_cast<int>(static_cast<float>(graphics.dims.y) * 0.045F));
+        DrawFrameDataIconRotated(
+            renderer,
+            state,
+            graphics,
+            frame_data_ids::CompassArrow,
+            exit_marker_screen,
+            IVec2::New(arrow_size, arrow_size),
+            -90.0
+        );
+        return;
+    }
+
+    const Vec2 arrow_center = Vec2::New(
+        std::clamp(exit_screen.x, min_x, max_x),
+        std::clamp(exit_screen.y, min_y, max_y)
+    );
+
+    constexpr float kRadiansToDegrees = 57.29577951308232F;
+    const double rotation_degrees =
+        static_cast<double>((std::atan2(direction.y, direction.x) * kRadiansToDegrees) - 180.0F);
+    const int arrow_size = std::max(16, static_cast<int>(static_cast<float>(graphics.dims.y) * 0.055F));
+    DrawFrameDataIconRotated(
+        renderer,
+        state,
+        graphics,
+        frame_data_ids::CompassArrow,
+        arrow_center,
+        IVec2::New(arrow_size, arrow_size),
+        rotation_degrees
+    );
 }
 
 } // namespace
@@ -371,6 +510,8 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
     }
 
     if (player_entity != nullptr) {
+        RenderCompassArrow(renderer, state, graphics, *player_entity);
+
         IVec2 passive_cursor = IVec2::New(hud_margin, hud_margin + std::max(status_icon_size.y, tool_slot_size.y) + hud_gap);
         const IVec2 passive_icon_size = IVec2::New(
             std::max(1, static_cast<int>(static_cast<float>(status_icon_size.x) * 0.8F)),
@@ -597,7 +738,9 @@ void RenderWorldPrompts(SDL_Renderer* renderer, const State& state, Graphics& gr
             std::sin((static_cast<float>(state.scene_frame) * 0.08F) +
                      static_cast<float>(prompt_idx) * 0.7F) *
             3.0F;
-        const Vec2 screen_anchor = graphics.WcToScreen(prompt.world_pos) + Vec2::New(0.0F, bob);
+        const Vec2 prompt_world =
+            GetNearestWorldPoint(state.stage, graphics.camera.target, prompt.world_pos);
+        const Vec2 screen_anchor = graphics.WcToScreen(prompt_world) + Vec2::New(0.0F, bob);
         const float bubble_width = content_width + (kPromptPaddingX * 2.0F);
         const float bubble_height = static_cast<float>(content_height) + (kPromptPaddingY * 2.0F);
         const SDL_FRect bubble_rect{

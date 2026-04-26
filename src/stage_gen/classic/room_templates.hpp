@@ -43,6 +43,7 @@ struct ClassicRoomTemplateDb {
     std::vector<::splonks::stage_gen::RoomTemplate> snake_pit_bottom;
     std::vector<::splonks::stage_gen::RoomTemplate> vault;
     std::vector<::splonks::stage_gen::RoomTemplate> idol;
+    std::vector<::splonks::stage_gen::RoomTemplate> altar;
     std::vector<::splonks::stage_gen::RoomTemplate> drop;
 };
 
