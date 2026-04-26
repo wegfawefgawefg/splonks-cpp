@@ -5,9 +5,12 @@
 #include "quest.hpp"
 #include "raw_frame_data.hpp"
 #include "stage_gen/classic/stagegen.hpp"
+#include "stage_gen/classic/tile_palette.hpp"
 #include "stage_gen/room_template_loader.hpp"
+#include "tile.hpp"
 #include "tile_source_data.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -103,9 +106,34 @@ bool CheckClassicQuestStagegen() {
             const StageConfig stage_config = LoadStageConfig(GetClassicQuestRootPath(), stage_def.stage_file);
             CheckClassicGlyphCoverage(stage_config);
             const Stage stage = stage_gen::classic::GenerateStage(quest, stage_def, stage_config);
+            const auto count_spawns = [&](EntityType type_) {
+                return static_cast<std::size_t>(
+                    std::count_if(
+                        stage.entity_spawns.begin(),
+                        stage.entity_spawns.end(),
+                        [type_](const StageEntitySpawn& spawn) {
+                            return spawn.type_ == type_;
+                        }
+                    )
+                );
+            };
+            const auto count_block_tiles = [&]() {
+                std::size_t count = 0;
+                for (unsigned int y = 0; y < stage.GetTileHeight(); ++y) {
+                    for (unsigned int x = 0; x < stage.GetTileWidth(); ++x) {
+                        if (stage_gen::classic::IsBlockTile(stage.GetTile(x, y))) {
+                            ++count;
+                        }
+                    }
+                }
+                return count;
+            };
             std::cout << stage_def.id << ": "
                       << stage.entity_spawns.size() << " spawns, "
-                      << stage.stagegen_annotations.size() << " annotations\n";
+                      << stage.stagegen_annotations.size() << " annotations, "
+                      << count_block_tiles() << " block tiles, "
+                      << count_spawns(EntityType::Block) << " block spawns, "
+                      << count_spawns(EntityType::ArrowTrap) << " arrow traps\n";
         }
         return true;
     } catch (const std::exception& e) {

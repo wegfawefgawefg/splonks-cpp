@@ -68,13 +68,7 @@ constexpr unsigned int kTileSize = 16;
 constexpr std::size_t kTileCount = 54;
 
 Tile RandomTile();
-Tile DirtTileForFamilyTile(Tile family_tile);
-Tile BlockTileForFamilyTile(Tile family_tile);
-Tile ShopWallTileForFamilyTile(Tile family_tile);
-Tile SmoothWallTileForFamilyTile(Tile family_tile);
-Tile GlassTileForFamilyTile(Tile family_tile);
 const char* TileToString(Tile tile);
-bool IsDirtTile(Tile tile);
 bool IsTileTransparent(Tile tile);
 bool IsTileCollidable(Tile tile);
 bool IsTileHangable(Tile tile);

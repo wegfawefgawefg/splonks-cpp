@@ -124,6 +124,21 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                 }
                 stage.entity_spawns.push_back(std::move(spawn));
             }
+            const IVec2 room_tile_offset = ToIVec2(room_pos);
+            for (StageTileTrigger& trigger : room.tile_triggers) {
+                trigger.tile_pos = trigger.tile_pos + room_tile_offset;
+                if (trigger.target_spawn_index.has_value()) {
+                    *trigger.target_spawn_index += room_spawn_base_index;
+                }
+                if (trigger.debug_label != nullptr) {
+                    stage.stagegen_annotations.push_back(StageGenAnnotation{
+                        .world_pos = ToVec2(trigger.tile_pos * static_cast<int>(kTileSize)) +
+                                     Vec2::New(2.0F, 8.0F),
+                        .text = trigger.debug_label,
+                    });
+                }
+                stage.tile_triggers.push_back(std::move(trigger));
+            }
             for (BackgroundStamp& stamp : room.background_stamps) {
                 stamp.pos += room_pos_wc;
                 stage.background_stamps.push_back(std::move(stamp));

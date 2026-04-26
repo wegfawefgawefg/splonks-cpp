@@ -20,6 +20,7 @@ room_pools:
   snake_pit_top: rooms/mines/snake_pit_top
   snake_pit_bottom: rooms/mines/snake_pit_bottom
   vault: rooms/mines/vault
+  idol: rooms/mines/idol
 
 layout_passes:
   - name: snake_pit
@@ -39,6 +40,11 @@ layout_passes:
       min_level_number: 2
       chance_denominator: 6
 
+  - name: idol
+    enabled: true
+    properties:
+      chance_denominator: 10
+
 stage_passes:
   - name: convert_exit_tiles
     enabled: true
@@ -52,5 +58,7 @@ stage_passes:
       min_level_number: 2
   - name: arrow_trap_conversion
     enabled: true
+    properties:
+      chance_denominator: 4
   - name: ambient_mines_entities
     enabled: true

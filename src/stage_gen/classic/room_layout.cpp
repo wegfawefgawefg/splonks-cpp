@@ -173,6 +173,30 @@ void TryPlaceVault(StageLayout& layout, int level_number, const StagePassConfig&
     SetRoomCode(layout, room.x, room.y, static_cast<int>(RoomCode::Vault));
 }
 
+void TryPlaceIdol(StageLayout& layout, const StagePassConfig& pass) {
+    if (!pass.enabled || layout.path_layout_size.y < 2) {
+        return;
+    }
+    const int chance_denominator = pass.GetInt("chance_denominator", 10);
+    if (chance_denominator <= 0) {
+        return;
+    }
+
+    const int last_non_idol_row = static_cast<int>(layout.path_layout_size.y) - 2;
+    for (int y = 0; y <= last_non_idol_row; ++y) {
+        for (int x = 0; x < static_cast<int>(layout.path_layout_size.x); ++x) {
+            if (GetRoomCode(layout, x, y) != static_cast<int>(RoomCode::Side)) {
+                continue;
+            }
+            if (rng::RandomIntInclusive(1, chance_denominator) != 1) {
+                continue;
+            }
+            SetRoomCode(layout, x, y, static_cast<int>(RoomCode::Idol));
+            return;
+        }
+    }
+}
+
 using ClassicRoomLayoutPassFn = void (*)(StageLayout&, int, const StagePassConfig&);
 
 struct ClassicRoomLayoutPassDefinition {
@@ -192,6 +216,10 @@ void RunShopLayoutPass(StageLayout& layout, int level_number, const StagePassCon
 
 void RunVaultLayoutPass(StageLayout& layout, int level_number, const StagePassConfig& pass) {
     TryPlaceVault(layout, level_number, pass);
+}
+
+void RunIdolLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
+    TryPlaceIdol(layout, pass);
 }
 
 void RunJungleLakeLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
@@ -288,10 +316,11 @@ void RunCityOfGoldXocLayoutPass(StageLayout& layout, int, const StagePassConfig&
                 row, static_cast<int>(RoomCode::Special6));
 }
 
-constexpr std::array<ClassicRoomLayoutPassDefinition, 8> kClassicRoomLayoutPasses = {{
+constexpr std::array<ClassicRoomLayoutPassDefinition, 9> kClassicRoomLayoutPasses = {{
     {"snake_pit", RunSnakePitLayoutPass},
     {"shop", RunShopLayoutPass},
     {"vault", RunVaultLayoutPass},
+    {"idol", RunIdolLayoutPass},
     {"jungle_lake", RunJungleLakeLayoutPass},
     {"ice_moai", RunIceMoaiLayoutPass},
     {"ice_alien_craft", RunIceAlienCraftLayoutPass},
@@ -483,6 +512,8 @@ const char* GetClassicRoomCodeDebugLabel(int room_code) {
         return "pit!";
     case 12:
         return "vault";
+    case 13:
+        return "idol";
     default:
         return "?";
     }

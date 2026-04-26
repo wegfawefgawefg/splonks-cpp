@@ -3,6 +3,7 @@
 #include "frame_data_id.hpp"
 #include "stage_gen/classic/stage_pass_helpers.hpp"
 #include "stage_gen/classic/stage_passes.hpp"
+#include "stage_gen/classic/tile_palette.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
@@ -460,8 +461,47 @@ void AddMinesTreasure(Stage& stage, int level_number) {
     }
 }
 
-void ConvertBlocksToArrowTraps(Stage& stage) {
+void ConvertBlocksToArrowTraps(Stage& stage, int chance_denominator) {
     const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
+    chance_denominator = std::max(1, chance_denominator);
+
+    const auto should_skip_candidate = [&](int tile_x, int tile_y, const Vec2& pos) {
+        if (IsShopRoomAt(stage, tile_x, tile_y)) {
+            return true;
+        }
+        if (rng::RandomIntInclusive(1, chance_denominator) != 1) {
+            return true;
+        }
+
+        if (entrance_pos.has_value()) {
+            const float dist = Length(pos - *entrance_pos);
+            if (dist <= 48.0F) {
+                return true;
+            }
+            if (static_cast<int>(pos.y) == static_cast<int>(entrance_pos->y) &&
+                dist < 144.0F) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const auto get_arrow_trap_facing = [&](int tile_x, int tile_y) -> std::optional<LeftOrRight> {
+        const bool solid_right = IsCollidableTileAt(stage, tile_x + 1, tile_y);
+        const bool left_open = !IsCollidableTileAt(stage, tile_x - 1, tile_y) &&
+                               !IsCollidableTileAt(stage, tile_x - 2, tile_y);
+        if (solid_right && left_open) {
+            return LeftOrRight::Left;
+        }
+
+        const bool solid_left = IsCollidableTileAt(stage, tile_x - 1, tile_y);
+        const bool right_open = !IsCollidableTileAt(stage, tile_x + 1, tile_y) &&
+                                !IsCollidableTileAt(stage, tile_x + 2, tile_y);
+        if (solid_left && right_open) {
+            return LeftOrRight::Right;
+        }
+        return std::nullopt;
+    };
 
     for (StageEntitySpawn& spawn : stage.entity_spawns) {
         if (spawn.type_ != EntityType::Block) {
@@ -470,40 +510,44 @@ void ConvertBlocksToArrowTraps(Stage& stage) {
 
         const int tile_x = static_cast<int>(spawn.pos.x) / static_cast<int>(kTileSize);
         const int tile_y = static_cast<int>(spawn.pos.y) / static_cast<int>(kTileSize);
-
-        if (IsShopRoomAt(stage, tile_x, tile_y)) {
-            continue;
-        }
-        if (rng::RandomIntInclusive(1, 4) != 1) {
+        if (should_skip_candidate(tile_x, tile_y, spawn.pos)) {
             continue;
         }
 
-        if (entrance_pos.has_value()) {
-            const float dist = Length(spawn.pos - *entrance_pos);
-            if (dist <= 48.0F) {
+        const std::optional<LeftOrRight> facing = get_arrow_trap_facing(tile_x, tile_y);
+        if (facing.has_value()) {
+            spawn.type_ = EntityType::ArrowTrap;
+            spawn.facing = *facing;
+        }
+    }
+
+    for (unsigned int y = 0; y < stage.GetTileHeight(); ++y) {
+        for (unsigned int x = 0; x < stage.GetTileWidth(); ++x) {
+            const int tile_x = static_cast<int>(x);
+            const int tile_y = static_cast<int>(y);
+            if (!IsBlockTile(stage.GetTile(x, y))) {
                 continue;
             }
-            if (static_cast<int>(spawn.pos.y) == static_cast<int>(entrance_pos->y) &&
-                dist < 144.0F) {
+
+            const Vec2 pos =
+                Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+                          static_cast<float>(tile_y * static_cast<int>(kTileSize)));
+            if (should_skip_candidate(tile_x, tile_y, pos)) {
                 continue;
             }
-        }
 
-        const bool solid_right = IsCollidableTileAt(stage, tile_x + 1, tile_y);
-        const bool left_open = !IsCollidableTileAt(stage, tile_x - 1, tile_y) &&
-                               !IsCollidableTileAt(stage, tile_x - 2, tile_y);
-        if (solid_right && left_open) {
-            spawn.type_ = EntityType::ArrowTrap;
-            spawn.facing = LeftOrRight::Left;
-            continue;
-        }
+            const std::optional<LeftOrRight> facing = get_arrow_trap_facing(tile_x, tile_y);
+            if (!facing.has_value()) {
+                continue;
+            }
 
-        const bool solid_left = IsCollidableTileAt(stage, tile_x - 1, tile_y);
-        const bool right_open = !IsCollidableTileAt(stage, tile_x + 1, tile_y) &&
-                                !IsCollidableTileAt(stage, tile_x + 2, tile_y);
-        if (solid_left && right_open) {
-            spawn.type_ = EntityType::ArrowTrap;
-            spawn.facing = LeftOrRight::Right;
+            stage.SetTile(IVec2::New(tile_x, tile_y), Tile::Air);
+            stage.entity_spawns.push_back(StageEntitySpawn{
+                .type_ = EntityType::ArrowTrap,
+                .pos = pos,
+                .facing = *facing,
+                .exit_id = "",
+            });
         }
     }
 }

@@ -16,6 +16,12 @@ Check a stage only when all applicable items are true:
 - [ ] Debug reroll/check command can generate the stage repeatedly without hard errors.
 - [ ] Manual playtest finds a valid entrance-to-exit route and no obvious generation blockers.
 
+## Trigger Notes
+
+- Exact authored tile destruction should use `StageTileTrigger`. Shop wall/vault vandalism now follows this path and emits stagegen annotations on each trigger tile.
+- Entity-owned `on_area_enter`, `on_area_exit`, and `on_area_tile_changed` callbacks remain useful for moving/dynamic detectors.
+- Future tile-location enter/exit triggers may be worth adding if a feature needs exact authored tile regions for pressure plates, tile-bound prompts, camera/music zones, fluid volumes, or shop threshold lines. Do not add that system until a real use case needs it.
+
 ## Main Route
 
 - [ ] `classic_mines_1` / `1-1` / Mines
@@ -84,6 +90,7 @@ Check a stage only when all applicable items are true:
   - Matched against ClassicHD `scrLevelGen`: shops require `currLevel > 1`, roll `rand(1, currLevel) <= 2`, and select one eligible side room adjacent to a main/drop room.
   - `classic_mines_1` therefore correctly has no random shop; Mines 2+ can place shops with ClassicHD's level-dependent chance.
   - Generated shop rooms now emit the same runtime shop concept used by the shop demo: one invisible `Shop` area, linked shopkeeper, owned buyables, buy prompts, theft detection, and tile-break disturbance.
+  - Shop wall/vault vandalism uses exact `StageTileTrigger` tile ownership, and stagegen annotations mark every vandalism trigger tile.
   - Shop signs, store lights, wanted posters, item slots, craps dice, and kissing-shop damsel are resolved from Classic room glyphs.
   - Buy prices use ClassicHD item base costs with the same post-level-2 scaling rule; `Damsel` keeps the current Splonks/demo price until kissing shop economy is revisited.
 
@@ -93,9 +100,16 @@ Check a stage only when all applicable items are true:
   - Vault rooms emit an invisible disturbed `Shop` area, an owned hostile shopkeeper, and two chests.
   - Vault walls use a dedicated glyph that rolls `1/4` into a pushable `block` entity and otherwise resolves to the stage's themed shop wall tile.
 
-- [ ] Idol/tiki/boulder path is audited.
-  - Verify idol spawn odds and room constraints.
-  - Verify tiki/boulder trigger path works in normal Mines generation, not only test rooms.
+- [x] Idol/tiki/boulder path is audited.
+  - Matched Mines idol spawn constraints against ClassicHD `scrRoomGen`: side-room only, not bottom room row, one idol room max, and `1/10` sequential roll across eligible side rooms.
+  - Mines idol room now uses a dedicated `idol` room pool and `idol` layout pass instead of living in the normal side-room pool, preventing duplicate idols and bottom-row idol rooms.
+  - `I` and `B` glyphs link `GoldIdol` to `GiantTikiHead` via authored spawn indices in normal generation, not only test rooms.
+  - Tiki/boulder runtime behavior exists: idol movement disturbs the tiki head, plays windup, spawns a boulder, and uses the current boulder rolling/shake/tile-break behavior.
+
+- [x] Dart/arrow trap generation and behavior is audited.
+  - `arrow_trap_conversion` turns eligible `Block` spawns into tile-sized impassable `ArrowTrap` entities with left/right facing.
+  - ClassicHD trap sensor behavior was matched: horizontal strip from the trap face toward the first solid, capped at `96 px`, minimum `32 px`, one-shot fire on a moving entity in the strip.
+  - `Arrow` is now a normal content entity with projectile damage, gravity, tile sticking, and entity contact cleanup.
 
 - [ ] Altar generation and sacrifice behavior is audited for Mines.
   - Verify altar spawn odds and room placement.

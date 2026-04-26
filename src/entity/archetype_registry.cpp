@@ -229,6 +229,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::BallAndChainBall, entities::ball_and_chain::kBallAndChainBallArchetype,
                  "BallAndChainBall");
     SetArchetype(EntityType::ArrowTrap, entities::arrow_trap::kArrowTrapArchetype, "ArrowTrap");
+    SetArchetype(EntityType::Arrow, entities::arrow_trap::kArrowArchetype, "Arrow");
     SetArchetype(EntityType::Skull, entities::skeleton::kSkullArchetype, "Skull");
     SetArchetype(EntityType::Skeleton, entities::skeleton::kSkeletonArchetype, "Skeleton");
     SetArchetype(EntityType::Snake, entities::snake::kSnakeArchetype, "Snake");

@@ -20,6 +20,7 @@ enum class RoomCode : int {
     SnakePitTop = 10,
     SnakePitBottom = 11,
     Vault = 12,
+    Idol = 13,
 };
 
 using RoomCodeGrid = std::vector<std::vector<int>>;

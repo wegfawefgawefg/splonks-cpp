@@ -31,7 +31,8 @@ RoomType RandomRoomType() {
     }
 }
 
-std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type, Tile family_tile) {
+std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type,
+                                       RoomTilePalette tile_palette) {
     std::vector<std::vector<TemplateTile>> room_template;
     switch (stage_type) {
     case StageType::Test1:
@@ -42,7 +43,7 @@ std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type,
         break;
     }
 
-    return ResolveRoomTemplate(room_template, family_tile);
+    return ResolveRoomTemplate(room_template, tile_palette);
 }
 
 void PasteTemplate(std::vector<std::vector<TemplateTile>>& parent,
@@ -68,7 +69,7 @@ void PasteTemplate(std::vector<std::vector<TemplateTile>>& parent,
 
 std::vector<std::vector<Tile>> ResolveRoomTemplate(
     const std::vector<std::vector<TemplateTile>>& template_tiles,
-    Tile family_tile) {
+    RoomTilePalette tile_palette) {
     std::vector<std::vector<Tile>> room(
         static_cast<std::size_t>(Stage::kRoomShape.y),
         std::vector<Tile>(static_cast<std::size_t>(Stage::kRoomShape.x), Tile::Air));
@@ -83,11 +84,11 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
             case TemplateTile::Solid: {
                 const int chance = rng::RandomIntInclusive(0, 99);
                 if (chance < 10) {
-                    tile_type = DirtTileForFamilyTile(family_tile);
+                    tile_type = tile_palette.dirt;
                 } else if (chance < 20) {
-                    tile_type = BlockTileForFamilyTile(family_tile);
+                    tile_type = tile_palette.block;
                 } else {
-                    tile_type = DirtTileForFamilyTile(family_tile);
+                    tile_type = tile_palette.dirt;
                 }
                 break;
             }
@@ -102,7 +103,7 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
                 break;
             case TemplateTile::MaybeSolid: {
                 const int chance = rng::RandomIntInclusive(0, 99);
-                tile_type = chance < 50 ? DirtTileForFamilyTile(family_tile) : Tile::Air;
+                tile_type = chance < 50 ? tile_palette.dirt : Tile::Air;
                 break;
             }
             case TemplateTile::MaybeSpikes: {
@@ -112,7 +113,7 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
             }
             case TemplateTile::MaybeBlock: {
                 const int chance = rng::RandomIntInclusive(0, 99);
-                tile_type = chance < 50 ? Tile::Air : BlockTileForFamilyTile(family_tile);
+                tile_type = chance < 50 ? Tile::Air : tile_palette.block;
                 break;
             }
             case TemplateTile::Entrance:

@@ -66,6 +66,8 @@ const char* GetDebugLevelKindName(DebugLevelKind kind) {
         return "ParachuteTest";
     case DebugLevelKind::SacAltarTest:
         return "SacAltarTest";
+    case DebugLevelKind::ArrowTrapTest:
+        return "ArrowTrapTest";
     }
 
     return "Unknown";

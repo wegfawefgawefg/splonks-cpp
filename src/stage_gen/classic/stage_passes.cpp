@@ -47,8 +47,9 @@ void RunUdjatKeyChestStagePass(Stage& stage, int level_number, const StagePassCo
     }
 }
 
-void RunArrowTrapConversionStagePass(Stage& stage, int, const StagePassConfig&, const ItemPoolDb&) {
-    ConvertBlocksToArrowTraps(stage);
+void RunArrowTrapConversionStagePass(Stage& stage, int, const StagePassConfig& pass,
+                                     const ItemPoolDb&) {
+    ConvertBlocksToArrowTraps(stage, pass.GetInt("chance_denominator", 4));
 }
 
 void RunAmbientMinesEntitiesStagePass(Stage& stage, int, const StagePassConfig&,

@@ -50,5 +50,7 @@ stage_passes:
       min_level_number: 2
   - name: arrow_trap_conversion
     enabled: true
+    properties:
+      chance_denominator: 3
   - name: ambient_city_of_gold_entities
     enabled: true

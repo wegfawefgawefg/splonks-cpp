@@ -108,32 +108,6 @@ void DisturbShopByVid(std::optional<VID> shop_vid, State& state, Audio& audio) {
     DisturbShop(shop_vid->id, state, audio);
 }
 
-void OnShopAreaTileChanged(
-    std::size_t area_idx,
-    const IVec2& tile_pos,
-    State& state,
-    Audio& audio
-) {
-    if (area_idx >= state.entity_manager.entities.size()) {
-        return;
-    }
-
-    const Entity& shop = state.entity_manager.entities[area_idx];
-    if (!shop.active || shop.type_ != EntityType::Shop) {
-        return;
-    }
-
-    const Vec2 tile_center = Vec2::New(
-        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
-    );
-    if (!WorldAabbContainsPoint(state.stage, GetShopArea(shop), tile_center)) {
-        return;
-    }
-
-    DisturbShop(area_idx, state, audio);
-}
-
 void OnShopAreaEnter(
     std::size_t area_idx,
     std::size_t other_idx,
@@ -228,7 +202,6 @@ extern const EntityArchetype kShopArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
     .on_area_enter = OnShopAreaEnter,
-    .on_area_tile_changed = OnShopAreaTileChanged,
     .step_logic = StepEntityLogicAsShop,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
 };

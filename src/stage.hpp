@@ -17,7 +17,9 @@
 
 namespace splonks {
 
+struct Audio;
 struct Entity;
+struct State;
 
 struct StageEntitySpawn {
     EntityType type_ = EntityType::None;
@@ -48,6 +50,25 @@ struct StageExitTarget {
 
 using StageExitId = int;
 constexpr StageExitId kInvalidStageExitId = -1;
+
+struct StageTileTrigger;
+enum class StageTileTriggerEvent {
+    Destroyed,
+    Changed,
+    Entered,
+    Exited,
+};
+using StageTileTriggerHandler = void (*)(const StageTileTrigger&, const IVec2&, State&, Audio&);
+
+struct StageTileTrigger {
+    IVec2 tile_pos = IVec2::New(0, 0);
+    StageTileTriggerEvent event = StageTileTriggerEvent::Destroyed;
+    std::optional<std::size_t> target_spawn_index = std::nullopt;
+    std::optional<VID> target_vid = std::nullopt;
+    std::uint32_t payload_id = 0;
+    StageTileTriggerHandler on_triggered = nullptr;
+    const char* debug_label = nullptr;
+};
 
 struct StageExit {
     std::string id;
@@ -159,6 +180,7 @@ struct Stage {
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
     std::vector<StageEntitySpawn> entity_spawns;
+    std::vector<StageTileTrigger> tile_triggers;
     std::vector<BackgroundStamp> background_stamps;
     std::vector<StageGenAnnotation> stagegen_annotations;
     std::vector<StageLight> lights;

@@ -6899,6 +6899,36 @@ sprites:
     emit_point:
       x: 3
       y: 1
+  - path: "entities.png"
+    aabb:
+      x: 84
+      y: 395
+      w: 7
+      h: 3
+    name: "arrow"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 1
+      y: 2
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 2
+      h: 3
+    cbox:
+      x: 0
+      y: 0
+      w: 2
+      h: 3
+    tile: false
+    emit_point:
+      x: 6
+      y: 1
   - path: "boss.png"
     aabb:
       x: 0

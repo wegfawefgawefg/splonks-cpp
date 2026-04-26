@@ -241,6 +241,7 @@ add_executable(splonks-cpp
     src/entities/scarab.cpp
     src/entities/shotgun.cpp
     src/entities/shop.cpp
+    src/entities/shop_tile_triggers.cpp
     src/entities/shopkeeper.cpp
     src/entities/sign.cpp
     src/entities/sapphire_big.cpp
@@ -292,6 +293,7 @@ add_executable(splonks-cpp
     src/stage.cpp
     src/stage_init.cpp
     src/stage_wrap.cpp
+    src/stage_tile_triggers.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/classic/ambient_passes.cpp
     src/stage_gen/classic/glyph_actions.cpp
@@ -300,6 +302,7 @@ add_executable(splonks-cpp
     src/stage_gen/classic/room_templates.cpp
     src/stage_gen/classic/stage_pass_helpers.cpp
     src/stage_gen/classic/stage_passes.cpp
+    src/stage_gen/classic/tile_palette.cpp
     src/stage_gen/classic/treasure_passes.cpp
     src/stage_gen/room_template_loader.cpp
     src/stage_gen/classic/stagegen.cpp

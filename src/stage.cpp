@@ -366,7 +366,12 @@ Stage Stage::New(StageType stage_type) {
             const RoomType room_type =
                 static_cast<RoomType>(rooms[static_cast<std::size_t>(room_y)]
                                            [static_cast<std::size_t>(room_x)]);
-            const std::vector<std::vector<Tile>> room = GenRoom(room_type, stage_type, border_tile);
+            const RoomTilePalette room_tile_palette{
+                .dirt = border_tile,
+                .block = Tile::CaveBlock,
+            };
+            const std::vector<std::vector<Tile>> room =
+                GenRoom(room_type, stage_type, room_tile_palette);
 
             const bool flip = RandomBool();
             for (unsigned int tile_y = 0; tile_y < kRoomShape.y; ++tile_y) {

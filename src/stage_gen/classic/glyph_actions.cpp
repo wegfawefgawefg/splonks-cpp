@@ -2,6 +2,8 @@
 
 #include "frame_data_id.hpp"
 #include "stage_gen/classic/room_layout.hpp"
+#include "entities/shop_tile_triggers.hpp"
+#include "stage_gen/classic/tile_palette.hpp"
 #include "utils.hpp"
 
 #include <stdexcept>
@@ -16,11 +18,6 @@ Vec2 GetShrineIdolTopLeft(const Vec2& tile_pos) {
     // Spawn it already settled so the tiki head does not false-trigger from the
     // idol's initial gravity settle on frame one.
     return tile_pos + Vec2::New(10.0F, 4.0F);
-}
-
-Tile RandomBrickOrBlockTile(Tile family_tile) {
-    return rng::RandomIntInclusive(1, 10) == 1 ? BlockTileForFamilyTile(family_tile)
-                                               : DirtTileForFamilyTile(family_tile);
 }
 
 EntityType GetShopSignEntityType(ShopType shop_type, const ShopConfigDb& shop_db) {
@@ -185,6 +182,14 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
         return room.entity_spawns.size() - 1;
     }();
     std::optional<std::size_t> craps_dice_spawn_index;
+    const auto mark_shop_vandalism_tile = [&](int tile_x, int tile_y) {
+        if (!is_shop_area_room || !shop_spawn_index.has_value()) {
+            return;
+        }
+        room.tile_triggers.push_back(
+            entities::shop::MakeShopVandalismTileTrigger(IVec2::New(tile_x, tile_y), *shop_spawn_index)
+        );
+    };
 
     for (int y = 0; y < static_cast<int>(room_size.y); ++y) {
         for (int x = 0; x < static_cast<int>(room_size.x); ++x) {
@@ -222,6 +227,11 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
             };
             const auto spawn_entity = [&](EntityType entity_type) -> std::optional<std::size_t> {
                 return spawn_entity_at(entity_type, tile_pos);
+            };
+            const auto roll_classic_ground_block = [&]() {
+                return rng::RandomIntInclusive(1, 10) == 1
+                           ? BlockTileForFamilyTile(existing_stage.border.left.tile)
+                           : DirtTileForFamilyTile(existing_stage.border.left.tile);
             };
             const auto link_craps_prize = [&](std::optional<std::size_t> spawn_index) {
                 if (!is_craps_shop || !craps_table_spawn_index.has_value() ||
@@ -299,11 +309,10 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
             if (!rule->action.empty()) {
                 const std::string& action = rule->action;
                 if (action == "random_brick_or_block") {
-                    tile = RandomBrickOrBlockTile(existing_stage.border.left.tile);
+                    tile = roll_classic_ground_block();
                 } else if (action == "maybe_random_brick_or_block") {
-                    tile = rng::RandomIntInclusive(1, 2) == 1
-                               ? RandomBrickOrBlockTile(existing_stage.border.left.tile)
-                               : Tile::Air;
+                    tile = rng::RandomIntInclusive(1, 2) == 1 ? roll_classic_ground_block()
+                                                              : Tile::Air;
                 } else if (action == "jungle_ground") {
                     tile = Tile::Lush;
                 } else if (action == "jungle_maybe_ground") {
@@ -360,21 +369,27 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     }
                 } else if (action == "shop_wall") {
                     tile = ShopWallTileForFamilyTile(existing_stage.border.left.tile);
+                    mark_shop_vandalism_tile(x, y);
                 } else if (action == "vault_wall_or_pushblock") {
                     if (rng::RandomIntInclusive(1, rule->chance_denominator) == 1) {
                         spawn_entity(EntityType::Block);
                         tile = Tile::Air;
                     } else {
                         tile = ShopWallTileForFamilyTile(existing_stage.border.left.tile);
+                        mark_shop_vandalism_tile(x, y);
                     }
                 } else if (action == "smooth_wall") {
                     tile = SmoothWallTileForFamilyTile(existing_stage.border.left.tile);
+                    mark_shop_vandalism_tile(x, y);
                 } else if (action == "lush_shop_wall" || action == "lush_smooth_wall") {
                     tile = Tile::Lush;
+                    mark_shop_vandalism_tile(x, y);
                 } else if (action == "dark_shop_wall" || action == "dark_smooth_wall") {
                     tile = Tile::Dark;
+                    mark_shop_vandalism_tile(x, y);
                 } else if (action == "temple_shop_wall") {
                     tile = Tile::TempleDirt;
+                    mark_shop_vandalism_tile(x, y);
                 } else if (action == "lamp_or_red") {
                     spawn_entity(selection.shop_type == ShopType::Kissing ? EntityType::LampRed
                                                                           : EntityType::Lamp);

@@ -12,6 +12,7 @@
 #include "entities/player.hpp"
 #include "entities/rock.hpp"
 #include "entities/shop.hpp"
+#include "entities/shop_tile_triggers.hpp"
 #include "entities/store_light.hpp"
 #include "entities/damsel.hpp"
 #include "entities/stomp_pad.hpp"
@@ -57,6 +58,8 @@ constexpr int kParachuteTestStageWidthTiles = 14;
 constexpr int kParachuteTestStageHeightTiles = 72;
 constexpr int kSacAltarTestStageWidthTiles = 96;
 constexpr int kSacAltarTestStageHeightTiles = 24;
+constexpr int kArrowTrapTestStageWidthTiles = 14;
+constexpr int kArrowTrapTestStageHeightTiles = 72;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
 constexpr std::uint16_t kPlayerInitialBombs = 400;
 constexpr std::uint16_t kPlayerInitialRopes = 400;
@@ -129,7 +132,7 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     for (int y = top_y; y < stage_height; ++y) {
         for (int x = 0; x <= wall_x; ++x) {
             stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
-                DirtTileForFamilyTile(stage.border.left.tile);
+                kDefaultDebugBorderTile;
         }
     }
 
@@ -158,7 +161,7 @@ Stage MakeStompTestStage() {
 
     for (int x = 0; x < kStompTestStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kStompTestStageHeightTiles - 1)][static_cast<std::size_t>(x)] =
-            DirtTileForFamilyTile(stage.border.left.tile);
+            kDefaultDebugBorderTile;
     }
 
     return stage;
@@ -301,6 +304,37 @@ void BuildShopTestStall(Stage& stage, const ShopTestStallSpec& stall) {
     const int floor_y = static_cast<int>(stage.GetTileHeight()) - 1;
     for (int x = stall.left_x; x <= stall.right_x; ++x) {
         SetStageTile(stage, x, floor_y, Tile::LawsonFloor);
+    }
+}
+
+void AddShopTestVandalismTrigger(State& state, const IVec2& tile_pos, VID shop_vid) {
+    const StageTileTrigger trigger = entities::shop::MakeShopVandalismTileTrigger(tile_pos, shop_vid);
+    state.stage.tile_triggers.push_back(trigger);
+    state.stage.stagegen_annotations.push_back(StageGenAnnotation{
+        .world_pos = ToVec2(tile_pos * static_cast<int>(kTileSize)) + Vec2::New(2.0F, 8.0F),
+        .text = trigger.debug_label == nullptr ? "" : trigger.debug_label,
+    });
+}
+
+void AddShopTestVandalismTriggers(State& state, const ShopTestStallSpec& stall, std::optional<VID> shop_vid) {
+    if (!shop_vid.has_value()) {
+        return;
+    }
+
+    constexpr int kShopTopY = 4;
+    constexpr int kShopBottomY = 10;
+    for (int x = stall.left_x; x <= stall.right_x; ++x) {
+        AddShopTestVandalismTrigger(state, IVec2::New(x, kShopTopY), *shop_vid);
+    }
+
+    for (int y = kShopTopY + 1; y <= kShopBottomY - 2; ++y) {
+        AddShopTestVandalismTrigger(state, IVec2::New(stall.left_x, y), *shop_vid);
+        AddShopTestVandalismTrigger(state, IVec2::New(stall.right_x, y), *shop_vid);
+    }
+
+    const int floor_y = static_cast<int>(state.stage.GetTileHeight()) - 1;
+    for (int x = stall.left_x; x <= stall.right_x; ++x) {
+        AddShopTestVandalismTrigger(state, IVec2::New(x, floor_y), *shop_vid);
     }
 }
 
@@ -477,7 +511,7 @@ Stage MakeBowlingTestStage() {
 
     for (int x = 0; x < kBowlingTestStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kBowlingTestStageHeightTiles - 1)][static_cast<std::size_t>(x)] =
-            DirtTileForFamilyTile(stage.border.left.tile);
+            kDefaultDebugBorderTile;
     }
 
     return stage;
@@ -500,7 +534,7 @@ Stage MakeOpposingBodySmackStage() {
 
     for (int x = 0; x < kOpposingBodySmackStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kOpposingBodySmackStageHeightTiles - 1)]
-                   [static_cast<std::size_t>(x)] = DirtTileForFamilyTile(stage.border.left.tile);
+                   [static_cast<std::size_t>(x)] = kDefaultDebugBorderTile;
     }
 
     return stage;
@@ -521,7 +555,7 @@ Stage MakeShopTestStage() {
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
 
-    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const Tile floor_tile = kDefaultDebugBorderTile;
     for (int x = 0; x < kShopTestStageWidthTiles; ++x) {
         stage.tiles[static_cast<std::size_t>(kShopTestStageHeightTiles - 1)]
                    [static_cast<std::size_t>(x)] = floor_tile;
@@ -554,7 +588,7 @@ Stage MakeParachuteTestStage() {
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
 
-    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const Tile floor_tile = kDefaultDebugBorderTile;
     for (int x = 0; x < kParachuteTestStageWidthTiles; ++x) {
         SetStageTile(stage, x, kParachuteTestStageHeightTiles - 1, floor_tile);
     }
@@ -563,6 +597,36 @@ Stage MakeParachuteTestStage() {
     }
     for (int y = 5; y < kParachuteTestStageHeightTiles; ++y) {
         SetStageTile(stage, 1, y, floor_tile);
+    }
+
+    return stage;
+}
+
+Stage MakeArrowTrapTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kArrowTrapTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kArrowTrapTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.gravity = 0.3F;
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile floor_tile = kDefaultDebugBorderTile;
+    for (int y = 0; y < kArrowTrapTestStageHeightTiles; ++y) {
+        SetStageTile(stage, 0, y, floor_tile);
+        SetStageTile(stage, kArrowTrapTestStageWidthTiles - 1, y, floor_tile);
+    }
+    for (int x = 0; x < kArrowTrapTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, kArrowTrapTestStageHeightTiles - 1, floor_tile);
+    }
+    for (int x = 4; x <= 9; ++x) {
+        SetStageTile(stage, x, 4, floor_tile);
     }
 
     return stage;
@@ -583,7 +647,7 @@ Stage MakeBoulderTestStage() {
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
 
-    const Tile floor_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const Tile floor_tile = kDefaultDebugBorderTile;
     for (int x = 0; x < 20; ++x) {
         SetStageTile(stage, x, 7, floor_tile);
     }
@@ -638,7 +702,7 @@ Stage MakeSacAltarTestStage() {
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
 
-    const Tile dirt_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const Tile dirt_tile = kDefaultDebugBorderTile;
     const int floor_y = kSacAltarTestStageHeightTiles - 1;
     for (int x = 0; x < kSacAltarTestStageWidthTiles; ++x) {
         SetStageTile(stage, x, floor_y, dirt_tile);
@@ -667,7 +731,7 @@ Stage MakeAudioTestStage() {
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
 
-    const Tile dirt_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const Tile dirt_tile = kDefaultDebugBorderTile;
     const int floor_y = kAudioTestStageHeightTiles - 1;
     for (int x = 0; x < kAudioTestStageWidthTiles; ++x) {
         SetStageTile(stage, x, floor_y, dirt_tile);
@@ -703,7 +767,7 @@ Stage MakeMovingPlatformTestStage() {
     stage.camera_clamp_enabled = true;
 
     const int floor_y = kMovingPlatformTestStageHeightTiles - 1;
-    const Tile dirt_tile = DirtTileForFamilyTile(stage.border.left.tile);
+    const Tile dirt_tile = kDefaultDebugBorderTile;
     const Tile ice_tile = Tile::IceDirt;
     for (int x = 0; x < kMovingPlatformTestStageWidthTiles; ++x) {
         SetStageTile(stage, x, floor_y, dirt_tile);
@@ -1324,6 +1388,18 @@ void SpawnAuthoredStageEntities(State& state) {
         resolve_spawn_link(i, spawn.entity_d_spawn_index, 3);
     }
 
+    for (StageTileTrigger& trigger : state.stage.tile_triggers) {
+        if (!trigger.target_spawn_index.has_value()) {
+            continue;
+        }
+        trigger.target_vid = std::nullopt;
+        if (*trigger.target_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[*trigger.target_spawn_index].has_value()) {
+            continue;
+        }
+        trigger.target_vid = *spawned_vids[*trigger.target_spawn_index];
+    }
+
     for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
         const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
         if (!spawned_vids[i].has_value()) {
@@ -1507,6 +1583,7 @@ void InitShopTestStage(State& state) {
 
     const std::optional<VID> left_shop_vid =
         SpawnShopTestShop(state, ShopTestStallSpec{.left_x = 10, .right_x = 24}, 12);
+    AddShopTestVandalismTriggers(state, ShopTestStallSpec{.left_x = 10, .right_x = 24}, left_shop_vid);
     SpawnShopTestOwnedItem(
         state,
         left_shop_vid,
@@ -1524,6 +1601,7 @@ void InitShopTestStage(State& state) {
 
     const std::optional<VID> middle_shop_vid =
         SpawnShopTestShop(state, ShopTestStallSpec{.left_x = 30, .right_x = 46}, 32);
+    AddShopTestVandalismTriggers(state, ShopTestStallSpec{.left_x = 30, .right_x = 46}, middle_shop_vid);
     SpawnShopTestOwnedItem(
         state,
         middle_shop_vid,
@@ -1547,6 +1625,7 @@ void InitShopTestStage(State& state) {
 
     const std::optional<VID> right_shop_vid =
         SpawnShopTestShop(state, ShopTestStallSpec{.left_x = 52, .right_x = 68}, 54);
+    AddShopTestVandalismTriggers(state, ShopTestStallSpec{.left_x = 52, .right_x = 68}, right_shop_vid);
     SpawnShopTestCrapsTable(state, right_shop_vid, ShopTestStallSpec{.left_x = 52, .right_x = 68});
     state.stage.background_stamps.push_back(BackgroundStamp{
         .animation_id = frame_data_ids::DiceSign,
@@ -1570,6 +1649,45 @@ void InitParachuteTestStage(State& state) {
     if (state.player_vid.has_value()) {
         if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
             SetPassiveItem(*player, EntityPassiveItem::Parachute, true);
+        }
+    }
+}
+
+void InitArrowTrapTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
+    const float player_spawn_y = 3.0F * static_cast<float>(kTileSize) - 14.0F;
+    SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
+
+    constexpr int kTrapRows = 32;
+    constexpr int kFirstTrapY = 6;
+    constexpr int kTrapStrideY = 2;
+    constexpr int kLeftTrapX = 1;
+    constexpr int kRightTrapX = kArrowTrapTestStageWidthTiles - 2;
+    for (int i = 0; i < kTrapRows; ++i) {
+        const int tile_y = kFirstTrapY + i * kTrapStrideY;
+        const Vec2 left_pos = Vec2::New(
+            static_cast<float>(kLeftTrapX * static_cast<int>(kTileSize)),
+            static_cast<float>(tile_y * static_cast<int>(kTileSize))
+        );
+        if (const std::optional<VID> trap_vid =
+                SpawnStageEntityAtTopLeft(state, EntityType::ArrowTrap, left_pos)) {
+            if (Entity* const trap = state.entity_manager.GetEntityMut(*trap_vid)) {
+                trap->facing = LeftOrRight::Right;
+            }
+        }
+
+        const Vec2 right_pos = Vec2::New(
+            static_cast<float>(kRightTrapX * static_cast<int>(kTileSize)),
+            static_cast<float>(tile_y * static_cast<int>(kTileSize))
+        );
+        if (const std::optional<VID> trap_vid =
+                SpawnStageEntityAtTopLeft(state, EntityType::ArrowTrap, right_pos)) {
+            if (Entity* const trap = state.entity_manager.GetEntityMut(*trap_vid)) {
+                trap->facing = LeftOrRight::Left;
+            }
         }
     }
 }
@@ -2180,6 +2298,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::SacAltarTest:
         state.stage = MakeSacAltarTestStage();
         InitSacAltarTestStage(state);
+        break;
+    case DebugLevelKind::ArrowTrapTest:
+        state.stage = MakeArrowTrapTestStage();
+        InitArrowTrapTestStage(state);
         break;
     }
 

@@ -267,6 +267,7 @@ ClassicRoomTemplateDb LoadClassicRoomTemplateDb(const StageConfig& config) {
     db.snake_pit_top = LoadClassicRoomPool(config, "snake_pit_top");
     db.snake_pit_bottom = LoadClassicRoomPool(config, "snake_pit_bottom");
     db.vault = LoadClassicRoomPool(config, "vault");
+    db.idol = LoadClassicRoomPool(config, "idol");
     db.drop = LoadClassicRoomPool(config, "drop");
     return db;
 }
@@ -331,6 +332,8 @@ RoomTemplateSelection SelectRoomTemplate(int room_code, bool is_start_room, bool
                                     "snake_pit_bottom");
     case static_cast<int>(RoomCode::Vault):
         return RequireRoomSelection(PickLoadedTemplate(room_templates.vault), "vault");
+    case static_cast<int>(RoomCode::Idol):
+        return RequireRoomSelection(PickLoadedTemplate(room_templates.idol), "idol");
     default:
         throw std::runtime_error("Unknown classic room code: " + std::to_string(room_code));
     }

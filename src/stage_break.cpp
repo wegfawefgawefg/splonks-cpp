@@ -4,6 +4,7 @@
 #include "on_damage_effects.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
+#include "stage_tile_triggers.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
@@ -90,10 +91,6 @@ void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& a
     }
 }
 
-} // namespace
-
-namespace {
-
 void BreakStageTilesAtCoordsInternal(
     const std::vector<IVec2>& tile_positions,
     State& state,
@@ -127,6 +124,7 @@ void BreakStageTilesAtCoordsInternal(
         if (tile_archetype.on_break != nullptr) {
             tile_archetype.on_break(tile_pos, state, audio);
         }
+        DispatchStageTileDestroyed(tile_pos, state, audio);
         NotifyAreaEntitiesTileChanged(tile_pos, state, audio);
 
         const EmbeddedTreasure embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);

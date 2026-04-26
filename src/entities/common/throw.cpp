@@ -69,6 +69,7 @@ bool TrySpawnAndThrowEntityForToolUse(
     spawned_entity->thrown_by = thrower.vid;
     spawned_entity->thrown_immunity_timer = thrown_immunity_timer;
     const EntityArchetype& spawned_archetype = GetEntityArchetype(spawned_entity->type_);
+    spawned_entity->can_apply_projectile_contact = spawned_archetype.can_apply_projectile_contact;
     spawned_entity->projectile_contact_damage_type = spawned_archetype.projectile_contact_damage_type;
     spawned_entity->projectile_contact_damage_amount = spawned_archetype.projectile_contact_damage_amount;
     spawned_entity->projectile_contact_timer = kProjectileContactDuration;

@@ -173,6 +173,7 @@ constexpr FrameDataId StoreLightBroken = HashFrameDataIdConstexpr("store_light_b
 constexpr FrameDataId Lantern = HashFrameDataIdConstexpr("lantern");
 constexpr FrameDataId LanternRed = HashFrameDataIdConstexpr("lantern_red");
 constexpr FrameDataId ArrowTrap = HashFrameDataIdConstexpr("arrow_trap");
+constexpr FrameDataId Arrow = HashFrameDataIdConstexpr("arrow");
 constexpr FrameDataId GiantTikiHead = HashFrameDataIdConstexpr("giant_tiki_head");
 constexpr FrameDataId KaliHead = HashFrameDataIdConstexpr("kali_head");
 constexpr FrameDataId KaliBody = HashFrameDataIdConstexpr("kali_body");

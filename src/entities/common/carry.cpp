@@ -6,6 +6,7 @@
 #include "controls.hpp"
 #include "world_query.hpp"
 
+#include <cmath>
 #include <optional>
 #include <vector>
 
@@ -22,7 +23,12 @@ void ApplyHeldState(Entity& entity) {
     entity.projectile_contact_timer = 0;
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
+    entity.rotation = 0.0F;
 
+}
+
+void SnapPlacedAttachmentToPixels(Entity& entity) {
+    entity.pos = Vec2::New(std::round(entity.pos.x), std::round(entity.pos.y));
 }
 
 void SyncHeldAttachmentForHolder(
@@ -56,6 +62,7 @@ void SyncHeldAttachmentForHolder(
             ? holder_center + Vec2::New(-hold_offset.x, hold_offset.y)
             : holder_center + hold_offset;
     SetVisualCenterForEntity(*holding, graphics, held_pos_target);
+    SnapPlacedAttachmentToPixels(*holding);
     holding->grounded = false;
     state.UpdateSidForEntity(holding->vid.id, graphics);
 }
@@ -103,6 +110,7 @@ void SyncBackAttachmentForHolder(
             ? holder_center + Vec2::New(-back_offset.x, back_offset.y)
             : holder_center + back_offset;
     back_item->SetCenter(held_pos_target);
+    SnapPlacedAttachmentToPixels(*back_item);
     back_item->grounded = false;
     state.UpdateSidForEntity(back_item->vid.id, graphics);
 }
@@ -159,6 +167,7 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     held->thrown_by = entity.vid;
     held->thrown_immunity_timer = kThrownByImmunityDuration;
     const EntityArchetype& held_archetype = GetEntityArchetype(held->type_);
+    held->can_apply_projectile_contact = held_archetype.can_apply_projectile_contact;
     held->projectile_contact_damage_type = held_archetype.projectile_contact_damage_type;
     held->projectile_contact_damage_amount = held_archetype.projectile_contact_damage_amount;
     held->projectile_contact_timer = kProjectileContactDuration;
@@ -294,6 +303,7 @@ void UpdateCarryAndBackItems(
                     StopUsingEntity(*thrown);
                     thrown->thrown_immunity_timer = kThrownByImmunityDuration;
                     const EntityArchetype& thrown_archetype = GetEntityArchetype(thrown->type_);
+                    thrown->can_apply_projectile_contact = thrown_archetype.can_apply_projectile_contact;
                     thrown->projectile_contact_damage_type = thrown_archetype.projectile_contact_damage_type;
                     thrown->projectile_contact_damage_amount = thrown_archetype.projectile_contact_damage_amount;
                     thrown->projectile_contact_timer = kProjectileContactDuration;
@@ -373,6 +383,8 @@ void UpdateCarryAndBackItems(
                 item_taken_off_back->thrown_by = entity_vid;
                 item_taken_off_back->thrown_immunity_timer = kThrownByImmunityDuration;
                 const EntityArchetype& back_item_archetype = GetEntityArchetype(item_taken_off_back->type_);
+                item_taken_off_back->can_apply_projectile_contact =
+                    back_item_archetype.can_apply_projectile_contact;
                 item_taken_off_back->projectile_contact_damage_type = back_item_archetype.projectile_contact_damage_type;
                 item_taken_off_back->projectile_contact_damage_amount = back_item_archetype.projectile_contact_damage_amount;
                 item_taken_off_back->projectile_contact_timer = kProjectileContactDuration;

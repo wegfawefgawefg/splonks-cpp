@@ -42,6 +42,9 @@ void ShiftStageSpawnsAndStamps(Stage& stage, const Vec2& delta) {
     for (StageLight& light : stage.lights) {
         light.tile_pos = light.tile_pos + tile_delta;
     }
+    for (StageTileTrigger& trigger : stage.tile_triggers) {
+        trigger.tile_pos = trigger.tile_pos + tile_delta;
+    }
 }
 
 void WrapPosIntoCore(const Stage& stage, Vec2& pos) {
@@ -106,6 +109,25 @@ void CropStageSpawnsAndStampsAndShiftBack(Stage& stage, const Vec2& delta_wc) {
             }
         }
         light.tile_pos = light.tile_pos - core_origin;
+    }
+    for (StageTileTrigger& trigger : stage.tile_triggers) {
+        if (stage.border.wrap_x && core_size.x > 0) {
+            while (trigger.tile_pos.x < core_origin.x) {
+                trigger.tile_pos.x += core_size.x;
+            }
+            while (trigger.tile_pos.x >= core_origin.x + core_size.x) {
+                trigger.tile_pos.x -= core_size.x;
+            }
+        }
+        if (stage.border.wrap_y && core_size.y > 0) {
+            while (trigger.tile_pos.y < core_origin.y) {
+                trigger.tile_pos.y += core_size.y;
+            }
+            while (trigger.tile_pos.y >= core_origin.y + core_size.y) {
+                trigger.tile_pos.y -= core_size.y;
+            }
+        }
+        trigger.tile_pos = trigger.tile_pos - core_origin;
     }
 }
 

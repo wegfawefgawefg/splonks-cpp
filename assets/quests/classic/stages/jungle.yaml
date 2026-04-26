@@ -69,7 +69,5 @@ stage_passes:
     enabled: false
     properties:
       min_level_number: 2
-  - name: arrow_trap_conversion
-    enabled: true
   - name: ambient_jungle_entities
     enabled: true

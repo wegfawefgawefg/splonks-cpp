@@ -11,15 +11,6 @@ namespace splonks {
 
 struct State;
 
-enum class TileFamily {
-    Neutral,
-    Cave,
-    Ice,
-    Jungle,
-    Temple,
-    Boss,
-};
-
 using TileOnBreak = void (*)(const IVec2& tile_pos, State& state, Audio& audio);
 
 struct TileArchetype {
@@ -28,7 +19,6 @@ struct TileArchetype {
     bool climbable = false;
     bool transparent = true;
     bool hangable = false;
-    TileFamily family = TileFamily::Neutral;
     float friction = 0.85F;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
     std::optional<AudioAssetId> break_sound = std::nullopt;

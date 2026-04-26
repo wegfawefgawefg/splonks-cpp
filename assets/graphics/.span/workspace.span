@@ -29,7 +29,7 @@
   ],
   "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "fda57733-7776-40a3-a032-f036e10d3c7a",
+  "selectedAnnotationId": "239464ad-c33d-4781-aff7-5b5a40a5ab6e",
   "sheets": [
     {
       "path": "images/title.png",
@@ -10103,15 +10103,58 @@
               "y": 1
             }
           }
+        },
+        {
+          "id": "239464ad-c33d-4781-aff7-5b5a40a5ab6e",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 84,
+            "y": 395,
+            "w": 7,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "arrow",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 1,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 2,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 2,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 1,
+              "y": 2
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 16.385,
-        "centerX": 184.71162648764113,
-        "centerY": 148.61153494049435
+        "zoom": 20.481,
+        "centerX": 104.21854401640545,
+        "centerY": 392.6566085640349
       }
     },
     {
