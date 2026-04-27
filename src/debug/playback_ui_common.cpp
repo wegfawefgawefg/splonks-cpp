@@ -65,6 +65,10 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.performance_settings_visible = debug.performance_settings_window_visible;
         changed = true;
     }
+    if (state.settings.debug_ui.player_tuning_visible != debug.player_tuning_window_visible) {
+        state.settings.debug_ui.player_tuning_visible = debug.player_tuning_window_visible;
+        changed = true;
+    }
     const std::uint32_t character_swap_type =
         static_cast<std::uint32_t>(EntityTypeIndex(debug.character_swap_entity_type));
     if (state.settings.debug_ui.entity_swap_type != character_swap_type) {

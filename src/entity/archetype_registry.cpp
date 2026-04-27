@@ -55,7 +55,6 @@
 #include "entities/pistol.hpp"
 #include "entities/player.hpp"
 #include "entities/pot.hpp"
-#include "entities/push_block.hpp"
 #include "entities/rock.hpp"
 #include "entities/rope.hpp"
 #include "entities/ruby_big.hpp"
@@ -248,7 +247,6 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Meathead, entities::meathead::kMeatheadArchetype, "Meathead");
     SetArchetype(EntityType::WebBall, entities::web_cannon::kWebBallArchetype, "WebBall");
     SetArchetype(EntityType::Cobweb, entities::web_cannon::kCobwebArchetype, "Cobweb");
-    SetArchetype(EntityType::PushBlock, entities::push_block::kPushBlockArchetype, "PushBlock");
     SetArchetype(EntityType::Jaws, entities::jaws::kJawsArchetype, "Jaws");
     SetArchetype(EntityType::CrystalSkull, entities::crystal_skull::kCrystalSkullArchetype,
                  "CrystalSkull");

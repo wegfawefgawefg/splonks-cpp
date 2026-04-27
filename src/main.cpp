@@ -182,6 +182,7 @@ int main(int argc, char** argv) {
         debug.graphics_settings_window_visible = state.settings.debug_ui.graphics_settings_visible;
         debug.camera_settings_window_visible = state.settings.debug_ui.camera_settings_visible;
         debug.performance_settings_window_visible = state.settings.debug_ui.performance_settings_visible;
+        debug.player_tuning_window_visible = state.settings.debug_ui.player_tuning_visible;
         if (state.settings.debug_ui.entity_swap_type > 0 &&
             state.settings.debug_ui.entity_swap_type < splonks::kEntityTypeCount) {
             debug.character_swap_entity_type =

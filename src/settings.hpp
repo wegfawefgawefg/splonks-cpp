@@ -129,6 +129,7 @@ struct DebugUiSettings {
     bool graphics_settings_visible = false;
     bool camera_settings_visible = false;
     bool performance_settings_visible = false;
+    bool player_tuning_visible = false;
     std::uint32_t entity_swap_type = 1;
     std::uint32_t default_spawn_type = 1;
     bool default_spawn_enabled = false;
@@ -141,6 +142,35 @@ struct DebugUiSettings {
     static DebugUiSettings New();
 };
 
+struct PlayerTuningState {
+    float gravity_scale = 1.0F;
+    float max_fall_speed = 9.0F;
+    float jump_impulse = 4.5F;
+    int jump_hold_frames = 0;
+    int coyote_frames = 6;
+    int jump_delay_frames = 1;
+    int fall_damage_light_frames = 32;
+    int fall_damage_medium_frames = 64;
+    int fall_damage_heavy_frames = 96;
+
+    float walk_speed = 2.5F;
+    float run_speed = 4.0F;
+    float move_acc = 0.5F;
+    float run_acc = 0.5F;
+    float ground_friction_scale = 1.0F;
+    float air_friction = 0.85F;
+
+    float climb_speed = 3.0F;
+    float climb_depart_horizontal_speed = 4.0F;
+    float climb_probe_bias_pixels = 8.0F;
+    float climb_probe_x_scale = 0.5F;
+    int climb_required_probe_hits = 2;
+    int climb_detach_cooldown = 5;
+    int hang_drop_cooldown = 5;
+    int glove_hang_drop_cooldown = 10;
+    int hang_wall_release_cooldown = 4;
+};
+
 struct Settings {
     SettingsMode mode = SettingsMode::Main;
     VideoSettings video;
@@ -149,6 +179,7 @@ struct Settings {
     UiSettings ui;
     PostProcessSettings post_process;
     DebugUiSettings debug_ui;
+    PlayerTuningState player_tuning;
 
     static Settings New();
 };

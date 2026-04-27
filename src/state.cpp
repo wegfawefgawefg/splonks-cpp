@@ -115,6 +115,7 @@ State State::New() {
     State state;
     state.mode = Mode::Playing;
     state.settings = LoadSettings();
+    state.player_tuning = state.settings.player_tuning;
     state.menu_inputs = MenuInputs::New();
     state.menu_input_snapshot = MenuInputSnapshot::New();
     state.previous_menu_input_snapshot = MenuInputSnapshot::New();

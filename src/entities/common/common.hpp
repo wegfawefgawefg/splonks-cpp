@@ -6,6 +6,8 @@
 #include "graphics.hpp"
 #include "state.hpp"
 
+#include <cstdint>
+
 namespace splonks::controls {
 struct ControlIntent;
 }
@@ -13,9 +15,27 @@ struct ControlIntent;
 namespace splonks::entities::common {
 
 constexpr float kMaxSpeed = 7.0F;
+constexpr std::uint32_t kDefaultCoyoteTimeFrames = 6;
 constexpr unsigned int kDefaultStunTimer = 60;
 constexpr unsigned int kThrownByImmunityDuration = 16;
 constexpr unsigned int kProjectileContactDuration = 120;
+
+struct JumpAndClimbTuning {
+    float gravity_scale = 1.0F;
+    float jump_impulse = 4.5F;
+    float climb_speed = 3.0F;
+    float climb_depart_horizontal_speed = 4.0F;
+    float climb_probe_bias_pixels = 8.0F;
+    float climb_probe_x_scale = 0.5F;
+    std::uint32_t climb_required_probe_hits = 2;
+    std::uint32_t coyote_time_frames = kDefaultCoyoteTimeFrames;
+    std::uint32_t jump_delay_frames = 1;
+    std::uint32_t jump_hold_gravity_frames = 0;
+    std::uint32_t climb_detach_cooldown_frames = 5;
+    std::uint32_t hang_drop_cooldown_frames = 5;
+    std::uint32_t glove_hang_drop_cooldown_frames = 10;
+    std::uint32_t hang_wall_release_cooldown_frames = 4;
+};
 
 struct TileContact {
     IVec2 tile_pos = IVec2::New(0, 0);
@@ -49,7 +69,9 @@ void EulerStep(std::size_t entity_idx, State& state, float dt);
 void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt);
 void ApplyGravity(std::size_t entity_idx, State& state, float dt);
 void ApplyGroundFriction(std::size_t entity_idx, State& state);
+void ApplyGroundFriction(std::size_t entity_idx, State& state, float friction_scale);
 void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state);
+void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state, float friction_scale);
 void StepStandardPhysics(
     std::size_t entity_idx,
     State& state,
@@ -63,11 +85,12 @@ void GroundedCheck(
     State& state,
     Audio& audio,
     bool check_tiles,
-    bool check_entities
+    bool check_entities,
+    std::uint32_t coyote_time_frames = kDefaultCoyoteTimeFrames
 );
 bool IsGroundedOnTiles(std::size_t entity_idx, State& state);
 void DoThrownByStep(std::size_t entity_idx, State& state);
-void HangHandsStep(std::size_t entity_idx, State& state);
+void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTuning& tuning);
 void DoTileCollisions(std::size_t entity_idx, State& state);
 void DoTileAndEntityCollisions(
     std::size_t entity_idx,
@@ -181,7 +204,12 @@ bool TryApplyProjectileContactToEntity(
     Audio& audio
 );
 
-void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio);
+void JumpingAndClimbingStep(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    const JumpAndClimbTuning& tuning
+);
 ContactResolution TryDispatchEntityEntityContactPair(
     std::size_t entity_idx,
     std::size_t other_entity_idx,

@@ -54,7 +54,6 @@ struct Entity {
     bool marked_for_destruction = false;
     EntityType type_ = EntityType::None;
     VID vid;
-    bool was_horizontally_controlled_this_frame = false;
     bool has_physics = true;
     bool can_collide = true;
     bool can_be_hit = true;
@@ -79,11 +78,12 @@ struct Entity {
     bool can_only_be_picked_up_if_dead_or_stunned = false;
     bool impassable = false;
     bool can_be_hung_on = true;
-    float fall_distance = 0.0F;
+    std::uint32_t fall_timer = 0;
     Vec2 pos;
     Vec2 vel;
     Vec2 acc;
     float max_speed = 7.0F;
+    std::uint32_t jump_hold_gravity_frames_remaining = 0;
     float throw_velocity_scale = 1.0F;
     Vec2 size;
     float dist_traveled_this_frame = 0.0F;
@@ -194,7 +194,6 @@ struct Entity {
     void IncTravelSound();
     bool IsHanging() const;
     bool IsClimbing() const;
-    bool IsHorizontallyControlled() const;
     AABB GetFeet() const;
     void SetGrounded(const Stage& stage);
     std::tuple<Vec2, Vec2> GetTlAndTrCorners() const;

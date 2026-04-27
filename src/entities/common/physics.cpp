@@ -1,8 +1,6 @@
 #include "entities/common/common.hpp"
 #include "world_query.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/player.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 
@@ -797,6 +795,10 @@ void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
 }
 
 void ApplyGroundFriction(std::size_t entity_idx, State& state) {
+    ApplyGroundFriction(entity_idx, state, 1.0F);
+}
+
+void ApplyGroundFriction(std::size_t entity_idx, State& state, float friction_scale) {
     {
         Entity& entity = state.entity_manager.entities[entity_idx];
         entity.grounded = false;
@@ -808,16 +810,24 @@ void ApplyGroundFriction(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.SetGrounded(state.stage);
     if (entity.grounded) {
-        entity.vel.x *= GetGroundFrictionMultiplier(entity_idx, state);
+        entity.vel.x *= std::clamp(
+            GetGroundFrictionMultiplier(entity_idx, state) * friction_scale,
+            0.0F,
+            1.0F
+        );
     }
 }
 
 void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state) {
+    ApplyArchetypeGroundFriction(entity_idx, state, 1.0F);
+}
+
+void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state, float friction_scale) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
     if (!entity.affected_by_ground_friction) {
         return;
     }
-    ApplyGroundFriction(entity_idx, state);
+    ApplyGroundFriction(entity_idx, state, friction_scale);
 }
 
 void StepStandardPhysics(
@@ -839,7 +849,8 @@ void GroundedCheck(
     State& state,
     Audio& audio,
     bool check_tiles,
-    bool check_entities
+    bool check_entities,
+    std::uint32_t coyote_time_frames
 ) {
     (void)audio;
     bool grounded = false;
@@ -857,7 +868,7 @@ void GroundedCheck(
         if (entity.vel.y > 0.0F) {
             entity.vel.y = 0.0F;
         }
-        entity.coyote_time = player::kCoyoteTimeFrames;
+        entity.coyote_time = coyote_time_frames;
     } else if (entity.coyote_time > 0) {
         entity.coyote_time -= 1;
     }

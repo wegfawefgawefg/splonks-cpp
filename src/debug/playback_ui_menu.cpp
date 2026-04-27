@@ -149,6 +149,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
     ImGui::Checkbox("Camera Settings", &debug.camera_settings_window_visible);
     ImGui::Checkbox("Performance", &debug.performance_settings_window_visible);
+    ImGui::Checkbox("Player Tuning", &debug.player_tuning_window_visible);
     ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
     ImGui::Checkbox("Lighting Settings", &debug.lighting_settings_window_visible);
     ImGui::Checkbox("Graphics Settings", &debug.graphics_settings_window_visible);
@@ -449,7 +450,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
     if (ImGui::Button("Give Players Gloves")) {
         for (Entity& entity : state.entity_manager.entities) {
-            if (!entity.active || entity.type_ != EntityType::Player) {
+            if (!entity.active || !IsPlayerLikeEntityType(entity.type_)) {
                 continue;
             }
             SetPassiveItem(entity, EntityPassiveItem::Gloves, true);
@@ -458,18 +459,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
 
     if (state.debug_level.kind == DebugLevelKind::HangTest) {
         HangTestLevelConfig& hang_test = state.debug_level.hang_test;
-        ImGui::SliderInt("Stage Height", &hang_test.stage_height_tiles, 16, 512);
-        const int cutout_drop_max = std::max(2, hang_test.stage_height_tiles - 8);
-        const int cutout_height_max =
-            std::max(1, hang_test.stage_height_tiles - 7 - hang_test.cutout_drop_tiles);
-
-        ImGui::SliderInt("Cutout Drop", &hang_test.cutout_drop_tiles, 2, cutout_drop_max);
-        ImGui::SliderInt(
-            "Cutout Height",
-            &hang_test.cutout_height_tiles,
-            1,
-            std::min(8, cutout_height_max)
-        );
+        ImGui::SliderInt("Drop", &hang_test.drop_tiles, 0, 64);
     } else if (state.debug_level.kind == DebugLevelKind::BorderTest) {
         ImGui::TextUnformatted("Use the Border window to edit side tiles, wrap, and void death.");
     } else if (state.debug_level.kind == DebugLevelKind::MazeDoorTest) {

@@ -67,9 +67,7 @@ constexpr bool HasShakeMask(ShakeMask mask, ShakeMask flag) {
 }
 
 struct HangTestLevelConfig {
-    int stage_height_tiles = 128;
-    int cutout_drop_tiles = 8;
-    int cutout_height_tiles = 2;
+    int drop_tiles = 8;
 };
 
 enum class MazeDoorTestRoom : std::uint8_t {
@@ -219,6 +217,7 @@ struct State {
     DebugOverlayState debug_overlay;
     DebugShakeBrushState debug_shake_brush;
     DebugAudioBrushState debug_audio_brush;
+    PlayerTuningState player_tuning;
     bool running = true;
 
     // Frame and simulation timing.

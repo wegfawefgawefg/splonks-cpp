@@ -64,6 +64,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
 void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Graphics& graphics) {
     state.mode = snapshot.mode;
     state.settings = snapshot.settings;
+    state.player_tuning = state.settings.player_tuning;
     state.menu_inputs = snapshot.menu_inputs;
     state.menu_input_snapshot = snapshot.menu_input_snapshot;
     state.previous_menu_input_snapshot = snapshot.previous_menu_input_snapshot;

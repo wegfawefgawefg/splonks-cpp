@@ -9,7 +9,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 54;
+constexpr std::uint32_t kRecordingVersion = 63;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -111,7 +111,6 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.marked_for_destruction);
     WritePod(out, entity.type_);
     WritePod(out, entity.vid);
-    WritePod(out, entity.was_horizontally_controlled_this_frame);
     WritePod(out, entity.has_physics);
     WritePod(out, entity.can_collide);
     WritePod(out, entity.can_be_hit);
@@ -136,11 +135,12 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.can_only_be_picked_up_if_dead_or_stunned);
     WritePod(out, entity.impassable);
     WritePod(out, entity.can_be_hung_on);
-    WritePod(out, entity.fall_distance);
+    WritePod(out, entity.fall_timer);
     WritePod(out, entity.pos);
     WritePod(out, entity.vel);
     WritePod(out, entity.acc);
     WritePod(out, entity.max_speed);
+    WritePod(out, entity.jump_hold_gravity_frames_remaining);
     WritePod(out, entity.throw_velocity_scale);
     WritePod(out, entity.size);
     WritePod(out, entity.dist_traveled_this_frame);
@@ -245,7 +245,6 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.marked_for_destruction) &&
            ReadPod(in, entity.type_) &&
            ReadPod(in, entity.vid) &&
-           ReadPod(in, entity.was_horizontally_controlled_this_frame) &&
            ReadPod(in, entity.has_physics) &&
            ReadPod(in, entity.can_collide) &&
            ReadPod(in, entity.can_be_hit) &&
@@ -270,11 +269,12 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.can_only_be_picked_up_if_dead_or_stunned) &&
            ReadPod(in, entity.impassable) &&
            ReadPod(in, entity.can_be_hung_on) &&
-           ReadPod(in, entity.fall_distance) &&
+           ReadPod(in, entity.fall_timer) &&
            ReadPod(in, entity.pos) &&
            ReadPod(in, entity.vel) &&
            ReadPod(in, entity.acc) &&
            ReadPod(in, entity.max_speed) &&
+           ReadPod(in, entity.jump_hold_gravity_frames_remaining) &&
            ReadPod(in, entity.throw_velocity_scale) &&
            ReadPod(in, entity.size) &&
            ReadPod(in, entity.dist_traveled_this_frame) &&
@@ -423,6 +423,7 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
     WritePod(out, settings.post_process.crt_vignette_intensity);
     WritePod(out, settings.post_process.crt_grille_amount);
     WritePod(out, settings.post_process.crt_brightness_boost);
+    WritePod(out, settings.player_tuning);
 }
 
 bool ReadSettings(std::istream& in, Settings& settings) {
@@ -473,7 +474,8 @@ bool ReadSettings(std::istream& in, Settings& settings) {
         !ReadPod(in, settings.post_process.crt_vignette_amount) ||
         !ReadPod(in, settings.post_process.crt_vignette_intensity) ||
         !ReadPod(in, settings.post_process.crt_grille_amount) ||
-        !ReadPod(in, settings.post_process.crt_brightness_boost)) {
+        !ReadPod(in, settings.post_process.crt_brightness_boost) ||
+        !ReadPod(in, settings.player_tuning)) {
         return false;
     }
     return true;

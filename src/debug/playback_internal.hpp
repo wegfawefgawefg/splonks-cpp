@@ -41,6 +41,7 @@ void DrawAudioSettingsWindow(DebugPlayback& debug, State& state);
 void DrawUiSettingsWindow(DebugPlayback& debug, State& state);
 void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state);
+void DrawPlayerTuningWindow(DebugPlayback& debug, State& state);
 void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics& graphics);
 void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawGraphicsSettingsWindow(

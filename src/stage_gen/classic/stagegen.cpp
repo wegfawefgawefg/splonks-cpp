@@ -153,7 +153,6 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
         std::vector<EmbeddedTreasure>(stage.tiles.empty() ? 0U : stage.tiles.front().size()));
     stage.rooms = std::move(room_codes);
     stage.path = layout.path;
-    stage.gravity = 0.3F;
     stage.camera_clamp_margin = ToVec2(room_size * kTileSize) / 2.0F;
     AddStageGenAnnotation(stage, "layout: start (" + std::to_string(layout.start_room.x) + "," +
                                      std::to_string(layout.start_room.y) + ") exit (" +
@@ -161,7 +160,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                                      std::to_string(layout.end_room.y) + ") path " +
                                      std::to_string(layout.path.size()) + " rooms");
     for (const StagePassConfig& pass : stage_config.stage_passes) {
-        RunStagePass(stage, level_number, pass, item_db);
+        RunStagePass(stage, level_number, pass, item_db, context.quest_state);
     }
     return stage;
 }
@@ -169,7 +168,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
 } // namespace
 
 Stage GenerateStage(const QuestDefinition& quest, const QuestStageDefinition& stage_def,
-                    const StageConfig& stage_config) {
+                    const StageConfig& stage_config, QuestState* quest_state) {
     if (stage_config.generator != "classic_room_graph") {
         throw std::runtime_error("Unsupported stage generator: " + stage_config.generator);
     }
@@ -177,7 +176,13 @@ Stage GenerateStage(const QuestDefinition& quest, const QuestStageDefinition& st
     context.quest = &quest;
     context.stage_def = &stage_def;
     context.stage_config = &stage_config;
+    context.quest_state = quest_state;
     return GenerateClassicStage(stage_def.level_number, context);
+}
+
+Stage GenerateStage(const QuestDefinition& quest, const QuestStageDefinition& stage_def,
+                    const StageConfig& stage_config) {
+    return GenerateStage(quest, stage_def, stage_config, nullptr);
 }
 
 const char* GetRoomCodeDebugLabel(int room_code) {

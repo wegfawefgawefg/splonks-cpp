@@ -17,6 +17,7 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
         .right = inputs.right.down,
         .up = inputs.up.down,
         .down = inputs.down.down,
+        .jump = inputs.jump.down,
         .jump_pressed = inputs.jump.pressed,
         .run = inputs.run.down,
         .use_held = inputs.attack.down,

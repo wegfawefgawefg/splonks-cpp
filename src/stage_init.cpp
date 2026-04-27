@@ -36,6 +36,9 @@ namespace {
 constexpr int kHangTestStageWidthTiles = 10;
 constexpr int kHangTestWallX = 4;
 constexpr int kHangTestTopY = 4;
+constexpr int kHangTestMaxDropTiles = 64;
+constexpr int kHangTestBottomPaddingTiles = 8;
+constexpr int kHangTestMinStageHeightTiles = 16;
 constexpr int kStompTestStageWidthTiles = 10;
 constexpr int kStompTestStageHeightTiles = 8;
 constexpr int kBorderTestStageWidthTiles = 10;
@@ -107,7 +110,11 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     Stage stage;
     stage.stage_type = StageType::Test1;
     const int stage_width = kHangTestStageWidthTiles;
-    const int stage_height = std::clamp(config.stage_height_tiles, 16, 512);
+    const int drop_tiles = std::clamp(config.drop_tiles, 0, kHangTestMaxDropTiles);
+    const int stage_height = std::max(
+        kHangTestMinStageHeightTiles,
+        kHangTestTopY + drop_tiles + kHangTestBottomPaddingTiles
+    );
     stage.tiles = std::vector<std::vector<Tile>>(
         static_cast<std::size_t>(stage_height),
         std::vector<Tile>(static_cast<std::size_t>(stage_width), Tile::Air)
@@ -115,19 +122,13 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
 
     const int wall_x = std::clamp(kHangTestWallX, 1, stage_width - 2);
     const int top_y = std::clamp(kHangTestTopY, 2, stage_height - 8);
-    const int cutout_drop_tiles =
-        std::clamp(config.cutout_drop_tiles, 2, stage_height - top_y - 4);
-    const int cutout_height_tiles =
-        std::clamp(config.cutout_height_tiles, 1, stage_height - top_y - cutout_drop_tiles - 1);
-    const int cutout_top_y = top_y + cutout_drop_tiles;
-    const int cutout_left_x = wall_x;
+    const int right_floor_y = top_y + drop_tiles;
 
     for (int y = top_y; y < stage_height; ++y) {
         for (int x = 0; x <= wall_x; ++x) {
@@ -136,9 +137,11 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
         }
     }
 
-    for (int y = cutout_top_y; y < cutout_top_y + cutout_height_tiles; ++y) {
-        stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(cutout_left_x)] =
-            Tile::Air;
+    for (int y = right_floor_y; y < stage_height; ++y) {
+        for (int x = wall_x + 1; x < stage_width; ++x) {
+            stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                kDefaultDebugBorderTile;
+        }
     }
 
     return stage;
@@ -154,7 +157,6 @@ Stage MakeStompTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -187,7 +189,6 @@ Stage MakeBorderTestStage(const BorderTestLevelConfig& config) {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = MakeStageBorderFromDebugConfig(config);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = config.camera_clamp_enabled;
@@ -504,7 +505,6 @@ Stage MakeBowlingTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -527,7 +527,6 @@ Stage MakeOpposingBodySmackStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -550,7 +549,6 @@ Stage MakeShopTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -583,7 +581,6 @@ Stage MakeParachuteTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -612,7 +609,6 @@ Stage MakeArrowTrapTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -642,7 +638,6 @@ Stage MakeBoulderTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -697,7 +692,6 @@ Stage MakeSacAltarTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -726,7 +720,6 @@ Stage MakeAudioTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -761,7 +754,6 @@ Stage MakeMovingPlatformTestStage() {
     FillDebugStageBackwall(stage);
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;
@@ -887,7 +879,6 @@ Stage MakeMazeDoorTestStage(MazeDoorTestRoom room) {
     stage.FillBackwall(std::vector<Tile>(kCaveBackwallFillTiles.begin(), kCaveBackwallFillTiles.end()));
     stage.rooms = {};
     stage.path = {};
-    stage.gravity = 0.3F;
     stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
     stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
     stage.camera_clamp_enabled = true;

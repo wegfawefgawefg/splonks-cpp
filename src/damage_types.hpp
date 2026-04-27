@@ -11,6 +11,7 @@ enum class DamageType {
     Explosion,
     Crush,
     Spikes,
+    Fall,
 };
 
 enum class DamageVulnerability {

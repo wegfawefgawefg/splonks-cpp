@@ -443,7 +443,7 @@ bool ApplyCobwebToEntity(std::size_t cobweb_idx, Entity& other, State& state) {
     if (std::abs(other.vel.y) < kCobwebOccupantSpeedThreshold) {
         other.vel.y = 0.0F;
     }
-    other.fall_distance = 0.0F;
+    other.fall_timer = 0;
 
     if (other.projectile_contact_timer > 0) {
         other.projectile_contact_timer = 0;
@@ -511,7 +511,7 @@ common::ContactResolution OnEntityContactAsWebBall(
         if (Entity* const other_mut = state.entity_manager.GetEntityMut(other.vid)) {
             other_mut->vel = Vec2::New(0.0F, 0.0F);
             other_mut->acc = Vec2::New(0.0F, 0.0F);
-            other_mut->fall_distance = 0.0F;
+            other_mut->fall_timer = 0;
         }
         TriggerWebBallBurst(entity_idx, state, true);
         return common::ContactResolution{.stop_sweep = true};
@@ -581,7 +581,7 @@ common::ContactResolution OnEntityContactAsCobweb(
 
     const bool is_controlled = state.controlled_entity_vid.has_value() &&
                                other.vid == *state.controlled_entity_vid;
-    const bool is_player = other.type_ == EntityType::Player;
+    const bool is_player = IsPlayerLikeEntityType(other.type_);
     if (is_controlled || is_player) {
         return common::ContactResolution{};
     }

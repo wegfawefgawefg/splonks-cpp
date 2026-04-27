@@ -118,11 +118,8 @@ void ControlEntityAsFlappyBee(
     Entity& bee = state.entity_manager.entities[entity_idx];
     const controls::ControlIntent control = controls::GetControlIntentForEntity(bee, state);
     if (bee.condition != EntityCondition::Normal) {
-        bee.was_horizontally_controlled_this_frame = false;
         return;
     }
-
-    bee.was_horizontally_controlled_this_frame = control.left || control.right;
 
     if (control.left && !control.right) {
         const float target_speed = bee.grounded ? -kGroundTargetSpeed : -kAirTargetSpeed;

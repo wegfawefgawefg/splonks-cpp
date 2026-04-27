@@ -9,6 +9,7 @@ struct ControlIntent {
     bool right = false;
     bool up = false;
     bool down = false;
+    bool jump = false;
     bool jump_pressed = false;
     bool run = false;
     bool use_held = false;

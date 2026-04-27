@@ -116,6 +116,7 @@ struct QuestDefinition {
 
 struct ClassicQuestState {
     bool made_black_market = false;
+    bool made_udjat_eye = false;
     bool has_udjat_eye = false;
     bool made_moai = false;
     bool has_hedjet = false;
@@ -137,7 +138,7 @@ struct StageGeneratorContext {
     const QuestDefinition* quest = nullptr;
     const QuestStageDefinition* stage_def = nullptr;
     const StageConfig* stage_config = nullptr;
-    const QuestState* quest_state = nullptr;
+    QuestState* quest_state = nullptr;
     std::vector<StageGenAnnotation>* annotations = nullptr;
 };
 

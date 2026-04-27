@@ -3,14 +3,18 @@
 #include "entities/baseball_bat.hpp"
 #include "entities/block.hpp"
 #include "entities/common/common.hpp"
+#include "entities/gear_items.hpp"
 #include "entities/meathead.hpp"
 #include "frame_data_id.hpp"
+#include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace splonks::entities::player {
@@ -24,9 +28,70 @@ constexpr float kPunishBallDraggedMaxRunSpeed = 3.0F;
 constexpr float kPunishBallDraggedExtraGravity = 0.14F;
 constexpr float kPunishBallDraggedJumpImpulse = 3.0F;
 constexpr float kClimbAnimationVelocityEpsilon = 0.01F;
-constexpr float kParachuteDeployVelocityY = 3.0F;
-constexpr float kParachuteMaxFallSpeed = 1.35F;
-constexpr float kParachuteVisualOffsetY = -12.0F;
+constexpr std::uint32_t kClassicFallDamageMinFrames = 32;
+constexpr std::uint32_t kClassicFallDamageMediumFrames = 64;
+constexpr std::uint32_t kClassicFallDamageHeavyFrames = 96;
+constexpr unsigned int kFallDamageLightAmount = 1;
+constexpr unsigned int kFallDamageMediumAmount = 2;
+constexpr unsigned int kFallDamageHeavyAmount = 10;
+constexpr float kFallDamageBounceVelocityY = -3.0F;
+
+struct PlayerControlTuning {
+    float move_acc = kMoveAcc;
+    float run_acc = kRunAcc;
+};
+
+struct PlayerPhysicsTuning {
+    common::JumpAndClimbTuning jump_and_climb{};
+    float max_walk_speed = kMaxWalkSpeed;
+    float max_run_speed = kMaxRunSpeed;
+    float max_speed = kMaxSpeed;
+    float air_friction = 0.85F;
+    float ground_friction_scale = 1.0F;
+    std::uint32_t fall_damage_min_frames = kClassicFallDamageMinFrames;
+    std::uint32_t fall_damage_medium_frames = kClassicFallDamageMediumFrames;
+    std::uint32_t fall_damage_heavy_frames = kClassicFallDamageHeavyFrames;
+};
+
+std::uint32_t ClampTuningFrames(int value) {
+    return static_cast<std::uint32_t>(std::max(0, value));
+}
+
+PlayerControlTuning MakePlayerControlTuning(const PlayerTuningState& tuning) {
+    return PlayerControlTuning{
+        .move_acc = tuning.move_acc,
+        .run_acc = tuning.run_acc,
+    };
+}
+
+PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
+    return PlayerPhysicsTuning{
+        .jump_and_climb = common::JumpAndClimbTuning{
+            .gravity_scale = tuning.gravity_scale,
+            .jump_impulse = tuning.jump_impulse,
+            .climb_speed = tuning.climb_speed,
+            .climb_depart_horizontal_speed = tuning.climb_depart_horizontal_speed,
+            .climb_probe_bias_pixels = tuning.climb_probe_bias_pixels,
+            .climb_probe_x_scale = tuning.climb_probe_x_scale,
+            .climb_required_probe_hits = ClampTuningFrames(tuning.climb_required_probe_hits),
+            .coyote_time_frames = ClampTuningFrames(tuning.coyote_frames),
+            .jump_delay_frames = ClampTuningFrames(tuning.jump_delay_frames),
+            .jump_hold_gravity_frames = ClampTuningFrames(tuning.jump_hold_frames),
+            .climb_detach_cooldown_frames = ClampTuningFrames(tuning.climb_detach_cooldown),
+            .hang_drop_cooldown_frames = ClampTuningFrames(tuning.hang_drop_cooldown),
+            .glove_hang_drop_cooldown_frames = ClampTuningFrames(tuning.glove_hang_drop_cooldown),
+            .hang_wall_release_cooldown_frames = ClampTuningFrames(tuning.hang_wall_release_cooldown),
+        },
+        .max_walk_speed = tuning.walk_speed,
+        .max_run_speed = tuning.run_speed,
+        .max_speed = tuning.max_fall_speed,
+        .air_friction = tuning.air_friction,
+        .ground_friction_scale = tuning.ground_friction_scale,
+        .fall_damage_min_frames = ClampTuningFrames(tuning.fall_damage_light_frames),
+        .fall_damage_medium_frames = ClampTuningFrames(tuning.fall_damage_medium_frames),
+        .fall_damage_heavy_frames = ClampTuningFrames(tuning.fall_damage_heavy_frames),
+    };
+}
 
 bool PlayerHasPunishBall(const Entity& player, const State& state) {
     if (!player.entity_d.has_value()) {
@@ -76,87 +141,89 @@ void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
     animator.playback_dirty = false;
 }
 
-Entity* GetOpenParachuteVisual(Entity& player, State& state) {
-    if (!player.entity_b.has_value()) {
-        return nullptr;
-    }
-    Entity* const parachute = state.entity_manager.GetEntityMut(*player.entity_b);
-    if (parachute == nullptr || !parachute->active || parachute->type_ != EntityType::Parachute ||
-        parachute->frame_data_animator.animation_id != frame_data_ids::OpenParachute) {
-        player.entity_b.reset();
-        return nullptr;
-    }
-    return parachute;
-}
-
-void ClearOpenParachuteVisual(Entity& player, State& state, const Graphics& graphics) {
-    Entity* const parachute = GetOpenParachuteVisual(player, state);
-    if (parachute == nullptr) {
-        return;
-    }
-    state.entity_manager.SetInactive(parachute->vid.id);
-    state.UpdateSidForEntity(parachute->vid.id, graphics);
-    player.entity_b.reset();
-}
-
-void UpdateOpenParachuteVisual(Entity& player, State& state, const Graphics& graphics) {
-    Entity* parachute = GetOpenParachuteVisual(player, state);
-    if (parachute == nullptr) {
-        const std::optional<VID> vid = state.entity_manager.NewEntity();
-        if (!vid.has_value()) {
-            return;
-        }
-        parachute = state.entity_manager.GetEntityMut(*vid);
-        if (parachute == nullptr) {
-            return;
-        }
-        SetEntityAs(*parachute, EntityType::Parachute);
-        SetAnimation(*parachute, frame_data_ids::OpenParachute);
-        parachute->has_physics = false;
-        parachute->can_collide = false;
-        parachute->can_be_hit = false;
-        parachute->can_be_picked_up = false;
-        parachute->draw_layer = DrawLayer::Background;
-        player.entity_b = *vid;
-    }
-
-    const Vec2 player_visual_center =
-        common::GetVisualCenterForEntity(player, graphics, player.GetCenter());
-    parachute->SetCenter(player_visual_center + Vec2::New(0.0F, kParachuteVisualOffsetY));
-    parachute->vel = Vec2::New(0.0F, 0.0F);
-    parachute->acc = Vec2::New(0.0F, 0.0F);
-    state.UpdateSidForEntity(parachute->vid.id, graphics);
-}
-
-void StepParachute(Entity& player, State& state, const Graphics& graphics) {
-    if (player.grounded || player.IsClimbing() || player.IsHanging() ||
-        player.condition != EntityCondition::Normal) {
-        ClearOpenParachuteVisual(player, state, graphics);
+void StepPlayerFallTimer(Entity& player) {
+    if (player.vel.y > 0.0F && !player.IsClimbing() && !player.IsHanging()) {
+        player.fall_timer += 1;
         return;
     }
 
-    const bool already_open = GetOpenParachuteVisual(player, state) != nullptr;
-    if (!already_open) {
-        if (!HasPassiveItem(player, EntityPassiveItem::Parachute) ||
-            player.vel.y < kParachuteDeployVelocityY) {
-            return;
-        }
-        SetPassiveItem(player, EntityPassiveItem::Parachute, false);
-    }
-
-    player.vel.y = std::min(player.vel.y, kParachuteMaxFallSpeed);
-    player.fall_distance = 0.0F;
-    UpdateOpenParachuteVisual(player, state, graphics);
+    player.fall_timer = 0;
 }
 
-} // namespace
+float GetFallDamageTimer(const Entity& player, const State& state) {
+    (void)state;
+    return static_cast<float>(player.fall_timer);
+}
 
-void ControlEntityAsPlayer(
+unsigned int GetFallDamageAmount(
+    const PlayerPhysicsTuning& tuning,
+    float fall_damage_timer
+) {
+    if (fall_damage_timer > static_cast<float>(tuning.fall_damage_heavy_frames)) {
+        return kFallDamageHeavyAmount;
+    }
+    if (fall_damage_timer > static_cast<float>(tuning.fall_damage_medium_frames)) {
+        return kFallDamageMediumAmount;
+    }
+    return kFallDamageLightAmount;
+}
+
+void SpawnFallDamagePoofs(const Entity& player, State& state) {
+    const Vec2 base_pos = player.GetCenter() + Vec2::New(0.0F, player.size.y * 0.5F);
+    for (float direction : {-1.0F, 1.0F}) {
+        SpriteParticle smoke{};
+        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.draw_layer = DrawLayer::Foreground;
+        smoke.counter = 16;
+        smoke.pos = base_pos + Vec2::New(direction * 4.0F, -2.0F);
+        smoke.size = Vec2::New(5.0F, 5.0F);
+        smoke.alpha = 0.85F;
+        smoke.vel = Vec2::New(direction * 0.12F, -0.08F);
+        smoke.svel = Vec2::New(0.08F, 0.08F);
+        smoke.alpha_vel = -0.05F;
+        state.particles.Add(std::move(smoke));
+    }
+}
+
+void ApplyClassicFallDamageOnLanding(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    const PlayerPhysicsTuning& tuning
+) {
+    Entity& player = state.entity_manager.entities[entity_idx];
+    if (!player.grounded) {
+        return;
+    }
+
+    const float fall_damage_timer = GetFallDamageTimer(player, state);
+    player.fall_timer = 0;
+    if (fall_damage_timer <= static_cast<float>(tuning.fall_damage_min_frames) ||
+        player.condition == EntityCondition::Dead) {
+        return;
+    }
+
+    const unsigned int damage_amount = GetFallDamageAmount(tuning, fall_damage_timer);
+    const common::DamageResult damage_result =
+        common::TryDamageEntity(entity_idx, state, audio, DamageType::Fall, damage_amount);
+    if (damage_result == common::DamageResult::None) {
+        return;
+    }
+
+    Entity& mutable_player = state.entity_manager.entities[entity_idx];
+    mutable_player.vel.y = kFallDamageBounceVelocityY;
+    mutable_player.grounded = false;
+    SpawnFallDamagePoofs(mutable_player, state);
+    (void)PlayEntityCenterSoundEmitter(state, mutable_player, audio_asset_ids::Thud);
+}
+
+void ControlEntityAsPlayerWithTuning(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
-    float dt
+    float dt,
+    const PlayerControlTuning& tuning
 ) {
     (void)graphics;
     (void)audio;
@@ -168,30 +235,27 @@ void ControlEntityAsPlayer(
     Entity& player = state.entity_manager.entities[entity_idx];
     const controls::ControlIntent intent = controls::GetControlIntentForEntity(player, state);
     if (player.condition != EntityCondition::Normal) {
-        player.was_horizontally_controlled_this_frame = false;
         return;
     }
 
     const bool climbing = player.IsClimbing();
-    player.was_horizontally_controlled_this_frame = !climbing && (intent.left || intent.right);
-
     if (climbing) {
         player.acc.x = 0.0F;
         player.vel.x = 0.0F;
     } else if (!(intent.left && intent.right)) {
         if (intent.run) {
             if (intent.left) {
-                player.acc.x = -kRunAcc;
+                player.acc.x = -tuning.run_acc;
             }
             if (intent.right) {
-                player.acc.x = kRunAcc;
+                player.acc.x = tuning.run_acc;
             }
         } else {
             if (intent.left) {
-                player.acc.x = -kMoveAcc;
+                player.acc.x = -tuning.move_acc;
             }
             if (intent.right) {
-                player.acc.x = kMoveAcc;
+                player.acc.x = tuning.move_acc;
             }
         }
     }
@@ -199,6 +263,25 @@ void ControlEntityAsPlayer(
         player.acc = Vec2::New(0.0F, 0.0F);
         player.vel = Vec2::New(0.0F, 0.0F);
     }
+}
+
+} // namespace
+
+void ControlEntityAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    ControlEntityAsPlayerWithTuning(
+        entity_idx,
+        state,
+        graphics,
+        audio,
+        dt,
+        MakePlayerControlTuning(state.player_tuning)
+    );
 }
 
 extern const EntityArchetype kPlayerArchetype{
@@ -267,7 +350,7 @@ void StepEntityLogicAsPlayer(
                 }
                 player.back_vid.reset();
             }
-            ClearOpenParachuteVisual(player, state, graphics);
+            gear_items::ClearEquippedPassiveItemVisuals(player, state, graphics);
 
             return;
         }
@@ -412,16 +495,18 @@ void StepEntityLogicAsPlayer(
 
 }
 
-/** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsPlayer(
+namespace {
+
+void StepEntityPhysicsAsPlayerWithTuning(
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
-    float dt
+    float dt,
+    const PlayerPhysicsTuning& tuning
 ) {
-    common::HangHandsStep(entity_idx, state);
-    common::JumpingAndClimbingStep(entity_idx, state, audio);
+    common::HangHandsStep(entity_idx, state, tuning.jump_and_climb);
+    common::JumpingAndClimbingStep(entity_idx, state, audio, tuning.jump_and_climb);
 
     // custom pre partial euler step for player to apply special velocity clamping.
     Entity& entity = state.entity_manager.entities[entity_idx];
@@ -444,24 +529,46 @@ void StepEntityPhysicsAsPlayer(
         controls::GetControlIntentForEntity(entity, state);
     const float max_walk_speed =
         holding_punish_ball ? kPunishBallHeldMaxWalkSpeed
-                            : (has_punish_ball ? kPunishBallDraggedMaxWalkSpeed : kMaxWalkSpeed);
+                            : (has_punish_ball ? kPunishBallDraggedMaxWalkSpeed : tuning.max_walk_speed);
     const float max_run_speed =
         holding_punish_ball ? kPunishBallHeldMaxRunSpeed
-                            : (has_punish_ball ? kPunishBallDraggedMaxRunSpeed : kMaxRunSpeed);
+                            : (has_punish_ball ? kPunishBallDraggedMaxRunSpeed : tuning.max_run_speed);
     if (control.run) {
         entity.vel.x = std::clamp(entity.vel.x, -max_run_speed, max_run_speed);
     } else {
         entity.vel.x = std::clamp(entity.vel.x, -max_walk_speed, max_walk_speed);
     }
-    entity.vel.y = std::clamp(entity.vel.y, -kMaxSpeed, kMaxSpeed);
-    StepParachute(entity, state, graphics);
+    entity.vel.y = std::min(entity.vel.y, tuning.max_speed);
+    StepPlayerFallTimer(entity);
+    gear_items::StepEquippedPassiveItems(entity_idx, state, graphics);
 
-    if (!entity.IsHorizontallyControlled() && !entity.grounded) {
-        entity.vel.x *= 0.85F;
-    }
     common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::ApplyArchetypeGroundFriction(entity_idx, state);
+    common::ApplyArchetypeGroundFriction(entity_idx, state, tuning.ground_friction_scale);
+    if (!entity.grounded) {
+        entity.vel.x *= tuning.air_friction;
+    }
+    ApplyClassicFallDamageOnLanding(entity_idx, state, audio, tuning);
     common::PostPartialEulerStep(entity_idx, state, dt);
+}
+
+} // namespace
+
+/** generalize this to all square or rectangular entities somehow */
+void StepEntityPhysicsAsPlayer(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    StepEntityPhysicsAsPlayerWithTuning(
+        entity_idx,
+        state,
+        graphics,
+        audio,
+        dt,
+        MakePlayerPhysicsTuning(state.player_tuning)
+    );
 }
 
 } // namespace splonks::entities::player

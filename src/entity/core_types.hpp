@@ -124,7 +124,6 @@ enum class EntityType {
     Meathead,
     WebBall,
     Cobweb,
-    PushBlock,
     Jaws,
     CrystalSkull,
     Bones,
@@ -159,8 +158,14 @@ constexpr std::size_t EntityTypeIndex(EntityType type_) {
 
 constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::FleshGuy) + 1;
 
+constexpr bool IsPlayerLikeEntityType(EntityType type_) {
+    return type_ == EntityType::Player || type_ == EntityType::FlappyBee ||
+           type_ == EntityType::FleshGuy;
+}
+
 constexpr float kTravelSoundDistInterval = 24.0F;
 constexpr float kWalkerClimberTravelSoundDistInterval = 24.0F;
+constexpr float kClimberTravelSoundDistInterval = 12.0F;
 
 enum class TravelSound {
     One,

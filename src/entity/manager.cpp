@@ -103,7 +103,7 @@ void EntityManager::ClearAllEntities() {
 void EntityManager::ClearAllNonPlayerEntities() {
     available_ids.clear();
     for (std::size_t i = 0; i < kMaxNumEntities; ++i) {
-        if (entities[i].type_ != EntityType::Player) {
+        if (!IsPlayerLikeEntityType(entities[i].type_)) {
             available_ids.insert(available_ids.begin(), i);
             entities[i].active = false;
             entities[i].type_ = EntityType::None;

@@ -133,7 +133,7 @@ void OnShopAreaEnter(
         return;
     }
 
-    if (other.type_ != EntityType::Player) {
+    if (!IsPlayerLikeEntityType(other.type_)) {
         return;
     }
 

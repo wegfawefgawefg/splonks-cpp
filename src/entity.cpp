@@ -30,7 +30,6 @@ Entity Entity::New() {
     entity.marked_for_destruction = false;
     entity.type_ = EntityType::None;
     entity.vid = VID{0, 0};
-    entity.was_horizontally_controlled_this_frame = false;
     entity.has_physics = true;
     entity.can_collide = true;
     entity.can_be_hit = true;
@@ -53,11 +52,12 @@ Entity Entity::New() {
     entity.can_only_be_picked_up_if_dead_or_stunned = false;
     entity.impassable = false;
     entity.can_be_hung_on = true;
-    entity.fall_distance = 0.0F;
+    entity.fall_timer = 0;
     entity.pos = Vec2::New(0.0F, 0.0F);
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
     entity.max_speed = 7.0F;
+    entity.jump_hold_gravity_frames_remaining = 0;
     entity.throw_velocity_scale = 1.0F;
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.dist_traveled_this_frame = 0.0F;
@@ -240,10 +240,6 @@ bool Entity::IsHanging() const {
 
 bool Entity::IsClimbing() const {
     return HasMovementFlag(*this, EntityMovementFlag::Climbing);
-}
-
-bool Entity::IsHorizontallyControlled() const {
-    return was_horizontally_controlled_this_frame;
 }
 
 AABB Entity::GetFeet() const {

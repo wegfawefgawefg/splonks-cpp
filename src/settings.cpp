@@ -31,6 +31,14 @@ unsigned int ParseUnsigned(const std::string& value, unsigned int fallback) {
     }
 }
 
+int ParseInt(const std::string& value, int fallback) {
+    try {
+        return std::stoi(value);
+    } catch (...) {
+        return fallback;
+    }
+}
+
 float ParseFloat(const std::string& value, float fallback) {
     try {
         return std::stof(value);
@@ -155,6 +163,7 @@ DebugUiSettings DebugUiSettings::New() {
     result.graphics_settings_visible = false;
     result.camera_settings_visible = false;
     result.performance_settings_visible = false;
+    result.player_tuning_visible = false;
     result.entity_swap_type = 1;
     result.default_spawn_type = 1;
     result.default_spawn_enabled = false;
@@ -175,6 +184,7 @@ Settings Settings::New() {
     result.ui = UiSettings::New();
     result.post_process = PostProcessSettings::New();
     result.debug_ui = DebugUiSettings::New();
+    result.player_tuning = PlayerTuningState{};
     return result;
 }
 
@@ -439,6 +449,9 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.performance_settings_visible") {
             settings.debug_ui.performance_settings_visible =
                 ParseBool(value, settings.debug_ui.performance_settings_visible);
+        } else if (key == "debug_ui.player_tuning_visible") {
+            settings.debug_ui.player_tuning_visible =
+                ParseBool(value, settings.debug_ui.player_tuning_visible);
         } else if (key == "debug_ui.entity_swap_type") {
             settings.debug_ui.entity_swap_type =
                 ParseUnsigned(value, settings.debug_ui.entity_swap_type);
@@ -463,6 +476,78 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.entity_swap_keep_tools") {
             settings.debug_ui.entity_swap_keep_tools =
                 ParseBool(value, settings.debug_ui.entity_swap_keep_tools);
+        } else if (key == "player_tuning.gravity_scale") {
+            settings.player_tuning.gravity_scale =
+                ParseFloat(value, settings.player_tuning.gravity_scale);
+        } else if (key == "player_tuning.max_fall_speed") {
+            settings.player_tuning.max_fall_speed =
+                ParseFloat(value, settings.player_tuning.max_fall_speed);
+        } else if (key == "player_tuning.jump_impulse") {
+            settings.player_tuning.jump_impulse =
+                ParseFloat(value, settings.player_tuning.jump_impulse);
+        } else if (key == "player_tuning.jump_hold_frames") {
+            settings.player_tuning.jump_hold_frames =
+                ParseInt(value, settings.player_tuning.jump_hold_frames);
+        } else if (key == "player_tuning.coyote_frames") {
+            settings.player_tuning.coyote_frames =
+                ParseInt(value, settings.player_tuning.coyote_frames);
+        } else if (key == "player_tuning.jump_delay_frames") {
+            settings.player_tuning.jump_delay_frames =
+                ParseInt(value, settings.player_tuning.jump_delay_frames);
+        } else if (key == "player_tuning.fall_damage_light_frames") {
+            settings.player_tuning.fall_damage_light_frames =
+                ParseInt(value, settings.player_tuning.fall_damage_light_frames);
+        } else if (key == "player_tuning.fall_damage_medium_frames") {
+            settings.player_tuning.fall_damage_medium_frames =
+                ParseInt(value, settings.player_tuning.fall_damage_medium_frames);
+        } else if (key == "player_tuning.fall_damage_heavy_frames") {
+            settings.player_tuning.fall_damage_heavy_frames =
+                ParseInt(value, settings.player_tuning.fall_damage_heavy_frames);
+        } else if (key == "player_tuning.walk_speed") {
+            settings.player_tuning.walk_speed =
+                ParseFloat(value, settings.player_tuning.walk_speed);
+        } else if (key == "player_tuning.run_speed") {
+            settings.player_tuning.run_speed =
+                ParseFloat(value, settings.player_tuning.run_speed);
+        } else if (key == "player_tuning.move_acc") {
+            settings.player_tuning.move_acc =
+                ParseFloat(value, settings.player_tuning.move_acc);
+        } else if (key == "player_tuning.run_acc") {
+            settings.player_tuning.run_acc =
+                ParseFloat(value, settings.player_tuning.run_acc);
+        } else if (key == "player_tuning.ground_friction_scale") {
+            settings.player_tuning.ground_friction_scale =
+                ParseFloat(value, settings.player_tuning.ground_friction_scale);
+        } else if (key == "player_tuning.air_friction") {
+            settings.player_tuning.air_friction =
+                ParseFloat(value, settings.player_tuning.air_friction);
+        } else if (key == "player_tuning.climb_speed") {
+            settings.player_tuning.climb_speed =
+                ParseFloat(value, settings.player_tuning.climb_speed);
+        } else if (key == "player_tuning.climb_depart_horizontal_speed") {
+            settings.player_tuning.climb_depart_horizontal_speed =
+                ParseFloat(value, settings.player_tuning.climb_depart_horizontal_speed);
+        } else if (key == "player_tuning.climb_probe_bias_pixels") {
+            settings.player_tuning.climb_probe_bias_pixels =
+                ParseFloat(value, settings.player_tuning.climb_probe_bias_pixels);
+        } else if (key == "player_tuning.climb_probe_x_scale") {
+            settings.player_tuning.climb_probe_x_scale =
+                ParseFloat(value, settings.player_tuning.climb_probe_x_scale);
+        } else if (key == "player_tuning.climb_required_probe_hits") {
+            settings.player_tuning.climb_required_probe_hits =
+                ParseInt(value, settings.player_tuning.climb_required_probe_hits);
+        } else if (key == "player_tuning.climb_detach_cooldown") {
+            settings.player_tuning.climb_detach_cooldown =
+                ParseInt(value, settings.player_tuning.climb_detach_cooldown);
+        } else if (key == "player_tuning.hang_drop_cooldown") {
+            settings.player_tuning.hang_drop_cooldown =
+                ParseInt(value, settings.player_tuning.hang_drop_cooldown);
+        } else if (key == "player_tuning.glove_hang_drop_cooldown") {
+            settings.player_tuning.glove_hang_drop_cooldown =
+                ParseInt(value, settings.player_tuning.glove_hang_drop_cooldown);
+        } else if (key == "player_tuning.hang_wall_release_cooldown") {
+            settings.player_tuning.hang_wall_release_cooldown =
+                ParseInt(value, settings.player_tuning.hang_wall_release_cooldown);
         }
     }
 
@@ -619,6 +704,8 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.camera_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.performance_settings_visible="
            << (settings.debug_ui.performance_settings_visible ? 1 : 0) << "\n";
+    output << "debug_ui.player_tuning_visible="
+           << (settings.debug_ui.player_tuning_visible ? 1 : 0) << "\n";
     output << "debug_ui.entity_swap_type=" << settings.debug_ui.entity_swap_type << "\n";
     output << "debug_ui.default_spawn_type=" << settings.debug_ui.default_spawn_type << "\n";
     output << "debug_ui.default_spawn_enabled="
@@ -633,6 +720,41 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.entity_swap_keep_health ? 1 : 0) << "\n";
     output << "debug_ui.entity_swap_keep_tools="
            << (settings.debug_ui.entity_swap_keep_tools ? 1 : 0) << "\n";
+    output << "player_tuning.gravity_scale=" << settings.player_tuning.gravity_scale << "\n";
+    output << "player_tuning.max_fall_speed=" << settings.player_tuning.max_fall_speed << "\n";
+    output << "player_tuning.jump_impulse=" << settings.player_tuning.jump_impulse << "\n";
+    output << "player_tuning.jump_hold_frames=" << settings.player_tuning.jump_hold_frames << "\n";
+    output << "player_tuning.coyote_frames=" << settings.player_tuning.coyote_frames << "\n";
+    output << "player_tuning.jump_delay_frames=" << settings.player_tuning.jump_delay_frames << "\n";
+    output << "player_tuning.fall_damage_light_frames="
+           << settings.player_tuning.fall_damage_light_frames << "\n";
+    output << "player_tuning.fall_damage_medium_frames="
+           << settings.player_tuning.fall_damage_medium_frames << "\n";
+    output << "player_tuning.fall_damage_heavy_frames="
+           << settings.player_tuning.fall_damage_heavy_frames << "\n";
+    output << "player_tuning.walk_speed=" << settings.player_tuning.walk_speed << "\n";
+    output << "player_tuning.run_speed=" << settings.player_tuning.run_speed << "\n";
+    output << "player_tuning.move_acc=" << settings.player_tuning.move_acc << "\n";
+    output << "player_tuning.run_acc=" << settings.player_tuning.run_acc << "\n";
+    output << "player_tuning.ground_friction_scale="
+           << settings.player_tuning.ground_friction_scale << "\n";
+    output << "player_tuning.air_friction=" << settings.player_tuning.air_friction << "\n";
+    output << "player_tuning.climb_speed=" << settings.player_tuning.climb_speed << "\n";
+    output << "player_tuning.climb_depart_horizontal_speed="
+           << settings.player_tuning.climb_depart_horizontal_speed << "\n";
+    output << "player_tuning.climb_probe_bias_pixels="
+           << settings.player_tuning.climb_probe_bias_pixels << "\n";
+    output << "player_tuning.climb_probe_x_scale="
+           << settings.player_tuning.climb_probe_x_scale << "\n";
+    output << "player_tuning.climb_required_probe_hits="
+           << settings.player_tuning.climb_required_probe_hits << "\n";
+    output << "player_tuning.climb_detach_cooldown="
+           << settings.player_tuning.climb_detach_cooldown << "\n";
+    output << "player_tuning.hang_drop_cooldown=" << settings.player_tuning.hang_drop_cooldown << "\n";
+    output << "player_tuning.glove_hang_drop_cooldown="
+           << settings.player_tuning.glove_hang_drop_cooldown << "\n";
+    output << "player_tuning.hang_wall_release_cooldown="
+           << settings.player_tuning.hang_wall_release_cooldown << "\n";
     return output.good();
 }
 

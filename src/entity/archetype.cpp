@@ -26,6 +26,7 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.vanish_on_death = archetype.vanish_on_death;
     entity.affected_by_ground_friction = archetype.affected_by_ground_friction;
     entity.support_ground_friction = archetype.support_ground_friction;
+    entity.jump_hold_gravity_frames_remaining = 0;
     entity.throw_velocity_scale = archetype.throw_velocity_scale;
     entity.alpha = archetype.alpha;
     entity.passive_item = archetype.passive_item;

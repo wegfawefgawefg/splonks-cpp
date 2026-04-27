@@ -1,6 +1,5 @@
 #include "entities/common/common.hpp"
 
-#include "entities/player.hpp"
 #include "controls.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
@@ -15,14 +14,6 @@ namespace splonks::entities::common {
 namespace {
 
 constexpr std::uint32_t kHangCountMax = 3;
-constexpr std::uint32_t kHangDropCooldownFrames = 5;
-constexpr std::uint32_t kHangGloveDropCooldownFrames = 10;
-constexpr std::uint32_t kHangWallReleaseCooldownFrames = 4;
-constexpr std::uint32_t kClimbDetachCooldownFrames = 5;
-constexpr float kClimbDepartHorizontalSpeed = 4.0F;
-constexpr float kClimbProbeBiasPixels = 8.0F;
-constexpr float kClimbHorizontalProbeOffsetPixels = 2.5F;
-constexpr int kClimbRequiredProbeHits = 2;
 
 struct ClimbAnchor {
     IVec2 tile_pos = IVec2::New(0, 0);
@@ -34,13 +25,15 @@ struct ClimbProbePoints {
     Vec2 right = Vec2::New(0.0F, 0.0F);
 };
 
-ClimbProbePoints GetClimbProbePointsAtPosition(const Entity& entity, const Vec2& pos) {
+ClimbProbePoints GetClimbProbePointsAtPosition(
+    const Entity& entity,
+    const Vec2& pos,
+    const JumpAndClimbTuning& tuning
+) {
     const Vec2 center = pos + (entity.size / 2.0F);
-    const float probe_y = pos.y + std::min(kClimbProbeBiasPixels, std::max(0.0F, entity.size.y - 1.0F));
-    const float horizontal_offset = std::min(
-        kClimbHorizontalProbeOffsetPixels,
-        std::max(0.0F, (entity.size.x * 0.5F) - 1.0F)
-    );
+    const float probe_y =
+        pos.y + std::min(tuning.climb_probe_bias_pixels, std::max(0.0F, entity.size.y - 1.0F));
+    const float horizontal_offset = (entity.size.x * 0.5F) * std::max(0.0F, tuning.climb_probe_x_scale);
     return ClimbProbePoints{
         .left = Vec2::New(center.x - horizontal_offset, probe_y),
         .center = Vec2::New(center.x, probe_y),
@@ -53,26 +46,35 @@ bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query)
            GetTileArchetype(*tile_query->tile).climbable;
 }
 
-std::optional<ClimbAnchor> GetClimbAnchorAtPosition(const Entity& entity, const Vec2& pos, const State& state) {
-    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(entity, pos);
-    const std::array<Vec2, 3> probe_points = {probes.left, probes.center, probes.right};
+std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
+    const Entity& entity,
+    const Vec2& pos,
+    const State& state,
+    const JumpAndClimbTuning& tuning
+) {
+    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(entity, pos, tuning);
+    const std::array<IVec2, 3> probe_points = {
+        ToIVec2(probes.left),
+        ToIVec2(probes.center),
+        ToIVec2(probes.right),
+    };
 
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     float best_score = 0.0F;
     const Vec2 entity_center = pos + (entity.size / 2.0F);
 
-    for (const Vec2& probe_point : probe_points) {
+    for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
-            QueryTileAtWorldPos(state.stage, ToIVec2(probe_point));
+            QueryTileAtWorldPos(state.stage, probe_point);
         if (!IsClimbableTileQuery(tile_query)) {
             continue;
         }
 
         int hits = 0;
-        for (const Vec2& candidate_probe_point : probe_points) {
+        for (const IVec2& candidate_probe_point : probe_points) {
             const std::optional<WorldTileQueryResult> candidate_query =
-                QueryTileAtWorldPos(state.stage, ToIVec2(candidate_probe_point));
+                QueryTileAtWorldPos(state.stage, candidate_probe_point);
             if (!IsClimbableTileQuery(candidate_query)) {
                 continue;
             }
@@ -81,7 +83,9 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(const Entity& entity, const 
             }
         }
 
-        if (hits < kClimbRequiredProbeHits) {
+        const int required_hits =
+            static_cast<int>(std::clamp<std::uint32_t>(tuning.climb_required_probe_hits, 1, 3));
+        if (hits < required_hits) {
             continue;
         }
 
@@ -106,8 +110,12 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(const Entity& entity, const 
     return ClimbAnchor{.tile_pos = *best_tile};
 }
 
-std::optional<ClimbAnchor> GetClimbAnchor(const Entity& entity, const State& state) {
-    return GetClimbAnchorAtPosition(entity, entity.pos, state);
+std::optional<ClimbAnchor> GetClimbAnchor(
+    const Entity& entity,
+    const State& state,
+    const JumpAndClimbTuning& tuning
+) {
+    return GetClimbAnchorAtPosition(entity, entity.pos, state, tuning);
 }
 
 bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& state) {
@@ -124,15 +132,25 @@ void SnapEntityToClimbTileCenterline(Entity& entity, const IVec2& tile_pos) {
     entity.SetCenter(center);
 }
 
-bool HasClimbableTileAtPosition(const Entity& entity, const Vec2& pos, const State& state) {
-    return GetClimbAnchorAtPosition(entity, pos, state).has_value();
+bool HasClimbableTileAtPosition(
+    const Entity& entity,
+    const Vec2& pos,
+    const State& state,
+    const JumpAndClimbTuning& tuning
+) {
+    return GetClimbAnchorAtPosition(entity, pos, state, tuning).has_value();
 }
 
-int GetAllowedClimbUpPixels(const Entity& entity, const State& state, int max_pixels) {
+int GetAllowedClimbUpPixels(
+    const Entity& entity,
+    const State& state,
+    const JumpAndClimbTuning& tuning,
+    int max_pixels
+) {
     int allowed_pixels = 0;
     for (int step = 1; step <= max_pixels; ++step) {
         const Vec2 next_pos = entity.pos + Vec2::New(0.0F, -static_cast<float>(step));
-        if (!HasClimbableTileAtPosition(entity, next_pos, state)) {
+        if (!HasClimbableTileAtPosition(entity, next_pos, state, tuning)) {
             break;
         }
         allowed_pixels = step;
@@ -140,12 +158,12 @@ int GetAllowedClimbUpPixels(const Entity& entity, const State& state, int max_pi
     return allowed_pixels;
 }
 
-void AddClimbDebugAnnotations(const Entity& entity, State& state) {
+void AddClimbDebugAnnotations(const Entity& entity, State& state, const JumpAndClimbTuning& tuning) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
 
-    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(entity, entity.pos);
+    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(entity, entity.pos, tuning);
     const std::array<std::pair<const char*, Vec2>, 3> probe_points = {{
         {"climb L", probes.left},
         {"climb C", probes.center},
@@ -242,6 +260,42 @@ bool IsTryingToHangOnSide(const Entity& entity, const State& state, bool left_si
         return control.left && !control.right;
     }
     return control.right && !control.left;
+}
+
+void StartEntityJump(Entity& entity, const JumpAndClimbTuning& tuning) {
+    entity.vel.y = -tuning.jump_impulse;
+    entity.jump_delay_frame_count = tuning.jump_delay_frames;
+    entity.jump_hold_gravity_frames_remaining = tuning.jump_hold_gravity_frames;
+    entity.jumped_this_frame = true;
+}
+
+void ApplyAirGravity(
+    Entity& entity,
+    const State& state,
+    const controls::ControlIntent& control,
+    const JumpAndClimbTuning& tuning
+) {
+    float gravity = state.stage.gravity * tuning.gravity_scale;
+    if (tuning.jump_hold_gravity_frames > 0 && entity.jump_hold_gravity_frames_remaining > 0 &&
+        control.jump && entity.vel.y < 0.0F) {
+        gravity = 0.0F;
+        entity.jump_hold_gravity_frames_remaining -= 1;
+    } else {
+        entity.jump_hold_gravity_frames_remaining = 0;
+    }
+
+    entity.acc.y += gravity;
+}
+
+void DetachFromClimb(Entity& entity, const JumpAndClimbTuning& tuning) {
+    const bool was_climbing = entity.IsClimbing();
+    SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
+    if (was_climbing) {
+        entity.climb_detach_cooldown = std::max(
+            entity.climb_detach_cooldown,
+            tuning.climb_detach_cooldown_frames
+        );
+    }
 }
 
 bool IsSideBlockedForHang(
@@ -497,7 +551,7 @@ bool TryCaptureHdHang(
 
 } // namespace
 
-void HangHandsStep(std::size_t entity_idx, State& state) {
+void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTuning& tuning) {
     Entity& mutable_entity = state.entity_manager.entities[entity_idx];
     const controls::ControlIntent control =
         controls::GetControlIntentForEntity(mutable_entity, state);
@@ -517,7 +571,7 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
             !IsSideBlockedForHang(mutable_entity, state, true, true, true)) {
             mutable_entity.hang_side.reset();
             SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
-            mutable_entity.hang_count = kHangWallReleaseCooldownFrames;
+            mutable_entity.hang_count = tuning.hang_wall_release_cooldown_frames;
         }
     } else if (mutable_entity.hang_side == LeftOrRight::Right) {
         const bool has_gloves = EntityHasHangGloves(mutable_entity);
@@ -526,7 +580,7 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
             !IsSideBlockedForHang(mutable_entity, state, false, true, true)) {
             mutable_entity.hang_side.reset();
             SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
-            mutable_entity.hang_count = kHangWallReleaseCooldownFrames;
+            mutable_entity.hang_count = tuning.hang_wall_release_cooldown_frames;
         }
     }
 
@@ -538,13 +592,18 @@ void HangHandsStep(std::size_t entity_idx, State& state) {
         mutable_entity.vel.y = 0.0F;
         mutable_entity.acc.y = 0.0F;
         mutable_entity.grounded = false;
-        mutable_entity.coyote_time = player::kCoyoteTimeFrames;
+        mutable_entity.coyote_time = tuning.coyote_time_frames;
     }
 }
 
-void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) {
+void JumpingAndClimbingStep(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    const JumpAndClimbTuning& tuning
+) {
     (void)audio;
-    GroundedCheck(entity_idx, state, audio, true, true);
+    GroundedCheck(entity_idx, state, audio, true, true, tuning.coyote_time_frames);
 
     Entity& entity = state.entity_manager.entities[entity_idx];
     const controls::ControlIntent control =
@@ -554,9 +613,10 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
         entity.climb_detach_cooldown -= 1;
     }
 
-    const std::optional<ClimbAnchor> climb_anchor = GetClimbAnchor(entity, state);
+    const std::optional<ClimbAnchor> climb_anchor = GetClimbAnchor(entity, state, tuning);
     const bool can_climb = climb_anchor.has_value();
     bool consume_jump_press = false;
+    AddClimbDebugAnnotations(entity, state, tuning);
 
     if (entity.condition != EntityCondition::Normal) {
         SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
@@ -573,12 +633,10 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
         }
 
         if (entity.IsClimbing()) {
-            AddClimbDebugAnnotations(entity, state);
             if (!can_climb) {
-                SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
-                entity.climb_detach_cooldown = kClimbDetachCooldownFrames;
+                DetachFromClimb(entity, tuning);
             } else if (control.down && was_grounded) {
-                SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
+                DetachFromClimb(entity, tuning);
                 entity.vel.y = 0.0F;
                 entity.acc.y = 0.0F;
                 entity.grounded = true;
@@ -589,18 +647,18 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
                 entity.acc.x = 0.0F;
 
                 if (control.up && !control.down) {
-                    const int max_climb_pixels = static_cast<int>(std::ceil(player::kClimbSpeed));
-                    const int allowed_up_pixels = GetAllowedClimbUpPixels(entity, state, max_climb_pixels);
-                    entity.vel.y = -static_cast<float>(allowed_up_pixels);
+                    const int max_climb_pixels = static_cast<int>(std::ceil(tuning.climb_speed));
+                    const int allowed_up_pixels =
+                        GetAllowedClimbUpPixels(entity, state, tuning, max_climb_pixels);
+                    entity.vel.y = -std::min(tuning.climb_speed, static_cast<float>(allowed_up_pixels));
                 } else if (control.down && !control.up) {
-                    entity.vel.y = player::kClimbSpeed;
+                    entity.vel.y = tuning.climb_speed;
                 } else {
                     entity.vel.y = 0.0F;
                 }
 
                 if (control.jump_pressed) {
-                    SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
-                    entity.climb_detach_cooldown = kClimbDetachCooldownFrames;
+                    DetachFromClimb(entity, tuning);
                     entity.grounded = false;
                     entity.vel.x = 0.0F;
                     entity.acc.y = 0.0F;
@@ -610,13 +668,11 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
                         entity.vel.y = 0.0F;
                     } else {
                         if (control.left && !control.right) {
-                            entity.vel.x = -kClimbDepartHorizontalSpeed;
+                            entity.vel.x = -tuning.climb_depart_horizontal_speed;
                         } else if (control.right && !control.left) {
-                            entity.vel.x = kClimbDepartHorizontalSpeed;
+                            entity.vel.x = tuning.climb_depart_horizontal_speed;
                         }
-                        entity.vel.y = -player::kJumpImpulse;
-                        entity.jump_delay_frame_count = player::kJumpDelayFrames;
-                        entity.jumped_this_frame = true;
+                        StartEntityJump(entity, tuning);
                         (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Jump);
                     }
                 }
@@ -625,7 +681,7 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     }
 
     if (entity.IsClimbing() && entity.grounded) {
-        SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
+        DetachFromClimb(entity, tuning);
     }
 
     if (control.jump_pressed && !consume_jump_press) {
@@ -639,19 +695,18 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
             entity.grounded = false;
             if (control.down) {
                 entity.hang_count =
-                    has_gloves ? kHangGloveDropCooldownFrames : kHangDropCooldownFrames;
+                    has_gloves ? tuning.glove_hang_drop_cooldown_frames
+                               : tuning.hang_drop_cooldown_frames;
             } else if (jumping_away) {
                 entity.hang_count = kHangCountMax;
             } else {
-                entity.vel.y = -player::kJumpImpulse;
+                StartEntityJump(entity, tuning);
                 entity.hang_count = kHangCountMax;
             }
         } else if ((entity.grounded && (entity.jump_delay_frame_count == 0)) || entity.coyote_time > 0) {
-            entity.jumped_this_frame = true;
-            entity.vel.y = -player::kJumpImpulse;
+            StartEntityJump(entity, tuning);
             entity.coyote_time = 0;
             entity.grounded = false;
-            entity.jump_delay_frame_count = player::kJumpDelayFrames;
             (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Jump);
         }
     }
@@ -661,7 +716,7 @@ void JumpingAndClimbingStep(std::size_t entity_idx, State& state, Audio& audio) 
     }
 
     if (!entity.IsClimbing() && !entity.grounded && !entity.IsHanging()) {
-        entity.acc.y += state.stage.gravity;
+        ApplyAirGravity(entity, state, control, tuning);
     }
 }
 

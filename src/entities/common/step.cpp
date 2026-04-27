@@ -85,7 +85,9 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
     }
 
     if (entity.travel_sound_countdown < 0.0F) {
-        entity.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
+        entity.travel_sound_countdown = entity.IsClimbing()
+                                            ? kClimberTravelSoundDistInterval
+                                            : kWalkerClimberTravelSoundDistInterval;
 
         AudioAssetId which_step_sound;
         if (entity.IsClimbing()) {

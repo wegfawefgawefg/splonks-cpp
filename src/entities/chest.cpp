@@ -50,6 +50,7 @@ common::ContactResolution OnEntityContactAsUdjatEye(
     }
 
     if (state.quest_state.quest_id == QuestId::Classic) {
+        state.quest_state.classic.made_udjat_eye = true;
         state.quest_state.classic.has_udjat_eye = true;
     }
 

@@ -502,6 +502,78 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
     SyncDebugUiSettings(debug, state);
 }
 
+void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
+    if (!debug.player_tuning_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(1080.0F, 220.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Player Tuning", &debug.player_tuning_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    PlayerTuningState& tuning = state.player_tuning;
+    bool changed = false;
+    if (ImGui::Button("Reset Current Player Defaults")) {
+        tuning = PlayerTuningState{};
+        changed = true;
+    }
+
+    ImGui::SeparatorText("Vertical");
+    changed |= ImGui::DragFloat("Gravity Scale", &tuning.gravity_scale, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= ImGui::DragFloat("Max Fall Speed", &tuning.max_fall_speed, 0.05F, 0.0F, 20.0F, "%.2f");
+    changed |= ImGui::DragFloat("Jump Impulse", &tuning.jump_impulse, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= ImGui::DragInt("Jump Hold Frames", &tuning.jump_hold_frames, 1.0F, 0, 60);
+    changed |= ImGui::DragInt("Coyote Frames", &tuning.coyote_frames, 1.0F, 0, 30);
+    changed |= ImGui::DragInt("Jump Delay Frames", &tuning.jump_delay_frames, 1.0F, 0, 30);
+    changed |= ImGui::DragInt("Fall Light Frames", &tuning.fall_damage_light_frames, 1.0F, 0, 240);
+    changed |= ImGui::DragInt("Fall Medium Frames", &tuning.fall_damage_medium_frames, 1.0F, 0, 240);
+    changed |= ImGui::DragInt("Fall Heavy Frames", &tuning.fall_damage_heavy_frames, 1.0F, 0, 240);
+
+    ImGui::SeparatorText("Horizontal");
+    changed |= ImGui::DragFloat("Walk Speed", &tuning.walk_speed, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= ImGui::DragFloat("Run Speed", &tuning.run_speed, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= ImGui::DragFloat("Move Acc", &tuning.move_acc, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= ImGui::DragFloat("Run Acc", &tuning.run_acc, 0.01F, 0.0F, 4.0F, "%.3f");
+    changed |= ImGui::DragFloat("Ground Friction Scale", &tuning.ground_friction_scale, 0.01F, 0.0F, 2.0F, "%.3f");
+    changed |= ImGui::DragFloat("Air Friction", &tuning.air_friction, 0.005F, 0.0F, 1.0F, "%.3f");
+
+    ImGui::SeparatorText("Climb / Hang");
+    changed |= ImGui::DragFloat("Climb Speed", &tuning.climb_speed, 0.005F, 0.0F, 8.0F, "%.3f");
+    changed |= ImGui::DragFloat(
+        "Climb Depart Horizontal",
+        &tuning.climb_depart_horizontal_speed,
+        0.05F,
+        0.0F,
+        12.0F,
+        "%.2f"
+    );
+    changed |= ImGui::DragFloat("Climb Probe Y Bias", &tuning.climb_probe_bias_pixels, 0.1F, 0.0F, 32.0F, "%.1f");
+    changed |= ImGui::DragFloat(
+        "Climb Probe X Scale",
+        &tuning.climb_probe_x_scale,
+        0.01F,
+        0.0F,
+        3.0F,
+        "%.2f"
+    );
+    changed |= ImGui::DragInt("Climb Required Probe Hits", &tuning.climb_required_probe_hits, 1.0F, 1, 3);
+    changed |= ImGui::DragInt("Climb Detach Cooldown", &tuning.climb_detach_cooldown, 1.0F, 0, 60);
+    changed |= ImGui::DragInt("Hang Drop Cooldown", &tuning.hang_drop_cooldown, 1.0F, 0, 60);
+    changed |= ImGui::DragInt("Glove Hang Drop Cooldown", &tuning.glove_hang_drop_cooldown, 1.0F, 0, 60);
+    changed |= ImGui::DragInt("Hang Wall Release Cooldown", &tuning.hang_wall_release_cooldown, 1.0F, 0, 60);
+
+    if (changed) {
+        state.settings.player_tuning = state.player_tuning;
+        SaveSettings(state.settings);
+    }
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
 void DrawPostFxSettingsWindow(DebugPlayback& debug, State& state, const Graphics& graphics) {
     if (!debug.post_fx_settings_window_visible) {
         return;

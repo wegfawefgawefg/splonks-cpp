@@ -622,7 +622,7 @@ void RenderEntityCollisionBoxes(
 
             SDL_Color pbox_color = SDL_Color{255, 255, 0, 255};
             SDL_Color cbox_color = SDL_Color{64, 224, 255, 255};
-            if (entity.type_ == EntityType::Player) {
+            if (IsPlayerLikeEntityType(entity.type_)) {
                 pbox_color = SDL_Color{64, 255, 64, 255};
                 cbox_color = SDL_Color{64, 160, 255, 255};
             } else if (!entity.can_collide) {

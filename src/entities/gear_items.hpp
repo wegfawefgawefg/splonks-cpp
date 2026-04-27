@@ -18,4 +18,7 @@ extern const EntityArchetype kCompassArchetype;
 extern const EntityArchetype kParachuteArchetype;
 extern const EntityArchetype kRopePileArchetype;
 
+void StepEquippedPassiveItems(std::size_t entity_idx, State& state, Graphics& graphics);
+void ClearEquippedPassiveItemVisuals(Entity& entity, State& state, const Graphics& graphics);
+
 } // namespace splonks::entities::gear_items

@@ -168,6 +168,11 @@ DamageResult TryDamageEntity(
                 (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
                 DieIfDead(entity_idx, state, audio);
                 return DamageResult::Died;
+            } else if (damage_type == DamageType::Fall) {
+                do_damage_calculation = true;
+                if (entity.can_be_stunned && entity.condition != EntityCondition::Stunned) {
+                    EnterStunnedState(entity, state);
+                }
             } else if (damage_type == DamageType::Explosion) {
                 do_damage_calculation = true;
                 if (entity.can_be_stunned && entity.condition != EntityCondition::Stunned) {

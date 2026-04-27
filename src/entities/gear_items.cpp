@@ -1,12 +1,20 @@
 #include "entities/gear_items.hpp"
 
 #include "audio_emitters.hpp"
-
 #include "entity/archetype.hpp"
+#include "frame_data_id.hpp"
+#include "world_query.hpp"
+
+#include <algorithm>
+#include <cstdint>
 
 namespace splonks::entities::gear_items {
 
 namespace {
+
+constexpr std::uint32_t kParachuteDeployFallFrames = 28;
+constexpr float kParachuteMaxFallSpeed = 1.35F;
+constexpr float kParachuteVisualOffsetY = -12.0F;
 
 common::ContactResolution OnEntityContactAsInventoryPickup(
     std::size_t entity_idx,
@@ -32,7 +40,102 @@ common::ContactResolution OnEntityContactAsInventoryPickup(
     return common::ContactResolution{};
 }
 
+Entity* GetOpenParachuteVisual(Entity& owner, State& state) {
+    if (!owner.entity_b.has_value()) {
+        return nullptr;
+    }
+    Entity* const parachute = state.entity_manager.GetEntityMut(*owner.entity_b);
+    if (parachute == nullptr || !parachute->active || parachute->type_ != EntityType::Parachute ||
+        parachute->frame_data_animator.animation_id != frame_data_ids::OpenParachute) {
+        owner.entity_b.reset();
+        return nullptr;
+    }
+    return parachute;
+}
+
+bool HasSolidParachuteBlockerBelow(const Entity& owner, const State& state) {
+    const IVec2 probe = ToIVec2(owner.GetCenter() + Vec2::New(0.0F, 32.0F));
+    const std::optional<WorldTileQueryResult> tile_query =
+        QueryTileAtWorldPos(state.stage, probe);
+    return tile_query.has_value() && tile_query->tile != nullptr &&
+           IsTileCollidable(*tile_query->tile);
+}
+
+void ClearOpenParachuteVisual(Entity& owner, State& state, const Graphics& graphics) {
+    Entity* const parachute = GetOpenParachuteVisual(owner, state);
+    if (parachute == nullptr) {
+        return;
+    }
+    state.entity_manager.SetInactive(parachute->vid.id);
+    state.UpdateSidForEntity(parachute->vid.id, graphics);
+    owner.entity_b.reset();
+}
+
+void UpdateOpenParachuteVisual(Entity& owner, State& state, const Graphics& graphics) {
+    Entity* parachute = GetOpenParachuteVisual(owner, state);
+    if (parachute == nullptr) {
+        const std::optional<VID> vid = state.entity_manager.NewEntity();
+        if (!vid.has_value()) {
+            return;
+        }
+        parachute = state.entity_manager.GetEntityMut(*vid);
+        if (parachute == nullptr) {
+            return;
+        }
+        SetEntityAs(*parachute, EntityType::Parachute);
+        SetAnimation(*parachute, frame_data_ids::OpenParachute);
+        parachute->has_physics = false;
+        parachute->can_collide = false;
+        parachute->can_be_hit = false;
+        parachute->can_be_picked_up = false;
+        parachute->draw_layer = DrawLayer::Background;
+        owner.entity_b = *vid;
+    }
+
+    const Vec2 owner_visual_center =
+        common::GetVisualCenterForEntity(owner, graphics, owner.GetCenter());
+    parachute->SetCenter(owner_visual_center + Vec2::New(0.0F, kParachuteVisualOffsetY));
+    parachute->vel = Vec2::New(0.0F, 0.0F);
+    parachute->acc = Vec2::New(0.0F, 0.0F);
+    state.UpdateSidForEntity(parachute->vid.id, graphics);
+}
+
+void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics) {
+    if (owner.grounded || owner.IsClimbing() || owner.IsHanging() ||
+        owner.condition != EntityCondition::Normal) {
+        ClearOpenParachuteVisual(owner, state, graphics);
+        return;
+    }
+
+    const bool already_open = GetOpenParachuteVisual(owner, state) != nullptr;
+    if (!already_open) {
+        if (!HasPassiveItem(owner, EntityPassiveItem::Parachute) ||
+            owner.fall_timer <= kParachuteDeployFallFrames ||
+            HasSolidParachuteBlockerBelow(owner, state)) {
+            return;
+        }
+        SetPassiveItem(owner, EntityPassiveItem::Parachute, false);
+    }
+
+    owner.vel.y = std::min(owner.vel.y, kParachuteMaxFallSpeed);
+    owner.fall_timer = 0;
+    UpdateOpenParachuteVisual(owner, state, graphics);
+}
+
 } // namespace
+
+void StepEquippedPassiveItems(std::size_t entity_idx, State& state, Graphics& graphics) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    StepEquippedParachute(entity, state, graphics);
+}
+
+void ClearEquippedPassiveItemVisuals(Entity& entity, State& state, const Graphics& graphics) {
+    ClearOpenParachuteVisual(entity, state, graphics);
+}
 
 extern const EntityArchetype kCapeArchetype{
     .type_ = EntityType::Cape,

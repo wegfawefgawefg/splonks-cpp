@@ -6,7 +6,7 @@ glyphs:
   - char: "2"
     action: maybe_random_brick_or_block
   - char: "4"
-    spawn_chance: push_block
+    spawn_chance: block
     chance_denominator: 4
   - char: "5"
     patch_pool: ground_obstacle

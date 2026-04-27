@@ -9,8 +9,9 @@ namespace splonks {
 namespace {
 
 bool IsKnownClassicQuestFlag(std::string_view flag) {
-    return flag == "made_black_market" || flag == "has_udjat_eye" || flag == "made_moai" ||
-           flag == "has_hedjet" || flag == "has_sceptre" || flag == "has_book_of_dead";
+    return flag == "made_black_market" || flag == "made_udjat_eye" ||
+           flag == "has_udjat_eye" || flag == "made_moai" || flag == "has_hedjet" ||
+           flag == "has_sceptre" || flag == "has_book_of_dead";
 }
 
 QuestExitRequirement ParseExitRequirement(const std::string& key, const std::string& value,

@@ -92,7 +92,7 @@ void MaybeHurtAndStunOnContact(
                 if (!AabbsIntersect(entity_aabb, other_aabb)) {
                     continue;
                 }
-                if (other_entity->type_ == EntityType::Player) {
+                if (IsPlayerLikeEntityType(other_entity->type_)) {
                     const AABB player_aabb = other_aabb;
                     const AABB player_foot = {
                         .tl = Vec2::New(player_aabb.tl.x, player_aabb.br.y - 4.0F),

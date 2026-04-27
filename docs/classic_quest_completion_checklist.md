@@ -47,7 +47,7 @@ Check a stage only when all applicable items are true:
 
 - [x] `PushBlock` is implemented or intentionally replaced.
   - Classic glyph `4` intentionally spawns our implemented `block` entity.
-  - The old `PushBlock` archetype remains an unimplemented Classic stub, but Classic glyph data no longer references it.
+  - Removed the old unimplemented `PushBlock` placeholder type/archetype.
 
 - [x] `Bones` floor clutter is implemented or intentionally replaced.
   - ClassicHD has real inert `oBones` floor clutter plus loose `oSkull`; `oFakeBones` is the separate skeleton ambush.
@@ -127,11 +127,18 @@ Check a stage only when all applicable items are true:
   - `build/splonks-cpp --check-classic-quest-stagegen` now hard-validates exactly one entrance tile, exactly one default `BasicExit`, and every generated exit id resolving to declared stage route data for normal non-Olmec Classic stages.
   - Olmec remains separately unchecked because its entrance/win path is not a normal Classic room-graph entrance.
 
+- [x] Udjat key/chest generation odds are audited.
+  - ClassicHD only attempts the Udjat chain if it has not already been made.
+  - ClassicHD Mines odds are level 2: `1/3`, level 3: `1/2`, level 4: guaranteed.
+  - Splonks now matches that run-state shape: stagegen receives mutable quest state, skips if `made_udjat_eye` or `has_udjat_eye` is already set, and marks `made_udjat_eye` when it successfully places both key chest and key.
+  - Pickup behavior is tracked separately under passive item behavior.
+
 - [ ] Player core survival mechanics are audited.
-  - [ ] Fall distance tracking is correct for player characters.
+  - [ ] Fall timer tracking is correct for player characters.
   - [ ] Fall damage/stun thresholds match the intended Classic/HD feel.
   - [ ] Parachute suppresses fall damage only after valid deploy conditions.
   - [ ] Spike tile damage interacts correctly with spike shoes.
+  - [ ] Spike hitbox and ladder/rope/climb interactions match Classic/HD edge cases.
   - [ ] Stomp damage and stomp immunity are consistent across enemies, props, and carried/thrown items.
   - [ ] Crush/telefrag/explosion deaths still route through normal death callbacks so favor, meathead, and effects work.
 
@@ -144,9 +151,15 @@ Check a stage only when all applicable items are true:
   - [ ] Camera follow/listener behavior does not hide gameplay issues or introduce jitter.
 
 - [ ] Passive item behavior is audited.
-  - [ ] `Gloves`: wall hang behavior works and does not override normal ledge/climb rules incorrectly.
-  - [ ] `Spectacles`: embedded treasure reveal works.
-  - [ ] `UdjatEye`: key chest pickup sets quest state and reveals embedded treasure.
+  - [x] `Gloves`: wall hang behavior works and does not override normal ledge/climb rules incorrectly.
+    - ClassicHD: gloves let the player hang while falling, holding into a solid wall, and side probes hit a solid wall; down+jump release uses a 10-frame hang cooldown.
+    - Splonks: gloves are a passive item routed through the shared hang path, require falling plus directional wall input, zero vertical motion while hanging, and use the same 10-frame glove drop cooldown.
+  - [x] `Spectacles`: embedded treasure reveal works.
+    - ClassicHD: spectacles set `hasSpectacles`, and buried treasure becomes visible when `hasSpectacles` or `hasUdjatEye` is true.
+    - Splonks: spectacles are a passive pickup, and embedded treasure overlays reveal when any active entity has `Spectacles` or `UdjatEye`.
+  - [x] `UdjatEye`: key chest pickup sets quest state and reveals embedded treasure.
+    - ClassicHD: key chest creates Udjat Eye, pickup sets `hasUdjatEye`, and hidden treasure becomes visible.
+    - Splonks: key chest opens into `UdjatEye`, pickup sets the passive and Classic quest `has_udjat_eye`, and embedded treasure reveal shares the same path as spectacles.
   - [x] `Compass`: screen-space arrow indicator exists and points to the default exit.
   - [ ] `Mitt`: thrown item behavior is implemented and tuned.
   - [ ] `Paste`: bomb behavior changes to sticky bombs.
@@ -173,6 +186,7 @@ Check a stage only when all applicable items are true:
 - [ ] Loot/shop/item pools are audited.
   - [ ] Chest random item pool matches intended Classic/HD item availability.
   - [ ] Crate/box contents match intended Classic/HD odds.
+  - [ ] Passive item generation odds are audited, including Spectacles in shops, crates/chests, sacrifice rewards, and generated loot.
   - [ ] Shop category pools match ClassicHD categories: general, bomb, weapon, rare, clothing, craps, and kissing.
   - [ ] Sacrifice reward pool and favor thresholds are intentionally documented versus Classic/HD.
   - [ ] Items that are intentionally Splonks-only are excluded from Classic generation unless explicitly marked as an adaptation.

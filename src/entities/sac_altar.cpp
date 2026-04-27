@@ -157,6 +157,8 @@ std::optional<std::int32_t> GetSacrificeFavorValueImpl(const Entity& victim, boo
 
     switch (victim.type_) {
     case EntityType::Player:
+    case EntityType::FlappyBee:
+    case EntityType::FleshGuy:
     case EntityType::Damsel:
         return alive ? 8 : 4;
     case EntityType::Shopkeeper:

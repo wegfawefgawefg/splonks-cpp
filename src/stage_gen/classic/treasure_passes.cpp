@@ -205,24 +205,18 @@ EmbeddedTreasure MakeVisibleBigGoldEmbed(FrameDataId overlay_frame) {
     return embedded_treasure;
 }
 
-void AddUdjatKeyChest(Stage& stage) {
+bool AddUdjatKeyChest(Stage& stage) {
     if (stage.quest_level_number < 2) {
-        return;
+        return false;
     }
     if (HasSpawnType(stage, EntityType::KeyChest) || HasSpawnType(stage, EntityType::ChestKey)) {
-        return;
+        return false;
     }
 
     const std::optional<Vec2> chest_pos = FindKeyChestSpawnPos(stage);
     if (!chest_pos.has_value()) {
-        return;
+        return false;
     }
-
-    stage.entity_spawns.push_back(StageEntitySpawn{
-        .type_ = EntityType::KeyChest,
-        .pos = *chest_pos,
-        .exit_id = "",
-    });
 
     std::vector<std::size_t> treasure_indices;
     treasure_indices.reserve(stage.entity_spawns.size());
@@ -240,8 +234,13 @@ void AddUdjatKeyChest(Stage& stage) {
     if (!treasure_indices.empty()) {
         const std::size_t pick =
             treasure_indices[static_cast<std::size_t>(PickStagePassIndex(treasure_indices.size()))];
+        stage.entity_spawns.push_back(StageEntitySpawn{
+            .type_ = EntityType::KeyChest,
+            .pos = *chest_pos,
+            .exit_id = "",
+        });
         stage.entity_spawns[pick].type_ = EntityType::ChestKey;
-        return;
+        return true;
     }
 
     for (int y = static_cast<int>(stage.GetTileHeight()) - 2; y >= 1; --y) {
@@ -257,13 +256,19 @@ void AddUdjatKeyChest(Stage& stage) {
             }
 
             stage.entity_spawns.push_back(StageEntitySpawn{
+                .type_ = EntityType::KeyChest,
+                .pos = *chest_pos,
+                .exit_id = "",
+            });
+            stage.entity_spawns.push_back(StageEntitySpawn{
                 .type_ = EntityType::ChestKey,
                 .pos = key_pos,
                 .exit_id = "",
             });
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 void AddMinesEmbeddedTreasure(Stage& stage, const ItemPoolDb& item_db) {

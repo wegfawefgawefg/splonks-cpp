@@ -590,6 +590,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("AABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);
     ImGui::Text("AABB BR: (%.2f, %.2f)", aabb.br.x, aabb.br.y);
     ImGui::Text("Coyote: %u", entity.coyote_time);
+    ImGui::Text("Fall timer: %u", entity.fall_timer);
     ImGui::Text("Health: %u", entity.health);
     ImGui::Text("Money: %u", entity.money);
     ImGui::SeparatorText("Passive Items");
@@ -665,7 +666,6 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     }
     ImGui::Text("Climbing: %s", entity.IsClimbing() ? "true" : "false");
     ImGui::Text("Holding: %s", entity.holding ? "true" : "false");
-    ImGui::Text("Horiz Controlled: %s", entity.IsHorizontallyControlled() ? "true" : "false");
 
     if (entity.frame_data_animator.HasAnimation()) {
         const FrameDataAnimation* animation =

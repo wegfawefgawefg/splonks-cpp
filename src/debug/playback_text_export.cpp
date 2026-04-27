@@ -170,6 +170,7 @@ bool ExportRecordingToTextFile(
             out << "    climbing: " << (entity.IsClimbing() ? "true" : "false") << "\n";
             out << "    holding: " << (entity.holding ? "true" : "false") << "\n";
             out << "    coyote_time: " << entity.coyote_time << "\n";
+            out << "    fall_timer: " << entity.fall_timer << "\n";
             out << "    pos: (" << entity.pos.x << ", " << entity.pos.y << ")\n";
             out << "    vel: (" << entity.vel.x << ", " << entity.vel.y << ")\n";
             out << "    acc: (" << entity.acc.x << ", " << entity.acc.y << ")\n";

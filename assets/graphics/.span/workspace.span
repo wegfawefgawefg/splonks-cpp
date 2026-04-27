@@ -28,8 +28,8 @@
     }
   ],
   "activePaletteId": "sweetie-16-manual",
-  "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "b1b95414-49fb-4b44-9244-4ba74bac24e1",
+  "lastOpenSheetPath": "sprites/entities-new.png",
+  "selectedAnnotationId": null,
   "sheets": [
     {
       "path": "images/title.png",
@@ -1286,8 +1286,8 @@
           "id": "e303a023-e4eb-4049-b84a-b7b3b174fa85",
           "entityType": "Sprite",
           "aabb": {
-            "x": 224,
-            "y": 208,
+            "x": 336,
+            "y": 193,
             "w": 16,
             "h": 16
           },
@@ -8985,8 +8985,8 @@
           "id": "5e104466-ba59-42c2-82c8-cc062013f11f",
           "entityType": "Sprite",
           "aabb": {
-            "x": 240,
-            "y": 208,
+            "x": 352,
+            "y": 193,
             "w": 16,
             "h": 16
           },
@@ -9029,8 +9029,8 @@
           "id": "89e26f68-7d68-4d7e-aa40-0c586dd07c85",
           "entityType": "Sprite",
           "aabb": {
-            "x": 256,
-            "y": 208,
+            "x": 368,
+            "y": 193,
             "w": 16,
             "h": 16
           },
@@ -9073,8 +9073,8 @@
           "id": "cf7115ed-824d-4752-8fb9-deada64fb1c5",
           "entityType": "Sprite",
           "aabb": {
-            "x": 272,
-            "y": 208,
+            "x": 384,
+            "y": 193,
             "w": 16,
             "h": 16
           },
@@ -9117,8 +9117,8 @@
           "id": "a1536b0a-445b-4d2e-ab4f-b0f99d85f98b",
           "entityType": "Sprite",
           "aabb": {
-            "x": 288,
-            "y": 208,
+            "x": 400,
+            "y": 193,
             "w": 16,
             "h": 16
           },
@@ -9161,8 +9161,8 @@
           "id": "946f65fc-eec9-4e10-a63b-eeeb48f9e1ee",
           "entityType": "Sprite",
           "aabb": {
-            "x": 304,
-            "y": 208,
+            "x": 416,
+            "y": 193,
             "w": 16,
             "h": 16
           },
@@ -10238,9 +10238,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 32,
-        "centerX": 180.640625,
-        "centerY": 267.0625
+        "zoom": 1.759,
+        "centerX": 246.4468447981808,
+        "centerY": 267.7657760090961
       }
     },
     {
@@ -13302,6 +13302,18 @@
         "zoom": 4.295,
         "centerX": 47.72991850989523,
         "centerY": 78.81257275902212
+      }
+    },
+    {
+      "path": "sprites/entities-new.png",
+      "annotations": [],
+      "view": {
+        "gridEnabled": true,
+        "gridWidth": 16,
+        "gridHeight": 16,
+        "zoom": 4.47,
+        "centerX": 120.24608501118568,
+        "centerY": 403.8031319910515
       }
     }
   ]

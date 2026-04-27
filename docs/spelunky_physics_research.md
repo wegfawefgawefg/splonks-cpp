@@ -1,83 +1,76 @@
-# Spelunky Physics Research
+# Spelunky Movement Research
 
 ## Purpose
 
-This note records what the current `splonks-cpp` player physics are, what the
-local `SpelunkyClassicHD` source says, and what that implies for later tuning.
+This note collects movement constants and behavior from the sources we can
+actually inspect, then compares them to current `splonks-cpp`. It is meant to
+guide a future high-parity Spelunky-style controller.
 
-The immediate conclusion is simple:
+The useful split:
 
-- our current physics are inherited from `splonks-rs`
-- they are playable and internally consistent
-- they are not a literal match for Spelunky Classic / HD
-- the biggest jump-model difference is that we currently use a single jump
-  impulse, while Spelunky uses a variable-jump model
+- `ClassicHD` is local source, so those values are hard facts.
+- Mossmouth `Spelunky HD` source is not available here, so exact internal
+  constants remain unverified.
+- `Spelunky 2` exposes useful datamined entity data through Overlunky, but its
+  units are tile/world units, not pixels.
 
-This is a research note, not a migration plan. Physics can stay as-is for now.
+## Current Splonks
 
-## Current `splonks-cpp` Numbers
+Current player constants are in `src/entities/player.hpp`:
 
-Current player constants:
-
-- `src/entities/player.hpp`
-- `kMoveAcc = 0.5F`
-- `kRunAcc = 0.5F`
-- `kClimbSpeed = 3.0F`
-- `kMaxWalkSpeed = 2.5F`
-- `kMaxRunSpeed = 4.0F`
-- `kMaxSpeed = 9.0F`
-- `kJumpImpulse = 4.5F`
+- `kMoveAcc = 0.5`
+- `kRunAcc = 0.5`
+- `kClimbSpeed = 3.0`
+- `kMaxWalkSpeed = 2.5`
+- `kMaxRunSpeed = 4.0`
+- `kMaxSpeed = 9.0`
+- `kJumpImpulse = 4.5`
 - `kCoyoteTimeFrames = 6`
-- `kJumpDelayFrames = 1`
-- player size `10 x 10`
+- player nominal size: `10 x 10` px
 
 Current stage gravity:
 
 - `src/stage.hpp`
-- `gravity = 0.3F`
+- `kDefaultStageGravity = 0.3`
 
-Current jump behavior:
+Current behavior summary:
 
-- `src/entities/common_hang.cpp`
-- grounded or coyote jump sets `entity.vel.y = -player::kJumpImpulse`
-- there is no held-jump timer or variable gravity ramp
+- Horizontal control adds acceleration, then clamps x velocity to walk/run cap.
+- Vertical velocity is clamped to `+/-kMaxSpeed`.
+- Player movement now reads from runtime debug tuning.
+- Fall damage is timer based.
 
-Current horizontal behavior:
+## Local ClassicHD Facts
 
-- `src/controls.cpp`
-- left/right directly set `acc.x` to `+/-kMoveAcc` or `+/-kRunAcc`
-- `src/entities/player.cpp`
-- velocity is clamped to walk or run cap
-- friction is a simple multiply by `0.85F` when not actively controlled
-
-## Provenance
-
-These values match the current `splonks-rs` era physics that `splonks-cpp`
-inherited. The current C++ build has diverged in collision/contact details, but
-the basic player movement numbers are still from that line.
-
-That means the present feel is "our Rust feel", not "measured Spelunky feel".
-
-## Local Classic Source Findings
-
-The local comparison source is:
+Local source:
 
 - `/home/vega/Coding/GameDev/Splonks/SpelunkyClassicHD`
 
-Important caveat:
+Important files:
 
-- this is Spelunky Classic source / ClassicHD work
-- it is not the commercial Spelunky HD remake source
-- it is still the best hard local source we have for real Spelunky-style
-  movement semantics
+- `options/main/options_main.yy`
+- `scripts/characterCreateEvent/characterCreateEvent.gml`
+- `scripts/characterStepEvent/characterStepEvent.gml`
+- `objects/oPlayer1/Create_0.gml`
+- `objects/oPlayer1/Step_0.gml`
 
-Relevant files:
+Project speed:
 
-- `/home/vega/Coding/GameDev/Splonks/SpelunkyClassicHD/scripts/characterCreateEvent/characterCreateEvent.gml`
-- `/home/vega/Coding/GameDev/Splonks/SpelunkyClassicHD/scripts/characterStepEvent/characterStepEvent.gml`
-- `/home/vega/Coding/GameDev/Splonks/SpelunkyClassicHD/objects/oPlayer1/Step_0.gml`
+- `option_game_speed = 30`
+- ClassicHD movement constants are authored per 30 Hz step.
+- Splonks runs gameplay at 60 Hz, so direct per-step constants play twice as
+  fast in real time unless converted.
 
-Key Classic values from `characterCreateEvent.gml`:
+Player-specific values:
+
+- `myGrav = 0.6`
+- `fallTimer = 0` initially
+- player step overrides `xVelLimit = 10`
+- player clamps `xVel` to `[-10, 10]`
+- player clamps `yVel` to `[-yVelLimit, yVelLimit]`
+- inherited `yVelLimit = 10`
+
+Generic character defaults from `characterCreateEvent.gml`:
 
 - `grav = 1`
 - `gravNorm = 1`
@@ -97,80 +90,146 @@ Key Classic values from `characterCreateEvent.gml`:
 - `frictionClimbingY = 0.6`
 - `frictionDuckingX = 0.8`
 - `frictionFlyingX = 0.99`
-- collision bounds are set with `setCollisionBounds(-5, -8, 5, 8)`
+- collision bounds: `setCollisionBounds(-5, -8, 5, 8)`
 
-Important Classic movement semantics from `characterStepEvent.gml`:
+ClassicHD fall damage:
 
-- airborne movement applies `yAcc += gravityIntensity`
-- stepping off a ledge immediately adds `yAcc += grav`
-- grounded jump uses `yAcc += initialJumpAcc * 2`
-- jump hold is variable:
-  - `jumpTime` starts at `0`
-  - `jumpTimeTotal = 10`
-  - while jump is held, gravity is scaled by `jumpTime / jumpTimeTotal`
-  - releasing jump early cuts the variable-jump window short
-- run behavior is stateful, not just a second accel value:
-  - sustained run can increase speed limits
-  - friction changes by locomotion mode
+- `fallTimer` increments while `yVel > 0` and not climbing.
+- Parachute checks `fallTimer > 14`.
+- Landing with `fallTimer > 16` causes long-drop stun/damage.
+- `fallTimer > 48`: `10` damage.
+- `fallTimer > 32`: `2` damage.
+- otherwise over `16`: `1` damage.
+- landing bounce sets `yVel = -3`.
+- landing horizontal velocity is damped more strongly on normal ground than ice.
 
-Important Classic fall / stun behavior from `oPlayer1/Step_0.gml`:
+ClassicHD jump shape:
 
-- `fallTimer` increments while falling
-- long falls trigger stun / damage on landing
-- dead or stunned bodies use different bounce / friction behavior
-- spikes kill only on meaningful downward impact, not merely because the player
-  touched them from above at low speed
+- Jump is not just one impulse.
+- There is an initial impulse.
+- A short held-jump window modulates gravity.
+- Releasing jump early cuts that window.
 
-## What This Means For Jumping
+This is probably the biggest difference from current Splonks.
 
-Our current jump is a single-impulse jump:
+## Mossmouth Spelunky HD
 
-- press jump
-- set `vel.y = -4.5`
-- normal gravity resumes immediately
+Exact source constants are not available in this repo.
 
-Spelunky Classic is not doing that.
+Behavior targets commonly reported by players are still useful:
 
-It does have an initial jump impulse, but jump height is not just that impulse.
-The jump button also modifies gravity for a short hold window. That means the
-actual shape of the arc depends on button hold duration.
+- normal jump is roughly `2` tiles
+- Spring Shoes add roughly `1` tile
+- ropes reach roughly `8` tiles
+- fall damage is commonly described around:
+  - about `8-17` tiles: `1` damage
+  - about `18-27` tiles: `2` damage
+  - about `28+` tiles: death
 
-So the answer to the design question is:
+These are validation targets, not hard internal constants.
 
-- no, our current single impulse is not how Spelunky works
-- the closest Spelunky description is "initial impulse plus short variable jump
-  sustain via gravity modulation"
+## Spelunky 2 Datamined Values
 
-That is probably the single biggest reason our jump feel is only
-Spelunky-adjacent right now.
+Source:
 
-## Online HD Findings
+- Overlunky API: `https://spelunky-fyi.github.io/overlunky/`
+- Overlunky entity data:
+  `https://raw.githubusercontent.com/spelunky-fyi/overlunky/main/docs/game_data/entities.json`
 
-There does not appear to be a trustworthy public table of exact commercial
-Spelunky HD movement constants.
+For `ENT_TYPE_CHAR_ANA_SPELUNKY` and other normal player characters:
 
-What is publicly easy to verify is behavior:
+- `max_speed = 0.0725`
+- `sprint_factor = 2.0`
+- `acceleration = 0.032`
+- `jump = 0.18`
+- `friction = 0.015`
+- `weight = 1.0`
 
-- Spelunky HD normal jump is generally described as about `2` tiles
-- Spelunky HD Spring Shoes add about `1` tile to jump height
-- Spelunky HD ropes reach about `8` tiles
-- Spelunky HD fall damage thresholds are commonly described as:
-  - `8-17` tiles: `1` damage
-  - `18-27` tiles: `2` damage
-  - `28+` tiles: death
+Spelunky 2 units:
 
-These are useful for validation targets, but they do not give us the actual
-internal constants.
+- One tile is `1.0` world unit.
+- Player chars are roughly `width = 1.25`, `height = 1.25`.
+- Floor/block entities are `width = 1.0`, `height = 1.0`.
 
-## Practical Conclusion
+Useful conversion to Splonks pixels:
 
-If we want literal Spelunky-like movement later, the likely order is:
+- Splonks tile size is `16 px`.
+- `Spelunky2 world units * 16 = Splonks px`.
+- `0.0725 tiles/frame * 16 = 1.16 px/frame`.
+- With `sprint_factor = 2.0`, horizontal run target is roughly
+  `2.32 px/frame`.
+- `0.032 tiles/frame^2 * 16 = 0.512 px/frame^2`.
+- `0.18 tiles/frame * 16 = 2.88 px/frame`.
 
-1. keep current physics for now
-2. change jump from pure single-impulse to variable jump
-3. tune horizontal friction / run behavior
-4. tune fall timer and landing damage separately
-5. validate against measured tile outcomes, not guessed constants
+Caveat:
 
-The important part is that changing only raw gravity or only `kJumpImpulse`
-would not be enough. Spelunky movement is a small system, not one number.
+- Overlunky `max_speed` appears to be movement database data.
+- Do not assume it is terminal fall speed without measuring in game or finding
+  the actual Spelunky 2 physics code path.
+
+## Current Diff
+
+Splonks versus ClassicHD:
+
+- Player gravity defaults to the current Splonks feel: stage gravity `0.3`.
+- Player terminal vertical speed is close but not equal: Splonks `9`,
+  ClassicHD `10`.
+- Horizontal run is probably too fast versus Spelunky 2 datamined player data:
+  Splonks run cap `4 px/frame`; Spelunky 2 converted run target is about
+  `2.32 px/frame`.
+- Horizontal walk is probably also high compared to Spelunky 2's base
+  `1.16 px/frame`, though ClassicHD uses different semantics.
+- Splonks acceleration `0.5 px/frame^2` lines up surprisingly closely with
+  Spelunky 2 converted `0.512 px/frame^2`.
+- Splonks jump impulse `4.5 px/frame` is much larger than Spelunky 2's
+  converted `2.88 px/frame`, but this is not an apples-to-apples comparison
+  because Spelunky uses more nuanced jump physics.
+- Splonks can now enable ClassicHD-style held-jump gravity modulation through
+  the runtime Player Tuning debug window.
+
+## Fall Timer Implications
+
+ClassicHD fall damage thresholds are frame thresholds, not direct tile-distance
+thresholds. Distance depends on:
+
+- simulation rate
+- gravity
+- initial vertical velocity
+- terminal fall speed
+- whether the timer starts immediately
+- whether low upward/downward states reset or pause the timer
+
+The local ClassicHD source uses raw thresholds `16/32/48` at 30 Hz. In a 60 Hz
+simulation, those are `32/64/96` frames for equivalent real-time behavior.
+
+Directly copying ClassicHD `gravity = 0.6` into 60 Hz makes the fall much too
+fast. The 60 Hz equivalent is:
+
+- acceleration-like constants: multiply by `(30 / 60)^2 = 0.25`
+- velocity-like constants: multiply by `(30 / 60) = 0.5`
+- frame-count constants: multiply by `(60 / 30) = 2`
+
+## Runtime Player Tuning
+
+`Debug: Player Tuning` owns the current parity pass. It exposes vertical,
+horizontal, run, and climb/hang knobs against the real `Player` entity rather
+than a temporary alternate player type.
+
+Validation targets:
+
+- short tap jump height
+- held jump height
+- running jump distance
+- first fall damage distance
+- stun bounce after fall damage
+- climbing attach/detach feel
+- rope/ladder top behavior
+- thrown/carry movement side effects
+
+## Open Questions
+
+- What is the true commercial Spelunky HD terminal fall speed?
+- Does Spelunky 2 use `EntityDB.max_speed` for vertical fall clamp, or only
+  horizontal locomotion?
+- What exact tile distance should Splonks use for first fall damage if we are
+  targeting feel rather than literal ClassicHD timer values?

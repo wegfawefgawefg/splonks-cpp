@@ -24,6 +24,7 @@ void ApplyClassicQuestStageEntryFlags(QuestState& quest_state, std::string_view 
 
 bool GetClassicQuestFlag(const ClassicQuestState& quest_state, const std::string& flag) {
     if (flag == "made_black_market") return quest_state.made_black_market;
+    if (flag == "made_udjat_eye") return quest_state.made_udjat_eye;
     if (flag == "has_udjat_eye") return quest_state.has_udjat_eye;
     if (flag == "made_moai") return quest_state.made_moai;
     if (flag == "has_hedjet") return quest_state.has_hedjet;
@@ -52,7 +53,6 @@ bool LoadClassicQuestStage(
 
     const StageConfig stage_config =
         LoadStageConfig(GetClassicQuestRootPath(), stage_def->stage_file);
-    state.stage = stage_gen::classic::GenerateStage(quest, *stage_def, stage_config);
     const QuestId loaded_quest_id = QuestIdFromString(quest.id);
     if (!preserve_player_state || state.quest_state.quest_id != loaded_quest_id) {
         state.quest_state = QuestState{
@@ -62,6 +62,12 @@ bool LoadClassicQuestStage(
     } else {
         state.quest_state.quest_id = loaded_quest_id;
     }
+    state.stage = stage_gen::classic::GenerateStage(
+        quest,
+        *stage_def,
+        stage_config,
+        &state.quest_state
+    );
     ApplyClassicQuestStageEntryFlags(state.quest_state, stage_def->id);
     InitStage(state, preserve_player_state);
     state.depth = static_cast<std::uint32_t>(std::max(0, stage_def->level_number - 1));

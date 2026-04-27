@@ -512,13 +512,10 @@ void ControlEntityAsFleshGuy(
     Entity& flesh_guy = state.entity_manager.entities[entity_idx];
     const controls::ControlIntent control = controls::GetControlIntentForEntity(flesh_guy, state);
     if (flesh_guy.condition != EntityCondition::Normal) {
-        flesh_guy.was_horizontally_controlled_this_frame = false;
         return;
     }
 
     const bool climbing = flesh_guy.IsClimbing();
-    flesh_guy.was_horizontally_controlled_this_frame = !climbing && (control.left || control.right);
-
     if (climbing) {
         flesh_guy.acc.x = 0.0F;
         flesh_guy.vel.x = 0.0F;

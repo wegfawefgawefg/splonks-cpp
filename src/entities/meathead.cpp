@@ -85,6 +85,8 @@ bool IsExcludedDeathType(EntityType type_) {
     switch (type_) {
     case EntityType::None:
     case EntityType::Player:
+    case EntityType::FlappyBee:
+    case EntityType::FleshGuy:
     case EntityType::BasicExit:
     case EntityType::Shop:
     case EntityType::SignGeneral:

@@ -8,7 +8,7 @@ glyphs:
   - char: "3"
     action: temple_lava_or_ground
   - char: "4"
-    spawn_chance: push_block
+    spawn_chance: block
     chance_denominator: 4
   - char: "5"
     patch_pool: ground_obstacle

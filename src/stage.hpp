@@ -17,6 +17,8 @@
 
 namespace splonks {
 
+constexpr float kDefaultStageGravity = 0.3F;
+
 struct Audio;
 struct Entity;
 struct State;
@@ -185,7 +187,7 @@ struct Stage {
     std::vector<StageGenAnnotation> stagegen_annotations;
     std::vector<StageLight> lights;
     FrameDataId block_animation_id = frame_data_ids::CaveBlock;
-    float gravity = 0.3F;
+    float gravity = kDefaultStageGravity;
     StageBorder border{};
     bool camera_clamp_enabled = true;
     Vec2 camera_clamp_margin = Vec2::New(0.0F, 0.0F);
