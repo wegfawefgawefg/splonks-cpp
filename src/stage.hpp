@@ -196,6 +196,7 @@ struct Stage {
     UVec2 wrap_core_origin_tiles = UVec2::New(0, 0);
     UVec2 wrap_core_size_tiles = UVec2::New(0, 0);
     std::uint32_t next_light_vid = 0;
+    std::uint32_t tile_change_generation = 0;
 
     static const UVec2 kShape;
     static const UVec2 kRoomShape;

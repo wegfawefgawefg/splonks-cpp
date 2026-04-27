@@ -71,6 +71,8 @@ Tile RandomTile();
 const char* TileToString(Tile tile);
 bool IsTileTransparent(Tile tile);
 bool IsTileCollidable(Tile tile);
+bool IsTileOneWayTopSolid(Tile tile);
+bool IsTileGroundSupport(Tile tile);
 bool IsTileHangable(Tile tile);
 bool CollidableTileInList(const std::vector<const Tile*>& tiles);
 bool ClimbableTileInList(const std::vector<const Tile*>& tiles);

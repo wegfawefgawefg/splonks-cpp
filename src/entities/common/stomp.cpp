@@ -1,4 +1,5 @@
 #include "entities/common/common.hpp"
+#include "controls.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -8,9 +9,13 @@ namespace splonks::entities::common {
 namespace {
 
 constexpr float kStompHeadHeight = 1.0F;
-constexpr float kStompBounceVelocityY = -4.5F;
+constexpr float kStompShortBounceVelocityY = -3.0F;
+constexpr float kStompHeldJumpBounceVelocityY = -4.5F;
 constexpr float kStompVictimKnockbackVelocityY = -1.0F;
 constexpr float kStompVictimKnockbackVelocityX = 1.0F;
+constexpr unsigned int kStompDamage = 1;
+constexpr unsigned int kSpikeShoesStompDamage = 2;
+constexpr float kSpringShoeMovementSoundVolume = 0.15F;
 
 bool CanEntityAttemptStomp(const Entity& stomper) {
     if (!stomper.active) {
@@ -93,13 +98,26 @@ bool TryApplyStompContactToEntity(
     }
 
     (void)PlayEntityCenterSoundEmitter(state, stomper, audio_asset_ids::Jump);
+    const bool has_spring_shoes = HasPassiveItem(stomper, EntityPassiveItem::SpringShoes);
+    if (has_spring_shoes) {
+        (void)PlayEntityCenterSoundEmitter(
+            state,
+            stomper,
+            audio_asset_ids::SpringShoe,
+            AudioEmitterPlayParams{.volume_scale = kSpringShoeMovementSoundVolume}
+        );
+    }
 
+    const unsigned int stomp_damage =
+        HasPassiveItem(stomper, EntityPassiveItem::SpikeShoes)
+            ? kSpikeShoesStompDamage
+            : kStompDamage;
     const DamageResult damage_result = TryDamageEntity(
         stomped->vid.id,
         state,
         audio,
         DamageType::JumpOn,
-        1
+        stomp_damage
     );
     if (stomped->can_be_stunned) {
         stomped->condition = EntityCondition::Stunned;
@@ -131,7 +149,9 @@ bool TryApplyStompContactToEntity(
         1
     );
 
-    stomper.vel.y = kStompBounceVelocityY;
+    const controls::ControlIntent control = controls::GetControlIntentForEntity(stomper, state);
+    const float spring_bonus = has_spring_shoes ? state.player_tuning.spring_shoes_jump_impulse_bonus : 0.0F;
+    stomper.vel.y = (control.jump ? kStompHeldJumpBounceVelocityY : kStompShortBounceVelocityY) - spring_bonus;
     return true;
 }
 

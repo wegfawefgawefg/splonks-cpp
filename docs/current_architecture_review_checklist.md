@@ -110,3 +110,14 @@ this as a triage checklist and mark items off intentionally.
 
 - [x] Unimplemented archetype stubs are a reasonable interim strategy.
   - Missing classic content exists as explicit entity-owned archetype stubs while behavior is filled in later.
+
+- [ ] Move passive-specific jump bonuses out of common jump code.
+  - `StartEntityJump()` currently checks `EntityPassiveItem::SpringShoes` directly.
+  - Stomp handling also checks `SpringShoes` and `SpikeShoes` directly for bounce sound/height and stomp damage.
+  - This is common gameplay code rather than low-level engine code, so it is acceptable short-term.
+  - Cleaner long-term shape: common movement/combat receives already-aggregated jump/stomp modifiers from equipment/passive stat helpers instead of knowing passive items by name.
+
+- [ ] Move authored tile CBox lookup out of common contact damage.
+  - Spike damage currently reads tile CBoxes through `Graphics`/`TileSourceData` from `src/entities/common/contact_damage.cpp`.
+  - The spike rule itself can remain common gameplay, but gameplay collision should not depend on renderer-owned graphics state.
+  - Cleaner long-term shape: tile collision/hazard metadata is cached in gameplay-owned tile metadata or a non-render tile source table.

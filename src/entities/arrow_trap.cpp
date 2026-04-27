@@ -15,6 +15,7 @@ namespace splonks::entities::arrow_trap {
 namespace {
 
 constexpr int kArrowTrapMaxSensorDistance = 96;
+constexpr int kArrowTrapMaxSensorTileSteps = kArrowTrapMaxSensorDistance / static_cast<int>(kTileSize);
 constexpr float kArrowTrapSensorHalfHeight = 3.0F;
 constexpr float kArrowTrapMovingEntitySpeed = 0.05F;
 constexpr float kArrowTrapArrowSpeed = 8.0F;
@@ -29,6 +30,11 @@ bool HasFired(const Entity& trap) {
 
 int DirectionForTrap(const Entity& trap) {
     return trap.facing == LeftOrRight::Left ? -1 : 1;
+}
+
+Vec2 GetSensorStart(const Entity& trap) {
+    const int direction = DirectionForTrap(trap);
+    return trap.GetCenter() + Vec2::New(static_cast<float>(direction) * 9.0F, 0.0F);
 }
 
 bool ShouldTriggerOnEntity(const Entity& entity) {
@@ -52,23 +58,53 @@ Vec2 FromStoredArrowOffsetPoint(const IVec2& point) {
     return Vec2::New(static_cast<float>(point.x), static_cast<float>(point.y));
 }
 
-AABB GetSensorAabb(const Entity& trap) {
+int GetOpenSensorCacheMarker(const Stage& stage) {
+    return static_cast<int>(stage.tile_change_generation + 1U);
+}
+
+int ComputeOpenSensorDistance(const Entity& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
-    const Vec2 center = trap.GetCenter();
-    const float face_x = center.x + static_cast<float>(direction) * 8.0F;
-    const float end_x = center.x + static_cast<float>(direction * kArrowTrapMaxSensorDistance);
-    return AABB::New(
-        Vec2::New(std::min(face_x, end_x), center.y - kArrowTrapSensorHalfHeight),
-        Vec2::New(std::max(face_x, end_x), center.y + kArrowTrapSensorHalfHeight)
+    const Vec2 start = GetSensorStart(trap);
+    const IVec2 origin_tile = state.stage.GetTileCoordAtWc(ToIVec2(start));
+    const TileStepRaycastResult ray = RaycastTileSteps(
+        state.stage,
+        origin_tile,
+        IVec2::New(direction, 0),
+        kArrowTrapMaxSensorTileSteps
+    );
+    return std::clamp(
+        ray.open_steps * static_cast<int>(kTileSize),
+        0,
+        kArrowTrapMaxSensorDistance
     );
 }
 
-void AddArrowTrapDebugAnnotations(const Entity& trap, State& state) {
+int GetCachedOpenSensorDistance(Entity& trap, const State& state) {
+    const int cache_marker = GetOpenSensorCacheMarker(state.stage);
+    if (trap.point_a.x != cache_marker) {
+        trap.point_a.x = cache_marker;
+        trap.point_a.y = ComputeOpenSensorDistance(trap, state);
+    }
+    return trap.point_a.y;
+}
+
+AABB GetOpenSensorAabb(Entity& trap, const State& state) {
+    const int direction = DirectionForTrap(trap);
+    const Vec2 start = GetSensorStart(trap);
+    const int open_distance = GetCachedOpenSensorDistance(trap, state);
+    const float end_x = start.x + static_cast<float>(direction * open_distance);
+    return AABB::New(
+        Vec2::New(std::min(start.x, end_x), start.y - kArrowTrapSensorHalfHeight),
+        Vec2::New(std::max(start.x, end_x), start.y + kArrowTrapSensorHalfHeight)
+    );
+}
+
+void AddArrowTrapDebugAnnotations(Entity& trap, State& state) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
 
-    const AABB sensor_aabb = GetSensorAabb(trap);
+    const AABB sensor_aabb = GetOpenSensorAabb(trap, state);
     state.AddDebugRectAnnotation(DebugRectAnnotation{
         .area = sensor_aabb,
         .color = DebugAnnotationColor{255, 192, 0, 255},
@@ -81,11 +117,14 @@ void AddArrowTrapDebugAnnotations(const Entity& trap, State& state) {
 }
 
 bool SensorTouchesMovingEntity(
-    const Entity& trap,
+    Entity& trap,
     const State& state,
     const Graphics& graphics
 ) {
-    const AABB sensor_aabb = GetSensorAabb(trap);
+    const AABB sensor_aabb = GetOpenSensorAabb(trap, state);
+    if (sensor_aabb.br.x <= sensor_aabb.tl.x) {
+        return false;
+    }
 
     const std::vector<VID> hits = QueryEntitiesInAabb(state, sensor_aabb, trap.vid);
     for (const VID& vid : hits) {
@@ -189,7 +228,7 @@ void StepEntityLogicAsArrowTrap(
         return;
     }
 
-    const Entity& trap = state.entity_manager.entities[entity_idx];
+    Entity& trap = state.entity_manager.entities[entity_idx];
     if (!trap.active || HasFired(trap)) {
         return;
     }

@@ -10,9 +10,39 @@
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
 #include "world_query.hpp"
 
 namespace splonks::entities::rope {
+
+namespace {
+
+bool IsClimbableTile(const Tile tile) {
+    return GetTileArchetype(tile).climbable;
+}
+
+IVec2 GetRopeDeployStartTile(const Stage& stage, const IVec2& hit_tile_pos) {
+    const std::optional<WorldTileQueryResult> hit_tile =
+        QueryTileAtTilePos(stage, hit_tile_pos);
+    if (!hit_tile.has_value() || hit_tile->tile == nullptr ||
+        !IsClimbableTile(*hit_tile->tile)) {
+        return hit_tile_pos;
+    }
+
+    IVec2 start = hit_tile->tile_pos;
+    while (true) {
+        const IVec2 next = IVec2::New(start.x, start.y + 1);
+        const std::optional<WorldTileQueryResult> next_tile =
+            QueryTileAtTilePos(stage, next);
+        if (!next_tile.has_value() || next_tile->tile == nullptr ||
+            !IsClimbableTile(*next_tile->tile)) {
+            return next;
+        }
+        start = next_tile->tile_pos;
+    }
+}
+
+} // namespace
 
 extern const EntityArchetype kRopeArchetype{
     .type_ = EntityType::Rope,
@@ -89,10 +119,12 @@ void StepEntityLogicAsRope(
         const std::optional<WorldTileQueryResult> rope_tile =
             QueryTileAtWorldPos(state.stage, ToIVec2(rope_center));
         if (rope_tile.has_value()) {
+            const IVec2 deploy_start_tile =
+                GetRopeDeployStartTile(state.stage, rope_tile->tile_pos);
             for (unsigned int y_offset = 0; y_offset < kRopeLength; ++y_offset) {
                 const std::optional<WorldTileQueryResult> tile_query = QueryTileAtTilePos(
                     state.stage,
-                    IVec2::New(rope_tile->tile_pos.x, rope_tile->tile_pos.y + static_cast<int>(y_offset))
+                    IVec2::New(deploy_start_tile.x, deploy_start_tile.y + static_cast<int>(y_offset))
                 );
                 if (!tile_query.has_value() || tile_query->tile == nullptr) {
                     break;

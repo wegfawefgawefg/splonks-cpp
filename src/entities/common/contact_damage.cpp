@@ -1,5 +1,6 @@
 #include "entities/common/common.hpp"
 
+#include "tile_source_data.hpp"
 #include "world_query.hpp"
 
 #include <vector>
@@ -26,6 +27,24 @@ bool CanApplyProjectileContact(const Entity& entity) {
 bool CanProjectileImpactWithoutDamage(const Entity& target) {
     return target.condition == EntityCondition::Stunned ||
            target.condition == EntityCondition::Dead;
+}
+
+AABB GetTileSourceCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
+                                const TileSourceData& tile_source_data, const Vec2& anchor) {
+    const FrameRect& cbox = tile_source_data.cbox;
+    const Vec2 tile_tl = ToVec2(tile_query.tile_pos) * static_cast<float>(kTileSize);
+    const AABB cbox_aabb = AABB::New(
+        tile_tl + Vec2::New(static_cast<float>(cbox.x), static_cast<float>(cbox.y)),
+        tile_tl + Vec2::New(
+            static_cast<float>(cbox.x + cbox.w - 1),
+            static_cast<float>(cbox.y + cbox.h - 1)
+        )
+    );
+    return GetNearestWorldAabb(stage, anchor, cbox_aabb);
+}
+
+bool HasAuthoredTileCbox(const TileSourceData& tile_source_data) {
+    return tile_source_data.cbox.w > 0 && tile_source_data.cbox.h > 0;
 }
 
 KnockbackSpec BuildBodyContactKnockback(const Entity& source, const Entity& target, const Stage& stage) {
@@ -151,18 +170,43 @@ void ApplyHurtOnContact(
     }
 }
 
-void DieIfFootInSpikes(std::size_t entity_idx, State& state, Audio& audio) {
+void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (HasPassiveItem(entity, EntityPassiveItem::SpikeShoes)) {
+        return;
+    }
+    if (entity.IsClimbing() || entity.IsHanging()) {
+        return;
+    }
+
     bool fell_into_spikes = false;
     if (entity.vel.y > 0.0F) {
-        const IAABB iaabb = entity.GetAABB().AsIAABB();
+        const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
+        const IAABB iaabb = entity_aabb.AsIAABB();
         const bool override_tile_portion_check = entity.vel.y > 4.0F;
         const bool in_top_portion_of_tile = (iaabb.br.y % static_cast<int>(kTileSize)) < 4;
-        if (in_top_portion_of_tile || override_tile_portion_check) {
-            for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
-                if (tile_query.tile != nullptr && *tile_query.tile == Tile::Spikes) {
+        for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
+            if (tile_query.tile == nullptr || *tile_query.tile != Tile::Spikes) {
+                continue;
+            }
+
+            const TileSourceData* const tile_source_data =
+                GetTileSourceData(graphics, *tile_query.tile, tile_query.tile_pos);
+            if (tile_source_data == nullptr || !HasAuthoredTileCbox(*tile_source_data)) {
+                if (in_top_portion_of_tile || override_tile_portion_check) {
                     fell_into_spikes = true;
                 }
+                continue;
+            }
+
+            const AABB spike_cbox_aabb = GetTileSourceCboxWorldAabb(
+                state.stage,
+                tile_query,
+                *tile_source_data,
+                entity.GetCenter()
+            );
+            if (AabbsIntersect(entity_aabb, spike_cbox_aabb)) {
+                fell_into_spikes = true;
             }
         }
     }
@@ -284,7 +328,7 @@ void CommonStep(
     }
     DoThrownByStep(entity_idx, state);
     ApplyHurtOnContact(entity_idx, state, graphics, audio);
-    DieIfFootInSpikes(entity_idx, state, audio);
+    DieIfFootInSpikes(entity_idx, state, graphics, audio);
     (void)dt;
 }
 

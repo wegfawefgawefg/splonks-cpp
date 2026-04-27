@@ -7109,6 +7109,66 @@ sprites:
     emit_point:
       x: 2
       y: 5
+  - path: "entities.png"
+    aabb:
+      x: 64
+      y: 416
+      w: 16
+      h: 16
+    name: "spike_shoes"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    tile: false
+    emit_point:
+      x: 9
+      y: 9
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 416
+      w: 16
+      h: 16
+    name: "spring_shoes"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 9
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0
@@ -7692,19 +7752,19 @@ sprites:
       x: 0
       y: 0
     center:
-      x: 0
-      y: 0
+      x: 10
+      y: 14
     tags: []
     pbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+      x: 2
+      y: 8
+      w: 14
+      h: 8
     cbox:
-      x: 0
-      y: 0
-      w: 0
-      h: 0
+      x: 2
+      y: 8
+      w: 14
+      h: 8
     tile: false
     emit_point:
       x: 0

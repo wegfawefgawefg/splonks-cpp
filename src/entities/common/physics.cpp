@@ -64,7 +64,7 @@ void ResolveBlockingOverlap(
 
 bool HasBlockingTileContact(const BlockingContactSet& contacts) {
     for (const TileContact& tile_contact : contacts.tile_contacts) {
-        if (tile_contact.tile != nullptr && IsTileCollidable(*tile_contact.tile)) {
+        if (tile_contact.blocks_movement) {
             return true;
         }
     }
@@ -79,6 +79,71 @@ BlockingImpactSurface GetImpactSurfaceForBlockedContacts(const BlockingContactSe
         return BlockingImpactSurface::StageBounds;
     }
     return BlockingImpactSurface::ImpassableEntity;
+}
+
+AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, const Vec2& anchor) {
+    const Vec2 tile_tl = ToVec2(tile_contact.tile_pos * static_cast<int>(kTileSize));
+    return GetNearestWorldAabb(
+        stage,
+        anchor,
+        AABB::New(tile_tl, tile_tl + Vec2::New(static_cast<float>(kTileSize - 1),
+                                               static_cast<float>(kTileSize - 1)))
+    );
+}
+
+bool DoesOneWayTopContactBlock(
+    const Entity& entity,
+    const TileContact& tile_contact,
+    const Stage& stage,
+    const AABB& current_aabb,
+    const AABB& next_aabb,
+    BlockingImpactAxis impact_axis,
+    int direction
+) {
+    if (tile_contact.tile == nullptr || !IsTileOneWayTopSolid(*tile_contact.tile)) {
+        return false;
+    }
+    if (impact_axis != BlockingImpactAxis::Vertical || direction <= 0) {
+        return false;
+    }
+    if (entity.IsClimbing()) {
+        return false;
+    }
+
+    const AABB tile_aabb = GetTileAabbForContact(tile_contact, stage, (next_aabb.tl + next_aabb.br) / 2.0F);
+    if (current_aabb.br.y >= tile_aabb.tl.y) {
+        return false;
+    }
+    if (next_aabb.br.y < tile_aabb.tl.y) {
+        return false;
+    }
+    return next_aabb.br.x >= tile_aabb.tl.x && next_aabb.tl.x <= tile_aabb.br.x;
+}
+
+BlockingContactSet GatherBlockingContactsForMovement(
+    std::size_t entity_idx,
+    const AABB& current_aabb,
+    const AABB& next_aabb,
+    State& state,
+    bool check_tiles,
+    bool check_entities,
+    BlockingImpactAxis impact_axis,
+    int direction
+) {
+    BlockingContactSet contacts =
+        GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+    if (!check_tiles) {
+        return contacts;
+    }
+
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    for (TileContact& tile_contact : contacts.tile_contacts) {
+        if (DoesOneWayTopContactBlock(
+                entity, tile_contact, state.stage, current_aabb, next_aabb, impact_axis, direction)) {
+            tile_contact.blocks_movement = true;
+        }
+    }
+    return contacts;
 }
 
 int GetIntegerStepDistance(float distance, unsigned int time) {
@@ -119,7 +184,11 @@ float GetGroundFrictionMultiplier(std::size_t entity_idx, State& state) {
     bool found_support_surface = false;
     for (int tile_x = min_tile_x; tile_x <= max_tile_x; ++tile_x) {
         const Tile tile = state.stage.GetTileOrBorder(tile_x, support_tile_y);
-        if (!IsTileCollidable(tile)) {
+        if (!IsTileGroundSupport(tile)) {
+            continue;
+        }
+        if (IsTileOneWayTopSolid(tile) &&
+            entity_br.y >= static_cast<float>(support_tile_y * static_cast<int>(kTileSize))) {
             continue;
         }
         const float tile_friction = GetTileFriction(tile);
@@ -397,9 +466,11 @@ void MoveEntityPixelStep(
                 hanging_carry_vids
             );
             const Vec2 next_pos = entity.pos + Vec2::New(1.0F, 0.0F);
+            const AABB current_aabb = entity.GetAABB();
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            const BlockingContactSet contacts =
-                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const BlockingContactSet contacts = GatherBlockingContactsForMovement(
+                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                BlockingImpactAxis::Horizontal, 1);
             const ContactResolution contact_resolution =
                 ResolveBlockingContactSet(entity_idx, contacts, state);
             if (contact_resolution.stop_sweep) {
@@ -480,9 +551,11 @@ void MoveEntityPixelStep(
                 hanging_carry_vids
             );
             const Vec2 next_pos = entity.pos + Vec2::New(-1.0F, 0.0F);
+            const AABB current_aabb = entity.GetAABB();
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            const BlockingContactSet contacts =
-                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const BlockingContactSet contacts = GatherBlockingContactsForMovement(
+                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                BlockingImpactAxis::Horizontal, -1);
             const ContactResolution contact_resolution =
                 ResolveBlockingContactSet(entity_idx, contacts, state);
             if (contact_resolution.stop_sweep) {
@@ -571,9 +644,11 @@ void MoveEntityPixelStep(
                 hanging_carry_vids
             );
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, 1.0F);
+            const AABB current_aabb = entity.GetAABB();
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            const BlockingContactSet contacts =
-                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const BlockingContactSet contacts = GatherBlockingContactsForMovement(
+                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                BlockingImpactAxis::Vertical, 1);
             const ContactResolution contact_resolution =
                 ResolveBlockingContactSet(entity_idx, contacts, state);
             if (contact_resolution.stop_sweep) {
@@ -660,9 +735,11 @@ void MoveEntityPixelStep(
                 hanging_carry_vids
             );
             const Vec2 next_pos = entity.pos + Vec2::New(0.0F, -1.0F);
+            const AABB current_aabb = entity.GetAABB();
             const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
-            const BlockingContactSet contacts =
-                GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+            const BlockingContactSet contacts = GatherBlockingContactsForMovement(
+                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                BlockingImpactAxis::Vertical, -1);
             const ContactResolution contact_resolution =
                 ResolveBlockingContactSet(entity_idx, contacts, state);
             if (contact_resolution.stop_sweep) {
@@ -880,6 +957,7 @@ bool IsGroundedOnTiles(std::size_t entity_idx, State& state) {
     const auto [entity_tl, entity_br] = entity.GetBounds();
     const Vec2 feet_tl = Vec2::New(entity_tl.x, entity_br.y);
     const Vec2 feet_br = entity_br + Vec2::New(0.0F, 1.0F);
+    const AABB feet_aabb = AABB::New(feet_tl, feet_br);
     if (feet_br.y >= static_cast<float>(state.stage.GetHeight()) &&
         state.stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
         return true;
@@ -889,7 +967,9 @@ bool IsGroundedOnTiles(std::size_t entity_idx, State& state) {
              state.stage,
              ToIVec2(feet_tl),
              ToIVec2(feet_br))) {
-        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
+        if (tile_query.tile != nullptr &&
+            (IsTileCollidable(*tile_query.tile) ||
+             (!entity.IsClimbing() && IsOneWayTopTileSupportingAabb(state.stage, tile_query, feet_aabb)))) {
             return true;
         }
     }

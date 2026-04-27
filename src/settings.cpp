@@ -485,6 +485,9 @@ Settings LoadSettings() {
         } else if (key == "player_tuning.jump_impulse") {
             settings.player_tuning.jump_impulse =
                 ParseFloat(value, settings.player_tuning.jump_impulse);
+        } else if (key == "player_tuning.spring_shoes_jump_impulse_bonus") {
+            settings.player_tuning.spring_shoes_jump_impulse_bonus =
+                ParseFloat(value, settings.player_tuning.spring_shoes_jump_impulse_bonus);
         } else if (key == "player_tuning.jump_hold_frames") {
             settings.player_tuning.jump_hold_frames =
                 ParseInt(value, settings.player_tuning.jump_hold_frames);
@@ -548,6 +551,9 @@ Settings LoadSettings() {
         } else if (key == "player_tuning.hang_wall_release_cooldown") {
             settings.player_tuning.hang_wall_release_cooldown =
                 ParseInt(value, settings.player_tuning.hang_wall_release_cooldown);
+        } else if (key == "player_tuning.auto_ledge_grab") {
+            settings.player_tuning.auto_ledge_grab =
+                ParseBool(value, settings.player_tuning.auto_ledge_grab);
         }
     }
 
@@ -723,6 +729,8 @@ bool SaveSettings(const Settings& settings) {
     output << "player_tuning.gravity_scale=" << settings.player_tuning.gravity_scale << "\n";
     output << "player_tuning.max_fall_speed=" << settings.player_tuning.max_fall_speed << "\n";
     output << "player_tuning.jump_impulse=" << settings.player_tuning.jump_impulse << "\n";
+    output << "player_tuning.spring_shoes_jump_impulse_bonus="
+           << settings.player_tuning.spring_shoes_jump_impulse_bonus << "\n";
     output << "player_tuning.jump_hold_frames=" << settings.player_tuning.jump_hold_frames << "\n";
     output << "player_tuning.coyote_frames=" << settings.player_tuning.coyote_frames << "\n";
     output << "player_tuning.jump_delay_frames=" << settings.player_tuning.jump_delay_frames << "\n";
@@ -755,6 +763,8 @@ bool SaveSettings(const Settings& settings) {
            << settings.player_tuning.glove_hang_drop_cooldown << "\n";
     output << "player_tuning.hang_wall_release_cooldown="
            << settings.player_tuning.hang_wall_release_cooldown << "\n";
+    output << "player_tuning.auto_ledge_grab="
+           << (settings.player_tuning.auto_ledge_grab ? 1 : 0) << "\n";
     return output.good();
 }
 

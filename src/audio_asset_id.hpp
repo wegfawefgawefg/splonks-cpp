@@ -51,6 +51,7 @@ constexpr AudioAssetId Jetpack1 = HashAudioAssetIdConstexpr("jetpack1");
 constexpr AudioAssetId Jetpack2 = HashAudioAssetIdConstexpr("jetpack2");
 constexpr AudioAssetId JetpackStart1 = HashAudioAssetIdConstexpr("jetpack_start1");
 constexpr AudioAssetId Equip = HashAudioAssetIdConstexpr("equip");
+constexpr AudioAssetId SpringShoe = HashAudioAssetIdConstexpr("springshoe");
 constexpr AudioAssetId Throw = HashAudioAssetIdConstexpr("throw");
 constexpr AudioAssetId Teleport = HashAudioAssetIdConstexpr("teleport");
 constexpr AudioAssetId PistolShoot = HashAudioAssetIdConstexpr("pistol_shoot");

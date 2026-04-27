@@ -35,6 +35,9 @@ common::ContactResolution OnEntityContactAsInventoryPickup(
     }
 
     (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
+    if (pickup.type_ == EntityType::SpringShoes) {
+        (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::SpringShoe);
+    }
     common::DeactivateCollectedPickup(entity_idx, state, *graphics);
     return common::ContactResolution{};
 }
@@ -230,7 +233,7 @@ extern const EntityArchetype kPasteArchetype{
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Paste),
+    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SpiderMilk),
 };
 extern const EntityArchetype kSpringShoesArchetype{
     .type_ = EntityType::SpringShoes,

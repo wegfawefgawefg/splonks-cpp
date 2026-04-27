@@ -139,6 +139,7 @@ constexpr FrameDataId Kiss = HashFrameDataIdConstexpr("kiss");
 constexpr FrameDataId LittleBrownShard = HashFrameDataIdConstexpr("little_brown_shard");
 constexpr FrameDataId Mitt = HashFrameDataIdConstexpr("mitt");
 constexpr FrameDataId Paste = HashFrameDataIdConstexpr("paste");
+constexpr FrameDataId SpiderMilk = HashFrameDataIdConstexpr("spider_milk");
 constexpr FrameDataId SpringShoes = HashFrameDataIdConstexpr("spring_shoes");
 constexpr FrameDataId SpikeShoes = HashFrameDataIdConstexpr("spike_shoes");
 constexpr FrameDataId Knife = HashFrameDataIdConstexpr("knife");

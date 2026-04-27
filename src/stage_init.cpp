@@ -63,6 +63,8 @@ constexpr int kSacAltarTestStageWidthTiles = 96;
 constexpr int kSacAltarTestStageHeightTiles = 24;
 constexpr int kArrowTrapTestStageWidthTiles = 14;
 constexpr int kArrowTrapTestStageHeightTiles = 72;
+constexpr int kSpikeTestStageWidthTiles = 28;
+constexpr int kSpikeTestStageHeightTiles = 16;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
 constexpr std::uint16_t kPlayerInitialBombs = 400;
 constexpr std::uint16_t kPlayerInitialRopes = 400;
@@ -140,6 +142,16 @@ Stage MakeHangTestStage(const HangTestLevelConfig& config) {
     for (int y = right_floor_y; y < stage_height; ++y) {
         for (int x = wall_x + 1; x < stage_width; ++x) {
             stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                kDefaultDebugBorderTile;
+        }
+    }
+
+    if (drop_tiles >= 4) {
+        const int notch_y = top_y + std::max(2, drop_tiles / 2);
+        if (notch_y + 1 < right_floor_y) {
+            stage.tiles[static_cast<std::size_t>(notch_y)][static_cast<std::size_t>(wall_x)] =
+                Tile::Air;
+            stage.tiles[static_cast<std::size_t>(notch_y + 1)][static_cast<std::size_t>(wall_x)] =
                 kDefaultDebugBorderTile;
         }
     }
@@ -680,6 +692,52 @@ void BuildDebugLadder(Stage& stage, int x, int top_y, int bottom_y) {
     for (int y = top_y + 1; y <= bottom_y; ++y) {
         SetStageTile(stage, x, y, Tile::Ladder);
     }
+}
+
+Stage MakeSpikeTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kSpikeTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kSpikeTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile floor_tile = kDefaultDebugBorderTile;
+    constexpr int floor_y = kSpikeTestStageHeightTiles - 1;
+    constexpr int spike_y = floor_y - 1;
+    for (int x = 0; x < kSpikeTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, floor_y, floor_tile);
+    }
+
+    for (int x = 4; x <= 7; ++x) {
+        SetStageTile(stage, x, spike_y, Tile::Spikes);
+    }
+
+    BuildDebugLadder(stage, 11, 5, spike_y - 1);
+    SetStageTile(stage, 11, spike_y, Tile::Spikes);
+    SetStageTile(stage, 10, 10, floor_tile);
+    SetStageTile(stage, 12, 10, floor_tile);
+
+    for (int y = 5; y <= spike_y - 1; ++y) {
+        SetStageTile(stage, 16, y, Tile::Rope);
+    }
+    SetStageTile(stage, 16, spike_y, Tile::Spikes);
+    SetStageTile(stage, 15, 10, floor_tile);
+    SetStageTile(stage, 17, 10, floor_tile);
+
+    for (int x = 20; x <= 23; ++x) {
+        SetStageTile(stage, x, 8, floor_tile);
+    }
+    SetStageTile(stage, 21, spike_y, Tile::Spikes);
+    SetStageTile(stage, 22, spike_y, Tile::Spikes);
+
+    return stage;
 }
 
 Stage MakeSacAltarTestStage() {
@@ -1683,6 +1741,28 @@ void InitArrowTrapTestStage(State& state) {
     }
 }
 
+void InitSpikeTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    SpawnPlayer(
+        state,
+        Vec2::New(
+            2.0F * static_cast<float>(kTileSize),
+            static_cast<float>((kSpikeTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 14.0F
+        )
+    );
+
+    (void)SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::SpikeShoes,
+        Vec2::New(
+            25.0F * static_cast<float>(kTileSize),
+            static_cast<float>((kSpikeTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 16.0F
+        )
+    );
+}
+
 void InitBowlingTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
@@ -2293,6 +2373,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::ArrowTrapTest:
         state.stage = MakeArrowTrapTestStage();
         InitArrowTrapTestStage(state);
+        break;
+    case DebugLevelKind::SpikeTest:
+        state.stage = MakeSpikeTestStage();
+        InitSpikeTestStage(state);
         break;
     }
 

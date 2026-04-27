@@ -16,6 +16,7 @@ using TileOnBreak = void (*)(const IVec2& tile_pos, State& state, Audio& audio);
 struct TileArchetype {
     Tile tile = Tile::Air;
     bool solid = false;
+    bool one_way_top_solid = false;
     bool climbable = false;
     bool transparent = true;
     bool hangable = false;

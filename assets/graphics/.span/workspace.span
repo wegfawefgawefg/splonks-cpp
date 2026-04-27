@@ -27,9 +27,9 @@
       ]
     }
   ],
-  "activePaletteId": "sweetie-16-manual",
+  "activePaletteId": null,
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "2f962260-db89-494d-9213-e3105ce6f32c",
+  "selectedAnnotationId": null,
   "sheets": [
     {
       "path": "images/title.png",
@@ -10404,15 +10404,101 @@
               "y": 5
             }
           }
+        },
+        {
+          "id": "73672eaa-99f3-4a0f-9509-6b0faf705049",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 64,
+            "y": 416,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "spike_shoes",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 9,
+              "y": 9
+            }
+          }
+        },
+        {
+          "id": "f800fd9c-c281-449f-a6e6-13b60c7afa32",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 416,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "spring_shoes",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 8,
+              "y": 9
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 16
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 10.486,
-        "centerX": 32.662597749380126,
-        "centerY": 421.8004958992943
+        "zoom": 13.108,
+        "centerX": 244.3164479707049,
+        "centerY": 110.1617332926457
       }
     },
     {
@@ -11287,22 +11373,22 @@
               "y": 0
             },
             "center": {
-              "x": 0,
-              "y": 0
+              "x": 10,
+              "y": 14
             },
             "tags": [],
             "pbox": {
-              "x": 0,
-              "y": 0,
-              "w": 0,
-              "h": 0
+              "x": 2,
+              "y": 8,
+              "w": 14,
+              "h": 8
             },
             "tile": false,
             "cbox": {
-              "x": 0,
-              "y": 0,
-              "w": 0,
-              "h": 0
+              "x": 2,
+              "y": 8,
+              "w": 14,
+              "h": 8
             },
             "hitboxes": [],
             "emit_point": {
@@ -12232,9 +12318,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 10.486,
-        "centerX": 68.90139233263399,
-        "centerY": 222.01029944688153
+        "zoom": 25.6,
+        "centerX": 15.05859375,
+        "centerY": 72.03125
       }
     },
     {
@@ -13050,9 +13136,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 4.211,
-        "centerX": 85.72785561624316,
-        "centerY": 24.103538351935406
+        "zoom": 2.156,
+        "centerX": 119.43413729128014,
+        "centerY": -9.74025974025974
       }
     },
     {
@@ -13471,9 +13557,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 4.295,
-        "centerX": 47.72991850989523,
-        "centerY": 78.81257275902212
+        "zoom": 6.711,
+        "centerX": 38.96587691849203,
+        "centerY": 37.2522723886157
       }
     },
     {

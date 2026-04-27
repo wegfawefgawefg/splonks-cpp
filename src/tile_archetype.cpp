@@ -49,6 +49,7 @@ TileArchetype MakeSolidTileArchetype(
     return TileArchetype{
         .tile = tile,
         .solid = true,
+        .one_way_top_solid = false,
         .climbable = false,
         .transparent = false,
         .hangable = hangable,
@@ -236,6 +237,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
     TileArchetype{
         .tile = Tile::LadderTop,
         .solid = false,
+        .one_way_top_solid = true,
         .climbable = true,
         .transparent = true,
         .hangable = false,
@@ -358,6 +360,15 @@ bool IsTileTransparent(Tile tile) {
 
 bool IsTileCollidable(Tile tile) {
     return GetTileArchetype(tile).solid;
+}
+
+bool IsTileOneWayTopSolid(Tile tile) {
+    return GetTileArchetype(tile).one_way_top_solid;
+}
+
+bool IsTileGroundSupport(Tile tile) {
+    const TileArchetype& archetype = GetTileArchetype(tile);
+    return archetype.solid || archetype.one_way_top_solid;
 }
 
 bool IsTileHangable(Tile tile) {

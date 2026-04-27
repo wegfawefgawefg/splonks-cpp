@@ -2,6 +2,7 @@
 
 #include "entities/common/common.hpp"
 #include "state.hpp"
+#include "tile_archetype.hpp"
 
 
 #include <algorithm>
@@ -176,6 +177,30 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
 
 std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AABB& area) {
     return QueryTilesInWorldRect(stage, ToIVec2(area.tl), ToIVec2(area.br));
+}
+
+bool IsOneWayTopTileSupportingAabb(
+    const Stage& stage,
+    const WorldTileQueryResult& tile_query,
+    const AABB& area
+) {
+    if (tile_query.tile == nullptr || !IsTileOneWayTopSolid(*tile_query.tile)) {
+        return false;
+    }
+
+    const Vec2 tile_tl = ToVec2(tile_query.tile_pos * static_cast<int>(kTileSize));
+    const AABB tile_aabb = GetNearestWorldAabb(
+        stage,
+        (area.tl + area.br) / 2.0F,
+        AABB::New(
+            tile_tl,
+            tile_tl + Vec2::New(
+                static_cast<float>(kTileSize - 1),
+                static_cast<float>(kTileSize - 1)
+            )
+        )
+    );
+    return area.tl.y < tile_aabb.tl.y;
 }
 
 bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area) {

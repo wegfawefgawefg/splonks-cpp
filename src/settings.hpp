@@ -146,6 +146,7 @@ struct PlayerTuningState {
     float gravity_scale = 1.0F;
     float max_fall_speed = 9.0F;
     float jump_impulse = 4.5F;
+    float spring_shoes_jump_impulse_bonus = 1.0F;
     int jump_hold_frames = 0;
     int coyote_frames = 6;
     int jump_delay_frames = 1;
@@ -169,6 +170,7 @@ struct PlayerTuningState {
     int hang_drop_cooldown = 5;
     int glove_hang_drop_cooldown = 10;
     int hang_wall_release_cooldown = 4;
+    bool auto_ledge_grab = true;
 };
 
 struct Settings {

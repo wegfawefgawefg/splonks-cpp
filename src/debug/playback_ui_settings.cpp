@@ -525,6 +525,14 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     changed |= ImGui::DragFloat("Gravity Scale", &tuning.gravity_scale, 0.01F, 0.0F, 4.0F, "%.3f");
     changed |= ImGui::DragFloat("Max Fall Speed", &tuning.max_fall_speed, 0.05F, 0.0F, 20.0F, "%.2f");
     changed |= ImGui::DragFloat("Jump Impulse", &tuning.jump_impulse, 0.05F, 0.0F, 12.0F, "%.2f");
+    changed |= ImGui::DragFloat(
+        "Spring Shoes Jump Bonus",
+        &tuning.spring_shoes_jump_impulse_bonus,
+        0.05F,
+        0.0F,
+        8.0F,
+        "%.2f"
+    );
     changed |= ImGui::DragInt("Jump Hold Frames", &tuning.jump_hold_frames, 1.0F, 0, 60);
     changed |= ImGui::DragInt("Coyote Frames", &tuning.coyote_frames, 1.0F, 0, 30);
     changed |= ImGui::DragInt("Jump Delay Frames", &tuning.jump_delay_frames, 1.0F, 0, 30);
@@ -564,6 +572,7 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     changed |= ImGui::DragInt("Hang Drop Cooldown", &tuning.hang_drop_cooldown, 1.0F, 0, 60);
     changed |= ImGui::DragInt("Glove Hang Drop Cooldown", &tuning.glove_hang_drop_cooldown, 1.0F, 0, 60);
     changed |= ImGui::DragInt("Hang Wall Release Cooldown", &tuning.hang_wall_release_cooldown, 1.0F, 0, 60);
+    changed |= ImGui::Checkbox("Auto Ledge Grab", &tuning.auto_ledge_grab);
 
     if (changed) {
         state.settings.player_tuning = state.player_tuning;

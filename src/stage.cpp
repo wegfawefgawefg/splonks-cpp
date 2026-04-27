@@ -551,7 +551,11 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
         return;
     }
+    if (tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] == tile) {
+        return;
+    }
     tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = tile;
+    tile_change_generation += 1;
 }
 
 void Stage::AddTileShake(const IVec2& pos, float amount) {

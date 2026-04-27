@@ -182,6 +182,7 @@ TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db) {
             tile_source_db.sources.push_back(TileSourceData{
                 .image_id = frame_data.image_id,
                 .sample_rect = frame_data.sample_rect,
+                .cbox = frame_data.cbox,
             });
         }
     }

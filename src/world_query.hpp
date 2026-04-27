@@ -30,6 +30,11 @@ std::vector<WorldTileQueryResult> QueryTilesInWorldRect(
     const IVec2& br
 );
 std::vector<WorldTileQueryResult> QueryTilesInAabb(const Stage& stage, const AABB& area);
+bool IsOneWayTopTileSupportingAabb(
+    const Stage& stage,
+    const WorldTileQueryResult& tile_query,
+    const AABB& area
+);
 bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area);
 bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area);
 bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area);

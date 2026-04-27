@@ -23,6 +23,7 @@ constexpr unsigned int kProjectileContactDuration = 120;
 struct JumpAndClimbTuning {
     float gravity_scale = 1.0F;
     float jump_impulse = 4.5F;
+    float spring_shoes_jump_impulse_bonus = 1.0F;
     float climb_speed = 3.0F;
     float climb_depart_horizontal_speed = 4.0F;
     float climb_probe_bias_pixels = 8.0F;
@@ -35,11 +36,13 @@ struct JumpAndClimbTuning {
     std::uint32_t hang_drop_cooldown_frames = 5;
     std::uint32_t glove_hang_drop_cooldown_frames = 10;
     std::uint32_t hang_wall_release_cooldown_frames = 4;
+    bool auto_ledge_grab = true;
 };
 
 struct TileContact {
     IVec2 tile_pos = IVec2::New(0, 0);
     const Tile* tile = nullptr;
+    bool blocks_movement = false;
 };
 
 struct BlockingContactSet {

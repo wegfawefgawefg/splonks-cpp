@@ -15,6 +15,7 @@ struct Graphics;
 struct TileSourceData {
     std::uint32_t image_id = 0;
     FrameRect sample_rect;
+    FrameRect cbox;
 };
 
 struct TileSourceSpan {

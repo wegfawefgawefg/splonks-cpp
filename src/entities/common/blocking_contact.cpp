@@ -51,7 +51,7 @@ ContactResolution ResolveBlockingTileContacts(const BlockingContactSet& contacts
         result.blocks_movement = true;
     }
     for (const TileContact& tile_contact : contacts.tile_contacts) {
-        if (tile_contact.tile != nullptr && IsTileCollidable(*tile_contact.tile)) {
+        if (tile_contact.blocks_movement) {
             result.blocks_movement = true;
             break;
         }
@@ -107,6 +107,8 @@ BlockingContactSet GatherBlockingContactsForAabb(
             contacts.tile_contacts.push_back(TileContact{
                 .tile_pos = tile_query.tile_pos,
                 .tile = tile_query.tile,
+                .blocks_movement = tile_query.tile != nullptr &&
+                                   IsTileCollidable(*tile_query.tile),
             });
         }
     }

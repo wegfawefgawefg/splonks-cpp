@@ -95,6 +95,10 @@ audio:
     file: sounds/equip.ogg
     streamed: false
     default_volume: 1.0
+  - name: springshoe
+    file: sounds/springshoe.ogg
+    streamed: false
+    default_volume: 1.0
   - name: throw
     file: sounds/throw.ogg
     streamed: false

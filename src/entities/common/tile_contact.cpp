@@ -182,7 +182,7 @@ ContactResolution TryDispatchEntityTileContacts(
         if (tile_contact.tile == nullptr) {
             continue;
         }
-        if (IsTileCollidable(*tile_contact.tile)) {
+        if (tile_contact.blocks_movement) {
             touched_blocking_tile = true;
             aggregate.blocks_movement = true;
         }

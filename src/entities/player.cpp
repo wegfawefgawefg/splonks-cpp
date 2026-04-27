@@ -74,6 +74,7 @@ PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
         .jump_and_climb = common::JumpAndClimbTuning{
             .gravity_scale = tuning.gravity_scale,
             .jump_impulse = tuning.jump_impulse,
+            .spring_shoes_jump_impulse_bonus = tuning.spring_shoes_jump_impulse_bonus,
             .climb_speed = tuning.climb_speed,
             .climb_depart_horizontal_speed = tuning.climb_depart_horizontal_speed,
             .climb_probe_bias_pixels = tuning.climb_probe_bias_pixels,
@@ -86,6 +87,7 @@ PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
             .hang_drop_cooldown_frames = ClampTuningFrames(tuning.hang_drop_cooldown),
             .glove_hang_drop_cooldown_frames = ClampTuningFrames(tuning.glove_hang_drop_cooldown),
             .hang_wall_release_cooldown_frames = ClampTuningFrames(tuning.hang_wall_release_cooldown),
+            .auto_ledge_grab = tuning.auto_ledge_grab,
         },
         .max_walk_speed = tuning.walk_speed,
         .max_run_speed = tuning.run_speed,

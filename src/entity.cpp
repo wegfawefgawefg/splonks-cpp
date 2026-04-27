@@ -256,7 +256,9 @@ void Entity::SetGrounded(const Stage& stage) {
     }
 
     for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(stage, feet)) {
-        if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
+        if (tile_query.tile != nullptr &&
+            (IsTileCollidable(*tile_query.tile) ||
+             (!IsClimbing() && IsOneWayTopTileSupportingAabb(stage, tile_query, feet)))) {
             grounded = true;
             return;
         }
