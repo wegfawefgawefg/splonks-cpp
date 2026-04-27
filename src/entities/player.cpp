@@ -35,6 +35,11 @@ constexpr unsigned int kFallDamageLightAmount = 1;
 constexpr unsigned int kFallDamageMediumAmount = 2;
 constexpr unsigned int kFallDamageHeavyAmount = 10;
 constexpr float kFallDamageBounceVelocityY = -3.0F;
+constexpr float kPlayerWalkAnimSpeed = 1.0F;
+constexpr float kPlayerRunAnimSpeed = 2.0F;
+constexpr float kPlayerBlockedPushAnimSpeed = 0.35F;
+constexpr float kPlayerWalkAnimVelocityEpsilon = 0.05F;
+constexpr float kPlayerWalkAnimDistanceEpsilon = 0.0F;
 
 struct PlayerControlTuning {
     float move_acc = kMoveAcc;
@@ -398,7 +403,6 @@ void StepEntityLogicAsPlayer(
     // SET ANIMATIONS AND DISPLAY STATES
     {
         Entity& player = state.entity_manager.entities[entity_idx];
-        // if player moving left, set that
         if (player.vel.x < 0.0F) {
             player.facing = LeftOrRight::Left;
         }
@@ -423,19 +427,47 @@ void StepEntityLogicAsPlayer(
                 player.frame_data_animator.loop = true;
                 player.frame_data_animator.finished = false;
             } else {
-                if (Length(player.vel) < 1.0F) {
-                    TrySetAnimation(player, EntityDisplayState::Neutral);
-                    if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
-                        TrySetAnimation(player, EntityDisplayState::NeutralHolding);
-                    }
-                } else if (Length(player.vel) > 1.0F) {
-                    TrySetAnimation(player, EntityDisplayState::Walk);
-                    if (player.holding_vid.has_value() || HasMovementFlag(player, EntityMovementFlag::Pushing)) {
-                        TrySetAnimation(player, EntityDisplayState::WalkHolding);
-                    }
+                const bool holding_or_pushing =
+                    player.holding ||
+                    player.holding_vid.has_value() ||
+                    HasMovementFlag(player, EntityMovementFlag::Pushing);
+                const bool has_horizontal_input = control.left != control.right;
+                if (has_horizontal_input) {
+                    player.facing = control.left ? LeftOrRight::Left : LeftOrRight::Right;
                 }
-                if (player.vel.y > 2.0F) {
+                const bool moving_with_input =
+                    (control.left && player.vel.x < -kPlayerWalkAnimVelocityEpsilon) ||
+                    (control.right && player.vel.x > kPlayerWalkAnimVelocityEpsilon);
+                const bool walking_horizontally =
+                    player.grounded &&
+                    moving_with_input &&
+                    player.dist_traveled_this_frame > kPlayerWalkAnimDistanceEpsilon;
+                const bool running_horizontally = walking_horizontally && control.run;
+                const bool pushing_into_blocker =
+                    player.grounded &&
+                    has_horizontal_input &&
+                    !walking_horizontally;
+
+                if (!player.grounded && player.vel.y > 0.0F) {
                     TrySetAnimation(player, EntityDisplayState::Falling);
+                    player.frame_data_animator.ResetSpeed();
+                } else if (walking_horizontally) {
+                    TrySetAnimation(
+                        player,
+                        holding_or_pushing ? EntityDisplayState::WalkHolding : EntityDisplayState::Walk
+                    );
+                    player.frame_data_animator.SetSpeed(
+                        running_horizontally ? kPlayerRunAnimSpeed : kPlayerWalkAnimSpeed
+                    );
+                } else if (pushing_into_blocker) {
+                    TrySetAnimation(player, EntityDisplayState::WalkHolding);
+                    player.frame_data_animator.SetSpeed(kPlayerBlockedPushAnimSpeed);
+                } else {
+                    TrySetAnimation(
+                        player,
+                        holding_or_pushing ? EntityDisplayState::NeutralHolding : EntityDisplayState::Neutral
+                    );
+                    player.frame_data_animator.ResetSpeed();
                 }
             }
         }

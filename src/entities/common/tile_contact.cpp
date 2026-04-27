@@ -23,6 +23,7 @@ std::optional<StageBorderSideKind> GetBorderSideForContactContext(const ContactC
 
 constexpr std::uint32_t kTileTouchSoundCooldownFrames = 8;
 constexpr float kTileTouchSoundMinImpactVelocity = 1.5F;
+constexpr float kTileTouchSoundMinPriorTravelDistance = 0.0F;
 constexpr float kTileTouchSoundVolumeScale = 0.10F;
 
 ContactResolution TryDispatchEntityTileContactByArchetype(
@@ -71,6 +72,10 @@ void PlayBlockingCollisionSounds(
     played_collision_sound = true;
 }
 
+bool HadRecentMovementForCollisionSound(const Entity& entity) {
+    return entity.dist_traveled_this_frame > kTileTouchSoundMinPriorTravelDistance;
+}
+
 void MaybePlayTileCollisionSounds(
     std::size_t entity_idx,
     const TileContact& tile_contact,
@@ -90,6 +95,9 @@ void MaybePlayTileCollisionSounds(
     }
 
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!HadRecentMovementForCollisionSound(entity)) {
+        return;
+    }
     if (entity.contact_sound_cooldown > 0) {
         return;
     }
@@ -126,6 +134,9 @@ void MaybePlayStageBoundsCollisionSounds(
     }
 
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!HadRecentMovementForCollisionSound(entity)) {
+        return;
+    }
     if (entity.contact_sound_cooldown > 0) {
         return;
     }

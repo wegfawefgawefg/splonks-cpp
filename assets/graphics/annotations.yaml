@@ -556,12 +556,12 @@ sprites:
       y: 9
     tags: []
     pbox:
-      x: 4
+      x: 5
       y: 2
       w: 8
       h: 14
     cbox:
-      x: 4
+      x: 5
       y: 2
       w: 8
       h: 14

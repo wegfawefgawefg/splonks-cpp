@@ -77,6 +77,8 @@ void DecelerateHorizontallyToStop(Entity& entity, float max_acceleration, float 
 
 void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio) {
     (void)audio;
+    constexpr float kWalkerStepVolumeScale = 0.70F;
+    constexpr float kClimberStepVolumeScale = 0.90F;
     Entity& entity = state.entity_manager.entities[entity_idx];
     entity.travel_sound_countdown -= entity.dist_traveled_this_frame;
 
@@ -123,7 +125,9 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
             which_step_sound =
                 entity.travel_sound == TravelSound::One ? audio_asset_ids::Step1 : audio_asset_ids::Step2;
         }
-        (void)PlayEntitySoundEmitter(state, entity, which_step_sound);
+        AudioEmitterPlayParams params;
+        params.volume_scale = entity.IsClimbing() ? kClimberStepVolumeScale : kWalkerStepVolumeScale;
+        (void)PlayEntitySoundEmitter(state, entity, which_step_sound, params);
         entity.IncTravelSound();
     }
 }

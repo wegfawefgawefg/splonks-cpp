@@ -164,8 +164,8 @@ constexpr bool IsPlayerLikeEntityType(EntityType type_) {
 }
 
 constexpr float kTravelSoundDistInterval = 24.0F;
-constexpr float kWalkerClimberTravelSoundDistInterval = 24.0F;
-constexpr float kClimberTravelSoundDistInterval = 12.0F;
+constexpr float kWalkerClimberTravelSoundDistInterval = 12.0F;
+constexpr float kClimberTravelSoundDistInterval = 9.0F;
 
 enum class TravelSound {
     One,

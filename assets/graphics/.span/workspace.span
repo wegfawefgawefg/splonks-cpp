@@ -28,8 +28,8 @@
     }
   ],
   "activePaletteId": "sweetie-16-manual",
-  "lastOpenSheetPath": "sprites/entities-new.png",
-  "selectedAnnotationId": null,
+  "lastOpenSheetPath": "sprites/entities.png",
+  "selectedAnnotationId": "c71027a9-8f0b-4ebe-b5d4-b5e52c90e59e",
   "sheets": [
     {
       "path": "images/title.png",
@@ -893,7 +893,7 @@
             },
             "tags": [],
             "pbox": {
-              "x": 4,
+              "x": 5,
               "y": 2,
               "w": 8,
               "h": 14
@@ -905,7 +905,7 @@
             "duration": 12,
             "tile": false,
             "cbox": {
-              "x": 4,
+              "x": 5,
               "y": 2,
               "w": 8,
               "h": 14
@@ -10238,9 +10238,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 1.759,
-        "centerX": 246.4468447981808,
-        "centerY": 267.7657760090961
+        "zoom": 10.486,
+        "centerX": 91.2168605760061,
+        "centerY": 201.12530993705892
       }
     },
     {
@@ -13311,9 +13311,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 4.47,
-        "centerX": 120.24608501118568,
-        "centerY": 403.8031319910515
+        "zoom": 1.831,
+        "centerX": 199.07154560349537,
+        "centerY": 559.2572364827963
       }
     }
   ]
