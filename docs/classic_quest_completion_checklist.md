@@ -162,7 +162,7 @@ Check a stage only when all applicable items are true:
     - Splonks: key chest opens into `UdjatEye`, pickup sets the passive and Classic quest `has_udjat_eye`, and embedded treasure reveal shares the same path as spectacles.
   - [x] `Compass`: screen-space arrow indicator exists and points to the default exit.
   - [ ] `Mitt`: thrown item behavior is implemented and tuned.
-  - [ ] `Paste`: bomb behavior changes to sticky bombs.
+  - [x] `Paste`: pickup converts the bomb tool into sticky bombs, and later bomb refills route into the sticky bomb slot.
   - [ ] `SpringShoes`: jump height boost is implemented and tuned.
   - [ ] `SpikeShoes`: spike immunity and stomp damage boost are implemented and tuned.
   - [ ] `Parachute`: single-use pickup, deploy speed threshold, visual placement, and cleanup are correct.

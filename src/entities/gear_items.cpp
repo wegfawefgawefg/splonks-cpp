@@ -3,7 +3,7 @@
 #include "audio_emitters.hpp"
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
-#include "world_query.hpp"
+#include "state.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -12,7 +12,6 @@ namespace splonks::entities::gear_items {
 
 namespace {
 
-constexpr std::uint32_t kParachuteDeployFallFrames = 28;
 constexpr float kParachuteMaxFallSpeed = 1.35F;
 constexpr float kParachuteVisualOffsetY = -12.0F;
 
@@ -53,12 +52,8 @@ Entity* GetOpenParachuteVisual(Entity& owner, State& state) {
     return parachute;
 }
 
-bool HasSolidParachuteBlockerBelow(const Entity& owner, const State& state) {
-    const IVec2 probe = ToIVec2(owner.GetCenter() + Vec2::New(0.0F, 32.0F));
-    const std::optional<WorldTileQueryResult> tile_query =
-        QueryTileAtWorldPos(state.stage, probe);
-    return tile_query.has_value() && tile_query->tile != nullptr &&
-           IsTileCollidable(*tile_query->tile);
+std::uint32_t GetParachuteDeployFallFrames(const State& state) {
+    return static_cast<std::uint32_t>(std::max(0, state.player_tuning.fall_damage_light_frames));
 }
 
 void ClearOpenParachuteVisual(Entity& owner, State& state, const Graphics& graphics) {
@@ -101,8 +96,7 @@ void UpdateOpenParachuteVisual(Entity& owner, State& state, const Graphics& grap
 }
 
 void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics) {
-    if (owner.grounded || owner.IsClimbing() || owner.IsHanging() ||
-        owner.condition != EntityCondition::Normal) {
+    if (owner.grounded || owner.condition != EntityCondition::Normal) {
         ClearOpenParachuteVisual(owner, state, graphics);
         return;
     }
@@ -110,8 +104,7 @@ void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics
     const bool already_open = GetOpenParachuteVisual(owner, state) != nullptr;
     if (!already_open) {
         if (!HasPassiveItem(owner, EntityPassiveItem::Parachute) ||
-            owner.fall_timer <= kParachuteDeployFallFrames ||
-            HasSolidParachuteBlockerBelow(owner, state)) {
+            owner.fall_timer < GetParachuteDeployFallFrames(state)) {
             return;
         }
         SetPassiveItem(owner, EntityPassiveItem::Parachute, false);
