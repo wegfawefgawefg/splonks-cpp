@@ -317,8 +317,6 @@ const char* PassiveItemToString(EntityPassiveItem passive_item) {
         return "Compass";
     case EntityPassiveItem::Mitt:
         return "Mitt";
-    case EntityPassiveItem::Paste:
-        return "Paste";
     case EntityPassiveItem::SpringShoes:
         return "SpringShoes";
     case EntityPassiveItem::SpikeShoes:
@@ -367,6 +365,9 @@ bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& picku
         break;
     case EntityType::BombBag:
         collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowBomb, 3);
+        break;
+    case EntityType::Paste:
+        collected |= state.entity_tools.UpgradeBombsToSticky(entity.vid);
         break;
     case EntityType::RopePile:
         collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowRope, 3);

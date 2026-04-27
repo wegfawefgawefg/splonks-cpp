@@ -61,6 +61,16 @@ bool SpawnSearchMatches(const char* query, const char* candidate) {
     return normalized_candidate.find(normalized_query) != std::string::npos;
 }
 
+bool HasStickyBombTool(const EntityToolInventoryState& entity_tools, const VID& owner_vid) {
+    const EntityToolState* const tool_state = entity_tools.FindEntityToolState(owner_vid);
+    if (tool_state == nullptr) {
+        return false;
+    }
+    return std::any_of(tool_state->slots.begin(), tool_state->slots.end(), [](const ToolSlot& slot) {
+        return slot.active && slot.kind == ToolKind::ThrowStickyBomb;
+    });
+}
+
 std::vector<EntityType> BuildSortedSpawnTypes() {
     std::vector<EntityType> types;
     types.reserve(kEntityTypeCount > 0 ? kEntityTypeCount - 1 : 0);
@@ -606,6 +616,12 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     if (debug.playback_active) {
         ImGui::TextDisabled("Tool editing disabled during playback.");
     } else {
+        const bool has_sticky_bombs = HasStickyBombTool(state.entity_tools, entity.vid);
+        ImGui::Text("Sticky bombs: %s", has_sticky_bombs ? "true" : "false");
+        ImGui::SameLine();
+        if (ImGui::Button("Upgrade Bombs To Sticky")) {
+            state.entity_tools.UpgradeBombsToSticky(entity.vid);
+        }
         for (std::size_t slot_index = 0; slot_index < kToolSlotCount; ++slot_index) {
             ToolSlot preview_slot{};
             if (const std::optional<ToolKind> preferred_tool_kind =

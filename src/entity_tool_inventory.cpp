@@ -79,7 +79,19 @@ bool EntityToolInventoryState::AddToolCount(
     }
 
     ToolSlot* slot = nullptr;
+    if (kind == ToolKind::ThrowBomb) {
+        for (ToolSlot& candidate : tool_state->slots) {
+            if (candidate.active && candidate.kind == ToolKind::ThrowStickyBomb) {
+                slot = &candidate;
+                break;
+            }
+        }
+    }
+
     for (ToolSlot& candidate : tool_state->slots) {
+        if (slot != nullptr) {
+            break;
+        }
         if (candidate.active && candidate.kind == kind) {
             slot = &candidate;
             break;
@@ -120,6 +132,48 @@ bool EntityToolInventoryState::AddToolCount(
     );
     slot->count = static_cast<std::uint16_t>(new_count);
     return true;
+}
+
+bool EntityToolInventoryState::UpgradeBombsToSticky(const VID& owner_vid) {
+    EntityToolState* tool_state = FindEntityToolStateMut(owner_vid);
+    if (tool_state == nullptr) {
+        EntityToolState new_tool_state{};
+        new_tool_state.owner_vid = owner_vid;
+        tool_states.push_back(new_tool_state);
+        tool_state = &tool_states.back();
+    }
+
+    for (ToolSlot& candidate : tool_state->slots) {
+        if (candidate.active && candidate.kind == ToolKind::ThrowStickyBomb) {
+            return true;
+        }
+    }
+
+    for (ToolSlot& candidate : tool_state->slots) {
+        if (candidate.active && candidate.kind == ToolKind::ThrowBomb) {
+            candidate.kind = ToolKind::ThrowStickyBomb;
+            return true;
+        }
+    }
+
+    const std::optional<std::size_t> preferred_slot_index =
+        GetToolArchetype(ToolKind::ThrowStickyBomb).preferred_slot_index;
+    if (preferred_slot_index.has_value() && *preferred_slot_index < tool_state->slots.size()) {
+        ToolSlot& preferred_slot = tool_state->slots[*preferred_slot_index];
+        if (!preferred_slot.active) {
+            FillToolSlot(preferred_slot, ToolKind::ThrowStickyBomb, 0, true);
+            return true;
+        }
+    }
+
+    for (ToolSlot& candidate : tool_state->slots) {
+        if (!candidate.active) {
+            FillToolSlot(candidate, ToolKind::ThrowStickyBomb, 0, true);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 } // namespace splonks

@@ -51,6 +51,7 @@ void PopulateToolArchetypesTable() {
     SetArchetype(ToolKind::ThrowPot, tools::throw_pot::kThrowPotToolArchetype);
     SetArchetype(ToolKind::ThrowBomb, tools::throw_bomb::kThrowBombToolArchetype);
     SetArchetype(ToolKind::ThrowRope, tools::throw_rope::kThrowRopeToolArchetype);
+    SetArchetype(ToolKind::ThrowStickyBomb, tools::throw_bomb::kThrowStickyBombToolArchetype);
     g_tool_archetypes_populated = true;
 }
 

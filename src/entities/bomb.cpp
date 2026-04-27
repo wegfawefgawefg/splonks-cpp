@@ -13,6 +13,49 @@ namespace splonks::entities::bomb {
 namespace {
 
 constexpr float kBombRotationDegreesPerPixel = 24.0F;
+constexpr float kStickyBombFlag = 1.0F;
+
+bool IsStickyBomb(const Entity& bomb) {
+    return bomb.counter_b >= 0.5F;
+}
+
+FrameDataId GetBombIdleAnimation(const Entity& bomb) {
+    return IsStickyBomb(bomb) ? frame_data_ids::StickyGrenade : frame_data_ids::Grenade;
+}
+
+FrameDataId GetBombLiveAnimation(const Entity& bomb) {
+    return IsStickyBomb(bomb) ? frame_data_ids::StickyLiveGrenade : frame_data_ids::LiveGrenade;
+}
+
+void StickBombInPlace(Entity& bomb) {
+    bomb.vel = Vec2::New(0.0F, 0.0F);
+    bomb.acc = Vec2::New(0.0F, 0.0F);
+    bomb.has_physics = false;
+    bomb.thrown_by.reset();
+    bomb.thrown_immunity_timer = 0;
+    bomb.projectile_contact_timer = 0;
+    bomb.can_apply_projectile_contact = false;
+}
+
+void UpdateStickyBombAttachment(Entity& bomb, State& state) {
+    if (!IsStickyBomb(bomb) || !bomb.entity_a.has_value()) {
+        return;
+    }
+
+    const Entity* const attached = state.entity_manager.GetEntity(*bomb.entity_a);
+    if (attached == nullptr || !attached->active) {
+        bomb.entity_a.reset();
+        bomb.has_physics = true;
+        return;
+    }
+
+    bomb.pos = attached->pos + Vec2::New(
+        static_cast<float>(bomb.point_a.x),
+        static_cast<float>(bomb.point_a.y)
+    );
+    bomb.vel = Vec2::New(0.0F, 0.0F);
+    bomb.acc = Vec2::New(0.0F, 0.0F);
+}
 
 void UpdateBombRotation(Entity& bomb) {
     if (bomb.held_by_vid.has_value() || bomb.attachment_mode != AttachmentMode::None) {
@@ -54,9 +97,16 @@ extern const EntityArchetype kBombArchetype{
     .on_death = OnDeathAsBomb,
     .on_use = OnUseAsBomb,
     .step_logic = StepEntityLogicAsBomb,
+    .on_entity_contact = OnEntityContactAsBomb,
+    .on_tile_contact = OnTileContactAsBomb,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Grenade),
 };
+
+void MarkBombSticky(Entity& bomb) {
+    bomb.counter_b = kStickyBombFlag;
+    SetAnimation(bomb, frame_data_ids::StickyGrenade);
+}
 
 void OnDeathAsBomb(std::size_t entity_idx, State& state, Audio& audio) {
     common::OnDeathAsExplosion(entity_idx, state, audio);
@@ -71,7 +121,7 @@ void OnUseAsBomb(std::size_t entity_idx, State& state, Graphics& graphics, Audio
     }
 
     bomb.counter_a = 144.0F;
-    SetAnimation(bomb, frame_data_ids::LiveGrenade);
+    SetAnimation(bomb, GetBombLiveAnimation(bomb));
 
     if (bomb.use_state.source == AttachmentMode::None) {
         StopUsingEntity(bomb);
@@ -88,6 +138,7 @@ void StepEntityLogicAsBomb(
     (void)graphics;
     (void)dt;
     Entity& bomb = state.entity_manager.entities[entity_idx];
+    UpdateStickyBombAttachment(bomb, state);
 
     // if bomb is in winding up
     // set animation and display state
@@ -102,6 +153,57 @@ void StepEntityLogicAsBomb(
     }
 
     UpdateBombRotation(bomb);
+}
+
+common::ContactResolution OnEntityContactAsBomb(
+    std::size_t entity_idx,
+    std::size_t other_entity_idx,
+    const common::ContactContext& context,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    (void)graphics;
+    (void)audio;
+    Entity& bomb = state.entity_manager.entities[entity_idx];
+    const Entity& other = state.entity_manager.entities[other_entity_idx];
+    if (!IsStickyBomb(bomb) || bomb.entity_a.has_value() ||
+        context.phase != common::ContactPhase::SweptEntered) {
+        return {};
+    }
+    if (bomb.thrown_by.has_value() && other.vid == *bomb.thrown_by) {
+        return {};
+    }
+    if (other.held_by_vid.has_value() && bomb.thrown_by.has_value() &&
+        *other.held_by_vid == *bomb.thrown_by) {
+        return {};
+    }
+    if (!other.can_collide || other.type_ == EntityType::Bomb) {
+        return {};
+    }
+
+    bomb.entity_a = other.vid;
+    bomb.point_a = IVec2::New(
+        static_cast<int>(std::lround(bomb.pos.x - other.pos.x)),
+        static_cast<int>(std::lround(bomb.pos.y - other.pos.y))
+    );
+    StickBombInPlace(bomb);
+    return {};
+}
+
+common::ContactResolution OnTileContactAsBomb(
+    std::size_t entity_idx,
+    const common::ContactContext& context,
+    State& state
+) {
+    Entity& bomb = state.entity_manager.entities[entity_idx];
+    if (!IsStickyBomb(bomb) || bomb.entity_a.has_value() ||
+        context.phase != common::ContactPhase::AttemptedBlocked || !context.has_impact) {
+        return {};
+    }
+
+    StickBombInPlace(bomb);
+    return {.stop_sweep = true};
 }
 
 /** generalize this to all square or rectangular entities somehow */

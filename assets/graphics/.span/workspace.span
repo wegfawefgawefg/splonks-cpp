@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "c71027a9-8f0b-4ebe-b5d4-b5e52c90e59e",
+  "selectedAnnotationId": "2f962260-db89-494d-9213-e3105ce6f32c",
   "sheets": [
     {
       "path": "images/title.png",
@@ -1858,8 +1858,8 @@
           "id": "2f962260-db89-494d-9213-e3105ce6f32c",
           "entityType": "Sprite",
           "aabb": {
-            "x": 36,
-            "y": 148,
+            "x": 3,
+            "y": 404,
             "w": 9,
             "h": 12
           },
@@ -3002,8 +3002,8 @@
           "id": "e74ec3d7-7f26-417e-a434-fc579d4311d3",
           "entityType": "Sprite",
           "aabb": {
-            "x": 17,
-            "y": 137,
+            "x": 27,
+            "y": 409,
             "w": 8,
             "h": 7
           },
@@ -3046,8 +3046,8 @@
           "id": "15622de7-fb39-44f5-b322-f77239a73274",
           "entityType": "Sprite",
           "aabb": {
-            "x": 33,
-            "y": 137,
+            "x": 37,
+            "y": 409,
             "w": 8,
             "h": 7
           },
@@ -3090,8 +3090,8 @@
           "id": "08e18137-c487-4230-abcc-76e5e879915b",
           "entityType": "Sprite",
           "aabb": {
-            "x": 6,
-            "y": 137,
+            "x": 16,
+            "y": 409,
             "w": 8,
             "h": 7
           },
@@ -10232,6 +10232,178 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "5c92749f-8d8b-4eb1-9c73-dbb976ca284a",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 3,
+            "y": 420,
+            "w": 9,
+            "h": 12
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sticky_grenade_ui_icon",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "92097cb5-dda1-4bba-a116-e0b32ba21105",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 16,
+            "y": 425,
+            "w": 8,
+            "h": 7
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sticky_grenade",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 3,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 0,
+              "y": 3,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "8d614795-fbe1-46c5-b207-4d87b16e0ea0",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 27,
+            "y": 425,
+            "w": 8,
+            "h": 7
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sticky_live_grenade",
+            "frame": 0,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 3,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 0,
+              "y": 3,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 5
+            }
+          }
+        },
+        {
+          "id": "b46752dd-3cf1-4d86-b134-e5d0bccc3ad1",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 37,
+            "y": 425,
+            "w": 8,
+            "h": 7
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "sticky_live_grenade",
+            "frame": 1,
+            "duration": 8,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 3,
+              "w": 4,
+              "h": 4
+            },
+            "cbox": {
+              "x": 0,
+              "y": 3,
+              "w": 4,
+              "h": 4
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 5
+            }
+          }
         }
       ],
       "view": {
@@ -10239,8 +10411,8 @@
         "gridWidth": 16,
         "gridHeight": 16,
         "zoom": 10.486,
-        "centerX": 91.2168605760061,
-        "centerY": 201.12530993705892
+        "centerX": 32.662597749380126,
+        "centerY": 421.8004958992943
       }
     },
     {

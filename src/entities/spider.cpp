@@ -91,7 +91,7 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
     SpawnEntityAtCenter(EntityType::Paste, center, state);
 }
 
-void OnDeathAsGiantSpider(std::size_t entity_idx, State& state, Audio& audio) {
+void HandleGiantSpiderDeath(std::size_t entity_idx, State& state, Audio& audio) {
     (void)audio;
 
     if (entity_idx >= state.entity_manager.entities.size()) {
@@ -201,6 +201,10 @@ void StepAggroSpider(
 }
 
 } // namespace
+
+void OnDeathAsGiantSpider(std::size_t entity_idx, State& state, Audio& audio) {
+    HandleGiantSpiderDeath(entity_idx, state, audio);
+}
 
 void StepEntityLogicAsSpider(
     std::size_t entity_idx,

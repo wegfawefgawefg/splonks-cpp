@@ -17,13 +17,14 @@ enum class ToolKind : std::uint8_t {
     ThrowPot,
     ThrowBomb,
     ThrowRope,
+    ThrowStickyBomb,
 };
 
 constexpr std::size_t ToolKindIndex(ToolKind kind) {
     return static_cast<std::size_t>(kind);
 }
 
-constexpr std::size_t kToolKindCount = ToolKindIndex(ToolKind::ThrowRope) + 1;
+constexpr std::size_t kToolKindCount = ToolKindIndex(ToolKind::ThrowStickyBomb) + 1;
 
 using ToolUseFn = bool (*) (
     std::size_t entity_idx,

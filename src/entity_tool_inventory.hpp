@@ -34,6 +34,7 @@ struct EntityToolInventoryState {
     const ToolSlot* FindToolSlot(const VID& owner_vid, std::size_t slot_index) const;
     ToolSlot& EnsureToolSlot(const VID& owner_vid, std::size_t slot_index);
     bool AddToolCount(const VID& owner_vid, ToolKind kind, std::uint32_t amount);
+    bool UpgradeBombsToSticky(const VID& owner_vid);
 };
 
 } // namespace splonks

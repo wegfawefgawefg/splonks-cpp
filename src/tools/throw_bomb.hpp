@@ -5,5 +5,6 @@
 namespace splonks::tools::throw_bomb {
 
 extern const ToolArchetype kThrowBombToolArchetype;
+extern const ToolArchetype kThrowStickyBombToolArchetype;
 
 } // namespace splonks::tools::throw_bomb

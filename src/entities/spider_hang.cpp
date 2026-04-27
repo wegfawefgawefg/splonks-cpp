@@ -1,6 +1,7 @@
 #include "entities/spider_hang.hpp"
 
 #include "entity/archetype.hpp"
+#include "entities/spider.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "utils.hpp"
@@ -295,6 +296,7 @@ extern const EntityArchetype kGiantSpiderHangArchetype{
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .damage_animation = frame_data_ids::BloodBall,
+    .on_death = entities::spider::OnDeathAsGiantSpider,
     .on_damage = OnDamageAsGiantSpiderHang,
     .step_logic = StepEntityLogicAsGiantSpiderHang,
     .alignment = Alignment::Enemy,

@@ -46,8 +46,6 @@ FrameDataId GetPassiveItemIconAnimationId(EntityPassiveItem passive_item) {
         return frame_data_ids::Compass;
     case EntityPassiveItem::Mitt:
         return frame_data_ids::Mitt;
-    case EntityPassiveItem::Paste:
-        return frame_data_ids::Paste;
     case EntityPassiveItem::SpringShoes:
         return frame_data_ids::SpringShoes;
     case EntityPassiveItem::SpikeShoes:

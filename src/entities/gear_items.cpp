@@ -235,7 +235,6 @@ extern const EntityArchetype kPasteArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::Paste,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Paste),
