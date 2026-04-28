@@ -216,7 +216,7 @@ void DrawDebugPlaybackControls(
     }
 
     debug_playback_internal::DrawDebugMenu(debug, state);
-    debug_playback_internal::DrawSimulationControls(debug, state, graphics);
+    debug_playback_internal::DrawSimulationControls(debug, state, audio, graphics);
     debug_playback_internal::DrawLevelControls(debug, state, graphics);
     debug_playback_internal::DrawBorderControls(debug, state, graphics);
     debug_playback_internal::DrawDebugOverlayWindow(debug, state, graphics);

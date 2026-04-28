@@ -70,6 +70,17 @@ std::vector<std::vector<float>> MakeEmptyTileShakeGrid(
     return tile_shake;
 }
 
+std::vector<std::vector<TileRotation>> MakeEmptyTileRotationGrid(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<TileRotation>> tile_rotations;
+    tile_rotations.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        tile_rotations.push_back(std::vector<TileRotation>(row.size(), kTileRotation0));
+    }
+    return tile_rotations;
+}
+
 std::vector<std::vector<Tile>> MakeEmptyBackwallTiles(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -104,6 +115,26 @@ void SyncTileShakeGridToTiles(TileShakeGrid& grid, const std::vector<std::vector
         if (grid[y].size() != tiles[y].size()) {
             grid = MakeEmptyTileShakeGrid(tiles);
             return;
+        }
+    }
+}
+
+void SyncTileRotationGridToTiles(
+    std::vector<std::vector<TileRotation>>& grid,
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    if (grid.size() != tiles.size()) {
+        grid = MakeEmptyTileRotationGrid(tiles);
+        return;
+    }
+
+    for (std::size_t y = 0; y < tiles.size(); ++y) {
+        if (grid[y].size() != tiles[y].size()) {
+            grid = MakeEmptyTileRotationGrid(tiles);
+            return;
+        }
+        for (TileRotation& rotation : grid[y]) {
+            rotation &= kTileRotationMask;
         }
     }
 }
@@ -262,6 +293,7 @@ Stage Stage::NewBlank() {
     stage.stage_type = StageType::Blank;
     stage.stage_title = "Blank";
     stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>(1, Tile::Air));
+    stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
@@ -396,6 +428,7 @@ Stage Stage::New(StageType stage_type) {
     stage.stage_title = stage_title;
     stage.block_animation_id = block_animation_id;
     stage.tiles = std::move(tiles);
+    stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
@@ -455,6 +488,17 @@ IVec2 Stage::GetRegularRoomGridTlWc(const IVec2& room) const {
 
 const Tile& Stage::GetTile(unsigned int x, unsigned int y) const {
     return tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+}
+
+TileRotation Stage::GetTileRotation(unsigned int x, unsigned int y) const {
+    if (y >= tile_rotations.size()) {
+        return kTileRotation0;
+    }
+    const std::vector<TileRotation>& row = tile_rotations[static_cast<std::size_t>(y)];
+    if (x >= row.size()) {
+        return kTileRotation0;
+    }
+    return row[static_cast<std::size_t>(x)] & kTileRotationMask;
 }
 
 float Stage::GetTileShake(unsigned int x, unsigned int y) const {
@@ -545,8 +589,13 @@ void Stage::SyncTileShakeGrid() {
     SyncTileShakeGridToTiles(backwall_tile_shake, tiles);
 }
 
+void Stage::SyncTileInstanceMetadataGrid() {
+    SyncTileRotationGridToTiles(tile_rotations, tiles);
+}
+
 void Stage::SetTile(const IVec2& pos, Tile tile) {
     SyncTileShakeGrid();
+    SyncTileInstanceMetadataGrid();
     const IVec2 tile_pos = WrapTileCoord(pos);
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
         return;
@@ -555,6 +604,24 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
         return;
     }
     tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = tile;
+    tile_rotations[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
+        kTileRotation0;
+    tile_change_generation += 1;
+}
+
+void Stage::SetTileRotation(const IVec2& pos, TileRotation rotation) {
+    SyncTileInstanceMetadataGrid();
+    const IVec2 tile_pos = WrapTileCoord(pos);
+    if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+        return;
+    }
+    TileRotation& stored =
+        tile_rotations[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)];
+    const TileRotation normalized = NormalizeTileRotation(rotation);
+    if (stored == normalized) {
+        return;
+    }
+    stored = normalized;
     tile_change_generation += 1;
 }
 
@@ -706,6 +773,7 @@ void Stage::SetTilesInRectWc(const AABB& area, Tile tile_type) {
 }
 
 void Stage::SetTilesInRect(const AABB& area, Tile tile_type) {
+    SyncTileInstanceMetadataGrid();
     const int max_x = static_cast<int>(GetTileWidth()) - 1;
     const int max_y = static_cast<int>(GetTileHeight()) - 1;
     const IVec2 tl = IVec2::New(static_cast<int>(area.tl.x), static_cast<int>(area.tl.y));
@@ -717,8 +785,11 @@ void Stage::SetTilesInRect(const AABB& area, Tile tile_type) {
                 continue;
             }
             tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = tile_type;
+            tile_rotations[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                kTileRotation0;
         }
     }
+    tile_change_generation += 1;
 }
 
 std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,

@@ -8,6 +8,7 @@
 #include "buying.hpp"
 #include "step_entities.hpp"
 #include "stage_progression.hpp"
+#include "stage_rotation.hpp"
 
 namespace splonks {
 
@@ -77,6 +78,13 @@ void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
 }
 
 void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
+    if (IsStageRotationActive(state)) {
+        state.ClearDebugAnnotations();
+        StepStageRotation(state, graphics);
+        state.scene_frame += 1;
+        return;
+    }
+
     if (state.frame_pause > 0) {
         state.frame_pause -= 1;
         return;

@@ -54,6 +54,7 @@ constexpr AudioAssetId Equip = HashAudioAssetIdConstexpr("equip");
 constexpr AudioAssetId SpringShoe = HashAudioAssetIdConstexpr("springshoe");
 constexpr AudioAssetId Throw = HashAudioAssetIdConstexpr("throw");
 constexpr AudioAssetId Teleport = HashAudioAssetIdConstexpr("teleport");
+constexpr AudioAssetId BigMachineRotate = HashAudioAssetIdConstexpr("bigmachinerotate");
 constexpr AudioAssetId PistolShoot = HashAudioAssetIdConstexpr("pistol_shoot");
 constexpr AudioAssetId PistolHolster = HashAudioAssetIdConstexpr("pistol_holster");
 constexpr AudioAssetId PistolUnholster = HashAudioAssetIdConstexpr("pistol_unholster");

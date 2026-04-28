@@ -167,7 +167,9 @@ void RenderTerrainTileLighting(
     int tile_y,
     const SDL_FRect& dst
 ) {
-    (void)graphics;
+    if (graphics.world_rotation_active) {
+        return;
+    }
     const PostProcessSettings& settings = state.settings.post_process;
     if (!settings.terrain_lighting) {
         return;

@@ -19,6 +19,9 @@ struct WorldTileQueryResult {
     const Tile* tile = nullptr;
 };
 
+TileRotation GetTileRotationForQuery(const Stage& stage, const WorldTileQueryResult& tile_query);
+bool IsTileQueryClimbable(const Stage& stage, const WorldTileQueryResult& tile_query);
+
 std::vector<WorldTileQueryResult> QueryTilesInRect(
     const Stage& stage,
     const IVec2& tl,

@@ -18,6 +18,7 @@ struct TileArchetype {
     bool solid = false;
     bool one_way_top_solid = false;
     bool climbable = false;
+    std::uint8_t climbable_rotation_mask = kTileRotationBitAll;
     bool transparent = true;
     bool hangable = false;
     float friction = 0.85F;

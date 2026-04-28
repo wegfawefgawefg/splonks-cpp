@@ -107,6 +107,10 @@ audio:
     file: sounds/teleport.ogg
     streamed: false
     default_volume: 1.0
+  - name: bigmachinerotate
+    file: sounds/bigmachinerotate.ogg
+    streamed: false
+    default_volume: 1.0
   - name: pistol_shoot
     file: sounds/pistol_shoot.ogg
     streamed: false

@@ -17,15 +17,10 @@ namespace splonks::entities::rope {
 
 namespace {
 
-bool IsClimbableTile(const Tile tile) {
-    return GetTileArchetype(tile).climbable;
-}
-
 IVec2 GetRopeDeployStartTile(const Stage& stage, const IVec2& hit_tile_pos) {
     const std::optional<WorldTileQueryResult> hit_tile =
         QueryTileAtTilePos(stage, hit_tile_pos);
-    if (!hit_tile.has_value() || hit_tile->tile == nullptr ||
-        !IsClimbableTile(*hit_tile->tile)) {
+    if (!hit_tile.has_value() || !IsTileQueryClimbable(stage, *hit_tile)) {
         return hit_tile_pos;
     }
 
@@ -34,8 +29,7 @@ IVec2 GetRopeDeployStartTile(const Stage& stage, const IVec2& hit_tile_pos) {
         const IVec2 next = IVec2::New(start.x, start.y + 1);
         const std::optional<WorldTileQueryResult> next_tile =
             QueryTileAtTilePos(stage, next);
-        if (!next_tile.has_value() || next_tile->tile == nullptr ||
-            !IsClimbableTile(*next_tile->tile)) {
+        if (!next_tile.has_value() || !IsTileQueryClimbable(stage, *next_tile)) {
             return next;
         }
         start = next_tile->tile_pos;

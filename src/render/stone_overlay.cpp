@@ -1,6 +1,7 @@
 #include "render/stone_overlay.hpp"
 
 #include "graphics.hpp"
+#include "render/world_texture.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_source_data.hpp"
@@ -10,26 +11,6 @@
 namespace splonks {
 
 namespace {
-
-Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos) {
-    const Vec2 screen =
-        ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
-    return Vec2::New(std::round(screen.x), std::round(screen.y));
-}
-
-SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
-    const Vec2 screen_pos = WorldToScreen(graphics, world_pos);
-    const Vec2 screen_size = Vec2::New(
-        std::round(world_size.x * graphics.camera.zoom),
-        std::round(world_size.y * graphics.camera.zoom)
-    );
-    return SDL_FRect{
-        screen_pos.x,
-        screen_pos.y,
-        screen_size.x,
-        screen_size.y,
-    };
-}
 
 SDL_Rect ToScreenClipRect(const SDL_FRect& rect) {
     return SDL_Rect{
@@ -52,6 +33,9 @@ void RenderStoneEntityOverlay(
     (void)state;
 
     if (render_size.x <= 0.0F || render_size.y <= 0.0F) {
+        return;
+    }
+    if (graphics.world_rotation_active) {
         return;
     }
 

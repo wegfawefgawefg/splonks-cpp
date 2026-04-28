@@ -17,6 +17,7 @@
 #include "stage_lighting.hpp"
 #include "stage_progression.hpp"
 #include "quest_stage_loader.hpp"
+#include "stage_rotation.hpp"
 
 #include <algorithm>
 
@@ -210,6 +211,13 @@ void ProcessInputPlaying(
     const PlayingInputs& inputs = state.immediate_playing_inputs;
     if (inputs.quit.pressed) {
         state.running = false;
+    }
+
+    if (KeyPressedEdge(SDL_SCANCODE_2)) {
+        StartStageRotation(state, graphics, audio, 1);
+    }
+    if (KeyPressedEdge(SDL_SCANCODE_1)) {
+        StartStageRotation(state, graphics, audio, -1);
     }
 
     if (inputs.regenerate_level.pressed) {

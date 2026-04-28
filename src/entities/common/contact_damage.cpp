@@ -31,7 +31,38 @@ bool CanProjectileImpactWithoutDamage(const Entity& target) {
 
 AABB GetTileSourceCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
                                 const TileSourceData& tile_source_data, const Vec2& anchor) {
-    const FrameRect& cbox = tile_source_data.cbox;
+    FrameRect cbox = tile_source_data.cbox;
+    const TileRotation rotation = GetTileRotationForQuery(stage, tile_query);
+    constexpr int kTileSizePx = static_cast<int>(kTileSize);
+    switch (rotation) {
+    case kTileRotation90:
+        cbox = FrameRect{
+            .x = kTileSizePx - (tile_source_data.cbox.y + tile_source_data.cbox.h),
+            .y = tile_source_data.cbox.x,
+            .w = tile_source_data.cbox.h,
+            .h = tile_source_data.cbox.w,
+        };
+        break;
+    case kTileRotation180:
+        cbox = FrameRect{
+            .x = kTileSizePx - (tile_source_data.cbox.x + tile_source_data.cbox.w),
+            .y = kTileSizePx - (tile_source_data.cbox.y + tile_source_data.cbox.h),
+            .w = tile_source_data.cbox.w,
+            .h = tile_source_data.cbox.h,
+        };
+        break;
+    case kTileRotation270:
+        cbox = FrameRect{
+            .x = tile_source_data.cbox.y,
+            .y = kTileSizePx - (tile_source_data.cbox.x + tile_source_data.cbox.w),
+            .w = tile_source_data.cbox.h,
+            .h = tile_source_data.cbox.w,
+        };
+        break;
+    case kTileRotation0:
+    default:
+        break;
+    }
     const Vec2 tile_tl = ToVec2(tile_query.tile_pos) * static_cast<float>(kTileSize);
     const AABB cbox_aabb = AABB::New(
         tile_tl + Vec2::New(static_cast<float>(cbox.x), static_cast<float>(cbox.y)),
@@ -45,6 +76,21 @@ AABB GetTileSourceCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& 
 
 bool HasAuthoredTileCbox(const TileSourceData& tile_source_data) {
     return tile_source_data.cbox.w > 0 && tile_source_data.cbox.h > 0;
+}
+
+bool EntityIsMovingIntoSpike(const Entity& entity, TileRotation spike_rotation) {
+    constexpr float kMinSpikeImpactSpeed = 0.01F;
+    switch (spike_rotation) {
+    case kTileRotation90:
+        return entity.vel.x < -kMinSpikeImpactSpeed;
+    case kTileRotation180:
+        return entity.vel.y < -kMinSpikeImpactSpeed;
+    case kTileRotation270:
+        return entity.vel.x > kMinSpikeImpactSpeed;
+    case kTileRotation0:
+    default:
+        return entity.vel.y > kMinSpikeImpactSpeed;
+    }
 }
 
 KnockbackSpec BuildBodyContactKnockback(const Entity& source, const Entity& target, const Stage& stage) {
@@ -179,22 +225,27 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics,
         return;
     }
 
-    bool fell_into_spikes = false;
-    if (entity.vel.y > 0.0F) {
+    bool hit_spikes = false;
+    {
         const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
         const IAABB iaabb = entity_aabb.AsIAABB();
-        const bool override_tile_portion_check = entity.vel.y > 4.0F;
+        const bool override_tile_portion_check = Length(entity.vel) > 4.0F;
         const bool in_top_portion_of_tile = (iaabb.br.y % static_cast<int>(kTileSize)) < 4;
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
             if (tile_query.tile == nullptr || *tile_query.tile != Tile::Spikes) {
+                continue;
+            }
+            const TileRotation spike_rotation = GetTileRotationForQuery(state.stage, tile_query);
+            if (!EntityIsMovingIntoSpike(entity, spike_rotation)) {
                 continue;
             }
 
             const TileSourceData* const tile_source_data =
                 GetTileSourceData(graphics, *tile_query.tile, tile_query.tile_pos);
             if (tile_source_data == nullptr || !HasAuthoredTileCbox(*tile_source_data)) {
-                if (in_top_portion_of_tile || override_tile_portion_check) {
-                    fell_into_spikes = true;
+                if (spike_rotation != kTileRotation0 || in_top_portion_of_tile ||
+                    override_tile_portion_check) {
+                    hit_spikes = true;
                 }
                 continue;
             }
@@ -206,11 +257,11 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics,
                 entity.GetCenter()
             );
             if (AabbsIntersect(entity_aabb, spike_cbox_aabb)) {
-                fell_into_spikes = true;
+                hit_spikes = true;
             }
         }
     }
-    if (fell_into_spikes) {
+    if (hit_spikes) {
         const DamageResult damage_result =
             TryDamageEntity(entity.vid.id, state, audio, DamageType::Spikes, 1);
         switch (damage_result) {

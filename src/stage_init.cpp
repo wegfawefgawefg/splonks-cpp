@@ -215,11 +215,7 @@ Stage MakeBorderTestStage(const BorderTestLevelConfig& config) {
 
 
 void SetStageTile(Stage& stage, int x, int y, Tile tile) {
-    if (x < 0 || y < 0 || x >= static_cast<int>(stage.GetTileWidth()) ||
-        y >= static_cast<int>(stage.GetTileHeight())) {
-        return;
-    }
-    stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = tile;
+    stage.SetTile(IVec2::New(x, y), tile);
 }
 
 void SetStageBackwallTile(Stage& stage, int x, int y, Tile tile) {

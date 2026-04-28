@@ -15,6 +15,28 @@ const char* TileToString(Tile tile) {
     return GetTileArchetype(tile).debug_name;
 }
 
+TileRotation NormalizeTileRotation(int rotation) {
+    int normalized = rotation % 4;
+    if (normalized < 0) {
+        normalized += 4;
+    }
+    return static_cast<TileRotation>(normalized) & kTileRotationMask;
+}
+
+TileRotation RotateTileRotation(TileRotation rotation, int quarter_turns) {
+    return NormalizeTileRotation(static_cast<int>(rotation & kTileRotationMask) + quarter_turns);
+}
+
+bool IsTileClimbableWithRotation(Tile tile, TileRotation rotation) {
+    const TileArchetype& archetype = GetTileArchetype(tile);
+    if (!archetype.climbable) {
+        return false;
+    }
+    const std::uint8_t rotation_bit =
+        static_cast<std::uint8_t>(1U << NormalizeTileRotation(rotation));
+    return (archetype.climbable_rotation_mask & rotation_bit) != 0;
+}
+
 bool CollidableTileInList(const std::vector<const Tile*>& tiles) {
     for (const Tile* tile : tiles) {
         if (IsTileCollidable(*tile)) {

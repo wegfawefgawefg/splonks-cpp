@@ -7,6 +7,7 @@
 #include "graphics.hpp"
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
+#include "render/world_texture.hpp"
 #include "particles/particle_archetypes.hpp"
 #include "state.hpp"
 #include "stage_lighting.hpp"
@@ -127,12 +128,6 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
     return offsets;
 }
 
-Vec2 WorldToScreen(const Graphics& graphics, const Vec2& world_pos) {
-    const Vec2 screen =
-        ((world_pos - graphics.camera.target) * graphics.camera.zoom) + graphics.camera.offset;
-    return Vec2::New(std::round(screen.x), std::round(screen.y));
-}
-
 Vec2 GetShakeOffset(float shake_pixels) {
     if (shake_pixels <= 0.0F) {
         return Vec2::New(0.0F, 0.0F);
@@ -142,20 +137,6 @@ Vec2 GetShakeOffset(float shake_pixels) {
         rng::RandomFloat(-shake_pixels, shake_pixels),
         rng::RandomFloat(-shake_pixels, shake_pixels)
     );
-}
-
-SDL_FRect WorldRectToScreen(const Graphics& graphics, const Vec2& world_pos, const Vec2& world_size) {
-    const Vec2 screen_pos = WorldToScreen(graphics, world_pos);
-    const Vec2 screen_size = Vec2::New(
-        std::round(world_size.x * graphics.camera.zoom),
-        std::round(world_size.y * graphics.camera.zoom)
-    );
-    return SDL_FRect{
-        screen_pos.x,
-        screen_pos.y,
-        screen_size.x,
-        screen_size.y,
-    };
 }
 
 bool ShouldRenderBackgroundStamp(const State& state, const BackgroundStamp& stamp) {
@@ -268,9 +249,9 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     static_cast<int>(y)
                 );
                 if (background_shake > 0.0F) {
-                    SDL_RenderTexture(renderer, backwall_texture, &backwall_src, &unshaken_dst);
+                    RenderWorldTexture(renderer, graphics, backwall_texture, &backwall_src, unshaken_dst);
                 }
-                SDL_RenderTexture(renderer, backwall_texture, &backwall_src, &background_dst);
+                RenderWorldTexture(renderer, graphics, backwall_texture, &backwall_src, background_dst);
                 ResetTerrainTileBrightness(backwall_texture);
             }
         }
@@ -320,7 +301,24 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     static_cast<int>(x),
                     static_cast<int>(y)
                 );
-                SDL_RenderTexture(renderer, tile_texture, &src, &foreground_dst);
+                const TileRotation tile_rotation = state.stage.GetTileRotation(
+                    static_cast<unsigned int>(x),
+                    static_cast<unsigned int>(y)
+                );
+                const SDL_FPoint tile_center{
+                    foreground_dst.w * 0.5F,
+                    foreground_dst.h * 0.5F,
+                };
+                RenderWorldTextureRotated(
+                    renderer,
+                    graphics,
+                    tile_texture,
+                    &src,
+                    foreground_dst,
+                    static_cast<double>(tile_rotation) * 90.0,
+                    &tile_center,
+                    SDL_FLIP_NONE
+                );
                 ResetTerrainTileBrightness(tile_texture);
                 RenderTerrainTileLighting(
                     renderer,
@@ -405,7 +403,7 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                         Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                     );
                     ApplyBackwallTileBrightness(air_texture, state, graphics, tile_x, tile_y);
-                    SDL_RenderTexture(renderer, air_texture, &air_src, &dst);
+                    RenderWorldTexture(renderer, graphics, air_texture, &air_src, dst);
                     ResetTerrainTileBrightness(air_texture);
                     continue;
                 }
@@ -454,7 +452,7 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                                 tile_x,
                                 tile_y
                             );
-                            SDL_RenderTexture(renderer, backing_texture, &backing_src, &backing_dst);
+                            RenderWorldTexture(renderer, graphics, backing_texture, &backing_src, backing_dst);
                             ResetTerrainTileBrightness(backing_texture);
                         }
                     }
@@ -465,7 +463,7 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                     Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
                 ApplyTerrainTileBrightness(tile_texture, state, graphics, tile_x, tile_y);
-                SDL_RenderTexture(renderer, tile_texture, &src, &dst);
+                RenderWorldTexture(renderer, graphics, tile_texture, &src, dst);
                 ResetTerrainTileBrightness(tile_texture);
                 RenderTerrainTileLighting(renderer, state, graphics, tile_x, tile_y, dst);
             }
@@ -517,7 +515,7 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
                 )
             );
             ApplyBackwallTileBrightness(sprite_texture, state, graphics, tile_x, tile_y);
-            SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
+            RenderWorldTexture(renderer, graphics, sprite_texture, &src, dst);
             ResetTerrainTileBrightness(sprite_texture);
         }
     }
@@ -596,7 +594,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                         static_cast<float>(frame_data->sample_rect.h)
                     )
                 );
-                SDL_RenderTexture(renderer, sprite_texture, &src, &dst);
+                RenderWorldTexture(renderer, graphics, sprite_texture, &src, dst);
             }
             SDL_SetTextureAlphaMod(sprite_texture, 255);
             ResetTerrainTileBrightness(sprite_texture);
@@ -660,7 +658,7 @@ void RenderAnimatedParticleSprite(
     for (const Vec2& render_offset : render_offsets) {
         const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
         const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
-        SDL_RenderTextureRotated(renderer, texture, &src, &dst, rotation, &center, flip);
+        RenderWorldTextureRotated(renderer, graphics, texture, &src, dst, rotation, &center, flip);
     }
     SDL_SetTextureAlphaMod(texture, 255);
     SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
@@ -882,15 +880,7 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                     sprite_scaled_size
                 );
                 if (std::abs(entity.rotation) <= 0.01F) {
-                    SDL_RenderTextureRotated(
-                        renderer,
-                        sprite_texture,
-                        &src,
-                        &dst,
-                        0.0,
-                        nullptr,
-                        flip
-                    );
+                    RenderWorldTextureRotated(renderer, graphics, sprite_texture, &src, dst, 0.0, nullptr, flip);
                 } else {
                     const Vec2 rotation_world =
                         entities::common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()) +
@@ -900,11 +890,12 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                         rotation_screen.x - dst.x,
                         rotation_screen.y - dst.y
                     };
-                    SDL_RenderTextureRotated(
+                    RenderWorldTextureRotated(
                         renderer,
+                        graphics,
                         sprite_texture,
                         &src,
-                        &dst,
+                        dst,
                         entity.rotation,
                         &rotation_center,
                         flip

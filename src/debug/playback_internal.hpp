@@ -29,7 +29,7 @@ bool ExportRecordingToTextFile(
 
 bool SyncDebugUiSettings(DebugPlayback& debug, State& state);
 
-void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphics);
+void DrawSimulationControls(DebugPlayback& debug, State& state, Audio& audio, Graphics& graphics);
 void DrawDebugMenu(DebugPlayback& debug, State& state);
 void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics);

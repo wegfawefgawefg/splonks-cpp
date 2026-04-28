@@ -125,6 +125,9 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     graphics.dims = UVec2::New(1920, 1080);
     graphics.fullscreen = true;
     graphics.gpu_renderer_active = false;
+    graphics.world_rotation_active = false;
+    graphics.world_rotation_pivot = Vec2::New(0.0F, 0.0F);
+    graphics.world_rotation_degrees = 0.0F;
 
     const Vec2 screen_center = ToVec2(graphics.dims / 2U);
     graphics.camera.target = Vec2::New(0.0F, 0.0F);

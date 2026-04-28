@@ -416,6 +416,7 @@ void DrawCameraSettingsWindow(DebugPlayback& debug, State& state, Graphics& grap
     }
 
     ImGui::Checkbox("Lock Follow Camera", &graphics.debug_lock_play_camera);
+    ImGui::Checkbox("Clamp To Stage Bounds", &state.stage.camera_clamp_enabled);
     ImGui::SliderFloat("Follow Zoom", &graphics.follow_camera_zoom, 1.0F, 8.0F, "%.2f");
     ImGui::SliderFloat("Stage Fit Padding", &graphics.stage_fit_padding, 0.0F, 128.0F, "%.1f");
     ImGui::SliderFloat("Zoom Multiplier", &graphics.camera_zoom_multiplier, 0.25F, 4.0F, "%.2f");

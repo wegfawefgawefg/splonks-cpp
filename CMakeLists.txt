@@ -268,6 +268,7 @@ add_executable(splonks-cpp
     src/on_damage_effects.cpp
     src/room.cpp
     src/render/render.cpp
+    src/render/camera.cpp
     src/render/menu/common.cpp
     src/render/menu/top_level.cpp
     src/render/menu/settings.cpp
@@ -279,6 +280,7 @@ add_executable(splonks-cpp
     src/render/stone_overlay.cpp
     src/render/tiles_and_entities.cpp
     src/render/ui.cpp
+    src/render/world_texture.cpp
     src/raw_audio_asset.cpp
     src/raw_frame_data.cpp
     src/quest.cpp
@@ -291,6 +293,7 @@ add_executable(splonks-cpp
     src/sid.cpp
     src/stage.cpp
     src/stage_init.cpp
+    src/stage_rotation.cpp
     src/stage_wrap.cpp
     src/stage_tile_triggers.cpp
     src/stage_gen/cave.cpp

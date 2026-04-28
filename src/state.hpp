@@ -20,6 +20,7 @@
 #include "stage.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_progression.hpp"
+#include "stage_rotation.hpp"
 #include "quest.hpp"
 #include "stage_lighting.hpp"
 
@@ -159,6 +160,15 @@ struct DebugAudioBrushState {
     Vec2 source_world_pos = Vec2::New(0.0F, 0.0F);
 };
 
+struct StageRotationState {
+    bool active = false;
+    int elapsed_frames = 0;
+    int duration_frames = 180;
+    int quarter_turns = 1;
+    Vec2 pivot = Vec2::New(0.0F, 0.0F);
+    StageRotationWrapPolicy wrap_policy = StageRotationWrapPolicy::DoNotChangeWrap;
+};
+
 struct WorldPrompt {
     Vec2 world_pos = Vec2::New(0.0F, 0.0F);
     const char* action_text = "";
@@ -217,6 +227,7 @@ struct State {
     DebugOverlayState debug_overlay;
     DebugShakeBrushState debug_shake_brush;
     DebugAudioBrushState debug_audio_brush;
+    StageRotationState stage_rotation;
     PlayerTuningState player_tuning;
     bool running = true;
 

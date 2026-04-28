@@ -3,6 +3,7 @@
 #include "entity/manager.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
+#include "render/camera.hpp"
 #include "render/tiles_and_entities.hpp"
 #include "state.hpp"
 #include "stage_progression.hpp"
@@ -12,40 +13,32 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace splonks {
 
 namespace {
 
-Vec2 ClampCameraTargetToStage(const Stage& stage, Vec2 target) {
-    if (!stage.camera_clamp_enabled) {
-        return target;
-    }
-
-    const Vec2 stage_dims = ToVec2(stage.GetStageDims());
-    const Vec2 margin = stage.camera_clamp_margin;
-    const Vec2 map_tl_bound = margin;
-    const Vec2 map_br_bound = stage_dims - margin;
-
-    if (stage_dims.x <= margin.x * 2.0F) {
-        target.x = stage_dims.x / 2.0F;
-    } else {
-        target.x = std::clamp(target.x, map_tl_bound.x, map_br_bound.x);
-    }
-
-    if (stage_dims.y <= margin.y * 2.0F) {
-        target.y = stage_dims.y / 2.0F;
-    } else {
-        target.y = std::clamp(target.y, map_tl_bound.y, map_br_bound.y);
-    }
-
-    return target;
-}
-
 void LerpCamera(Graphics& graphics, const Vec2& target, float zoom) {
     const float t = std::clamp(graphics.camera_lerp_factor, 0.0F, 1.0F);
     graphics.camera.target += (target - graphics.camera.target) * t;
     graphics.camera.zoom += (zoom - graphics.camera.zoom) * t;
+}
+
+Vec2 RotateWorldPointForActiveWorldRotation(const Graphics& graphics, const Vec2& world_pos) {
+    if (!graphics.world_rotation_active) {
+        return world_pos;
+    }
+
+    constexpr float kDegreesToRadians = 3.14159265358979323846F / 180.0F;
+    const float radians = graphics.world_rotation_degrees * kDegreesToRadians;
+    const float c = std::cos(radians);
+    const float s = std::sin(radians);
+    const Vec2 delta = world_pos - graphics.world_rotation_pivot;
+    return graphics.world_rotation_pivot + Vec2::New(
+        (delta.x * c) - (delta.y * s),
+        (delta.x * s) + (delta.y * c)
+    );
 }
 
 void DrawCenteredText(
@@ -145,13 +138,19 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
         if (!graphics.debug_lock_play_camera) {
             const Vec2 controlled_visual_center =
                 entities::common::GetVisualCenterForEntity(*camera_target_entity, graphics, camera_target_entity->GetCenter());
-            const Vec2 delta = GetNearestWorldDelta(
-                state.stage,
-                graphics.play_cam.pos,
-                controlled_visual_center
-            );
-            graphics.play_cam.pos += delta * 0.075F;
-            graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, graphics.play_cam.pos);
+            const Vec2 camera_follow_target =
+                RotateWorldPointForActiveWorldRotation(graphics, controlled_visual_center);
+            if (graphics.world_rotation_active) {
+                graphics.play_cam.pos = camera_follow_target;
+            } else {
+                const Vec2 delta = GetNearestWorldDelta(
+                    state.stage,
+                    graphics.play_cam.pos,
+                    camera_follow_target
+                );
+                graphics.play_cam.pos += delta * 0.075F;
+                graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, graphics.play_cam.pos);
+            }
         }
         target = graphics.play_cam.pos;
     } else if (state.mode == Mode::GameOver && state.gameplay_camera_anchor_world_pos.has_value()) {
@@ -165,9 +164,18 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     }
 
     zoom *= graphics.camera_zoom_multiplier;
-    LerpCamera(graphics, target, zoom);
+    if (graphics.world_rotation_active) {
+        graphics.camera.target = target;
+        graphics.camera.zoom = zoom;
+    } else {
+        LerpCamera(graphics, target, zoom);
+    }
 
-    SDL_SetRenderDrawColor(renderer, 38, 43, 68, 255);
+    if (graphics.world_rotation_active) {
+        SDL_SetRenderDrawColor(renderer, 6, 6, 6, 255);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 38, 43, 68, 255);
+    }
     SDL_RenderClear(renderer);
     RenderStageTileWrapper(renderer, state, graphics);
     RenderStageTiles(renderer, state, graphics);

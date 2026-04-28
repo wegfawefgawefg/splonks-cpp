@@ -174,6 +174,7 @@ struct Stage {
     int quest_level_number = 0;
     std::vector<StageExit> exits;
     std::vector<std::vector<Tile>> tiles;
+    std::vector<std::vector<TileRotation>> tile_rotations;
     std::vector<std::vector<float>> tile_shake;
     std::vector<std::vector<float>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
@@ -210,6 +211,7 @@ struct Stage {
     UVec2 GetRegularRoomGridRoomDims() const;
     IVec2 GetRegularRoomGridTlWc(const IVec2& room) const;
     const Tile& GetTile(unsigned int x, unsigned int y) const;
+    TileRotation GetTileRotation(unsigned int x, unsigned int y) const;
     float GetTileShake(unsigned int x, unsigned int y) const;
     float GetForegroundTileShake(unsigned int x, unsigned int y) const;
     float GetBackgroundTileShake(unsigned int x, unsigned int y) const;
@@ -220,7 +222,9 @@ struct Stage {
     std::vector<const Tile*> GetTilesInRect(const IVec2& tl, const IVec2& br) const;
     void FillBackwall(const std::vector<Tile>& fill_tiles);
     void SyncTileShakeGrid();
+    void SyncTileInstanceMetadataGrid();
     void SetTile(const IVec2& pos, Tile tile);
+    void SetTileRotation(const IVec2& pos, TileRotation rotation);
     void AddTileShake(const IVec2& pos, float amount);
     void AddForegroundTileShake(const IVec2& pos, float amount);
     void AddBackgroundTileShake(const IVec2& pos, float amount);

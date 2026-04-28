@@ -70,9 +70,11 @@ ClimbProbePoints GetClimbProbePointsAtPosition(
     };
 }
 
-bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query) {
-    return tile_query.has_value() && tile_query->tile != nullptr &&
-           GetTileArchetype(*tile_query->tile).climbable;
+bool IsClimbableTileQuery(
+    const Stage& stage,
+    const std::optional<WorldTileQueryResult>& tile_query
+) {
+    return tile_query.has_value() && IsTileQueryClimbable(stage, *tile_query);
 }
 
 std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
@@ -96,7 +98,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
             QueryTileAtWorldPos(state.stage, probe_point);
-        if (!IsClimbableTileQuery(tile_query)) {
+        if (!IsClimbableTileQuery(state.stage, tile_query)) {
             continue;
         }
 
@@ -104,7 +106,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
         for (const IVec2& candidate_probe_point : probe_points) {
             const std::optional<WorldTileQueryResult> candidate_query =
                 QueryTileAtWorldPos(state.stage, candidate_probe_point);
-            if (!IsClimbableTileQuery(candidate_query)) {
+            if (!IsClimbableTileQuery(state.stage, candidate_query)) {
                 continue;
             }
             if (candidate_query->tile_pos == tile_query->tile_pos) {
@@ -151,7 +153,7 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
             QueryTileAtWorldPos(state.stage, probe_point);
-        if (!IsClimbableTileQuery(tile_query)) {
+        if (!IsClimbableTileQuery(state.stage, tile_query)) {
             continue;
         }
 
@@ -159,7 +161,7 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
         for (const IVec2& candidate_probe_point : probe_points) {
             const std::optional<WorldTileQueryResult> candidate_query =
                 QueryTileAtWorldPos(state.stage, candidate_probe_point);
-            if (IsClimbableTileQuery(candidate_query) &&
+            if (IsClimbableTileQuery(state.stage, candidate_query) &&
                 candidate_query->tile_pos == tile_query->tile_pos) {
                 hits += 1;
             }
@@ -234,7 +236,7 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
         AddClimbDebugRect(state, ToVec2(edge_probe_point), DebugAnnotationColor{255, 240, 64, 255});
         const std::optional<WorldTileQueryResult> edge_query =
             QueryTileAtWorldPos(state.stage, edge_probe_point);
-        if (!IsClimbableTileQuery(edge_query)) {
+        if (!IsClimbableTileQuery(state.stage, edge_query)) {
             AddClimbDebugLabel(state, ToVec2(edge_probe_point), "side: no climb");
             continue;
         }
@@ -243,7 +245,7 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
         for (const IVec2& normal_probe_point : normal_probe_points) {
             const std::optional<WorldTileQueryResult> normal_query =
                 QueryTileAtWorldPos(state.stage, normal_probe_point);
-            if (IsClimbableTileQuery(normal_query)) {
+            if (IsClimbableTileQuery(state.stage, normal_query)) {
                 normal_hits += 1;
             }
         }
@@ -264,11 +266,11 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
 }
 
 bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& state) {
-    const Tile below_tile = state.stage.GetTileOrBorder(
-        climb_anchor.tile_pos.x,
-        climb_anchor.tile_pos.y + 1
+    const std::optional<WorldTileQueryResult> below_query = QueryTileAtTilePos(
+        state.stage,
+        IVec2::New(climb_anchor.tile_pos.x, climb_anchor.tile_pos.y + 1)
     );
-    return GetTileArchetype(below_tile).climbable;
+    return IsClimbableTileQuery(state.stage, below_query);
 }
 
 void SnapEntityToClimbTileCenterline(Entity& entity, const IVec2& tile_pos) {
@@ -317,7 +319,7 @@ void AddClimbDebugAnnotations(const Entity& entity, State& state, const JumpAndC
 
     for (const auto& [label, probe_point] : probe_points) {
         const bool is_climbable =
-            IsClimbableTileQuery(QueryTileAtWorldPos(state.stage, ToIVec2(probe_point)));
+            IsClimbableTileQuery(state.stage, QueryTileAtWorldPos(state.stage, ToIVec2(probe_point)));
         const DebugAnnotationColor color = is_climbable
                                                ? DebugAnnotationColor{64, 255, 128, 255}
                                                : DebugAnnotationColor{255, 64, 64, 255};

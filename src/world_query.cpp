@@ -94,6 +94,27 @@ Vec2 GetNearestWorldPoint(const Stage& stage, const Vec2& anchor, const Vec2& po
     return anchor + GetNearestWorldDelta(stage, anchor, point);
 }
 
+TileRotation GetTileRotationForQuery(const Stage& stage, const WorldTileQueryResult& tile_query) {
+    if (tile_query.tile == nullptr ||
+        !stage.IsTileCoordInside(tile_query.tile_pos.x, tile_query.tile_pos.y)) {
+        return kTileRotation0;
+    }
+    return stage.GetTileRotation(
+        static_cast<unsigned int>(tile_query.tile_pos.x),
+        static_cast<unsigned int>(tile_query.tile_pos.y)
+    );
+}
+
+bool IsTileQueryClimbable(const Stage& stage, const WorldTileQueryResult& tile_query) {
+    if (tile_query.tile == nullptr) {
+        return false;
+    }
+    return IsTileClimbableWithRotation(
+        *tile_query.tile,
+        GetTileRotationForQuery(stage, tile_query)
+    );
+}
+
 AABB GetNearestWorldAabb(const Stage& stage, const Vec2& anchor, const AABB& aabb) {
     const Vec2 center = GetAabbCenter(aabb);
     const Vec2 nearest_center = GetNearestWorldPoint(stage, anchor, center);

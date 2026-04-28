@@ -69,6 +69,9 @@ struct Graphics {
     float stage_fit_padding = 16.0F;
     float camera_lerp_factor = 0.12F;
     float camera_zoom_multiplier = 1.0F;
+    bool world_rotation_active = false;
+    Vec2 world_rotation_pivot = Vec2::New(0.0F, 0.0F);
+    float world_rotation_degrees = 0.0F;
     Camera2D camera;
     PlayCam play_cam;
     std::vector<SDL_Texture*> textures;

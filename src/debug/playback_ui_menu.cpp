@@ -4,6 +4,7 @@
 #include "imgui_layer.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
+#include "stage_rotation.hpp"
 #include "stage_wrap.hpp"
 #include "utils.hpp"
 #include "stage_lighting.hpp"
@@ -27,6 +28,16 @@ constexpr float kMinTimeScale = 0.01F;
 constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
+
+const char* StageRotationWrapPolicyName(StageRotationWrapPolicy policy) {
+    switch (policy) {
+    case StageRotationWrapPolicy::DoNotChangeWrap:
+        return "Do Not Change Wrap";
+    case StageRotationWrapPolicy::SwapXYWrap:
+        return "Swap X/Y Wrap";
+    }
+    return "Unknown";
+}
 
 int DefaultVoidDeathYForStage(const Stage& stage) {
     return static_cast<int>(stage.GetHeight() + 8 * kTileSize);
@@ -171,7 +182,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     SyncDebugUiSettings(debug, state);
 }
 
-void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphics) {
+void DrawSimulationControls(DebugPlayback& debug, State& state, Audio& audio, Graphics& graphics) {
     if (!debug.playback_window_visible) {
         return;
     }
@@ -208,6 +219,39 @@ void DrawSimulationControls(DebugPlayback& debug, State& state, Graphics& graphi
     ImGui::SameLine();
     if (ImGui::Button("0.10x")) {
         debug.time_scale = 0.10F;
+    }
+
+    ImGui::Separator();
+    ImGui::TextUnformatted("World Rotation");
+    ImGui::Text("Active: %s", state.stage_rotation.active ? "true" : "false");
+    if (state.stage_rotation.active) {
+        ImGui::Text(
+            "Frame: %d / %d",
+            state.stage_rotation.elapsed_frames,
+            state.stage_rotation.duration_frames
+        );
+    }
+    if (ImGui::BeginCombo(
+            "Wrap Policy",
+            StageRotationWrapPolicyName(state.stage_rotation.wrap_policy))) {
+        for (int i = 0; i < 2; ++i) {
+            const StageRotationWrapPolicy policy = static_cast<StageRotationWrapPolicy>(i);
+            const bool selected = policy == state.stage_rotation.wrap_policy;
+            if (ImGui::Selectable(StageRotationWrapPolicyName(policy), selected)) {
+                state.stage_rotation.wrap_policy = policy;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::Button("Rotate Stage 90 CW")) {
+        StartStageRotation(state, graphics, audio, 1);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Rotate Stage 90 CCW")) {
+        StartStageRotation(state, graphics, audio, -1);
     }
 
     ImGui::Separator();
