@@ -855,9 +855,16 @@ void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
     (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
     if (entity.grounded) {
+        SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
         if (entity.vel.y > 0.0F) {
             entity.vel.y = 0.0F;
         }
+        return;
+    }
+    if (entity.collided_last_frame) {
+        SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
+    }
+    if (HasTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact)) {
         return;
     }
     entity.acc.y += state.stage.gravity;

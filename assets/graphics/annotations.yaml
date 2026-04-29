@@ -7169,6 +7169,246 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 97
+      y: 418
+      w: 10
+      h: 10
+    name: "mitt"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 10
+      h: 10
+    cbox:
+      x: 0
+      y: 0
+      w: 10
+      h: 10
+    tile: false
+    emit_point:
+      x: 6
+      y: 5
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 416
+      w: 16
+      h: 16
+    name: "cape_item"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 8
+    tags: []
+    pbox:
+      x: 3
+      y: 4
+      w: 8
+      h: 10
+    cbox:
+      x: 3
+      y: 4
+      w: 8
+      h: 10
+    tile: false
+    emit_point:
+      x: 7
+      y: 8
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 452
+      w: 14
+      h: 12
+    name: "cape_open"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 5
+    tags: []
+    pbox:
+      x: 2
+      y: 2
+      w: 8
+      h: 10
+    cbox:
+      x: 2
+      y: 1
+      w: 8
+      h: 10
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 449
+      w: 11
+      h: 15
+    name: "cape_back_open"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 5
+    tags: []
+    pbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 9
+    cbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 9
+    tile: false
+    emit_point:
+      x: 8
+      y: 6
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 455
+      w: 12
+      h: 12
+    name: "cape_side_open"
+    frame: 2
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 5
+    tags: []
+    pbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 8
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 114
+      y: 436
+      w: 11
+      h: 12
+    name: "cape"
+    frame: 1
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 5
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 12
+    cbox:
+      x: 0
+      y: 1
+      w: 8
+      h: 11
+    tile: false
+    emit_point:
+      x: 6
+      y: 4
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 434
+      w: 10
+      h: 14
+    name: "cape_back"
+    frame: 2
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 6
+      y: 5
+    tags: []
+    pbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+    cbox:
+      x: 1
+      y: 0
+      w: 9
+      h: 10
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 144
+      y: 439
+      w: 11
+      h: 12
+    name: "cape_side"
+    frame: 3
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 3
+      y: 5
+    tags: []
+    pbox:
+      x: 2
+      y: 0
+      w: 9
+      h: 10
+    cbox:
+      x: 2
+      y: 0
+      w: 10
+      h: 10
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

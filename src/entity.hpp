@@ -31,6 +31,10 @@ enum class EntityPassiveItem : std::uint8_t {
     Count,
 };
 
+enum class EntityTemporaryEffect : std::uint8_t {
+    NoGravityUntilContact,
+};
+
 struct UseState {
     bool down = false;
     bool pressed = false;
@@ -84,6 +88,7 @@ struct Entity {
     float max_speed = 7.0F;
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
     float throw_velocity_scale = 1.0F;
+    std::uint32_t temporary_effect_flags = 0;
     Vec2 size;
     float dist_traveled_this_frame = 0.0F;
     LeftOrRight facing = LeftOrRight::Left;
@@ -213,6 +218,8 @@ void StopUsingEntity(Entity& entity);
 bool HasMovementFlag(const Entity& entity, EntityMovementFlag movement_flag);
 void SetMovementFlag(Entity& entity, EntityMovementFlag movement_flag, bool enabled);
 void ClearTransientMovementFlags(Entity& entity);
+bool HasTemporaryEffect(const Entity& entity, EntityTemporaryEffect effect);
+void SetTemporaryEffect(Entity& entity, EntityTemporaryEffect effect, bool enabled);
 const char* PassiveItemToString(EntityPassiveItem passive_item);
 bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
 void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);

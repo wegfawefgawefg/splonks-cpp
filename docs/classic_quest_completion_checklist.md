@@ -134,13 +134,13 @@ Check a stage only when all applicable items are true:
   - Pickup behavior is tracked separately under passive item behavior.
 
 - [ ] Player core survival mechanics are audited.
-  - [ ] Fall timer tracking is correct for player characters.
-  - [ ] Fall damage/stun thresholds match the intended Classic/HD feel.
-  - [ ] Parachute suppresses fall damage only after valid deploy conditions.
-  - [ ] Spike tile damage interacts correctly with spike shoes.
-  - [ ] Spike hitbox and ladder/rope/climb interactions match Classic/HD edge cases.
+  - [x] Fall timer tracking is correct for player characters.
+  - [x] Fall damage/stun thresholds match the intended Classic/HD feel.
+  - [x] Parachute suppresses fall damage only after valid deploy conditions.
+  - [x] Spike tile damage interacts correctly with spike shoes.
+  - [x] Spike hitbox and ladder/rope/climb interactions match Classic/HD edge cases.
   - [ ] Stomp damage and stomp immunity are consistent across enemies, props, and carried/thrown items.
-  - [ ] Crush/telefrag/explosion deaths still route through normal death callbacks so favor, meathead, and effects work.
+  - [x] Crush/telefrag/explosion deaths still route through normal death callbacks so favor, meathead, and effects work.
 
 - [ ] Spelunky player physics are audited.
   - [ ] Run acceleration, max speed, ground friction, and turnaround feel match the target Spelunky reference.
@@ -161,27 +161,27 @@ Check a stage only when all applicable items are true:
     - ClassicHD: key chest creates Udjat Eye, pickup sets `hasUdjatEye`, and hidden treasure becomes visible.
     - Splonks: key chest opens into `UdjatEye`, pickup sets the passive and Classic quest `has_udjat_eye`, and embedded treasure reveal shares the same path as spectacles.
   - [x] `Compass`: screen-space arrow indicator exists and points to the default exit.
-  - [ ] `Mitt`: thrown item behavior is implemented and tuned.
+  - [x] `Mitt`: thrown item behavior is implemented and tuned.
   - [x] `Paste`: pickup converts the bomb tool into sticky bombs, and later bomb refills route into the sticky bomb slot.
-  - [ ] `SpringShoes`: jump height boost is implemented and tuned.
-  - [ ] `SpikeShoes`: spike immunity and stomp damage boost are implemented and tuned.
-  - [ ] `Parachute`: single-use pickup, deploy speed threshold, visual placement, and cleanup are correct.
-  - [ ] `Meathead`: Splonks replacement for Kapala; should appear through Classic sacrifice rewards and stay documented as an intentional adaptation.
+  - [x] `SpringShoes`: jump height boost is implemented and tuned.
+  - [x] `SpikeShoes`: spike immunity and stomp damage boost are implemented and tuned.
+  - [x] `Parachute`: single-use pickup, deploy speed threshold, visual placement, and cleanup are correct.
+  - [x] `Meathead`: Splonks replacement for Kapala; should appear through Classic sacrifice rewards and stay documented as an intentional adaptation.
 
 - [ ] Back items and movement gear are audited.
-  - [ ] `Cape`: pickup/equip/use behavior exists and matches intended glide/slowfall behavior.
-  - [ ] `JetPack`: pickup/equip/use, fuel feel, explosion damage, and shop/loot placement are correct.
-  - [ ] `TeleporterBackpack`: intentionally Splonks-specific; excluded from Classic pools unless explicitly wanted.
+  - [x] `Cape`: pickup/equip/use behavior exists and matches intended glide/slowfall behavior.
+  - [x] `JetPack`: pickup/equip/use, fuel feel, explosion damage, and shop/loot placement are correct.
+  - [x] `TeleporterBackpack`: intentionally Splonks-specific; excluded from Classic pools unless explicitly wanted.
 
 - [ ] Tools, weapons, and held item behavior are audited.
   - [ ] `BombBox` and `BombBag`: add bombs to the bomb tool slot correctly, including empty-slot acquisition.
   - [ ] `RopePile`: adds ropes to the rope tool slot correctly, including empty-slot acquisition.
-  - [ ] `Mattock`: dig probes, durability, entity hits, sounds, and wrap/border behavior are correct.
-  - [ ] `Machete`: swing damage, thrown damage, corpse-sac interaction, and altar cash-in are correct.
-  - [ ] `Pistol`: firing, projectiles, ammo/reload behavior if any, and shop/loot placement are correct.
+  - [x] `Mattock`: dig probes, durability, entity hits, sounds, and wrap/border behavior are correct.
+  - [x] `Machete`: swing damage, thrown damage, corpse-sac interaction, and altar cash-in are correct.
+  - [x] `Pistol`: firing, projectiles, ammo/reload behavior if any, and shop/loot placement are correct.
   - [ ] `Shotgun`: firing, recoil, pellets/projectiles, reload cadence, and shopkeeper use are correct.
-  - [ ] `WebCannon`: webball flight, web placement, web decay, and web interaction are correct.
-  - [ ] `Teleporter`: 8-way target probes, telefrag/splat, wall death, shake, and item/player visual effects are correct.
+  - [x] `WebCannon`: webball flight, web placement, web decay, and web interaction are correct.
+  - [x] `Teleporter`: 8-way target probes, telefrag/splat, wall death, shake, and item/player visual effects are correct.
 
 - [ ] Loot/shop/item pools are audited.
   - [ ] Chest random item pool matches intended Classic/HD item availability.

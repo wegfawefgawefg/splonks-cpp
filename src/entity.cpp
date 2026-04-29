@@ -22,6 +22,10 @@ constexpr std::uint32_t MovementFlagBit(EntityMovementFlag movement_flag) {
     return 1U << static_cast<unsigned int>(movement_flag);
 }
 
+constexpr std::uint32_t TemporaryEffectBit(EntityTemporaryEffect effect) {
+    return 1U << static_cast<unsigned int>(effect);
+}
+
 } // namespace
 
 Entity Entity::New() {
@@ -59,6 +63,7 @@ Entity Entity::New() {
     entity.max_speed = 7.0F;
     entity.jump_hold_gravity_frames_remaining = 0;
     entity.throw_velocity_scale = 1.0F;
+    entity.temporary_effect_flags = 0;
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.dist_traveled_this_frame = 0.0F;
     entity.facing = LeftOrRight::Left;
@@ -205,6 +210,19 @@ void ClearTransientMovementFlags(Entity& entity) {
     SetMovementFlag(entity, EntityMovementFlag::Walking, false);
     SetMovementFlag(entity, EntityMovementFlag::Running, false);
     SetMovementFlag(entity, EntityMovementFlag::Pushing, false);
+}
+
+bool HasTemporaryEffect(const Entity& entity, EntityTemporaryEffect effect) {
+    return (entity.temporary_effect_flags & TemporaryEffectBit(effect)) != 0;
+}
+
+void SetTemporaryEffect(Entity& entity, EntityTemporaryEffect effect, bool enabled) {
+    if (enabled) {
+        entity.temporary_effect_flags |= TemporaryEffectBit(effect);
+        return;
+    }
+
+    entity.temporary_effect_flags &= ~TemporaryEffectBit(effect);
 }
 
 std::tuple<Vec2, Vec2> Entity::GetBounds() const {

@@ -23,6 +23,7 @@ void ApplyHeldState(Entity& entity) {
     entity.projectile_contact_timer = 0;
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
+    SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
     entity.rotation = 0.0F;
 
 }
@@ -141,6 +142,7 @@ void ReleaseEntityFromHolder(Entity& entity, State& state) {
     RestoreEntityCanCollideFromArchetype(entity);
     RestoreEntityDrawLayerFromArchetype(entity);
     entity.grounded = false;
+    SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
 }
 
 void DropHeldItemFromEntity(Entity& entity, State& state) {
@@ -173,6 +175,7 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     held->projectile_contact_timer = kProjectileContactDuration;
     held->vel = Vec2::New(throw_x, -1.0F);
     held->acc = Vec2::New(0.0F, 0.0F);
+    SetTemporaryEffect(*held, EntityTemporaryEffect::NoGravityUntilContact, false);
 }
 
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
@@ -292,6 +295,9 @@ void UpdateCarryAndBackItems(
             const bool trying_to_go_left = control.left;
             const bool trying_to_go_right = control.right;
             const Vec2 entity_size = entity.size;
+            const bool mitt_throw =
+                HasPassiveItem(entity, EntityPassiveItem::Mitt) &&
+                !(entity.grounded && trying_to_go_down);
 
             if (thrown_vid.has_value()) {
                 if (Entity* const thrown = state.entity_manager.GetEntityMut(*thrown_vid)) {
@@ -323,6 +329,21 @@ void UpdateCarryAndBackItems(
                     if (!trying_to_go_up && !trying_to_go_down &&
                         (trying_to_go_left || trying_to_go_right)) {
                         throw_vel.y = -2.0F;
+                    }
+                    if (mitt_throw) {
+                        const float throw_direction =
+                            throw_vel.x < 0.0F ? -1.0F :
+                            throw_vel.x > 0.0F ? 1.0F :
+                            entity.facing == LeftOrRight::Left ? -1.0F : 1.0F;
+                        throw_vel.x += throw_direction * 6.0F;
+                        if (!trying_to_go_up && !trying_to_go_down) {
+                            throw_vel.y = -0.4F;
+                        } else if (trying_to_go_down) {
+                            throw_vel.y = 6.0F;
+                        }
+                        SetTemporaryEffect(*thrown, EntityTemporaryEffect::NoGravityUntilContact, true);
+                    } else {
+                        SetTemporaryEffect(*thrown, EntityTemporaryEffect::NoGravityUntilContact, false);
                     }
 
                     if (entity_size.y <= thrown->size.y) {
@@ -388,6 +409,7 @@ void UpdateCarryAndBackItems(
                 item_taken_off_back->projectile_contact_damage_type = back_item_archetype.projectile_contact_damage_type;
                 item_taken_off_back->projectile_contact_damage_amount = back_item_archetype.projectile_contact_damage_amount;
                 item_taken_off_back->projectile_contact_timer = kProjectileContactDuration;
+                SetTemporaryEffect(*item_taken_off_back, EntityTemporaryEffect::NoGravityUntilContact, false);
             }
 
             Entity& entity = state.entity_manager.entities[entity_idx];

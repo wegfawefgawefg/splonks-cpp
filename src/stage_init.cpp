@@ -1008,6 +1008,8 @@ void InitCommonStageState(State& state) {
     state.mouse_trailer_vid.reset();
 }
 
+void GivePlayerBackItem(State& state, EntityType type_);
+
 void SpawnPlayer(State& state, const Vec2& pos) {
     if (const std::optional<VID> player_vid = state.entity_manager.NewEntity()) {
         state.player_vid = player_vid;
@@ -1021,6 +1023,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
 
             if (spawn_type == EntityType::Player) {
                 GrantPlayerStarterTools(state, *player_vid);
+                GivePlayerBackItem(state, EntityType::Cape);
             }
         }
     }

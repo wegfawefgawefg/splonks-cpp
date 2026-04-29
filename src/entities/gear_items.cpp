@@ -14,6 +14,7 @@ namespace {
 
 constexpr float kParachuteMaxFallSpeed = 1.35F;
 constexpr float kParachuteVisualOffsetY = -12.0F;
+constexpr float kCapeMaxFallSpeed = 1.35F;
 
 common::ContactResolution OnEntityContactAsInventoryPickup(
     std::size_t entity_idx,
@@ -118,6 +119,75 @@ void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics
     UpdateOpenParachuteVisual(owner, state, graphics);
 }
 
+FrameDataId GetCapeAnimation(const Entity& cape, const State& state) {
+    const bool open = cape.counter_a > 0.0F;
+    if (cape.attachment_mode == AttachmentMode::Back && cape.held_by_vid.has_value()) {
+        const Entity* const holder = state.entity_manager.GetEntity(*cape.held_by_vid);
+        if (holder != nullptr) {
+            if (holder->IsHanging()) {
+                return open ? frame_data_ids::CapeSideOpen : frame_data_ids::CapeSide;
+            }
+            if (holder->IsClimbing()) {
+                return open ? frame_data_ids::CapeBackOpen : frame_data_ids::CapeBack;
+            }
+        }
+        return open ? frame_data_ids::CapeOpen : frame_data_ids::Cape;
+    }
+
+    if (cape.attachment_mode == AttachmentMode::Held || cape.held_by_vid.has_value()) {
+        return frame_data_ids::CapeSide;
+    }
+    return frame_data_ids::CapeClosed;
+}
+
+void OnUseAsCape(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+    (void)graphics;
+    (void)audio;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& cape = state.entity_manager.entities[entity_idx];
+    cape.counter_a = 0.0F;
+    if (cape.use_state.source != AttachmentMode::Back ||
+        !cape.use_state.down ||
+        !cape.use_state.user_vid.has_value()) {
+        return;
+    }
+
+    Entity* const holder = state.entity_manager.GetEntityMut(*cape.use_state.user_vid);
+    if (holder == nullptr || holder->condition != EntityCondition::Normal) {
+        return;
+    }
+
+    cape.counter_a = 1.0F;
+    if (!holder->grounded && holder->vel.y > 0.0F) {
+        holder->vel.y = std::min(holder->vel.y, kCapeMaxFallSpeed);
+        holder->fall_timer = 0;
+    }
+}
+
+void StepEntityLogicAsCape(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    float dt
+) {
+    (void)graphics;
+    (void)audio;
+    (void)dt;
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& cape = state.entity_manager.entities[entity_idx];
+    if (!cape.use_state.down) {
+        cape.counter_a = 0.0F;
+    }
+    SetAnimation(cape, GetCapeAnimation(cape, state));
+}
+
 } // namespace
 
 void StepEquippedPassiveItems(std::size_t entity_idx, State& state, Graphics& graphics) {
@@ -143,12 +213,15 @@ extern const EntityArchetype kCapeArchetype{
     .impassable = false,
     .hurt_on_contact = false,
     .can_be_stomped = false,
+    .can_go_on_back = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .on_use = OnUseAsCape,
+    .step_logic = StepEntityLogicAsCape,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CapePickup),
 };

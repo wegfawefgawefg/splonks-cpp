@@ -10490,15 +10490,359 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "220fae37-371a-4e59-b926-791fc4ad7416",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 97,
+            "y": 418,
+            "w": 10,
+            "h": 10
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "mitt",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 10,
+              "h": 10
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 10,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 5
+            }
+          }
+        },
+        {
+          "id": "f5668a74-c91a-4ec4-b931-77b5e115a64f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 416,
+            "w": 16,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cape_item",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 7,
+              "y": 8
+            },
+            "tags": [],
+            "pbox": {
+              "x": 3,
+              "y": 4,
+              "w": 8,
+              "h": 10
+            },
+            "cbox": {
+              "x": 3,
+              "y": 4,
+              "w": 8,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 7,
+              "y": 8
+            }
+          }
+        },
+        {
+          "id": "f16aabaa-1883-44b4-9240-5c34cbff3413",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 112,
+            "y": 452,
+            "w": 14,
+            "h": 12
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cape_open",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 2,
+              "y": 2,
+              "w": 8,
+              "h": 10
+            },
+            "cbox": {
+              "x": 2,
+              "y": 1,
+              "w": 8,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "704cd2fc-2679-495b-929b-efe900c2d861",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 449,
+            "w": 11,
+            "h": 15
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cape_back_open",
+            "frame": 1,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 9
+            },
+            "cbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 9
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 8,
+              "y": 6
+            }
+          }
+        },
+        {
+          "id": "25df44fd-be89-44a1-b324-ea5493df27fa",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 144,
+            "y": 455,
+            "w": 12,
+            "h": 12
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cape_side_open",
+            "frame": 2,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 2,
+              "y": 0,
+              "w": 8,
+              "h": 8
+            },
+            "cbox": {
+              "x": 2,
+              "y": 0,
+              "w": 8,
+              "h": 8
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "566fb77f-299e-4e9b-8bc2-390d3a143474",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 114,
+            "y": 436,
+            "w": 11,
+            "h": 12
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cape",
+            "frame": 1,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 12
+            },
+            "cbox": {
+              "x": 0,
+              "y": 1,
+              "w": 8,
+              "h": 11
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 6,
+              "y": 4
+            }
+          }
+        },
+        {
+          "id": "9797e829-3632-47e9-8119-23604beb7f02",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 128,
+            "y": 434,
+            "w": 10,
+            "h": 14
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cape_back",
+            "frame": 2,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 6,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 10
+            },
+            "cbox": {
+              "x": 1,
+              "y": 0,
+              "w": 9,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "7b1d641e-b1cb-490e-bc1a-8098b6b7a7a3",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 144,
+            "y": 439,
+            "w": 11,
+            "h": 12
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "cape_side",
+            "frame": 3,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 3,
+              "y": 5
+            },
+            "tags": [],
+            "pbox": {
+              "x": 2,
+              "y": 0,
+              "w": 9,
+              "h": 10
+            },
+            "cbox": {
+              "x": 2,
+              "y": 0,
+              "w": 10,
+              "h": 10
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 13.108,
-        "centerX": 244.3164479707049,
-        "centerY": 110.1617332926457
+        "zoom": 8.389,
+        "centerX": 128.2035999523185,
+        "centerY": 455.2390034569079
       }
     },
     {

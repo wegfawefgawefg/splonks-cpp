@@ -142,6 +142,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.max_speed);
     WritePod(out, entity.jump_hold_gravity_frames_remaining);
     WritePod(out, entity.throw_velocity_scale);
+    WritePod(out, entity.temporary_effect_flags);
     WritePod(out, entity.size);
     WritePod(out, entity.dist_traveled_this_frame);
     WritePod(out, entity.facing);
@@ -276,6 +277,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.max_speed) &&
            ReadPod(in, entity.jump_hold_gravity_frames_remaining) &&
            ReadPod(in, entity.throw_velocity_scale) &&
+           ReadPod(in, entity.temporary_effect_flags) &&
            ReadPod(in, entity.size) &&
            ReadPod(in, entity.dist_traveled_this_frame) &&
            ReadPod(in, entity.facing) &&
