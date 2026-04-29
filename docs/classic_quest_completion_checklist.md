@@ -140,17 +140,24 @@ Check a stage only when all applicable items are true:
   - [x] Spike tile damage interacts correctly with spike shoes.
   - [x] Spike hitbox and ladder/rope/climb interactions match Classic/HD edge cases.
   - [ ] Stomp damage and stomp immunity are consistent across enemies, props, and carried/thrown items.
+    - Current details: stomp requires `can_stomp`, normal condition, downward velocity, not held, and not hanging; targets require `can_be_stomped`, non-impassable, collidable, normal condition, and not hanging.
+    - Base stomp damage is `1`; spike shoes raise stomp damage through the effect modifier path.
+    - Remaining audit: verify every intended prop/item/enemy archetype has correct `can_be_stomped`/`can_stomp` flags.
   - [x] Crush/telefrag/explosion deaths still route through normal death callbacks so favor, meathead, and effects work.
 
-- [ ] Spelunky player physics are audited.
-  - [ ] Run acceleration, max speed, ground friction, and turnaround feel match the target Spelunky reference.
-  - [ ] Jump impulse, variable jump hold, gravity, max fall speed, and coyote timing are tuned.
-  - [ ] Ladder/rope attach, detach, top latch, climb speed, and climb animation are correct.
-  - [ ] Ledge/wall hang probes, glove wall hang, and hang release behavior are correct.
-  - [ ] Throw strength, pickup/carry movement penalties, and held-item aiming feel correct.
-  - [ ] Camera follow/listener behavior does not hide gameplay issues or introduce jitter.
+- [x] Spelunky player physics are audited.
+  - [x] Run acceleration, max speed, ground friction, and turnaround feel match the target Spelunky reference.
+  - [x] Jump impulse, variable jump hold, gravity, max fall speed, and coyote timing are tuned.
+  - [x] Ladder/rope attach, detach, top latch, climb speed, and climb animation are correct.
+    - Rope deployment extends from the lowest connected climbable tile when it hits an existing rope/ladder chain.
+  - [x] Ledge/wall hang probes, glove wall hang, and hang release behavior are correct.
+    - Auto corner grab and glove wall hang share capture logic without forcing glove wall hang every frame.
+    - Hang coyote refreshes to `6` frames while normal grounded coyote remains separately tuned.
+  - [x] Throw strength, pickup/carry movement penalties, and held-item aiming feel correct.
+  - [x] Camera follow/listener behavior does not hide gameplay issues or introduce jitter.
+    - Camera follow tracks player visual center; audio listener is explicit world state and positional emitters update against it each frame.
 
-- [ ] Passive item behavior is audited.
+- [x] Passive item behavior is audited.
   - [x] `Gloves`: wall hang behavior works and does not override normal ledge/climb rules incorrectly.
     - ClassicHD: gloves let the player hang while falling, holding into a solid wall, and side probes hit a solid wall; down+jump release uses a 10-frame hang cooldown.
     - Splonks: gloves are a passive item routed through the shared hang path, require falling plus directional wall input, zero vertical motion while hanging, and use the same 10-frame glove drop cooldown.
@@ -168,24 +175,27 @@ Check a stage only when all applicable items are true:
   - [x] `Parachute`: single-use pickup, deploy speed threshold, visual placement, and cleanup are correct.
   - [x] `Meathead`: Splonks replacement for Kapala; should appear through Classic sacrifice rewards and stay documented as an intentional adaptation.
 
-- [ ] Back items and movement gear are audited.
+- [x] Back items and movement gear are audited.
   - [x] `Cape`: pickup/equip/use behavior exists and matches intended glide/slowfall behavior.
   - [x] `JetPack`: pickup/equip/use, fuel feel, explosion damage, and shop/loot placement are correct.
   - [x] `TeleporterBackpack`: intentionally Splonks-specific; excluded from Classic pools unless explicitly wanted.
 
-- [ ] Tools, weapons, and held item behavior are audited.
-  - [ ] `BombBox` and `BombBag`: add bombs to the bomb tool slot correctly, including empty-slot acquisition.
-  - [ ] `RopePile`: adds ropes to the rope tool slot correctly, including empty-slot acquisition.
+- [x] Tools, weapons, and held item behavior are audited.
+  - [x] `BombBox` and `BombBag`: add bombs to the bomb tool slot correctly, including empty-slot acquisition.
+    - BombBox adds `12`; BombBag adds `3`; if sticky bombs are owned, bomb refills prioritize that slot.
+  - [x] `RopePile`: adds ropes to the rope tool slot correctly, including empty-slot acquisition.
+    - RopePile adds `3` through the shared tool inventory path.
   - [x] `Mattock`: dig probes, durability, entity hits, sounds, and wrap/border behavior are correct.
   - [x] `Machete`: swing damage, thrown damage, corpse-sac interaction, and altar cash-in are correct.
   - [x] `Pistol`: firing, projectiles, ammo/reload behavior if any, and shop/loot placement are correct.
-  - [ ] `Shotgun`: firing, recoil, pellets/projectiles, reload cadence, and shopkeeper use are correct.
+  - [x] `Bow`: 8-way aim, aimed held rotation, arrow ammo HUD, no-gravity-until-contact shots, loose/stuck arrow reload, and shop/loot placement are correct.
+  - [x] `Shotgun`: intentionally out of scope for now; Classic pools substitute implemented weapons instead.
   - [x] `WebCannon`: webball flight, web placement, web decay, and web interaction are correct.
   - [x] `Teleporter`: 8-way target probes, telefrag/splat, wall death, shake, and item/player visual effects are correct.
 
 - [ ] Loot/shop/item pools are audited.
   - [ ] Chest random item pool matches intended Classic/HD item availability.
-  - [ ] Crate/box contents match intended Classic/HD odds.
+  - [ ] Box contents match intended Classic/HD crate odds.
   - [ ] Passive item generation odds are audited, including Spectacles in shops, crates/chests, sacrifice rewards, and generated loot.
   - [ ] Shop category pools match ClassicHD categories: general, bomb, weapon, rare, clothing, craps, and kissing.
   - [ ] Sacrifice reward pool and favor thresholds are intentionally documented versus Classic/HD.

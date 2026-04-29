@@ -19,6 +19,7 @@ extern const EntityArchetype kScarabArchetype{
     .can_only_be_picked_up_if_dead_or_stunned = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,

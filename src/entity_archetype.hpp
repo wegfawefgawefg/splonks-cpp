@@ -43,7 +43,7 @@ struct EntityArchetype {
     EntityDisplayState display_state = EntityDisplayState::Neutral;
     float counter_a = 0.0F;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
-    std::optional<EntityPassiveItem> passive_item = std::nullopt;
+    std::optional<EffectId> pickup_effect = std::nullopt;
     std::optional<SoundEffect> death_sound = std::nullopt;
     EntityOnDeath on_death = nullptr;
     EntityOnUse on_use = nullptr;

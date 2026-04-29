@@ -1,5 +1,4 @@
 #include "entities/common/common.hpp"
-#include "entities/meathead.hpp"
 
 #include "on_damage_effects.hpp"
 
@@ -36,13 +35,25 @@ std::optional<AudioAssetId> GetCrushAudioAssetId(EntityType type_) {
 
 void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    DispatchEffectEventToAll(
+        state,
+        &audio,
+        EffectEvent{
+            .type = EffectEventType::Death,
+            .target_vid = entity.vid,
+            .world_pos = entity.GetCenter(),
+        }
+    );
+    if (entity.health > 0 && entity.condition != EntityCondition::Dead) {
+        return;
+    }
+
     const std::optional<AudioAssetId> sound_effect =
         entity.stone ? std::optional<AudioAssetId>(audio_asset_ids::PotShatter)
                      : entity.death_sound;
     if (sound_effect.has_value()) {
         (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
     }
-    entities::meathead::OnEntityDeathForMeathead(entity_idx, state, audio);
     if (entity.on_death != nullptr) {
         entity.on_death(entity_idx, state, audio);
     }
@@ -99,6 +110,10 @@ void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
     }
 }
 
+bool DeathWasConsumed(const Entity& entity) {
+    return entity.health > 0 && entity.condition != EntityCondition::Dead;
+}
+
 bool CanEntityTakeDamageType(const Entity& entity, DamageType damage_type) {
     switch (entity.damage_vulnerability) {
     case DamageVulnerability::AttackingOnly:
@@ -144,6 +159,9 @@ DamageResult TryDamageEntity(
         if (entity.stone && damage_type == DamageType::Explosion) {
             entity.health = 0;
             DieIfDead(entity_idx, state, audio);
+            if (DeathWasConsumed(entity)) {
+                return DamageResult::Hurt;
+            }
             return DamageResult::Died;
         }
         bool do_damage_calculation = false;
@@ -151,6 +169,9 @@ DamageResult TryDamageEntity(
             entity.health = 0;
             (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
             DieIfDead(entity_idx, state, audio);
+            if (DeathWasConsumed(entity)) {
+                return DamageResult::Hurt;
+            }
             if (!entity.active) {
                 return DamageResult::Died;
             }
@@ -167,6 +188,9 @@ DamageResult TryDamageEntity(
                 entity.health = 0;
                 (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
                 DieIfDead(entity_idx, state, audio);
+                if (DeathWasConsumed(entity)) {
+                    return DamageResult::Hurt;
+                }
                 return DamageResult::Died;
             } else if (damage_type == DamageType::Fall) {
                 do_damage_calculation = true;
@@ -198,6 +222,9 @@ DamageResult TryDamageEntity(
             entity.health = 0;
             (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
             DieIfDead(entity_idx, state, audio);
+            if (DeathWasConsumed(entity)) {
+                return DamageResult::Hurt;
+            }
             return DamageResult::Died;
         }
     }

@@ -482,6 +482,11 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     level_kind = std::clamp(level_kind, 0, kDebugLevelKindCount - 1);
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
     if (previous_level_kind != state.debug_level.kind &&
+        (state.debug_level.kind == DebugLevelKind::TrapDoorTest ||
+         state.debug_level.kind == DebugLevelKind::CrusherTrapTest)) {
+        graphics.camera_mode = CameraMode::Follow;
+    }
+    if (previous_level_kind != state.debug_level.kind &&
         (state.debug_level.kind == DebugLevelKind::BowlingTest ||
          state.debug_level.kind == DebugLevelKind::OpposingBodySmack ||
          state.debug_level.kind == DebugLevelKind::BoulderTest ||
@@ -498,7 +503,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             if (!entity.active || !IsPlayerLikeEntityType(entity.type_)) {
                 continue;
             }
-            SetPassiveItem(entity, EntityPassiveItem::Gloves, true);
+            SetEffect(entity, EffectId::Gloves, true);
         }
     }
 
@@ -512,6 +517,20 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         const char* maze_room_names[] = {"RoomA", "RoomB", "RoomC"};
         ImGui::Combo("Maze Room", &maze_room, maze_room_names, IM_ARRAYSIZE(maze_room_names));
         state.debug_level.maze_door_test.room = static_cast<MazeDoorTestRoom>(maze_room);
+    } else if (state.debug_level.kind == DebugLevelKind::CrusherTrapTest) {
+        ImGui::SliderInt(
+            "Squisher Sensor Tiles",
+            &state.debug_level.crusher_trap_test.squisher_sensor_tiles,
+            0,
+            256
+        );
+        ImGui::TextUnformatted("0 = full stage reach");
+        ImGui::SliderInt(
+            "Stress Squisher Count",
+            &state.debug_level.crusher_trap_test.stress_squisher_count,
+            0,
+            static_cast<int>(EntityManager::kMaxNumEntities - 8)
+        );
     }
 
     if (ImGui::Button("Regenerate")) {
@@ -528,6 +547,9 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             state.debug_level.kind == DebugLevelKind::SacAltarTest ||
             state.debug_level.kind == DebugLevelKind::SpikeTest) {
             apply_stage_fit_camera();
+        } else if (state.debug_level.kind == DebugLevelKind::TrapDoorTest ||
+                   state.debug_level.kind == DebugLevelKind::CrusherTrapTest) {
+            graphics.camera_mode = CameraMode::Follow;
         }
         graphics.ResetTileVariations();
         InvalidateStageLighting(state);

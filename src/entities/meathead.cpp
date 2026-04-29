@@ -15,9 +15,9 @@ namespace splonks::entities::meathead {
 
 namespace {
 
-constexpr float kMeatheadPickupRange = 16.0F;
-constexpr std::uint32_t kMeatheadPointsPerHeal = 10;
 constexpr std::uint32_t kMeatheadPreviewIntervalFrames = 300;
+constexpr std::int32_t kMeatheadPointsPerHeal = 10;
+constexpr float kMeatheadPickupRange = 16.0F;
 constexpr float kMeatheadPopupSize = 9.0F;
 constexpr int kMeatheadPopupSearchTiles = 2;
 
@@ -79,39 +79,6 @@ std::optional<Vec2> FindMeatheadPopupCenter(const Entity& player, const State& s
     const float center_x = static_cast<float>(choice.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
     const float support_top_y = static_cast<float>((choice.y + 1) * static_cast<int>(kTileSize));
     return Vec2::New(center_x, support_top_y - (kMeatheadPopupSize * 0.5F));
-}
-
-bool IsExcludedDeathType(EntityType type_) {
-    switch (type_) {
-    case EntityType::None:
-    case EntityType::Player:
-    case EntityType::FlappyBee:
-    case EntityType::FleshGuy:
-    case EntityType::BasicExit:
-    case EntityType::Shop:
-    case EntityType::SignGeneral:
-    case EntityType::SignBomb:
-    case EntityType::SignWeapon:
-    case EntityType::SignRare:
-    case EntityType::SignClothing:
-    case EntityType::SignCraps:
-    case EntityType::SignKissing:
-    case EntityType::StoreLight:
-    case EntityType::MouseTrailer:
-    case EntityType::GhostBall:
-    case EntityType::SacAltar:
-    case EntityType::SacAltarTopper:
-    case EntityType::Altar:
-    case EntityType::KaliHead:
-    case EntityType::BallAndChainBall:
-    case EntityType::CobraSpit:
-    case EntityType::BaseballBat:
-    case EntityType::Rope:
-    case EntityType::Meathead:
-        return true;
-    default:
-        return false;
-    }
 }
 
 std::optional<Vec2> SpawnMeatheadPopup(State& state, const Entity& player) {
@@ -195,7 +162,7 @@ void StepEntityLogicAsMeathead(
 } // namespace
 
 void MaybePreviewMeatheadPassive(const Entity& player, State& state) {
-    if (!HasPassiveItem(player, EntityPassiveItem::Meathead)) {
+    if (!HasEffect(player, EffectId::Meathead)) {
         return;
     }
 
@@ -207,42 +174,40 @@ void MaybePreviewMeatheadPassive(const Entity& player, State& state) {
     SpawnMeatheadPopup(state, player);
 }
 
-void OnEntityDeathForMeathead(std::size_t entity_idx, State& state, Audio& audio) {
-    if (!state.player_vid.has_value()) {
-        return;
-    }
-    if (entity_idx >= state.entity_manager.entities.size()) {
-        return;
-    }
-
-    const Entity& victim = state.entity_manager.entities[entity_idx];
-    if (!victim.active || victim.condition != EntityCondition::Dead || IsExcludedDeathType(victim.type_)) {
-        return;
-    }
-
-    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        return;
-    }
-    if (!HasPassiveItem(*player, EntityPassiveItem::Meathead)) {
-        return;
-    }
-
-    const AABB player_collect_area = ExpandAabb(player->GetAABB(), kMeatheadPickupRange);
-    if (!WorldAabbsIntersect(state.stage, player_collect_area, victim.GetAABB())) {
-        return;
-    }
-
+void OnMeatheadEffectEvent(
+    Entity& owner,
+    EffectInstance& effect,
+    State& state,
+    Audio* audio,
+    const EffectEvent& event
+) {
     (void)audio;
-    player->meathead_points += 1;
+    if (event.type != EffectEventType::Death || !event.target_vid.has_value()) {
+        return;
+    }
+
+    const Entity* const victim = state.entity_manager.GetEntity(*event.target_vid);
+    if (victim == nullptr || !victim->active || victim->condition != EntityCondition::Dead) {
+        return;
+    }
+    if (!owner.active || owner.condition == EntityCondition::Dead) {
+        return;
+    }
+
+    const AABB collect_area = ExpandAabb(owner.GetAABB(), kMeatheadPickupRange);
+    if (!WorldAabbsIntersect(state.stage, collect_area, victim->GetAABB())) {
+        return;
+    }
+
+    effect.count += 1;
     bool granted_health = false;
-    while (player->meathead_points >= kMeatheadPointsPerHeal) {
-        player->meathead_points -= kMeatheadPointsPerHeal;
-        player->health += 1;
+    while (effect.count >= kMeatheadPointsPerHeal) {
+        effect.count -= kMeatheadPointsPerHeal;
+        owner.health += 1;
         granted_health = true;
     }
     if (granted_health) {
-        PlayMeatheadHealFeedback(state, *player);
+        PlayMeatheadHealFeedback(state, owner);
     }
 }
 
@@ -262,7 +227,7 @@ extern const EntityArchetype kMeatheadArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
-    .passive_item = EntityPassiveItem::Meathead,
+    .pickup_effect = EffectId::Meathead,
     .step_logic = StepEntityLogicAsMeathead,
     .on_entity_contact = OnEntityContactAsMeathead,
     .alignment = Alignment::Neutral,

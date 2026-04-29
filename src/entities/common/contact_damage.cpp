@@ -218,7 +218,7 @@ void ApplyHurtOnContact(
 
 void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    if (HasPassiveItem(entity, EntityPassiveItem::SpikeShoes)) {
+    if (GetModifiedEffectValue(entity, EffectModifierTarget::SpikeDamageTaken, 1.0F) <= 0.0F) {
         return;
     }
     if (entity.IsClimbing() || entity.IsHanging()) {

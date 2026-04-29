@@ -26,9 +26,11 @@ enum class DebugLevelKind {
     SacAltarTest,
     ArrowTrapTest,
     SpikeTest,
+    TrapDoorTest,
+    CrusherTrapTest,
 };
 
-constexpr int kDebugLevelKindCount = static_cast<int>(DebugLevelKind::SpikeTest) + 1;
+constexpr int kDebugLevelKindCount = static_cast<int>(DebugLevelKind::CrusherTrapTest) + 1;
 
 enum class StageLoadTargetKind {
     StageType,

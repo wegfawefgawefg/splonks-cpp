@@ -2,6 +2,7 @@
 
 #include "entity/core_types.hpp"
 #include "entity/callbacks.hpp"
+#include "effects.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
@@ -9,6 +10,7 @@
 #include "stage.hpp"
 #include "utils.hpp"
 
+#include <array>
 #include <optional>
 #include <cstdint>
 #include <tuple>
@@ -17,23 +19,6 @@
 namespace splonks {
 
 constexpr unsigned int kJumpDelayFrames = 1;
-
-enum class EntityPassiveItem : std::uint8_t {
-    Gloves,
-    Spectacles,
-    Compass,
-    Mitt,
-    SpringShoes,
-    SpikeShoes,
-    UdjatEye,
-    Meathead,
-    Parachute,
-    Count,
-};
-
-enum class EntityTemporaryEffect : std::uint8_t {
-    NoGravityUntilContact,
-};
 
 struct UseState {
     bool down = false;
@@ -64,6 +49,7 @@ struct Entity {
     bool stone = false;
     bool wanted = false;
     bool crusher_pusher = false;
+    bool pushable = false;
     bool can_stomp = false;
     bool can_be_stomped = true;
     bool can_collect_pickups = false;
@@ -88,7 +74,6 @@ struct Entity {
     float max_speed = 7.0F;
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
     float throw_velocity_scale = 1.0F;
-    std::uint32_t temporary_effect_flags = 0;
     Vec2 size;
     float dist_traveled_this_frame = 0.0F;
     LeftOrRight facing = LeftOrRight::Left;
@@ -104,9 +89,8 @@ struct Entity {
     bool can_hang_wall = false;
     std::uint32_t hang_count = 0;
     bool holding = false;
-    std::uint64_t passive_item_flags = 0;
-    std::optional<EntityPassiveItem> passive_item = std::nullopt;
-    std::uint32_t meathead_points = 0;
+    BoxedEntityEffects effects;
+    std::optional<EffectId> pickup_effect = std::nullopt;
     std::uint32_t money = 0;
     Buyable buyable;
     std::optional<VID> back_vid;
@@ -124,6 +108,7 @@ struct Entity {
     bool vanish_on_death = false;
     bool affected_by_ground_friction = true;
     float support_ground_friction = 0.85F;
+    float push_acc = 0.0F;
     std::optional<FrameDataId> damage_animation = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
@@ -218,12 +203,7 @@ void StopUsingEntity(Entity& entity);
 bool HasMovementFlag(const Entity& entity, EntityMovementFlag movement_flag);
 void SetMovementFlag(Entity& entity, EntityMovementFlag movement_flag, bool enabled);
 void ClearTransientMovementFlags(Entity& entity);
-bool HasTemporaryEffect(const Entity& entity, EntityTemporaryEffect effect);
-void SetTemporaryEffect(Entity& entity, EntityTemporaryEffect effect, bool enabled);
-const char* PassiveItemToString(EntityPassiveItem passive_item);
-bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item);
-void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled);
-bool TryCollectPassiveItem(Entity& entity, const Entity& pickup);
+bool TryCollectEffectPickup(Entity& entity, const Entity& pickup);
 bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& pickup);
 bool CanRevealEmbeddedTreasure(const Entity& entity);
 void EnableStone(Entity& entity);

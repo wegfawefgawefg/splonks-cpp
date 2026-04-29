@@ -643,6 +643,7 @@ extern const EntityArchetype kTeleporterBackpackArchetype{
     .can_be_picked_up = true,
     .impassable = false,
     .hurt_on_contact = false,
+    .can_be_stomped = false,
     .can_go_on_back = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,

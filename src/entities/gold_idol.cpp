@@ -165,13 +165,17 @@ void StepEntityLogicAsGoldIdol(
     if (idol.grounded && !idol.held_by_vid.has_value()) {
         if (const std::optional<std::size_t> shop_idx = FindIntersectingShopIdx(idol, state)) {
             (void)shop_idx;
-            RedeemGoldIdol(entity_idx, kGoldIdolShopValue, audio_asset_ids::CashRegister, state, graphics, audio);
+            const std::uint32_t amount =
+                idol.counter_b > 0.0F ? static_cast<std::uint32_t>(idol.counter_b) : kGoldIdolShopValue;
+            RedeemGoldIdol(entity_idx, amount, audio_asset_ids::CashRegister, state, graphics, audio);
             return;
         }
     }
 
     if (entities::basic_exit::IsEntityTouchingBasicExit(idol, state, graphics)) {
-        RedeemGoldIdol(entity_idx, kGoldIdolExitValue, audio_asset_ids::GoldStack, state, graphics, audio);
+        const std::uint32_t amount =
+            idol.counter_a > 0.0F ? static_cast<std::uint32_t>(idol.counter_a) : kGoldIdolExitValue;
+        RedeemGoldIdol(entity_idx, amount, audio_asset_ids::GoldStack, state, graphics, audio);
         return;
     }
 }
@@ -191,6 +195,8 @@ extern const EntityArchetype kGoldIdolArchetype{
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
+    .counter_a = static_cast<float>(kGoldIdolExitValue),
+    .counter_b = static_cast<float>(kGoldIdolShopValue),
     .damage_vulnerability = DamageVulnerability::CrushingOnly,
     .projectile_contact_damage_amount = 0,
     .step_logic = StepEntityLogicAsGoldIdol,

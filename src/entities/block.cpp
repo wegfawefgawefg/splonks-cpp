@@ -20,6 +20,7 @@ constexpr float kControlledBlockMoveAcc = 0.18F;
 constexpr float kControlledBlockSlideVel = 3.25F;
 constexpr std::uint32_t kControlledBlockSlideCooldownFrames = 120;
 constexpr float kBlockTrailSmokeDistInterval = 14.0F;
+constexpr float kBlockPushAcc = 0.2F;
 
 void StepControlledBlock(Entity& block, const controls::ControlIntent& control) {
     if (block.attack_delay_countdown > 0) {
@@ -139,8 +140,10 @@ extern const EntityArchetype kBlockArchetype{
     .impassable = true,
     .hurt_on_contact = false,
     .crusher_pusher = true,
+    .pushable = true,
     .vanish_on_death = true,
     .can_be_stunned = false,
+    .push_acc = kBlockPushAcc,
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

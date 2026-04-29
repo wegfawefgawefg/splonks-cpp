@@ -5541,9 +5541,9 @@ sprites:
       w: 12
       h: 8
     cbox:
-      x: 3
+      x: 2
       y: 5
-      w: 9
+      w: 10
       h: 7
     tile: false
     emit_point:
@@ -5571,9 +5571,9 @@ sprites:
       w: 12
       h: 8
     cbox:
-      x: 1
+      x: 0
       y: 10
-      w: 11
+      w: 12
       h: 3
     tile: false
     emit_point:
@@ -5601,9 +5601,9 @@ sprites:
       w: 12
       h: 8
     cbox:
-      x: 1
+      x: 0
       y: 10
-      w: 11
+      w: 12
       h: 5
     tile: false
     emit_point:
@@ -7405,6 +7405,726 @@ sprites:
       y: 0
       w: 10
       h: 10
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 400
+      w: 16
+      h: 16
+    name: "mitt_no_grav"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 7
+    tags: []
+    pbox:
+      x: 2
+      y: 0
+      w: 11
+      h: 16
+    cbox:
+      x: 2
+      y: 0
+      w: 11
+      h: 17
+    tile: false
+    emit_point:
+      x: 8
+      y: 5
+  - path: "entities.png"
+    aabb:
+      x: 53
+      y: 438
+      w: 8
+      h: 8
+    name: "bow_loose_empty"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 4
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 8
+    cbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 4
+  - path: "entities.png"
+    aabb:
+      x: 65
+      y: 438
+      w: 8
+      h: 8
+    name: "bow_pull_empty"
+    frame: 0
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 4
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 5
+      h: 8
+    cbox:
+      x: 3
+      y: 0
+      w: 5
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 77
+      y: 438
+      w: 9
+      h: 8
+    name: "bow_pull_empty"
+    frame: 1
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 6
+      h: 8
+    cbox:
+      x: 3
+      y: 0
+      w: 6
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 89
+      y: 438
+      w: 10
+      h: 8
+    name: "bow_pull_empty"
+    frame: 2
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 7
+      h: 8
+    cbox:
+      x: 3
+      y: 0
+      w: 7
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 53
+      y: 447
+      w: 8
+      h: 8
+    name: "bow_loose_loaded"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 5
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 7
+      h: 8
+    cbox:
+      x: 0
+      y: 0
+      w: 7
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 65
+      y: 448
+      w: 8
+      h: 8
+    name: "bow_pull_loaded"
+    frame: 0
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 4
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 5
+      h: 8
+    cbox:
+      x: 3
+      y: 0
+      w: 5
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 77
+      y: 448
+      w: 9
+      h: 8
+    name: "bow_pull_loaded"
+    frame: 2
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 6
+      h: 8
+    cbox:
+      x: 3
+      y: 0
+      w: 6
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 89
+      y: 448
+      w: 10
+      h: 8
+    name: "bow_pull_loaded"
+    frame: 3
+    duration: 4
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 3
+      y: 0
+      w: 7
+      h: 8
+    cbox:
+      x: 3
+      y: 0
+      w: 7
+      h: 8
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 36
+      y: 441
+      w: 5
+      h: 7
+    name: "ankh"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 2
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 7
+    cbox:
+      x: 0
+      y: 0
+      w: 5
+      h: 7
+    tile: false
+    emit_point:
+      x: 3
+      y: 3
+  - path: "entities.png"
+    aabb:
+      x: 0
+      y: 448
+      w: 16
+      h: 16
+    name: "beam_emitter"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 16
+      y: 448
+      w: 16
+      h: 16
+    name: "beam"
+    frame: 0
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 8
+    tags: []
+    pbox:
+      x: 6
+      y: 0
+      w: 4
+      h: 16
+    cbox:
+      x: 6
+      y: 0
+      w: 4
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 32
+      y: 448
+      w: 16
+      h: 16
+    name: "beam"
+    frame: 1
+    duration: 2
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 6
+      y: 0
+      w: 4
+      h: 16
+    cbox:
+      x: 6
+      y: 0
+      w: 4
+      h: 16
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 114
+      y: 147
+      w: 12
+      h: 13
+    name: "crystal_idol"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 5
+      y: 6
+    tags: []
+    pbox:
+      x: 0
+      y: 1
+      w: 12
+      h: 12
+    cbox:
+      x: 0
+      y: 1
+      w: 12
+      h: 12
+    tile: false
+    emit_point:
+      x: 5
+      y: 5
+  - path: "entities.png"
+    aabb:
+      x: 224
+      y: 272
+      w: 16
+      h: 16
+    name: "mantrap"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 9
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 240
+      y: 272
+      w: 16
+      h: 16
+    name: "mantrap_walk"
+    frame: 0
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 272
+      y: 272
+      w: 16
+      h: 16
+    name: "mantrap_eat"
+    frame: 0
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 10
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    tile: false
+    emit_point:
+      x: 8
+      y: 10
+  - path: "entities.png"
+    aabb:
+      x: 256
+      y: 272
+      w: 16
+      h: 16
+    name: "mantrap_walk"
+    frame: 1
+    duration: 8
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 288
+      y: 272
+      w: 16
+      h: 16
+    name: "mantrap_eat"
+    frame: 1
+    duration: 6
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 10
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    tile: false
+    emit_point:
+      x: 8
+      y: 10
+  - path: "entities.png"
+    aabb:
+      x: 304
+      y: 272
+      w: 16
+      h: 16
+    name: "mantrap_eat"
+    frame: 2
+    duration: 60
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 10
+    tags: []
+    pbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    cbox:
+      x: 3
+      y: 3
+      w: 9
+      h: 13
+    tile: false
+    emit_point:
+      x: 8
+      y: 10
+  - path: "entities.png"
+    aabb:
+      x: 208
+      y: 272
+      w: 16
+      h: 32
+    name: "idle_trap_door"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 16
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 32
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 32
+    tile: false
+    emit_point:
+      x: 8
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 224
+      y: 288
+      w: 16
+      h: 16
+    name: "thwomp_trap"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 256
+      y: 288
+      w: 16
+      h: 16
+    name: "squisher_block"
+    frame: 0
+    duration: 120
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
+  - path: "entities.png"
+    aabb:
+      x: 240
+      y: 288
+      w: 16
+      h: 16
+    name: "squisher_block"
+    frame: 1
+    duration: 15
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
+    cbox:
+      x: 0
+      y: 0
+      w: 0
+      h: 0
     tile: false
     emit_point:
       x: 0

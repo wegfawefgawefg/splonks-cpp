@@ -8,7 +8,7 @@ namespace splonks::entities::sign {
 
 // TODO(classic): Sign is not implemented yet. This archetype only keeps Classic Quest data spawnable.
 extern const EntityArchetype kSignArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Sign);
+    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::Sign);
 
 extern const EntityArchetype kSignGeneralArchetype{
     .type_ = EntityType::SignGeneral,

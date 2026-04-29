@@ -92,6 +92,17 @@ std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplaySta
         default:
             return std::nullopt;
         }
+    case EntityType::Mantrap:
+        switch (entity.display_state) {
+        case EntityDisplayState::Neutral:
+        case EntityDisplayState::Stunned:
+        case EntityDisplayState::Dead:
+            return DisplayStateFrameDataSelection{frame_data_ids::Mantrap, true, false, 0};
+        case EntityDisplayState::Walk:
+            return DisplayStateFrameDataSelection{frame_data_ids::MantrapWalk, true, false, 0};
+        default:
+            return std::nullopt;
+        }
     case EntityType::Caveman:
         switch (entity.display_state) {
         case EntityDisplayState::Neutral:

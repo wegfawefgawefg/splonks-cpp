@@ -82,7 +82,7 @@ glyphs:
     spawn_random:
       - entity: chest
         weight: 1
-      - entity: crate
+      - entity: box
         weight: 1
       - entity: emerald_big
         weight: 1

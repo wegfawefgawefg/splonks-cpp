@@ -855,19 +855,21 @@ void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
     (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
     if (entity.grounded) {
-        SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
+        DispatchEffectEventToEntity(entity, state, nullptr, EffectEvent{.type = EffectEventType::Grounded});
         if (entity.vel.y > 0.0F) {
             entity.vel.y = 0.0F;
         }
         return;
     }
     if (entity.collided_last_frame) {
-        SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
+        DispatchEffectEventToEntity(entity, state, nullptr, EffectEvent{.type = EffectEventType::BlockingContact});
     }
-    if (HasTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact)) {
+    const float gravity_scale =
+        GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F);
+    if (gravity_scale == 0.0F) {
         return;
     }
-    entity.acc.y += state.stage.gravity;
+    entity.acc.y += state.stage.gravity * gravity_scale;
 }
 
 void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
@@ -1002,6 +1004,18 @@ void DoTileCollisions(std::size_t entity_idx, State& state) {
     entity.collided_last_frame = entity.collided;
     entity.collided = false;
     MoveEntityPixelStep(entity_idx, state, true, false, nullptr, nullptr);
+}
+
+void DoEntityCollisions(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    entity.collided_last_frame = entity.collided;
+    entity.collided = false;
+    MoveEntityPixelStep(entity_idx, state, false, true, &graphics, &audio);
 }
 
 } // namespace splonks::entities::common

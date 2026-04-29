@@ -1,134 +1,82 @@
 # Passives And Effects Notes
 
-## Current State
+## Current Shape
 
-Players and other entities currently use a few separate mechanisms for persistent and temporary gameplay state:
+Persistent passives and temporary gameplay states now use the same fixed-slot effect system.
 
-- `passive_item_flags` stores persistent passive item ownership, such as mitt, spring shoes, spike shoes, compass, and meathead.
-- `movement_flags` stores transient movement state, such as walking, running, pushing, climbing, and hanging.
-- dedicated timers store specific state, such as stun, fall, projectile contact, and throw immunity.
-- entity-local `counter_a` through `counter_d` store archetype-specific scratch state.
-- `temporary_effect_flags` is a small interim bitset for simple temporary effects. It currently supports `NoGravityUntilContact` for mitt-thrown items.
-
-This is workable for the current scope, but the passive bitset and one-off timers should not grow into a large set of hardcoded special cases scattered through engine and gameplay code.
-
-## Terms
-
-`Passive`: persistent owned capability or upgrade. It is usually shown in the UI and saved on the character. Examples: mitt, spring shoes, spike shoes, compass, meathead.
-
-`Temporary effect`: runtime state applied to an entity for a limited duration or until a lifecycle event clears it. Examples: no gravity until contact, burning, frozen, slow, invulnerable until landing.
-
-`Modifier`: a simple numeric or boolean adjustment derived from passives and temporary effects. Examples: gravity scale, jump impulse bonus, spike immunity, movement speed scale, damage scale.
-
-`Gameplay event`: a fact emitted by gameplay code that passives/effects can react to. Examples: throw, jump, stomp, damage dealt, damage taken, death, tile contact, entity contact, pickup.
-
-## Preferred Long-Term Shape
-
-Keep passives and effects separate, but let both feed an `EntityModifiers` aggregate.
-
-Passives should eventually move away from a raw bitset enum toward a fixed-size list of passive ids:
+Entities store:
 
 ```cpp
-struct PassiveSlot {
-    PassiveId id;
-};
-
-PassiveSlot passives[kMaxPassives];
-std::uint8_t passive_count;
+BoxedEntityEffects effects;
 ```
 
-Each passive id points to a C++ archetype:
+`BoxedEntityEffects` is empty for normal entities. It allocates one fixed-slot `EntityEffects` payload only when an entity actually has effects, and deep-copies that payload for replay snapshots.
+
+`EffectInstance` is intentionally generic:
+
+- `id`: resolves to a C++ effect archetype.
+- `count`: stack count, charges, or archetype-specific accumulated points.
+- `value`: archetype-specific scalar.
+- `frames_remaining`: timer for future timed effects.
+
+Pickup entities point at an effect with `pickup_effect`. Collecting the pickup adds that effect to the collector.
+
+## Effect Archetypes
+
+Effect behavior is registered in C++ archetypes.
+
+Each archetype can provide:
+
+- a debug name
+- a HUD icon
+- a UI kind, such as hidden or passive
+- simple numeric modifiers
+- an optional event handler
+- an optional expiry predicate
+
+Common systems should not branch on concrete passive names. They should ask for an effective value:
 
 ```cpp
-struct PassiveArchetype {
-    PassiveId id;
-    FrameDataId icon;
-    EntityModifiers static_modifiers;
-    GameplayEventMask event_mask;
-    PassiveEventHandler on_event;
-};
+GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F);
 ```
 
-Temporary effects should use fixed-size slots, not heap allocations:
+Special behavior belongs in the effect event handler. Example: mitt reacts to a throw event and applies `NoGravityUntilContact` to the thrown entity.
 
-```cpp
-struct ActiveEffect {
-    EffectId id;
-    std::uint32_t frames;
-    float amount;
-};
+## Implemented Effects
 
-ActiveEffect effects[kMaxEffects];
-std::uint8_t effect_count;
-```
+- `Gloves`: persistent passive marker used by hang logic.
+- `Spectacles`: reveals hidden treasure via `HiddenTreasureVisibility`.
+- `Compass`: persistent passive consumed by HUD compass rendering.
+- `Mitt`: adds throw boost and applies no-gravity-until-contact to thrown items.
+- `SpringShoes`: persistent passive used by jump and stomp bounce logic.
+- `SpikeShoes`: overrides spike damage to zero and raises stomp damage.
+- `UdjatEye`: reveals hidden treasure via `HiddenTreasureVisibility`.
+- `Meathead`: persistent passive with point count stored in `EffectInstance::count`.
+- `Parachute`: persistent counted effect consumed on deploy.
+- `NoGravityUntilContact`: hidden temporary effect cleared on grounded or blocking contact events.
 
-Each effect id points to a C++ archetype:
+## Remaining Cleanup
 
-```cpp
-struct EffectArchetype {
-    EffectId id;
-    EntityModifiers static_modifiers;
-    GameplayEventMask event_mask;
-    EffectEventHandler on_event;
-};
-```
+Some old passive behavior still uses direct effect identity checks because there is not yet a useful generic modifier target for it.
 
-At the start of each entity step, rebuild modifiers from passives and active effects:
+Examples:
 
-```cpp
-entity.modifiers = EntityModifiers::Identity();
-ApplyPassiveModifiers(entity);
-ApplyEffectModifiers(entity);
-```
+- gloves side-hang eligibility
+- spring shoe jump/bounce sound feedback
+- compass HUD rendering
+- parachute deployment visuals
 
-Physics, combat, and UI read the already-computed modifiers instead of repeatedly checking passives and effects directly.
+Those checks are acceptable for now because they are in gameplay/content-facing code, not engine plumbing. If more effects need the same interaction, add a generic modifier target or gameplay event rather than adding more scattered concrete checks.
 
-## Why Event Handlers Instead Of Many Hook Fields
+## Future Direction
 
-A passive archetype with fields like `on_throw`, `on_jump`, `on_stomp`, and `on_spike_contact` is too opinionated. It forces the passive API to grow every time a new kind of interaction matters.
+Timed effects should use `frames_remaining` and a timer expiry predicate.
 
-A generic event handler is less opinionated:
+More event types can be added as real use cases appear. Avoid adding opinionated hook fields like `on_jump`, `on_stomp`, and `on_spike_contact` unless the generic event model becomes too vague in practice.
 
-```cpp
-enum class GameplayEventType {
-    Throw,
-    Jump,
-    Stomp,
-    TileContact,
-    EntityContact,
-    DamageDealt,
-    DamageTaken,
-    Death,
-    Pickup,
-};
+Effects and tools remain separate:
 
-struct GameplayEvent {
-    GameplayEventType type;
-    VID actor;
-    VID target;
-    Vec2 pos;
-    Vec2 velocity;
-    DamageType damage_type;
-    unsigned int damage_amount;
-};
-```
+- effects are non-physical state on an entity
+- tools are physical entities that can be held, equipped, bought, dropped, or thrown
 
-Passives/effects can opt into event masks so we do not broadcast every event to every passive.
-
-This gives C++ mod authors real behavior hooks without embedding Lua or inventing a huge data DSL.
-
-## Interim Rule
-
-Until the full system exists, simple temporary mechanics can use `EntityTemporaryEffect` and `temporary_effect_flags`.
-
-Rules for this interim bitset:
-
-- Keep entries generic. Avoid names tied to one item, such as `MittThrow`.
-- Do not put item-specific branching in common engine code.
-- Use common code only for generic behavior, such as "no gravity until contact".
-- If this grows beyond a handful of entries, replace it with fixed-size active effect slots and effect archetypes.
-
-Current interim effect:
-
-- `NoGravityUntilContact`: physics skips gravity while the flag is present. The flag clears when the entity is grounded or after a blocking collision is observed.
-
+This keeps the system C++-native and easy to debug while still allowing future C++ content/mod archetypes.

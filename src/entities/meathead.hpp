@@ -8,6 +8,12 @@ namespace splonks::entities::meathead {
 
 extern const EntityArchetype kMeatheadArchetype;
 void MaybePreviewMeatheadPassive(const Entity& player, State& state);
-void OnEntityDeathForMeathead(std::size_t entity_idx, State& state, Audio& audio);
+void OnMeatheadEffectEvent(
+    Entity& owner,
+    EffectInstance& effect,
+    State& state,
+    Audio* audio,
+    const EffectEvent& event
+);
 
 } // namespace splonks::entities::meathead

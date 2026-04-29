@@ -1,6 +1,7 @@
 #include "entities/arrow_trap.hpp"
 
 #include "audio.hpp"
+#include "effects.hpp"
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
@@ -162,7 +163,7 @@ Entity* SpawnArrow(State& state, const Vec2& center, int direction, const VID& t
     SetEntityAs(*arrow, EntityType::Arrow);
     arrow->SetCenter(center);
     arrow->vel = Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F);
-    arrow->acc = Vec2::New(0.0F, kArrowGravity);
+    arrow->acc = Vec2::New(0.0F, 0.0F);
     arrow->facing = direction < 0 ? LeftOrRight::Left : LeftOrRight::Right;
     arrow->rotation = 0.0F;
     arrow->thrown_by = trap_vid;
@@ -171,6 +172,7 @@ Entity* SpawnArrow(State& state, const Vec2& center, int direction, const VID& t
     arrow->projectile_contact_damage_amount = kArrowDamage;
     arrow->projectile_contact_timer = entities::common::kProjectileContactDuration;
     arrow->can_apply_projectile_contact = false;
+    (void)AddEffect(*arrow, EffectId::NoGravityUntilContact);
     return arrow;
 }
 
@@ -303,7 +305,9 @@ void StepEntityLogicAsArrow(
             std::atan2(arrow.vel.y, horizontal_speed) * (180.0F / 3.14159265F);
         arrow.rotation = arrow.facing == LeftOrRight::Left ? -relative_rotation : relative_rotation;
     }
-    arrow.acc.y += kArrowGravity;
+    const float gravity_scale =
+        GetModifiedEffectValue(arrow, EffectModifierTarget::GravityScale, 1.0F);
+    arrow.acc.y += kArrowGravity * gravity_scale;
 }
 
 bool CanArrowHitEntity(const Entity& arrow, const Entity& other) {
@@ -322,6 +326,56 @@ bool CanArrowHitEntity(const Entity& arrow, const Entity& other) {
     if (arrow.thrown_by.has_value() && other.vid == *arrow.thrown_by) {
         return false;
     }
+    return true;
+}
+
+Entity* GetHeldBow(Entity& collector, State& state) {
+    if (!collector.holding_vid.has_value()) {
+        return nullptr;
+    }
+
+    Entity* const held = state.entity_manager.GetEntityMut(*collector.holding_vid);
+    if (held == nullptr || !held->active || held->type_ != EntityType::Bow) {
+        return nullptr;
+    }
+    return held;
+}
+
+bool TryCollectLooseArrowIntoHeldBow(
+    std::size_t arrow_idx,
+    std::size_t collector_idx,
+    State& state,
+    const Graphics* graphics,
+    Audio* audio
+) {
+    if (graphics == nullptr || audio == nullptr ||
+        arrow_idx >= state.entity_manager.entities.size() ||
+        collector_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    Entity& arrow = state.entity_manager.entities[arrow_idx];
+    Entity& collector = state.entity_manager.entities[collector_idx];
+    if (!arrow.active || arrow.held_by_vid.has_value() || arrow.projectile_contact_timer > 0 ||
+        arrow.buyable.active || !collector.can_collect_pickups) {
+        return false;
+    }
+
+    Entity* const bow = GetHeldBow(collector, state);
+    if (bow == nullptr) {
+        return false;
+    }
+
+    bow->counter_b += 1.0F;
+    if (!bow->entity_a.has_value()) {
+        SetAnimation(
+            *bow,
+            bow->counter_b > 0.0F ? frame_data_ids::BowLooseLoaded
+                                  : frame_data_ids::BowLooseEmpty
+        );
+    }
+    (void)PlayEntityCenterSoundEmitter(state, *bow, audio_asset_ids::Equip);
+    common::DeactivateCollectedPickup(arrow_idx, state, *graphics);
     return true;
 }
 
@@ -361,6 +415,10 @@ entities::common::ContactResolution OnEntityContactAsArrow(
 ) {
     (void)graphics;
     (void)audio;
+    if (TryCollectLooseArrowIntoHeldBow(entity_idx, other_entity_idx, state, graphics, audio)) {
+        return {};
+    }
+
     if (context.phase != entities::common::ContactPhase::SweptEntered || audio == nullptr ||
         entity_idx >= state.entity_manager.entities.size()) {
         return {};

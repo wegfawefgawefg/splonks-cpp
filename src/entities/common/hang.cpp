@@ -14,6 +14,7 @@ namespace splonks::entities::common {
 namespace {
 
 constexpr std::uint32_t kHangCountMax = 3;
+constexpr std::uint32_t kHangCoyoteTimeFrames = 6;
 constexpr int kGroundedDownSideAttachRequiredProbeHits = 2;
 constexpr float kSpringShoeMovementSoundVolume = 0.15F;
 
@@ -399,7 +400,7 @@ bool EntityHasHangGloves(const Entity& entity) {
     if (entity.can_hang_wall) {
         return true;
     }
-    if (HasPassiveItem(entity, EntityPassiveItem::Gloves)) {
+    if (HasEffect(entity, EffectId::Gloves)) {
         return true;
     }
     return false;
@@ -415,11 +416,9 @@ bool IsTryingToHangOnSide(const Entity& entity, const State& state, bool left_si
 }
 
 void StartEntityJump(Entity& entity, const JumpAndClimbTuning& tuning) {
-    const float spring_bonus =
-        HasPassiveItem(entity, EntityPassiveItem::SpringShoes)
-            ? tuning.spring_shoes_jump_impulse_bonus
-            : 0.0F;
-    entity.vel.y = -(tuning.jump_impulse + spring_bonus);
+    const float jump_impulse =
+        GetModifiedEffectValue(entity, EffectModifierTarget::JumpImpulse, tuning.jump_impulse);
+    entity.vel.y = -jump_impulse;
     entity.jump_delay_frame_count = tuning.jump_delay_frames;
     entity.jump_hold_gravity_frames_remaining = tuning.jump_hold_gravity_frames;
     entity.jumped_this_frame = true;
@@ -427,7 +426,7 @@ void StartEntityJump(Entity& entity, const JumpAndClimbTuning& tuning) {
 
 void PlayJumpSoundsForEntity(State& state, Entity& entity) {
     (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Jump);
-    if (HasPassiveItem(entity, EntityPassiveItem::SpringShoes)) {
+    if (HasEffect(entity, EffectId::SpringShoes)) {
         (void)PlayEntityCenterSoundEmitter(
             state,
             entity,
@@ -589,8 +588,10 @@ bool TryCaptureHdHang(
         return false;
     }
 
-    const bool try_left = tuning.auto_ledge_grab || IsTryingToHangOnSide(entity, state, true);
-    const bool try_right = tuning.auto_ledge_grab || IsTryingToHangOnSide(entity, state, false);
+    const bool input_try_left = IsTryingToHangOnSide(entity, state, true);
+    const bool input_try_right = IsTryingToHangOnSide(entity, state, false);
+    const bool try_left = tuning.auto_ledge_grab || input_try_left;
+    const bool try_right = tuning.auto_ledge_grab || input_try_right;
     if (!try_left && !try_right) {
         return false;
     }
@@ -628,6 +629,9 @@ bool TryCaptureHdHang(
                 entity.acc.y = 0.0F;
                 entity.grounded = false;
                 return true;
+            }
+            if (!input_try_left) {
+                return false;
             }
             if (!CanGloveHangBelowCorner(entity, state, true, check_tiles, check_entities)) {
                 return false;
@@ -678,6 +682,9 @@ bool TryCaptureHdHang(
                 entity.acc.y = 0.0F;
                 entity.grounded = false;
                 return true;
+            }
+            if (!input_try_right) {
+                return false;
             }
             if (!CanGloveHangBelowCorner(entity, state, false, check_tiles, check_entities)) {
                 return false;
@@ -736,8 +743,10 @@ void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTunin
     if (mutable_entity.hang_side == LeftOrRight::Left) {
         const bool has_gloves = EntityHasHangGloves(mutable_entity);
         const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, true);
-        if ((has_gloves && !still_trying) ||
-            !IsSideBlockedForHang(mutable_entity, state, true, true, true)) {
+        const bool still_on_side = IsSideBlockedForHang(mutable_entity, state, true, true, true);
+        const bool glove_corner_grab =
+            has_gloves && !still_trying && CanCornerHangOnSide(mutable_entity, state, true, true, true);
+        if (!still_on_side || (has_gloves && !still_trying && !glove_corner_grab)) {
             mutable_entity.hang_side.reset();
             SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
             mutable_entity.hang_count = tuning.hang_wall_release_cooldown_frames;
@@ -745,8 +754,10 @@ void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTunin
     } else if (mutable_entity.hang_side == LeftOrRight::Right) {
         const bool has_gloves = EntityHasHangGloves(mutable_entity);
         const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, false);
-        if ((has_gloves && !still_trying) ||
-            !IsSideBlockedForHang(mutable_entity, state, false, true, true)) {
+        const bool still_on_side = IsSideBlockedForHang(mutable_entity, state, false, true, true);
+        const bool glove_corner_grab =
+            has_gloves && !still_trying && CanCornerHangOnSide(mutable_entity, state, false, true, true);
+        if (!still_on_side || (has_gloves && !still_trying && !glove_corner_grab)) {
             mutable_entity.hang_side.reset();
             SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
             mutable_entity.hang_count = tuning.hang_wall_release_cooldown_frames;
@@ -761,7 +772,7 @@ void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTunin
         mutable_entity.vel.y = 0.0F;
         mutable_entity.acc.y = 0.0F;
         mutable_entity.grounded = false;
-        mutable_entity.coyote_time = tuning.coyote_time_frames;
+        mutable_entity.coyote_time = kHangCoyoteTimeFrames;
     }
 }
 

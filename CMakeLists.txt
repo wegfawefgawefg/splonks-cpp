@@ -142,6 +142,8 @@ add_executable(splonks-cpp
     src/debug/playback_ui_menu.cpp
     src/debug/playback_ui_settings.cpp
     src/direction.cpp
+    src/effects.cpp
+    src/effects/archetypes.cpp
     src/entity.cpp
     src/entity_tool_inventory.cpp
     src/entity/archetype.cpp
@@ -167,7 +169,6 @@ add_executable(splonks-cpp
     src/entities/jaws.cpp
     src/entities/crystal_skull.cpp
     src/entities/bones.cpp
-    src/entities/jar.cpp
     src/entities/trap_block.cpp
     src/entities/ceiling_trap.cpp
     src/entities/tomb_lord.cpp
@@ -182,7 +183,6 @@ add_executable(splonks-cpp
     src/entities/barrier_emitter.cpp
     src/entities/thwomp_trap.cpp
     src/entities/lamp.cpp
-    src/entities/crate.cpp
     src/entities/mantrap.cpp
     src/entities/frog.cpp
     src/entities/monkey.cpp

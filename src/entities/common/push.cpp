@@ -1,6 +1,5 @@
 #include "entities/common/common.hpp"
 
-#include "entities/block.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -92,7 +91,7 @@ void TryPushBlocks(
             QueryEntitiesInAabb(state, try_to_push_zone, entity_vid);
         for (const VID& vid : search_results) {
             const Entity& candidate = state.entity_manager.entities[vid.id];
-            if (candidate.type_ != EntityType::Block) {
+            if (!candidate.pushable) {
                 continue;
             }
             if (Entity* const block_entity = state.entity_manager.GetEntityMut(vid)) {
@@ -106,10 +105,10 @@ void TryPushBlocks(
                 float block_x_acc_delta = 0.0F;
                 if (entity_vel.x > 0.0F && block_br.x > push_zone_left_x &&
                     block_tl.x > push_zone_left_x) {
-                    block_x_acc_delta = block::kBlockPushAcc;
+                    block_x_acc_delta = block_entity->push_acc;
                 } else if (entity_vel.x < 0.0F && block_tl.x < push_zone_right_x &&
                            block_br.x < push_zone_right_x) {
-                    block_x_acc_delta = -block::kBlockPushAcc;
+                    block_x_acc_delta = -block_entity->push_acc;
                 }
                 block_entity->acc.x += block_x_acc_delta;
                 break;

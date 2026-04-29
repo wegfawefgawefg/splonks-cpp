@@ -15,8 +15,6 @@ struct ContactContext;
 
 namespace splonks::entities::block {
 
-constexpr float kBlockPushAcc = 0.2F;
-
 extern const EntityArchetype kBlockArchetype;
 
 void OnDeathAsBlock(std::size_t entity_idx, State& state, Audio& audio);

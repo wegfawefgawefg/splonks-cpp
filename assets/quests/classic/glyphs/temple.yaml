@@ -47,7 +47,7 @@ glyphs:
   - char: "I"
     action: gold_idol
   - char: "B"
-    spawn: trap_block
+    spawn: squisher_block
   - char: "Q"
     action: dice_sign_if_craps
   - char: "q"
@@ -105,7 +105,7 @@ glyphs:
     spawn_random:
       - entity: chest
         weight: 1
-      - entity: crate
+      - entity: box
         weight: 1
   - char: "C"
     spawn: ceiling_trap

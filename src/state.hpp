@@ -93,11 +93,17 @@ struct MazeDoorTestLevelConfig {
     MazeDoorTestRoom room = MazeDoorTestRoom::RoomA;
 };
 
+struct CrusherTrapTestLevelConfig {
+    int stress_squisher_count = 0;
+    int squisher_sensor_tiles = 0;
+};
+
 struct DebugLevelConfig {
     DebugLevelKind kind = DebugLevelKind::HangTest;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
     MazeDoorTestLevelConfig maze_door_test;
+    CrusherTrapTestLevelConfig crusher_trap_test;
 };
 
 struct DebugOverlayState {

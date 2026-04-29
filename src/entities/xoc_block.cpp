@@ -6,6 +6,6 @@ namespace splonks::entities::xoc_block {
 
 // TODO(classic): XocBlock is not implemented yet. This archetype only keeps Classic Quest data spawnable.
 extern const EntityArchetype kXocBlockArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::XocBlock);
+    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::XocBlock);
 
 } // namespace splonks::entities::xoc_block

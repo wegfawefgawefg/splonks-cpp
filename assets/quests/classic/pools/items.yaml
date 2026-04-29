@@ -5,8 +5,6 @@ pools:
         weight: 1
       - entity: cape
         weight: 1
-      - entity: shotgun
-        weight: 1
       - entity: mattock
         weight: 1
       - entity: teleporter
@@ -18,7 +16,7 @@ pools:
       - entity: web_cannon
         weight: 1
       - entity: pistol
-        weight: 1
+        weight: 2
       - entity: mitt
         weight: 1
       - entity: paste
@@ -45,8 +43,6 @@ pools:
         weight: 1
       - entity: cape
         weight: 1
-      - entity: shotgun
-        weight: 1
       - entity: gloves
         weight: 2
       - entity: teleporter
@@ -62,7 +58,7 @@ pools:
       - entity: compass
         weight: 3
       - entity: pistol
-        weight: 3
+        weight: 4
       - entity: machete
         weight: 3
   - id: general_shop_items
@@ -92,12 +88,10 @@ pools:
     entries:
       - entity: web_cannon
         weight: 1
-      - entity: shotgun
-        weight: 1
       - entity: bomb_box
         weight: 2
       - entity: pistol
-        weight: 4
+        weight: 5
       - entity: machete
         weight: 4
       - entity: bomb_bag

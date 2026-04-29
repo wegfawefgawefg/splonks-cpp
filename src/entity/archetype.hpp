@@ -26,6 +26,7 @@ struct EntityArchetype {
     bool can_be_hung_on = true;
     bool hurt_on_contact = false;
     bool crusher_pusher = false;
+    bool pushable = false;
     bool can_stomp = false;
     bool can_be_stomped = true;
     bool vanish_on_death = false;
@@ -36,8 +37,10 @@ struct EntityArchetype {
     bool stun_recovers_while_held = true;
     bool affected_by_ground_friction = true;
     float support_ground_friction = 0.85F;
+    float push_acc = 0.0F;
     float throw_velocity_scale = 1.0F;
     float alpha = 1.0F;
+    bool preserve_held_aim = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     bool render_enabled = true;
     LeftOrRight facing = LeftOrRight::Left;
@@ -50,7 +53,7 @@ struct EntityArchetype {
     DamageType projectile_contact_damage_type = DamageType::Attack;
     unsigned int projectile_contact_damage_amount = 1;
     bool can_apply_projectile_contact = true;
-    std::optional<EntityPassiveItem> passive_item = std::nullopt;
+    std::optional<EffectId> pickup_effect = std::nullopt;
     Buyable buyable{};
     std::optional<FrameDataId> damage_animation = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;

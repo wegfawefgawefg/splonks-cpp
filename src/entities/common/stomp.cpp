@@ -14,7 +14,6 @@ constexpr float kStompHeldJumpBounceVelocityY = -4.5F;
 constexpr float kStompVictimKnockbackVelocityY = -1.0F;
 constexpr float kStompVictimKnockbackVelocityX = 1.0F;
 constexpr unsigned int kStompDamage = 1;
-constexpr unsigned int kSpikeShoesStompDamage = 2;
 constexpr float kSpringShoeMovementSoundVolume = 0.15F;
 
 bool CanEntityAttemptStomp(const Entity& stomper) {
@@ -98,7 +97,7 @@ bool TryApplyStompContactToEntity(
     }
 
     (void)PlayEntityCenterSoundEmitter(state, stomper, audio_asset_ids::Jump);
-    const bool has_spring_shoes = HasPassiveItem(stomper, EntityPassiveItem::SpringShoes);
+    const bool has_spring_shoes = HasEffect(stomper, EffectId::SpringShoes);
     if (has_spring_shoes) {
         (void)PlayEntityCenterSoundEmitter(
             state,
@@ -108,10 +107,13 @@ bool TryApplyStompContactToEntity(
         );
     }
 
-    const unsigned int stomp_damage =
-        HasPassiveItem(stomper, EntityPassiveItem::SpikeShoes)
-            ? kSpikeShoesStompDamage
-            : kStompDamage;
+    const unsigned int stomp_damage = static_cast<unsigned int>(
+        GetModifiedEffectValue(
+            stomper,
+            EffectModifierTarget::StompDamage,
+            static_cast<float>(kStompDamage)
+        )
+    );
     const DamageResult damage_result = TryDamageEntity(
         stomped->vid.id,
         state,
@@ -150,8 +152,12 @@ bool TryApplyStompContactToEntity(
     );
 
     const controls::ControlIntent control = controls::GetControlIntentForEntity(stomper, state);
-    const float spring_bonus = has_spring_shoes ? state.player_tuning.spring_shoes_jump_impulse_bonus : 0.0F;
-    stomper.vel.y = (control.jump ? kStompHeldJumpBounceVelocityY : kStompShortBounceVelocityY) - spring_bonus;
+    const float base_bounce_impulse = control.jump
+        ? -kStompHeldJumpBounceVelocityY
+        : -kStompShortBounceVelocityY;
+    const float bounce_impulse =
+        GetModifiedEffectValue(stomper, EffectModifierTarget::StompBounceImpulse, base_bounce_impulse);
+    stomper.vel.y = -bounce_impulse;
     return true;
 }
 

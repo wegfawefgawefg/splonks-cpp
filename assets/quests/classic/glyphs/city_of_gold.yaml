@@ -44,7 +44,7 @@ glyphs:
   - char: "I"
     action: gold_idol
   - char: "B"
-    spawn: trap_block
+    spawn: squisher_block
   - char: "Q"
     action: dice_sign_if_craps
   - char: "q"

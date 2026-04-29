@@ -196,7 +196,7 @@ bool PlayerHasBackItemType(const Entity& player, State& state, EntityType type_)
 
 bool PlayerOwnsRewardType(const Entity& player, State& state, EntityType type_) {
     const EntityArchetype& archetype = GetEntityArchetype(type_);
-    if (archetype.passive_item.has_value() && HasPassiveItem(player, *archetype.passive_item)) {
+    if (archetype.pickup_effect.has_value() && HasEffect(player, *archetype.pickup_effect)) {
         return true;
     }
     if (IsBackItemType(type_) && PlayerHasBackItemType(player, state, type_)) {

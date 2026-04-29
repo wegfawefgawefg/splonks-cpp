@@ -21,8 +21,10 @@ void RestoreEntityHurtOnContactFromArchetype(Entity& entity) { entity.hurt_on_co
 void RestoreEntityVanishOnDeathFromArchetype(Entity& entity) { entity.vanish_on_death = GetArchetypeForEntity(entity).vanish_on_death; }
 void RestoreEntityAffectedByGroundFrictionFromArchetype(Entity& entity) { entity.affected_by_ground_friction = GetArchetypeForEntity(entity).affected_by_ground_friction; }
 void RestoreEntitySupportGroundFrictionFromArchetype(Entity& entity) { entity.support_ground_friction = GetArchetypeForEntity(entity).support_ground_friction; }
+void RestoreEntityPushableFromArchetype(Entity& entity) { entity.pushable = GetArchetypeForEntity(entity).pushable; }
+void RestoreEntityPushAccFromArchetype(Entity& entity) { entity.push_acc = GetArchetypeForEntity(entity).push_acc; }
 void RestoreEntityThrowVelocityScaleFromArchetype(Entity& entity) { entity.throw_velocity_scale = GetArchetypeForEntity(entity).throw_velocity_scale; }
-void RestoreEntityPassiveItemFromArchetype(Entity& entity) { entity.passive_item = GetArchetypeForEntity(entity).passive_item; }
+void RestoreEntityPickupEffectFromArchetype(Entity& entity) { entity.pickup_effect = GetArchetypeForEntity(entity).pickup_effect; }
 void RestoreEntityBuyableFromArchetype(Entity& entity) { entity.buyable = GetArchetypeForEntity(entity).buyable; }
 void RestoreEntityDamageAnimationFromArchetype(Entity& entity) { entity.damage_animation = GetArchetypeForEntity(entity).damage_animation; }
 void RestoreEntityDamageSoundFromArchetype(Entity& entity) { entity.damage_sound = GetArchetypeForEntity(entity).damage_sound; }

@@ -23,7 +23,7 @@ void ApplyHeldState(Entity& entity) {
     entity.projectile_contact_timer = 0;
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
-    SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
+    RemoveEffect(entity, EffectId::NoGravityUntilContact);
     entity.rotation = 0.0F;
 
 }
@@ -46,12 +46,20 @@ void SyncHeldAttachmentForHolder(
         return;
     }
 
+    const EntityArchetype& holding_archetype = GetEntityArchetype(holding->type_);
+    const bool preserve_held_aim = holding_archetype.preserve_held_aim;
+    const LeftOrRight aimed_facing = holding->facing;
+    const float aimed_rotation = holding->rotation;
+
     holding->has_physics = false;
     holding->can_collide = false;
     holding->held_by_vid = holder.vid;
     holding->attachment_mode = AttachmentMode::Held;
     ApplyHeldState(*holding);
-    holding->facing = holder.facing;
+    holding->facing = preserve_held_aim ? aimed_facing : holder.facing;
+    if (preserve_held_aim) {
+        holding->rotation = aimed_rotation;
+    }
     holding->draw_layer = HasMovementFlag(holder, EntityMovementFlag::Climbing)
                               ? DrawLayer::Background
                               : DrawLayer::Foreground;
@@ -142,7 +150,7 @@ void ReleaseEntityFromHolder(Entity& entity, State& state) {
     RestoreEntityCanCollideFromArchetype(entity);
     RestoreEntityDrawLayerFromArchetype(entity);
     entity.grounded = false;
-    SetTemporaryEffect(entity, EntityTemporaryEffect::NoGravityUntilContact, false);
+    RemoveEffect(entity, EffectId::NoGravityUntilContact);
 }
 
 void DropHeldItemFromEntity(Entity& entity, State& state) {
@@ -175,7 +183,7 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     held->projectile_contact_timer = kProjectileContactDuration;
     held->vel = Vec2::New(throw_x, -1.0F);
     held->acc = Vec2::New(0.0F, 0.0F);
-    SetTemporaryEffect(*held, EntityTemporaryEffect::NoGravityUntilContact, false);
+    RemoveEffect(*held, EffectId::NoGravityUntilContact);
 }
 
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
@@ -247,7 +255,7 @@ void UpdateCarryAndBackItems(
 
         std::optional<VID> trying_to_pick_this_up_vid;
         {
-            const Entity& entity = state.entity_manager.entities[entity_idx];
+            Entity& entity = state.entity_manager.entities[entity_idx];
             const std::optional<VID> entity_back_vid = entity.back_vid;
             if (trying_to_pick_up_these.has_value()) {
                 for (const VID& vid : *trying_to_pick_up_these) {
@@ -287,7 +295,7 @@ void UpdateCarryAndBackItems(
         }
 
         {
-            const Entity& entity = state.entity_manager.entities[entity_idx];
+            Entity& entity = state.entity_manager.entities[entity_idx];
             const VID entity_vid = entity.vid;
             const Vec2 entity_center = entity.GetCenter();
             const bool trying_to_go_down = control.down;
@@ -295,9 +303,11 @@ void UpdateCarryAndBackItems(
             const bool trying_to_go_left = control.left;
             const bool trying_to_go_right = control.right;
             const Vec2 entity_size = entity.size;
-            const bool mitt_throw =
-                HasPassiveItem(entity, EntityPassiveItem::Mitt) &&
-                !(entity.grounded && trying_to_go_down);
+            const float mitt_throw_boost =
+                entity.grounded && trying_to_go_down
+                    ? 0.0F
+                    : GetModifiedEffectValue(entity, EffectModifierTarget::ThrowHorizontalBoost, 0.0F);
+            const bool mitt_throw = mitt_throw_boost != 0.0F;
 
             if (thrown_vid.has_value()) {
                 if (Entity* const thrown = state.entity_manager.GetEntityMut(*thrown_vid)) {
@@ -335,15 +345,25 @@ void UpdateCarryAndBackItems(
                             throw_vel.x < 0.0F ? -1.0F :
                             throw_vel.x > 0.0F ? 1.0F :
                             entity.facing == LeftOrRight::Left ? -1.0F : 1.0F;
-                        throw_vel.x += throw_direction * 6.0F;
+                        throw_vel.x += throw_direction * mitt_throw_boost;
                         if (!trying_to_go_up && !trying_to_go_down) {
                             throw_vel.y = -0.4F;
                         } else if (trying_to_go_down) {
                             throw_vel.y = 6.0F;
                         }
-                        SetTemporaryEffect(*thrown, EntityTemporaryEffect::NoGravityUntilContact, true);
+                        DispatchEffectEventToEntity(
+                            entity,
+                            state,
+                            &audio,
+                            EffectEvent{
+                                .type = EffectEventType::Throw,
+                                .actor_vid = entity.vid,
+                                .target_vid = thrown->vid,
+                                .world_pos = thrown->GetCenter(),
+                            }
+                        );
                     } else {
-                        SetTemporaryEffect(*thrown, EntityTemporaryEffect::NoGravityUntilContact, false);
+                        RemoveEffect(*thrown, EffectId::NoGravityUntilContact);
                     }
 
                     if (entity_size.y <= thrown->size.y) {
@@ -409,7 +429,7 @@ void UpdateCarryAndBackItems(
                 item_taken_off_back->projectile_contact_damage_type = back_item_archetype.projectile_contact_damage_type;
                 item_taken_off_back->projectile_contact_damage_amount = back_item_archetype.projectile_contact_damage_amount;
                 item_taken_off_back->projectile_contact_timer = kProjectileContactDuration;
-                SetTemporaryEffect(*item_taken_off_back, EntityTemporaryEffect::NoGravityUntilContact, false);
+                RemoveEffect(*item_taken_off_back, EffectId::NoGravityUntilContact);
             }
 
             Entity& entity = state.entity_manager.entities[entity_idx];

@@ -9,7 +9,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 64;
+constexpr std::uint32_t kRecordingVersion = 65;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -83,6 +83,37 @@ bool ReadOptionalPod(std::istream& in, std::optional<T>& value) {
     return true;
 }
 
+void WriteEntityEffects(std::ostream& out, const BoxedEntityEffects& effects_box) {
+    const EntityEffects* const effects = effects_box.get();
+    const std::uint8_t count = effects != nullptr ? effects->count : 0;
+    WritePod(out, count);
+    for (std::uint8_t i = 0; i < count; ++i) {
+        WritePod(out, effects->effects[i]);
+    }
+}
+
+bool ReadEntityEffects(std::istream& in, BoxedEntityEffects& effects_box) {
+    std::uint8_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    if (count > kMaxEntityEffects) {
+        return false;
+    }
+    if (count == 0) {
+        effects_box.reset();
+        return true;
+    }
+    EntityEffects& effects = effects_box.emplace();
+    effects.count = count;
+    for (std::uint8_t i = 0; i < count; ++i) {
+        if (!ReadPod(in, effects.effects[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 template <typename T>
 void WriteOptionalVectorPod(std::ostream& out, const std::optional<std::vector<T>>& values) {
     const bool has_value = values.has_value();
@@ -118,6 +149,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.stone);
     WritePod(out, entity.wanted);
     WritePod(out, entity.crusher_pusher);
+    WritePod(out, entity.pushable);
     WritePod(out, entity.can_stomp);
     WritePod(out, entity.can_be_stomped);
     WritePod(out, entity.can_collect_pickups);
@@ -142,7 +174,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.max_speed);
     WritePod(out, entity.jump_hold_gravity_frames_remaining);
     WritePod(out, entity.throw_velocity_scale);
-    WritePod(out, entity.temporary_effect_flags);
+    WriteEntityEffects(out, entity.effects);
     WritePod(out, entity.size);
     WritePod(out, entity.dist_traveled_this_frame);
     WritePod(out, entity.facing);
@@ -157,9 +189,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.can_hang_wall);
     WritePod(out, entity.hang_count);
     WritePod(out, entity.holding);
-    WritePod(out, entity.passive_item_flags);
-    WriteOptionalPod(out, entity.passive_item);
-    WritePod(out, entity.meathead_points);
+    WriteOptionalPod(out, entity.pickup_effect);
     WritePod(out, entity.money);
     WritePod(out, entity.buyable);
     WriteOptionalPod(out, entity.back_vid);
@@ -177,6 +207,7 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.vanish_on_death);
     WritePod(out, entity.affected_by_ground_friction);
     WritePod(out, entity.support_ground_friction);
+    WritePod(out, entity.push_acc);
     WriteOptionalPod(out, entity.damage_animation);
     WriteOptionalPod(out, entity.damage_sound);
     WriteOptionalPod(out, entity.collide_sound);
@@ -253,6 +284,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.stone) &&
            ReadPod(in, entity.wanted) &&
            ReadPod(in, entity.crusher_pusher) &&
+           ReadPod(in, entity.pushable) &&
            ReadPod(in, entity.can_stomp) &&
            ReadPod(in, entity.can_be_stomped) &&
            ReadPod(in, entity.can_collect_pickups) &&
@@ -277,7 +309,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.max_speed) &&
            ReadPod(in, entity.jump_hold_gravity_frames_remaining) &&
            ReadPod(in, entity.throw_velocity_scale) &&
-           ReadPod(in, entity.temporary_effect_flags) &&
+           ReadEntityEffects(in, entity.effects) &&
            ReadPod(in, entity.size) &&
            ReadPod(in, entity.dist_traveled_this_frame) &&
            ReadPod(in, entity.facing) &&
@@ -292,9 +324,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.can_hang_wall) &&
            ReadPod(in, entity.hang_count) &&
            ReadPod(in, entity.holding) &&
-           ReadPod(in, entity.passive_item_flags) &&
-           ReadOptionalPod(in, entity.passive_item) &&
-           ReadPod(in, entity.meathead_points) &&
+           ReadOptionalPod(in, entity.pickup_effect) &&
            ReadPod(in, entity.money) &&
            ReadPod(in, entity.buyable) &&
            ReadOptionalPod(in, entity.back_vid) &&
@@ -312,6 +342,7 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadPod(in, entity.vanish_on_death) &&
            ReadPod(in, entity.affected_by_ground_friction) &&
            ReadPod(in, entity.support_ground_friction) &&
+           ReadPod(in, entity.push_acc) &&
            ReadOptionalPod(in, entity.damage_animation) &&
            ReadOptionalPod(in, entity.damage_sound) &&
            ReadOptionalPod(in, entity.collide_sound) &&

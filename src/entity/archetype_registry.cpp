@@ -19,7 +19,6 @@
 #include "entities/chest.hpp"
 #include "entities/cobra.hpp"
 #include "entities/craps_table.hpp"
-#include "entities/crate.hpp"
 #include "entities/crown.hpp"
 #include "entities/crystal_skull.hpp"
 #include "entities/damsel.hpp"
@@ -35,7 +34,6 @@
 #include "entities/giant_tiki_head.hpp"
 #include "entities/gold_idol.hpp"
 #include "entities/hawkman.hpp"
-#include "entities/jar.hpp"
 #include "entities/jaws.hpp"
 #include "entities/jetpack.hpp"
 #include "entities/kali_head.hpp"
@@ -251,8 +249,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::CrystalSkull, entities::crystal_skull::kCrystalSkullArchetype,
                  "CrystalSkull");
     SetArchetype(EntityType::Bones, entities::bones::kBonesArchetype, "Bones");
-    SetArchetype(EntityType::Jar, entities::jar::kJarArchetype, "Jar");
-    SetArchetype(EntityType::TrapBlock, entities::trap_block::kTrapBlockArchetype, "TrapBlock");
+    SetArchetype(EntityType::TrapBlock, entities::trap_block::kTrapBlockArchetype, "SquisherBlock");
     SetArchetype(EntityType::CeilingTrap, entities::ceiling_trap::kCeilingTrapArchetype,
                  "CeilingTrap");
     SetArchetype(EntityType::TombLord, entities::tomb_lord::kTombLordArchetype, "TombLord");
@@ -269,11 +266,11 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::AlienBoss, entities::alien_boss::kAlienBossArchetype, "AlienBoss");
     SetArchetype(EntityType::BarrierEmitter, entities::barrier_emitter::kBarrierEmitterArchetype,
                  "BarrierEmitter");
+    SetArchetype(EntityType::Beam, entities::barrier_emitter::kBeamArchetype, "Beam");
     SetArchetype(EntityType::ThwompTrap, entities::thwomp_trap::kThwompTrapArchetype,
                  "ThwompTrap");
     SetArchetype(EntityType::Lamp, entities::lamp::kLampArchetype, "Lamp");
     SetArchetype(EntityType::LampRed, entities::lamp::kLampRedArchetype, "LampRed");
-    SetArchetype(EntityType::Crate, entities::crate::kCrateArchetype, "Crate");
     SetArchetype(EntityType::Sign, entities::sign::kSignArchetype, "Sign");
     SetArchetype(EntityType::Mantrap, entities::mantrap::kMantrapArchetype, "Mantrap");
     SetArchetype(EntityType::Frog, entities::frog::kFrogArchetype, "Frog");

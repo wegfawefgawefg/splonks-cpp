@@ -181,6 +181,17 @@ const FrameData* GetFirstFrameForAnimationOrFallback(
     return &graphics.frame_data_db.frames[animation->frame_indices[0]];
 }
 
+const FrameData* GetFirstFrameForAnimation(
+    const Graphics& graphics,
+    FrameDataId animation_id
+) {
+    const FrameDataAnimation* animation = graphics.frame_data_db.FindAnimation(animation_id);
+    if (animation == nullptr || animation->frame_indices.empty()) {
+        return nullptr;
+    }
+    return &graphics.frame_data_db.frames[animation->frame_indices[0]];
+}
+
 Tile GetBackwallFillTileForTileCoord(const Stage& stage, int tile_x, int tile_y) {
     if (stage.backwall_fill_tiles.empty()) {
         return Tile::Air;
@@ -548,8 +559,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 continue;
             }
 
-            const FrameData* const frame_data =
-                GetFirstFrameForAnimationOrFallback(graphics, *overlay_frame);
+            const FrameData* const frame_data = GetFirstFrameForAnimation(graphics, *overlay_frame);
             if (frame_data == nullptr) {
                 continue;
             }

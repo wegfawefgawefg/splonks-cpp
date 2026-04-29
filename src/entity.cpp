@@ -14,16 +14,8 @@ namespace splonks {
 
 namespace {
 
-constexpr std::uint64_t PassiveItemBit(EntityPassiveItem passive_item) {
-    return 1ULL << static_cast<unsigned int>(passive_item);
-}
-
 constexpr std::uint32_t MovementFlagBit(EntityMovementFlag movement_flag) {
     return 1U << static_cast<unsigned int>(movement_flag);
-}
-
-constexpr std::uint32_t TemporaryEffectBit(EntityTemporaryEffect effect) {
-    return 1U << static_cast<unsigned int>(effect);
 }
 
 } // namespace
@@ -40,6 +32,7 @@ Entity Entity::New() {
     entity.can_receive_projectile_contact = true;
     entity.stone = false;
     entity.crusher_pusher = false;
+    entity.pushable = false;
     entity.can_stomp = false;
     entity.can_be_stomped = true;
     entity.can_collect_pickups = false;
@@ -63,7 +56,6 @@ Entity Entity::New() {
     entity.max_speed = 7.0F;
     entity.jump_hold_gravity_frames_remaining = 0;
     entity.throw_velocity_scale = 1.0F;
-    entity.temporary_effect_flags = 0;
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.dist_traveled_this_frame = 0.0F;
     entity.facing = LeftOrRight::Left;
@@ -80,9 +72,8 @@ Entity Entity::New() {
     entity.can_hang_wall = false;
     entity.hang_count = 0;
     entity.holding = false;
-    entity.passive_item_flags = 0;
-    entity.passive_item.reset();
-    entity.meathead_points = 0;
+    entity.effects.reset();
+    entity.pickup_effect.reset();
     entity.money = 0;
     entity.buyable = Buyable{};
     entity.attachment_mode = AttachmentMode::None;
@@ -99,6 +90,7 @@ Entity Entity::New() {
     entity.vanish_on_death = false;
     entity.affected_by_ground_friction = true;
     entity.support_ground_friction = 0.85F;
+    entity.push_acc = 0.0F;
     entity.damage_animation.reset();
     entity.damage_sound.reset();
     entity.collide_sound.reset();
@@ -212,19 +204,6 @@ void ClearTransientMovementFlags(Entity& entity) {
     SetMovementFlag(entity, EntityMovementFlag::Pushing, false);
 }
 
-bool HasTemporaryEffect(const Entity& entity, EntityTemporaryEffect effect) {
-    return (entity.temporary_effect_flags & TemporaryEffectBit(effect)) != 0;
-}
-
-void SetTemporaryEffect(Entity& entity, EntityTemporaryEffect effect, bool enabled) {
-    if (enabled) {
-        entity.temporary_effect_flags |= TemporaryEffectBit(effect);
-        return;
-    }
-
-    entity.temporary_effect_flags &= ~TemporaryEffectBit(effect);
-}
-
 std::tuple<Vec2, Vec2> Entity::GetBounds() const {
     return {pos, pos + size - Vec2::New(1.0F, 1.0F)};
 }
@@ -327,53 +306,13 @@ void SetAnimation(Entity& entity, FrameDataId animation_id) {
     entity.frame_data_animator.SetAnimation(animation_id);
 }
 
-const char* PassiveItemToString(EntityPassiveItem passive_item) {
-    switch (passive_item) {
-    case EntityPassiveItem::Gloves:
-        return "Gloves";
-    case EntityPassiveItem::Spectacles:
-        return "Spectacles";
-    case EntityPassiveItem::Compass:
-        return "Compass";
-    case EntityPassiveItem::Mitt:
-        return "Mitt";
-    case EntityPassiveItem::SpringShoes:
-        return "SpringShoes";
-    case EntityPassiveItem::SpikeShoes:
-        return "SpikeShoes";
-    case EntityPassiveItem::UdjatEye:
-        return "UdjatEye";
-    case EntityPassiveItem::Meathead:
-        return "Meathead";
-    case EntityPassiveItem::Parachute:
-        return "Parachute";
-    case EntityPassiveItem::Count:
-        return "Count";
-    }
-
-    return "Unknown";
-}
-
-bool HasPassiveItem(const Entity& entity, EntityPassiveItem passive_item) {
-    return (entity.passive_item_flags & PassiveItemBit(passive_item)) != 0;
-}
-
-void SetPassiveItem(Entity& entity, EntityPassiveItem passive_item, bool enabled) {
-    if (enabled) {
-        entity.passive_item_flags |= PassiveItemBit(passive_item);
-        return;
-    }
-
-    entity.passive_item_flags &= ~PassiveItemBit(passive_item);
-}
-
-bool TryCollectPassiveItem(Entity& entity, const Entity& pickup) {
-    const std::optional<EntityPassiveItem> passive_item = pickup.passive_item;
-    if (!passive_item.has_value()) {
+bool TryCollectEffectPickup(Entity& entity, const Entity& pickup) {
+    if (!pickup.pickup_effect.has_value()) {
         return false;
     }
 
-    SetPassiveItem(entity, *passive_item, true);
+    const std::int32_t count = *pickup.pickup_effect == EffectId::Parachute ? 1 : 0;
+    (void)AddEffect(entity, *pickup.pickup_effect, count);
     return true;
 }
 
@@ -395,15 +334,14 @@ bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& picku
     default:
         break;
     }
-    if (TryCollectPassiveItem(entity, pickup)) {
+    if (TryCollectEffectPickup(entity, pickup)) {
         collected = true;
     }
     return collected;
 }
 
 bool CanRevealEmbeddedTreasure(const Entity& entity) {
-    return HasPassiveItem(entity, EntityPassiveItem::Spectacles) ||
-           HasPassiveItem(entity, EntityPassiveItem::UdjatEye);
+    return GetModifiedEffectValue(entity, EffectModifierTarget::HiddenTreasureVisibility, 0.0F) > 0.0F;
 }
 
 void EnableStone(Entity& entity) {

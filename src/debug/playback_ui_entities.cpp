@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -69,6 +70,91 @@ bool HasStickyBombTool(const EntityToolInventoryState& entity_tools, const VID& 
     return std::any_of(tool_state->slots.begin(), tool_state->slots.end(), [](const ToolSlot& slot) {
         return slot.active && slot.kind == ToolKind::ThrowStickyBomb;
     });
+}
+
+const char* EffectUiKindToString(EffectUiKind kind) {
+    switch (kind) {
+    case EffectUiKind::Hidden:
+        return "hidden";
+    case EffectUiKind::Passive:
+        return "passive";
+    case EffectUiKind::Temporary:
+        return "temporary";
+    }
+
+    return "unknown";
+}
+
+void AddEffectFromDebug(Entity& entity, EffectId effect_id) {
+    if (effect_id == EffectId::NoGravityUntilContact) {
+        // Let the debug add survive stale contact state from the previous step.
+        entity.grounded = false;
+        entity.collided = false;
+        entity.collided_last_frame = false;
+    }
+    (void)AddEffect(entity, effect_id);
+}
+
+void DrawEntityEffectsEditor(Entity& entity) {
+    EntityEffects* const effects = entity.effects.get();
+    if (effects == nullptr || effects->count == 0) {
+        ImGui::TextDisabled("No active effects.");
+    } else {
+        for (std::size_t effect_index = 0; effect_index < effects->count; ++effect_index) {
+            EffectInstance& effect = effects->effects[effect_index];
+            const EffectArchetype& archetype = GetEffectArchetype(effect.id);
+            ImGui::PushID("active_effect");
+            ImGui::PushID(static_cast<int>(effect_index));
+            ImGui::Separator();
+            ImGui::Text("%s (%s)", archetype.debug_name, EffectUiKindToString(archetype.ui_kind));
+
+            int count = effect.count;
+            if (ImGui::InputInt("Count##effect_count", &count)) {
+                effect.count = count;
+            }
+            ImGui::DragFloat("Value##effect_value", &effect.value, 0.05F, -1000.0F, 1000.0F, "%.2f");
+            int frames_remaining = static_cast<int>(effect.frames_remaining);
+            if (ImGui::InputInt("Frames##effect_frames", &frames_remaining)) {
+                effect.frames_remaining = static_cast<std::uint32_t>(std::max(0, frames_remaining));
+            }
+            if (ImGui::Button("Remove##effect_remove")) {
+                RemoveEffect(entity, effect.id);
+                ImGui::PopID();
+                ImGui::PopID();
+                break;
+            }
+            ImGui::PopID();
+            ImGui::PopID();
+        }
+    }
+
+    static EffectId selected_effect = EffectId::Gloves;
+    if (selected_effect == EffectId::None || selected_effect == EffectId::Count) {
+        selected_effect = EffectId::Gloves;
+    }
+
+    ImGui::Separator();
+    if (ImGui::BeginCombo("Add Effect##entity_effect_add_combo", EffectIdToString(selected_effect))) {
+        for (std::uint8_t i = 1; i < static_cast<std::uint8_t>(EffectId::Count); ++i) {
+            const EffectId effect_id = static_cast<EffectId>(i);
+            const bool selected = effect_id == selected_effect;
+            char label[96];
+            std::snprintf(label, sizeof(label), "%s##entity_effect_add_%u", EffectIdToString(effect_id), i);
+            if (ImGui::Selectable(label, selected)) {
+                selected_effect = effect_id;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::Button("Add Selected Effect##entity_effect_add_button")) {
+        AddEffectFromDebug(entity, selected_effect);
+    }
+    if (selected_effect == EffectId::NoGravityUntilContact) {
+        ImGui::TextDisabled("Expires on grounded or blocking contact.");
+    }
 }
 
 std::vector<EntityType> BuildSortedSpawnTypes() {
@@ -208,8 +294,8 @@ bool SwapControlledCharacter(
     const LeftOrRight facing = source_entity->facing;
     const VID replacement_vid = source_entity->vid;
     const std::optional<VID> old_player_vid = state.player_vid;
-    const std::uint64_t passive_flags = stats_entity != nullptr ? stats_entity->passive_item_flags : 0;
-    const std::uint32_t meathead_points = stats_entity != nullptr ? stats_entity->meathead_points : 0;
+    const EntityEffects* const effects =
+        stats_entity != nullptr ? stats_entity->effects.get() : nullptr;
     const std::uint32_t money = stats_entity != nullptr ? stats_entity->money : 0;
     const std::uint32_t health = stats_entity != nullptr ? stats_entity->health : 0;
     const std::optional<EntityToolState> preserved_tools =
@@ -231,8 +317,10 @@ bool SwapControlledCharacter(
     source_entity->SetCenter(spawn_center);
 
     if (keep_passives) {
-        source_entity->passive_item_flags = passive_flags;
-        source_entity->meathead_points = meathead_points;
+        source_entity->effects.reset();
+        if (effects != nullptr) {
+            source_entity->effects.emplace() = *effects;
+        }
     }
     if (keep_money) {
         source_entity->money = money;
@@ -591,6 +679,8 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     }
     ImGui::Checkbox("Wanted", &entity.wanted);
     ImGui::Checkbox("Crusher/Pusher", &entity.crusher_pusher);
+    ImGui::Checkbox("Pushable", &entity.pushable);
+    ImGui::DragFloat("Push Acc", &entity.push_acc, 0.01F, 0.0F, 5.0F, "%.2f");
     ImGui::Text("Facing: %s", LeftOrRightToString(entity.facing));
     ImGui::Text("Grounded: %s", entity.grounded ? "true" : "false");
     ImGui::Text("Pos: (%.2f, %.2f)", entity.pos.x, entity.pos.y);
@@ -603,14 +693,8 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("Fall timer: %u", entity.fall_timer);
     ImGui::Text("Health: %u", entity.health);
     ImGui::Text("Money: %u", entity.money);
-    ImGui::SeparatorText("Passive Items");
-    for (std::uint8_t i = 0; i < static_cast<std::uint8_t>(EntityPassiveItem::Count); ++i) {
-        const EntityPassiveItem passive_item = static_cast<EntityPassiveItem>(i);
-        bool has_passive_item = HasPassiveItem(entity, passive_item);
-        if (ImGui::Checkbox(PassiveItemToString(passive_item), &has_passive_item)) {
-            SetPassiveItem(entity, passive_item, has_passive_item);
-        }
-    }
+    ImGui::SeparatorText("Effects");
+    DrawEntityEffectsEditor(entity);
     ImGui::Separator();
     ImGui::TextUnformatted("Tools");
     if (debug.playback_active) {

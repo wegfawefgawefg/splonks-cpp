@@ -36,33 +36,6 @@ FrameDataId GetToolSlotBackgroundAnimationId(std::size_t slot_index) {
     }
 }
 
-FrameDataId GetPassiveItemIconAnimationId(EntityPassiveItem passive_item) {
-    switch (passive_item) {
-    case EntityPassiveItem::Gloves:
-        return frame_data_ids::Gloves;
-    case EntityPassiveItem::Spectacles:
-        return frame_data_ids::Spectacles;
-    case EntityPassiveItem::Compass:
-        return frame_data_ids::Compass;
-    case EntityPassiveItem::Mitt:
-        return frame_data_ids::Mitt;
-    case EntityPassiveItem::SpringShoes:
-        return frame_data_ids::SpringShoes;
-    case EntityPassiveItem::SpikeShoes:
-        return frame_data_ids::SpikeShoes;
-    case EntityPassiveItem::UdjatEye:
-        return frame_data_ids::UdjatEye;
-    case EntityPassiveItem::Meathead:
-        return frame_data_ids::Meathead;
-    case EntityPassiveItem::Parachute:
-        return frame_data_ids::PackedParachute;
-    case EntityPassiveItem::Count:
-        return kInvalidFrameDataId;
-    }
-
-    return kInvalidFrameDataId;
-}
-
 std::string GetHudStageLabel(const Stage& stage) {
     if (!stage.route_label.empty()) {
         return stage.route_label;
@@ -316,7 +289,7 @@ std::optional<Vec2> FindDefaultExitCenter(const State& state) {
 }
 
 void RenderCompassArrow(SDL_Renderer* renderer, const State& state, Graphics& graphics, const Entity& player) {
-    if (!HasPassiveItem(player, EntityPassiveItem::Compass)) {
+    if (!HasEffect(player, EffectId::Compass)) {
         return;
     }
 
@@ -508,6 +481,38 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
     }
 
     if (player_entity != nullptr) {
+        const Entity* const held_entity =
+            player_entity->holding_vid.has_value()
+                ? state.entity_manager.GetEntity(*player_entity->holding_vid)
+                : nullptr;
+        if (held_entity != nullptr && held_entity->active && held_entity->type_ == EntityType::Bow) {
+            const FrameDataId icon_animation_id =
+                held_entity->counter_b > 0.0F ? frame_data_ids::BowLooseLoaded
+                                               : frame_data_ids::BowLooseEmpty;
+            DrawFrameDataIcon(renderer, state, graphics, icon_animation_id, cursor, tool_icon_size);
+
+            char ammo_text[16];
+            std::snprintf(
+                ammo_text,
+                sizeof(ammo_text),
+                "%u",
+                static_cast<unsigned int>(std::max(0.0F, held_entity->counter_b))
+            );
+            const Vec2 text_pos = GetUiCountTextPosition(cursor, tool_icon_size);
+            DrawText(
+                renderer,
+                graphics,
+                32,
+                graphics.ui_font,
+                ammo_text,
+                text_pos.x,
+                text_pos.y,
+                SDL_Color{255, 255, 255, 255}
+            );
+        }
+    }
+
+    if (player_entity != nullptr) {
         RenderCompassArrow(renderer, state, graphics, *player_entity);
 
         IVec2 passive_cursor = IVec2::New(hud_margin, hud_margin + std::max(status_icon_size.y, tool_slot_size.y) + hud_gap);
@@ -516,25 +521,41 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
             std::max(1, static_cast<int>(static_cast<float>(status_icon_size.y) * 0.8F))
         );
         const int passive_gap = std::max(4, hud_gap / 2);
-        for (std::uint8_t i = 0; i < static_cast<std::uint8_t>(EntityPassiveItem::Count); ++i) {
-            const EntityPassiveItem passive_item = static_cast<EntityPassiveItem>(i);
-            if (!HasPassiveItem(*player_entity, passive_item)) {
+        const EntityEffects* const effects = player_entity->effects.get();
+        const std::uint8_t effect_count = effects != nullptr ? effects->count : 0;
+        for (std::size_t i = 0; i < effect_count; ++i) {
+            const EffectInstance& effect = effects->effects[i];
+            const EffectArchetype& archetype = GetEffectArchetype(effect.id);
+            if (archetype.ui_kind == EffectUiKind::Hidden) {
                 continue;
             }
-            const FrameDataId icon_animation_id = GetPassiveItemIconAnimationId(passive_item);
+            const FrameDataId icon_animation_id = archetype.icon_animation_id;
             if (icon_animation_id == kInvalidFrameDataId) {
                 continue;
             }
             DrawFrameDataIcon(renderer, state, graphics, icon_animation_id, passive_cursor, passive_icon_size);
-            if (passive_item == EntityPassiveItem::Meathead) {
+            if (effect.id == EffectId::Meathead) {
                 char points_text[16];
-                std::snprintf(points_text, sizeof(points_text), "%u/10", player_entity->meathead_points);
+                std::snprintf(points_text, sizeof(points_text), "%d/10", effect.count);
                 DrawText(
                     renderer,
                     graphics,
                     24,
                     graphics.ui_font,
                     points_text,
+                    static_cast<float>(passive_cursor.x),
+                    static_cast<float>(passive_cursor.y + passive_icon_size.y),
+                    SDL_Color{255, 255, 255, 255}
+                );
+            } else if (effect.id == EffectId::Parachute) {
+                char count_text[16];
+                std::snprintf(count_text, sizeof(count_text), "%d", effect.count);
+                DrawText(
+                    renderer,
+                    graphics,
+                    24,
+                    graphics.ui_font,
+                    count_text,
                     static_cast<float>(passive_cursor.x),
                     static_cast<float>(passive_cursor.y + passive_icon_size.y),
                     SDL_Color{255, 255, 255, 255}

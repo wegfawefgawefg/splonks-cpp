@@ -181,7 +181,7 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     } else if (RandInclusive(1, 200) == 1) {
         SpawnEntityAtTopLeft(EntityType::Cape, spawn_pos, state);
     } else if (RandInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Shotgun, spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
     } else if (RandInclusive(1, 100) == 1) {
         SpawnEntityAtTopLeft(EntityType::Mattock, spawn_pos, state);
     } else if (RandInclusive(1, 100) == 1) {

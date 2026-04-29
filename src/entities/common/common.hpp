@@ -95,6 +95,7 @@ bool IsGroundedOnTiles(std::size_t entity_idx, State& state);
 void DoThrownByStep(std::size_t entity_idx, State& state);
 void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTuning& tuning);
 void DoTileCollisions(std::size_t entity_idx, State& state);
+void DoEntityCollisions(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
 void DoTileAndEntityCollisions(
     std::size_t entity_idx,
     State& state,

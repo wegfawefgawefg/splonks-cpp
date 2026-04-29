@@ -29,4 +29,10 @@ inline EntityArchetype MakeUnimplementedClassicArchetype(EntityType type_) {
     };
 }
 
+inline EntityArchetype MakeUnimplementedClassicNonStompableArchetype(EntityType type_) {
+    EntityArchetype archetype = MakeUnimplementedClassicArchetype(type_);
+    archetype.can_be_stomped = false;
+    return archetype;
+}
+
 } // namespace splonks::entities::common

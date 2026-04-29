@@ -47,7 +47,7 @@ glyphs:
   - char: "I"
     action: gold_idol
   - char: "B"
-    spawn: trap_block
+    spawn: squisher_block
   - char: "Q"
     action: dice_sign_if_craps
   - char: "q"
@@ -129,7 +129,7 @@ glyphs:
     spawn_random:
       - entity: skeleton
         weight: 1
-      - entity: jar
+      - entity: pot
         weight: 1
   - char: "J"
     tile: water_swim

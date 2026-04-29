@@ -14,6 +14,7 @@
 #include "entities/shop.hpp"
 #include "entities/shop_tile_triggers.hpp"
 #include "entities/store_light.hpp"
+#include "entities/trap_block.hpp"
 #include "entities/damsel.hpp"
 #include "entities/stomp_pad.hpp"
 #include "frame_data_id.hpp"
@@ -65,6 +66,10 @@ constexpr int kArrowTrapTestStageWidthTiles = 14;
 constexpr int kArrowTrapTestStageHeightTiles = 72;
 constexpr int kSpikeTestStageWidthTiles = 28;
 constexpr int kSpikeTestStageHeightTiles = 16;
+constexpr int kTrapDoorTestStageWidthTiles = 112;
+constexpr int kTrapDoorTestStageHeightTiles = 10;
+constexpr int kCrusherTrapTestStageWidthTiles = 64;
+constexpr int kCrusherTrapTestStageHeightTiles = 40;
 constexpr Tile kDefaultDebugBorderTile = Tile::CaveDirt;
 constexpr std::uint16_t kPlayerInitialBombs = 400;
 constexpr std::uint16_t kPlayerInitialRopes = 400;
@@ -736,6 +741,69 @@ Stage MakeSpikeTestStage() {
     return stage;
 }
 
+Stage MakeTrapDoorTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    const Tile wall_tile = kDefaultDebugBorderTile;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kTrapDoorTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kTrapDoorTestStageWidthTiles), wall_tile)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    constexpr int hallway_top_y = 4;
+    constexpr int hallway_bottom_y = 5;
+    for (int y = hallway_top_y; y <= hallway_bottom_y; ++y) {
+        for (int x = 1; x < kTrapDoorTestStageWidthTiles - 1; ++x) {
+            SetStageTile(stage, x, y, Tile::Air);
+        }
+    }
+
+    return stage;
+}
+
+Stage MakeCrusherTrapTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kCrusherTrapTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kCrusherTrapTestStageWidthTiles), Tile::Air)
+    );
+    FillDebugStageBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.border = Stage::MakeUniformBorder(kDefaultDebugBorderTile);
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+    stage.camera_clamp_enabled = true;
+
+    const Tile wall_tile = kDefaultDebugBorderTile;
+    for (int x = 0; x < kCrusherTrapTestStageWidthTiles; ++x) {
+        SetStageTile(stage, x, 0, wall_tile);
+        SetStageTile(stage, x, kCrusherTrapTestStageHeightTiles - 1, wall_tile);
+    }
+    for (int y = 0; y < kCrusherTrapTestStageHeightTiles; ++y) {
+        SetStageTile(stage, 0, y, wall_tile);
+        SetStageTile(stage, kCrusherTrapTestStageWidthTiles - 1, y, wall_tile);
+    }
+
+    FillStageRect(stage, 14, 12, 20, 12, wall_tile);
+
+    FillStageRect(stage, 3, 12, 6, 12, wall_tile);
+    FillStageRect(stage, 9, 12, 12, 12, wall_tile);
+    FillStageRect(stage, 2, 4, 4, 4, wall_tile);
+    FillStageRect(stage, 11, 4, 13, 4, wall_tile);
+    FillStageRect(stage, 7, 7, 8, 7, wall_tile);
+    FillStageRect(stage, 7, 8, 7, 10, wall_tile);
+    FillStageRect(stage, 2, 34, kCrusherTrapTestStageWidthTiles - 3, 34, wall_tile);
+
+    return stage;
+}
+
 Stage MakeSacAltarTestStage() {
     Stage stage;
     stage.stage_type = StageType::Test1;
@@ -1008,6 +1076,7 @@ void InitCommonStageState(State& state) {
     state.mouse_trailer_vid.reset();
 }
 
+void GivePlayerHeldItem(State& state, EntityType type_);
 void GivePlayerBackItem(State& state, EntityType type_);
 
 void SpawnPlayer(State& state, const Vec2& pos) {
@@ -1023,6 +1092,7 @@ void SpawnPlayer(State& state, const Vec2& pos) {
 
             if (spawn_type == EntityType::Player) {
                 GrantPlayerStarterTools(state, *player_vid);
+                GivePlayerHeldItem(state, EntityType::Bow);
                 GivePlayerBackItem(state, EntityType::Cape);
             }
         }
@@ -1696,7 +1766,7 @@ void InitParachuteTestStage(State& state) {
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
     if (state.player_vid.has_value()) {
         if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-            SetPassiveItem(*player, EntityPassiveItem::Parachute, true);
+            (void)AddEffect(*player, EffectId::Parachute, 1);
         }
     }
 }
@@ -1760,6 +1830,133 @@ void InitSpikeTestStage(State& state) {
             static_cast<float>((kSpikeTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 16.0F
         )
     );
+}
+
+void InitTrapDoorTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    SpawnPlayer(
+        state,
+        Vec2::New(
+            4.0F * static_cast<float>(kTileSize),
+            6.0F * static_cast<float>(kTileSize) - 14.0F
+        )
+    );
+
+    constexpr int ceiling_start_y = 2;
+    constexpr int floor_y = 6;
+    const int closed_top_y =
+        floor_y * static_cast<int>(kTileSize) -
+        static_cast<int>(GetEntityArchetype(EntityType::Door).size.y);
+    constexpr std::array<int, 4> kDropDoorXs{{18, 42, 66, 90}};
+    for (const int door_x : kDropDoorXs) {
+        if (const std::optional<VID> door_vid = SpawnStageEntityAtTopLeft(
+            state,
+            EntityType::Door,
+            Vec2::New(
+                static_cast<float>(door_x * static_cast<int>(kTileSize)),
+                static_cast<float>(ceiling_start_y * static_cast<int>(kTileSize))
+            )
+        )) {
+            if (Entity* const door = state.entity_manager.GetEntityMut(*door_vid)) {
+                door->point_a = IVec2::New(door_x * static_cast<int>(kTileSize), closed_top_y);
+                door->point_label_a = PointLabel::Target;
+            }
+        }
+    }
+
+    constexpr std::array<int, 8> kLightXs{{8, 14, 32, 38, 56, 62, 80, 104}};
+    for (const int light_x : kLightXs) {
+        SpawnShopTestStoreLight(state, light_x, 3);
+    }
+}
+
+void InitCrusherTrapTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    SpawnPlayer(
+        state,
+        Vec2::New(
+            2.0F * static_cast<float>(kTileSize),
+            11.0F * static_cast<float>(kTileSize) - 14.0F
+        )
+    );
+
+    (void)SpawnStageEntityAtTopLeft(
+        state,
+        EntityType::ThwompTrap,
+        Vec2::New(
+            5.0F * static_cast<float>(kTileSize),
+            1.0F * static_cast<float>(kTileSize)
+        )
+    );
+
+    const std::array<IVec2, 5> kSquisherBlocks{{
+        IVec2::New(2, 8),
+        IVec2::New(13, 8),
+        IVec2::New(5, 10),
+        IVec2::New(10, 10),
+        IVec2::New(8, 3),
+    }};
+    for (const IVec2& tile_pos : kSquisherBlocks) {
+        (void)SpawnStageEntityAtTopLeft(
+            state,
+            EntityType::TrapBlock,
+            Vec2::New(
+                static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
+                static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
+            )
+        );
+    }
+
+    for (int row = 0; row < 5; ++row) {
+        const int count = 5 - row;
+        for (int column = 0; column < count; ++column) {
+            const int tile_x = 19 + row + column;
+            if (const std::optional<VID> block_vid = SpawnStageEntityAtTopLeft(
+                state,
+                EntityType::TrapBlock,
+                Vec2::New(
+                    static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+                    static_cast<float>((7 + row) * static_cast<int>(kTileSize))
+                )
+            )) {
+                if (Entity* const block = state.entity_manager.GetEntityMut(*block_vid)) {
+                    entities::trap_block::MakeTrapBlockOneShot(*block);
+                }
+            }
+        }
+    }
+
+    constexpr int kStressStartX = 2;
+    constexpr int kStressStartY = 16;
+    constexpr int kStressWidth = kCrusherTrapTestStageWidthTiles - 4;
+    constexpr int kStressHeight = 17;
+    const int requested_count = std::clamp(
+        state.debug_level.crusher_trap_test.stress_squisher_count,
+        0,
+        static_cast<int>(EntityManager::kMaxNumEntities)
+    );
+    for (int i = 0; i < requested_count; ++i) {
+        const int column = i % kStressWidth;
+        const int row = i / kStressWidth;
+        if (row >= kStressHeight) {
+            break;
+        }
+        const std::optional<VID> block_vid = SpawnStageEntityAtTopLeft(
+            state,
+            EntityType::TrapBlock,
+            Vec2::New(
+                static_cast<float>((kStressStartX + column) * static_cast<int>(kTileSize)),
+                static_cast<float>((kStressStartY + row) * static_cast<int>(kTileSize))
+            )
+        );
+        if (!block_vid.has_value()) {
+            break;
+        }
+    }
 }
 
 void InitBowlingTestStage(State& state) {
@@ -2376,6 +2573,14 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
     case DebugLevelKind::SpikeTest:
         state.stage = MakeSpikeTestStage();
         InitSpikeTestStage(state);
+        break;
+    case DebugLevelKind::TrapDoorTest:
+        state.stage = MakeTrapDoorTestStage();
+        InitTrapDoorTestStage(state);
+        break;
+    case DebugLevelKind::CrusherTrapTest:
+        state.stage = MakeCrusherTrapTestStage();
+        InitCrusherTrapTestStage(state);
         break;
     }
 

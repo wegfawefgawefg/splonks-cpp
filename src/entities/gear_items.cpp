@@ -107,11 +107,11 @@ void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics
 
     const bool already_open = GetOpenParachuteVisual(owner, state) != nullptr;
     if (!already_open) {
-        if (!HasPassiveItem(owner, EntityPassiveItem::Parachute) ||
+        if (!HasEffect(owner, EffectId::Parachute) ||
             owner.fall_timer < GetParachuteDeployFallFrames(state)) {
             return;
         }
-        SetPassiveItem(owner, EntityPassiveItem::Parachute, false);
+        RemoveEffect(owner, EffectId::Parachute);
     }
 
     owner.vel.y = std::min(owner.vel.y, kParachuteMaxFallSpeed);
@@ -241,7 +241,7 @@ extern const EntityArchetype kGlovesArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::Gloves,
+    .pickup_effect = EffectId::Gloves,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Gloves),
@@ -262,7 +262,7 @@ extern const EntityArchetype kSpectaclesArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::Spectacles,
+    .pickup_effect = EffectId::Spectacles,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spectacles),
@@ -283,7 +283,7 @@ extern const EntityArchetype kMittArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::Mitt,
+    .pickup_effect = EffectId::Mitt,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Mitt),
@@ -324,7 +324,7 @@ extern const EntityArchetype kSpringShoesArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::SpringShoes,
+    .pickup_effect = EffectId::SpringShoes,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SpringShoes),
@@ -345,7 +345,7 @@ extern const EntityArchetype kSpikeShoesArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::SpikeShoes,
+    .pickup_effect = EffectId::SpikeShoes,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SpikeShoes),
@@ -406,7 +406,7 @@ extern const EntityArchetype kCompassArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::Compass,
+    .pickup_effect = EffectId::Compass,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Compass),
@@ -427,7 +427,7 @@ extern const EntityArchetype kParachuteArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .passive_item = EntityPassiveItem::Parachute,
+    .pickup_effect = EffectId::Parachute,
     .on_entity_contact = OnEntityContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::PackedParachute),

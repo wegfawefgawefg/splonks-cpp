@@ -6,6 +6,6 @@ namespace splonks::entities::ceiling_trap {
 
 // TODO(classic): CeilingTrap is not implemented yet. This archetype only keeps Classic Quest data spawnable.
 extern const EntityArchetype kCeilingTrapArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::CeilingTrap);
+    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::CeilingTrap);
 
 } // namespace splonks::entities::ceiling_trap
