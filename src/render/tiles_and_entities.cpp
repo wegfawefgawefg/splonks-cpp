@@ -30,12 +30,6 @@ struct VisibleWorldRect {
     Vec2 br;
 };
 
-enum class FluidFallSide {
-    Left,
-    Center,
-    Right,
-};
-
 int WrapCoordinate(int value, int size) {
     if (size <= 0) {
         return 0;
@@ -43,6 +37,14 @@ int WrapCoordinate(int value, int size) {
     int wrapped = value % size;
     if (wrapped < 0) {
         wrapped += size;
+    }
+    return wrapped;
+}
+
+std::optional<IVec2> ResolveWrappedTileCoord(const Stage& stage, int tile_x, int tile_y) {
+    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
+    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+        return std::nullopt;
     }
     return wrapped;
 }
@@ -99,12 +101,12 @@ float GetBorderTileShake(const Stage& stage, int tile_x, int tile_y) {
 }
 
 std::uint8_t GetWrappedFluidAmount(const Stage& stage, int tile_x, int tile_y) {
-    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
-    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+    const std::optional<IVec2> wrapped = ResolveWrappedTileCoord(stage, tile_x, tile_y);
+    if (!wrapped.has_value()) {
         return 0;
     }
-    const auto x = static_cast<unsigned int>(wrapped.x);
-    const auto y = static_cast<unsigned int>(wrapped.y);
+    const auto x = static_cast<unsigned int>(wrapped->x);
+    const auto y = static_cast<unsigned int>(wrapped->y);
     if (!GetTileArchetype(stage.GetFluidTile(x, y)).simulated_fluid) {
         return 0;
     }
@@ -115,46 +117,38 @@ bool HasWrappedFluid(const Stage& stage, int tile_x, int tile_y) {
     return GetWrappedFluidAmount(stage, tile_x, tile_y) > 0;
 }
 
-std::int8_t GetWrappedFluidMomentum(const Stage& stage, int tile_x, int tile_y) {
-    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
-    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
-        return 0;
-    }
-    if (wrapped.y < 0 || static_cast<std::size_t>(wrapped.y) >= stage.fluid_momentum.size()) {
-        return 0;
-    }
-    const std::vector<std::int8_t>& row =
-        stage.fluid_momentum[static_cast<std::size_t>(wrapped.y)];
-    if (wrapped.x < 0 || static_cast<std::size_t>(wrapped.x) >= row.size()) {
-        return 0;
-    }
-    return std::clamp<std::int8_t>(row[static_cast<std::size_t>(wrapped.x)], -1, 1);
-}
-
 Tile GetWrappedFluidTile(const Stage& stage, int tile_x, int tile_y) {
-    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
-    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+    const std::optional<IVec2> wrapped = ResolveWrappedTileCoord(stage, tile_x, tile_y);
+    if (!wrapped.has_value()) {
         return Tile::Air;
     }
     return stage.GetFluidTile(
-        static_cast<unsigned int>(wrapped.x),
-        static_cast<unsigned int>(wrapped.y)
+        static_cast<unsigned int>(wrapped->x),
+        static_cast<unsigned int>(wrapped->y)
     );
 }
 
 Tile GetWrappedTerrainTile(const Stage& stage, int tile_x, int tile_y) {
-    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
-    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+    const std::optional<IVec2> wrapped = ResolveWrappedTileCoord(stage, tile_x, tile_y);
+    if (!wrapped.has_value()) {
         return Tile::Air;
     }
     return stage.GetTile(
-        static_cast<unsigned int>(wrapped.x),
-        static_cast<unsigned int>(wrapped.y)
+        static_cast<unsigned int>(wrapped->x),
+        static_cast<unsigned int>(wrapped->y)
     );
 }
 
 bool IsWrappedTerrainSolid(const Stage& stage, int tile_x, int tile_y) {
     return GetTileArchetype(GetWrappedTerrainTile(stage, tile_x, tile_y)).solid;
+}
+
+bool CanDrawFluidFallThrough(const Stage& stage, int tile_x, int tile_y) {
+    const std::optional<IVec2> wrapped = ResolveWrappedTileCoord(stage, tile_x, tile_y);
+    if (!wrapped.has_value()) {
+        return false;
+    }
+    return !GetTileArchetype(GetWrappedTerrainTile(stage, tile_x, tile_y)).solid;
 }
 
 int GetFluidFillHeightPx(std::uint8_t amount) {
@@ -351,16 +345,6 @@ void RenderWorldTextureRibbon(
         );
         consumed += piece_len;
     }
-}
-
-FluidFallSide GetFluidFallSide(std::int8_t momentum) {
-    if (momentum < 0) {
-        return FluidFallSide::Left;
-    }
-    if (momentum > 0) {
-        return FluidFallSide::Right;
-    }
-    return FluidFallSide::Center;
 }
 
 bool ShouldRenderImmediateBorderBacking(const Stage& stage, int tile_x, int tile_y) {
@@ -623,26 +607,124 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     state.stage.SyncTileInstanceMetadataGrid();
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     constexpr std::uint8_t kFluidAlpha = 176;
-    constexpr std::uint8_t kFluidFallAlpha = 144;
     constexpr std::uint8_t kFluidTopAlpha = 224;
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
+    constexpr float kWaterTopRaisePx = 1.0F;
+    constexpr int kWaterfallLengthTiles = 10;
+
+    struct FluidRenderCell {
+        Tile visible_tile = Tile::Air;
+        float liquid_level = 0.0F;
+        float visible_level = 0.0F;
+        float opacity = 1.0F;
+        bool terrain_solid = false;
+        bool has_liquid = false;
+        bool has_visible_liquid = false;
+    };
+
+    const int stage_tile_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_tile_height = static_cast<int>(state.stage.GetTileHeight());
+    if (stage_tile_width <= 0 || stage_tile_height <= 0) {
+        return;
+    }
+
+    std::vector<FluidRenderCell> cells(
+        static_cast<std::size_t>(stage_tile_width * stage_tile_height)
+    );
+    auto cell_at = [&](int tile_x, int tile_y) -> FluidRenderCell* {
+        const std::optional<IVec2> wrapped = ResolveWrappedTileCoord(
+            state.stage,
+            tile_x,
+            tile_y
+        );
+        if (!wrapped.has_value()) {
+            return nullptr;
+        }
+        return &cells[
+            static_cast<std::size_t>((wrapped->y * stage_tile_width) + wrapped->x)
+        ];
+    };
+    auto const_cell_at = [&](int tile_x, int tile_y) -> const FluidRenderCell* {
+        const std::optional<IVec2> wrapped = ResolveWrappedTileCoord(
+            state.stage,
+            tile_x,
+            tile_y
+        );
+        if (!wrapped.has_value()) {
+            return nullptr;
+        }
+        return &cells[
+            static_cast<std::size_t>((wrapped->y * stage_tile_width) + wrapped->x)
+        ];
+    };
+
+    for (int y = 0; y < stage_tile_height; ++y) {
+        for (int x = 0; x < stage_tile_width; ++x) {
+            FluidRenderCell& cell = *cell_at(x, y);
+            cell.terrain_solid = GetTileArchetype(
+                state.stage.GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y))
+            ).solid;
+            const Tile fluid_tile = state.stage.GetFluidTile(
+                static_cast<unsigned int>(x),
+                static_cast<unsigned int>(y)
+            );
+            const std::uint8_t amount = state.stage.GetFluidAmount(
+                static_cast<unsigned int>(x),
+                static_cast<unsigned int>(y)
+            );
+            cell.has_liquid = GetTileArchetype(fluid_tile).simulated_fluid && amount > 0;
+            if (!cell.has_liquid) {
+                continue;
+            }
+            cell.visible_tile = fluid_tile;
+            cell.liquid_level = static_cast<float>(amount) / 255.0F;
+            cell.visible_level = cell.liquid_level;
+            cell.has_visible_liquid = true;
+        }
+    }
+
+    for (int y = 0; y < stage_tile_height; ++y) {
+        for (int x = 0; x < stage_tile_width; ++x) {
+            const FluidRenderCell* const source_cell = const_cell_at(x, y);
+            if (source_cell == nullptr || !source_cell->has_visible_liquid ||
+                source_cell->terrain_solid ||
+                !CanDrawFluidFallThrough(state.stage, x, y + 1)) {
+                continue;
+            }
+
+            float opacity = 1.0F;
+            const float opacity_step = 1.0F / static_cast<float>(kWaterfallLengthTiles + 1);
+            for (int fall_index = 1; fall_index <= kWaterfallLengthTiles; ++fall_index) {
+                opacity -= opacity_step;
+                FluidRenderCell* const target_cell = cell_at(x, y + fall_index);
+                if (target_cell == nullptr || target_cell->terrain_solid) {
+                    break;
+                }
+
+                const float visible_level = source_cell->visible_level * opacity;
+                if (visible_level > target_cell->visible_level) {
+                    target_cell->visible_level = visible_level;
+                    target_cell->visible_tile = source_cell->visible_tile;
+                }
+                target_cell->opacity = std::max(target_cell->opacity, opacity);
+                target_cell->has_visible_liquid = target_cell->visible_level > 0.0F;
+
+                if (!CanDrawFluidFallThrough(state.stage, x, y + fall_index + 1)) {
+                    break;
+                }
+            }
+        }
+    }
+
     for (const Vec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const auto tile_x = static_cast<unsigned int>(x);
                 const auto tile_y = static_cast<unsigned int>(y);
-                const Tile fluid_tile = state.stage.GetFluidTile(
-                    tile_x,
-                    tile_y
-                );
-                const std::uint8_t amount = state.stage.GetFluidAmount(tile_x, tile_y);
                 const int int_x = static_cast<int>(x);
                 const int int_y = static_cast<int>(y);
-                const bool has_fluid = GetTileArchetype(fluid_tile).simulated_fluid && amount > 0;
-                const bool has_fluid_above = HasWrappedFluid(state.stage, int_x, int_y - 1);
-                const bool terrain_blocks_falls =
-                    GetTileArchetype(state.stage.GetTile(tile_x, tile_y)).solid;
-                if (!has_fluid && (!has_fluid_above || terrain_blocks_falls)) {
+                const FluidRenderCell* const cell = const_cell_at(int_x, int_y);
+                if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
                     continue;
                 }
 
@@ -651,11 +733,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     static_cast<int>(y * kTileSize)
                 );
 
-                const Tile body_tile = has_fluid
-                    ? fluid_tile
-                    : GetWrappedFluidTile(state.stage, int_x, int_y - 1);
                 const TileSourceData* const tile_source_data =
-                    GetTileSourceData(graphics, body_tile, tile_pos);
+                    GetTileSourceData(graphics, cell->visible_tile, tile_pos);
                 if (tile_source_data == nullptr) {
                     continue;
                 }
@@ -682,13 +761,17 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                       }
                     : SDL_FRect{};
 
-                const int fill_height_px = GetFluidFillHeightPx(amount);
-                const int surface_y_px = kTileSizePx - fill_height_px;
+                const bool has_visible_above = [&] {
+                    const FluidRenderCell* const above = const_cell_at(int_x, int_y - 1);
+                    return above != nullptr && above->has_visible_liquid && !above->terrain_solid;
+                }();
                 const bool above_solid = IsWrappedTerrainSolid(state.stage, int_x, int_y - 1);
                 const bool visible_surface =
-                    has_fluid && !has_fluid_above && !(amount == 255 && above_solid);
-                float top_left_y = static_cast<float>(surface_y_px);
-                float top_right_y = static_cast<float>(surface_y_px);
+                    !has_visible_above && !(cell->visible_level >= 1.0F && above_solid);
+                const float surface_y = static_cast<float>(kTileSizePx) *
+                                        (1.0F - std::clamp(cell->visible_level, 0.0F, 1.0F));
+                float top_left_y = surface_y;
+                float top_right_y = surface_y;
                 const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
                 const float brightness = GetTileArchetype(state.stage.GetTile(tile_x, tile_y)).solid
                     ? GetForegroundBrightnessForRender(
@@ -697,114 +780,62 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                           static_cast<int>(y)
                       )
                     : 1.0F;
-                if (has_fluid) {
-                    if (visible_surface) {
-                        const int left_fill = GetFluidFillHeightPx(
-                            GetWrappedFluidAmount(state.stage, int_x - 1, int_y)
-                        );
-                        const int right_fill = GetFluidFillHeightPx(
-                            GetWrappedFluidAmount(state.stage, int_x + 1, int_y)
-                        );
-                        if (left_fill > 0) {
-                            top_left_y = (top_left_y + static_cast<float>(kTileSizePx - left_fill)) *
-                                         0.5F;
-                        }
-                        if (right_fill > 0) {
-                            top_right_y = (top_right_y + static_cast<float>(kTileSizePx - right_fill)) *
-                                          0.5F;
-                        }
+                top_left_y = surface_y;
+                top_right_y = surface_y;
+                if (visible_surface) {
+                    const FluidRenderCell* const left_cell = const_cell_at(int_x - 1, int_y);
+                    const FluidRenderCell* const right_cell = const_cell_at(int_x + 1, int_y);
+                    if (left_cell != nullptr && left_cell->has_visible_liquid) {
+                        const float left_y = static_cast<float>(kTileSizePx) *
+                                             (1.0F - std::clamp(
+                                                         left_cell->visible_level,
+                                                         0.0F,
+                                                         1.0F
+                                                     ));
+                        top_left_y = (top_left_y + left_y) * 0.5F;
                     }
-
-                    const SDL_FRect body_src{
-                        static_cast<float>(tile_source_data->sample_rect.x),
-                        static_cast<float>(tile_source_data->sample_rect.y),
-                        static_cast<float>(tile_source_data->sample_rect.w),
-                        static_cast<float>(tile_source_data->sample_rect.h),
-                    };
-                    RenderWorldTextureQuad(
-                        renderer,
-                        graphics,
-                        tile_texture,
-                        body_src,
-                        std::array<Vec2, 4>{
-                            tile_world + Vec2::New(0.0F, top_left_y),
-                            tile_world + Vec2::New(static_cast<float>(kTileSizePx), top_right_y),
-                            tile_world + Vec2::New(
-                                static_cast<float>(kTileSizePx),
-                                static_cast<float>(kTileSizePx)
-                            ),
-                            tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
-                        },
-                        MakeFluidVertexColor(brightness, kFluidAlpha)
-                    );
+                    if (right_cell != nullptr && right_cell->has_visible_liquid) {
+                        const float right_y = static_cast<float>(kTileSizePx) *
+                                              (1.0F - std::clamp(
+                                                          right_cell->visible_level,
+                                                          0.0F,
+                                                          1.0F
+                                                      ));
+                        top_right_y = (top_right_y + right_y) * 0.5F;
+                    }
                 }
 
-                const int fall_height_px = has_fluid ? surface_y_px : kTileSizePx;
-                if (has_fluid_above && fall_height_px > 0) {
-                    const std::int8_t fall_momentum = has_fluid
-                        ? GetWrappedFluidMomentum(state.stage, int_x, int_y)
-                        : GetWrappedFluidMomentum(state.stage, int_x, int_y - 1);
-                    const FluidFallSide fall_side = GetFluidFallSide(fall_momentum);
-                    const int above_fill = GetFluidFillHeightPx(
-                        GetWrappedFluidAmount(state.stage, int_x, int_y - 1)
-                    );
-                    const int fall_width_px = std::clamp(
-                        static_cast<int>(std::ceil(
-                            (static_cast<float>(above_fill) / static_cast<float>(kTileSizePx)) *
-                            12.0F
+                const SDL_FRect body_src{
+                    static_cast<float>(tile_source_data->sample_rect.x),
+                    static_cast<float>(tile_source_data->sample_rect.y),
+                    static_cast<float>(tile_source_data->sample_rect.w),
+                    static_cast<float>(tile_source_data->sample_rect.h),
+                };
+                const std::uint8_t body_alpha = static_cast<std::uint8_t>(
+                    std::clamp(
+                        static_cast<int>(std::round(
+                            static_cast<float>(kFluidAlpha) * std::clamp(cell->opacity, 0.0F, 1.0F)
                         )),
-                        2,
-                        12
-                    );
-                    const int fall_src_x = (tile_source_data->sample_rect.w - fall_width_px) / 2;
-                    int fall_dst_x = (kTileSizePx - fall_width_px) / 2;
-                    if (fall_side == FluidFallSide::Left) {
-                        fall_dst_x = 0;
-                    } else if (fall_side == FluidFallSide::Right) {
-                        fall_dst_x = kTileSizePx - fall_width_px;
-                    }
-                    const SDL_FRect fall_src{
-                        static_cast<float>(tile_source_data->sample_rect.x + fall_src_x),
-                        static_cast<float>(tile_source_data->sample_rect.y),
-                        static_cast<float>(fall_width_px),
-                        static_cast<float>(tile_source_data->sample_rect.h),
-                    };
-                    const SDL_FRect fall_dst = WorldRectToScreen(
-                        graphics,
-                        ToVec2(tile_pos) + render_offset +
-                            Vec2::New(static_cast<float>(fall_dst_x), 0.0F),
-                        Vec2::New(static_cast<float>(fall_width_px), static_cast<float>(fall_height_px))
-                    );
-                    ApplyTerrainTileBrightness(
-                        tile_texture,
-                        state,
-                        graphics,
-                        static_cast<int>(x),
-                        static_cast<int>(y)
-                    );
-                    SDL_SetTextureAlphaMod(tile_texture, kFluidFallAlpha);
-                    RenderWorldTexture(renderer, graphics, tile_texture, &fall_src, fall_dst);
-                    SDL_SetTextureAlphaMod(tile_texture, 255);
-                    ResetTerrainTileBrightness(tile_texture);
-
-                    if (fall_side != FluidFallSide::Center && top_texture != nullptr) {
-                        const bool cap_on_right_side = fall_side == FluidFallSide::Left;
-                        const float cap_x = cap_on_right_side
-                            ? static_cast<float>(fall_dst_x + fall_width_px)
-                            : static_cast<float>(fall_dst_x);
-                        RenderWorldTextureRibbon(
-                            renderer,
-                            graphics,
-                            top_texture,
-                            top_src,
-                            tile_world + Vec2::New(cap_x, 0.0F),
-                            tile_world + Vec2::New(cap_x, static_cast<float>(fall_height_px)),
-                            top_src.h,
-                            !cap_on_right_side,
-                            MakeFluidVertexColor(brightness, kFluidTopAlpha)
-                        );
-                    }
-                }
+                        0,
+                        static_cast<int>(kFluidAlpha)
+                    )
+                );
+                RenderWorldTextureQuad(
+                    renderer,
+                    graphics,
+                    tile_texture,
+                    body_src,
+                    std::array<Vec2, 4>{
+                        tile_world + Vec2::New(0.0F, top_left_y),
+                        tile_world + Vec2::New(static_cast<float>(kTileSizePx), top_right_y),
+                        tile_world + Vec2::New(
+                            static_cast<float>(kTileSizePx),
+                            static_cast<float>(kTileSizePx)
+                        ),
+                        tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                    },
+                    MakeFluidVertexColor(brightness, body_alpha)
+                );
 
                 if (visible_surface && top_texture != nullptr) {
                     RenderWorldTextureRibbon(
@@ -812,8 +843,11 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         graphics,
                         top_texture,
                         top_src,
-                        tile_world + Vec2::New(0.0F, top_left_y),
-                        tile_world + Vec2::New(static_cast<float>(kTileSizePx), top_right_y),
+                        tile_world + Vec2::New(0.0F, top_left_y - kWaterTopRaisePx),
+                        tile_world + Vec2::New(
+                            static_cast<float>(kTileSizePx),
+                            top_right_y - kWaterTopRaisePx
+                        ),
                         top_src.h,
                         false,
                         MakeFluidVertexColor(brightness, kFluidTopAlpha)

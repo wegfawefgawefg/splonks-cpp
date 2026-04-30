@@ -12,8 +12,10 @@
 - Apply the changed fluid cells after the pass, then batch lighting and acoustics updates for those changed cells.
 - Alternate left/right candidate order each fluid tick so water does not always prefer one side.
 - Render water as a late transparent pass:
-  - body cells use amount-driven textured quads/trapezoids;
-  - falling cells use center-sliced vertical strips from the same water texture;
+  - build a Terraria-style visible-liquid cache from the fluid amount grid;
+  - extend visible liquid downward from unsupported source cells for liquidfalls;
+  - render supported/pool cells as amount-driven textured quads;
+  - render unsupported falling-stream cells as transparent liquidfall cells;
   - `watertop` uses the animated `watertop` sprite, with tile-position tick offsets so every surface tile does not animate in lockstep.
 - Surface checks must use wrapped neighbor lookup. A top-row water cell should not draw `watertop` if Y wrap makes the bottom-row cell directly above it contain water.
 
@@ -49,8 +51,13 @@ Source notes:
 - `TerrariaDecompiled` is useful because it exposes decompiled vanilla Terraria source, including `Liquid.cs`. It is still decompiled code, not an official engine design document.
 - tModLoader source/docs are a strong public reference for Terraria-compatible APIs and modern rendering internals, but not every renderer detail should be assumed to be byte-for-byte vanilla Terraria.
 - For simulation parity, prefer the decompiled `Liquid.cs` flow rules. For rendering ideas, tModLoader `LiquidRenderer` / `LiquidEdgeRenderer` are useful design references.
+- Terraria's `LiquidRenderer.InternalPrepareDraw` builds a `LiquidCache`, derives `VisibleLiquidLevel`, extends visible liquid downward up to `WATERFALL_LENGTH`, computes smoothed edge walls, then draws source-rectangle slices with per-cell offsets.
+- tModLoader documents `WATERFALL_LENGTH` as controlling how far visual liquidfalls draw. Liquidfalls are emitted from source liquid when the tile underneath is not solid; they are not a separate liquid amount in the target cell.
+- Splonks intentionally keeps the current renderer simpler than Terraria's full `VisibleLeftWall` / `VisibleRightWall` / edge-frame cache because we do not currently have a Terraria-style liquid texture atlas. The important constraint is to avoid diagonal target inference: full 255 columns must not emit side waterfalls just because a diagonal neighbor is open.
 - References:
   - `TerrariaDecompiled/Liquid.cs`: https://infinitynichto.github.io/TerrariaDecompiled/dc/dad/Liquid_8cs_source.html
+  - `TerrariaDecompiled/LiquidRenderer.cs`: https://infinitynichto.github.io/TerrariaDecompiled/d2/d2c/LiquidRenderer_8cs_source.html
+  - tModLoader `LiquidRenderer.cs.patch`: https://raw.githubusercontent.com/tModLoader/tModLoader/stable/patches/tModLoader/Terraria/GameContent/Liquid/LiquidRenderer.cs.patch
   - tModLoader `LiquidRenderer`: https://docs.tmodloader.net/docs/stable/class_liquid_renderer.html
   - tModLoader `LiquidEdgeRenderer`: https://docs.tmodloader.net/docs/preview/class_liquid_edge_renderer.html
 
@@ -92,10 +99,11 @@ Practical active-frontier shape:
 
 ## Future Rendering
 
-- Waterfall visuals should be separate render-only effects, not collision/drowning liquid.
-- Sloped surfaces should be generated from neighboring amounts, not authored as fixed-angle sprites. The first pass uses the current cell amount plus left/right neighbor amounts to make a textured trapezoid body.
-- A marching-squares pass could replace the current trapezoid heuristic later if we need cleaner corners between many partial cells.
-- The current SDL renderer can draw basic transitions by slicing the water texture vertically and horizontally.
-- For smoother partial-cell edges, render textured quads/trapezoids with `SDL_RenderGeometry` instead of requiring a new tile asset for each slope.
-- Waterfalls start as thin side-sliced vertical strips from the existing `water` texture, with width driven by source amount.
-- Terraria-style polish usually separates simulation from edge rendering. Splonks should keep this split: the grid stores amounts, while render code derives body, top, slope, and fall visuals from that grid.
+- Waterfall visuals should stay separate render-only effects, not collision/drowning liquid.
+- Source cells should own waterfall rendering. Do not infer a waterfall solely from an empty target cell having liquid above, or the visual can drift one tile and create 0-amount waterfall artifacts.
+- If we need smoother partial-cell edges later, port a small version of Terraria's visible-edge cache:
+  - derive visible liquid level, including waterfall extension;
+  - derive left/right/top/bottom walls from neighboring visible cells;
+  - smooth those walls with neighboring edge values;
+  - draw source-rectangle slices offset into each tile, instead of inventing per-case diagonal waterfall caps.
+- Terraria-style polish separates simulation from edge rendering. Splonks should keep this split: the grid stores amounts, while render code derives body, top, and fall visuals from that grid.
