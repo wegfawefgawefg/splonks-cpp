@@ -12,6 +12,7 @@
 #include "state.hpp"
 #include "stage_lighting.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
 #include "world_query.hpp"
 #include <algorithm>
 #include <cmath>
@@ -339,6 +340,61 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     static_cast<int>(y),
                     foreground_dst
                 );
+            }
+        }
+    }
+}
+
+void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    EnsureStageLighting(state);
+    state.stage.SyncTileInstanceMetadataGrid();
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const Vec2& render_offset : render_offsets) {
+        for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
+            for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
+                const Tile fluid_tile = state.stage.GetFluidTile(
+                    static_cast<unsigned int>(x),
+                    static_cast<unsigned int>(y)
+                );
+                if (!GetTileArchetype(fluid_tile).simulated_fluid) {
+                    continue;
+                }
+
+                const IVec2 tile_pos = IVec2::New(
+                    static_cast<int>(x * kTileSize),
+                    static_cast<int>(y * kTileSize)
+                );
+                const SDL_FRect fluid_dst = WorldRectToScreen(
+                    graphics,
+                    ToVec2(tile_pos) + render_offset,
+                    Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+                );
+
+                const TileSourceData* const tile_source_data =
+                    GetTileSourceDataForStage(graphics, state.stage, fluid_tile, tile_pos);
+                if (tile_source_data == nullptr) {
+                    continue;
+                }
+                SDL_Texture* const tile_texture = GetTileTexture(graphics, *tile_source_data);
+                if (tile_texture == nullptr) {
+                    continue;
+                }
+                const SDL_FRect src{
+                    static_cast<float>(tile_source_data->sample_rect.x),
+                    static_cast<float>(tile_source_data->sample_rect.y),
+                    static_cast<float>(tile_source_data->sample_rect.w),
+                    static_cast<float>(tile_source_data->sample_rect.h),
+                };
+
+                ApplyTerrainTileBrightness(
+                    tile_texture,
+                    state,
+                    graphics,
+                    static_cast<int>(x),
+                    static_cast<int>(y)
+                );
+                RenderWorldTexture(renderer, graphics, tile_texture, &src, fluid_dst);
+                ResetTerrainTileBrightness(tile_texture);
             }
         }
     }

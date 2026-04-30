@@ -106,6 +106,15 @@ bool IsFluidBrushActive(const State& state) {
     return state.debug_fluid_brush.enabled;
 }
 
+bool CanFluidBrushOccupyTile(Tile terrain_tile) {
+    if (terrain_tile == Tile::Air) {
+        return true;
+    }
+    const TileArchetype& archetype = GetTileArchetype(terrain_tile);
+    return !archetype.simulated_fluid && archetype.transparent && !archetype.solid &&
+           !archetype.one_way_top_solid;
+}
+
 void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord) {
     if (std::find(changed_tiles.begin(), changed_tiles.end(), tile_coord) != changed_tiles.end()) {
         return;
@@ -191,14 +200,27 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                 static_cast<unsigned int>(wrapped.y)
             );
             if (paint_water) {
-                if (!brush.replace_solid_tiles && current_tile != Tile::Air) {
+                if (!brush.replace_solid_tiles && !CanFluidBrushOccupyTile(current_tile)) {
                     continue;
                 }
-                state.stage.SetTile(wrapped, Tile::WaterSwim);
+                if (brush.replace_solid_tiles && !CanFluidBrushOccupyTile(current_tile)) {
+                    state.stage.SetTile(wrapped, Tile::Air);
+                }
+                state.stage.SetFluidTile(wrapped, Tile::WaterSwim);
                 PushChangedTile(changed_tiles, wrapped);
-            } else if (erase_fluid && GetTileArchetype(current_tile).simulated_fluid) {
-                state.stage.SetTile(wrapped, Tile::Air);
-                PushChangedTile(changed_tiles, wrapped);
+            } else if (erase_fluid) {
+                const Tile fluid_tile = state.stage.GetFluidTile(
+                    static_cast<unsigned int>(wrapped.x),
+                    static_cast<unsigned int>(wrapped.y)
+                );
+                if (GetTileArchetype(current_tile).simulated_fluid) {
+                    state.stage.SetTile(wrapped, Tile::Air);
+                    PushChangedTile(changed_tiles, wrapped);
+                }
+                if (GetTileArchetype(fluid_tile).simulated_fluid) {
+                    state.stage.SetFluidTile(wrapped, Tile::Air);
+                    PushChangedTile(changed_tiles, wrapped);
+                }
             }
         }
     }

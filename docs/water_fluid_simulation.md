@@ -4,12 +4,13 @@
 
 This is the first implementation target.
 
-- Store fluid as regular foreground tiles, not as special entity state.
+- Store fluid in `Stage::fluid_tiles`, a level-sized overlay grid parallel to `Stage::tiles`.
+- Terrain stays in `Stage::tiles`, so a cell can be `terrain = Ladder` and `fluid = WaterSwim`.
 - Mark fluid-capable tile archetypes with `simulated_fluid`.
 - Every 4-8 gameplay frames, run one full pass over the stage tile grid. The initial default is 6 frames and is live-tunable through the debug fluid brush.
-- Read from the current `stage.tiles` grid and write movement into a copied `next_tiles` grid.
-- Fluids move only into air for now: down, then diagonal-down, then sideways.
-- Apply the changed cells after the pass with normal stage tile mutation, then batch lighting and acoustics updates for those changed cells.
+- Read terrain blockage from `stage.tiles`, read/write fluid occupancy through `stage.fluid_tiles`.
+- Fluids move into air or transparent non-solid terrain cells, so water can occupy ladders/ropes without replacing them.
+- Apply the changed fluid cells after the pass, then batch lighting and acoustics updates for those changed cells.
 - Alternate left/right candidate order each fluid tick so water does not always prefer one side.
 
 Pros:
@@ -18,11 +19,11 @@ Pros:
 - No support-trigger ownership problem.
 - No row/zone metadata to maintain when the level changes.
 - Works with arbitrary tile destruction and stage edits.
-- Keeps water behavior visible as normal tile data.
+- Keeps terrain and fluid ownership separate.
 
 Cons:
 
-- Binary full-tile water is chunky and not volume-conserving beyond one full tile per cell.
+- Binary full-tile water is chunky and not volume-conserving beyond one full tile per cell. Whole cubes of water visibly move.
 - A full-grid copy/pass is fine for current stage sizes, but may need an active-cell frontier later.
 - Does not model partial liquid levels, pressure, waterfalls, or settling gradients.
 
@@ -32,6 +33,7 @@ Initial rules:
 - The current visual `WaterTop` can remain derived at render time from neighboring water.
 - Entity control changes come from tile overlap effects, not from water-specific physics checks in the engine.
 - Water-specific entities, like piranhas, may still use water query helpers in their own content logic.
+- Fluids render as a late transparent pass over terrain/entities.
 
 ## Approach B: Amount Grid / Terraria-Style Liquid
 
@@ -57,4 +59,4 @@ Cons:
 
 ## Current Decision
 
-Start with Approach A. It is enough to validate piranhas, pools, drainage, and water effects without committing to a full liquid layer. If binary water becomes too limited, move to Approach B after the gameplay requirements are clearer.
+Start with overlay-backed Approach A. It is enough to validate piranhas, pools, drainage, and water effects without committing to a full amount-grid liquid layer. If binary water looks too chunky, move to Approach B or add an intermediate visual smoothing pass similar to 2D marching squares while keeping the gameplay grid discrete.

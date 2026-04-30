@@ -5,7 +5,6 @@
 #include "tile_archetype.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cstdint>
 #include <optional>
 #include <utility>
@@ -34,11 +33,13 @@ bool IsFluidDestinationTile(Tile tile) {
     return tile == Tile::Air;
 }
 
-bool IsFluidPassThroughTile(Tile tile) {
+bool CanTerrainHoldFluid(Tile tile) {
+    if (tile == Tile::Air) {
+        return true;
+    }
     const TileArchetype& archetype = GetTileArchetype(tile);
-    return !archetype.simulated_fluid && archetype.transparent &&
-           !archetype.solid && !archetype.one_way_top_solid &&
-           (archetype.climbable || archetype.hangable);
+    return !archetype.simulated_fluid && archetype.transparent && !archetype.solid &&
+           !archetype.one_way_top_solid;
 }
 
 std::optional<IVec2> ResolveFluidTileCoord(const Stage& stage, const IVec2& tile_coord) {
@@ -99,107 +100,56 @@ void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord)
     changed_tiles.push_back(tile_coord);
 }
 
-bool CanFluidOccupy(
-    const Stage& stage,
-    const std::vector<std::vector<Tile>>& source_tiles,
-    const std::vector<std::vector<Tile>>& next_tiles,
-    const IVec2& tile_coord
-) {
-    const std::optional<IVec2> resolved = ResolveFluidTileCoord(stage, tile_coord);
-    if (!resolved.has_value()) {
-        return false;
-    }
-    return IsFluidDestinationTile(GetTileFromGrid(source_tiles, *resolved)) &&
-           IsFluidDestinationTile(GetTileFromGrid(next_tiles, *resolved));
-}
-
 std::optional<IVec2> ResolveFluidMoveTarget(
     const Stage& stage,
-    const std::vector<std::vector<Tile>>& source_tiles,
-    const std::vector<std::vector<Tile>>& next_tiles,
+    const std::vector<std::vector<Tile>>& terrain_tiles,
+    const std::vector<std::vector<Tile>>& source_fluid_tiles,
+    const std::vector<std::vector<Tile>>& next_fluid_tiles,
     const IVec2& start,
     const IVec2& direction
 ) {
-    const int max_steps = std::max(
-        static_cast<int>(stage.GetTileWidth()),
-        static_cast<int>(stage.GetTileHeight())
-    );
-    IVec2 candidate = start;
-    for (int step = 0; step < max_steps; ++step) {
-        const std::optional<IVec2> resolved = ResolveFluidTileCoord(stage, candidate);
-        if (!resolved.has_value()) {
-            return std::nullopt;
-        }
-
-        const Tile source_tile = GetTileFromGrid(source_tiles, *resolved);
-        const Tile next_tile = GetTileFromGrid(next_tiles, *resolved);
-        if (IsFluidDestinationTile(source_tile) && IsFluidDestinationTile(next_tile)) {
-            return resolved;
-        }
-        if (!IsFluidPassThroughTile(source_tile) || source_tile != next_tile) {
-            return std::nullopt;
-        }
-
-        candidate = candidate + direction;
+    const std::optional<IVec2> resolved = ResolveFluidTileCoord(stage, start);
+    if (!resolved.has_value()) {
+        return std::nullopt;
     }
-    return std::nullopt;
-}
-
-bool CanFluidDropFrom(
-    const Stage& stage,
-    const std::vector<std::vector<Tile>>& source_tiles,
-    const std::vector<std::vector<Tile>>& next_tiles,
-    const IVec2& tile_coord
-) {
-    return ResolveFluidMoveTarget(
-        stage,
-        source_tiles,
-        next_tiles,
-        tile_coord + IVec2::New(0, 1),
-        IVec2::New(0, 1)
-    ).has_value();
-}
-
-bool HasFluidNeighbor(
-    const Stage& stage,
-    const std::vector<std::vector<Tile>>& source_tiles,
-    const IVec2& tile_coord,
-    const IVec2& direction
-) {
-    const std::optional<IVec2> neighbor = ResolveFluidTileCoord(stage, tile_coord + direction);
-    return neighbor.has_value() && IsSimulatedFluidTile(GetTileFromGrid(source_tiles, *neighbor));
+    if (!CanTerrainHoldFluid(GetTileFromGrid(terrain_tiles, *resolved))) {
+        return std::nullopt;
+    }
+    if (!IsFluidDestinationTile(GetTileFromGrid(source_fluid_tiles, *resolved)) ||
+        !IsFluidDestinationTile(GetTileFromGrid(next_fluid_tiles, *resolved))) {
+        return std::nullopt;
+    }
+    (void)direction;
+    return resolved;
 }
 
 bool TryMoveFluidTile(
     const Stage& stage,
-    const std::vector<std::vector<Tile>>& source_tiles,
-    std::vector<std::vector<Tile>>& next_tiles,
+    const std::vector<std::vector<Tile>>& terrain_tiles,
+    const std::vector<std::vector<Tile>>& source_fluid_tiles,
+    std::vector<std::vector<Tile>>& next_fluid_tiles,
     const IVec2& source,
     const IVec2& target,
     const IVec2& direction,
     Tile fluid_tile,
-    bool require_drop_from_target,
     std::int8_t next_momentum,
     std::vector<IVec2>& changed_tiles,
     std::vector<std::vector<std::int8_t>>& next_momentum_grid
 ) {
     const std::optional<IVec2> resolved_target = ResolveFluidMoveTarget(
         stage,
-        source_tiles,
-        next_tiles,
+        terrain_tiles,
+        source_fluid_tiles,
+        next_fluid_tiles,
         target,
         direction
     );
     if (!resolved_target.has_value()) {
         return false;
     }
-    if (require_drop_from_target &&
-        !CanFluidDropFrom(stage, source_tiles, next_tiles, *resolved_target)) {
-        return false;
-    }
 
-    SetTileInGrid(next_tiles, source, Tile::Air);
-    SetTileInGrid(next_tiles, *resolved_target, fluid_tile);
+    SetTileInGrid(next_fluid_tiles, source, Tile::Air);
+    SetTileInGrid(next_fluid_tiles, *resolved_target, fluid_tile);
     SetMomentumInGrid(next_momentum_grid, source, 0);
     SetMomentumInGrid(next_momentum_grid, *resolved_target, next_momentum);
     PushChangedTile(changed_tiles, source);
@@ -207,35 +157,11 @@ bool TryMoveFluidTile(
     return true;
 }
 
-bool TryMoveFluidSideways(
-    const Stage& stage,
-    const std::vector<std::vector<Tile>>& source_tiles,
-    std::vector<std::vector<Tile>>& next_tiles,
-    std::vector<std::vector<std::int8_t>>& next_momentum_grid,
-    const IVec2& source,
-    Tile fluid_tile,
-    int direction,
-    std::vector<IVec2>& changed_tiles
-) {
-    return TryMoveFluidTile(
-        stage,
-        source_tiles,
-        next_tiles,
-        source,
-        source + IVec2::New(direction, 0),
-        IVec2::New(direction, 0),
-        fluid_tile,
-        false,
-        static_cast<std::int8_t>(direction),
-        changed_tiles,
-        next_momentum_grid
-    );
-}
-
 bool TryMoveFluidTile(
     const Stage& stage,
-    const std::vector<std::vector<Tile>>& source_tiles,
-    std::vector<std::vector<Tile>>& next_tiles,
+    const std::vector<std::vector<Tile>>& terrain_tiles,
+    const std::vector<std::vector<Tile>>& source_fluid_tiles,
+    std::vector<std::vector<Tile>>& next_fluid_tiles,
     const std::vector<std::vector<std::int8_t>>& source_momentum_grid,
     std::vector<std::vector<std::int8_t>>& next_momentum_grid,
     const IVec2& source,
@@ -246,13 +172,13 @@ bool TryMoveFluidTile(
     const std::int8_t source_momentum = GetMomentumFromGrid(source_momentum_grid, source);
     if (TryMoveFluidTile(
             stage,
-            source_tiles,
-            next_tiles,
+            terrain_tiles,
+            source_fluid_tiles,
+            next_fluid_tiles,
             source,
             source + IVec2::New(0, 1),
             IVec2::New(0, 1),
             fluid_tile,
-            false,
             source_momentum,
             changed_tiles,
             next_momentum_grid
@@ -265,13 +191,13 @@ bool TryMoveFluidTile(
     const int second = -first;
     if (TryMoveFluidTile(
             stage,
-            source_tiles,
-            next_tiles,
+            terrain_tiles,
+            source_fluid_tiles,
+            next_fluid_tiles,
             source,
             source + IVec2::New(first, 1),
             IVec2::New(first, 1),
             fluid_tile,
-            false,
             static_cast<std::int8_t>(first),
             changed_tiles,
             next_momentum_grid
@@ -280,13 +206,13 @@ bool TryMoveFluidTile(
     }
     if (TryMoveFluidTile(
             stage,
-            source_tiles,
-            next_tiles,
+            terrain_tiles,
+            source_fluid_tiles,
+            next_fluid_tiles,
             source,
             source + IVec2::New(second, 1),
             IVec2::New(second, 1),
             fluid_tile,
-            false,
             static_cast<std::int8_t>(second),
             changed_tiles,
             next_momentum_grid
@@ -294,49 +220,15 @@ bool TryMoveFluidTile(
         return true;
     }
 
-    if (source_momentum != 0 && TryMoveFluidTile(
-            stage,
-            source_tiles,
-            next_tiles,
-            source,
-            source + IVec2::New(static_cast<int>(source_momentum), 0),
-            IVec2::New(static_cast<int>(source_momentum), 0),
-            fluid_tile,
-            false,
-            source_momentum,
-            changed_tiles,
-            next_momentum_grid
-        )) {
-        return true;
-    }
-
-    const bool has_left_fluid =
-        HasFluidNeighbor(stage, source_tiles, source, IVec2::New(-1, 0));
-    const bool has_right_fluid =
-        HasFluidNeighbor(stage, source_tiles, source, IVec2::New(1, 0));
-    const bool can_equalize = has_left_fluid != has_right_fluid;
-    if (can_equalize && TryMoveFluidSideways(
-            stage,
-            source_tiles,
-            next_tiles,
-            next_momentum_grid,
-            source,
-            fluid_tile,
-            has_left_fluid ? 1 : -1,
-            changed_tiles
-        )) {
-        return true;
-    }
-
     if (TryMoveFluidTile(
             stage,
-            source_tiles,
-            next_tiles,
+            terrain_tiles,
+            source_fluid_tiles,
+            next_fluid_tiles,
             source,
             source + IVec2::New(first, 0),
             IVec2::New(first, 0),
             fluid_tile,
-            true,
             static_cast<std::int8_t>(first),
             changed_tiles,
             next_momentum_grid
@@ -344,18 +236,18 @@ bool TryMoveFluidTile(
         return true;
     }
     if (TryMoveFluidTile(
-        stage,
-        source_tiles,
-        next_tiles,
-        source,
-        source + IVec2::New(second, 0),
-        IVec2::New(second, 0),
-        fluid_tile,
-        true,
-        static_cast<std::int8_t>(second),
-        changed_tiles,
-        next_momentum_grid
-    )) {
+            stage,
+            terrain_tiles,
+            source_fluid_tiles,
+            next_fluid_tiles,
+            source,
+            source + IVec2::New(second, 0),
+            IVec2::New(second, 0),
+            fluid_tile,
+            static_cast<std::int8_t>(second),
+            changed_tiles,
+            next_momentum_grid
+        )) {
         return true;
     }
 
@@ -365,11 +257,46 @@ bool TryMoveFluidTile(
     return false;
 }
 
+std::vector<IVec2> NormalizeAuthoredFluidTiles(Stage& stage) {
+    stage.SyncTileInstanceMetadataGrid();
+    std::vector<IVec2> changed_tiles;
+    for (int y = 0; y < static_cast<int>(stage.GetTileHeight()); ++y) {
+        for (int x = 0; x < static_cast<int>(stage.GetTileWidth()); ++x) {
+            const IVec2 tile_coord = IVec2::New(x, y);
+            Tile& terrain_tile = stage.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            if (!IsSimulatedFluidTile(terrain_tile)) {
+                continue;
+            }
+
+            Tile& fluid_tile = stage.fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            if (fluid_tile == Tile::Air) {
+                fluid_tile = terrain_tile;
+            }
+            terrain_tile = Tile::Air;
+            stage.tile_rotations[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                kTileRotation0;
+            stage.fluid_momentum[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = 0;
+            PushChangedTile(changed_tiles, tile_coord);
+        }
+    }
+    if (!changed_tiles.empty()) {
+        stage.tile_change_generation += 1;
+    }
+    return changed_tiles;
+}
+
 } // namespace
 
 void StepStageFluids(State& state) {
-    if (!state.debug_fluid_brush.simulation_enabled ||
-        state.stage.tiles.empty()) {
+    if (state.stage.tiles.empty()) {
+        return;
+    }
+    std::vector<IVec2> normalized_tiles = NormalizeAuthoredFluidTiles(state.stage);
+    if (!normalized_tiles.empty()) {
+        UpdateStageLightingForTileChanges(state, normalized_tiles);
+        UpdateStageAcousticsForTileChanges(state, normalized_tiles);
+    }
+    if (!state.debug_fluid_brush.simulation_enabled) {
         return;
     }
     const std::uint32_t interval_frames = static_cast<std::uint32_t>(
@@ -379,10 +306,11 @@ void StepStageFluids(State& state) {
         return;
     }
 
-    state.stage.SyncFluidMomentumGrid();
-    const std::vector<std::vector<Tile>>& source_tiles = state.stage.tiles;
+    state.stage.SyncTileInstanceMetadataGrid();
+    const std::vector<std::vector<Tile>>& terrain_tiles = state.stage.tiles;
+    const std::vector<std::vector<Tile>>& source_fluid_tiles = state.stage.fluid_tiles;
     const std::vector<std::vector<std::int8_t>>& source_momentum_grid = state.stage.fluid_momentum;
-    std::vector<std::vector<Tile>> next_tiles = source_tiles;
+    std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
     std::vector<std::vector<std::int8_t>> next_momentum_grid = source_momentum_grid;
     std::vector<IVec2> changed_tiles;
     const bool left_first = ((state.stage_frame / interval_frames) % 2U) == 0U;
@@ -390,15 +318,16 @@ void StepStageFluids(State& state) {
     for (int y = static_cast<int>(state.stage.GetTileHeight()) - 1; y >= 0; --y) {
         for (int x = 0; x < static_cast<int>(state.stage.GetTileWidth()); ++x) {
             const IVec2 source = IVec2::New(x, y);
-            const Tile fluid_tile = GetTileFromGrid(source_tiles, source);
+            const Tile fluid_tile = GetTileFromGrid(source_fluid_tiles, source);
             if (!IsSimulatedFluidTile(fluid_tile) ||
-                GetTileFromGrid(next_tiles, source) != fluid_tile) {
+                GetTileFromGrid(next_fluid_tiles, source) != fluid_tile) {
                 continue;
             }
             (void)TryMoveFluidTile(
                 state.stage,
-                source_tiles,
-                next_tiles,
+                terrain_tiles,
+                source_fluid_tiles,
+                next_fluid_tiles,
                 source_momentum_grid,
                 next_momentum_grid,
                 source,
@@ -414,10 +343,9 @@ void StepStageFluids(State& state) {
         return;
     }
 
-    for (const IVec2& tile_coord : changed_tiles) {
-        state.stage.SetTile(tile_coord, GetTileFromGrid(next_tiles, tile_coord));
-    }
+    state.stage.fluid_tiles = std::move(next_fluid_tiles);
     state.stage.fluid_momentum = std::move(next_momentum_grid);
+    state.stage.tile_change_generation += 1;
     UpdateStageLightingForTileChanges(state, changed_tiles);
     UpdateStageAcousticsForTileChanges(state, changed_tiles);
 }

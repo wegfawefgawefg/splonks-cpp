@@ -8,6 +8,7 @@ struct Graphics;
 struct State;
 
 void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics);
+void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics);
 void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics);
 void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphics& graphics);
 void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& graphics);

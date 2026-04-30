@@ -9,7 +9,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 66;
+constexpr std::uint32_t kRecordingVersion = 67;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -526,6 +526,12 @@ void WriteStage(std::ostream& out, const Stage& stage) {
         WriteVectorPod(out, row);
     }
 
+    const std::uint32_t fluid_tile_rows = static_cast<std::uint32_t>(stage.fluid_tiles.size());
+    WritePod(out, fluid_tile_rows);
+    for (const std::vector<Tile>& row : stage.fluid_tiles) {
+        WriteVectorPod(out, row);
+    }
+
     const std::uint32_t fluid_momentum_rows =
         static_cast<std::uint32_t>(stage.fluid_momentum.size());
     WritePod(out, fluid_momentum_rows);
@@ -587,6 +593,17 @@ bool ReadStage(std::istream& in, Stage& stage) {
     stage.tiles.resize(tile_rows);
     for (std::uint32_t i = 0; i < tile_rows; ++i) {
         if (!ReadVectorPod(in, stage.tiles[i])) {
+            return false;
+        }
+    }
+
+    std::uint32_t fluid_tile_rows = 0;
+    if (!ReadPod(in, fluid_tile_rows)) {
+        return false;
+    }
+    stage.fluid_tiles.resize(fluid_tile_rows);
+    for (std::uint32_t i = 0; i < fluid_tile_rows; ++i) {
+        if (!ReadVectorPod(in, stage.fluid_tiles[i])) {
             return false;
         }
     }

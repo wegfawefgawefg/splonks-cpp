@@ -38,15 +38,31 @@ void ApplyTileOverlapEffects(std::size_t entity_idx, State& state) {
             continue;
         }
         const TileArchetype& tile_archetype = GetTileArchetype(*tile_query.tile);
-        if (!tile_archetype.effect_while_inside.has_value()) {
+        if (tile_archetype.effect_while_inside.has_value()) {
+            (void)AddEffect(
+                entity,
+                *tile_archetype.effect_while_inside,
+                0,
+                kTileOverlapEffectRefreshFrames
+            );
+        }
+
+        if (!state.stage.IsTileCoordInside(tile_query.tile_pos.x, tile_query.tile_pos.y)) {
             continue;
         }
-        (void)AddEffect(
-            entity,
-            *tile_archetype.effect_while_inside,
-            0,
-            kTileOverlapEffectRefreshFrames
+        const Tile fluid_tile = state.stage.GetFluidTile(
+            static_cast<unsigned int>(tile_query.tile_pos.x),
+            static_cast<unsigned int>(tile_query.tile_pos.y)
         );
+        const TileArchetype& fluid_archetype = GetTileArchetype(fluid_tile);
+        if (fluid_archetype.effect_while_inside.has_value()) {
+            (void)AddEffect(
+                entity,
+                *fluid_archetype.effect_while_inside,
+                0,
+                kTileOverlapEffectRefreshFrames
+            );
+        }
     }
 }
 
