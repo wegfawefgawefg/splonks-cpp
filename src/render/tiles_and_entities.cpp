@@ -30,6 +30,12 @@ struct VisibleWorldRect {
     Vec2 br;
 };
 
+enum class FluidFallSide {
+    Left,
+    Center,
+    Right,
+};
+
 int WrapCoordinate(int value, int size) {
     if (size <= 0) {
         return 0;
@@ -109,6 +115,48 @@ bool HasWrappedFluid(const Stage& stage, int tile_x, int tile_y) {
     return GetWrappedFluidAmount(stage, tile_x, tile_y) > 0;
 }
 
+std::int8_t GetWrappedFluidMomentum(const Stage& stage, int tile_x, int tile_y) {
+    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
+    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+        return 0;
+    }
+    if (wrapped.y < 0 || static_cast<std::size_t>(wrapped.y) >= stage.fluid_momentum.size()) {
+        return 0;
+    }
+    const std::vector<std::int8_t>& row =
+        stage.fluid_momentum[static_cast<std::size_t>(wrapped.y)];
+    if (wrapped.x < 0 || static_cast<std::size_t>(wrapped.x) >= row.size()) {
+        return 0;
+    }
+    return std::clamp<std::int8_t>(row[static_cast<std::size_t>(wrapped.x)], -1, 1);
+}
+
+Tile GetWrappedFluidTile(const Stage& stage, int tile_x, int tile_y) {
+    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
+    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+        return Tile::Air;
+    }
+    return stage.GetFluidTile(
+        static_cast<unsigned int>(wrapped.x),
+        static_cast<unsigned int>(wrapped.y)
+    );
+}
+
+Tile GetWrappedTerrainTile(const Stage& stage, int tile_x, int tile_y) {
+    const IVec2 wrapped = stage.WrapTileCoord(IVec2::New(tile_x, tile_y));
+    if (!stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+        return Tile::Air;
+    }
+    return stage.GetTile(
+        static_cast<unsigned int>(wrapped.x),
+        static_cast<unsigned int>(wrapped.y)
+    );
+}
+
+bool IsWrappedTerrainSolid(const Stage& stage, int tile_x, int tile_y) {
+    return GetTileArchetype(GetWrappedTerrainTile(stage, tile_x, tile_y)).solid;
+}
+
 int GetFluidFillHeightPx(std::uint8_t amount) {
     constexpr std::uint8_t kMaxFluidAmount = 255;
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
@@ -156,6 +204,31 @@ const FrameData* GetAnimationFrameForTick(
     }
 
     return &frame_data_db.frames[animation->frame_indices.front()];
+}
+
+std::optional<TileSourceData> GetAnimatedWaterTopSourceData(
+    Graphics& graphics,
+    const IVec2& tile_pos,
+    std::uint64_t tick
+) {
+    const TileSourceData* const fallback_top_source_data =
+        GetTileSourceData(graphics, Tile::WaterTop, tile_pos);
+    if (fallback_top_source_data == nullptr) {
+        return std::nullopt;
+    }
+
+    TileSourceData top_source_data = *fallback_top_source_data;
+    const FrameData* const top_frame = GetAnimationFrameForTick(
+        graphics.frame_data_db,
+        HashFrameDataIdConstexpr("watertop"),
+        tick
+    );
+    if (top_frame != nullptr) {
+        top_source_data.image_id = top_frame->image_id;
+        top_source_data.sample_rect = top_frame->sample_rect;
+        top_source_data.cbox = top_frame->cbox;
+    }
+    return top_source_data;
 }
 
 Vec2 WorldPointToScreenForGeometry(const Graphics& graphics, const Vec2& world_pos) {
@@ -230,6 +303,64 @@ void RenderWorldTextureQuad(
         indices.data(),
         static_cast<int>(indices.size())
     );
+}
+
+void RenderWorldTextureRibbon(
+    SDL_Renderer* renderer,
+    const Graphics& graphics,
+    SDL_Texture* texture,
+    const SDL_FRect& src,
+    const Vec2& start,
+    const Vec2& end,
+    float thickness,
+    bool use_right_normal,
+    const SDL_FColor& color
+) {
+    const Vec2 delta = end - start;
+    const float length = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
+    if (length <= 0.01F || thickness <= 0.0F) {
+        return;
+    }
+
+    const Vec2 dir = delta / length;
+    const Vec2 normal = use_right_normal
+        ? Vec2::New(dir.y, -dir.x)
+        : Vec2::New(-dir.y, dir.x);
+    const float max_piece_len = std::max(src.w, 1.0F);
+    float consumed = 0.0F;
+    while (consumed < length - 0.01F) {
+        const float piece_len = std::min(max_piece_len, length - consumed);
+        const float t0 = consumed / length;
+        const float t1 = (consumed + piece_len) / length;
+        const Vec2 piece_start = start + (delta * t0);
+        const Vec2 piece_end = start + (delta * t1);
+        SDL_FRect piece_src = src;
+        piece_src.w = src.w * (piece_len / max_piece_len);
+        RenderWorldTextureQuad(
+            renderer,
+            graphics,
+            texture,
+            piece_src,
+            std::array<Vec2, 4>{
+                piece_start,
+                piece_end,
+                piece_end + (normal * thickness),
+                piece_start + (normal * thickness),
+            },
+            color
+        );
+        consumed += piece_len;
+    }
+}
+
+FluidFallSide GetFluidFallSide(std::int8_t momentum) {
+    if (momentum < 0) {
+        return FluidFallSide::Left;
+    }
+    if (momentum > 0) {
+        return FluidFallSide::Right;
+    }
+    return FluidFallSide::Center;
 }
 
 bool ShouldRenderImmediateBorderBacking(const Stage& stage, int tile_x, int tile_y) {
@@ -520,17 +651,9 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     static_cast<int>(y * kTileSize)
                 );
 
-                Tile body_tile = fluid_tile;
-                if (!has_fluid) {
-                    body_tile = state.stage.GetFluidTile(
-                        static_cast<unsigned int>(state.stage.WrapTileCoord(
-                            IVec2::New(int_x, int_y - 1)
-                        ).x),
-                        static_cast<unsigned int>(state.stage.WrapTileCoord(
-                            IVec2::New(int_x, int_y - 1)
-                        ).y)
-                    );
-                }
+                const Tile body_tile = has_fluid
+                    ? fluid_tile
+                    : GetWrappedFluidTile(state.stage, int_x, int_y - 1);
                 const TileSourceData* const tile_source_data =
                     GetTileSourceData(graphics, body_tile, tile_pos);
                 if (tile_source_data == nullptr) {
@@ -541,12 +664,40 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     continue;
                 }
 
+                const std::uint64_t top_tick =
+                    static_cast<std::uint64_t>(state.scene_frame) +
+                    (static_cast<std::uint64_t>(x) * 13ULL) +
+                    (static_cast<std::uint64_t>(y) * 7ULL);
+                const std::optional<TileSourceData> top_source_data =
+                    GetAnimatedWaterTopSourceData(graphics, tile_pos, top_tick);
+                SDL_Texture* const top_texture = top_source_data.has_value()
+                    ? GetTileTexture(graphics, *top_source_data)
+                    : nullptr;
+                const SDL_FRect top_src = top_source_data.has_value()
+                    ? SDL_FRect{
+                          static_cast<float>(top_source_data->sample_rect.x),
+                          static_cast<float>(top_source_data->sample_rect.y),
+                          static_cast<float>(top_source_data->sample_rect.w),
+                          static_cast<float>(top_source_data->sample_rect.h),
+                      }
+                    : SDL_FRect{};
+
                 const int fill_height_px = GetFluidFillHeightPx(amount);
                 const int surface_y_px = kTileSizePx - fill_height_px;
+                const bool above_solid = IsWrappedTerrainSolid(state.stage, int_x, int_y - 1);
+                const bool visible_surface =
+                    has_fluid && !has_fluid_above && !(amount == 255 && above_solid);
+                float top_left_y = static_cast<float>(surface_y_px);
+                float top_right_y = static_cast<float>(surface_y_px);
+                const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
+                const float brightness = GetTileArchetype(state.stage.GetTile(tile_x, tile_y)).solid
+                    ? GetForegroundBrightnessForRender(
+                          state,
+                          static_cast<int>(x),
+                          static_cast<int>(y)
+                      )
+                    : 1.0F;
                 if (has_fluid) {
-                    const bool visible_surface = !has_fluid_above;
-                    float top_left_y = static_cast<float>(surface_y_px);
-                    float top_right_y = static_cast<float>(surface_y_px);
                     if (visible_surface) {
                         const int left_fill = GetFluidFillHeightPx(
                             GetWrappedFluidAmount(state.stage, int_x - 1, int_y)
@@ -570,14 +721,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         static_cast<float>(tile_source_data->sample_rect.w),
                         static_cast<float>(tile_source_data->sample_rect.h),
                     };
-                    const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
-                    const float brightness = GetTileArchetype(state.stage.GetTile(tile_x, tile_y)).solid
-                        ? GetForegroundBrightnessForRender(
-                              state,
-                              static_cast<int>(x),
-                              static_cast<int>(y)
-                          )
-                        : 1.0F;
                     RenderWorldTextureQuad(
                         renderer,
                         graphics,
@@ -598,6 +741,10 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
 
                 const int fall_height_px = has_fluid ? surface_y_px : kTileSizePx;
                 if (has_fluid_above && fall_height_px > 0) {
+                    const std::int8_t fall_momentum = has_fluid
+                        ? GetWrappedFluidMomentum(state.stage, int_x, int_y)
+                        : GetWrappedFluidMomentum(state.stage, int_x, int_y - 1);
+                    const FluidFallSide fall_side = GetFluidFallSide(fall_momentum);
                     const int above_fill = GetFluidFillHeightPx(
                         GetWrappedFluidAmount(state.stage, int_x, int_y - 1)
                     );
@@ -610,7 +757,12 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         12
                     );
                     const int fall_src_x = (tile_source_data->sample_rect.w - fall_width_px) / 2;
-                    const int fall_dst_x = (kTileSizePx - fall_width_px) / 2;
+                    int fall_dst_x = (kTileSizePx - fall_width_px) / 2;
+                    if (fall_side == FluidFallSide::Left) {
+                        fall_dst_x = 0;
+                    } else if (fall_side == FluidFallSide::Right) {
+                        fall_dst_x = kTileSizePx - fall_width_px;
+                    }
                     const SDL_FRect fall_src{
                         static_cast<float>(tile_source_data->sample_rect.x + fall_src_x),
                         static_cast<float>(tile_source_data->sample_rect.y),
@@ -634,62 +786,39 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     RenderWorldTexture(renderer, graphics, tile_texture, &fall_src, fall_dst);
                     SDL_SetTextureAlphaMod(tile_texture, 255);
                     ResetTerrainTileBrightness(tile_texture);
+
+                    if (fall_side != FluidFallSide::Center && top_texture != nullptr) {
+                        const bool cap_on_right_side = fall_side == FluidFallSide::Left;
+                        const float cap_x = cap_on_right_side
+                            ? static_cast<float>(fall_dst_x + fall_width_px)
+                            : static_cast<float>(fall_dst_x);
+                        RenderWorldTextureRibbon(
+                            renderer,
+                            graphics,
+                            top_texture,
+                            top_src,
+                            tile_world + Vec2::New(cap_x, 0.0F),
+                            tile_world + Vec2::New(cap_x, static_cast<float>(fall_height_px)),
+                            top_src.h,
+                            !cap_on_right_side,
+                            MakeFluidVertexColor(brightness, kFluidTopAlpha)
+                        );
+                    }
                 }
 
-                if (!has_fluid || has_fluid_above) {
-                    continue;
+                if (visible_surface && top_texture != nullptr) {
+                    RenderWorldTextureRibbon(
+                        renderer,
+                        graphics,
+                        top_texture,
+                        top_src,
+                        tile_world + Vec2::New(0.0F, top_left_y),
+                        tile_world + Vec2::New(static_cast<float>(kTileSizePx), top_right_y),
+                        top_src.h,
+                        false,
+                        MakeFluidVertexColor(brightness, kFluidTopAlpha)
+                    );
                 }
-
-                const TileSourceData* const fallback_top_source_data =
-                    GetTileSourceData(graphics, Tile::WaterTop, tile_pos);
-                if (fallback_top_source_data == nullptr) {
-                    continue;
-                }
-                TileSourceData top_source_data = *fallback_top_source_data;
-                const std::uint64_t top_tick =
-                    static_cast<std::uint64_t>(state.scene_frame) +
-                    (static_cast<std::uint64_t>(x) * 13ULL) +
-                    (static_cast<std::uint64_t>(y) * 7ULL);
-                const FrameData* const top_frame = GetAnimationFrameForTick(
-                    graphics.frame_data_db,
-                    HashFrameDataIdConstexpr("watertop"),
-                    top_tick
-                );
-                if (top_frame != nullptr) {
-                    top_source_data.image_id = top_frame->image_id;
-                    top_source_data.sample_rect = top_frame->sample_rect;
-                    top_source_data.cbox = top_frame->cbox;
-                }
-                SDL_Texture* const top_texture = GetTileTexture(graphics, top_source_data);
-                if (top_texture == nullptr) {
-                    continue;
-                }
-                const SDL_FRect top_src{
-                    static_cast<float>(top_source_data.sample_rect.x),
-                    static_cast<float>(top_source_data.sample_rect.y),
-                    static_cast<float>(top_source_data.sample_rect.w),
-                    static_cast<float>(top_source_data.sample_rect.h),
-                };
-                const SDL_FRect top_dst = WorldRectToScreen(
-                    graphics,
-                    ToVec2(tile_pos) + render_offset +
-                        Vec2::New(0.0F, static_cast<float>(surface_y_px)),
-                    Vec2::New(
-                        static_cast<float>(top_source_data.sample_rect.w),
-                        static_cast<float>(top_source_data.sample_rect.h)
-                    )
-                );
-                ApplyTerrainTileBrightness(
-                    top_texture,
-                    state,
-                    graphics,
-                    static_cast<int>(x),
-                    static_cast<int>(y)
-                );
-                SDL_SetTextureAlphaMod(top_texture, kFluidTopAlpha);
-                RenderWorldTexture(renderer, graphics, top_texture, &top_src, top_dst);
-                SDL_SetTextureAlphaMod(top_texture, 255);
-                ResetTerrainTileBrightness(top_texture);
             }
         }
     }

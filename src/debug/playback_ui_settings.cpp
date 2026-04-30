@@ -71,6 +71,7 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
     ImGui::Checkbox("Show Tile Indexes", &state.debug_overlay.show_tile_indexes);
     ImGui::Checkbox("Show Tile Types", &state.debug_overlay.show_tile_types);
     ImGui::Checkbox("Show Tile Openness", &state.debug_overlay.show_tile_openness);
+    ImGui::Checkbox("Show Fluid Amounts", &state.debug_overlay.show_fluid_amounts);
     ImGui::Checkbox("Show Lights", &state.debug_overlay.show_lights);
     ImGui::Checkbox("Show Area Boundaries", &state.debug_overlay.show_area_boundaries);
     ImGui::Checkbox("Show Area IDs", &state.debug_overlay.show_area_ids);

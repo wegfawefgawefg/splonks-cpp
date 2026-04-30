@@ -117,6 +117,7 @@ struct DebugOverlayState {
     bool show_tile_indexes = false;
     bool show_tile_types = false;
     bool show_tile_openness = false;
+    bool show_fluid_amounts = false;
     bool show_lights = false;
     bool show_area_boundaries = false;
     bool show_area_ids = false;

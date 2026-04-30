@@ -11,6 +11,7 @@
 #include "state.hpp"
 #include "text.hpp"
 #include "tile.hpp"
+#include "tile_archetype.hpp"
 #include "world_query.hpp"
 #include "entities/shop.hpp"
 
@@ -1132,6 +1133,74 @@ void RenderTileOpennessOverlay(
     }
 }
 
+void RenderFluidAmountOverlay(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation,
+    const std::vector<Vec2>& render_offsets
+) {
+    if (!state.debug_overlay.show_fluid_amounts) {
+        return;
+    }
+
+    const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    for (const Vec2& render_offset : render_offsets) {
+        for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
+                 state.stage,
+                 ToIVec2(visible.tl - render_offset),
+                 ToIVec2(visible.br - render_offset))) {
+            if (!state.stage.IsTileCoordInside(tile_query.tile_pos.x, tile_query.tile_pos.y)) {
+                continue;
+            }
+
+            const auto tile_x = static_cast<unsigned int>(tile_query.tile_pos.x);
+            const auto tile_y = static_cast<unsigned int>(tile_query.tile_pos.y);
+            const Tile fluid_tile = state.stage.GetFluidTile(tile_x, tile_y);
+            const std::uint8_t amount = state.stage.GetFluidAmount(tile_x, tile_y);
+            if (!GetTileArchetype(fluid_tile).simulated_fluid || amount == 0) {
+                continue;
+            }
+
+            const Vec2 tile_tl = TileTopLeftWorld(tile_query.tile_pos) + render_offset;
+            const SDL_FRect tile_rect = WorldRectToScreen(
+                graphics,
+                presentation,
+                tile_tl,
+                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+            );
+            if (!IsScreenRectVisible(presentation, tile_rect)) {
+                continue;
+            }
+
+            const std::uint8_t alpha = static_cast<std::uint8_t>(
+                48 + ((static_cast<int>(amount) * 128) / 255)
+            );
+            SDL_SetRenderDrawColor(renderer, 32, 180, 255, alpha);
+            SDL_RenderFillRect(renderer, &tile_rect);
+            SDL_SetRenderDrawColor(renderer, 128, 232, 255, 255);
+            SDL_RenderRect(renderer, &tile_rect);
+
+            if (tile_rect.w >= 24.0F && tile_rect.h >= 14.0F) {
+                char label[16];
+                std::snprintf(label, sizeof(label), "%u", static_cast<unsigned int>(amount));
+                DrawText(
+                    renderer,
+                    graphics,
+                    10,
+                    graphics.ui_font,
+                    label,
+                    tile_rect.x + 1.0F,
+                    tile_rect.y + 1.0F,
+                    SDL_Color{255, 255, 255, 255}
+                );
+            }
+        }
+    }
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+}
+
 void RenderLightOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
@@ -1402,6 +1471,7 @@ void RenderDebugOverlay(
         !state.debug_overlay.show_tile_indexes &&
         !state.debug_overlay.show_tile_types &&
         !state.debug_overlay.show_tile_openness &&
+        !state.debug_overlay.show_fluid_amounts &&
         !state.debug_overlay.show_lights &&
         !state.debug_overlay.show_area_boundaries &&
         !state.debug_overlay.show_area_ids &&
@@ -1438,6 +1508,9 @@ void RenderDebugOverlay(
     }
     if (state.debug_overlay.show_tile_openness) {
         RenderTileOpennessOverlay(renderer, graphics, state, presentation, render_offsets);
+    }
+    if (state.debug_overlay.show_fluid_amounts) {
+        RenderFluidAmountOverlay(renderer, graphics, state, presentation, render_offsets);
     }
     if (state.debug_overlay.show_tile_indexes || state.debug_overlay.show_tile_types) {
         RenderTileOverlay(renderer, graphics, state, presentation, render_offsets);
