@@ -103,6 +103,24 @@ std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplaySta
         default:
             return std::nullopt;
         }
+    case EntityType::Monkey:
+        switch (entity.display_state) {
+        case EntityDisplayState::Neutral:
+            return DisplayStateFrameDataSelection{frame_data_ids::MonkeyStand, true, false, 0};
+        case EntityDisplayState::Stunned:
+        case EntityDisplayState::Dead:
+            return DisplayStateFrameDataSelection{frame_data_ids::MonkeyDead, true, false, 0};
+        case EntityDisplayState::Walk:
+            return DisplayStateFrameDataSelection{frame_data_ids::MonkeyDown, true, false, 0};
+        case EntityDisplayState::Fly:
+        case EntityDisplayState::Falling:
+            return DisplayStateFrameDataSelection{frame_data_ids::MonkeyHang, true, false, 0};
+        case EntityDisplayState::Climbing:
+        case EntityDisplayState::Hanging:
+            return DisplayStateFrameDataSelection{frame_data_ids::MonkeyHang, true, false, 0};
+        default:
+            return std::nullopt;
+        }
     case EntityType::Caveman:
         switch (entity.display_state) {
         case EntityDisplayState::Neutral:

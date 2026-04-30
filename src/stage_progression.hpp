@@ -27,6 +27,7 @@ enum class DebugLevelKind {
     ArrowTrapTest,
     SpikeTest,
     TrapDoorTest,
+    MonkeyTest,
     CrusherTrapTest,
 };
 

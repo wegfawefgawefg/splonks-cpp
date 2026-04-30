@@ -5,6 +5,7 @@
 #include "entities/common/common.hpp"
 #include "stage_spawning.hpp"
 
+#include <array>
 #include <optional>
 
 namespace splonks {
@@ -15,6 +16,8 @@ constexpr int kBowlingTestStageWidthTiles = 80;
 constexpr int kBowlingTestStageHeightTiles = 8;
 constexpr int kOpposingBodySmackStageWidthTiles = 14;
 constexpr int kOpposingBodySmackStageHeightTiles = 8;
+constexpr int kMonkeyTestStageWidthTiles = 16;
+constexpr int kMonkeyTestStageHeightTiles = 16;
 
 std::optional<VID> SpawnBowlingCaveman(
     State& state,
@@ -140,6 +143,45 @@ Stage MakeOpposingBodySmackStage() {
     return stage;
 }
 
+Stage MakeMonkeyTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kMonkeyTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kMonkeyTestStageWidthTiles), Tile::Air)
+    );
+    debug_stage::FillBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.border = Stage::MakeUniformBorder(debug_stage::kDefaultBorderTile);
+    debug_stage::ApplyDefaultDebugCamera(stage);
+
+    const Tile wall_tile = debug_stage::kDefaultBorderTile;
+    for (int x = 0; x < kMonkeyTestStageWidthTiles; ++x) {
+        debug_stage::SetTile(stage, x, 0, wall_tile);
+        debug_stage::SetTile(stage, x, kMonkeyTestStageHeightTiles - 1, wall_tile);
+    }
+    for (int y = 0; y < kMonkeyTestStageHeightTiles; ++y) {
+        debug_stage::SetTile(stage, 0, y, wall_tile);
+        debug_stage::SetTile(stage, kMonkeyTestStageWidthTiles - 1, y, wall_tile);
+    }
+
+    debug_stage::BuildLadder(stage, 3, 4, 14);
+    debug_stage::BuildLadder(stage, 12, 3, 14);
+    for (int y = 2; y <= 14; ++y) {
+        debug_stage::SetTile(stage, 8, y, Tile::Rope);
+    }
+
+    debug_stage::FillRect(stage, 2, 11, 5, 11, wall_tile);
+    debug_stage::FillRect(stage, 10, 10, 13, 10, wall_tile);
+    debug_stage::FillRect(stage, 5, 7, 7, 7, wall_tile);
+    debug_stage::FillRect(stage, 9, 5, 11, 5, wall_tile);
+    debug_stage::FillRect(stage, 6, 13, 6, 14, wall_tile);
+    debug_stage::FillRect(stage, 10, 13, 10, 14, wall_tile);
+
+    return stage;
+}
+
 void InitBowlingTestStage(State& state) {
     InitCommonStageState(state);
     state.mouse_trailer_vid.reset();
@@ -203,6 +245,44 @@ void InitOpposingBodySmackStage(State& state) {
         Vec2::New(9.0F * static_cast<float>(kTileSize), caveman_center_y),
         Vec2::New(-8.0F, 0.0F)
     );
+}
+
+void InitMonkeyTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    SpawnPlayer(
+        state,
+        Vec2::New(
+            2.0F * static_cast<float>(kTileSize),
+            14.0F * static_cast<float>(kTileSize) - 14.0F
+        )
+    );
+
+    const std::array<IVec2, 6> monkey_centers_tiles{{
+        IVec2::New(5, 10),
+        IVec2::New(11, 9),
+        IVec2::New(8, 6),
+        IVec2::New(13, 4),
+        IVec2::New(4, 13),
+        IVec2::New(12, 13),
+    }};
+
+    for (std::size_t i = 0; i < monkey_centers_tiles.size(); ++i) {
+        const IVec2& tile_pos = monkey_centers_tiles[i];
+        if (const std::optional<VID> monkey_vid = SpawnStageEntityAtCenter(
+            state,
+            EntityType::Monkey,
+            Vec2::New(
+                (static_cast<float>(tile_pos.x) + 0.5F) * static_cast<float>(kTileSize),
+                (static_cast<float>(tile_pos.y) + 0.5F) * static_cast<float>(kTileSize)
+            )
+        )) {
+            if (Entity* const monkey = state.entity_manager.GetEntityMut(*monkey_vid)) {
+                monkey->facing = (i % 2 == 0) ? LeftOrRight::Left : LeftOrRight::Right;
+            }
+        }
+    }
 }
 
 } // namespace splonks

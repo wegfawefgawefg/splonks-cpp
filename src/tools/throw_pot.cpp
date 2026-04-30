@@ -24,7 +24,8 @@ bool UseThrowPotTool(
     Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
-    bool trigger_pressed
+    bool trigger_pressed,
+    ToolThrowVelocityBuilder build_throw_velocity
 ) {
     const VID user_vid = state.entity_manager.entities[entity_idx].vid;
     ToolSlot* const tool_slot = state.entity_tools.FindToolSlotMut(user_vid, tool_slot_index);
@@ -41,7 +42,8 @@ bool UseThrowPotTool(
         trigger_pressed,
         kThrowPotToolArchetype.use_cooldown_frames,
         entities::common::kThrownByImmunityDuration,
-        [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Pot); }
+        [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Pot); },
+        build_throw_velocity
     );
 }
 

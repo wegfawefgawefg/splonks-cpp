@@ -1,20 +1,30 @@
 #include "cli.hpp"
 
 #include "debug/playback.hpp"
+#include "debug/debug_stage_builders.hpp"
+#include "audio.hpp"
+#include "entity/archetype.hpp"
 #include "frame_data.hpp"
+#include "graphics.hpp"
 #include "quest.hpp"
 #include "raw_frame_data.hpp"
+#include "stage_init.hpp"
 #include "stage_gen/classic/stagegen.hpp"
 #include "stage_gen/classic/tile_palette.hpp"
 #include "stage_gen/room_template_loader.hpp"
+#include "stage_spawning.hpp"
+#include "step.hpp"
+#include "state.hpp"
 #include "tile.hpp"
 #include "tile_source_data.hpp"
+#include "tools/tool_archetype.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <set>
@@ -266,6 +276,173 @@ bool SampleClassicMinesAltars(int runs) {
     }
 }
 
+void SetCliStageTile(Stage& stage, int x, int y, Tile tile) {
+    stage.SetTile(IVec2::New(x, y), tile);
+}
+
+void FillCliStageRect(Stage& stage, int left_x, int top_y, int right_x, int bottom_y, Tile tile) {
+    for (int y = top_y; y <= bottom_y; ++y) {
+        for (int x = left_x; x <= right_x; ++x) {
+            SetCliStageTile(stage, x, y, tile);
+        }
+    }
+}
+
+void BuildCliStageLadder(Stage& stage, int x, int top_y, int bottom_y) {
+    SetCliStageTile(stage, x, top_y, Tile::LadderTop);
+    for (int y = top_y + 1; y <= bottom_y; ++y) {
+        SetCliStageTile(stage, x, y, Tile::Ladder);
+    }
+}
+
+Stage MakeBigMonkeySampleStage() {
+    constexpr int width = 40;
+    constexpr int height = 32;
+    constexpr Tile wall_tile = Tile::CaveDirt;
+
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(height),
+        std::vector<Tile>(static_cast<std::size_t>(width), Tile::Air)
+    );
+    stage.FillBackwall(std::vector<Tile>{
+        Tile::CaveAir0,
+        Tile::CaveAir1,
+        Tile::CaveAir2,
+    });
+    stage.rooms = {};
+    stage.path = {};
+    stage.border = Stage::MakeUniformBorder(wall_tile);
+    stage.camera_clamp_enabled = true;
+    stage.camera_clamp_margin = ToVec2(Stage::kRoomShape * kTileSize) / 2.0F;
+
+    for (int x = 0; x < width; ++x) {
+        SetCliStageTile(stage, x, 0, wall_tile);
+        SetCliStageTile(stage, x, height - 1, wall_tile);
+    }
+    for (int y = 0; y < height; ++y) {
+        SetCliStageTile(stage, 0, y, wall_tile);
+        SetCliStageTile(stage, width - 1, y, wall_tile);
+    }
+
+    for (int room_y = 0; room_y < 4; ++room_y) {
+        const int base_y = room_y * 8;
+        FillCliStageRect(stage, 6, base_y + 6, 10, base_y + 6, wall_tile);
+        FillCliStageRect(stage, 13, base_y + 4, 17, base_y + 4, wall_tile);
+        FillCliStageRect(stage, 22, base_y + 5, 28, base_y + 5, wall_tile);
+        FillCliStageRect(stage, 31, base_y + 3, 36, base_y + 3, wall_tile);
+    }
+
+    BuildCliStageLadder(stage, 4, 2, height - 2);
+    BuildCliStageLadder(stage, 15, 1, height - 2);
+    BuildCliStageLadder(stage, 25, 2, height - 2);
+    BuildCliStageLadder(stage, 35, 1, height - 2);
+    for (int y = 1; y <= height - 2; ++y) {
+        SetCliStageTile(stage, 20, y, Tile::Rope);
+    }
+
+    return stage;
+}
+
+void InitBigMonkeySampleStage(State& state) {
+    InitCommonStageState(state);
+
+    for (int room_y = 0; room_y < 4; ++room_y) {
+        for (int room_x = 0; room_x < 4; ++room_x) {
+            const float center_x = static_cast<float>(room_x * 10 + 5) * static_cast<float>(kTileSize);
+            const float center_y = static_cast<float>(room_y * 8 + 4) * static_cast<float>(kTileSize);
+            if (const std::optional<VID> monkey_vid =
+                    SpawnStageEntityAtCenter(state, EntityType::Monkey, Vec2::New(center_x, center_y))) {
+                if (Entity* const monkey = state.entity_manager.GetEntityMut(*monkey_vid)) {
+                    monkey->facing = ((room_x + room_y) % 2 == 0) ? LeftOrRight::Left : LeftOrRight::Right;
+                }
+            }
+        }
+    }
+}
+
+bool SampleMonkeyTest(int frames, bool big_stage) {
+    try {
+        Graphics graphics;
+        const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
+        graphics.frame_data_db = FrameDataDb::FromRaw(raw_file);
+        graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
+
+        PopulateEntityArchetypesTable();
+        SyncEntityArchetypeSizesFromFrameData(graphics);
+        PopulateToolArchetypesTable();
+
+        rng::SetSeed(1);
+        State state = State::New();
+        if (big_stage) {
+            state.stage = MakeBigMonkeySampleStage();
+            InitBigMonkeySampleStage(state);
+        } else {
+            state.debug_level.kind = DebugLevelKind::MonkeyTest;
+            InitDebugLevel(state, false);
+        }
+
+        Audio audio;
+        for (int frame = 0; frame < frames; ++frame) {
+            StepSingleTick(state, audio, graphics);
+            state.audio_emitters.ClearAll();
+        }
+
+        int count = 0;
+        float min_y = 0.0F;
+        float max_y = 0.0F;
+        float sum_y = 0.0F;
+        std::array<int, 4> y_bins{};
+        const int tile_height = std::max(1, static_cast<int>(state.stage.GetTileHeight()));
+        for (const Entity& entity : state.entity_manager.entities) {
+            if (!entity.active || entity.type_ != EntityType::Monkey) {
+                continue;
+            }
+
+            const float center_y = entity.GetCenter().y;
+            if (count == 0) {
+                min_y = center_y;
+                max_y = center_y;
+            } else {
+                min_y = std::min(min_y, center_y);
+                max_y = std::max(max_y, center_y);
+            }
+            sum_y += center_y;
+            count += 1;
+
+            const int tile_y = std::clamp(
+                static_cast<int>(center_y / static_cast<float>(kTileSize)),
+                0,
+                tile_height - 1
+            );
+            y_bins[static_cast<std::size_t>(std::min((tile_y * 4) / tile_height, 3))] += 1;
+        }
+
+        if (count == 0) {
+            std::cerr << "monkey test failed: no active monkeys\n";
+            return false;
+        }
+
+        std::cout << (big_stage ? "big monkey test" : "monkey test")
+                  << " after " << frames << " frames: "
+                  << count << " monkeys, y min/avg/max = "
+                  << std::fixed << std::setprecision(1)
+                  << min_y << "/"
+                  << (sum_y / static_cast<float>(count)) << "/"
+                  << max_y
+                  << ", normalized y bins top-to-bottom = "
+                  << y_bins[0] << "/"
+                  << y_bins[1] << "/"
+                  << y_bins[2] << "/"
+                  << y_bins[3] << '\n';
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "monkey test sample failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
 } // namespace
 
 bool RunCliCommand(int argc, char** argv) {
@@ -291,6 +468,16 @@ bool RunCliCommand(int argc, char** argv) {
     if (command == "--sample-classic-mines-altars") {
         const int runs = argc >= 3 ? std::max(1, std::atoi(argv[2])) : 1000;
         std::exit(SampleClassicMinesAltars(runs) ? 0 : 1);
+    }
+
+    if (command == "--sample-monkey-test") {
+        const int frames = argc >= 3 ? std::max(1, std::atoi(argv[2])) : 3600;
+        std::exit(SampleMonkeyTest(frames, false) ? 0 : 1);
+    }
+
+    if (command == "--sample-monkey-test-big") {
+        const int frames = argc >= 3 ? std::max(1, std::atoi(argv[2])) : 3600;
+        std::exit(SampleMonkeyTest(frames, true) ? 0 : 1);
     }
 
     if (command == "--dump-recording-text") {

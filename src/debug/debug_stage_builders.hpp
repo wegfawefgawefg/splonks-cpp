@@ -18,6 +18,7 @@ Stage MakeSacAltarTestStage();
 Stage MakeArrowTrapTestStage();
 Stage MakeSpikeTestStage();
 Stage MakeTrapDoorTestStage();
+Stage MakeMonkeyTestStage();
 Stage MakeCrusherTrapTestStage();
 
 void InitHangTestStage(State& state);
@@ -34,6 +35,7 @@ void InitSacAltarTestStage(State& state);
 void InitArrowTrapTestStage(State& state);
 void InitSpikeTestStage(State& state);
 void InitTrapDoorTestStage(State& state);
+void InitMonkeyTestStage(State& state);
 void InitCrusherTrapTestStage(State& state);
 
 } // namespace splonks

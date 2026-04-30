@@ -52,6 +52,7 @@ struct EntityArchetype {
     EntityDisplayState display_state = EntityDisplayState::Neutral;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float counter_d = 0.0F;
     DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
     DamageType projectile_contact_damage_type = DamageType::Attack;
     unsigned int projectile_contact_damage_amount = 1;

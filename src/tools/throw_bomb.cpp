@@ -25,7 +25,8 @@ bool UseThrowBombTool(
     Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
-    bool trigger_pressed
+    bool trigger_pressed,
+    ToolThrowVelocityBuilder build_throw_velocity
 ) {
     const VID user_vid = state.entity_manager.entities[entity_idx].vid;
     ToolSlot* const tool_slot = state.entity_tools.FindToolSlotMut(user_vid, tool_slot_index);
@@ -42,7 +43,8 @@ bool UseThrowBombTool(
         trigger_pressed,
         kThrowBombToolArchetype.use_cooldown_frames,
         entities::common::kThrownByImmunityDuration,
-        [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Bomb); }
+        [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Bomb); },
+        build_throw_velocity
     );
 }
 
@@ -52,7 +54,8 @@ bool UseThrowStickyBombTool(
     Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
-    bool trigger_pressed
+    bool trigger_pressed,
+    ToolThrowVelocityBuilder build_throw_velocity
 ) {
     const VID user_vid = state.entity_manager.entities[entity_idx].vid;
     ToolSlot* const tool_slot = state.entity_tools.FindToolSlotMut(user_vid, tool_slot_index);
@@ -72,7 +75,8 @@ bool UseThrowStickyBombTool(
         [](Entity& spawned_entity) {
             SetEntityAs(spawned_entity, EntityType::Bomb);
             entities::bomb::MarkBombSticky(spawned_entity);
-        }
+        },
+        build_throw_velocity
     );
 }
 

@@ -10,7 +10,8 @@ bool TryUseToolSlot(
     Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
-    bool trigger_pressed
+    bool trigger_pressed,
+    ToolThrowVelocityBuilder build_throw_velocity
 ) {
     const Entity& entity = state.entity_manager.entities[entity_idx];
     const ToolSlot* const tool_slot = state.entity_tools.FindToolSlot(entity.vid, tool_slot_index);
@@ -28,7 +29,8 @@ bool TryUseToolSlot(
         graphics,
         audio,
         tool_slot_index,
-        trigger_pressed
+        trigger_pressed,
+        build_throw_velocity
     );
 }
 

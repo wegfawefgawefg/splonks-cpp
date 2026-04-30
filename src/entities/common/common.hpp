@@ -5,6 +5,7 @@
 #include "entities/common/knockback.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
+#include "tools/tool_archetype.hpp"
 
 #include <cstdint>
 
@@ -164,7 +165,6 @@ bool TryApplyCrusherPusherContact(
     const Graphics& graphics,
     Audio& audio
 );
-using ToolThrowVelocityBuilder = Vec2 (*)(const controls::ControlIntent&);
 bool TrySpawnAndThrowEntityForToolUse(
     std::size_t thrower_idx,
     State& state,
@@ -183,7 +183,8 @@ bool TryUseToolSlot(
     Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
-    bool trigger_pressed
+    bool trigger_pressed,
+    ToolThrowVelocityBuilder build_throw_velocity = nullptr
 );
 
 enum class DamageResult {

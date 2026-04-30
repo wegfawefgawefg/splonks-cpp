@@ -76,6 +76,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
         state.stage = MakeTrapDoorTestStage();
         InitTrapDoorTestStage(state);
         break;
+    case DebugLevelKind::MonkeyTest:
+        state.stage = MakeMonkeyTestStage();
+        InitMonkeyTestStage(state);
+        break;
     case DebugLevelKind::CrusherTrapTest:
         state.stage = MakeCrusherTrapTestStage();
         InitCrusherTrapTestStage(state);

@@ -43,6 +43,26 @@ audio:
     file: sounds/bat_squeak.ogg
     streamed: false
     default_volume: 1.0
+  - name: monkey_1
+    file: sounds/monkey_1.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: monkey_2
+    file: sounds/monkey_2.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: monkey_3
+    file: sounds/monkey_3.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: monkey_4
+    file: sounds/monkey_4.ogg
+    streamed: false
+    default_volume: 1.0
+  - name: monkey_5
+    file: sounds/monkey_5.ogg
+    streamed: false
+    default_volume: 1.0
   - name: buzz
     file: sounds/buzz.ogg
     streamed: false

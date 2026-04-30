@@ -1,12 +1,17 @@
 #pragma once
 
 #include "frame_data_id.hpp"
+#include "math_types.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 
 namespace splonks {
+
+namespace controls {
+struct ControlIntent;
+}
 
 struct Audio;
 struct Graphics;
@@ -26,13 +31,16 @@ constexpr std::size_t ToolKindIndex(ToolKind kind) {
 
 constexpr std::size_t kToolKindCount = ToolKindIndex(ToolKind::ThrowStickyBomb) + 1;
 
+using ToolThrowVelocityBuilder = Vec2 (*)(const controls::ControlIntent&);
+
 using ToolUseFn = bool (*) (
     std::size_t entity_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     std::size_t tool_slot_index,
-    bool trigger_pressed
+    bool trigger_pressed,
+    ToolThrowVelocityBuilder build_throw_velocity
 );
 
 struct ToolArchetype {

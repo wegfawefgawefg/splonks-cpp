@@ -8189,6 +8189,126 @@ sprites:
     emit_point:
       x: 8
       y: 8
+  - path: "entities.png"
+    aabb:
+      x: 112
+      y: 384
+      w: 16
+      h: 16
+    name: "monkey_stand"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 9
+    tags: []
+    pbox:
+      x: 4
+      y: 1
+      w: 9
+      h: 15
+    cbox:
+      x: 4
+      y: 1
+      w: 9
+      h: 15
+    tile: false
+    emit_point:
+      x: 8
+      y: 13
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 385
+      w: 16
+      h: 15
+    name: "monkey_dead"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 7
+      y: 13
+    tags: []
+    pbox:
+      x: 3
+      y: 11
+      w: 9
+      h: 4
+    cbox:
+      x: 3
+      y: 11
+      w: 9
+      h: 4
+    tile: false
+    emit_point:
+      x: 12
+      y: 12
+  - path: "entities.png"
+    aabb:
+      x: 145
+      y: 389
+      w: 10
+      h: 11
+    name: "monkey_hang"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 11
+    cbox:
+      x: 2
+      y: 0
+      w: 8
+      h: 11
+    tile: false
+    emit_point:
+      x: 7
+      y: 9
+  - path: "entities.png"
+    aabb:
+      x: 163
+      y: 394
+      w: 10
+      h: 6
+    name: "monkey_down"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 4
+      y: 3
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 6
+    cbox:
+      x: 0
+      y: 0
+      w: 8
+      h: 6
+    tile: false
+    emit_point:
+      x: 7
+      y: 5
   - path: "boss.png"
     aabb:
       x: 0
