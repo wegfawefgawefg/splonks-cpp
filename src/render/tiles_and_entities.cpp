@@ -620,6 +620,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         bool terrain_solid = false;
         bool has_liquid = false;
         bool has_visible_liquid = false;
+        bool waterfall_visual = false;
     };
 
     const int stage_tile_width = static_cast<int>(state.stage.GetTileWidth());
@@ -705,6 +706,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 if (visible_level > target_cell->visible_level) {
                     target_cell->visible_level = visible_level;
                     target_cell->visible_tile = source_cell->visible_tile;
+                    target_cell->waterfall_visual = !target_cell->has_liquid;
                 }
                 target_cell->opacity = std::max(target_cell->opacity, opacity);
                 target_cell->has_visible_liquid = target_cell->visible_level > 0.0F;
@@ -713,6 +715,21 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     break;
                 }
             }
+        }
+    }
+
+    for (int y = 0; y < stage_tile_height; ++y) {
+        for (int x = 0; x < stage_tile_width; ++x) {
+            FluidRenderCell* const cell = cell_at(x, y);
+            const FluidRenderCell* const above = const_cell_at(x, y - 1);
+            if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
+                continue;
+            }
+            const bool has_visible_above =
+                above != nullptr && above->has_visible_liquid && !above->terrain_solid;
+            const bool unsupported_below = CanDrawFluidFallThrough(state.stage, x, y + 1);
+            cell->waterfall_visual =
+                unsupported_below && (has_visible_above || !cell->has_liquid);
         }
     }
 
@@ -770,8 +787,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     !has_visible_above && !(cell->visible_level >= 1.0F && above_solid);
                 const float surface_y = static_cast<float>(kTileSizePx) *
                                         (1.0F - std::clamp(cell->visible_level, 0.0F, 1.0F));
-                float top_left_y = surface_y;
-                float top_right_y = surface_y;
+                float top_left_y = cell->waterfall_visual ? 0.0F : surface_y;
+                float top_right_y = cell->waterfall_visual ? 0.0F : surface_y;
                 const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
                 const float brightness = GetTileArchetype(state.stage.GetTile(tile_x, tile_y)).solid
                     ? GetForegroundBrightnessForRender(
@@ -780,9 +797,11 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                           static_cast<int>(y)
                       )
                     : 1.0F;
-                top_left_y = surface_y;
-                top_right_y = surface_y;
-                if (visible_surface) {
+                if (!cell->waterfall_visual) {
+                    top_left_y = surface_y;
+                    top_right_y = surface_y;
+                }
+                if (visible_surface && !cell->waterfall_visual) {
                     const FluidRenderCell* const left_cell = const_cell_at(int_x - 1, int_y);
                     const FluidRenderCell* const right_cell = const_cell_at(int_x + 1, int_y);
                     if (left_cell != nullptr && left_cell->has_visible_liquid) {
@@ -837,7 +856,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     MakeFluidVertexColor(brightness, body_alpha)
                 );
 
-                if (visible_surface && top_texture != nullptr) {
+                if (visible_surface && !cell->waterfall_visual && top_texture != nullptr) {
                     RenderWorldTextureRibbon(
                         renderer,
                         graphics,
