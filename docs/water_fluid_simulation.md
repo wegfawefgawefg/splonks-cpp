@@ -61,6 +61,55 @@ Source notes:
   - tModLoader `LiquidRenderer`: https://docs.tmodloader.net/docs/stable/class_liquid_renderer.html
   - tModLoader `LiquidEdgeRenderer`: https://docs.tmodloader.net/docs/preview/class_liquid_edge_renderer.html
 
+## Terraria 1.4.4.9 Renderer Flow
+
+Terraria does not draw directly from raw liquid amounts. It builds a draw cache first.
+
+1. Build `LiquidCache` from tile liquid state.
+   Each cache cell stores liquid level, visible liquid level, opacity, solidity, half-brick state, real-liquid presence, wall presence, liquid type, frame offset, and edge-wall values.
+
+2. Derive `VisibleLiquidLevel`.
+   Real liquid cells copy their actual `0..255` amount as a normalized level. Some empty cells can receive a derived visible level from neighboring liquid so gaps and half-block cases look continuous.
+
+3. Extend visible liquid downward for liquidfalls.
+   If a visible liquid cell has no solid tile below, visible liquid propagates downward up to `WATERFALL_LENGTH` cells. For water this is `10`. This is render-only; those lower cells do not necessarily contain real liquid.
+
+4. Compute edge walls.
+   Terraria computes `LeftWall`, `RightWall`, `TopWall`, and `BottomWall` from neighboring visible-liquid cells and solid cells. These values describe which part of the tile should actually be drawn.
+
+5. Smooth edge walls and pick frame offsets.
+   Neighboring edge-wall values are averaged and adjusted to avoid blocky seams. `FrameOffset` selects a region from Terraria's liquid texture atlas based on which edges are visible.
+
+6. Build and draw `LiquidDrawCache`.
+   Each visible cache cell becomes a source rectangle plus a pixel offset. Rendering draws that source-rect slice from the liquid atlas at tile position plus `LiquidOffset`, using per-corner lighting and opacity.
+
+## Splonks Renderer Parity
+
+Current matches:
+
+- We have a real fluid overlay grid: `Stage::fluid_tiles` plus `Stage::fluid_amount`.
+- We normalize authored water tiles into the overlay grid.
+- We build a per-frame visible-liquid render cache before drawing.
+- We extend visible liquid downward up to `10` cells for liquidfall visuals.
+- We keep waterfalls render-only; they do not create collision/drowning liquid by themselves.
+- We render water after terrain as a transparent pass.
+
+Current deviations:
+
+- We do not store or compute Terraria's full edge-wall set: `LeftWall`, `RightWall`, `TopWall`, `BottomWall`, and their smoothed visible variants.
+- We do not compute Terraria-style `FrameOffset`.
+- We do not have a Terraria-style liquid texture atlas with edge/body/waterfall source regions.
+- We draw pool water as textured geometry quads/trapezoids, while Terraria draws source-rect slices with offsets.
+- We currently draw waterfall-classified cells as a centered strip from the same `water` tile, not from a dedicated atlas waterfall region.
+- We expose some raw sim oscillation because the sim can flip cells between tiny and near-full amounts; Terraria's visible cache and atlas slicing hide more of that.
+
+Needed assets if we want closer Terraria parity:
+
+- A liquid atlas or equivalent frame set with at least body/interior, surface, side-edge, corner/diagonal transition, and vertical waterfall regions.
+- A waterfall strip region that can tile vertically without looking like bottom-filled pool water.
+- Optional edge variants matching Terraria's frame-offset cases if we want to port the edge-wall renderer directly.
+- Our existing animated `watertop` can remain as a stylistic overlay, but a direct Terraria-like renderer would use atlas source slices for most surface/edge work instead.
+
 Temporary validation defaults:
 
 - Boot into `classic_mines_1`.

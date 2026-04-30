@@ -254,6 +254,152 @@ SDL_FColor MakeFluidVertexColor(float brightness, std::uint8_t alpha) {
     };
 }
 
+struct FluidMarchingVertex {
+    Vec2 local;
+    float signed_distance = 0.0F;
+};
+
+struct FluidContourSegment {
+    Vec2 a;
+    Vec2 b;
+};
+
+Vec2 InterpolateFluidVertex(
+    const FluidMarchingVertex& a,
+    const FluidMarchingVertex& b
+) {
+    const float denom = a.signed_distance - b.signed_distance;
+    if (std::abs(denom) <= 0.0001F) {
+        return (a.local + b.local) * 0.5F;
+    }
+    const float t = std::clamp(a.signed_distance / denom, 0.0F, 1.0F);
+    return a.local + ((b.local - a.local) * t);
+}
+
+struct FluidMarchingResult {
+    std::vector<std::vector<Vec2>> polygons;
+    std::vector<FluidContourSegment> contour_segments;
+};
+
+FluidMarchingResult BuildFilledFluidMarchingSquares(
+    const std::array<FluidMarchingVertex, 4>& corners,
+    float center_signed_distance
+) {
+    const bool tl_inside = corners[0].signed_distance >= 0.0F;
+    const bool tr_inside = corners[1].signed_distance >= 0.0F;
+    const bool br_inside = corners[2].signed_distance >= 0.0F;
+    const bool bl_inside = corners[3].signed_distance >= 0.0F;
+    const int case_id =
+        (tl_inside ? 1 : 0) |
+        (tr_inside ? 2 : 0) |
+        (br_inside ? 4 : 0) |
+        (bl_inside ? 8 : 0);
+
+    const Vec2 p0 = corners[0].local;
+    const Vec2 p1 = corners[1].local;
+    const Vec2 p2 = corners[2].local;
+    const Vec2 p3 = corners[3].local;
+    const Vec2 e0 = InterpolateFluidVertex(corners[0], corners[1]);
+    const Vec2 e1 = InterpolateFluidVertex(corners[1], corners[2]);
+    const Vec2 e2 = InterpolateFluidVertex(corners[2], corners[3]);
+    const Vec2 e3 = InterpolateFluidVertex(corners[3], corners[0]);
+
+    FluidMarchingResult result;
+    auto add_polygon = [&](std::initializer_list<Vec2> points) {
+        if (points.size() < 3) {
+            return;
+        }
+        result.polygons.emplace_back(points);
+    };
+    auto add_segment = [&](const Vec2& a, const Vec2& b) {
+        result.contour_segments.push_back(FluidContourSegment{.a = a, .b = b});
+    };
+
+    switch (case_id) {
+    case 0:
+        break;
+    case 1:
+        add_polygon({p0, e0, e3});
+        add_segment(e0, e3);
+        break;
+    case 2:
+        add_polygon({e0, p1, e1});
+        add_segment(e0, e1);
+        break;
+    case 3:
+        add_polygon({p0, p1, e1, e3});
+        add_segment(e1, e3);
+        break;
+    case 4:
+        add_polygon({e1, p2, e2});
+        add_segment(e1, e2);
+        break;
+    case 5:
+        if (center_signed_distance >= 0.0F) {
+            add_polygon({p0, e0, e1, p2, e2, e3});
+            add_segment(e0, e1);
+            add_segment(e2, e3);
+        } else {
+            add_polygon({p0, e0, e3});
+            add_polygon({e1, p2, e2});
+            add_segment(e0, e3);
+            add_segment(e1, e2);
+        }
+        break;
+    case 6:
+        add_polygon({e0, p1, p2, e2});
+        add_segment(e0, e2);
+        break;
+    case 7:
+        add_polygon({p0, p1, p2, e2, e3});
+        add_segment(e2, e3);
+        break;
+    case 8:
+        add_polygon({e2, p3, e3});
+        add_segment(e2, e3);
+        break;
+    case 9:
+        add_polygon({p0, e0, e2, p3});
+        add_segment(e0, e2);
+        break;
+    case 10:
+        if (center_signed_distance >= 0.0F) {
+            add_polygon({e0, p1, e1, e2, p3, e3});
+            add_segment(e0, e3);
+            add_segment(e1, e2);
+        } else {
+            add_polygon({e0, p1, e1});
+            add_polygon({e2, p3, e3});
+            add_segment(e0, e1);
+            add_segment(e2, e3);
+        }
+        break;
+    case 11:
+        add_polygon({p0, p1, e1, e2, p3});
+        add_segment(e1, e2);
+        break;
+    case 12:
+        add_polygon({e1, p2, p3, e3});
+        add_segment(e1, e3);
+        break;
+    case 13:
+        add_polygon({p0, e0, e1, p2, p3});
+        add_segment(e0, e1);
+        break;
+    case 14:
+        add_polygon({e0, p1, p2, p3, e3});
+        add_segment(e0, e3);
+        break;
+    case 15:
+        add_polygon({p0, p1, p2, p3});
+        break;
+    default:
+        break;
+    }
+
+    return result;
+}
+
 void RenderWorldTextureQuad(
     SDL_Renderer* renderer,
     const Graphics& graphics,
@@ -289,6 +435,64 @@ void RenderWorldTextureQuad(
         SDL_Vertex{SDL_FPoint{bl.x, bl.y}, color, SDL_FPoint{u0, v1}},
     };
     constexpr std::array<int, 6> indices{0, 1, 2, 0, 2, 3};
+    SDL_RenderGeometry(
+        renderer,
+        texture,
+        vertices.data(),
+        static_cast<int>(vertices.size()),
+        indices.data(),
+        static_cast<int>(indices.size())
+    );
+}
+
+void RenderWorldTexturePolygon(
+    SDL_Renderer* renderer,
+    const Graphics& graphics,
+    SDL_Texture* texture,
+    const SDL_FRect& src,
+    const Vec2& tile_world,
+    const std::vector<Vec2>& local_points,
+    const SDL_FColor& color
+) {
+    if (texture == nullptr || local_points.size() < 3 || src.w <= 0.0F || src.h <= 0.0F) {
+        return;
+    }
+
+    float texture_width = 0.0F;
+    float texture_height = 0.0F;
+    if (!SDL_GetTextureSize(texture, &texture_width, &texture_height) ||
+        texture_width <= 0.0F || texture_height <= 0.0F) {
+        return;
+    }
+
+    std::vector<SDL_Vertex> vertices;
+    vertices.reserve(local_points.size());
+    for (const Vec2& local : local_points) {
+        const Vec2 screen = WorldPointToScreenForGeometry(graphics, tile_world + local);
+        const float u =
+            (src.x + (std::clamp(local.x, 0.0F, static_cast<float>(kTileSize)) /
+                      static_cast<float>(kTileSize)) *
+                         src.w) /
+            texture_width;
+        const float v =
+            (src.y + (std::clamp(local.y, 0.0F, static_cast<float>(kTileSize)) /
+                      static_cast<float>(kTileSize)) *
+                         src.h) /
+            texture_height;
+        vertices.push_back(SDL_Vertex{
+            SDL_FPoint{screen.x, screen.y},
+            color,
+            SDL_FPoint{u, v},
+        });
+    }
+
+    std::vector<int> indices;
+    indices.reserve((local_points.size() - 2) * 3);
+    for (std::size_t i = 1; i + 1 < local_points.size(); ++i) {
+        indices.push_back(0);
+        indices.push_back(static_cast<int>(i));
+        indices.push_back(static_cast<int>(i + 1));
+    }
     SDL_RenderGeometry(
         renderer,
         texture,
@@ -610,7 +814,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     constexpr std::uint8_t kFluidTopAlpha = 224;
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
     constexpr float kWaterTopRaisePx = 1.0F;
-    constexpr int kWaterfallLengthTiles = 10;
 
     struct FluidRenderCell {
         Tile visible_tile = Tile::Air;
@@ -620,7 +823,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         bool terrain_solid = false;
         bool has_liquid = false;
         bool has_visible_liquid = false;
-        bool waterfall_visual = false;
     };
 
     const int stage_tile_width = static_cast<int>(state.stage.GetTileWidth());
@@ -658,6 +860,31 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             static_cast<std::size_t>((wrapped->y * stage_tile_width) + wrapped->x)
         ];
     };
+    auto sample_fluid_signed_distance = [&](int vertex_x, int vertex_y) -> float {
+        float best_signed_distance = -static_cast<float>(kTileSizePx);
+        for (int adjacent_y = vertex_y - 1; adjacent_y <= vertex_y; ++adjacent_y) {
+            for (int adjacent_x = vertex_x - 1; adjacent_x <= vertex_x; ++adjacent_x) {
+                const FluidRenderCell* const adjacent_cell =
+                    const_cell_at(adjacent_x, adjacent_y);
+                if (adjacent_cell == nullptr || !adjacent_cell->has_visible_liquid ||
+                    adjacent_cell->terrain_solid) {
+                    continue;
+                }
+
+                const float cell_surface_world_y =
+                    (static_cast<float>(adjacent_y) * static_cast<float>(kTileSizePx)) +
+                    (static_cast<float>(kTileSizePx) *
+                     (1.0F - std::clamp(adjacent_cell->visible_level, 0.0F, 1.0F)));
+                const float vertex_world_y =
+                    static_cast<float>(vertex_y) * static_cast<float>(kTileSizePx);
+                best_signed_distance = std::max(
+                    best_signed_distance,
+                    vertex_world_y - cell_surface_world_y
+                );
+            }
+        }
+        return best_signed_distance;
+    };
 
     for (int y = 0; y < stage_tile_height; ++y) {
         for (int x = 0; x < stage_tile_width; ++x) {
@@ -681,55 +908,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             cell.liquid_level = static_cast<float>(amount) / 255.0F;
             cell.visible_level = cell.liquid_level;
             cell.has_visible_liquid = true;
-        }
-    }
-
-    for (int y = 0; y < stage_tile_height; ++y) {
-        for (int x = 0; x < stage_tile_width; ++x) {
-            const FluidRenderCell* const source_cell = const_cell_at(x, y);
-            if (source_cell == nullptr || !source_cell->has_visible_liquid ||
-                source_cell->terrain_solid ||
-                !CanDrawFluidFallThrough(state.stage, x, y + 1)) {
-                continue;
-            }
-
-            float opacity = 1.0F;
-            const float opacity_step = 1.0F / static_cast<float>(kWaterfallLengthTiles + 1);
-            for (int fall_index = 1; fall_index <= kWaterfallLengthTiles; ++fall_index) {
-                opacity -= opacity_step;
-                FluidRenderCell* const target_cell = cell_at(x, y + fall_index);
-                if (target_cell == nullptr || target_cell->terrain_solid) {
-                    break;
-                }
-
-                const float visible_level = source_cell->visible_level * opacity;
-                if (visible_level > target_cell->visible_level) {
-                    target_cell->visible_level = visible_level;
-                    target_cell->visible_tile = source_cell->visible_tile;
-                    target_cell->waterfall_visual = !target_cell->has_liquid;
-                }
-                target_cell->opacity = std::max(target_cell->opacity, opacity);
-                target_cell->has_visible_liquid = target_cell->visible_level > 0.0F;
-
-                if (!CanDrawFluidFallThrough(state.stage, x, y + fall_index + 1)) {
-                    break;
-                }
-            }
-        }
-    }
-
-    for (int y = 0; y < stage_tile_height; ++y) {
-        for (int x = 0; x < stage_tile_width; ++x) {
-            FluidRenderCell* const cell = cell_at(x, y);
-            const FluidRenderCell* const above = const_cell_at(x, y - 1);
-            if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
-                continue;
-            }
-            const bool has_visible_above =
-                above != nullptr && above->has_visible_liquid && !above->terrain_solid;
-            const bool unsupported_below = CanDrawFluidFallThrough(state.stage, x, y + 1);
-            cell->waterfall_visual =
-                unsupported_below && (has_visible_above || !cell->has_liquid);
         }
     }
 
@@ -778,17 +956,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                       }
                     : SDL_FRect{};
 
-                const bool has_visible_above = [&] {
-                    const FluidRenderCell* const above = const_cell_at(int_x, int_y - 1);
-                    return above != nullptr && above->has_visible_liquid && !above->terrain_solid;
-                }();
-                const bool above_solid = IsWrappedTerrainSolid(state.stage, int_x, int_y - 1);
-                const bool visible_surface =
-                    !has_visible_above && !(cell->visible_level >= 1.0F && above_solid);
-                const float surface_y = static_cast<float>(kTileSizePx) *
-                                        (1.0F - std::clamp(cell->visible_level, 0.0F, 1.0F));
-                float top_left_y = cell->waterfall_visual ? 0.0F : surface_y;
-                float top_right_y = cell->waterfall_visual ? 0.0F : surface_y;
                 const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
                 const float brightness = GetTileArchetype(state.stage.GetTile(tile_x, tile_y)).solid
                     ? GetForegroundBrightnessForRender(
@@ -797,32 +964,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                           static_cast<int>(y)
                       )
                     : 1.0F;
-                if (!cell->waterfall_visual) {
-                    top_left_y = surface_y;
-                    top_right_y = surface_y;
-                }
-                if (visible_surface && !cell->waterfall_visual) {
-                    const FluidRenderCell* const left_cell = const_cell_at(int_x - 1, int_y);
-                    const FluidRenderCell* const right_cell = const_cell_at(int_x + 1, int_y);
-                    if (left_cell != nullptr && left_cell->has_visible_liquid) {
-                        const float left_y = static_cast<float>(kTileSizePx) *
-                                             (1.0F - std::clamp(
-                                                         left_cell->visible_level,
-                                                         0.0F,
-                                                         1.0F
-                                                     ));
-                        top_left_y = (top_left_y + left_y) * 0.5F;
-                    }
-                    if (right_cell != nullptr && right_cell->has_visible_liquid) {
-                        const float right_y = static_cast<float>(kTileSizePx) *
-                                              (1.0F - std::clamp(
-                                                          right_cell->visible_level,
-                                                          0.0F,
-                                                          1.0F
-                                                      ));
-                        top_right_y = (top_right_y + right_y) * 0.5F;
-                    }
-                }
 
                 const SDL_FRect body_src{
                     static_cast<float>(tile_source_data->sample_rect.x),
@@ -839,38 +980,72 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         static_cast<int>(kFluidAlpha)
                     )
                 );
-                RenderWorldTextureQuad(
-                    renderer,
-                    graphics,
-                    tile_texture,
-                    body_src,
-                    std::array<Vec2, 4>{
-                        tile_world + Vec2::New(0.0F, top_left_y),
-                        tile_world + Vec2::New(static_cast<float>(kTileSizePx), top_right_y),
-                        tile_world + Vec2::New(
+
+                const std::array<FluidMarchingVertex, 4> samples{
+                    FluidMarchingVertex{
+                        .local = Vec2::New(0.0F, 0.0F),
+                        .signed_distance = sample_fluid_signed_distance(int_x, int_y),
+                    },
+                    FluidMarchingVertex{
+                        .local = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                        .signed_distance = sample_fluid_signed_distance(int_x + 1, int_y),
+                    },
+                    FluidMarchingVertex{
+                        .local = Vec2::New(
                             static_cast<float>(kTileSizePx),
                             static_cast<float>(kTileSizePx)
                         ),
-                        tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                        .signed_distance = sample_fluid_signed_distance(int_x + 1, int_y + 1),
                     },
-                    MakeFluidVertexColor(brightness, body_alpha)
+                    FluidMarchingVertex{
+                        .local = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                        .signed_distance = sample_fluid_signed_distance(int_x, int_y + 1),
+                    },
+                };
+                const float center_signed_distance = std::max(
+                    -static_cast<float>(kTileSizePx),
+                    static_cast<float>(kTileSizePx) *
+                        (std::clamp(cell->visible_level, 0.0F, 1.0F) - 0.5F)
                 );
+                const FluidMarchingResult marching_result =
+                    BuildFilledFluidMarchingSquares(samples, center_signed_distance);
 
-                if (visible_surface && !cell->waterfall_visual && top_texture != nullptr) {
-                    RenderWorldTextureRibbon(
+                for (const std::vector<Vec2>& polygon : marching_result.polygons) {
+                    RenderWorldTexturePolygon(
                         renderer,
                         graphics,
-                        top_texture,
-                        top_src,
-                        tile_world + Vec2::New(0.0F, top_left_y - kWaterTopRaisePx),
-                        tile_world + Vec2::New(
-                            static_cast<float>(kTileSizePx),
-                            top_right_y - kWaterTopRaisePx
-                        ),
-                        top_src.h,
-                        false,
-                        MakeFluidVertexColor(brightness, kFluidTopAlpha)
+                        tile_texture,
+                        body_src,
+                        tile_world,
+                        polygon,
+                        MakeFluidVertexColor(brightness, body_alpha)
                     );
+                }
+
+                if (top_texture != nullptr) {
+                    for (const FluidContourSegment& segment : marching_result.contour_segments) {
+                        Vec2 segment_start = segment.a;
+                        Vec2 segment_end = segment.b;
+                        if (segment_start.x > segment_end.x) {
+                            std::swap(segment_start, segment_end);
+                        }
+
+                        const Vec2 delta = segment_end - segment_start;
+                        if (std::abs(delta.x) < std::abs(delta.y) * 0.35F) {
+                            continue;
+                        }
+                        RenderWorldTextureRibbon(
+                            renderer,
+                            graphics,
+                            top_texture,
+                            top_src,
+                            tile_world + segment_start + Vec2::New(0.0F, -kWaterTopRaisePx),
+                            tile_world + segment_end + Vec2::New(0.0F, -kWaterTopRaisePx),
+                            top_src.h,
+                            false,
+                            MakeFluidVertexColor(brightness, kFluidTopAlpha)
+                        );
+                    }
                 }
             }
         }
