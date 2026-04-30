@@ -1,6 +1,7 @@
 #include "buying.hpp"
 
 #include "entities/common/common.hpp"
+#include "frame_data_id.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -103,6 +104,15 @@ void ClearEntityBuyableState(Entity& entity) {
     entity.buyable.display_icon_animation_id.reset();
     entity.buyable.shop_owner_vid.reset();
     entity.buyable.on_try_buy = nullptr;
+}
+
+void ConfigureEntityAsBuyable(Entity& entity, std::uint32_t price) {
+    entity.buyable.active = true;
+    entity.buyable.display_quantity = price;
+    entity.buyable.display_icon_animation_id = frame_data_ids::GoldIcon;
+    if (entity.buyable.on_try_buy == nullptr) {
+        entity.buyable.on_try_buy = TryBuyEntityForMoney;
+    }
 }
 
 bool TrySpendMoney(std::size_t buyer_idx, std::uint32_t amount, State& state, Audio& audio) {

@@ -338,6 +338,7 @@ extern const EntityArchetype kDamselArchetype{
     .ai_state = EntityAiState::Idle,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .buyable = Buyable{.on_try_buy = BuyDamsel},
     .damage_animation = frame_data_ids::BloodBall,
     .damage_sound = audio_asset_ids::DamselHurt,
     .step_logic = StepEntityLogicAsDamsel,

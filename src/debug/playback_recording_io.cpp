@@ -9,7 +9,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 65;
+constexpr std::uint32_t kRecordingVersion = 66;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -258,9 +258,6 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WriteOptionalVectorPod(out, entity.child_vids);
     WriteOptionalVectorPod(out, entity.inside_vids);
     WritePod(out, entity.entity_label_a);
-    WritePod(out, entity.entity_label_b);
-    WritePod(out, entity.entity_label_c);
-    WritePod(out, entity.entity_label_d);
     WritePod(out, entity.alignment);
     WritePod(out, entity.counter_a);
     WritePod(out, entity.counter_b);
@@ -268,8 +265,6 @@ void WriteEntity(std::ostream& out, const Entity& entity) {
     WritePod(out, entity.counter_d);
     WritePod(out, entity.threshold_a);
     WritePod(out, entity.threshold_b);
-    WritePod(out, entity.threshold_c);
-    WritePod(out, entity.threshold_d);
 }
 
 bool ReadEntity(std::istream& in, Entity& entity) {
@@ -393,18 +388,13 @@ bool ReadEntity(std::istream& in, Entity& entity) {
            ReadOptionalVectorPod(in, entity.child_vids) &&
            ReadOptionalVectorPod(in, entity.inside_vids) &&
            ReadPod(in, entity.entity_label_a) &&
-           ReadPod(in, entity.entity_label_b) &&
-           ReadPod(in, entity.entity_label_c) &&
-           ReadPod(in, entity.entity_label_d) &&
            ReadPod(in, entity.alignment) &&
            ReadPod(in, entity.counter_a) &&
            ReadPod(in, entity.counter_b) &&
            ReadPod(in, entity.counter_c) &&
            ReadPod(in, entity.counter_d) &&
            ReadPod(in, entity.threshold_a) &&
-           ReadPod(in, entity.threshold_b) &&
-           ReadPod(in, entity.threshold_c) &&
-           ReadPod(in, entity.threshold_d);
+           ReadPod(in, entity.threshold_b);
 }
 
 void WriteSettings(std::ostream& out, const Settings& settings) {

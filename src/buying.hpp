@@ -11,6 +11,7 @@ struct Graphics;
 struct State;
 
 void ClearEntityBuyableState(Entity& entity);
+void ConfigureEntityAsBuyable(Entity& entity, std::uint32_t price);
 bool TrySpendMoney(std::size_t buyer_idx, std::uint32_t amount, State& state, Audio& audio);
 bool TryBuyEntityForMoney(
     std::size_t entity_idx,

@@ -1,10 +1,11 @@
 #include "render/ui.hpp"
 
 #include "buying.hpp"
-#include "entities/basic_exit.hpp"
+#include "effects/render.hpp"
 #include "entity.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
+#include "hud/entries.hpp"
 #include "tools/tool_archetype.hpp"
 #include "state.hpp"
 #include "step.hpp"
@@ -12,10 +13,12 @@
 #include "world_query.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <cmath>
 #include <cstdio>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace splonks {
 
@@ -31,6 +34,19 @@ FrameDataId GetToolSlotBackgroundAnimationId(std::size_t slot_index) {
         return frame_data_ids::ToolSlot1;
     case 1:
         return frame_data_ids::ToolSlot2;
+    default:
+        return kInvalidFrameDataId;
+    }
+}
+
+FrameDataId GetEquipmentSlotBackgroundAnimationId(HudEntrySource source) {
+    switch (source) {
+    case HudEntrySource::HeldItem:
+        return frame_data_ids::HandSlot;
+    case HudEntrySource::BackItem:
+        return frame_data_ids::BackSlot;
+    case HudEntrySource::Effect:
+    case HudEntrySource::Temporary:
     default:
         return kInvalidFrameDataId;
     }
@@ -89,13 +105,13 @@ std::size_t GetUiAnimationFrameIndex(
     return 0;
 }
 
-void DrawFrameDataIcon(
+void DrawFrameDataIconAtTick(
     SDL_Renderer* renderer,
-    const State& state,
     Graphics& graphics,
     FrameDataId animation_id,
     const IVec2& cursor,
-    const IVec2& size
+    const IVec2& size,
+    std::uint64_t tick
 ) {
     const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animation_id);
     if (animation == nullptr || animation->frame_indices.empty()) {
@@ -103,7 +119,7 @@ void DrawFrameDataIcon(
     }
 
     const std::size_t ordered_frame_index =
-        GetUiAnimationFrameIndex(*animation, graphics.frame_data_db, state.scene_frame);
+        GetUiAnimationFrameIndex(*animation, graphics.frame_data_db, tick);
     if (ordered_frame_index >= animation->frame_indices.size()) {
         return;
     }
@@ -130,58 +146,15 @@ void DrawFrameDataIcon(
     SDL_RenderTexture(renderer, texture, &src, &dst);
 }
 
-void DrawFrameDataIconRotated(
+void DrawFrameDataIcon(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,
     FrameDataId animation_id,
-    const Vec2& center,
-    const IVec2& size,
-    double rotation_degrees
+    const IVec2& cursor,
+    const IVec2& size
 ) {
-    const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
-        return;
-    }
-
-    const std::size_t ordered_frame_index =
-        GetUiAnimationFrameIndex(*animation, graphics.frame_data_db, state.scene_frame);
-    if (ordered_frame_index >= animation->frame_indices.size()) {
-        return;
-    }
-
-    const FrameData& frame_data =
-        graphics.frame_data_db.frames[animation->frame_indices[ordered_frame_index]];
-    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data.image_id);
-    if (texture == nullptr) {
-        return;
-    }
-
-    const SDL_FRect src{
-        static_cast<float>(frame_data.sample_rect.x),
-        static_cast<float>(frame_data.sample_rect.y),
-        static_cast<float>(frame_data.sample_rect.w),
-        static_cast<float>(frame_data.sample_rect.h),
-    };
-    const SDL_FRect dst{
-        std::round(center.x - (static_cast<float>(size.x) * 0.5F)),
-        std::round(center.y - (static_cast<float>(size.y) * 0.5F)),
-        static_cast<float>(size.x),
-        static_cast<float>(size.y),
-    };
-    const SDL_FPoint rotation_center{
-        static_cast<float>(size.x) * 0.5F,
-        static_cast<float>(size.y) * 0.5F,
-    };
-    SDL_RenderTextureRotated(
-        renderer,
-        texture,
-        &src,
-        &dst,
-        rotation_degrees,
-        &rotation_center,
-        SDL_FLIP_NONE
-    );
+    DrawFrameDataIconAtTick(renderer, graphics, animation_id, cursor, size, state.scene_frame);
 }
 
 Vec2 GetUiCountTextPosition(const IVec2& icon_cursor, const IVec2& icon_size) {
@@ -189,6 +162,61 @@ Vec2 GetUiCountTextPosition(const IVec2& icon_cursor, const IVec2& icon_size) {
         static_cast<float>(icon_cursor.x + icon_size.x),
         static_cast<float>(icon_cursor.y)
     );
+}
+
+bool SameHudEntryKey(const HudEntryKey& a, const HudEntryKey& b) {
+    return a.source == b.source && a.id == b.id;
+}
+
+struct HudEntryAnimationState {
+    HudEntryKey key{};
+    FrameDataId animation_id = kInvalidFrameDataId;
+    std::uint64_t started_scene_frame = 0;
+    std::uint64_t last_seen_scene_frame = 0;
+    float shake = 0.0F;
+};
+
+HudEntryAnimationState& GetHudEntryAnimationState(const HudEntry& entry, std::uint64_t scene_frame) {
+    static std::vector<HudEntryAnimationState> states;
+    if ((scene_frame % 120U) == 0U) {
+        states.erase(
+            std::remove_if(
+                states.begin(),
+                states.end(),
+                [scene_frame](const HudEntryAnimationState& state) {
+                    return state.last_seen_scene_frame + 240U < scene_frame;
+                }
+            ),
+            states.end()
+        );
+    }
+
+    for (HudEntryAnimationState& state : states) {
+        if (!SameHudEntryKey(state.key, entry.key)) {
+            continue;
+        }
+
+        if (state.animation_id != entry.icon_animation_id) {
+            state.animation_id = entry.icon_animation_id;
+            state.started_scene_frame = scene_frame;
+        }
+        state.last_seen_scene_frame = scene_frame;
+        state.shake = std::max(state.shake * 0.85F, entry.shake);
+        return state;
+    }
+
+    states.push_back(HudEntryAnimationState{
+        .key = entry.key,
+        .animation_id = entry.icon_animation_id,
+        .started_scene_frame = scene_frame,
+        .last_seen_scene_frame = scene_frame,
+        .shake = entry.shake,
+    });
+    return states.back();
+}
+
+std::uint64_t GetHudEntryAnimationTick(const HudEntryAnimationState& entry_state, std::uint64_t scene_frame) {
+    return scene_frame - entry_state.started_scene_frame;
 }
 
 void DrawRightAlignedUiText(
@@ -212,6 +240,154 @@ void DrawRightAlignedUiText(
         y,
         color
     );
+}
+
+Vec2 GetHudEntryVisualOffset(const HudEntry& entry, const HudEntryAnimationState& entry_state, std::uint64_t scene_frame) {
+    Vec2 offset = Vec2::New(0.0F, 0.0F);
+    if (entry_state.shake > 0.0F) {
+        const float phase = static_cast<float>((scene_frame + entry.key.id * 17U) % 31U);
+        offset.x += std::sin(phase * 1.7F) * entry_state.shake;
+        offset.y += std::cos(phase * 2.3F) * entry_state.shake;
+    }
+    if (entry.hop_interval_frames > 0) {
+        constexpr float kPi = 3.14159265358979323846F;
+        const int interval = std::max(entry.hop_interval_frames, 8);
+        const int local_frame = static_cast<int>(scene_frame % static_cast<std::uint64_t>(interval));
+        constexpr int kHopFrames = 8;
+        if (local_frame < kHopFrames) {
+            const float t = static_cast<float>(local_frame) / static_cast<float>(kHopFrames - 1);
+            offset.y -= std::sin(t * kPi) * entry.hop_amount;
+        }
+    }
+    return offset;
+}
+
+SDL_Color GetHudEntryTextColor(HudEntryStyle style) {
+    switch (style) {
+    case HudEntryStyle::Dimmed:
+    case HudEntryStyle::Disabled:
+        return SDL_Color{180, 180, 180, 255};
+    case HudEntryStyle::Flashing:
+        return SDL_Color{255, 235, 130, 255};
+    case HudEntryStyle::Normal:
+    default:
+        return SDL_Color{255, 255, 255, 255};
+    }
+}
+
+IVec2 GetHudAnchorCursor(const IVec2& icon_cursor, const IVec2& icon_size, const IVec2& item_size, HudAnchor anchor) {
+    switch (anchor) {
+    case HudAnchor::TopLeft:
+        return icon_cursor;
+    case HudAnchor::Top:
+        return IVec2::New(icon_cursor.x + ((icon_size.x - item_size.x) / 2), icon_cursor.y);
+    case HudAnchor::TopRight:
+        return IVec2::New(icon_cursor.x + icon_size.x - item_size.x, icon_cursor.y);
+    case HudAnchor::Right:
+        return IVec2::New(
+            icon_cursor.x + icon_size.x - item_size.x,
+            icon_cursor.y + ((icon_size.y - item_size.y) / 2)
+        );
+    case HudAnchor::BottomLeft:
+        return IVec2::New(icon_cursor.x, icon_cursor.y + icon_size.y - item_size.y);
+    case HudAnchor::Bottom:
+        return IVec2::New(
+            icon_cursor.x + ((icon_size.x - item_size.x) / 2),
+            icon_cursor.y + icon_size.y - item_size.y
+        );
+    case HudAnchor::Left:
+        return IVec2::New(icon_cursor.x, icon_cursor.y + ((icon_size.y - item_size.y) / 2));
+    case HudAnchor::BottomRight:
+    default:
+        return IVec2::New(icon_cursor.x + icon_size.x - item_size.x, icon_cursor.y + icon_size.y - item_size.y);
+    }
+}
+
+void DrawHudEntryBadges(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const HudEntry& entry,
+    const IVec2& icon_cursor,
+    const IVec2& icon_size,
+    std::uint64_t local_tick
+) {
+    const IVec2 badge_size = IVec2::New(std::max(8, icon_size.x / 3), std::max(8, icon_size.y / 3));
+    for (const HudBadge& badge : entry.badges) {
+        if (!badge.active) {
+            continue;
+        }
+
+        const IVec2 badge_cursor = GetHudAnchorCursor(icon_cursor, icon_size, badge_size, badge.anchor);
+        if (badge.icon_animation_id != kInvalidFrameDataId) {
+            DrawFrameDataIconAtTick(renderer, graphics, badge.icon_animation_id, badge_cursor, badge_size, local_tick);
+        }
+        if (badge.text.has_value()) {
+            DrawText(
+                renderer,
+                graphics,
+                18,
+                graphics.ui_font,
+                badge.text->c_str(),
+                static_cast<float>(badge_cursor.x),
+                static_cast<float>(badge_cursor.y),
+                GetHudEntryTextColor(badge.style)
+            );
+        }
+    }
+}
+
+void DrawHudEntry(
+    SDL_Renderer* renderer,
+    const State& state,
+    Graphics& graphics,
+    const HudEntry& entry,
+    const IVec2& cursor,
+    const IVec2& icon_size
+) {
+    if (entry.icon_animation_id == kInvalidFrameDataId) {
+        return;
+    }
+
+    HudEntryAnimationState& entry_state = GetHudEntryAnimationState(entry, state.scene_frame);
+    const Vec2 offset = GetHudEntryVisualOffset(entry, entry_state, state.scene_frame);
+    const IVec2 icon_cursor = IVec2::New(
+        cursor.x + static_cast<int>(std::round(offset.x)),
+        cursor.y + static_cast<int>(std::round(offset.y))
+    );
+    const std::uint64_t local_tick = GetHudEntryAnimationTick(entry_state, state.scene_frame);
+    DrawFrameDataIconAtTick(renderer, graphics, entry.icon_animation_id, icon_cursor, icon_size, local_tick);
+    DrawHudEntryBadges(renderer, graphics, entry, icon_cursor, icon_size, local_tick);
+
+    if (entry.count_text.has_value()) {
+        int text_width = 0;
+        int text_height = 0;
+        MeasureText(graphics, 24, graphics.ui_font, entry.count_text->c_str(), &text_width, &text_height);
+        const IVec2 count_cursor = GetHudAnchorCursor(
+            icon_cursor,
+            icon_size,
+            IVec2::New(text_width, text_height),
+            entry.count_anchor
+        );
+        DrawText(
+            renderer,
+            graphics,
+            24,
+            graphics.ui_font,
+            entry.count_text->c_str(),
+            static_cast<float>(count_cursor.x),
+            static_cast<float>(count_cursor.y),
+            GetHudEntryTextColor(entry.style)
+        );
+    }
+}
+
+const HudEntry* FindHudEntryBySource(const std::vector<HudEntry>& entries, HudEntrySource source) {
+    for (const HudEntry& entry : entries) {
+        if (entry.key.source == source) {
+            return &entry;
+        }
+    }
+    return nullptr;
 }
 
 void DrawDownArrowIcon(
@@ -269,88 +445,6 @@ void DrawPromptBubble(
     SDL_RenderRect(renderer, &bubble_rect);
     SDL_RenderLine(renderer, tip_x - half_base, base_y, tip_x, tip_y);
     SDL_RenderLine(renderer, tip_x, tip_y, tip_x + half_base, base_y);
-}
-
-std::optional<Vec2> FindDefaultExitCenter(const State& state) {
-    const StageExitId default_exit_id = state.stage.FindExitId("default");
-    const bool should_match_exit_id = !state.stage.exits.empty();
-
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || entity.type_ != EntityType::BasicExit) {
-            continue;
-        }
-        if (should_match_exit_id && entity.stage_exit_id != default_exit_id) {
-            continue;
-        }
-        return entity.GetCenter();
-    }
-
-    return std::nullopt;
-}
-
-void RenderCompassArrow(SDL_Renderer* renderer, const State& state, Graphics& graphics, const Entity& player) {
-    if (!HasEffect(player, EffectId::Compass)) {
-        return;
-    }
-
-    const std::optional<Vec2> exit_center = FindDefaultExitCenter(state);
-    if (!exit_center.has_value()) {
-        return;
-    }
-
-    const Vec2 nearest_exit_center =
-        graphics.camera.target + GetNearestWorldDelta(state.stage, graphics.camera.target, *exit_center);
-    const Vec2 exit_screen = graphics.WcToScreen(nearest_exit_center);
-    const Vec2 screen_center = graphics.camera.offset;
-    Vec2 direction = exit_screen - screen_center;
-    if ((direction.x * direction.x) + (direction.y * direction.y) < 1.0F) {
-        return;
-    }
-
-    const float min_x = static_cast<float>(graphics.dims.x) * 0.25F;
-    const float max_x = static_cast<float>(graphics.dims.x) * 0.75F;
-    const float min_y = static_cast<float>(graphics.dims.y) * 0.25F;
-    const float max_y = static_cast<float>(graphics.dims.y) * 0.75F;
-    const bool exit_in_safe_rect =
-        exit_screen.x >= min_x && exit_screen.x <= max_x &&
-        exit_screen.y >= min_y && exit_screen.y <= max_y;
-    if (exit_in_safe_rect) {
-        const float bob = std::sin(static_cast<float>(state.scene_frame) * 0.08F) * 3.0F;
-        const Vec2 exit_marker_screen =
-            graphics.WcToScreen(nearest_exit_center + Vec2::New(0.0F, -16.0F)) +
-            Vec2::New(0.0F, bob);
-        const int arrow_size =
-            std::max(16, static_cast<int>(static_cast<float>(graphics.dims.y) * 0.045F));
-        DrawFrameDataIconRotated(
-            renderer,
-            state,
-            graphics,
-            frame_data_ids::CompassArrow,
-            exit_marker_screen,
-            IVec2::New(arrow_size, arrow_size),
-            -90.0
-        );
-        return;
-    }
-
-    const Vec2 arrow_center = Vec2::New(
-        std::clamp(exit_screen.x, min_x, max_x),
-        std::clamp(exit_screen.y, min_y, max_y)
-    );
-
-    constexpr float kRadiansToDegrees = 57.29577951308232F;
-    const double rotation_degrees =
-        static_cast<double>((std::atan2(direction.y, direction.x) * kRadiansToDegrees) - 180.0F);
-    const int arrow_size = std::max(16, static_cast<int>(static_cast<float>(graphics.dims.y) * 0.055F));
-    DrawFrameDataIconRotated(
-        renderer,
-        state,
-        graphics,
-        frame_data_ids::CompassArrow,
-        arrow_center,
-        IVec2::New(arrow_size, arrow_size),
-        rotation_degrees
-    );
 }
 
 } // namespace
@@ -478,90 +572,52 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
 
             cursor = cursor + (tool_cursor_advance * 3);
         }
-    }
 
-    if (player_entity != nullptr) {
-        const Entity* const held_entity =
-            player_entity->holding_vid.has_value()
-                ? state.entity_manager.GetEntity(*player_entity->holding_vid)
-                : nullptr;
-        if (held_entity != nullptr && held_entity->active && held_entity->type_ == EntityType::Bow) {
-            const FrameDataId icon_animation_id =
-                held_entity->counter_b > 0.0F ? frame_data_ids::BowLooseLoaded
-                                               : frame_data_ids::BowLooseEmpty;
-            DrawFrameDataIcon(renderer, state, graphics, icon_animation_id, cursor, tool_icon_size);
+        if (player_entity != nullptr) {
+            const std::vector<HudEntry> equipment_entries = BuildEquipmentHudEntries(state, *player_entity);
+            constexpr HudEntrySource kEquipmentSources[] = {
+                HudEntrySource::HeldItem,
+                HudEntrySource::BackItem,
+            };
+            for (HudEntrySource source : kEquipmentSources) {
+                const IVec2 slot_cursor = cursor;
+                DrawFrameDataIcon(
+                    renderer,
+                    state,
+                    graphics,
+                    GetEquipmentSlotBackgroundAnimationId(source),
+                    slot_cursor,
+                    tool_slot_size
+                );
 
-            char ammo_text[16];
-            std::snprintf(
-                ammo_text,
-                sizeof(ammo_text),
-                "%u",
-                static_cast<unsigned int>(std::max(0.0F, held_entity->counter_b))
-            );
-            const Vec2 text_pos = GetUiCountTextPosition(cursor, tool_icon_size);
-            DrawText(
-                renderer,
-                graphics,
-                32,
-                graphics.ui_font,
-                ammo_text,
-                text_pos.x,
-                text_pos.y,
-                SDL_Color{255, 255, 255, 255}
-            );
+                if (const HudEntry* const entry = FindHudEntryBySource(equipment_entries, source)) {
+                    const IVec2 item_icon_cursor = IVec2::New(
+                        slot_cursor.x + (tool_slot_size.x - tool_icon_size.x) / 2,
+                        slot_cursor.y + (tool_slot_size.y - tool_icon_size.y) / 2
+                    );
+                    DrawHudEntry(renderer, state, graphics, *entry, item_icon_cursor, tool_icon_size);
+                }
+
+                cursor = cursor + (tool_cursor_advance * 3);
+            }
         }
     }
 
     if (player_entity != nullptr) {
-        RenderCompassArrow(renderer, state, graphics, *player_entity);
+        RenderEffectWorldOverlays(renderer, state, graphics, *player_entity);
 
-        IVec2 passive_cursor = IVec2::New(hud_margin, hud_margin + std::max(status_icon_size.y, tool_slot_size.y) + hud_gap);
-        const IVec2 passive_icon_size = IVec2::New(
+        IVec2 effects_cursor = IVec2::New(
+            hud_margin,
+            hud_margin + std::max(status_icon_size.y, tool_slot_size.y) + hud_gap
+        );
+        const IVec2 effect_icon_size = IVec2::New(
             std::max(1, static_cast<int>(static_cast<float>(status_icon_size.x) * 0.8F)),
             std::max(1, static_cast<int>(static_cast<float>(status_icon_size.y) * 0.8F))
         );
-        const int passive_gap = std::max(4, hud_gap / 2);
-        const EntityEffects* const effects = player_entity->effects.get();
-        const std::uint8_t effect_count = effects != nullptr ? effects->count : 0;
-        for (std::size_t i = 0; i < effect_count; ++i) {
-            const EffectInstance& effect = effects->effects[i];
-            const EffectArchetype& archetype = GetEffectArchetype(effect.id);
-            if (archetype.ui_kind == EffectUiKind::Hidden) {
-                continue;
-            }
-            const FrameDataId icon_animation_id = archetype.icon_animation_id;
-            if (icon_animation_id == kInvalidFrameDataId) {
-                continue;
-            }
-            DrawFrameDataIcon(renderer, state, graphics, icon_animation_id, passive_cursor, passive_icon_size);
-            if (effect.id == EffectId::Meathead) {
-                char points_text[16];
-                std::snprintf(points_text, sizeof(points_text), "%d/10", effect.count);
-                DrawText(
-                    renderer,
-                    graphics,
-                    24,
-                    graphics.ui_font,
-                    points_text,
-                    static_cast<float>(passive_cursor.x),
-                    static_cast<float>(passive_cursor.y + passive_icon_size.y),
-                    SDL_Color{255, 255, 255, 255}
-                );
-            } else if (effect.id == EffectId::Parachute) {
-                char count_text[16];
-                std::snprintf(count_text, sizeof(count_text), "%d", effect.count);
-                DrawText(
-                    renderer,
-                    graphics,
-                    24,
-                    graphics.ui_font,
-                    count_text,
-                    static_cast<float>(passive_cursor.x),
-                    static_cast<float>(passive_cursor.y + passive_icon_size.y),
-                    SDL_Color{255, 255, 255, 255}
-                );
-            }
-            passive_cursor.x += passive_icon_size.x + passive_gap;
+        const int effect_gap = std::max(4, hud_gap / 2);
+        for (const HudEntry& entry : BuildEffectHudEntries(state, *player_entity)) {
+            DrawHudEntry(renderer, state, graphics, entry, effects_cursor, effect_icon_size);
+            effects_cursor.x += effect_icon_size.x + effect_gap + entry.extra_right_padding;
         }
     }
 

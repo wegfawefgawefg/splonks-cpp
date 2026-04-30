@@ -4,11 +4,14 @@
 #include "entity.hpp"
 #include "entity/callbacks.hpp"
 #include "frame_data_id.hpp"
+#include "hud/types.hpp"
 
 namespace splonks {
 
 struct Graphics;
 struct State;
+
+using EntityBuildHudEntry = void (*)(const Entity& entity, const State& state, HudEntrySource source, HudEntry& entry);
 
 struct EntityArchetype {
     EntityType type_ = EntityType::None;
@@ -70,6 +73,7 @@ struct EntityArchetype {
     EntityStepPhysics step_physics = nullptr;
     EntityOnEntityContact on_entity_contact = nullptr;
     EntityOnTileContact on_tile_contact = nullptr;
+    EntityBuildHudEntry build_hud_entry = nullptr;
     std::uint32_t entity_contact_cooldown_duration = 0;
     EntityLabel entity_label_a = EntityLabel::None;
     Alignment alignment = Alignment::Neutral;

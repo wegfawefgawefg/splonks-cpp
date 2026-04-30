@@ -141,9 +141,17 @@ add_executable(splonks-cpp
     src/debug/playback_ui_entities.cpp
     src/debug/playback_ui_menu.cpp
     src/debug/playback_ui_settings.cpp
+    src/debug/debug_stage_basic.cpp
+    src/debug/debug_stage_boulder_sacrifice.cpp
+    src/debug/debug_stage_platforms.cpp
+    src/debug/debug_stage_scenarios.cpp
+    src/debug/debug_stage_traps.cpp
+    src/debug/debug_stage_init.cpp
+    src/debug/shop_test_stage.cpp
     src/direction.cpp
     src/effects.cpp
     src/effects/archetypes.cpp
+    src/effects/render.cpp
     src/entity.cpp
     src/entity_tool_inventory.cpp
     src/entity/archetype.cpp
@@ -274,6 +282,7 @@ add_executable(splonks-cpp
     src/render/menu/settings.cpp
     src/render/menu/lighting.cpp
     src/render/gameplay.cpp
+    src/hud/entries.cpp
     src/render/postfx.cpp
     src/render/tile_lighting.cpp
     src/render/debug.cpp
@@ -293,6 +302,7 @@ add_executable(splonks-cpp
     src/sid.cpp
     src/stage.cpp
     src/stage_init.cpp
+    src/stage_spawning.cpp
     src/stage_rotation.cpp
     src/stage_wrap.cpp
     src/stage_tile_triggers.cpp

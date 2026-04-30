@@ -1,6 +1,8 @@
 #pragma once
 
+#include "effects/effect_id.hpp"
 #include "frame_data_id.hpp"
+#include "hud/types.hpp"
 #include "math_types.hpp"
 #include "utils.hpp"
 #include "vid.hpp"
@@ -10,30 +12,18 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
+
+struct SDL_Renderer;
 
 namespace splonks {
 
 struct Audio;
 struct Entity;
+struct Graphics;
 struct State;
 
 constexpr std::size_t kMaxEntityEffects = 12;
-
-enum class EffectId : std::uint8_t {
-    None,
-    Gloves,
-    Spectacles,
-    Compass,
-    Mitt,
-    SpringShoes,
-    SpikeShoes,
-    UdjatEye,
-    Ankh,
-    Meathead,
-    Parachute,
-    NoGravityUntilContact,
-    Count,
-};
 
 enum class EffectUiKind : std::uint8_t {
     Hidden,
@@ -128,12 +118,24 @@ struct EffectEvent {
 
 using EffectEventHandler = void (*)(Entity& owner, EffectInstance& effect, State& state, Audio* audio, const EffectEvent& event);
 using EffectExpiryPredicate = bool (*)(const Entity& owner, const EffectInstance& effect, const State& state, const EffectEvent& event);
+using EffectHudCountTextFn = std::optional<std::string> (*)(const EffectInstance& effect);
+using EffectWorldOverlayFn = void (*)(
+    SDL_Renderer* renderer,
+    const State& state,
+    Graphics& graphics,
+    const Entity& owner,
+    const EffectInstance& effect
+);
 
 struct EffectArchetype {
     EffectId id = EffectId::None;
     const char* debug_name = "None";
     FrameDataId icon_animation_id = kInvalidFrameDataId;
     EffectUiKind ui_kind = EffectUiKind::Hidden;
+    std::int32_t default_count = 0;
+    EffectHudCountTextFn hud_count_text = nullptr;
+    HudAnchor hud_count_anchor = HudAnchor::BottomRight;
+    EffectWorldOverlayFn render_world_overlay = nullptr;
     std::array<EffectModifier, 4> modifiers{};
     std::uint8_t modifier_count = 0;
     EffectEventHandler on_event = nullptr;

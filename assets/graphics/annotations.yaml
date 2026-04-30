@@ -8129,6 +8129,66 @@ sprites:
     emit_point:
       x: 0
       y: 0
+  - path: "entities.png"
+    aabb:
+      x: 80
+      y: 96
+      w: 16
+      h: 16
+    name: "hand_slot"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 8
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    cbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    tile: false
+    emit_point:
+      x: 8
+      y: 9
+  - path: "entities.png"
+    aabb:
+      x: 96
+      y: 96
+      w: 16
+      h: 16
+    name: "back_slot"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 8
+      y: 9
+    tags: []
+    pbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    cbox:
+      x: 1
+      y: 1
+      w: 14
+      h: 14
+    tile: false
+    emit_point:
+      x: 8
+      y: 8
   - path: "boss.png"
     aabb:
       x: 0

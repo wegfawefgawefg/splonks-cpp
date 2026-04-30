@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <string>
 
 namespace splonks::entities::bow {
 
@@ -40,6 +42,27 @@ FrameDataId GetLooseAnimationId(const Entity& bow) {
 
 FrameDataId GetPullAnimationId(const Entity& bow) {
     return HasAmmo(bow) ? frame_data_ids::BowPullLoaded : frame_data_ids::BowPullEmpty;
+}
+
+std::string FormatHudInt(int value) {
+    char text[16];
+    std::snprintf(text, sizeof(text), "%d", value);
+    return std::string(text);
+}
+
+void BuildHudEntryAsBow(
+    const Entity& bow,
+    const State& state,
+    HudEntrySource source,
+    HudEntry& entry
+) {
+    (void)state;
+    (void)source;
+    const int ammo = static_cast<int>(std::max(0.0F, bow.counter_b));
+    entry.icon_animation_id = ammo > 0 ? frame_data_ids::BowLooseLoaded : frame_data_ids::BowLooseEmpty;
+    entry.count_text = FormatHudInt(ammo);
+    entry.count_anchor = HudAnchor::BottomRight;
+    entry.style = ammo > 0 ? HudEntryStyle::Normal : HudEntryStyle::Dimmed;
 }
 
 float NormalizeDegrees(float degrees) {
@@ -225,6 +248,7 @@ extern const EntityArchetype kBowArchetype{
     .damage_vulnerability = DamageVulnerability::Vulnerable,
     .on_use = OnUseAsBow,
     .step_logic = StepEntityLogicAsBow,
+    .build_hud_entry = BuildHudEntryAsBow,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Bow),
 };

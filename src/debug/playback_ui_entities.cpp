@@ -92,7 +92,18 @@ void AddEffectFromDebug(Entity& entity, EffectId effect_id) {
         entity.collided = false;
         entity.collided_last_frame = false;
     }
-    (void)AddEffect(entity, effect_id);
+    (void)AddEffect(entity, effect_id, GetEffectArchetype(effect_id).default_count);
+}
+
+void AddAllPersistentEffectsFromDebug(Entity& entity) {
+    for (std::uint8_t i = 1; i < static_cast<std::uint8_t>(EffectId::Count); ++i) {
+        const EffectId effect_id = static_cast<EffectId>(i);
+        const EffectArchetype& archetype = GetEffectArchetype(effect_id);
+        if (archetype.ui_kind != EffectUiKind::Passive) {
+            continue;
+        }
+        AddEffectFromDebug(entity, effect_id);
+    }
 }
 
 void DrawEntityEffectsEditor(Entity& entity) {
@@ -151,6 +162,10 @@ void DrawEntityEffectsEditor(Entity& entity) {
     }
     if (ImGui::Button("Add Selected Effect##entity_effect_add_button")) {
         AddEffectFromDebug(entity, selected_effect);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Add All Persistent##entity_effect_add_all_persistent")) {
+        AddAllPersistentEffectsFromDebug(entity);
     }
     if (selected_effect == EffectId::NoGravityUntilContact) {
         ImGui::TextDisabled("Expires on grounded or blocking contact.");

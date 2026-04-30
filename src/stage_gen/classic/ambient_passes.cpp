@@ -43,6 +43,12 @@ bool IsOpenAmbientFloorSpot(const Stage& stage, int tile_x, int tile_y) {
                          static_cast<unsigned int>(tile_y - 1)) != Tile::Spikes;
 }
 
+void AddGiantSpiderHangSpawn(Stage& stage, const Vec2& pos) {
+    AddAmbientSpawn(stage, EntityType::GiantSpiderHang, pos);
+    AddAmbientSpawn(stage, EntityType::Cobweb, pos);
+    AddAmbientSpawn(stage, EntityType::Cobweb, pos + Vec2::New(static_cast<float>(kTileSize), 0.0F));
+}
+
 void AddAmbientMinesEntities(Stage& stage) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
@@ -76,7 +82,7 @@ void AddAmbientMinesEntities(Stage& stage) {
                     !HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
                     !HasSpawnAtWorldPos(stage, ceiling_spawn_pos_2) &&
                     rng::RandomIntInclusive(1, 40) == 1) {
-                    AddAmbientSpawn(stage, EntityType::GiantSpiderHang, ceiling_spawn_pos);
+                    AddGiantSpiderHangSpawn(stage, ceiling_spawn_pos);
                     giant_spider_spawned = true;
                 } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
                            dark_level && rng::RandomIntInclusive(1, 60) == 1) {

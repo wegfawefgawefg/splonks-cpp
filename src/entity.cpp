@@ -132,9 +132,6 @@ Entity Entity::New() {
     entity.point_label_d = PointLabel::None;
     entity.holding_timer = kDefaultHoldingTimer;
     entity.entity_label_a = EntityLabel::None;
-    entity.entity_label_b = EntityLabel::None;
-    entity.entity_label_c = EntityLabel::None;
-    entity.entity_label_d = EntityLabel::None;
     entity.child_vids.reset();
     entity.inside_vids.reset();
     entity.alignment = Alignment::Neutral;
@@ -144,8 +141,6 @@ Entity Entity::New() {
     entity.counter_d = 0.0F;
     entity.threshold_a = 0.0F;
     entity.threshold_b = 0.0F;
-    entity.threshold_c = 0.0F;
-    entity.threshold_d = 0.0F;
     return entity;
 }
 
@@ -311,8 +306,7 @@ bool TryCollectEffectPickup(Entity& entity, const Entity& pickup) {
         return false;
     }
 
-    const std::int32_t count = *pickup.pickup_effect == EffectId::Parachute ? 1 : 0;
-    (void)AddEffect(entity, *pickup.pickup_effect, count);
+    (void)AddEffect(entity, *pickup.pickup_effect, GetEffectArchetype(*pickup.pickup_effect).default_count);
     return true;
 }
 

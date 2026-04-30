@@ -135,7 +135,7 @@ FrameDataId GetCapeAnimation(const Entity& cape, const State& state) {
     }
 
     if (cape.attachment_mode == AttachmentMode::Held || cape.held_by_vid.has_value()) {
-        return frame_data_ids::CapeSide;
+        return open ? frame_data_ids::CapeSideOpen : frame_data_ids::CapeSide;
     }
     return frame_data_ids::CapeClosed;
 }
@@ -149,9 +149,12 @@ void OnUseAsCape(std::size_t entity_idx, State& state, Graphics& graphics, Audio
 
     Entity& cape = state.entity_manager.entities[entity_idx];
     cape.counter_a = 0.0F;
-    if (cape.use_state.source != AttachmentMode::Back ||
-        !cape.use_state.down ||
+    if (!cape.use_state.down ||
         !cape.use_state.user_vid.has_value()) {
+        return;
+    }
+    if (cape.use_state.source != AttachmentMode::Back &&
+        cape.use_state.source != AttachmentMode::Held) {
         return;
     }
 

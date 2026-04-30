@@ -87,7 +87,7 @@ extern const EntityArchetype kGiantTikiHeadArchetype{
     .can_stomp = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
-    .draw_layer = DrawLayer::Middle,
+    .draw_layer = DrawLayer::Background,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .ai_state = EntityAiState::Idle,

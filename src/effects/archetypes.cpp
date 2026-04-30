@@ -1,6 +1,7 @@
 #include "effects.hpp"
 
 #include "audio_emitters.hpp"
+#include "effects/render.hpp"
 #include "entity.hpp"
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
@@ -12,7 +13,9 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdio>
 #include <optional>
+#include <string>
 
 namespace splonks {
 
@@ -84,6 +87,21 @@ std::array<EffectModifier, 4> MakeModifierArray(const EffectModifier (&modifiers
         out[i] = modifiers[i];
     }
     return out;
+}
+
+std::string FormatEffectInt(int value) {
+    char text[16];
+    std::snprintf(text, sizeof(text), "%d", value);
+    return std::string(text);
+}
+
+std::optional<std::string> FormatEffectCountText(const EffectInstance& effect) {
+    return FormatEffectInt(effect.count);
+}
+
+std::optional<std::string> FormatMeatheadCountdownText(const EffectInstance& effect) {
+    constexpr std::int32_t kMeatheadPointsPerHeal = 10;
+    return FormatEffectInt(std::max(1, kMeatheadPointsPerHeal - effect.count));
 }
 
 bool IsNoGravityUntilContactExpired(
@@ -218,6 +236,7 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .debug_name = "Compass",
         .icon_animation_id = frame_data_ids::Compass,
         .ui_kind = EffectUiKind::Passive,
+        .render_world_overlay = RenderCompassWorldOverlay,
     },
     EffectArchetype{
         .id = EffectId::Mitt,
@@ -264,6 +283,8 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .debug_name = "Meathead",
         .icon_animation_id = frame_data_ids::Meathead,
         .ui_kind = EffectUiKind::Passive,
+        .hud_count_text = FormatMeatheadCountdownText,
+        .hud_count_anchor = HudAnchor::BottomRight,
         .on_event = entities::meathead::OnMeatheadEffectEvent,
     },
     EffectArchetype{
@@ -271,6 +292,9 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .debug_name = "Parachute",
         .icon_animation_id = frame_data_ids::PackedParachute,
         .ui_kind = EffectUiKind::Passive,
+        .default_count = 1,
+        .hud_count_text = FormatEffectCountText,
+        .hud_count_anchor = HudAnchor::BottomRight,
     },
     EffectArchetype{
         .id = EffectId::NoGravityUntilContact,

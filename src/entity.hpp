@@ -159,9 +159,6 @@ struct Entity {
     std::optional<std::vector<VID>> child_vids;
     std::optional<std::vector<VID>> inside_vids;
     EntityLabel entity_label_a = EntityLabel::None;
-    EntityLabel entity_label_b = EntityLabel::None;
-    EntityLabel entity_label_c = EntityLabel::None;
-    EntityLabel entity_label_d = EntityLabel::None;
     Alignment alignment = Alignment::Neutral;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
@@ -169,8 +166,6 @@ struct Entity {
     float counter_d = 0.0F;
     float threshold_a = 0.0F;
     float threshold_b = 0.0F;
-    float threshold_c = 0.0F;
-    float threshold_d = 0.0F;
 
     static constexpr Vec2 kHangHandSize = {1.0F, 4.0F};
 
