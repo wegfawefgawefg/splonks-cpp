@@ -11,6 +11,7 @@
 #include "state.hpp"
 #include "step.hpp"
 #include "stage_lighting.hpp"
+#include "stage_wrap.hpp"
 #include "tools/tool_archetype.hpp"
 #include "text.hpp"
 
@@ -56,6 +57,26 @@ void RebaseCwdToRepoRoot() {
             probe = probe.parent_path();
         }
     }
+}
+
+void ApplyTemporaryWaterTestDefaults(splonks::State& state, splonks::Graphics& graphics) {
+    // Temporary water tuning startup: remove after the fluid algorithm is validated.
+    constexpr bool kTestWrapX = false;
+    constexpr bool kTestWrapY = true;
+    constexpr unsigned int kTestWrapPaddingTiles = 1U;
+    constexpr bool kTestCameraClampEnabled = false;
+    splonks::ApplyToroidalWrapSettings(
+        state,
+        graphics,
+        kTestWrapX,
+        kTestWrapY,
+        kTestWrapPaddingTiles,
+        kTestCameraClampEnabled
+    );
+    graphics.camera_mode = splonks::CameraMode::StageFit;
+    graphics.play_cam.pos = splonks::GetStageCameraCenter(state.stage);
+    graphics.camera.target = graphics.play_cam.pos;
+    graphics.camera.zoom = splonks::GetStageFitCameraZoom(state.stage, graphics);
 }
 
 } // namespace
@@ -201,6 +222,7 @@ int main(int argc, char** argv) {
         debug.character_swap_keep_health = state.settings.debug_ui.entity_swap_keep_health;
         debug.character_swap_keep_tools = state.settings.debug_ui.entity_swap_keep_tools;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
+        ApplyTemporaryWaterTestDefaults(state, graphics);
         splonks::RebuildStageLighting(state);
 
         std::uint64_t last_ticks = SDL_GetTicks();

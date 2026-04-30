@@ -9694,7 +9694,7 @@ sprites:
       x: 32
       y: 96
       w: 16
-      h: 16
+      h: 2
     name: "watertop"
     frame: 0
     duration: 20
@@ -9724,7 +9724,7 @@ sprites:
       x: 48
       y: 96
       w: 16
-      h: 16
+      h: 2
     name: "watertop"
     frame: 1
     duration: 20
@@ -9754,7 +9754,7 @@ sprites:
       x: 64
       y: 96
       w: 16
-      h: 16
+      h: 2
     name: "watertop"
     frame: 2
     duration: 20

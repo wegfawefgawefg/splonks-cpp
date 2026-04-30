@@ -123,6 +123,11 @@ struct DebugUiSettings {
     bool shake_brush_visible = false;
     bool audio_brush_visible = false;
     bool fluid_brush_visible = false;
+    bool fluid_brush_enabled = false;
+    bool fluid_brush_simulation_enabled = true;
+    bool fluid_brush_replace_solid_tiles = false;
+    int fluid_brush_radius_tiles = 1;
+    int fluid_brush_simulation_interval_frames = 6;
     bool audio_settings_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;

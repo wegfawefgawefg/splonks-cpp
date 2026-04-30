@@ -104,6 +104,17 @@ std::vector<std::vector<Tile>> MakeEmptyFluidTileGrid(
     return fluid_tiles;
 }
 
+std::vector<std::vector<std::uint8_t>> MakeEmptyFluidAmountGrid(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<std::uint8_t>> fluid_amount;
+    fluid_amount.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        fluid_amount.push_back(std::vector<std::uint8_t>(row.size(), 0));
+    }
+    return fluid_amount;
+}
+
 std::vector<std::vector<Tile>> MakeEmptyBackwallTiles(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -194,6 +205,23 @@ void SyncFluidTileGridToTiles(
     for (std::size_t y = 0; y < tiles.size(); ++y) {
         if (grid[y].size() != tiles[y].size()) {
             grid = MakeEmptyFluidTileGrid(tiles);
+            return;
+        }
+    }
+}
+
+void SyncFluidAmountGridToTiles(
+    std::vector<std::vector<std::uint8_t>>& grid,
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    if (grid.size() != tiles.size()) {
+        grid = MakeEmptyFluidAmountGrid(tiles);
+        return;
+    }
+
+    for (std::size_t y = 0; y < tiles.size(); ++y) {
+        if (grid[y].size() != tiles[y].size()) {
+            grid = MakeEmptyFluidAmountGrid(tiles);
             return;
         }
     }
@@ -355,6 +383,7 @@ Stage Stage::NewBlank() {
     stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>(1, Tile::Air));
     stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
     stage.fluid_tiles = MakeEmptyFluidTileGrid(stage.tiles);
+    stage.fluid_amount = MakeEmptyFluidAmountGrid(stage.tiles);
     stage.fluid_momentum = MakeEmptyFluidMomentumGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
@@ -492,6 +521,7 @@ Stage Stage::New(StageType stage_type) {
     stage.tiles = std::move(tiles);
     stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
     stage.fluid_tiles = MakeEmptyFluidTileGrid(stage.tiles);
+    stage.fluid_amount = MakeEmptyFluidAmountGrid(stage.tiles);
     stage.fluid_momentum = MakeEmptyFluidMomentumGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
@@ -572,6 +602,17 @@ Tile Stage::GetFluidTile(unsigned int x, unsigned int y) const {
     const std::vector<Tile>& row = fluid_tiles[static_cast<std::size_t>(y)];
     if (x >= row.size()) {
         return Tile::Air;
+    }
+    return row[static_cast<std::size_t>(x)];
+}
+
+std::uint8_t Stage::GetFluidAmount(unsigned int x, unsigned int y) const {
+    if (y >= fluid_amount.size()) {
+        return 0;
+    }
+    const std::vector<std::uint8_t>& row = fluid_amount[static_cast<std::size_t>(y)];
+    if (x >= row.size()) {
+        return 0;
     }
     return row[static_cast<std::size_t>(x)];
 }
@@ -667,6 +708,7 @@ void Stage::SyncTileShakeGrid() {
 void Stage::SyncTileInstanceMetadataGrid() {
     SyncTileRotationGridToTiles(tile_rotations, tiles);
     SyncFluidTileGridToTiles(fluid_tiles, tiles);
+    SyncFluidAmountGridToTiles(fluid_amount, tiles);
     SyncFluidMomentumGridToTiles(fluid_momentum, tiles);
 }
 
@@ -706,6 +748,8 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
     if (GetTileArchetype(tile).solid || GetTileArchetype(tile).one_way_top_solid) {
         fluid_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
             Tile::Air;
+        fluid_amount[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
+            0;
     }
     fluid_momentum[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = 0;
     tile_change_generation += 1;
@@ -719,10 +763,14 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
     }
     Tile& stored = fluid_tiles[static_cast<std::size_t>(tile_pos.y)]
                               [static_cast<std::size_t>(tile_pos.x)];
-    if (stored == tile) {
+    std::uint8_t& amount = fluid_amount[static_cast<std::size_t>(tile_pos.y)]
+                                       [static_cast<std::size_t>(tile_pos.x)];
+    const std::uint8_t new_amount = GetTileArchetype(tile).simulated_fluid ? 255 : 0;
+    if (stored == tile && amount == new_amount) {
         return;
     }
     stored = tile;
+    amount = new_amount;
     fluid_momentum[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = 0;
     tile_change_generation += 1;
 }

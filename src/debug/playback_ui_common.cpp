@@ -4,6 +4,8 @@
 #include "settings.hpp"
 #include "state.hpp"
 
+#include <algorithm>
+
 namespace splonks::debug_playback_internal {
 
 bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
@@ -39,6 +41,35 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
     }
     if (state.settings.debug_ui.fluid_brush_visible != debug.fluid_brush_window_visible) {
         state.settings.debug_ui.fluid_brush_visible = debug.fluid_brush_window_visible;
+        changed = true;
+    }
+    if (state.settings.debug_ui.fluid_brush_enabled != state.debug_fluid_brush.enabled) {
+        state.settings.debug_ui.fluid_brush_enabled = state.debug_fluid_brush.enabled;
+        changed = true;
+    }
+    if (state.settings.debug_ui.fluid_brush_simulation_enabled !=
+        state.debug_fluid_brush.simulation_enabled) {
+        state.settings.debug_ui.fluid_brush_simulation_enabled =
+            state.debug_fluid_brush.simulation_enabled;
+        changed = true;
+    }
+    if (state.settings.debug_ui.fluid_brush_replace_solid_tiles !=
+        state.debug_fluid_brush.replace_solid_tiles) {
+        state.settings.debug_ui.fluid_brush_replace_solid_tiles =
+            state.debug_fluid_brush.replace_solid_tiles;
+        changed = true;
+    }
+    const int fluid_brush_radius_tiles = std::max(0, state.debug_fluid_brush.radius_tiles);
+    if (state.settings.debug_ui.fluid_brush_radius_tiles != fluid_brush_radius_tiles) {
+        state.settings.debug_ui.fluid_brush_radius_tiles = fluid_brush_radius_tiles;
+        changed = true;
+    }
+    const int fluid_brush_simulation_interval_frames =
+        std::max(1, state.debug_fluid_brush.simulation_interval_frames);
+    if (state.settings.debug_ui.fluid_brush_simulation_interval_frames !=
+        fluid_brush_simulation_interval_frames) {
+        state.settings.debug_ui.fluid_brush_simulation_interval_frames =
+            fluid_brush_simulation_interval_frames;
         changed = true;
     }
     if (state.settings.debug_ui.audio_settings_visible != debug.audio_settings_window_visible) {

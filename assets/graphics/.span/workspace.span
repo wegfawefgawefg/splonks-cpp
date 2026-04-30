@@ -27,9 +27,9 @@
       ]
     }
   ],
-  "activePaletteId": null,
-  "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "47190461-3d5a-44ac-a051-6d5d8300fc0a",
+  "activePaletteId": "sweetie-16-manual",
+  "lastOpenSheetPath": "tiles/cave.png",
+  "selectedAnnotationId": "cd72e72a-493e-4366-a62d-56046bbde0d0",
   "sheets": [
     {
       "path": "images/title.png",
@@ -12302,9 +12302,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 4.314,
-        "centerX": 47.17199814557255,
-        "centerY": 494.20491423273063
+        "zoom": 1.767,
+        "centerX": 131.01301641199774,
+        "centerY": 363.32767402376913
       }
     },
     {
@@ -14169,7 +14169,7 @@
             "x": 32,
             "y": 96,
             "w": 16,
-            "h": 16
+            "h": 2
           },
           "point": null,
           "chromaKey": null,
@@ -14212,7 +14212,7 @@
             "x": 48,
             "y": 96,
             "w": 16,
-            "h": 16
+            "h": 2
           },
           "point": null,
           "chromaKey": null,
@@ -14255,7 +14255,7 @@
             "x": 64,
             "y": 96,
             "w": 16,
-            "h": 16
+            "h": 2
           },
           "point": null,
           "chromaKey": null,
@@ -14296,9 +14296,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 6.729,
-        "centerX": 88.20032694308217,
-        "centerY": 100.31208203299153
+        "zoom": 6.711,
+        "centerX": 77.41022202354343,
+        "centerY": 86.42527194158843
       }
     },
     {

@@ -156,7 +156,12 @@ DebugUiSettings DebugUiSettings::New() {
     result.entity_annotations_visible = false;
     result.shake_brush_visible = false;
     result.audio_brush_visible = false;
-    result.fluid_brush_visible = false;
+    result.fluid_brush_visible = true;
+    result.fluid_brush_enabled = true;
+    result.fluid_brush_simulation_enabled = true;
+    result.fluid_brush_replace_solid_tiles = true;
+    result.fluid_brush_radius_tiles = 0;
+    result.fluid_brush_simulation_interval_frames = 1;
     result.audio_settings_visible = false;
     result.ui_settings_visible = false;
     result.post_fx_settings_visible = false;
@@ -432,6 +437,21 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_visible") {
             settings.debug_ui.fluid_brush_visible =
                 ParseBool(value, settings.debug_ui.fluid_brush_visible);
+        } else if (key == "debug_ui.fluid_brush_enabled") {
+            settings.debug_ui.fluid_brush_enabled =
+                ParseBool(value, settings.debug_ui.fluid_brush_enabled);
+        } else if (key == "debug_ui.fluid_brush_simulation_enabled") {
+            settings.debug_ui.fluid_brush_simulation_enabled =
+                ParseBool(value, settings.debug_ui.fluid_brush_simulation_enabled);
+        } else if (key == "debug_ui.fluid_brush_replace_solid_tiles") {
+            settings.debug_ui.fluid_brush_replace_solid_tiles =
+                ParseBool(value, settings.debug_ui.fluid_brush_replace_solid_tiles);
+        } else if (key == "debug_ui.fluid_brush_radius_tiles") {
+            settings.debug_ui.fluid_brush_radius_tiles =
+                ParseInt(value, settings.debug_ui.fluid_brush_radius_tiles);
+        } else if (key == "debug_ui.fluid_brush_simulation_interval_frames") {
+            settings.debug_ui.fluid_brush_simulation_interval_frames =
+                ParseInt(value, settings.debug_ui.fluid_brush_simulation_interval_frames);
         } else if (key == "debug_ui.audio_settings_visible") {
             settings.debug_ui.audio_settings_visible =
                 ParseBool(value, settings.debug_ui.audio_settings_visible);
@@ -702,6 +722,16 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.audio_brush_visible ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_visible="
            << (settings.debug_ui.fluid_brush_visible ? 1 : 0) << "\n";
+    output << "debug_ui.fluid_brush_enabled="
+           << (settings.debug_ui.fluid_brush_enabled ? 1 : 0) << "\n";
+    output << "debug_ui.fluid_brush_simulation_enabled="
+           << (settings.debug_ui.fluid_brush_simulation_enabled ? 1 : 0) << "\n";
+    output << "debug_ui.fluid_brush_replace_solid_tiles="
+           << (settings.debug_ui.fluid_brush_replace_solid_tiles ? 1 : 0) << "\n";
+    output << "debug_ui.fluid_brush_radius_tiles="
+           << settings.debug_ui.fluid_brush_radius_tiles << "\n";
+    output << "debug_ui.fluid_brush_simulation_interval_frames="
+           << settings.debug_ui.fluid_brush_simulation_interval_frames << "\n";
     output << "debug_ui.audio_settings_visible="
            << (settings.debug_ui.audio_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.ui_settings_visible="

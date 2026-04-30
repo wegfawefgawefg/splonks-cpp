@@ -173,6 +173,15 @@ State State::New() {
     state.world_prompts.clear();
     state.debug_rect_annotations.clear();
     state.debug_label_annotations.clear();
+    state.debug_fluid_brush.enabled = state.settings.debug_ui.fluid_brush_enabled;
+    state.debug_fluid_brush.simulation_enabled =
+        state.settings.debug_ui.fluid_brush_simulation_enabled;
+    state.debug_fluid_brush.replace_solid_tiles =
+        state.settings.debug_ui.fluid_brush_replace_solid_tiles;
+    state.debug_fluid_brush.radius_tiles =
+        std::max(0, state.settings.debug_ui.fluid_brush_radius_tiles);
+    state.debug_fluid_brush.simulation_interval_frames =
+        std::max(1, state.settings.debug_ui.fluid_brush_simulation_interval_frames);
     (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
     return state;
 }

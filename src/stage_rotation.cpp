@@ -170,6 +170,7 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     stage.tile_rotations = RotateGrid(stage.tile_rotations, quarter_turns);
     RotateTileRotationsInPlace(stage.tile_rotations, quarter_turns);
     stage.fluid_tiles = RotateGrid(stage.fluid_tiles, quarter_turns);
+    stage.fluid_amount = RotateGrid(stage.fluid_amount, quarter_turns);
     stage.fluid_momentum = RotateGrid(stage.fluid_momentum, quarter_turns);
     stage.backwall_tiles = RotateGrid(stage.backwall_tiles, quarter_turns);
     stage.embedded_treasures = RotateGrid(stage.embedded_treasures, quarter_turns);

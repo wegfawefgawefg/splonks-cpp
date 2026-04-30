@@ -54,6 +54,12 @@ void ApplyTileOverlapEffects(std::size_t entity_idx, State& state) {
             static_cast<unsigned int>(tile_query.tile_pos.x),
             static_cast<unsigned int>(tile_query.tile_pos.y)
         );
+        if (state.stage.GetFluidAmount(
+                static_cast<unsigned int>(tile_query.tile_pos.x),
+                static_cast<unsigned int>(tile_query.tile_pos.y)
+            ) == 0) {
+            continue;
+        }
         const TileArchetype& fluid_archetype = GetTileArchetype(fluid_tile);
         if (fluid_archetype.effect_while_inside.has_value()) {
             (void)AddEffect(

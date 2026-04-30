@@ -170,6 +170,10 @@ void ExpandStageForWrap(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<Tile>(static_cast<std::size_t>(new_tile_dims.x), Tile::Air)
     );
+    std::vector<std::vector<std::uint8_t>> fluid_amount(
+        static_cast<std::size_t>(new_tile_dims.y),
+        std::vector<std::uint8_t>(static_cast<std::size_t>(new_tile_dims.x), 0)
+    );
     std::vector<std::vector<std::int8_t>> fluid_momentum(
         static_cast<std::size_t>(new_tile_dims.y),
         std::vector<std::int8_t>(static_cast<std::size_t>(new_tile_dims.x), 0)
@@ -200,6 +204,10 @@ void ExpandStageForWrap(
                        [static_cast<std::size_t>(x + padding_tile_dims.x)] =
                            stage.fluid_tiles[static_cast<std::size_t>(y)]
                                             [static_cast<std::size_t>(x)];
+            fluid_amount[static_cast<std::size_t>(y + padding_tile_dims.y)]
+                        [static_cast<std::size_t>(x + padding_tile_dims.x)] =
+                            stage.fluid_amount[static_cast<std::size_t>(y)]
+                                              [static_cast<std::size_t>(x)];
             fluid_momentum[static_cast<std::size_t>(y + padding_tile_dims.y)]
                           [static_cast<std::size_t>(x + padding_tile_dims.x)] =
                               stage.fluid_momentum[static_cast<std::size_t>(y)]
@@ -221,6 +229,7 @@ void ExpandStageForWrap(
     stage.tiles = std::move(tiles);
     stage.backwall_tiles = std::move(backwall_tiles);
     stage.fluid_tiles = std::move(fluid_tiles);
+    stage.fluid_amount = std::move(fluid_amount);
     stage.fluid_momentum = std::move(fluid_momentum);
     stage.tile_shake = std::move(tile_shake);
     stage.backwall_tile_shake = std::move(backwall_tile_shake);
@@ -258,6 +267,10 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
         static_cast<std::size_t>(core_size.y),
         std::vector<Tile>(static_cast<std::size_t>(core_size.x), Tile::Air)
     );
+    std::vector<std::vector<std::uint8_t>> fluid_amount(
+        static_cast<std::size_t>(core_size.y),
+        std::vector<std::uint8_t>(static_cast<std::size_t>(core_size.x), 0)
+    );
     std::vector<std::vector<std::int8_t>> fluid_momentum(
         static_cast<std::size_t>(core_size.y),
         std::vector<std::int8_t>(static_cast<std::size_t>(core_size.x), 0)
@@ -285,6 +298,9 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
             fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 stage.fluid_tiles[static_cast<std::size_t>(y + core_origin.y)]
                                  [static_cast<std::size_t>(x + core_origin.x)];
+            fluid_amount[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                stage.fluid_amount[static_cast<std::size_t>(y + core_origin.y)]
+                                  [static_cast<std::size_t>(x + core_origin.x)];
             fluid_momentum[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 stage.fluid_momentum[static_cast<std::size_t>(y + core_origin.y)]
                                     [static_cast<std::size_t>(x + core_origin.x)];
@@ -308,6 +324,7 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
     stage.tiles = std::move(tiles);
     stage.backwall_tiles = std::move(backwall_tiles);
     stage.fluid_tiles = std::move(fluid_tiles);
+    stage.fluid_amount = std::move(fluid_amount);
     stage.fluid_momentum = std::move(fluid_momentum);
     stage.tile_shake = std::move(tile_shake);
     stage.backwall_tile_shake = std::move(backwall_tile_shake);
