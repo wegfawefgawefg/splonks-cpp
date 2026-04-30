@@ -17,6 +17,7 @@ enum class EffectId : std::uint8_t {
     Meathead,
     Parachute,
     NoGravityUntilContact,
+    InWater,
     Count,
 };
 

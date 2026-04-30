@@ -1,6 +1,7 @@
 #include "stage_gen/classic/ambient_passes.hpp"
 
 #include "stage_gen/classic/stage_pass_helpers.hpp"
+#include "water.hpp"
 #include "utils.hpp"
 
 namespace splonks::stage_gen::classic {
@@ -25,7 +26,7 @@ bool IsVineAmbientTile(Tile tile) {
 }
 
 bool IsWaterAmbientTile(Tile tile) {
-    return tile == Tile::WaterSwim;
+    return IsWaterTile(tile);
 }
 
 bool IsOpenAmbientCeilingSpot(const Stage& stage, int tile_x, int tile_y) {

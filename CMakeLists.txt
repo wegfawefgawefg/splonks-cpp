@@ -301,11 +301,13 @@ add_executable(splonks-cpp
     src/settings.cpp
     src/sid.cpp
     src/stage.cpp
+    src/stage_fluids.cpp
     src/stage_init.cpp
     src/stage_spawning.cpp
     src/stage_rotation.cpp
     src/stage_wrap.cpp
     src/stage_tile_triggers.cpp
+    src/water.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/classic/ambient_passes.cpp
     src/stage_gen/classic/glyph_actions.cpp

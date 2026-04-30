@@ -122,6 +122,7 @@ struct DebugUiSettings {
     bool entity_annotations_visible = false;
     bool shake_brush_visible = false;
     bool audio_brush_visible = false;
+    bool fluid_brush_visible = false;
     bool audio_settings_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;

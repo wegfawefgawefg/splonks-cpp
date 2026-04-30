@@ -18,6 +18,8 @@ constexpr int kOpposingBodySmackStageWidthTiles = 14;
 constexpr int kOpposingBodySmackStageHeightTiles = 8;
 constexpr int kMonkeyTestStageWidthTiles = 16;
 constexpr int kMonkeyTestStageHeightTiles = 16;
+constexpr int kWaterPiranhaTestStageWidthTiles = 22;
+constexpr int kWaterPiranhaTestStageHeightTiles = 13;
 
 std::optional<VID> SpawnBowlingCaveman(
     State& state,
@@ -96,6 +98,34 @@ void GiveHeldRockToEntity(State& state, VID holder_vid) {
     rock->acc = Vec2::New(0.0F, 0.0F);
     rock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
     holder->holding_vid = rock->vid;
+    holder->holding = true;
+}
+
+void GiveHeldMattockToEntity(State& state, VID holder_vid) {
+    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+    if (holder == nullptr || !holder->active) {
+        return;
+    }
+
+    const std::optional<VID> mattock_vid = state.entity_manager.NewEntity();
+    if (!mattock_vid.has_value()) {
+        return;
+    }
+
+    Entity* const mattock = state.entity_manager.GetEntityMut(*mattock_vid);
+    if (mattock == nullptr) {
+        return;
+    }
+
+    SetEntityAs(*mattock, EntityType::Mattock);
+    mattock->held_by_vid = holder_vid;
+    mattock->attachment_mode = AttachmentMode::Held;
+    mattock->has_physics = false;
+    mattock->can_collide = false;
+    mattock->vel = Vec2::New(0.0F, 0.0F);
+    mattock->acc = Vec2::New(0.0F, 0.0F);
+    mattock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
+    holder->holding_vid = mattock->vid;
     holder->holding = true;
 }
 
@@ -179,6 +209,43 @@ Stage MakeMonkeyTestStage() {
     debug_stage::FillRect(stage, 6, 13, 6, 14, wall_tile);
     debug_stage::FillRect(stage, 10, 13, 10, 14, wall_tile);
 
+    return stage;
+}
+
+Stage MakeWaterPiranhaTestStage() {
+    Stage stage;
+    stage.stage_type = StageType::Test1;
+    stage.tiles = std::vector<std::vector<Tile>>(
+        static_cast<std::size_t>(kWaterPiranhaTestStageHeightTiles),
+        std::vector<Tile>(static_cast<std::size_t>(kWaterPiranhaTestStageWidthTiles), Tile::Air)
+    );
+    debug_stage::FillBackwall(stage);
+    stage.rooms = {};
+    stage.path = {};
+    stage.border = Stage::MakeUniformBorder(debug_stage::kDefaultBorderTile);
+    debug_stage::ApplyDefaultDebugCamera(stage);
+
+    const Tile wall_tile = debug_stage::kDefaultBorderTile;
+    for (int x = 0; x < kWaterPiranhaTestStageWidthTiles; ++x) {
+        debug_stage::SetTile(stage, x, 0, wall_tile);
+        debug_stage::SetTile(stage, x, kWaterPiranhaTestStageHeightTiles - 1, wall_tile);
+    }
+    for (int y = 0; y < kWaterPiranhaTestStageHeightTiles; ++y) {
+        debug_stage::SetTile(stage, 0, y, wall_tile);
+        debug_stage::SetTile(stage, kWaterPiranhaTestStageWidthTiles - 1, y, wall_tile);
+    }
+
+    debug_stage::FillRect(stage, 1, 10, 20, 11, wall_tile);
+    debug_stage::FillRect(stage, 7, 8, 7, 9, wall_tile);
+    debug_stage::FillRect(stage, 14, 8, 14, 9, wall_tile);
+    debug_stage::SetTile(stage, 6, 9, wall_tile);
+    debug_stage::SetTile(stage, 15, 9, wall_tile);
+    debug_stage::FillRect(stage, 8, 8, 13, 9, Tile::WaterSwim);
+
+    stage.stagegen_annotations.push_back(StageGenAnnotation{
+        .world_pos = Vec2::New(8.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize)),
+        .text = "simulated tile water pool",
+    });
     return stage;
 }
 
@@ -282,6 +349,31 @@ void InitMonkeyTestStage(State& state) {
                 monkey->facing = (i % 2 == 0) ? LeftOrRight::Left : LeftOrRight::Right;
             }
         }
+    }
+}
+
+void InitWaterPiranhaTestStage(State& state) {
+    InitCommonStageState(state);
+    state.mouse_trailer_vid.reset();
+
+    SpawnPlayer(
+        state,
+        Vec2::New(
+            3.0F * static_cast<float>(kTileSize),
+            10.0F * static_cast<float>(kTileSize) - 14.0F
+        )
+    );
+    if (state.player_vid.has_value()) {
+        GiveHeldMattockToEntity(state, *state.player_vid);
+    }
+
+    const std::array<Vec2, 3> piranha_centers{{
+        Vec2::New(9.0F * static_cast<float>(kTileSize), 8.5F * static_cast<float>(kTileSize)),
+        Vec2::New(11.0F * static_cast<float>(kTileSize), 9.5F * static_cast<float>(kTileSize)),
+        Vec2::New(13.0F * static_cast<float>(kTileSize), 8.5F * static_cast<float>(kTileSize)),
+    }};
+    for (const Vec2& center : piranha_centers) {
+        (void)SpawnStageEntityAtCenter(state, EntityType::Piranha, center);
     }
 }
 

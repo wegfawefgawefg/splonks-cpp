@@ -219,7 +219,10 @@ Check a stage only when all applicable items are true:
 
 - [ ] `classic_jungle_1` / `2-1` / Jungle
   - Data exists.
-  - Needs jungle room pool audit, jungle ambient pass parity, water/lake behavior, piranha/jaws/mantrap/frog/monkey behavior, tree/vine behavior, and hazard odds.
+  - Needs jungle room pool audit, jungle ambient pass parity, jaws/frog behavior, tree/vine behavior, and hazard odds.
+  - Water is tile-based with rendered surface tops, optional drain-support triggers, and a focused Water/Piranha debug room.
+  - Piranha behavior is implemented and uses water-constrained swimming.
+  - Monkey behavior is implemented and playtested in the monkey debug room.
 
 - [ ] `classic_jungle_2` / `2-2` / Jungle
   - Needs Jungle parity.

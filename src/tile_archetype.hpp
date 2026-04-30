@@ -1,6 +1,7 @@
 #pragma once
 
 #include "audio.hpp"
+#include "effects/effect_id.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"
@@ -21,10 +22,12 @@ struct TileArchetype {
     std::uint8_t climbable_rotation_mask = kTileRotationBitAll;
     bool transparent = true;
     bool hangable = false;
+    bool simulated_fluid = false;
     float friction = 0.85F;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
     std::optional<AudioAssetId> break_sound = std::nullopt;
     std::optional<FrameDataId> break_animation = std::nullopt;
+    std::optional<EffectId> effect_while_inside = std::nullopt;
     TileOnBreak on_break = nullptr;
     const char* debug_name = "Unknown";
 };

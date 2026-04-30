@@ -156,6 +156,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Overlay", &debug.entity_annotations_visible);
     ImGui::Checkbox("Shake Brush", &debug.shake_brush_window_visible);
     ImGui::Checkbox("Audio Brush", &debug.audio_brush_window_visible);
+    ImGui::Checkbox("Fluid Brush", &debug.fluid_brush_window_visible);
     ImGui::Checkbox("Audio Settings", &debug.audio_settings_window_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
     ImGui::Checkbox("Camera Settings", &debug.camera_settings_window_visible);
@@ -171,6 +172,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::TextUnformatted("Overlay toggles live in the Overlay window.");
     ImGui::TextUnformatted("Shake brush controls live in the Shake Brush window.");
     ImGui::TextUnformatted("Audio brush controls live in the Audio Brush window.");
+    ImGui::TextUnformatted("Fluid brush controls live in the Fluid Brush window.");
     ImGui::TextUnformatted("Persisted acoustics tuning lives in the Audio Settings window.");
     ImGui::Separator();
     ImGui::Text("Playback Active: %s", debug.playback_active ? "true" : "false");

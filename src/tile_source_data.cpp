@@ -1,6 +1,7 @@
 #include "tile_source_data.hpp"
 
 #include "graphics.hpp"
+#include "water.hpp"
 
 #include <array>
 #include <stdexcept>
@@ -24,7 +25,7 @@ struct TileSourceNameGroup {
     std::uint32_t count = 0;
 };
 
-constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
+constexpr std::array<TileSourceNameGroup, 55> kTileSourceNameGroups{{
     {Tile::CaveAir0, {HashFrameDataIdConstexpr("cave_air_0"), 0, 0}, 1},
     {Tile::CaveAir1, {HashFrameDataIdConstexpr("cave_air_1"), 0, 0}, 1},
     {Tile::CaveAir2, {HashFrameDataIdConstexpr("cave_air_2"), 0, 0}, 1},
@@ -87,7 +88,8 @@ constexpr std::array<TileSourceNameGroup, 53> kTileSourceNameGroups{{
     {Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
     {Tile::Vine, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
     {Tile::VineTop, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {Tile::WaterSwim, {HashFrameDataIdConstexpr("cave_air_0"), 0, 0}, 1},
+    {Tile::WaterSwim, {HashFrameDataIdConstexpr("water"), 0, 0}, 1},
+    {Tile::WaterTop, {HashFrameDataIdConstexpr("watertop"), 0, 0}, 1},
     {Tile::Lava, {HashFrameDataIdConstexpr("cave_air_0"), 0, 0}, 1},
     {Tile::Lush,
      {HashFrameDataIdConstexpr("jungle_dirt_0"), HashFrameDataIdConstexpr("jungle_dirt_1"),
@@ -196,6 +198,18 @@ const TileSourceData* GetTileSourceData(Graphics& graphics, Tile tile, const IVe
     }
     return GetSourceDataForSpan(graphics, FindTileSourceSpan(graphics.tile_source_db, tile),
                                 tile_pos);
+}
+
+const TileSourceData* GetTileSourceDataForStage(
+    Graphics& graphics,
+    const Stage& stage,
+    Tile tile,
+    const IVec2& tile_pos
+) {
+    if (tile == Tile::WaterSwim && IsWaterSurfaceTile(stage, tile_pos)) {
+        return GetTileSourceData(graphics, Tile::WaterTop, tile_pos);
+    }
+    return GetTileSourceData(graphics, tile, tile_pos);
 }
 
 SDL_Texture* GetTileTexture(const Graphics& graphics, const TileSourceData& tile_source_data) {

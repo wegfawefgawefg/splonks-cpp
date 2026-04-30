@@ -150,6 +150,7 @@ bool HasEffect(const Entity& entity, EffectId id);
 EffectInstance* AddEffect(Entity& entity, EffectId id, std::int32_t count = 0, std::uint32_t frames_remaining = 0);
 void RemoveEffect(Entity& entity, EffectId id);
 void SetEffect(Entity& entity, EffectId id, bool enabled);
+void StepEffectTimers(Entity& entity);
 float GetModifiedEffectValue(const Entity& entity, EffectModifierTarget target, float base_value);
 void DispatchEffectEventToEntity(Entity& entity, State& state, Audio* audio, const EffectEvent& event);
 void DispatchEffectEventToAll(State& state, Audio* audio, const EffectEvent& event);

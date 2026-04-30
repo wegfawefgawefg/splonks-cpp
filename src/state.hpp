@@ -166,6 +166,14 @@ struct DebugAudioBrushState {
     Vec2 source_world_pos = Vec2::New(0.0F, 0.0F);
 };
 
+struct DebugFluidBrushState {
+    bool enabled = false;
+    bool simulation_enabled = true;
+    bool replace_solid_tiles = false;
+    int radius_tiles = 1;
+    int simulation_interval_frames = 6;
+};
+
 struct StageRotationState {
     bool active = false;
     int elapsed_frames = 0;
@@ -233,6 +241,7 @@ struct State {
     DebugOverlayState debug_overlay;
     DebugShakeBrushState debug_shake_brush;
     DebugAudioBrushState debug_audio_brush;
+    DebugFluidBrushState debug_fluid_brush;
     StageRotationState stage_rotation;
     PlayerTuningState player_tuning;
     bool running = true;

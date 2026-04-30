@@ -142,6 +142,28 @@ void SetEffect(Entity& entity, EffectId id, bool enabled) {
     RemoveEffect(entity, id);
 }
 
+void StepEffectTimers(Entity& entity) {
+    if (entity.effects.get() == nullptr) {
+        return;
+    }
+
+    std::size_t effect_index = 0;
+    while (entity.effects.get() != nullptr && effect_index < entity.effects->count) {
+        EffectInstance& effect = entity.effects->effects[effect_index];
+        if (effect.frames_remaining == 0) {
+            ++effect_index;
+            continue;
+        }
+
+        effect.frames_remaining -= 1;
+        if (effect.frames_remaining == 0) {
+            RemoveEffectAt(entity, effect_index);
+            continue;
+        }
+        ++effect_index;
+    }
+}
+
 float GetModifiedEffectValue(const Entity& entity, EffectModifierTarget target, float base_value) {
     float value = base_value;
     if (entity.effects.get() == nullptr) {

@@ -41,6 +41,7 @@ struct GameplaySnapshot {
     DebugOverlayState debug_overlay;
     DebugShakeBrushState debug_shake_brush;
     DebugAudioBrushState debug_audio_brush;
+    DebugFluidBrushState debug_fluid_brush;
     double now = 0.0;
     float time_since_last_update = 0.0F;
     std::uint32_t scene_frame = 0;
@@ -79,6 +80,7 @@ struct DebugPlayback {
     bool entity_annotations_visible = false;
     bool shake_brush_window_visible = false;
     bool audio_brush_window_visible = false;
+    bool fluid_brush_window_visible = false;
     bool audio_settings_window_visible = false;
     bool ui_settings_window_visible = false;
     bool post_fx_settings_window_visible = false;

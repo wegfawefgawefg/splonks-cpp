@@ -81,6 +81,17 @@ std::vector<std::vector<TileRotation>> MakeEmptyTileRotationGrid(
     return tile_rotations;
 }
 
+std::vector<std::vector<std::int8_t>> MakeEmptyFluidMomentumGrid(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<std::int8_t>> fluid_momentum;
+    fluid_momentum.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        fluid_momentum.push_back(std::vector<std::int8_t>(row.size(), 0));
+    }
+    return fluid_momentum;
+}
+
 std::vector<std::vector<Tile>> MakeEmptyBackwallTiles(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -135,6 +146,26 @@ void SyncTileRotationGridToTiles(
         }
         for (TileRotation& rotation : grid[y]) {
             rotation &= kTileRotationMask;
+        }
+    }
+}
+
+void SyncFluidMomentumGridToTiles(
+    std::vector<std::vector<std::int8_t>>& grid,
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    if (grid.size() != tiles.size()) {
+        grid = MakeEmptyFluidMomentumGrid(tiles);
+        return;
+    }
+
+    for (std::size_t y = 0; y < tiles.size(); ++y) {
+        if (grid[y].size() != tiles[y].size()) {
+            grid = MakeEmptyFluidMomentumGrid(tiles);
+            return;
+        }
+        for (std::int8_t& momentum : grid[y]) {
+            momentum = std::clamp<std::int8_t>(momentum, -1, 1);
         }
     }
 }
@@ -294,6 +325,7 @@ Stage Stage::NewBlank() {
     stage.stage_title = "Blank";
     stage.tiles = std::vector<std::vector<Tile>>(1, std::vector<Tile>(1, Tile::Air));
     stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
+    stage.fluid_momentum = MakeEmptyFluidMomentumGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
@@ -429,6 +461,7 @@ Stage Stage::New(StageType stage_type) {
     stage.block_animation_id = block_animation_id;
     stage.tiles = std::move(tiles);
     stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
+    stage.fluid_momentum = MakeEmptyFluidMomentumGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
@@ -591,6 +624,11 @@ void Stage::SyncTileShakeGrid() {
 
 void Stage::SyncTileInstanceMetadataGrid() {
     SyncTileRotationGridToTiles(tile_rotations, tiles);
+    SyncFluidMomentumGridToTiles(fluid_momentum, tiles);
+}
+
+void Stage::SyncFluidMomentumGrid() {
+    SyncFluidMomentumGridToTiles(fluid_momentum, tiles);
 }
 
 void Stage::SetTile(const IVec2& pos, Tile tile) {
@@ -606,6 +644,7 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
     tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = tile;
     tile_rotations[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
         kTileRotation0;
+    fluid_momentum[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = 0;
     tile_change_generation += 1;
 }
 

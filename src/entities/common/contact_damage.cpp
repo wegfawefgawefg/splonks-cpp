@@ -1,6 +1,8 @@
 #include "entities/common/common.hpp"
 
+#include "effects.hpp"
 #include "tile_source_data.hpp"
+#include "tile_archetype.hpp"
 #include "world_query.hpp"
 
 #include <vector>
@@ -11,6 +13,7 @@ namespace {
 
 constexpr std::uint32_t kHarmContactCooldownFrames = 8;
 constexpr std::uint32_t kProjectileBodyImpactCooldownFrames = 60;
+constexpr std::uint32_t kTileOverlapEffectRefreshFrames = 2;
 constexpr float kProjectileContactVelocityScale = 0.35F;
 
 bool HasContactHarmAlignment(const Entity& source, const Entity& target) {
@@ -22,6 +25,29 @@ bool HasContactHarmAlignment(const Entity& source, const Entity& target) {
 bool CanApplyProjectileContact(const Entity& entity) {
     return entity.can_apply_projectile_contact && entity.projectile_contact_timer > 0 &&
            Length(entity.vel) >= 1.0F;
+}
+
+void ApplyTileOverlapEffects(std::size_t entity_idx, State& state) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, entity.GetAABB())) {
+        if (tile_query.tile == nullptr) {
+            continue;
+        }
+        const TileArchetype& tile_archetype = GetTileArchetype(*tile_query.tile);
+        if (!tile_archetype.effect_while_inside.has_value()) {
+            continue;
+        }
+        (void)AddEffect(
+            entity,
+            *tile_archetype.effect_while_inside,
+            0,
+            kTileOverlapEffectRefreshFrames
+        );
+    }
 }
 
 bool CanProjectileImpactWithoutDamage(const Entity& target) {
@@ -370,6 +396,8 @@ void CommonStep(
     float dt
 ) {
     DieIfDead(entity_idx, state, audio);
+    StepEffectTimers(state.entity_manager.entities[entity_idx]);
+    ApplyTileOverlapEffects(entity_idx, state);
     StepStunTimer(entity_idx, state);
     {
         Entity& entity = state.entity_manager.entities[entity_idx];

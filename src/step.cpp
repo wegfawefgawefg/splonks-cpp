@@ -8,6 +8,7 @@
 #include "buying.hpp"
 #include "step_entities.hpp"
 #include "stage_progression.hpp"
+#include "stage_fluids.hpp"
 #include "stage_rotation.hpp"
 
 namespace splonks {
@@ -149,6 +150,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.ClearWorldPrompts();
     state.ClearInteractClaims();
     state.entity_tools.Step();
+    StepStageFluids(state);
     state.RebuildSid(graphics);
     state.gameplay_camera_anchor_world_pos = graphics.camera.target;
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));

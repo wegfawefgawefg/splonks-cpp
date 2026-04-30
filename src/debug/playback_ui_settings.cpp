@@ -215,6 +215,34 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Audio& audio, Grap
     SyncDebugUiSettings(debug, state);
 }
 
+void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.fluid_brush_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(620.0F, 700.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Fluid Brush", &debug.fluid_brush_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    DebugFluidBrushState& brush = state.debug_fluid_brush;
+    ImGui::Checkbox("Enable Fluid Brush", &brush.enabled);
+    ImGui::Checkbox("Run Fluid Simulation", &brush.simulation_enabled);
+    ImGui::SliderInt("Sim Interval (frames)", &brush.simulation_interval_frames, 1, 30);
+    ImGui::SliderInt("Brush Radius (tiles)", &brush.radius_tiles, 0, 16);
+    ImGui::Checkbox("Replace Non-Air Tiles", &brush.replace_solid_tiles);
+    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
+    ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
+    ImGui::Text("Mouse Tile: (%d, %d)", mouse_tile.x, mouse_tile.y);
+    ImGui::TextUnformatted("Hold left mouse to paint water. Hold right mouse to erase simulated fluid.");
+
+    ImGui::End();
+    SyncDebugUiSettings(debug, state);
+}
+
 void DrawAudioSettingsWindow(DebugPlayback& debug, State& state) {
     if (!debug.audio_settings_window_visible) {
         return;

@@ -305,6 +305,11 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .modifier_count = 1,
         .should_expire = IsNoGravityUntilContactExpired,
     },
+    EffectArchetype{
+        .id = EffectId::InWater,
+        .debug_name = "InWater",
+        .ui_kind = EffectUiKind::Hidden,
+    },
 }};
 
 } // namespace

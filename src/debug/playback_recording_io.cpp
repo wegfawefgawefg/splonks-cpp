@@ -526,6 +526,13 @@ void WriteStage(std::ostream& out, const Stage& stage) {
         WriteVectorPod(out, row);
     }
 
+    const std::uint32_t fluid_momentum_rows =
+        static_cast<std::uint32_t>(stage.fluid_momentum.size());
+    WritePod(out, fluid_momentum_rows);
+    for (const std::vector<std::int8_t>& row : stage.fluid_momentum) {
+        WriteVectorPod(out, row);
+    }
+
     const std::uint32_t tile_shake_rows = static_cast<std::uint32_t>(stage.tile_shake.size());
     WritePod(out, tile_shake_rows);
     for (const std::vector<float>& row : stage.tile_shake) {
@@ -580,6 +587,17 @@ bool ReadStage(std::istream& in, Stage& stage) {
     stage.tiles.resize(tile_rows);
     for (std::uint32_t i = 0; i < tile_rows; ++i) {
         if (!ReadVectorPod(in, stage.tiles[i])) {
+            return false;
+        }
+    }
+
+    std::uint32_t fluid_momentum_rows = 0;
+    if (!ReadPod(in, fluid_momentum_rows)) {
+        return false;
+    }
+    stage.fluid_momentum.resize(fluid_momentum_rows);
+    for (std::uint32_t i = 0; i < fluid_momentum_rows; ++i) {
+        if (!ReadVectorPod(in, stage.fluid_momentum[i])) {
             return false;
         }
     }
@@ -682,6 +700,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.debug_overlay);
     WritePod(out, snapshot.debug_shake_brush);
     WritePod(out, snapshot.debug_audio_brush);
+    WritePod(out, snapshot.debug_fluid_brush);
     WritePod(out, snapshot.now);
     WritePod(out, snapshot.time_since_last_update);
     WritePod(out, snapshot.scene_frame);
@@ -736,6 +755,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.debug_overlay) &&
            ReadPod(in, snapshot.debug_shake_brush) &&
            ReadPod(in, snapshot.debug_audio_brush) &&
+           ReadPod(in, snapshot.debug_fluid_brush) &&
            ReadPod(in, snapshot.now) &&
            ReadPod(in, snapshot.time_since_last_update) &&
            ReadPod(in, snapshot.scene_frame) &&

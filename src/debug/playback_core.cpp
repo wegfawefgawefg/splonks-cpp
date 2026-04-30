@@ -7,11 +7,14 @@
 #include "step.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
+#include "tile_archetype.hpp"
 
 #include <imgui.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
+#include <vector>
 
 namespace splonks::debug_playback_internal {
 
@@ -99,6 +102,17 @@ bool IsShakeBrushActive(const State& state) {
             (brush.affect_entities && brush.entity_amount > 0.0F));
 }
 
+bool IsFluidBrushActive(const State& state) {
+    return state.debug_fluid_brush.enabled;
+}
+
+void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord) {
+    if (std::find(changed_tiles.begin(), changed_tiles.end(), tile_coord) != changed_tiles.end()) {
+        return;
+    }
+    changed_tiles.push_back(tile_coord);
+}
+
 void ApplyShakeBrush(State& state, Graphics& graphics) {
     if (state.mode != Mode::Playing || !IsShakeBrushActive(state) || ImGuiWantsMouse()) {
         return;
@@ -139,6 +153,62 @@ void ApplyShakeBrush(State& state, Graphics& graphics) {
     }
 }
 
+void ApplyFluidBrush(State& state, Graphics& graphics) {
+    if (state.mode != Mode::Playing || !IsFluidBrushActive(state) || ImGuiWantsMouse()) {
+        return;
+    }
+
+    float mouse_x = 0.0F;
+    float mouse_y = 0.0F;
+    const SDL_MouseButtonFlags mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
+    const bool paint_water = (mouse_buttons & SDL_BUTTON_LMASK) != 0;
+    const bool erase_fluid = (mouse_buttons & SDL_BUTTON_RMASK) != 0;
+    if (!paint_water && !erase_fluid) {
+        return;
+    }
+
+    const DebugFluidBrushState& brush = state.debug_fluid_brush;
+    const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
+    const int radius_tiles = std::max(0, brush.radius_tiles);
+    std::vector<IVec2> changed_tiles;
+
+    for (int y = mouse_tile.y - radius_tiles; y <= mouse_tile.y + radius_tiles; ++y) {
+        for (int x = mouse_tile.x - radius_tiles; x <= mouse_tile.x + radius_tiles; ++x) {
+            const float dx = static_cast<float>(x - mouse_tile.x);
+            const float dy = static_cast<float>(y - mouse_tile.y);
+            const float distance = std::sqrt((dx * dx) + (dy * dy));
+            if (distance > static_cast<float>(radius_tiles)) {
+                continue;
+            }
+
+            const IVec2 wrapped = state.stage.WrapTileCoord(IVec2::New(x, y));
+            if (!state.stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+                continue;
+            }
+
+            const Tile current_tile = state.stage.GetTile(
+                static_cast<unsigned int>(wrapped.x),
+                static_cast<unsigned int>(wrapped.y)
+            );
+            if (paint_water) {
+                if (!brush.replace_solid_tiles && current_tile != Tile::Air) {
+                    continue;
+                }
+                state.stage.SetTile(wrapped, Tile::WaterSwim);
+                PushChangedTile(changed_tiles, wrapped);
+            } else if (erase_fluid && GetTileArchetype(current_tile).simulated_fluid) {
+                state.stage.SetTile(wrapped, Tile::Air);
+                PushChangedTile(changed_tiles, wrapped);
+            }
+        }
+    }
+
+    if (!changed_tiles.empty()) {
+        UpdateStageLightingForTileChanges(state, changed_tiles);
+        UpdateStageAcousticsForTileChanges(state, changed_tiles);
+    }
+}
+
 } // namespace
 
 void AdvanceLiveSimulation(
@@ -162,6 +232,7 @@ void AdvanceLiveSimulation(
     }
 
     ApplyShakeBrush(state, graphics);
+    ApplyFluidBrush(state, graphics);
 
     if (debug.pause_live_simulation) {
         if (!debug.step_live_simulation_once) {
@@ -222,6 +293,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawDebugOverlayWindow(debug, state, graphics);
     debug_playback_internal::DrawShakeBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawAudioBrushWindow(debug, state, audio, graphics);
+    debug_playback_internal::DrawFluidBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawAudioSettingsWindow(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
     debug_playback_internal::DrawCameraSettingsWindow(debug, state, graphics);

@@ -175,6 +175,7 @@ int main(int argc, char** argv) {
         debug.entity_annotations_visible = state.settings.debug_ui.entity_annotations_visible;
         debug.shake_brush_window_visible = state.settings.debug_ui.shake_brush_visible;
         debug.audio_brush_window_visible = state.settings.debug_ui.audio_brush_visible;
+        debug.fluid_brush_window_visible = state.settings.debug_ui.fluid_brush_visible;
         debug.audio_settings_window_visible = state.settings.debug_ui.audio_settings_visible;
         debug.ui_settings_window_visible = state.settings.debug_ui.ui_settings_visible;
         debug.post_fx_settings_window_visible = state.settings.debug_ui.post_fx_settings_visible;

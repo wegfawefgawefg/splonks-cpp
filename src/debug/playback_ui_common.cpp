@@ -37,6 +37,10 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.audio_brush_visible = debug.audio_brush_window_visible;
         changed = true;
     }
+    if (state.settings.debug_ui.fluid_brush_visible != debug.fluid_brush_window_visible) {
+        state.settings.debug_ui.fluid_brush_visible = debug.fluid_brush_window_visible;
+        changed = true;
+    }
     if (state.settings.debug_ui.audio_settings_visible != debug.audio_settings_window_visible) {
         state.settings.debug_ui.audio_settings_visible = debug.audio_settings_window_visible;
         changed = true;

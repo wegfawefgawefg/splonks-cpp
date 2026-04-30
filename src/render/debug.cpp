@@ -156,6 +156,10 @@ bool ShouldRenderAudioBrushPreview(const State& state) {
     return state.debug_audio_brush.enabled;
 }
 
+bool ShouldRenderFluidBrushPreview(const State& state) {
+    return state.debug_fluid_brush.enabled;
+}
+
 void RenderWorldCircleOutline(
     SDL_Renderer* renderer,
     Graphics& graphics,
@@ -583,6 +587,57 @@ void RenderShakeBrushPreview(
             radius_tiles * static_cast<float>(kTileSize),
             SDL_Color{255, 180, 64, 255}
         );
+    }
+}
+
+void RenderFluidBrushPreview(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation
+) {
+    if (!ShouldRenderFluidBrushPreview(state)) {
+        return;
+    }
+
+    const DebugFluidBrushState& brush = state.debug_fluid_brush;
+    const UVec2 mouse_pos = state.immediate_playing_inputs.mouse_pos;
+    const Vec2 mouse_world = graphics.ScreenToWc(mouse_pos);
+    const IVec2 mouse_tile = graphics.ScreenToTileCoords(mouse_pos);
+    const int radius_tiles = std::max(0, brush.radius_tiles);
+
+    for (int y = mouse_tile.y - radius_tiles; y <= mouse_tile.y + radius_tiles; ++y) {
+        for (int x = mouse_tile.x - radius_tiles; x <= mouse_tile.x + radius_tiles; ++x) {
+            const float dx = static_cast<float>(x - mouse_tile.x);
+            const float dy = static_cast<float>(y - mouse_tile.y);
+            const float distance = std::sqrt((dx * dx) + (dy * dy));
+            if (distance > static_cast<float>(radius_tiles)) {
+                continue;
+            }
+
+            const IVec2 wrapped = state.stage.WrapTileCoord(IVec2::New(x, y));
+            if (!state.stage.IsTileCoordInside(wrapped.x, wrapped.y)) {
+                continue;
+            }
+
+            const Vec2 tile_world = Vec2::New(
+                static_cast<float>(wrapped.x * static_cast<int>(kTileSize)),
+                static_cast<float>(wrapped.y * static_cast<int>(kTileSize))
+            );
+            const Vec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
+            const SDL_FRect tile_rect = WorldRectToScreen(
+                graphics,
+                presentation,
+                nearest_tile_world,
+                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
+            );
+            if (!IsScreenRectVisible(presentation, tile_rect)) {
+                continue;
+            }
+
+            SDL_SetRenderDrawColor(renderer, 32, 220, 255, 255);
+            SDL_RenderRect(renderer, &tile_rect);
+        }
     }
 }
 
@@ -1402,6 +1457,7 @@ void RenderDebugOverlay(
         RenderDebugAnnotations(renderer, graphics, state, presentation, render_offsets);
     }
     RenderShakeBrushPreview(renderer, graphics, state, presentation);
+    RenderFluidBrushPreview(renderer, graphics, state, presentation);
     RenderAudioBrushPreview(renderer, graphics, state, presentation);
 }
 

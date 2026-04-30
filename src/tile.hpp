@@ -53,6 +53,7 @@ enum class Tile {
     Vine,
     VineTop,
     WaterSwim,
+    WaterTop,
     Lava,
     Lush,
     Tree,
@@ -66,7 +67,7 @@ enum class Tile {
 };
 
 constexpr unsigned int kTileSize = 16;
-constexpr std::size_t kTileCount = 54;
+constexpr std::size_t kTileCount = 55;
 using TileRotation = std::uint8_t;
 constexpr TileRotation kTileRotationMask = 0x03;
 constexpr TileRotation kTileRotation0 = 0;

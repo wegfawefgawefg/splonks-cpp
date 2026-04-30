@@ -103,6 +103,20 @@ std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplaySta
         default:
             return std::nullopt;
         }
+    case EntityType::Piranha:
+        switch (entity.display_state) {
+        case EntityDisplayState::Dead:
+            return DisplayStateFrameDataSelection{frame_data_ids::PiranhaDead, true, false, 0};
+        case EntityDisplayState::Neutral:
+            return DisplayStateFrameDataSelection{frame_data_ids::Piranha, true, false, 0};
+        case EntityDisplayState::Walk:
+        case EntityDisplayState::Fly:
+        case EntityDisplayState::Stunned:
+        case EntityDisplayState::Falling:
+            return DisplayStateFrameDataSelection{frame_data_ids::PiranhaSwim, true, false, 0};
+        default:
+            return std::nullopt;
+        }
     case EntityType::Monkey:
         switch (entity.display_state) {
         case EntityDisplayState::Neutral:

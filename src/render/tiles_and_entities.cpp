@@ -290,7 +290,7 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                 );
 
                 const TileSourceData* const tile_source_data =
-                    GetTileSourceData(graphics, tile, tile_pos);
+                    GetTileSourceDataForStage(graphics, state.stage, tile, tile_pos);
                 if (tile_source_data == nullptr) {
                     continue;
                 }

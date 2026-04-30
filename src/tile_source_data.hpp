@@ -11,6 +11,7 @@ struct SDL_Texture;
 namespace splonks {
 
 struct Graphics;
+struct Stage;
 
 struct TileSourceData {
     std::uint32_t image_id = 0;
@@ -30,6 +31,12 @@ struct TileSourceDb {
 
 TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db);
 const TileSourceData* GetTileSourceData(Graphics& graphics, Tile tile, const IVec2& tile_pos);
+const TileSourceData* GetTileSourceDataForStage(
+    Graphics& graphics,
+    const Stage& stage,
+    Tile tile,
+    const IVec2& tile_pos
+);
 SDL_Texture* GetTileTexture(const Graphics& graphics, const TileSourceData& tile_source_data);
 
 } // namespace splonks

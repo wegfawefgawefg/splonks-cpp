@@ -84,6 +84,10 @@ void InitDebugLevel(State& state, bool preserve_player_state) {
         state.stage = MakeCrusherTrapTestStage();
         InitCrusherTrapTestStage(state);
         break;
+    case DebugLevelKind::WaterPiranhaTest:
+        state.stage = MakeWaterPiranhaTestStage();
+        InitWaterPiranhaTestStage(state);
+        break;
     }
 
     state.stage_acoustics = StageAcoustics::New();
