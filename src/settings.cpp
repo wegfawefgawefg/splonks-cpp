@@ -162,6 +162,8 @@ DebugUiSettings DebugUiSettings::New() {
     result.fluid_brush_replace_solid_tiles = true;
     result.fluid_brush_radius_tiles = 0;
     result.fluid_brush_simulation_interval_frames = 1;
+    result.fluid_brush_vertical_transfer_per_step = 255;
+    result.fluid_brush_horizontal_transfer_per_step = 255;
     result.audio_settings_visible = false;
     result.ui_settings_visible = false;
     result.post_fx_settings_visible = false;
@@ -452,6 +454,12 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_simulation_interval_frames") {
             settings.debug_ui.fluid_brush_simulation_interval_frames =
                 ParseInt(value, settings.debug_ui.fluid_brush_simulation_interval_frames);
+        } else if (key == "debug_ui.fluid_brush_vertical_transfer_per_step") {
+            settings.debug_ui.fluid_brush_vertical_transfer_per_step =
+                ParseInt(value, settings.debug_ui.fluid_brush_vertical_transfer_per_step);
+        } else if (key == "debug_ui.fluid_brush_horizontal_transfer_per_step") {
+            settings.debug_ui.fluid_brush_horizontal_transfer_per_step =
+                ParseInt(value, settings.debug_ui.fluid_brush_horizontal_transfer_per_step);
         } else if (key == "debug_ui.audio_settings_visible") {
             settings.debug_ui.audio_settings_visible =
                 ParseBool(value, settings.debug_ui.audio_settings_visible);
@@ -732,6 +740,10 @@ bool SaveSettings(const Settings& settings) {
            << settings.debug_ui.fluid_brush_radius_tiles << "\n";
     output << "debug_ui.fluid_brush_simulation_interval_frames="
            << settings.debug_ui.fluid_brush_simulation_interval_frames << "\n";
+    output << "debug_ui.fluid_brush_vertical_transfer_per_step="
+           << settings.debug_ui.fluid_brush_vertical_transfer_per_step << "\n";
+    output << "debug_ui.fluid_brush_horizontal_transfer_per_step="
+           << settings.debug_ui.fluid_brush_horizontal_transfer_per_step << "\n";
     output << "debug_ui.audio_settings_visible="
            << (settings.debug_ui.audio_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.ui_settings_visible="

@@ -173,6 +173,8 @@ struct DebugFluidBrushState {
     bool replace_solid_tiles = false;
     int radius_tiles = 1;
     int simulation_interval_frames = 6;
+    int vertical_transfer_per_step = 255;
+    int horizontal_transfer_per_step = 255;
 };
 
 struct StageRotationState {

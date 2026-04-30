@@ -182,6 +182,16 @@ State State::New() {
         std::max(0, state.settings.debug_ui.fluid_brush_radius_tiles);
     state.debug_fluid_brush.simulation_interval_frames =
         std::max(1, state.settings.debug_ui.fluid_brush_simulation_interval_frames);
+    state.debug_fluid_brush.vertical_transfer_per_step = std::clamp(
+        state.settings.debug_ui.fluid_brush_vertical_transfer_per_step,
+        0,
+        255
+    );
+    state.debug_fluid_brush.horizontal_transfer_per_step = std::clamp(
+        state.settings.debug_ui.fluid_brush_horizontal_transfer_per_step,
+        0,
+        255
+    );
     (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
     return state;
 }

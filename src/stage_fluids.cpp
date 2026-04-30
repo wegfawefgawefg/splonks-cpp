@@ -15,8 +15,6 @@ namespace splonks {
 namespace {
 
 constexpr std::uint8_t kMaxFluidAmount = 255;
-constexpr std::uint8_t kVerticalFluidTransfer = kMaxFluidAmount;
-constexpr std::uint8_t kHorizontalFluidTransfer = kMaxFluidAmount;
 
 int WrapFluidCoordinate(int value, int size) {
     if (size <= 0) {
@@ -204,6 +202,7 @@ bool TryEqualizeFluidSideways(
     const IVec2& source,
     int direction,
     Tile fluid_tile,
+    std::uint8_t horizontal_transfer_per_step,
     std::vector<IVec2>& changed_tiles,
     std::vector<std::vector<std::int8_t>>& next_momentum_grid
 ) {
@@ -233,7 +232,7 @@ bool TryEqualizeFluidSideways(
     const int transfer = std::min({
         desired,
         capacity,
-        static_cast<int>(kHorizontalFluidTransfer),
+        static_cast<int>(horizontal_transfer_per_step),
     });
     if (transfer <= 0) {
         return false;
@@ -267,6 +266,8 @@ bool TryMoveFluidTile(
     std::vector<std::vector<std::int8_t>>& next_momentum_grid,
     const IVec2& source,
     Tile fluid_tile,
+    std::uint8_t vertical_transfer_per_step,
+    std::uint8_t horizontal_transfer_per_step,
     bool left_first,
     std::vector<IVec2>& changed_tiles
 ) {
@@ -280,7 +281,7 @@ bool TryMoveFluidTile(
             source + IVec2::New(0, 1),
             IVec2::New(0, 1),
             fluid_tile,
-            kVerticalFluidTransfer,
+            vertical_transfer_per_step,
             source_momentum,
             changed_tiles,
             next_momentum_grid
@@ -291,39 +292,6 @@ bool TryMoveFluidTile(
     const int first = source_momentum != 0 ? static_cast<int>(source_momentum)
                                            : (left_first ? -1 : 1);
     const int second = -first;
-    if (TryMoveFluidTile(
-            stage,
-            terrain_tiles,
-            next_fluid_tiles,
-            next_amount_grid,
-            source,
-            source + IVec2::New(first, 1),
-            IVec2::New(first, 1),
-            fluid_tile,
-            kVerticalFluidTransfer,
-            static_cast<std::int8_t>(first),
-            changed_tiles,
-            next_momentum_grid
-        )) {
-        return true;
-    }
-    if (TryMoveFluidTile(
-            stage,
-            terrain_tiles,
-            next_fluid_tiles,
-            next_amount_grid,
-            source,
-            source + IVec2::New(second, 1),
-            IVec2::New(second, 1),
-            fluid_tile,
-            kVerticalFluidTransfer,
-            static_cast<std::int8_t>(second),
-            changed_tiles,
-            next_momentum_grid
-        )) {
-        return true;
-    }
-
     if (TryEqualizeFluidSideways(
             stage,
             terrain_tiles,
@@ -332,6 +300,7 @@ bool TryMoveFluidTile(
             source,
             first,
             fluid_tile,
+            horizontal_transfer_per_step,
             changed_tiles,
             next_momentum_grid
         )) {
@@ -345,6 +314,7 @@ bool TryMoveFluidTile(
             source,
             second,
             fluid_tile,
+            horizontal_transfer_per_step,
             changed_tiles,
             next_momentum_grid
         )) {
@@ -413,6 +383,16 @@ void StepStageFluids(State& state) {
     const std::vector<std::vector<Tile>>& source_fluid_tiles = state.stage.fluid_tiles;
     const std::vector<std::vector<std::uint8_t>>& source_amount_grid = state.stage.fluid_amount;
     const std::vector<std::vector<std::int8_t>>& source_momentum_grid = state.stage.fluid_momentum;
+    const auto vertical_transfer_per_step = static_cast<std::uint8_t>(std::clamp(
+        state.debug_fluid_brush.vertical_transfer_per_step,
+        0,
+        static_cast<int>(kMaxFluidAmount)
+    ));
+    const auto horizontal_transfer_per_step = static_cast<std::uint8_t>(std::clamp(
+        state.debug_fluid_brush.horizontal_transfer_per_step,
+        0,
+        static_cast<int>(kMaxFluidAmount)
+    ));
     std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
     std::vector<std::vector<std::uint8_t>> next_amount_grid = source_amount_grid;
     std::vector<std::vector<std::int8_t>> next_momentum_grid = source_momentum_grid;
@@ -437,6 +417,8 @@ void StepStageFluids(State& state) {
                 next_momentum_grid,
                 source,
                 fluid_tile,
+                vertical_transfer_per_step,
+                horizontal_transfer_per_step,
                 left_first,
                 changed_tiles
             );

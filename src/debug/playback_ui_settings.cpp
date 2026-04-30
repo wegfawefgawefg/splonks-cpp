@@ -232,6 +232,8 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     ImGui::Checkbox("Enable Fluid Brush", &brush.enabled);
     ImGui::Checkbox("Run Fluid Simulation", &brush.simulation_enabled);
     ImGui::SliderInt("Sim Interval (frames)", &brush.simulation_interval_frames, 1, 30);
+    ImGui::SliderInt("Vertical Transfer / Step", &brush.vertical_transfer_per_step, 0, 255);
+    ImGui::SliderInt("Horizontal Transfer / Step", &brush.horizontal_transfer_per_step, 0, 255);
     ImGui::SliderInt("Brush Radius (tiles)", &brush.radius_tiles, 0, 16);
     ImGui::Checkbox("Replace Non-Air Tiles", &brush.replace_solid_tiles);
     const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);

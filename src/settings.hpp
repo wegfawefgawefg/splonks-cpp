@@ -128,6 +128,8 @@ struct DebugUiSettings {
     bool fluid_brush_replace_solid_tiles = false;
     int fluid_brush_radius_tiles = 1;
     int fluid_brush_simulation_interval_frames = 6;
+    int fluid_brush_vertical_transfer_per_step = 255;
+    int fluid_brush_horizontal_transfer_per_step = 255;
     bool audio_settings_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;

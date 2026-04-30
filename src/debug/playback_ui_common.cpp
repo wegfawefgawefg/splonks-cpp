@@ -72,6 +72,22 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
             fluid_brush_simulation_interval_frames;
         changed = true;
     }
+    const int fluid_brush_vertical_transfer_per_step =
+        std::clamp(state.debug_fluid_brush.vertical_transfer_per_step, 0, 255);
+    if (state.settings.debug_ui.fluid_brush_vertical_transfer_per_step !=
+        fluid_brush_vertical_transfer_per_step) {
+        state.settings.debug_ui.fluid_brush_vertical_transfer_per_step =
+            fluid_brush_vertical_transfer_per_step;
+        changed = true;
+    }
+    const int fluid_brush_horizontal_transfer_per_step =
+        std::clamp(state.debug_fluid_brush.horizontal_transfer_per_step, 0, 255);
+    if (state.settings.debug_ui.fluid_brush_horizontal_transfer_per_step !=
+        fluid_brush_horizontal_transfer_per_step) {
+        state.settings.debug_ui.fluid_brush_horizontal_transfer_per_step =
+            fluid_brush_horizontal_transfer_per_step;
+        changed = true;
+    }
     if (state.settings.debug_ui.audio_settings_visible != debug.audio_settings_window_visible) {
         state.settings.debug_ui.audio_settings_visible = debug.audio_settings_window_visible;
         changed = true;
