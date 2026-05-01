@@ -314,19 +314,14 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         "%.3f"
     );
     ImGui::Checkbox("Show Flow Indicators", &brush.show_flow_indicators);
-    int render_mode = static_cast<int>(brush.render_mode);
-    ImGui::RadioButton(
-        "Marching Water",
-        &render_mode,
-        static_cast<int>(DebugFluidBrushState::RenderMode::MarchingSquares)
+    ImGui::Checkbox("Water Uses Stage Lighting", &brush.lighting_enabled);
+    ImGui::SliderFloat(
+        "Water Lighting Strength",
+        &brush.lighting_strength,
+        0.0F,
+        2.0F,
+        "%.2f"
     );
-    ImGui::SameLine();
-    ImGui::RadioButton(
-        "Alpha Cell Water",
-        &render_mode,
-        static_cast<int>(DebugFluidBrushState::RenderMode::AlphaCells)
-    );
-    brush.render_mode = static_cast<DebugFluidBrushState::RenderMode>(render_mode);
     ImGui::SliderInt("Brush Radius (tiles)", &brush.radius_tiles, 0, 16);
     ImGui::Checkbox("Replace Non-Air Tiles", &brush.replace_solid_tiles);
     const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);

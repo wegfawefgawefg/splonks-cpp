@@ -232,12 +232,13 @@ State State::New() {
     );
     state.debug_fluid_brush.show_flow_indicators =
         state.settings.debug_ui.fluid_brush_show_flow_indicators;
-    state.debug_fluid_brush.render_mode =
-        static_cast<DebugFluidBrushState::RenderMode>(std::clamp(
-            state.settings.debug_ui.fluid_brush_render_mode,
-            0,
-            1
-        ));
+    state.debug_fluid_brush.lighting_enabled =
+        state.settings.debug_ui.fluid_brush_lighting_enabled;
+    state.debug_fluid_brush.lighting_strength = std::clamp(
+        state.settings.debug_ui.fluid_brush_lighting_strength,
+        0.0F,
+        2.0F
+    );
     (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
     return state;
 }

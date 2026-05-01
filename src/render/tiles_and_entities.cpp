@@ -202,151 +202,10 @@ SDL_FColor MakeFluidVertexColor(float brightness, std::uint8_t alpha) {
     };
 }
 
-struct FluidMarchingVertex {
-    Vec2 local;
-    float signed_distance = 0.0F;
-};
-
 struct FluidContourSegment {
     Vec2 a;
     Vec2 b;
 };
-
-Vec2 InterpolateFluidVertex(
-    const FluidMarchingVertex& a,
-    const FluidMarchingVertex& b
-) {
-    const float denom = a.signed_distance - b.signed_distance;
-    if (std::abs(denom) <= 0.0001F) {
-        return (a.local + b.local) * 0.5F;
-    }
-    const float t = std::clamp(a.signed_distance / denom, 0.0F, 1.0F);
-    return a.local + ((b.local - a.local) * t);
-}
-
-struct FluidMarchingResult {
-    std::vector<std::vector<Vec2>> polygons;
-    std::vector<FluidContourSegment> contour_segments;
-};
-
-FluidMarchingResult BuildFilledFluidMarchingSquares(
-    const std::array<FluidMarchingVertex, 4>& corners,
-    float center_signed_distance
-) {
-    const bool tl_inside = corners[0].signed_distance >= 0.0F;
-    const bool tr_inside = corners[1].signed_distance >= 0.0F;
-    const bool br_inside = corners[2].signed_distance >= 0.0F;
-    const bool bl_inside = corners[3].signed_distance >= 0.0F;
-    const int case_id =
-        (tl_inside ? 1 : 0) |
-        (tr_inside ? 2 : 0) |
-        (br_inside ? 4 : 0) |
-        (bl_inside ? 8 : 0);
-
-    const Vec2 p0 = corners[0].local;
-    const Vec2 p1 = corners[1].local;
-    const Vec2 p2 = corners[2].local;
-    const Vec2 p3 = corners[3].local;
-    const Vec2 e0 = InterpolateFluidVertex(corners[0], corners[1]);
-    const Vec2 e1 = InterpolateFluidVertex(corners[1], corners[2]);
-    const Vec2 e2 = InterpolateFluidVertex(corners[2], corners[3]);
-    const Vec2 e3 = InterpolateFluidVertex(corners[3], corners[0]);
-
-    FluidMarchingResult result;
-    auto add_polygon = [&](std::initializer_list<Vec2> points) {
-        if (points.size() < 3) {
-            return;
-        }
-        result.polygons.emplace_back(points);
-    };
-    auto add_segment = [&](const Vec2& a, const Vec2& b) {
-        result.contour_segments.push_back(FluidContourSegment{.a = a, .b = b});
-    };
-
-    switch (case_id) {
-    case 0:
-        break;
-    case 1:
-        add_polygon({p0, e0, e3});
-        add_segment(e0, e3);
-        break;
-    case 2:
-        add_polygon({e0, p1, e1});
-        add_segment(e0, e1);
-        break;
-    case 3:
-        add_polygon({p0, p1, e1, e3});
-        add_segment(e1, e3);
-        break;
-    case 4:
-        add_polygon({e1, p2, e2});
-        add_segment(e1, e2);
-        break;
-    case 5:
-        if (center_signed_distance >= 0.0F) {
-            add_polygon({p0, e0, e1, p2, e2, e3});
-            add_segment(e0, e1);
-            add_segment(e2, e3);
-        } else {
-            add_polygon({p0, e0, e3});
-            add_polygon({e1, p2, e2});
-            add_segment(e0, e3);
-            add_segment(e1, e2);
-        }
-        break;
-    case 6:
-        add_polygon({e0, p1, p2, e2});
-        add_segment(e0, e2);
-        break;
-    case 7:
-        add_polygon({p0, p1, p2, e2, e3});
-        add_segment(e2, e3);
-        break;
-    case 8:
-        add_polygon({e2, p3, e3});
-        add_segment(e2, e3);
-        break;
-    case 9:
-        add_polygon({p0, e0, e2, p3});
-        add_segment(e0, e2);
-        break;
-    case 10:
-        if (center_signed_distance >= 0.0F) {
-            add_polygon({e0, p1, e1, e2, p3, e3});
-            add_segment(e0, e3);
-            add_segment(e1, e2);
-        } else {
-            add_polygon({e0, p1, e1});
-            add_polygon({e2, p3, e3});
-            add_segment(e0, e1);
-            add_segment(e2, e3);
-        }
-        break;
-    case 11:
-        add_polygon({p0, p1, e1, e2, p3});
-        add_segment(e1, e2);
-        break;
-    case 12:
-        add_polygon({e1, p2, p3, e3});
-        add_segment(e1, e3);
-        break;
-    case 13:
-        add_polygon({p0, e0, e1, p2, p3});
-        add_segment(e0, e1);
-        break;
-    case 14:
-        add_polygon({e0, p1, p2, p3, e3});
-        add_segment(e0, e3);
-        break;
-    case 15:
-        add_polygon({p0, p1, p2, p3});
-        break;
-    default:
-        break;
-    }
-
-    return result;
-}
 
 void RenderWorldTextureQuad(
     SDL_Renderer* renderer,
@@ -383,64 +242,6 @@ void RenderWorldTextureQuad(
         SDL_Vertex{SDL_FPoint{bl.x, bl.y}, color, SDL_FPoint{u0, v1}},
     };
     constexpr std::array<int, 6> indices{0, 1, 2, 0, 2, 3};
-    SDL_RenderGeometry(
-        renderer,
-        texture,
-        vertices.data(),
-        static_cast<int>(vertices.size()),
-        indices.data(),
-        static_cast<int>(indices.size())
-    );
-}
-
-void RenderWorldTexturePolygon(
-    SDL_Renderer* renderer,
-    const Graphics& graphics,
-    SDL_Texture* texture,
-    const SDL_FRect& src,
-    const Vec2& tile_world,
-    const std::vector<Vec2>& local_points,
-    const SDL_FColor& color
-) {
-    if (texture == nullptr || local_points.size() < 3 || src.w <= 0.0F || src.h <= 0.0F) {
-        return;
-    }
-
-    float texture_width = 0.0F;
-    float texture_height = 0.0F;
-    if (!SDL_GetTextureSize(texture, &texture_width, &texture_height) ||
-        texture_width <= 0.0F || texture_height <= 0.0F) {
-        return;
-    }
-
-    std::vector<SDL_Vertex> vertices;
-    vertices.reserve(local_points.size());
-    for (const Vec2& local : local_points) {
-        const Vec2 screen = WorldPointToScreenForGeometry(graphics, tile_world + local);
-        const float u =
-            (src.x + (std::clamp(local.x, 0.0F, static_cast<float>(kTileSize)) /
-                      static_cast<float>(kTileSize)) *
-                         src.w) /
-            texture_width;
-        const float v =
-            (src.y + (std::clamp(local.y, 0.0F, static_cast<float>(kTileSize)) /
-                      static_cast<float>(kTileSize)) *
-                         src.h) /
-            texture_height;
-        vertices.push_back(SDL_Vertex{
-            SDL_FPoint{screen.x, screen.y},
-            color,
-            SDL_FPoint{u, v},
-        });
-    }
-
-    std::vector<int> indices;
-    indices.reserve((local_points.size() - 2) * 3);
-    for (std::size_t i = 1; i + 1 < local_points.size(); ++i) {
-        indices.push_back(0);
-        indices.push_back(static_cast<int>(i));
-        indices.push_back(static_cast<int>(i + 1));
-    }
     SDL_RenderGeometry(
         renderer,
         texture,
@@ -549,23 +350,120 @@ void RenderFluidFlowIndicator(
     }
 
     const Vec2 direction = NormalizeOrZero(velocity);
-    const float phase = std::fmod(static_cast<float>(tick % 120ULL) / 120.0F, 1.0F);
-    const Vec2 center =
+    const float phase = std::fmod(
+        (static_cast<float>(tick % 10000ULL) * (0.015F + (speed * 0.06F))),
+        1.0F
+    );
+    const Vec2 point =
         tile_world +
         Vec2::New(static_cast<float>(kTileSize) * 0.5F, static_cast<float>(kTileSize) * 0.5F) +
-        direction * ((phase - 0.5F) * static_cast<float>(kTileSize) * 0.75F);
-    const float length = std::clamp(speed * 2.0F, 2.0F, 6.0F);
-    const Vec2 tail = center - (direction * length);
-    const Vec2 head = center + (direction * length);
-    const Vec2 tail_screen = WorldPointToScreenForGeometry(graphics, tail);
-    const Vec2 head_screen = WorldPointToScreenForGeometry(graphics, head);
+        direction * ((phase - 0.5F) * static_cast<float>(kTileSize) * 0.8F);
+    const Vec2 point_screen = WorldPointToScreenForGeometry(graphics, point);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     const std::uint8_t alpha = static_cast<std::uint8_t>(
-        std::clamp(static_cast<int>(std::round(180.0F * std::clamp(opacity, 0.0F, 1.0F))), 0, 180)
+        std::clamp(static_cast<int>(std::round(220.0F * std::clamp(opacity, 0.0F, 1.0F))), 0, 220)
     );
     SDL_SetRenderDrawColor(renderer, 230, 250, 255, alpha);
-    SDL_RenderLine(renderer, tail_screen.x, tail_screen.y, head_screen.x, head_screen.y);
+    SDL_RenderPoint(renderer, point_screen.x, point_screen.y);
+}
+
+std::uint32_t HashFluidCell(int tile_x, int tile_y, std::uint32_t salt) {
+    std::uint32_t value =
+        (static_cast<std::uint32_t>(tile_x) * 0x9E3779B9U) ^
+        (static_cast<std::uint32_t>(tile_y) * 0x85EBCA6BU) ^
+        salt;
+    value ^= value >> 16U;
+    value *= 0x7FEB352DU;
+    value ^= value >> 15U;
+    value *= 0x846CA68BU;
+    value ^= value >> 16U;
+    return value;
+}
+
+void RenderFluidBubble(
+    SDL_Renderer* renderer,
+    const Graphics& graphics,
+    const Vec2& tile_world,
+    int tile_x,
+    int tile_y,
+    std::uint64_t scene_frame,
+    float display_level,
+    float visible_cutoff,
+    float brightness
+) {
+    if (display_level <= visible_cutoff) {
+        return;
+    }
+    const std::uint32_t seed = HashFluidCell(tile_x, tile_y, 0xB0B13U);
+    const std::uint64_t period_frames = 150ULL + static_cast<std::uint64_t>(seed % 180U);
+    const std::uint64_t active_frames = 36ULL + static_cast<std::uint64_t>((seed >> 8U) % 28U);
+    const std::uint64_t local_tick =
+        (scene_frame + static_cast<std::uint64_t>(seed % period_frames)) % period_frames;
+    if (local_tick >= active_frames) {
+        return;
+    }
+
+    const FrameData* const bubble_frame = GetAnimationFrameForTick(
+        graphics.frame_data_db,
+        HashFrameDataIdConstexpr("bubble"),
+        scene_frame + static_cast<std::uint64_t>(seed & 31U)
+    );
+    if (bubble_frame == nullptr) {
+        return;
+    }
+    SDL_Texture* const bubble_texture = graphics.GetFrameDataTexture(bubble_frame->image_id);
+    if (bubble_texture == nullptr) {
+        return;
+    }
+
+    const float progress =
+        static_cast<float>(local_tick) / static_cast<float>(std::max<std::uint64_t>(active_frames, 1ULL));
+    const float x_jitter = static_cast<float>((seed >> 16U) % 9U) - 4.0F;
+    const float water_top_y =
+        static_cast<float>(kTileSize) * (1.0F - std::clamp(display_level, visible_cutoff, 1.0F));
+    const float bubble_x =
+        (static_cast<float>(kTileSize) * 0.5F) + x_jitter -
+        (static_cast<float>(bubble_frame->sample_rect.w) * 0.5F);
+    const float bubble_y =
+        std::lerp(
+            static_cast<float>(kTileSize) - 2.0F,
+            water_top_y + 1.0F,
+            progress
+        ) -
+        (static_cast<float>(bubble_frame->sample_rect.h) * 0.5F);
+    const Vec2 bubble_world =
+        tile_world +
+        Vec2::New(
+            std::round(bubble_x),
+            std::round(bubble_y)
+        );
+    const SDL_FRect src{
+        static_cast<float>(bubble_frame->sample_rect.x),
+        static_cast<float>(bubble_frame->sample_rect.y),
+        static_cast<float>(bubble_frame->sample_rect.w),
+        static_cast<float>(bubble_frame->sample_rect.h),
+    };
+    const SDL_FRect dst = WorldRectToScreen(
+        graphics,
+        bubble_world,
+        Vec2::New(
+            static_cast<float>(bubble_frame->sample_rect.w),
+            static_cast<float>(bubble_frame->sample_rect.h)
+        )
+    );
+    const std::uint8_t alpha = static_cast<std::uint8_t>(
+        std::clamp(
+            static_cast<int>(std::round(180.0F * std::clamp(display_level, 0.0F, 1.0F))),
+            0,
+            180
+        )
+    );
+    SDL_SetTextureColorModFloat(bubble_texture, brightness, brightness, brightness);
+    SDL_SetTextureAlphaMod(bubble_texture, alpha);
+    RenderWorldTexture(renderer, graphics, bubble_texture, &src, dst);
+    SDL_SetTextureAlphaMod(bubble_texture, 255);
+    SDL_SetTextureColorModFloat(bubble_texture, 1.0F, 1.0F, 1.0F);
 }
 
 bool ShouldRenderImmediateBorderBacking(const Stage& stage, int tile_x, int tile_y) {
@@ -835,14 +733,12 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         std::clamp(state.debug_fluid_brush.render_cutoff_amount, 0.0F, 1.0F);
     const float effective_display_cutoff =
         std::max(min_fluid_display_level, kMinVisibleDisplayLevel);
-    const float marching_threshold = min_fluid_display_level;
 
     struct FluidRenderCell {
         Tile visible_tile = Tile::Air;
         float liquid_level = 0.0F;
         float visible_level = 0.0F;
         float display_level = 0.0F;
-        float opacity = 1.0F;
         bool terrain_solid = false;
         bool has_liquid = false;
         bool has_visible_liquid = false;
@@ -884,28 +780,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             static_cast<std::size_t>((wrapped->y * stage_tile_width) + wrapped->x)
         ];
     };
-    auto sample_fluid_signed_distance = [&](int vertex_x, int vertex_y) -> float {
-        float density = 0.0F;
-        float total_weight = 0.0F;
-        for (int adjacent_y = vertex_y - 1; adjacent_y <= vertex_y; ++adjacent_y) {
-            for (int adjacent_x = vertex_x - 1; adjacent_x <= vertex_x; ++adjacent_x) {
-                const FluidRenderCell* const adjacent_cell =
-                    const_cell_at(adjacent_x, adjacent_y);
-                if (adjacent_cell == nullptr || !adjacent_cell->render_candidate ||
-                    adjacent_cell->terrain_solid ||
-                    adjacent_cell->display_level <= effective_display_cutoff) {
-                    continue;
-                }
-                density += std::clamp(adjacent_cell->display_level, 0.0F, 1.0F);
-                total_weight += 1.0F;
-            }
-        }
-        if (total_weight <= 0.0F) {
-            return -static_cast<float>(kTileSizePx);
-        }
-        return ((density / 4.0F) - marching_threshold) * static_cast<float>(kTileSizePx);
-    };
-
     for (int y = 0; y < stage_tile_height; ++y) {
         for (int x = 0; x < stage_tile_width; ++x) {
             FluidRenderCell& cell = *cell_at(x, y);
@@ -983,48 +857,9 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         }
     }
 
-    for (int y = 0; y < stage_tile_height; ++y) {
-        for (int x = 0; x < stage_tile_width; ++x) {
-            FluidRenderCell* const cell = cell_at(x, y);
-            if (cell == nullptr || cell->terrain_solid || cell->has_visible_liquid) {
-                continue;
-            }
-
-            bool has_neighboring_visible_liquid = false;
-            Tile neighboring_visible_tile = Tile::WaterSwim;
-            for (int offset_y = -1; offset_y <= 1; ++offset_y) {
-                for (int offset_x = -1; offset_x <= 1; ++offset_x) {
-                    if (offset_x == 0 && offset_y == 0) {
-                        continue;
-                    }
-                    const FluidRenderCell* const nearby = const_cell_at(x + offset_x, y + offset_y);
-                    if (nearby == nullptr || !nearby->has_visible_liquid ||
-                        nearby->terrain_solid ||
-                        nearby->display_level <= effective_display_cutoff) {
-                        continue;
-                    }
-                    has_neighboring_visible_liquid = true;
-                    neighboring_visible_tile = nearby->visible_tile;
-                    break;
-                }
-                if (has_neighboring_visible_liquid) {
-                    break;
-                }
-            }
-
-            if (!has_neighboring_visible_liquid) {
-                continue;
-            }
-            cell->visible_tile = neighboring_visible_tile;
-            cell->render_candidate = true;
-        }
-    }
-
     for (const Vec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
-                const auto tile_x = static_cast<unsigned int>(x);
-                const auto tile_y = static_cast<unsigned int>(y);
                 const int int_x = static_cast<int>(x);
                 const int int_y = static_cast<int>(y);
                 const FluidRenderCell* const cell = const_cell_at(int_x, int_y);
@@ -1066,13 +901,20 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     : SDL_FRect{};
 
                 const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
-                const float brightness = GetTileArchetype(state.stage.GetTile(tile_x, tile_y)).solid
-                    ? GetForegroundBrightnessForRender(
-                          state,
-                          static_cast<int>(x),
-                          static_cast<int>(y)
-                      )
-                    : 1.0F;
+                float brightness = 1.0F;
+                if (state.debug_fluid_brush.lighting_enabled) {
+                    const float sampled_brightness =
+                        GetBackwallBrightnessForRender(state, static_cast<int>(x), static_cast<int>(y));
+                    brightness = std::clamp(
+                        std::lerp(
+                            1.0F,
+                            sampled_brightness,
+                            std::clamp(state.debug_fluid_brush.lighting_strength, 0.0F, 2.0F)
+                        ),
+                        0.0F,
+                        2.0F
+                    );
+                }
 
                 const SDL_FRect body_src{
                     static_cast<float>(tile_source_data->sample_rect.x),
@@ -1080,15 +922,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     static_cast<float>(tile_source_data->sample_rect.w),
                     static_cast<float>(tile_source_data->sample_rect.h),
                 };
-                const std::uint8_t body_alpha = static_cast<std::uint8_t>(
-                    std::clamp(
-                        static_cast<int>(std::round(
-                            static_cast<float>(kFluidAlpha) * std::clamp(cell->opacity, 0.0F, 1.0F)
-                        )),
-                        0,
-                        static_cast<int>(kFluidAlpha)
-                    )
-                );
                 auto render_flow_indicator = [&]() {
                     if (!state.debug_fluid_brush.show_flow_indicators ||
                         y >= state.stage.fluid_velocity.size() ||
@@ -1110,174 +943,114 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     );
                 };
 
-                if (state.debug_fluid_brush.render_mode ==
-                    DebugFluidBrushState::RenderMode::AlphaCells) {
-                    if (cell->display_level <= effective_display_cutoff) {
-                        continue;
-                    }
-                    const float topper_edge_cutoff = std::clamp(
-                        state.debug_fluid_brush.topper_cutoff_amount,
-                        0.0F,
-                        1.0F
-                    );
-                    const bool cell_can_render_topper =
-                        cell->display_level > topper_edge_cutoff;
-                    const std::uint8_t alpha_cell_body_alpha = static_cast<std::uint8_t>(
-                        std::clamp(
-                            static_cast<int>(std::round(
-                                static_cast<float>(kFluidAlpha) *
-                                std::clamp(cell->display_level, 0.0F, 1.0F)
-                            )),
-                            0,
-                            static_cast<int>(kFluidAlpha)
-                        )
-                    );
-                    RenderWorldTextureQuad(
-                        renderer,
-                        graphics,
-                        tile_texture,
-                        body_src,
-                        std::array<Vec2, 4>{
-                            tile_world + Vec2::New(0.0F, 0.0F),
-                            tile_world + Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
-                            tile_world + Vec2::New(
-                                static_cast<float>(kTileSizePx),
-                                static_cast<float>(kTileSizePx)
-                            ),
-                            tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
-                        },
-                        MakeFluidVertexColor(brightness, alpha_cell_body_alpha)
-                    );
-
-                    auto neighbor_is_fluid_or_solid = [&](int offset_x, int offset_y) -> bool {
-                        const FluidRenderCell* const nearby =
-                            const_cell_at(int_x + offset_x, int_y + offset_y);
-                        if (nearby == nullptr || nearby->terrain_solid) {
-                            return true;
-                        }
-                        return nearby->has_visible_liquid &&
-                               nearby->display_level > topper_edge_cutoff;
-                    };
-                    auto render_cell_edge_topper = [&](const FluidContourSegment& segment) {
-                        if (!cell_can_render_topper || top_texture == nullptr || top_src.h <= 0.0F) {
-                            return;
-                        }
-                        const RibbonPlacement ribbon = MakeCenteredContourRibbonPlacement(
-                            segment,
-                            true,
-                            top_src.h
-                        );
-                        RenderWorldTextureRibbon(
-                            renderer,
-                            graphics,
-                            top_texture,
-                            top_src,
-                            tile_world + ribbon.start,
-                            tile_world + ribbon.end,
-                            top_src.h,
-                            ribbon.use_right_normal,
-                            MakeFluidVertexColor(brightness, kFluidTopAlpha)
-                        );
-                    };
-                    if (!neighbor_is_fluid_or_solid(0, -1)) {
-                        render_cell_edge_topper(FluidContourSegment{
-                            .a = Vec2::New(0.0F, 0.0F),
-                            .b = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
-                        });
-                    }
-                    if (!neighbor_is_fluid_or_solid(1, 0)) {
-                        render_cell_edge_topper(FluidContourSegment{
-                            .a = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
-                            .b = Vec2::New(
-                                static_cast<float>(kTileSizePx),
-                                static_cast<float>(kTileSizePx)
-                            ),
-                        });
-                    }
-                    if (!neighbor_is_fluid_or_solid(0, 1)) {
-                        render_cell_edge_topper(FluidContourSegment{
-                            .a = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
-                            .b = Vec2::New(
-                                static_cast<float>(kTileSizePx),
-                                static_cast<float>(kTileSizePx)
-                            ),
-                        });
-                    }
-                    if (!neighbor_is_fluid_or_solid(-1, 0)) {
-                        render_cell_edge_topper(FluidContourSegment{
-                            .a = Vec2::New(0.0F, 0.0F),
-                            .b = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
-                        });
-                    }
-                    render_flow_indicator();
+                if (cell->display_level <= effective_display_cutoff) {
                     continue;
                 }
-
-                const std::array<FluidMarchingVertex, 4> samples{
-                    FluidMarchingVertex{
-                        .local = Vec2::New(0.0F, 0.0F),
-                        .signed_distance = sample_fluid_signed_distance(int_x, int_y),
-                    },
-                    FluidMarchingVertex{
-                        .local = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
-                        .signed_distance = sample_fluid_signed_distance(int_x + 1, int_y),
-                    },
-                    FluidMarchingVertex{
-                        .local = Vec2::New(
+                const float topper_edge_cutoff = std::clamp(
+                    state.debug_fluid_brush.topper_cutoff_amount,
+                    0.0F,
+                    1.0F
+                );
+                const bool cell_can_render_topper =
+                    cell->display_level > topper_edge_cutoff;
+                const std::uint8_t alpha_cell_body_alpha = static_cast<std::uint8_t>(
+                    std::clamp(
+                        static_cast<int>(std::round(
+                            static_cast<float>(kFluidAlpha) *
+                            std::clamp(cell->display_level, 0.0F, 1.0F)
+                        )),
+                        0,
+                        static_cast<int>(kFluidAlpha)
+                    )
+                );
+                RenderWorldTextureQuad(
+                    renderer,
+                    graphics,
+                    tile_texture,
+                    body_src,
+                    std::array<Vec2, 4>{
+                        tile_world + Vec2::New(0.0F, 0.0F),
+                        tile_world + Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                        tile_world + Vec2::New(
                             static_cast<float>(kTileSizePx),
                             static_cast<float>(kTileSizePx)
                         ),
-                        .signed_distance = sample_fluid_signed_distance(int_x + 1, int_y + 1),
+                        tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
                     },
-                    FluidMarchingVertex{
-                        .local = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
-                        .signed_distance = sample_fluid_signed_distance(int_x, int_y + 1),
-                    },
-                };
-                const float center_signed_distance = std::max(
-                    -static_cast<float>(kTileSizePx),
-                    static_cast<float>(kTileSizePx) *
-                        (std::clamp(cell->display_level, 0.0F, 1.0F) - marching_threshold)
+                    MakeFluidVertexColor(brightness, alpha_cell_body_alpha)
                 );
-                const FluidMarchingResult marching_result =
-                    BuildFilledFluidMarchingSquares(samples, center_signed_distance);
 
-                for (const std::vector<Vec2>& polygon : marching_result.polygons) {
-                    RenderWorldTexturePolygon(
+                auto neighbor_is_fluid_or_solid = [&](int offset_x, int offset_y) -> bool {
+                    const FluidRenderCell* const nearby =
+                        const_cell_at(int_x + offset_x, int_y + offset_y);
+                    if (nearby == nullptr || nearby->terrain_solid) {
+                        return true;
+                    }
+                    return nearby->has_visible_liquid &&
+                           nearby->display_level > topper_edge_cutoff;
+                };
+                auto render_cell_edge_topper = [&](const FluidContourSegment& segment) {
+                    if (!cell_can_render_topper || top_texture == nullptr || top_src.h <= 0.0F) {
+                        return;
+                    }
+                    const RibbonPlacement ribbon = MakeCenteredContourRibbonPlacement(
+                        segment,
+                        true,
+                        top_src.h
+                    );
+                    RenderWorldTextureRibbon(
                         renderer,
                         graphics,
-                        tile_texture,
-                        body_src,
-                        tile_world,
-                        polygon,
-                        MakeFluidVertexColor(brightness, body_alpha)
+                        top_texture,
+                        top_src,
+                        tile_world + ribbon.start,
+                        tile_world + ribbon.end,
+                        top_src.h,
+                        ribbon.use_right_normal,
+                        MakeFluidVertexColor(brightness, kFluidTopAlpha)
                     );
+                };
+                if (!neighbor_is_fluid_or_solid(0, -1)) {
+                    render_cell_edge_topper(FluidContourSegment{
+                        .a = Vec2::New(0.0F, 0.0F),
+                        .b = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                    });
                 }
-
-                if (top_texture != nullptr) {
-                    for (const FluidContourSegment& segment : marching_result.contour_segments) {
-                        const Vec2 delta = segment.b - segment.a;
-                        if (Length(delta) <= 0.001F) {
-                            continue;
-                        }
-                        const RibbonPlacement ribbon = MakeCenteredContourRibbonPlacement(
-                            segment,
-                            center_signed_distance >= 0.0F,
-                            top_src.h
-                        );
-                        RenderWorldTextureRibbon(
-                            renderer,
-                            graphics,
-                            top_texture,
-                            top_src,
-                            tile_world + ribbon.start,
-                            tile_world + ribbon.end,
-                            top_src.h,
-                            ribbon.use_right_normal,
-                            MakeFluidVertexColor(brightness, kFluidTopAlpha)
-                        );
-                    }
+                if (!neighbor_is_fluid_or_solid(1, 0)) {
+                    render_cell_edge_topper(FluidContourSegment{
+                        .a = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                        .b = Vec2::New(
+                            static_cast<float>(kTileSizePx),
+                            static_cast<float>(kTileSizePx)
+                        ),
+                    });
                 }
+                if (!neighbor_is_fluid_or_solid(0, 1)) {
+                    render_cell_edge_topper(FluidContourSegment{
+                        .a = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                        .b = Vec2::New(
+                            static_cast<float>(kTileSizePx),
+                            static_cast<float>(kTileSizePx)
+                        ),
+                    });
+                }
+                if (!neighbor_is_fluid_or_solid(-1, 0)) {
+                    render_cell_edge_topper(FluidContourSegment{
+                        .a = Vec2::New(0.0F, 0.0F),
+                        .b = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                    });
+                }
+                RenderFluidBubble(
+                    renderer,
+                    graphics,
+                    tile_world,
+                    int_x,
+                    int_y,
+                    static_cast<std::uint64_t>(state.scene_frame),
+                    cell->display_level,
+                    topper_edge_cutoff,
+                    brightness
+                );
                 render_flow_indicator();
             }
         }

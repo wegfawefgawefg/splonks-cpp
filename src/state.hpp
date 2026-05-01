@@ -175,10 +175,6 @@ struct DebugFluidBrushState {
         TemporaryGravity,
         GlobalGravityDirection,
     };
-    enum class RenderMode : std::uint8_t {
-        MarchingSquares,
-        AlphaCells,
-    };
 
     bool enabled = false;
     bool simulation_enabled = true;
@@ -199,7 +195,8 @@ struct DebugFluidBrushState {
     float render_cutoff_amount = 0.004F;
     float topper_cutoff_amount = 0.1F;
     bool show_flow_indicators = false;
-    RenderMode render_mode = RenderMode::MarchingSquares;
+    bool lighting_enabled = true;
+    float lighting_strength = 1.0F;
 };
 
 struct StageRotationState {

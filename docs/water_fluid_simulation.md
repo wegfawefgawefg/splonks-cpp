@@ -14,8 +14,9 @@ next implementation should be cleaner:
   without changing the amount/velocity storage shape.
 - Remove binary momentum and scan-order direction hacks.
 - Simulate from a snapshot and apply transfers after all proposals are known.
-- Render from a scalar density field with marching squares, not from a
-  gravity-specific "filled from bottom" assumption.
+- Render as alpha-scaled cells with explicit surface ribbons. The attempted
+  density contour renderer was removed because the simpler cell renderer looked
+  better for this game, was easier to tune, and was cheaper.
 
 Simulation shape:
 
@@ -39,13 +40,13 @@ velocity and pressure.
 Rendering shape:
 
 - Smooth `fluid_display_amount` remains a render cache only.
-- Build a density value at grid vertices by sampling the four neighboring
-  fluid cells.
-- Run marching squares against that scalar density threshold.
-- Draw water polygons from the density contour.
-- Draw `watertop` ribbons on contour segments that are mostly horizontal for
-  now. Later, if we support arbitrary local gravity fields visually, orient
-  surface foam/ripples from the local gravity vector or contour normal.
+- Draw one full water cell with alpha scaled by display amount.
+- Draw `watertop` ribbons on any exposed edge where this cell is above the
+  topper cutoff and the neighbor is not solid/fluid above that same cutoff.
+- Draw optional debug flow as a single moving pixel. Stronger velocity moves
+  the pixel faster rather than making the indicator longer.
+- Draw occasional render-only bubbles from the `bubble` animation inside cells
+  above the topper cutoff.
 
 Debug knobs for the vector model:
 
@@ -73,7 +74,9 @@ Per-cell gravity:
 - Effective gravity for simulation is:
   `active_local_gravity_or_global_gravity + temporary_gravity`.
 - Temporary gravity decays even when the cell is dry, so old brush/bomb impulses do not wait forever for water to arrive.
-- The renderer does not assume down is gravity; it keeps using scalar density and only uses gravity for optional future surface decoration.
+- The renderer no longer depends on gravity direction. It draws alpha cells and
+  edge ribbons from neighbor occupancy, which keeps it stable under arbitrary
+  fluid gravity.
 
 ## Current Implementation: Vector Amount Overlay
 
@@ -93,18 +96,17 @@ Per-cell gravity:
 - Apply changed fluid cells after the pass, then batch lighting and acoustics updates for those changed cells.
 - Render water as a late transparent pass:
   - smooth `fluid_display_amount` as an optional render cache;
-  - build a scalar density field from nearby display amounts;
-  - run marching squares against that density field;
-  - render textured water polygons and `watertop` ribbons directly on visible contour segments;
-  - `watertop` uses the animated `watertop` sprite, with tile-position tick offsets so every surface tile does not animate in lockstep.
-- A cheaper alpha-cell render mode is available for weaker machines and comparison. It draws one full water quad per occupied cell, scales alpha by display amount, and draws `watertop` ribbons only on edges not adjacent to solid terrain or visible fluid.
-- Alpha-cell `watertop` has its own edge cutoff. A cell below this amount does not draw toppers, and a neighbor below this amount is treated like empty for edge wrapping.
-- The render cutoff slider feeds the marching-squares density threshold directly.
+  - render one full water quad per occupied cell, with alpha scaled by display amount;
+  - draw `watertop` ribbons only on edges not adjacent to solid terrain or visible fluid;
+  - `watertop` uses the animated `watertop` sprite, with tile-position tick offsets so every surface tile does not animate in lockstep;
+  - draw occasional render-only `bubble` sprites inside visible water cells.
+- `watertop` has its own edge cutoff. A cell below this amount does not draw toppers, and a neighbor below this amount is treated like empty for edge wrapping.
+- The render cutoff slider controls when a display-cache cell is visible at all.
   A hidden hard threshold made low-amount water vanish while flowing and should not be reintroduced without an explicit debug setting.
 - The renderer still uses a tiny epsilon when deciding whether a smoothed display-cache cell is visible at all. This prevents temporal smoothing from leaving zero-amount phantom blue cells when the public render cutoff is `0`.
 - Surface checks must use wrapped neighbor lookup. A top-row water cell should not draw `watertop` if Y wrap makes the bottom-row cell directly above it contain water.
 - The stage-center gravity picker maps `(mouse_world - stage_center) / 64px` into global gravity, clamped to the debug gravity slider bounds. It is intentionally not normalized, so short drags can create weak gravity and long drags can create stronger gravity.
-- Optional flow indicators draw render-only streaks from the fluid velocity grid. They are debug visualization, not gameplay particles.
+- Optional flow indicators draw render-only moving pixels from the fluid velocity grid. They are debug visualization, not gameplay particles.
 
 Pros:
 
@@ -123,7 +125,7 @@ Cons:
 Initial rules:
 
 - The simulation is generic: it asks tile archetypes whether a tile is simulated fluid.
-- `WaterTop` is drawn at render time from marching-squares contour data.
+- `WaterTop` is drawn at render time from alpha-cell exposed-edge data.
 - Entity control changes come from tile overlap effects, not from water-specific physics checks in the engine.
 - Water-specific entities, like piranhas, may still use water query helpers in their own content logic.
 - Fluids render as a late transparent pass over terrain/entities.
@@ -187,9 +189,12 @@ That prototype still deviated:
 - We do not store or compute Terraria's full edge-wall set: `LeftWall`, `RightWall`, `TopWall`, `BottomWall`, and their smoothed visible variants.
 - We do not compute Terraria-style `FrameOffset`.
 - We do not have a Terraria-style liquid texture atlas with edge/body/waterfall source regions.
-- We draw pool water as textured geometry quads/trapezoids, while Terraria draws source-rect slices with offsets.
+- We drew pool water as textured geometry quads/trapezoids, while Terraria draws source-rect slices with offsets.
 - We currently draw waterfall-classified cells as a centered strip from the same `water` tile, not from a dedicated atlas waterfall region.
 - We expose some raw sim oscillation because the sim can flip cells between tiny and near-full amounts; Terraria's visible cache and atlas slicing hide more of that.
+
+This prototype was removed from the current renderer. Keep the notes here only
+as a reference if we later want a Terraria-style liquid atlas renderer.
 
 Needed assets if we want closer Terraria parity:
 
@@ -244,3 +249,18 @@ Practical active-frontier shape:
   - smooth those walls with neighboring edge values;
   - draw source-rectangle slices offset into each tile, instead of inventing per-case diagonal waterfall caps.
 - Terraria-style polish separates simulation from edge rendering. Splonks should keep this split: the grid stores amounts, while render code derives body, top, and fall visuals from that grid.
+
+## Water And Lighting
+
+Current water rendering does not recalculate lighting. Water can optionally use
+render-time lighting: sample the existing backwall brightness for each water
+cell and tint the water quad/topper/bubbles by that value. The debug fluid
+brush exposes a toggle plus a strength slider, where `0` is unlit water and `1`
+uses the sampled stage brightness directly.
+
+Making water affect lighting is a separate step. The pragmatic version is to
+treat changed fluid cells like changed terrain for lighting/acoustics batching,
+then have the light solver read a fluid optical property such as attenuation or
+color tint. That should only run for cells changed by the fluid pass, not every
+render frame. A live full lighting recompute every fluid tick is the wrong shape
+unless the stages stay tiny forever.

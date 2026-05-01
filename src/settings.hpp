@@ -142,7 +142,8 @@ struct DebugUiSettings {
     float fluid_brush_render_cutoff_amount = 0.004F;
     float fluid_brush_topper_cutoff_amount = 0.1F;
     bool fluid_brush_show_flow_indicators = false;
-    int fluid_brush_render_mode = 0;
+    bool fluid_brush_lighting_enabled = true;
+    float fluid_brush_lighting_strength = 1.0F;
     bool audio_settings_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;

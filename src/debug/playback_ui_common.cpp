@@ -187,13 +187,21 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
             state.debug_fluid_brush.show_flow_indicators;
         changed = true;
     }
-    const int fluid_brush_render_mode = std::clamp(
-        static_cast<int>(state.debug_fluid_brush.render_mode),
-        0,
-        1
+    if (state.settings.debug_ui.fluid_brush_lighting_enabled !=
+        state.debug_fluid_brush.lighting_enabled) {
+        state.settings.debug_ui.fluid_brush_lighting_enabled =
+            state.debug_fluid_brush.lighting_enabled;
+        changed = true;
+    }
+    const float fluid_brush_lighting_strength = std::clamp(
+        state.debug_fluid_brush.lighting_strength,
+        0.0F,
+        2.0F
     );
-    if (state.settings.debug_ui.fluid_brush_render_mode != fluid_brush_render_mode) {
-        state.settings.debug_ui.fluid_brush_render_mode = fluid_brush_render_mode;
+    if (state.settings.debug_ui.fluid_brush_lighting_strength !=
+        fluid_brush_lighting_strength) {
+        state.settings.debug_ui.fluid_brush_lighting_strength =
+            fluid_brush_lighting_strength;
         changed = true;
     }
     if (state.settings.debug_ui.audio_settings_visible != debug.audio_settings_window_visible) {
