@@ -826,6 +826,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         bool terrain_solid = false;
         bool has_liquid = false;
         bool has_visible_liquid = false;
+        bool render_candidate = false;
     };
 
     const int stage_tile_width = static_cast<int>(state.stage.GetTileWidth());
@@ -869,8 +870,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             for (int adjacent_x = vertex_x - 1; adjacent_x <= vertex_x; ++adjacent_x) {
                 const FluidRenderCell* const adjacent_cell =
                     const_cell_at(adjacent_x, adjacent_y);
-                if (adjacent_cell == nullptr || !adjacent_cell->has_visible_liquid ||
-                    adjacent_cell->terrain_solid) {
+                if (adjacent_cell == nullptr || !adjacent_cell->render_candidate ||
+                    adjacent_cell->terrain_solid || adjacent_cell->display_level <= 0.0F) {
                     continue;
                 }
 
@@ -939,10 +940,11 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 }
 
                 cell.visible_tile = residual_visible_tile;
-                cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
-                cell.display_level = cell.visible_level;
-                cell.has_visible_liquid = true;
-                continue;
+            cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
+            cell.display_level = cell.visible_level;
+            cell.has_visible_liquid = true;
+            cell.render_candidate = true;
+            continue;
             }
             cell.visible_tile = fluid_tile;
             cell.liquid_level = static_cast<float>(amount) / 255.0F;
@@ -959,6 +961,42 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
             cell.display_level = cell.visible_level;
             cell.has_visible_liquid = true;
+            cell.render_candidate = true;
+        }
+    }
+
+    for (int y = 0; y < stage_tile_height; ++y) {
+        for (int x = 0; x < stage_tile_width; ++x) {
+            FluidRenderCell* const cell = cell_at(x, y);
+            if (cell == nullptr || cell->terrain_solid || cell->has_visible_liquid) {
+                continue;
+            }
+
+            bool has_neighboring_visible_liquid = false;
+            Tile neighboring_visible_tile = Tile::WaterSwim;
+            for (int offset_y = -1; offset_y <= 1; ++offset_y) {
+                for (int offset_x = -1; offset_x <= 1; ++offset_x) {
+                    if (offset_x == 0 && offset_y == 0) {
+                        continue;
+                    }
+                    const FluidRenderCell* const nearby = const_cell_at(x + offset_x, y + offset_y);
+                    if (nearby == nullptr || !nearby->has_visible_liquid || nearby->terrain_solid) {
+                        continue;
+                    }
+                    has_neighboring_visible_liquid = true;
+                    neighboring_visible_tile = nearby->visible_tile;
+                    break;
+                }
+                if (has_neighboring_visible_liquid) {
+                    break;
+                }
+            }
+
+            if (!has_neighboring_visible_liquid) {
+                continue;
+            }
+            cell->visible_tile = neighboring_visible_tile;
+            cell->render_candidate = true;
         }
     }
 
@@ -966,7 +1004,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         for (int y = 0; y < stage_tile_height; ++y) {
             for (int x = 0; x < stage_tile_width; ++x) {
                 FluidRenderCell* const cell = cell_at(x, y);
-                if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
+                if (cell == nullptr || !cell->render_candidate || cell->terrain_solid) {
                     continue;
                 }
 
@@ -976,7 +1014,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     for (int offset_x = -1; offset_x <= 1; ++offset_x) {
                         const FluidRenderCell* const nearby =
                             const_cell_at(x + offset_x, y + offset_y);
-                        if (nearby == nullptr || nearby->terrain_solid) {
+                        if (nearby == nullptr || nearby->terrain_solid || !nearby->render_candidate) {
                             continue;
                         }
                         const bool center = offset_x == 0 && offset_y == 0;
@@ -1006,7 +1044,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 const int int_x = static_cast<int>(x);
                 const int int_y = static_cast<int>(y);
                 const FluidRenderCell* const cell = const_cell_at(int_x, int_y);
-                if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
+                if (cell == nullptr || !cell->render_candidate || cell->terrain_solid) {
                     continue;
                 }
 
