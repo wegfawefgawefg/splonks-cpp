@@ -826,56 +826,6 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
     bool changed = false;
     changed |=
         ImGui::Checkbox("Terrain Lighting", &state.settings.post_process.terrain_lighting);
-    changed |= ImGui::Checkbox(
-        "Terrain Face Shading",
-        &state.settings.post_process.terrain_face_shading
-    );
-    changed |= ImGui::Checkbox(
-        "Enclosed Stage Bounds",
-        &state.settings.post_process.terrain_face_enclosed_stage_bounds
-    );
-    changed |= ImGui::SliderFloat(
-        "Terrain Top Highlight",
-        &state.settings.post_process.terrain_face_top_highlight,
-        0.0F,
-        1.0F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
-        "Terrain Side Shade",
-        &state.settings.post_process.terrain_face_side_shade,
-        0.0F,
-        1.0F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
-        "Terrain Bottom Shade",
-        &state.settings.post_process.terrain_face_bottom_shade,
-        0.0F,
-        1.0F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
-        "Terrain Band Size",
-        &state.settings.post_process.terrain_face_band_size,
-        0.05F,
-        0.50F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
-        "Terrain Gradient Softness",
-        &state.settings.post_process.terrain_face_gradient_softness,
-        0.0F,
-        1.0F,
-        "%.2f"
-    );
-    changed |= ImGui::SliderFloat(
-        "Terrain Corner Rounding",
-        &state.settings.post_process.terrain_face_corner_rounding,
-        0.0F,
-        1.0F,
-        "%.2f"
-    );
     changed |= ImGui::Checkbox("Terrain Seam AO", &state.settings.post_process.terrain_seam_ao);
     changed |= ImGui::SliderFloat(
         "Terrain Seam AO Amount",

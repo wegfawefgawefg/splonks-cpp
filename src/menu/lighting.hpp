@@ -10,14 +10,6 @@ struct State;
 
 enum class LightingSettingsMenuOption {
     TerrainLighting,
-    TerrainFaceShading,
-    TerrainEnclosedStageBounds,
-    TerrainTopHighlight,
-    TerrainSideShade,
-    TerrainBottomShade,
-    TerrainBandSize,
-    TerrainGradientSoftness,
-    TerrainCornerRounding,
     TerrainSeamAo,
     TerrainSeamAoAmount,
     TerrainSeamAoSize,

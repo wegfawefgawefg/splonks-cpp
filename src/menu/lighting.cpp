@@ -39,22 +39,6 @@ const char* GetLightingSettingsMenuOptionName(LightingSettingsMenuOption option)
     switch (option) {
     case LightingSettingsMenuOption::TerrainLighting:
         return "Terrain Lighting";
-    case LightingSettingsMenuOption::TerrainFaceShading:
-        return "Terrain Face Shading";
-    case LightingSettingsMenuOption::TerrainEnclosedStageBounds:
-        return "Enclosed Stage Bounds";
-    case LightingSettingsMenuOption::TerrainTopHighlight:
-        return "Terrain Top Highlight";
-    case LightingSettingsMenuOption::TerrainSideShade:
-        return "Terrain Side Shade";
-    case LightingSettingsMenuOption::TerrainBottomShade:
-        return "Terrain Bottom Shade";
-    case LightingSettingsMenuOption::TerrainBandSize:
-        return "Terrain Band Size";
-    case LightingSettingsMenuOption::TerrainGradientSoftness:
-        return "Terrain Gradient Softness";
-    case LightingSettingsMenuOption::TerrainCornerRounding:
-        return "Terrain Corner Rounding";
     case LightingSettingsMenuOption::TerrainSeamAo:
         return "Terrain Seam AO";
     case LightingSettingsMenuOption::TerrainSeamAoAmount:
@@ -113,7 +97,7 @@ void ProcessInputLightingSettingsMenu(
         if (up_pressed) {
             PlayMenuSoundCant(audio);
         } else if (down_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainFaceShading;
+            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainSeamAo;
             PlayMenuSoundCursorMove(audio);
         } else if (left_pressed || right_pressed || confirm_pressed) {
             state.settings.post_process.terrain_lighting =
@@ -122,206 +106,9 @@ void ProcessInputLightingSettingsMenu(
             PlayMenuSoundCursorMove(audio);
         }
         break;
-    case LightingSettingsMenuOption::TerrainFaceShading:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainLighting;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection =
-                LightingSettingsMenuOption::TerrainEnclosedStageBounds;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed || right_pressed || confirm_pressed) {
-            state.settings.post_process.terrain_face_shading =
-                !state.settings.post_process.terrain_face_shading;
-            SaveSettings(state.settings);
-            PlayMenuSoundCursorMove(audio);
-        }
-        break;
-    case LightingSettingsMenuOption::TerrainEnclosedStageBounds:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainFaceShading;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainTopHighlight;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed || right_pressed || confirm_pressed) {
-            state.settings.post_process.terrain_face_enclosed_stage_bounds =
-                !state.settings.post_process.terrain_face_enclosed_stage_bounds;
-            SaveSettings(state.settings);
-            PlayMenuSoundCursorMove(audio);
-            invalidate_terrain_lighting_cache = true;
-        }
-        break;
-    case LightingSettingsMenuOption::TerrainTopHighlight:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection =
-                LightingSettingsMenuOption::TerrainEnclosedStageBounds;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainSideShade;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_top_highlight,
-                -kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        } else if (right_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_top_highlight,
-                kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        }
-        break;
-    case LightingSettingsMenuOption::TerrainSideShade:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainTopHighlight;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainBottomShade;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_side_shade,
-                -kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        } else if (right_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_side_shade,
-                kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        }
-        break;
-    case LightingSettingsMenuOption::TerrainBottomShade:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainSideShade;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainBandSize;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_bottom_shade,
-                -kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        } else if (right_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_bottom_shade,
-                kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        }
-        break;
-    case LightingSettingsMenuOption::TerrainBandSize:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainBottomShade;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection =
-                LightingSettingsMenuOption::TerrainGradientSoftness;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_band_size,
-                -kLightingStep,
-                0.05F,
-                0.50F,
-                state,
-                audio
-            );
-        } else if (right_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_band_size,
-                kLightingStep,
-                0.05F,
-                0.50F,
-                state,
-                audio
-            );
-        }
-        break;
-    case LightingSettingsMenuOption::TerrainGradientSoftness:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainBandSize;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection =
-                LightingSettingsMenuOption::TerrainCornerRounding;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_gradient_softness,
-                -kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        } else if (right_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_gradient_softness,
-                kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        }
-        break;
-    case LightingSettingsMenuOption::TerrainCornerRounding:
-        if (up_pressed) {
-            state.lighting_settings_menu_selection =
-                LightingSettingsMenuOption::TerrainGradientSoftness;
-            PlayMenuSoundCursorMove(audio);
-        } else if (down_pressed) {
-            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainSeamAo;
-            PlayMenuSoundCursorMove(audio);
-        } else if (left_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_corner_rounding,
-                -kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        } else if (right_pressed) {
-            AdjustFloatSetting(
-                state.settings.post_process.terrain_face_corner_rounding,
-                kLightingStep,
-                0.0F,
-                1.0F,
-                state,
-                audio
-            );
-        }
-        break;
     case LightingSettingsMenuOption::TerrainSeamAo:
         if (up_pressed) {
-            state.lighting_settings_menu_selection =
-                LightingSettingsMenuOption::TerrainCornerRounding;
+            state.lighting_settings_menu_selection = LightingSettingsMenuOption::TerrainLighting;
             PlayMenuSoundCursorMove(audio);
         } else if (down_pressed) {
             state.lighting_settings_menu_selection =

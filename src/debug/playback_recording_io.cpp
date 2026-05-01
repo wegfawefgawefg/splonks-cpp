@@ -414,17 +414,9 @@ void WriteSettings(std::ostream& out, const Settings& settings) {
     WritePod(out, settings.ui.tool_icon_scale);
     WritePod(out, settings.post_process.effect);
     WritePod(out, settings.post_process.terrain_lighting);
-    WritePod(out, settings.post_process.terrain_face_shading);
-    WritePod(out, settings.post_process.terrain_face_enclosed_stage_bounds);
     WritePod(out, settings.post_process.terrain_seam_ao);
     WritePod(out, settings.post_process.terrain_exposure_lighting);
     WritePod(out, settings.post_process.backwall_lighting);
-    WritePod(out, settings.post_process.terrain_face_top_highlight);
-    WritePod(out, settings.post_process.terrain_face_side_shade);
-    WritePod(out, settings.post_process.terrain_face_bottom_shade);
-    WritePod(out, settings.post_process.terrain_face_band_size);
-    WritePod(out, settings.post_process.terrain_face_gradient_softness);
-    WritePod(out, settings.post_process.terrain_face_corner_rounding);
     WritePod(out, settings.post_process.terrain_seam_ao_amount);
     WritePod(out, settings.post_process.terrain_seam_ao_size);
     WritePod(out, settings.post_process.terrain_exposure_amount);
@@ -466,17 +458,9 @@ bool ReadSettings(std::istream& in, Settings& settings) {
         !ReadPod(in, settings.ui.tool_icon_scale) ||
         !ReadPod(in, settings.post_process.effect) ||
         !ReadPod(in, settings.post_process.terrain_lighting) ||
-        !ReadPod(in, settings.post_process.terrain_face_shading) ||
-        !ReadPod(in, settings.post_process.terrain_face_enclosed_stage_bounds) ||
         !ReadPod(in, settings.post_process.terrain_seam_ao) ||
         !ReadPod(in, settings.post_process.terrain_exposure_lighting) ||
         !ReadPod(in, settings.post_process.backwall_lighting) ||
-        !ReadPod(in, settings.post_process.terrain_face_top_highlight) ||
-        !ReadPod(in, settings.post_process.terrain_face_side_shade) ||
-        !ReadPod(in, settings.post_process.terrain_face_bottom_shade) ||
-        !ReadPod(in, settings.post_process.terrain_face_band_size) ||
-        !ReadPod(in, settings.post_process.terrain_face_gradient_softness) ||
-        !ReadPod(in, settings.post_process.terrain_face_corner_rounding) ||
         !ReadPod(in, settings.post_process.terrain_seam_ao_amount) ||
         !ReadPod(in, settings.post_process.terrain_seam_ao_size) ||
         !ReadPod(in, settings.post_process.terrain_exposure_amount) ||

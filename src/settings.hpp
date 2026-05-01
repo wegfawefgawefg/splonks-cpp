@@ -68,17 +68,9 @@ enum class PostProcessEffect : std::uint8_t {
 struct PostProcessSettings {
     PostProcessEffect effect = PostProcessEffect::Crt;
     bool terrain_lighting = true;
-    bool terrain_face_shading = true;
-    bool terrain_face_enclosed_stage_bounds = true;
     bool terrain_seam_ao = true;
     bool terrain_exposure_lighting = true;
     bool backwall_lighting = true;
-    float terrain_face_top_highlight = 0.18F;
-    float terrain_face_side_shade = 0.12F;
-    float terrain_face_bottom_shade = 0.20F;
-    float terrain_face_band_size = 0.22F;
-    float terrain_face_gradient_softness = 0.75F;
-    float terrain_face_corner_rounding = 0.80F;
     float terrain_seam_ao_amount = 0.18F;
     float terrain_seam_ao_size = 0.20F;
     float terrain_exposure_amount = 0.12F;

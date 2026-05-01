@@ -26,20 +26,9 @@ bool IsForegroundSolidTile(Tile tile) {
 Tile GetTileForLighting(const State& state, int tile_x, int tile_y) {
     if (tile_x < 0 || tile_y < 0 || tile_x >= static_cast<int>(state.stage.GetTileWidth()) ||
         tile_y >= static_cast<int>(state.stage.GetTileHeight())) {
-        return state.settings.post_process.terrain_face_enclosed_stage_bounds
-                   ? state.stage.GetTileOrBorder(tile_x, tile_y)
-                   : Tile::Air;
+        return state.stage.GetTileOrBorder(tile_x, tile_y);
     }
     return state.stage.tiles[static_cast<std::size_t>(tile_y)][static_cast<std::size_t>(tile_x)];
-}
-
-SDL_FColor MakeOverlayColor(std::uint8_t r, std::uint8_t g, std::uint8_t b, float alpha) {
-    return SDL_FColor{
-        static_cast<float>(r) / 255.0F,
-        static_cast<float>(g) / 255.0F,
-        static_cast<float>(b) / 255.0F,
-        std::clamp(alpha, 0.0F, 1.0F),
-    };
 }
 
 SDL_FColor MakeMultiplyShadeColor(float shade_amount) {
@@ -181,87 +170,6 @@ void RenderTerrainTileLighting(
     }
 
     const ForegroundTileTopology topology = GetForegroundTileTopologyForRender(state, tile_x, tile_y);
-
-    if (settings.terrain_face_shading) {
-        const float band_ratio = std::clamp(settings.terrain_face_band_size, 0.05F, 0.50F);
-        const float gradient_softness =
-            std::clamp(settings.terrain_face_gradient_softness, 0.0F, 1.0F);
-        const float corner_rounding =
-            std::clamp(settings.terrain_face_corner_rounding, 0.0F, 1.0F);
-        const float band_w = std::max(1.0F, std::round(dst.w * band_ratio));
-        const float band_h = std::max(1.0F, std::round(dst.h * band_ratio));
-        const float side_top_trim = std::round(band_h * corner_rounding);
-
-        const float top_inner_alpha =
-            settings.terrain_face_top_highlight * (1.0F - gradient_softness);
-        const float side_inner_alpha =
-            settings.terrain_face_side_shade * (1.0F - gradient_softness);
-        const float bottom_inner_alpha =
-            settings.terrain_face_bottom_shade * (1.0F - gradient_softness);
-
-        if (topology.open_top) {
-            const SDL_FRect top_rect{dst.x, dst.y, dst.w, band_h};
-            DrawGradientQuad(
-                renderer,
-                top_rect,
-                SDL_BLENDMODE_ADD,
-                MakeOverlayColor(255, 255, 255, settings.terrain_face_top_highlight),
-                MakeOverlayColor(255, 255, 255, settings.terrain_face_top_highlight),
-                MakeOverlayColor(255, 255, 255, top_inner_alpha),
-                MakeOverlayColor(255, 255, 255, top_inner_alpha)
-            );
-        }
-        if (topology.open_bottom) {
-            const SDL_FRect bottom_rect{dst.x, dst.y + dst.h - band_h, dst.w, band_h};
-            DrawGradientQuad(
-                renderer,
-                bottom_rect,
-                SDL_BLENDMODE_MUL,
-                MakeMultiplyShadeColor(bottom_inner_alpha),
-                MakeMultiplyShadeColor(bottom_inner_alpha),
-                MakeMultiplyShadeColor(settings.terrain_face_bottom_shade),
-                MakeMultiplyShadeColor(settings.terrain_face_bottom_shade)
-            );
-        }
-        if (topology.open_left) {
-            const float top_trim = topology.open_top ? side_top_trim : 0.0F;
-            const float bottom_trim = topology.open_bottom ? side_top_trim : 0.0F;
-            const SDL_FRect left_rect{
-                dst.x,
-                dst.y + top_trim,
-                band_w,
-                std::max(0.0F, dst.h - top_trim - bottom_trim),
-            };
-            DrawGradientQuad(
-                renderer,
-                left_rect,
-                SDL_BLENDMODE_MUL,
-                MakeMultiplyShadeColor(settings.terrain_face_side_shade),
-                MakeMultiplyShadeColor(side_inner_alpha),
-                MakeMultiplyShadeColor(side_inner_alpha),
-                MakeMultiplyShadeColor(settings.terrain_face_side_shade)
-            );
-        }
-        if (topology.open_right) {
-            const float top_trim = topology.open_top ? side_top_trim : 0.0F;
-            const float bottom_trim = topology.open_bottom ? side_top_trim : 0.0F;
-            const SDL_FRect right_rect{
-                dst.x + dst.w - band_w,
-                dst.y + top_trim,
-                band_w,
-                std::max(0.0F, dst.h - top_trim - bottom_trim),
-            };
-            DrawGradientQuad(
-                renderer,
-                right_rect,
-                SDL_BLENDMODE_MUL,
-                MakeMultiplyShadeColor(side_inner_alpha),
-                MakeMultiplyShadeColor(settings.terrain_face_side_shade),
-                MakeMultiplyShadeColor(settings.terrain_face_side_shade),
-                MakeMultiplyShadeColor(side_inner_alpha)
-            );
-        }
-    }
 
     if (settings.terrain_seam_ao) {
         const float ao_size_ratio = std::clamp(settings.terrain_seam_ao_size, 0.05F, 0.50F);

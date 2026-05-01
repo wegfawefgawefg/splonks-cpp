@@ -32,7 +32,7 @@ struct GameplaySnapshot {
     UiSettingsMenuOption ui_settings_menu_selection = UiSettingsMenuOption::IconScale;
     PostFxSettingsMenuOption post_fx_settings_menu_selection = PostFxSettingsMenuOption::Effect;
     LightingSettingsMenuOption lighting_settings_menu_selection =
-        LightingSettingsMenuOption::TerrainFaceShading;
+        LightingSettingsMenuOption::TerrainLighting;
     std::optional<std::size_t> video_settings_target_window_size_index;
     std::optional<std::size_t> video_settings_target_resolution_index;
     std::optional<bool> video_settings_target_fullscreen;
