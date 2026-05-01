@@ -105,6 +105,8 @@ PostProcessSettings PostProcessSettings::New() {
     result.terrain_seam_ao = true;
     result.terrain_exposure_lighting = true;
     result.backwall_lighting = true;
+    result.player_lamp_strength = 1.0F;
+    result.embedded_treasure_brightness = 1.15F;
     result.terrain_seam_ao_amount = 0.18F;
     result.terrain_seam_ao_size = 0.20F;
     result.terrain_exposure_amount = 0.12F;
@@ -148,13 +150,13 @@ DebugUiSettings DebugUiSettings::New() {
     result.entity_annotations_visible = false;
     result.shake_brush_visible = false;
     result.audio_brush_visible = false;
-    result.fluid_brush_visible = true;
-    result.fluid_brush_enabled = true;
+    result.fluid_brush_visible = false;
+    result.fluid_brush_enabled = false;
     result.fluid_brush_simulation_enabled = true;
-    result.fluid_brush_replace_solid_tiles = true;
+    result.fluid_brush_replace_solid_tiles = false;
     result.fluid_brush_mode = 0;
-    result.fluid_brush_radius_tiles = 0;
-    result.fluid_brush_simulation_interval_frames = 1;
+    result.fluid_brush_radius_tiles = 1;
+    result.fluid_brush_simulation_interval_frames = 6;
     result.fluid_brush_transfer_per_step = 1.0F;
     result.fluid_brush_gravity_x = 0.0F;
     result.fluid_brush_gravity_y = 1.0F;
@@ -308,6 +310,12 @@ Settings LoadSettings() {
         } else if (key == "post_process.backwall_lighting") {
             settings.post_process.backwall_lighting =
                 ParseBool(value, settings.post_process.backwall_lighting);
+        } else if (key == "post_process.player_lamp_strength") {
+            settings.post_process.player_lamp_strength =
+                ParseFloat(value, settings.post_process.player_lamp_strength);
+        } else if (key == "post_process.embedded_treasure_brightness") {
+            settings.post_process.embedded_treasure_brightness =
+                ParseFloat(value, settings.post_process.embedded_treasure_brightness);
         } else if (key == "post_process.terrain_seam_ao_amount") {
             settings.post_process.terrain_seam_ao_amount =
                 ParseFloat(value, settings.post_process.terrain_seam_ao_amount);
@@ -671,6 +679,10 @@ bool SaveSettings(const Settings& settings) {
            << (settings.post_process.terrain_exposure_lighting ? 1 : 0) << "\n";
     output << "post_process.backwall_lighting="
            << (settings.post_process.backwall_lighting ? 1 : 0) << "\n";
+    output << "post_process.player_lamp_strength="
+           << settings.post_process.player_lamp_strength << "\n";
+    output << "post_process.embedded_treasure_brightness="
+           << settings.post_process.embedded_treasure_brightness << "\n";
     output << "post_process.terrain_seam_ao_amount="
            << settings.post_process.terrain_seam_ao_amount << "\n";
     output << "post_process.terrain_seam_ao_size="

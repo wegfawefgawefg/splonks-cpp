@@ -3,6 +3,7 @@
 #include "math_types.hpp"
 #include "vid.hpp"
 
+#include <cstdint>
 #include <vector>
 
 namespace splonks {
@@ -44,6 +45,7 @@ struct StageLighting {
     ForegroundBrightnessCache foreground_brightness;
     BackwallBrightnessCache backwall_base_brightness;
     BackwallBrightnessCache backwall_light_brightness;
+    std::uint32_t rebuilt_stage_frame = 0;
 
     static StageLighting New();
 };
@@ -63,5 +65,7 @@ ForegroundTileTopology GetForegroundTileTopologyForRender(
 );
 float GetForegroundBrightnessForRender(const State& state, int tile_x, int tile_y);
 float GetBackwallBrightnessForRender(const State& state, int tile_x, int tile_y);
+float SampleForegroundBrightnessForRender(const State& state, const Vec2& world_pos);
+float SampleBackwallBrightnessForRender(const State& state, const Vec2& world_pos);
 
 } // namespace splonks

@@ -30,6 +30,24 @@ struct VisibleWorldRect {
     Vec2 br;
 };
 
+enum class TileCapSide {
+    Top,
+    Bottom,
+    Left,
+    Right,
+};
+
+struct TileCapSourceData {
+    const FrameData* top = nullptr;
+    const FrameData* bottom = nullptr;
+    const FrameData* left = nullptr;
+};
+
+enum class ForegroundTileRenderPass {
+    PreEntity,
+    PostEntity,
+};
+
 int WrapCoordinate(int value, int size) {
     if (size <= 0) {
         return 0;
@@ -75,6 +93,34 @@ bool IsImmediateBorderRingTile(const Stage& stage, int tile_x, int tile_y) {
     return (immediate_x && (inside_y || immediate_y)) || (immediate_y && (inside_x || immediate_x));
 }
 
+bool IsSolidTileForCap(const Stage& stage, int tile_x, int tile_y) {
+    return GetTileArchetype(stage.GetTileOrBorder(tile_x, tile_y)).solid;
+}
+
+bool ShouldRenderTileCap(const Stage& stage, int tile_x, int tile_y, TileCapSide side) {
+    if (!IsSolidTileForCap(stage, tile_x, tile_y)) {
+        return false;
+    }
+
+    IVec2 neighbor_delta = IVec2::New(0, 0);
+    switch (side) {
+    case TileCapSide::Top:
+        neighbor_delta = IVec2::New(0, -1);
+        break;
+    case TileCapSide::Bottom:
+        neighbor_delta = IVec2::New(0, 1);
+        break;
+    case TileCapSide::Left:
+        neighbor_delta = IVec2::New(-1, 0);
+        break;
+    case TileCapSide::Right:
+        neighbor_delta = IVec2::New(1, 0);
+        break;
+    }
+
+    return !IsSolidTileForCap(stage, tile_x + neighbor_delta.x, tile_y + neighbor_delta.y);
+}
+
 float GetBorderTileShake(const Stage& stage, int tile_x, int tile_y) {
     const int width = static_cast<int>(stage.GetTileWidth());
     const int height = static_cast<int>(stage.GetTileHeight());
@@ -101,6 +147,16 @@ float GetBorderTileShake(const Stage& stage, int tile_x, int tile_y) {
     return stage.GetForegroundTileShake(
         static_cast<unsigned int>(resolved_x),
         static_cast<unsigned int>(resolved_y)
+    );
+}
+
+float GetTileCapShake(const Stage& stage, int tile_x, int tile_y) {
+    if (!stage.IsTileCoordInside(tile_x, tile_y)) {
+        return GetBorderTileShake(stage, tile_x, tile_y);
+    }
+    return stage.GetForegroundTileShake(
+        static_cast<unsigned int>(tile_x),
+        static_cast<unsigned int>(tile_y)
     );
 }
 
@@ -524,6 +580,25 @@ bool ShouldRenderBackgroundStamp(const State& state, const BackgroundStamp& stam
     return true;
 }
 
+bool ShouldRenderForegroundTileInPass(Tile tile, ForegroundTileRenderPass pass) {
+    const TileArchetype& archetype = GetTileArchetype(tile);
+    const bool pre_entity_tile = archetype.climbable && !archetype.solid;
+    switch (pass) {
+    case ForegroundTileRenderPass::PreEntity:
+        return pre_entity_tile;
+    case ForegroundTileRenderPass::PostEntity:
+        return !pre_entity_tile;
+    }
+    return true;
+}
+
+float GetEntityLightingBrightness(State& state, const Entity& entity, Graphics& graphics) {
+    EnsureStageLighting(state);
+    const Vec2 visual_center =
+        entities::common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter());
+    return SampleForegroundBrightnessForRender(state, visual_center);
+}
+
 bool ShouldRevealEmbeddedTreasure(const State& state) {
     for (const Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
@@ -559,6 +634,105 @@ const FrameData* GetFirstFrameForAnimation(
         return nullptr;
     }
     return &graphics.frame_data_db.frames[animation->frame_indices[0]];
+}
+
+TileCapSourceData GetTileCapSourceData(const Graphics& graphics) {
+    return TileCapSourceData{
+        .top = GetFirstFrameForAnimation(graphics, HashFrameDataIdConstexpr("dirt_cap_top")),
+        .bottom = GetFirstFrameForAnimation(graphics, HashFrameDataIdConstexpr("dirt_cap_bottom")),
+        .left = GetFirstFrameForAnimation(graphics, HashFrameDataIdConstexpr("dirt_cap_left")),
+    };
+}
+
+const FrameData* GetTileCapFrameData(const TileCapSourceData& source_data, TileCapSide side) {
+    switch (side) {
+    case TileCapSide::Top:
+        return source_data.top;
+    case TileCapSide::Bottom:
+        return source_data.bottom;
+    case TileCapSide::Left:
+    case TileCapSide::Right:
+        return source_data.left;
+    }
+    return nullptr;
+}
+
+Vec2 GetTileCapWorldPos(const FrameData& frame_data, int tile_x, int tile_y, TileCapSide side) {
+    Vec2 pos = Vec2::New(
+        static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+        static_cast<float>(tile_y * static_cast<int>(kTileSize))
+    );
+
+    switch (side) {
+    case TileCapSide::Top:
+        pos.y -= static_cast<float>(frame_data.sample_rect.h);
+        return pos;
+    case TileCapSide::Left:
+        pos.x -= static_cast<float>(frame_data.sample_rect.w);
+        return pos;
+    case TileCapSide::Bottom:
+        pos.y += static_cast<float>(kTileSize);
+        return pos;
+    case TileCapSide::Right:
+        pos.x += static_cast<float>(kTileSize);
+        return pos;
+    }
+    return pos;
+}
+
+void RenderTileCap(
+    SDL_Renderer* renderer,
+    State& state,
+    Graphics& graphics,
+    const TileCapSourceData& source_data,
+    int tile_x,
+    int tile_y,
+    TileCapSide side,
+    const Vec2& render_offset
+) {
+    if (!ShouldRenderTileCap(state.stage, tile_x, tile_y, side)) {
+        return;
+    }
+
+    const FrameData* const frame_data = GetTileCapFrameData(source_data, side);
+    if (frame_data == nullptr) {
+        return;
+    }
+    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
+    if (texture == nullptr) {
+        return;
+    }
+
+    const SDL_FRect src{
+        static_cast<float>(frame_data->sample_rect.x),
+        static_cast<float>(frame_data->sample_rect.y),
+        static_cast<float>(frame_data->sample_rect.w),
+        static_cast<float>(frame_data->sample_rect.h),
+    };
+    const Vec2 cap_size = Vec2::New(
+        static_cast<float>(frame_data->sample_rect.w),
+        static_cast<float>(frame_data->sample_rect.h)
+    );
+    const Vec2 shake_offset = GetShakeOffset(GetTileCapShake(state.stage, tile_x, tile_y));
+    const SDL_FRect dst = WorldRectToScreen(
+        graphics,
+        GetTileCapWorldPos(*frame_data, tile_x, tile_y, side) + render_offset + shake_offset,
+        cap_size
+    );
+
+    const float brightness = GetForegroundBrightnessForRender(state, tile_x, tile_y);
+    SDL_SetTextureColorModFloat(texture, brightness, brightness, brightness);
+    RenderWorldTextureRotated(
+        renderer,
+        graphics,
+        texture,
+        &src,
+        dst,
+        0.0,
+        nullptr,
+        side == TileCapSide::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE
+    );
+    SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
 }
 
 Tile GetBackwallFillTileForTileCoord(const Stage& stage, int tile_x, int tile_y) {
@@ -635,11 +809,26 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                 ResetTerrainTileBrightness(backwall_texture);
             }
         }
+    }
+}
 
+void RenderStageForegroundTilePass(
+    SDL_Renderer* renderer,
+    State& state,
+    Graphics& graphics,
+    ForegroundTileRenderPass pass
+) {
+    EnsureStageLighting(state);
+    state.stage.SyncTileShakeGrid();
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    for (const Vec2& render_offset : render_offsets) {
         for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const Tile tile = state.stage.tiles[y][x];
                 if (tile == Tile::Air) {
+                    continue;
+                }
+                if (!ShouldRenderForegroundTileInPass(tile, pass)) {
                     continue;
                 }
 
@@ -711,6 +900,14 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
             }
         }
     }
+}
+
+void RenderStagePreEntityForegroundTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    RenderStageForegroundTilePass(renderer, state, graphics, ForegroundTileRenderPass::PreEntity);
+}
+
+void RenderStageForegroundTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    RenderStageForegroundTilePass(renderer, state, graphics, ForegroundTileRenderPass::PostEntity);
 }
 
 void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -1054,7 +1251,93 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     }
 }
 
-void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+void RenderStageTileCaps(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    EnsureStageLighting(state);
+    state.stage.SyncTileShakeGrid();
+
+    const TileCapSourceData cap_source_data = GetTileCapSourceData(graphics);
+    if (cap_source_data.top == nullptr &&
+        cap_source_data.bottom == nullptr &&
+        cap_source_data.left == nullptr) {
+        return;
+    }
+
+    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
+    constexpr std::array<TileCapSide, 4> kCapSides{
+        TileCapSide::Top,
+        TileCapSide::Bottom,
+        TileCapSide::Left,
+        TileCapSide::Right,
+    };
+
+    for (const Vec2& render_offset : render_offsets) {
+        for (std::size_t y = 0; y < state.stage.tiles.size(); ++y) {
+            for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
+                const int tile_x = static_cast<int>(x);
+                const int tile_y = static_cast<int>(y);
+                for (const TileCapSide side : kCapSides) {
+                    RenderTileCap(
+                        renderer,
+                        state,
+                        graphics,
+                        cap_source_data,
+                        tile_x,
+                        tile_y,
+                        side,
+                        render_offset
+                    );
+                }
+            }
+        }
+    }
+
+    if (state.stage.WrapsX() && state.stage.WrapsY()) {
+        return;
+    }
+
+    const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
+    const int visible_tl_tile_x =
+        static_cast<int>(std::floor(visible.tl.x / static_cast<float>(kTileSize))) - 1;
+    const int visible_tl_tile_y =
+        static_cast<int>(std::floor(visible.tl.y / static_cast<float>(kTileSize))) - 1;
+    const int visible_br_tile_x =
+        static_cast<int>(std::ceil(visible.br.x / static_cast<float>(kTileSize))) + 1;
+    const int visible_br_tile_y =
+        static_cast<int>(std::ceil(visible.br.y / static_cast<float>(kTileSize))) + 1;
+    const int stage_tile_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_tile_height = static_cast<int>(state.stage.GetTileHeight());
+
+    for (int tile_y = visible_tl_tile_y; tile_y <= visible_br_tile_y; ++tile_y) {
+        for (int tile_x = visible_tl_tile_x; tile_x <= visible_br_tile_x; ++tile_x) {
+            const bool inside_stage =
+                tile_x >= 0 && tile_y >= 0 &&
+                tile_x < stage_tile_width && tile_y < stage_tile_height;
+            if (inside_stage || !IsImmediateBorderRingTile(state.stage, tile_x, tile_y)) {
+                continue;
+            }
+
+            for (const TileCapSide side : kCapSides) {
+                RenderTileCap(
+                    renderer,
+                    state,
+                    graphics,
+                    cap_source_data,
+                    tile_x,
+                    tile_y,
+                    side,
+                    Vec2::New(0.0F, 0.0F)
+                );
+            }
+        }
+    }
+}
+
+void RenderStageTileWrapperLayer(
+    SDL_Renderer* renderer,
+    State& state,
+    Graphics& graphics,
+    bool render_foreground
+) {
     EnsureStageLighting(state);
 
     const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
@@ -1100,6 +1383,9 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                     tile_y * static_cast<int>(kTileSize)
                 );
                 if (border_tile == Tile::Air) {
+                    if (render_foreground) {
+                        continue;
+                    }
                     const Tile air_tile = GetBackwallFillTileForTileCoord(state.stage, tile_x, tile_y);
                     const TileSourceData* const air_source_data =
                         GetTileSourceData(graphics, air_tile, tile_pos);
@@ -1126,6 +1412,9 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
                     ApplyBackwallTileBrightness(air_texture, state, graphics, tile_x, tile_y);
                     RenderWorldTexture(renderer, graphics, air_texture, &air_src, dst);
                     ResetTerrainTileBrightness(air_texture);
+                    continue;
+                }
+                if (!render_foreground) {
                     continue;
                 }
                 const TileSourceData* const tile_source_data =
@@ -1190,6 +1479,14 @@ void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& grap
             }
         }
     }
+}
+
+void RenderStageTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    RenderStageTileWrapperLayer(renderer, state, graphics, false);
+}
+
+void RenderStageForegroundTileWrapper(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    RenderStageTileWrapperLayer(renderer, state, graphics, true);
 }
 
 void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -1297,13 +1594,17 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 static_cast<float>(frame_data->sample_rect.w),
                 static_cast<float>(frame_data->sample_rect.h),
             };
-            ApplyTerrainTileBrightness(
-                sprite_texture,
-                state,
-                graphics,
-                static_cast<int>(x),
-                static_cast<int>(y)
+            const Vec2 overlay_center = tile_world_pos + Vec2::New(
+                static_cast<float>(kTileSize) * 0.5F,
+                static_cast<float>(kTileSize) * 0.5F
             );
+            const float brightness = std::max(
+                SampleForegroundBrightnessForRender(state, overlay_center),
+                embedded_treasure.IsVisible()
+                    ? state.settings.post_process.embedded_treasure_brightness
+                    : 0.0F
+            );
+            SDL_SetTextureColorModFloat(sprite_texture, brightness, brightness, brightness);
             SDL_SetTextureAlphaMod(sprite_texture, 224);
             for (const Vec2& render_offset : render_offsets) {
                 const SDL_FRect dst = WorldRectToScreen(
@@ -1317,7 +1618,7 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 RenderWorldTexture(renderer, graphics, sprite_texture, &src, dst);
             }
             SDL_SetTextureAlphaMod(sprite_texture, 255);
-            ResetTerrainTileBrightness(sprite_texture);
+            SDL_SetTextureColorModFloat(sprite_texture, 1.0F, 1.0F, 1.0F);
         }
     }
 }
@@ -1522,7 +1823,7 @@ void RenderParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphic
 
 } // namespace
 
-void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
+void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     std::vector<std::size_t> draw_queue;
     std::vector<std::size_t> next_draw_queue;
@@ -1575,7 +1876,14 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
             const SDL_FlipMode flip =
                 entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             const Uint8 entity_alpha = static_cast<Uint8>(std::clamp(entity.alpha, 0.0F, 1.0F) * 255.0F);
+            const float entity_brightness = GetEntityLightingBrightness(state, entity, graphics);
             SDL_SetTextureAlphaMod(sprite_texture, entity_alpha);
+            SDL_SetTextureColorModFloat(
+                sprite_texture,
+                entity_brightness,
+                entity_brightness,
+                entity_brightness
+            );
             if (entity.type_ == EntityType::BallAndChainBall && entity.entity_a.has_value()) {
                 if (const Entity* const attached = state.entity_manager.GetEntity(*entity.entity_a)) {
                     if (attached->active) {
@@ -1633,6 +1941,7 @@ void RenderEntities(SDL_Renderer* renderer, const State& state, Graphics& graphi
                 }
             }
             SDL_SetTextureAlphaMod(sprite_texture, 255);
+            SDL_SetTextureColorModFloat(sprite_texture, 1.0F, 1.0F, 1.0F);
         }
         RenderParticlesForLayer(renderer, state, graphics, layer);
     }

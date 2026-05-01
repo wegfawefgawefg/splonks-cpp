@@ -105,12 +105,6 @@ void ApplyTerrainTileBrightness(
         return;
     }
 
-    const Tile tile = GetTileForLighting(state, tile_x, tile_y);
-    if (!IsForegroundSolidTile(tile)) {
-        SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
-        return;
-    }
-
     const float brightness = GetForegroundBrightnessForRender(state, tile_x, tile_y);
     SDL_SetTextureColorModFloat(
         texture,

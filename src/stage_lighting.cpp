@@ -6,15 +6,23 @@
 
 #include <algorithm>
 #include <cmath>
-#include <deque>
+#include <limits>
 #include <vector>
 
 namespace splonks {
 
 namespace {
 
-constexpr int kTileChangeUpdateRadius = 2;
-constexpr float kStageLightBrightnessBoost = 1.0F;
+constexpr float kLiveAirAmbient = 0.10F;
+constexpr float kLiveSolidAmbient = 0.06F;
+constexpr float kLiveCoveredBackwallAmbient = 0.04F;
+constexpr float kLiveStageLightSource = 1.55F;
+constexpr float kLivePlayerLightSource = 1.45F;
+constexpr int kLivePlayerLightRadius = 13;
+constexpr float kLiveAirDecay = 0.075F;
+constexpr float kLiveSolidDecay = 0.18F;
+constexpr float kLiveFluidDecay = 0.11F;
+constexpr int kLiveMinimumPropagationPasses = 18;
 
 float ApplySignalRemap(float value, bool enabled, float input_min, float input_max, float gamma) {
     const float clamped_value = std::clamp(value, 0.0F, 1.0F);
@@ -59,496 +67,6 @@ Tile GetTileForLighting(const State& state, int tile_x, int tile_y) {
     }
 
     return state.stage.tiles[static_cast<std::size_t>(tile_y)][static_cast<std::size_t>(tile_x)];
-}
-
-bool IsBackwallLightingTile(const State& state, int tile_x, int tile_y) {
-    const Tile tile = GetTileForLighting(state, tile_x, tile_y);
-    return !IsForegroundSolidTile(tile);
-}
-
-float GetRawForegroundOpenness(const State& state, int tile_x, int tile_y) {
-    const Tile center_tile = GetTileForLighting(state, tile_x, tile_y);
-    if (!IsForegroundSolidTile(center_tile)) {
-        return 0.5F;
-    }
-
-    const float diagonal_weight = std::clamp(
-        state.settings.post_process.terrain_exposure_diagonal_weight,
-        0.0F,
-        1.0F
-    );
-
-    float openness = 0.0F;
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x, tile_y - 1))) {
-        openness += 1.0F;
-    }
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x, tile_y + 1))) {
-        openness += 1.0F;
-    }
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x - 1, tile_y))) {
-        openness += 1.0F;
-    }
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x + 1, tile_y))) {
-        openness += 1.0F;
-    }
-
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x - 1, tile_y - 1))) {
-        openness += diagonal_weight;
-    }
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x + 1, tile_y - 1))) {
-        openness += diagonal_weight;
-    }
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x - 1, tile_y + 1))) {
-        openness += diagonal_weight;
-    }
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x + 1, tile_y + 1))) {
-        openness += diagonal_weight;
-    }
-
-    const float max_openness = 4.0F + (4.0F * diagonal_weight);
-    return std::clamp(openness / max_openness, 0.0F, 1.0F);
-}
-
-float GetSmoothedForegroundOpenness(const State& state, int tile_x, int tile_y) {
-    const float raw_openness = GetRawForegroundOpenness(state, tile_x, tile_y);
-    const float smoothing = std::clamp(state.settings.post_process.terrain_exposure_smoothing, 0.0F, 1.0F);
-    if (smoothing <= 0.0F) {
-        return raw_openness;
-    }
-
-    float openness_sum = 0.0F;
-    int samples = 0;
-    for (int sample_y = tile_y - 1; sample_y <= tile_y + 1; ++sample_y) {
-        for (int sample_x = tile_x - 1; sample_x <= tile_x + 1; ++sample_x) {
-            if (!IsForegroundSolidTile(GetTileForLighting(state, sample_x, sample_y))) {
-                continue;
-            }
-            openness_sum += GetRawForegroundOpenness(state, sample_x, sample_y);
-            samples += 1;
-        }
-    }
-
-    if (samples == 0) {
-        return raw_openness;
-    }
-
-    const float neighborhood_average = openness_sum / static_cast<float>(samples);
-    return std::lerp(raw_openness, neighborhood_average, smoothing);
-}
-
-float GetRawBackwallOpenness(const State& state, int tile_x, int tile_y) {
-    if (!IsBackwallLightingTile(state, tile_x, tile_y)) {
-        return 0.5F;
-    }
-
-    const float diagonal_weight = std::clamp(
-        state.settings.post_process.terrain_exposure_diagonal_weight,
-        0.0F,
-        1.0F
-    );
-
-    float openness = 0.0F;
-    if (IsBackwallLightingTile(state, tile_x, tile_y - 1)) {
-        openness += 1.0F;
-    }
-    if (IsBackwallLightingTile(state, tile_x, tile_y + 1)) {
-        openness += 1.0F;
-    }
-    if (IsBackwallLightingTile(state, tile_x - 1, tile_y)) {
-        openness += 1.0F;
-    }
-    if (IsBackwallLightingTile(state, tile_x + 1, tile_y)) {
-        openness += 1.0F;
-    }
-
-    if (IsBackwallLightingTile(state, tile_x - 1, tile_y - 1)) {
-        openness += diagonal_weight;
-    }
-    if (IsBackwallLightingTile(state, tile_x + 1, tile_y - 1)) {
-        openness += diagonal_weight;
-    }
-    if (IsBackwallLightingTile(state, tile_x - 1, tile_y + 1)) {
-        openness += diagonal_weight;
-    }
-    if (IsBackwallLightingTile(state, tile_x + 1, tile_y + 1)) {
-        openness += diagonal_weight;
-    }
-
-    const float max_openness = 4.0F + (4.0F * diagonal_weight);
-    return std::clamp(openness / max_openness, 0.0F, 1.0F);
-}
-
-float GetSmoothedBackwallOpenness(const State& state, int tile_x, int tile_y) {
-    const float raw_openness = GetRawBackwallOpenness(state, tile_x, tile_y);
-    const float smoothing = std::clamp(state.settings.post_process.backwall_smoothing, 0.0F, 1.0F);
-    if (smoothing <= 0.0F) {
-        return raw_openness;
-    }
-
-    float openness_sum = 0.0F;
-    int samples = 0;
-    for (int sample_y = tile_y - 1; sample_y <= tile_y + 1; ++sample_y) {
-        for (int sample_x = tile_x - 1; sample_x <= tile_x + 1; ++sample_x) {
-            if (!IsBackwallLightingTile(state, sample_x, sample_y)) {
-                continue;
-            }
-            openness_sum += GetRawBackwallOpenness(state, sample_x, sample_y);
-            samples += 1;
-        }
-    }
-
-    if (samples == 0) {
-        return raw_openness;
-    }
-
-    const float neighborhood_average = openness_sum / static_cast<float>(samples);
-    return std::lerp(raw_openness, neighborhood_average, smoothing);
-}
-
-int GetWrappedTileDelta(int from, int to, int size) {
-    int delta = to - from;
-    if (size <= 0) {
-        return delta;
-    }
-    const int positive = delta + size;
-    const int negative = delta - size;
-    if (std::abs(positive) < std::abs(delta)) {
-        delta = positive;
-    }
-    if (std::abs(negative) < std::abs(delta)) {
-        delta = negative;
-    }
-    return delta;
-}
-
-bool IsTileWithinStageLightRadius(const State& state, const StageLight& light, int tile_x, int tile_y) {
-    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
-    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
-    const int dx = state.stage.WrapsX()
-                       ? GetWrappedTileDelta(tile_x, light.tile_pos.x, stage_width)
-                       : light.tile_pos.x - tile_x;
-    const int dy = state.stage.WrapsY()
-                       ? GetWrappedTileDelta(tile_y, light.tile_pos.y, stage_height)
-                       : light.tile_pos.y - tile_y;
-    const float distance = std::sqrt(static_cast<float>(dx * dx + dy * dy));
-    return distance <= static_cast<float>(light.radius);
-}
-
-float GetStageLightFalloff(const State& state, const StageLight& light, int tile_x, int tile_y) {
-    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
-    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
-    const int dx = state.stage.WrapsX()
-                       ? GetWrappedTileDelta(tile_x, light.tile_pos.x, stage_width)
-                       : light.tile_pos.x - tile_x;
-    const int dy = state.stage.WrapsY()
-                       ? GetWrappedTileDelta(tile_y, light.tile_pos.y, stage_height)
-                       : light.tile_pos.y - tile_y;
-    const float distance = std::sqrt(static_cast<float>(dx * dx + dy * dy));
-    if (distance > static_cast<float>(light.radius)) {
-        return 0.0F;
-    }
-    return 1.0F - (distance / static_cast<float>(light.radius));
-}
-
-void ApplyStageLightContribution(
-    State& state,
-    const StageLight& light,
-    const std::vector<std::vector<bool>>* allowed_tiles = nullptr
-) {
-    if (light.radius <= 0) {
-        return;
-    }
-
-    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
-    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
-    if (stage_width <= 0 || stage_height <= 0) {
-        return;
-    }
-
-    std::vector<std::vector<bool>> visited(
-        static_cast<std::size_t>(stage_height),
-        std::vector<bool>(static_cast<std::size_t>(stage_width), false)
-    );
-    std::deque<IVec2> open;
-    open.push_back(state.stage.WrapTileCoord(light.tile_pos));
-
-    while (!open.empty()) {
-        const IVec2 current = open.front();
-        open.pop_front();
-
-        if (!state.stage.IsTileCoordInside(current.x, current.y)) {
-            continue;
-        }
-
-        if (visited[static_cast<std::size_t>(current.y)][static_cast<std::size_t>(current.x)]) {
-            continue;
-        }
-        visited[static_cast<std::size_t>(current.y)][static_cast<std::size_t>(current.x)] = true;
-
-        if (!IsTileWithinStageLightRadius(state, light, current.x, current.y)) {
-            continue;
-        }
-        if (!IsBackwallLightingTile(state, current.x, current.y)) {
-            continue;
-        }
-
-        if (allowed_tiles == nullptr ||
-            (*allowed_tiles)[static_cast<std::size_t>(current.y)][static_cast<std::size_t>(current.x)]) {
-            const float falloff = GetStageLightFalloff(state, light, current.x, current.y);
-            float& brightness =
-                state.stage_lighting.backwall_light_brightness.tiles[static_cast<std::size_t>(current.y)]
-                                                              [static_cast<std::size_t>(current.x)];
-            brightness = std::clamp(
-                brightness + (kStageLightBrightnessBoost * falloff),
-                0.0F,
-                2.0F
-            );
-        }
-
-        const IVec2 neighbors[] = {
-            IVec2::New(current.x - 1, current.y),
-            IVec2::New(current.x + 1, current.y),
-            IVec2::New(current.x, current.y - 1),
-            IVec2::New(current.x, current.y + 1),
-        };
-        for (const IVec2& neighbor_unwrapped : neighbors) {
-            const IVec2 neighbor = state.stage.WrapTileCoord(neighbor_unwrapped);
-            if (!state.stage.IsTileCoordInside(neighbor.x, neighbor.y)) {
-                continue;
-            }
-            if (!IsTileWithinStageLightRadius(state, light, neighbor.x, neighbor.y)) {
-                continue;
-            }
-            open.push_back(neighbor);
-        }
-    }
-}
-
-void ApplyStageLightsToBackwallBrightness(State& state) {
-    for (const StageLight& light : state.stage.lights) {
-        ApplyStageLightContribution(state, light);
-    }
-}
-
-bool IsTileAffectedByStageLight(const State& state, const StageLight& light, const IVec2& tile_pos) {
-    return IsTileWithinStageLightRadius(state, light, tile_pos.x, tile_pos.y);
-}
-
-std::vector<const StageLight*> GetStageLightsAffectedByTileChange(const State& state, const IVec2& tile_pos) {
-    std::vector<const StageLight*> affected_lights;
-    affected_lights.reserve(state.stage.lights.size());
-    for (const StageLight& light : state.stage.lights) {
-        if (light.radius <= 0) {
-            continue;
-        }
-        if (IsTileAffectedByStageLight(state, light, tile_pos)) {
-            affected_lights.push_back(&light);
-        }
-    }
-    return affected_lights;
-}
-
-std::vector<const StageLight*> GetStageLightsAffectedByTileChanges(
-    const State& state,
-    const std::vector<IVec2>& tile_positions
-) {
-    std::vector<const StageLight*> affected_lights;
-    std::vector<bool> seen_lights(state.stage.lights.size(), false);
-
-    for (const IVec2& tile_pos : tile_positions) {
-        for (std::size_t light_idx = 0; light_idx < state.stage.lights.size(); ++light_idx) {
-            if (seen_lights[light_idx]) {
-                continue;
-            }
-
-            const StageLight& light = state.stage.lights[light_idx];
-            if (light.radius <= 0) {
-                continue;
-            }
-            if (!IsTileAffectedByStageLight(state, light, tile_pos)) {
-                continue;
-            }
-
-            seen_lights[light_idx] = true;
-            affected_lights.push_back(&light);
-        }
-    }
-
-    return affected_lights;
-}
-
-void MarkTilesAffectedByStageLight(
-    const State& state,
-    const StageLight& light,
-    std::vector<std::vector<bool>>& affected_tiles
-) {
-    const int radius = light.radius;
-    for (int dy = -radius; dy <= radius; ++dy) {
-        for (int dx = -radius; dx <= radius; ++dx) {
-            const IVec2 tile_pos = state.stage.WrapTileCoord(
-                IVec2::New(light.tile_pos.x + dx, light.tile_pos.y + dy)
-            );
-            if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
-                continue;
-            }
-            if (!IsTileAffectedByStageLight(state, light, tile_pos)) {
-                continue;
-            }
-            affected_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = true;
-        }
-    }
-}
-
-bool DoesStageLightAffectAnyMarkedTile(
-    const State& state,
-    const StageLight& light,
-    const std::vector<std::vector<bool>>& affected_tiles
-) {
-    const int radius = light.radius;
-    for (int dy = -radius; dy <= radius; ++dy) {
-        for (int dx = -radius; dx <= radius; ++dx) {
-            const IVec2 tile_pos = state.stage.WrapTileCoord(
-                IVec2::New(light.tile_pos.x + dx, light.tile_pos.y + dy)
-            );
-            if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
-                continue;
-            }
-            if (!affected_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)]) {
-                continue;
-            }
-            if (!IsTileAffectedByStageLight(state, light, tile_pos)) {
-                continue;
-            }
-            return true;
-        }
-    }
-    return false;
-}
-
-void RebuildAffectedStageLightRegions(State& state, const std::vector<IVec2>& tile_positions) {
-    const std::vector<const StageLight*> first_pass_lights =
-        GetStageLightsAffectedByTileChanges(state, tile_positions);
-    if (first_pass_lights.empty()) {
-        return;
-    }
-
-    const std::size_t tile_height = state.stage_lighting.backwall_light_brightness.tiles.size();
-    const std::size_t tile_width =
-        tile_height == 0 ? 0 : state.stage_lighting.backwall_light_brightness.tiles.front().size();
-    std::vector<std::vector<bool>> affected_tiles(
-        tile_height,
-        std::vector<bool>(tile_width, false)
-    );
-
-    for (const StageLight* light : first_pass_lights) {
-        MarkTilesAffectedByStageLight(state, *light, affected_tiles);
-    }
-
-    std::vector<const StageLight*> closed_lights;
-    closed_lights.reserve(state.stage.lights.size());
-    for (const StageLight& light : state.stage.lights) {
-        if (light.radius <= 0) {
-            continue;
-        }
-        if (!DoesStageLightAffectAnyMarkedTile(state, light, affected_tiles)) {
-            continue;
-        }
-        closed_lights.push_back(&light);
-    }
-
-    for (std::size_t y = 0; y < affected_tiles.size(); ++y) {
-        for (std::size_t x = 0; x < affected_tiles[y].size(); ++x) {
-            if (!affected_tiles[y][x]) {
-                continue;
-            }
-            state.stage_lighting.backwall_light_brightness.tiles[y][x] = 0.0F;
-        }
-    }
-
-    for (const StageLight* light : closed_lights) {
-        ApplyStageLightContribution(state, *light, &affected_tiles);
-    }
-}
-
-float ComputeForegroundBrightness(const State& state, int tile_x, int tile_y) {
-    if (!state.settings.post_process.terrain_exposure_lighting) {
-        return 1.0F;
-    }
-
-    if (!IsForegroundSolidTile(GetTileForLighting(state, tile_x, tile_y))) {
-        return 1.0F;
-    }
-
-    const float openness = GetSmoothedForegroundOpenness(state, tile_x, tile_y);
-    const float remapped_openness = ApplySignalRemap(
-        openness,
-        state.settings.post_process.terrain_exposure_remap_enabled,
-        state.settings.post_process.terrain_exposure_input_min,
-        state.settings.post_process.terrain_exposure_input_max,
-        state.settings.post_process.terrain_exposure_gamma
-    );
-    const float amount = std::clamp(state.settings.post_process.terrain_exposure_amount, 0.0F, 1.0F);
-    const float min_brightness = std::clamp(
-        state.settings.post_process.terrain_exposure_min_brightness,
-        0.0F,
-        2.0F
-    );
-    const float max_brightness = std::clamp(
-        state.settings.post_process.terrain_exposure_max_brightness,
-        0.0F,
-        2.0F
-    );
-    const float target_brightness = ApplyOutputLevels(
-        remapped_openness,
-        state.settings.post_process.terrain_exposure_output_levels_enabled,
-        min_brightness,
-        max_brightness
-    );
-    return std::clamp(std::lerp(1.0F, target_brightness, amount), 0.0F, 2.0F);
-}
-
-float ComputeBackwallBrightness(const State& state, int tile_x, int tile_y) {
-    if (!state.settings.post_process.terrain_lighting ||
-        !state.settings.post_process.backwall_lighting) {
-        return 1.0F;
-    }
-
-    // Covered backwall should stay dim so foreground shake reveals wall,
-    // not an incorrectly lit gap behind it.
-    if (IsForegroundSolidTile(GetTileForLighting(state, tile_x, tile_y))) {
-        return 0.4F;
-    }
-
-    const float openness = GetSmoothedBackwallOpenness(state, tile_x, tile_y);
-    const float remapped_openness = ApplySignalRemap(
-        openness,
-        state.settings.post_process.backwall_remap_enabled,
-        state.settings.post_process.backwall_input_min,
-        state.settings.post_process.backwall_input_max,
-        state.settings.post_process.backwall_gamma
-    );
-    const float min_brightness = std::clamp(
-        state.settings.post_process.backwall_min_brightness,
-        0.0F,
-        2.0F
-    );
-    const float max_brightness = std::clamp(
-        state.settings.post_process.backwall_max_brightness,
-        0.0F,
-        2.0F
-    );
-    const float brightness_scale = std::clamp(
-        state.settings.post_process.backwall_brightness,
-        0.0F,
-        2.0F
-    );
-    const float base_brightness = ApplyOutputLevels(
-        remapped_openness,
-        state.settings.post_process.backwall_output_levels_enabled,
-        min_brightness,
-        max_brightness
-    );
-    return std::clamp(base_brightness * brightness_scale, 0.0F, 2.0F);
 }
 
 ForegroundTileTopology BuildForegroundTileTopology(const State& state, int tile_x, int tile_y) {
@@ -630,6 +148,280 @@ void EnsureStageLightingCacheShape(State& state) {
     state.stage_lighting.backwall_light_brightness.valid = false;
 }
 
+float GetLiveLightSeedForTile(const State& state, int tile_x, int tile_y) {
+    const Tile tile = GetTileForLighting(state, tile_x, tile_y);
+    return IsForegroundSolidTile(tile) ? kLiveSolidAmbient : kLiveAirAmbient;
+}
+
+float GetLiveLightDecayIntoTile(const State& state, int tile_x, int tile_y) {
+    if (StageTileExists(state, tile_x, tile_y)) {
+        const float fluid_amount = state.stage.GetFluidAmount(
+            static_cast<unsigned int>(tile_x),
+            static_cast<unsigned int>(tile_y)
+        );
+        if (fluid_amount > 0.001F) {
+            return kLiveFluidDecay;
+        }
+    }
+
+    return IsForegroundSolidTile(GetTileForLighting(state, tile_x, tile_y))
+               ? kLiveSolidDecay
+               : kLiveAirDecay;
+}
+
+void ApplyLiveLightSourceAtTile(
+    const State& state,
+    std::vector<std::vector<float>>& light_grid,
+    const IVec2& raw_center,
+    int radius,
+    float source
+) {
+    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
+    if (stage_width <= 0 || stage_height <= 0 || radius <= 0 || source <= 0.0F) {
+        return;
+    }
+
+    const IVec2 center = state.stage.WrapTileCoord(raw_center);
+    if (!state.stage.IsTileCoordInside(center.x, center.y)) {
+        return;
+    }
+
+    // Seed only the emitter cell. Spread and occlusion are handled by propagation,
+    // so sources do not paint light through nearby solid walls.
+    float& light_value =
+        light_grid[static_cast<std::size_t>(center.y)]
+                  [static_cast<std::size_t>(center.x)];
+    light_value = std::max(light_value, source);
+}
+
+void ApplyLiveLightSourceAtWorldPos(
+    const State& state,
+    std::vector<std::vector<float>>& light_grid,
+    const Vec2& world_pos,
+    float source
+) {
+    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
+    if (stage_width <= 0 || stage_height <= 0 || source <= 0.0F) {
+        return;
+    }
+
+    const float tile_x = (world_pos.x / static_cast<float>(kTileSize)) - 0.5F;
+    const float tile_y = (world_pos.y / static_cast<float>(kTileSize)) - 0.5F;
+    const int base_x = static_cast<int>(std::floor(tile_x));
+    const int base_y = static_cast<int>(std::floor(tile_y));
+
+    for (int offset_y = 0; offset_y <= 1; ++offset_y) {
+        for (int offset_x = 0; offset_x <= 1; ++offset_x) {
+            const IVec2 tile_pos = state.stage.WrapTileCoord(
+                IVec2::New(base_x + offset_x, base_y + offset_y)
+            );
+            if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+                continue;
+            }
+
+            const Vec2 tile_center = Vec2::New(
+                (static_cast<float>(base_x + offset_x) + 0.5F) * static_cast<float>(kTileSize),
+                (static_cast<float>(base_y + offset_y) + 0.5F) * static_cast<float>(kTileSize)
+            );
+            const float distance_tiles =
+                Length(tile_center - world_pos) / static_cast<float>(kTileSize);
+            const float tile_center_source = std::max(
+                0.0F,
+                source - (distance_tiles * kLiveAirDecay)
+            );
+            float& light_value =
+                light_grid[static_cast<std::size_t>(tile_pos.y)]
+                          [static_cast<std::size_t>(tile_pos.x)];
+            light_value = std::max(light_value, tile_center_source);
+        }
+    }
+}
+
+void ApplyLiveStageLightSources(State& state, std::vector<std::vector<float>>& light_grid) {
+    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
+    if (stage_width <= 0 || stage_height <= 0) {
+        return;
+    }
+
+    for (const StageLight& light : state.stage.lights) {
+        if (light.radius <= 0) {
+            continue;
+        }
+        const IVec2 center = state.stage.WrapTileCoord(light.tile_pos);
+        if (!state.stage.IsTileCoordInside(center.x, center.y)) {
+            continue;
+        }
+
+        const float source = kLiveStageLightSource + (static_cast<float>(light.radius) * 0.03F);
+        ApplyLiveLightSourceAtTile(state, light_grid, center, light.radius, source);
+    }
+}
+
+void ApplyLiveControlledEntityLightSource(State& state, std::vector<std::vector<float>>& light_grid) {
+    const Entity* entity = nullptr;
+    if (state.controlled_entity_vid.has_value()) {
+        entity = state.entity_manager.GetEntity(*state.controlled_entity_vid);
+    }
+    if ((entity == nullptr || !entity->active || entity->condition == EntityCondition::Dead) &&
+        state.player_vid.has_value()) {
+        entity = state.entity_manager.GetEntity(*state.player_vid);
+    }
+    if (entity == nullptr || !entity->active || entity->condition == EntityCondition::Dead) {
+        return;
+    }
+
+    const Vec2 world_pos = entity->GetCenter();
+    ApplyLiveLightSourceAtWorldPos(
+        state,
+        light_grid,
+        world_pos,
+        kLivePlayerLightSource * std::max(state.settings.post_process.player_lamp_strength, 0.0F)
+    );
+}
+
+void PropagateLiveStageLighting(State& state, std::vector<std::vector<float>>& light_grid) {
+    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
+    if (stage_width <= 0 || stage_height <= 0) {
+        return;
+    }
+
+    int max_light_radius = 0;
+    for (const StageLight& light : state.stage.lights) {
+        max_light_radius = std::max(max_light_radius, light.radius);
+    }
+    if (state.controlled_entity_vid.has_value() || state.player_vid.has_value()) {
+        max_light_radius = std::max(max_light_radius, kLivePlayerLightRadius);
+    }
+    const int pass_cap = std::max(kLiveMinimumPropagationPasses, stage_width + stage_height);
+    const int passes = std::clamp(
+        std::max(kLiveMinimumPropagationPasses, max_light_radius + 4),
+        kLiveMinimumPropagationPasses,
+        pass_cap
+    );
+
+    std::vector<std::vector<float>> next_grid = light_grid;
+    constexpr IVec2 kNeighbors[] = {
+        IVec2{-1, 0},
+        IVec2{1, 0},
+        IVec2{0, -1},
+        IVec2{0, 1},
+    };
+
+    for (int pass = 0; pass < passes; ++pass) {
+        next_grid = light_grid;
+        for (int y = 0; y < stage_height; ++y) {
+            for (int x = 0; x < stage_width; ++x) {
+                const float source = light_grid[static_cast<std::size_t>(y)]
+                                               [static_cast<std::size_t>(x)];
+                if (source <= 0.001F) {
+                    continue;
+                }
+                if (IsForegroundSolidTile(GetTileForLighting(state, x, y))) {
+                    continue;
+                }
+
+                for (const IVec2& neighbor_delta : kNeighbors) {
+                    const IVec2 neighbor = state.stage.WrapTileCoord(
+                        IVec2::New(x + neighbor_delta.x, y + neighbor_delta.y)
+                    );
+                    if (!state.stage.IsTileCoordInside(neighbor.x, neighbor.y)) {
+                        continue;
+                    }
+
+                    const float candidate =
+                        source - GetLiveLightDecayIntoTile(state, neighbor.x, neighbor.y);
+                    if (candidate <= 0.0F) {
+                        continue;
+                    }
+                    float& target =
+                        next_grid[static_cast<std::size_t>(neighbor.y)]
+                                 [static_cast<std::size_t>(neighbor.x)];
+                    target = std::max(target, candidate);
+                }
+            }
+        }
+        light_grid.swap(next_grid);
+    }
+}
+
+std::vector<std::vector<float>> BuildLiveStageLightGrid(State& state) {
+    const std::size_t tile_height = state.stage.tiles.size();
+    const std::size_t tile_width =
+        tile_height == 0 ? 0 : state.stage.tiles.front().size();
+    std::vector<std::vector<float>> light_grid(
+        tile_height,
+        std::vector<float>(tile_width, 0.0F)
+    );
+
+    for (std::size_t y = 0; y < tile_height; ++y) {
+        for (std::size_t x = 0; x < tile_width; ++x) {
+            light_grid[y][x] = GetLiveLightSeedForTile(state, static_cast<int>(x), static_cast<int>(y));
+        }
+    }
+
+    ApplyLiveStageLightSources(state, light_grid);
+    ApplyLiveControlledEntityLightSource(state, light_grid);
+    PropagateLiveStageLighting(state, light_grid);
+    return light_grid;
+}
+
+float ApplyForegroundLightingSettings(const State& state, float light_value) {
+    if (!state.settings.post_process.terrain_lighting ||
+        !state.settings.post_process.terrain_exposure_lighting) {
+        return 1.0F;
+    }
+
+    const float remapped_light = ApplySignalRemap(
+        light_value,
+        state.settings.post_process.terrain_exposure_remap_enabled,
+        state.settings.post_process.terrain_exposure_input_min,
+        state.settings.post_process.terrain_exposure_input_max,
+        state.settings.post_process.terrain_exposure_gamma
+    );
+    const float leveled_light = ApplyOutputLevels(
+        remapped_light,
+        state.settings.post_process.terrain_exposure_output_levels_enabled,
+        state.settings.post_process.terrain_exposure_min_brightness,
+        state.settings.post_process.terrain_exposure_max_brightness
+    );
+    const float amount = std::clamp(state.settings.post_process.terrain_exposure_amount, 0.0F, 1.0F);
+    return std::clamp(std::lerp(1.0F, leveled_light, amount), 0.0F, 2.0F);
+}
+
+float ApplyBackwallLightingSettings(const State& state, float light_value, bool covered_by_solid) {
+    if (!state.settings.post_process.terrain_lighting ||
+        !state.settings.post_process.backwall_lighting) {
+        return 1.0F;
+    }
+
+    const float covered_light = covered_by_solid
+                                    ? std::min(light_value, kLiveCoveredBackwallAmbient)
+                                    : light_value;
+    const float remapped_light = ApplySignalRemap(
+        covered_light,
+        state.settings.post_process.backwall_remap_enabled,
+        state.settings.post_process.backwall_input_min,
+        state.settings.post_process.backwall_input_max,
+        state.settings.post_process.backwall_gamma
+    );
+    const float leveled_light = ApplyOutputLevels(
+        remapped_light,
+        state.settings.post_process.backwall_output_levels_enabled,
+        state.settings.post_process.backwall_min_brightness,
+        state.settings.post_process.backwall_max_brightness
+    );
+    const float brightness_scale = std::clamp(
+        state.settings.post_process.backwall_brightness,
+        0.0F,
+        2.0F
+    );
+    return std::clamp(leveled_light * brightness_scale, 0.0F, 2.0F);
+}
+
 } // namespace
 
 VID AddStageLight(State& state, const IVec2& tile_pos, int radius) {
@@ -672,10 +464,13 @@ void InvalidateStageLighting(State& state) {
     state.stage_lighting.foreground_brightness.valid = false;
     state.stage_lighting.backwall_base_brightness.valid = false;
     state.stage_lighting.backwall_light_brightness.valid = false;
+    state.stage_lighting.rebuilt_stage_frame = std::numeric_limits<std::uint32_t>::max();
 }
 
 void RebuildStageLighting(State& state) {
     EnsureStageLightingCacheShape(state);
+
+    const std::vector<std::vector<float>> live_light_grid = BuildLiveStageLightGrid(state);
 
     for (std::size_t y = 0; y < state.stage_lighting.foreground_topology.tiles.size(); ++y) {
         for (std::size_t x = 0; x < state.stage_lighting.foreground_topology.tiles[y].size(); ++x) {
@@ -684,26 +479,23 @@ void RebuildStageLighting(State& state) {
                 static_cast<int>(x),
                 static_cast<int>(y)
             );
-            state.stage_lighting.foreground_brightness.tiles[y][x] = ComputeForegroundBrightness(
+            const float live_light = live_light_grid[y][x];
+            state.stage_lighting.foreground_brightness.tiles[y][x] =
+                ApplyForegroundLightingSettings(state, live_light);
+            state.stage_lighting.backwall_base_brightness.tiles[y][x] = ApplyBackwallLightingSettings(
                 state,
-                static_cast<int>(x),
-                static_cast<int>(y)
-            );
-            state.stage_lighting.backwall_base_brightness.tiles[y][x] = ComputeBackwallBrightness(
-                state,
-                static_cast<int>(x),
-                static_cast<int>(y)
+                live_light,
+                IsForegroundSolidTile(GetTileForLighting(state, static_cast<int>(x), static_cast<int>(y)))
             );
             state.stage_lighting.backwall_light_brightness.tiles[y][x] = 0.0F;
         }
     }
 
-    ApplyStageLightsToBackwallBrightness(state);
-
     state.stage_lighting.foreground_topology.valid = true;
     state.stage_lighting.foreground_brightness.valid = true;
     state.stage_lighting.backwall_base_brightness.valid = true;
     state.stage_lighting.backwall_light_brightness.valid = true;
+    state.stage_lighting.rebuilt_stage_frame = state.stage_frame;
 }
 
 void EnsureStageLighting(State& state) {
@@ -711,7 +503,8 @@ void EnsureStageLighting(State& state) {
     if (!state.stage_lighting.foreground_topology.valid ||
         !state.stage_lighting.foreground_brightness.valid ||
         !state.stage_lighting.backwall_base_brightness.valid ||
-        !state.stage_lighting.backwall_light_brightness.valid) {
+        !state.stage_lighting.backwall_light_brightness.valid ||
+        state.stage_lighting.rebuilt_stage_frame != state.stage_frame) {
         RebuildStageLighting(state);
     }
 }
@@ -725,48 +518,7 @@ void UpdateStageLightingForTileChanges(State& state, const std::vector<IVec2>& t
     if (tile_positions.empty()) {
         return;
     }
-
-    EnsureStageLightingCacheShape(state);
-    if (!state.stage_lighting.foreground_topology.valid ||
-        !state.stage_lighting.foreground_brightness.valid ||
-        !state.stage_lighting.backwall_base_brightness.valid ||
-        !state.stage_lighting.backwall_light_brightness.valid) {
-        RebuildStageLighting(state);
-        return;
-    }
-
-    int min_x = static_cast<int>(state.stage.GetTileWidth()) - 1;
-    int min_y = static_cast<int>(state.stage.GetTileHeight()) - 1;
-    int max_x = 0;
-    int max_y = 0;
-    for (const IVec2& tile_pos : tile_positions) {
-        min_x = std::min(min_x, std::max(0, tile_pos.x - kTileChangeUpdateRadius));
-        min_y = std::min(min_y, std::max(0, tile_pos.y - kTileChangeUpdateRadius));
-        max_x = std::max(
-            max_x,
-            std::min(static_cast<int>(state.stage.GetTileWidth()) - 1, tile_pos.x + kTileChangeUpdateRadius)
-        );
-        max_y = std::max(
-            max_y,
-            std::min(static_cast<int>(state.stage.GetTileHeight()) - 1, tile_pos.y + kTileChangeUpdateRadius)
-        );
-    }
-
-    for (int y = min_y; y <= max_y; ++y) {
-        for (int x = min_x; x <= max_x; ++x) {
-            state.stage_lighting.foreground_topology.tiles[static_cast<std::size_t>(y)]
-                                                        [static_cast<std::size_t>(x)] =
-                BuildForegroundTileTopology(state, x, y);
-            state.stage_lighting.foreground_brightness.tiles[static_cast<std::size_t>(y)]
-                                                          [static_cast<std::size_t>(x)] =
-                ComputeForegroundBrightness(state, x, y);
-            state.stage_lighting.backwall_base_brightness.tiles[static_cast<std::size_t>(y)]
-                                                             [static_cast<std::size_t>(x)] =
-                ComputeBackwallBrightness(state, x, y);
-        }
-    }
-
-    RebuildAffectedStageLightRegions(state, tile_positions);
+    InvalidateStageLighting(state);
 }
 
 ForegroundTileTopology GetForegroundTileTopologyForRender(const State& state, int tile_x, int tile_y) {
@@ -794,9 +546,60 @@ float GetForegroundBrightnessForRender(const State& state, int tile_x, int tile_
                                                            [static_cast<std::size_t>(tile_x)];
     }
 
-    return ComputeForegroundBrightness(state, tile_x, tile_y);
+    return ApplyForegroundLightingSettings(state, GetLiveLightSeedForTile(state, tile_x, tile_y));
 }
 
+float SampleBrightnessForRender(
+    const State& state,
+    const Vec2& world_pos,
+    float (*sample_tile)(const State&, int, int)
+) {
+    const int stage_width = static_cast<int>(state.stage.GetTileWidth());
+    const int stage_height = static_cast<int>(state.stage.GetTileHeight());
+    if (stage_width <= 0 || stage_height <= 0) {
+        return 1.0F;
+    }
+
+    const float tile_x = (world_pos.x / static_cast<float>(kTileSize)) - 0.5F;
+    const float tile_y = (world_pos.y / static_cast<float>(kTileSize)) - 0.5F;
+    const int base_x = static_cast<int>(std::floor(tile_x));
+    const int base_y = static_cast<int>(std::floor(tile_y));
+    const float frac_x = tile_x - static_cast<float>(base_x);
+    const float frac_y = tile_y - static_cast<float>(base_y);
+
+    float weighted_brightness = 0.0F;
+    float total_weight = 0.0F;
+    for (int offset_y = 0; offset_y <= 1; ++offset_y) {
+        for (int offset_x = 0; offset_x <= 1; ++offset_x) {
+            const float weight_x = offset_x == 0 ? 1.0F - frac_x : frac_x;
+            const float weight_y = offset_y == 0 ? 1.0F - frac_y : frac_y;
+            const float weight = weight_x * weight_y;
+            if (weight <= 0.0F) {
+                continue;
+            }
+
+            const IVec2 tile_pos = state.stage.WrapTileCoord(
+                IVec2::New(base_x + offset_x, base_y + offset_y)
+            );
+            if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+                continue;
+            }
+
+            weighted_brightness += sample_tile(state, tile_pos.x, tile_pos.y) * weight;
+            total_weight += weight;
+        }
+    }
+
+    if (total_weight <= 0.0F) {
+        const IVec2 fallback_tile = state.stage.GetTileCoordAtWc(ToIVec2(world_pos));
+        return sample_tile(state, fallback_tile.x, fallback_tile.y);
+    }
+    return weighted_brightness / total_weight;
+}
+
+float SampleForegroundBrightnessForRender(const State& state, const Vec2& world_pos) {
+    return SampleBrightnessForRender(state, world_pos, GetForegroundBrightnessForRender);
+}
 
 float GetBackwallBrightnessForRender(const State& state, int tile_x, int tile_y) {
     if (tile_x >= 0 && tile_y >= 0 &&
@@ -816,7 +619,15 @@ float GetBackwallBrightnessForRender(const State& state, int tile_x, int tile_y)
         );
     }
 
-    return ComputeBackwallBrightness(state, tile_x, tile_y);
+    return ApplyBackwallLightingSettings(
+        state,
+        GetLiveLightSeedForTile(state, tile_x, tile_y),
+        IsForegroundSolidTile(GetTileForLighting(state, tile_x, tile_y))
+    );
+}
+
+float SampleBackwallBrightnessForRender(const State& state, const Vec2& world_pos) {
+    return SampleBrightnessForRender(state, world_pos, GetBackwallBrightnessForRender);
 }
 
 } // namespace splonks

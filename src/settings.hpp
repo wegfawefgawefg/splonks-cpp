@@ -71,6 +71,8 @@ struct PostProcessSettings {
     bool terrain_seam_ao = true;
     bool terrain_exposure_lighting = true;
     bool backwall_lighting = true;
+    float player_lamp_strength = 1.0F;
+    float embedded_treasure_brightness = 1.15F;
     float terrain_seam_ao_amount = 0.18F;
     float terrain_seam_ao_size = 0.20F;
     float terrain_exposure_amount = 0.12F;

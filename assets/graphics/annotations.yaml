@@ -9899,6 +9899,96 @@ sprites:
     emit_point:
       x: 2
       y: 1
+  - path: "cave.png"
+    aabb:
+      x: 78
+      y: 32
+      w: 2
+      h: 16
+    name: "dirt_cap_left"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 2
+      h: 16
+    cbox:
+      x: 0
+      y: 0
+      w: 2
+      h: 16
+    tile: true
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 80
+      y: 30
+      w: 16
+      h: 2
+    name: "dirt_cap_top"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 2
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 2
+    tile: true
+    emit_point:
+      x: 0
+      y: 0
+  - path: "cave.png"
+    aabb:
+      x: 80
+      y: 48
+      w: 16
+      h: 3
+    name: "dirt_cap_bottom"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 3
+    cbox:
+      x: 0
+      y: 0
+      w: 16
+      h: 3
+    tile: true
+    emit_point:
+      x: 0
+      y: 0
   - path: "ice.png"
     aabb:
       x: 0

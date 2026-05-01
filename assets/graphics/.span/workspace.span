@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "tiles/cave.png",
-  "selectedAnnotationId": "0031cb12-522c-4211-a246-9f050b221553",
+  "selectedAnnotationId": "66bee64e-e912-4c5b-9761-dd6e64143414",
   "sheets": [
     {
       "path": "images/title.png",
@@ -14460,6 +14460,135 @@
             "emit_point": {
               "x": 2,
               "y": 1
+            }
+          }
+        },
+        {
+          "id": "246e9867-9d4a-4cef-85dc-52f38597b89f",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 78,
+            "y": 32,
+            "w": 2,
+            "h": 16
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "dirt_cap_left",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 2,
+              "h": 16
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 2,
+              "h": 16
+            },
+            "tile": true,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "66bee64e-e912-4c5b-9761-dd6e64143414",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 30,
+            "w": 16,
+            "h": 2
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "dirt_cap_top",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 2
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 2
+            },
+            "tile": true,
+            "emit_point": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        {
+          "id": "067ae524-4274-4aa8-a1ea-0a36ed3b63ab",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 80,
+            "y": 48,
+            "w": 16,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "dirt_cap_bottom",
+            "frame": 0,
+            "duration": 1,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 16,
+              "h": 3
+            },
+            "tile": true,
+            "emit_point": {
+              "x": 0,
+              "y": 0
             }
           }
         }

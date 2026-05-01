@@ -179,10 +179,14 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     SDL_RenderClear(renderer);
     RenderStageTileWrapper(renderer, state, graphics);
     RenderStageTiles(renderer, state, graphics);
-    RenderEmbeddedTreasureOverlays(renderer, state, graphics);
     RenderBackgroundStamps(renderer, state, graphics);
+    RenderStagePreEntityForegroundTiles(renderer, state, graphics);
     RenderEntities(renderer, state, graphics);
     RenderStageFluids(renderer, state, graphics);
+    RenderStageForegroundTiles(renderer, state, graphics);
+    RenderStageForegroundTileWrapper(renderer, state, graphics);
+    RenderEmbeddedTreasureOverlays(renderer, state, graphics);
+    RenderStageTileCaps(renderer, state, graphics);
 }
 
 void RenderStageTransition(SDL_Renderer* renderer, State& state, Graphics& graphics) {

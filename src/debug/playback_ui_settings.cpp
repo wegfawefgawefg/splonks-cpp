@@ -911,6 +911,20 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
     );
     changed |= ImGui::Checkbox("Backwall Lighting", &state.settings.post_process.backwall_lighting);
     changed |= ImGui::SliderFloat(
+        "Player Lamp Strength",
+        &state.settings.post_process.player_lamp_strength,
+        0.0F,
+        4.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Embedded Treasure Brightness",
+        &state.settings.post_process.embedded_treasure_brightness,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    changed |= ImGui::SliderFloat(
         "Backwall Smoothing",
         &state.settings.post_process.backwall_smoothing,
         0.0F,
