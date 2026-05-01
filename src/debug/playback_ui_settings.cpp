@@ -235,6 +235,7 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     ImGui::SliderInt("Vertical Transfer / Step", &brush.vertical_transfer_per_step, 0, 255);
     ImGui::SliderInt("Horizontal Transfer / Step", &brush.horizontal_transfer_per_step, 0, 255);
     ImGui::SliderInt("Horizontal Flow Deadband", &brush.horizontal_flow_deadband, 0, 255);
+    ImGui::Checkbox("Use Fluid Momentum", &brush.use_momentum);
     ImGui::Checkbox("Render 8-Way Blur", &brush.render_blur_enabled);
     ImGui::Checkbox("Temporal Smoothing", &brush.temporal_smoothing_enabled);
     ImGui::SliderFloat(

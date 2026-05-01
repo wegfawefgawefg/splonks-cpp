@@ -204,6 +204,7 @@ bool TryEqualizeFluidSideways(
     Tile fluid_tile,
     std::uint8_t horizontal_transfer_per_step,
     std::uint8_t horizontal_flow_deadband,
+    bool use_momentum,
     std::vector<IVec2>& changed_tiles,
     std::vector<std::vector<std::int8_t>>& next_momentum_grid
 ) {
@@ -253,7 +254,11 @@ bool TryEqualizeFluidSideways(
     }
     SetTileInGrid(next_fluid_tiles, *resolved_target, fluid_tile);
     SetAmountInGrid(next_amount_grid, *resolved_target, new_target_amount);
-    SetMomentumInGrid(next_momentum_grid, *resolved_target, static_cast<std::int8_t>(direction));
+    SetMomentumInGrid(
+        next_momentum_grid,
+        *resolved_target,
+        use_momentum ? static_cast<std::int8_t>(direction) : 0
+    );
     PushChangedTile(changed_tiles, source);
     PushChangedTile(changed_tiles, *resolved_target);
     return true;
@@ -271,10 +276,13 @@ bool TryMoveFluidTile(
     std::uint8_t vertical_transfer_per_step,
     std::uint8_t horizontal_transfer_per_step,
     std::uint8_t horizontal_flow_deadband,
+    bool use_momentum,
     bool left_first,
     std::vector<IVec2>& changed_tiles
 ) {
-    const std::int8_t source_momentum = GetMomentumFromGrid(source_momentum_grid, source);
+    const std::int8_t source_momentum = use_momentum
+        ? GetMomentumFromGrid(source_momentum_grid, source)
+        : 0;
     if (TryMoveFluidTile(
             stage,
             terrain_tiles,
@@ -285,7 +293,7 @@ bool TryMoveFluidTile(
             IVec2::New(0, 1),
             fluid_tile,
             vertical_transfer_per_step,
-            source_momentum,
+            use_momentum ? source_momentum : 0,
             changed_tiles,
             next_momentum_grid
         )) {
@@ -305,6 +313,7 @@ bool TryMoveFluidTile(
             fluid_tile,
             horizontal_transfer_per_step,
             horizontal_flow_deadband,
+            use_momentum,
             changed_tiles,
             next_momentum_grid
         )) {
@@ -320,6 +329,7 @@ bool TryMoveFluidTile(
             fluid_tile,
             horizontal_transfer_per_step,
             horizontal_flow_deadband,
+            use_momentum,
             changed_tiles,
             next_momentum_grid
         )) {
@@ -403,9 +413,15 @@ void StepStageFluids(State& state) {
         0,
         static_cast<int>(kMaxFluidAmount)
     ));
+    const bool use_momentum = state.debug_fluid_brush.use_momentum;
     std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
     std::vector<std::vector<std::uint8_t>> next_amount_grid = source_amount_grid;
     std::vector<std::vector<std::int8_t>> next_momentum_grid = source_momentum_grid;
+    if (!use_momentum) {
+        for (std::vector<std::int8_t>& row : next_momentum_grid) {
+            std::fill(row.begin(), row.end(), 0);
+        }
+    }
     std::vector<IVec2> changed_tiles;
     const bool left_first = ((state.stage_frame / interval_frames) % 2U) == 0U;
 
@@ -430,6 +446,7 @@ void StepStageFluids(State& state) {
                 vertical_transfer_per_step,
                 horizontal_transfer_per_step,
                 horizontal_flow_deadband,
+                use_momentum,
                 left_first,
                 changed_tiles
             );

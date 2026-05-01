@@ -165,6 +165,7 @@ DebugUiSettings DebugUiSettings::New() {
     result.fluid_brush_vertical_transfer_per_step = 255;
     result.fluid_brush_horizontal_transfer_per_step = 255;
     result.fluid_brush_horizontal_flow_deadband = 1;
+    result.fluid_brush_use_momentum = true;
     result.fluid_brush_render_blur_enabled = true;
     result.fluid_brush_temporal_smoothing_enabled = false;
     result.fluid_brush_temporal_smoothing_response = 0.35F;
@@ -468,6 +469,9 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_horizontal_flow_deadband") {
             settings.debug_ui.fluid_brush_horizontal_flow_deadband =
                 ParseInt(value, settings.debug_ui.fluid_brush_horizontal_flow_deadband);
+        } else if (key == "debug_ui.fluid_brush_use_momentum") {
+            settings.debug_ui.fluid_brush_use_momentum =
+                ParseBool(value, settings.debug_ui.fluid_brush_use_momentum);
         } else if (key == "debug_ui.fluid_brush_render_blur_enabled") {
             settings.debug_ui.fluid_brush_render_blur_enabled =
                 ParseBool(value, settings.debug_ui.fluid_brush_render_blur_enabled);
@@ -766,6 +770,8 @@ bool SaveSettings(const Settings& settings) {
            << settings.debug_ui.fluid_brush_horizontal_transfer_per_step << "\n";
     output << "debug_ui.fluid_brush_horizontal_flow_deadband="
            << settings.debug_ui.fluid_brush_horizontal_flow_deadband << "\n";
+    output << "debug_ui.fluid_brush_use_momentum="
+           << (settings.debug_ui.fluid_brush_use_momentum ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_render_blur_enabled="
            << (settings.debug_ui.fluid_brush_render_blur_enabled ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_temporal_smoothing_enabled="

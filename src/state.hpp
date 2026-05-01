@@ -176,6 +176,7 @@ struct DebugFluidBrushState {
     int vertical_transfer_per_step = 255;
     int horizontal_transfer_per_step = 255;
     int horizontal_flow_deadband = 1;
+    bool use_momentum = true;
     bool render_blur_enabled = true;
     bool temporal_smoothing_enabled = false;
     float temporal_smoothing_response = 0.35F;

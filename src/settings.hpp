@@ -131,6 +131,7 @@ struct DebugUiSettings {
     int fluid_brush_vertical_transfer_per_step = 255;
     int fluid_brush_horizontal_transfer_per_step = 255;
     int fluid_brush_horizontal_flow_deadband = 1;
+    bool fluid_brush_use_momentum = true;
     bool fluid_brush_render_blur_enabled = true;
     bool fluid_brush_temporal_smoothing_enabled = false;
     float fluid_brush_temporal_smoothing_response = 0.35F;

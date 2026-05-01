@@ -96,6 +96,12 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
             fluid_brush_horizontal_flow_deadband;
         changed = true;
     }
+    if (state.settings.debug_ui.fluid_brush_use_momentum !=
+        state.debug_fluid_brush.use_momentum) {
+        state.settings.debug_ui.fluid_brush_use_momentum =
+            state.debug_fluid_brush.use_momentum;
+        changed = true;
+    }
     if (state.settings.debug_ui.fluid_brush_render_blur_enabled !=
         state.debug_fluid_brush.render_blur_enabled) {
         state.settings.debug_ui.fluid_brush_render_blur_enabled =

@@ -197,6 +197,8 @@ State State::New() {
         0,
         255
     );
+    state.debug_fluid_brush.use_momentum =
+        state.settings.debug_ui.fluid_brush_use_momentum;
     state.debug_fluid_brush.render_blur_enabled =
         state.settings.debug_ui.fluid_brush_render_blur_enabled;
     state.debug_fluid_brush.temporal_smoothing_enabled =
