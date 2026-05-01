@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "tiles/cave.png",
-  "selectedAnnotationId": "cd72e72a-493e-4366-a62d-56046bbde0d0",
+  "selectedAnnotationId": "0031cb12-522c-4211-a246-9f050b221553",
   "sheets": [
     {
       "path": "images/title.png",
@@ -14290,15 +14290,187 @@
               "y": 0
             }
           }
+        },
+        {
+          "id": "d319fd8d-5e7f-4957-928e-5d71003b6341",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 95,
+            "y": 104,
+            "w": 5,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bubble",
+            "frame": 0,
+            "duration": 10,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 1
+            }
+          }
+        },
+        {
+          "id": "dfafc10e-fdce-49d3-a83b-ef2b207e8104",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 102,
+            "y": 104,
+            "w": 5,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bubble",
+            "frame": 1,
+            "duration": 10,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 1
+            }
+          }
+        },
+        {
+          "id": "3fea45ea-adbc-4c28-9a1d-e1ae6d8aed48",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 109,
+            "y": 104,
+            "w": 5,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bubble",
+            "frame": 2,
+            "duration": 10,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 1
+            }
+          }
+        },
+        {
+          "id": "0031cb12-522c-4211-a246-9f050b221553",
+          "entityType": "Sprite",
+          "aabb": {
+            "x": 115,
+            "y": 104,
+            "w": 5,
+            "h": 3
+          },
+          "point": null,
+          "chromaKey": null,
+          "properties": {
+            "name": "bubble",
+            "frame": 3,
+            "duration": 10,
+            "offset": {
+              "x": 0,
+              "y": 0
+            },
+            "center": {
+              "x": 2,
+              "y": 2
+            },
+            "tags": [],
+            "pbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "cbox": {
+              "x": 0,
+              "y": 0,
+              "w": 5,
+              "h": 3
+            },
+            "tile": false,
+            "emit_point": {
+              "x": 2,
+              "y": 1
+            }
+          }
         }
       ],
       "view": {
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 6.711,
-        "centerX": 77.41022202354343,
-        "centerY": 86.42527194158843
+        "zoom": 32,
+        "centerX": 107.984375,
+        "centerY": 105.25
       }
     },
     {
