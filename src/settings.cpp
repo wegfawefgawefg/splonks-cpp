@@ -107,6 +107,10 @@ PostProcessSettings PostProcessSettings::New() {
     result.backwall_lighting = true;
     result.player_lamp_strength = 1.0F;
     result.embedded_treasure_brightness = 1.15F;
+    result.openness_ambient_strength = 0.08F;
+    result.openness_ambient_gamma = 1.0F;
+    result.lighting_temporal_smoothing = false;
+    result.lighting_temporal_smoothing_response = 0.45F;
     result.terrain_seam_ao_amount = 0.18F;
     result.terrain_seam_ao_size = 0.20F;
     result.terrain_exposure_amount = 0.12F;
@@ -316,6 +320,18 @@ Settings LoadSettings() {
         } else if (key == "post_process.embedded_treasure_brightness") {
             settings.post_process.embedded_treasure_brightness =
                 ParseFloat(value, settings.post_process.embedded_treasure_brightness);
+        } else if (key == "post_process.openness_ambient_strength") {
+            settings.post_process.openness_ambient_strength =
+                ParseFloat(value, settings.post_process.openness_ambient_strength);
+        } else if (key == "post_process.openness_ambient_gamma") {
+            settings.post_process.openness_ambient_gamma =
+                ParseFloat(value, settings.post_process.openness_ambient_gamma);
+        } else if (key == "post_process.lighting_temporal_smoothing") {
+            settings.post_process.lighting_temporal_smoothing =
+                ParseBool(value, settings.post_process.lighting_temporal_smoothing);
+        } else if (key == "post_process.lighting_temporal_smoothing_response") {
+            settings.post_process.lighting_temporal_smoothing_response =
+                ParseFloat(value, settings.post_process.lighting_temporal_smoothing_response);
         } else if (key == "post_process.terrain_seam_ao_amount") {
             settings.post_process.terrain_seam_ao_amount =
                 ParseFloat(value, settings.post_process.terrain_seam_ao_amount);
@@ -683,6 +699,14 @@ bool SaveSettings(const Settings& settings) {
            << settings.post_process.player_lamp_strength << "\n";
     output << "post_process.embedded_treasure_brightness="
            << settings.post_process.embedded_treasure_brightness << "\n";
+    output << "post_process.openness_ambient_strength="
+           << settings.post_process.openness_ambient_strength << "\n";
+    output << "post_process.openness_ambient_gamma="
+           << settings.post_process.openness_ambient_gamma << "\n";
+    output << "post_process.lighting_temporal_smoothing="
+           << (settings.post_process.lighting_temporal_smoothing ? 1 : 0) << "\n";
+    output << "post_process.lighting_temporal_smoothing_response="
+           << settings.post_process.lighting_temporal_smoothing_response << "\n";
     output << "post_process.terrain_seam_ao_amount="
            << settings.post_process.terrain_seam_ao_amount << "\n";
     output << "post_process.terrain_seam_ao_size="

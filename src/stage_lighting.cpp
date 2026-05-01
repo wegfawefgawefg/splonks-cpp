@@ -150,7 +150,42 @@ void EnsureStageLightingCacheShape(State& state) {
 
 float GetLiveLightSeedForTile(const State& state, int tile_x, int tile_y) {
     const Tile tile = GetTileForLighting(state, tile_x, tile_y);
-    return IsForegroundSolidTile(tile) ? kLiveSolidAmbient : kLiveAirAmbient;
+    const float base_ambient = IsForegroundSolidTile(tile) ? kLiveSolidAmbient : kLiveAirAmbient;
+    const float openness_strength = std::clamp(
+        state.settings.post_process.openness_ambient_strength,
+        0.0F,
+        1.0F
+    );
+    if (openness_strength <= 0.0F) {
+        return base_ambient;
+    }
+
+    const float diagonal_weight = std::clamp(
+        state.settings.post_process.terrain_exposure_diagonal_weight,
+        0.0F,
+        1.0F
+    );
+    const auto is_open = [&state](int x, int y) {
+        return !IsForegroundSolidTile(GetTileForLighting(state, x, y));
+    };
+
+    float openness = 0.0F;
+    openness += is_open(tile_x, tile_y - 1) ? 1.0F : 0.0F;
+    openness += is_open(tile_x, tile_y + 1) ? 1.0F : 0.0F;
+    openness += is_open(tile_x - 1, tile_y) ? 1.0F : 0.0F;
+    openness += is_open(tile_x + 1, tile_y) ? 1.0F : 0.0F;
+    openness += is_open(tile_x - 1, tile_y - 1) ? diagonal_weight : 0.0F;
+    openness += is_open(tile_x + 1, tile_y - 1) ? diagonal_weight : 0.0F;
+    openness += is_open(tile_x - 1, tile_y + 1) ? diagonal_weight : 0.0F;
+    openness += is_open(tile_x + 1, tile_y + 1) ? diagonal_weight : 0.0F;
+
+    const float total_weight = 4.0F + (4.0F * diagonal_weight);
+    const float normalized_openness = total_weight <= 0.0F ? 0.0F : openness / total_weight;
+    const float shaped_openness = std::pow(
+        std::clamp(normalized_openness, 0.0F, 1.0F),
+        std::max(state.settings.post_process.openness_ambient_gamma, 0.01F)
+    );
+    return std::clamp(base_ambient + (shaped_openness * openness_strength), 0.0F, 2.0F);
 }
 
 float GetLiveLightDecayIntoTile(const State& state, int tile_x, int tile_y) {
@@ -471,6 +506,15 @@ void RebuildStageLighting(State& state) {
     EnsureStageLightingCacheShape(state);
 
     const std::vector<std::vector<float>> live_light_grid = BuildLiveStageLightGrid(state);
+    const bool can_temporally_smooth =
+        state.settings.post_process.lighting_temporal_smoothing &&
+        state.stage_lighting.foreground_brightness.valid &&
+        state.stage_lighting.backwall_base_brightness.valid;
+    const float temporal_response = std::clamp(
+        state.settings.post_process.lighting_temporal_smoothing_response,
+        0.0F,
+        1.0F
+    );
 
     for (std::size_t y = 0; y < state.stage_lighting.foreground_topology.tiles.size(); ++y) {
         for (std::size_t x = 0; x < state.stage_lighting.foreground_topology.tiles[y].size(); ++x) {
@@ -480,13 +524,27 @@ void RebuildStageLighting(State& state) {
                 static_cast<int>(y)
             );
             const float live_light = live_light_grid[y][x];
-            state.stage_lighting.foreground_brightness.tiles[y][x] =
-                ApplyForegroundLightingSettings(state, live_light);
-            state.stage_lighting.backwall_base_brightness.tiles[y][x] = ApplyBackwallLightingSettings(
+            const float foreground_brightness = ApplyForegroundLightingSettings(state, live_light);
+            const float backwall_brightness = ApplyBackwallLightingSettings(
                 state,
                 live_light,
                 IsForegroundSolidTile(GetTileForLighting(state, static_cast<int>(x), static_cast<int>(y)))
             );
+            if (can_temporally_smooth) {
+                state.stage_lighting.foreground_brightness.tiles[y][x] = std::lerp(
+                    state.stage_lighting.foreground_brightness.tiles[y][x],
+                    foreground_brightness,
+                    temporal_response
+                );
+                state.stage_lighting.backwall_base_brightness.tiles[y][x] = std::lerp(
+                    state.stage_lighting.backwall_base_brightness.tiles[y][x],
+                    backwall_brightness,
+                    temporal_response
+                );
+            } else {
+                state.stage_lighting.foreground_brightness.tiles[y][x] = foreground_brightness;
+                state.stage_lighting.backwall_base_brightness.tiles[y][x] = backwall_brightness;
+            }
             state.stage_lighting.backwall_light_brightness.tiles[y][x] = 0.0F;
         }
     }

@@ -73,6 +73,10 @@ struct PostProcessSettings {
     bool backwall_lighting = true;
     float player_lamp_strength = 1.0F;
     float embedded_treasure_brightness = 1.15F;
+    float openness_ambient_strength = 0.08F;
+    float openness_ambient_gamma = 1.0F;
+    bool lighting_temporal_smoothing = false;
+    float lighting_temporal_smoothing_response = 0.45F;
     float terrain_seam_ao_amount = 0.18F;
     float terrain_seam_ao_size = 0.20F;
     float terrain_exposure_amount = 0.12F;

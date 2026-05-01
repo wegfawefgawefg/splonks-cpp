@@ -36,6 +36,24 @@ SDL_FColor MakeMultiplyShadeColor(float shade_amount) {
     return SDL_FColor{factor, factor, factor, 1.0F};
 }
 
+Vec2 RotateTileLocalPoint(const Vec2& point, TileRotation rotation) {
+    const float tile_size = static_cast<float>(kTileSize);
+    const Vec2 center = Vec2::New(tile_size * 0.5F, tile_size * 0.5F);
+    const Vec2 local = point - center;
+
+    switch (rotation & kTileRotationMask) {
+    case kTileRotation90:
+        return center + Vec2::New(-local.y, local.x);
+    case kTileRotation180:
+        return center + Vec2::New(-local.x, -local.y);
+    case kTileRotation270:
+        return center + Vec2::New(local.y, -local.x);
+    case kTileRotation0:
+    default:
+        return point;
+    }
+}
+
 void DrawGradientQuad(
     SDL_Renderer* renderer,
     const SDL_FRect& dst,
@@ -140,6 +158,88 @@ void ResetTerrainTileBrightness(SDL_Texture* texture) {
         return;
     }
     SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
+}
+
+bool RenderTerrainTileWithVertexLighting(
+    SDL_Renderer* renderer,
+    SDL_Texture* texture,
+    const State& state,
+    const Graphics& graphics,
+    const SDL_FRect& src,
+    const SDL_FRect& dst,
+    const Vec2& world_pos,
+    TileRotation tile_rotation
+) {
+    if (renderer == nullptr || texture == nullptr || graphics.world_rotation_active ||
+        src.w <= 0.0F || src.h <= 0.0F || dst.w <= 0.0F || dst.h <= 0.0F) {
+        return false;
+    }
+    if (!state.settings.post_process.terrain_lighting ||
+        !state.settings.post_process.terrain_exposure_lighting) {
+        return false;
+    }
+
+    float texture_width = 0.0F;
+    float texture_height = 0.0F;
+    if (!SDL_GetTextureSize(texture, &texture_width, &texture_height) ||
+        texture_width <= 0.0F || texture_height <= 0.0F) {
+        return false;
+    }
+
+    const float u0 = src.x / texture_width;
+    const float v0 = src.y / texture_height;
+    const float u1 = (src.x + src.w) / texture_width;
+    const float v1 = (src.y + src.h) / texture_height;
+    const float tile_size = static_cast<float>(kTileSize);
+
+    const auto brightness_color = [&state](const Vec2& sample_pos) {
+        const float brightness = std::clamp(
+            SampleForegroundBrightnessForRender(state, sample_pos),
+            0.0F,
+            2.0F
+        );
+        return SDL_FColor{brightness, brightness, brightness, 1.0F};
+    };
+
+    const std::array<SDL_Vertex, 4> vertices{
+        SDL_Vertex{
+            SDL_FPoint{dst.x, dst.y},
+            brightness_color(world_pos + RotateTileLocalPoint(Vec2::New(0.0F, 0.0F), tile_rotation)),
+            SDL_FPoint{u0, v0},
+        },
+        SDL_Vertex{
+            SDL_FPoint{dst.x + dst.w, dst.y},
+            brightness_color(
+                world_pos + RotateTileLocalPoint(Vec2::New(tile_size, 0.0F), tile_rotation)
+            ),
+            SDL_FPoint{u1, v0},
+        },
+        SDL_Vertex{
+            SDL_FPoint{dst.x + dst.w, dst.y + dst.h},
+            brightness_color(
+                world_pos + RotateTileLocalPoint(Vec2::New(tile_size, tile_size), tile_rotation)
+            ),
+            SDL_FPoint{u1, v1},
+        },
+        SDL_Vertex{
+            SDL_FPoint{dst.x, dst.y + dst.h},
+            brightness_color(
+                world_pos + RotateTileLocalPoint(Vec2::New(0.0F, tile_size), tile_rotation)
+            ),
+            SDL_FPoint{u0, v1},
+        },
+    };
+    constexpr std::array<int, 6> indices{0, 1, 2, 0, 2, 3};
+    SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
+    SDL_RenderGeometry(
+        renderer,
+        texture,
+        vertices.data(),
+        static_cast<int>(vertices.size()),
+        indices.data(),
+        static_cast<int>(indices.size())
+    );
+    return true;
 }
 
 void RenderTerrainTileLighting(

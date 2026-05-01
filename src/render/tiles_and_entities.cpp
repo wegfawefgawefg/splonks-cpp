@@ -863,32 +863,45 @@ void RenderStageForegroundTilePass(
                     static_cast<float>(tile_source_data->sample_rect.h),
                 };
 
-                ApplyTerrainTileBrightness(
-                    tile_texture,
-                    state,
-                    graphics,
-                    static_cast<int>(x),
-                    static_cast<int>(y)
-                );
                 const TileRotation tile_rotation = state.stage.GetTileRotation(
                     static_cast<unsigned int>(x),
                     static_cast<unsigned int>(y)
                 );
-                const SDL_FPoint tile_center{
-                    foreground_dst.w * 0.5F,
-                    foreground_dst.h * 0.5F,
-                };
-                RenderWorldTextureRotated(
-                    renderer,
-                    graphics,
-                    tile_texture,
-                    &src,
-                    foreground_dst,
-                    static_cast<double>(tile_rotation) * 90.0,
-                    &tile_center,
-                    SDL_FLIP_NONE
-                );
-                ResetTerrainTileBrightness(tile_texture);
+                const bool rendered_with_vertex_lighting =
+                    RenderTerrainTileWithVertexLighting(
+                        renderer,
+                        tile_texture,
+                        state,
+                        graphics,
+                        src,
+                        foreground_dst,
+                        ToVec2(tile_pos),
+                        tile_rotation
+                    );
+                if (!rendered_with_vertex_lighting) {
+                    ApplyTerrainTileBrightness(
+                        tile_texture,
+                        state,
+                        graphics,
+                        static_cast<int>(x),
+                        static_cast<int>(y)
+                    );
+                    const SDL_FPoint tile_center{
+                        foreground_dst.w * 0.5F,
+                        foreground_dst.h * 0.5F,
+                    };
+                    RenderWorldTextureRotated(
+                        renderer,
+                        graphics,
+                        tile_texture,
+                        &src,
+                        foreground_dst,
+                        static_cast<double>(tile_rotation) * 90.0,
+                        &tile_center,
+                        SDL_FLIP_NONE
+                    );
+                    ResetTerrainTileBrightness(tile_texture);
+                }
                 RenderTerrainTileLighting(
                     renderer,
                     state,

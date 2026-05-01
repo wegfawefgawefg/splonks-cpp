@@ -925,6 +925,32 @@ void DrawLightingSettingsWindow(DebugPlayback& debug, State& state, Graphics& gr
         "%.2f"
     );
     changed |= ImGui::SliderFloat(
+        "Openness Ambient Strength",
+        &state.settings.post_process.openness_ambient_strength,
+        0.0F,
+        0.50F,
+        "%.3f"
+    );
+    changed |= ImGui::SliderFloat(
+        "Openness Ambient Gamma",
+        &state.settings.post_process.openness_ambient_gamma,
+        0.10F,
+        4.00F,
+        "%.2f"
+    );
+    changed |= ImGui::Checkbox(
+        "Lighting Temporal Smoothing",
+        &state.settings.post_process.lighting_temporal_smoothing
+    );
+    changed |= ImGui::SliderFloat(
+        "Lighting Temporal Response",
+        &state.settings.post_process.lighting_temporal_smoothing_response,
+        0.01F,
+        1.00F,
+        "%.2f"
+    );
+    ImGui::TextUnformatted("Response: 1.0 = immediate, 0.1 = 10% toward target per frame.");
+    changed |= ImGui::SliderFloat(
         "Backwall Smoothing",
         &state.settings.post_process.backwall_smoothing,
         0.0F,

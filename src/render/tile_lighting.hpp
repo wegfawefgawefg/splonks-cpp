@@ -1,5 +1,8 @@
 #pragma once
 
+#include "math_types.hpp"
+#include "tile.hpp"
+
 struct SDL_Renderer;
 struct SDL_FRect;
 struct SDL_Texture;
@@ -16,6 +19,17 @@ void RenderTerrainTileLighting(
     int tile_x,
     int tile_y,
     const SDL_FRect& dst
+);
+
+bool RenderTerrainTileWithVertexLighting(
+    SDL_Renderer* renderer,
+    SDL_Texture* texture,
+    const State& state,
+    const Graphics& graphics,
+    const SDL_FRect& src,
+    const SDL_FRect& dst,
+    const Vec2& world_pos,
+    TileRotation tile_rotation
 );
 
 void ApplyTerrainTileBrightness(
