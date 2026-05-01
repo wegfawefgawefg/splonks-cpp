@@ -177,6 +177,7 @@ struct Stage {
     std::vector<std::vector<TileRotation>> tile_rotations;
     std::vector<std::vector<Tile>> fluid_tiles;
     std::vector<std::vector<std::uint8_t>> fluid_amount;
+    std::vector<std::vector<float>> fluid_display_amount;
     std::vector<std::vector<std::int8_t>> fluid_momentum;
     std::vector<std::vector<float>> tile_shake;
     std::vector<std::vector<float>> backwall_tile_shake;

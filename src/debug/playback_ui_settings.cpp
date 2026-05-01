@@ -234,6 +234,23 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     ImGui::SliderInt("Sim Interval (frames)", &brush.simulation_interval_frames, 1, 30);
     ImGui::SliderInt("Vertical Transfer / Step", &brush.vertical_transfer_per_step, 0, 255);
     ImGui::SliderInt("Horizontal Transfer / Step", &brush.horizontal_transfer_per_step, 0, 255);
+    ImGui::SliderInt("Horizontal Flow Deadband", &brush.horizontal_flow_deadband, 0, 255);
+    ImGui::Checkbox("Render 8-Way Blur", &brush.render_blur_enabled);
+    ImGui::Checkbox("Temporal Smoothing", &brush.temporal_smoothing_enabled);
+    ImGui::SliderFloat(
+        "Temporal Response",
+        &brush.temporal_smoothing_response,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    ImGui::SliderFloat(
+        "Render Cutoff Amount",
+        &brush.render_cutoff_amount,
+        0.0F,
+        8.0F,
+        "%.2f"
+    );
     ImGui::SliderInt("Brush Radius (tiles)", &brush.radius_tiles, 0, 16);
     ImGui::Checkbox("Replace Non-Air Tiles", &brush.replace_solid_tiles);
     const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);

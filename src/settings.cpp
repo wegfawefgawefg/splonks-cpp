@@ -164,6 +164,11 @@ DebugUiSettings DebugUiSettings::New() {
     result.fluid_brush_simulation_interval_frames = 1;
     result.fluid_brush_vertical_transfer_per_step = 255;
     result.fluid_brush_horizontal_transfer_per_step = 255;
+    result.fluid_brush_horizontal_flow_deadband = 1;
+    result.fluid_brush_render_blur_enabled = true;
+    result.fluid_brush_temporal_smoothing_enabled = false;
+    result.fluid_brush_temporal_smoothing_response = 0.35F;
+    result.fluid_brush_render_cutoff_amount = 1.0F;
     result.audio_settings_visible = false;
     result.ui_settings_visible = false;
     result.post_fx_settings_visible = false;
@@ -460,6 +465,21 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_horizontal_transfer_per_step") {
             settings.debug_ui.fluid_brush_horizontal_transfer_per_step =
                 ParseInt(value, settings.debug_ui.fluid_brush_horizontal_transfer_per_step);
+        } else if (key == "debug_ui.fluid_brush_horizontal_flow_deadband") {
+            settings.debug_ui.fluid_brush_horizontal_flow_deadband =
+                ParseInt(value, settings.debug_ui.fluid_brush_horizontal_flow_deadband);
+        } else if (key == "debug_ui.fluid_brush_render_blur_enabled") {
+            settings.debug_ui.fluid_brush_render_blur_enabled =
+                ParseBool(value, settings.debug_ui.fluid_brush_render_blur_enabled);
+        } else if (key == "debug_ui.fluid_brush_temporal_smoothing_enabled") {
+            settings.debug_ui.fluid_brush_temporal_smoothing_enabled =
+                ParseBool(value, settings.debug_ui.fluid_brush_temporal_smoothing_enabled);
+        } else if (key == "debug_ui.fluid_brush_temporal_smoothing_response") {
+            settings.debug_ui.fluid_brush_temporal_smoothing_response =
+                ParseFloat(value, settings.debug_ui.fluid_brush_temporal_smoothing_response);
+        } else if (key == "debug_ui.fluid_brush_render_cutoff_amount") {
+            settings.debug_ui.fluid_brush_render_cutoff_amount =
+                ParseFloat(value, settings.debug_ui.fluid_brush_render_cutoff_amount);
         } else if (key == "debug_ui.audio_settings_visible") {
             settings.debug_ui.audio_settings_visible =
                 ParseBool(value, settings.debug_ui.audio_settings_visible);
@@ -744,6 +764,16 @@ bool SaveSettings(const Settings& settings) {
            << settings.debug_ui.fluid_brush_vertical_transfer_per_step << "\n";
     output << "debug_ui.fluid_brush_horizontal_transfer_per_step="
            << settings.debug_ui.fluid_brush_horizontal_transfer_per_step << "\n";
+    output << "debug_ui.fluid_brush_horizontal_flow_deadband="
+           << settings.debug_ui.fluid_brush_horizontal_flow_deadband << "\n";
+    output << "debug_ui.fluid_brush_render_blur_enabled="
+           << (settings.debug_ui.fluid_brush_render_blur_enabled ? 1 : 0) << "\n";
+    output << "debug_ui.fluid_brush_temporal_smoothing_enabled="
+           << (settings.debug_ui.fluid_brush_temporal_smoothing_enabled ? 1 : 0) << "\n";
+    output << "debug_ui.fluid_brush_temporal_smoothing_response="
+           << settings.debug_ui.fluid_brush_temporal_smoothing_response << "\n";
+    output << "debug_ui.fluid_brush_render_cutoff_amount="
+           << settings.debug_ui.fluid_brush_render_cutoff_amount << "\n";
     output << "debug_ui.audio_settings_visible="
            << (settings.debug_ui.audio_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.ui_settings_visible="

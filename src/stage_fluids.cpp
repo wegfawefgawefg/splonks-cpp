@@ -203,6 +203,7 @@ bool TryEqualizeFluidSideways(
     int direction,
     Tile fluid_tile,
     std::uint8_t horizontal_transfer_per_step,
+    std::uint8_t horizontal_flow_deadband,
     std::vector<IVec2>& changed_tiles,
     std::vector<std::vector<std::int8_t>>& next_momentum_grid
 ) {
@@ -223,7 +224,8 @@ bool TryEqualizeFluidSideways(
     }
 
     const std::uint8_t source_amount = GetAmountFromGrid(next_amount_grid, source);
-    if (source_amount <= target_amount + 1U) {
+    if (static_cast<int>(source_amount) <=
+        static_cast<int>(target_amount) + static_cast<int>(horizontal_flow_deadband)) {
         return false;
     }
 
@@ -268,6 +270,7 @@ bool TryMoveFluidTile(
     Tile fluid_tile,
     std::uint8_t vertical_transfer_per_step,
     std::uint8_t horizontal_transfer_per_step,
+    std::uint8_t horizontal_flow_deadband,
     bool left_first,
     std::vector<IVec2>& changed_tiles
 ) {
@@ -301,6 +304,7 @@ bool TryMoveFluidTile(
             first,
             fluid_tile,
             horizontal_transfer_per_step,
+            horizontal_flow_deadband,
             changed_tiles,
             next_momentum_grid
         )) {
@@ -315,6 +319,7 @@ bool TryMoveFluidTile(
             second,
             fluid_tile,
             horizontal_transfer_per_step,
+            horizontal_flow_deadband,
             changed_tiles,
             next_momentum_grid
         )) {
@@ -393,6 +398,11 @@ void StepStageFluids(State& state) {
         0,
         static_cast<int>(kMaxFluidAmount)
     ));
+    const auto horizontal_flow_deadband = static_cast<std::uint8_t>(std::clamp(
+        state.debug_fluid_brush.horizontal_flow_deadband,
+        0,
+        static_cast<int>(kMaxFluidAmount)
+    ));
     std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
     std::vector<std::vector<std::uint8_t>> next_amount_grid = source_amount_grid;
     std::vector<std::vector<std::int8_t>> next_momentum_grid = source_momentum_grid;
@@ -419,6 +429,7 @@ void StepStageFluids(State& state) {
                 fluid_tile,
                 vertical_transfer_per_step,
                 horizontal_transfer_per_step,
+                horizontal_flow_deadband,
                 left_first,
                 changed_tiles
             );

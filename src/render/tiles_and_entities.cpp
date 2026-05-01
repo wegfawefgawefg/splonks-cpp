@@ -814,6 +814,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     constexpr std::uint8_t kFluidTopAlpha = 224;
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
     constexpr float kWaterTopRaisePx = 1.0F;
+    const float min_fluid_display_level =
+        std::clamp(state.debug_fluid_brush.render_cutoff_amount, 0.0F, 255.0F) / 255.0F;
 
     struct FluidRenderCell {
         Tile visible_tile = Tile::Air;
@@ -902,47 +904,96 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 static_cast<unsigned int>(y)
             );
             cell.has_liquid = GetTileArchetype(fluid_tile).simulated_fluid && amount > 0;
+            float& display_amount =
+                state.stage.fluid_display_amount[static_cast<std::size_t>(y)]
+                                                [static_cast<std::size_t>(x)];
             if (!cell.has_liquid) {
+                if (state.debug_fluid_brush.temporal_smoothing_enabled) {
+                    const float response = std::clamp(
+                        state.debug_fluid_brush.temporal_smoothing_response,
+                        0.0F,
+                        1.0F
+                    );
+                    display_amount += (0.0F - display_amount) * response;
+                } else {
+                    display_amount = 0.0F;
+                }
+                if (display_amount < min_fluid_display_level || cell.terrain_solid) {
+                    display_amount = 0.0F;
+                    continue;
+                }
+
+                Tile residual_visible_tile = Tile::WaterSwim;
+                for (int offset_y = -1; offset_y <= 1; ++offset_y) {
+                    for (int offset_x = -1; offset_x <= 1; ++offset_x) {
+                        const Tile nearby_fluid_tile =
+                            GetWrappedFluidTile(state.stage, x + offset_x, y + offset_y);
+                        if (GetTileArchetype(nearby_fluid_tile).simulated_fluid) {
+                            residual_visible_tile = nearby_fluid_tile;
+                            break;
+                        }
+                    }
+                    if (residual_visible_tile != Tile::WaterSwim) {
+                        break;
+                    }
+                }
+
+                cell.visible_tile = residual_visible_tile;
+                cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
+                cell.display_level = cell.visible_level;
+                cell.has_visible_liquid = true;
                 continue;
             }
             cell.visible_tile = fluid_tile;
             cell.liquid_level = static_cast<float>(amount) / 255.0F;
-            cell.visible_level = cell.liquid_level;
+            if (state.debug_fluid_brush.temporal_smoothing_enabled) {
+                const float response = std::clamp(
+                    state.debug_fluid_brush.temporal_smoothing_response,
+                    0.0F,
+                    1.0F
+                );
+                display_amount += (cell.liquid_level - display_amount) * response;
+            } else {
+                display_amount = cell.liquid_level;
+            }
+            cell.visible_level = std::clamp(display_amount, 0.0F, 1.0F);
             cell.display_level = cell.visible_level;
             cell.has_visible_liquid = true;
         }
     }
 
-    for (int y = 0; y < stage_tile_height; ++y) {
-        for (int x = 0; x < stage_tile_width; ++x) {
-            FluidRenderCell* const cell = cell_at(x, y);
-            if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
-                continue;
-            }
-
-            float weighted_level = 0.0F;
-            float total_weight = 0.0F;
-            for (int offset_y = -1; offset_y <= 1; ++offset_y) {
-                for (int offset_x = -1; offset_x <= 1; ++offset_x) {
-                    const FluidRenderCell* const nearby =
-                        const_cell_at(x + offset_x, y + offset_y);
-                    if (nearby == nullptr || nearby->terrain_solid) {
-                        continue;
-                    }
-                    const bool center = offset_x == 0 && offset_y == 0;
-                    const bool diagonal = offset_x != 0 && offset_y != 0;
-                    const float weight = center ? 4.0F : (diagonal ? 1.0F : 2.0F);
-                    weighted_level += nearby->visible_level * weight;
-                    total_weight += weight;
+    if (state.debug_fluid_brush.render_blur_enabled) {
+        for (int y = 0; y < stage_tile_height; ++y) {
+            for (int x = 0; x < stage_tile_width; ++x) {
+                FluidRenderCell* const cell = cell_at(x, y);
+                if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
+                    continue;
                 }
-            }
 
-            if (total_weight > 0.0F) {
-                cell->display_level = std::clamp(
-                    (cell->visible_level + (weighted_level / total_weight)) * 0.5F,
-                    0.0F,
-                    1.0F
-                );
+                float weighted_level = 0.0F;
+                float total_weight = 0.0F;
+                for (int offset_y = -1; offset_y <= 1; ++offset_y) {
+                    for (int offset_x = -1; offset_x <= 1; ++offset_x) {
+                        const FluidRenderCell* const nearby =
+                            const_cell_at(x + offset_x, y + offset_y);
+                        if (nearby == nullptr || nearby->terrain_solid) {
+                            continue;
+                        }
+                        const bool center = offset_x == 0 && offset_y == 0;
+                        const bool diagonal = offset_x != 0 && offset_y != 0;
+                        const float weight = center ? 4.0F : (diagonal ? 1.0F : 2.0F);
+                        weighted_level += nearby->visible_level * weight;
+                        total_weight += weight;
+                    }
+                }
+
+                if (total_weight > 0.0F) {
+                    cell->display_level = std::clamp(
+                        (cell->visible_level + (weighted_level / total_weight)) * 0.5F,
+                        0.0F,
+                        1.0F
+                    );
+                }
             }
         }
     }

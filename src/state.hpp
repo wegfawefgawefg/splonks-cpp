@@ -175,6 +175,11 @@ struct DebugFluidBrushState {
     int simulation_interval_frames = 6;
     int vertical_transfer_per_step = 255;
     int horizontal_transfer_per_step = 255;
+    int horizontal_flow_deadband = 1;
+    bool render_blur_enabled = true;
+    bool temporal_smoothing_enabled = false;
+    float temporal_smoothing_response = 0.35F;
+    float render_cutoff_amount = 1.0F;
 };
 
 struct StageRotationState {

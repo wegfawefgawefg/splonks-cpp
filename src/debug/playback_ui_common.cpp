@@ -88,6 +88,48 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
             fluid_brush_horizontal_transfer_per_step;
         changed = true;
     }
+    const int fluid_brush_horizontal_flow_deadband =
+        std::clamp(state.debug_fluid_brush.horizontal_flow_deadband, 0, 255);
+    if (state.settings.debug_ui.fluid_brush_horizontal_flow_deadband !=
+        fluid_brush_horizontal_flow_deadband) {
+        state.settings.debug_ui.fluid_brush_horizontal_flow_deadband =
+            fluid_brush_horizontal_flow_deadband;
+        changed = true;
+    }
+    if (state.settings.debug_ui.fluid_brush_render_blur_enabled !=
+        state.debug_fluid_brush.render_blur_enabled) {
+        state.settings.debug_ui.fluid_brush_render_blur_enabled =
+            state.debug_fluid_brush.render_blur_enabled;
+        changed = true;
+    }
+    if (state.settings.debug_ui.fluid_brush_temporal_smoothing_enabled !=
+        state.debug_fluid_brush.temporal_smoothing_enabled) {
+        state.settings.debug_ui.fluid_brush_temporal_smoothing_enabled =
+            state.debug_fluid_brush.temporal_smoothing_enabled;
+        changed = true;
+    }
+    const float fluid_brush_temporal_smoothing_response = std::clamp(
+        state.debug_fluid_brush.temporal_smoothing_response,
+        0.0F,
+        1.0F
+    );
+    if (state.settings.debug_ui.fluid_brush_temporal_smoothing_response !=
+        fluid_brush_temporal_smoothing_response) {
+        state.settings.debug_ui.fluid_brush_temporal_smoothing_response =
+            fluid_brush_temporal_smoothing_response;
+        changed = true;
+    }
+    const float fluid_brush_render_cutoff_amount = std::clamp(
+        state.debug_fluid_brush.render_cutoff_amount,
+        0.0F,
+        255.0F
+    );
+    if (state.settings.debug_ui.fluid_brush_render_cutoff_amount !=
+        fluid_brush_render_cutoff_amount) {
+        state.settings.debug_ui.fluid_brush_render_cutoff_amount =
+            fluid_brush_render_cutoff_amount;
+        changed = true;
+    }
     if (state.settings.debug_ui.audio_settings_visible != debug.audio_settings_window_visible) {
         state.settings.debug_ui.audio_settings_visible = debug.audio_settings_window_visible;
         changed = true;

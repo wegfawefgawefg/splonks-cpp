@@ -115,6 +115,17 @@ std::vector<std::vector<std::uint8_t>> MakeEmptyFluidAmountGrid(
     return fluid_amount;
 }
 
+std::vector<std::vector<float>> MakeEmptyFluidDisplayAmountGrid(
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    std::vector<std::vector<float>> fluid_display_amount;
+    fluid_display_amount.reserve(tiles.size());
+    for (const std::vector<Tile>& row : tiles) {
+        fluid_display_amount.push_back(std::vector<float>(row.size(), 0.0F));
+    }
+    return fluid_display_amount;
+}
+
 std::vector<std::vector<Tile>> MakeEmptyBackwallTiles(
     const std::vector<std::vector<Tile>>& tiles
 ) {
@@ -222,6 +233,22 @@ void SyncFluidAmountGridToTiles(
     for (std::size_t y = 0; y < tiles.size(); ++y) {
         if (grid[y].size() != tiles[y].size()) {
             grid = MakeEmptyFluidAmountGrid(tiles);
+            return;
+        }
+    }
+}
+
+void SyncFluidDisplayAmountGridToTiles(
+    std::vector<std::vector<float>>& grid,
+    const std::vector<std::vector<Tile>>& tiles
+) {
+    if (grid.size() != tiles.size()) {
+        grid = MakeEmptyFluidDisplayAmountGrid(tiles);
+        return;
+    }
+    for (std::size_t y = 0; y < tiles.size(); ++y) {
+        if (grid[y].size() != tiles[y].size()) {
+            grid = MakeEmptyFluidDisplayAmountGrid(tiles);
             return;
         }
     }
@@ -384,6 +411,7 @@ Stage Stage::NewBlank() {
     stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
     stage.fluid_tiles = MakeEmptyFluidTileGrid(stage.tiles);
     stage.fluid_amount = MakeEmptyFluidAmountGrid(stage.tiles);
+    stage.fluid_display_amount = MakeEmptyFluidDisplayAmountGrid(stage.tiles);
     stage.fluid_momentum = MakeEmptyFluidMomentumGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
@@ -522,6 +550,7 @@ Stage Stage::New(StageType stage_type) {
     stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
     stage.fluid_tiles = MakeEmptyFluidTileGrid(stage.tiles);
     stage.fluid_amount = MakeEmptyFluidAmountGrid(stage.tiles);
+    stage.fluid_display_amount = MakeEmptyFluidDisplayAmountGrid(stage.tiles);
     stage.fluid_momentum = MakeEmptyFluidMomentumGrid(stage.tiles);
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
@@ -709,6 +738,7 @@ void Stage::SyncTileInstanceMetadataGrid() {
     SyncTileRotationGridToTiles(tile_rotations, tiles);
     SyncFluidTileGridToTiles(fluid_tiles, tiles);
     SyncFluidAmountGridToTiles(fluid_amount, tiles);
+    SyncFluidDisplayAmountGridToTiles(fluid_display_amount, tiles);
     SyncFluidMomentumGridToTiles(fluid_momentum, tiles);
 }
 
@@ -750,6 +780,8 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
             Tile::Air;
         fluid_amount[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
             0;
+        fluid_display_amount[static_cast<std::size_t>(tile_pos.y)]
+                            [static_cast<std::size_t>(tile_pos.x)] = 0.0F;
     }
     fluid_momentum[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = 0;
     tile_change_generation += 1;
@@ -771,6 +803,9 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
     }
     stored = tile;
     amount = new_amount;
+    fluid_display_amount[static_cast<std::size_t>(tile_pos.y)]
+                        [static_cast<std::size_t>(tile_pos.x)] =
+                            static_cast<float>(new_amount) / 255.0F;
     fluid_momentum[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = 0;
     tile_change_generation += 1;
 }
