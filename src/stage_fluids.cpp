@@ -14,8 +14,8 @@ namespace splonks {
 
 namespace {
 
-constexpr float kMaxFluidAmount = 255.0F;
-constexpr float kMinFluidAmount = 0.25F;
+constexpr float kMaxFluidAmount = 1.0F;
+constexpr float kMinFluidAmount = 0.0001F;
 constexpr float kVelocityClamp = 8.0F;
 
 struct FluidTransferProposal {
@@ -95,6 +95,10 @@ Vec2 GetVelocityFromGrid(const std::vector<std::vector<Vec2>>& velocities, const
                      [static_cast<std::size_t>(tile_coord.x)];
 }
 
+Vec2 GetVec2FromGrid(const std::vector<std::vector<Vec2>>& grid, const IVec2& tile_coord) {
+    return grid[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)];
+}
+
 void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord) {
     if (std::find(changed_tiles.begin(), changed_tiles.end(), tile_coord) != changed_tiles.end()) {
         return;
@@ -122,6 +126,9 @@ void AddFluidTransferProposalsForCell(
     const std::vector<std::vector<Tile>>& fluid_tiles,
     const std::vector<std::vector<float>>& amounts,
     const std::vector<std::vector<Vec2>>& velocities,
+    const std::vector<std::vector<Vec2>>& gravity_overrides,
+    const std::vector<std::vector<float>>& gravity_strengths,
+    const std::vector<std::vector<Vec2>>& temp_gravity,
     const IVec2& source,
     float transfer_cap,
     float pressure_strength,
@@ -152,12 +159,19 @@ void AddFluidTransferProposalsForCell(
         IVec2::New(1, 1),
     };
 
+    const float gravity_strength =
+        gravity_strengths[static_cast<std::size_t>(source.y)][static_cast<std::size_t>(source.x)];
+    const Vec2 effective_gravity = ((gravity_strength > 0.0F)
+        ? GetVec2FromGrid(gravity_overrides, source)
+        : gravity) + GetVec2FromGrid(temp_gravity, source);
     const Vec2 source_velocity = ClampLength(
-        GetVelocityFromGrid(velocities, source) + gravity,
+        GetVelocityFromGrid(velocities, source) + effective_gravity,
         kVelocityClamp
     );
-    const Vec2 gravity_direction = NormalizeOrZero(gravity);
-    const bool has_gravity = Length(gravity_direction) > 0.0F;
+    const float gravity_magnitude = Length(effective_gravity);
+    const Vec2 gravity_direction = NormalizeOrZero(effective_gravity);
+    const bool has_gravity = gravity_magnitude > 0.0001F;
+    const float gravity_pressure_bias = std::clamp(gravity_magnitude, 0.0F, 1.0F);
     std::vector<Candidate> candidates;
     float total_score = 0.0F;
 
@@ -180,10 +194,16 @@ void AddFluidTransferProposalsForCell(
         const float target_amount = GetAmountFromGrid(amounts, *resolved_target);
         const Vec2 direction = NormalizeOrZero(ToVec2(offset));
         const float velocity_score = std::max(0.0F, Dot(source_velocity, direction));
-        const bool pressure_can_flow = !has_gravity || Dot(direction, gravity_direction) >= -0.05F;
-        const float pressure_score = pressure_can_flow
-            ? std::max(0.0F, source_amount - target_amount) * pressure_strength / kMaxFluidAmount
+        const float directional_pressure_gate = (!has_gravity || Dot(direction, gravity_direction) >= -0.05F)
+            ? 1.0F
             : 0.0F;
+        const float pressure_gate =
+            ((1.0F - gravity_pressure_bias) + (gravity_pressure_bias * directional_pressure_gate));
+        const float pressure_score =
+            std::max(0.0F, source_amount - target_amount) *
+            pressure_strength *
+            pressure_gate /
+            kMaxFluidAmount;
         const float score = velocity_score + pressure_score;
         if (score <= 0.0F) {
             continue;
@@ -202,13 +222,16 @@ void AddFluidTransferProposalsForCell(
         return;
     }
 
-    const float source_budget = std::min(source_amount, transfer_cap);
+    const float source_budget = std::min(
+        source_amount,
+        transfer_cap * std::clamp(total_score, 0.0F, 1.0F)
+    );
     for (const Candidate& candidate : candidates) {
         const float requested = std::min(
             candidate.capacity,
             source_budget * (candidate.score / total_score)
         );
-        if (requested <= kMinFluidAmount) {
+        if (requested <= 0.0F) {
             continue;
         }
         proposals.push_back(FluidTransferProposal{
@@ -284,12 +307,13 @@ void StepStageFluids(State& state) {
     const std::vector<std::vector<Tile>>& source_fluid_tiles = stage.fluid_tiles;
     const std::vector<std::vector<float>>& source_amounts = stage.fluid_amount;
     const std::vector<std::vector<Vec2>>& source_velocities = stage.fluid_velocity;
+    const std::vector<std::vector<Vec2>>& source_gravity_overrides = stage.fluid_gravity;
+    const std::vector<std::vector<float>>& source_gravity_strengths =
+        stage.fluid_gravity_strength;
+    const std::vector<std::vector<Vec2>>& source_temp_gravity = stage.fluid_temp_gravity;
 
-    const float transfer_cap = std::clamp(
-        static_cast<float>(state.debug_fluid_brush.transfer_per_step),
-        0.0F,
-        kMaxFluidAmount
-    );
+    const float transfer_cap =
+        std::clamp(state.debug_fluid_brush.transfer_per_step, 0.0F, kMaxFluidAmount);
     const float pressure_strength = std::clamp(
         state.debug_fluid_brush.pressure_strength,
         0.0F,
@@ -316,6 +340,9 @@ void StepStageFluids(State& state) {
                 source_fluid_tiles,
                 source_amounts,
                 source_velocities,
+                source_gravity_overrides,
+                source_gravity_strengths,
+                source_temp_gravity,
                 IVec2::New(x, y),
                 transfer_cap,
                 pressure_strength,
@@ -337,6 +364,7 @@ void StepStageFluids(State& state) {
     std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
     std::vector<std::vector<float>> next_amounts = source_amounts;
     std::vector<std::vector<Vec2>> next_velocities = source_velocities;
+    std::vector<std::vector<Vec2>> next_temp_gravity = source_temp_gravity;
     std::vector<std::vector<Vec2>> incoming_velocity(
         source_amounts.size(),
         std::vector<Vec2>(
@@ -347,12 +375,20 @@ void StepStageFluids(State& state) {
 
     for (std::size_t y = 0; y < next_velocities.size(); ++y) {
         for (std::size_t x = 0; x < next_velocities[y].size(); ++x) {
+            next_temp_gravity[y][x] =
+                next_temp_gravity[y][x] *
+                std::clamp(state.debug_fluid_brush.temp_gravity_decay, 0.0F, 1.0F);
             if (source_amounts[y][x] <= kMinFluidAmount) {
                 next_velocities[y][x] = Vec2::New(0.0F, 0.0F);
                 continue;
             }
-            next_velocities[y][x] =
-                ClampLength((next_velocities[y][x] + gravity) * velocity_damping, kVelocityClamp);
+            const Vec2 cell_gravity = ((source_gravity_strengths[y][x] > 0.0F)
+                ? source_gravity_overrides[y][x]
+                : gravity) + source_temp_gravity[y][x];
+            next_velocities[y][x] = ClampLength(
+                (next_velocities[y][x] + cell_gravity) * velocity_damping,
+                kVelocityClamp
+            );
         }
     }
 
@@ -369,7 +405,7 @@ void StepStageFluids(State& state) {
             ? capacity / incoming
             : 1.0F;
         const float amount = std::min(proposal.amount * target_scale, GetAmountFromGrid(next_amounts, proposal.source));
-        if (amount <= kMinFluidAmount) {
+        if (amount <= 0.0F) {
             continue;
         }
 
@@ -381,7 +417,7 @@ void StepStageFluids(State& state) {
                         [static_cast<std::size_t>(proposal.target.x)] = proposal.fluid_tile;
         incoming_velocity[static_cast<std::size_t>(proposal.target.y)]
                          [static_cast<std::size_t>(proposal.target.x)] +=
-            proposal.direction * (amount / kMaxFluidAmount);
+            proposal.direction * amount;
     }
 
     std::vector<IVec2> changed_tiles;
@@ -404,8 +440,13 @@ void StepStageFluids(State& state) {
                 next_velocity = Vec2::New(0.0F, 0.0F);
             }
 
-            const bool changed = next_tile != source_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] ||
-                                 std::abs(next_amount - source_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]) > 0.5F;
+            const bool changed =
+                next_tile !=
+                    source_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] ||
+                std::abs(
+                    next_amount -
+                    source_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]
+                ) > kMinFluidAmount;
             if (changed) {
                 PushChangedTile(changed_tiles, tile_coord);
             }
@@ -415,6 +456,7 @@ void StepStageFluids(State& state) {
     stage.fluid_tiles = std::move(next_fluid_tiles);
     stage.fluid_amount = std::move(next_amounts);
     stage.fluid_velocity = std::move(next_velocities);
+    stage.fluid_temp_gravity = std::move(next_temp_gravity);
     if (!changed_tiles.empty()) {
         stage.tile_change_generation += 1;
         UpdateStageLightingForTileChanges(state, changed_tiles);

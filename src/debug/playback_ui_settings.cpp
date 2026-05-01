@@ -72,6 +72,7 @@ void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
     ImGui::Checkbox("Show Tile Types", &state.debug_overlay.show_tile_types);
     ImGui::Checkbox("Show Tile Openness", &state.debug_overlay.show_tile_openness);
     ImGui::Checkbox("Show Fluid Amounts", &state.debug_overlay.show_fluid_amounts);
+    ImGui::Checkbox("Show Fluid Gravity", &state.debug_overlay.show_fluid_gravity);
     ImGui::Checkbox("Show Lights", &state.debug_overlay.show_lights);
     ImGui::Checkbox("Show Area Boundaries", &state.debug_overlay.show_area_boundaries);
     ImGui::Checkbox("Show Area IDs", &state.debug_overlay.show_area_ids);
@@ -231,12 +232,65 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     DebugFluidBrushState& brush = state.debug_fluid_brush;
     ImGui::Checkbox("Enable Fluid Brush", &brush.enabled);
     ImGui::Checkbox("Run Fluid Simulation", &brush.simulation_enabled);
+    int brush_mode = static_cast<int>(brush.mode);
+    ImGui::RadioButton("Water", &brush_mode, static_cast<int>(DebugFluidBrushState::Mode::Water));
+    ImGui::SameLine();
+    ImGui::RadioButton(
+        "Gravity",
+        &brush_mode,
+        static_cast<int>(DebugFluidBrushState::Mode::PermanentGravity)
+    );
+    ImGui::SameLine();
+    ImGui::RadioButton(
+        "Temp Gravity",
+        &brush_mode,
+        static_cast<int>(DebugFluidBrushState::Mode::TemporaryGravity)
+    );
+    ImGui::RadioButton(
+        "Set Global Gravity Direction From Stage Center",
+        &brush_mode,
+        static_cast<int>(DebugFluidBrushState::Mode::GlobalGravityDirection)
+    );
+    brush.mode = static_cast<DebugFluidBrushState::Mode>(brush_mode);
     ImGui::SliderInt("Sim Interval (frames)", &brush.simulation_interval_frames, 1, 30);
-    ImGui::SliderInt("Transfer / Step", &brush.transfer_per_step, 0, 255);
-    ImGui::SliderFloat("Gravity X", &brush.gravity_x, -4.0F, 4.0F, "%.2f");
-    ImGui::SliderFloat("Gravity Y", &brush.gravity_y, -4.0F, 4.0F, "%.2f");
+    ImGui::SliderFloat("Transfer / Step (0-1)", &brush.transfer_per_step, 0.0F, 1.0F, "%.3f");
+    ImGui::SliderFloat("Global Gravity X", &brush.gravity_x, -4.0F, 4.0F, "%.2f");
+    ImGui::SameLine();
+    if (ImGui::Button("0##FluidGravityX")) {
+        brush.gravity_x = 0.0F;
+    }
+    ImGui::SliderFloat("Global Gravity Y", &brush.gravity_y, -4.0F, 4.0F, "%.2f");
+    ImGui::SameLine();
+    if (ImGui::Button("0##FluidGravityY")) {
+        brush.gravity_y = 0.0F;
+    }
+    if (ImGui::Button("Zero Gravity XY")) {
+        brush.gravity_x = 0.0F;
+        brush.gravity_y = 0.0F;
+    }
+    ImGui::Text("Global Gravity: (%.2f, %.2f)", brush.gravity_x, brush.gravity_y);
+    ImGui::SliderFloat("Brush Gravity X", &brush.paint_gravity_x, -4.0F, 4.0F, "%.2f");
+    ImGui::SameLine();
+    if (ImGui::Button("0##FluidPaintGravityX")) {
+        brush.paint_gravity_x = 0.0F;
+    }
+    ImGui::SliderFloat("Brush Gravity Y", &brush.paint_gravity_y, -4.0F, 4.0F, "%.2f");
+    ImGui::SameLine();
+    if (ImGui::Button("0##FluidPaintGravityY")) {
+        brush.paint_gravity_y = 0.0F;
+    }
+    if (ImGui::Button("Zero Brush Gravity XY")) {
+        brush.paint_gravity_x = 0.0F;
+        brush.paint_gravity_y = 0.0F;
+    }
+    ImGui::Text(
+        "Painted Gravity: (%.2f, %.2f)",
+        brush.paint_gravity_x,
+        brush.paint_gravity_y
+    );
     ImGui::SliderFloat("Pressure Strength", &brush.pressure_strength, 0.0F, 4.0F, "%.2f");
     ImGui::SliderFloat("Velocity Damping", &brush.velocity_damping, 0.0F, 1.0F, "%.2f");
+    ImGui::SliderFloat("Temp Gravity Decay", &brush.temp_gravity_decay, 0.0F, 1.0F, "%.2f");
     ImGui::Checkbox("Temporal Smoothing", &brush.temporal_smoothing_enabled);
     ImGui::SliderFloat(
         "Temporal Response",
@@ -246,12 +300,33 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         "%.2f"
     );
     ImGui::SliderFloat(
-        "Render Cutoff Amount",
+        "Render Cutoff (0-1)",
         &brush.render_cutoff_amount,
         0.0F,
-        8.0F,
-        "%.2f"
+        1.0F,
+        "%.4f"
     );
+    ImGui::SliderFloat(
+        "Topper Edge Cutoff (0-1)",
+        &brush.topper_cutoff_amount,
+        0.0F,
+        1.0F,
+        "%.3f"
+    );
+    ImGui::Checkbox("Show Flow Indicators", &brush.show_flow_indicators);
+    int render_mode = static_cast<int>(brush.render_mode);
+    ImGui::RadioButton(
+        "Marching Water",
+        &render_mode,
+        static_cast<int>(DebugFluidBrushState::RenderMode::MarchingSquares)
+    );
+    ImGui::SameLine();
+    ImGui::RadioButton(
+        "Alpha Cell Water",
+        &render_mode,
+        static_cast<int>(DebugFluidBrushState::RenderMode::AlphaCells)
+    );
+    brush.render_mode = static_cast<DebugFluidBrushState::RenderMode>(render_mode);
     ImGui::SliderInt("Brush Radius (tiles)", &brush.radius_tiles, 0, 16);
     ImGui::Checkbox("Replace Non-Air Tiles", &brush.replace_solid_tiles);
     const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);

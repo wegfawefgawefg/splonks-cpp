@@ -5,7 +5,7 @@
 The old byte-grid water was useful for proving the ownership split, but the
 next implementation should be cleaner:
 
-- Store fluid amount as a floating value in `0..255`.
+- Store fluid amount as a normalized float in `0..1`.
 - Store fluid velocity as a `Vec2` per cell.
 - Store terrain separately from fluid, as we do now:
   `Stage::tiles` is terrain and `Stage::fluid_tiles` / amount / velocity are
@@ -56,19 +56,29 @@ Debug knobs for the vector model:
 - Transfer cap per step.
 - Temporal smoothing and response.
 - Render cutoff / density threshold.
+- Fluid brush mode:
+  - water paint / erase;
+  - permanent per-cell gravity override paint / erase;
+  - temporary per-cell gravity impulse paint / erase;
+  - global gravity direction picker from stage center to mouse.
+- Temporary gravity decay.
 
-Per-cell gravity plan:
+Per-cell gravity:
 
-- Add an optional `Stage::fluid_gravity` grid with `Vec2` cells.
-- Use global gravity when the cell override is zero/unset.
-- Add a debug gravity brush after the base vector solver feels good.
-- The renderer should not assume down is gravity; it should keep using scalar
-  density and only use gravity for optional surface decoration.
+- `Stage::fluid_gravity` stores a permanent `Vec2` override per cell.
+- `Stage::fluid_gravity_strength` marks whether the permanent override is active.
+  This makes `(0, 0)` a valid local gravity value instead of meaning "unset".
+- `Stage::fluid_temp_gravity` stores a decaying additive impulse per cell.
+- The debug brush has a separate painted gravity vector for permanent/temp gravity, so those tools do not have to reuse the global simulation gravity direction.
+- Effective gravity for simulation is:
+  `active_local_gravity_or_global_gravity + temporary_gravity`.
+- Temporary gravity decays even when the cell is dry, so old brush/bomb impulses do not wait forever for water to arrive.
+- The renderer does not assume down is gravity; it keeps using scalar density and only uses gravity for optional future surface decoration.
 
 ## Current Implementation: Vector Amount Overlay
 
 - Store fluid in `Stage::fluid_tiles`, a level-sized overlay grid parallel to `Stage::tiles`.
-- Store per-cell fill in `Stage::fluid_amount`, as a float in `0..255`.
+- Store per-cell fill in `Stage::fluid_amount`, as a normalized float in `0..1`.
 - Store per-cell velocity in `Stage::fluid_velocity`.
 - Terrain stays in `Stage::tiles`, so a cell can be `terrain = Ladder` and `fluid = WaterSwim`.
 - Mark fluid-capable tile archetypes with `simulated_fluid`.
@@ -77,15 +87,24 @@ Per-cell gravity plan:
 - Fluids move into air or transparent non-solid terrain cells, so water can occupy ladders/ropes without replacing them.
 - Build transfer proposals from a snapshot, scale them by source amount and target capacity, then apply the whole transfer set at once.
 - Transfers are driven by velocity projected onto neighbor directions plus pressure from amount differences.
+- Amounts are normalized floats. `1.0` is a full cell, so the sim no longer needs byte-liquid droplet special cases.
 - Gravity is a tunable global `Vec2` for now. Pressure is blocked from flowing opposite gravity; with zero gravity, pressure can spread in any direction.
+- Gravity magnitude matters. Pressure direction gating fades in with gravity strength, and the transfer budget scales by total proposal score so micro-gravity does not spend a full-cell transfer budget immediately.
 - Apply changed fluid cells after the pass, then batch lighting and acoustics updates for those changed cells.
 - Render water as a late transparent pass:
   - smooth `fluid_display_amount` as an optional render cache;
   - build a scalar density field from nearby display amounts;
   - run marching squares against that density field;
-  - render textured water polygons and `watertop` ribbons on mostly-horizontal contours;
+  - render textured water polygons and `watertop` ribbons directly on visible contour segments;
   - `watertop` uses the animated `watertop` sprite, with tile-position tick offsets so every surface tile does not animate in lockstep.
+- A cheaper alpha-cell render mode is available for weaker machines and comparison. It draws one full water quad per occupied cell, scales alpha by display amount, and draws `watertop` ribbons only on edges not adjacent to solid terrain or visible fluid.
+- Alpha-cell `watertop` has its own edge cutoff. A cell below this amount does not draw toppers, and a neighbor below this amount is treated like empty for edge wrapping.
+- The render cutoff slider feeds the marching-squares density threshold directly.
+  A hidden hard threshold made low-amount water vanish while flowing and should not be reintroduced without an explicit debug setting.
+- The renderer still uses a tiny epsilon when deciding whether a smoothed display-cache cell is visible at all. This prevents temporal smoothing from leaving zero-amount phantom blue cells when the public render cutoff is `0`.
 - Surface checks must use wrapped neighbor lookup. A top-row water cell should not draw `watertop` if Y wrap makes the bottom-row cell directly above it contain water.
+- The stage-center gravity picker maps `(mouse_world - stage_center) / 64px` into global gravity, clamped to the debug gravity slider bounds. It is intentionally not normalized, so short drags can create weak gravity and long drags can create stronger gravity.
+- Optional flow indicators draw render-only streaks from the fluid velocity grid. They are debug visualization, not gameplay particles.
 
 Pros:
 
@@ -109,11 +128,11 @@ Initial rules:
 - Water-specific entities, like piranhas, may still use water query helpers in their own content logic.
 - Fluids render as a late transparent pass over terrain/entities.
 
-Legacy transfer rule notes:
+Terraria byte-liquid reference notes:
 
 - Terraria's runtime update first tries to fill the cell below by its full remaining capacity, up to `255`, before doing horizontal equalization.
 - Terraria's horizontal path averages liquid amounts over neighboring same-liquid cells and requeues changed cells.
-- Splonks currently keeps the simpler full-stage pass, but its transfer rates should still use full `0..255` capacity while we validate behavior.
+- Splonks currently keeps the simpler full-stage pass, but uses normalized `0..1` amounts instead of Terraria's byte `0..255` liquid amount.
 
 Source notes:
 
@@ -122,7 +141,7 @@ Source notes:
 - For simulation parity, prefer the decompiled `Liquid.cs` flow rules. For rendering ideas, tModLoader `LiquidRenderer` / `LiquidEdgeRenderer` are useful design references.
 - Terraria's `LiquidRenderer.InternalPrepareDraw` builds a `LiquidCache`, derives `VisibleLiquidLevel`, extends visible liquid downward up to `WATERFALL_LENGTH`, computes smoothed edge walls, then draws source-rectangle slices with per-cell offsets.
 - tModLoader documents `WATERFALL_LENGTH` as controlling how far visual liquidfalls draw. Liquidfalls are emitted from source liquid when the tile underneath is not solid; they are not a separate liquid amount in the target cell.
-- Splonks intentionally keeps the current renderer simpler than Terraria's full `VisibleLeftWall` / `VisibleRightWall` / edge-frame cache because we do not currently have a Terraria-style liquid texture atlas. The important constraint is to avoid diagonal target inference: full 255 columns must not emit side waterfalls just because a diagonal neighbor is open.
+- Splonks intentionally keeps the current renderer simpler than Terraria's full `VisibleLeftWall` / `VisibleRightWall` / edge-frame cache because we do not currently have a Terraria-style liquid texture atlas. The important constraint is to avoid diagonal target inference: full columns must not emit side waterfalls just because a diagonal neighbor is open.
 - References:
   - `TerrariaDecompiled/Liquid.cs`: https://infinitynichto.github.io/TerrariaDecompiled/dc/dad/Liquid_8cs_source.html
   - `TerrariaDecompiled/LiquidRenderer.cs`: https://infinitynichto.github.io/TerrariaDecompiled/d2/d2c/LiquidRenderer_8cs_source.html

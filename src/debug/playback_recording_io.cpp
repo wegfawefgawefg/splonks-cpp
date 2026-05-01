@@ -546,6 +546,27 @@ void WriteStage(std::ostream& out, const Stage& stage) {
         WriteVectorPod(out, row);
     }
 
+    const std::uint32_t fluid_gravity_rows =
+        static_cast<std::uint32_t>(stage.fluid_gravity.size());
+    WritePod(out, fluid_gravity_rows);
+    for (const std::vector<Vec2>& row : stage.fluid_gravity) {
+        WriteVectorPod(out, row);
+    }
+
+    const std::uint32_t fluid_gravity_strength_rows =
+        static_cast<std::uint32_t>(stage.fluid_gravity_strength.size());
+    WritePod(out, fluid_gravity_strength_rows);
+    for (const std::vector<float>& row : stage.fluid_gravity_strength) {
+        WriteVectorPod(out, row);
+    }
+
+    const std::uint32_t fluid_temp_gravity_rows =
+        static_cast<std::uint32_t>(stage.fluid_temp_gravity.size());
+    WritePod(out, fluid_temp_gravity_rows);
+    for (const std::vector<Vec2>& row : stage.fluid_temp_gravity) {
+        WriteVectorPod(out, row);
+    }
+
     const std::uint32_t tile_shake_rows = static_cast<std::uint32_t>(stage.tile_shake.size());
     WritePod(out, tile_shake_rows);
     for (const std::vector<float>& row : stage.tile_shake) {
@@ -633,6 +654,39 @@ bool ReadStage(std::istream& in, Stage& stage) {
     stage.fluid_velocity.resize(fluid_velocity_rows);
     for (std::uint32_t i = 0; i < fluid_velocity_rows; ++i) {
         if (!ReadVectorPod(in, stage.fluid_velocity[i])) {
+            return false;
+        }
+    }
+
+    std::uint32_t fluid_gravity_rows = 0;
+    if (!ReadPod(in, fluid_gravity_rows)) {
+        return false;
+    }
+    stage.fluid_gravity.resize(fluid_gravity_rows);
+    for (std::uint32_t i = 0; i < fluid_gravity_rows; ++i) {
+        if (!ReadVectorPod(in, stage.fluid_gravity[i])) {
+            return false;
+        }
+    }
+
+    std::uint32_t fluid_gravity_strength_rows = 0;
+    if (!ReadPod(in, fluid_gravity_strength_rows)) {
+        return false;
+    }
+    stage.fluid_gravity_strength.resize(fluid_gravity_strength_rows);
+    for (std::uint32_t i = 0; i < fluid_gravity_strength_rows; ++i) {
+        if (!ReadVectorPod(in, stage.fluid_gravity_strength[i])) {
+            return false;
+        }
+    }
+
+    std::uint32_t fluid_temp_gravity_rows = 0;
+    if (!ReadPod(in, fluid_temp_gravity_rows)) {
+        return false;
+    }
+    stage.fluid_temp_gravity.resize(fluid_temp_gravity_rows);
+    for (std::uint32_t i = 0; i < fluid_temp_gravity_rows; ++i) {
+        if (!ReadVectorPod(in, stage.fluid_temp_gravity[i])) {
             return false;
         }
     }

@@ -179,6 +179,9 @@ struct Stage {
     std::vector<std::vector<float>> fluid_amount;
     std::vector<std::vector<float>> fluid_display_amount;
     std::vector<std::vector<Vec2>> fluid_velocity;
+    std::vector<std::vector<Vec2>> fluid_gravity;
+    std::vector<std::vector<float>> fluid_gravity_strength;
+    std::vector<std::vector<Vec2>> fluid_temp_gravity;
     std::vector<std::vector<float>> tile_shake;
     std::vector<std::vector<float>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
@@ -231,6 +234,10 @@ struct Stage {
     void SyncTileInstanceMetadataGrid();
     void SyncFluidTileGrid();
     void SyncFluidVelocityGrid();
+    void SetFluidGravityOverride(const IVec2& pos, Vec2 gravity_value);
+    void ClearFluidGravityOverride(const IVec2& pos);
+    void AddFluidTempGravity(const IVec2& pos, Vec2 gravity_value);
+    void ClearFluidTempGravity(const IVec2& pos);
     void SetTile(const IVec2& pos, Tile tile);
     void SetFluidTile(const IVec2& pos, Tile tile);
     void SetTileRotation(const IVec2& pos, TileRotation rotation);

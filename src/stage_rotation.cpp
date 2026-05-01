@@ -184,9 +184,22 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     stage.fluid_amount = RotateGrid(stage.fluid_amount, quarter_turns);
     stage.fluid_display_amount = RotateGrid(stage.fluid_display_amount, quarter_turns);
     stage.fluid_velocity = RotateGrid(stage.fluid_velocity, quarter_turns);
+    stage.fluid_gravity = RotateGrid(stage.fluid_gravity, quarter_turns);
+    stage.fluid_gravity_strength = RotateGrid(stage.fluid_gravity_strength, quarter_turns);
+    stage.fluid_temp_gravity = RotateGrid(stage.fluid_temp_gravity, quarter_turns);
     for (std::vector<Vec2>& row : stage.fluid_velocity) {
         for (Vec2& velocity : row) {
             velocity = RotateDirection(velocity, quarter_turns);
+        }
+    }
+    for (std::vector<Vec2>& row : stage.fluid_gravity) {
+        for (Vec2& gravity : row) {
+            gravity = RotateDirection(gravity, quarter_turns);
+        }
+    }
+    for (std::vector<Vec2>& row : stage.fluid_temp_gravity) {
+        for (Vec2& gravity : row) {
+            gravity = RotateDirection(gravity, quarter_turns);
         }
     }
     stage.backwall_tiles = RotateGrid(stage.backwall_tiles, quarter_turns);

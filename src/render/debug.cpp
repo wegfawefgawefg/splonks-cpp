@@ -266,6 +266,29 @@ void RenderScreenLine(
     }
 }
 
+void RenderScreenArrow(
+    SDL_Renderer* renderer,
+    const Vec2& from,
+    const Vec2& to,
+    const SDL_Color& color,
+    int thickness = 1
+) {
+    RenderScreenLine(renderer, from, to, color, thickness);
+    const Vec2 delta = to - from;
+    const float length = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
+    if (length <= 0.0F) {
+        return;
+    }
+
+    const Vec2 dir = delta * (1.0F / length);
+    const Vec2 perp = Vec2::New(-dir.y, dir.x);
+    constexpr float kArrowHeadLength = 6.0F;
+    constexpr float kArrowHeadWidth = 4.0F;
+    const Vec2 head_base = to - (dir * kArrowHeadLength);
+    RenderScreenLine(renderer, to, head_base + (perp * kArrowHeadWidth), color, thickness);
+    RenderScreenLine(renderer, to, head_base - (perp * kArrowHeadWidth), color, thickness);
+}
+
 Vec2 TileTopLeftWorld(const IVec2& tile_pos) {
     return Vec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
@@ -606,6 +629,34 @@ void RenderFluidBrushPreview(
     const Vec2 mouse_world = graphics.ScreenToWc(mouse_pos);
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(mouse_pos);
     const int radius_tiles = std::max(0, brush.radius_tiles);
+    const SDL_Color brush_color = [&]() {
+        switch (brush.mode) {
+        case DebugFluidBrushState::Mode::PermanentGravity:
+            return SDL_Color{255, 220, 64, 255};
+        case DebugFluidBrushState::Mode::TemporaryGravity:
+            return SDL_Color{255, 96, 224, 255};
+        case DebugFluidBrushState::Mode::GlobalGravityDirection:
+            return SDL_Color{128, 255, 128, 255};
+        case DebugFluidBrushState::Mode::Water:
+        default:
+            return SDL_Color{32, 220, 255, 255};
+        }
+    }();
+
+    if (brush.mode == DebugFluidBrushState::Mode::GlobalGravityDirection) {
+        const Vec2 stage_center = Vec2::New(
+            static_cast<float>(state.stage.GetWidth()) * 0.5F,
+            static_cast<float>(state.stage.GetHeight()) * 0.5F
+        );
+        RenderScreenLine(
+            renderer,
+            WorldPointToScreen(graphics, presentation, stage_center),
+            WorldPointToScreen(graphics, presentation, mouse_world),
+            brush_color,
+            3
+        );
+        return;
+    }
 
     for (int y = mouse_tile.y - radius_tiles; y <= mouse_tile.y + radius_tiles; ++y) {
         for (int x = mouse_tile.x - radius_tiles; x <= mouse_tile.x + radius_tiles; ++x) {
@@ -636,8 +687,27 @@ void RenderFluidBrushPreview(
                 continue;
             }
 
-            SDL_SetRenderDrawColor(renderer, 32, 220, 255, 255);
+            SDL_SetRenderDrawColor(renderer, brush_color.r, brush_color.g, brush_color.b, brush_color.a);
             SDL_RenderRect(renderer, &tile_rect);
+            if (brush.mode == DebugFluidBrushState::Mode::PermanentGravity ||
+                brush.mode == DebugFluidBrushState::Mode::TemporaryGravity) {
+                const Vec2 from_world = nearest_tile_world + Vec2::New(
+                    static_cast<float>(kTileSize) * 0.5F,
+                    static_cast<float>(kTileSize) * 0.5F
+                );
+                const Vec2 to_world = from_world + Vec2::New(
+                                           brush.paint_gravity_x,
+                                           brush.paint_gravity_y
+                                       ) *
+                                                   (static_cast<float>(kTileSize) * 0.75F);
+                RenderScreenLine(
+                    renderer,
+                    WorldPointToScreen(graphics, presentation, from_world),
+                    WorldPointToScreen(graphics, presentation, to_world),
+                    brush_color,
+                    2
+                );
+            }
         }
     }
 }
@@ -1175,7 +1245,7 @@ void RenderFluidAmountOverlay(
             }
 
             const std::uint8_t alpha = static_cast<std::uint8_t>(
-                48 + ((static_cast<int>(std::round(amount)) * 128) / 255)
+                48 + static_cast<int>(std::round(std::clamp(amount, 0.0F, 1.0F) * 128.0F))
             );
             SDL_SetRenderDrawColor(renderer, 32, 180, 255, alpha);
             SDL_RenderFillRect(renderer, &tile_rect);
@@ -1187,8 +1257,8 @@ void RenderFluidAmountOverlay(
                 std::snprintf(
                     label,
                     sizeof(label),
-                    "%u",
-                    static_cast<unsigned int>(std::round(amount))
+                    "%.3f",
+                    amount
                 );
                 DrawText(
                     renderer,
@@ -1201,6 +1271,113 @@ void RenderFluidAmountOverlay(
                     SDL_Color{255, 255, 255, 255}
                 );
             }
+        }
+    }
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+}
+
+void RenderFluidGravityOverlay(
+    SDL_Renderer* renderer,
+    Graphics& graphics,
+    const State& state,
+    const SDL_FRect& presentation,
+    const std::vector<Vec2>& render_offsets
+) {
+    if (!state.debug_overlay.show_fluid_gravity) {
+        return;
+    }
+
+    const Vec2 global_gravity = Vec2::New(
+        state.debug_fluid_brush.gravity_x,
+        state.debug_fluid_brush.gravity_y
+    );
+    char global_label[64];
+    std::snprintf(
+        global_label,
+        sizeof(global_label),
+        "Fluid gravity global: %.2f, %.2f",
+        global_gravity.x,
+        global_gravity.y
+    );
+    DrawText(
+        renderer,
+        graphics,
+        14,
+        graphics.ui_font,
+        global_label,
+        presentation.x + 8.0F,
+        presentation.y + 8.0F,
+        SDL_Color{128, 255, 255, 255}
+    );
+
+    const VisibleWorldRect visible = GetVisibleWorldRect(graphics);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    for (const Vec2& render_offset : render_offsets) {
+        for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
+                 state.stage,
+                 ToIVec2(visible.tl - render_offset),
+                 ToIVec2(visible.br - render_offset))) {
+            const IVec2 tile_pos = tile_query.tile_pos;
+            if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
+                continue;
+            }
+
+            const std::size_t grid_y = static_cast<std::size_t>(tile_pos.y);
+            const std::size_t grid_x = static_cast<std::size_t>(tile_pos.x);
+            if (grid_y >= state.stage.fluid_gravity.size() ||
+                grid_y >= state.stage.fluid_gravity_strength.size() ||
+                grid_y >= state.stage.fluid_temp_gravity.size() ||
+                grid_x >= state.stage.fluid_gravity[grid_y].size() ||
+                grid_x >= state.stage.fluid_gravity_strength[grid_y].size() ||
+                grid_x >= state.stage.fluid_temp_gravity[grid_y].size()) {
+                continue;
+            }
+
+            const bool has_local_gravity =
+                state.stage.fluid_gravity_strength[grid_y][grid_x] > 0.0F;
+            const Vec2 temp_gravity = state.stage.fluid_temp_gravity[grid_y][grid_x];
+            const bool has_temp_gravity = Length(temp_gravity) > 0.01F;
+            const Vec2 base_gravity = has_local_gravity
+                ? state.stage.fluid_gravity[grid_y][grid_x]
+                : global_gravity;
+            const Vec2 effective_gravity = base_gravity + temp_gravity;
+            if (Length(effective_gravity) <= 0.01F && !has_local_gravity && !has_temp_gravity) {
+                continue;
+            }
+
+            SDL_Color color{128, 255, 255, 255};
+            if (has_local_gravity && has_temp_gravity) {
+                color = SDL_Color{255, 160, 64, 255};
+            } else if (has_local_gravity) {
+                color = SDL_Color{255, 220, 64, 255};
+            } else if (has_temp_gravity) {
+                color = SDL_Color{255, 96, 224, 255};
+            }
+
+            const Vec2 tile_center = TileCenterWorld(tile_pos) + render_offset;
+            const Vec2 center_screen = WorldPointToScreen(graphics, presentation, tile_center);
+            if (Length(effective_gravity) <= 0.01F) {
+                SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+                const SDL_FRect zero_rect{
+                    center_screen.x - 3.0F,
+                    center_screen.y - 3.0F,
+                    6.0F,
+                    6.0F,
+                };
+                SDL_RenderRect(renderer, &zero_rect);
+                continue;
+            }
+
+            const Vec2 arrow_delta =
+                NormalizeOrZero(effective_gravity) *
+                std::min(Length(effective_gravity), 1.0F) *
+                (static_cast<float>(kTileSize) * 0.45F);
+            const Vec2 to_screen = WorldPointToScreen(
+                graphics,
+                presentation,
+                tile_center + arrow_delta
+            );
+            RenderScreenArrow(renderer, center_screen, to_screen, color, 2);
         }
     }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
@@ -1477,6 +1654,7 @@ void RenderDebugOverlay(
         !state.debug_overlay.show_tile_types &&
         !state.debug_overlay.show_tile_openness &&
         !state.debug_overlay.show_fluid_amounts &&
+        !state.debug_overlay.show_fluid_gravity &&
         !state.debug_overlay.show_lights &&
         !state.debug_overlay.show_area_boundaries &&
         !state.debug_overlay.show_area_ids &&
@@ -1485,6 +1663,7 @@ void RenderDebugOverlay(
         !state.debug_overlay.show_audio_occlusion_paths &&
         !state.debug_overlay.show_debug_annotations &&
         !ShouldRenderShakeBrushPreview(state) &&
+        !ShouldRenderFluidBrushPreview(state) &&
         !ShouldRenderAudioBrushPreview(state)) {
         return;
     }
@@ -1516,6 +1695,9 @@ void RenderDebugOverlay(
     }
     if (state.debug_overlay.show_fluid_amounts) {
         RenderFluidAmountOverlay(renderer, graphics, state, presentation, render_offsets);
+    }
+    if (state.debug_overlay.show_fluid_gravity) {
+        RenderFluidGravityOverlay(renderer, graphics, state, presentation, render_offsets);
     }
     if (state.debug_overlay.show_tile_indexes || state.debug_overlay.show_tile_types) {
         RenderTileOverlay(renderer, graphics, state, presentation, render_offsets);

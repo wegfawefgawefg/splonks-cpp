@@ -106,6 +106,13 @@ bool IsFluidBrushActive(const State& state) {
     return state.debug_fluid_brush.enabled;
 }
 
+Vec2 StageCenterWorld(const Stage& stage) {
+    return Vec2::New(
+        static_cast<float>(stage.GetWidth()) * 0.5F,
+        static_cast<float>(stage.GetHeight()) * 0.5F
+    );
+}
+
 bool CanFluidBrushOccupyTile(Tile terrain_tile) {
     if (terrain_tile == Tile::Air) {
         return true;
@@ -176,9 +183,22 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
         return;
     }
 
-    const DebugFluidBrushState& brush = state.debug_fluid_brush;
+    DebugFluidBrushState& brush = state.debug_fluid_brush;
+    if (brush.mode == DebugFluidBrushState::Mode::GlobalGravityDirection) {
+        if (paint_water) {
+            constexpr float kGravityPickerScalePx = 64.0F;
+            const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+            const Vec2 gravity = (mouse_world - StageCenterWorld(state.stage)) /
+                                 kGravityPickerScalePx;
+            brush.gravity_x = std::clamp(gravity.x, -4.0F, 4.0F);
+            brush.gravity_y = std::clamp(gravity.y, -4.0F, 4.0F);
+        }
+        return;
+    }
+
     const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
     const int radius_tiles = std::max(0, brush.radius_tiles);
+    const float radius_for_falloff = std::max(1.0F, static_cast<float>(radius_tiles));
     std::vector<IVec2> changed_tiles;
 
     for (int y = mouse_tile.y - radius_tiles; y <= mouse_tile.y + radius_tiles; ++y) {
@@ -199,6 +219,30 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                 static_cast<unsigned int>(wrapped.x),
                 static_cast<unsigned int>(wrapped.y)
             );
+            const float falloff = std::clamp(1.0F - (distance / (radius_for_falloff + 1.0F)), 0.0F, 1.0F);
+            if (brush.mode == DebugFluidBrushState::Mode::PermanentGravity) {
+                if (paint_water) {
+                    state.stage.SetFluidGravityOverride(
+                        wrapped,
+                        Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y)
+                    );
+                } else if (erase_fluid) {
+                    state.stage.ClearFluidGravityOverride(wrapped);
+                }
+                continue;
+            }
+            if (brush.mode == DebugFluidBrushState::Mode::TemporaryGravity) {
+                if (paint_water) {
+                    state.stage.AddFluidTempGravity(
+                        wrapped,
+                        Vec2::New(brush.paint_gravity_x, brush.paint_gravity_y) * falloff
+                    );
+                } else if (erase_fluid) {
+                    state.stage.ClearFluidTempGravity(wrapped);
+                }
+                continue;
+            }
+
             if (paint_water) {
                 if (!brush.replace_solid_tiles && !CanFluidBrushOccupyTile(current_tile)) {
                     continue;

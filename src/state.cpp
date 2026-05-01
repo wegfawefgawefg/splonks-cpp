@@ -178,17 +178,26 @@ State State::New() {
         state.settings.debug_ui.fluid_brush_simulation_enabled;
     state.debug_fluid_brush.replace_solid_tiles =
         state.settings.debug_ui.fluid_brush_replace_solid_tiles;
+    state.debug_fluid_brush.mode = static_cast<DebugFluidBrushState::Mode>(std::clamp(
+        state.settings.debug_ui.fluid_brush_mode,
+        0,
+        3
+    ));
     state.debug_fluid_brush.radius_tiles =
         std::max(0, state.settings.debug_ui.fluid_brush_radius_tiles);
     state.debug_fluid_brush.simulation_interval_frames =
         std::max(1, state.settings.debug_ui.fluid_brush_simulation_interval_frames);
     state.debug_fluid_brush.transfer_per_step = std::clamp(
         state.settings.debug_ui.fluid_brush_transfer_per_step,
-        0,
-        255
+        0.0F,
+        1.0F
     );
     state.debug_fluid_brush.gravity_x = state.settings.debug_ui.fluid_brush_gravity_x;
     state.debug_fluid_brush.gravity_y = state.settings.debug_ui.fluid_brush_gravity_y;
+    state.debug_fluid_brush.paint_gravity_x =
+        state.settings.debug_ui.fluid_brush_paint_gravity_x;
+    state.debug_fluid_brush.paint_gravity_y =
+        state.settings.debug_ui.fluid_brush_paint_gravity_y;
     state.debug_fluid_brush.pressure_strength = std::clamp(
         state.settings.debug_ui.fluid_brush_pressure_strength,
         0.0F,
@@ -196,6 +205,11 @@ State State::New() {
     );
     state.debug_fluid_brush.velocity_damping = std::clamp(
         state.settings.debug_ui.fluid_brush_velocity_damping,
+        0.0F,
+        1.0F
+    );
+    state.debug_fluid_brush.temp_gravity_decay = std::clamp(
+        state.settings.debug_ui.fluid_brush_temp_gravity_decay,
         0.0F,
         1.0F
     );
@@ -209,8 +223,21 @@ State State::New() {
     state.debug_fluid_brush.render_cutoff_amount = std::clamp(
         state.settings.debug_ui.fluid_brush_render_cutoff_amount,
         0.0F,
-        255.0F
+        1.0F
     );
+    state.debug_fluid_brush.topper_cutoff_amount = std::clamp(
+        state.settings.debug_ui.fluid_brush_topper_cutoff_amount,
+        0.0F,
+        1.0F
+    );
+    state.debug_fluid_brush.show_flow_indicators =
+        state.settings.debug_ui.fluid_brush_show_flow_indicators;
+    state.debug_fluid_brush.render_mode =
+        static_cast<DebugFluidBrushState::RenderMode>(std::clamp(
+            state.settings.debug_ui.fluid_brush_render_mode,
+            0,
+            1
+        ));
     (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
     return state;
 }

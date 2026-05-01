@@ -49,6 +49,10 @@ std::optional<IVec2> ResolveWrappedTileCoord(const Stage& stage, int tile_x, int
     return wrapped;
 }
 
+float Dot(const Vec2& left, const Vec2& right) {
+    return (left.x * right.x) + (left.y * right.y);
+}
+
 VisibleWorldRect GetVisibleWorldRect(const Graphics& graphics) {
     return VisibleWorldRect{
         .tl = graphics.camera.target - (graphics.camera.offset / graphics.camera.zoom),
@@ -495,6 +499,75 @@ void RenderWorldTextureRibbon(
     }
 }
 
+struct RibbonPlacement {
+    Vec2 start = Vec2::New(0.0F, 0.0F);
+    Vec2 end = Vec2::New(0.0F, 0.0F);
+    bool use_right_normal = false;
+};
+
+RibbonPlacement MakeCenteredContourRibbonPlacement(
+    const FluidContourSegment& segment,
+    bool tile_center_is_inside_fluid,
+    float thickness
+) {
+    const Vec2 delta = segment.b - segment.a;
+    const Vec2 left_normal = NormalizeOrZero(Vec2::New(-delta.y, delta.x));
+    const Vec2 right_normal = Vec2::New(left_normal.x * -1.0F, left_normal.y * -1.0F);
+    const Vec2 midpoint = (segment.a + segment.b) * 0.5F;
+    Vec2 desired_normal = NormalizeOrZero(
+        Vec2::New(static_cast<float>(kTileSize) * 0.5F, static_cast<float>(kTileSize) * 0.5F) -
+        midpoint
+    );
+    if (!tile_center_is_inside_fluid) {
+        desired_normal = desired_normal * -1.0F;
+    }
+    if (Length(desired_normal) <= 0.001F) {
+        desired_normal = left_normal;
+    }
+
+    const bool use_right_normal = Dot(right_normal, desired_normal) > Dot(left_normal, desired_normal);
+    const Vec2 ribbon_normal = use_right_normal ? right_normal : left_normal;
+    const Vec2 centered_offset = ribbon_normal * (thickness * -0.5F);
+    return RibbonPlacement{
+        .start = segment.a + centered_offset,
+        .end = segment.b + centered_offset,
+        .use_right_normal = use_right_normal,
+    };
+}
+
+void RenderFluidFlowIndicator(
+    SDL_Renderer* renderer,
+    const Graphics& graphics,
+    const Vec2& tile_world,
+    const Vec2& velocity,
+    std::uint64_t tick,
+    float opacity
+) {
+    const float speed = Length(velocity);
+    if (speed <= 0.01F) {
+        return;
+    }
+
+    const Vec2 direction = NormalizeOrZero(velocity);
+    const float phase = std::fmod(static_cast<float>(tick % 120ULL) / 120.0F, 1.0F);
+    const Vec2 center =
+        tile_world +
+        Vec2::New(static_cast<float>(kTileSize) * 0.5F, static_cast<float>(kTileSize) * 0.5F) +
+        direction * ((phase - 0.5F) * static_cast<float>(kTileSize) * 0.75F);
+    const float length = std::clamp(speed * 2.0F, 2.0F, 6.0F);
+    const Vec2 tail = center - (direction * length);
+    const Vec2 head = center + (direction * length);
+    const Vec2 tail_screen = WorldPointToScreenForGeometry(graphics, tail);
+    const Vec2 head_screen = WorldPointToScreenForGeometry(graphics, head);
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    const std::uint8_t alpha = static_cast<std::uint8_t>(
+        std::clamp(static_cast<int>(std::round(180.0F * std::clamp(opacity, 0.0F, 1.0F))), 0, 180)
+    );
+    SDL_SetRenderDrawColor(renderer, 230, 250, 255, alpha);
+    SDL_RenderLine(renderer, tail_screen.x, tail_screen.y, head_screen.x, head_screen.y);
+}
+
 bool ShouldRenderImmediateBorderBacking(const Stage& stage, int tile_x, int tile_y) {
     return IsImmediateBorderRingTile(stage, tile_x, tile_y);
 }
@@ -757,12 +830,12 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     constexpr std::uint8_t kFluidAlpha = 176;
     constexpr std::uint8_t kFluidTopAlpha = 224;
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
-    constexpr float kWaterTopRaisePx = 1.0F;
-    constexpr float kMaxFluidAmount = 255.0F;
+    constexpr float kMinVisibleDisplayLevel = 0.0001F;
     const float min_fluid_display_level =
-        std::clamp(state.debug_fluid_brush.render_cutoff_amount, 0.0F, kMaxFluidAmount) /
-        kMaxFluidAmount;
-    const float marching_threshold = std::max(0.05F, min_fluid_display_level);
+        std::clamp(state.debug_fluid_brush.render_cutoff_amount, 0.0F, 1.0F);
+    const float effective_display_cutoff =
+        std::max(min_fluid_display_level, kMinVisibleDisplayLevel);
+    const float marching_threshold = min_fluid_display_level;
 
     struct FluidRenderCell {
         Tile visible_tile = Tile::Air;
@@ -819,7 +892,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 const FluidRenderCell* const adjacent_cell =
                     const_cell_at(adjacent_x, adjacent_y);
                 if (adjacent_cell == nullptr || !adjacent_cell->render_candidate ||
-                    adjacent_cell->terrain_solid || adjacent_cell->display_level <= 0.0F) {
+                    adjacent_cell->terrain_solid ||
+                    adjacent_cell->display_level <= effective_display_cutoff) {
                     continue;
                 }
                 density += std::clamp(adjacent_cell->display_level, 0.0F, 1.0F);
@@ -846,7 +920,9 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 static_cast<unsigned int>(x),
                 static_cast<unsigned int>(y)
             );
-            cell.has_liquid = GetTileArchetype(fluid_tile).simulated_fluid && amount > 0.0F;
+            cell.has_liquid =
+                GetTileArchetype(fluid_tile).simulated_fluid &&
+                amount > kMinVisibleDisplayLevel;
             float& display_amount =
                 state.stage.fluid_display_amount[static_cast<std::size_t>(y)]
                                                 [static_cast<std::size_t>(x)];
@@ -861,7 +937,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 } else {
                     display_amount = 0.0F;
                 }
-                if (display_amount < min_fluid_display_level || cell.terrain_solid) {
+                if (display_amount <= effective_display_cutoff || cell.terrain_solid) {
                     display_amount = 0.0F;
                     continue;
                 }
@@ -889,7 +965,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 continue;
             }
             cell.visible_tile = fluid_tile;
-            cell.liquid_level = amount / kMaxFluidAmount;
+            cell.liquid_level = std::clamp(amount, 0.0F, 1.0F);
             if (state.debug_fluid_brush.temporal_smoothing_enabled) {
                 const float response = std::clamp(
                     state.debug_fluid_brush.temporal_smoothing_response,
@@ -922,7 +998,9 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         continue;
                     }
                     const FluidRenderCell* const nearby = const_cell_at(x + offset_x, y + offset_y);
-                    if (nearby == nullptr || !nearby->has_visible_liquid || nearby->terrain_solid) {
+                    if (nearby == nullptr || !nearby->has_visible_liquid ||
+                        nearby->terrain_solid ||
+                        nearby->display_level <= effective_display_cutoff) {
                         continue;
                     }
                     has_neighboring_visible_liquid = true;
@@ -1011,6 +1089,129 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         static_cast<int>(kFluidAlpha)
                     )
                 );
+                auto render_flow_indicator = [&]() {
+                    if (!state.debug_fluid_brush.show_flow_indicators ||
+                        y >= state.stage.fluid_velocity.size() ||
+                        x >= state.stage.fluid_velocity[y].size()) {
+                        return;
+                    }
+                    const Vec2 velocity = state.stage.fluid_velocity[y][x];
+                    const std::uint64_t flow_tick =
+                        static_cast<std::uint64_t>(state.scene_frame) +
+                        (static_cast<std::uint64_t>(x) * 29ULL) +
+                        (static_cast<std::uint64_t>(y) * 17ULL);
+                    RenderFluidFlowIndicator(
+                        renderer,
+                        graphics,
+                        tile_world,
+                        velocity,
+                        flow_tick,
+                        cell->display_level
+                    );
+                };
+
+                if (state.debug_fluid_brush.render_mode ==
+                    DebugFluidBrushState::RenderMode::AlphaCells) {
+                    if (cell->display_level <= effective_display_cutoff) {
+                        continue;
+                    }
+                    const float topper_edge_cutoff = std::clamp(
+                        state.debug_fluid_brush.topper_cutoff_amount,
+                        0.0F,
+                        1.0F
+                    );
+                    const bool cell_can_render_topper =
+                        cell->display_level > topper_edge_cutoff;
+                    const std::uint8_t alpha_cell_body_alpha = static_cast<std::uint8_t>(
+                        std::clamp(
+                            static_cast<int>(std::round(
+                                static_cast<float>(kFluidAlpha) *
+                                std::clamp(cell->display_level, 0.0F, 1.0F)
+                            )),
+                            0,
+                            static_cast<int>(kFluidAlpha)
+                        )
+                    );
+                    RenderWorldTextureQuad(
+                        renderer,
+                        graphics,
+                        tile_texture,
+                        body_src,
+                        std::array<Vec2, 4>{
+                            tile_world + Vec2::New(0.0F, 0.0F),
+                            tile_world + Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                            tile_world + Vec2::New(
+                                static_cast<float>(kTileSizePx),
+                                static_cast<float>(kTileSizePx)
+                            ),
+                            tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                        },
+                        MakeFluidVertexColor(brightness, alpha_cell_body_alpha)
+                    );
+
+                    auto neighbor_is_fluid_or_solid = [&](int offset_x, int offset_y) -> bool {
+                        const FluidRenderCell* const nearby =
+                            const_cell_at(int_x + offset_x, int_y + offset_y);
+                        if (nearby == nullptr || nearby->terrain_solid) {
+                            return true;
+                        }
+                        return nearby->has_visible_liquid &&
+                               nearby->display_level > topper_edge_cutoff;
+                    };
+                    auto render_cell_edge_topper = [&](const FluidContourSegment& segment) {
+                        if (!cell_can_render_topper || top_texture == nullptr || top_src.h <= 0.0F) {
+                            return;
+                        }
+                        const RibbonPlacement ribbon = MakeCenteredContourRibbonPlacement(
+                            segment,
+                            true,
+                            top_src.h
+                        );
+                        RenderWorldTextureRibbon(
+                            renderer,
+                            graphics,
+                            top_texture,
+                            top_src,
+                            tile_world + ribbon.start,
+                            tile_world + ribbon.end,
+                            top_src.h,
+                            ribbon.use_right_normal,
+                            MakeFluidVertexColor(brightness, kFluidTopAlpha)
+                        );
+                    };
+                    if (!neighbor_is_fluid_or_solid(0, -1)) {
+                        render_cell_edge_topper(FluidContourSegment{
+                            .a = Vec2::New(0.0F, 0.0F),
+                            .b = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                        });
+                    }
+                    if (!neighbor_is_fluid_or_solid(1, 0)) {
+                        render_cell_edge_topper(FluidContourSegment{
+                            .a = Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                            .b = Vec2::New(
+                                static_cast<float>(kTileSizePx),
+                                static_cast<float>(kTileSizePx)
+                            ),
+                        });
+                    }
+                    if (!neighbor_is_fluid_or_solid(0, 1)) {
+                        render_cell_edge_topper(FluidContourSegment{
+                            .a = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                            .b = Vec2::New(
+                                static_cast<float>(kTileSizePx),
+                                static_cast<float>(kTileSizePx)
+                            ),
+                        });
+                    }
+                    if (!neighbor_is_fluid_or_solid(-1, 0)) {
+                        render_cell_edge_topper(FluidContourSegment{
+                            .a = Vec2::New(0.0F, 0.0F),
+                            .b = Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                        });
+                    }
+                    render_flow_indicator();
+                    continue;
+                }
 
                 const std::array<FluidMarchingVertex, 4> samples{
                     FluidMarchingVertex{
@@ -1055,29 +1256,29 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
 
                 if (top_texture != nullptr) {
                     for (const FluidContourSegment& segment : marching_result.contour_segments) {
-                        Vec2 segment_start = segment.a;
-                        Vec2 segment_end = segment.b;
-                        if (segment_start.x > segment_end.x) {
-                            std::swap(segment_start, segment_end);
-                        }
-
-                        const Vec2 delta = segment_end - segment_start;
-                        if (std::abs(delta.x) < std::abs(delta.y) * 0.35F) {
+                        const Vec2 delta = segment.b - segment.a;
+                        if (Length(delta) <= 0.001F) {
                             continue;
                         }
+                        const RibbonPlacement ribbon = MakeCenteredContourRibbonPlacement(
+                            segment,
+                            center_signed_distance >= 0.0F,
+                            top_src.h
+                        );
                         RenderWorldTextureRibbon(
                             renderer,
                             graphics,
                             top_texture,
                             top_src,
-                            tile_world + segment_start + Vec2::New(0.0F, -kWaterTopRaisePx),
-                            tile_world + segment_end + Vec2::New(0.0F, -kWaterTopRaisePx),
+                            tile_world + ribbon.start,
+                            tile_world + ribbon.end,
                             top_src.h,
-                            false,
+                            ribbon.use_right_normal,
                             MakeFluidVertexColor(brightness, kFluidTopAlpha)
                         );
                     }
                 }
+                render_flow_indicator();
             }
         }
     }
