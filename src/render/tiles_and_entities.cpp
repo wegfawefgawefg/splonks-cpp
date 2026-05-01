@@ -819,6 +819,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
         Tile visible_tile = Tile::Air;
         float liquid_level = 0.0F;
         float visible_level = 0.0F;
+        float display_level = 0.0F;
         float opacity = 1.0F;
         bool terrain_solid = false;
         bool has_liquid = false;
@@ -874,7 +875,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 const float cell_surface_world_y =
                     (static_cast<float>(adjacent_y) * static_cast<float>(kTileSizePx)) +
                     (static_cast<float>(kTileSizePx) *
-                     (1.0F - std::clamp(adjacent_cell->visible_level, 0.0F, 1.0F)));
+                     (1.0F - std::clamp(adjacent_cell->display_level, 0.0F, 1.0F)));
                 const float vertex_world_y =
                     static_cast<float>(vertex_y) * static_cast<float>(kTileSizePx);
                 best_signed_distance = std::max(
@@ -907,7 +908,42 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             cell.visible_tile = fluid_tile;
             cell.liquid_level = static_cast<float>(amount) / 255.0F;
             cell.visible_level = cell.liquid_level;
+            cell.display_level = cell.visible_level;
             cell.has_visible_liquid = true;
+        }
+    }
+
+    for (int y = 0; y < stage_tile_height; ++y) {
+        for (int x = 0; x < stage_tile_width; ++x) {
+            FluidRenderCell* const cell = cell_at(x, y);
+            if (cell == nullptr || !cell->has_visible_liquid || cell->terrain_solid) {
+                continue;
+            }
+
+            float weighted_level = 0.0F;
+            float total_weight = 0.0F;
+            for (int offset_y = -1; offset_y <= 1; ++offset_y) {
+                for (int offset_x = -1; offset_x <= 1; ++offset_x) {
+                    const FluidRenderCell* const nearby =
+                        const_cell_at(x + offset_x, y + offset_y);
+                    if (nearby == nullptr || nearby->terrain_solid) {
+                        continue;
+                    }
+                    const bool center = offset_x == 0 && offset_y == 0;
+                    const bool diagonal = offset_x != 0 && offset_y != 0;
+                    const float weight = center ? 4.0F : (diagonal ? 1.0F : 2.0F);
+                    weighted_level += nearby->visible_level * weight;
+                    total_weight += weight;
+                }
+            }
+
+            if (total_weight > 0.0F) {
+                cell->display_level = std::clamp(
+                    (cell->visible_level + (weighted_level / total_weight)) * 0.5F,
+                    0.0F,
+                    1.0F
+                );
+            }
         }
     }
 
@@ -1005,7 +1041,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 const float center_signed_distance = std::max(
                     -static_cast<float>(kTileSizePx),
                     static_cast<float>(kTileSizePx) *
-                        (std::clamp(cell->visible_level, 0.0F, 1.0F) - 0.5F)
+                        (std::clamp(cell->display_level, 0.0F, 1.0F) - 0.5F)
                 );
                 const FluidMarchingResult marching_result =
                     BuildFilledFluidMarchingSquares(samples, center_signed_distance);
