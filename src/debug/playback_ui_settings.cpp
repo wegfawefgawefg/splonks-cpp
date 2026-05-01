@@ -307,11 +307,11 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         "%.4f"
     );
     ImGui::SliderFloat(
-        "Topper Edge Cutoff (0-1)",
-        &brush.topper_cutoff_amount,
+        "Global Water Alpha",
+        &brush.water_alpha,
         0.0F,
         1.0F,
-        "%.3f"
+        "%.2f"
     );
     ImGui::Checkbox("Show Flow Indicators", &brush.show_flow_indicators);
     ImGui::Checkbox("Water Uses Stage Lighting", &brush.lighting_enabled);

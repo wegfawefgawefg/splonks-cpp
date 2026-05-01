@@ -225,8 +225,8 @@ State State::New() {
         0.0F,
         1.0F
     );
-    state.debug_fluid_brush.topper_cutoff_amount = std::clamp(
-        state.settings.debug_ui.fluid_brush_topper_cutoff_amount,
+    state.debug_fluid_brush.water_alpha = std::clamp(
+        state.settings.debug_ui.fluid_brush_water_alpha,
         0.0F,
         1.0F
     );

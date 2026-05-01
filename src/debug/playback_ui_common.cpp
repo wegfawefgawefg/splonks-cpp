@@ -170,15 +170,15 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
             fluid_brush_render_cutoff_amount;
         changed = true;
     }
-    const float fluid_brush_topper_cutoff_amount = std::clamp(
-        state.debug_fluid_brush.topper_cutoff_amount,
+    const float fluid_brush_water_alpha = std::clamp(
+        state.debug_fluid_brush.water_alpha,
         0.0F,
         1.0F
     );
-    if (state.settings.debug_ui.fluid_brush_topper_cutoff_amount !=
-        fluid_brush_topper_cutoff_amount) {
-        state.settings.debug_ui.fluid_brush_topper_cutoff_amount =
-            fluid_brush_topper_cutoff_amount;
+    if (state.settings.debug_ui.fluid_brush_water_alpha !=
+        fluid_brush_water_alpha) {
+        state.settings.debug_ui.fluid_brush_water_alpha =
+            fluid_brush_water_alpha;
         changed = true;
     }
     if (state.settings.debug_ui.fluid_brush_show_flow_indicators !=

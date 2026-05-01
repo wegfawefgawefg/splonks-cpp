@@ -174,7 +174,7 @@ DebugUiSettings DebugUiSettings::New() {
     result.fluid_brush_temporal_smoothing_enabled = false;
     result.fluid_brush_temporal_smoothing_response = 0.35F;
     result.fluid_brush_render_cutoff_amount = 0.004F;
-    result.fluid_brush_topper_cutoff_amount = 0.1F;
+    result.fluid_brush_water_alpha = 0.69F;
     result.fluid_brush_show_flow_indicators = false;
     result.fluid_brush_lighting_enabled = true;
     result.fluid_brush_lighting_strength = 1.0F;
@@ -504,9 +504,9 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_render_cutoff_amount") {
             settings.debug_ui.fluid_brush_render_cutoff_amount =
                 ParseFloat(value, settings.debug_ui.fluid_brush_render_cutoff_amount);
-        } else if (key == "debug_ui.fluid_brush_topper_cutoff_amount") {
-            settings.debug_ui.fluid_brush_topper_cutoff_amount =
-                ParseFloat(value, settings.debug_ui.fluid_brush_topper_cutoff_amount);
+        } else if (key == "debug_ui.fluid_brush_water_alpha") {
+            settings.debug_ui.fluid_brush_water_alpha =
+                ParseFloat(value, settings.debug_ui.fluid_brush_water_alpha);
         } else if (key == "debug_ui.fluid_brush_show_flow_indicators") {
             settings.debug_ui.fluid_brush_show_flow_indicators =
                 ParseBool(value, settings.debug_ui.fluid_brush_show_flow_indicators);
@@ -820,8 +820,8 @@ bool SaveSettings(const Settings& settings) {
            << settings.debug_ui.fluid_brush_temporal_smoothing_response << "\n";
     output << "debug_ui.fluid_brush_render_cutoff_amount="
            << settings.debug_ui.fluid_brush_render_cutoff_amount << "\n";
-    output << "debug_ui.fluid_brush_topper_cutoff_amount="
-           << settings.debug_ui.fluid_brush_topper_cutoff_amount << "\n";
+    output << "debug_ui.fluid_brush_water_alpha="
+           << settings.debug_ui.fluid_brush_water_alpha << "\n";
     output << "debug_ui.fluid_brush_show_flow_indicators="
            << (settings.debug_ui.fluid_brush_show_flow_indicators ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_lighting_enabled="

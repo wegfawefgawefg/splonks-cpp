@@ -140,7 +140,7 @@ struct DebugUiSettings {
     bool fluid_brush_temporal_smoothing_enabled = false;
     float fluid_brush_temporal_smoothing_response = 0.35F;
     float fluid_brush_render_cutoff_amount = 0.004F;
-    float fluid_brush_topper_cutoff_amount = 0.1F;
+    float fluid_brush_water_alpha = 0.69F;
     bool fluid_brush_show_flow_indicators = false;
     bool fluid_brush_lighting_enabled = true;
     float fluid_brush_lighting_strength = 1.0F;

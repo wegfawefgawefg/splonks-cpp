@@ -14,7 +14,7 @@ next implementation should be cleaner:
   without changing the amount/velocity storage shape.
 - Remove binary momentum and scan-order direction hacks.
 - Simulate from a snapshot and apply transfers after all proposals are known.
-- Render as alpha-scaled cells with explicit surface ribbons. The attempted
+- Render as fixed-alpha cells with explicit surface ribbons. The attempted
   density contour renderer was removed because the simpler cell renderer looked
   better for this game, was easier to tune, and was cheaper.
 
@@ -40,9 +40,10 @@ velocity and pressure.
 Rendering shape:
 
 - Smooth `fluid_display_amount` remains a render cache only.
-- Draw one full water cell with alpha scaled by display amount.
+- Draw one full water cell with global water alpha, not alpha scaled by fill amount.
+- Use the render cutoff as the single "water exists visually" threshold.
 - Draw `watertop` ribbons on any exposed edge where this cell is above the
-  topper cutoff and the neighbor is not solid/fluid above that same cutoff.
+  render cutoff and the neighbor is not solid/fluid above that same cutoff.
 - Draw optional debug flow as a single moving pixel. Stronger velocity moves
   the pixel faster rather than making the indicator longer.
 - Draw occasional render-only bubbles from the `bubble` animation inside cells
@@ -56,7 +57,8 @@ Debug knobs for the vector model:
 - Velocity damping.
 - Transfer cap per step.
 - Temporal smoothing and response.
-- Render cutoff / density threshold.
+- Render cutoff.
+- Global water alpha.
 - Fluid brush mode:
   - water paint / erase;
   - permanent per-cell gravity override paint / erase;
@@ -96,12 +98,12 @@ Per-cell gravity:
 - Apply changed fluid cells after the pass, then batch lighting and acoustics updates for those changed cells.
 - Render water as a late transparent pass:
   - smooth `fluid_display_amount` as an optional render cache;
-  - render one full water quad per occupied cell, with alpha scaled by display amount;
+  - render one full water quad per visible occupied cell, with global water alpha;
   - draw `watertop` ribbons only on edges not adjacent to solid terrain or visible fluid;
   - `watertop` uses the animated `watertop` sprite, with tile-position tick offsets so every surface tile does not animate in lockstep;
   - draw occasional render-only `bubble` sprites inside visible water cells.
-- `watertop` has its own edge cutoff. A cell below this amount does not draw toppers, and a neighbor below this amount is treated like empty for edge wrapping.
-- The render cutoff slider controls when a display-cache cell is visible at all.
+- The render cutoff slider controls whether a display-cache cell counts as visible water at all. Body rendering, topper rendering, and neighbor edge checks all use this same cutoff.
+- The global water alpha slider controls water transparency. It is intentionally independent of fill amount, because fill amount should control presence/shape, not opacity.
   A hidden hard threshold made low-amount water vanish while flowing and should not be reintroduced without an explicit debug setting.
 - The renderer still uses a tiny epsilon when deciding whether a smoothed display-cache cell is visible at all. This prevents temporal smoothing from leaving zero-amount phantom blue cells when the public render cutoff is `0`.
 - Surface checks must use wrapped neighbor lookup. A top-row water cell should not draw `watertop` if Y wrap makes the bottom-row cell directly above it contain water.

@@ -193,7 +193,7 @@ struct DebugFluidBrushState {
     bool temporal_smoothing_enabled = false;
     float temporal_smoothing_response = 0.35F;
     float render_cutoff_amount = 0.004F;
-    float topper_cutoff_amount = 0.1F;
+    float water_alpha = 0.69F;
     bool show_flow_indicators = false;
     bool lighting_enabled = true;
     float lighting_strength = 1.0F;

@@ -390,6 +390,7 @@ void RenderFluidBubble(
     std::uint64_t scene_frame,
     float display_level,
     float visible_cutoff,
+    std::uint8_t alpha,
     float brightness
 ) {
     if (display_level <= visible_cutoff) {
@@ -420,15 +421,13 @@ void RenderFluidBubble(
     const float progress =
         static_cast<float>(local_tick) / static_cast<float>(std::max<std::uint64_t>(active_frames, 1ULL));
     const float x_jitter = static_cast<float>((seed >> 16U) % 9U) - 4.0F;
-    const float water_top_y =
-        static_cast<float>(kTileSize) * (1.0F - std::clamp(display_level, visible_cutoff, 1.0F));
     const float bubble_x =
         (static_cast<float>(kTileSize) * 0.5F) + x_jitter -
         (static_cast<float>(bubble_frame->sample_rect.w) * 0.5F);
     const float bubble_y =
         std::lerp(
             static_cast<float>(kTileSize) - 2.0F,
-            water_top_y + 1.0F,
+            1.0F,
             progress
         ) -
         (static_cast<float>(bubble_frame->sample_rect.h) * 0.5F);
@@ -450,13 +449,6 @@ void RenderFluidBubble(
         Vec2::New(
             static_cast<float>(bubble_frame->sample_rect.w),
             static_cast<float>(bubble_frame->sample_rect.h)
-        )
-    );
-    const std::uint8_t alpha = static_cast<std::uint8_t>(
-        std::clamp(
-            static_cast<int>(std::round(180.0F * std::clamp(display_level, 0.0F, 1.0F))),
-            0,
-            180
         )
     );
     SDL_SetTextureColorModFloat(bubble_texture, brightness, brightness, brightness);
@@ -725,14 +717,35 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     EnsureStageLighting(state);
     state.stage.SyncTileInstanceMetadataGrid();
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    constexpr std::uint8_t kFluidAlpha = 176;
-    constexpr std::uint8_t kFluidTopAlpha = 224;
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
     constexpr float kMinVisibleDisplayLevel = 0.0001F;
     const float min_fluid_display_level =
         std::clamp(state.debug_fluid_brush.render_cutoff_amount, 0.0F, 1.0F);
     const float effective_display_cutoff =
         std::max(min_fluid_display_level, kMinVisibleDisplayLevel);
+    const std::uint8_t body_alpha = static_cast<std::uint8_t>(
+        std::clamp(
+            static_cast<int>(std::round(
+                255.0F * std::clamp(state.debug_fluid_brush.water_alpha, 0.0F, 1.0F)
+            )),
+            0,
+            255
+        )
+    );
+    const std::uint8_t top_alpha = static_cast<std::uint8_t>(
+        std::clamp(
+            static_cast<int>(std::round(static_cast<float>(body_alpha) * (224.0F / 176.0F))),
+            0,
+            255
+        )
+    );
+    const std::uint8_t bubble_alpha = static_cast<std::uint8_t>(
+        std::clamp(
+            static_cast<int>(std::round(static_cast<float>(body_alpha) * (180.0F / 176.0F))),
+            0,
+            255
+        )
+    );
 
     struct FluidRenderCell {
         Tile visible_tile = Tile::Air;
@@ -946,23 +959,6 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 if (cell->display_level <= effective_display_cutoff) {
                     continue;
                 }
-                const float topper_edge_cutoff = std::clamp(
-                    state.debug_fluid_brush.topper_cutoff_amount,
-                    0.0F,
-                    1.0F
-                );
-                const bool cell_can_render_topper =
-                    cell->display_level > topper_edge_cutoff;
-                const std::uint8_t alpha_cell_body_alpha = static_cast<std::uint8_t>(
-                    std::clamp(
-                        static_cast<int>(std::round(
-                            static_cast<float>(kFluidAlpha) *
-                            std::clamp(cell->display_level, 0.0F, 1.0F)
-                        )),
-                        0,
-                        static_cast<int>(kFluidAlpha)
-                    )
-                );
                 RenderWorldTextureQuad(
                     renderer,
                     graphics,
@@ -977,7 +973,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         ),
                         tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
                     },
-                    MakeFluidVertexColor(brightness, alpha_cell_body_alpha)
+                    MakeFluidVertexColor(brightness, body_alpha)
                 );
 
                 auto neighbor_is_fluid_or_solid = [&](int offset_x, int offset_y) -> bool {
@@ -987,10 +983,10 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         return true;
                     }
                     return nearby->has_visible_liquid &&
-                           nearby->display_level > topper_edge_cutoff;
+                           nearby->display_level > effective_display_cutoff;
                 };
                 auto render_cell_edge_topper = [&](const FluidContourSegment& segment) {
-                    if (!cell_can_render_topper || top_texture == nullptr || top_src.h <= 0.0F) {
+                    if (top_texture == nullptr || top_src.h <= 0.0F) {
                         return;
                     }
                     const RibbonPlacement ribbon = MakeCenteredContourRibbonPlacement(
@@ -1007,7 +1003,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                         tile_world + ribbon.end,
                         top_src.h,
                         ribbon.use_right_normal,
-                        MakeFluidVertexColor(brightness, kFluidTopAlpha)
+                        MakeFluidVertexColor(brightness, top_alpha)
                     );
                 };
                 if (!neighbor_is_fluid_or_solid(0, -1)) {
@@ -1048,7 +1044,8 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     int_y,
                     static_cast<std::uint64_t>(state.scene_frame),
                     cell->display_level,
-                    topper_edge_cutoff,
+                    effective_display_cutoff,
+                    bubble_alpha,
                     brightness
                 );
                 render_flow_indicator();
