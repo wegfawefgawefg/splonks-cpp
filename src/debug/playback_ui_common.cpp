@@ -72,40 +72,42 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
             fluid_brush_simulation_interval_frames;
         changed = true;
     }
-    const int fluid_brush_vertical_transfer_per_step =
-        std::clamp(state.debug_fluid_brush.vertical_transfer_per_step, 0, 255);
-    if (state.settings.debug_ui.fluid_brush_vertical_transfer_per_step !=
-        fluid_brush_vertical_transfer_per_step) {
-        state.settings.debug_ui.fluid_brush_vertical_transfer_per_step =
-            fluid_brush_vertical_transfer_per_step;
+    const int fluid_brush_transfer_per_step =
+        std::clamp(state.debug_fluid_brush.transfer_per_step, 0, 255);
+    if (state.settings.debug_ui.fluid_brush_transfer_per_step !=
+        fluid_brush_transfer_per_step) {
+        state.settings.debug_ui.fluid_brush_transfer_per_step =
+            fluid_brush_transfer_per_step;
         changed = true;
     }
-    const int fluid_brush_horizontal_transfer_per_step =
-        std::clamp(state.debug_fluid_brush.horizontal_transfer_per_step, 0, 255);
-    if (state.settings.debug_ui.fluid_brush_horizontal_transfer_per_step !=
-        fluid_brush_horizontal_transfer_per_step) {
-        state.settings.debug_ui.fluid_brush_horizontal_transfer_per_step =
-            fluid_brush_horizontal_transfer_per_step;
+    if (state.settings.debug_ui.fluid_brush_gravity_x != state.debug_fluid_brush.gravity_x) {
+        state.settings.debug_ui.fluid_brush_gravity_x = state.debug_fluid_brush.gravity_x;
         changed = true;
     }
-    const int fluid_brush_horizontal_flow_deadband =
-        std::clamp(state.debug_fluid_brush.horizontal_flow_deadband, 0, 255);
-    if (state.settings.debug_ui.fluid_brush_horizontal_flow_deadband !=
-        fluid_brush_horizontal_flow_deadband) {
-        state.settings.debug_ui.fluid_brush_horizontal_flow_deadband =
-            fluid_brush_horizontal_flow_deadband;
+    if (state.settings.debug_ui.fluid_brush_gravity_y != state.debug_fluid_brush.gravity_y) {
+        state.settings.debug_ui.fluid_brush_gravity_y = state.debug_fluid_brush.gravity_y;
         changed = true;
     }
-    if (state.settings.debug_ui.fluid_brush_use_momentum !=
-        state.debug_fluid_brush.use_momentum) {
-        state.settings.debug_ui.fluid_brush_use_momentum =
-            state.debug_fluid_brush.use_momentum;
+    const float fluid_brush_pressure_strength = std::clamp(
+        state.debug_fluid_brush.pressure_strength,
+        0.0F,
+        4.0F
+    );
+    if (state.settings.debug_ui.fluid_brush_pressure_strength !=
+        fluid_brush_pressure_strength) {
+        state.settings.debug_ui.fluid_brush_pressure_strength =
+            fluid_brush_pressure_strength;
         changed = true;
     }
-    if (state.settings.debug_ui.fluid_brush_render_blur_enabled !=
-        state.debug_fluid_brush.render_blur_enabled) {
-        state.settings.debug_ui.fluid_brush_render_blur_enabled =
-            state.debug_fluid_brush.render_blur_enabled;
+    const float fluid_brush_velocity_damping = std::clamp(
+        state.debug_fluid_brush.velocity_damping,
+        0.0F,
+        1.0F
+    );
+    if (state.settings.debug_ui.fluid_brush_velocity_damping !=
+        fluid_brush_velocity_damping) {
+        state.settings.debug_ui.fluid_brush_velocity_damping =
+            fluid_brush_velocity_damping;
         changed = true;
     }
     if (state.settings.debug_ui.fluid_brush_temporal_smoothing_enabled !=

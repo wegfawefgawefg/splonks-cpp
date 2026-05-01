@@ -173,11 +173,11 @@ struct DebugFluidBrushState {
     bool replace_solid_tiles = false;
     int radius_tiles = 1;
     int simulation_interval_frames = 6;
-    int vertical_transfer_per_step = 255;
-    int horizontal_transfer_per_step = 255;
-    int horizontal_flow_deadband = 1;
-    bool use_momentum = true;
-    bool render_blur_enabled = true;
+    int transfer_per_step = 255;
+    float gravity_x = 0.0F;
+    float gravity_y = 1.0F;
+    float pressure_strength = 0.35F;
+    float velocity_damping = 0.88F;
     bool temporal_smoothing_enabled = false;
     float temporal_smoothing_response = 0.35F;
     float render_cutoff_amount = 1.0F;

@@ -182,25 +182,23 @@ State State::New() {
         std::max(0, state.settings.debug_ui.fluid_brush_radius_tiles);
     state.debug_fluid_brush.simulation_interval_frames =
         std::max(1, state.settings.debug_ui.fluid_brush_simulation_interval_frames);
-    state.debug_fluid_brush.vertical_transfer_per_step = std::clamp(
-        state.settings.debug_ui.fluid_brush_vertical_transfer_per_step,
+    state.debug_fluid_brush.transfer_per_step = std::clamp(
+        state.settings.debug_ui.fluid_brush_transfer_per_step,
         0,
         255
     );
-    state.debug_fluid_brush.horizontal_transfer_per_step = std::clamp(
-        state.settings.debug_ui.fluid_brush_horizontal_transfer_per_step,
-        0,
-        255
+    state.debug_fluid_brush.gravity_x = state.settings.debug_ui.fluid_brush_gravity_x;
+    state.debug_fluid_brush.gravity_y = state.settings.debug_ui.fluid_brush_gravity_y;
+    state.debug_fluid_brush.pressure_strength = std::clamp(
+        state.settings.debug_ui.fluid_brush_pressure_strength,
+        0.0F,
+        4.0F
     );
-    state.debug_fluid_brush.horizontal_flow_deadband = std::clamp(
-        state.settings.debug_ui.fluid_brush_horizontal_flow_deadband,
-        0,
-        255
+    state.debug_fluid_brush.velocity_damping = std::clamp(
+        state.settings.debug_ui.fluid_brush_velocity_damping,
+        0.0F,
+        1.0F
     );
-    state.debug_fluid_brush.use_momentum =
-        state.settings.debug_ui.fluid_brush_use_momentum;
-    state.debug_fluid_brush.render_blur_enabled =
-        state.settings.debug_ui.fluid_brush_render_blur_enabled;
     state.debug_fluid_brush.temporal_smoothing_enabled =
         state.settings.debug_ui.fluid_brush_temporal_smoothing_enabled;
     state.debug_fluid_brush.temporal_smoothing_response = std::clamp(

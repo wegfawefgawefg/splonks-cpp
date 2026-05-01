@@ -1158,8 +1158,8 @@ void RenderFluidAmountOverlay(
             const auto tile_x = static_cast<unsigned int>(tile_query.tile_pos.x);
             const auto tile_y = static_cast<unsigned int>(tile_query.tile_pos.y);
             const Tile fluid_tile = state.stage.GetFluidTile(tile_x, tile_y);
-            const std::uint8_t amount = state.stage.GetFluidAmount(tile_x, tile_y);
-            if (!GetTileArchetype(fluid_tile).simulated_fluid || amount == 0) {
+            const float amount = state.stage.GetFluidAmount(tile_x, tile_y);
+            if (!GetTileArchetype(fluid_tile).simulated_fluid || amount <= 0.0F) {
                 continue;
             }
 
@@ -1175,7 +1175,7 @@ void RenderFluidAmountOverlay(
             }
 
             const std::uint8_t alpha = static_cast<std::uint8_t>(
-                48 + ((static_cast<int>(amount) * 128) / 255)
+                48 + ((static_cast<int>(std::round(amount)) * 128) / 255)
             );
             SDL_SetRenderDrawColor(renderer, 32, 180, 255, alpha);
             SDL_RenderFillRect(renderer, &tile_rect);
@@ -1184,7 +1184,12 @@ void RenderFluidAmountOverlay(
 
             if (tile_rect.w >= 24.0F && tile_rect.h >= 14.0F) {
                 char label[16];
-                std::snprintf(label, sizeof(label), "%u", static_cast<unsigned int>(amount));
+                std::snprintf(
+                    label,
+                    sizeof(label),
+                    "%u",
+                    static_cast<unsigned int>(std::round(amount))
+                );
                 DrawText(
                     renderer,
                     graphics,

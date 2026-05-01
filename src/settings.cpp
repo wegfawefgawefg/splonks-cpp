@@ -162,11 +162,11 @@ DebugUiSettings DebugUiSettings::New() {
     result.fluid_brush_replace_solid_tiles = true;
     result.fluid_brush_radius_tiles = 0;
     result.fluid_brush_simulation_interval_frames = 1;
-    result.fluid_brush_vertical_transfer_per_step = 255;
-    result.fluid_brush_horizontal_transfer_per_step = 255;
-    result.fluid_brush_horizontal_flow_deadband = 1;
-    result.fluid_brush_use_momentum = true;
-    result.fluid_brush_render_blur_enabled = true;
+    result.fluid_brush_transfer_per_step = 255;
+    result.fluid_brush_gravity_x = 0.0F;
+    result.fluid_brush_gravity_y = 1.0F;
+    result.fluid_brush_pressure_strength = 0.35F;
+    result.fluid_brush_velocity_damping = 0.88F;
     result.fluid_brush_temporal_smoothing_enabled = false;
     result.fluid_brush_temporal_smoothing_response = 0.35F;
     result.fluid_brush_render_cutoff_amount = 1.0F;
@@ -460,21 +460,21 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_simulation_interval_frames") {
             settings.debug_ui.fluid_brush_simulation_interval_frames =
                 ParseInt(value, settings.debug_ui.fluid_brush_simulation_interval_frames);
-        } else if (key == "debug_ui.fluid_brush_vertical_transfer_per_step") {
-            settings.debug_ui.fluid_brush_vertical_transfer_per_step =
-                ParseInt(value, settings.debug_ui.fluid_brush_vertical_transfer_per_step);
-        } else if (key == "debug_ui.fluid_brush_horizontal_transfer_per_step") {
-            settings.debug_ui.fluid_brush_horizontal_transfer_per_step =
-                ParseInt(value, settings.debug_ui.fluid_brush_horizontal_transfer_per_step);
-        } else if (key == "debug_ui.fluid_brush_horizontal_flow_deadband") {
-            settings.debug_ui.fluid_brush_horizontal_flow_deadband =
-                ParseInt(value, settings.debug_ui.fluid_brush_horizontal_flow_deadband);
-        } else if (key == "debug_ui.fluid_brush_use_momentum") {
-            settings.debug_ui.fluid_brush_use_momentum =
-                ParseBool(value, settings.debug_ui.fluid_brush_use_momentum);
-        } else if (key == "debug_ui.fluid_brush_render_blur_enabled") {
-            settings.debug_ui.fluid_brush_render_blur_enabled =
-                ParseBool(value, settings.debug_ui.fluid_brush_render_blur_enabled);
+        } else if (key == "debug_ui.fluid_brush_transfer_per_step") {
+            settings.debug_ui.fluid_brush_transfer_per_step =
+                ParseInt(value, settings.debug_ui.fluid_brush_transfer_per_step);
+        } else if (key == "debug_ui.fluid_brush_gravity_x") {
+            settings.debug_ui.fluid_brush_gravity_x =
+                ParseFloat(value, settings.debug_ui.fluid_brush_gravity_x);
+        } else if (key == "debug_ui.fluid_brush_gravity_y") {
+            settings.debug_ui.fluid_brush_gravity_y =
+                ParseFloat(value, settings.debug_ui.fluid_brush_gravity_y);
+        } else if (key == "debug_ui.fluid_brush_pressure_strength") {
+            settings.debug_ui.fluid_brush_pressure_strength =
+                ParseFloat(value, settings.debug_ui.fluid_brush_pressure_strength);
+        } else if (key == "debug_ui.fluid_brush_velocity_damping") {
+            settings.debug_ui.fluid_brush_velocity_damping =
+                ParseFloat(value, settings.debug_ui.fluid_brush_velocity_damping);
         } else if (key == "debug_ui.fluid_brush_temporal_smoothing_enabled") {
             settings.debug_ui.fluid_brush_temporal_smoothing_enabled =
                 ParseBool(value, settings.debug_ui.fluid_brush_temporal_smoothing_enabled);
@@ -764,16 +764,16 @@ bool SaveSettings(const Settings& settings) {
            << settings.debug_ui.fluid_brush_radius_tiles << "\n";
     output << "debug_ui.fluid_brush_simulation_interval_frames="
            << settings.debug_ui.fluid_brush_simulation_interval_frames << "\n";
-    output << "debug_ui.fluid_brush_vertical_transfer_per_step="
-           << settings.debug_ui.fluid_brush_vertical_transfer_per_step << "\n";
-    output << "debug_ui.fluid_brush_horizontal_transfer_per_step="
-           << settings.debug_ui.fluid_brush_horizontal_transfer_per_step << "\n";
-    output << "debug_ui.fluid_brush_horizontal_flow_deadband="
-           << settings.debug_ui.fluid_brush_horizontal_flow_deadband << "\n";
-    output << "debug_ui.fluid_brush_use_momentum="
-           << (settings.debug_ui.fluid_brush_use_momentum ? 1 : 0) << "\n";
-    output << "debug_ui.fluid_brush_render_blur_enabled="
-           << (settings.debug_ui.fluid_brush_render_blur_enabled ? 1 : 0) << "\n";
+    output << "debug_ui.fluid_brush_transfer_per_step="
+           << settings.debug_ui.fluid_brush_transfer_per_step << "\n";
+    output << "debug_ui.fluid_brush_gravity_x="
+           << settings.debug_ui.fluid_brush_gravity_x << "\n";
+    output << "debug_ui.fluid_brush_gravity_y="
+           << settings.debug_ui.fluid_brush_gravity_y << "\n";
+    output << "debug_ui.fluid_brush_pressure_strength="
+           << settings.debug_ui.fluid_brush_pressure_strength << "\n";
+    output << "debug_ui.fluid_brush_velocity_damping="
+           << settings.debug_ui.fluid_brush_velocity_damping << "\n";
     output << "debug_ui.fluid_brush_temporal_smoothing_enabled="
            << (settings.debug_ui.fluid_brush_temporal_smoothing_enabled ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_temporal_smoothing_response="

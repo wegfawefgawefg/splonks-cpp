@@ -2,19 +2,29 @@
 
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
+#include "state.hpp"
 #include "tile_archetype.hpp"
 
 #include <algorithm>
-#include <cstdint>
+#include <cmath>
 #include <optional>
-#include <utility>
 #include <vector>
 
 namespace splonks {
 
 namespace {
 
-constexpr std::uint8_t kMaxFluidAmount = 255;
+constexpr float kMaxFluidAmount = 255.0F;
+constexpr float kMinFluidAmount = 0.25F;
+constexpr float kVelocityClamp = 8.0F;
+
+struct FluidTransferProposal {
+    IVec2 source = IVec2::New(0, 0);
+    IVec2 target = IVec2::New(0, 0);
+    Tile fluid_tile = Tile::Air;
+    float amount = 0.0F;
+    Vec2 direction = Vec2::New(0.0F, 0.0F);
+};
 
 int WrapFluidCoordinate(int value, int size) {
     if (size <= 0) {
@@ -27,12 +37,20 @@ int WrapFluidCoordinate(int value, int size) {
     return wrapped;
 }
 
-bool IsSimulatedFluidTile(Tile tile) {
-    return GetTileArchetype(tile).simulated_fluid;
+float Dot(const Vec2& left, const Vec2& right) {
+    return (left.x * right.x) + (left.y * right.y);
 }
 
-bool IsFluidDestinationTile(Tile tile) {
-    return tile == Tile::Air;
+Vec2 ClampLength(const Vec2& value, float max_length) {
+    const float length = Length(value);
+    if (length <= max_length || length <= 0.0F) {
+        return value;
+    }
+    return value * (max_length / length);
+}
+
+bool IsSimulatedFluidTile(Tile tile) {
+    return GetTileArchetype(tile).simulated_fluid;
 }
 
 bool CanTerrainHoldFluid(Tile tile) {
@@ -64,50 +82,17 @@ std::optional<IVec2> ResolveFluidTileCoord(const Stage& stage, const IVec2& tile
     return resolved;
 }
 
-std::int8_t GetMomentumFromGrid(
-    const std::vector<std::vector<std::int8_t>>& momentum,
-    const IVec2& tile_coord
-) {
-    if (tile_coord.y < 0 || static_cast<std::size_t>(tile_coord.y) >= momentum.size()) {
-        return 0;
-    }
-    const std::vector<std::int8_t>& row = momentum[static_cast<std::size_t>(tile_coord.y)];
-    if (tile_coord.x < 0 || static_cast<std::size_t>(tile_coord.x) >= row.size()) {
-        return 0;
-    }
-    return std::clamp<std::int8_t>(row[static_cast<std::size_t>(tile_coord.x)], -1, 1);
-}
-
-void SetMomentumInGrid(
-    std::vector<std::vector<std::int8_t>>& momentum,
-    const IVec2& tile_coord,
-    std::int8_t value
-) {
-    momentum[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)] =
-        std::clamp<std::int8_t>(value, -1, 1);
-}
-
 Tile GetTileFromGrid(const std::vector<std::vector<Tile>>& tiles, const IVec2& tile_coord) {
     return tiles[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)];
 }
 
-void SetTileInGrid(std::vector<std::vector<Tile>>& tiles, const IVec2& tile_coord, Tile tile) {
-    tiles[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)] = tile;
-}
-
-std::uint8_t GetAmountFromGrid(
-    const std::vector<std::vector<std::uint8_t>>& amounts,
-    const IVec2& tile_coord
-) {
+float GetAmountFromGrid(const std::vector<std::vector<float>>& amounts, const IVec2& tile_coord) {
     return amounts[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)];
 }
 
-void SetAmountInGrid(
-    std::vector<std::vector<std::uint8_t>>& amounts,
-    const IVec2& tile_coord,
-    std::uint8_t amount
-) {
-    amounts[static_cast<std::size_t>(tile_coord.y)][static_cast<std::size_t>(tile_coord.x)] = amount;
+Vec2 GetVelocityFromGrid(const std::vector<std::vector<Vec2>>& velocities, const IVec2& tile_coord) {
+    return velocities[static_cast<std::size_t>(tile_coord.y)]
+                     [static_cast<std::size_t>(tile_coord.x)];
 }
 
 void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord) {
@@ -117,229 +102,123 @@ void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord)
     changed_tiles.push_back(tile_coord);
 }
 
-std::optional<IVec2> ResolveFluidMoveTarget(
-    const Stage& stage,
-    const std::vector<std::vector<Tile>>& terrain_tiles,
-    const IVec2& start,
-    const IVec2& direction
-) {
-    const std::optional<IVec2> resolved = ResolveFluidTileCoord(stage, start);
-    if (!resolved.has_value()) {
-        return std::nullopt;
-    }
-    if (!CanTerrainHoldFluid(GetTileFromGrid(terrain_tiles, *resolved))) {
-        return std::nullopt;
-    }
-    (void)direction;
-    return resolved;
-}
-
-bool TryMoveFluidTile(
-    const Stage& stage,
-    const std::vector<std::vector<Tile>>& terrain_tiles,
-    std::vector<std::vector<Tile>>& next_fluid_tiles,
-    std::vector<std::vector<std::uint8_t>>& next_amount_grid,
-    const IVec2& source,
+float GetTargetCapacity(
+    const std::vector<std::vector<Tile>>& fluid_tiles,
+    const std::vector<std::vector<float>>& amounts,
     const IVec2& target,
-    const IVec2& direction,
-    Tile fluid_tile,
-    std::uint8_t max_transfer,
-    std::int8_t next_momentum,
-    std::vector<IVec2>& changed_tiles,
-    std::vector<std::vector<std::int8_t>>& next_momentum_grid
+    Tile fluid_tile
 ) {
-    const std::optional<IVec2> resolved_target = ResolveFluidMoveTarget(
-        stage,
-        terrain_tiles,
-        target,
-        direction
-    );
-    if (!resolved_target.has_value()) {
-        return false;
+    const float target_amount = GetAmountFromGrid(amounts, target);
+    const Tile target_tile = GetTileFromGrid(fluid_tiles, target);
+    if (target_amount > kMinFluidAmount && target_tile != fluid_tile) {
+        return 0.0F;
     }
-    const Tile target_tile = GetTileFromGrid(next_fluid_tiles, *resolved_target);
-    const std::uint8_t target_amount = GetAmountFromGrid(next_amount_grid, *resolved_target);
-    if (target_amount > 0 && target_tile != fluid_tile) {
-        return false;
-    }
-
-    const std::uint8_t source_amount = GetAmountFromGrid(next_amount_grid, source);
-    const int capacity = static_cast<int>(kMaxFluidAmount) - static_cast<int>(target_amount);
-    const int transfer = std::min({
-        static_cast<int>(source_amount),
-        capacity,
-        static_cast<int>(max_transfer),
-    });
-    if (transfer <= 0) {
-        return false;
-    }
-
-    const auto new_source_amount = static_cast<std::uint8_t>(
-        static_cast<int>(source_amount) - transfer
-    );
-    const auto new_target_amount = static_cast<std::uint8_t>(
-        static_cast<int>(target_amount) + transfer
-    );
-
-    SetAmountInGrid(next_amount_grid, source, new_source_amount);
-    if (new_source_amount == 0) {
-        SetTileInGrid(next_fluid_tiles, source, Tile::Air);
-        SetMomentumInGrid(next_momentum_grid, source, 0);
-    }
-    SetTileInGrid(next_fluid_tiles, *resolved_target, fluid_tile);
-    SetAmountInGrid(next_amount_grid, *resolved_target, new_target_amount);
-    SetMomentumInGrid(next_momentum_grid, *resolved_target, next_momentum);
-    PushChangedTile(changed_tiles, source);
-    PushChangedTile(changed_tiles, *resolved_target);
-    return true;
+    return std::max(0.0F, kMaxFluidAmount - target_amount);
 }
 
-bool TryEqualizeFluidSideways(
+void AddFluidTransferProposalsForCell(
     const Stage& stage,
     const std::vector<std::vector<Tile>>& terrain_tiles,
-    std::vector<std::vector<Tile>>& next_fluid_tiles,
-    std::vector<std::vector<std::uint8_t>>& next_amount_grid,
+    const std::vector<std::vector<Tile>>& fluid_tiles,
+    const std::vector<std::vector<float>>& amounts,
+    const std::vector<std::vector<Vec2>>& velocities,
     const IVec2& source,
-    int direction,
-    Tile fluid_tile,
-    std::uint8_t horizontal_transfer_per_step,
-    std::uint8_t horizontal_flow_deadband,
-    bool use_momentum,
-    std::vector<IVec2>& changed_tiles,
-    std::vector<std::vector<std::int8_t>>& next_momentum_grid
+    float transfer_cap,
+    float pressure_strength,
+    const Vec2& gravity,
+    std::vector<FluidTransferProposal>& proposals
 ) {
-    const std::optional<IVec2> resolved_target = ResolveFluidMoveTarget(
-        stage,
-        terrain_tiles,
-        source + IVec2::New(direction, 0),
-        IVec2::New(direction, 0)
+    const Tile fluid_tile = GetTileFromGrid(fluid_tiles, source);
+    const float source_amount = GetAmountFromGrid(amounts, source);
+    if (source_amount <= kMinFluidAmount || !IsSimulatedFluidTile(fluid_tile)) {
+        return;
+    }
+
+    struct Candidate {
+        IVec2 target = IVec2::New(0, 0);
+        Vec2 direction = Vec2::New(0.0F, 0.0F);
+        float score = 0.0F;
+        float capacity = 0.0F;
+    };
+
+    const IVec2 neighbor_offsets[] = {
+        IVec2::New(-1, -1),
+        IVec2::New(0, -1),
+        IVec2::New(1, -1),
+        IVec2::New(-1, 0),
+        IVec2::New(1, 0),
+        IVec2::New(-1, 1),
+        IVec2::New(0, 1),
+        IVec2::New(1, 1),
+    };
+
+    const Vec2 source_velocity = ClampLength(
+        GetVelocityFromGrid(velocities, source) + gravity,
+        kVelocityClamp
     );
-    if (!resolved_target.has_value()) {
-        return false;
+    const Vec2 gravity_direction = NormalizeOrZero(gravity);
+    const bool has_gravity = Length(gravity_direction) > 0.0F;
+    std::vector<Candidate> candidates;
+    float total_score = 0.0F;
+
+    for (const IVec2& offset : neighbor_offsets) {
+        const std::optional<IVec2> resolved_target =
+            ResolveFluidTileCoord(stage, source + offset);
+        if (!resolved_target.has_value()) {
+            continue;
+        }
+        if (!CanTerrainHoldFluid(GetTileFromGrid(terrain_tiles, *resolved_target))) {
+            continue;
+        }
+
+        const float target_capacity =
+            GetTargetCapacity(fluid_tiles, amounts, *resolved_target, fluid_tile);
+        if (target_capacity <= kMinFluidAmount) {
+            continue;
+        }
+
+        const float target_amount = GetAmountFromGrid(amounts, *resolved_target);
+        const Vec2 direction = NormalizeOrZero(ToVec2(offset));
+        const float velocity_score = std::max(0.0F, Dot(source_velocity, direction));
+        const bool pressure_can_flow = !has_gravity || Dot(direction, gravity_direction) >= -0.05F;
+        const float pressure_score = pressure_can_flow
+            ? std::max(0.0F, source_amount - target_amount) * pressure_strength / kMaxFluidAmount
+            : 0.0F;
+        const float score = velocity_score + pressure_score;
+        if (score <= 0.0F) {
+            continue;
+        }
+
+        candidates.push_back(Candidate{
+            .target = *resolved_target,
+            .direction = direction,
+            .score = score,
+            .capacity = target_capacity,
+        });
+        total_score += score;
     }
 
-    const Tile target_tile = GetTileFromGrid(next_fluid_tiles, *resolved_target);
-    const std::uint8_t target_amount = GetAmountFromGrid(next_amount_grid, *resolved_target);
-    if (target_amount > 0 && target_tile != fluid_tile) {
-        return false;
+    if (total_score <= 0.0F || candidates.empty()) {
+        return;
     }
 
-    const std::uint8_t source_amount = GetAmountFromGrid(next_amount_grid, source);
-    if (static_cast<int>(source_amount) <=
-        static_cast<int>(target_amount) + static_cast<int>(horizontal_flow_deadband)) {
-        return false;
+    const float source_budget = std::min(source_amount, transfer_cap);
+    for (const Candidate& candidate : candidates) {
+        const float requested = std::min(
+            candidate.capacity,
+            source_budget * (candidate.score / total_score)
+        );
+        if (requested <= kMinFluidAmount) {
+            continue;
+        }
+        proposals.push_back(FluidTransferProposal{
+            .source = source,
+            .target = candidate.target,
+            .fluid_tile = fluid_tile,
+            .amount = requested,
+            .direction = candidate.direction,
+        });
     }
-
-    const int capacity = static_cast<int>(kMaxFluidAmount) - static_cast<int>(target_amount);
-    const int desired = (static_cast<int>(source_amount) - static_cast<int>(target_amount)) / 2;
-    const int transfer = std::min({
-        desired,
-        capacity,
-        static_cast<int>(horizontal_transfer_per_step),
-    });
-    if (transfer <= 0) {
-        return false;
-    }
-
-    const auto new_source_amount = static_cast<std::uint8_t>(
-        static_cast<int>(source_amount) - transfer
-    );
-    const auto new_target_amount = static_cast<std::uint8_t>(
-        static_cast<int>(target_amount) + transfer
-    );
-    SetAmountInGrid(next_amount_grid, source, new_source_amount);
-    if (new_source_amount == 0) {
-        SetTileInGrid(next_fluid_tiles, source, Tile::Air);
-        SetMomentumInGrid(next_momentum_grid, source, 0);
-    }
-    SetTileInGrid(next_fluid_tiles, *resolved_target, fluid_tile);
-    SetAmountInGrid(next_amount_grid, *resolved_target, new_target_amount);
-    SetMomentumInGrid(
-        next_momentum_grid,
-        *resolved_target,
-        use_momentum ? static_cast<std::int8_t>(direction) : 0
-    );
-    PushChangedTile(changed_tiles, source);
-    PushChangedTile(changed_tiles, *resolved_target);
-    return true;
-}
-
-bool TryMoveFluidTile(
-    const Stage& stage,
-    const std::vector<std::vector<Tile>>& terrain_tiles,
-    std::vector<std::vector<Tile>>& next_fluid_tiles,
-    std::vector<std::vector<std::uint8_t>>& next_amount_grid,
-    const std::vector<std::vector<std::int8_t>>& source_momentum_grid,
-    std::vector<std::vector<std::int8_t>>& next_momentum_grid,
-    const IVec2& source,
-    Tile fluid_tile,
-    std::uint8_t vertical_transfer_per_step,
-    std::uint8_t horizontal_transfer_per_step,
-    std::uint8_t horizontal_flow_deadband,
-    bool use_momentum,
-    bool left_first,
-    std::vector<IVec2>& changed_tiles
-) {
-    const std::int8_t source_momentum = use_momentum
-        ? GetMomentumFromGrid(source_momentum_grid, source)
-        : 0;
-    if (TryMoveFluidTile(
-            stage,
-            terrain_tiles,
-            next_fluid_tiles,
-            next_amount_grid,
-            source,
-            source + IVec2::New(0, 1),
-            IVec2::New(0, 1),
-            fluid_tile,
-            vertical_transfer_per_step,
-            use_momentum ? source_momentum : 0,
-            changed_tiles,
-            next_momentum_grid
-        )) {
-        return true;
-    }
-
-    const int first = source_momentum != 0 ? static_cast<int>(source_momentum)
-                                           : (left_first ? -1 : 1);
-    const int second = -first;
-    if (TryEqualizeFluidSideways(
-            stage,
-            terrain_tiles,
-            next_fluid_tiles,
-            next_amount_grid,
-            source,
-            first,
-            fluid_tile,
-            horizontal_transfer_per_step,
-            horizontal_flow_deadband,
-            use_momentum,
-            changed_tiles,
-            next_momentum_grid
-        )) {
-        return true;
-    }
-    if (TryEqualizeFluidSideways(
-            stage,
-            terrain_tiles,
-            next_fluid_tiles,
-            next_amount_grid,
-            source,
-            second,
-            fluid_tile,
-            horizontal_transfer_per_step,
-            horizontal_flow_deadband,
-            use_momentum,
-            changed_tiles,
-            next_momentum_grid
-        )) {
-        return true;
-    }
-
-    if (source_momentum != 0) {
-        SetMomentumInGrid(next_momentum_grid, source, 0);
-    }
-    return false;
 }
 
 std::vector<IVec2> NormalizeAuthoredFluidTiles(Stage& stage) {
@@ -353,16 +232,20 @@ std::vector<IVec2> NormalizeAuthoredFluidTiles(Stage& stage) {
                 continue;
             }
 
-            Tile& fluid_tile = stage.fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            Tile& fluid_tile = stage.fluid_tiles[static_cast<std::size_t>(y)]
+                                                [static_cast<std::size_t>(x)];
             if (fluid_tile == Tile::Air) {
                 fluid_tile = terrain_tile;
             }
             stage.fluid_amount[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 kMaxFluidAmount;
+            stage.fluid_display_amount[static_cast<std::size_t>(y)]
+                                      [static_cast<std::size_t>(x)] = 1.0F;
+            stage.fluid_velocity[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                Vec2::New(0.0F, 0.0F);
             terrain_tile = Tile::Air;
             stage.tile_rotations[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
                 kTileRotation0;
-            stage.fluid_momentum[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = 0;
             PushChangedTile(changed_tiles, tile_coord);
         }
     }
@@ -378,6 +261,7 @@ void StepStageFluids(State& state) {
     if (state.stage.tiles.empty()) {
         return;
     }
+
     std::vector<IVec2> normalized_tiles = NormalizeAuthoredFluidTiles(state.stage);
     if (!normalized_tiles.empty()) {
         UpdateStageLightingForTileChanges(state, normalized_tiles);
@@ -386,6 +270,7 @@ void StepStageFluids(State& state) {
     if (!state.debug_fluid_brush.simulation_enabled) {
         return;
     }
+
     const std::uint32_t interval_frames = static_cast<std::uint32_t>(
         std::max(1, state.debug_fluid_brush.simulation_interval_frames)
     );
@@ -393,78 +278,148 @@ void StepStageFluids(State& state) {
         return;
     }
 
-    state.stage.SyncTileInstanceMetadataGrid();
-    const std::vector<std::vector<Tile>>& terrain_tiles = state.stage.tiles;
-    const std::vector<std::vector<Tile>>& source_fluid_tiles = state.stage.fluid_tiles;
-    const std::vector<std::vector<std::uint8_t>>& source_amount_grid = state.stage.fluid_amount;
-    const std::vector<std::vector<std::int8_t>>& source_momentum_grid = state.stage.fluid_momentum;
-    const auto vertical_transfer_per_step = static_cast<std::uint8_t>(std::clamp(
-        state.debug_fluid_brush.vertical_transfer_per_step,
-        0,
-        static_cast<int>(kMaxFluidAmount)
-    ));
-    const auto horizontal_transfer_per_step = static_cast<std::uint8_t>(std::clamp(
-        state.debug_fluid_brush.horizontal_transfer_per_step,
-        0,
-        static_cast<int>(kMaxFluidAmount)
-    ));
-    const auto horizontal_flow_deadband = static_cast<std::uint8_t>(std::clamp(
-        state.debug_fluid_brush.horizontal_flow_deadband,
-        0,
-        static_cast<int>(kMaxFluidAmount)
-    ));
-    const bool use_momentum = state.debug_fluid_brush.use_momentum;
-    std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
-    std::vector<std::vector<std::uint8_t>> next_amount_grid = source_amount_grid;
-    std::vector<std::vector<std::int8_t>> next_momentum_grid = source_momentum_grid;
-    if (!use_momentum) {
-        for (std::vector<std::int8_t>& row : next_momentum_grid) {
-            std::fill(row.begin(), row.end(), 0);
-        }
-    }
-    std::vector<IVec2> changed_tiles;
-    const bool left_first = ((state.stage_frame / interval_frames) % 2U) == 0U;
+    Stage& stage = state.stage;
+    stage.SyncTileInstanceMetadataGrid();
+    const std::vector<std::vector<Tile>>& terrain_tiles = stage.tiles;
+    const std::vector<std::vector<Tile>>& source_fluid_tiles = stage.fluid_tiles;
+    const std::vector<std::vector<float>>& source_amounts = stage.fluid_amount;
+    const std::vector<std::vector<Vec2>>& source_velocities = stage.fluid_velocity;
 
-    for (int y = static_cast<int>(state.stage.GetTileHeight()) - 1; y >= 0; --y) {
-        for (int x = 0; x < static_cast<int>(state.stage.GetTileWidth()); ++x) {
-            const IVec2 source = IVec2::New(x, y);
-            const Tile fluid_tile = GetTileFromGrid(source_fluid_tiles, source);
-            if (GetAmountFromGrid(source_amount_grid, source) == 0 ||
-                !IsSimulatedFluidTile(fluid_tile) ||
-                GetTileFromGrid(next_fluid_tiles, source) != fluid_tile) {
-                continue;
-            }
-            (void)TryMoveFluidTile(
-                state.stage,
+    const float transfer_cap = std::clamp(
+        static_cast<float>(state.debug_fluid_brush.transfer_per_step),
+        0.0F,
+        kMaxFluidAmount
+    );
+    const float pressure_strength = std::clamp(
+        state.debug_fluid_brush.pressure_strength,
+        0.0F,
+        4.0F
+    );
+    const float velocity_damping = std::clamp(
+        state.debug_fluid_brush.velocity_damping,
+        0.0F,
+        1.0F
+    );
+    const Vec2 gravity = Vec2::New(
+        state.debug_fluid_brush.gravity_x,
+        state.debug_fluid_brush.gravity_y
+    );
+
+    std::vector<FluidTransferProposal> proposals;
+    proposals.reserve(static_cast<std::size_t>(stage.GetTileWidth() * stage.GetTileHeight()));
+
+    for (int y = 0; y < static_cast<int>(stage.GetTileHeight()); ++y) {
+        for (int x = 0; x < static_cast<int>(stage.GetTileWidth()); ++x) {
+            AddFluidTransferProposalsForCell(
+                stage,
                 terrain_tiles,
-                next_fluid_tiles,
-                next_amount_grid,
-                source_momentum_grid,
-                next_momentum_grid,
-                source,
-                fluid_tile,
-                vertical_transfer_per_step,
-                horizontal_transfer_per_step,
-                horizontal_flow_deadband,
-                use_momentum,
-                left_first,
-                changed_tiles
+                source_fluid_tiles,
+                source_amounts,
+                source_velocities,
+                IVec2::New(x, y),
+                transfer_cap,
+                pressure_strength,
+                gravity,
+                proposals
             );
         }
     }
 
-    if (changed_tiles.empty()) {
-        state.stage.fluid_amount = std::move(next_amount_grid);
-        state.stage.fluid_momentum = std::move(next_momentum_grid);
-        return;
+    std::vector<std::vector<float>> incoming_capacity_used(
+        source_amounts.size(),
+        std::vector<float>(source_amounts.empty() ? 0 : source_amounts.front().size(), 0.0F)
+    );
+    for (const FluidTransferProposal& proposal : proposals) {
+        incoming_capacity_used[static_cast<std::size_t>(proposal.target.y)]
+                              [static_cast<std::size_t>(proposal.target.x)] += proposal.amount;
     }
 
-    state.stage.fluid_tiles = std::move(next_fluid_tiles);
-    state.stage.fluid_amount = std::move(next_amount_grid);
-    state.stage.fluid_momentum = std::move(next_momentum_grid);
-    state.stage.tile_change_generation += 1;
-    UpdateStageLightingForTileChanges(state, changed_tiles);
-    UpdateStageAcousticsForTileChanges(state, changed_tiles);
+    std::vector<std::vector<Tile>> next_fluid_tiles = source_fluid_tiles;
+    std::vector<std::vector<float>> next_amounts = source_amounts;
+    std::vector<std::vector<Vec2>> next_velocities = source_velocities;
+    std::vector<std::vector<Vec2>> incoming_velocity(
+        source_amounts.size(),
+        std::vector<Vec2>(
+            source_amounts.empty() ? 0 : source_amounts.front().size(),
+            Vec2::New(0.0F, 0.0F)
+        )
+    );
+
+    for (std::size_t y = 0; y < next_velocities.size(); ++y) {
+        for (std::size_t x = 0; x < next_velocities[y].size(); ++x) {
+            if (source_amounts[y][x] <= kMinFluidAmount) {
+                next_velocities[y][x] = Vec2::New(0.0F, 0.0F);
+                continue;
+            }
+            next_velocities[y][x] =
+                ClampLength((next_velocities[y][x] + gravity) * velocity_damping, kVelocityClamp);
+        }
+    }
+
+    for (const FluidTransferProposal& proposal : proposals) {
+        const float capacity = GetTargetCapacity(
+            source_fluid_tiles,
+            source_amounts,
+            proposal.target,
+            proposal.fluid_tile
+        );
+        const float incoming = incoming_capacity_used[static_cast<std::size_t>(proposal.target.y)]
+                                             [static_cast<std::size_t>(proposal.target.x)];
+        const float target_scale = incoming > capacity && incoming > 0.0F
+            ? capacity / incoming
+            : 1.0F;
+        const float amount = std::min(proposal.amount * target_scale, GetAmountFromGrid(next_amounts, proposal.source));
+        if (amount <= kMinFluidAmount) {
+            continue;
+        }
+
+        next_amounts[static_cast<std::size_t>(proposal.source.y)]
+                    [static_cast<std::size_t>(proposal.source.x)] -= amount;
+        next_amounts[static_cast<std::size_t>(proposal.target.y)]
+                    [static_cast<std::size_t>(proposal.target.x)] += amount;
+        next_fluid_tiles[static_cast<std::size_t>(proposal.target.y)]
+                        [static_cast<std::size_t>(proposal.target.x)] = proposal.fluid_tile;
+        incoming_velocity[static_cast<std::size_t>(proposal.target.y)]
+                         [static_cast<std::size_t>(proposal.target.x)] +=
+            proposal.direction * (amount / kMaxFluidAmount);
+    }
+
+    std::vector<IVec2> changed_tiles;
+    for (int y = 0; y < static_cast<int>(stage.GetTileHeight()); ++y) {
+        for (int x = 0; x < static_cast<int>(stage.GetTileWidth()); ++x) {
+            const IVec2 tile_coord = IVec2::New(x, y);
+            float& next_amount = next_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            Tile& next_tile = next_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            Vec2& next_velocity = next_velocities[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            next_amount = std::clamp(next_amount, 0.0F, kMaxFluidAmount);
+            next_velocity = ClampLength(
+                (next_velocity + incoming_velocity[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]) *
+                    velocity_damping,
+                kVelocityClamp
+            );
+
+            if (next_amount <= kMinFluidAmount || !CanTerrainHoldFluid(GetTileFromGrid(terrain_tiles, tile_coord))) {
+                next_amount = 0.0F;
+                next_tile = Tile::Air;
+                next_velocity = Vec2::New(0.0F, 0.0F);
+            }
+
+            const bool changed = next_tile != source_fluid_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] ||
+                                 std::abs(next_amount - source_amounts[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)]) > 0.5F;
+            if (changed) {
+                PushChangedTile(changed_tiles, tile_coord);
+            }
+        }
+    }
+
+    stage.fluid_tiles = std::move(next_fluid_tiles);
+    stage.fluid_amount = std::move(next_amounts);
+    stage.fluid_velocity = std::move(next_velocities);
+    if (!changed_tiles.empty()) {
+        stage.tile_change_generation += 1;
+        UpdateStageLightingForTileChanges(state, changed_tiles);
+        UpdateStageAcousticsForTileChanges(state, changed_tiles);
+    }
 }
 
 } // namespace splonks

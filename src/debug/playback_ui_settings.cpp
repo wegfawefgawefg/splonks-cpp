@@ -232,11 +232,11 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     ImGui::Checkbox("Enable Fluid Brush", &brush.enabled);
     ImGui::Checkbox("Run Fluid Simulation", &brush.simulation_enabled);
     ImGui::SliderInt("Sim Interval (frames)", &brush.simulation_interval_frames, 1, 30);
-    ImGui::SliderInt("Vertical Transfer / Step", &brush.vertical_transfer_per_step, 0, 255);
-    ImGui::SliderInt("Horizontal Transfer / Step", &brush.horizontal_transfer_per_step, 0, 255);
-    ImGui::SliderInt("Horizontal Flow Deadband", &brush.horizontal_flow_deadband, 0, 255);
-    ImGui::Checkbox("Use Fluid Momentum", &brush.use_momentum);
-    ImGui::Checkbox("Render 8-Way Blur", &brush.render_blur_enabled);
+    ImGui::SliderInt("Transfer / Step", &brush.transfer_per_step, 0, 255);
+    ImGui::SliderFloat("Gravity X", &brush.gravity_x, -4.0F, 4.0F, "%.2f");
+    ImGui::SliderFloat("Gravity Y", &brush.gravity_y, -4.0F, 4.0F, "%.2f");
+    ImGui::SliderFloat("Pressure Strength", &brush.pressure_strength, 0.0F, 4.0F, "%.2f");
+    ImGui::SliderFloat("Velocity Damping", &brush.velocity_damping, 0.0F, 1.0F, "%.2f");
     ImGui::Checkbox("Temporal Smoothing", &brush.temporal_smoothing_enabled);
     ImGui::SliderFloat(
         "Temporal Response",

@@ -128,11 +128,11 @@ struct DebugUiSettings {
     bool fluid_brush_replace_solid_tiles = false;
     int fluid_brush_radius_tiles = 1;
     int fluid_brush_simulation_interval_frames = 6;
-    int fluid_brush_vertical_transfer_per_step = 255;
-    int fluid_brush_horizontal_transfer_per_step = 255;
-    int fluid_brush_horizontal_flow_deadband = 1;
-    bool fluid_brush_use_momentum = true;
-    bool fluid_brush_render_blur_enabled = true;
+    int fluid_brush_transfer_per_step = 255;
+    float fluid_brush_gravity_x = 0.0F;
+    float fluid_brush_gravity_y = 1.0F;
+    float fluid_brush_pressure_strength = 0.35F;
+    float fluid_brush_velocity_damping = 0.88F;
     bool fluid_brush_temporal_smoothing_enabled = false;
     float fluid_brush_temporal_smoothing_response = 0.35F;
     float fluid_brush_render_cutoff_amount = 1.0F;

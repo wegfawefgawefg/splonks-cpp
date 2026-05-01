@@ -51,6 +51,17 @@ Vec2 RotatePoint(const Vec2& point, Vec2 dims, int quarter_turns) {
     return rotated;
 }
 
+Vec2 RotateDirectionClockwise(const Vec2& direction) {
+    return Vec2::New(-direction.y, direction.x);
+}
+
+Vec2 RotateDirection(Vec2 direction, int quarter_turns) {
+    for (int i = 0; i < quarter_turns; ++i) {
+        direction = RotateDirectionClockwise(direction);
+    }
+    return direction;
+}
+
 IVec2 RotateTileCoordClockwise(const IVec2& tile_pos, int old_width, int old_height) {
     (void)old_width;
     return IVec2::New(old_height - 1 - tile_pos.y, tile_pos.x);
@@ -172,7 +183,12 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     stage.fluid_tiles = RotateGrid(stage.fluid_tiles, quarter_turns);
     stage.fluid_amount = RotateGrid(stage.fluid_amount, quarter_turns);
     stage.fluid_display_amount = RotateGrid(stage.fluid_display_amount, quarter_turns);
-    stage.fluid_momentum = RotateGrid(stage.fluid_momentum, quarter_turns);
+    stage.fluid_velocity = RotateGrid(stage.fluid_velocity, quarter_turns);
+    for (std::vector<Vec2>& row : stage.fluid_velocity) {
+        for (Vec2& velocity : row) {
+            velocity = RotateDirection(velocity, quarter_turns);
+        }
+    }
     stage.backwall_tiles = RotateGrid(stage.backwall_tiles, quarter_turns);
     stage.embedded_treasures = RotateGrid(stage.embedded_treasures, quarter_turns);
     stage.tile_shake = RotateGrid(stage.tile_shake, quarter_turns);

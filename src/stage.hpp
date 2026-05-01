@@ -176,9 +176,9 @@ struct Stage {
     std::vector<std::vector<Tile>> tiles;
     std::vector<std::vector<TileRotation>> tile_rotations;
     std::vector<std::vector<Tile>> fluid_tiles;
-    std::vector<std::vector<std::uint8_t>> fluid_amount;
+    std::vector<std::vector<float>> fluid_amount;
     std::vector<std::vector<float>> fluid_display_amount;
-    std::vector<std::vector<std::int8_t>> fluid_momentum;
+    std::vector<std::vector<Vec2>> fluid_velocity;
     std::vector<std::vector<float>> tile_shake;
     std::vector<std::vector<float>> backwall_tile_shake;
     std::vector<std::vector<Tile>> backwall_tiles;
@@ -217,7 +217,7 @@ struct Stage {
     const Tile& GetTile(unsigned int x, unsigned int y) const;
     TileRotation GetTileRotation(unsigned int x, unsigned int y) const;
     Tile GetFluidTile(unsigned int x, unsigned int y) const;
-    std::uint8_t GetFluidAmount(unsigned int x, unsigned int y) const;
+    float GetFluidAmount(unsigned int x, unsigned int y) const;
     float GetTileShake(unsigned int x, unsigned int y) const;
     float GetForegroundTileShake(unsigned int x, unsigned int y) const;
     float GetBackgroundTileShake(unsigned int x, unsigned int y) const;
@@ -230,7 +230,7 @@ struct Stage {
     void SyncTileShakeGrid();
     void SyncTileInstanceMetadataGrid();
     void SyncFluidTileGrid();
-    void SyncFluidMomentumGrid();
+    void SyncFluidVelocityGrid();
     void SetTile(const IVec2& pos, Tile tile);
     void SetFluidTile(const IVec2& pos, Tile tile);
     void SetTileRotation(const IVec2& pos, TileRotation rotation);

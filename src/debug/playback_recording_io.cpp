@@ -535,14 +535,14 @@ void WriteStage(std::ostream& out, const Stage& stage) {
     const std::uint32_t fluid_amount_rows =
         static_cast<std::uint32_t>(stage.fluid_amount.size());
     WritePod(out, fluid_amount_rows);
-    for (const std::vector<std::uint8_t>& row : stage.fluid_amount) {
+    for (const std::vector<float>& row : stage.fluid_amount) {
         WriteVectorPod(out, row);
     }
 
-    const std::uint32_t fluid_momentum_rows =
-        static_cast<std::uint32_t>(stage.fluid_momentum.size());
-    WritePod(out, fluid_momentum_rows);
-    for (const std::vector<std::int8_t>& row : stage.fluid_momentum) {
+    const std::uint32_t fluid_velocity_rows =
+        static_cast<std::uint32_t>(stage.fluid_velocity.size());
+    WritePod(out, fluid_velocity_rows);
+    for (const std::vector<Vec2>& row : stage.fluid_velocity) {
         WriteVectorPod(out, row);
     }
 
@@ -626,13 +626,13 @@ bool ReadStage(std::istream& in, Stage& stage) {
         }
     }
 
-    std::uint32_t fluid_momentum_rows = 0;
-    if (!ReadPod(in, fluid_momentum_rows)) {
+    std::uint32_t fluid_velocity_rows = 0;
+    if (!ReadPod(in, fluid_velocity_rows)) {
         return false;
     }
-    stage.fluid_momentum.resize(fluid_momentum_rows);
-    for (std::uint32_t i = 0; i < fluid_momentum_rows; ++i) {
-        if (!ReadVectorPod(in, stage.fluid_momentum[i])) {
+    stage.fluid_velocity.resize(fluid_velocity_rows);
+    for (std::uint32_t i = 0; i < fluid_velocity_rows; ++i) {
+        if (!ReadVectorPod(in, stage.fluid_velocity[i])) {
             return false;
         }
     }
