@@ -734,13 +734,16 @@ bool TryApplySwimImpulse(Entity& entity, State& state, Audio& audio) {
         return false;
     }
 
+    const bool play_sound = entity.vel.y > -swim_impulse * 0.5F;
     entity.vel.y = std::min(entity.vel.y, -swim_impulse);
     entity.grounded = false;
     entity.coyote_time = 0;
     entity.jump_delay_frame_count = 0;
     entity.jump_hold_gravity_frames_remaining = 0;
     entity.jumped_this_frame = true;
-    PlayJumpSoundsForEntity(state, entity);
+    if (play_sound) {
+        PlayJumpSoundsForEntity(state, entity);
+    }
     (void)audio;
     return true;
 }
@@ -909,13 +912,13 @@ void JumpingAndClimbingStep(
                 PlayJumpSoundsForEntity(state, entity);
                 entity.hang_count = kHangCountMax;
             }
+        } else if (TryApplySwimImpulse(entity, state, audio)) {
+            // Fluid jump handled; do not also apply the grounded/coyote jump.
         } else if ((entity.grounded && (entity.jump_delay_frame_count == 0)) || entity.coyote_time > 0) {
             StartEntityJump(entity, tuning);
             entity.coyote_time = 0;
             entity.grounded = false;
             PlayJumpSoundsForEntity(state, entity);
-        } else {
-            (void)TryApplySwimImpulse(entity, state, audio);
         }
     }
 

@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace splonks {
 
@@ -128,13 +129,8 @@ constexpr EffectModifier kInWaterModifiers[]{
 };
 
 template <std::size_t N>
-std::array<EffectModifier, 9> MakeModifierArray(const EffectModifier (&modifiers)[N]) {
-    static_assert(N <= 9);
-    std::array<EffectModifier, 9> out{};
-    for (std::size_t i = 0; i < N; ++i) {
-        out[i] = modifiers[i];
-    }
-    return out;
+std::vector<EffectModifier> MakeModifierVector(const EffectModifier (&modifiers)[N]) {
+    return std::vector<EffectModifier>(std::begin(modifiers), std::end(modifiers));
 }
 
 std::string FormatEffectInt(int value) {
@@ -264,20 +260,21 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
     EffectArchetype{
         .id = EffectId::None,
         .debug_name = "None",
+        .modifiers = {},
     },
     EffectArchetype{
         .id = EffectId::Gloves,
         .debug_name = "Gloves",
         .icon_animation_id = frame_data_ids::Gloves,
         .ui_kind = EffectUiKind::Passive,
+        .modifiers = {},
     },
     EffectArchetype{
         .id = EffectId::Spectacles,
         .debug_name = "Spectacles",
         .icon_animation_id = frame_data_ids::Spectacles,
         .ui_kind = EffectUiKind::Passive,
-        .modifiers = MakeModifierArray(kSpectaclesModifiers),
-        .modifier_count = 1,
+        .modifiers = MakeModifierVector(kSpectaclesModifiers),
     },
     EffectArchetype{
         .id = EffectId::Compass,
@@ -285,14 +282,14 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .icon_animation_id = frame_data_ids::Compass,
         .ui_kind = EffectUiKind::Passive,
         .render_world_overlay = RenderCompassWorldOverlay,
+        .modifiers = {},
     },
     EffectArchetype{
         .id = EffectId::Mitt,
         .debug_name = "Mitt",
         .icon_animation_id = frame_data_ids::Mitt,
         .ui_kind = EffectUiKind::Passive,
-        .modifiers = MakeModifierArray(kMittModifiers),
-        .modifier_count = 1,
+        .modifiers = MakeModifierVector(kMittModifiers),
         .on_event = OnMittEffectEvent,
     },
     EffectArchetype{
@@ -300,30 +297,28 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .debug_name = "SpringShoes",
         .icon_animation_id = frame_data_ids::SpringShoes,
         .ui_kind = EffectUiKind::Passive,
-        .modifiers = MakeModifierArray(kSpringShoesModifiers),
-        .modifier_count = 2,
+        .modifiers = MakeModifierVector(kSpringShoesModifiers),
     },
     EffectArchetype{
         .id = EffectId::SpikeShoes,
         .debug_name = "SpikeShoes",
         .icon_animation_id = frame_data_ids::SpikeShoes,
         .ui_kind = EffectUiKind::Passive,
-        .modifiers = MakeModifierArray(kSpikeShoesModifiers),
-        .modifier_count = 2,
+        .modifiers = MakeModifierVector(kSpikeShoesModifiers),
     },
     EffectArchetype{
         .id = EffectId::UdjatEye,
         .debug_name = "UdjatEye",
         .icon_animation_id = frame_data_ids::UdjatEye,
         .ui_kind = EffectUiKind::Passive,
-        .modifiers = MakeModifierArray(kUdjatEyeModifiers),
-        .modifier_count = 1,
+        .modifiers = MakeModifierVector(kUdjatEyeModifiers),
     },
     EffectArchetype{
         .id = EffectId::Ankh,
         .debug_name = "Ankh",
         .icon_animation_id = frame_data_ids::Ankh,
         .ui_kind = EffectUiKind::Passive,
+        .modifiers = {},
         .on_event = OnAnkhEffectEvent,
     },
     EffectArchetype{
@@ -333,6 +328,7 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .ui_kind = EffectUiKind::Passive,
         .hud_count_text = FormatMeatheadCountdownText,
         .hud_count_anchor = HudAnchor::BottomRight,
+        .modifiers = {},
         .on_event = entities::meathead::OnMeatheadEffectEvent,
     },
     EffectArchetype{
@@ -343,14 +339,14 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .default_count = 1,
         .hud_count_text = FormatEffectCountText,
         .hud_count_anchor = HudAnchor::BottomRight,
+        .modifiers = {},
     },
     EffectArchetype{
         .id = EffectId::NoGravityUntilContact,
         .debug_name = "NoGravityUntilContact",
         .icon_animation_id = frame_data_ids::MittNoGrav,
         .ui_kind = EffectUiKind::Temporary,
-        .modifiers = MakeModifierArray(kNoGravityUntilContactModifiers),
-        .modifier_count = 1,
+        .modifiers = MakeModifierVector(kNoGravityUntilContactModifiers),
         .should_expire = IsNoGravityUntilContactExpired,
     },
     EffectArchetype{
@@ -358,8 +354,7 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .debug_name = "InWater",
         .icon_animation_id = frame_data_ids::Water,
         .ui_kind = EffectUiKind::Temporary,
-        .modifiers = MakeModifierArray(kInWaterModifiers),
-        .modifier_count = 8,
+        .modifiers = MakeModifierVector(kInWaterModifiers),
     },
 }};
 

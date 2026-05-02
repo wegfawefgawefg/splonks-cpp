@@ -223,8 +223,7 @@ float GetModifiedEffectValue(
     for (std::size_t effect_index = 0; effect_index < entity.effects->count; ++effect_index) {
         const EffectInstance& effect = entity.effects->effects[effect_index];
         const EffectArchetype& archetype = GetEffectArchetype(effect.id);
-        for (std::uint8_t modifier_index = 0; modifier_index < archetype.modifier_count; ++modifier_index) {
-            const EffectModifier& modifier = archetype.modifiers[modifier_index];
+        for (const EffectModifier& modifier : archetype.modifiers) {
             if (modifier.target == target) {
                 ApplyModifier(value, ResolveRuntimeModifier(effect, modifier, state));
             }

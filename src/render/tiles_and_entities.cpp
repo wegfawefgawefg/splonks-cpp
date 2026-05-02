@@ -293,7 +293,7 @@ void RenderWorldTextureQuad(
     SDL_Texture* texture,
     const SDL_FRect& src,
     const std::array<Vec2, 4>& world_points,
-    const SDL_FColor& color
+    const std::array<SDL_FColor, 4>& colors
 ) {
     if (texture == nullptr || src.w <= 0.0F || src.h <= 0.0F) {
         return;
@@ -316,10 +316,10 @@ void RenderWorldTextureQuad(
     const float u1 = (src.x + src.w) / texture_width;
     const float v1 = (src.y + src.h) / texture_height;
     const std::array<SDL_Vertex, 4> vertices{
-        SDL_Vertex{SDL_FPoint{tl.x, tl.y}, color, SDL_FPoint{u0, v0}},
-        SDL_Vertex{SDL_FPoint{tr.x, tr.y}, color, SDL_FPoint{u1, v0}},
-        SDL_Vertex{SDL_FPoint{br.x, br.y}, color, SDL_FPoint{u1, v1}},
-        SDL_Vertex{SDL_FPoint{bl.x, bl.y}, color, SDL_FPoint{u0, v1}},
+        SDL_Vertex{SDL_FPoint{tl.x, tl.y}, colors[0], SDL_FPoint{u0, v0}},
+        SDL_Vertex{SDL_FPoint{tr.x, tr.y}, colors[1], SDL_FPoint{u1, v0}},
+        SDL_Vertex{SDL_FPoint{br.x, br.y}, colors[2], SDL_FPoint{u1, v1}},
+        SDL_Vertex{SDL_FPoint{bl.x, bl.y}, colors[3], SDL_FPoint{u0, v1}},
     };
     constexpr std::array<int, 6> indices{0, 1, 2, 0, 2, 3};
     SDL_RenderGeometry(
@@ -330,6 +330,48 @@ void RenderWorldTextureQuad(
         indices.data(),
         static_cast<int>(indices.size())
     );
+}
+
+void RenderWorldTextureQuad(
+    SDL_Renderer* renderer,
+    const Graphics& graphics,
+    SDL_Texture* texture,
+    const SDL_FRect& src,
+    const std::array<Vec2, 4>& world_points,
+    const SDL_FColor& color
+) {
+    RenderWorldTextureQuad(
+        renderer,
+        graphics,
+        texture,
+        src,
+        world_points,
+        std::array<SDL_FColor, 4>{color, color, color, color}
+    );
+}
+
+std::array<SDL_FColor, 4> MakeFluidVertexColorsForWorldQuad(
+    const State& state,
+    const FluidSettings& fluid,
+    const std::array<Vec2, 4>& world_points,
+    std::uint8_t alpha
+) {
+    std::array<SDL_FColor, 4> colors{};
+    for (std::size_t i = 0; i < world_points.size(); ++i) {
+        Color3 brightness = Color3::White();
+        if (fluid.lighting_enabled) {
+            const Color3 sampled_brightness = SampleBackwallLightColorForRender(state, world_points[i]);
+            brightness = ClampRenderColor(
+                LerpRenderColor(
+                    Color3::White(),
+                    sampled_brightness,
+                    std::clamp(fluid.lighting_strength, 0.0F, 2.0F)
+                )
+            );
+        }
+        colors[i] = MakeFluidVertexColor(brightness, alpha);
+    }
+    return colors;
 }
 
 void RenderWorldTextureRibbon(
@@ -1286,8 +1328,13 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
                 Color3 brightness = Color3::White();
                 if (fluid.lighting_enabled) {
-                    const Color3 sampled_brightness =
-                        GetBackwallLightColorForRender(state, static_cast<int>(x), static_cast<int>(y));
+                    const Color3 sampled_brightness = SampleBackwallLightColorForRender(
+                        state,
+                        tile_world + Vec2::New(
+                            static_cast<float>(kTileSizePx) * 0.5F,
+                            static_cast<float>(kTileSizePx) * 0.5F
+                        )
+                    );
                     brightness = ClampRenderColor(
                         LerpRenderColor(
                             Color3::White(),
@@ -1327,21 +1374,22 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 if (cell->display_level <= effective_display_cutoff) {
                     continue;
                 }
+                const std::array<Vec2, 4> body_world_points{
+                    tile_world + Vec2::New(0.0F, 0.0F),
+                    tile_world + Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
+                    tile_world + Vec2::New(
+                        static_cast<float>(kTileSizePx),
+                        static_cast<float>(kTileSizePx)
+                    ),
+                    tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
+                };
                 RenderWorldTextureQuad(
                     renderer,
                     graphics,
                     tile_texture,
                     body_src,
-                    std::array<Vec2, 4>{
-                        tile_world + Vec2::New(0.0F, 0.0F),
-                        tile_world + Vec2::New(static_cast<float>(kTileSizePx), 0.0F),
-                        tile_world + Vec2::New(
-                            static_cast<float>(kTileSizePx),
-                            static_cast<float>(kTileSizePx)
-                        ),
-                        tile_world + Vec2::New(0.0F, static_cast<float>(kTileSizePx)),
-                    },
-                    MakeFluidVertexColor(brightness, body_alpha)
+                    body_world_points,
+                    MakeFluidVertexColorsForWorldQuad(state, fluid, body_world_points, body_alpha)
                 );
 
                 auto neighbor_is_fluid_or_solid = [&](int offset_x, int offset_y) -> bool {

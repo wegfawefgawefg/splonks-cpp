@@ -139,7 +139,7 @@ extern const EntityArchetype kBoxArchetype{
     .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
-    .buoyancy = 1.45F,
+    .buoyancy = 1.0F,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

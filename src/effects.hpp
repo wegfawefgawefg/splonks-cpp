@@ -13,6 +13,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 struct SDL_Renderer;
 
@@ -152,8 +153,7 @@ struct EffectArchetype {
     EffectHudCountTextFn hud_count_text = nullptr;
     HudAnchor hud_count_anchor = HudAnchor::BottomRight;
     EffectWorldOverlayFn render_world_overlay = nullptr;
-    std::array<EffectModifier, 9> modifiers{};
-    std::uint8_t modifier_count = 0;
+    std::vector<EffectModifier> modifiers;
     EffectEventHandler on_event = nullptr;
     EffectExpiryPredicate should_expire = nullptr;
 };

@@ -18,18 +18,19 @@ namespace splonks::entities::piranha {
 
 namespace {
 
-constexpr float kPiranhaSwimAcceleration = 0.08F;
-constexpr float kPiranhaChaseAcceleration = 0.12F;
-constexpr float kPiranhaMaxSwimSpeed = 1.35F;
+constexpr float kPiranhaSwimAcceleration = 0.10F;
+constexpr float kPiranhaChaseAcceleration = 0.16F;
+constexpr float kPiranhaMaxSwimSpeed = 1.70F;
 constexpr float kPiranhaWaterDamping = 0.98F;
-constexpr float kPiranhaSurfaceDiveSpeed = 0.45F;
+constexpr float kPiranhaSurfaceDiveSpeed = 0.55F;
 constexpr float kPiranhaTargetDistance = 96.0F;
 constexpr float kPiranhaBiteDistance = 12.0F;
 
 bool IsPiranhaInWater(const Entity& piranha, const State& state) {
     const Vec2 center = piranha.GetCenter();
-    return IsWaterAtWorldPos(state.stage, center) ||
-           IsWaterAtWorldPos(state.stage, center + Vec2::New(0.0F, piranha.size.y * 0.35F));
+    const float cutoff = state.settings.fluid.render_cutoff_amount;
+    return IsWaterAtWorldPos(state.stage, center, cutoff) ||
+           IsWaterAtWorldPos(state.stage, center + Vec2::New(0.0F, piranha.size.y * 0.35F), cutoff);
 }
 
 std::optional<Vec2> FindPiranhaTarget(const Entity& piranha, const State& state) {
@@ -73,9 +74,10 @@ struct SwimProbeResult {
 SwimProbeResult QuerySwimProbes(const Entity& piranha, const State& state) {
     const AABB aabb = piranha.GetAABB();
     const Vec2 center = piranha.GetCenter();
+    const float cutoff = state.settings.fluid.render_cutoff_amount;
     return SwimProbeResult{
-        .center = IsWaterAtWorldPos(state.stage, center),
-        .bottom = IsWaterAtWorldPos(state.stage, Vec2::New(center.x, aabb.br.y)),
+        .center = IsWaterAtWorldPos(state.stage, center, cutoff),
+        .bottom = IsWaterAtWorldPos(state.stage, Vec2::New(center.x, aabb.br.y), cutoff),
     };
 }
 
@@ -104,17 +106,19 @@ void StepEntityLogicAsPiranha(
         return;
     }
 
+    bool biting = false;
     if (const std::optional<Vec2> target = FindPiranhaTarget(piranha, state)) {
-        if (Length(GetNearestWorldDelta(state.stage, piranha.GetCenter(), *target)) <= kPiranhaBiteDistance) {
-            SetAnimation(piranha, frame_data_ids::PiranhaBite);
-            return;
-        }
+        biting = Length(GetNearestWorldDelta(state.stage, piranha.GetCenter(), *target)) <= kPiranhaBiteDistance;
         ChaseTarget(piranha, *target, state.stage);
     } else {
         PatrolWater(piranha);
     }
     SetMovementFlag(piranha, EntityMovementFlag::Walking, true);
-    TrySetAnimation(piranha, EntityDisplayState::Walk);
+    if (biting) {
+        SetAnimation(piranha, frame_data_ids::PiranhaBite);
+    } else {
+        TrySetAnimation(piranha, EntityDisplayState::Walk);
+    }
 }
 
 void StepEntityPhysicsAsPiranha(
