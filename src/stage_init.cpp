@@ -1,6 +1,8 @@
 #include "stage_init.hpp"
 
 #include "entity/archetype.hpp"
+#include "stage_acoustics.hpp"
+#include "stage_lighting.hpp"
 #include "stage_spawning.hpp"
 
 #include <random>
@@ -152,6 +154,8 @@ void InitStage(State& state, bool preserve_player_state) {
     if (carryover.player.has_value()) {
         SnapAttachedItemsToPlayer(state);
     }
+    InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
 }
 
 } // namespace splonks

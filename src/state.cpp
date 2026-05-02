@@ -174,8 +174,6 @@ State State::New() {
     state.debug_rect_annotations.clear();
     state.debug_label_annotations.clear();
     state.debug_fluid_brush.enabled = state.settings.debug_ui.fluid_brush_enabled;
-    state.debug_fluid_brush.simulation_enabled =
-        state.settings.debug_ui.fluid_brush_simulation_enabled;
     state.debug_fluid_brush.replace_solid_tiles =
         state.settings.debug_ui.fluid_brush_replace_solid_tiles;
     state.debug_fluid_brush.mode = static_cast<DebugFluidBrushState::Mode>(std::clamp(
@@ -185,60 +183,12 @@ State State::New() {
     ));
     state.debug_fluid_brush.radius_tiles =
         std::max(0, state.settings.debug_ui.fluid_brush_radius_tiles);
-    state.debug_fluid_brush.simulation_interval_frames =
-        std::max(1, state.settings.debug_ui.fluid_brush_simulation_interval_frames);
-    state.debug_fluid_brush.transfer_per_step = std::clamp(
-        state.settings.debug_ui.fluid_brush_transfer_per_step,
-        0.0F,
-        1.0F
-    );
-    state.debug_fluid_brush.gravity_x = state.settings.debug_ui.fluid_brush_gravity_x;
-    state.debug_fluid_brush.gravity_y = state.settings.debug_ui.fluid_brush_gravity_y;
     state.debug_fluid_brush.paint_gravity_x =
         state.settings.debug_ui.fluid_brush_paint_gravity_x;
     state.debug_fluid_brush.paint_gravity_y =
         state.settings.debug_ui.fluid_brush_paint_gravity_y;
-    state.debug_fluid_brush.pressure_strength = std::clamp(
-        state.settings.debug_ui.fluid_brush_pressure_strength,
-        0.0F,
-        4.0F
-    );
-    state.debug_fluid_brush.velocity_damping = std::clamp(
-        state.settings.debug_ui.fluid_brush_velocity_damping,
-        0.0F,
-        1.0F
-    );
-    state.debug_fluid_brush.temp_gravity_decay = std::clamp(
-        state.settings.debug_ui.fluid_brush_temp_gravity_decay,
-        0.0F,
-        1.0F
-    );
-    state.debug_fluid_brush.temporal_smoothing_enabled =
-        state.settings.debug_ui.fluid_brush_temporal_smoothing_enabled;
-    state.debug_fluid_brush.temporal_smoothing_response = std::clamp(
-        state.settings.debug_ui.fluid_brush_temporal_smoothing_response,
-        0.0F,
-        1.0F
-    );
-    state.debug_fluid_brush.render_cutoff_amount = std::clamp(
-        state.settings.debug_ui.fluid_brush_render_cutoff_amount,
-        0.0F,
-        1.0F
-    );
-    state.debug_fluid_brush.water_alpha = std::clamp(
-        state.settings.debug_ui.fluid_brush_water_alpha,
-        0.0F,
-        1.0F
-    );
     state.debug_fluid_brush.show_flow_indicators =
         state.settings.debug_ui.fluid_brush_show_flow_indicators;
-    state.debug_fluid_brush.lighting_enabled =
-        state.settings.debug_ui.fluid_brush_lighting_enabled;
-    state.debug_fluid_brush.lighting_strength = std::clamp(
-        state.settings.debug_ui.fluid_brush_lighting_strength,
-        0.0F,
-        2.0F
-    );
     (void)LoadQuestStage(state, "classic", "classic_mines_1", false);
     return state;
 }

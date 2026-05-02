@@ -3,6 +3,7 @@
 #include "draw_layer.hpp"
 #include "frame_data_animator.hpp"
 #include "math_types.hpp"
+#include "particles/lighting_mode.hpp"
 
 #include <cstdint>
 
@@ -12,6 +13,7 @@ struct SpriteParticle {
     std::uint32_t counter = 0;
     bool finish_on_animation_end = false;
     DrawLayer draw_layer = DrawLayer::Middle;
+    ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     Vec2 pos{};
     Vec2 size{};
     float rot = 0.0F;

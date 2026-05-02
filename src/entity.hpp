@@ -75,6 +75,10 @@ struct Entity {
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
     float throw_velocity_scale = 1.0F;
     Vec2 size;
+    float self_light = 0.0F;
+    float light_strength = 0.0F;
+    Color3 light_color = Color3::White();
+    int light_radius = 0;
     float dist_traveled_this_frame = 0.0F;
     LeftOrRight facing = LeftOrRight::Left;
     bool vertical_flip = false;

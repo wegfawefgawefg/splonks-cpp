@@ -29,6 +29,7 @@ enum class EntityType {
     Block,
     GhostBall,
     BasicExit,
+    Entrance,
     DvdLogo,
     Bat,
     Rock,

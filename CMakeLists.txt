@@ -152,6 +152,7 @@ add_executable(splonks-cpp
     src/effects.cpp
     src/effects/archetypes.cpp
     src/effects/render.cpp
+    src/effects/treasure_pickup.cpp
     src/entity.cpp
     src/entity_tool_inventory.cpp
     src/entity/archetype.cpp
@@ -181,6 +182,7 @@ add_executable(splonks-cpp
     src/entities/ceiling_trap.cpp
     src/entities/tomb_lord.cpp
     src/entities/door.cpp
+    src/entities/entrance.cpp
     src/entities/ankh.cpp
     src/entities/crown.cpp
     src/entities/xoc_block.cpp
@@ -283,9 +285,11 @@ add_executable(splonks-cpp
     src/render/menu/lighting.cpp
     src/render/gameplay.cpp
     src/hud/entries.cpp
+    src/render/particles.cpp
     src/render/postfx.cpp
     src/render/tile_lighting.cpp
     src/render/debug.cpp
+    src/render/debug_lighting.cpp
     src/render/stone_overlay.cpp
     src/render/tiles_and_entities.cpp
     src/render/ui.cpp

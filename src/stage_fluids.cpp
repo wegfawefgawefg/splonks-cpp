@@ -290,12 +290,13 @@ void StepStageFluids(State& state) {
         UpdateStageLightingForTileChanges(state, normalized_tiles);
         UpdateStageAcousticsForTileChanges(state, normalized_tiles);
     }
-    if (!state.debug_fluid_brush.simulation_enabled) {
+    const FluidSettings& fluid = state.settings.fluid;
+    if (!fluid.simulation_enabled) {
         return;
     }
 
     const std::uint32_t interval_frames = static_cast<std::uint32_t>(
-        std::max(1, state.debug_fluid_brush.simulation_interval_frames)
+        std::max(1, fluid.simulation_interval_frames)
     );
     if (state.stage_frame % interval_frames != 0) {
         return;
@@ -313,21 +314,18 @@ void StepStageFluids(State& state) {
     const std::vector<std::vector<Vec2>>& source_temp_gravity = stage.fluid_temp_gravity;
 
     const float transfer_cap =
-        std::clamp(state.debug_fluid_brush.transfer_per_step, 0.0F, kMaxFluidAmount);
+        std::clamp(fluid.transfer_per_step, 0.0F, kMaxFluidAmount);
     const float pressure_strength = std::clamp(
-        state.debug_fluid_brush.pressure_strength,
+        fluid.pressure_strength,
         0.0F,
         4.0F
     );
     const float velocity_damping = std::clamp(
-        state.debug_fluid_brush.velocity_damping,
+        fluid.velocity_damping,
         0.0F,
         1.0F
     );
-    const Vec2 gravity = Vec2::New(
-        state.debug_fluid_brush.gravity_x,
-        state.debug_fluid_brush.gravity_y
-    );
+    const Vec2 gravity = Vec2::New(fluid.gravity_x, fluid.gravity_y);
 
     std::vector<FluidTransferProposal> proposals;
     proposals.reserve(static_cast<std::size_t>(stage.GetTileWidth() * stage.GetTileHeight()));
@@ -377,7 +375,7 @@ void StepStageFluids(State& state) {
         for (std::size_t x = 0; x < next_velocities[y].size(); ++x) {
             next_temp_gravity[y][x] =
                 next_temp_gravity[y][x] *
-                std::clamp(state.debug_fluid_brush.temp_gravity_decay, 0.0F, 1.0F);
+                std::clamp(fluid.temp_gravity_decay, 0.0F, 1.0F);
             if (source_amounts[y][x] <= kMinFluidAmount) {
                 next_velocities[y][x] = Vec2::New(0.0F, 0.0F);
                 continue;

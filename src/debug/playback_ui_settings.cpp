@@ -230,8 +230,10 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     }
 
     DebugFluidBrushState& brush = state.debug_fluid_brush;
+    FluidSettings& fluid = state.settings.fluid;
+    bool save_settings = false;
     ImGui::Checkbox("Enable Fluid Brush", &brush.enabled);
-    ImGui::Checkbox("Run Fluid Simulation", &brush.simulation_enabled);
+    save_settings |= ImGui::Checkbox("Run Fluid Simulation", &fluid.simulation_enabled);
     int brush_mode = static_cast<int>(brush.mode);
     ImGui::RadioButton("Water", &brush_mode, static_cast<int>(DebugFluidBrushState::Mode::Water));
     ImGui::SameLine();
@@ -252,23 +254,27 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         static_cast<int>(DebugFluidBrushState::Mode::GlobalGravityDirection)
     );
     brush.mode = static_cast<DebugFluidBrushState::Mode>(brush_mode);
-    ImGui::SliderInt("Sim Interval (frames)", &brush.simulation_interval_frames, 1, 30);
-    ImGui::SliderFloat("Transfer / Step (0-1)", &brush.transfer_per_step, 0.0F, 1.0F, "%.3f");
-    ImGui::SliderFloat("Global Gravity X", &brush.gravity_x, -4.0F, 4.0F, "%.2f");
+    save_settings |= ImGui::SliderInt("Sim Interval (frames)", &fluid.simulation_interval_frames, 1, 30);
+    save_settings |=
+        ImGui::SliderFloat("Transfer / Step (0-1)", &fluid.transfer_per_step, 0.0F, 1.0F, "%.3f");
+    save_settings |= ImGui::SliderFloat("Global Gravity X", &fluid.gravity_x, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();
     if (ImGui::Button("0##FluidGravityX")) {
-        brush.gravity_x = 0.0F;
+        fluid.gravity_x = 0.0F;
+        save_settings = true;
     }
-    ImGui::SliderFloat("Global Gravity Y", &brush.gravity_y, -4.0F, 4.0F, "%.2f");
+    save_settings |= ImGui::SliderFloat("Global Gravity Y", &fluid.gravity_y, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();
     if (ImGui::Button("0##FluidGravityY")) {
-        brush.gravity_y = 0.0F;
+        fluid.gravity_y = 0.0F;
+        save_settings = true;
     }
     if (ImGui::Button("Zero Gravity XY")) {
-        brush.gravity_x = 0.0F;
-        brush.gravity_y = 0.0F;
+        fluid.gravity_x = 0.0F;
+        fluid.gravity_y = 0.0F;
+        save_settings = true;
     }
-    ImGui::Text("Global Gravity: (%.2f, %.2f)", brush.gravity_x, brush.gravity_y);
+    ImGui::Text("Global Gravity: (%.2f, %.2f)", fluid.gravity_x, fluid.gravity_y);
     ImGui::SliderFloat("Brush Gravity X", &brush.paint_gravity_x, -4.0F, 4.0F, "%.2f");
     ImGui::SameLine();
     if (ImGui::Button("0##FluidPaintGravityX")) {
@@ -288,36 +294,36 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         brush.paint_gravity_x,
         brush.paint_gravity_y
     );
-    ImGui::SliderFloat("Pressure Strength", &brush.pressure_strength, 0.0F, 4.0F, "%.2f");
-    ImGui::SliderFloat("Velocity Damping", &brush.velocity_damping, 0.0F, 1.0F, "%.2f");
-    ImGui::SliderFloat("Temp Gravity Decay", &brush.temp_gravity_decay, 0.0F, 1.0F, "%.2f");
-    ImGui::Checkbox("Temporal Smoothing", &brush.temporal_smoothing_enabled);
-    ImGui::SliderFloat(
+    save_settings |= ImGui::SliderFloat("Pressure Strength", &fluid.pressure_strength, 0.0F, 4.0F, "%.2f");
+    save_settings |= ImGui::SliderFloat("Velocity Damping", &fluid.velocity_damping, 0.0F, 1.0F, "%.2f");
+    save_settings |= ImGui::SliderFloat("Temp Gravity Decay", &fluid.temp_gravity_decay, 0.0F, 1.0F, "%.2f");
+    save_settings |= ImGui::Checkbox("Temporal Smoothing", &fluid.temporal_smoothing_enabled);
+    save_settings |= ImGui::SliderFloat(
         "Temporal Response",
-        &brush.temporal_smoothing_response,
+        &fluid.temporal_smoothing_response,
         0.0F,
         1.0F,
         "%.2f"
     );
-    ImGui::SliderFloat(
+    save_settings |= ImGui::SliderFloat(
         "Render Cutoff (0-1)",
-        &brush.render_cutoff_amount,
+        &fluid.render_cutoff_amount,
         0.0F,
         1.0F,
         "%.4f"
     );
-    ImGui::SliderFloat(
+    save_settings |= ImGui::SliderFloat(
         "Global Water Alpha",
-        &brush.water_alpha,
+        &fluid.water_alpha,
         0.0F,
         1.0F,
         "%.2f"
     );
     ImGui::Checkbox("Show Flow Indicators", &brush.show_flow_indicators);
-    ImGui::Checkbox("Water Uses Stage Lighting", &brush.lighting_enabled);
-    ImGui::SliderFloat(
+    save_settings |= ImGui::Checkbox("Water Uses Stage Lighting", &fluid.lighting_enabled);
+    save_settings |= ImGui::SliderFloat(
         "Water Lighting Strength",
-        &brush.lighting_strength,
+        &fluid.lighting_strength,
         0.0F,
         2.0F,
         "%.2f"
@@ -332,6 +338,9 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
 
     ImGui::End();
     SyncDebugUiSettings(debug, state);
+    if (save_settings) {
+        SaveSettings(state.settings);
+    }
 }
 
 void DrawAudioSettingsWindow(DebugPlayback& debug, State& state) {

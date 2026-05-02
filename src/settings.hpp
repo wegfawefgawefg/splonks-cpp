@@ -112,6 +112,25 @@ struct PostProcessSettings {
     static PostProcessSettings New();
 };
 
+struct FluidSettings {
+    bool simulation_enabled = true;
+    int simulation_interval_frames = 6;
+    float transfer_per_step = 1.0F;
+    float gravity_x = 0.0F;
+    float gravity_y = 1.0F;
+    float pressure_strength = 0.35F;
+    float velocity_damping = 0.88F;
+    float temp_gravity_decay = 0.92F;
+    bool temporal_smoothing_enabled = false;
+    float temporal_smoothing_response = 0.35F;
+    float render_cutoff_amount = 0.004F;
+    float water_alpha = 0.69F;
+    bool lighting_enabled = true;
+    float lighting_strength = 1.0F;
+
+    static FluidSettings New();
+};
+
 struct DebugUiSettings {
     bool menu_visible = true;
     bool playback_visible = true;
@@ -122,26 +141,12 @@ struct DebugUiSettings {
     bool audio_brush_visible = false;
     bool fluid_brush_visible = false;
     bool fluid_brush_enabled = false;
-    bool fluid_brush_simulation_enabled = true;
     bool fluid_brush_replace_solid_tiles = false;
     int fluid_brush_mode = 0;
     int fluid_brush_radius_tiles = 1;
-    int fluid_brush_simulation_interval_frames = 6;
-    float fluid_brush_transfer_per_step = 1.0F;
-    float fluid_brush_gravity_x = 0.0F;
-    float fluid_brush_gravity_y = 1.0F;
     float fluid_brush_paint_gravity_x = 0.0F;
     float fluid_brush_paint_gravity_y = -2.0F;
-    float fluid_brush_pressure_strength = 0.35F;
-    float fluid_brush_velocity_damping = 0.88F;
-    float fluid_brush_temp_gravity_decay = 0.92F;
-    bool fluid_brush_temporal_smoothing_enabled = false;
-    float fluid_brush_temporal_smoothing_response = 0.35F;
-    float fluid_brush_render_cutoff_amount = 0.004F;
-    float fluid_brush_water_alpha = 0.69F;
     bool fluid_brush_show_flow_indicators = false;
-    bool fluid_brush_lighting_enabled = true;
-    float fluid_brush_lighting_strength = 1.0F;
     bool audio_settings_visible = false;
     bool ui_settings_visible = false;
     bool post_fx_settings_visible = false;
@@ -200,6 +205,7 @@ struct Settings {
     ControlsSettings controls;
     UiSettings ui;
     PostProcessSettings post_process;
+    FluidSettings fluid;
     DebugUiSettings debug_ui;
     PlayerTuningState player_tuning;
 

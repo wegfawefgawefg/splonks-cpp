@@ -45,6 +45,7 @@ ScriptedParticle MakeScriptedParticle(
     particle.active = true;
     particle.archetype_id = archetype_id;
     particle.draw_layer = archetype->draw_layer;
+    particle.lighting_mode = archetype->lighting_mode;
     particle.pos = pos;
     particle.size = archetype->size;
     particle.horizontal_flip = horizontal_flip;

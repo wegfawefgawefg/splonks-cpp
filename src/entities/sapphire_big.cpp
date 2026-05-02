@@ -1,6 +1,7 @@
 #include "entities/sapphire_big.hpp"
 
 #include "audio_emitters.hpp"
+#include "effects/treasure_pickup.hpp"
 #include "entities/common/common.hpp"
 
 #include "entity/archetype.hpp"
@@ -28,8 +29,9 @@ common::ContactResolution OnEntityContactAsSapphireBig(
 
     Entity& collector = state.entity_manager.entities[other_entity_idx];
     const Entity& gem = state.entity_manager.entities[entity_idx];
-    collector.money += 6;
+    collector.money += 1200;
     (void)PlayEntityCenterSoundEmitter(state, gem, audio_asset_ids::GoldStack);
+    effects::SpawnTreasurePickupSparkles(gem, state, Color3::New(0.24F, 0.46F, 1.0F), 7);
     common::DeactivateCollectedPickup(entity_idx, state, *graphics);
     return common::ContactResolution{};
 }
@@ -47,6 +49,10 @@ extern const EntityArchetype kSapphireBigArchetype{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
+    .self_light = 0.28F,
+    .light_strength = 0.45F,
+    .light_color = Color3::New(0.24F, 0.46F, 1.0F),
+    .light_radius = 5,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

@@ -57,6 +57,10 @@ Entity Entity::New() {
     entity.jump_hold_gravity_frames_remaining = 0;
     entity.throw_velocity_scale = 1.0F;
     entity.size = Vec2::New(8.0F, 8.0F);
+    entity.self_light = 0.0F;
+    entity.light_strength = 0.0F;
+    entity.light_color = Color3::White();
+    entity.light_radius = 0;
     entity.dist_traveled_this_frame = 0.0F;
     entity.facing = LeftOrRight::Left;
     entity.vertical_flip = false;

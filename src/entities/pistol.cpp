@@ -7,6 +7,7 @@
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "hitscan.hpp"
+#include "stage_lighting.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 
@@ -51,6 +52,7 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
         SpriteParticle spark{};
         spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
+        spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
         spark.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
         spark.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));
@@ -105,6 +107,7 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
                                                                         : pistol.use_state.user_vid;
 
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
+    AddTransientLight(state, muzzle_pos, 1.4F, Color3::New(1.0F, 0.72F, 0.34F), 5, 4);
     SpawnPistolMuzzleSmoke(state, muzzle_pos, direction);
 
     const HitscanHit hit = TraceHitscan(

@@ -337,6 +337,7 @@ void SpawnTelefragPhaseParticle(
     SpriteParticle particle{};
     particle.counter = 32;
     particle.draw_layer = entity.draw_layer;
+    particle.lighting_mode = ParticleLightingMode::Emissive;
     particle.pos = common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()) + start_offset;
     particle.size = Vec2::New(
         static_cast<float>(frame_data->sample_rect.w),

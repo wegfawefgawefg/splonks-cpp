@@ -388,6 +388,7 @@ void SpawnSacrificeSparks(State& state, const Vec2& pos) {
         SpriteParticle spark{};
         spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
+        spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
         spark.pos = pos + Vec2::New(
             rng::RandomFloat(-2.0F, 2.0F),

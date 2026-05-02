@@ -27,17 +27,26 @@ struct ForegroundTopologyCache {
 };
 
 struct ForegroundBrightnessCache {
-    std::vector<std::vector<float>> tiles;
+    std::vector<std::vector<Color3>> tiles;
     bool valid = false;
 
     static ForegroundBrightnessCache New();
 };
 
 struct BackwallBrightnessCache {
-    std::vector<std::vector<float>> tiles;
+    std::vector<std::vector<Color3>> tiles;
     bool valid = false;
 
     static BackwallBrightnessCache New();
+};
+
+struct TransientLight {
+    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    float strength = 0.0F;
+    Color3 color = Color3::White();
+    int radius = 0;
+    std::uint32_t frames_remaining = 0;
+    std::uint32_t total_frames = 0;
 };
 
 struct StageLighting {
@@ -45,6 +54,7 @@ struct StageLighting {
     ForegroundBrightnessCache foreground_brightness;
     BackwallBrightnessCache backwall_base_brightness;
     BackwallBrightnessCache backwall_light_brightness;
+    std::vector<TransientLight> transient_lights;
     std::uint32_t rebuilt_stage_frame = 0;
 
     static StageLighting New();
@@ -58,6 +68,22 @@ void RebuildStageLighting(State& state);
 void EnsureStageLighting(State& state);
 void UpdateStageLightingForTileChange(State& state, const IVec2& tile_pos);
 void UpdateStageLightingForTileChanges(State& state, const std::vector<IVec2>& tile_positions);
+void AddTransientLight(
+    State& state,
+    const Vec2& world_pos,
+    float strength,
+    int radius,
+    std::uint32_t lifetime_frames
+);
+void AddTransientLight(
+    State& state,
+    const Vec2& world_pos,
+    float strength,
+    Color3 color,
+    int radius,
+    std::uint32_t lifetime_frames
+);
+void StepTransientLights(State& state);
 ForegroundTileTopology GetForegroundTileTopologyForRender(
     const State& state,
     int tile_x,
@@ -67,5 +93,9 @@ float GetForegroundBrightnessForRender(const State& state, int tile_x, int tile_
 float GetBackwallBrightnessForRender(const State& state, int tile_x, int tile_y);
 float SampleForegroundBrightnessForRender(const State& state, const Vec2& world_pos);
 float SampleBackwallBrightnessForRender(const State& state, const Vec2& world_pos);
+Color3 GetForegroundLightColorForRender(const State& state, int tile_x, int tile_y);
+Color3 GetBackwallLightColorForRender(const State& state, int tile_x, int tile_y);
+Color3 SampleForegroundLightColorForRender(const State& state, const Vec2& world_pos);
+Color3 SampleBackwallLightColorForRender(const State& state, const Vec2& world_pos);
 
 } // namespace splonks

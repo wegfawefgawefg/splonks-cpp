@@ -81,6 +81,7 @@ void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
         SpriteParticle spark{};
         spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
+        spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
         spark.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
         spark.size = Vec2::New(rng::RandomFloat(3.0F, 5.0F), rng::RandomFloat(4.0F, 6.0F));

@@ -355,6 +355,11 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                 } else if (action == "entrance_or_exit") {
                     if (is_start_room) {
                         tile = Tile::Entrance;
+                        room.entity_spawns.push_back(StageEntitySpawn{
+                            .type_ = EntityType::Entrance,
+                            .pos = tile_pos,
+                            .exit_id = "",
+                        });
                     } else if (is_end_room) {
                         room.entity_spawns.push_back(StageEntitySpawn{
                             .type_ = EntityType::BasicExit,

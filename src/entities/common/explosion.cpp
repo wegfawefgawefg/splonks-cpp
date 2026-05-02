@@ -2,6 +2,7 @@
 #include "particles/sprite_particle.hpp"
 
 #include "stage_break.hpp"
+#include "stage_lighting.hpp"
 #include "world_query.hpp"
 
 #include <memory>
@@ -76,6 +77,7 @@ void DoExplosion(
         effect.frame_data_animator.loop = false;
         effect.finish_on_animation_end = true;
         effect.draw_layer = DrawLayer::Foreground;
+        effect.lighting_mode = ParticleLightingMode::Emissive;
         effect.counter = 8;
         effect.pos = center;
         effect.size = Vec2::New(effect_size, effect_size);
@@ -123,6 +125,7 @@ void DoExplosion(
         kExplosionShakeEntityAmount,
         kExplosionShakeRadiusTiles
     );
+    AddTransientLight(state, center, 2.4F, Color3::New(1.0F, 0.48F, 0.12F), 9, 14);
 
     const std::vector<IVec2> explosion_tiles = BuildExplosionFootprintTiles(state.stage, center);
     BreakStageTilesAtCoords(explosion_tiles, state, audio);

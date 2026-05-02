@@ -4,6 +4,7 @@
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
+#include "particles/lighting_mode.hpp"
 
 #include <cstdint>
 #include <span>
@@ -65,6 +66,7 @@ struct ScriptedParticleArchetype {
     ScriptedParticleArchetypeId id = kInvalidScriptedParticleArchetypeId;
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
+    ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     Vec2 size = Vec2::New(0.0F, 0.0F);
     std::uint32_t hold_frames_after_sequence = 0;
     std::span<const ScriptedParticleSequenceStep> sequence;
@@ -74,6 +76,7 @@ struct RibbonParticleArchetype {
     RibbonParticleArchetypeId id = kInvalidRibbonParticleArchetypeId;
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
+    ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     FrameDataId animation_id = kInvalidFrameDataId;
     float width = 1.0F;
 };
@@ -82,6 +85,7 @@ struct SegmentedSpriteParticleArchetype {
     SegmentedSpriteParticleArchetypeId id = kInvalidSegmentedSpriteParticleArchetypeId;
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
+    ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     FrameDataId animation_id = kInvalidFrameDataId;
     Vec2 segment_size = Vec2::New(0.0F, 0.0F);
     float spacing = 0.0F;

@@ -346,7 +346,7 @@ void InitShopTestStage(State& state) {
     SpawnShopTestOwnedItem(
         state,
         left_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Mattock, .tile_x = 16, .price = 2000}
+        ShopTestItemSpec{.type_ = EntityType::Mattock, .tile_x = 16, .price = 8000}
     );
     SpawnShopTestOwnedItem(
         state,
@@ -364,7 +364,7 @@ void InitShopTestStage(State& state) {
     SpawnShopTestOwnedItem(
         state,
         middle_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Shotgun, .tile_x = 35, .price = 12000}
+        ShopTestItemSpec{.type_ = EntityType::Shotgun, .tile_x = 35, .price = 15000}
     );
     SpawnShopTestOwnedItem(
         state,
@@ -374,7 +374,7 @@ void InitShopTestStage(State& state) {
     SpawnShopTestOwnedItem(
         state,
         middle_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Cape, .tile_x = 43, .price = 8000}
+        ShopTestItemSpec{.type_ = EntityType::Cape, .tile_x = 43, .price = 12000}
     );
     SpawnShopTestSign(state, EntityType::SignWeapon, 34);
     SpawnShopTestSign(state, EntityType::SignRare, 38);

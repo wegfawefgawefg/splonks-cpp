@@ -14,6 +14,10 @@ namespace {
 
 constexpr float kBombRotationDegreesPerPixel = 24.0F;
 constexpr float kStickyBombFlag = 1.0F;
+constexpr float kLitBombSelfLight = 0.2F;
+constexpr float kLitBombLightStrength = 0.55F;
+constexpr int kLitBombLightRadius = 5;
+constexpr Color3 kLitBombLightColor = Color3::New(1.0F, 0.48F, 0.16F);
 
 bool IsStickyBomb(const Entity& bomb) {
     return bomb.counter_b >= 0.5F;
@@ -72,6 +76,21 @@ void UpdateBombRotation(Entity& bomb) {
     if (bomb.rotation < 0.0F) {
         bomb.rotation += 360.0F;
     }
+}
+
+void UpdateBombFuseLight(Entity& bomb) {
+    if (bomb.counter_a <= 0.0F) {
+        bomb.self_light = 0.0F;
+        bomb.light_strength = 0.0F;
+        bomb.light_color = Color3::White();
+        bomb.light_radius = 0;
+        return;
+    }
+
+    bomb.self_light = kLitBombSelfLight;
+    bomb.light_strength = kLitBombLightStrength;
+    bomb.light_color = kLitBombLightColor;
+    bomb.light_radius = kLitBombLightRadius;
 }
 
 } // namespace
@@ -146,12 +165,14 @@ void StepEntityLogicAsBomb(
     if (bomb.counter_a > 0.0F) {
         bomb.counter_a -= 1.0F;
         if (bomb.counter_a <= 0.0F) {
+            UpdateBombFuseLight(bomb);
             bomb.health = 0;
             common::DieIfDead(entity_idx, state, audio);
             return;
         }
     }
 
+    UpdateBombFuseLight(bomb);
     UpdateBombRotation(bomb);
 }
 

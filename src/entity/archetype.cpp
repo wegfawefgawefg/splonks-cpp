@@ -31,6 +31,10 @@ void SetEntityAs(Entity& entity, EntityType type_) {
     entity.jump_hold_gravity_frames_remaining = 0;
     entity.throw_velocity_scale = archetype.throw_velocity_scale;
     entity.alpha = archetype.alpha;
+    entity.self_light = archetype.self_light;
+    entity.light_strength = archetype.light_strength;
+    entity.light_color = archetype.light_color;
+    entity.light_radius = archetype.light_radius;
     entity.pickup_effect = archetype.pickup_effect;
     entity.buyable = archetype.buyable;
     entity.damage_animation = archetype.damage_animation;

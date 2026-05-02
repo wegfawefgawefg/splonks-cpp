@@ -10,6 +10,7 @@
 #include "render/postfx.hpp"
 #include "state.hpp"
 #include "step.hpp"
+#include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 #include "tools/tool_archetype.hpp"
 #include "text.hpp"
@@ -201,7 +202,9 @@ int main(int argc, char** argv) {
         debug.character_swap_keep_health = state.settings.debug_ui.entity_swap_keep_health;
         debug.character_swap_keep_tools = state.settings.debug_ui.entity_swap_keep_tools;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
-        splonks::RebuildStageLighting(state);
+        graphics.ResetTileVariations();
+        splonks::InvalidateStageLighting(state);
+        splonks::InvalidateStageAcoustics(state);
 
         std::uint64_t last_ticks = SDL_GetTicks();
         const double perf_frequency = static_cast<double>(SDL_GetPerformanceFrequency());

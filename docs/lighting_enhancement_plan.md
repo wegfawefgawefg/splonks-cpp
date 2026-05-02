@@ -1,47 +1,86 @@
 # Lighting Enhancement Plan
 
-## Current Problem
+## Current State
 
-The live lighting grid works, but it still feels tile-discrete:
+The live lighting grid is the active terrain/entity lighting path. It supports:
 
-- Player light is seeded at a whole tile, so brightness can jump when crossing tile boundaries.
-- Entities and embedded overlays sample one tile instead of interpolating nearby cells.
-- Foreground tiles use one brightness value per tile, so lighting has hard cell edges.
-- Embedded treasures should read as shiny, but should not behave like torches.
-- The old openness lighting made caves readable, and we lost too much of that ambient shape.
+- CPU-computed RGB brightness grid.
+- World-position light splatting for stage lights, player lamp, and emitting entities.
+- Transient world lights for short-lived flashes.
+- Bilinear world-position sampling for moving sprites and overlays.
+- Foreground and backwall vertex/corner lighting.
+- Water/liquid light attenuation.
+- Openness ambient bias.
+- Temporal smoothing.
+- Embedded treasure self-brightness without making every treasure a propagated torch.
+- Particle lighting modes: scene-lit, unlit, and emissive.
+- RGB source colors for stage lights, entity lights, transient lights, tiles, entities, particles, water, and overlays.
 
-## Near-Term CPU-Side Fixes
+## Completed
 
-1. Sub-tile light source splatting
-   - Convert world-position light sources into weighted contributions across the nearest four tiles.
-   - This should apply to the player lamp and future entity-attached lights.
-   - Goal: no visible snap when the player crosses a tile boundary.
+- [x] Remove face-shading terrain trick.
+- [x] Replace openness-only lighting with a live propagated light grid.
+- [x] Merge player lamp into the normal live light source path.
+- [x] Add live light source support for entity archetypes and runtime entities.
+- [x] Add transient lights for explosion and gunshot flashes.
+- [x] Add self-light for entities that should read bright without necessarily lighting the world.
+- [x] Add bilinear lighting samples for entity and overlay rendering.
+- [x] Add vertex lighting for foreground tiles.
+- [x] Add vertex lighting for backwall tiles.
+- [x] Add border lighting samples.
+- [x] Add liquid attenuation to light propagation.
+- [x] Add openness ambient bias.
+- [x] Add temporal light smoothing.
+- [x] Add embedded treasure brightness control.
+- [x] Add particle lighting modes.
+- [x] Add RGB lighting.
+  - Scalar ambient/openness settings still enter the grid as white light.
+  - Light sources now carry separate strength and color.
+  - Terrain, backwall, entity, particle, water, tile cap, and embedded overlay render paths sample RGB.
+- [x] Add debug visibility for live light sources.
+  - The existing light overlay now shows stage lights, player lamp, entity-emitted lights, and transient flashes.
+- [x] Add vertex lighting for tile caps.
+  - Caps now sample their exact rendered rect corners instead of using one owning-tile brightness value.
 
-2. Bilinear light sampling
-   - Add a helper that samples `StageLighting` using world coordinates.
-   - Entities, embedded treasure overlays, water, and particles can use this.
-   - Goal: moving sprites receive smooth lighting instead of tile-stepped lighting.
+## Remaining
 
-3. Embedded treasure self-light
-   - Remove embedded treasure from the propagated light-source grid.
-   - Render visible embedded treasure with `max(sampled_light, treasure_min_brightness)`.
-   - Optional later: rare sparkle particles can emit tiny temporary lights, but normal gold/gems should not illuminate nearby walls.
+- [ ] Expand transient light coverage.
+  - Current coverage: explosion flash and gunshot flash.
+  - Useful next cases: sparks, magic effects, lava bursts, and future electrical effects.
 
-4. Temporal smoothing
-   - Store the previous final light grid and blend toward the newly computed grid.
-   - Add a debug slider for response speed.
-   - Keep this after the spatial fixes, because smoothing can hide but not solve tile snapping.
+- [ ] Profile many live lights.
+  - Current entity lights are fine at normal counts.
+  - If we start lighting every coin/gem/particle, add culling, caps, or light buckets before it becomes a frame-time issue.
 
-5. Vertex/corner tile lighting
-   - Sample brightness at tile corners or use neighboring cells to compute four vertex colors.
-   - Draw foreground/backwall tiles with SDL geometry instead of a single texture color mod where needed.
-   - Goal: tiles can be brighter on one edge and darker on another.
+## RGB Implementation
 
-6. Openness ambient bias
-   - Add a dim openness-derived ambient term back into the live light grid.
-   - This should be additive and subtle, not the primary lighting model.
-   - Suggested shape: `ambient = base_ambient + openness * openness_ambient_strength`.
-   - This keeps caves readable and preserves some of the old terrain readability without making openness pretend to be an actual light.
+Implemented shape:
+
+1. `LiveLightSource` stores `{strength, color}`.
+2. `StageLighting` caches use `Color3` grids.
+3. Propagation runs per channel with the same decay rules.
+4. Scalar ambient/openness stays white light.
+5. Terrain and backwall vertex lighting writes per-vertex RGB.
+6. Entity, particle, water, tile cap, and overlay lighting use RGB samples.
+7. Old scalar sample helpers remain as brightness wrappers for compatibility.
+
+This lets gems, explosions, teleporter phase effects, lava, water caustics, and weird quest-specific lights tint the world without special render cases.
+
+## Transient Light Plan
+
+Do not make every flash a real entity. Add a small frame-owned or state-owned list like:
+
+```cpp
+struct TransientLight {
+    Vec2 pos;
+    float strength;
+    int radius_tiles;
+    int frames_remaining;
+    int total_frames;
+};
+```
+
+Then collect it into the same live light source list before lighting recomputes.
 
 ## Renderer/Shader Question
 
@@ -72,9 +111,6 @@ The pragmatic path is:
 
 ## Likely Implementation Order
 
-1. Remove embedded treasure as a propagated source and make it self-lit.
-2. Add world-position bilinear sampling for entities/overlays.
-3. Add sub-tile source splatting for the player lamp.
-4. Add openness ambient bias with a debug strength slider.
-5. Add temporal smoothing if flicker remains.
-6. Add vertex/corner lighting for terrain if cell edges are still too visible.
+1. Profile dense light scenes before adding many more always-on entity emitters.
+2. Expand transient light coverage and add colored source data to new light-emitting content as it is implemented.
+3. Consider shaders only after RGB CPU lighting or normal mapping creates a real renderer ceiling.

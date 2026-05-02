@@ -177,26 +177,12 @@ struct DebugFluidBrushState {
     };
 
     bool enabled = false;
-    bool simulation_enabled = true;
     bool replace_solid_tiles = false;
     Mode mode = Mode::Water;
     int radius_tiles = 1;
-    int simulation_interval_frames = 6;
-    float transfer_per_step = 1.0F;
-    float gravity_x = 0.0F;
-    float gravity_y = 1.0F;
     float paint_gravity_x = 0.0F;
     float paint_gravity_y = -2.0F;
-    float pressure_strength = 0.35F;
-    float velocity_damping = 0.88F;
-    float temp_gravity_decay = 0.92F;
-    bool temporal_smoothing_enabled = false;
-    float temporal_smoothing_response = 0.35F;
-    float render_cutoff_amount = 0.004F;
-    float water_alpha = 0.69F;
     bool show_flow_indicators = false;
-    bool lighting_enabled = true;
-    float lighting_strength = 1.0F;
 };
 
 struct StageRotationState {

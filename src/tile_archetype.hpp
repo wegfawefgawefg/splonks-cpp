@@ -22,6 +22,7 @@ struct TileArchetype {
     std::uint8_t climbable_rotation_mask = kTileRotationBitAll;
     bool transparent = true;
     bool hangable = false;
+    bool render_enabled = true;
     bool simulated_fluid = false;
     float friction = 0.85F;
     std::optional<AudioAssetId> collide_sound = std::nullopt;

@@ -29,6 +29,7 @@ namespace frame_data_ids {
 
 constexpr FrameDataId NoSprite = HashFrameDataIdConstexpr("no_sprite");
 constexpr FrameDataId Exit = HashFrameDataIdConstexpr("exit");
+constexpr FrameDataId Entrance = HashFrameDataIdConstexpr("entrance");
 constexpr FrameDataId PlayerStanding = HashFrameDataIdConstexpr("player_standing");
 constexpr FrameDataId PlayerStandingHolding =
     HashFrameDataIdConstexpr("player_standing_holding");
@@ -145,6 +146,7 @@ constexpr FrameDataId LittleSmoke = HashFrameDataIdConstexpr("little_smoke");
 constexpr FrameDataId BigSmoke = HashFrameDataIdConstexpr("big_smoke");
 constexpr FrameDataId BloodBall = HashFrameDataIdConstexpr("blood_ball");
 constexpr FrameDataId Sparkle = HashFrameDataIdConstexpr("sparkle");
+constexpr FrameDataId Glint = HashFrameDataIdConstexpr("glint");
 constexpr FrameDataId Trail = HashFrameDataIdConstexpr("trail");
 constexpr FrameDataId BaseballBatTrail = HashFrameDataIdConstexpr("baseball_bat_trail");
 constexpr FrameDataId Kiss = HashFrameDataIdConstexpr("kiss");

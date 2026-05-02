@@ -7,6 +7,7 @@
 #include "entity.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
+#include "render/debug_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "state.hpp"
 #include "text.hpp"
@@ -1288,8 +1289,8 @@ void RenderFluidGravityOverlay(
     }
 
     const Vec2 global_gravity = Vec2::New(
-        state.debug_fluid_brush.gravity_x,
-        state.debug_fluid_brush.gravity_y
+        state.settings.fluid.gravity_x,
+        state.settings.fluid.gravity_y
     );
     char global_label[64];
     std::snprintf(
@@ -1381,52 +1382,6 @@ void RenderFluidGravityOverlay(
         }
     }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-}
-
-void RenderLightOverlay(
-    SDL_Renderer* renderer,
-    Graphics& graphics,
-    const State& state,
-    const SDL_FRect& presentation,
-    const std::vector<Vec2>& render_offsets
-) {
-    if (!state.debug_overlay.show_lights) {
-        return;
-    }
-
-    for (const Vec2& render_offset : render_offsets) {
-        for (const StageLight& light : state.stage.lights) {
-            const Vec2 tile_tl = Vec2::New(
-                static_cast<float>(light.tile_pos.x * static_cast<int>(kTileSize)),
-                static_cast<float>(light.tile_pos.y * static_cast<int>(kTileSize))
-            ) + render_offset;
-            const SDL_FRect tile_rect = WorldRectToScreen(
-                graphics,
-                presentation,
-                tile_tl,
-                Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
-            );
-            if (!IsScreenRectVisible(presentation, tile_rect)) {
-                continue;
-            }
-
-            SDL_SetRenderDrawColor(renderer, 255, 200, 64, 255);
-            SDL_RenderRect(renderer, &tile_rect);
-
-            char label[64];
-            std::snprintf(label, sizeof(label), "L%zu b%d", light.vid.id, light.radius);
-            DrawText(
-                renderer,
-                graphics,
-                10,
-                graphics.ui_font,
-                label,
-                tile_rect.x + 1.0F,
-                tile_rect.y - 10.0F,
-                SDL_Color{255, 200, 64, 255}
-            );
-        }
-    }
 }
 
 void RenderAreaOverlay(

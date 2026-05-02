@@ -36,6 +36,15 @@ SDL_FColor MakeMultiplyShadeColor(float shade_amount) {
     return SDL_FColor{factor, factor, factor, 1.0F};
 }
 
+SDL_FColor MakeLightColor(Color3 color) {
+    return SDL_FColor{
+        std::clamp(color.r, 0.0F, 2.0F),
+        std::clamp(color.g, 0.0F, 2.0F),
+        std::clamp(color.b, 0.0F, 2.0F),
+        1.0F,
+    };
+}
+
 Vec2 RotateTileLocalPoint(const Vec2& point, TileRotation rotation) {
     const float tile_size = static_cast<float>(kTileSize);
     const Vec2 center = Vec2::New(tile_size * 0.5F, tile_size * 0.5F);
@@ -123,12 +132,12 @@ void ApplyTerrainTileBrightness(
         return;
     }
 
-    const float brightness = GetForegroundBrightnessForRender(state, tile_x, tile_y);
+    const Color3 brightness = GetForegroundLightColorForRender(state, tile_x, tile_y);
     SDL_SetTextureColorModFloat(
         texture,
-        brightness,
-        brightness,
-        brightness
+        std::clamp(brightness.r, 0.0F, 2.0F),
+        std::clamp(brightness.g, 0.0F, 2.0F),
+        std::clamp(brightness.b, 0.0F, 2.0F)
     );
 }
 
@@ -144,12 +153,12 @@ void ApplyBackwallTileBrightness(
         return;
     }
 
-    const float brightness = GetBackwallBrightnessForRender(state, tile_x, tile_y);
+    const Color3 brightness = GetBackwallLightColorForRender(state, tile_x, tile_y);
     SDL_SetTextureColorModFloat(
         texture,
-        brightness,
-        brightness,
-        brightness
+        std::clamp(brightness.r, 0.0F, 2.0F),
+        std::clamp(brightness.g, 0.0F, 2.0F),
+        std::clamp(brightness.b, 0.0F, 2.0F)
     );
 }
 
@@ -160,7 +169,7 @@ void ResetTerrainTileBrightness(SDL_Texture* texture) {
     SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
 }
 
-bool RenderTerrainTileWithVertexLighting(
+bool RenderTileWithVertexLighting(
     SDL_Renderer* renderer,
     SDL_Texture* texture,
     const State& state,
@@ -168,7 +177,8 @@ bool RenderTerrainTileWithVertexLighting(
     const SDL_FRect& src,
     const SDL_FRect& dst,
     const Vec2& world_pos,
-    TileRotation tile_rotation
+    TileRotation tile_rotation,
+    Color3 (*sample_color)(const State&, const Vec2&)
 ) {
     if (renderer == nullptr || texture == nullptr || graphics.world_rotation_active ||
         src.w <= 0.0F || src.h <= 0.0F || dst.w <= 0.0F || dst.h <= 0.0F) {
@@ -192,13 +202,8 @@ bool RenderTerrainTileWithVertexLighting(
     const float v1 = (src.y + src.h) / texture_height;
     const float tile_size = static_cast<float>(kTileSize);
 
-    const auto brightness_color = [&state](const Vec2& sample_pos) {
-        const float brightness = std::clamp(
-            SampleForegroundBrightnessForRender(state, sample_pos),
-            0.0F,
-            2.0F
-        );
-        return SDL_FColor{brightness, brightness, brightness, 1.0F};
+    const auto brightness_color = [&state, sample_color](const Vec2& sample_pos) {
+        return MakeLightColor(sample_color(state, sample_pos));
     };
 
     const std::array<SDL_Vertex, 4> vertices{
@@ -240,6 +245,51 @@ bool RenderTerrainTileWithVertexLighting(
         static_cast<int>(indices.size())
     );
     return true;
+}
+
+bool RenderTerrainTileWithVertexLighting(
+    SDL_Renderer* renderer,
+    SDL_Texture* texture,
+    const State& state,
+    const Graphics& graphics,
+    const SDL_FRect& src,
+    const SDL_FRect& dst,
+    const Vec2& world_pos,
+    TileRotation tile_rotation
+) {
+    return RenderTileWithVertexLighting(
+        renderer,
+        texture,
+        state,
+        graphics,
+        src,
+        dst,
+        world_pos,
+        tile_rotation,
+        SampleForegroundLightColorForRender
+    );
+}
+
+bool RenderBackwallTileWithVertexLighting(
+    SDL_Renderer* renderer,
+    SDL_Texture* texture,
+    const State& state,
+    const Graphics& graphics,
+    const SDL_FRect& src,
+    const SDL_FRect& dst,
+    const Vec2& world_pos
+) {
+    return RenderTileWithVertexLighting(
+        renderer,
+        texture,
+        state,
+        graphics,
+        src,
+        dst,
+        world_pos,
+        kTileRotation0,
+        SampleBackwallLightColorForRender
+    );
 }
 
 void RenderTerrainTileLighting(

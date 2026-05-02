@@ -40,6 +40,24 @@ struct UVec2 {
     }
 };
 
+struct Color3 {
+    float r = 1.0F;
+    float g = 1.0F;
+    float b = 1.0F;
+
+    static constexpr Color3 New(float r_value, float g_value, float b_value) {
+        Color3 result;
+        result.r = r_value;
+        result.g = g_value;
+        result.b = b_value;
+        return result;
+    }
+
+    static constexpr Color3 White(float value = 1.0F) {
+        return New(value, value, value);
+    }
+};
+
 inline Vec2 operator+(const Vec2& left, const Vec2& right) {
     return Vec2::New(left.x + right.x, left.y + right.y);
 }
@@ -50,6 +68,10 @@ inline IVec2 operator+(const IVec2& left, const IVec2& right) {
 
 inline UVec2 operator+(const UVec2& left, const UVec2& right) {
     return UVec2::New(left.x + right.x, left.y + right.y);
+}
+
+inline Color3 operator+(const Color3& left, const Color3& right) {
+    return Color3::New(left.r + right.r, left.g + right.g, left.b + right.b);
 }
 
 inline UVec2 operator-(const UVec2& left, const UVec2& right) {
@@ -86,6 +108,10 @@ inline Vec2 operator*(const Vec2& left, float right) {
     return Vec2::New(left.x * right, left.y * right);
 }
 
+inline Color3 operator*(const Color3& left, float right) {
+    return Color3::New(left.r * right, left.g * right, left.b * right);
+}
+
 inline IVec2 operator*(const IVec2& left, int right) {
     return IVec2::New(left.x * right, left.y * right);
 }
@@ -104,6 +130,10 @@ inline Vec2 operator*(float left, const Vec2& right) {
 
 inline Vec2 operator/(const Vec2& left, float right) {
     return Vec2::New(left.x / right, left.y / right);
+}
+
+inline Color3 operator/(const Color3& left, float right) {
+    return Color3::New(left.r / right, left.g / right, left.b / right);
 }
 
 inline IVec2 operator/(const IVec2& left, int right) {

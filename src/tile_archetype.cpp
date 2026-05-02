@@ -350,6 +350,7 @@ const std::array<TileArchetype, kTileCount> kTileArchetypes{{
         .climbable = false,
         .transparent = true,
         .hangable = false,
+        .render_enabled = false,
         .debug_name = "Entrance",
     },
     TileArchetype{

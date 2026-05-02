@@ -145,6 +145,25 @@ PostProcessSettings PostProcessSettings::New() {
     return result;
 }
 
+FluidSettings FluidSettings::New() {
+    FluidSettings result;
+    result.simulation_enabled = true;
+    result.simulation_interval_frames = 6;
+    result.transfer_per_step = 1.0F;
+    result.gravity_x = 0.0F;
+    result.gravity_y = 1.0F;
+    result.pressure_strength = 0.35F;
+    result.velocity_damping = 0.88F;
+    result.temp_gravity_decay = 0.92F;
+    result.temporal_smoothing_enabled = false;
+    result.temporal_smoothing_response = 0.35F;
+    result.render_cutoff_amount = 0.004F;
+    result.water_alpha = 0.69F;
+    result.lighting_enabled = true;
+    result.lighting_strength = 1.0F;
+    return result;
+}
+
 DebugUiSettings DebugUiSettings::New() {
     DebugUiSettings result;
     result.menu_visible = true;
@@ -156,26 +175,12 @@ DebugUiSettings DebugUiSettings::New() {
     result.audio_brush_visible = false;
     result.fluid_brush_visible = false;
     result.fluid_brush_enabled = false;
-    result.fluid_brush_simulation_enabled = true;
     result.fluid_brush_replace_solid_tiles = false;
     result.fluid_brush_mode = 0;
     result.fluid_brush_radius_tiles = 1;
-    result.fluid_brush_simulation_interval_frames = 6;
-    result.fluid_brush_transfer_per_step = 1.0F;
-    result.fluid_brush_gravity_x = 0.0F;
-    result.fluid_brush_gravity_y = 1.0F;
     result.fluid_brush_paint_gravity_x = 0.0F;
     result.fluid_brush_paint_gravity_y = -2.0F;
-    result.fluid_brush_pressure_strength = 0.35F;
-    result.fluid_brush_velocity_damping = 0.88F;
-    result.fluid_brush_temp_gravity_decay = 0.92F;
-    result.fluid_brush_temporal_smoothing_enabled = false;
-    result.fluid_brush_temporal_smoothing_response = 0.35F;
-    result.fluid_brush_render_cutoff_amount = 0.004F;
-    result.fluid_brush_water_alpha = 0.69F;
     result.fluid_brush_show_flow_indicators = false;
-    result.fluid_brush_lighting_enabled = true;
-    result.fluid_brush_lighting_strength = 1.0F;
     result.audio_settings_visible = false;
     result.ui_settings_visible = false;
     result.post_fx_settings_visible = false;
@@ -203,6 +208,7 @@ Settings Settings::New() {
     result.controls = ControlsSettings::New();
     result.ui = UiSettings::New();
     result.post_process = PostProcessSettings::New();
+    result.fluid = FluidSettings::New();
     result.debug_ui = DebugUiSettings::New();
     result.player_tuning = PlayerTuningState{};
     return result;
@@ -425,6 +431,56 @@ Settings LoadSettings() {
         } else if (key == "post_process.crt_brightness_boost") {
             settings.post_process.crt_brightness_boost =
                 ParseFloat(value, settings.post_process.crt_brightness_boost);
+        } else if (key == "fluid.simulation_enabled" ||
+                   key == "debug_ui.fluid_brush_simulation_enabled") {
+            settings.fluid.simulation_enabled =
+                ParseBool(value, settings.fluid.simulation_enabled);
+        } else if (key == "fluid.simulation_interval_frames" ||
+                   key == "debug_ui.fluid_brush_simulation_interval_frames") {
+            settings.fluid.simulation_interval_frames =
+                ParseInt(value, settings.fluid.simulation_interval_frames);
+        } else if (key == "fluid.transfer_per_step" ||
+                   key == "debug_ui.fluid_brush_transfer_per_step") {
+            settings.fluid.transfer_per_step =
+                ParseFloat(value, settings.fluid.transfer_per_step);
+        } else if (key == "fluid.gravity_x" || key == "debug_ui.fluid_brush_gravity_x") {
+            settings.fluid.gravity_x = ParseFloat(value, settings.fluid.gravity_x);
+        } else if (key == "fluid.gravity_y" || key == "debug_ui.fluid_brush_gravity_y") {
+            settings.fluid.gravity_y = ParseFloat(value, settings.fluid.gravity_y);
+        } else if (key == "fluid.pressure_strength" ||
+                   key == "debug_ui.fluid_brush_pressure_strength") {
+            settings.fluid.pressure_strength =
+                ParseFloat(value, settings.fluid.pressure_strength);
+        } else if (key == "fluid.velocity_damping" ||
+                   key == "debug_ui.fluid_brush_velocity_damping") {
+            settings.fluid.velocity_damping =
+                ParseFloat(value, settings.fluid.velocity_damping);
+        } else if (key == "fluid.temp_gravity_decay" ||
+                   key == "debug_ui.fluid_brush_temp_gravity_decay") {
+            settings.fluid.temp_gravity_decay =
+                ParseFloat(value, settings.fluid.temp_gravity_decay);
+        } else if (key == "fluid.temporal_smoothing_enabled" ||
+                   key == "debug_ui.fluid_brush_temporal_smoothing_enabled") {
+            settings.fluid.temporal_smoothing_enabled =
+                ParseBool(value, settings.fluid.temporal_smoothing_enabled);
+        } else if (key == "fluid.temporal_smoothing_response" ||
+                   key == "debug_ui.fluid_brush_temporal_smoothing_response") {
+            settings.fluid.temporal_smoothing_response =
+                ParseFloat(value, settings.fluid.temporal_smoothing_response);
+        } else if (key == "fluid.render_cutoff_amount" ||
+                   key == "debug_ui.fluid_brush_render_cutoff_amount") {
+            settings.fluid.render_cutoff_amount =
+                ParseFloat(value, settings.fluid.render_cutoff_amount);
+        } else if (key == "fluid.water_alpha" || key == "debug_ui.fluid_brush_water_alpha") {
+            settings.fluid.water_alpha = ParseFloat(value, settings.fluid.water_alpha);
+        } else if (key == "fluid.lighting_enabled" ||
+                   key == "debug_ui.fluid_brush_lighting_enabled") {
+            settings.fluid.lighting_enabled =
+                ParseBool(value, settings.fluid.lighting_enabled);
+        } else if (key == "fluid.lighting_strength" ||
+                   key == "debug_ui.fluid_brush_lighting_strength") {
+            settings.fluid.lighting_strength =
+                ParseFloat(value, settings.fluid.lighting_strength);
         } else if (key == "debug_ui.menu_visible") {
             settings.debug_ui.menu_visible = ParseBool(value, settings.debug_ui.menu_visible);
         } else if (key == "debug_ui.playback_visible") {
@@ -448,9 +504,6 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_enabled") {
             settings.debug_ui.fluid_brush_enabled =
                 ParseBool(value, settings.debug_ui.fluid_brush_enabled);
-        } else if (key == "debug_ui.fluid_brush_simulation_enabled") {
-            settings.debug_ui.fluid_brush_simulation_enabled =
-                ParseBool(value, settings.debug_ui.fluid_brush_simulation_enabled);
         } else if (key == "debug_ui.fluid_brush_replace_solid_tiles") {
             settings.debug_ui.fluid_brush_replace_solid_tiles =
                 ParseBool(value, settings.debug_ui.fluid_brush_replace_solid_tiles);
@@ -460,54 +513,15 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.fluid_brush_radius_tiles") {
             settings.debug_ui.fluid_brush_radius_tiles =
                 ParseInt(value, settings.debug_ui.fluid_brush_radius_tiles);
-        } else if (key == "debug_ui.fluid_brush_simulation_interval_frames") {
-            settings.debug_ui.fluid_brush_simulation_interval_frames =
-                ParseInt(value, settings.debug_ui.fluid_brush_simulation_interval_frames);
-        } else if (key == "debug_ui.fluid_brush_transfer_per_step") {
-            settings.debug_ui.fluid_brush_transfer_per_step =
-                ParseFloat(value, settings.debug_ui.fluid_brush_transfer_per_step);
-        } else if (key == "debug_ui.fluid_brush_gravity_x") {
-            settings.debug_ui.fluid_brush_gravity_x =
-                ParseFloat(value, settings.debug_ui.fluid_brush_gravity_x);
-        } else if (key == "debug_ui.fluid_brush_gravity_y") {
-            settings.debug_ui.fluid_brush_gravity_y =
-                ParseFloat(value, settings.debug_ui.fluid_brush_gravity_y);
         } else if (key == "debug_ui.fluid_brush_paint_gravity_x") {
             settings.debug_ui.fluid_brush_paint_gravity_x =
                 ParseFloat(value, settings.debug_ui.fluid_brush_paint_gravity_x);
         } else if (key == "debug_ui.fluid_brush_paint_gravity_y") {
             settings.debug_ui.fluid_brush_paint_gravity_y =
                 ParseFloat(value, settings.debug_ui.fluid_brush_paint_gravity_y);
-        } else if (key == "debug_ui.fluid_brush_pressure_strength") {
-            settings.debug_ui.fluid_brush_pressure_strength =
-                ParseFloat(value, settings.debug_ui.fluid_brush_pressure_strength);
-        } else if (key == "debug_ui.fluid_brush_velocity_damping") {
-            settings.debug_ui.fluid_brush_velocity_damping =
-                ParseFloat(value, settings.debug_ui.fluid_brush_velocity_damping);
-        } else if (key == "debug_ui.fluid_brush_temp_gravity_decay") {
-            settings.debug_ui.fluid_brush_temp_gravity_decay =
-                ParseFloat(value, settings.debug_ui.fluid_brush_temp_gravity_decay);
-        } else if (key == "debug_ui.fluid_brush_temporal_smoothing_enabled") {
-            settings.debug_ui.fluid_brush_temporal_smoothing_enabled =
-                ParseBool(value, settings.debug_ui.fluid_brush_temporal_smoothing_enabled);
-        } else if (key == "debug_ui.fluid_brush_temporal_smoothing_response") {
-            settings.debug_ui.fluid_brush_temporal_smoothing_response =
-                ParseFloat(value, settings.debug_ui.fluid_brush_temporal_smoothing_response);
-        } else if (key == "debug_ui.fluid_brush_render_cutoff_amount") {
-            settings.debug_ui.fluid_brush_render_cutoff_amount =
-                ParseFloat(value, settings.debug_ui.fluid_brush_render_cutoff_amount);
-        } else if (key == "debug_ui.fluid_brush_water_alpha") {
-            settings.debug_ui.fluid_brush_water_alpha =
-                ParseFloat(value, settings.debug_ui.fluid_brush_water_alpha);
         } else if (key == "debug_ui.fluid_brush_show_flow_indicators") {
             settings.debug_ui.fluid_brush_show_flow_indicators =
                 ParseBool(value, settings.debug_ui.fluid_brush_show_flow_indicators);
-        } else if (key == "debug_ui.fluid_brush_lighting_enabled") {
-            settings.debug_ui.fluid_brush_lighting_enabled =
-                ParseBool(value, settings.debug_ui.fluid_brush_lighting_enabled);
-        } else if (key == "debug_ui.fluid_brush_lighting_strength") {
-            settings.debug_ui.fluid_brush_lighting_strength =
-                ParseFloat(value, settings.debug_ui.fluid_brush_lighting_strength);
         } else if (key == "debug_ui.audio_settings_visible") {
             settings.debug_ui.audio_settings_visible =
                 ParseBool(value, settings.debug_ui.audio_settings_visible);
@@ -762,6 +776,24 @@ bool SaveSettings(const Settings& settings) {
     output << "post_process.crt_vignette_intensity=" << settings.post_process.crt_vignette_intensity << "\n";
     output << "post_process.crt_grille_amount=" << settings.post_process.crt_grille_amount << "\n";
     output << "post_process.crt_brightness_boost=" << settings.post_process.crt_brightness_boost << "\n";
+    output << "fluid.simulation_enabled="
+           << (settings.fluid.simulation_enabled ? 1 : 0) << "\n";
+    output << "fluid.simulation_interval_frames="
+           << settings.fluid.simulation_interval_frames << "\n";
+    output << "fluid.transfer_per_step=" << settings.fluid.transfer_per_step << "\n";
+    output << "fluid.gravity_x=" << settings.fluid.gravity_x << "\n";
+    output << "fluid.gravity_y=" << settings.fluid.gravity_y << "\n";
+    output << "fluid.pressure_strength=" << settings.fluid.pressure_strength << "\n";
+    output << "fluid.velocity_damping=" << settings.fluid.velocity_damping << "\n";
+    output << "fluid.temp_gravity_decay=" << settings.fluid.temp_gravity_decay << "\n";
+    output << "fluid.temporal_smoothing_enabled="
+           << (settings.fluid.temporal_smoothing_enabled ? 1 : 0) << "\n";
+    output << "fluid.temporal_smoothing_response="
+           << settings.fluid.temporal_smoothing_response << "\n";
+    output << "fluid.render_cutoff_amount=" << settings.fluid.render_cutoff_amount << "\n";
+    output << "fluid.water_alpha=" << settings.fluid.water_alpha << "\n";
+    output << "fluid.lighting_enabled=" << (settings.fluid.lighting_enabled ? 1 : 0) << "\n";
+    output << "fluid.lighting_strength=" << settings.fluid.lighting_strength << "\n";
     output << "debug_ui.menu_visible=" << (settings.debug_ui.menu_visible ? 1 : 0) << "\n";
     output << "debug_ui.playback_visible=" << (settings.debug_ui.playback_visible ? 1 : 0) << "\n";
     output << "debug_ui.level_visible=" << (settings.debug_ui.level_visible ? 1 : 0) << "\n";
@@ -776,46 +808,18 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.fluid_brush_visible ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_enabled="
            << (settings.debug_ui.fluid_brush_enabled ? 1 : 0) << "\n";
-    output << "debug_ui.fluid_brush_simulation_enabled="
-           << (settings.debug_ui.fluid_brush_simulation_enabled ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_replace_solid_tiles="
            << (settings.debug_ui.fluid_brush_replace_solid_tiles ? 1 : 0) << "\n";
     output << "debug_ui.fluid_brush_mode="
            << settings.debug_ui.fluid_brush_mode << "\n";
     output << "debug_ui.fluid_brush_radius_tiles="
            << settings.debug_ui.fluid_brush_radius_tiles << "\n";
-    output << "debug_ui.fluid_brush_simulation_interval_frames="
-           << settings.debug_ui.fluid_brush_simulation_interval_frames << "\n";
-    output << "debug_ui.fluid_brush_transfer_per_step="
-           << settings.debug_ui.fluid_brush_transfer_per_step << "\n";
-    output << "debug_ui.fluid_brush_gravity_x="
-           << settings.debug_ui.fluid_brush_gravity_x << "\n";
-    output << "debug_ui.fluid_brush_gravity_y="
-           << settings.debug_ui.fluid_brush_gravity_y << "\n";
     output << "debug_ui.fluid_brush_paint_gravity_x="
            << settings.debug_ui.fluid_brush_paint_gravity_x << "\n";
     output << "debug_ui.fluid_brush_paint_gravity_y="
            << settings.debug_ui.fluid_brush_paint_gravity_y << "\n";
-    output << "debug_ui.fluid_brush_pressure_strength="
-           << settings.debug_ui.fluid_brush_pressure_strength << "\n";
-    output << "debug_ui.fluid_brush_velocity_damping="
-           << settings.debug_ui.fluid_brush_velocity_damping << "\n";
-    output << "debug_ui.fluid_brush_temp_gravity_decay="
-           << settings.debug_ui.fluid_brush_temp_gravity_decay << "\n";
-    output << "debug_ui.fluid_brush_temporal_smoothing_enabled="
-           << (settings.debug_ui.fluid_brush_temporal_smoothing_enabled ? 1 : 0) << "\n";
-    output << "debug_ui.fluid_brush_temporal_smoothing_response="
-           << settings.debug_ui.fluid_brush_temporal_smoothing_response << "\n";
-    output << "debug_ui.fluid_brush_render_cutoff_amount="
-           << settings.debug_ui.fluid_brush_render_cutoff_amount << "\n";
-    output << "debug_ui.fluid_brush_water_alpha="
-           << settings.debug_ui.fluid_brush_water_alpha << "\n";
     output << "debug_ui.fluid_brush_show_flow_indicators="
            << (settings.debug_ui.fluid_brush_show_flow_indicators ? 1 : 0) << "\n";
-    output << "debug_ui.fluid_brush_lighting_enabled="
-           << (settings.debug_ui.fluid_brush_lighting_enabled ? 1 : 0) << "\n";
-    output << "debug_ui.fluid_brush_lighting_strength="
-           << settings.debug_ui.fluid_brush_lighting_strength << "\n";
     output << "debug_ui.audio_settings_visible="
            << (settings.debug_ui.audio_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.ui_settings_visible="

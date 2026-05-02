@@ -110,6 +110,7 @@ void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
         SpriteParticle sparkle{};
         sparkle.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Sparkle);
         sparkle.draw_layer = DrawLayer::Foreground;
+        sparkle.lighting_mode = ParticleLightingMode::Emissive;
         sparkle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(16, 28));
         sparkle.pos = emit_pos + Vec2::New(
             rng::RandomFloat(-2.0F, 2.0F),

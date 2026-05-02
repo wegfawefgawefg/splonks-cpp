@@ -25,6 +25,7 @@
 #include "entities/dice.hpp"
 #include "entities/door.hpp"
 #include "entities/dvdlogo.hpp"
+#include "entities/entrance.hpp"
 #include "entities/emerald_big.hpp"
 #include "entities/flappy_bee.hpp"
 #include "entities/flesh_guy.hpp"
@@ -147,6 +148,7 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Block, entities::block::kBlockArchetype, "Block");
     SetArchetype(EntityType::GhostBall, entities::ghost_ball::kGhostBallArchetype, "GhostBall");
     SetArchetype(EntityType::BasicExit, entities::basic_exit::kBasicExitArchetype, "BasicExit");
+    SetArchetype(EntityType::Entrance, entities::entrance::kEntranceArchetype, "Entrance");
     SetArchetype(EntityType::DvdLogo, entities::dvdlogo::kDvdLogoArchetype, "DvdLogo");
     SetArchetype(EntityType::Bat, entities::bat::kBatArchetype, "Bat");
     SetArchetype(EntityType::Rock, entities::rock::kRockArchetype, "Rock");

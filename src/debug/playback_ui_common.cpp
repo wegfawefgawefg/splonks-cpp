@@ -47,12 +47,6 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.fluid_brush_enabled = state.debug_fluid_brush.enabled;
         changed = true;
     }
-    if (state.settings.debug_ui.fluid_brush_simulation_enabled !=
-        state.debug_fluid_brush.simulation_enabled) {
-        state.settings.debug_ui.fluid_brush_simulation_enabled =
-            state.debug_fluid_brush.simulation_enabled;
-        changed = true;
-    }
     if (state.settings.debug_ui.fluid_brush_replace_solid_tiles !=
         state.debug_fluid_brush.replace_solid_tiles) {
         state.settings.debug_ui.fluid_brush_replace_solid_tiles =
@@ -73,30 +67,6 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
         state.settings.debug_ui.fluid_brush_radius_tiles = fluid_brush_radius_tiles;
         changed = true;
     }
-    const int fluid_brush_simulation_interval_frames =
-        std::max(1, state.debug_fluid_brush.simulation_interval_frames);
-    if (state.settings.debug_ui.fluid_brush_simulation_interval_frames !=
-        fluid_brush_simulation_interval_frames) {
-        state.settings.debug_ui.fluid_brush_simulation_interval_frames =
-            fluid_brush_simulation_interval_frames;
-        changed = true;
-    }
-    const float fluid_brush_transfer_per_step =
-        std::clamp(state.debug_fluid_brush.transfer_per_step, 0.0F, 1.0F);
-    if (state.settings.debug_ui.fluid_brush_transfer_per_step !=
-        fluid_brush_transfer_per_step) {
-        state.settings.debug_ui.fluid_brush_transfer_per_step =
-            fluid_brush_transfer_per_step;
-        changed = true;
-    }
-    if (state.settings.debug_ui.fluid_brush_gravity_x != state.debug_fluid_brush.gravity_x) {
-        state.settings.debug_ui.fluid_brush_gravity_x = state.debug_fluid_brush.gravity_x;
-        changed = true;
-    }
-    if (state.settings.debug_ui.fluid_brush_gravity_y != state.debug_fluid_brush.gravity_y) {
-        state.settings.debug_ui.fluid_brush_gravity_y = state.debug_fluid_brush.gravity_y;
-        changed = true;
-    }
     if (state.settings.debug_ui.fluid_brush_paint_gravity_x !=
         state.debug_fluid_brush.paint_gravity_x) {
         state.settings.debug_ui.fluid_brush_paint_gravity_x =
@@ -109,99 +79,10 @@ bool SyncDebugUiSettings(DebugPlayback& debug, State& state) {
             state.debug_fluid_brush.paint_gravity_y;
         changed = true;
     }
-    const float fluid_brush_pressure_strength = std::clamp(
-        state.debug_fluid_brush.pressure_strength,
-        0.0F,
-        4.0F
-    );
-    if (state.settings.debug_ui.fluid_brush_pressure_strength !=
-        fluid_brush_pressure_strength) {
-        state.settings.debug_ui.fluid_brush_pressure_strength =
-            fluid_brush_pressure_strength;
-        changed = true;
-    }
-    const float fluid_brush_velocity_damping = std::clamp(
-        state.debug_fluid_brush.velocity_damping,
-        0.0F,
-        1.0F
-    );
-    if (state.settings.debug_ui.fluid_brush_velocity_damping !=
-        fluid_brush_velocity_damping) {
-        state.settings.debug_ui.fluid_brush_velocity_damping =
-            fluid_brush_velocity_damping;
-        changed = true;
-    }
-    const float fluid_brush_temp_gravity_decay = std::clamp(
-        state.debug_fluid_brush.temp_gravity_decay,
-        0.0F,
-        1.0F
-    );
-    if (state.settings.debug_ui.fluid_brush_temp_gravity_decay !=
-        fluid_brush_temp_gravity_decay) {
-        state.settings.debug_ui.fluid_brush_temp_gravity_decay =
-            fluid_brush_temp_gravity_decay;
-        changed = true;
-    }
-    if (state.settings.debug_ui.fluid_brush_temporal_smoothing_enabled !=
-        state.debug_fluid_brush.temporal_smoothing_enabled) {
-        state.settings.debug_ui.fluid_brush_temporal_smoothing_enabled =
-            state.debug_fluid_brush.temporal_smoothing_enabled;
-        changed = true;
-    }
-    const float fluid_brush_temporal_smoothing_response = std::clamp(
-        state.debug_fluid_brush.temporal_smoothing_response,
-        0.0F,
-        1.0F
-    );
-    if (state.settings.debug_ui.fluid_brush_temporal_smoothing_response !=
-        fluid_brush_temporal_smoothing_response) {
-        state.settings.debug_ui.fluid_brush_temporal_smoothing_response =
-            fluid_brush_temporal_smoothing_response;
-        changed = true;
-    }
-    const float fluid_brush_render_cutoff_amount = std::clamp(
-        state.debug_fluid_brush.render_cutoff_amount,
-        0.0F,
-        1.0F
-    );
-    if (state.settings.debug_ui.fluid_brush_render_cutoff_amount !=
-        fluid_brush_render_cutoff_amount) {
-        state.settings.debug_ui.fluid_brush_render_cutoff_amount =
-            fluid_brush_render_cutoff_amount;
-        changed = true;
-    }
-    const float fluid_brush_water_alpha = std::clamp(
-        state.debug_fluid_brush.water_alpha,
-        0.0F,
-        1.0F
-    );
-    if (state.settings.debug_ui.fluid_brush_water_alpha !=
-        fluid_brush_water_alpha) {
-        state.settings.debug_ui.fluid_brush_water_alpha =
-            fluid_brush_water_alpha;
-        changed = true;
-    }
     if (state.settings.debug_ui.fluid_brush_show_flow_indicators !=
         state.debug_fluid_brush.show_flow_indicators) {
         state.settings.debug_ui.fluid_brush_show_flow_indicators =
             state.debug_fluid_brush.show_flow_indicators;
-        changed = true;
-    }
-    if (state.settings.debug_ui.fluid_brush_lighting_enabled !=
-        state.debug_fluid_brush.lighting_enabled) {
-        state.settings.debug_ui.fluid_brush_lighting_enabled =
-            state.debug_fluid_brush.lighting_enabled;
-        changed = true;
-    }
-    const float fluid_brush_lighting_strength = std::clamp(
-        state.debug_fluid_brush.lighting_strength,
-        0.0F,
-        2.0F
-    );
-    if (state.settings.debug_ui.fluid_brush_lighting_strength !=
-        fluid_brush_lighting_strength) {
-        state.settings.debug_ui.fluid_brush_lighting_strength =
-            fluid_brush_lighting_strength;
         changed = true;
     }
     if (state.settings.debug_ui.audio_settings_visible != debug.audio_settings_window_visible) {

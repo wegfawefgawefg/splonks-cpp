@@ -8,6 +8,7 @@ struct ScriptedParticle {
     bool active = false;
     ScriptedParticleArchetypeId archetype_id = kInvalidScriptedParticleArchetypeId;
     DrawLayer draw_layer = DrawLayer::Middle;
+    ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     Vec2 pos{};
     Vec2 size{};
     float rot = 0.0F;

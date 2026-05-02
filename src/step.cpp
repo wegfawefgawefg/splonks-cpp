@@ -9,7 +9,10 @@
 #include "step_entities.hpp"
 #include "stage_progression.hpp"
 #include "stage_fluids.hpp"
+#include "stage_lighting.hpp"
 #include "stage_rotation.hpp"
+
+#include <algorithm>
 
 namespace splonks {
 
@@ -18,6 +21,8 @@ namespace {
 constexpr float kShakeAttenuationRate = 0.1F;
 constexpr std::uint32_t kGameOverHitstopFrames = 8;
 constexpr std::uint32_t kGameOverSlowmoFrames = 60 * 3;
+constexpr float kPlayerLampLightStrength = 1.45F;
+constexpr int kPlayerLampLightRadius = 13;
 
 float GetSimulationTickInterval(const State& state) {
     if (state.mode == Mode::GameOver && state.scene_frame < kGameOverSlowmoFrames) {
@@ -50,6 +55,28 @@ void UpdateControlledEntity(State& state) {
     }
 
     state.controlled_entity_vid.reset();
+}
+
+void RefreshPlayableCharacterLamp(State& state) {
+    for (Entity& entity : state.entity_manager.entities) {
+        if (!entity.active || !IsPlayerLikeEntityType(entity.type_)) {
+            continue;
+        }
+
+        const bool is_controlled =
+            state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
+        if (!is_controlled || entity.condition == EntityCondition::Dead) {
+            entity.light_strength = 0.0F;
+            entity.light_radius = 0;
+            entity.light_color = Color3::White();
+            continue;
+        }
+
+        entity.light_strength = kPlayerLampLightStrength *
+                                std::max(state.settings.post_process.player_lamp_strength, 0.0F);
+        entity.light_radius = kPlayerLampLightRadius;
+        entity.light_color = Color3::White();
+    }
 }
 
 Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics& graphics) {
@@ -135,6 +162,8 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::Playing as usize]);
 
     UpdateControlledEntity(state);
+    RefreshPlayableCharacterLamp(state);
+    StepTransientLights(state);
     LatchPlayingInputsForTick(state);
     if (state.controlled_entity_vid.has_value()) {
         if (Entity* const controlled = state.entity_manager.GetEntityMut(*state.controlled_entity_vid)) {
@@ -228,6 +257,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::GameOver as usize]);
     state.contact.ClearEntityContactDispatchesThisTick();
+    StepTransientLights(state);
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
     state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);

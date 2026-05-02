@@ -5,10 +5,10 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
+#include "render/particles.hpp"
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
 #include "render/world_texture.hpp"
-#include "particles/particle_archetypes.hpp"
 #include "state.hpp"
 #include "stage_lighting.hpp"
 #include "tile.hpp"
@@ -248,12 +248,36 @@ Vec2 WorldPointToScreenForGeometry(const Graphics& graphics, const Vec2& world_p
     return screen;
 }
 
-SDL_FColor MakeFluidVertexColor(float brightness, std::uint8_t alpha) {
-    const float factor = std::clamp(brightness, 0.0F, 2.0F);
+Color3 ClampRenderColor(Color3 color, float min_value = 0.0F, float max_value = 2.0F) {
+    return Color3::New(
+        std::clamp(color.r, min_value, max_value),
+        std::clamp(color.g, min_value, max_value),
+        std::clamp(color.b, min_value, max_value)
+    );
+}
+
+Color3 MaxRenderColor(Color3 left, Color3 right) {
+    return Color3::New(
+        std::max(left.r, right.r),
+        std::max(left.g, right.g),
+        std::max(left.b, right.b)
+    );
+}
+
+Color3 LerpRenderColor(Color3 left, Color3 right, float amount) {
+    return Color3::New(
+        std::lerp(left.r, right.r, amount),
+        std::lerp(left.g, right.g, amount),
+        std::lerp(left.b, right.b, amount)
+    );
+}
+
+SDL_FColor MakeFluidVertexColor(Color3 brightness, std::uint8_t alpha) {
+    const Color3 factor = ClampRenderColor(brightness);
     return SDL_FColor{
-        factor,
-        factor,
-        factor,
+        factor.r,
+        factor.g,
+        factor.b,
         static_cast<float>(alpha) / 255.0F,
     };
 }
@@ -447,7 +471,7 @@ void RenderFluidBubble(
     float display_level,
     float visible_cutoff,
     std::uint8_t alpha,
-    float brightness
+    Color3 brightness
 ) {
     if (display_level <= visible_cutoff) {
         return;
@@ -507,7 +531,12 @@ void RenderFluidBubble(
             static_cast<float>(bubble_frame->sample_rect.h)
         )
     );
-    SDL_SetTextureColorModFloat(bubble_texture, brightness, brightness, brightness);
+    SDL_SetTextureColorModFloat(
+        bubble_texture,
+        std::clamp(brightness.r, 0.0F, 2.0F),
+        std::clamp(brightness.g, 0.0F, 2.0F),
+        std::clamp(brightness.b, 0.0F, 2.0F)
+    );
     SDL_SetTextureAlphaMod(bubble_texture, alpha);
     RenderWorldTexture(renderer, graphics, bubble_texture, &src, dst);
     SDL_SetTextureAlphaMod(bubble_texture, 255);
@@ -592,11 +621,15 @@ bool ShouldRenderForegroundTileInPass(Tile tile, ForegroundTileRenderPass pass) 
     return true;
 }
 
-float GetEntityLightingBrightness(State& state, const Entity& entity, Graphics& graphics) {
+Color3 GetEntityLightingColor(State& state, const Entity& entity, Graphics& graphics) {
     EnsureStageLighting(state);
     const Vec2 visual_center =
         entities::common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter());
-    return SampleForegroundBrightnessForRender(state, visual_center);
+    Color3 color = SampleForegroundLightColorForRender(state, visual_center);
+    if (entity.self_light > 0.0F) {
+        color = color + (entity.light_color * entity.self_light);
+    }
+    return ClampRenderColor(color);
 }
 
 bool ShouldRevealEmbeddedTreasure(const State& state) {
@@ -680,6 +713,80 @@ Vec2 GetTileCapWorldPos(const FrameData& frame_data, int tile_x, int tile_y, Til
     return pos;
 }
 
+bool RenderTileCapWithVertexLighting(
+    SDL_Renderer* renderer,
+    SDL_Texture* texture,
+    const State& state,
+    const Graphics& graphics,
+    const SDL_FRect& src,
+    const SDL_FRect& dst,
+    const Vec2& cap_world_pos,
+    const Vec2& cap_size,
+    bool horizontal_flip
+) {
+    if (renderer == nullptr || texture == nullptr || graphics.world_rotation_active ||
+        src.w <= 0.0F || src.h <= 0.0F || dst.w <= 0.0F || dst.h <= 0.0F ||
+        cap_size.x <= 0.0F || cap_size.y <= 0.0F) {
+        return false;
+    }
+    if (!state.settings.post_process.terrain_lighting ||
+        !state.settings.post_process.terrain_exposure_lighting) {
+        return false;
+    }
+
+    float texture_width = 0.0F;
+    float texture_height = 0.0F;
+    if (!SDL_GetTextureSize(texture, &texture_width, &texture_height) ||
+        texture_width <= 0.0F || texture_height <= 0.0F) {
+        return false;
+    }
+
+    float u0 = src.x / texture_width;
+    float u1 = (src.x + src.w) / texture_width;
+    if (horizontal_flip) {
+        std::swap(u0, u1);
+    }
+    const float v0 = src.y / texture_height;
+    const float v1 = (src.y + src.h) / texture_height;
+
+    const Color3 top_left = SampleForegroundLightColorForRender(state, cap_world_pos);
+    const Color3 top_right =
+        SampleForegroundLightColorForRender(state, cap_world_pos + Vec2::New(cap_size.x, 0.0F));
+    const Color3 bottom_right = SampleForegroundLightColorForRender(state, cap_world_pos + cap_size);
+    const Color3 bottom_left =
+        SampleForegroundLightColorForRender(state, cap_world_pos + Vec2::New(0.0F, cap_size.y));
+
+    const std::array<SDL_Vertex, 4> vertices{
+        SDL_Vertex{SDL_FPoint{dst.x, dst.y}, MakeFluidVertexColor(top_left, 255), SDL_FPoint{u0, v0}},
+        SDL_Vertex{
+            SDL_FPoint{dst.x + dst.w, dst.y},
+            MakeFluidVertexColor(top_right, 255),
+            SDL_FPoint{u1, v0},
+        },
+        SDL_Vertex{
+            SDL_FPoint{dst.x + dst.w, dst.y + dst.h},
+            MakeFluidVertexColor(bottom_right, 255),
+            SDL_FPoint{u1, v1},
+        },
+        SDL_Vertex{
+            SDL_FPoint{dst.x, dst.y + dst.h},
+            MakeFluidVertexColor(bottom_left, 255),
+            SDL_FPoint{u0, v1},
+        },
+    };
+    constexpr std::array<int, 6> indices{0, 1, 2, 0, 2, 3};
+    SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
+    SDL_RenderGeometry(
+        renderer,
+        texture,
+        vertices.data(),
+        static_cast<int>(vertices.size()),
+        indices.data(),
+        static_cast<int>(indices.size())
+    );
+    return true;
+}
+
 void RenderTileCap(
     SDL_Renderer* renderer,
     State& state,
@@ -714,14 +821,31 @@ void RenderTileCap(
         static_cast<float>(frame_data->sample_rect.h)
     );
     const Vec2 shake_offset = GetShakeOffset(GetTileCapShake(state.stage, tile_x, tile_y));
+    const Vec2 cap_world_pos =
+        GetTileCapWorldPos(*frame_data, tile_x, tile_y, side) + render_offset + shake_offset;
     const SDL_FRect dst = WorldRectToScreen(
         graphics,
-        GetTileCapWorldPos(*frame_data, tile_x, tile_y, side) + render_offset + shake_offset,
+        cap_world_pos,
         cap_size
     );
 
-    const float brightness = GetForegroundBrightnessForRender(state, tile_x, tile_y);
-    SDL_SetTextureColorModFloat(texture, brightness, brightness, brightness);
+    const bool horizontal_flip = side == TileCapSide::Right;
+    if (RenderTileCapWithVertexLighting(
+            renderer,
+            texture,
+            state,
+            graphics,
+            src,
+            dst,
+            cap_world_pos,
+            cap_size,
+            horizontal_flip
+        )) {
+        return;
+    }
+
+    const Color3 brightness = GetForegroundLightColorForRender(state, tile_x, tile_y);
+    SDL_SetTextureColorModFloat(texture, brightness.r, brightness.g, brightness.b);
     RenderWorldTextureRotated(
         renderer,
         graphics,
@@ -730,7 +854,7 @@ void RenderTileCap(
         dst,
         0.0,
         nullptr,
-        side == TileCapSide::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE
+        horizontal_flip ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE
     );
     SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
 }
@@ -795,18 +919,50 @@ void RenderStageTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) 
                     static_cast<float>(backwall_source_data->sample_rect.w),
                     static_cast<float>(backwall_source_data->sample_rect.h),
                 };
-                ApplyBackwallTileBrightness(
-                    backwall_texture,
-                    state,
-                    graphics,
-                    static_cast<int>(x),
-                    static_cast<int>(y)
-                );
                 if (background_shake > 0.0F) {
-                    RenderWorldTexture(renderer, graphics, backwall_texture, &backwall_src, unshaken_dst);
+                    const bool rendered_unshaken_with_vertex_lighting =
+                        RenderBackwallTileWithVertexLighting(
+                            renderer,
+                            backwall_texture,
+                            state,
+                            graphics,
+                            backwall_src,
+                            unshaken_dst,
+                            ToVec2(tile_pos) + render_offset
+                        );
+                    if (!rendered_unshaken_with_vertex_lighting) {
+                        ApplyBackwallTileBrightness(
+                            backwall_texture,
+                            state,
+                            graphics,
+                            static_cast<int>(x),
+                            static_cast<int>(y)
+                        );
+                        RenderWorldTexture(renderer, graphics, backwall_texture, &backwall_src, unshaken_dst);
+                        ResetTerrainTileBrightness(backwall_texture);
+                    }
                 }
-                RenderWorldTexture(renderer, graphics, backwall_texture, &backwall_src, background_dst);
-                ResetTerrainTileBrightness(backwall_texture);
+                const bool rendered_with_vertex_lighting =
+                    RenderBackwallTileWithVertexLighting(
+                        renderer,
+                        backwall_texture,
+                        state,
+                        graphics,
+                        backwall_src,
+                        background_dst,
+                        ToVec2(tile_pos) + render_offset
+                    );
+                if (!rendered_with_vertex_lighting) {
+                    ApplyBackwallTileBrightness(
+                        backwall_texture,
+                        state,
+                        graphics,
+                        static_cast<int>(x),
+                        static_cast<int>(y)
+                    );
+                    RenderWorldTexture(renderer, graphics, backwall_texture, &backwall_src, background_dst);
+                    ResetTerrainTileBrightness(backwall_texture);
+                }
             }
         }
     }
@@ -826,6 +982,9 @@ void RenderStageForegroundTilePass(
             for (std::size_t x = 0; x < state.stage.tiles[y].size(); ++x) {
                 const Tile tile = state.stage.tiles[y][x];
                 if (tile == Tile::Air) {
+                    continue;
+                }
+                if (!GetTileArchetype(tile).render_enabled) {
                     continue;
                 }
                 if (!ShouldRenderForegroundTileInPass(tile, pass)) {
@@ -929,14 +1088,15 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
     constexpr float kMinVisibleDisplayLevel = 0.0001F;
+    const FluidSettings& fluid = state.settings.fluid;
     const float min_fluid_display_level =
-        std::clamp(state.debug_fluid_brush.render_cutoff_amount, 0.0F, 1.0F);
+        std::clamp(fluid.render_cutoff_amount, 0.0F, 1.0F);
     const float effective_display_cutoff =
         std::max(min_fluid_display_level, kMinVisibleDisplayLevel);
     const std::uint8_t body_alpha = static_cast<std::uint8_t>(
         std::clamp(
             static_cast<int>(std::round(
-                255.0F * std::clamp(state.debug_fluid_brush.water_alpha, 0.0F, 1.0F)
+                255.0F * std::clamp(fluid.water_alpha, 0.0F, 1.0F)
             )),
             0,
             255
@@ -1024,9 +1184,9 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 state.stage.fluid_display_amount[static_cast<std::size_t>(y)]
                                                 [static_cast<std::size_t>(x)];
             if (!cell.has_liquid) {
-                if (state.debug_fluid_brush.temporal_smoothing_enabled) {
+                if (fluid.temporal_smoothing_enabled) {
                     const float response = std::clamp(
-                        state.debug_fluid_brush.temporal_smoothing_response,
+                        fluid.temporal_smoothing_response,
                         0.0F,
                         1.0F
                     );
@@ -1063,9 +1223,9 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
             }
             cell.visible_tile = fluid_tile;
             cell.liquid_level = std::clamp(amount, 0.0F, 1.0F);
-            if (state.debug_fluid_brush.temporal_smoothing_enabled) {
+            if (fluid.temporal_smoothing_enabled) {
                 const float response = std::clamp(
-                    state.debug_fluid_brush.temporal_smoothing_response,
+                    fluid.temporal_smoothing_response,
                     0.0F,
                     1.0F
                 );
@@ -1124,18 +1284,16 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     : SDL_FRect{};
 
                 const Vec2 tile_world = ToVec2(tile_pos) + render_offset;
-                float brightness = 1.0F;
-                if (state.debug_fluid_brush.lighting_enabled) {
-                    const float sampled_brightness =
-                        GetBackwallBrightnessForRender(state, static_cast<int>(x), static_cast<int>(y));
-                    brightness = std::clamp(
-                        std::lerp(
-                            1.0F,
+                Color3 brightness = Color3::White();
+                if (fluid.lighting_enabled) {
+                    const Color3 sampled_brightness =
+                        GetBackwallLightColorForRender(state, static_cast<int>(x), static_cast<int>(y));
+                    brightness = ClampRenderColor(
+                        LerpRenderColor(
+                            Color3::White(),
                             sampled_brightness,
-                            std::clamp(state.debug_fluid_brush.lighting_strength, 0.0F, 2.0F)
-                        ),
-                        0.0F,
-                        2.0F
+                            std::clamp(fluid.lighting_strength, 0.0F, 2.0F)
+                        )
                     );
                 }
 
@@ -1611,13 +1769,15 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 static_cast<float>(kTileSize) * 0.5F,
                 static_cast<float>(kTileSize) * 0.5F
             );
-            const float brightness = std::max(
-                SampleForegroundBrightnessForRender(state, overlay_center),
-                embedded_treasure.IsVisible()
-                    ? state.settings.post_process.embedded_treasure_brightness
-                    : 0.0F
+            const Color3 brightness = MaxRenderColor(
+                SampleForegroundLightColorForRender(state, overlay_center),
+                Color3::White(
+                    embedded_treasure.IsVisible()
+                        ? state.settings.post_process.embedded_treasure_brightness
+                        : 0.0F
+                )
             );
-            SDL_SetTextureColorModFloat(sprite_texture, brightness, brightness, brightness);
+            SDL_SetTextureColorModFloat(sprite_texture, brightness.r, brightness.g, brightness.b);
             SDL_SetTextureAlphaMod(sprite_texture, 224);
             for (const Vec2& render_offset : render_offsets) {
                 const SDL_FRect dst = WorldRectToScreen(
@@ -1637,202 +1797,6 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
 }
 
 namespace {
-
-const FrameData* GetAnimatedParticleFrameData(
-    Graphics& graphics,
-    const FrameDataAnimator& animator,
-    FrameDataId fallback_animation_id
-) {
-    const FrameDataId animation_id = animator.HasAnimation() ? animator.animation_id : fallback_animation_id;
-    const std::size_t frame_index = animator.HasAnimation() ? animator.current_frame : 0;
-    if (animation_id == kInvalidFrameDataId) {
-        return nullptr;
-    }
-    return graphics.frame_data_db.FindFrame(animation_id, frame_index);
-}
-
-void RenderAnimatedParticleSprite(
-    SDL_Renderer* renderer,
-    const State& state,
-    Graphics& graphics,
-    const std::vector<Vec2>& render_offsets,
-    const Vec2& pos,
-    const Vec2& size,
-    float rotation,
-    float alpha,
-    bool horizontal_flip,
-    const FrameDataAnimator& animator,
-    FrameDataId fallback_animation_id = kInvalidFrameDataId,
-    float tint_r = 1.0F,
-    float tint_g = 1.0F,
-    float tint_b = 1.0F
-) {
-    const FrameData* const frame_data =
-        GetAnimatedParticleFrameData(graphics, animator, fallback_animation_id);
-    if (frame_data == nullptr) {
-        return;
-    }
-
-    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
-    if (texture == nullptr) {
-        return;
-    }
-
-    (void)state;
-    const SDL_FlipMode flip = horizontal_flip ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-    const Vec2 half_size = size / 2.0F;
-    SDL_SetTextureAlphaMod(texture, static_cast<Uint8>(alpha * 255.0F));
-    SDL_SetTextureColorModFloat(texture, std::clamp(tint_r, 0.0F, 1.0F), std::clamp(tint_g, 0.0F, 1.0F), std::clamp(tint_b, 0.0F, 1.0F));
-    const SDL_FRect src{
-        static_cast<float>(frame_data->sample_rect.x),
-        static_cast<float>(frame_data->sample_rect.y),
-        static_cast<float>(frame_data->sample_rect.w),
-        static_cast<float>(frame_data->sample_rect.h),
-    };
-    for (const Vec2& render_offset : render_offsets) {
-        const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
-        const SDL_FPoint center{dst.w / 2.0F, dst.h / 2.0F};
-        RenderWorldTextureRotated(renderer, graphics, texture, &src, dst, rotation, &center, flip);
-    }
-    SDL_SetTextureAlphaMod(texture, 255);
-    SDL_SetTextureColorModFloat(texture, 1.0F, 1.0F, 1.0F);
-}
-
-void RenderSpriteParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const SpriteParticle& particle : state.particles.sprite_particles) {
-        if (particle.draw_layer != layer || particle.IsFinished()) {
-            continue;
-        }
-        RenderAnimatedParticleSprite(
-            renderer,
-            state,
-            graphics,
-            render_offsets,
-            particle.pos,
-            particle.size,
-            particle.rot,
-            particle.alpha,
-            particle.horizontal_flip,
-            particle.frame_data_animator,
-            kInvalidFrameDataId,
-            particle.tint_r,
-            particle.tint_g,
-            particle.tint_b
-        );
-    }
-}
-
-void RenderScriptedParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const ScriptedParticle& particle : state.particles.scripted_particles) {
-        if (particle.draw_layer != layer || particle.IsFinished()) {
-            continue;
-        }
-        RenderAnimatedParticleSprite(
-            renderer,
-            state,
-            graphics,
-            render_offsets,
-            particle.pos,
-            particle.size,
-            particle.rot,
-            particle.alpha,
-            particle.horizontal_flip,
-            particle.frame_data_animator
-        );
-    }
-}
-
-void RenderRibbonParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const RibbonParticle& particle : state.particles.ribbon_particles) {
-        if (particle.IsFinished()) {
-            continue;
-        }
-        const RibbonParticleArchetype* const archetype = GetRibbonParticleArchetype(particle.archetype_id);
-        if (archetype == nullptr || archetype->draw_layer != layer) {
-            continue;
-        }
-        for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
-            const Vec2 a = particle.points[i];
-            const Vec2 b = particle.points[i + 1];
-            const Vec2 diff = b - a;
-            const float length = Length(diff);
-            if (length <= 0.01F) {
-                continue;
-            }
-            const float rotation = std::atan2(diff.y, diff.x) * (180.0F / 3.14159265F);
-            RenderAnimatedParticleSprite(
-                renderer,
-                state,
-                graphics,
-                render_offsets,
-                (a + b) * 0.5F,
-                Vec2::New(length, archetype->width),
-                rotation,
-                particle.alpha,
-                false,
-                particle.frame_data_animator,
-                archetype->animation_id
-            );
-        }
-    }
-}
-
-void RenderSegmentedSpriteParticlesForLayer(
-    SDL_Renderer* renderer,
-    const State& state,
-    Graphics& graphics,
-    DrawLayer layer
-) {
-    const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    for (const SegmentedSpriteParticle& particle : state.particles.segmented_sprite_particles) {
-        if (particle.IsFinished()) {
-            continue;
-        }
-        const SegmentedSpriteParticleArchetype* const archetype =
-            GetSegmentedSpriteParticleArchetype(particle.archetype_id);
-        if (archetype == nullptr || archetype->draw_layer != layer) {
-            continue;
-        }
-        const float spacing = archetype->spacing > 0.0F ? archetype->spacing : Max(archetype->segment_size.x, 1.0F);
-        for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
-            const Vec2 a = particle.points[i];
-            const Vec2 b = particle.points[i + 1];
-            const Vec2 diff = b - a;
-            const float length = Length(diff);
-            if (length <= 0.01F) {
-                continue;
-            }
-            const Vec2 dir = diff / length;
-            const float rotation = std::atan2(diff.y, diff.x) * (180.0F / 3.14159265F);
-            for (float distance_along = 0.0F; distance_along < length; distance_along += spacing) {
-                const Vec2 center = a + (dir * distance_along);
-                RenderAnimatedParticleSprite(
-                    renderer,
-                    state,
-                    graphics,
-                    render_offsets,
-                    center,
-                    archetype->segment_size,
-                    rotation,
-                    particle.alpha,
-                    particle.horizontal_flip,
-                    particle.frame_data_animator,
-                    archetype->animation_id
-                );
-            }
-        }
-    }
-}
-
-void RenderParticlesForLayer(SDL_Renderer* renderer, const State& state, Graphics& graphics, DrawLayer layer) {
-    RenderSpriteParticlesForLayer(renderer, state, graphics, layer);
-    RenderScriptedParticlesForLayer(renderer, state, graphics, layer);
-    RenderRibbonParticlesForLayer(renderer, state, graphics, layer);
-    RenderSegmentedSpriteParticlesForLayer(renderer, state, graphics, layer);
-}
 
 } // namespace
 
@@ -1889,13 +1853,13 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
             const SDL_FlipMode flip =
                 entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             const Uint8 entity_alpha = static_cast<Uint8>(std::clamp(entity.alpha, 0.0F, 1.0F) * 255.0F);
-            const float entity_brightness = GetEntityLightingBrightness(state, entity, graphics);
+            const Color3 entity_brightness = GetEntityLightingColor(state, entity, graphics);
             SDL_SetTextureAlphaMod(sprite_texture, entity_alpha);
             SDL_SetTextureColorModFloat(
                 sprite_texture,
-                entity_brightness,
-                entity_brightness,
-                entity_brightness
+                entity_brightness.r,
+                entity_brightness.g,
+                entity_brightness.b
             );
             if (entity.type_ == EntityType::BallAndChainBall && entity.entity_a.has_value()) {
                 if (const Entity* const attached = state.entity_manager.GetEntity(*entity.entity_a)) {

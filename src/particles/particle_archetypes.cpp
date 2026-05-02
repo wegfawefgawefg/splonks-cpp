@@ -44,6 +44,7 @@ const RibbonParticleArchetype kRibbonParticleArchetypes[] = {
         .id = ribbon_particle_archetype_ids::BaseballBatTrail,
         .name = "baseball_bat_trail",
         .draw_layer = DrawLayer::Foreground,
+        .lighting_mode = ParticleLightingMode::Emissive,
         .animation_id = frame_data_ids::BaseballBatTrail,
         .width = 2.5F,
     },
