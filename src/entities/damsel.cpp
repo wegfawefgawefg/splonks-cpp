@@ -128,24 +128,25 @@ void StartIdle(Entity& damsel) {
     TrySetAnimation(damsel, EntityDisplayState::Neutral);
 }
 
-void StartPanicRun(Entity& damsel) {
+void StartPanicRun(Entity& damsel, const State& state) {
     damsel.ai_state = EntityAiState::Patrolling;
     const int direction = damsel.facing == LeftOrRight::Left ? -1 : 1;
     common::AccelerateHorizontallyTowardSpeed(
         damsel,
+        state,
         static_cast<float>(direction) * kDamselPanicRunSpeed,
         kDamselRunAcceleration
     );
     TrySetAnimation(damsel, EntityDisplayState::Walk);
 }
 
-void MaybeStartPanicRunFromCarryRelease(Entity& damsel) {
+void MaybeStartPanicRunFromCarryRelease(Entity& damsel, const State& state) {
     if (damsel.counter_a <= 0.0F || damsel.condition != EntityCondition::Normal) {
         return;
     }
 
     damsel.counter_a = 0.0F;
-    StartPanicRun(damsel);
+    StartPanicRun(damsel, state);
 }
 
 void RescueDamsel(
@@ -209,6 +210,7 @@ void StepPanicRun(Entity& damsel, const State& state, const Graphics& graphics) 
 
     common::AccelerateHorizontallyTowardSpeed(
         damsel,
+        state,
         static_cast<float>(direction) * kDamselPanicRunSpeed,
         kDamselRunAcceleration
     );
@@ -299,10 +301,10 @@ void StepEntityLogicAsDamsel(
 
     if (damsel.last_condition == EntityCondition::Stunned &&
         damsel.condition == EntityCondition::Normal) {
-        StartPanicRun(damsel);
+        StartPanicRun(damsel, state);
     }
 
-    MaybeStartPanicRunFromCarryRelease(damsel);
+    MaybeStartPanicRunFromCarryRelease(damsel, state);
 
     if (damsel.condition == EntityCondition::Normal &&
         damsel.ai_state == EntityAiState::Patrolling && !damsel.held_by_vid.has_value()) {

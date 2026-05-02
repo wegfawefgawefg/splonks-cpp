@@ -40,10 +40,11 @@ void StartIdle(Entity& cobra, int min_frames = kCobraIdleMinFrames, int max_fram
     TrySetAnimation(cobra, EntityDisplayState::Neutral);
 }
 
-void StartWalking(Entity& cobra) {
+void StartWalking(Entity& cobra, const State& state) {
     cobra.ai_state = EntityAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         cobra,
+        state,
         cobra.facing == LeftOrRight::Left ? -kCobraWalkSpeed : kCobraWalkSpeed,
         kCobraWalkAcceleration
     );
@@ -273,7 +274,7 @@ void StepEntityLogicAsCobra(
         }
 
         cobra.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
-        StartWalking(cobra);
+        StartWalking(cobra, state);
         return;
     }
 
@@ -291,6 +292,7 @@ void StepEntityLogicAsCobra(
 
     common::AccelerateHorizontallyTowardSpeed(
         cobra,
+        state,
         static_cast<float>(direction) * kCobraWalkSpeed,
         kCobraWalkAcceleration
     );

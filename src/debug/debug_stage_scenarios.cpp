@@ -7,6 +7,7 @@
 
 #include <array>
 #include <optional>
+#include <utility>
 
 namespace splonks {
 
@@ -18,8 +19,8 @@ constexpr int kOpposingBodySmackStageWidthTiles = 14;
 constexpr int kOpposingBodySmackStageHeightTiles = 8;
 constexpr int kMonkeyTestStageWidthTiles = 16;
 constexpr int kMonkeyTestStageHeightTiles = 16;
-constexpr int kWaterPiranhaTestStageWidthTiles = 22;
-constexpr int kWaterPiranhaTestStageHeightTiles = 13;
+constexpr int kWaterPiranhaTestStageWidthTiles = 28;
+constexpr int kWaterPiranhaTestStageHeightTiles = 16;
 
 std::optional<VID> SpawnBowlingCaveman(
     State& state,
@@ -235,16 +236,22 @@ Stage MakeWaterPiranhaTestStage() {
         debug_stage::SetTile(stage, kWaterPiranhaTestStageWidthTiles - 1, y, wall_tile);
     }
 
-    debug_stage::FillRect(stage, 1, 10, 20, 11, wall_tile);
-    debug_stage::FillRect(stage, 7, 8, 7, 9, wall_tile);
-    debug_stage::FillRect(stage, 14, 8, 14, 9, wall_tile);
-    debug_stage::SetTile(stage, 6, 9, wall_tile);
-    debug_stage::SetTile(stage, 15, 9, wall_tile);
-    debug_stage::FillRect(stage, 8, 8, 13, 9, Tile::WaterSwim);
+    debug_stage::FillRect(stage, 1, 13, 26, 14, wall_tile);
+    debug_stage::FillRect(stage, 6, 9, 7, 12, wall_tile);
+    debug_stage::FillRect(stage, 20, 9, 21, 12, wall_tile);
+    debug_stage::SetTile(stage, 5, 12, wall_tile);
+    debug_stage::SetTile(stage, 22, 12, wall_tile);
+    debug_stage::FillRect(stage, 8, 10, 19, 12, Tile::WaterSwim);
+    debug_stage::FillRect(stage, 11, 8, 16, 9, Tile::WaterSwim);
+    debug_stage::FillRect(stage, 2, 12, 4, 12, Tile::Air);
+    debug_stage::FillRect(stage, 23, 12, 25, 12, Tile::Air);
+    debug_stage::FillRect(stage, 12, 5, 15, 5, wall_tile);
+    debug_stage::BuildLadder(stage, 3, 9, 12);
+    debug_stage::BuildLadder(stage, 24, 9, 12);
 
     stage.stagegen_annotations.push_back(StageGenAnnotation{
-        .world_pos = Vec2::New(8.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize)),
-        .text = "simulated tile water pool",
+        .world_pos = Vec2::New(8.0F * static_cast<float>(kTileSize), 9.0F * static_cast<float>(kTileSize)),
+        .text = "effect-driven water pool: jump, fall timer, damping, props",
     });
     return stage;
 }
@@ -360,7 +367,7 @@ void InitWaterPiranhaTestStage(State& state) {
         state,
         Vec2::New(
             3.0F * static_cast<float>(kTileSize),
-            10.0F * static_cast<float>(kTileSize) - 14.0F
+            13.0F * static_cast<float>(kTileSize) - 14.0F
         )
     );
     if (state.player_vid.has_value()) {
@@ -368,12 +375,26 @@ void InitWaterPiranhaTestStage(State& state) {
     }
 
     const std::array<Vec2, 3> piranha_centers{{
-        Vec2::New(9.0F * static_cast<float>(kTileSize), 8.5F * static_cast<float>(kTileSize)),
-        Vec2::New(11.0F * static_cast<float>(kTileSize), 9.5F * static_cast<float>(kTileSize)),
-        Vec2::New(13.0F * static_cast<float>(kTileSize), 8.5F * static_cast<float>(kTileSize)),
+        Vec2::New(10.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
+        Vec2::New(14.0F * static_cast<float>(kTileSize), 10.5F * static_cast<float>(kTileSize)),
+        Vec2::New(18.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
     }};
     for (const Vec2& center : piranha_centers) {
         (void)SpawnStageEntityAtCenter(state, EntityType::Piranha, center);
+    }
+
+    const std::array<std::pair<EntityType, Vec2>, 8> props{{
+        {EntityType::Box, Vec2::New(9.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntityType::Pot, Vec2::New(11.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntityType::Rock, Vec2::New(13.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntityType::Bomb, Vec2::New(15.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntityType::Caveman, Vec2::New(17.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntityType::GoldChunk, Vec2::New(9.5F, 12.5F) * static_cast<float>(kTileSize)},
+        {EntityType::RubyBig, Vec2::New(12.5F, 12.5F) * static_cast<float>(kTileSize)},
+        {EntityType::Chest, Vec2::New(18.5F, 12.5F) * static_cast<float>(kTileSize)},
+    }};
+    for (const auto& [type, center] : props) {
+        (void)SpawnStageEntityAtCenter(state, type, center);
     }
 }
 

@@ -42,6 +42,7 @@ struct EntityArchetype {
     float support_ground_friction = 0.85F;
     float push_acc = 0.0F;
     float throw_velocity_scale = 1.0F;
+    float buoyancy = 0.0F;
     float alpha = 1.0F;
     float self_light = 0.0F;
     float light_strength = 0.0F;

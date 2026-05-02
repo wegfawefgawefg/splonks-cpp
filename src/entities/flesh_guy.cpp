@@ -522,6 +522,7 @@ void ControlEntityAsFleshGuy(
     } else if (control.left && !control.right) {
         common::AccelerateHorizontallyTowardSpeed(
             flesh_guy,
+            state,
             flesh_guy.grounded ? -kGroundTargetSpeed : -kAirTargetSpeed,
             flesh_guy.grounded ? kGroundMoveAcc : kAirMoveAcc
         );
@@ -529,6 +530,7 @@ void ControlEntityAsFleshGuy(
     } else if (control.right && !control.left) {
         common::AccelerateHorizontallyTowardSpeed(
             flesh_guy,
+            state,
             flesh_guy.grounded ? kGroundTargetSpeed : kAirTargetSpeed,
             flesh_guy.grounded ? kGroundMoveAcc : kAirMoveAcc
         );

@@ -47,20 +47,22 @@ void StartIdle(Entity& caveman) {
     TrySetAnimation(caveman, EntityDisplayState::Neutral);
 }
 
-void StartWalking(Entity& caveman) {
+void StartWalking(Entity& caveman, const State& state) {
     caveman.ai_state = EntityAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         caveman,
+        state,
         caveman.facing == LeftOrRight::Left ? -kCavemanWalkSpeed : kCavemanWalkSpeed,
         kCavemanWalkAcceleration
     );
     TrySetAnimation(caveman, EntityDisplayState::Walk);
 }
 
-void StartAttacking(Entity& caveman) {
+void StartAttacking(Entity& caveman, const State& state) {
     caveman.ai_state = EntityAiState::Pursuing;
     common::AccelerateHorizontallyTowardSpeed(
         caveman,
+        state,
         caveman.facing == LeftOrRight::Left ? -kCavemanAttackSpeed : kCavemanAttackSpeed,
         kCavemanAttackAcceleration
     );
@@ -147,7 +149,6 @@ void StepEntityLogicAsCaveman(
     if (caveman.condition != EntityCondition::Normal) {
         return;
     }
-
     if (caveman.ai_state != EntityAiState::Pursuing &&
         ShouldRunSightScan(caveman, state.stage_frame) &&
         CanSeePlayerAhead(caveman, state, graphics)) {
@@ -161,7 +162,7 @@ void StepEntityLogicAsCaveman(
             caveman.grounded = false;
         }
         (void)PlayEntitySoundEmitter(state, caveman, audio_asset_ids::CavemanNotice);
-        StartAttacking(caveman);
+        StartAttacking(caveman, state);
         return;
     }
 
@@ -173,6 +174,7 @@ void StepEntityLogicAsCaveman(
         }
         common::AccelerateHorizontallyTowardSpeed(
             caveman,
+            state,
             static_cast<float>(direction) * kCavemanAttackSpeed,
             kCavemanAttackAcceleration
         );
@@ -192,7 +194,7 @@ void StepEntityLogicAsCaveman(
         }
 
         caveman.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
-        StartWalking(caveman);
+        StartWalking(caveman, state);
         return;
     }
 
@@ -210,6 +212,7 @@ void StepEntityLogicAsCaveman(
 
     common::AccelerateHorizontallyTowardSpeed(
         caveman,
+        state,
         static_cast<float>(direction) * kCavemanWalkSpeed,
         kCavemanWalkAcceleration
     );

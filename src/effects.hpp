@@ -32,13 +32,29 @@ enum class EffectUiKind : std::uint8_t {
 };
 
 enum class EffectModifierTarget : std::uint8_t {
+    // Multiplies gravity acceleration. Base: 1.0.
     GravityScale,
+    // Multiplies velocity after physics integration. Base: 1.0.
+    VelocityDampingX,
+    VelocityDampingY,
+    // Multiplies controller-chosen horizontal top speeds. Base: 1.0.
+    MoveSpeedScale,
+    // Clamps positive/downward velocity. Base: entity/controller max fall speed.
+    MaxFallSpeed,
+    // Upward acceleration applied from fluid-like effects, scaled by entity buoyancy. Base: 0.0.
+    BuoyancyStrength,
+    // Multiplies fall danger accumulation. Override 0 disables fall damage buildup. Base: 1.0.
+    FallTimerRate,
     HiddenTreasureVisibility,
     JumpImpulse,
     SpikeDamageTaken,
     StompDamage,
+    // Multiplies final stomp damage. Override 0 disables stomp attempts. Base: 1.0.
+    StompDamageScale,
     StompBounceImpulse,
     ThrowHorizontalBoost,
+    // Enables a controller/common helper to swim upward on jump. Base: 0.0.
+    SwimImpulse,
 };
 
 enum class EffectModifierOp : std::uint8_t {
@@ -136,7 +152,7 @@ struct EffectArchetype {
     EffectHudCountTextFn hud_count_text = nullptr;
     HudAnchor hud_count_anchor = HudAnchor::BottomRight;
     EffectWorldOverlayFn render_world_overlay = nullptr;
-    std::array<EffectModifier, 4> modifiers{};
+    std::array<EffectModifier, 9> modifiers{};
     std::uint8_t modifier_count = 0;
     EffectEventHandler on_event = nullptr;
     EffectExpiryPredicate should_expire = nullptr;
@@ -151,7 +167,12 @@ EffectInstance* AddEffect(Entity& entity, EffectId id, std::int32_t count = 0, s
 void RemoveEffect(Entity& entity, EffectId id);
 void SetEffect(Entity& entity, EffectId id, bool enabled);
 void StepEffectTimers(Entity& entity);
-float GetModifiedEffectValue(const Entity& entity, EffectModifierTarget target, float base_value);
+float GetModifiedEffectValue(
+    const Entity& entity,
+    EffectModifierTarget target,
+    float base_value,
+    const State* state = nullptr
+);
 void DispatchEffectEventToEntity(Entity& entity, State& state, Audio* audio, const EffectEvent& event);
 void DispatchEffectEventToAll(State& state, Audio* audio, const EffectEvent& event);
 

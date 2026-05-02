@@ -727,6 +727,24 @@ bool TryCaptureHdHang(
 
 } // namespace
 
+bool TryApplySwimImpulse(Entity& entity, State& state, Audio& audio) {
+    const float swim_impulse =
+        GetModifiedEffectValue(entity, EffectModifierTarget::SwimImpulse, 0.0F, &state);
+    if (swim_impulse <= 0.0F) {
+        return false;
+    }
+
+    entity.vel.y = std::min(entity.vel.y, -swim_impulse);
+    entity.grounded = false;
+    entity.coyote_time = 0;
+    entity.jump_delay_frame_count = 0;
+    entity.jump_hold_gravity_frames_remaining = 0;
+    entity.jumped_this_frame = true;
+    PlayJumpSoundsForEntity(state, entity);
+    (void)audio;
+    return true;
+}
+
 void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTuning& tuning) {
     Entity& mutable_entity = state.entity_manager.entities[entity_idx];
     const controls::ControlIntent control =
@@ -896,6 +914,8 @@ void JumpingAndClimbingStep(
             entity.coyote_time = 0;
             entity.grounded = false;
             PlayJumpSoundsForEntity(state, entity);
+        } else {
+            (void)TryApplySwimImpulse(entity, state, audio);
         }
     }
 

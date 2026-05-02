@@ -79,6 +79,7 @@ extern const EntityArchetype kRockArchetype{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
+    .buoyancy = 0.0F,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

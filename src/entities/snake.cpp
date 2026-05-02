@@ -27,10 +27,11 @@ void StartIdle(Entity& snake) {
     TrySetAnimation(snake, EntityDisplayState::Neutral);
 }
 
-void StartWalking(Entity& snake) {
+void StartWalking(Entity& snake, const State& state) {
     snake.ai_state = EntityAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         snake,
+        state,
         snake.facing == LeftOrRight::Left ? -kSnakeWalkSpeed : kSnakeWalkSpeed,
         kSnakeWalkAcceleration
     );
@@ -63,7 +64,7 @@ void StepEntityLogicAsSnake(
         }
 
         snake.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
-        StartWalking(snake);
+        StartWalking(snake, state);
         return;
     }
 
@@ -81,6 +82,7 @@ void StepEntityLogicAsSnake(
 
     common::AccelerateHorizontallyTowardSpeed(
         snake,
+        state,
         static_cast<float>(direction) * kSnakeWalkSpeed,
         kSnakeWalkAcceleration
     );

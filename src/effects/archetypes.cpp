@@ -79,10 +79,58 @@ constexpr EffectModifier kMittModifiers[]{
     },
 };
 
+constexpr EffectModifier kInWaterModifiers[]{
+    EffectModifier{
+        .target = EffectModifierTarget::GravityScale,
+        .op = EffectModifierOp::Multiply,
+        .value = 0.35F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::VelocityDampingX,
+        .op = EffectModifierOp::Multiply,
+        .value = 0.82F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::VelocityDampingY,
+        .op = EffectModifierOp::Multiply,
+        .value = 0.55F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::MoveSpeedScale,
+        .op = EffectModifierOp::Multiply,
+        .value = 0.5F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::MaxFallSpeed,
+        .op = EffectModifierOp::Min,
+        .value = 1.35F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::BuoyancyStrength,
+        .op = EffectModifierOp::Max,
+        .value = 0.55F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::FallTimerRate,
+        .op = EffectModifierOp::Override,
+        .value = 0.0F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::StompDamageScale,
+        .op = EffectModifierOp::Override,
+        .value = 0.0F,
+    },
+    EffectModifier{
+        .target = EffectModifierTarget::SwimImpulse,
+        .op = EffectModifierOp::Max,
+        .value = 8.70F,
+    },
+};
+
 template <std::size_t N>
-std::array<EffectModifier, 4> MakeModifierArray(const EffectModifier (&modifiers)[N]) {
-    static_assert(N <= 4);
-    std::array<EffectModifier, 4> out{};
+std::array<EffectModifier, 9> MakeModifierArray(const EffectModifier (&modifiers)[N]) {
+    static_assert(N <= 9);
+    std::array<EffectModifier, 9> out{};
     for (std::size_t i = 0; i < N; ++i) {
         out[i] = modifiers[i];
     }
@@ -308,7 +356,10 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
     EffectArchetype{
         .id = EffectId::InWater,
         .debug_name = "InWater",
-        .ui_kind = EffectUiKind::Hidden,
+        .icon_animation_id = frame_data_ids::Water,
+        .ui_kind = EffectUiKind::Temporary,
+        .modifiers = MakeModifierArray(kInWaterModifiers),
+        .modifier_count = 8,
     },
 }};
 

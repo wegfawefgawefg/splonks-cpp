@@ -148,9 +148,23 @@ void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
     animator.playback_dirty = false;
 }
 
-void StepPlayerFallTimer(Entity& player) {
+void StepPlayerFallTimer(Entity& player, const State& state) {
+    const float fall_timer_rate =
+        GetModifiedEffectValue(player, EffectModifierTarget::FallTimerRate, 1.0F, &state);
+    if (fall_timer_rate <= 0.0F) {
+        player.fall_timer = 0;
+        return;
+    }
     if (player.vel.y > 0.0F && !player.IsClimbing() && !player.IsHanging()) {
-        player.fall_timer += 1;
+        if (fall_timer_rate >= 1.0F) {
+            player.fall_timer += static_cast<std::uint32_t>(std::round(fall_timer_rate));
+            return;
+        }
+        const std::uint32_t interval =
+            static_cast<std::uint32_t>(std::max(1.0F, std::round(1.0F / fall_timer_rate)));
+        if ((state.stage_frame % interval) == 0) {
+            player.fall_timer += 1;
+        }
         return;
     }
 
@@ -567,13 +581,20 @@ void StepEntityPhysicsAsPlayerWithTuning(
     const float max_run_speed =
         holding_punish_ball ? kPunishBallHeldMaxRunSpeed
                             : (has_punish_ball ? kPunishBallDraggedMaxRunSpeed : tuning.max_run_speed);
+    const float move_speed_scale = std::max(
+        0.0F,
+        GetModifiedEffectValue(entity, EffectModifierTarget::MoveSpeedScale, 1.0F, &state)
+    );
     if (control.run) {
-        entity.vel.x = std::clamp(entity.vel.x, -max_run_speed, max_run_speed);
+        entity.vel.x = std::clamp(entity.vel.x, -max_run_speed * move_speed_scale, max_run_speed * move_speed_scale);
     } else {
-        entity.vel.x = std::clamp(entity.vel.x, -max_walk_speed, max_walk_speed);
+        entity.vel.x =
+            std::clamp(entity.vel.x, -max_walk_speed * move_speed_scale, max_walk_speed * move_speed_scale);
     }
-    entity.vel.y = std::min(entity.vel.y, tuning.max_speed);
-    StepPlayerFallTimer(entity);
+    const float max_fall_speed =
+        GetModifiedEffectValue(entity, EffectModifierTarget::MaxFallSpeed, tuning.max_speed, &state);
+    entity.vel.y = std::min(entity.vel.y, max_fall_speed);
+    StepPlayerFallTimer(entity, state);
     gear_items::StepEquippedPassiveItems(entity_idx, state, graphics);
 
     common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);

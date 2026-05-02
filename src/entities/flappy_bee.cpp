@@ -124,12 +124,12 @@ void ControlEntityAsFlappyBee(
     if (control.left && !control.right) {
         const float target_speed = bee.grounded ? -kGroundTargetSpeed : -kAirTargetSpeed;
         const float acc = bee.grounded ? kGroundMoveAcc : kAirMoveAcc;
-        common::AccelerateHorizontallyTowardSpeed(bee, target_speed, acc);
+        common::AccelerateHorizontallyTowardSpeed(bee, state, target_speed, acc);
         bee.facing = LeftOrRight::Left;
     } else if (control.right && !control.left) {
         const float target_speed = bee.grounded ? kGroundTargetSpeed : kAirTargetSpeed;
         const float acc = bee.grounded ? kGroundMoveAcc : kAirMoveAcc;
-        common::AccelerateHorizontallyTowardSpeed(bee, target_speed, acc);
+        common::AccelerateHorizontallyTowardSpeed(bee, state, target_speed, acc);
         bee.facing = LeftOrRight::Right;
     } else if (!bee.grounded) {
         bee.vel.x *= kAirNoInputDamping;

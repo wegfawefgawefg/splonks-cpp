@@ -66,12 +66,19 @@ void ApplyDeactivateConditions(std::size_t entity_idx, State& state);
 void StepStunTimer(std::size_t entity_idx, State& state);
 void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio);
 void AccelerateHorizontallyTowardSpeed(Entity& entity, float target_speed, float max_acceleration);
+void AccelerateHorizontallyTowardSpeed(
+    Entity& entity,
+    const State& state,
+    float target_speed,
+    float max_acceleration
+);
 void DecelerateHorizontallyToStop(Entity& entity, float max_acceleration, float snap_speed = 0.05F);
 void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& graphics, float dt);
 void RefreshAllEntityFrameDataGeometry(State& state, const Graphics& graphics);
 void EulerStep(std::size_t entity_idx, State& state, float dt);
 void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt);
 void ApplyGravity(std::size_t entity_idx, State& state, float dt);
+void ApplyEffectVelocityModifiers(Entity& entity, const State& state);
 void ApplyGroundFriction(std::size_t entity_idx, State& state);
 void ApplyGroundFriction(std::size_t entity_idx, State& state, float friction_scale);
 void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state);
@@ -215,6 +222,7 @@ void JumpingAndClimbingStep(
     Audio& audio,
     const JumpAndClimbTuning& tuning
 );
+bool TryApplySwimImpulse(Entity& entity, State& state, Audio& audio);
 ContactResolution TryDispatchEntityEntityContactPair(
     std::size_t entity_idx,
     std::size_t other_entity_idx,

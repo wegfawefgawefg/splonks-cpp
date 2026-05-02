@@ -16,7 +16,7 @@ constexpr float kStompVictimKnockbackVelocityX = 1.0F;
 constexpr unsigned int kStompDamage = 1;
 constexpr float kSpringShoeMovementSoundVolume = 0.15F;
 
-bool CanEntityAttemptStomp(const Entity& stomper) {
+bool CanEntityAttemptStomp(const Entity& stomper, const State& state) {
     if (!stomper.active) {
         return false;
     }
@@ -33,6 +33,9 @@ bool CanEntityAttemptStomp(const Entity& stomper) {
         return false;
     }
     if (HasMovementFlag(stomper, EntityMovementFlag::Hanging)) {
+        return false;
+    }
+    if (GetModifiedEffectValue(stomper, EffectModifierTarget::StompDamageScale, 1.0F, &state) <= 0.0F) {
         return false;
     }
     return true;
@@ -78,7 +81,7 @@ bool TryApplyStompContactToEntity(
         return false;
     }
 
-    if (!CanEntityAttemptStomp(stomper)) {
+    if (!CanEntityAttemptStomp(stomper, state)) {
         return false;
     }
     if (!CanEntityBeStomped(*stomped)) {
@@ -107,13 +110,19 @@ bool TryApplyStompContactToEntity(
         );
     }
 
-    const unsigned int stomp_damage = static_cast<unsigned int>(
-        GetModifiedEffectValue(
-            stomper,
-            EffectModifierTarget::StompDamage,
-            static_cast<float>(kStompDamage)
-        )
+    const float base_stomp_damage = GetModifiedEffectValue(
+        stomper,
+        EffectModifierTarget::StompDamage,
+        static_cast<float>(kStompDamage),
+        &state
     );
+    const float stomp_damage_scale =
+        GetModifiedEffectValue(stomper, EffectModifierTarget::StompDamageScale, 1.0F, &state);
+    const unsigned int stomp_damage =
+        static_cast<unsigned int>(std::max(0.0F, base_stomp_damage * stomp_damage_scale));
+    if (stomp_damage == 0) {
+        return false;
+    }
     const DamageResult damage_result = TryDamageEntity(
         stomped->vid.id,
         state,
@@ -156,7 +165,7 @@ bool TryApplyStompContactToEntity(
         ? -kStompHeldJumpBounceVelocityY
         : -kStompShortBounceVelocityY;
     const float bounce_impulse =
-        GetModifiedEffectValue(stomper, EffectModifierTarget::StompBounceImpulse, base_bounce_impulse);
+        GetModifiedEffectValue(stomper, EffectModifierTarget::StompBounceImpulse, base_bounce_impulse, &state);
     stomper.vel.y = -bounce_impulse;
     return true;
 }

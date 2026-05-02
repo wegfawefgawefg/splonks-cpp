@@ -131,6 +131,20 @@ struct FluidSettings {
     static FluidSettings New();
 };
 
+struct WaterEffectSettings {
+    float gravity_scale = 0.35F;
+    float velocity_damping_x = 0.82F;
+    float velocity_damping_y = 0.55F;
+    float move_speed_scale = 0.5F;
+    float max_fall_speed = 1.35F;
+    float buoyancy_strength = 0.55F;
+    float fall_timer_rate = 0.0F;
+    float stomp_damage_scale = 0.0F;
+    float swim_impulse = 8.70F;
+
+    static WaterEffectSettings New();
+};
+
 struct DebugUiSettings {
     bool menu_visible = true;
     bool playback_visible = true;
@@ -206,6 +220,7 @@ struct Settings {
     UiSettings ui;
     PostProcessSettings post_process;
     FluidSettings fluid;
+    WaterEffectSettings water_effect;
     DebugUiSettings debug_ui;
     PlayerTuningState player_tuning;
 

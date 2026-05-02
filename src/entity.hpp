@@ -74,6 +74,7 @@ struct Entity {
     float max_speed = 7.0F;
     std::uint32_t jump_hold_gravity_frames_remaining = 0;
     float throw_velocity_scale = 1.0F;
+    float buoyancy = 0.0F;
     Vec2 size;
     float self_light = 0.0F;
     float light_strength = 0.0F;

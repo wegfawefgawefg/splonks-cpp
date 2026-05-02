@@ -43,6 +43,52 @@ void ApplyModifier(float& value, const EffectModifier& modifier) {
     }
 }
 
+float GetWaterTunedModifierValue(EffectModifierTarget target, const State& state, float fallback) {
+    const WaterEffectSettings& water = state.settings.water_effect;
+    switch (target) {
+    case EffectModifierTarget::GravityScale:
+        return water.gravity_scale;
+    case EffectModifierTarget::VelocityDampingX:
+        return water.velocity_damping_x;
+    case EffectModifierTarget::VelocityDampingY:
+        return water.velocity_damping_y;
+    case EffectModifierTarget::MoveSpeedScale:
+        return water.move_speed_scale;
+    case EffectModifierTarget::MaxFallSpeed:
+        return water.max_fall_speed;
+    case EffectModifierTarget::BuoyancyStrength:
+        return water.buoyancy_strength;
+    case EffectModifierTarget::FallTimerRate:
+        return water.fall_timer_rate;
+    case EffectModifierTarget::StompDamageScale:
+        return water.stomp_damage_scale;
+    case EffectModifierTarget::SwimImpulse:
+        return water.swim_impulse;
+    case EffectModifierTarget::HiddenTreasureVisibility:
+    case EffectModifierTarget::JumpImpulse:
+    case EffectModifierTarget::SpikeDamageTaken:
+    case EffectModifierTarget::StompDamage:
+    case EffectModifierTarget::StompBounceImpulse:
+    case EffectModifierTarget::ThrowHorizontalBoost:
+        return fallback;
+    }
+    return fallback;
+}
+
+EffectModifier ResolveRuntimeModifier(
+    const EffectInstance& effect,
+    const EffectModifier& modifier,
+    const State* state
+) {
+    if (state == nullptr || effect.id != EffectId::InWater) {
+        return modifier;
+    }
+
+    EffectModifier runtime_modifier = modifier;
+    runtime_modifier.value = GetWaterTunedModifierValue(modifier.target, *state, modifier.value);
+    return runtime_modifier;
+}
+
 } // namespace
 
 BoxedEntityEffects::BoxedEntityEffects(const BoxedEntityEffects& other) {
@@ -164,17 +210,23 @@ void StepEffectTimers(Entity& entity) {
     }
 }
 
-float GetModifiedEffectValue(const Entity& entity, EffectModifierTarget target, float base_value) {
+float GetModifiedEffectValue(
+    const Entity& entity,
+    EffectModifierTarget target,
+    float base_value,
+    const State* state
+) {
     float value = base_value;
     if (entity.effects.get() == nullptr) {
         return value;
     }
     for (std::size_t effect_index = 0; effect_index < entity.effects->count; ++effect_index) {
-        const EffectArchetype& archetype = GetEffectArchetype(entity.effects->effects[effect_index].id);
+        const EffectInstance& effect = entity.effects->effects[effect_index];
+        const EffectArchetype& archetype = GetEffectArchetype(effect.id);
         for (std::uint8_t modifier_index = 0; modifier_index < archetype.modifier_count; ++modifier_index) {
             const EffectModifier& modifier = archetype.modifiers[modifier_index];
             if (modifier.target == target) {
-                ApplyModifier(value, modifier);
+                ApplyModifier(value, ResolveRuntimeModifier(effect, modifier, state));
             }
         }
     }

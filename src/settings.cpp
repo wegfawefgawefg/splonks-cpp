@@ -164,6 +164,20 @@ FluidSettings FluidSettings::New() {
     return result;
 }
 
+WaterEffectSettings WaterEffectSettings::New() {
+    WaterEffectSettings result;
+    result.gravity_scale = 0.35F;
+    result.velocity_damping_x = 0.82F;
+    result.velocity_damping_y = 0.55F;
+    result.move_speed_scale = 0.5F;
+    result.max_fall_speed = 1.35F;
+    result.buoyancy_strength = 0.55F;
+    result.fall_timer_rate = 0.0F;
+    result.stomp_damage_scale = 0.0F;
+    result.swim_impulse = 8.70F;
+    return result;
+}
+
 DebugUiSettings DebugUiSettings::New() {
     DebugUiSettings result;
     result.menu_visible = true;
@@ -209,6 +223,7 @@ Settings Settings::New() {
     result.ui = UiSettings::New();
     result.post_process = PostProcessSettings::New();
     result.fluid = FluidSettings::New();
+    result.water_effect = WaterEffectSettings::New();
     result.debug_ui = DebugUiSettings::New();
     result.player_tuning = PlayerTuningState{};
     return result;
@@ -481,6 +496,33 @@ Settings LoadSettings() {
                    key == "debug_ui.fluid_brush_lighting_strength") {
             settings.fluid.lighting_strength =
                 ParseFloat(value, settings.fluid.lighting_strength);
+        } else if (key == "water_effect.gravity_scale") {
+            settings.water_effect.gravity_scale =
+                ParseFloat(value, settings.water_effect.gravity_scale);
+        } else if (key == "water_effect.velocity_damping_x") {
+            settings.water_effect.velocity_damping_x =
+                ParseFloat(value, settings.water_effect.velocity_damping_x);
+        } else if (key == "water_effect.velocity_damping_y") {
+            settings.water_effect.velocity_damping_y =
+                ParseFloat(value, settings.water_effect.velocity_damping_y);
+        } else if (key == "water_effect.move_speed_scale") {
+            settings.water_effect.move_speed_scale =
+                ParseFloat(value, settings.water_effect.move_speed_scale);
+        } else if (key == "water_effect.max_fall_speed") {
+            settings.water_effect.max_fall_speed =
+                ParseFloat(value, settings.water_effect.max_fall_speed);
+        } else if (key == "water_effect.buoyancy_strength") {
+            settings.water_effect.buoyancy_strength =
+                ParseFloat(value, settings.water_effect.buoyancy_strength);
+        } else if (key == "water_effect.fall_timer_rate") {
+            settings.water_effect.fall_timer_rate =
+                ParseFloat(value, settings.water_effect.fall_timer_rate);
+        } else if (key == "water_effect.stomp_damage_scale") {
+            settings.water_effect.stomp_damage_scale =
+                ParseFloat(value, settings.water_effect.stomp_damage_scale);
+        } else if (key == "water_effect.swim_impulse") {
+            settings.water_effect.swim_impulse =
+                ParseFloat(value, settings.water_effect.swim_impulse);
         } else if (key == "debug_ui.menu_visible") {
             settings.debug_ui.menu_visible = ParseBool(value, settings.debug_ui.menu_visible);
         } else if (key == "debug_ui.playback_visible") {
@@ -794,6 +836,15 @@ bool SaveSettings(const Settings& settings) {
     output << "fluid.water_alpha=" << settings.fluid.water_alpha << "\n";
     output << "fluid.lighting_enabled=" << (settings.fluid.lighting_enabled ? 1 : 0) << "\n";
     output << "fluid.lighting_strength=" << settings.fluid.lighting_strength << "\n";
+    output << "water_effect.gravity_scale=" << settings.water_effect.gravity_scale << "\n";
+    output << "water_effect.velocity_damping_x=" << settings.water_effect.velocity_damping_x << "\n";
+    output << "water_effect.velocity_damping_y=" << settings.water_effect.velocity_damping_y << "\n";
+    output << "water_effect.move_speed_scale=" << settings.water_effect.move_speed_scale << "\n";
+    output << "water_effect.max_fall_speed=" << settings.water_effect.max_fall_speed << "\n";
+    output << "water_effect.buoyancy_strength=" << settings.water_effect.buoyancy_strength << "\n";
+    output << "water_effect.fall_timer_rate=" << settings.water_effect.fall_timer_rate << "\n";
+    output << "water_effect.stomp_damage_scale=" << settings.water_effect.stomp_damage_scale << "\n";
+    output << "water_effect.swim_impulse=" << settings.water_effect.swim_impulse << "\n";
     output << "debug_ui.menu_visible=" << (settings.debug_ui.menu_visible ? 1 : 0) << "\n";
     output << "debug_ui.playback_visible=" << (settings.debug_ui.playback_visible ? 1 : 0) << "\n";
     output << "debug_ui.level_visible=" << (settings.debug_ui.level_visible ? 1 : 0) << "\n";

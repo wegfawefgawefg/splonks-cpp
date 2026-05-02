@@ -67,6 +67,19 @@ void AccelerateHorizontallyTowardSpeed(Entity& entity, float target_speed, float
     entity.acc.x += std::clamp(delta, -max_acceleration, max_acceleration);
 }
 
+void AccelerateHorizontallyTowardSpeed(
+    Entity& entity,
+    const State& state,
+    float target_speed,
+    float max_acceleration
+) {
+    const float move_speed_scale = std::max(
+        0.0F,
+        GetModifiedEffectValue(entity, EffectModifierTarget::MoveSpeedScale, 1.0F, &state)
+    );
+    AccelerateHorizontallyTowardSpeed(entity, target_speed * move_speed_scale, max_acceleration);
+}
+
 void DecelerateHorizontallyToStop(Entity& entity, float max_acceleration, float snap_speed) {
     if (std::abs(entity.vel.x) <= snap_speed) {
         entity.vel.x = 0.0F;

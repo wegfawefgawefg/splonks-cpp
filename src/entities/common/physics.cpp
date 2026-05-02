@@ -865,16 +865,34 @@ void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
         DispatchEffectEventToEntity(entity, state, nullptr, EffectEvent{.type = EffectEventType::BlockingContact});
     }
     const float gravity_scale =
-        GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F);
-    if (gravity_scale == 0.0F) {
-        return;
+        GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F, &state);
+    if (gravity_scale != 0.0F) {
+        entity.acc.y += state.stage.gravity * gravity_scale;
     }
-    entity.acc.y += state.stage.gravity * gravity_scale;
+    const float buoyancy_strength =
+        GetModifiedEffectValue(entity, EffectModifierTarget::BuoyancyStrength, 0.0F, &state);
+    if (entity.buoyancy > 0.0F && buoyancy_strength > 0.0F) {
+        entity.acc.y -= state.stage.gravity * entity.buoyancy * buoyancy_strength;
+    }
+}
+
+void ApplyEffectVelocityModifiers(Entity& entity, const State& state) {
+    const float damping_x =
+        GetModifiedEffectValue(entity, EffectModifierTarget::VelocityDampingX, 1.0F, &state);
+    const float damping_y =
+        GetModifiedEffectValue(entity, EffectModifierTarget::VelocityDampingY, 1.0F, &state);
+    entity.vel.x *= std::clamp(damping_x, 0.0F, 1.0F);
+    entity.vel.y *= std::clamp(damping_y, 0.0F, 1.0F);
+
+    const float max_fall_speed =
+        GetModifiedEffectValue(entity, EffectModifierTarget::MaxFallSpeed, entity.max_speed, &state);
+    entity.vel.y = std::min(entity.vel.y, max_fall_speed);
 }
 
 void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
     (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
+    ApplyEffectVelocityModifiers(entity, state);
     entity.vel.x = std::clamp(entity.vel.x, -entity.max_speed, entity.max_speed);
     entity.vel.y = std::clamp(entity.vel.y, -entity.max_speed, entity.max_speed);
     entity.acc = Vec2::New(0.0F, 0.0F);

@@ -159,9 +159,20 @@ Splonks target behavior:
    - max fall speed or downward velocity clamp if tuning needs it;
    - optional stomp damage multiplier so water can disable stomps without special-casing water in stomp code.
 
+   Current explicit modifier targets:
+   - `GravityScale`: multiplicative, base `1.0`.
+   - `VelocityDampingX`: multiplicative, base `1.0`.
+   - `VelocityDampingY`: multiplicative, base `1.0`.
+   - `MaxFallSpeed`: usually `Min`, base entity/controller max fall speed.
+   - `BuoyancyStrength`: usually `Max`, base `0.0`; common physics multiplies this by `Entity::buoyancy`.
+   - `FallTimerRate`: multiplicative/override, base `1.0`; override `0` clears/suppresses fall danger.
+   - `StompDamageScale`: multiplicative/override, base `1.0`; override `0` disables stomp attempts.
+   - `SwimImpulse`: usually `Max`, base `0.0`; controllers/helpers may consume it when jump is pressed.
+
 3. Give `InWater` default modifiers:
    - lower effective gravity for normal entities;
    - damp vertical velocity strongly while falling;
+   - add upward buoyancy only for entities with non-zero `buoyancy`;
    - optionally damp projectile/body impacts enough that thrown items stop being lethal underwater.
 
 4. Player control should read `HasEffect(player, EffectId::InWater)` for swim-specific input:

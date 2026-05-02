@@ -328,6 +328,77 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         2.0F,
         "%.2f"
     );
+
+    WaterEffectSettings& water_effect = state.settings.water_effect;
+    ImGui::SeparatorText("Water Effect");
+    if (ImGui::Button("Reset Water Effect")) {
+        water_effect = WaterEffectSettings::New();
+        save_settings = true;
+    }
+    save_settings |= ImGui::SliderFloat(
+        "Effect Gravity Scale",
+        &water_effect.gravity_scale,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Damping X",
+        &water_effect.velocity_damping_x,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Damping Y",
+        &water_effect.velocity_damping_y,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Move Speed Scale",
+        &water_effect.move_speed_scale,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Max Fall Speed",
+        &water_effect.max_fall_speed,
+        0.0F,
+        12.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Buoyancy",
+        &water_effect.buoyancy_strength,
+        0.0F,
+        4.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Fall Timer Rate",
+        &water_effect.fall_timer_rate,
+        0.0F,
+        2.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Stomp Damage Scale",
+        &water_effect.stomp_damage_scale,
+        0.0F,
+        1.0F,
+        "%.2f"
+    );
+    save_settings |= ImGui::SliderFloat(
+        "Effect Swim Impulse",
+        &water_effect.swim_impulse,
+        0.0F,
+        20.0F,
+        "%.2f"
+    );
+
     ImGui::SliderInt("Brush Radius (tiles)", &brush.radius_tiles, 0, 16);
     ImGui::Checkbox("Replace Non-Air Tiles", &brush.replace_solid_tiles);
     const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);

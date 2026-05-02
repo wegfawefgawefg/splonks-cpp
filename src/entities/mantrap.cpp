@@ -30,10 +30,11 @@ void StartIdle(Entity& mantrap) {
     TrySetAnimation(mantrap, EntityDisplayState::Neutral);
 }
 
-void StartWalking(Entity& mantrap) {
+void StartWalking(Entity& mantrap, const State& state) {
     mantrap.ai_state = EntityAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         mantrap,
+        state,
         mantrap.facing == LeftOrRight::Left ? -kMantrapWalkSpeed : kMantrapWalkSpeed,
         kMantrapWalkAcceleration
     );
@@ -141,7 +142,7 @@ void StepEntityLogicAsMantrap(
         }
 
         mantrap.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
-        StartWalking(mantrap);
+        StartWalking(mantrap, state);
         return;
     }
 
@@ -159,6 +160,7 @@ void StepEntityLogicAsMantrap(
 
     common::AccelerateHorizontallyTowardSpeed(
         mantrap,
+        state,
         static_cast<float>(direction) * kMantrapWalkSpeed,
         kMantrapWalkAcceleration
     );

@@ -193,6 +193,7 @@ bool TryRecoverDroppedPistol(
     if (shopkeeper.grounded) {
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper,
+            state,
             static_cast<float>(move_direction) * kShopkeeperRecoverPistolSpeedX,
             kShopkeeperRecoverAcceleration
         );
@@ -320,6 +321,7 @@ void StepEntityLogicAsShopkeeper(
         shopkeeper.vel.y = kShopkeeperJumpSpeedY;
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper,
+            state,
             delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX,
             kShopkeeperMoveAcceleration
         );
@@ -329,6 +331,7 @@ void StepEntityLogicAsShopkeeper(
     if (shopkeeper.grounded) {
         common::AccelerateHorizontallyTowardSpeed(
             shopkeeper,
+            state,
             delta.x < 0.0F ? -kShopkeeperMoveSpeedX : kShopkeeperMoveSpeedX,
             kShopkeeperMoveAcceleration
         );

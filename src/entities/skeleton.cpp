@@ -70,7 +70,7 @@ void EnterGettingUpState(Entity& entity) {
     SetAnimation(entity, frame_data_ids::SkeletonGettingUp);
 }
 
-void EnterWalkingState(Entity& entity) {
+void EnterWalkingState(Entity& entity, const State& state) {
     ResizeEntityPreservingBottomCenter(entity, kSkeletonSize);
     entity.ai_state = EntityAiState::Patrolling;
     entity.hurt_on_contact = true;
@@ -79,6 +79,7 @@ void EnterWalkingState(Entity& entity) {
     TrySetAnimation(entity, EntityDisplayState::Walk);
     common::AccelerateHorizontallyTowardSpeed(
         entity,
+        state,
         entity.facing == LeftOrRight::Left ? -kSkeletonWalkSpeed : kSkeletonWalkSpeed,
         kSkeletonWalkAcceleration
     );
@@ -254,7 +255,7 @@ void StepEntityLogicAsSkeleton(
             return;
         }
         if (skeleton.frame_data_animator.IsFinished()) {
-            EnterWalkingState(skeleton);
+            EnterWalkingState(skeleton, state);
         }
         return;
     case EntityAiState::Patrolling:
@@ -278,6 +279,7 @@ void StepEntityLogicAsSkeleton(
     skeleton.hurt_on_contact = true;
     common::AccelerateHorizontallyTowardSpeed(
         skeleton,
+        state,
         static_cast<float>(direction) * kSkeletonWalkSpeed,
         kSkeletonWalkAcceleration
     );

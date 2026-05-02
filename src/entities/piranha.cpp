@@ -22,6 +22,7 @@ constexpr float kPiranhaSwimAcceleration = 0.08F;
 constexpr float kPiranhaChaseAcceleration = 0.12F;
 constexpr float kPiranhaMaxSwimSpeed = 1.35F;
 constexpr float kPiranhaWaterDamping = 0.98F;
+constexpr float kPiranhaSurfaceDiveSpeed = 0.45F;
 constexpr float kPiranhaTargetDistance = 96.0F;
 constexpr float kPiranhaBiteDistance = 12.0F;
 
@@ -64,11 +65,18 @@ void ChaseTarget(Entity& piranha, const Vec2& target, const Stage& stage) {
     }
 }
 
-bool IsSwimProbeInWater(const Entity& piranha, const State& state) {
+struct SwimProbeResult {
+    bool center = false;
+    bool bottom = false;
+};
+
+SwimProbeResult QuerySwimProbes(const Entity& piranha, const State& state) {
     const AABB aabb = piranha.GetAABB();
     const Vec2 center = piranha.GetCenter();
-    return IsWaterAtWorldPos(state.stage, center) &&
-           IsWaterAtWorldPos(state.stage, Vec2::New(center.x, aabb.br.y));
+    return SwimProbeResult{
+        .center = IsWaterAtWorldPos(state.stage, center),
+        .bottom = IsWaterAtWorldPos(state.stage, Vec2::New(center.x, aabb.br.y)),
+    };
 }
 
 } // namespace
@@ -132,7 +140,15 @@ void StepEntityPhysicsAsPiranha(
     piranha.vel.x = std::clamp(piranha.vel.x, -kPiranhaMaxSwimSpeed, kPiranhaMaxSwimSpeed);
     piranha.vel.y = std::clamp(piranha.vel.y, -kPiranhaMaxSwimSpeed, kPiranhaMaxSwimSpeed);
 
-    if (!IsSwimProbeInWater(piranha, state)) {
+    const SwimProbeResult swim_probe = QuerySwimProbes(piranha, state);
+    if (!swim_probe.center || !swim_probe.bottom) {
+        if (swim_probe.bottom) {
+            piranha.vel.y = std::max(piranha.vel.y, kPiranhaSurfaceDiveSpeed);
+            piranha.vel.x *= 0.75F;
+            common::DoEntityCollisions(entity_idx, state, graphics, audio);
+            common::PostPartialEulerStep(entity_idx, state, dt);
+            return;
+        }
         piranha.pos = old_pos;
         piranha.vel = Vec2::New(-piranha.vel.x * 0.5F, -piranha.vel.y * 0.5F);
         piranha.facing = piranha.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;

@@ -56,6 +56,7 @@ Entity Entity::New() {
     entity.max_speed = 7.0F;
     entity.jump_hold_gravity_frames_remaining = 0;
     entity.throw_velocity_scale = 1.0F;
+    entity.buoyancy = 0.0F;
     entity.size = Vec2::New(8.0F, 8.0F);
     entity.self_light = 0.0F;
     entity.light_strength = 0.0F;

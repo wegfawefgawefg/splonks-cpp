@@ -139,6 +139,7 @@ extern const EntityArchetype kPotArchetype{
     .can_be_stomped = false,
     .vanish_on_death = true,
     .can_be_stunned = false,
+    .buoyancy = 0.35F,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

@@ -104,6 +104,7 @@ constexpr FrameDataId IceBlock = HashFrameDataIdConstexpr("ice_block");
 constexpr FrameDataId JungleBlock = HashFrameDataIdConstexpr("jungle_block");
 constexpr FrameDataId TempleBlock = HashFrameDataIdConstexpr("temple_block");
 constexpr FrameDataId BossBlock = HashFrameDataIdConstexpr("boss_block");
+constexpr FrameDataId Water = HashFrameDataIdConstexpr("water");
 constexpr FrameDataId HeartUiIcon = HashFrameDataIdConstexpr("heart_ui_icon");
 constexpr FrameDataId GrenadeUiIcon = HashFrameDataIdConstexpr("grenade_ui_icon");
 constexpr FrameDataId StickyGrenadeUiIcon = HashFrameDataIdConstexpr("sticky_grenade_ui_icon");
