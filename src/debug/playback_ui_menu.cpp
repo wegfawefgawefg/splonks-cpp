@@ -485,7 +485,8 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     state.debug_level.kind = static_cast<DebugLevelKind>(level_kind);
     if (previous_level_kind != state.debug_level.kind &&
         (state.debug_level.kind == DebugLevelKind::TrapDoorTest ||
-         state.debug_level.kind == DebugLevelKind::CrusherTrapTest)) {
+         state.debug_level.kind == DebugLevelKind::CrusherTrapTest ||
+         state.debug_level.kind == DebugLevelKind::LightingStressTest)) {
         graphics.camera_mode = CameraMode::Follow;
     }
     if (previous_level_kind != state.debug_level.kind &&
@@ -533,6 +534,13 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             0,
             static_cast<int>(EntityManager::kMaxNumEntities - 8)
         );
+    } else if (state.debug_level.kind == DebugLevelKind::LightingStressTest) {
+        ImGui::SliderInt(
+            "Moving Light Count",
+            &state.debug_level.lighting_stress_test.moving_light_count,
+            0,
+            static_cast<int>(EntityManager::kMaxNumEntities - 8)
+        );
     }
 
     if (ImGui::Button("Regenerate")) {
@@ -550,7 +558,8 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             state.debug_level.kind == DebugLevelKind::SpikeTest) {
             apply_stage_fit_camera();
         } else if (state.debug_level.kind == DebugLevelKind::TrapDoorTest ||
-                   state.debug_level.kind == DebugLevelKind::CrusherTrapTest) {
+                   state.debug_level.kind == DebugLevelKind::CrusherTrapTest ||
+                   state.debug_level.kind == DebugLevelKind::LightingStressTest) {
             graphics.camera_mode = CameraMode::Follow;
         }
         graphics.ResetTileVariations();

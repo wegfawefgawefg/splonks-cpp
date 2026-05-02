@@ -2,6 +2,7 @@
 
 #include "frame_data.hpp"
 #include "tile.hpp"
+#include "tile_contact_data.hpp"
 #include "tile_source_data.hpp"
 
 #include <cstdint>
@@ -81,6 +82,7 @@ struct Graphics {
     std::filesystem::file_time_type frame_data_annotations_last_loaded_write_time{};
     std::filesystem::file_time_type frame_data_annotations_last_seen_write_time{};
     TileSourceDb tile_source_db;
+    TileContactDb tile_contact_db;
     std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
     std::string font_path = "assets/fonts/DejaVuSans.ttf";
     LoadedFont menu_title_font;

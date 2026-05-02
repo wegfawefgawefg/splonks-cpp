@@ -116,7 +116,7 @@ this as a triage checklist and mark items off intentionally.
   - Stomp damage, spike immunity, hidden-treasure visibility, mitt throw boost, and no-gravity-until-contact now route through effects/modifiers/events.
   - Spring shoe jump/bounce audio still checks `EffectId::SpringShoes` where it is making content-specific feedback decisions.
 
-- [ ] Move authored tile CBox lookup out of common contact damage.
-  - Spike damage currently reads tile CBoxes through `Graphics`/`TileSourceData` from `src/entities/common/contact_damage.cpp`.
-  - The spike rule itself can remain common gameplay, but gameplay collision should not depend on renderer-owned graphics state.
-  - Cleaner long-term shape: tile collision/hazard metadata is cached in gameplay-owned tile metadata or a non-render tile source table.
+- [x] Move authored tile CBox lookup out of common contact damage.
+  - Spike damage now reads authored CBoxes through `TileContactData`, a gameplay-facing cache built from frame data.
+  - `src/entities/common/contact_damage.cpp` no longer depends on `TileSourceData`.
+  - Follow-up only if needed: move `TileContactDb` ownership out of `Graphics` entirely; the current shape is no longer coupled to renderer source structs.

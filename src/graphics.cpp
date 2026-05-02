@@ -22,6 +22,7 @@ struct LoadedFrameDataResources {
     FrameDataDb frame_data_db;
     std::vector<SDL_Texture*> frame_data_images;
     TileSourceDb tile_source_db;
+    TileContactDb tile_contact_db;
     std::filesystem::file_time_type write_time{};
 };
 
@@ -98,6 +99,7 @@ LoadedFrameDataResources LoadFrameDataResources(
     }
 
     result.tile_source_db = BuildTileSourceDb(result.frame_data_db);
+    result.tile_contact_db = BuildTileContactDb(result.tile_source_db);
     result.write_time = GetFileWriteTimeOrThrow(annotations_path);
     return result;
 }
@@ -121,6 +123,7 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     graphics.frame_data_annotations_last_loaded_write_time = frame_data_resources.write_time;
     graphics.frame_data_annotations_last_seen_write_time = frame_data_resources.write_time;
     graphics.tile_source_db = frame_data_resources.tile_source_db;
+    graphics.tile_contact_db = frame_data_resources.tile_contact_db;
     graphics.window_dims = UVec2::New(1920, 1080);
     graphics.dims = UVec2::New(1920, 1080);
     graphics.fullscreen = true;
@@ -241,6 +244,7 @@ bool Graphics::ReloadFrameData(SDL_Renderer* renderer, std::string* status_out) 
         frame_data_db = std::move(frame_data_resources.frame_data_db);
         frame_data_images = std::move(frame_data_resources.frame_data_images);
         tile_source_db = std::move(frame_data_resources.tile_source_db);
+        tile_contact_db = std::move(frame_data_resources.tile_contact_db);
         frame_data_annotations_last_loaded_write_time = frame_data_resources.write_time;
         frame_data_annotations_last_seen_write_time = frame_data_resources.write_time;
         ResetTileVariations();

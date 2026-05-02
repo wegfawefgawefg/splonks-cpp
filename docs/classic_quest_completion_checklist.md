@@ -142,6 +142,7 @@ Check a stage only when all applicable items are true:
   - [ ] Stomp damage and stomp immunity are consistent across enemies, props, and carried/thrown items.
     - Current details: stomp requires `can_stomp`, normal condition, downward velocity, not held, and not hanging; targets require `can_be_stomped`, non-impassable, collidable, normal condition, and not hanging.
     - Base stomp damage is `1`; spike shoes raise stomp damage through the effect modifier path.
+    - Fixed in current pass: generated chest/key chest placement no longer starts half embedded, and thrown chest/key chest projectile contact now applies `1` damage.
     - Remaining audit: verify every intended prop/item/enemy archetype has correct `can_be_stomped`/`can_stomp` flags.
   - [x] Crush/telefrag/explosion deaths still route through normal death callbacks so favor, meathead, and effects work.
 
@@ -195,9 +196,12 @@ Check a stage only when all applicable items are true:
 
 - [ ] Loot/shop/item pools are audited.
   - [ ] Chest random item pool matches intended Classic/HD item availability.
-  - [ ] Box contents match intended Classic/HD crate odds.
+  - [x] Box contents match intended ClassicHD crate odds.
+    - Uses ClassicHD's actual open-crate sequential roll order, with `Shotgun` intentionally substituted by implemented `Pistol`.
+    - Final common fallback matches ClassicHD and the HD/2 crate shape: `1/2` `RopePile`, otherwise guaranteed `BombBag`.
   - [ ] Passive item generation odds are audited, including Spectacles in shops, crates/chests, sacrifice rewards, and generated loot.
   - [ ] Shop category pools match ClassicHD categories: general, bomb, weapon, rare, clothing, craps, and kissing.
+    - Current YAML shop pools are weighted approximations, not exact sequential ClassicHD roll logic.
   - [ ] Sacrifice reward pool and favor thresholds are intentionally documented versus Classic/HD.
   - [ ] Items that are intentionally Splonks-only are excluded from Classic generation unless explicitly marked as an adaptation.
 

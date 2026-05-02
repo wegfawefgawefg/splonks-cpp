@@ -98,12 +98,17 @@ struct CrusherTrapTestLevelConfig {
     int squisher_sensor_tiles = 0;
 };
 
+struct LightingStressTestLevelConfig {
+    int moving_light_count = 128;
+};
+
 struct DebugLevelConfig {
     DebugLevelKind kind = DebugLevelKind::HangTest;
     HangTestLevelConfig hang_test;
     BorderTestLevelConfig border_test;
     MazeDoorTestLevelConfig maze_door_test;
     CrusherTrapTestLevelConfig crusher_trap_test;
+    LightingStressTestLevelConfig lighting_stress_test;
 };
 
 struct DebugOverlayState {

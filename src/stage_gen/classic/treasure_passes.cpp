@@ -150,8 +150,8 @@ std::optional<Vec2> FindKeyChestSpawnPos(const Stage& stage) {
         }
 
         const Vec2 spawn_pos =
-            Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize) + 8),
-                      static_cast<float>(tile_y * static_cast<int>(kTileSize) - 8));
+            Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
+                      static_cast<float>(tile_y * static_cast<int>(kTileSize)));
         if (!HasSpawnAtWorldPos(stage, spawn_pos)) {
             return spawn_pos;
         }
@@ -359,13 +359,14 @@ void AddMinesTreasure(Stage& stage, int level_number) {
 
             const Vec2 item_pos = tile_pos + Vec2::New(8.0F, -4.0F);
             const Vec2 stack_pos = tile_pos + Vec2::New(8.0F, -8.0F);
+            const Vec2 chest_pos = tile_pos;
             const Vec2 box_pos = tile_pos + Vec2::New(2.0F, -12.0F);
             const Vec2 web_pos = tile_pos + Vec2::New(0.0F, -16.0F);
             const Vec2 bones_pos = tile_pos + Vec2::New(0.0F, -16.0F);
             const Vec2 skull_pos = tile_pos + Vec2::New(12.0F, -4.0F);
             if (HasSpawnAtWorldPos(stage, item_pos) || HasSpawnAtWorldPos(stage, stack_pos) ||
-                HasSpawnAtWorldPos(stage, box_pos) || HasSpawnAtWorldPos(stage, bones_pos) ||
-                HasSpawnAtWorldPos(stage, skull_pos)) {
+                HasSpawnAtWorldPos(stage, chest_pos) || HasSpawnAtWorldPos(stage, box_pos) ||
+                HasSpawnAtWorldPos(stage, bones_pos) || HasSpawnAtWorldPos(stage, skull_pos)) {
                 continue;
             }
 
@@ -394,7 +395,7 @@ void AddMinesTreasure(Stage& stage, int level_number) {
                 } else if (rng::RandomIntInclusive(1, 10) == 1) {
                     AddAmbientSpawn(stage, EntityType::Box, box_pos);
                 } else if (rng::RandomIntInclusive(1, 15) == 1) {
-                    AddAmbientSpawn(stage, EntityType::Chest, stack_pos);
+                    AddAmbientSpawn(stage, EntityType::Chest, chest_pos);
                 } else if (!HasSpawnType(stage, EntityType::Damsel) &&
                            rng::RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntityType::Damsel, stack_pos);

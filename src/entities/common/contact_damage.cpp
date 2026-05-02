@@ -1,7 +1,7 @@
 #include "entities/common/common.hpp"
 
 #include "effects.hpp"
-#include "tile_source_data.hpp"
+#include "tile_contact_data.hpp"
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
 
@@ -77,34 +77,34 @@ bool CanProjectileImpactWithoutDamage(const Entity& target) {
            target.condition == EntityCondition::Dead;
 }
 
-AABB GetTileSourceCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
-                                const TileSourceData& tile_source_data, const Vec2& anchor) {
-    FrameRect cbox = tile_source_data.cbox;
+AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
+                                 const TileContactData& tile_contact_data, const Vec2& anchor) {
+    FrameRect cbox = tile_contact_data.cbox;
     const TileRotation rotation = GetTileRotationForQuery(stage, tile_query);
     constexpr int kTileSizePx = static_cast<int>(kTileSize);
     switch (rotation) {
     case kTileRotation90:
         cbox = FrameRect{
-            .x = kTileSizePx - (tile_source_data.cbox.y + tile_source_data.cbox.h),
-            .y = tile_source_data.cbox.x,
-            .w = tile_source_data.cbox.h,
-            .h = tile_source_data.cbox.w,
+            .x = kTileSizePx - (tile_contact_data.cbox.y + tile_contact_data.cbox.h),
+            .y = tile_contact_data.cbox.x,
+            .w = tile_contact_data.cbox.h,
+            .h = tile_contact_data.cbox.w,
         };
         break;
     case kTileRotation180:
         cbox = FrameRect{
-            .x = kTileSizePx - (tile_source_data.cbox.x + tile_source_data.cbox.w),
-            .y = kTileSizePx - (tile_source_data.cbox.y + tile_source_data.cbox.h),
-            .w = tile_source_data.cbox.w,
-            .h = tile_source_data.cbox.h,
+            .x = kTileSizePx - (tile_contact_data.cbox.x + tile_contact_data.cbox.w),
+            .y = kTileSizePx - (tile_contact_data.cbox.y + tile_contact_data.cbox.h),
+            .w = tile_contact_data.cbox.w,
+            .h = tile_contact_data.cbox.h,
         };
         break;
     case kTileRotation270:
         cbox = FrameRect{
-            .x = tile_source_data.cbox.y,
-            .y = kTileSizePx - (tile_source_data.cbox.x + tile_source_data.cbox.w),
-            .w = tile_source_data.cbox.h,
-            .h = tile_source_data.cbox.w,
+            .x = tile_contact_data.cbox.y,
+            .y = kTileSizePx - (tile_contact_data.cbox.x + tile_contact_data.cbox.w),
+            .w = tile_contact_data.cbox.h,
+            .h = tile_contact_data.cbox.w,
         };
         break;
     case kTileRotation0:
@@ -122,8 +122,8 @@ AABB GetTileSourceCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& 
     return GetNearestWorldAabb(stage, anchor, cbox_aabb);
 }
 
-bool HasAuthoredTileCbox(const TileSourceData& tile_source_data) {
-    return tile_source_data.cbox.w > 0 && tile_source_data.cbox.h > 0;
+bool HasAuthoredTileCbox(const TileContactData& tile_contact_data) {
+    return tile_contact_data.cbox.w > 0 && tile_contact_data.cbox.h > 0;
 }
 
 bool EntityIsMovingIntoSpike(const Entity& entity, TileRotation spike_rotation) {
@@ -288,9 +288,9 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics,
                 continue;
             }
 
-            const TileSourceData* const tile_source_data =
-                GetTileSourceData(graphics, *tile_query.tile, tile_query.tile_pos);
-            if (tile_source_data == nullptr || !HasAuthoredTileCbox(*tile_source_data)) {
+            const TileContactData* const tile_contact_data =
+                GetTileContactData(graphics.tile_contact_db, *tile_query.tile, tile_query.tile_pos);
+            if (tile_contact_data == nullptr || !HasAuthoredTileCbox(*tile_contact_data)) {
                 if (spike_rotation != kTileRotation0 || in_top_portion_of_tile ||
                     override_tile_portion_check) {
                     hit_spikes = true;
@@ -298,10 +298,10 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics,
                 continue;
             }
 
-            const AABB spike_cbox_aabb = GetTileSourceCboxWorldAabb(
+            const AABB spike_cbox_aabb = GetTileContactCboxWorldAabb(
                 state.stage,
                 tile_query,
-                *tile_source_data,
+                *tile_contact_data,
                 entity.GetCenter()
             );
             if (AabbsIntersect(entity_aabb, spike_cbox_aabb)) {

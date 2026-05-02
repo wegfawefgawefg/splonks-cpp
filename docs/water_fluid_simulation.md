@@ -132,6 +132,57 @@ Initial rules:
 - Water-specific entities, like piranhas, may still use water query helpers in their own content logic.
 - Fluids render as a late transparent pass over terrain/entities.
 
+## Gameplay Interaction Plan
+
+Current state:
+
+- Terrain/fluid overlap already refreshes `TileArchetype::effect_while_inside` for entities through common entity contact.
+- `WaterSwim` and `WaterTop` both apply `EffectId::InWater`.
+- `InWater` currently has no modifiers or event behavior, so water is visible but mostly non-interactive.
+
+ClassicHD reference behavior:
+
+- Player contact with `oWaterSwim` enters a `swimming` state, plays a splash once on entry, and spawns splash particles.
+- Water/lava checks are point-based around the player center/feet, not full rigid-body liquid physics.
+- Player water contact resets fall danger and applies vertical damping/friction. Jumping from `WaterTop` applies an upward swim/jump impulse; it does not simply mark the player as grounded.
+- Enemies and damsels switch from normal gravity to water gravity while their center is in `oWaterSwim` (`0.6` normal to `0.2` water in the local ClassicHD source).
+- Piranhas/fish are content-specific water actors and should keep using water query helpers.
+
+Splonks target behavior:
+
+1. Keep water driven by `EffectId::InWater`.
+   The engine/query side should only refresh tile/fluid effects. It should not contain water-specific movement rules.
+
+2. Add effect modifier targets for water-relevant common physics:
+   - vertical damping / friction scale;
+   - horizontal damping / friction scale if needed;
+   - max fall speed or downward velocity clamp if tuning needs it;
+   - optional stomp damage multiplier so water can disable stomps without special-casing water in stomp code.
+
+3. Give `InWater` default modifiers:
+   - lower effective gravity for normal entities;
+   - damp vertical velocity strongly while falling;
+   - optionally damp projectile/body impacts enough that thrown items stop being lethal underwater.
+
+4. Player control should read `HasEffect(player, EffectId::InWater)` for swim-specific input:
+   - reset `fall_timer` while in water;
+   - close/disable cape-like fall gear while in water;
+   - on jump press, apply a swim impulse upward;
+   - if only the surface is intended to be jumpable, derive an `at_water_surface` helper from fluid amount / exposed top edge instead of faking `grounded`.
+
+5. Add effect enter/exit handling for feedback:
+   - first frame entering water plays splash and spawns splash particles;
+   - while in water, spawn occasional bubbles;
+   - leaving water does not need a separate physics state if the refreshed effect expires naturally after a couple frames.
+
+6. Lava should use the same shape later:
+   - `EffectId::InLava` or a generic tile damage/burning effect;
+   - lava-specific death/burn logic lives in effect/content code, not collision engine code.
+
+7. Debug/tuning pass:
+   - add water movement sliders for gravity scale, vertical damping, swim impulse, max fall speed, and surface threshold;
+   - add a water test room with player, piranha, carried items, thrown items, enemies, bombs, and a shallow/deep pool.
+
 Terraria byte-liquid reference notes:
 
 - Terraria's runtime update first tries to fill the cell below by its full remaining capacity, up to `255`, before doing horizontal equalization.

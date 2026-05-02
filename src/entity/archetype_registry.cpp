@@ -22,6 +22,7 @@
 #include "entities/crown.hpp"
 #include "entities/crystal_skull.hpp"
 #include "entities/damsel.hpp"
+#include "entities/debug_moving_light.hpp"
 #include "entities/dice.hpp"
 #include "entities/door.hpp"
 #include "entities/dvdlogo.hpp"
@@ -285,6 +286,11 @@ void PopulateEntityArchetypesTable() {
     SetArchetype(EntityType::Hawkman, entities::hawkman::kHawkmanArchetype, "Hawkman");
     SetArchetype(EntityType::FlappyBee, entities::flappy_bee::kFlappyBeeArchetype, "FlappyBee");
     SetArchetype(EntityType::FleshGuy, entities::flesh_guy::kFleshGuyArchetype, "FleshGuy");
+    SetArchetype(
+        EntityType::DebugMovingLight,
+        entities::debug_moving_light::kDebugMovingLightArchetype,
+        "DebugMovingLight"
+    );
     g_entity_archetypes_populated = true;
 }
 

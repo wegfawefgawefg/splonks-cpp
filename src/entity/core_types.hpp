@@ -150,13 +150,14 @@ enum class EntityType {
     Sign,
     FlappyBee,
     FleshGuy,
+    DebugMovingLight,
 };
 
 constexpr std::size_t EntityTypeIndex(EntityType type_) {
     return static_cast<std::size_t>(type_);
 }
 
-constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::FleshGuy) + 1;
+constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::DebugMovingLight) + 1;
 
 constexpr bool IsPlayerLikeEntityType(EntityType type_) {
     return type_ == EntityType::Player || type_ == EntityType::FlappyBee ||

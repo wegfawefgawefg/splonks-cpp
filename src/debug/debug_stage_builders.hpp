@@ -21,6 +21,7 @@ Stage MakeTrapDoorTestStage();
 Stage MakeMonkeyTestStage();
 Stage MakeCrusherTrapTestStage();
 Stage MakeWaterPiranhaTestStage();
+Stage MakeLightingStressTestStage();
 
 void InitHangTestStage(State& state);
 void InitStompTestStage(State& state);
@@ -39,5 +40,6 @@ void InitTrapDoorTestStage(State& state);
 void InitMonkeyTestStage(State& state);
 void InitCrusherTrapTestStage(State& state);
 void InitWaterPiranhaTestStage(State& state);
+void InitLightingStressTestStage(State& state);
 
 } // namespace splonks

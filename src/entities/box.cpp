@@ -176,6 +176,9 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     const Vec2 spawn_pos = box.pos;
     SpawnBreakawayContainerShards(box.GetCenter(), state);
 
+    // Matches ClassicHD's actual open-crate roll order, with unimplemented Shotgun
+    // intentionally substituted by Pistol for now. HD/2 use the same common
+    // tail shape: 1/2 RopePile, otherwise guaranteed BombBag.
     if (RandInclusive(1, 500) == 1) {
         SpawnEntityAtTopLeft(EntityType::JetPack, spawn_pos, state);
     } else if (RandInclusive(1, 200) == 1) {
@@ -212,8 +215,10 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
         SpawnEntityAtTopLeft(EntityType::Compass, spawn_pos, state);
     } else if (RandInclusive(1, 10) == 1) {
         SpawnEntityAtTopLeft(EntityType::Parachute, spawn_pos, state);
-    } else {
+    } else if (RandInclusive(1, 2) == 1) {
         SpawnEntityAtTopLeft(EntityType::RopePile, spawn_pos, state);
+    } else {
+        SpawnEntityAtTopLeft(EntityType::BombBag, spawn_pos, state);
     }
 }
 

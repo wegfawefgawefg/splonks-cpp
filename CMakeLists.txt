@@ -143,6 +143,7 @@ add_executable(splonks-cpp
     src/debug/playback_ui_settings.cpp
     src/debug/debug_stage_basic.cpp
     src/debug/debug_stage_boulder_sacrifice.cpp
+    src/debug/debug_stage_lighting.cpp
     src/debug/debug_stage_platforms.cpp
     src/debug/debug_stage_scenarios.cpp
     src/debug/debug_stage_traps.cpp
@@ -175,6 +176,7 @@ add_executable(splonks-cpp
     src/entities/chest.cpp
     src/entities/cobra.cpp
     src/entities/craps_table.cpp
+    src/entities/debug_moving_light.cpp
     src/entities/jaws.cpp
     src/entities/crystal_skull.cpp
     src/entities/bones.cpp
@@ -346,6 +348,7 @@ add_executable(splonks-cpp
     src/particles/system.cpp
     src/tile.cpp
     src/tile_archetype.cpp
+    src/tile_contact_data.cpp
     src/tile_source_data.cpp
     src/utils.cpp
     src/controls.cpp
