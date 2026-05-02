@@ -25,6 +25,7 @@ struct StagePassConfig {
 struct WeightedEntityEntry {
     EntityType entity_type = EntityType::None;
     int weight = 1;
+    bool unique = false;
 };
 
 struct EntityPoolConfig {

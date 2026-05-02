@@ -26,7 +26,7 @@ Check a stage only when all applicable items are true:
 
 - [ ] `classic_mines_1` / `1-1` / Mines
   - Data loads and current gameplay is furthest along.
-  - Needs final parity audit for enemy/object odds, pots/crates, snake pit odds, shop odds, altar odds, idol/tiki path, and treasure placement.
+  - Needs final parity audit for missing HD Mines features: ghost pressure, scorpion, camera, powder box, darkness/torch/scarab behavior, and spider-heavy level feeling.
 
 ### `classic_mines_1` Sub Checklist
 
@@ -60,6 +60,12 @@ Check a stage only when all applicable items are true:
   - Odds match ClassicHD: giant spider level pre-roll `1/6`, giant spider ceiling placement `1/40`, dark lamp `1/60`, dark scarab `1/40`, bat `1/60`, spider hang `1/80`, snake `1/60`, caveman `1/800`.
   - Cobra is not part of ClassicHD ambient Mines generation; our cobra remains only as an intentional HD-flavored room glyph roll on Mines `S`, not in ambient spawning.
 
+- [ ] HD Mines enemy/content additions are implemented.
+  - [ ] `Scorpion` exists as a real entity and can appear in Mines with the intended HD/Classic odds.
+  - [ ] `Camera` exists as a usable item/weapon and appears in appropriate loot/shop pools.
+  - [ ] `Ghost` exists as the real Spelunky ghost pressure system, not the old `GhostBall`.
+    - Needs timer spawn, instant-kill contact, Crystal Skull trigger, altar-curse trigger, and gem-to-diamond conversion behavior.
+
 - [x] Mines floor treasure/object odds are audited.
   - Matched against `SpelunkyClassicHD/scripts/scrTreasureGen/scrTreasureGen.gml`.
   - Open-floor early rolls match: rock `1/100`, pot/jar `1/40`.
@@ -86,6 +92,11 @@ Check a stage only when all applicable items are true:
   - Lowercase `s` matches ClassicHD: `10%` snake, otherwise `50%` solid cave dirt.
   - Uppercase `S` intentionally remains an HD-content deviation: `80%` snake, `20%` cobra.
 
+- [ ] Mines level feelings/events are audited.
+  - [x] Snake pit: "I hear snakes...I hate snakes!" generation is implemented and audited.
+  - [ ] Spider-heavy event: "My skin is crawling..." needs spider/cocoon/web generation parity and any message/background treatment we want.
+  - [ ] Darkness event: "I can't see a thing..." needs darkness selection odds, torch/lamp behavior, scarab behavior, lighting rules, and the level message.
+
 - [x] Shop generation is audited.
   - Matched against ClassicHD `scrLevelGen`: shops require `currLevel > 1`, roll `rand(1, currLevel) <= 2`, and select one eligible side room adjacent to a main/drop room.
   - `classic_mines_1` therefore correctly has no random shop; Mines 2+ can place shops with ClassicHD's level-dependent chance.
@@ -110,6 +121,12 @@ Check a stage only when all applicable items are true:
   - `arrow_trap_conversion` turns eligible `Block` spawns into tile-sized impassable `ArrowTrap` entities with left/right facing.
   - ClassicHD trap sensor behavior was matched: horizontal strip from the trap face toward the first solid, capped at `96 px`, minimum `32 px`, one-shot fire on a moving entity in the strip.
   - `Arrow` is now a normal content entity with projectile damage, gravity, tile sticking, and entity contact cleanup.
+
+- [ ] Mines trap/hazard set is complete.
+  - [x] Spikes behave correctly with fall/contact edge cases and spike shoes.
+  - [x] Arrow traps generate and behave correctly.
+  - [x] Boulder trap exists through the idol/tiki/boulder path.
+  - [ ] `PowderBox` exists and behaves as an explosive crate/trap with correct spawn odds.
 
 - [x] Altar generation and sacrifice behavior is audited for Mines.
   - Matched Mines altar placement against ClassicHD `scrRoomGen`: side rooms only, `currLevel > 1`, one altar max, sequential `1/16` roll across eligible side rooms.
@@ -200,6 +217,7 @@ Check a stage only when all applicable items are true:
     - Uses ClassicHD's actual open-crate sequential roll order, with `Shotgun` intentionally substituted by implemented `Pistol`.
     - Final common fallback matches ClassicHD and the HD/2 crate shape: `1/2` `RopePile`, otherwise guaranteed `BombBag`.
   - [ ] Passive item generation odds are audited, including Spectacles in shops, crates/chests, sacrifice rewards, and generated loot.
+  - [ ] Camera availability is audited across crates/chests/shops once the camera item exists.
   - [ ] Shop category pools match ClassicHD categories: general, bomb, weapon, rare, clothing, craps, and kissing.
     - Current YAML shop pools are weighted approximations, not exact sequential ClassicHD roll logic.
   - [ ] Sacrifice reward pool and favor thresholds are intentionally documented versus Classic/HD.
@@ -301,6 +319,14 @@ Check a stage only when all applicable items are true:
 
 - [ ] Several Classic entities intentionally exist as `NoSprite` unimplemented archetype stubs.
   - These keep data spawnable, but stages using them cannot be marked complete until behavior is implemented or intentionally substituted.
+
+- [ ] HD Mines blockers are explicitly tracked.
+  - [ ] Scorpion.
+  - [ ] Camera item.
+  - [ ] Real ghost system.
+  - [ ] Powder box.
+  - [ ] Darkness/torch/scarab level feeling.
+  - [ ] Spider-heavy level feeling.
 
 - [ ] Water and lava are currently tile mappings, but need final gameplay behavior.
   - Likely needs a shop-area-style watcher entity or a lightweight fluid area system so broken containers can drain/clear correctly.

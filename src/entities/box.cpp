@@ -45,6 +45,10 @@ void SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     entity->vel = Vec2::New(0.0F, 0.0F);
 }
 
+EntityType RandomTeleporterVariant() {
+    return RandInclusive(1, 2) == 1 ? EntityType::Teleporter : EntityType::TeleporterBackpack;
+}
+
 void StepControlledBox(Entity& box, const controls::ControlIntent& control) {
     if (box.attack_delay_countdown > 0) {
         box.attack_delay_countdown -= 1;
@@ -189,7 +193,7 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     } else if (RandInclusive(1, 100) == 1) {
         SpawnEntityAtTopLeft(EntityType::Mattock, spawn_pos, state);
     } else if (RandInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Teleporter, spawn_pos, state);
+        SpawnEntityAtTopLeft(RandomTeleporterVariant(), spawn_pos, state);
     } else if (RandInclusive(1, 90) == 1) {
         SpawnEntityAtTopLeft(EntityType::Gloves, spawn_pos, state);
     } else if (RandInclusive(1, 90) == 1) {

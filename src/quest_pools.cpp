@@ -112,11 +112,14 @@ ItemPoolDb LoadItemPoolDb(const std::string& quest_root_path, const std::string&
         }
         if (in_entries && indent == 8 && current_entry != nullptr) {
             const auto [key, value] = SplitKeyValue(trimmed, path, line_number);
-            if (key != "weight") {
+            if (key == "weight") {
+                current_entry->weight = ParseInt(value, path, line_number);
+            } else if (key == "unique") {
+                current_entry->unique = ParseBool(value, path, line_number);
+            } else {
                 throw std::runtime_error(path + ":" + std::to_string(line_number) +
                                          ": unknown pool entry field: " + key);
             }
-            current_entry->weight = ParseInt(value, path, line_number);
             continue;
         }
         throw std::runtime_error(path + ":" + std::to_string(line_number) +

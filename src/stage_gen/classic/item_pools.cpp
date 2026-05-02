@@ -66,7 +66,8 @@ EntityType PickEntityFromPool(const EntityPoolConfig* pool, std::string_view poo
         if (entry.entity_type == EntityType::None) {
             continue;
         }
-        if (pool->unique && HasSpawnType(stage, room_spawns, entry.entity_type)) {
+        if ((pool->unique || entry.unique) &&
+            HasSpawnType(stage, room_spawns, entry.entity_type)) {
             continue;
         }
         candidates.push_back(entry);

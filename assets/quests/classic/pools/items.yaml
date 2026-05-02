@@ -3,36 +3,53 @@ pools:
     entries:
       - entity: jetpack
         weight: 1
+        unique: true
       - entity: cape
         weight: 1
+        unique: true
       - entity: mattock
         weight: 1
+        unique: true
       - entity: teleporter
         weight: 1
+        unique: true
+      - entity: teleporter_backpack
+        weight: 1
+        unique: true
       - entity: gloves
         weight: 1
+        unique: true
       - entity: spectacles
         weight: 1
+        unique: true
       - entity: web_cannon
         weight: 1
+        unique: true
       - entity: pistol
         weight: 2
       - entity: mitt
         weight: 1
+        unique: true
       - entity: paste
         weight: 1
+        unique: true
       - entity: spring_shoes
         weight: 1
+        unique: true
       - entity: spike_shoes
         weight: 1
+        unique: true
       - entity: machete
         weight: 1
+        unique: true
       - entity: bomb_box
         weight: 1
       - entity: bow
         weight: 1
+        unique: true
       - entity: compass
         weight: 1
+        unique: true
       - entity: parachute
         weight: 1
       - entity: rope_pile
@@ -41,34 +58,50 @@ pools:
     entries:
       - entity: jetpack
         weight: 1
+        unique: true
       - entity: cape
         weight: 1
+        unique: true
       - entity: gloves
         weight: 2
+        unique: true
       - entity: teleporter
         weight: 2
+        unique: true
+      - entity: teleporter_backpack
+        weight: 2
+        unique: true
       - entity: mattock
         weight: 3
+        unique: true
       - entity: paste
         weight: 3
+        unique: true
       - entity: spring_shoes
         weight: 3
+        unique: true
       - entity: spike_shoes
         weight: 3
+        unique: true
       - entity: compass
         weight: 3
+        unique: true
       - entity: pistol
         weight: 4
       - entity: machete
         weight: 3
+        unique: true
   - id: general_shop_items
     entries:
       - entity: mattock
         weight: 1
+        unique: true
       - entity: gloves
         weight: 2
+        unique: true
       - entity: compass
         weight: 2
+        unique: true
       - entity: bomb_bag
         weight: 8
       - entity: rope_pile
@@ -79,6 +112,7 @@ pools:
     entries:
       - entity: paste
         weight: 1
+        unique: true
       - entity: bomb_box
         weight: 4
       - entity: bomb_bag
@@ -137,6 +171,8 @@ pools:
       - entity: cape
         weight: 2
       - entity: teleporter
+        weight: 2
+      - entity: teleporter_backpack
         weight: 2
       - entity: spike_shoes
         weight: 3

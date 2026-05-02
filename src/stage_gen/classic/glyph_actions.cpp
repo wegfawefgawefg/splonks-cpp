@@ -67,6 +67,7 @@ std::uint32_t GetClassicShopBasePrice(EntityType type_) {
     case EntityType::Mattock:
         return 8000;
     case EntityType::Teleporter:
+    case EntityType::TeleporterBackpack:
         return 10000;
     case EntityType::BombBox:
         return 10000;
