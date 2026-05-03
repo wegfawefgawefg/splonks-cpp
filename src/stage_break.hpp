@@ -14,7 +14,8 @@ void BreakStageTilesInRectWc(
     State& state,
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound = std::nullopt,
-    bool suppress_tile_break_sound = false
+    bool suppress_tile_break_sound = false,
+    bool suppress_network_event = false
 );
 
 void BreakStageTilesAtCoords(
@@ -22,7 +23,8 @@ void BreakStageTilesAtCoords(
     State& state,
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound = std::nullopt,
-    bool suppress_tile_break_sound = false
+    bool suppress_tile_break_sound = false,
+    bool suppress_network_event = false
 );
 
 } // namespace splonks

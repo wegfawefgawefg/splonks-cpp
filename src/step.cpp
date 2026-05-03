@@ -11,6 +11,9 @@
 #include "stage_fluids.hpp"
 #include "stage_lighting.hpp"
 #include "stage_rotation.hpp"
+#include "network/net_event_apply.hpp"
+#include "network/net_lobby.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 
@@ -23,6 +26,26 @@ constexpr std::uint32_t kGameOverHitstopFrames = 8;
 constexpr std::uint32_t kGameOverSlowmoFrames = 60 * 3;
 constexpr float kPlayerLampLightStrength = 1.45F;
 constexpr int kPlayerLampLightRadius = 13;
+constexpr std::uint32_t kNetworkStageTransitionFrames = 60;
+
+std::uint32_t MakeNetworkTransitionSeed(const State& state) {
+    return (state.frame + 1U) ^ (state.stage_frame << 7U) ^ 0x6D2B79F5U;
+}
+
+void ApplyPendingStageTransitionNow(State& state, Graphics& graphics) {
+    if (state.net_session.role != network::NetRole::Offline &&
+        state.pending_stage_transition.has_value() &&
+        state.pending_stage_transition->destination.kind == StageLoadTargetKind::QuestStage &&
+        !state.pending_stage_transition->seed.has_value()) {
+        state.pending_stage_transition->seed = MakeNetworkTransitionSeed(state);
+    }
+
+    ApplyPendingStageTransition(state);
+    graphics.ResetTileVariations();
+    InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
+    network::NotifyStageLoaded(state);
+}
 
 float GetSimulationTickInterval(const State& state) {
     if (state.mode == Mode::GameOver && state.scene_frame < kGameOverSlowmoFrames) {
@@ -95,6 +118,102 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
     return graphics.camera.target;
 }
 
+void DrainAndApplyLocalNetworkEvents(State& state, Audio& audio, Graphics& graphics) {
+    if (state.net_session.role == network::NetRole::Offline ||
+        state.net_session.role == network::NetRole::Coordinator) {
+        (void)state.net_session.DrainPendingLocalEventsToOrdered();
+    }
+    (void)network::ApplyOrderedEvents(state.net_session, state, &audio, &graphics);
+}
+
+void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, float dt) {
+    bool stepped_any_player_slot = false;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connection_kind != PlayerConnectionKind::Local) {
+            continue;
+        }
+        if (!slot.entity_vid.has_value()) {
+            continue;
+        }
+
+        Entity* const entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        if (entity == nullptr || !entity->active || entity->control_logic == nullptr) {
+            continue;
+        }
+
+        entity->control_logic(entity->vid.id, state, graphics, audio, dt);
+        stepped_any_player_slot = true;
+    }
+
+    if (stepped_any_player_slot) {
+        return;
+    }
+
+    if (state.controlled_entity_vid.has_value()) {
+        if (Entity* const controlled = state.entity_manager.GetEntityMut(*state.controlled_entity_vid)) {
+            if (controlled->active && controlled->control_logic != nullptr) {
+                controlled->control_logic(controlled->vid.id, state, graphics, audio, dt);
+            }
+        }
+    }
+}
+
+ButtonState MakeDebugBotButtonState(bool down, bool previous_down) {
+    return ButtonState{
+        .down = down,
+        .pressed = down && !previous_down,
+        .released = !down && previous_down,
+    };
+}
+
+PlayingInputs MakeDebugBotInputs(DebugLocalPlayerBot& bot) {
+    if (bot.retarget_frames <= 0) {
+        bot.move_dir = rng::RandomIntInclusive(-1, 1);
+        bot.retarget_frames = rng::RandomIntInclusive(24, 90);
+    } else {
+        bot.retarget_frames -= 1;
+    }
+
+    bool jump_down = false;
+    if (bot.jump_cooldown_frames > 0) {
+        bot.jump_cooldown_frames -= 1;
+    } else if (bot.allow_jump && rng::RandomIntInclusive(1, 45) == 1) {
+        jump_down = true;
+        bot.jump_cooldown_frames = rng::RandomIntInclusive(20, 70);
+    }
+
+    const bool left_down = bot.enabled && bot.move_dir < 0;
+    const bool right_down = bot.enabled && bot.move_dir > 0;
+    const bool run_down = bot.enabled && rng::RandomIntInclusive(1, 5) == 1;
+
+    PlayingInputs inputs = PlayingInputs::New();
+    inputs.left = MakeDebugBotButtonState(left_down, bot.previous_inputs.left.down);
+    inputs.right = MakeDebugBotButtonState(right_down, bot.previous_inputs.right.down);
+    inputs.jump = MakeDebugBotButtonState(bot.enabled && jump_down, bot.previous_inputs.jump.down);
+    inputs.run = MakeDebugBotButtonState(run_down, bot.previous_inputs.run.down);
+    if (bot.allow_tools) {
+        const bool attack_down = bot.enabled && rng::RandomIntInclusive(1, 180) == 1;
+        const bool bomb_down = bot.enabled && rng::RandomIntInclusive(1, 420) == 1;
+        const bool rope_down = bot.enabled && rng::RandomIntInclusive(1, 420) == 1;
+        inputs.attack = MakeDebugBotButtonState(attack_down, bot.previous_inputs.attack.down);
+        inputs.bomb = MakeDebugBotButtonState(bomb_down, bot.previous_inputs.bomb.down);
+        inputs.rope = MakeDebugBotButtonState(rope_down, bot.previous_inputs.rope.down);
+    }
+    inputs.mouse_pos = bot.previous_inputs.mouse_pos;
+    bot.previous_inputs = inputs;
+    return inputs;
+}
+
+void StepDebugLocalPlayerBots(State& state) {
+    for (DebugLocalPlayerBot& bot : state.debug_local_player_bots) {
+        if (!state.players.Find(bot.player_id)) {
+            continue;
+        }
+        PlayingInputs inputs = bot.enabled ? MakeDebugBotInputs(bot) : PlayingInputs::New();
+        state.players.SetInputsForPlayer(bot.player_id, inputs, inputs);
+    }
+}
+
 } // namespace
 
 void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
@@ -165,13 +284,8 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     RefreshPlayableCharacterLamp(state);
     StepTransientLights(state);
     LatchPlayingInputsForTick(state);
-    if (state.controlled_entity_vid.has_value()) {
-        if (Entity* const controlled = state.entity_manager.GetEntityMut(*state.controlled_entity_vid)) {
-            if (controlled->active && controlled->control_logic != nullptr) {
-                controlled->control_logic(controlled->vid.id, state, graphics, audio, dt);
-            }
-        }
-    }
+    StepDebugLocalPlayerBots(state);
+    StepPlayerSlotControls(state, graphics, audio, dt);
     state.contact.ClearEntityContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
@@ -185,6 +299,8 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
+    network::StepNetworkLobby(state, graphics);
+    DrainAndApplyLocalNetworkEvents(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
@@ -232,7 +348,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         state.SetMode(Mode::GameOver);
     } else if (state.pending_stage_transition.has_value()) {
         StopAllSoundEmitters(state, audio);
-        state.mode = Mode::StageTransition;
+        state.SetMode(Mode::StageTransition);
         state.frame = 0;
     }
 
@@ -244,12 +360,21 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
 }
 
 void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
-    (void)state;
     (void)audio;
-    (void)graphics;
-    // figure out what stage comes next,
-    // set up the game state.
-    // fall the player in.
+    if (state.net_session.role == network::NetRole::Offline) {
+        return;
+    }
+    if (!state.pending_stage_transition.has_value()) {
+        state.SetMode(Mode::Win);
+        return;
+    }
+    if (state.scene_frame < kNetworkStageTransitionFrames) {
+        return;
+    }
+
+    ApplyPendingStageTransitionNow(state, graphics);
+    state.scene_frame = 0;
+    state.SetMode(Mode::Playing);
 }
 
 void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
@@ -266,6 +391,8 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.RebuildSid(graphics);
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     StepEntities(state, audio, graphics, dt);
+    network::StepNetworkLobby(state, graphics);
+    DrainAndApplyLocalNetworkEvents(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
@@ -275,6 +402,9 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     }
     state.stage.AttenuateTileShake(kShakeAttenuationRate);
     state.particles.Step(graphics.frame_data_db, dt);
+    state.frame += 1;
+    state.stage_frame += 1;
+    state.scene_frame += 1;
 }
 
 void StepWin(State& state, Audio& audio, Graphics& graphics) {

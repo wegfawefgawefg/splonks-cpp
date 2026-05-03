@@ -42,6 +42,8 @@ struct GameplaySnapshot {
     DebugShakeBrushState debug_shake_brush;
     DebugAudioBrushState debug_audio_brush;
     DebugFluidBrushState debug_fluid_brush;
+    std::vector<DebugLocalPlayerBot> debug_local_player_bots;
+    PlayerId next_debug_local_player_id = 2;
     double now = 0.0;
     float time_since_last_update = 0.0F;
     std::uint32_t scene_frame = 0;
@@ -59,6 +61,7 @@ struct GameplaySnapshot {
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
     QuestState quest_state;
+    PlayerRegistry players;
     std::uint32_t frame_pause = 0;
     DebugLevelConfig debug_level;
     EntityManager entity_manager;
@@ -89,6 +92,7 @@ struct DebugPlayback {
     bool camera_settings_window_visible = false;
     bool performance_settings_window_visible = false;
     bool player_tuning_window_visible = false;
+    bool network_window_visible = false;
     bool recording = false;
     bool playback_active = false;
     bool pause_live_simulation = false;
@@ -128,6 +132,11 @@ struct DebugPlayback {
     int quest_stage_seed = 1;
     std::string quest_stage_status;
     std::string frame_data_reload_status;
+    int network_test_money_delta = 100;
+    int network_host_port = 42424;
+    int network_join_port = 42424;
+    std::array<char, 64> network_join_host{};
+    std::string network_status;
 
     static DebugPlayback New();
 };

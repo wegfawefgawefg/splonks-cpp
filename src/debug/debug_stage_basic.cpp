@@ -259,7 +259,7 @@ void InitMazeDoorTestStage(State& state, bool preserve_player_state) {
 
     const MazeDoorTestRoom room = state.debug_level.maze_door_test.room;
     const Vec2 spawn_pos = GetMazeDoorTestPlayerSpawn(room);
-    if (carryover.player.has_value()) {
+    if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
         PlacePlayerAtPosition(state, spawn_pos);
         SnapAttachedItemsToPlayer(state);

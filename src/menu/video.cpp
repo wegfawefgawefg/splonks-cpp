@@ -8,10 +8,11 @@
 
 namespace splonks {
 
-const std::array<UVec2, 10> kResolutions = {
+const std::array<UVec2, 11> kResolutions = {
     UVec2::New(160, 144),  UVec2::New(240, 160), UVec2::New(320, 240), UVec2::New(480, 272),
-    UVec2::New(640, 360),  UVec2::New(800, 600), UVec2::New(960, 540), UVec2::New(1280, 720),
-    UVec2::New(1600, 900), UVec2::New(1920, 1080),
+    UVec2::New(640, 360),  UVec2::New(800, 600),  UVec2::New(960, 540),
+    UVec2::New(1280, 720), UVec2::New(1600, 900), UVec2::New(1920, 540),
+    UVec2::New(1920, 1080),
 };
 
 const char* GetVideoSettingsMenuOptionName(VideoSettingsMenuOption option) {

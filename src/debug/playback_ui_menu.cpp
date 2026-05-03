@@ -82,14 +82,12 @@ void LoadClassicQuestStage(
         return;
     }
     stage_index = std::clamp(stage_index, 0, static_cast<int>(quest.stages.size()) - 1);
-    if (seed.has_value()) {
-        rng::SetSeed(*seed);
-    }
     (void)LoadQuestStage(
         state,
         quest.id,
         quest.stages[static_cast<std::size_t>(stage_index)].id,
-        preserve_player_state
+        preserve_player_state,
+        seed
     );
     ResetStageDebugState(state, graphics);
 }
@@ -162,6 +160,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Camera Settings", &debug.camera_settings_window_visible);
     ImGui::Checkbox("Performance", &debug.performance_settings_window_visible);
     ImGui::Checkbox("Player Tuning", &debug.player_tuning_window_visible);
+    ImGui::Checkbox("Network", &debug.network_window_visible);
     ImGui::Checkbox("Post FX Settings", &debug.post_fx_settings_window_visible);
     ImGui::Checkbox("Lighting Settings", &debug.lighting_settings_window_visible);
     ImGui::Checkbox("Graphics Settings", &debug.graphics_settings_window_visible);

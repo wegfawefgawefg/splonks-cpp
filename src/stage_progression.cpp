@@ -167,7 +167,8 @@ void ApplyPendingStageTransition(State& state) {
             state,
             target.destination.quest_id.data(),
             target.destination.quest_stage_id.data(),
-            target.preserve_player_state
+            target.preserve_player_state,
+            target.seed
         );
         break;
     }

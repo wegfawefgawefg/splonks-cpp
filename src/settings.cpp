@@ -51,12 +51,13 @@ float ParseFloat(const std::string& value, float fallback) {
 
 VideoSettings VideoSettings::New() {
     VideoSettings result;
-    result.resolution = UVec2::New(1920, 1080);
-    result.fullscreen = true;
+    result.resolution = UVec2::New(1920, 540);
+    result.fullscreen = false;
     result.vsync = true;
     result.resolution_options = {
-        UVec2::New(800, 600),   UVec2::New(1024, 768),  UVec2::New(1280, 720),
-        UVec2::New(1280, 1024), UVec2::New(1920, 1080),
+        UVec2::New(800, 600),   UVec2::New(960, 540),   UVec2::New(1024, 768),
+        UVec2::New(1280, 720),  UVec2::New(1280, 1024), UVec2::New(1920, 540),
+        UVec2::New(1920, 1080),
     };
     return result;
 }

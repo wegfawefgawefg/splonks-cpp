@@ -99,6 +99,7 @@ void InitCommonStageState(State& state) {
     state.entity_tools.tool_states.clear();
     state.contact = ContactBookkeeping{};
     state.particles.Clear();
+    state.players.ClearEntityRefs();
     state.player_vid.reset();
     state.controlled_entity_vid.reset();
     state.gameplay_camera_anchor_world_pos.reset();
@@ -107,79 +108,97 @@ void InitCommonStageState(State& state) {
 
 StageCarryover CaptureStageCarryover(const State& state) {
     StageCarryover carryover;
-    if (!state.player_vid.has_value()) {
-        return carryover;
-    }
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected ||
+            slot.connection_kind != PlayerConnectionKind::Local ||
+            !slot.entity_vid.has_value()) {
+            continue;
+        }
 
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        return carryover;
-    }
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+            continue;
+        }
 
-    carryover.player = *player;
-    carryover.player->holding = false;
-    carryover.player->holding_vid.reset();
-    carryover.player->back_vid.reset();
+        PlayerStageCarryover player_carryover;
+        player_carryover.player_id = slot.player_id;
+        player_carryover.player = *player;
+        player_carryover.player->holding = false;
+        player_carryover.player->holding_vid.reset();
+        player_carryover.player->back_vid.reset();
 
-    if (player->holding_vid.has_value()) {
-        if (const Entity* const held_item = state.entity_manager.GetEntity(*player->holding_vid)) {
-            if (held_item->active) {
-                carryover.held_item = *held_item;
-                carryover.player->holding_vid = held_item->vid;
-                carryover.player->holding = true;
+        if (player->holding_vid.has_value()) {
+            if (const Entity* const held_item = state.entity_manager.GetEntity(*player->holding_vid)) {
+                if (held_item->active) {
+                    player_carryover.held_item = *held_item;
+                    player_carryover.player->holding_vid = held_item->vid;
+                    player_carryover.player->holding = true;
+                }
             }
         }
-    }
 
-    if (player->back_vid.has_value()) {
-        if (const Entity* const back_item = state.entity_manager.GetEntity(*player->back_vid)) {
-            if (back_item->active) {
-                carryover.back_item = *back_item;
-                carryover.player->back_vid = back_item->vid;
+        if (player->back_vid.has_value()) {
+            if (const Entity* const back_item = state.entity_manager.GetEntity(*player->back_vid)) {
+                if (back_item->active) {
+                    player_carryover.back_item = *back_item;
+                    player_carryover.player->back_vid = back_item->vid;
+                }
             }
         }
-    }
 
-    if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player->vid)) {
-        carryover.player_tools = *tools;
+        if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player->vid)) {
+            player_carryover.player_tools = *tools;
+        }
+
+        carryover.players.push_back(player_carryover);
     }
 
     return carryover;
 }
 
 void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
-    if (!carryover.player.has_value()) {
-        return;
-    }
+    for (const PlayerStageCarryover& player_carryover : carryover.players) {
+        if (!player_carryover.player.has_value()) {
+            continue;
+        }
 
-    Entity player = *carryover.player;
-    PrepareEntityForStageEntry(player);
-    RestoreEntitySlot(state.entity_manager, player);
-    state.player_vid = player.vid;
-    state.controlled_entity_vid = player.vid;
+        Entity player = *player_carryover.player;
+        PrepareEntityForStageEntry(player);
+        RestoreEntitySlot(state.entity_manager, player);
+        state.players.AssignEntity(player_carryover.player_id, player.vid);
+        if (const PlayerSlot* const slot = state.players.Find(player_carryover.player_id);
+            slot != nullptr && slot->primary_local) {
+            state.player_vid = player.vid;
+            state.controlled_entity_vid = player.vid;
+        }
+        if (!state.player_vid.has_value()) {
+            state.player_vid = player.vid;
+            state.controlled_entity_vid = player.vid;
+        }
 
-    if (carryover.player_tools.has_value()) {
-        state.entity_tools.tool_states.push_back(*carryover.player_tools);
-    }
+        if (player_carryover.player_tools.has_value()) {
+            state.entity_tools.tool_states.push_back(*player_carryover.player_tools);
+        }
 
-    if (carryover.held_item.has_value()) {
-        Entity held_item = *carryover.held_item;
-        PrepareEntityForStageEntry(held_item);
-        held_item.held_by_vid = player.vid;
-        held_item.attachment_mode = AttachmentMode::Held;
-        held_item.has_physics = false;
-        held_item.can_collide = false;
-        RestoreEntitySlot(state.entity_manager, held_item);
-    }
+        if (player_carryover.held_item.has_value()) {
+            Entity held_item = *player_carryover.held_item;
+            PrepareEntityForStageEntry(held_item);
+            held_item.held_by_vid = player.vid;
+            held_item.attachment_mode = AttachmentMode::Held;
+            held_item.has_physics = false;
+            held_item.can_collide = false;
+            RestoreEntitySlot(state.entity_manager, held_item);
+        }
 
-    if (carryover.back_item.has_value()) {
-        Entity back_item = *carryover.back_item;
-        PrepareEntityForStageEntry(back_item);
-        back_item.held_by_vid = player.vid;
-        back_item.attachment_mode = AttachmentMode::Back;
-        back_item.has_physics = false;
-        back_item.can_collide = false;
-        RestoreEntitySlot(state.entity_manager, back_item);
+        if (player_carryover.back_item.has_value()) {
+            Entity back_item = *player_carryover.back_item;
+            PrepareEntityForStageEntry(back_item);
+            back_item.held_by_vid = player.vid;
+            back_item.attachment_mode = AttachmentMode::Back;
+            back_item.has_physics = false;
+            back_item.can_collide = false;
+            RestoreEntitySlot(state.entity_manager, back_item);
+        }
     }
 }
 
@@ -197,61 +216,76 @@ void PlacePlayerAtPosition(State& state, const Vec2& pos) {
 }
 
 void SnapAttachedItemsToPlayer(State& state) {
-    if (!state.player_vid.has_value()) {
-        return;
-    }
-
-    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
-    if (player == nullptr) {
-        return;
-    }
-
-    const Vec2 player_center = player->GetCenter();
-
-    if (player->holding_vid.has_value()) {
-        if (Entity* const held_item = state.entity_manager.GetEntityMut(*player->holding_vid)) {
-            const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
-            held_item->facing = player->facing;
-            held_item->draw_layer = DrawLayer::Foreground;
-            held_item->SetCenter(
-                player->facing == LeftOrRight::Left
-                    ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
-                    : player_center + hold_offset
-            );
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected ||
+            slot.connection_kind != PlayerConnectionKind::Local ||
+            !slot.entity_vid.has_value()) {
+            continue;
         }
-    }
 
-    if (player->back_vid.has_value()) {
-        if (Entity* const back_item = state.entity_manager.GetEntityMut(*player->back_vid)) {
-            const Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
-            back_item->facing = player->facing;
-            back_item->draw_layer = DrawLayer::Background;
-            TrySetAnimation(*back_item, EntityDisplayState::Neutral);
-            back_item->SetCenter(
-                player->facing == LeftOrRight::Left
-                    ? player_center + Vec2::New(-back_offset.x, back_offset.y)
-                    : player_center + back_offset
-            );
+        Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        if (player == nullptr) {
+            continue;
+        }
+
+        const Vec2 player_center = player->GetCenter();
+
+        if (player->holding_vid.has_value()) {
+            if (Entity* const held_item = state.entity_manager.GetEntityMut(*player->holding_vid)) {
+                const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
+                held_item->facing = player->facing;
+                held_item->draw_layer = DrawLayer::Foreground;
+                held_item->SetCenter(
+                    player->facing == LeftOrRight::Left
+                        ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
+                        : player_center + hold_offset
+                );
+            }
+        }
+
+        if (player->back_vid.has_value()) {
+            if (Entity* const back_item = state.entity_manager.GetEntityMut(*player->back_vid)) {
+                const Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
+                back_item->facing = player->facing;
+                back_item->draw_layer = DrawLayer::Background;
+                TrySetAnimation(*back_item, EntityDisplayState::Neutral);
+                back_item->SetCenter(
+                    player->facing == LeftOrRight::Left
+                        ? player_center + Vec2::New(-back_offset.x, back_offset.y)
+                        : player_center + back_offset
+                );
+            }
         }
     }
 }
 
 void SpawnPlayer(State& state, const Vec2& pos) {
+    (void)state.players.EnsurePrimaryLocalPlayer();
+    const std::optional<VID> player_vid = SpawnPlayerForPlayerId(state, kPrimaryLocalPlayerId, pos);
+    if (!player_vid.has_value()) {
+        return;
+    }
+    state.player_vid = player_vid;
+    state.controlled_entity_vid = player_vid;
+}
+
+std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos) {
     if (const std::optional<VID> player_vid = state.entity_manager.NewEntity()) {
-        state.player_vid = player_vid;
-        state.controlled_entity_vid = player_vid;
         if (Entity* const player = state.entity_manager.GetEntityMut(*player_vid)) {
             const EntityType spawn_type = GetConfiguredPlayerSpawnType(state);
             SetEntityAs(*player, spawn_type);
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
             player->acc = Vec2::New(0.0F, 0.0F);
+            state.players.AssignEntity(player_id, *player_vid);
 
             if (spawn_type == EntityType::Player) {
                 GrantPlayerStarterTools(state, *player_vid);
             }
         }
+        return player_vid;
     }
+    return std::nullopt;
 }
 
 std::optional<VID> SpawnStageEntityAtTopLeft(State& state, EntityType type_, const Vec2& pos) {

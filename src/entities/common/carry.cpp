@@ -4,6 +4,8 @@
 #include "entity/archetype.hpp"
 #include "entity/archetype_restore.hpp"
 #include "controls.hpp"
+#include "network/net_event.hpp"
+#include "network/net_session.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -30,6 +32,140 @@ void ApplyHeldState(Entity& entity) {
 
 void SnapPlacedAttachmentToPixels(Entity& entity) {
     entity.pos = Vec2::New(std::round(entity.pos.x), std::round(entity.pos.y));
+}
+
+bool IsAttachmentDriven(const Entity& entity) {
+    return entity.held_by_vid.has_value() || entity.attachment_mode != AttachmentMode::None;
+}
+
+bool HasAttachmentReference(const Entity& entity, const State& state) {
+    if (IsAttachmentDriven(entity)) {
+        return true;
+    }
+    for (const Entity& candidate_holder : state.entity_manager.entities) {
+        if (!candidate_holder.active || candidate_holder.vid == entity.vid) {
+            continue;
+        }
+        if ((candidate_holder.holding_vid.has_value() &&
+             *candidate_holder.holding_vid == entity.vid) ||
+            (candidate_holder.back_vid.has_value() &&
+             *candidate_holder.back_vid == entity.vid)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsPlayerEntity(const Entity& entity, const State& state) {
+    return state.players.FindByEntityVid(entity.vid) != nullptr;
+}
+
+bool IsVidInHolderChain(VID needle, const Entity& entity, const State& state) {
+    std::optional<VID> holder_vid = entity.held_by_vid;
+    constexpr int kMaxCarryChainDepth = 16;
+    for (int depth = 0; depth < kMaxCarryChainDepth && holder_vid.has_value(); ++depth) {
+        if (*holder_vid == needle) {
+            return true;
+        }
+        const Entity* const holder = state.entity_manager.GetEntity(*holder_vid);
+        if (holder == nullptr || !holder->active) {
+            return false;
+        }
+        holder_vid = holder->held_by_vid;
+    }
+    return false;
+}
+
+bool CanPickUpCandidate(const Entity& picker, const Entity& candidate, const State& state) {
+    if (!candidate.can_be_picked_up || candidate.vid == picker.vid) {
+        return false;
+    }
+    if (picker.back_vid.has_value() && candidate.vid == *picker.back_vid) {
+        return false;
+    }
+    if (IsAttachmentDriven(candidate)) {
+        return false;
+    }
+    if (IsVidInHolderChain(candidate.vid, picker, state)) {
+        return false;
+    }
+
+    const bool dead_or_stunned =
+        candidate.condition == EntityCondition::Dead ||
+        candidate.condition == EntityCondition::Stunned;
+    return !candidate.can_only_be_picked_up_if_dead_or_stunned || dead_or_stunned;
+}
+
+network::NetEntityId GetReplicatedEntityId(State& state, const Entity& entity) {
+    if (const std::optional<network::NetEntityId> linked =
+            state.net_session.FindNetEntityId(entity.vid)) {
+        return *linked;
+    }
+
+    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
+        const network::NetEntityId player_entity_id = network::MakePlayerNetEntityId(*player_id);
+        state.net_session.LinkEntity(player_entity_id, entity.vid);
+        return player_entity_id;
+    }
+
+    const network::NetEntityId deterministic_stage_id =
+        static_cast<network::NetEntityId>(entity.vid.id) + 1U;
+    state.net_session.LinkEntity(deterministic_stage_id, entity.vid);
+    return deterministic_stage_id;
+}
+
+void EmitHeldNetworkEvent(State& state, const Entity& holder, const Entity& held) {
+    if (state.net_session.role == network::NetRole::Offline) {
+        return;
+    }
+
+    const network::NetEntityId held_id = GetReplicatedEntityId(state, held);
+    state.net_session.SetEntityOwner(held_id, state.net_session.local_player_id);
+
+    network::NetEvent event;
+    event.header = state.net_session.MakeLocalEventHeader(state.frame);
+    event.type = network::NetEventType::EntityHeld;
+    event.payload = network::EntityHeldEvent{
+        .holder_id = GetReplicatedEntityId(state, holder),
+        .held_id = held_id,
+    };
+    state.net_session.EnqueueLocalEvent(event);
+}
+
+void EmitThrownNetworkEvent(State& state, const Entity& thrower, const Entity& thrown, Vec2 throw_velocity) {
+    if (state.net_session.role == network::NetRole::Offline) {
+        return;
+    }
+
+    const network::NetEntityId thrown_id = GetReplicatedEntityId(state, thrown);
+    state.net_session.SetEntityOwner(thrown_id, state.net_session.local_player_id);
+
+    network::NetEvent event;
+    event.header = state.net_session.MakeLocalEventHeader(state.frame);
+    event.type = network::NetEventType::EntityThrown;
+    event.payload = network::EntityThrownEvent{
+        .entity_id = thrown_id,
+        .pos = thrown.pos,
+        .vel = throw_velocity,
+        .thrower_id = GetReplicatedEntityId(state, thrower),
+    };
+    state.net_session.EnqueueLocalEvent(event);
+}
+
+void EmitDroppedNetworkEvent(State& state, const Entity& entity) {
+    if (state.net_session.role == network::NetRole::Offline) {
+        return;
+    }
+
+    network::NetEvent event;
+    event.header = state.net_session.MakeLocalEventHeader(state.frame);
+    event.type = network::NetEventType::EntityDropped;
+    event.payload = network::EntityDroppedEvent{
+        .entity_id = GetReplicatedEntityId(state, entity),
+        .pos = entity.pos,
+        .vel = entity.vel,
+    };
+    state.net_session.EnqueueLocalEvent(event);
 }
 
 void SyncHeldAttachmentForHolder(
@@ -126,20 +262,44 @@ void SyncBackAttachmentForHolder(
 
 } // namespace
 
+void AttachEntityAsHeld(Entity& holder, Entity& held) {
+    holder.holding_vid = held.vid;
+    holder.holding = true;
+    held.held_by_vid = holder.vid;
+    held.attachment_mode = AttachmentMode::Held;
+    held.has_physics = false;
+    held.can_collide = false;
+    ApplyHeldState(held);
+}
+
 
 void ReleaseEntityFromHolder(Entity& entity, State& state) {
-    if (!entity.held_by_vid.has_value()) {
-        return;
+    if (entity.held_by_vid.has_value()) {
+        if (Entity* const holder = state.entity_manager.GetEntityMut(*entity.held_by_vid)) {
+            if (holder->holding_vid.has_value() && *holder->holding_vid == entity.vid) {
+                holder->holding_vid.reset();
+                holder->holding = false;
+                holder->holding_timer = kDefaultHoldingTimer;
+            }
+            if (holder->back_vid.has_value() && *holder->back_vid == entity.vid) {
+                holder->back_vid.reset();
+            }
+        }
     }
 
-    if (Entity* const holder = state.entity_manager.GetEntityMut(*entity.held_by_vid)) {
-        if (holder->holding_vid.has_value() && *holder->holding_vid == entity.vid) {
-            holder->holding_vid.reset();
-            holder->holding = false;
-            holder->holding_timer = kDefaultHoldingTimer;
+    for (Entity& candidate_holder : state.entity_manager.entities) {
+        if (!candidate_holder.active || candidate_holder.vid == entity.vid) {
+            continue;
         }
-        if (holder->back_vid.has_value() && *holder->back_vid == entity.vid) {
-            holder->back_vid.reset();
+        if (candidate_holder.holding_vid.has_value() &&
+            *candidate_holder.holding_vid == entity.vid) {
+            candidate_holder.holding_vid.reset();
+            candidate_holder.holding = false;
+            candidate_holder.holding_timer = kDefaultHoldingTimer;
+        }
+        if (candidate_holder.back_vid.has_value() &&
+            *candidate_holder.back_vid == entity.vid) {
+            candidate_holder.back_vid.reset();
         }
     }
 
@@ -153,6 +313,14 @@ void ReleaseEntityFromHolder(Entity& entity, State& state) {
     RemoveEffect(entity, EffectId::NoGravityUntilContact);
 }
 
+void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state) {
+    if (!HasAttachmentReference(entity, state)) {
+        return;
+    }
+    ReleaseEntityFromHolder(entity, state);
+    EmitDroppedNetworkEvent(state, entity);
+}
+
 void DropHeldItemFromEntity(Entity& entity, State& state) {
     if (!entity.holding_vid.has_value()) {
         return;
@@ -163,6 +331,14 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     entity.holding = false;
     entity.holding_timer = kDefaultHoldingTimer;
     if (held == nullptr) {
+        return;
+    }
+
+    if (IsPlayerEntity(*held, state)) {
+        ReleaseEntityFromHolder(*held, state);
+        held->vel = Vec2::New(0.0F, 0.0F);
+        held->acc = Vec2::New(0.0F, 0.0F);
+        EmitDroppedNetworkEvent(state, *held);
         return;
     }
 
@@ -184,6 +360,7 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     held->vel = Vec2::New(throw_x, -1.0F);
     held->acc = Vec2::New(0.0F, 0.0F);
     RemoveEffect(*held, EffectId::NoGravityUntilContact);
+    EmitThrownNetworkEvent(state, entity, *held, held->vel);
 }
 
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
@@ -256,21 +433,10 @@ void UpdateCarryAndBackItems(
         std::optional<VID> trying_to_pick_this_up_vid;
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
-            const std::optional<VID> entity_back_vid = entity.back_vid;
             if (trying_to_pick_up_these.has_value()) {
                 for (const VID& vid : *trying_to_pick_up_these) {
                     const Entity& candidate = state.entity_manager.entities[vid.id];
-                    const bool dead_or_stunned =
-                        candidate.condition == EntityCondition::Dead ||
-                        candidate.condition == EntityCondition::Stunned;
-                    const bool can_pick_up_candidate =
-                        candidate.can_be_picked_up &&
-                        (!candidate.can_only_be_picked_up_if_dead_or_stunned ||
-                         dead_or_stunned);
-                    if (!can_pick_up_candidate) {
-                        continue;
-                    }
-                    if (entity_back_vid.has_value() && candidate.vid == *entity_back_vid) {
+                    if (!CanPickUpCandidate(entity, candidate, state)) {
                         continue;
                     }
                     trying_to_pick_this_up_vid = vid;
@@ -281,15 +447,11 @@ void UpdateCarryAndBackItems(
 
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
-            const VID entity_vid = entity.vid;
             if (trying_to_pick_this_up_vid.has_value()) {
-                entity.holding_vid = trying_to_pick_this_up_vid;
-                entity.holding = true;
                 if (Entity* const pick_up_entity =
                         state.entity_manager.GetEntityMut(*trying_to_pick_this_up_vid)) {
-                    pick_up_entity->held_by_vid = entity_vid;
-                    pick_up_entity->attachment_mode = AttachmentMode::Held;
-                    ApplyHeldState(*pick_up_entity);
+                    AttachEntityAsHeld(entity, *pick_up_entity);
+                    EmitHeldNetworkEvent(state, entity, *pick_up_entity);
                 }
             }
         }
@@ -374,6 +536,7 @@ void UpdateCarryAndBackItems(
                     }
                     thrown->acc += throw_vel * entity.throw_velocity_scale;
                     state.UpdateSidForEntity(thrown->vid.id, graphics);
+                    EmitThrownNetworkEvent(state, entity, *thrown, throw_vel * entity.throw_velocity_scale);
                     (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Throw);
                 }
             }

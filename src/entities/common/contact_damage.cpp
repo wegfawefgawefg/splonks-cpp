@@ -390,10 +390,13 @@ bool TryApplyProjectileContactToEntity(
     case DamageResult::Died:
     case DamageResult::None: {
         Entity& other_entity_mut = state.entity_manager.entities[other_entity_idx];
-        ApplyKnockback(
-            other_entity_mut,
-            BuildProjectileContactKnockback(entity, other_entity_mut, state.stage)
-        );
+        if (!other_entity_mut.held_by_vid.has_value() &&
+            other_entity_mut.attachment_mode == AttachmentMode::None) {
+            ApplyKnockback(
+                other_entity_mut,
+                BuildProjectileContactKnockback(entity, other_entity_mut, state.stage)
+            );
+        }
         state.contact.AddProjectileBodyImpactCooldown(
             entity.vid,
             other_entity.vid,

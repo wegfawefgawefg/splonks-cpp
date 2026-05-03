@@ -32,13 +32,21 @@ void PlacePlayerAtEntrance(State& state) {
                 continue;
             }
 
-            if (state.player_vid.has_value()) {
-                if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-                    player->pos = Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
-                                  static_cast<float>(kTileSize);
+            Vec2 spawn_pos = Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
+                             static_cast<float>(kTileSize);
+            unsigned int local_player_index = 0;
+            for (const PlayerSlot& slot : state.players.slots) {
+                if (!slot.connected ||
+                    slot.connection_kind != PlayerConnectionKind::Local ||
+                    !slot.entity_vid.has_value()) {
+                    continue;
+                }
+                if (Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid)) {
+                    player->pos = spawn_pos + Vec2::New(static_cast<float>(local_player_index) * 8.0F, 0.0F);
                     player->vel = Vec2::New(0.0F, 0.0F);
                     player->acc = Vec2::New(0.0F, 0.0F);
                 }
+                ++local_player_index;
             }
             return;
         }
@@ -66,7 +74,7 @@ void InitStage(State& state, bool preserve_player_state) {
         preserve_player_state ? CaptureStageCarryover(state) : StageCarryover{};
     InitCommonStageState(state);
 
-    if (carryover.player.has_value()) {
+    if (!carryover.players.empty()) {
         RestoreStageCarryover(state, carryover);
     } else {
         SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
@@ -151,7 +159,7 @@ void InitStage(State& state, bool preserve_player_state) {
     }
 
     PlacePlayerAtEntrance(state);
-    if (carryover.player.has_value()) {
+    if (!carryover.players.empty()) {
         SnapAttachedItemsToPlayer(state);
     }
     InvalidateStageLighting(state);

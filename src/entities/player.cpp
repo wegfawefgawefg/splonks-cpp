@@ -525,6 +525,7 @@ void StepEntityLogicAsPlayer(
                     entity->held_by_vid = player_vid;
                     entity->attachment_mode = AttachmentMode::Held;
                     state.UpdateSidForEntity(vid->id, graphics);
+                    common::EmitReplicatedEntitySpawnedEvent(state, *entity, player_vid);
                     attacked = true;
                     (void)PlayEntitySoundEmitter(state, player, audio_asset_ids::BaseballBatSwing);
                 }

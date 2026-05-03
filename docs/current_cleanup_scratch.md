@@ -30,3 +30,12 @@ Short-term triage list for the current large commit.
 10. [ ] Remove/update temporary fluid validation defaults and decide future optimization path.
 11. [ ] Refresh passive/effect modifier plan against current implementation.
 12. [ ] Retire or update stale `splk_mines_olmec_demo_checklist.md`.
+# Stagegen Validation Follow-Up
+
+- [ ] Make `--check-classic-quest-stagegen` deterministic/debuggable.
+  - Observed one transient `std::bad_alloc` during randomized classic stagegen
+    validation after `classic_temple_1`; immediate rerun passed.
+  - The check currently does not print or pin per-stage RNG seeds, so failures
+    are hard to reproduce.
+  - Add per-stage seed reporting and failure context before investigating
+    further.

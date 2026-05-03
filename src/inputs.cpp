@@ -9,6 +9,7 @@
 #include "menu/title.hpp"
 #include "menu/ui.hpp"
 #include "menu/video.hpp"
+#include "network/net_lobby.hpp"
 #include "settings.hpp"
 #include "stage.hpp"
 #include "stage_init.hpp"
@@ -20,6 +21,7 @@
 #include "stage_rotation.hpp"
 
 #include <algorithm>
+#include <string>
 
 namespace splonks {
 
@@ -284,6 +286,17 @@ void ProcessInputGameOver(
         return;
     }
     if (state.menu_inputs.confirm.down) {
+        if (state.net_session.role != network::NetRole::Offline) {
+            std::string status;
+            if (network::RespawnLocalPlayersAtEntrance(state, graphics, &status)) {
+                graphics.camera.rotation = 0.0F;
+                InvalidateStageLighting(state);
+                InvalidateStageAcoustics(state);
+                state.scene_frame = 0;
+                state.SetMode(Mode::Playing);
+                return;
+            }
+        }
         QueueRespawnTransition(state);
         graphics.camera.rotation = 0.0F;
         InvalidateStageLighting(state);
@@ -447,6 +460,7 @@ void LatchPlayingInputsForTick(State& state) {
     const PlayingInputSnapshot current = state.playing_input_snapshot;
     state.playing_inputs = BuildPlayingInputs(current, state.previous_playing_input_snapshot);
     state.previous_playing_input_snapshot = current;
+    state.players.SetPrimaryLocalInputs(state.playing_inputs, state.immediate_playing_inputs);
 }
 
 } // namespace splonks

@@ -329,6 +329,9 @@ DebugPlayback DebugPlayback::New() {
     const char* default_path = "debug_recording.splrec";
     std::strncpy(result.file_path.data(), default_path, result.file_path.size() - 1);
     result.file_path[result.file_path.size() - 1] = '\0';
+    const char* default_host = "127.0.0.1";
+    std::strncpy(result.network_join_host.data(), default_host, result.network_join_host.size() - 1);
+    result.network_join_host[result.network_join_host.size() - 1] = '\0';
     return result;
 }
 
@@ -365,6 +368,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawCameraSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawPerformanceSettingsWindow(debug, state);
     debug_playback_internal::DrawPlayerTuningWindow(debug, state);
+    debug_playback_internal::DrawNetworkWindow(debug, state, graphics);
     debug_playback_internal::DrawPostFxSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawLightingSettingsWindow(debug, state, graphics);
     debug_playback_internal::DrawGraphicsSettingsWindow(debug, state, graphics, window, renderer);

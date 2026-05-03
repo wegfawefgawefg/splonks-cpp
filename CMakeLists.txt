@@ -137,9 +137,11 @@ add_executable(splonks-cpp
     src/debug/playback_recording_io.cpp
     src/debug/playback_text_export.cpp
     src/debug/playback_snapshot_state.cpp
+    src/debug/control_server.cpp
     src/debug/playback_ui_common.cpp
     src/debug/playback_ui_entities.cpp
     src/debug/playback_ui_menu.cpp
+    src/debug/playback_ui_network.cpp
     src/debug/playback_ui_settings.cpp
     src/debug/debug_stage_basic.cpp
     src/debug/debug_stage_boulder_sacrifice.cpp
@@ -277,7 +279,14 @@ add_executable(splonks-cpp
     src/menu/title.cpp
     src/menu/ui.cpp
     src/menu/video.cpp
+    src/network/net_fuzzer.cpp
+    src/network/net_event_apply.cpp
+    src/network/net_lobby.cpp
+    src/network/net_protocol.cpp
+    src/network/net_session.cpp
+    src/network/net_transport.cpp
     src/on_damage_effects.cpp
+    src/player_registry.cpp
     src/room.cpp
     src/render/render.cpp
     src/render/camera.cpp

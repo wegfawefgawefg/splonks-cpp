@@ -57,6 +57,7 @@ struct StageLoadTarget {
 struct StageTransitionTarget {
     StageLoadTarget destination = StageLoadTarget::ForStageType(StageType::Blank);
     bool preserve_player_state = true;
+    std::optional<std::uint32_t> seed = std::nullopt;
 };
 
 const char* GetDebugLevelKindName(DebugLevelKind kind);

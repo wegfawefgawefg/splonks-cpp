@@ -38,23 +38,20 @@ const Entity* GetActiveBasicExitEntity(
 std::optional<ExitPrompt> BuildExitPromptForEntity(
     std::size_t entity_idx,
     const State& state,
-    const Graphics& graphics
+    const Graphics& graphics,
+    const Entity& player
 ) {
     const Entity* const exit_entity = GetActiveBasicExitEntity(entity_idx, state);
     if (exit_entity == nullptr) {
         return std::nullopt;
     }
 
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active) {
+    if (!player.active) {
         return std::nullopt;
     }
 
     const std::optional<std::size_t> overlapping_exit_idx =
-        FindOverlappingBasicExitEntityIdx(*player, state, graphics);
+        FindOverlappingBasicExitEntityIdx(player, state, graphics);
     if (!overlapping_exit_idx.has_value() || *overlapping_exit_idx != entity_idx) {
         return std::nullopt;
     }
@@ -70,18 +67,26 @@ std::optional<ExitPrompt> BuildExitPromptForEntity(
     };
 }
 
-bool TryTakeExit(
+std::optional<ExitPrompt> BuildPrimaryExitPromptForEntity(
     std::size_t entity_idx,
-    State& state,
-    const Graphics& graphics,
-    Audio& audio
+    const State& state,
+    const Graphics& graphics
 ) {
-    (void)audio;
-    const std::optional<ExitPrompt> prompt = BuildExitPromptForEntity(entity_idx, state, graphics);
-    if (!prompt.has_value() || !prompt->allowed) {
-        return false;
+    if (!state.player_vid.has_value()) {
+        return std::nullopt;
     }
 
+    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
+    if (player == nullptr) {
+        return std::nullopt;
+    }
+    return BuildExitPromptForEntity(entity_idx, state, graphics, *player);
+}
+
+bool TryQueueExitTransition(
+    std::size_t entity_idx,
+    State& state
+) {
     const Entity& exit_entity = state.entity_manager.entities[entity_idx];
     (void)PlayEntityCenterSoundEmitter(state, exit_entity, audio_asset_ids::StageWin);
     if (exit_entity.transition_target.has_value()) {
@@ -89,7 +94,7 @@ bool TryTakeExit(
     } else {
         QueueStageExitTransition(state, exit_entity.stage_exit_id);
     }
-    return true;
+    return state.pending_stage_transition.has_value() || state.mode == Mode::Win;
 }
 
 } // namespace
@@ -163,13 +168,14 @@ void StepEntityLogicAsBasicExit(
     Audio& audio,
     float dt
 ) {
+    (void)audio;
     (void)dt;
 
     if (state.mode != Mode::Playing) {
         return;
     }
 
-    const std::optional<ExitPrompt> prompt = BuildExitPromptForEntity(entity_idx, state, graphics);
+    const std::optional<ExitPrompt> prompt = BuildPrimaryExitPromptForEntity(entity_idx, state, graphics);
     if (prompt.has_value()) {
         if (state.player_vid.has_value()) {
             state.ClaimInteractForEntity(*state.player_vid);
@@ -201,11 +207,34 @@ void StepEntityLogicAsBasicExit(
         }
     }
 
-    if (state.pending_stage_transition.has_value() || !state.playing_inputs.equip_button.pressed) {
+    if (state.pending_stage_transition.has_value()) {
         return;
     }
 
-    (void)TryTakeExit(entity_idx, state, graphics, audio);
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected ||
+            slot.connection_kind != PlayerConnectionKind::Local ||
+            !slot.entity_vid.has_value() ||
+            !slot.inputs.equip_button.pressed) {
+            continue;
+        }
+
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr) {
+            continue;
+        }
+
+        const std::optional<ExitPrompt> player_prompt =
+            BuildExitPromptForEntity(entity_idx, state, graphics, *player);
+        if (!player_prompt.has_value() || !player_prompt->allowed) {
+            continue;
+        }
+
+        state.ClaimInteractForEntity(*slot.entity_vid);
+        if (TryQueueExitTransition(entity_idx, state)) {
+            return;
+        }
+    }
 }
 
 extern const EntityArchetype kBasicExitArchetype{

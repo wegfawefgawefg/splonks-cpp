@@ -1,11 +1,13 @@
 #include "audio.hpp"
 #include "cli.hpp"
+#include "debug/control_server.hpp"
 #include "debug/playback.hpp"
 #include "entities/common/common.hpp"
 #include "entity/archetype.hpp"
 #include "graphics.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
+#include "network/net_lobby.hpp"
 #include "render/render.hpp"
 #include "render/postfx.hpp"
 #include "state.hpp"
@@ -25,7 +27,69 @@
 namespace {
 
 constexpr int kWindowWidth = 1920;
-constexpr int kWindowHeight = 1080;
+constexpr int kWindowHeight = 540;
+constexpr std::uint16_t kDefaultMultiplayerPort = 39000;
+
+enum class StartupNetworkMode {
+    None,
+    Host,
+    Join,
+};
+
+struct StartupNetworkConfig {
+    StartupNetworkMode mode = StartupNetworkMode::None;
+    std::string host = "127.0.0.1";
+    std::uint16_t port = kDefaultMultiplayerPort;
+};
+
+std::uint16_t ParsePortArg(const char* text, std::uint16_t fallback) {
+    if (text == nullptr) {
+        return fallback;
+    }
+    try {
+        const int port = std::stoi(text);
+        if (port <= 0 || port > 65535) {
+            return fallback;
+        }
+        return static_cast<std::uint16_t>(port);
+    } catch (...) {
+        return fallback;
+    }
+}
+
+StartupNetworkConfig ParseStartupNetworkConfig(int argc, char** argv) {
+    StartupNetworkConfig config;
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i] != nullptr ? argv[i] : "";
+        if (arg == "--multiplayer-host" || arg == "--mp-host") {
+            config.mode = StartupNetworkMode::Host;
+            if (i + 1 < argc) {
+                config.port = ParsePortArg(argv[++i], config.port);
+            }
+            continue;
+        }
+        if (arg == "--multiplayer-join" || arg == "--mp-join") {
+            config.mode = StartupNetworkMode::Join;
+            if (i + 1 < argc) {
+                config.host = argv[++i] != nullptr ? argv[i] : config.host;
+            }
+            if (i + 1 < argc) {
+                config.port = ParsePortArg(argv[++i], config.port);
+            }
+        }
+    }
+    return config;
+}
+
+std::uint16_t ParseDebugControlPort(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i] != nullptr ? argv[i] : "";
+        if ((arg == "--debug-control-port" || arg == "--ctl-port") && i + 1 < argc) {
+            return ParsePortArg(argv[++i], 0);
+        }
+    }
+    return 0;
+}
 
 [[noreturn]] void ThrowSdlError(const char* message) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
@@ -67,6 +131,8 @@ int main(int argc, char** argv) {
     if (splonks::RunCliCommand(argc, argv)) {
         return 0;
     }
+    const StartupNetworkConfig startup_network = ParseStartupNetworkConfig(argc, argv);
+    const std::uint16_t debug_control_port = ParseDebugControlPort(argc, argv);
 
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
@@ -75,6 +141,7 @@ int main(int argc, char** argv) {
     splonks::RenderPostFx post_fx = splonks::RenderPostFx::New();
     splonks::Audio audio;
     splonks::DebugPlayback debug = splonks::DebugPlayback::New();
+    splonks::debug::DebugControlServer debug_control_server;
 
     try {
         ////////////////        GRAPHICS INIT        ////////////////
@@ -205,6 +272,32 @@ int main(int argc, char** argv) {
         graphics.ResetTileVariations();
         splonks::InvalidateStageLighting(state);
         splonks::InvalidateStageAcoustics(state);
+        if (startup_network.mode != StartupNetworkMode::None) {
+            std::string network_status;
+            const bool started = startup_network.mode == StartupNetworkMode::Host
+                ? splonks::network::StartHostSession(state, startup_network.port, &network_status)
+                : splonks::network::JoinHostSession(
+                      state,
+                      startup_network.host,
+                      startup_network.port,
+                      &network_status
+                  );
+            debug.network_window_visible = true;
+            debug.network_status = network_status;
+            std::cerr << network_status << '\n';
+            if (!started) {
+                std::cerr << "Startup multiplayer mode failed; continuing offline.\n";
+            }
+        }
+        if (debug_control_port != 0) {
+            std::string debug_control_error;
+            if (debug_control_server.Start(debug_control_port, &debug_control_error)) {
+                std::cerr << "Debug control server listening on 127.0.0.1:"
+                          << debug_control_port << '\n';
+            } else {
+                std::cerr << "Debug control server failed: " << debug_control_error << '\n';
+            }
+        }
 
         std::uint64_t last_ticks = SDL_GetTicks();
         const double perf_frequency = static_cast<double>(SDL_GetPerformanceFrequency());
@@ -264,6 +357,7 @@ int main(int argc, char** argv) {
                 debug,
                 dt
             );
+            debug_control_server.Step(state);
             const std::uint64_t step_end_counter = SDL_GetPerformanceCounter();
             splonks::DrawDebugPlaybackInspector(debug, state, graphics);
             splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);

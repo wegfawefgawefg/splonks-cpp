@@ -156,6 +156,9 @@ State State::New() {
     state.audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
     state.gameplay_camera_anchor_world_pos.reset();
     state.interact_claimed_vids_this_frame.clear();
+    state.players = PlayerRegistry::New();
+    state.net_session = network::NetSessionState::NewOffline();
+    state.net_transport.reset();
     state.entity_manager = EntityManager::New();
     state.particles = ParticleSystem{};
     state.audio_emitters = AudioEmitterManager::New();
@@ -173,6 +176,8 @@ State State::New() {
     state.world_prompts.clear();
     state.debug_rect_annotations.clear();
     state.debug_label_annotations.clear();
+    state.debug_local_player_bots.clear();
+    state.next_debug_local_player_id = 2;
     state.debug_fluid_brush.enabled = state.settings.debug_ui.fluid_brush_enabled;
     state.debug_fluid_brush.replace_solid_tiles =
         state.settings.debug_ui.fluid_brush_replace_solid_tiles;

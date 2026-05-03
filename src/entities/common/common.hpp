@@ -8,6 +8,7 @@
 #include "tools/tool_archetype.hpp"
 
 #include <cstdint>
+#include <optional>
 
 namespace splonks::controls {
 struct ControlIntent;
@@ -132,7 +133,9 @@ bool CanCollectPickupFromContact(
 );
 void DeactivateCollectedPickup(std::size_t pickup_idx, State& state, const Graphics& graphics);
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state);
+void AttachEntityAsHeld(Entity& holder, Entity& held);
 void ReleaseEntityFromHolder(Entity& entity, State& state);
+void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state);
 void DropHeldItemFromEntity(Entity& entity, State& state);
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
@@ -144,6 +147,11 @@ void SyncEntityAttachments(
     std::size_t entity_idx,
     State& state,
     const Graphics& graphics
+);
+void EmitReplicatedEntitySpawnedEvent(
+    State& state,
+    Entity& spawned_entity,
+    std::optional<VID> held_by_vid = std::nullopt
 );
 bool TryApplyStompContactToEntity(
     std::size_t entity_idx,

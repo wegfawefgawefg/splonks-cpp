@@ -1,5 +1,7 @@
 #include "entities/common/common.hpp"
 
+#include "network/net_event.hpp"
+#include "network/net_session.hpp"
 #include "on_damage_effects.hpp"
 
 namespace splonks::entities::common {
@@ -7,6 +9,9 @@ namespace splonks::entities::common {
 namespace {
 
 void EnterStunnedState(Entity& entity, State& state) {
+    if (entity.held_by_vid.has_value() || entity.attachment_mode != AttachmentMode::None) {
+        ReleaseEntityFromHolder(entity, state);
+    }
     DropHeldItemFromEntity(entity, state);
     entity.condition = EntityCondition::Stunned;
     TrySetAnimation(entity, EntityDisplayState::Stunned);
@@ -31,6 +36,65 @@ std::optional<AudioAssetId> GetCrushAudioAssetId(EntityType type_) {
     default:
         return std::nullopt;
     }
+}
+
+network::NetEntityId GetReplicatedEntityId(State& state, const Entity& entity) {
+    if (const std::optional<network::NetEntityId> linked =
+            state.net_session.FindNetEntityId(entity.vid)) {
+        return *linked;
+    }
+
+    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
+        const network::NetEntityId player_entity_id = network::MakePlayerNetEntityId(*player_id);
+        state.net_session.LinkEntity(player_entity_id, entity.vid);
+        return player_entity_id;
+    }
+
+    const network::NetEntityId deterministic_stage_id =
+        static_cast<network::NetEntityId>(entity.vid.id) + 1U;
+    state.net_session.LinkEntity(deterministic_stage_id, entity.vid);
+    return deterministic_stage_id;
+}
+
+void EmitEntityDamageEvent(
+    std::size_t entity_idx,
+    State& state,
+    DamageType damage_type,
+    unsigned int amount
+) {
+    if (state.net_session.role == network::NetRole::Offline ||
+        entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    const Entity& entity = state.entity_manager.entities[entity_idx];
+    const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity.vid);
+    if (player_slot != nullptr &&
+        player_slot->connection_kind == PlayerConnectionKind::Remote) {
+        return;
+    }
+    const network::NetEntityId entity_id = GetReplicatedEntityId(state, entity);
+    if (player_slot == nullptr) {
+        state.net_session.SetEntityOwner(entity_id, state.net_session.local_player_id);
+    }
+
+    network::NetEvent event;
+    event.header = state.net_session.MakeLocalEventHeader(state.frame);
+    event.type = network::NetEventType::EntityDamaged;
+    event.payload = network::EntityDamagedEvent{
+        .entity_id = entity_id,
+        .source_entity_id = network::kInvalidNetEntityId,
+        .amount = amount,
+        .remaining_health = entity.health,
+        .pos = entity.pos,
+        .vel = entity.vel,
+        .acc = entity.acc,
+        .stun_timer = entity.stun_timer,
+        .condition = static_cast<std::uint8_t>(entity.condition),
+        .grounded = static_cast<std::uint8_t>(entity.grounded ? 1 : 0),
+        .damage_type = damage_type,
+    };
+    state.net_session.EnqueueLocalEvent(event);
 }
 
 void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
@@ -150,9 +214,21 @@ DamageResult TryDamageEntity(
     unsigned int amount
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity.vid);
+    if (state.net_session.role != network::NetRole::Offline &&
+        player_slot != nullptr &&
+        player_slot->connection_kind == PlayerConnectionKind::Remote) {
+        return DamageResult::None;
+    }
+    const auto finish = [&](DamageResult result) {
+        if (result == DamageResult::Hurt || result == DamageResult::Died) {
+            EmitEntityDamageEvent(entity_idx, state, damage_type, amount);
+        }
+        return result;
+    };
     if (ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, false) ==
         EntityDamageEffectResult::Consumed) {
-        return DamageResult::Hurt;
+        return finish(DamageResult::Hurt);
     }
 
     if (CanEntityTakeDamageType(entity, damage_type)) {
@@ -160,9 +236,9 @@ DamageResult TryDamageEntity(
             entity.health = 0;
             DieIfDead(entity_idx, state, audio);
             if (DeathWasConsumed(entity)) {
-                return DamageResult::Hurt;
+                return finish(DamageResult::Hurt);
             }
-            return DamageResult::Died;
+            return finish(DamageResult::Died);
         }
         bool do_damage_calculation = false;
         if (damage_type == DamageType::Crush) {
@@ -170,16 +246,16 @@ DamageResult TryDamageEntity(
             (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
             DieIfDead(entity_idx, state, audio);
             if (DeathWasConsumed(entity)) {
-                return DamageResult::Hurt;
+                return finish(DamageResult::Hurt);
             }
             if (!entity.active) {
-                return DamageResult::Died;
+                return finish(DamageResult::Died);
             }
             if (const std::optional<AudioAssetId> sound_effect = GetCrushAudioAssetId(entity.type_)) {
                 (void)PlayEntityCenterSoundEmitter(state, entity, *sound_effect);
             }
             entity.marked_for_destruction = true;
-            return DamageResult::Died;
+            return finish(DamageResult::Died);
         }
         if (entity.condition == EntityCondition::Dead) {
             return DamageResult::None;
@@ -189,9 +265,9 @@ DamageResult TryDamageEntity(
                 (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
                 DieIfDead(entity_idx, state, audio);
                 if (DeathWasConsumed(entity)) {
-                    return DamageResult::Hurt;
+                    return finish(DamageResult::Hurt);
                 }
-                return DamageResult::Died;
+                return finish(DamageResult::Died);
             } else if (damage_type == DamageType::Fall) {
                 do_damage_calculation = true;
                 if (entity.can_be_stunned && entity.condition != EntityCondition::Stunned) {
@@ -217,15 +293,15 @@ DamageResult TryDamageEntity(
             if (entity.health > amount) {
                 entity.health -= amount;
                 (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
-                return DamageResult::Hurt;
+                return finish(DamageResult::Hurt);
             }
             entity.health = 0;
             (void)ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, true);
             DieIfDead(entity_idx, state, audio);
             if (DeathWasConsumed(entity)) {
-                return DamageResult::Hurt;
+                return finish(DamageResult::Hurt);
             }
-            return DamageResult::Died;
+            return finish(DamageResult::Died);
         }
     }
     return DamageResult::None;

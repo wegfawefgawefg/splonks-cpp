@@ -124,9 +124,9 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     graphics.frame_data_annotations_last_seen_write_time = frame_data_resources.write_time;
     graphics.tile_source_db = frame_data_resources.tile_source_db;
     graphics.tile_contact_db = frame_data_resources.tile_contact_db;
-    graphics.window_dims = UVec2::New(1920, 1080);
-    graphics.dims = UVec2::New(1920, 1080);
-    graphics.fullscreen = true;
+    graphics.window_dims = UVec2::New(1920, 540);
+    graphics.dims = UVec2::New(1920, 540);
+    graphics.fullscreen = false;
     graphics.gpu_renderer_active = false;
     graphics.world_rotation_active = false;
     graphics.world_rotation_pivot = Vec2::New(0.0F, 0.0F);

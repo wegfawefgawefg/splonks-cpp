@@ -13,6 +13,9 @@
 #include "menu/title.hpp"
 #include "menu/ui.hpp"
 #include "menu/video.hpp"
+#include "network/net_session.hpp"
+#include "network/net_transport.hpp"
+#include "player_registry.hpp"
 #include "settings.hpp"
 #include "sid.hpp"
 #include "particles/system.hpp"
@@ -190,6 +193,17 @@ struct DebugFluidBrushState {
     bool show_flow_indicators = false;
 };
 
+struct DebugLocalPlayerBot {
+    PlayerId player_id = kInvalidPlayerId;
+    bool enabled = true;
+    bool allow_jump = true;
+    bool allow_tools = false;
+    int retarget_frames = 0;
+    int jump_cooldown_frames = 0;
+    int move_dir = 0;
+    PlayingInputs previous_inputs = PlayingInputs::New();
+};
+
 struct StageRotationState {
     bool active = false;
     int elapsed_frames = 0;
@@ -258,6 +272,8 @@ struct State {
     DebugShakeBrushState debug_shake_brush;
     DebugAudioBrushState debug_audio_brush;
     DebugFluidBrushState debug_fluid_brush;
+    std::vector<DebugLocalPlayerBot> debug_local_player_bots;
+    PlayerId next_debug_local_player_id = 2;
     StageRotationState stage_rotation;
     PlayerTuningState player_tuning;
     bool running = true;
@@ -288,6 +304,9 @@ struct State {
     std::optional<Vec2> gameplay_camera_anchor_world_pos;
     std::vector<VID> interact_claimed_vids_this_frame;
     PerformanceStats performance_stats;
+    PlayerRegistry players;
+    network::NetSessionState net_session;
+    std::unique_ptr<network::NetTransportRuntime> net_transport;
 
     // World and debug level state.
     DebugLevelConfig debug_level;

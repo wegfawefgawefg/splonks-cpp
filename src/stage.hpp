@@ -172,6 +172,7 @@ struct Stage {
     std::string route_label;
     std::string stage_title;
     int quest_level_number = 0;
+    std::optional<std::uint32_t> generation_seed = std::nullopt;
     std::vector<StageExit> exits;
     std::vector<std::vector<Tile>> tiles;
     std::vector<std::vector<TileRotation>> tile_rotations;

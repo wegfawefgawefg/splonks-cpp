@@ -31,7 +31,7 @@ enum class VideoLeftOrRightOrNeither {
     Right,
 };
 
-extern const std::array<UVec2, 10> kResolutions;
+extern const std::array<UVec2, 11> kResolutions;
 
 const char* GetVideoSettingsMenuOptionName(VideoSettingsMenuOption option);
 void ProcessInputVideoSettingsMenu(

@@ -33,6 +33,8 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.debug_shake_brush = state.debug_shake_brush;
     snapshot.debug_audio_brush = state.debug_audio_brush;
     snapshot.debug_fluid_brush = state.debug_fluid_brush;
+    snapshot.debug_local_player_bots = state.debug_local_player_bots;
+    snapshot.next_debug_local_player_id = state.next_debug_local_player_id;
     snapshot.now = state.now;
     snapshot.time_since_last_update = state.time_since_last_update;
     snapshot.scene_frame = state.scene_frame;
@@ -50,6 +52,7 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.sac_altar_favor = state.sac_altar_favor;
     snapshot.sac_altar_reward_tier = state.sac_altar_reward_tier;
     snapshot.quest_state = state.quest_state;
+    snapshot.players = state.players;
     snapshot.frame_pause = state.frame_pause;
     snapshot.debug_level = state.debug_level;
     snapshot.entity_manager = state.entity_manager;
@@ -91,6 +94,8 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.debug_shake_brush = snapshot.debug_shake_brush;
     state.debug_audio_brush = snapshot.debug_audio_brush;
     state.debug_fluid_brush = snapshot.debug_fluid_brush;
+    state.debug_local_player_bots = snapshot.debug_local_player_bots;
+    state.next_debug_local_player_id = snapshot.next_debug_local_player_id;
     state.now = snapshot.now;
     state.time_since_last_update = snapshot.time_since_last_update;
     state.scene_frame = snapshot.scene_frame;
@@ -108,6 +113,7 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.sac_altar_favor = snapshot.sac_altar_favor;
     state.sac_altar_reward_tier = snapshot.sac_altar_reward_tier;
     state.quest_state = snapshot.quest_state;
+    state.players = snapshot.players;
     state.frame_pause = snapshot.frame_pause;
     state.debug_level = snapshot.debug_level;
     state.entity_manager = snapshot.entity_manager;

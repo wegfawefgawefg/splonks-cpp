@@ -1,6 +1,7 @@
 #include "step_entities.hpp"
 
 #include "entities/common/common.hpp"
+#include "controls.hpp"
 #include "entity.hpp"
 #include "entity/archetype.hpp"
 #include "entity/core_types.hpp"
@@ -147,60 +148,143 @@ void ClearUseEdgesAfterFrame(Entity& entity) {
         You may also need to check if an entity has some trait, and that can go in entity, and instead of having a table you can just
         force every entity to implement is_burnable() for example. and the dyn table will take care of that for you.
 */
-void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
-    // extract and step the player first, this is so held items and stuff are updated with the latest player pos.
-    // also makes sense to do this first, since the player is the most important entity.
+namespace {
 
-    if (state.player_vid) {
-        if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-            if (player->active) {
-                ClearTransientMovementFlags(state.entity_manager.entities[state.player_vid->id]);
-                entities::common::CommonStep(state.player_vid->id, state, graphics, audio, dt);
-                if (state.entity_manager.entities[state.player_vid->id].active) {
-                    const Entity& entity = state.entity_manager.entities[state.player_vid->id];
-                    if (HasUseActivity(entity) && entity.on_use != nullptr) {
-                        entity.on_use(state.player_vid->id, state, graphics, audio);
-                    }
-                    if (state.entity_manager.entities[state.player_vid->id].active &&
-                        entity.step_logic != nullptr) {
-                        entity.step_logic(state.player_vid->id, state, graphics, audio, dt);
-                    }
-                }
-                if (state.entity_manager.entities[state.player_vid->id].active) {
-                    entities::common::CommonPostStep(
-                        state.player_vid->id,
-                        state,
-                        graphics,
-                        audio,
-                        dt
-                    );
-                }
-            }
-            if (state.entity_manager.entities[state.player_vid->id].active &&
-                state.entity_manager.entities[state.player_vid->id].has_physics) {
-                const Entity& entity = state.entity_manager.entities[state.player_vid->id];
-                if (entity.step_physics != nullptr) {
-                    entity.step_physics(state.player_vid->id, state, graphics, audio, dt);
-                } else {
-                    entities::common::StepStandardPhysics(
-                        state.player_vid->id,
-                        state,
-                        graphics,
-                        audio,
-                        dt
-                    );
-                }
-                if (state.entity_manager.entities[state.player_vid->id].active) {
-                    ApplyStageWrapAndVoidDeath(state.player_vid->id, state, audio);
-                }
-            }
-            entities::common::ApplyDeactivateConditions(state.player_vid->id, state);
-            state.UpdateSidForEntity(state.player_vid->id, graphics);
-            if (Entity* const mutable_entity = state.entity_manager.GetEntityMut(*state.player_vid)) {
-                ClearUseEdgesAfterFrame(*mutable_entity);
-                mutable_entity->last_condition = mutable_entity->condition;
-                mutable_entity->last_ai_state = mutable_entity->ai_state;
-            }
+void StepOneEntity(std::size_t entity_idx, State& state, Audio& audio, Graphics& graphics, float dt) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    if (!state.entity_manager.entities[entity_idx].active) {
+        return;
+    }
+
+    ClearTransientMovementFlags(state.entity_manager.entities[entity_idx]);
+    entities::common::CommonStep(entity_idx, state, graphics, audio, dt);
+    if (!state.entity_manager.entities[entity_idx].active) {
+        return;
+    }
+
+    const Entity& current_entity = state.entity_manager.entities[entity_idx];
+    if (HasUseActivity(current_entity) && current_entity.on_use != nullptr) {
+        current_entity.on_use(entity_idx, state, graphics, audio);
+    }
+    if (state.entity_manager.entities[entity_idx].active && current_entity.step_logic != nullptr) {
+        current_entity.step_logic(entity_idx, state, graphics, audio, dt);
+    }
+    if (!state.entity_manager.entities[entity_idx].active) {
+        return;
+    }
+
+    entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
+    if (!state.entity_manager.entities[entity_idx].active) {
+        return;
+    }
+
+    if (state.entity_manager.entities[entity_idx].has_physics) {
+        if (current_entity.step_physics != nullptr) {
+            current_entity.step_physics(entity_idx, state, graphics, audio, dt);
+        } else {
+            entities::common::StepStandardPhysics(entity_idx, state, graphics, audio, dt);
+        }
+        if (state.entity_manager.entities[entity_idx].active) {
+            ApplyStageWrapAndVoidDeath(entity_idx, state, audio);
+        }
+    }
+
+    entities::common::ApplyDeactivateConditions(entity_idx, state);
+    state.UpdateSidForEntity(entity_idx, graphics);
+    Entity& mutable_entity = state.entity_manager.entities[entity_idx];
+    ClearUseEdgesAfterFrame(mutable_entity);
+    mutable_entity.last_condition = mutable_entity.condition;
+    mutable_entity.last_ai_state = mutable_entity.ai_state;
+}
+
+bool IsPlayerSlotEntity(const State& state, const Entity& entity) {
+    return state.players.FindPlayerIdForEntity(entity.vid).has_value();
+}
+
+bool IsLocallyPredictedThrownRemotePlayer(const PlayerSlot& slot, const Entity& entity) {
+    return slot.connection_kind == PlayerConnectionKind::Remote &&
+           entity.active &&
+           entity.has_physics &&
+           !entity.held_by_vid.has_value() &&
+           entity.attachment_mode == AttachmentMode::None &&
+           entity.projectile_contact_timer > 0;
+}
+
+void StepPredictedThrownRemotePlayer(
+    const PlayerSlot& slot,
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    float dt
+) {
+    if (!slot.entity_vid.has_value()) {
+        return;
+    }
+
+    Entity* const entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
+    if (entity == nullptr || !IsLocallyPredictedThrownRemotePlayer(slot, *entity)) {
+        return;
+    }
+
+    ClearTransientMovementFlags(*entity);
+    entities::common::CommonStep(slot.entity_vid->id, state, graphics, audio, dt);
+    if (!entity->active || !IsLocallyPredictedThrownRemotePlayer(slot, *entity)) {
+        return;
+    }
+
+    entities::common::CommonPostStep(slot.entity_vid->id, state, graphics, audio, dt);
+    if (!entity->active || !IsLocallyPredictedThrownRemotePlayer(slot, *entity)) {
+        return;
+    }
+
+    if (entity->step_physics != nullptr) {
+        entity->step_physics(slot.entity_vid->id, state, graphics, audio, dt);
+    } else {
+        entities::common::StepStandardPhysics(slot.entity_vid->id, state, graphics, audio, dt);
+    }
+    if (entity->active) {
+        ApplyStageWrapAndVoidDeath(slot.entity_vid->id, state, audio);
+        state.UpdateSidForEntity(slot.entity_vid->id, graphics);
+    }
+}
+
+void TryReleaseHeldPlayerSlotFromJump(const PlayerSlot& slot, State& state) {
+    if (!slot.entity_vid.has_value()) {
+        return;
+    }
+    Entity* const entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
+    if (entity == nullptr ||
+        !entity->active ||
+        !entity->held_by_vid.has_value() ||
+        entity->attachment_mode != AttachmentMode::Held ||
+        entity->condition != EntityCondition::Normal) {
+        return;
+    }
+
+    const controls::ControlIntent control = controls::GetControlIntentForEntity(*entity, state);
+    if (!control.jump_pressed) {
+        return;
+    }
+
+    entities::common::ReleaseEntityFromHolderAndEmitNetwork(*entity, state);
+    entity->grounded = false;
+    entity->coyote_time = 2;
+}
+
+} // namespace
+
+void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
+    // Step all player-controlled entities first so held items and attached
+    // visuals follow the latest player positions.
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connection_kind == PlayerConnectionKind::Local && slot.entity_vid.has_value()) {
+            TryReleaseHeldPlayerSlotFromJump(slot, state);
+            StepOneEntity(slot.entity_vid->id, state, audio, graphics, dt);
+        } else if (slot.connection_kind == PlayerConnectionKind::Remote) {
+            StepPredictedThrownRemotePlayer(slot, state, audio, graphics, dt);
         }
     }
 
@@ -208,57 +292,18 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
         const Entity& entity = state.entity_manager.GetEntityById(entity_idx);
 
         if (entity.active) {
-            if (state.player_vid.has_value() && entity.vid == *state.player_vid) {
+            if (IsPlayerSlotEntity(state, entity)) {
                 continue;
             }
-            ClearTransientMovementFlags(state.entity_manager.entities[entity_idx]);
-            entities::common::CommonStep(entity_idx, state, graphics, audio, dt);
-            if (!state.entity_manager.entities[entity_idx].active) {
-                continue;
-            }
-            const Entity& current_entity = state.entity_manager.entities[entity_idx];
-            if (HasUseActivity(current_entity) && current_entity.on_use != nullptr) {
-                current_entity.on_use(entity_idx, state, graphics, audio);
-            }
-            if (state.entity_manager.entities[entity_idx].active &&
-                current_entity.step_logic != nullptr) {
-                current_entity.step_logic(entity_idx, state, graphics, audio, dt);
-            }
-            if (!state.entity_manager.entities[entity_idx].active) {
-                continue;
-            }
-            entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
-            if (!state.entity_manager.entities[entity_idx].active) {
-                continue;
-            }
-
-            if (state.entity_manager.entities[entity_idx].has_physics) {
-                if (current_entity.step_physics != nullptr) {
-                    current_entity.step_physics(entity_idx, state, graphics, audio, dt);
-                } else {
-                    entities::common::StepStandardPhysics(
-                        entity_idx,
-                        state,
-                        graphics,
-                        audio,
-                        dt
-                    );
-                }
-                if (state.entity_manager.entities[entity_idx].active) {
-                    ApplyStageWrapAndVoidDeath(entity_idx, state, audio);
-                }
-            }
-            entities::common::ApplyDeactivateConditions(entity_idx, state);
-            state.UpdateSidForEntity(entity_idx, graphics);
-            Entity& mutable_entity = state.entity_manager.entities[entity_idx];
-            ClearUseEdgesAfterFrame(mutable_entity);
-            mutable_entity.last_condition = mutable_entity.condition;
-            mutable_entity.last_ai_state = mutable_entity.ai_state;
+            StepOneEntity(entity_idx, state, audio, graphics, dt);
         }
     }
 
-    for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
-        entities::common::SyncEntityAttachments(entity_idx, state, graphics);
+    constexpr int kAttachmentSyncPasses = 8;
+    for (int pass = 0; pass < kAttachmentSyncPasses; ++pass) {
+        for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
+            entities::common::SyncEntityAttachments(entity_idx, state, graphics);
+        }
     }
 
     StepAreaEntityOverlaps(state, graphics, audio);

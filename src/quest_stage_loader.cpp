@@ -4,6 +4,7 @@
 #include "stage_gen/classic/stagegen.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -36,8 +37,13 @@ bool GetClassicQuestFlag(const ClassicQuestState& quest_state, const std::string
 bool LoadClassicQuestStage(
     State& state,
     std::string_view quest_stage_id,
-    bool preserve_player_state
+    bool preserve_player_state,
+    std::optional<std::uint32_t> seed
 ) {
+    if (seed.has_value()) {
+        rng::SetSeed(*seed);
+    }
+
     const QuestDefinition quest =
         LoadQuestDefinition(std::string(GetClassicQuestRootPath()) + "/quest.yaml");
     const QuestStageDefinition* stage_def = quest.FindStage(quest_stage_id);
@@ -68,6 +74,7 @@ bool LoadClassicQuestStage(
         stage_config,
         &state.quest_state
     );
+    state.stage.generation_seed = seed;
     ApplyClassicQuestStageEntryFlags(state.quest_state, stage_def->id);
     InitStage(state, preserve_player_state);
     state.depth = static_cast<std::uint32_t>(std::max(0, stage_def->level_number - 1));
@@ -94,8 +101,18 @@ bool LoadQuestStage(
     std::string_view quest_stage_id,
     bool preserve_player_state
 ) {
+    return LoadQuestStage(state, quest_id, quest_stage_id, preserve_player_state, std::nullopt);
+}
+
+bool LoadQuestStage(
+    State& state,
+    std::string_view quest_id,
+    std::string_view quest_stage_id,
+    bool preserve_player_state,
+    std::optional<std::uint32_t> seed
+) {
     if (quest_id == "classic") {
-        return LoadClassicQuestStage(state, quest_stage_id, preserve_player_state);
+        return LoadClassicQuestStage(state, quest_stage_id, preserve_player_state, seed);
     }
     return false;
 }
