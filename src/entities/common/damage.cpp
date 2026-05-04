@@ -1,7 +1,6 @@
 #include "entities/common/common.hpp"
 
-#include "network/net_event.hpp"
-#include "network/net_session.hpp"
+#include "gameplay_events.hpp"
 #include "on_damage_effects.hpp"
 
 namespace splonks::entities::common {
@@ -38,63 +37,10 @@ std::optional<AudioAssetId> GetCrushAudioAssetId(EntityType type_) {
     }
 }
 
-network::NetEntityId GetReplicatedEntityId(State& state, const Entity& entity) {
-    if (const std::optional<network::NetEntityId> linked =
-            state.net_session.FindNetEntityId(entity.vid)) {
-        return *linked;
-    }
-
-    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
-        const network::NetEntityId player_entity_id = network::MakePlayerNetEntityId(*player_id);
-        state.net_session.LinkEntity(player_entity_id, entity.vid);
-        return player_entity_id;
-    }
-
-    const network::NetEntityId deterministic_stage_id =
-        static_cast<network::NetEntityId>(entity.vid.id) + 1U;
-    state.net_session.LinkEntity(deterministic_stage_id, entity.vid);
-    return deterministic_stage_id;
-}
-
-void EmitEntityDamageEvent(
-    std::size_t entity_idx,
-    State& state,
-    DamageType damage_type,
-    unsigned int amount
-) {
-    if (state.net_session.role == network::NetRole::Offline ||
-        entity_idx >= state.entity_manager.entities.size()) {
-        return;
-    }
-
-    const Entity& entity = state.entity_manager.entities[entity_idx];
+bool IsRemotePlayerEntity(const State& state, const Entity& entity) {
     const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity.vid);
-    if (player_slot != nullptr &&
-        player_slot->connection_kind == PlayerConnectionKind::Remote) {
-        return;
-    }
-    const network::NetEntityId entity_id = GetReplicatedEntityId(state, entity);
-    if (player_slot == nullptr) {
-        state.net_session.SetEntityOwner(entity_id, state.net_session.local_player_id);
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityDamaged;
-    event.payload = network::EntityDamagedEvent{
-        .entity_id = entity_id,
-        .source_entity_id = network::kInvalidNetEntityId,
-        .amount = amount,
-        .remaining_health = entity.health,
-        .pos = entity.pos,
-        .vel = entity.vel,
-        .acc = entity.acc,
-        .stun_timer = entity.stun_timer,
-        .condition = static_cast<std::uint8_t>(entity.condition),
-        .grounded = static_cast<std::uint8_t>(entity.grounded ? 1 : 0),
-        .damage_type = damage_type,
-    };
-    state.net_session.EnqueueLocalEvent(event);
+    return player_slot != nullptr &&
+           player_slot->connection_kind == PlayerConnectionKind::Remote;
 }
 
 void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
@@ -211,18 +157,17 @@ DamageResult TryDamageEntity(
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount
+    unsigned int amount,
+    DamageOptions options
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity.vid);
-    if (state.net_session.role != network::NetRole::Offline &&
-        player_slot != nullptr &&
-        player_slot->connection_kind == PlayerConnectionKind::Remote) {
+    if (IsRemotePlayerEntity(state, entity) && !options.allow_remote_player_target) {
         return DamageResult::None;
     }
     const auto finish = [&](DamageResult result) {
-        if (result == DamageResult::Hurt || result == DamageResult::Died) {
-            EmitEntityDamageEvent(entity_idx, state, damage_type, amount);
+        if (!options.defer_replication &&
+            (result == DamageResult::Hurt || result == DamageResult::Died)) {
+            EmitEntityDamagedGameplayEvent(state, entity, damage_type, amount, options.source_vid);
         }
         return result;
     };

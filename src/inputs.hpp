@@ -54,6 +54,8 @@ struct PlayingInputs {
     ButtonState rope;
     ButtonState attack;
     ButtonState buy_button;
+    ButtonState emote_up;
+    ButtonState emote_down;
     ButtonState quit;
     ButtonState toggle_collision_boxes;
     ButtonState regenerate_level;
@@ -77,6 +79,8 @@ struct PlayingInputSnapshot {
     bool rope = false;
     bool attack = false;
     bool buy_button = false;
+    bool emote_up = false;
+    bool emote_down = false;
     bool quit = false;
     bool toggle_collision_boxes = false;
     bool regenerate_level = false;

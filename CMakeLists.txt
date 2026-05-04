@@ -268,6 +268,8 @@ add_executable(splonks-cpp
     src/entities/pistol.cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp
+    src/gameplay_authority.cpp
+    src/gameplay_events.cpp
     src/graphics.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
@@ -280,8 +282,10 @@ add_executable(splonks-cpp
     src/menu/ui.cpp
     src/menu/video.cpp
     src/network/net_fuzzer.cpp
+    src/network/net_entity_links.cpp
     src/network/net_event_apply.cpp
     src/network/net_lobby.cpp
+    src/network/net_progression.cpp
     src/network/net_protocol.cpp
     src/network/net_session.cpp
     src/network/net_transport.cpp

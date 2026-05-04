@@ -2,6 +2,7 @@
 
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "stage_progression.hpp"
 #include "world_query.hpp"
 
@@ -67,36 +68,6 @@ std::optional<ExitPrompt> BuildExitPromptForEntity(
     };
 }
 
-std::optional<ExitPrompt> BuildPrimaryExitPromptForEntity(
-    std::size_t entity_idx,
-    const State& state,
-    const Graphics& graphics
-) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr) {
-        return std::nullopt;
-    }
-    return BuildExitPromptForEntity(entity_idx, state, graphics, *player);
-}
-
-bool TryQueueExitTransition(
-    std::size_t entity_idx,
-    State& state
-) {
-    const Entity& exit_entity = state.entity_manager.entities[entity_idx];
-    (void)PlayEntityCenterSoundEmitter(state, exit_entity, audio_asset_ids::StageWin);
-    if (exit_entity.transition_target.has_value()) {
-        QueueStageTransition(state, *exit_entity.transition_target);
-    } else {
-        QueueStageExitTransition(state, exit_entity.stage_exit_id);
-    }
-    return state.pending_stage_transition.has_value() || state.mode == Mode::Win;
-}
-
 } // namespace
 
 std::optional<std::size_t> FindOverlappingBasicExitEntityIdx(
@@ -139,20 +110,6 @@ std::optional<std::size_t> FindOverlappingBasicExitEntityIdx(
     return best_entity_idx;
 }
 
-std::optional<std::size_t> FindOverlappingBasicExitEntityIdxForPlayer(
-    const State& state,
-    const Graphics& graphics
-) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr) {
-        return std::nullopt;
-    }
-    return FindOverlappingBasicExitEntityIdx(*player, state, graphics);
-}
-
 bool IsEntityTouchingBasicExit(
     const Entity& entity,
     const State& state,
@@ -175,47 +132,11 @@ void StepEntityLogicAsBasicExit(
         return;
     }
 
-    const std::optional<ExitPrompt> prompt = BuildPrimaryExitPromptForEntity(entity_idx, state, graphics);
-    if (prompt.has_value()) {
-        if (state.player_vid.has_value()) {
-            state.ClaimInteractForEntity(*state.player_vid);
-        }
-        const Entity& exit_entity = state.entity_manager.entities[entity_idx];
-        const Entity* const player = state.player_vid.has_value() ? state.entity_manager.GetEntity(*state.player_vid) : nullptr;
-        if (player != nullptr) {
-            const AABB player_aabb = common::GetContactAabbForEntity(*player, graphics);
-            const Vec2 player_center = GetAabbCenter(player_aabb);
-            const AABB nearest_exit_aabb = GetNearestWorldAabb(
-                state.stage,
-                player_center,
-                common::GetContactAabbForEntity(exit_entity, graphics)
-            );
-            const Vec2 prompt_base = GetNearestWorldPoint(
-                state.stage,
-                player_center,
-                Vec2::New((nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) * 0.5F,
-                          nearest_exit_aabb.tl.y)
-            );
-            state.AddWorldPrompt(WorldPrompt{
-                .world_pos = prompt_base + Vec2::New(0.0F, -6.0F),
-                .action_text = prompt->action_text,
-                .message_text = prompt->message_text,
-                .show_down_arrow = prompt->show_down_arrow,
-                .quantity = 0,
-                .icon_animation_id = std::nullopt,
-            });
-        }
-    }
-
-    if (state.pending_stage_transition.has_value()) {
-        return;
-    }
-
+    const Entity& exit_entity = state.entity_manager.entities[entity_idx];
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected ||
             slot.connection_kind != PlayerConnectionKind::Local ||
-            !slot.entity_vid.has_value() ||
-            !slot.inputs.equip_button.pressed) {
+            !slot.entity_vid.has_value()) {
             continue;
         }
 
@@ -226,14 +147,46 @@ void StepEntityLogicAsBasicExit(
 
         const std::optional<ExitPrompt> player_prompt =
             BuildExitPromptForEntity(entity_idx, state, graphics, *player);
-        if (!player_prompt.has_value() || !player_prompt->allowed) {
+        if (!player_prompt.has_value()) {
             continue;
         }
 
         state.ClaimInteractForEntity(*slot.entity_vid);
-        if (TryQueueExitTransition(entity_idx, state)) {
-            return;
+        const AABB player_aabb = common::GetContactAabbForEntity(*player, graphics);
+        const Vec2 player_center = GetAabbCenter(player_aabb);
+        const AABB nearest_exit_aabb = GetNearestWorldAabb(
+            state.stage,
+            player_center,
+            common::GetContactAabbForEntity(exit_entity, graphics)
+        );
+        const Vec2 prompt_base = GetNearestWorldPoint(
+            state.stage,
+            player_center,
+            Vec2::New((nearest_exit_aabb.tl.x + nearest_exit_aabb.br.x) * 0.5F,
+                      nearest_exit_aabb.tl.y)
+        );
+        state.AddWorldPrompt(WorldPrompt{
+            .world_pos = prompt_base + Vec2::New(0.0F, -6.0F),
+            .action_text = player_prompt->action_text,
+            .message_text = player_prompt->message_text,
+            .show_down_arrow = player_prompt->show_down_arrow,
+            .quantity = 0,
+            .icon_animation_id = std::nullopt,
+        });
+
+        if (state.pending_stage_transition.has_value() ||
+            !slot.inputs.equip_button.pressed ||
+            !player_prompt->allowed) {
+            continue;
         }
+
+        (void)PlayEntityCenterSoundEmitter(state, exit_entity, audio_asset_ids::StageWin);
+        if (exit_entity.transition_target.has_value()) {
+            EmitStageTransitionRequested(state, *exit_entity.transition_target, slot.player_id);
+        } else {
+            EmitStageExitRequested(state, exit_entity.stage_exit_id, slot.player_id);
+        }
+        return;
     }
 }
 

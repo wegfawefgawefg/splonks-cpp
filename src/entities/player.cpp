@@ -6,6 +6,7 @@
 #include "entities/gear_items.hpp"
 #include "entities/meathead.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "controls.hpp"
@@ -112,6 +113,39 @@ bool PlayerHasPunishBall(const Entity& player, const State& state) {
 bool PlayerIsHoldingPunishBall(const Entity& player, const State& state) {
     return player.holding_vid.has_value() && player.entity_d.has_value() &&
            *player.holding_vid == *player.entity_d && PlayerHasPunishBall(player, state);
+}
+
+bool IsExternallyLaunchedPlayer(const Entity& player) {
+    return player.projectile_contact_timer > 0 &&
+           !player.held_by_vid.has_value() &&
+           player.attachment_mode == AttachmentMode::None;
+}
+
+bool CanPlayerEmote(const Entity& player, const controls::ControlIntent& control) {
+    return player.condition == EntityCondition::Normal &&
+           player.grounded &&
+           !player.IsClimbing() &&
+           !player.IsHanging() &&
+           !control.left &&
+           !control.right &&
+           !control.jump;
+}
+
+bool TryStepPlayerEmote(Entity& player, const controls::ControlIntent& control) {
+    if (!CanPlayerEmote(player, control)) {
+        return false;
+    }
+
+    if (control.emote_up) {
+        TrySetAnimation(player, EntityDisplayState::EmoteBald);
+        return true;
+    }
+    if (control.emote_down) {
+        TrySetAnimation(player, EntityDisplayState::EmoteDab);
+        return true;
+    }
+
+    return false;
 }
 
 void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
@@ -442,6 +476,8 @@ void StepEntityLogicAsPlayer(
                 }
                 player.frame_data_animator.loop = true;
                 player.frame_data_animator.finished = false;
+            } else if (TryStepPlayerEmote(player, control)) {
+                player.frame_data_animator.ResetSpeed();
             } else {
                 const bool holding_or_pushing =
                     player.holding ||
@@ -525,7 +561,7 @@ void StepEntityLogicAsPlayer(
                     entity->held_by_vid = player_vid;
                     entity->attachment_mode = AttachmentMode::Held;
                     state.UpdateSidForEntity(vid->id, graphics);
-                    common::EmitReplicatedEntitySpawnedEvent(state, *entity, player_vid);
+                    EmitEntitySpawnedGameplayEvent(state, *entity, player_vid);
                     attacked = true;
                     (void)PlayEntitySoundEmitter(state, player, audio_asset_ids::BaseballBatSwing);
                 }
@@ -559,6 +595,7 @@ void StepEntityPhysicsAsPlayerWithTuning(
 
     // custom pre partial euler step for player to apply special velocity clamping.
     Entity& entity = state.entity_manager.entities[entity_idx];
+    const bool externally_launched_player = IsExternallyLaunchedPlayer(entity);
     const bool has_punish_ball = PlayerHasPunishBall(entity, state);
     const bool holding_punish_ball = PlayerIsHoldingPunishBall(entity, state);
     if (has_punish_ball && !holding_punish_ball && !entity.IsClimbing()) {
@@ -586,11 +623,13 @@ void StepEntityPhysicsAsPlayerWithTuning(
         0.0F,
         GetModifiedEffectValue(entity, EffectModifierTarget::MoveSpeedScale, 1.0F, &state)
     );
-    if (control.run) {
-        entity.vel.x = std::clamp(entity.vel.x, -max_run_speed * move_speed_scale, max_run_speed * move_speed_scale);
-    } else {
-        entity.vel.x =
-            std::clamp(entity.vel.x, -max_walk_speed * move_speed_scale, max_walk_speed * move_speed_scale);
+    if (!externally_launched_player) {
+        if (control.run) {
+            entity.vel.x = std::clamp(entity.vel.x, -max_run_speed * move_speed_scale, max_run_speed * move_speed_scale);
+        } else {
+            entity.vel.x =
+                std::clamp(entity.vel.x, -max_walk_speed * move_speed_scale, max_walk_speed * move_speed_scale);
+        }
     }
     const float max_fall_speed =
         GetModifiedEffectValue(entity, EffectModifierTarget::MaxFallSpeed, tuning.max_speed, &state);
@@ -600,7 +639,7 @@ void StepEntityPhysicsAsPlayerWithTuning(
 
     common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
     common::ApplyArchetypeGroundFriction(entity_idx, state, tuning.ground_friction_scale);
-    if (!entity.grounded) {
+    if (!entity.grounded && !externally_launched_player) {
         entity.vel.x *= tuning.air_friction;
     }
     ApplyClassicFallDamageOnLanding(entity_idx, state, audio, tuning);

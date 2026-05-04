@@ -23,6 +23,11 @@ net_port="${SPLONKS_NET_PORT:-39000}"
 host_ctl_port="${SPLONKS_HOST_CTL_PORT:-41000}"
 join_ctl_port="${SPLONKS_JOIN_CTL_PORT:-41001}"
 
+kill_existing_pair_processes() {
+    pkill -f "${binary} --multiplayer-host ${net_port} --debug-control-port ${host_ctl_port}" >/dev/null 2>&1 || true
+    pkill -f "${binary} --multiplayer-join ${net_host} ${net_port} --debug-control-port ${join_ctl_port}" >/dev/null 2>&1 || true
+}
+
 if [ "${1:-}" = "--child" ]; then
     role="${2:-offline}"
     cd "${repo_root}"
@@ -41,6 +46,10 @@ fi
 
 "${script_dir}/build.sh"
 
+if [ "${SPLONKS_KILL_EXISTING_PAIR:-1}" != "0" ]; then
+    kill_existing_pair_processes
+fi
+
 if ! command -v i3-msg >/dev/null 2>&1; then
     echo "i3-msg not found; launching two Splonks instances without workspace placement." >&2
     (cd "${repo_root}" && "${binary}" --multiplayer-host "${net_port}" --debug-control-port "${host_ctl_port}") &
@@ -51,6 +60,12 @@ if ! command -v i3-msg >/dev/null 2>&1; then
 fi
 
 target_output="${SPLONKS_I3_OUTPUT:-DisplayPort-0}"
+
+if [ "${SPLONKS_KILL_EXISTING_PAIR:-1}" != "0" ]; then
+    i3-msg "[workspace=\"${workspace}\" title=\"${window_title}\"] kill" >/dev/null || true
+    sleep 0.25
+    kill_existing_pair_processes
+fi
 
 i3-msg "workspace number ${workspace}" >/dev/null
 if [ -n "${target_output}" ]; then

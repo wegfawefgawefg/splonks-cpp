@@ -790,6 +790,7 @@ void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTunin
     }
 
     if (mutable_entity.IsHanging()) {
+        mutable_entity.projectile_contact_timer = 0;
         mutable_entity.vel.y = 0.0F;
         mutable_entity.acc.y = 0.0F;
         mutable_entity.grounded = false;

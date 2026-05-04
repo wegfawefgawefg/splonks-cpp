@@ -8459,6 +8459,66 @@ sprites:
     emit_point:
       x: 1
       y: 1
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 192
+      w: 16
+      h: 16
+    name: "player_dab"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 5
+      y: 2
+      w: 8
+      h: 14
+    cbox:
+      x: 5
+      y: 2
+      w: 8
+      h: 14
+    tile: false
+    emit_point:
+      x: 8
+      y: 10
+  - path: "entities.png"
+    aabb:
+      x: 128
+      y: 208
+      w: 16
+      h: 16
+    name: "player_bald"
+    frame: 0
+    duration: 1
+    offset:
+      x: 0
+      y: 0
+    center:
+      x: 0
+      y: 0
+    tags: []
+    pbox:
+      x: 5
+      y: 2
+      w: 8
+      h: 14
+    cbox:
+      x: 5
+      y: 2
+      w: 8
+      h: 14
+    tile: false
+    emit_point:
+      x: 0
+      y: 0
   - path: "boss.png"
     aabb:
       x: 0

@@ -1,6 +1,8 @@
 #include "entities/common/common.hpp"
 
 #include "effects.hpp"
+#include "gameplay_authority.hpp"
+#include "gameplay_events.hpp"
 #include "tile_contact_data.hpp"
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
@@ -75,6 +77,16 @@ void ApplyTileOverlapEffects(std::size_t entity_idx, State& state) {
 bool CanProjectileImpactWithoutDamage(const Entity& target) {
     return target.condition == EntityCondition::Stunned ||
            target.condition == EntityCondition::Dead;
+}
+
+bool IsLocalPlayerEntity(const State& state, const Entity& entity) {
+    const PlayerSlot* const slot = state.players.FindByEntityVid(entity.vid);
+    return slot != nullptr && slot->connection_kind == PlayerConnectionKind::Local;
+}
+
+bool IsRemotePlayerEntity(const State& state, const Entity& entity) {
+    const PlayerSlot* const slot = state.players.FindByEntityVid(entity.vid);
+    return slot != nullptr && slot->connection_kind == PlayerConnectionKind::Remote;
 }
 
 AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
@@ -375,6 +387,19 @@ bool TryApplyProjectileContactToEntity(
         return false;
     }
 
+    const bool source_has_local_authority =
+        HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
+    const bool target_is_local_player = IsLocalPlayerEntity(state, other_entity);
+    const bool target_is_remote_player = IsRemotePlayerEntity(state, other_entity);
+    if ((target_is_local_player || target_is_remote_player) && !source_has_local_authority) {
+        return false;
+    }
+
+    const DamageOptions damage_options{
+        .source_vid = entity.vid,
+        .allow_remote_player_target = source_has_local_authority,
+        .defer_replication = true,
+    };
     const DamageResult damage_result =
         entity.projectile_contact_damage_amount > 0
             ? TryDamageEntity(
@@ -382,7 +407,8 @@ bool TryApplyProjectileContactToEntity(
                   state,
                   audio,
                   entity.projectile_contact_damage_type,
-                  entity.projectile_contact_damage_amount
+                  entity.projectile_contact_damage_amount,
+                  damage_options
               )
             : DamageResult::None;
     switch (damage_result) {
@@ -405,6 +431,16 @@ bool TryApplyProjectileContactToEntity(
         );
         if (entity.collide_sound.has_value()) {
             (void)PlayEntityCenterSoundEmitter(state, entity, *entity.collide_sound);
+        }
+        if (source_has_local_authority &&
+            (damage_result == DamageResult::Hurt || damage_result == DamageResult::Died)) {
+            EmitEntityDamagedGameplayEvent(
+                state,
+                other_entity_mut,
+                entity.projectile_contact_damage_type,
+                entity.projectile_contact_damage_amount,
+                entity.vid
+            );
         }
         return true;
     }

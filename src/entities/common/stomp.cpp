@@ -60,6 +60,16 @@ bool CanEntityBeStomped(const Entity& target) {
     return true;
 }
 
+void ApplyStompBounce(Entity& stomper, State& state) {
+    const controls::ControlIntent control = controls::GetControlIntentForEntity(stomper, state);
+    const float base_bounce_impulse = control.jump
+        ? -kStompHeldJumpBounceVelocityY
+        : -kStompShortBounceVelocityY;
+    const float bounce_impulse =
+        GetModifiedEffectValue(stomper, EffectModifierTarget::StompBounceImpulse, base_bounce_impulse, &state);
+    stomper.vel.y = -bounce_impulse;
+}
+
 } // namespace
 
 bool TryApplyStompContactToEntity(
@@ -108,6 +118,11 @@ bool TryApplyStompContactToEntity(
             audio_asset_ids::SpringShoe,
             AudioEmitterPlayParams{.volume_scale = kSpringShoeMovementSoundVolume}
         );
+    }
+
+    if (IsPlayerLikeEntityType(stomper.type_) && IsPlayerLikeEntityType(stomped->type_)) {
+        ApplyStompBounce(stomper, state);
+        return true;
     }
 
     const float base_stomp_damage = GetModifiedEffectValue(
@@ -160,13 +175,7 @@ bool TryApplyStompContactToEntity(
         1
     );
 
-    const controls::ControlIntent control = controls::GetControlIntentForEntity(stomper, state);
-    const float base_bounce_impulse = control.jump
-        ? -kStompHeldJumpBounceVelocityY
-        : -kStompShortBounceVelocityY;
-    const float bounce_impulse =
-        GetModifiedEffectValue(stomper, EffectModifierTarget::StompBounceImpulse, base_bounce_impulse, &state);
-    stomper.vel.y = -bounce_impulse;
+    ApplyStompBounce(stomper, state);
     return true;
 }
 

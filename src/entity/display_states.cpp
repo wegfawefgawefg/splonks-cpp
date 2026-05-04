@@ -32,6 +32,10 @@ std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplaySta
             return DisplayStateFrameDataSelection{frame_data_ids::PlayerHanging, true, false, 0};
         case EntityDisplayState::Falling:
             return DisplayStateFrameDataSelection{frame_data_ids::PlayerFalling, true, false, 0};
+        case EntityDisplayState::EmoteDab:
+            return DisplayStateFrameDataSelection{frame_data_ids::PlayerDab, true, false, 0};
+        case EntityDisplayState::EmoteBald:
+            return DisplayStateFrameDataSelection{frame_data_ids::PlayerBald, true, false, 0};
         }
         break;
     case EntityType::Bat:

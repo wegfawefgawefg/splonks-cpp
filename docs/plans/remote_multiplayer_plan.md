@@ -61,6 +61,44 @@ This is not lockstep, not GGPO-style whole-game rollback, and not classic
 client/server physics authority. It is deliberately permissive because Splonks is
 trusted co-op and source-available.
 
+## Architecture Boundary
+
+Do not convert the whole game to local event-driven gameplay. Normal offline
+gameplay should remain direct: entity code mutates entity/tile state immediately
+so controls stay simple and responsive.
+
+Use gameplay events only as a replication/progression seam:
+
+- Gameplay code emits durable facts after the local mutation happened.
+- The replication layer converts those facts to `NetEvent`s and packets.
+- The progression layer handles stage-exit requests/sync.
+- Entity code must not construct network packets or know about sockets.
+- Networking should not know entity-specific rules like sacrifice, shop
+  behavior, weapon hitboxes, or tool internals.
+
+This gives a permissive co-op model without forcing every behavior through an
+abstract event bus. If a gameplay fact is not durable or not useful for remote
+readability, it should stay local.
+
+## Source Authority Rule
+
+Durable interactions are source-owned, not target-owned.
+
+- If a local player or locally-owned held/projectile entity hits, carries,
+  drops, throws, or otherwise mutates another entity, that local source reports
+  the durable fact.
+- This includes remote player targets. Picking up or hitting a remote player
+  must replicate from the holder/attacker, not be filtered just because the
+  target body is remote on this machine.
+- Remote-owned projectiles/melee replicas should not independently author damage
+  to our local player. Their owner sends the damage event; our machine applies
+  that event if it names an explicit source entity.
+- Generic remote damage without a named source should not take over local
+  player bodies, because stale enemy overlap can otherwise produce bogus hits.
+
+This rule avoids the worst double-authoring case: both the attacker's machine
+and the target's machine deciding they are the source of truth for the same hit.
+
 ## Current First Pass Status
 
 Implemented:

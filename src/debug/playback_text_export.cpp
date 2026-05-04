@@ -65,6 +65,10 @@ const char* DisplayStateToString(EntityDisplayState state) {
         return "Hanging";
     case EntityDisplayState::Falling:
         return "Falling";
+    case EntityDisplayState::EmoteDab:
+        return "EmoteDab";
+    case EntityDisplayState::EmoteBald:
+        return "EmoteBald";
     }
     return "Unknown";
 }

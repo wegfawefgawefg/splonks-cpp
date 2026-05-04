@@ -5,6 +5,7 @@
 #include "network/net_session.hpp"
 #include "entity.hpp"
 #include "entity/archetype.hpp"
+#include "entity/display_states.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
 #include "on_damage_effects.hpp"
@@ -54,6 +55,58 @@ std::optional<VID> FindEntityVidForEvent(
 
 bool IsAttachmentDriven(const Entity& entity) {
     return entity.held_by_vid.has_value() || entity.attachment_mode != AttachmentMode::None;
+}
+
+bool ApplyConditionPresentation(Entity& entity, EntityCondition condition) {
+    std::optional<EntityDisplayState> display_state;
+    if (condition == EntityCondition::Dead) {
+        display_state = EntityDisplayState::Dead;
+    } else if (condition == EntityCondition::Stunned) {
+        display_state = EntityDisplayState::Stunned;
+    }
+    if (!display_state.has_value()) {
+        return false;
+    }
+
+    const auto selection = GetFrameDataSelectionForDisplayState(EntityDisplayInput{
+        .type_ = entity.type_,
+        .display_state = *display_state,
+    });
+    if (!selection.has_value()) {
+        return false;
+    }
+
+    FrameDataAnimator& animator = entity.frame_data_animator;
+    if (animator.animation_id != selection->animation_id) {
+        animator.SetAnimation(selection->animation_id);
+    }
+    animator.animate = selection->animate;
+    animator.current_frame = selection->has_forced_frame ? selection->forced_frame : 0;
+    animator.current_time = 0.0F;
+    animator.speed = 1.0F;
+    return true;
+}
+
+void ApplyDamagePresentation(Entity& entity, const EntityDamagedEvent& payload) {
+    const EntityCondition effective_condition =
+        payload.remaining_health == 0
+            ? EntityCondition::Dead
+            : static_cast<EntityCondition>(payload.condition);
+    if (ApplyConditionPresentation(entity, effective_condition)) {
+        return;
+    }
+    if (payload.animation_id == kInvalidFrameDataId) {
+        return;
+    }
+
+    FrameDataAnimator& animator = entity.frame_data_animator;
+    if (animator.animation_id != payload.animation_id) {
+        animator.SetAnimation(payload.animation_id);
+    }
+    animator.current_frame = payload.animation_frame;
+    animator.current_time = payload.animation_time;
+    animator.speed = payload.animation_speed;
+    animator.animate = payload.animate != 0;
 }
 
 void ApplyEntitySpawnedEvent(
@@ -129,19 +182,7 @@ std::optional<VID> FindEntityVidForEvent(
         session.LinkEntity(entity_id, *slot->entity_vid);
         return slot->entity_vid;
     }
-    if (entity_id == kInvalidNetEntityId ||
-        entity_id > static_cast<NetEntityId>(state.entity_manager.entities.size())) {
-        return std::nullopt;
-    }
-
-    const std::size_t entity_idx = static_cast<std::size_t>(entity_id - 1U);
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.active) {
-        return std::nullopt;
-    }
-
-    session.LinkEntity(entity_id, entity.vid);
-    return entity.vid;
+    return std::nullopt;
 }
 
 void ApplyEntityDamagedEvent(
@@ -163,26 +204,53 @@ void ApplyEntityDamagedEvent(
         return;
     }
 
+    std::optional<VID> source_vid;
+    const Entity* source_entity = nullptr;
+    if (payload.source_entity_id != kInvalidNetEntityId) {
+        source_vid = FindEntityVidForEvent(session, state, payload.source_entity_id);
+        if (source_vid.has_value()) {
+            source_entity = state.entity_manager.GetEntity(*source_vid);
+        }
+    }
+    if (source_entity != nullptr &&
+        IsPlayerLikeEntityType(source_entity->type_) &&
+        IsPlayerLikeEntityType(entity->type_) &&
+        (payload.damage_type == DamageType::Attack ||
+         payload.damage_type == DamageType::JumpOn)) {
+        return;
+    }
+
     const PlayerSlot* const target_player_slot = state.players.FindByEntityVid(entity->vid);
     const bool target_is_local_player =
         target_player_slot != nullptr &&
         target_player_slot->connection_kind == PlayerConnectionKind::Local;
-    if (target_is_local_player && target_player_slot->player_id != source_player_id) {
+    const bool has_explicit_remote_source =
+        target_player_slot != nullptr &&
+        payload.source_entity_id != kInvalidNetEntityId &&
+        source_player_id != target_player_slot->player_id;
+    if (target_is_local_player &&
+        target_player_slot->player_id != source_player_id &&
+        !has_explicit_remote_source) {
         // Remote simulations can have stale/enemy-overlap disagreement for our
         // local player body. Local players own their own damage; remote attacks
-        // should replicate through their spawned/projectile entities and be
-        // resolved by this machine's simulation.
+        // must name their source entity so generic stale damage cannot take
+        // over the local body.
         return;
     }
 
+    const bool remote_hit_on_local_player =
+        target_is_local_player && target_player_slot->player_id != source_player_id;
     const bool attachment_driven = IsAttachmentDriven(*entity);
     if (!attachment_driven) {
-        entity->pos = payload.pos;
+        if (!remote_hit_on_local_player) {
+            entity->pos = payload.pos;
+        }
         entity->vel = payload.vel;
         entity->acc = payload.acc;
         entity->grounded = payload.grounded != 0;
     }
     entity->stun_timer = payload.stun_timer;
+    entity->projectile_contact_timer = payload.projectile_contact_timer;
 
     if (payload.remaining_health == 0) {
         entity->health = 0;
@@ -191,11 +259,13 @@ void ApplyEntityDamagedEvent(
         } else {
             entity->condition = EntityCondition::Dead;
         }
+        ApplyDamagePresentation(*entity, payload);
         return;
     }
 
     entity->health = payload.remaining_health;
     entity->condition = static_cast<EntityCondition>(payload.condition);
+    ApplyDamagePresentation(*entity, payload);
     if (entity->condition == EntityCondition::Stunned ||
         entity->condition == EntityCondition::Dead) {
         entities::common::ReleaseEntityFromHolder(*entity, state);
@@ -217,8 +287,15 @@ void ApplyEntityStatePatchedEvent(
     PlayerId source_player_id,
     const EntityStatePatchedEvent& payload
 ) {
-    const std::optional<PlayerId> owner_player_id = session.FindEntityOwner(payload.entity_id);
-    if (owner_player_id.has_value()) {
+    const bool has_explicit_source = payload.source_entity_id != kInvalidNetEntityId;
+    if (has_explicit_source) {
+        const std::optional<PlayerId> source_owner =
+            session.FindEntityOwner(payload.source_entity_id);
+        if (!source_owner.has_value() || *source_owner != source_player_id) {
+            return;
+        }
+    } else if (const std::optional<PlayerId> owner_player_id =
+                   session.FindEntityOwner(payload.entity_id)) {
         if (*owner_player_id == session.local_player_id ||
             *owner_player_id != source_player_id) {
             return;
@@ -230,6 +307,9 @@ void ApplyEntityStatePatchedEvent(
     const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
     if (!vid.has_value()) {
         return;
+    }
+    if (has_explicit_source && !IsPlayerNetEntityId(payload.entity_id)) {
+        session.SetEntityOwner(payload.entity_id, source_player_id);
     }
     Entity* const entity = state.entity_manager.GetEntityMut(*vid);
     if (entity == nullptr) {
@@ -274,10 +354,10 @@ bool IsVidInHolderChain(VID needle, const Entity& entity, const State& state) {
 bool IsImmediateLocalGameplayEvent(NetEventType type) {
     switch (type) {
     case NetEventType::EntitySpawned:
+    case NetEventType::EntityDamaged:
     case NetEventType::EntityHeld:
     case NetEventType::EntityDropped:
     case NetEventType::EntityThrown:
-    case NetEventType::EntityDamaged:
     case NetEventType::TileBroken:
     case NetEventType::RopeTilePlaced:
     case NetEventType::TileChanged:

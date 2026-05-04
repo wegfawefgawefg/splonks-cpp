@@ -2,6 +2,7 @@
 
 #include "damage_types.hpp"
 #include "entity/core_types.hpp"
+#include "frame_data_id.hpp"
 #include "math_types.hpp"
 #include "network/net_ids.hpp"
 #include "tile.hpp"
@@ -118,13 +119,20 @@ struct EntityDamagedEvent {
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
     std::uint32_t stun_timer = 0;
+    std::uint32_t projectile_contact_timer = 0;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
+    std::uint8_t animate = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    std::uint16_t animation_frame = 0;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
     DamageType damage_type = DamageType::Attack;
 };
 
 struct EntityStatePatchedEvent {
     NetEntityId entity_id = kInvalidNetEntityId;
+    NetEntityId source_entity_id = kInvalidNetEntityId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);

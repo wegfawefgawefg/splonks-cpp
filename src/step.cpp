@@ -6,6 +6,7 @@
 #include "entities/common/common.hpp"
 #include "entities/basic_exit.hpp"
 #include "buying.hpp"
+#include "gameplay_events.hpp"
 #include "step_entities.hpp"
 #include "stage_progression.hpp"
 #include "stage_fluids.hpp"
@@ -13,6 +14,7 @@
 #include "stage_rotation.hpp"
 #include "network/net_event_apply.hpp"
 #include "network/net_lobby.hpp"
+#include "network/net_progression.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
@@ -54,9 +56,18 @@ float GetSimulationTickInterval(const State& state) {
     return kTimestep;
 }
 
+std::optional<VID> GetPrimaryLocalPlayerVid(const State& state) {
+    if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
+        if (primary->entity_vid.has_value()) {
+            return primary->entity_vid;
+        }
+    }
+    return state.player_vid;
+}
+
 void UpdateControlledEntity(State& state) {
     if (!state.controlled_entity_vid.has_value()) {
-        state.controlled_entity_vid = state.player_vid;
+        state.controlled_entity_vid = GetPrimaryLocalPlayerVid(state);
         return;
     }
 
@@ -68,11 +79,11 @@ void UpdateControlledEntity(State& state) {
         return;
     }
 
-    if (state.player_vid.has_value()) {
-        const Entity* player = state.entity_manager.GetEntity(*state.player_vid);
+    if (const std::optional<VID> primary_player_vid = GetPrimaryLocalPlayerVid(state)) {
+        const Entity* player = state.entity_manager.GetEntity(*primary_player_vid);
         if (player != nullptr && player->active &&
             player->condition != EntityCondition::Dead) {
-            state.controlled_entity_vid = state.player_vid;
+            state.controlled_entity_vid = primary_player_vid;
             return;
         }
     }
@@ -299,6 +310,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
+    ProcessGameplayEvents(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
     DrainAndApplyLocalNetworkEvents(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);
@@ -310,15 +322,16 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     }
     state.stage.AttenuateTileShake(kShakeAttenuationRate);
     AddBuyPromptsForPlayer(state, graphics);
-    if (state.player_vid.has_value() && state.playing_inputs.equip_button.pressed &&
-        !state.IsInteractClaimedForEntity(*state.player_vid)) {
-        (void)TryBuyOverlappingEntity(state.player_vid->id, state, graphics, audio);
+    const std::optional<VID> primary_player_vid = GetPrimaryLocalPlayerVid(state);
+    if (primary_player_vid.has_value() && state.playing_inputs.equip_button.pressed &&
+        !state.IsInteractClaimedForEntity(*primary_player_vid)) {
+        (void)TryBuyOverlappingEntity(primary_player_vid->id, state, graphics, audio);
     }
     state.particles.Step(graphics.frame_data_db, dt);
 
     bool lost = false;
-    if (state.player_vid) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+    if (primary_player_vid.has_value()) {
+        if (Entity* const player = state.entity_manager.GetEntityMut(*primary_player_vid)) {
             if (player->condition == EntityCondition::Dead) {
                 lost = true;
             } else {
@@ -333,11 +346,11 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     if (lost) {
         state.pending_stage_transition.reset();
         Vec2 game_over_pos = state.gameplay_camera_anchor_world_pos.value_or(graphics.camera.target);
-        if (state.player_vid.has_value()) {
-            if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
+        if (primary_player_vid.has_value()) {
+            if (const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid)) {
                 if (player->active) {
                     game_over_pos = entities::common::GetVisualCenterForEntity(*player, graphics, player->GetCenter());
-                    state.controlled_entity_vid = state.player_vid;
+                    state.controlled_entity_vid = primary_player_vid;
                 }
             }
         }
@@ -361,7 +374,12 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
 
 void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
     (void)audio;
+    network::StepNetworkLobby(state, graphics);
+
     if (state.net_session.role == network::NetRole::Offline) {
+        return;
+    }
+    if (state.net_session.role == network::NetRole::Peer) {
         return;
     }
     if (!state.pending_stage_transition.has_value()) {
@@ -391,6 +409,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.RebuildSid(graphics);
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     StepEntities(state, audio, graphics, dt);
+    ProcessGameplayEvents(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
     DrainAndApplyLocalNetworkEvents(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);

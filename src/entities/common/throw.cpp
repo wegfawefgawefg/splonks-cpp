@@ -2,8 +2,7 @@
 
 #include "controls.hpp"
 #include "entity/archetype.hpp"
-#include "network/net_event.hpp"
-#include "network/net_session.hpp"
+#include "gameplay_events.hpp"
 
 namespace splonks::entities::common {
 
@@ -28,64 +27,7 @@ Vec2 BuildThrowVelocity(const controls::ControlIntent& control) {
     return throw_vel;
 }
 
-network::NetEntityId GetReplicatedEntityId(State& state, const Entity& entity) {
-    if (const std::optional<network::NetEntityId> linked =
-            state.net_session.FindNetEntityId(entity.vid)) {
-        return *linked;
-    }
-    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
-        const network::NetEntityId player_entity_id = network::MakePlayerNetEntityId(*player_id);
-        state.net_session.LinkEntity(player_entity_id, entity.vid);
-        return player_entity_id;
-    }
-    const network::NetEntityId deterministic_stage_id =
-        static_cast<network::NetEntityId>(entity.vid.id) + 1U;
-    state.net_session.LinkEntity(deterministic_stage_id, entity.vid);
-    return deterministic_stage_id;
-}
-
 } // namespace
-
-void EmitReplicatedEntitySpawnedEvent(
-    State& state,
-    Entity& spawned_entity,
-    std::optional<VID> held_by_vid
-) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    network::NetEntityId net_id = state.net_session.FindNetEntityId(spawned_entity.vid)
-        .value_or(network::kInvalidNetEntityId);
-    if (net_id == network::kInvalidNetEntityId) {
-        net_id = state.net_session.AllocateLocalEntityId();
-        state.net_session.LinkEntity(net_id, spawned_entity.vid);
-    }
-    state.net_session.SetEntityOwner(net_id, state.net_session.local_player_id);
-
-    const Vec2 spawn_velocity = spawned_entity.vel + spawned_entity.acc;
-    network::NetEntityId held_by_id = network::kInvalidNetEntityId;
-    if (held_by_vid.has_value()) {
-        if (const Entity* const holder = state.entity_manager.GetEntity(*held_by_vid)) {
-            held_by_id = GetReplicatedEntityId(state, *holder);
-        }
-    }
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntitySpawned;
-    event.payload = network::EntitySpawnedEvent{
-        .entity_id = net_id,
-        .entity_type = spawned_entity.type_,
-        .held_by_id = held_by_id,
-        .pos = spawned_entity.pos,
-        .vel = spawn_velocity,
-        .owner = network::NetEntityOwner::Player(state.net_session.local_player_id),
-        .counter_a = spawned_entity.counter_a,
-        .counter_b = spawned_entity.counter_b,
-        .use_pressed = spawned_entity.use_state.pressed,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
 
 bool TrySpawnAndThrowEntityForToolUse(
     std::size_t thrower_idx,
@@ -137,7 +79,7 @@ bool TrySpawnAndThrowEntityForToolUse(
     spawned_entity->SetCenter(thrower.GetCenter());
     spawned_entity->acc += velocity_builder(control) * thrower.throw_velocity_scale;
     state.UpdateSidForEntity(vid->id, graphics);
-    EmitReplicatedEntitySpawnedEvent(state, *spawned_entity);
+    EmitEntitySpawnedGameplayEvent(state, *spawned_entity);
 
     tool_slot.count -= 1;
     tool_slot.cooldown = cooldown_frames;

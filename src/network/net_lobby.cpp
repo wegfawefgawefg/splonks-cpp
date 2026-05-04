@@ -3,6 +3,8 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
+#include "network/net_entity_links.hpp"
+#include "network/net_progression.hpp"
 #include "network/net_protocol.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_spawning.hpp"
@@ -31,21 +33,6 @@ NetTransportRuntime& EnsureTransport(State& state) {
         state.net_transport = std::make_unique<NetTransportRuntime>(NetTransportRuntime::New());
     }
     return *state.net_transport;
-}
-
-NetEntityId GetReplicatedEntityId(State& state, const Entity& entity) {
-    if (const std::optional<NetEntityId> linked = state.net_session.FindNetEntityId(entity.vid)) {
-        return *linked;
-    }
-    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
-        const NetEntityId player_entity_id = MakePlayerNetEntityId(*player_id);
-        state.net_session.LinkEntity(player_entity_id, entity.vid);
-        return player_entity_id;
-    }
-
-    const NetEntityId deterministic_stage_id = static_cast<NetEntityId>(entity.vid.id) + 1U;
-    state.net_session.LinkEntity(deterministic_stage_id, entity.vid);
-    return deterministic_stage_id;
 }
 
 Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
@@ -493,7 +480,8 @@ bool ShouldReplicateEntityStatePatch(const State& state, const Entity& entity) {
 
 EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entity) {
     return EntityStatePatchedEvent{
-        .entity_id = GetReplicatedEntityId(state, entity),
+        .entity_id = GetOrAssignReplicatedEntityId(state, entity.vid),
+        .source_entity_id = kInvalidNetEntityId,
         .pos = entity.pos,
         .vel = entity.vel,
         .acc = entity.acc,
@@ -722,11 +710,17 @@ EntityDamageEventEntry MakeEntityDamageEventEntry(const NetEvent& event) {
         .acc_x = payload != nullptr ? payload->acc.x : 0.0F,
         .acc_y = payload != nullptr ? payload->acc.y : 0.0F,
         .stun_timer = payload != nullptr ? payload->stun_timer : 0U,
+        .projectile_contact_timer = payload != nullptr ? payload->projectile_contact_timer : 0U,
         .damage_type = payload != nullptr
             ? static_cast<std::uint16_t>(payload->damage_type)
             : static_cast<std::uint16_t>(0),
         .condition = payload != nullptr ? payload->condition : static_cast<std::uint8_t>(0),
         .grounded = payload != nullptr ? payload->grounded : static_cast<std::uint8_t>(0),
+        .animate = payload != nullptr ? payload->animate : static_cast<std::uint8_t>(0),
+        .animation_id = payload != nullptr ? payload->animation_id : kInvalidFrameDataId,
+        .animation_frame = payload != nullptr ? payload->animation_frame : static_cast<std::uint16_t>(0),
+        .animation_time = payload != nullptr ? payload->animation_time : 0.0F,
+        .animation_speed = payload != nullptr ? payload->animation_speed : 1.0F,
     };
 }
 
@@ -749,8 +743,14 @@ NetEvent MakeEntityDamageEvent(const EntityDamageEventEntry& entry) {
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
         .stun_timer = entry.stun_timer,
+        .projectile_contact_timer = entry.projectile_contact_timer,
         .condition = entry.condition,
         .grounded = entry.grounded,
+        .animate = entry.animate,
+        .animation_id = entry.animation_id,
+        .animation_frame = entry.animation_frame,
+        .animation_time = entry.animation_time,
+        .animation_speed = entry.animation_speed,
         .damage_type = static_cast<DamageType>(entry.damage_type),
     };
     return event;
@@ -786,6 +786,7 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .source_local_frame = event.header.source_local_frame,
         .coordinator_order = event.header.coordinator_order,
         .entity_id = payload != nullptr ? payload->entity_id : kInvalidNetEntityId,
+        .source_entity_id = payload != nullptr ? payload->source_entity_id : kInvalidNetEntityId,
         .pos_x = payload != nullptr ? payload->pos.x : 0.0F,
         .pos_y = payload != nullptr ? payload->pos.y : 0.0F,
         .vel_x = payload != nullptr ? payload->vel.x : 0.0F,
@@ -812,6 +813,7 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
     event.type = NetEventType::EntityStatePatched;
     event.payload = EntityStatePatchedEvent{
         .entity_id = entry.entity_id,
+        .source_entity_id = entry.source_entity_id,
         .pos = Vec2::New(entry.pos_x, entry.pos_y),
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
@@ -974,69 +976,6 @@ void SendOrderedTileEventsToAllRemotes(State& state, NetTransportRuntime& transp
         SendEntityDamageEvents(transport, remote.endpoint, state.net_session.ordered_events);
         SendEntityStateEvents(transport, remote.endpoint, state.net_session.ordered_events);
         SendEntityCarryEvents(transport, remote.endpoint, state.net_session.ordered_events);
-    }
-}
-
-StageSyncPacket MakeStageSyncPacket(const State& state) {
-    StageSyncPacket packet;
-    packet.stage_instance_id = state.net_session.stage_instance_id;
-    packet.stage_seed = state.net_session.stage_seed;
-    WriteFixedString(state.net_session.quest_id, packet.quest_id);
-    WriteFixedString(state.net_session.quest_stage_id, packet.quest_stage_id);
-    return packet;
-}
-
-void SendStageSyncToAllRemotes(State& state, NetTransportRuntime& transport) {
-    if (state.net_session.role != NetRole::Coordinator || transport.remotes.empty()) {
-        return;
-    }
-
-    const EncodedNetPacket encoded = EncodeStageSync(MakeStageSyncPacket(state));
-    for (const NetRemoteEndpoint& remote : transport.remotes) {
-        SendEncodedPacket(transport, remote.endpoint, encoded);
-    }
-}
-
-void ApplyStageSync(
-    State& state,
-    const Graphics& graphics,
-    NetTransportRuntime& transport,
-    const StageSyncPacket& packet
-) {
-    if (packet.stage_instance_id == kInvalidStageInstanceId ||
-        packet.stage_instance_id == state.net_session.stage_instance_id) {
-        return;
-    }
-
-    const std::string quest_id = ReadFixedString(packet.quest_id);
-    const std::string quest_stage_id = ReadFixedString(packet.quest_stage_id);
-    if (quest_id.empty() || quest_stage_id.empty()) {
-        return;
-    }
-
-    state.net_session.stage_instance_id = packet.stage_instance_id;
-    state.net_session.quest_id = quest_id;
-    state.net_session.quest_stage_id = quest_stage_id;
-    state.net_session.stage_seed = packet.stage_seed;
-    state.net_session.ClearStageEntityLinks();
-    state.net_session.ordered_events.clear();
-    state.net_session.pending_local_events.clear();
-    state.net_session.applied_event_ids.clear();
-    transport.remote_player_targets.clear();
-
-    if (!LoadNetworkQuestStage(state, quest_id, quest_stage_id, packet.stage_seed, true)) {
-        transport.last_error = "Stage sync failed: could not load " + quest_stage_id + ".";
-        return;
-    }
-
-    state.pending_stage_transition.reset();
-    state.frame = 0;
-    state.scene_frame = 0;
-    state.SetMode(Mode::Playing);
-    for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.entity_vid.has_value()) {
-            state.UpdateSidForEntity(slot.entity_vid->id, graphics);
-        }
     }
 }
 
@@ -1222,10 +1161,13 @@ void HandleEntityCarryEventsAsPeer(State& state, const EntityCarryEventsPacket& 
             entry.event_id == kInvalidNetEventId) {
             continue;
         }
-        if (entry.source_player_id == state.net_session.local_player_id) {
+        const bool sourced_by_local = entry.source_player_id == state.net_session.local_player_id;
+        if (sourced_by_local) {
             RemovePendingLocalEvent(state.net_session, entry.event_id);
-            (void)state.net_session.MarkEventApplied(entry.event_id);
-            continue;
+            if (static_cast<NetEventType>(entry.event_type) == NetEventType::EntityThrown) {
+                (void)state.net_session.MarkEventApplied(entry.event_id);
+                continue;
+            }
         }
         if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
             continue;
@@ -1659,6 +1601,7 @@ void HandleJoinAccept(
         Vec2::New(accept.host_spawn_x, accept.host_spawn_y),
         graphics
     );
+    RegisterStageEntityLinks(state);
 }
 
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
@@ -1684,6 +1627,12 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (const std::optional<LeaveNoticePacket> leave =
                 TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {
             RemoveRemotePlayers(state, transport, GetLeavePlayerIds(*leave));
+            continue;
+        }
+
+        if (const std::optional<StageExitRequestPacket> exit_request =
+                TryDecodeStageExitRequest(packet->bytes.data(), packet->size)) {
+            HandleStageExitRequestAsCoordinator(state, *exit_request);
             continue;
         }
 
@@ -1826,6 +1775,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     }
     state.net_session.stage_instance_id = static_cast<StageInstanceId>(state.net_session.stage_seed);
     state.players.EnsurePrimaryLocalPlayer();
+    RegisterStageEntityLinks(state);
     transport.remotes.clear();
     transport.remote_player_targets.clear();
     transport.join_request_pending = false;
@@ -1833,25 +1783,6 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
     }
     return true;
-}
-
-void NotifyStageLoaded(State& state) {
-    if (state.net_session.role == NetRole::Offline || state.stage.quest_id.empty()) {
-        return;
-    }
-
-    state.net_session.quest_id = state.stage.quest_id;
-    state.net_session.quest_stage_id = state.stage.quest_stage_id;
-    state.net_session.stage_seed = state.stage.generation_seed.value_or(MakeHostStageSeed(state));
-    state.net_session.stage_instance_id += 1;
-    state.net_session.ClearStageEntityLinks();
-    state.net_session.ordered_events.clear();
-    state.net_session.pending_local_events.clear();
-    state.net_session.applied_event_ids.clear();
-    if (state.net_transport) {
-        state.net_transport->remote_player_targets.clear();
-        SendStageSyncToAllRemotes(state, *state.net_transport);
-    }
 }
 
 bool JoinHostSession(
@@ -2023,6 +1954,7 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
         }
         return false;
     }
+    RegisterStageEntityLinks(state);
     const Vec2 spawn_base = GetPrimaryPlayerSpawnPos(state);
     if (state.player_vid.has_value()) {
         state.entity_manager.SetInactiveVid(*state.player_vid);

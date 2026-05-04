@@ -1,5 +1,7 @@
 #include "entities/common/common.hpp"
 
+#include "gameplay_authority.hpp"
+#include "gameplay_events.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -111,6 +113,10 @@ void TryPushBlocks(
                     block_x_acc_delta = -block_entity->push_acc;
                 }
                 block_entity->acc.x += block_x_acc_delta;
+                if (block_x_acc_delta != 0.0F &&
+                    HasLocalGameplayAuthorityForInteractionSource(state, entity.vid)) {
+                    EmitEntityStatePatchedGameplayEvent(state, entity, *block_entity);
+                }
                 break;
             }
         }

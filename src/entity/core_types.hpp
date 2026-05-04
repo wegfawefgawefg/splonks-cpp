@@ -230,6 +230,8 @@ enum class EntityDisplayState {
     Climbing,
     Hanging,
     Falling,
+    EmoteDab,
+    EmoteBald,
 };
 
 enum class AttachmentMode {

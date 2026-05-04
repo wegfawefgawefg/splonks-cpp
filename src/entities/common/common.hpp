@@ -148,11 +148,6 @@ void SyncEntityAttachments(
     State& state,
     const Graphics& graphics
 );
-void EmitReplicatedEntitySpawnedEvent(
-    State& state,
-    Entity& spawned_entity,
-    std::optional<VID> held_by_vid = std::nullopt
-);
 bool TryApplyStompContactToEntity(
     std::size_t entity_idx,
     std::size_t other_entity_idx,
@@ -208,13 +203,20 @@ enum class DamageResult {
     Died,
 };
 
+struct DamageOptions {
+    std::optional<VID> source_vid = std::nullopt;
+    bool allow_remote_player_target = false;
+    bool defer_replication = false;
+};
+
 bool CanEntityTakeDamageType(const Entity& entity, DamageType damage_type);
 DamageResult TryDamageEntity(
     std::size_t entity_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
-    unsigned int amount
+    unsigned int amount,
+    DamageOptions options = {}
 );
 bool TryApplyProjectileContactToEntity(
     std::size_t entity_idx,

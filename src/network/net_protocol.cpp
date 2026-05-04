@@ -10,6 +10,7 @@ static_assert(sizeof(EntityStateEventsPacket) <= kNetPacketMaxBytes - sizeof(Net
 static_assert(sizeof(EntityCarryEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(StageExitRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -101,6 +102,10 @@ EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet) {
 
 EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet) {
     return EncodePayload(NetPacketType::StageSync, packet);
+}
+
+EncodedNetPacket EncodeStageExitRequest(const StageExitRequestPacket& packet) {
+    return EncodePayload(NetPacketType::StageExitRequest, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -245,6 +250,18 @@ std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std
         return std::nullopt;
     }
     StageSyncPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<StageExitRequestPacket> TryDecodeStageExitRequest(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::StageExitRequest, offset)) {
+        return std::nullopt;
+    }
+    StageExitRequestPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

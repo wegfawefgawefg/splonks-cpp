@@ -4,9 +4,9 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_authority.hpp"
+#include "gameplay_events.hpp"
 #include "graphics.hpp"
-#include "network/net_event.hpp"
-#include "network/net_session.hpp"
 #include "stage.hpp"
 #include "state.hpp"
 #include "stage_lighting.hpp"
@@ -36,21 +36,6 @@ IVec2 GetRopeDeployStartTile(const Stage& stage, const IVec2& hit_tile_pos) {
         }
         start = next_tile->tile_pos;
     }
-}
-
-void EmitRopeTilePlacedEvent(State& state, const Entity& rope, const IVec2& tile_pos) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::RopeTilePlaced;
-    event.payload = network::RopeTilePlacedEvent{
-        .tile_pos = tile_pos,
-        .source_entity_id = state.net_session.FindNetEntityId(rope.vid).value_or(network::kInvalidNetEntityId),
-    };
-    state.net_session.EnqueueLocalEvent(event);
 }
 
 } // namespace
@@ -121,7 +106,7 @@ void StepEntityLogicAsRope(
     }
     constexpr unsigned int kRopeLength = 6;
     if (rope_popped) {
-        if (!state.net_session.HasLocalAuthorityForEntity(rope.vid)) {
+        if (!HasLocalGameplayAuthorityForEntity(state, rope.vid)) {
             state.entity_manager.SetInactive(entity_idx);
             return;
         }
@@ -151,7 +136,7 @@ void StepEntityLogicAsRope(
                 if (tile == Tile::Air || tile == Tile::Rope || tile == Tile::Entrance) {
                     state.stage.SetTile(p, Tile::Rope);
                     graphics.ResetTileVariation(p);
-                    EmitRopeTilePlacedEvent(state, rope, p);
+                    EmitRopeTilePlacedGameplayEvent(state, rope, p);
                     changed_tiles.push_back(p);
                     atleast_one_tile_converted = true;
                 } else {

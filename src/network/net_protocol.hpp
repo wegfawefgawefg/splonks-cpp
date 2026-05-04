@@ -39,6 +39,7 @@ enum class NetPacketType : std::uint16_t {
     EntityCarryEvents = 8,
     LeaveNotice = 9,
     StageSync = 10,
+    StageExitRequest = 11,
 };
 
 struct NetPacketHeader {
@@ -104,6 +105,12 @@ struct StageSyncPacket {
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
 };
 
+struct StageExitRequestPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    PlayerId player_id = kInvalidPlayerId;
+    std::int32_t exit_id = -1;
+};
+
 struct TileEventEntry {
     NetEventId event_id = kInvalidNetEventId;
     PlayerId source_player_id = kInvalidPlayerId;
@@ -163,9 +170,15 @@ struct EntityDamageEventEntry {
     float acc_x = 0.0F;
     float acc_y = 0.0F;
     std::uint32_t stun_timer = 0;
+    std::uint32_t projectile_contact_timer = 0;
     std::uint16_t damage_type = 0;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
+    std::uint8_t animate = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    std::uint16_t animation_frame = 0;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
 };
 
 struct EntityDamageEventsPacket {
@@ -180,6 +193,7 @@ struct EntityStateEventEntry {
     std::uint64_t source_local_frame = 0;
     std::uint64_t coordinator_order = 0;
     NetEntityId entity_id = kInvalidNetEntityId;
+    NetEntityId source_entity_id = kInvalidNetEntityId;
     float pos_x = 0.0F;
     float pos_y = 0.0F;
     float vel_x = 0.0F;
@@ -236,6 +250,7 @@ EncodedNetPacket EncodeEntityStateEvents(const EntityStateEventsPacket& packet);
 EncodedNetPacket EncodeEntityCarryEvents(const EntityCarryEventsPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet);
+EncodedNetPacket EncodeStageExitRequest(const StageExitRequestPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PlayerSnapshotsPacket> TryDecodePlayerSnapshots(const std::uint8_t* bytes, std::size_t size);
@@ -246,6 +261,7 @@ std::optional<EntityStateEventsPacket> TryDecodeEntityStateEvents(const std::uin
 std::optional<EntityCarryEventsPacket> TryDecodeEntityCarryEvents(const std::uint8_t* bytes, std::size_t size);
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std::size_t size);
+std::optional<StageExitRequestPacket> TryDecodeStageExitRequest(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

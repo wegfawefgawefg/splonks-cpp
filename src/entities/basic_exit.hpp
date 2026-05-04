@@ -23,11 +23,6 @@ std::optional<std::size_t> FindOverlappingBasicExitEntityIdx(
     const Graphics& graphics
 );
 
-std::optional<std::size_t> FindOverlappingBasicExitEntityIdxForPlayer(
-    const State& state,
-    const Graphics& graphics
-);
-
 bool IsEntityTouchingBasicExit(
     const Entity& entity,
     const State& state,

@@ -4,6 +4,8 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_authority.hpp"
+#include "gameplay_events.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
@@ -139,6 +141,15 @@ bool TryApplyBatContactToEntity(
         return false;
     }
 
+    const bool source_has_local_authority =
+        HasLocalGameplayAuthorityForInteractionSource(state, bat_entity.vid);
+    if (const PlayerSlot* const target_player = state.players.FindByEntityVid(other_entity_const.vid)) {
+        if (!source_has_local_authority) {
+            return false;
+        }
+        (void)target_player;
+    }
+
     const LeftOrRight bat_facing = bat_entity.facing;
     const std::optional<VID> held_by_vid = bat_entity.held_by_vid;
     const SwingStage swing_stage = GetSwingStage(bat_entity);
@@ -180,7 +191,22 @@ bool TryApplyBatContactToEntity(
         );
 
         const common::DamageResult damage_result = common::TryDamageEntity(
-            other_entity->vid.id, state, audio, DamageType::Attack, 1);
+            other_entity->vid.id,
+            state,
+            audio,
+            DamageType::Attack,
+            1,
+            common::DamageOptions{
+                .source_vid = bat_entity.vid,
+                .allow_remote_player_target = source_has_local_authority,
+                .defer_replication = true,
+            }
+        );
+        if (source_has_local_authority &&
+            (damage_result == common::DamageResult::Hurt ||
+             damage_result == common::DamageResult::Died)) {
+            EmitEntityDamagedGameplayEvent(state, *other_entity, DamageType::Attack, 1, bat_entity.vid);
+        }
         switch (damage_result) {
         case common::DamageResult::Died: {
             const int random_number = rng::RandomIntInclusive(0, 10);

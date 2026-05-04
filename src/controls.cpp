@@ -33,6 +33,8 @@ ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state
         .rope_pressed = inputs->rope.pressed,
         .attack_pressed = inputs->attack.pressed,
         .buy_pressed = inputs->buy_button.pressed,
+        .emote_up = inputs->emote_up.down,
+        .emote_down = inputs->emote_down.down,
         .stop = inputs->stop.down,
         .no_hang = inputs->down.down,
     };

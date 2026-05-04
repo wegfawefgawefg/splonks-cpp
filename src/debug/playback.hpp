@@ -74,7 +74,7 @@ struct GameplaySnapshot {
 };
 
 struct DebugPlayback {
-    bool imgui_visible = true;
+    bool imgui_visible = false;
     bool ui_visible = true;
     bool playback_window_visible = true;
     bool level_window_visible = true;

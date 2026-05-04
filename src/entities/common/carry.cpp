@@ -4,8 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entity/archetype_restore.hpp"
 #include "controls.hpp"
-#include "network/net_event.hpp"
-#include "network/net_session.hpp"
+#include "gameplay_events.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -27,7 +26,15 @@ void ApplyHeldState(Entity& entity) {
     entity.acc = Vec2::New(0.0F, 0.0F);
     RemoveEffect(entity, EffectId::NoGravityUntilContact);
     entity.rotation = 0.0F;
-
+    entity.hang_side.reset();
+    entity.hang_count = 0;
+    entity.climb_detach_cooldown = 0;
+    entity.coyote_time = 0;
+    entity.jump_hold_gravity_frames_remaining = 0;
+    entity.jumped_this_frame = false;
+    entity.grounded = false;
+    entity.movement_flags = 0;
+    TrySetAnimation(entity, EntityDisplayState::Neutral);
 }
 
 void SnapPlacedAttachmentToPixels(Entity& entity) {
@@ -94,78 +101,6 @@ bool CanPickUpCandidate(const Entity& picker, const Entity& candidate, const Sta
         candidate.condition == EntityCondition::Dead ||
         candidate.condition == EntityCondition::Stunned;
     return !candidate.can_only_be_picked_up_if_dead_or_stunned || dead_or_stunned;
-}
-
-network::NetEntityId GetReplicatedEntityId(State& state, const Entity& entity) {
-    if (const std::optional<network::NetEntityId> linked =
-            state.net_session.FindNetEntityId(entity.vid)) {
-        return *linked;
-    }
-
-    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
-        const network::NetEntityId player_entity_id = network::MakePlayerNetEntityId(*player_id);
-        state.net_session.LinkEntity(player_entity_id, entity.vid);
-        return player_entity_id;
-    }
-
-    const network::NetEntityId deterministic_stage_id =
-        static_cast<network::NetEntityId>(entity.vid.id) + 1U;
-    state.net_session.LinkEntity(deterministic_stage_id, entity.vid);
-    return deterministic_stage_id;
-}
-
-void EmitHeldNetworkEvent(State& state, const Entity& holder, const Entity& held) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    const network::NetEntityId held_id = GetReplicatedEntityId(state, held);
-    state.net_session.SetEntityOwner(held_id, state.net_session.local_player_id);
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityHeld;
-    event.payload = network::EntityHeldEvent{
-        .holder_id = GetReplicatedEntityId(state, holder),
-        .held_id = held_id,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EmitThrownNetworkEvent(State& state, const Entity& thrower, const Entity& thrown, Vec2 throw_velocity) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    const network::NetEntityId thrown_id = GetReplicatedEntityId(state, thrown);
-    state.net_session.SetEntityOwner(thrown_id, state.net_session.local_player_id);
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityThrown;
-    event.payload = network::EntityThrownEvent{
-        .entity_id = thrown_id,
-        .pos = thrown.pos,
-        .vel = throw_velocity,
-        .thrower_id = GetReplicatedEntityId(state, thrower),
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EmitDroppedNetworkEvent(State& state, const Entity& entity) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityDropped;
-    event.payload = network::EntityDroppedEvent{
-        .entity_id = GetReplicatedEntityId(state, entity),
-        .pos = entity.pos,
-        .vel = entity.vel,
-    };
-    state.net_session.EnqueueLocalEvent(event);
 }
 
 void SyncHeldAttachmentForHolder(
@@ -317,8 +252,9 @@ void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state) {
     if (!HasAttachmentReference(entity, state)) {
         return;
     }
+    const std::optional<VID> dropped_by_vid = entity.held_by_vid;
     ReleaseEntityFromHolder(entity, state);
-    EmitDroppedNetworkEvent(state, entity);
+    EmitEntityDroppedGameplayEvent(state, entity, dropped_by_vid);
 }
 
 void DropHeldItemFromEntity(Entity& entity, State& state) {
@@ -335,10 +271,11 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     }
 
     if (IsPlayerEntity(*held, state)) {
+        const VID dropped_by_vid = entity.vid;
         ReleaseEntityFromHolder(*held, state);
         held->vel = Vec2::New(0.0F, 0.0F);
         held->acc = Vec2::New(0.0F, 0.0F);
-        EmitDroppedNetworkEvent(state, *held);
+        EmitEntityDroppedGameplayEvent(state, *held, dropped_by_vid);
         return;
     }
 
@@ -360,7 +297,7 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     held->vel = Vec2::New(throw_x, -1.0F);
     held->acc = Vec2::New(0.0F, 0.0F);
     RemoveEffect(*held, EffectId::NoGravityUntilContact);
-    EmitThrownNetworkEvent(state, entity, *held, held->vel);
+    EmitEntityThrownGameplayEvent(state, entity, *held, held->vel);
 }
 
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
@@ -451,7 +388,7 @@ void UpdateCarryAndBackItems(
                 if (Entity* const pick_up_entity =
                         state.entity_manager.GetEntityMut(*trying_to_pick_this_up_vid)) {
                     AttachEntityAsHeld(entity, *pick_up_entity);
-                    EmitHeldNetworkEvent(state, entity, *pick_up_entity);
+                    EmitEntityHeldGameplayEvent(state, entity, *pick_up_entity);
                 }
             }
         }
@@ -534,9 +471,15 @@ void UpdateCarryAndBackItems(
                     } else {
                         thrown->SetCenter(entity_center);
                     }
-                    thrown->acc += throw_vel * entity.throw_velocity_scale;
+                    const Vec2 scaled_throw_vel = throw_vel * entity.throw_velocity_scale;
+                    if (IsPlayerEntity(*thrown, state)) {
+                        thrown->vel = scaled_throw_vel;
+                        thrown->acc = Vec2::New(0.0F, 0.0F);
+                    } else {
+                        thrown->acc += scaled_throw_vel;
+                    }
                     state.UpdateSidForEntity(thrown->vid.id, graphics);
-                    EmitThrownNetworkEvent(state, entity, *thrown, throw_vel * entity.throw_velocity_scale);
+                    EmitEntityThrownGameplayEvent(state, entity, *thrown, scaled_throw_vel);
                     (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Throw);
                 }
             }

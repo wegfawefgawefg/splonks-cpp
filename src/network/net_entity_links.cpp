@@ -1,0 +1,54 @@
+#include "network/net_entity_links.hpp"
+
+#include "entity.hpp"
+#include "network/net_session.hpp"
+#include "state.hpp"
+
+namespace splonks::network {
+
+namespace {
+
+NetEntityId MakeStageEntityId(VID entity_vid) {
+    return static_cast<NetEntityId>(entity_vid.id) + 1U;
+}
+
+bool IsStageLinkedEntity(const State& state, const Entity& entity) {
+    return entity.active && !state.players.FindPlayerIdForEntity(entity.vid).has_value();
+}
+
+} // namespace
+
+void RegisterStageEntityLinks(State& state) {
+    if (state.net_session.role == NetRole::Offline) {
+        return;
+    }
+
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!IsStageLinkedEntity(state, entity)) {
+            continue;
+        }
+        if (state.net_session.FindNetEntityId(entity.vid).has_value()) {
+            continue;
+        }
+        state.net_session.LinkEntity(MakeStageEntityId(entity.vid), entity.vid);
+    }
+}
+
+NetEntityId GetOrAssignReplicatedEntityId(State& state, VID entity_vid) {
+    if (const std::optional<NetEntityId> linked = state.net_session.FindNetEntityId(entity_vid)) {
+        return *linked;
+    }
+
+    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity_vid)) {
+        const NetEntityId player_entity_id = MakePlayerNetEntityId(*player_id);
+        state.net_session.LinkEntity(player_entity_id, entity_vid);
+        return player_entity_id;
+    }
+
+    const NetEntityId runtime_id = state.net_session.AllocateLocalEntityId();
+    state.net_session.LinkEntity(runtime_id, entity_vid);
+    state.net_session.SetEntityOwner(runtime_id, state.net_session.local_player_id);
+    return runtime_id;
+}
+
+} // namespace splonks::network

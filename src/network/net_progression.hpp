@@ -1,0 +1,26 @@
+#pragma once
+
+#include "network/net_protocol.hpp"
+#include "network/net_transport.hpp"
+#include "stage.hpp"
+
+namespace splonks {
+
+struct Graphics;
+struct State;
+
+namespace network {
+
+void SendStageSyncToAllRemotes(State& state, NetTransportRuntime& transport);
+void ApplyStageSync(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const StageSyncPacket& packet
+);
+void HandleStageExitRequestAsCoordinator(State& state, const StageExitRequestPacket& request);
+void RequestStageExit(State& state, StageExitId exit_id);
+void NotifyStageLoaded(State& state);
+
+} // namespace network
+} // namespace splonks

@@ -22,6 +22,8 @@ struct ControlIntent {
     bool rope_pressed = false;
     bool attack_pressed = false;
     bool buy_pressed = false;
+    bool emote_up = false;
+    bool emote_down = false;
     bool stop = false;
     bool no_hang = false;
 };
