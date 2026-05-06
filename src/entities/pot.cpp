@@ -4,6 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 
@@ -29,20 +30,29 @@ int RandInclusive(int minimum, int maximum) {
 }
 
 
-void SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
+Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
-        return;
+        return nullptr;
     }
 
     Entity* const entity = state.entity_manager.GetEntityMut(*vid);
     if (entity == nullptr) {
-        return;
+        return nullptr;
     }
 
     SetEntityAs(*entity, type_);
     entity->pos = pos;
     entity->vel = Vec2::New(0.0F, 0.0F);
+    return entity;
+}
+
+void SpawnAndReplicateEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
+    Entity* const entity = SpawnEntityAtTopLeft(type_, pos, state);
+    if (entity == nullptr) {
+        return;
+    }
+    EmitEntitySpawnedGameplayEvent(state, *entity);
 }
 
 void StepControlledPot(Entity& pot, const controls::ControlIntent& control) {
@@ -185,19 +195,19 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
     }
 
     if (RandInclusive(1, 3) == 1) {
-        SpawnEntityAtTopLeft(EntityType::GoldChunk, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::GoldChunk, spawn_pos, state);
     } else if (RandInclusive(1, 6) == 1) {
-        SpawnEntityAtTopLeft(EntityType::GoldNugget, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::GoldNugget, spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::EmeraldBig, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::EmeraldBig, spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::SapphireBig, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::SapphireBig, spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::RubyBig, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::RubyBig, spawn_pos, state);
     } else if (RandInclusive(1, 6) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Spider, spider_spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Spider, spider_spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
     }
 }
 

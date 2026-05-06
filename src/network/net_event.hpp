@@ -57,7 +57,7 @@ enum class NetEventType : std::uint16_t {
     ArrowFired,
     ProjectileHit,
     MattockDug,
-    TeleporterUsed,
+    PresentationCommand,
     CrateOpened,
     ChestOpened,
     SacrificeApplied,
@@ -133,14 +133,22 @@ struct EntityDamagedEvent {
 struct EntityStatePatchedEvent {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId source_entity_id = kInvalidNetEntityId;
+    NetEntityId entity_a_id = kInvalidNetEntityId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    IVec2 point_a = IVec2::New(0, 0);
     std::uint32_t health = 0;
     std::uint32_t stun_timer = 0;
+    std::uint32_t projectile_contact_timer = 0;
+    float rotation = 0.0F;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
     std::uint8_t active = 0;
+    std::uint8_t has_physics = 1;
+    std::uint8_t can_collide = 1;
+    std::uint8_t can_apply_projectile_contact = 1;
+    std::uint8_t facing = 0;
 };
 
 struct TileChangedEvent {
@@ -157,6 +165,22 @@ struct TileBrokenEvent {
 struct RopeTilePlacedEvent {
     IVec2 tile_pos = IVec2::New(0, 0);
     NetEntityId source_entity_id = kInvalidNetEntityId;
+};
+
+struct PresentationCommandEvent {
+    std::uint16_t kind = 0;
+    std::uint16_t effect_id = 0;
+    std::uint32_t audio_asset_id = 0;
+    NetEntityId source_entity_id = kInvalidNetEntityId;
+    NetEntityId target_entity_id = kInvalidNetEntityId;
+    Vec2 source_pos = Vec2::New(0.0F, 0.0F);
+    Vec2 target_pos = Vec2::New(0.0F, 0.0F);
+    std::int32_t direction_x = 1;
+    std::int32_t direction_y = 0;
+    float param_a = 0.0F;
+    float param_b = 0.0F;
+    float param_c = 0.0F;
+    float param_d = 0.0F;
 };
 
 struct MoneyChangedEvent {
@@ -195,6 +219,7 @@ struct NetEvent {
         TileChangedEvent,
         TileBrokenEvent,
         RopeTilePlacedEvent,
+        PresentationCommandEvent,
         MoneyChangedEvent,
         FavorChangedEvent,
         QuestFlagChangedEvent,

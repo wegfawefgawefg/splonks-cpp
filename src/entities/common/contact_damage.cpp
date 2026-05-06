@@ -79,16 +79,6 @@ bool CanProjectileImpactWithoutDamage(const Entity& target) {
            target.condition == EntityCondition::Dead;
 }
 
-bool IsLocalPlayerEntity(const State& state, const Entity& entity) {
-    const PlayerSlot* const slot = state.players.FindByEntityVid(entity.vid);
-    return slot != nullptr && slot->connection_kind == PlayerConnectionKind::Local;
-}
-
-bool IsRemotePlayerEntity(const State& state, const Entity& entity) {
-    const PlayerSlot* const slot = state.players.FindByEntityVid(entity.vid);
-    return slot != nullptr && slot->connection_kind == PlayerConnectionKind::Remote;
-}
-
 AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
                                  const TileContactData& tile_contact_data, const Vec2& anchor) {
     FrameRect cbox = tile_contact_data.cbox;
@@ -389,9 +379,7 @@ bool TryApplyProjectileContactToEntity(
 
     const bool source_has_local_authority =
         HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
-    const bool target_is_local_player = IsLocalPlayerEntity(state, other_entity);
-    const bool target_is_remote_player = IsRemotePlayerEntity(state, other_entity);
-    if ((target_is_local_player || target_is_remote_player) && !source_has_local_authority) {
+    if (!source_has_local_authority) {
         return false;
     }
 

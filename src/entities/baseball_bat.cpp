@@ -143,11 +143,8 @@ bool TryApplyBatContactToEntity(
 
     const bool source_has_local_authority =
         HasLocalGameplayAuthorityForInteractionSource(state, bat_entity.vid);
-    if (const PlayerSlot* const target_player = state.players.FindByEntityVid(other_entity_const.vid)) {
-        if (!source_has_local_authority) {
-            return false;
-        }
-        (void)target_player;
+    if (!source_has_local_authority) {
+        return false;
     }
 
     const LeftOrRight bat_facing = bat_entity.facing;

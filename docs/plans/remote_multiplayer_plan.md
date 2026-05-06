@@ -34,7 +34,8 @@ interaction should not wait on the network.
 
 ## Decided Model
 
-Use trusted co-op, event-sourced, coordinator-ordered networking.
+Use a Barony-like hybrid: local-predicted player movement plus
+coordinator-authoritative shared world state.
 
 - Player count is N-player by design. Four players is the first practical test
   target, not a code assumption.
@@ -45,21 +46,60 @@ Use trusted co-op, event-sourced, coordinator-ordered networking.
   directly on the world through the same `PlayerId -> input -> entity` routing
   used by remote players.
 - No peer waits for remote input before simulating local control.
-- Clients own their local player, held/back items, immediate local actions, and
-  the short-lived visual consequences of those actions.
-- Clients broadcast durable results, not low-level intentions.
-- One peer is a session coordinator. It assigns ids, orders durable events,
-  breaks ties, sends repair snapshots, and handles stage transitions. It is not a
-  physics authority.
+- Clients author/predict their local player motion immediately and send movement
+  state. The coordinator may validate/correct against solid world state, stage
+  transitions, and death/respawn state.
+- The coordinator owns shared world outcomes: stable entity ids, stage
+  transitions, enemy/world-prop defaults, durable event ordering, and repair
+  snapshots.
+- Local actions may present immediately on the acting machine, but durable
+  shared results must pass through coordinator ordering before they are treated
+  as canonical on other machines.
+- Local actions must not create canonical shared-world outcomes on peers. A peer
+  may show local-only prediction or cosmetics, but the coordinator creates the
+  real entity/tile/inventory result.
 - Peers apply durable events idempotently. If an event arrives late but still
-  applies cleanly, apply it. If it conflicts, resolve through deterministic
-  priority.
+  applies cleanly, apply it. If it conflicts, resolve through coordinator order
+  and later repair snapshots.
 - Cheating and modified clients are treated as a social/lobby compatibility
   problem, not as a reason to make every action server-authoritative.
 
-This is not lockstep, not GGPO-style whole-game rollback, and not classic
-client/server physics authority. It is deliberately permissive because Splonks is
-trusted co-op and source-available.
+This is not lockstep, not GGPO-style whole-game rollback, and not pure
+client/server input authority. It is permissive where latency matters most
+(`PlayerId` control) and authoritative where ad hoc sync would otherwise slow
+content development (shared world/entity state).
+
+## Hard Authority Rules
+
+These are the multiplayer architecture rules to enforce going forward:
+
+- Local player control must never wait on the network.
+- The controlling client predicts and presents its own player immediately.
+- Remote player bodies are replicas, not local gameplay actors.
+- The coordinator assigns stable net ids for shared entities.
+- Non-player runtime spawns are coordinator-owned by default, even when a client
+  requested the spawn. A client-thrown bomb, arrow, rope ball, pot, or loose
+  item may be predicted locally for presentation, but its canonical shared-world
+  physics/damage/tile effects come from the coordinator.
+- Peers do not run full gameplay simulation for coordinator-owned non-player
+  entities. They may advance presentation/animation and may run explicit
+  local-interaction seams such as exit prompts, but AI, physics, damage, tile
+  breakage, projectile contact, and impulses are coordinator-authored.
+- The coordinator owns canonical shared world state: stage transitions, tiles,
+  loose items, enemies, props, entity health/condition, held/attached state, and
+  durable inventory/economy changes.
+- Clients may optimistically present local action results, but the durable result
+  is not canonical until the coordinator orders or repairs it.
+- Peers must not roll canonical loot, spawn canonical non-player entities, break
+  canonical tiles, or apply canonical damage to shared non-player entities.
+- Durable mutations use stable message categories, not item-specific packet
+  families.
+- Cosmetic-only presentation uses generic presentation commands and remains
+  non-authoritative.
+- Packet loss must not permanently fork durable state. Reliable delivery or
+  repair snapshots are required for all durable mutations.
+- New gameplay content should not need custom networking unless it introduces a
+  genuinely new durable category.
 
 ## Architecture Boundary
 
@@ -75,29 +115,172 @@ Use gameplay events only as a replication/progression seam:
 - Entity code must not construct network packets or know about sockets.
 - Networking should not know entity-specific rules like sacrifice, shop
   behavior, weapon hitboxes, or tool internals.
+- In multiplayer peer mode, gameplay code should not perform shared-world
+  durable mutations directly. It should emit/request the attempted action and
+  let the coordinator run the content callback that mutates shared state.
 
 This gives a permissive co-op model without forcing every behavior through an
 abstract event bus. If a gameplay fact is not durable or not useful for remote
 readability, it should stay local.
 
-## Source Authority Rule
+### No Generic Listener Bus Requirement
 
-Durable interactions are source-owned, not target-owned.
+Do not add a generic listener/event-bus system just because gameplay events now
+exist. Direct calls are acceptable when they cross a clear ownership boundary:
+
+- `ProcessGameplayEvents` may directly call network replication/progression
+  while it remains small and explicit.
+- A listener/dispatcher is only justified if many independent systems need the
+  same gameplay facts or if `ProcessGameplayEvents` becomes a large ownerless
+  switchboard.
+- The important boundary is not "everything listens to events." The important
+  boundary is "peers request shared mutations; coordinator applies shared
+  mutations."
+
+## Interaction Authority Rule
+
+Durable interactions start as source-predicted presentation, but canonical
+shared-world effects are coordinator-owned.
 
 - If a local player or locally-owned held/projectile entity hits, carries,
-  drops, throws, or otherwise mutates another entity, that local source reports
-  the durable fact.
-- This includes remote player targets. Picking up or hitting a remote player
-  must replicate from the holder/attacker, not be filtered just because the
-  target body is remote on this machine.
+  drops, throws, or otherwise mutates another entity, that local source may
+  predict/present the result immediately.
+- The source sends an action request to the coordinator. It must not permanently
+  create the canonical shared result locally unless this process is the
+  coordinator or offline.
+- The coordinator orders, confirms, rebroadcasts, or repairs the result.
+- This includes remote player targets. Picking up or hitting a remote player may
+  be predicted by the holder/attacker, but the coordinator must be able to repair
+  held state, damage state, and final velocity.
 - Remote-owned projectiles/melee replicas should not independently author damage
-  to our local player. Their owner sends the damage event; our machine applies
-  that event if it names an explicit source entity.
+  to our local player. Their owner sends the interaction result to the
+  coordinator; peers apply the coordinator-ordered event.
 - Generic remote damage without a named source should not take over local
   player bodies, because stale enemy overlap can otherwise produce bogus hits.
 
-This rule avoids the worst double-authoring case: both the attacker's machine
-and the target's machine deciding they are the source of truth for the same hit.
+This rule avoids the worst double-authoring case: both the attacker's machine and
+the target's machine deciding they are the source of truth for the same hit.
+
+## Terraria / Barony Alignment
+
+The target architecture is closer to Terraria and Barony than to deterministic
+lockstep:
+
+- Terraria/tModLoader uses stable message categories and server relay rather
+  than one packet per item. Examples include projectile sync, NPC sync, tile
+  manipulation, tile square repair, and player/item action messages. Content is
+  identified by ids and payload, while the server remains the middleman for
+  shared state.
+- Barony uses direct semantic packets and helper calls such as movement packets,
+  item-use/drop packets, entity snapshots, and server update helpers. It is more
+  ad hoc than we want, but the authority shape is similar: clients control their
+  own player, and shared entities/world state are server/coordinator updated.
+
+For Splonks, avoid `RequestBreakBox`, `RequestUseTeleporter`, or other
+content-specific network families. Use generic categories that carry entity type,
+archetype id, tool slot, tile coordinate, interaction kind, and compact content
+payloads. Coordinator-side content callbacks interpret those ids and produce
+generic results.
+
+## Request / Apply API Shape
+
+Use explicit request/apply naming to prevent authority drift.
+
+Requests are generated by peers or local coordinator input. Requests describe
+what a player/source attempted:
+
+```cpp
+enum class NetActionKind : std::uint16_t {
+    UseTool,
+    UseHeldEntity,
+    PickupEntity,
+    DropEntity,
+    ThrowEntity,
+    InteractEntity,
+    HitEntity,
+    HitTile,
+    BreakTile,
+    PlaceTile,
+    EnterExit,
+};
+
+struct NetActionRequest {
+    NetEventHeader header;
+    NetActionKind kind;
+    NetEntityId source_entity_id;
+    NetEntityId target_entity_id;
+    IVec2 tile_pos;
+    IVec2 direction;
+    Vec2 world_pos;
+    Vec2 velocity;
+    std::uint16_t tool_slot;
+    std::uint16_t content_command;
+    std::array<std::uint8_t, 32> content_payload;
+};
+```
+
+Coordinator apply functions run normal content behavior and emit results:
+
+```cpp
+void ApplyActionRequestAsCoordinator(State& state, const NetActionRequest& request);
+void ApplyEntitySpawnedResult(State& state, const EntitySpawnedResult& result);
+void ApplyEntityStatePatch(State& state, const EntityStatePatch& patch);
+void ApplyTileMutationResult(State& state, const TileMutationResult& result);
+void ApplyInventoryMutationResult(State& state, const InventoryMutationResult& result);
+```
+
+Important rules:
+
+- Offline mode may call `Apply*` directly.
+- Coordinator mode may call `Apply*` directly for local coordinator actions.
+- Peer mode sends `Request*` and may only do local-only prediction/cosmetics.
+- `Apply*` is the only path that performs canonical non-player entity spawns,
+  tile changes, loot rolls, inventory changes, and shared damage.
+- Result events are generic and idempotent. They identify content by entity
+  type/archetype/tool/effect ids, not by hardcoded item packet families.
+
+Canonical result categories:
+
+- `EntitySpawnedResult`: coordinator net id, entity type/archetype id, position,
+  velocity, initial counters/state, holder/attachment ids.
+- `EntityDeactivatedResult`: net id and reason.
+- `EntityStatePatch`: net id, position, velocity, condition, health,
+  held/attached ids, relevant flags, animation/display state when needed.
+- `EntityInteractionResult`: source id, target id, damage/stun/knockback,
+  pickup/drop/throw/attach/detach kind.
+- `TileMutationResult`: tile coordinate or compact region, new tile/wall/fluid
+  data, optional trigger id.
+- `InventoryMutationResult`: player id, tool/effect/held/back slot changes.
+- `StageProgressionResult`: exit request accepted, transition start, stage load,
+  respawn.
+- `PresentationCommand`: cosmetic-only sound/shake/particles/scripted effect.
+
+Do not add a new durable packet type for each item. If a future item truly needs
+new durable behavior, first ask whether it fits one of these result categories
+with a content command id and payload.
+
+## Authority Guard Rails
+
+Add checks before broad multiplayer work continues:
+
+- In peer mode, canonical tile break/change functions must assert/log and refuse
+  unless they are applying a coordinator result.
+- In peer mode, canonical non-player entity spawn helpers must assert/log and
+  refuse unless they are applying a coordinator result or creating a local-only
+  predicted presentation entity.
+- In peer mode, loot-drop callbacks must not roll canonical drops.
+- In peer mode, damage/death/deactivation of coordinator-owned non-player
+  entities must be request-only.
+- Debug logs should include the authority owner, net id, event id, coordinator
+  order, and whether the action was request, apply, prediction, or repair.
+
+Known failure cases that these guards must catch:
+
+- Client breaks a box and rolls a knife locally, but host has no knife.
+- Client bomb breaks tiles and rolls embedded treasure locally.
+- Client pot breaks and spawns a snake locally.
+- Client arrow trap fires or kills/despawns locally without coordinator result.
+- Client pushblock/loose item physics creates durable tile/entity differences.
 
 ## Current First Pass Status
 
@@ -119,23 +302,33 @@ Implemented:
   stage ids.
 - Entity held/thrown/drop event packets exist for carry ownership, including
   player-carry chains.
+- Durable events now have basic ack/retry boundaries:
+  - Peer-authored durable events stay in a local retry queue until the
+    coordinator echoes them.
+  - Coordinator-ordered durable events are resent per remote until that remote
+    acks the highest contiguous applied coordinator order.
+  - Transient player/entity state patches remain lossy and outside durable
+    history.
+- The coordinator sends periodic repair state patches for linked non-player
+  entities. This repairs shared prop/enemy drift without touching local player
+  prediction.
 
 Not yet implemented:
 
-- Reliable delivery for durable events. Durable events are ordered and
-  idempotent after receipt, but there is not yet a proper ack/retry layer, so a
-  UDP packet dropped before the coordinator sees it can still permanently fork
-  world state.
+- Full durable repair snapshots for peers that fall too far behind or join after
+  old ordered history has been pruned.
 - Tool slot/count replication.
 - Back-slot replication.
 - Durable item pickup/buy events.
-- Repair snapshots for correcting late or conflicting event histories.
 
 Near-term priority:
 
-- Add reliable durable-event delivery before widening multiplayer much further.
-  Local tests can pass without it, but internet play will randomly desync under
-  packet loss until durable events are acked and retried.
+- Expand coordinator repair snapshots for shared entities. This is what turns
+  transient desync from permanent corruption into a short visual glitch. The
+  first pass exists for linked non-player entity state; it still needs a fuller
+  stage/entity ownership repair path.
+- Convert direct peer-authored durable mutations into action/request/result
+  categories owned by the coordinator.
 
 ## Synthetik Notes
 
@@ -154,6 +347,95 @@ It appears to be host/lobby based and permissive enough that local play does not
 feel like waiting for remote inputs. We should copy that feel, not assume its
 implementation is ideal or fully known.
 
+## Barony Notes
+
+Local reference clone inspected: `/home/vega/Coding/GameDev/Barony`.
+
+Barony is a useful reference because it feels good over long-distance co-op but
+does not appear to use deterministic lockstep.
+
+Observed source shape:
+
+- Transport uses UDP plus a reliable wrapper. `sendPacketSafe` prefixes packets
+  with `SAFE`, sequence numbers, and retry/ack bookkeeping; Steam/EOS paths can
+  use their own reliable P2P send modes. See `src/net.cpp`.
+- Entity replication uses broad snapshot packets. `sendEntityUDP` sends `ENTU`
+  with entity uid, sprite, position, rotation, flags, tick, and velocity.
+  Clients receive/create/update entities and assign client-side behavior from
+  the replicated sprite/model. See `src/net.cpp` and `src/net.hpp`.
+- Player movement is not input-only lockstep. Client `PMOV` packets contain
+  player position, velocity, yaw, and pitch. The server updates internal player
+  movement state, runs collision validation with `clipMove`, and sends a
+  corrected `PMOV` if the path hits an obstacle. See `src/net.cpp`.
+- Item interactions are semantic requests. Examples include `DROP`, `USEI`, and
+  `DCKA`; clients send item details to the server, and the server performs or
+  rebroadcasts the durable result. See `src/items.cpp` and `src/net.cpp`.
+- Monster/world state is server-owned enough that monster code frequently calls
+  `serverUpdateEntitySkill`, `serverUpdateEntityFlag`, and related helpers.
+  Monster behavior is generally not client-authored. See `src/actmonster.cpp`.
+
+Conclusion: Barony is closest to "server/coordinator authoritative shared world
+plus client-authored player movement with validation/correction." It is not pure
+permissive peer mutation, and it is not pure server-simulated input prediction.
+This is the best fit for Splonks if we want Japan/Texas/Hawaii play to feel
+responsive without turning every future item into a networking whack-a-mole.
+
+## Authority Decision
+
+Do not continue the current fully permissive/ad hoc direction as the final
+architecture. It is viable for quick tests, but it is already causing repeated
+fixes for animation state, held state, damage, item use, and entity identity.
+
+Do not switch to deterministic lockstep or server-only input authority as the
+default either. That would likely reproduce Spelunky-style latency sensitivity,
+which is the opposite of the goal.
+
+Target model:
+
+- Local player motion is immediate and locally predicted.
+- Remote player bodies are interpolated display replicas plus occasional
+  authoritative repair.
+- Shared world mutations are coordinator ordered.
+- Coordinator owns stable net ids and default ownership for enemies, props,
+  loose items, stage transitions, and repair snapshots.
+- Clients send action requests or optimistic action results through stable
+  gameplay categories, not item-specific network hacks.
+- The coordinator confirms, orders, rebroadcasts, or repairs those outcomes.
+- Cosmetic-only presentation commands may remain generic and non-authoritative.
+
+This should preserve the good feel of permissive co-op while reducing the
+ongoing cost of syncing each new item by hand.
+
+## Stable Message Categories
+
+Prefer category messages over one-off content packet families:
+
+- `PlayerMoveState`: position, velocity, facing, animation/control state, carried
+  attachment presentation state.
+- `PlayerActionRequest`: use tool, use held entity, interact, pickup, drop,
+  throw, emote.
+- `EntitySpawned`: coordinator-assigned net id, archetype id, position, initial
+  state, owner lane.
+- `EntityStateSnapshot`: position, velocity, condition, display state, animation
+  id/frame, held/attached state, health, relevant effect summary.
+- `EntityStatePatch`: small reliable changes such as condition, sprite/display,
+  flags, health, inventory count, effect add/remove.
+- `EntityInteraction`: damage, stun, knockback, pickup, drop, throw, attach,
+  detach, telefrag, crush.
+- `TileChanged`: break/change/place tile, rope placement, fluid-affecting tile
+  changes.
+- `StageProgression`: exit request, stage load, respawn, player join/leave.
+- `PresentationCommand`: sound, shake, particle, phase effect, one-shot visual
+  command.
+
+For future modded content, prefer a generic extension lane:
+
+- `ContentCommand { archetype_id, command_id, payload }`
+
+The core network layer transports and orders it. The registered content
+archetype interprets it. This keeps the network table stable without hardcoding
+`Teleporter`, `Cape`, `Bow`, or future modded item names into `net_lobby.cpp`.
+
 ## Ownership Lanes
 
 ### Player Body
@@ -162,24 +444,30 @@ implementation is ideal or fully known.
 - Local simulation: immediate.
 - Network: send periodic player-state events/snapshots.
 - Remote peers display the latest received player state with interpolation.
-- Coordinator does not validate normal movement. Hard repair only if a peer's
-  state graph becomes corrupt or the stage transition/death state conflicts.
+- Coordinator can validate/correct movement against solid world state and hard
+  session facts such as death, respawn, and stage transition.
+- Normal movement correction should be rare and gentle; do not make local
+  controls wait for coordinator approval.
 
 ### Held / Carried Items
 
-- Owner: holder's client while held.
+- Predictor: holder's client while held.
+- Canonical owner: coordinator for conflict resolution and repair.
 - Pickup is a durable event: `PickupEntity(player, item)`.
-- The picker applies pickup immediately and broadcasts the event.
-- Conflicting pickups resolve by coordinator event order. Losing peers undo or
+- The picker applies pickup immediately and sends the action/result to the
+  coordinator.
+- Conflicting pickups resolve by coordinator event order. Losing peers repair or
   ignore their local pickup if needed.
-- Throw/drop/use is broadcast as durable result events, not replayed by remote
-  physics from input.
+- Throw/drop/use should be confirmed through stable action/result categories,
+  not item-specific packet families.
 
 ### Projectiles / Tools
 
-- Owner: spawning client.
+- Predictor: spawning client.
+- Canonical owner: coordinator once the spawn is accepted and assigned a stable
+  net id.
 - Local actor sees projectile/tool results immediately.
-- Broadcast results:
+- Send action/result categories:
   - `SpawnProjectile`
   - `ProjectileHitEntity`
   - `ProjectileHitTile`
@@ -187,23 +475,27 @@ implementation is ideal or fully known.
   - `KillEntity`
   - `SpawnEntity`
 - Remote peers may render the projectile path approximately. Durable results
-  come from explicit events.
+  come from coordinator-ordered events and repair snapshots.
 
 ### Enemies / World Props
 
-- Default owner: coordinator, unless a client has an active interaction with the
-  entity.
-- Any client may broadcast a durable interaction result: hit, stun, kill, pickup,
-  sacrifice, telefrag, push, or break.
+- Default owner: coordinator.
+- A client may predict an active interaction with the entity for local
+  responsiveness.
+- Any client may request or report a durable interaction result: hit, stun, kill,
+  pickup, sacrifice, telefrag, push, or break.
 - Conflicting events resolve by ordered event application and idempotent checks.
-- Remote peers accept plausible-looking outcomes. They do not replay exact
-  physics to prove the event.
+- Remote peers accept coordinator-ordered outcomes and may be repaired by later
+  snapshots. They do not replay exact physics to prove every event.
 
 ### Stage Tiles / Fluids / Lighting
 
-- Tile changes are durable ordered events.
-- The actor applies them immediately and broadcasts.
-- Coordinator orders them and rebroadcasts if necessary.
+- Tile changes are durable ordered results.
+- A peer actor may show immediate local-only break/place presentation, but it
+  must not permanently modify canonical tile state until the coordinator result
+  arrives.
+- Coordinator orders tile changes, rebroadcasts if necessary, and repairs
+  conflicts.
 - Fluids, lighting, particles, and audio are locally simulated from current
   durable state. They do not need exact cross-peer parity.
 
@@ -290,7 +582,7 @@ Action-specific first targets:
 - `ArrowFired`
 - `ProjectileHit`
 - `MattockDug`
-- `TeleporterUsed`
+- `PresentationCommand`
 - `CrateOpened`
 - `ChestOpened`
 - `SacrificeApplied`
@@ -299,6 +591,10 @@ Local-only events should not be networked: particles, short-lived audio, camera
 shake, debug annotations, and cosmetic lighting flicker. If a cosmetic effect is
 important for remote readability, send the durable cause and let peers spawn the
 effect locally.
+
+Content-specific cosmetic events should not get their own packet families. Use
+generic presentation commands for readable one-shots such as sounds, entity
+shake, area shake, and named scripted presentation effects.
 
 ## Network Identity
 
@@ -310,10 +606,11 @@ Local `VID` values are not enough across machines. Use stable player/session ids
 - `NetEventId`: monotonic per event source.
 - `StageInstanceId`: identifies a generated stage instance and seed.
 
-Each peer maps `NetEntityId -> local VID`. The coordinator assigns ids for
-coordinator-created entities; clients assign from client-owned id ranges for
-local action results that need to exist immediately. Local-only effects,
-particles, and annotations do not need network ids.
+Each peer maps `NetEntityId -> local VID`. The coordinator assigns canonical ids
+for shared entities. Clients may use provisional prediction ids for immediate
+local presentation, but those ids must be replaced or confirmed by the
+coordinator before the entity is canonical. Local-only effects, particles, and
+annotations do not need network ids.
 
 ## Required Data Structures
 
@@ -410,31 +707,29 @@ or a minimal custom UDP layer. Do not bind gameplay architecture to the transpor
 
 ### Durable Event Reliability
 
-Current implementation warning:
+Current implementation:
 
 - `NetEvent` durable payloads are coordinator-ordered and idempotent once
   received.
-- They are not yet guaranteed to be received. UDP packet loss can still drop a
-  peer-to-coordinator event before the coordinator knows it exists.
+- Peer local durable events retry until the coordinator echoes them back.
+- Coordinator-ordered durable events retry per remote until that remote acks
+  the highest contiguous `coordinator_order` it has applied.
+- The coordinator prunes ordered durable history only after every connected
+  remote has acked it.
+- The coordinator periodically sends lossy repair state patches for linked,
+  non-player entities. These are intentionally not durable ordered events; the
+  newest repair wins.
 - Transient player snapshots and entity state patches intentionally remain
   unreliable and should never be retried; newer snapshots replace older ones.
 
-Reliable durable-event layer requirements:
+Remaining durable reliability requirements:
 
-- Peers keep locally emitted durable events in a retry queue until the
-  coordinator echoes or explicitly acks them.
-- Coordinator assigns `coordinator_order` and keeps ordered durable events in a
-  per-peer resend queue until that peer acks receipt/application.
-- Add ack packets containing `stage_instance_id`, highest contiguous
-  `coordinator_order` applied, and optionally sparse event ids for gaps.
 - Resend unacked durable events on an interval with a cap/backoff so packet loss
   cannot create unbounded traffic.
-- Prune ordered history only after every connected peer has acked, or after a
-  peer disconnects/falls back to repair snapshot.
-- Keep transient state patches out of durable history. They are packet-loss
-  tolerant and should not participate in ack/retry.
 - If a peer falls too far behind the retained durable history, send a repair
   snapshot or force a stage reload instead of replaying an unbounded log.
+- Optionally add sparse gap acks later if we need to skip over permanently
+  missing events without forcing repair.
 
 Durable event classes that must use ack/retry:
 
@@ -502,7 +797,8 @@ Then do `EntityDamaged`/`EntityKilled`, then pickup/drop/throw ownership.
 
 ## Conflict Resolution
 
-Because clients broadcast results, conflicts must be boring and deterministic.
+Because clients may predict or report results before coordinator confirmation,
+conflicts must be boring and deterministic.
 
 Default priority:
 
@@ -668,7 +964,7 @@ This is useful as a stepping stone, but it should not define the remote model.
   - Player-carry chains use the normal entity carry references; attachment sync
     runs multiple passes so `player0 -> player1 -> player2` resolves
     deterministically.
-- [ ] Add ack/retry reliable delivery for durable events.
+- [x] Add ack/retry reliable delivery boundaries for durable events.
   - Peer local durable events retry until coordinator echo/ack.
   - Coordinator ordered durable events retry per peer until ack.
   - Transient player/entity snapshots stay lossy and are never retried.

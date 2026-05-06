@@ -1,5 +1,6 @@
 #include "entities/common/common.hpp"
 
+#include "gameplay_authority.hpp"
 #include "gameplay_events.hpp"
 #include "on_damage_effects.hpp"
 
@@ -99,8 +100,13 @@ EntityDamageEffectResult ApplyDamageEffect(
 
 void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!HasLocalGameplayAuthorityForEntity(state, entity.vid)) {
+        return;
+    }
+
     DoExplosion(entity_idx, entity.GetCenter(), 2.0F, 6.0F, state, audio);
     state.entity_manager.SetInactive(entity_idx);
+    EmitEntityStatePatchedGameplayEvent(state, entity, entity);
 }
 
 void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {

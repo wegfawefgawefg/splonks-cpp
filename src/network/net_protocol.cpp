@@ -8,9 +8,11 @@ static_assert(sizeof(EntityDamageEventsPacket) <= kNetPacketMaxBytes - sizeof(Ne
 static_assert(sizeof(EntitySpawnedEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityCarryEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(PresentationCommandEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageExitRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(DurableEventAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -96,6 +98,10 @@ EncodedNetPacket EncodeEntityCarryEvents(const EntityCarryEventsPacket& packet) 
     return EncodePayload(NetPacketType::EntityCarryEvents, packet);
 }
 
+EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEventsPacket& packet) {
+    return EncodePayload(NetPacketType::PresentationCommandEvents, packet);
+}
+
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet) {
     return EncodePayload(NetPacketType::LeaveNotice, packet);
 }
@@ -106,6 +112,10 @@ EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet) {
 
 EncodedNetPacket EncodeStageExitRequest(const StageExitRequestPacket& packet) {
     return EncodePayload(NetPacketType::StageExitRequest, packet);
+}
+
+EncodedNetPacket EncodeDurableEventAck(const DurableEventAckPacket& packet) {
+    return EncodePayload(NetPacketType::DurableEventAck, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -228,6 +238,22 @@ std::optional<EntityCarryEventsPacket> TryDecodeEntityCarryEvents(const std::uin
     return packet;
 }
 
+std::optional<PresentationCommandEventsPacket> TryDecodePresentationCommandEvents(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::PresentationCommandEvents, offset)) {
+        return std::nullopt;
+    }
+    PresentationCommandEventsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.event_count = std::min<std::uint32_t>(
+        packet.event_count,
+        static_cast<std::uint32_t>(packet.events.size())
+    );
+    return packet;
+}
+
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
     if (!ReadHeader(bytes, size, NetPacketType::LeaveNotice, offset)) {
@@ -262,6 +288,18 @@ std::optional<StageExitRequestPacket> TryDecodeStageExitRequest(const std::uint8
         return std::nullopt;
     }
     StageExitRequestPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<DurableEventAckPacket> TryDecodeDurableEventAck(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::DurableEventAck, offset)) {
+        return std::nullopt;
+    }
+    DurableEventAckPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

@@ -1,8 +1,10 @@
 #include "entities/teleporter.hpp"
 
 #include "audio_asset_id.hpp"
+#include "audio_emitters.hpp"
 #include "controls.hpp"
 #include "entities/common/common.hpp"
+#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
@@ -322,6 +324,7 @@ const TeleportProbeCandidate* FindFirstBlockedTeleportProbeCandidate(const std::
 void SpawnTelefragPhaseParticle(
     const Entity& entity,
     const Graphics& graphics,
+    const Vec2& visual_center,
     const Vec2& start_offset,
     const Vec2& velocity,
     float tint_r,
@@ -338,7 +341,7 @@ void SpawnTelefragPhaseParticle(
     particle.counter = 32;
     particle.draw_layer = entity.draw_layer;
     particle.lighting_mode = ParticleLightingMode::Emissive;
-    particle.pos = common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()) + start_offset;
+    particle.pos = visual_center + start_offset;
     particle.size = Vec2::New(
         static_cast<float>(frame_data->sample_rect.w),
         static_cast<float>(frame_data->sample_rect.h)
@@ -356,20 +359,52 @@ void SpawnTelefragPhaseParticle(
     state.particles.Add(std::move(particle));
 }
 
-void SpawnTelefragSplitEffect(const Entity& entity, const Graphics& graphics, const IVec2& direction, State& state) {
+void SpawnTelefragSplitEffectAt(
+    const Entity& entity,
+    const Graphics& graphics,
+    const Vec2& visual_center,
+    const IVec2& direction,
+    State& state
+) {
     const Vec2 axis = GetTeleportAxis(direction);
     const Vec2 ortho = GetTeleportOrtho(axis);
-    SpawnTelefragPhaseParticle(entity, graphics, Vec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, Vec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, Vec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
+    SpawnTelefragPhaseParticle(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
+    SpawnTelefragPhaseParticle(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
+    SpawnTelefragPhaseParticle(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
+}
+
+void SpawnTelefragSplitEffect(const Entity& entity, const Graphics& graphics, const IVec2& direction, State& state) {
+    SpawnTelefragSplitEffectAt(
+        entity,
+        graphics,
+        common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()),
+        direction,
+        state
+    );
+}
+
+void SpawnTelefragMergeEffectAt(
+    const Entity& entity,
+    const Graphics& graphics,
+    const Vec2& visual_center,
+    const IVec2& direction,
+    State& state
+) {
+    const Vec2 axis = GetTeleportAxis(direction);
+    const Vec2 ortho = GetTeleportOrtho(axis);
+    SpawnTelefragPhaseParticle(entity, graphics, visual_center, axis * -3.0F, axis * 0.3F, 1.0F, 0.20F, 0.20F, state);
+    SpawnTelefragPhaseParticle(entity, graphics, visual_center, ortho * 2.0F, ortho * -0.0875F, 0.25F, 1.0F, 0.25F, state);
+    SpawnTelefragPhaseParticle(entity, graphics, visual_center, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
 }
 
 void SpawnTelefragMergeEffect(const Entity& entity, const Graphics& graphics, const IVec2& direction, State& state) {
-    const Vec2 axis = GetTeleportAxis(direction);
-    const Vec2 ortho = GetTeleportOrtho(axis);
-    SpawnTelefragPhaseParticle(entity, graphics, axis * -3.0F, axis * 0.3F, 1.0F, 0.20F, 0.20F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, ortho * 2.0F, ortho * -0.0875F, 0.25F, 1.0F, 0.25F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
+    SpawnTelefragMergeEffectAt(
+        entity,
+        graphics,
+        common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()),
+        direction,
+        state
+    );
 }
 
 void SplatTelefraggedEntity(std::size_t entity_idx, State& state, const Graphics& graphics) {
@@ -442,6 +477,60 @@ void ApplyTeleportAreaShake(
         radius_tiles,
         std::nullopt
     );
+}
+
+void EmitTeleportSoundPresentation(State& state, const Entity& holder, const Vec2& source_center) {
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::PlaySoundAt,
+        .audio_asset_id = audio_asset_ids::Teleport,
+        .source_vid = holder.vid,
+        .source_pos = source_center,
+    });
+}
+
+void EmitTeleportPhasePresentation(
+    State& state,
+    const Entity& holder,
+    const Entity& teleporter,
+    const Vec2& world_center,
+    const IVec2& direction,
+    ScriptedPresentationEffectId effect_id
+) {
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::ShakeEntity,
+        .source_vid = holder.vid,
+        .source_pos = world_center,
+        .param_a = 0.5F,
+    });
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::ShakeEntity,
+        .source_vid = teleporter.vid,
+        .source_pos = world_center,
+        .param_a = 0.5F,
+    });
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::ShakeArea,
+        .source_vid = holder.vid,
+        .source_pos = world_center,
+        .param_a = 8.0F,
+        .param_b = 8.0F,
+        .param_c = 1.0F,
+        .param_d = 1.5F,
+    });
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::SpawnScriptedEffect,
+        .effect_id = effect_id,
+        .source_vid = holder.vid,
+        .source_pos = world_center,
+        .direction = direction,
+    });
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::SpawnScriptedEffect,
+        .effect_id = effect_id,
+        .source_vid = teleporter.vid,
+        .source_pos = world_center,
+        .direction = direction,
+    });
 }
 
 void AddTeleporterDebugAnnotations(
@@ -545,6 +634,15 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
     (void)PlayEntityCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
     const Vec2 source_center =
         entities::common::GetVisualCenterForEntity(*holder, graphics, holder->GetCenter());
+    EmitTeleportSoundPresentation(state, *holder, source_center);
+    EmitTeleportPhasePresentation(
+        state,
+        *holder,
+        teleporter,
+        source_center,
+        aim.direction,
+        ScriptedPresentationEffectId::TeleportSplit
+    );
     AddEntityShake(*holder, 0.5F);
     AddEntityShake(teleporter, 0.5F);
     ApplyTeleportAreaShake(state, source_center, 8.0F, 8.0F, 1.0F, 1.5F);
@@ -553,6 +651,14 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
 
     if (chosen == nullptr) {
         if (blocked != nullptr) {
+            EmitTeleportPhasePresentation(
+                state,
+                *holder,
+                teleporter,
+                blocked->destination_center,
+                aim.direction,
+                ScriptedPresentationEffectId::TeleportMerge
+            );
             MoveTeleportHolderToDestination(*holder, holder_idx, blocked->destination_center, state, graphics);
             AddEntityShake(*holder, 0.5F);
             AddEntityShake(teleporter, 0.5F);
@@ -568,6 +674,14 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
         return;
     }
 
+    EmitTeleportPhasePresentation(
+        state,
+        *holder,
+        teleporter,
+        chosen->destination_center,
+        aim.direction,
+        ScriptedPresentationEffectId::TeleportMerge
+    );
     ApplyTelefragToCandidate(*chosen, state, audio, graphics);
     MoveTeleportHolderToDestination(*holder, holder_idx, chosen->destination_center, state, graphics);
     AddEntityShake(*holder, 0.5F);

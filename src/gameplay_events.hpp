@@ -4,6 +4,7 @@
 #include "entity/core_types.hpp"
 #include "math_types.hpp"
 #include "player_id.hpp"
+#include "presentation_commands.hpp"
 #include "stage.hpp"
 #include "stage_progression.hpp"
 #include "vid.hpp"
@@ -28,7 +29,9 @@ enum class GameplayEventType {
     EntityThrown,
     EntityDamaged,
     EntityStatePatched,
+    TileBroken,
     RopeTilePlaced,
+    PresentationCommand,
 };
 
 struct GameplayStageExitRequested {
@@ -94,18 +97,30 @@ struct GameplayEntityDamaged {
 struct GameplayEntityStatePatched {
     VID entity_vid{};
     VID source_vid{};
+    std::optional<VID> entity_a_vid;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    IVec2 point_a = IVec2::New(0, 0);
     unsigned int health = 0;
     std::uint32_t stun_timer = 0;
+    std::uint32_t projectile_contact_timer = 0;
+    float rotation = 0.0F;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
     std::uint8_t active = 0;
+    std::uint8_t has_physics = 1;
+    std::uint8_t can_collide = 1;
+    std::uint8_t can_apply_projectile_contact = 1;
+    std::uint8_t facing = 0;
 };
 
 struct GameplayRopeTilePlaced {
     VID source_vid{};
+    IVec2 tile_pos = IVec2::New(0, 0);
+};
+
+struct GameplayTileBroken {
     IVec2 tile_pos = IVec2::New(0, 0);
 };
 
@@ -119,7 +134,9 @@ struct GameplayEvent {
     GameplayEntityThrown entity_thrown;
     GameplayEntityDamaged entity_damaged;
     GameplayEntityStatePatched entity_state_patched;
+    GameplayTileBroken tile_broken;
     GameplayRopeTilePlaced rope_tile_placed;
+    PresentationCommand presentation_command;
 };
 
 void EmitStageExitRequested(State& state, StageExitId exit_id, PlayerId player_id);
@@ -144,7 +161,9 @@ void EmitEntityDamagedGameplayEvent(
     std::optional<VID> source_vid = std::nullopt
 );
 void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, const Entity& entity);
+void EmitTileBrokenGameplayEvent(State& state, const IVec2& tile_pos);
 void EmitRopeTilePlacedGameplayEvent(State& state, const Entity& source_entity, const IVec2& tile_pos);
+void EmitPresentationCommandGameplayEvent(State& state, const PresentationCommand& command);
 void ProcessGameplayEvents(State& state, Graphics& graphics, Audio& audio);
 
 } // namespace splonks

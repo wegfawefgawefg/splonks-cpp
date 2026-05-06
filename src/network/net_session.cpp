@@ -9,6 +9,7 @@ namespace splonks::network {
 namespace {
 
 constexpr std::size_t kMaxEventLogEntries = 256;
+constexpr std::size_t kMaxAppliedCoordinatorOrders = 1024;
 
 const char* NetRoleName(NetRole role) {
     switch (role) {
@@ -56,6 +57,8 @@ const char* NetEventTypeName(NetEventType type) {
         return "TileBroken";
     case NetEventType::RopeTilePlaced:
         return "RopeTilePlaced";
+    case NetEventType::PresentationCommand:
+        return "PresentationCommand";
     case NetEventType::MoneyChanged:
         return "MoneyChanged";
     case NetEventType::FavorChanged:
@@ -79,6 +82,8 @@ NetSessionState NetSessionState::NewOffline() {
     state.next_local_entity_id = 1;
     state.next_player_id = 2;
     state.next_coordinator_order = 1;
+    state.next_expected_coordinator_order = 1;
+    state.highest_applied_coordinator_order = 0;
     state.quest_id = "classic";
     state.quest_stage_id = "classic_mines_1";
     state.stage_seed = 1;
@@ -86,15 +91,20 @@ NetSessionState NetSessionState::NewOffline() {
 }
 
 NetEventHeader NetSessionState::MakeLocalEventHeader(std::uint64_t source_local_frame) {
+    NetEventHeader header = MakeLocalTransientEventHeader(source_local_frame);
+    if (role == NetRole::Coordinator || role == NetRole::Offline) {
+        header.coordinator_order = next_coordinator_order++;
+    }
+    return header;
+}
+
+NetEventHeader NetSessionState::MakeLocalTransientEventHeader(std::uint64_t source_local_frame) {
     NetEventHeader header;
     const std::uint64_t player_component = static_cast<std::uint64_t>(local_player_id) << 48U;
     header.event_id = player_component | next_local_event_id++;
     header.source_player_id = local_player_id;
     header.stage_instance_id = stage_instance_id;
     header.source_local_frame = source_local_frame;
-    if (role == NetRole::Coordinator || role == NetRole::Offline) {
-        header.coordinator_order = next_coordinator_order++;
-    }
     return header;
 }
 
@@ -121,9 +131,22 @@ void NetSessionState::EnqueueOrderedEvent(NetEvent event) {
     if (event.header.event_id == kInvalidNetEventId) {
         event.header = MakeLocalEventHeader(0);
     }
+    if (event.type == NetEventType::EntityStatePatched) {
+        EnqueueTransientEvent(event);
+        return;
+    }
     if (event.header.coordinator_order == 0) {
         event.header.coordinator_order = next_coordinator_order++;
     }
+    AddEventLog(NetEventLogPhase::EnqueuedOrdered, event);
+    ordered_events.push_back(event);
+}
+
+void NetSessionState::EnqueueTransientEvent(NetEvent event) {
+    if (event.header.event_id == kInvalidNetEventId) {
+        event.header = MakeLocalTransientEventHeader(0);
+    }
+    event.header.coordinator_order = 0;
     AddEventLog(NetEventLogPhase::EnqueuedOrdered, event);
     ordered_events.push_back(event);
 }
@@ -158,6 +181,44 @@ bool NetSessionState::MarkEventApplied(NetEventId event_id) {
 bool NetSessionState::HasAppliedEvent(NetEventId event_id) const {
     return std::find(applied_event_ids.begin(), applied_event_ids.end(), event_id) !=
            applied_event_ids.end();
+}
+
+void NetSessionState::MarkCoordinatorOrderApplied(const NetEvent& event) {
+    const std::uint64_t order = event.header.coordinator_order;
+    if (order == 0) {
+        return;
+    }
+
+    highest_applied_coordinator_order = std::max(highest_applied_coordinator_order, order);
+    if (std::find(applied_coordinator_orders.begin(), applied_coordinator_orders.end(), order) ==
+        applied_coordinator_orders.end()) {
+        applied_coordinator_orders.push_back(order);
+    }
+
+    if (role == NetRole::Peer) {
+        while (std::find(
+                   applied_coordinator_orders.begin(),
+                   applied_coordinator_orders.end(),
+                   next_expected_coordinator_order
+               ) != applied_coordinator_orders.end()) {
+            ++next_expected_coordinator_order;
+        }
+    }
+
+    if (applied_coordinator_orders.size() > kMaxAppliedCoordinatorOrders) {
+        const std::uint64_t prune_before =
+            next_expected_coordinator_order > 256 ? next_expected_coordinator_order - 256 : 0;
+        applied_coordinator_orders.erase(
+            std::remove_if(
+                applied_coordinator_orders.begin(),
+                applied_coordinator_orders.end(),
+                [prune_before](std::uint64_t applied_order) {
+                    return applied_order < prune_before;
+                }
+            ),
+            applied_coordinator_orders.end()
+        );
+    }
 }
 
 void NetSessionState::AddEventLog(NetEventLogPhase phase, const NetEvent& event) {
@@ -203,10 +264,14 @@ void NetSessionState::AddEventLog(NetEventLogPhase phase, const NetEvent& event)
 
 void NetSessionState::ClearStageEntityLinks() {
     entity_links.clear();
+    entity_id_aliases.clear();
     applied_event_ids.clear();
+    applied_coordinator_orders.clear();
     ordered_events.clear();
     pending_local_events.clear();
     event_log.clear();
+    next_expected_coordinator_order = 1;
+    highest_applied_coordinator_order = 0;
 }
 
 void NetSessionState::LinkEntity(NetEntityId net_id, VID local_vid) {
@@ -246,6 +311,43 @@ void NetSessionState::SetEntityOwner(
         .local_vid = VID{},
         .owner_player_id = owner_player_id,
     });
+}
+
+void NetSessionState::AliasEntityId(NetEntityId from_id, NetEntityId to_id) {
+    if (from_id == kInvalidNetEntityId ||
+        to_id == kInvalidNetEntityId ||
+        from_id == to_id) {
+        return;
+    }
+    for (NetEntityIdAlias& alias : entity_id_aliases) {
+        if (alias.from_id == from_id) {
+            alias.to_id = to_id;
+            return;
+        }
+    }
+    entity_id_aliases.push_back(NetEntityIdAlias{
+        .from_id = from_id,
+        .to_id = to_id,
+    });
+}
+
+NetEntityId NetSessionState::ResolveEntityIdAlias(NetEntityId entity_id) const {
+    constexpr int kMaxAliasDepth = 8;
+    NetEntityId resolved = entity_id;
+    for (int depth = 0; depth < kMaxAliasDepth; ++depth) {
+        bool changed = false;
+        for (const NetEntityIdAlias& alias : entity_id_aliases) {
+            if (alias.from_id == resolved) {
+                resolved = alias.to_id;
+                changed = true;
+                break;
+            }
+        }
+        if (!changed) {
+            break;
+        }
+    }
+    return resolved;
 }
 
 void NetSessionState::UnlinkEntity(NetEntityId net_id) {
@@ -295,10 +397,7 @@ std::optional<PlayerId> NetSessionState::FindEntityOwner(VID local_vid) const {
             if (IsPlayerNetEntityId(link.net_id)) {
                 return GetPlayerIdFromNetEntityId(link.net_id);
             }
-            if (link.owner_player_id.has_value()) {
-                return link.owner_player_id;
-            }
-            return GetSpawnedNetEntityOwnerPlayerId(link.net_id);
+            return link.owner_player_id;
         }
     }
     return std::nullopt;

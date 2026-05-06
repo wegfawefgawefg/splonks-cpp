@@ -73,6 +73,11 @@ void RestoreEntitySlot(EntityManager& entity_manager, const Entity& entity) {
 
 void PrepareEntityForStageEntry(Entity& entity) {
     entity.marked_for_destruction = false;
+    entity.holding = false;
+    entity.holding_vid.reset();
+    entity.back_vid.reset();
+    entity.held_by_vid.reset();
+    entity.attachment_mode = AttachmentMode::None;
     entity.vel = Vec2::New(0.0F, 0.0F);
     entity.acc = Vec2::New(0.0F, 0.0F);
     entity.grounded = false;
@@ -129,7 +134,8 @@ StageCarryover CaptureStageCarryover(const State& state) {
 
         if (player->holding_vid.has_value()) {
             if (const Entity* const held_item = state.entity_manager.GetEntity(*player->holding_vid)) {
-                if (held_item->active) {
+                if (held_item->active &&
+                    !state.players.FindPlayerIdForEntity(held_item->vid).has_value()) {
                     player_carryover.held_item = *held_item;
                     player_carryover.player->holding_vid = held_item->vid;
                     player_carryover.player->holding = true;
@@ -139,7 +145,8 @@ StageCarryover CaptureStageCarryover(const State& state) {
 
         if (player->back_vid.has_value()) {
             if (const Entity* const back_item = state.entity_manager.GetEntity(*player->back_vid)) {
-                if (back_item->active) {
+                if (back_item->active &&
+                    !state.players.FindPlayerIdForEntity(back_item->vid).has_value()) {
                     player_carryover.back_item = *back_item;
                     player_carryover.player->back_vid = back_item->vid;
                 }
@@ -164,6 +171,13 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
 
         Entity player = *player_carryover.player;
         PrepareEntityForStageEntry(player);
+        if (player_carryover.held_item.has_value()) {
+            player.holding = true;
+            player.holding_vid = player_carryover.held_item->vid;
+        }
+        if (player_carryover.back_item.has_value()) {
+            player.back_vid = player_carryover.back_item->vid;
+        }
         RestoreEntitySlot(state.entity_manager, player);
         state.players.AssignEntity(player_carryover.player_id, player.vid);
         if (const PlayerSlot* const slot = state.players.Find(player_carryover.player_id);

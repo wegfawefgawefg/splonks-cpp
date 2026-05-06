@@ -34,7 +34,9 @@ void ApplyHeldState(Entity& entity) {
     entity.jumped_this_frame = false;
     entity.grounded = false;
     entity.movement_flags = 0;
-    TrySetAnimation(entity, EntityDisplayState::Neutral);
+    if (entity.condition == EntityCondition::Normal) {
+        TrySetAnimation(entity, EntityDisplayState::Neutral);
+    }
 }
 
 void SnapPlacedAttachmentToPixels(Entity& entity) {

@@ -399,15 +399,21 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     // audio
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::GameOver as usize]);
-    state.contact.ClearEntityContactDispatchesThisTick();
     StepTransientLights(state);
+    LatchPlayingInputsForTick(state);
+    StepDebugLocalPlayerBots(state);
+    StepPlayerSlotControls(state, graphics, audio, dt);
+    state.contact.ClearEntityContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
     state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
     state.ClearWorldPrompts();
     state.ClearInteractClaims();
+    state.entity_tools.Step();
+    StepStageFluids(state);
     state.RebuildSid(graphics);
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
+    state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
     ProcessGameplayEvents(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);

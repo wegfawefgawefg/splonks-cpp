@@ -3,10 +3,8 @@
 #include "audio.hpp"
 #include "entity.hpp"
 #include "entity/display_states.hpp"
-#include "gameplay_authority.hpp"
 #include "graphics.hpp"
-#include "network/net_entity_links.hpp"
-#include "network/net_event.hpp"
+#include "network/net_gameplay_replication.hpp"
 #include "network/net_progression.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
@@ -69,227 +67,6 @@ AnimationPresentationSnapshot CaptureDamagePresentation(const Entity& entity) {
     }
 
     return presentation;
-}
-
-bool ShouldReplicateEntityEvent(const State& state, VID entity_vid) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return false;
-    }
-    const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity_vid);
-    return player_slot == nullptr ||
-           player_slot->connection_kind != PlayerConnectionKind::Remote;
-}
-
-bool ShouldReplicateInteractionSourceEvent(const State& state, VID source_vid) {
-    return state.net_session.role != network::NetRole::Offline &&
-           HasLocalGameplayAuthorityForInteractionSource(state, source_vid);
-}
-
-bool IsPlayerBodyDamageBetweenPlayers(const State& state, const GameplayEntityDamaged& gameplay_event) {
-    if (!gameplay_event.source_vid.has_value() ||
-        (gameplay_event.damage_type != DamageType::Attack &&
-         gameplay_event.damage_type != DamageType::JumpOn)) {
-        return false;
-    }
-
-    const Entity* const target = state.entity_manager.GetEntity(gameplay_event.entity_vid);
-    const Entity* const source = state.entity_manager.GetEntity(*gameplay_event.source_vid);
-    return target != nullptr && source != nullptr &&
-           IsPlayerLikeEntityType(target->type_) &&
-           IsPlayerLikeEntityType(source->type_);
-}
-
-void EnqueueEntitySpawnedReplicationEvent(State& state, const GameplayEntitySpawned& gameplay_event) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    network::NetEntityId net_id = state.net_session.FindNetEntityId(gameplay_event.entity_vid)
-        .value_or(network::kInvalidNetEntityId);
-    if (net_id == network::kInvalidNetEntityId) {
-        net_id = state.net_session.AllocateLocalEntityId();
-        state.net_session.LinkEntity(net_id, gameplay_event.entity_vid);
-    }
-    state.net_session.SetEntityOwner(net_id, state.net_session.local_player_id);
-
-    network::NetEntityId held_by_id = network::kInvalidNetEntityId;
-    if (gameplay_event.held_by_vid.has_value()) {
-        held_by_id = network::GetOrAssignReplicatedEntityId(
-            state,
-            *gameplay_event.held_by_vid
-        );
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntitySpawned;
-    event.payload = network::EntitySpawnedEvent{
-        .entity_id = net_id,
-        .entity_type = gameplay_event.entity_type,
-        .held_by_id = held_by_id,
-        .pos = gameplay_event.pos,
-        .vel = gameplay_event.vel,
-        .owner = network::NetEntityOwner::Player(state.net_session.local_player_id),
-        .counter_a = gameplay_event.counter_a,
-        .counter_b = gameplay_event.counter_b,
-        .use_pressed = gameplay_event.use_pressed,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EnqueueEntityHeldReplicationEvent(State& state, const GameplayEntityHeld& gameplay_event) {
-    if (!ShouldReplicateInteractionSourceEvent(state, gameplay_event.holder_vid)) {
-        return;
-    }
-
-    const network::NetEntityId held_id =
-        network::GetOrAssignReplicatedEntityId(state, gameplay_event.held_vid);
-    state.net_session.SetEntityOwner(held_id, state.net_session.local_player_id);
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityHeld;
-    event.payload = network::EntityHeldEvent{
-        .holder_id = network::GetOrAssignReplicatedEntityId(state, gameplay_event.holder_vid),
-        .held_id = held_id,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EnqueueEntityDroppedReplicationEvent(State& state, const GameplayEntityDropped& gameplay_event) {
-    const bool should_replicate =
-        gameplay_event.dropped_by_vid.has_value()
-            ? ShouldReplicateInteractionSourceEvent(state, *gameplay_event.dropped_by_vid)
-            : ShouldReplicateEntityEvent(state, gameplay_event.entity_vid);
-    if (!should_replicate) {
-        return;
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityDropped;
-    event.payload = network::EntityDroppedEvent{
-        .entity_id = network::GetOrAssignReplicatedEntityId(state, gameplay_event.entity_vid),
-        .pos = gameplay_event.pos,
-        .vel = gameplay_event.vel,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EnqueueEntityThrownReplicationEvent(State& state, const GameplayEntityThrown& gameplay_event) {
-    if (!ShouldReplicateInteractionSourceEvent(state, gameplay_event.thrower_vid)) {
-        return;
-    }
-
-    const network::NetEntityId entity_id =
-        network::GetOrAssignReplicatedEntityId(state, gameplay_event.entity_vid);
-    state.net_session.SetEntityOwner(entity_id, state.net_session.local_player_id);
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityThrown;
-    event.payload = network::EntityThrownEvent{
-        .entity_id = entity_id,
-        .pos = gameplay_event.pos,
-        .vel = gameplay_event.vel,
-        .thrower_id = network::GetOrAssignReplicatedEntityId(state, gameplay_event.thrower_vid),
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EnqueueEntityDamagedReplicationEvent(State& state, const GameplayEntityDamaged& gameplay_event) {
-    if (IsPlayerBodyDamageBetweenPlayers(state, gameplay_event)) {
-        return;
-    }
-
-    const bool should_replicate =
-        gameplay_event.source_vid.has_value()
-            ? ShouldReplicateInteractionSourceEvent(state, *gameplay_event.source_vid)
-            : ShouldReplicateEntityEvent(state, gameplay_event.entity_vid);
-    if (!should_replicate) {
-        return;
-    }
-
-    const network::NetEntityId entity_id =
-        network::GetOrAssignReplicatedEntityId(state, gameplay_event.entity_vid);
-    if (state.players.FindByEntityVid(gameplay_event.entity_vid) == nullptr) {
-        state.net_session.SetEntityOwner(entity_id, state.net_session.local_player_id);
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityDamaged;
-    event.payload = network::EntityDamagedEvent{
-        .entity_id = entity_id,
-        .source_entity_id = gameplay_event.source_vid.has_value()
-            ? network::GetOrAssignReplicatedEntityId(state, *gameplay_event.source_vid)
-            : network::kInvalidNetEntityId,
-        .amount = gameplay_event.amount,
-        .remaining_health = gameplay_event.remaining_health,
-        .pos = gameplay_event.pos,
-        .vel = gameplay_event.vel,
-        .acc = gameplay_event.acc,
-        .stun_timer = gameplay_event.stun_timer,
-        .projectile_contact_timer = gameplay_event.projectile_contact_timer,
-        .condition = gameplay_event.condition,
-        .grounded = gameplay_event.grounded,
-        .animate = gameplay_event.animate,
-        .animation_id = gameplay_event.animation_id,
-        .animation_frame = gameplay_event.animation_frame,
-        .animation_time = gameplay_event.animation_time,
-        .animation_speed = gameplay_event.animation_speed,
-        .damage_type = gameplay_event.damage_type,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EnqueueEntityStatePatchedReplicationEvent(
-    State& state,
-    const GameplayEntityStatePatched& gameplay_event
-) {
-    if (!ShouldReplicateInteractionSourceEvent(state, gameplay_event.source_vid)) {
-        return;
-    }
-
-    const network::NetEntityId entity_id =
-        network::GetOrAssignReplicatedEntityId(state, gameplay_event.entity_vid);
-    if (state.players.FindByEntityVid(gameplay_event.entity_vid) == nullptr) {
-        state.net_session.SetEntityOwner(entity_id, state.net_session.local_player_id);
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::EntityStatePatched;
-    event.payload = network::EntityStatePatchedEvent{
-        .entity_id = entity_id,
-        .source_entity_id =
-            network::GetOrAssignReplicatedEntityId(state, gameplay_event.source_vid),
-        .pos = gameplay_event.pos,
-        .vel = gameplay_event.vel,
-        .acc = gameplay_event.acc,
-        .health = gameplay_event.health,
-        .stun_timer = gameplay_event.stun_timer,
-        .condition = gameplay_event.condition,
-        .grounded = gameplay_event.grounded,
-        .active = gameplay_event.active,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
-void EnqueueRopeTilePlacedReplicationEvent(State& state, const GameplayRopeTilePlaced& gameplay_event) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::RopeTilePlaced;
-    event.payload = network::RopeTilePlacedEvent{
-        .tile_pos = gameplay_event.tile_pos,
-        .source_entity_id = state.net_session.FindNetEntityId(gameplay_event.source_vid)
-                                .value_or(network::kInvalidNetEntityId),
-    };
-    state.net_session.EnqueueLocalEvent(event);
 }
 
 } // namespace
@@ -415,14 +192,32 @@ void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, con
     event.entity_state_patched = GameplayEntityStatePatched{
         .entity_vid = entity.vid,
         .source_vid = source.vid,
+        .entity_a_vid = entity.entity_a,
         .pos = entity.pos,
         .vel = entity.vel,
         .acc = entity.acc,
+        .point_a = entity.point_a,
         .health = entity.health,
         .stun_timer = entity.stun_timer,
+        .projectile_contact_timer = entity.projectile_contact_timer,
+        .rotation = entity.rotation,
         .condition = static_cast<std::uint8_t>(entity.condition),
         .grounded = static_cast<std::uint8_t>(entity.grounded ? 1 : 0),
         .active = static_cast<std::uint8_t>(entity.active ? 1 : 0),
+        .has_physics = static_cast<std::uint8_t>(entity.has_physics ? 1 : 0),
+        .can_collide = static_cast<std::uint8_t>(entity.can_collide ? 1 : 0),
+        .can_apply_projectile_contact =
+            static_cast<std::uint8_t>(entity.can_apply_projectile_contact ? 1 : 0),
+        .facing = static_cast<std::uint8_t>(entity.facing == LeftOrRight::Right ? 1 : 0),
+    };
+    state.gameplay_events.push_back(event);
+}
+
+void EmitTileBrokenGameplayEvent(State& state, const IVec2& tile_pos) {
+    GameplayEvent event;
+    event.type = GameplayEventType::TileBroken;
+    event.tile_broken = GameplayTileBroken{
+        .tile_pos = tile_pos,
     };
     state.gameplay_events.push_back(event);
 }
@@ -434,6 +229,13 @@ void EmitRopeTilePlacedGameplayEvent(State& state, const Entity& source_entity, 
         .source_vid = source_entity.vid,
         .tile_pos = tile_pos,
     };
+    state.gameplay_events.push_back(event);
+}
+
+void EmitPresentationCommandGameplayEvent(State& state, const PresentationCommand& command) {
+    GameplayEvent event;
+    event.type = GameplayEventType::PresentationCommand;
+    event.presentation_command = command;
     state.gameplay_events.push_back(event);
 }
 
@@ -455,35 +257,28 @@ void ProcessGameplayEvents(State& state, Graphics& graphics, Audio& audio) {
             }
             if (state.net_session.role == network::NetRole::Peer) {
                 network::RequestStageExit(state, event.stage_exit.exit_id);
+                QueueStageExitTransition(state, event.stage_exit.exit_id);
+                continue;
             }
             QueueStageExitTransition(state, event.stage_exit.exit_id);
             break;
         case GameplayEventType::StageTransitionRequested:
-            if (state.pending_stage_transition.has_value()) {
+            if (state.pending_stage_transition.has_value() ||
+                state.net_session.role == network::NetRole::Peer) {
                 continue;
             }
             QueueStageTransition(state, event.stage_transition.target);
             break;
         case GameplayEventType::EntitySpawned:
-            EnqueueEntitySpawnedReplicationEvent(state, event.entity_spawned);
-            break;
         case GameplayEventType::EntityHeld:
-            EnqueueEntityHeldReplicationEvent(state, event.entity_held);
-            break;
         case GameplayEventType::EntityDropped:
-            EnqueueEntityDroppedReplicationEvent(state, event.entity_dropped);
-            break;
         case GameplayEventType::EntityThrown:
-            EnqueueEntityThrownReplicationEvent(state, event.entity_thrown);
-            break;
         case GameplayEventType::EntityDamaged:
-            EnqueueEntityDamagedReplicationEvent(state, event.entity_damaged);
-            break;
         case GameplayEventType::EntityStatePatched:
-            EnqueueEntityStatePatchedReplicationEvent(state, event.entity_state_patched);
-            break;
+        case GameplayEventType::TileBroken:
         case GameplayEventType::RopeTilePlaced:
-            EnqueueRopeTilePlacedReplicationEvent(state, event.rope_tile_placed);
+        case GameplayEventType::PresentationCommand:
+            network::ReplicateGameplayEvent(state, event);
             break;
         }
     }

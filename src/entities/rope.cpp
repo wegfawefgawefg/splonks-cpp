@@ -53,6 +53,7 @@ extern const EntityArchetype kRopeArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .affected_by_ground_friction = false,
+    .step_without_local_authority = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

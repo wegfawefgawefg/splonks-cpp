@@ -106,8 +106,8 @@ const char* NetEventTypeName(network::NetEventType type) {
         return "ProjectileHit";
     case network::NetEventType::MattockDug:
         return "MattockDug";
-    case network::NetEventType::TeleporterUsed:
-        return "TeleporterUsed";
+    case network::NetEventType::PresentationCommand:
+        return "PresentationCommand";
     case network::NetEventType::CrateOpened:
         return "CrateOpened";
     case network::NetEventType::ChestOpened:
@@ -415,6 +415,36 @@ void DrawMovementReplicationControls(State& state) {
     }
 }
 
+void DrawDurableReplicationStatus(const State& state) {
+    if (!ImGui::CollapsingHeader("Durable Replication", ImGuiTreeNodeFlags_DefaultOpen)) {
+        return;
+    }
+
+    const network::NetSessionState& session = state.net_session;
+    ImGui::Text(
+        "Expected/apply order: %llu / %llu",
+        static_cast<unsigned long long>(session.next_expected_coordinator_order),
+        static_cast<unsigned long long>(session.highest_applied_coordinator_order)
+    );
+    ImGui::Text("Entity id aliases: %zu", session.entity_id_aliases.size());
+    if (!state.net_transport) {
+        ImGui::TextUnformatted("Transport not initialized.");
+        return;
+    }
+
+    const network::NetTransportRuntime& transport = *state.net_transport;
+    ImGui::Text("Remote endpoints: %zu", transport.remotes.size());
+    for (const network::NetRemoteEndpoint& remote : transport.remotes) {
+        ImGui::BulletText(
+            "%s acked_order=%llu players=%zu last_heard_age=%llu",
+            network::EndpointToString(remote.endpoint).c_str(),
+            static_cast<unsigned long long>(remote.highest_acked_coordinator_order),
+            remote.player_ids.size(),
+            static_cast<unsigned long long>(state.frame - remote.last_heard_frame)
+        );
+    }
+}
+
 } // namespace
 
 void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graphics) {
@@ -454,6 +484,9 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Separator();
 
     DrawMovementReplicationControls(state);
+    ImGui::Separator();
+
+    DrawDurableReplicationStatus(state);
     ImGui::Separator();
 
     DrawDebugLocalPlayers(state, debug, graphics);

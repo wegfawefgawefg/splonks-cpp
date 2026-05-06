@@ -202,6 +202,7 @@ extern const EntityArchetype kBasicExitArchetype{
     .can_be_hung_on = false,
     .hurt_on_contact = false,
     .can_be_stomped = false,
+    .step_without_local_authority = true,
     .draw_layer = DrawLayer::Background,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

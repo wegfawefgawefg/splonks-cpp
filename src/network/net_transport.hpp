@@ -49,6 +49,7 @@ struct NetRemoteEndpoint {
     std::vector<PlayerId> player_ids;
     NetEndpoint endpoint;
     std::uint64_t last_heard_frame = 0;
+    std::uint64_t highest_acked_coordinator_order = 0;
 };
 
 struct NetRemotePlayerTarget {
@@ -65,6 +66,7 @@ struct NetRemotePlayerTarget {
     std::uint8_t animate = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
+    std::uint16_t animation_flags = 0;
     float animation_time = 0.0F;
     float animation_speed = 1.0F;
     std::uint32_t sequence = 0;

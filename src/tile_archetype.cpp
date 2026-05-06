@@ -1,6 +1,7 @@
 #include "tile_archetype.hpp"
 
 #include "entity/archetype.hpp"
+#include "gameplay_events.hpp"
 #include "state.hpp"
 
 #include <array>
@@ -14,20 +15,29 @@ constexpr std::size_t TileIndex(Tile tile) {
     return static_cast<std::size_t>(tile);
 }
 
-void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
+Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
-        return;
+        return nullptr;
     }
 
     Entity* const entity = state.entity_manager.GetEntityMut(*vid);
     if (entity == nullptr) {
-        return;
+        return nullptr;
     }
 
     SetEntityAs(*entity, type_);
     entity->SetCenter(center);
     entity->vel = Vec2::New(0.0F, 0.0F);
+    return entity;
+}
+
+void SpawnAndReplicateEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
+    Entity* const entity = SpawnEntityAtCenter(type_, center, state);
+    if (entity == nullptr) {
+        return;
+    }
+    EmitEntitySpawnedGameplayEvent(state, *entity);
 }
 
 void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio) {
@@ -36,10 +46,10 @@ void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio)
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
-    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
-    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
-    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
-    SpawnEntityAtCenter(EntityType::GoldNugget, center, state);
+    SpawnAndReplicateEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
+    SpawnAndReplicateEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
+    SpawnAndReplicateEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
+    SpawnAndReplicateEntityAtCenter(EntityType::GoldNugget, center, state);
 }
 
 TileArchetype MakeSolidTileArchetype(

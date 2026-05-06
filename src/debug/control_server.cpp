@@ -178,6 +178,16 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
     WriteOptionalVid(out, entity.held_by_vid);
     out << ",\"back\":";
     WriteOptionalVid(out, entity.back_vid);
+    out << ",\"entity_a\":";
+    WriteOptionalVid(out, entity.entity_a);
+    out << ",\"point_a\":{\"x\":" << entity.point_a.x << ",\"y\":" << entity.point_a.y << "}"
+        << ",\"has_physics\":" << (entity.has_physics ? "true" : "false")
+        << ",\"can_collide\":" << (entity.can_collide ? "true" : "false")
+        << ",\"can_apply_projectile_contact\":"
+        << (entity.can_apply_projectile_contact ? "true" : "false")
+        << ",\"projectile_contact_timer\":" << entity.projectile_contact_timer
+        << ",\"rotation\":" << entity.rotation
+        << ",\"facing\":" << JsonString(entity.facing == LeftOrRight::Right ? "right" : "left");
     if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
         out << ",\"player_id\":" << *player_id;
     } else {
@@ -186,8 +196,20 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
     if (const std::optional<network::NetEntityId> net_id =
             state.net_session.FindNetEntityId(entity.vid)) {
         out << ",\"net_entity_id\":" << *net_id;
+        if (const std::optional<PlayerId> owner = state.net_session.FindEntityOwner(*net_id)) {
+            out << ",\"net_owner_player_id\":" << *owner;
+        } else {
+            out << ",\"net_owner_player_id\":null";
+        }
+        out << ",\"net_owner\":" << JsonString(
+            state.net_session.HasLocalAuthorityForEntity(entity.vid)
+                ? "local-authority"
+                : "remote-authority"
+        );
     } else {
-        out << ",\"net_entity_id\":null";
+        out << ",\"net_entity_id\":null"
+            << ",\"net_owner_player_id\":null"
+            << ",\"net_owner\":null";
     }
     out << "}";
 }
@@ -392,6 +414,8 @@ std::string HandleNetCommand(const State& state) {
         << ",\"pending_local_events\":" << state.net_session.pending_local_events.size()
         << ",\"ordered_events\":" << state.net_session.ordered_events.size()
         << ",\"applied_events\":" << state.net_session.applied_event_ids.size()
+        << ",\"next_expected_coordinator_order\":" << state.net_session.next_expected_coordinator_order
+        << ",\"highest_applied_coordinator_order\":" << state.net_session.highest_applied_coordinator_order
         << ",\"entity_links\":" << state.net_session.entity_links.size()
         << ",\"peers\":[";
     for (std::size_t i = 0; i < state.net_session.peers.size(); ++i) {
@@ -409,6 +433,17 @@ std::string HandleNetCommand(const State& state) {
     if (state.net_transport) {
         out << "{\"socket_port\":" << state.net_transport->socket.BoundPort()
             << ",\"remotes\":" << state.net_transport->remotes.size()
+            << ",\"remote_acks\":[";
+        for (std::size_t i = 0; i < state.net_transport->remotes.size(); ++i) {
+            const network::NetRemoteEndpoint& remote = state.net_transport->remotes[i];
+            if (i > 0) {
+                out << ",";
+            }
+            out << "{\"endpoint\":" << JsonString(remote.endpoint.address + ":" + std::to_string(remote.endpoint.port))
+                << ",\"highest_acked_coordinator_order\":" << remote.highest_acked_coordinator_order
+                << "}";
+        }
+        out << "]"
             << ",\"remote_targets\":[";
         for (std::size_t i = 0; i < state.net_transport->remote_player_targets.size(); ++i) {
             const network::NetRemotePlayerTarget& target = state.net_transport->remote_player_targets[i];

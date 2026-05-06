@@ -4,7 +4,12 @@
 #include "audio.hpp"
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_authority.hpp"
+#include "gameplay_events.hpp"
 #include "state.hpp"
+#include "world_query.hpp"
+
+#include <limits>
 
 namespace splonks::entities::giant_tiki_head {
 
@@ -43,8 +48,35 @@ void AddTikiHeadReleaseShake(State& state, const Entity& head) {
     );
 }
 
+const Entity* FindClosestPlayerToHead(const Entity& head, const State& state) {
+    const Entity* best_player = nullptr;
+    float best_distance_sq = std::numeric_limits<float>::max();
+    const Vec2 head_center = head.GetCenter();
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+            continue;
+        }
+
+        const Vec2 delta = GetNearestWorldDelta(state.stage, head_center, player->GetCenter());
+        const float distance_sq = delta.x * delta.x + delta.y * delta.y;
+        if (best_player == nullptr || distance_sq < best_distance_sq) {
+            best_player = player;
+            best_distance_sq = distance_sq;
+        }
+    }
+    return best_player;
+}
+
 std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio) {
     (void)audio;
+    if (!HasLocalGameplayAuthorityForEntity(state, head.vid)) {
+        return std::nullopt;
+    }
+
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
         return std::nullopt;
@@ -58,14 +90,14 @@ std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio)
     SetEntityAs(*boulder, EntityType::Boulder);
     boulder->SetCenter(head.GetCenter());
 
-    const Entity* const player =
-        state.player_vid.has_value() ? state.entity_manager.GetEntity(*state.player_vid) : nullptr;
+    const Entity* const player = FindClosestPlayerToHead(head, state);
     if (player != nullptr) {
-        const Vec2 delta = player->GetCenter() - head.GetCenter();
+        const Vec2 delta = GetNearestWorldDelta(state.stage, head.GetCenter(), player->GetCenter());
         boulder->facing = delta.x < 0.0F ? LeftOrRight::Left : LeftOrRight::Right;
     } else {
         boulder->facing = LeftOrRight::Right;
     }
+    EmitEntitySpawnedGameplayEvent(state, *boulder, std::nullopt);
 
     AddTikiHeadReleaseShake(state, head);
     (void)PlayWorldSoundEmitter(state, head.GetCenter(), audio_asset_ids::BoulderHitGround);

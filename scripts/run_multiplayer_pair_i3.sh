@@ -46,6 +46,9 @@ fi
 
 "${script_dir}/build.sh"
 
+rm -f "${repo_root}"/logs/network_events_host_p*.log \
+      "${repo_root}"/logs/network_events_peer_p*.log
+
 if [ "${SPLONKS_KILL_EXISTING_PAIR:-1}" != "0" ]; then
     kill_existing_pair_processes
 fi

@@ -26,6 +26,11 @@ struct NetEntityLink {
     std::optional<PlayerId> owner_player_id = std::nullopt;
 };
 
+struct NetEntityIdAlias {
+    NetEntityId from_id = kInvalidNetEntityId;
+    NetEntityId to_id = kInvalidNetEntityId;
+};
+
 enum class NetEventLogPhase : std::uint8_t {
     EnqueuedLocal,
     EnqueuedOrdered,
@@ -51,15 +56,19 @@ struct NetSessionState {
     NetEntityId next_local_entity_id = 1;
     PlayerId next_player_id = 2;
     std::uint64_t next_coordinator_order = 1;
+    std::uint64_t next_expected_coordinator_order = 1;
+    std::uint64_t highest_applied_coordinator_order = 0;
     std::string quest_id;
     std::string quest_stage_id;
     std::uint32_t stage_seed = 1;
 
     std::vector<NetPeerState> peers;
     std::vector<NetEntityLink> entity_links;
+    std::vector<NetEntityIdAlias> entity_id_aliases;
     std::vector<NetEvent> pending_local_events;
     std::vector<NetEvent> ordered_events;
     std::vector<NetEventId> applied_event_ids;
+    std::vector<std::uint64_t> applied_coordinator_orders;
     std::vector<NetEventLogEntry> event_log;
     std::string event_log_file_path;
 
@@ -69,20 +78,25 @@ struct NetSessionState {
     static NetSessionState NewOffline();
 
     NetEventHeader MakeLocalEventHeader(std::uint64_t source_local_frame);
+    NetEventHeader MakeLocalTransientEventHeader(std::uint64_t source_local_frame);
     NetEntityId AllocateLocalEntityId();
 
     void EnqueueLocalEvent(NetEvent event);
     std::vector<NetEvent> DrainPendingLocalEvents();
     void EnqueueOrderedEvent(NetEvent event);
+    void EnqueueTransientEvent(NetEvent event);
     std::size_t DrainPendingLocalEventsToOrdered();
     std::size_t MarkAllOrderedEventsApplied();
     bool MarkEventApplied(NetEventId event_id);
     bool HasAppliedEvent(NetEventId event_id) const;
+    void MarkCoordinatorOrderApplied(const NetEvent& event);
     void AddEventLog(NetEventLogPhase phase, const NetEvent& event);
 
     void ClearStageEntityLinks();
     void LinkEntity(NetEntityId net_id, VID local_vid);
     void SetEntityOwner(NetEntityId net_id, std::optional<PlayerId> owner_player_id);
+    void AliasEntityId(NetEntityId from_id, NetEntityId to_id);
+    NetEntityId ResolveEntityIdAlias(NetEntityId entity_id) const;
     void UnlinkEntity(NetEntityId net_id);
     std::optional<VID> FindLocalVid(NetEntityId net_id) const;
     std::optional<NetEntityId> FindNetEntityId(VID local_vid) const;

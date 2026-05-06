@@ -15,6 +15,9 @@ bool HasLocalGameplayAuthorityForInteractionSource(const State& state, VID entit
     if (state.net_session.role == network::NetRole::Offline) {
         return true;
     }
+    if (state.net_session.HasLocalAuthorityForEntity(entity_vid)) {
+        return true;
+    }
 
     constexpr int kMaxHolderChainDepth = 16;
     std::optional<VID> cursor = entity_vid;
@@ -27,11 +30,10 @@ bool HasLocalGameplayAuthorityForInteractionSource(const State& state, VID entit
         if (entity == nullptr || !entity->active) {
             return false;
         }
-        if (entity->held_by_vid.has_value()) {
-            cursor = entity->held_by_vid;
-        } else {
-            cursor = entity->thrown_by;
+        if (!entity->held_by_vid.has_value()) {
+            return false;
         }
+        cursor = entity->held_by_vid;
     }
 
     return state.net_session.HasLocalAuthorityForEntity(entity_vid);

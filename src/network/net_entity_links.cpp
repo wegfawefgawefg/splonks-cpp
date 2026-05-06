@@ -47,7 +47,7 @@ NetEntityId GetOrAssignReplicatedEntityId(State& state, VID entity_vid) {
 
     const NetEntityId runtime_id = state.net_session.AllocateLocalEntityId();
     state.net_session.LinkEntity(runtime_id, entity_vid);
-    state.net_session.SetEntityOwner(runtime_id, state.net_session.local_player_id);
+    state.net_session.SetEntityOwner(runtime_id, std::nullopt);
     return runtime_id;
 }
 

@@ -6,6 +6,7 @@
 #include "entity/archetype.hpp"
 #include "entity/core_types.hpp"
 #include "entity/manager.hpp"
+#include "gameplay_authority.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -204,6 +205,61 @@ bool IsPlayerSlotEntity(const State& state, const Entity& entity) {
     return state.players.FindPlayerIdForEntity(entity.vid).has_value();
 }
 
+bool IsHeldByLocalPlayerChain(const State& state, const Entity& entity) {
+    std::optional<VID> cursor = entity.held_by_vid;
+    constexpr int kMaxHolderChainDepth = 16;
+    for (int depth = 0; depth < kMaxHolderChainDepth && cursor.has_value(); ++depth) {
+        const PlayerSlot* const slot = state.players.FindByEntityVid(*cursor);
+        if (slot != nullptr) {
+            return slot->connection_kind == PlayerConnectionKind::Local;
+        }
+
+        const Entity* const holder = state.entity_manager.GetEntity(*cursor);
+        if (holder == nullptr || !holder->active) {
+            return false;
+        }
+        cursor = holder->held_by_vid;
+    }
+    return false;
+}
+
+bool ShouldRunFullLocalStepForNonPlayerEntity(const State& state, const Entity& entity) {
+    if (HasLocalGameplayAuthorityForEntity(state, entity.vid)) {
+        return true;
+    }
+    if (IsHeldByLocalPlayerChain(state, entity)) {
+        return true;
+    }
+    return GetEntityArchetype(entity.type_).step_without_local_authority;
+}
+
+void StepNonAuthorityEntityPresentation(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    float dt
+) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!entity.active) {
+        return;
+    }
+
+    ClearTransientMovementFlags(entity);
+    entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
+    if (!entity.active) {
+        return;
+    }
+    entities::common::ApplyDeactivateConditions(entity_idx, state);
+    state.UpdateSidForEntity(entity_idx, graphics);
+    ClearUseEdgesAfterFrame(entity);
+    entity.last_condition = entity.condition;
+    entity.last_ai_state = entity.ai_state;
+}
+
 bool IsLocallyPredictedThrownRemotePlayer(const PlayerSlot& slot, const Entity& entity) {
     return slot.connection_kind == PlayerConnectionKind::Remote &&
            entity.active &&
@@ -295,7 +351,11 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             if (IsPlayerSlotEntity(state, entity)) {
                 continue;
             }
-            StepOneEntity(entity_idx, state, audio, graphics, dt);
+            if (ShouldRunFullLocalStepForNonPlayerEntity(state, entity)) {
+                StepOneEntity(entity_idx, state, audio, graphics, dt);
+            } else {
+                StepNonAuthorityEntityPresentation(entity_idx, state, audio, graphics, dt);
+            }
         }
     }
 

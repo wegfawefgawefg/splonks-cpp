@@ -27,6 +27,10 @@ constexpr std::uint32_t kMaxPlayersPerEndpoint = 16;
 constexpr std::uint32_t kJoinRetryFrames = 30;
 constexpr std::uint64_t kRemoteEndpointTimeoutFrames = 180;
 constexpr float kReplicatedEntityStateMinDist = 0.01F;
+constexpr std::uint32_t kCoordinatorRepairSnapshotIntervalFrames = 30;
+constexpr std::uint16_t kPlayerSnapshotFlagClimbing = 1U << 0U;
+constexpr std::uint16_t kPlayerSnapshotFlagHanging = 1U << 1U;
+constexpr std::uint16_t kPlayerSnapshotFlagHangRight = 1U << 2U;
 
 NetTransportRuntime& EnsureTransport(State& state) {
     if (!state.net_transport) {
@@ -360,6 +364,15 @@ std::optional<PlayerSnapshotEntry> MakeSnapshotForSlot(const State& state, const
         entity->frame_data_animator.current_frame,
         std::numeric_limits<std::uint16_t>::max()
     ));
+    if (entity->IsClimbing()) {
+        snapshot.animation_flags |= kPlayerSnapshotFlagClimbing;
+    }
+    if (entity->hang_side.has_value()) {
+        snapshot.animation_flags |= kPlayerSnapshotFlagHanging;
+        if (*entity->hang_side == LeftOrRight::Right) {
+            snapshot.animation_flags |= kPlayerSnapshotFlagHangRight;
+        }
+    }
     snapshot.animation_time = entity->frame_data_animator.current_time;
     snapshot.animation_speed = entity->frame_data_animator.speed;
     return snapshot;
@@ -452,6 +465,10 @@ bool IsReplicatedEntityStateEvent(const NetEvent& event) {
            std::holds_alternative<EntityStatePatchedEvent>(event.payload);
 }
 
+bool IsOneShotTransientLocalEvent(const NetEvent& event) {
+    return event.header.coordinator_order == 0 && IsReplicatedEntityStateEvent(event);
+}
+
 bool IsReplicatedEntityCarryEvent(const NetEvent& event) {
     return (event.type == NetEventType::EntityHeld &&
                std::holds_alternative<EntityHeldEvent>(event.payload)) ||
@@ -460,6 +477,14 @@ bool IsReplicatedEntityCarryEvent(const NetEvent& event) {
            (event.type == NetEventType::EntityThrown &&
                std::holds_alternative<EntityThrownEvent>(event.payload));
 }
+
+bool IsReplicatedPresentationCommandEvent(const NetEvent& event) {
+    return event.type == NetEventType::PresentationCommand &&
+           std::holds_alternative<PresentationCommandEvent>(event.payload);
+}
+
+void RemovePendingLocalEvent(NetSessionState& session, NetEventId event_id);
+void RemoveOneShotTransientLocalEvents(NetSessionState& session);
 
 bool ShouldReplicateEntityStatePatch(const State& state, const Entity& entity) {
     if (!entity.active || state.players.FindPlayerIdForEntity(entity.vid).has_value()) {
@@ -473,23 +498,44 @@ bool ShouldReplicateEntityStatePatch(const State& state, const Entity& entity) {
     }
     if (std::abs(entity.vel.x) >= kReplicatedEntityStateMinDist ||
         std::abs(entity.vel.y) >= kReplicatedEntityStateMinDist) {
-        return entity.pushable || entity.impassable || entity.crusher_pusher;
+        return state.net_session.role == NetRole::Coordinator ||
+               entity.pushable || entity.impassable || entity.crusher_pusher;
     }
     return false;
+}
+
+NetEntityId GetReplicatedEntityLinkId(State& state, const std::optional<VID>& vid) {
+    if (!vid.has_value()) {
+        return kInvalidNetEntityId;
+    }
+    const Entity* const linked_entity = state.entity_manager.GetEntity(*vid);
+    if (linked_entity == nullptr || !linked_entity->active) {
+        return kInvalidNetEntityId;
+    }
+    return GetOrAssignReplicatedEntityId(state, *vid);
 }
 
 EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entity) {
     return EntityStatePatchedEvent{
         .entity_id = GetOrAssignReplicatedEntityId(state, entity.vid),
         .source_entity_id = kInvalidNetEntityId,
+        .entity_a_id = GetReplicatedEntityLinkId(state, entity.entity_a),
         .pos = entity.pos,
         .vel = entity.vel,
         .acc = entity.acc,
+        .point_a = entity.point_a,
         .health = entity.health,
         .stun_timer = entity.stun_timer,
+        .projectile_contact_timer = entity.projectile_contact_timer,
+        .rotation = entity.rotation,
         .condition = static_cast<std::uint8_t>(entity.condition),
         .grounded = static_cast<std::uint8_t>(entity.grounded ? 1 : 0),
         .active = static_cast<std::uint8_t>(entity.active ? 1 : 0),
+        .has_physics = static_cast<std::uint8_t>(entity.has_physics ? 1 : 0),
+        .can_collide = static_cast<std::uint8_t>(entity.can_collide ? 1 : 0),
+        .can_apply_projectile_contact =
+            static_cast<std::uint8_t>(entity.can_apply_projectile_contact ? 1 : 0),
+        .facing = static_cast<std::uint8_t>(entity.facing == LeftOrRight::Right ? 1 : 0),
     };
 }
 
@@ -500,7 +546,40 @@ std::vector<NetEvent> BuildReplicatedEntityStatePatchEvents(State& state) {
             continue;
         }
         NetEvent event;
-        event.header = state.net_session.MakeLocalEventHeader(state.frame);
+        event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
+        event.type = NetEventType::EntityStatePatched;
+        event.payload = MakeEntityStatePayload(state, entity);
+        events.push_back(event);
+    }
+    return events;
+}
+
+bool ShouldIncludeCoordinatorRepairEntityState(const State& state, const Entity& entity) {
+    if (state.net_session.role != NetRole::Coordinator) {
+        return false;
+    }
+    if (state.players.FindPlayerIdForEntity(entity.vid).has_value()) {
+        return false;
+    }
+    // Inactive linked entities are intentionally repaired too. Entity state patches are
+    // transient, so this is the safety net that clears remote ghosts after explosions,
+    // pickups, rope deployment, or any other authoritative despawn path.
+    return state.net_session.FindNetEntityId(entity.vid).has_value();
+}
+
+std::vector<NetEvent> BuildCoordinatorEntityRepairEvents(State& state) {
+    std::vector<NetEvent> events;
+    if (state.net_session.role != NetRole::Coordinator ||
+        (state.frame % kCoordinatorRepairSnapshotIntervalFrames) != 0) {
+        return events;
+    }
+
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!ShouldIncludeCoordinatorRepairEntityState(state, entity)) {
+            continue;
+        }
+        NetEvent event;
+        event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
         event.type = NetEventType::EntityStatePatched;
         event.payload = MakeEntityStatePayload(state, entity);
         events.push_back(event);
@@ -602,6 +681,18 @@ bool HasQueuedOrAppliedEvent(const NetSessionState& session, NetEventId event_id
     return false;
 }
 
+void NoteCoordinatorOrderApplied(NetSessionState& session, const NetEvent& event) {
+    session.MarkCoordinatorOrderApplied(event);
+}
+
+void MarkLocalEchoEventApplied(NetSessionState& session, const NetEvent& event) {
+    RemovePendingLocalEvent(session, event.header.event_id);
+    if (session.MarkEventApplied(event.header.event_id)) {
+        NoteCoordinatorOrderApplied(session, event);
+        session.AddEventLog(NetEventLogPhase::SkippedLocal, event);
+    }
+}
+
 void SendTileEvents(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
@@ -662,7 +753,7 @@ NetEvent MakeEntitySpawnedEvent(const EntitySpawnedEventEntry& entry) {
         .held_by_id = entry.held_by_id,
         .pos = Vec2::New(entry.pos_x, entry.pos_y),
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
-        .owner = NetEntityOwner::Player(entry.source_player_id),
+        .owner = NetEntityOwner::Coordinator(),
         .counter_a = entry.counter_a,
         .counter_b = entry.counter_b,
         .use_pressed = entry.use_pressed != 0,
@@ -787,17 +878,27 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .coordinator_order = event.header.coordinator_order,
         .entity_id = payload != nullptr ? payload->entity_id : kInvalidNetEntityId,
         .source_entity_id = payload != nullptr ? payload->source_entity_id : kInvalidNetEntityId,
+        .entity_a_id = payload != nullptr ? payload->entity_a_id : kInvalidNetEntityId,
         .pos_x = payload != nullptr ? payload->pos.x : 0.0F,
         .pos_y = payload != nullptr ? payload->pos.y : 0.0F,
         .vel_x = payload != nullptr ? payload->vel.x : 0.0F,
         .vel_y = payload != nullptr ? payload->vel.y : 0.0F,
         .acc_x = payload != nullptr ? payload->acc.x : 0.0F,
         .acc_y = payload != nullptr ? payload->acc.y : 0.0F,
+        .point_a_x = payload != nullptr ? payload->point_a.x : 0,
+        .point_a_y = payload != nullptr ? payload->point_a.y : 0,
         .health = payload != nullptr ? payload->health : 0U,
         .stun_timer = payload != nullptr ? payload->stun_timer : 0U,
+        .projectile_contact_timer = payload != nullptr ? payload->projectile_contact_timer : 0U,
+        .rotation = payload != nullptr ? payload->rotation : 0.0F,
         .condition = payload != nullptr ? payload->condition : static_cast<std::uint8_t>(0),
         .grounded = payload != nullptr ? payload->grounded : static_cast<std::uint8_t>(0),
         .active = payload != nullptr ? payload->active : static_cast<std::uint8_t>(0),
+        .has_physics = payload != nullptr ? payload->has_physics : static_cast<std::uint8_t>(1),
+        .can_collide = payload != nullptr ? payload->can_collide : static_cast<std::uint8_t>(1),
+        .can_apply_projectile_contact =
+            payload != nullptr ? payload->can_apply_projectile_contact : static_cast<std::uint8_t>(1),
+        .facing = payload != nullptr ? payload->facing : static_cast<std::uint8_t>(0),
     };
 }
 
@@ -814,14 +915,22 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
     event.payload = EntityStatePatchedEvent{
         .entity_id = entry.entity_id,
         .source_entity_id = entry.source_entity_id,
+        .entity_a_id = entry.entity_a_id,
         .pos = Vec2::New(entry.pos_x, entry.pos_y),
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
+        .point_a = IVec2::New(entry.point_a_x, entry.point_a_y),
         .health = entry.health,
         .stun_timer = entry.stun_timer,
+        .projectile_contact_timer = entry.projectile_contact_timer,
+        .rotation = entry.rotation,
         .condition = entry.condition,
         .grounded = entry.grounded,
         .active = entry.active,
+        .has_physics = entry.has_physics,
+        .can_collide = entry.can_collide,
+        .can_apply_projectile_contact = entry.can_apply_projectile_contact,
+        .facing = entry.facing,
     };
     return event;
 }
@@ -939,6 +1048,81 @@ void SendEntityCarryEvents(
     }
 }
 
+PresentationCommandEventEntry MakePresentationCommandEventEntry(const NetEvent& event) {
+    const PresentationCommandEvent* const payload = std::get_if<PresentationCommandEvent>(&event.payload);
+    return PresentationCommandEventEntry{
+        .event_id = event.header.event_id,
+        .source_player_id = event.header.source_player_id,
+        .stage_instance_id = event.header.stage_instance_id,
+        .source_local_frame = event.header.source_local_frame,
+        .coordinator_order = event.header.coordinator_order,
+        .kind = payload != nullptr ? payload->kind : static_cast<std::uint16_t>(0),
+        .effect_id = payload != nullptr ? payload->effect_id : static_cast<std::uint16_t>(0),
+        .audio_asset_id = payload != nullptr ? payload->audio_asset_id : 0,
+        .source_entity_id = payload != nullptr ? payload->source_entity_id : kInvalidNetEntityId,
+        .target_entity_id = payload != nullptr ? payload->target_entity_id : kInvalidNetEntityId,
+        .source_x = payload != nullptr ? payload->source_pos.x : 0.0F,
+        .source_y = payload != nullptr ? payload->source_pos.y : 0.0F,
+        .target_x = payload != nullptr ? payload->target_pos.x : 0.0F,
+        .target_y = payload != nullptr ? payload->target_pos.y : 0.0F,
+        .direction_x = payload != nullptr ? payload->direction_x : 1,
+        .direction_y = payload != nullptr ? payload->direction_y : 0,
+        .param_a = payload != nullptr ? payload->param_a : 0.0F,
+        .param_b = payload != nullptr ? payload->param_b : 0.0F,
+        .param_c = payload != nullptr ? payload->param_c : 0.0F,
+        .param_d = payload != nullptr ? payload->param_d : 0.0F,
+    };
+}
+
+NetEvent MakePresentationCommandEvent(const PresentationCommandEventEntry& entry) {
+    NetEvent event;
+    event.header = NetEventHeader{
+        .event_id = entry.event_id,
+        .source_player_id = entry.source_player_id,
+        .stage_instance_id = entry.stage_instance_id,
+        .source_local_frame = entry.source_local_frame,
+        .coordinator_order = entry.coordinator_order,
+    };
+    event.type = NetEventType::PresentationCommand;
+    event.payload = PresentationCommandEvent{
+        .kind = entry.kind,
+        .effect_id = entry.effect_id,
+        .audio_asset_id = entry.audio_asset_id,
+        .source_entity_id = entry.source_entity_id,
+        .target_entity_id = entry.target_entity_id,
+        .source_pos = Vec2::New(entry.source_x, entry.source_y),
+        .target_pos = Vec2::New(entry.target_x, entry.target_y),
+        .direction_x = entry.direction_x,
+        .direction_y = entry.direction_y,
+        .param_a = entry.param_a,
+        .param_b = entry.param_b,
+        .param_c = entry.param_c,
+        .param_d = entry.param_d,
+    };
+    return event;
+}
+
+void SendPresentationCommandEvents(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEvent>& events
+) {
+    PresentationCommandEventsPacket packet;
+    for (const NetEvent& event : events) {
+        if (!IsReplicatedPresentationCommandEvent(event)) {
+            continue;
+        }
+        if (packet.event_count >= packet.events.size()) {
+            SendEncodedPacket(transport, endpoint, EncodePresentationCommandEvents(packet));
+            packet = PresentationCommandEventsPacket{};
+        }
+        packet.events[packet.event_count++] = MakePresentationCommandEventEntry(event);
+    }
+    if (packet.event_count > 0) {
+        SendEncodedPacket(transport, endpoint, EncodePresentationCommandEvents(packet));
+    }
+}
+
 void SendPendingTileEventsToCoordinator(State& state, NetTransportRuntime& transport) {
     if (state.net_session.pending_local_events.empty()) {
         return;
@@ -964,6 +1148,12 @@ void SendPendingTileEventsToCoordinator(State& state, NetTransportRuntime& trans
         transport.coordinator_endpoint,
         state.net_session.pending_local_events
     );
+    SendPresentationCommandEvents(
+        transport,
+        transport.coordinator_endpoint,
+        state.net_session.pending_local_events
+    );
+    RemoveOneShotTransientLocalEvents(state.net_session);
 }
 
 void SendOrderedTileEventsToAllRemotes(State& state, NetTransportRuntime& transport) {
@@ -971,11 +1161,101 @@ void SendOrderedTileEventsToAllRemotes(State& state, NetTransportRuntime& transp
         return;
     }
     for (const NetRemoteEndpoint& remote : transport.remotes) {
-        SendTileEvents(transport, remote.endpoint, state.net_session.ordered_events);
-        SendEntitySpawnedEvents(transport, remote.endpoint, state.net_session.ordered_events);
-        SendEntityDamageEvents(transport, remote.endpoint, state.net_session.ordered_events);
-        SendEntityStateEvents(transport, remote.endpoint, state.net_session.ordered_events);
-        SendEntityCarryEvents(transport, remote.endpoint, state.net_session.ordered_events);
+        std::vector<NetEvent> unacked_events;
+        unacked_events.reserve(state.net_session.ordered_events.size());
+        for (const NetEvent& event : state.net_session.ordered_events) {
+            if ((event.header.coordinator_order == 0 && IsReplicatedEntityStateEvent(event)) ||
+                event.header.coordinator_order > remote.highest_acked_coordinator_order) {
+                unacked_events.push_back(event);
+            }
+        }
+        if (unacked_events.empty()) {
+            continue;
+        }
+        SendTileEvents(transport, remote.endpoint, unacked_events);
+        SendEntitySpawnedEvents(transport, remote.endpoint, unacked_events);
+        SendEntityDamageEvents(transport, remote.endpoint, unacked_events);
+        SendEntityStateEvents(transport, remote.endpoint, unacked_events);
+        SendEntityCarryEvents(transport, remote.endpoint, unacked_events);
+        SendPresentationCommandEvents(transport, remote.endpoint, unacked_events);
+    }
+}
+
+void PruneAckedOrderedEvents(State& state, const NetTransportRuntime& transport) {
+    if (state.net_session.ordered_events.empty() || transport.remotes.empty()) {
+        return;
+    }
+
+    std::uint64_t lowest_remote_ack = std::numeric_limits<std::uint64_t>::max();
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        lowest_remote_ack = std::min(
+            lowest_remote_ack,
+            remote.highest_acked_coordinator_order
+        );
+    }
+
+    if (lowest_remote_ack == 0) {
+        return;
+    }
+
+    state.net_session.ordered_events.erase(
+        std::remove_if(
+            state.net_session.ordered_events.begin(),
+            state.net_session.ordered_events.end(),
+            [lowest_remote_ack](const NetEvent& event) {
+                return event.header.coordinator_order != 0 &&
+                       event.header.coordinator_order <= lowest_remote_ack;
+            }
+        ),
+        state.net_session.ordered_events.end()
+    );
+}
+
+void SendDurableEventAckToCoordinator(State& state, NetTransportRuntime& transport) {
+    if (state.net_session.highest_applied_coordinator_order == 0) {
+        return;
+    }
+
+    DurableEventAckPacket ack;
+    ack.stage_instance_id = state.net_session.stage_instance_id;
+    ack.player_id = state.net_session.local_player_id;
+    ack.highest_applied_coordinator_order = state.net_session.highest_applied_coordinator_order;
+    SendEncodedPacket(
+        transport,
+        transport.coordinator_endpoint,
+        EncodeDurableEventAck(ack)
+    );
+}
+
+void HandleDurableEventAckAsCoordinator(
+    State& state,
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const DurableEventAckPacket& ack
+) {
+    if (ack.stage_instance_id != state.net_session.stage_instance_id ||
+        ack.player_id == kInvalidPlayerId) {
+        return;
+    }
+
+    for (NetRemoteEndpoint& remote : transport.remotes) {
+        if (!EndpointsEqual(remote.endpoint, endpoint)) {
+            continue;
+        }
+        const bool owns_player = std::find(
+            remote.player_ids.begin(),
+            remote.player_ids.end(),
+            ack.player_id
+        ) != remote.player_ids.end();
+        if (!owns_player) {
+            return;
+        }
+        remote.highest_acked_coordinator_order = std::max(
+            remote.highest_acked_coordinator_order,
+            ack.highest_applied_coordinator_order
+        );
+        PruneAckedOrderedEvents(state, transport);
+        return;
     }
 }
 
@@ -997,6 +1277,16 @@ void SendReplicatedEntityStatePatchesToCoordinator(State& state, NetTransportRun
     SendEntityStateEvents(transport, transport.coordinator_endpoint, events);
 }
 
+void SendCoordinatorEntityRepairPatchesToAllRemotes(State& state, NetTransportRuntime& transport) {
+    const std::vector<NetEvent> events = BuildCoordinatorEntityRepairEvents(state);
+    if (events.empty()) {
+        return;
+    }
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        SendEntityStateEvents(transport, remote.endpoint, events);
+    }
+}
+
 void RemovePendingLocalEvent(NetSessionState& session, NetEventId event_id) {
     session.pending_local_events.erase(
         std::remove_if(
@@ -1006,6 +1296,120 @@ void RemovePendingLocalEvent(NetSessionState& session, NetEventId event_id) {
         ),
         session.pending_local_events.end()
     );
+}
+
+void RemoveOneShotTransientLocalEvents(NetSessionState& session) {
+    session.pending_local_events.erase(
+        std::remove_if(
+            session.pending_local_events.begin(),
+            session.pending_local_events.end(),
+            [](const NetEvent& event) {
+                return IsOneShotTransientLocalEvent(event);
+            }
+        ),
+        session.pending_local_events.end()
+    );
+}
+
+const NetEvent* FindPendingLocalEvent(const NetSessionState& session, NetEventId event_id) {
+    for (const NetEvent& event : session.pending_local_events) {
+        if (event.header.event_id == event_id) {
+            return &event;
+        }
+    }
+    return nullptr;
+}
+
+void ConfirmLocalSpawnEntityId(State& state, NetEventId event_id, NetEntityId canonical_id) {
+    if (canonical_id == kInvalidNetEntityId) {
+        return;
+    }
+    const NetEvent* const pending = FindPendingLocalEvent(state.net_session, event_id);
+    if (pending == nullptr || pending->type != NetEventType::EntitySpawned) {
+        return;
+    }
+    const EntitySpawnedEvent* const payload = std::get_if<EntitySpawnedEvent>(&pending->payload);
+    if (payload == nullptr || payload->entity_id == kInvalidNetEntityId) {
+        return;
+    }
+
+    const NetEntityId provisional_id = payload->entity_id;
+    if (provisional_id == canonical_id) {
+        return;
+    }
+
+    state.net_session.AliasEntityId(provisional_id, canonical_id);
+    if (const std::optional<VID> local_vid = state.net_session.FindLocalVid(provisional_id)) {
+        state.net_session.LinkEntity(canonical_id, *local_vid);
+        state.net_session.SetEntityOwner(canonical_id, std::nullopt);
+        state.net_session.UnlinkEntity(provisional_id);
+    }
+}
+
+NetEntityId CanonicalizeIncomingEntityId(const NetSessionState& session, NetEntityId entity_id) {
+    if (entity_id == kInvalidNetEntityId || IsPlayerNetEntityId(entity_id)) {
+        return entity_id;
+    }
+    return session.ResolveEntityIdAlias(entity_id);
+}
+
+void CanonicalizeIncomingEventEntityIds(NetSessionState& session, NetEvent& event) {
+    if (EntitySpawnedEvent* const payload = std::get_if<EntitySpawnedEvent>(&event.payload)) {
+        payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
+        payload->held_by_id = CanonicalizeIncomingEntityId(session, payload->held_by_id);
+        return;
+    }
+    if (EntityHeldEvent* const payload = std::get_if<EntityHeldEvent>(&event.payload)) {
+        payload->holder_id = CanonicalizeIncomingEntityId(session, payload->holder_id);
+        payload->held_id = CanonicalizeIncomingEntityId(session, payload->held_id);
+        return;
+    }
+    if (EntityDroppedEvent* const payload = std::get_if<EntityDroppedEvent>(&event.payload)) {
+        payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
+        return;
+    }
+    if (EntityThrownEvent* const payload = std::get_if<EntityThrownEvent>(&event.payload)) {
+        payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
+        payload->thrower_id = CanonicalizeIncomingEntityId(session, payload->thrower_id);
+        return;
+    }
+    if (EntityDamagedEvent* const payload = std::get_if<EntityDamagedEvent>(&event.payload)) {
+        payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
+        payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
+        return;
+    }
+    if (EntityStatePatchedEvent* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload)) {
+        payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
+        payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
+        payload->entity_a_id = CanonicalizeIncomingEntityId(session, payload->entity_a_id);
+        return;
+    }
+    if (PresentationCommandEvent* const payload = std::get_if<PresentationCommandEvent>(&event.payload)) {
+        payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
+        payload->target_entity_id = CanonicalizeIncomingEntityId(session, payload->target_entity_id);
+    }
+}
+
+void AssignCanonicalSpawnIdAsCoordinator(NetSessionState& session, NetEvent& event) {
+    EntitySpawnedEvent* const payload = std::get_if<EntitySpawnedEvent>(&event.payload);
+    if (payload == nullptr ||
+        payload->entity_id == kInvalidNetEntityId ||
+        IsPlayerNetEntityId(payload->entity_id)) {
+        return;
+    }
+
+    const NetEntityId requested_id = payload->entity_id;
+    const NetEntityId existing_canonical_id = session.ResolveEntityIdAlias(requested_id);
+    if (existing_canonical_id != requested_id) {
+        payload->entity_id = existing_canonical_id;
+        payload->held_by_id = CanonicalizeIncomingEntityId(session, payload->held_by_id);
+        return;
+    }
+
+    const NetEntityId canonical_id = session.AllocateLocalEntityId();
+    session.AliasEntityId(requested_id, canonical_id);
+    payload->entity_id = canonical_id;
+    payload->held_by_id = CanonicalizeIncomingEntityId(session, payload->held_by_id);
 }
 
 void HandleTileEventsAsCoordinator(State& state, const TileEventsPacket& packet) {
@@ -1030,8 +1434,7 @@ void HandleTileEventsAsPeer(State& state, const TileEventsPacket& packet) {
             continue;
         }
         if (entry.source_player_id == state.net_session.local_player_id) {
-            RemovePendingLocalEvent(state.net_session, entry.event_id);
-            (void)state.net_session.MarkEventApplied(entry.event_id);
+            MarkLocalEchoEventApplied(state.net_session, MakeTileEvent(entry));
             continue;
         }
         if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
@@ -1052,6 +1455,7 @@ void HandleEntitySpawnedEventsAsCoordinator(State& state, const EntitySpawnedEve
             HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
             continue;
         }
+        AssignCanonicalSpawnIdAsCoordinator(state.net_session, event);
         event.header.coordinator_order = state.net_session.next_coordinator_order++;
         state.net_session.EnqueueOrderedEvent(event);
     }
@@ -1065,8 +1469,8 @@ void HandleEntitySpawnedEventsAsPeer(State& state, const EntitySpawnedEventsPack
             continue;
         }
         if (entry.source_player_id == state.net_session.local_player_id) {
-            RemovePendingLocalEvent(state.net_session, entry.event_id);
-            (void)state.net_session.MarkEventApplied(entry.event_id);
+            ConfirmLocalSpawnEntityId(state, entry.event_id, entry.entity_id);
+            MarkLocalEchoEventApplied(state.net_session, MakeEntitySpawnedEvent(entry));
             continue;
         }
         if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
@@ -1084,6 +1488,7 @@ void HandleEntityDamageEventsAsCoordinator(State& state, const EntityDamageEvent
             HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
             continue;
         }
+        CanonicalizeIncomingEventEntityIds(state.net_session, event);
         event.header.coordinator_order = state.net_session.next_coordinator_order++;
         state.net_session.EnqueueOrderedEvent(event);
     }
@@ -1097,8 +1502,7 @@ void HandleEntityDamageEventsAsPeer(State& state, const EntityDamageEventsPacket
             continue;
         }
         if (entry.source_player_id == state.net_session.local_player_id) {
-            RemovePendingLocalEvent(state.net_session, entry.event_id);
-            (void)state.net_session.MarkEventApplied(entry.event_id);
+            MarkLocalEchoEventApplied(state.net_session, MakeEntityDamageEvent(entry));
             continue;
         }
         if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
@@ -1116,8 +1520,8 @@ void HandleEntityStateEventsAsCoordinator(State& state, const EntityStateEventsP
             HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
             continue;
         }
-        event.header.coordinator_order = state.net_session.next_coordinator_order++;
-        state.net_session.EnqueueOrderedEvent(event);
+        CanonicalizeIncomingEventEntityIds(state.net_session, event);
+        state.net_session.EnqueueTransientEvent(event);
     }
 }
 
@@ -1129,14 +1533,13 @@ void HandleEntityStateEventsAsPeer(State& state, const EntityStateEventsPacket& 
             continue;
         }
         if (entry.source_player_id == state.net_session.local_player_id) {
-            RemovePendingLocalEvent(state.net_session, entry.event_id);
-            (void)state.net_session.MarkEventApplied(entry.event_id);
+            MarkLocalEchoEventApplied(state.net_session, MakeEntityStateEvent(entry));
             continue;
         }
         if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
             continue;
         }
-        state.net_session.EnqueueOrderedEvent(MakeEntityStateEvent(entry));
+        state.net_session.EnqueueTransientEvent(MakeEntityStateEvent(entry));
     }
 }
 
@@ -1149,6 +1552,7 @@ void HandleEntityCarryEventsAsCoordinator(State& state, const EntityCarryEventsP
             HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
             continue;
         }
+        CanonicalizeIncomingEventEntityIds(state.net_session, event);
         event.header.coordinator_order = state.net_session.next_coordinator_order++;
         state.net_session.EnqueueOrderedEvent(event);
     }
@@ -1165,7 +1569,7 @@ void HandleEntityCarryEventsAsPeer(State& state, const EntityCarryEventsPacket& 
         if (sourced_by_local) {
             RemovePendingLocalEvent(state.net_session, entry.event_id);
             if (static_cast<NetEventType>(entry.event_type) == NetEventType::EntityThrown) {
-                (void)state.net_session.MarkEventApplied(entry.event_id);
+                MarkLocalEchoEventApplied(state.net_session, MakeEntityCarryEvent(entry));
                 continue;
             }
         }
@@ -1176,6 +1580,38 @@ void HandleEntityCarryEventsAsPeer(State& state, const EntityCarryEventsPacket& 
         if (event.type != NetEventType::None) {
             state.net_session.EnqueueOrderedEvent(event);
         }
+    }
+}
+
+void HandlePresentationCommandEventsAsCoordinator(State& state, const PresentationCommandEventsPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
+        NetEvent event = MakePresentationCommandEvent(packet.events[i]);
+        if (event.header.stage_instance_id != state.net_session.stage_instance_id ||
+            event.header.event_id == kInvalidNetEventId ||
+            HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
+            continue;
+        }
+        CanonicalizeIncomingEventEntityIds(state.net_session, event);
+        event.header.coordinator_order = state.net_session.next_coordinator_order++;
+        state.net_session.EnqueueOrderedEvent(event);
+    }
+}
+
+void HandlePresentationCommandEventsAsPeer(State& state, const PresentationCommandEventsPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
+        const PresentationCommandEventEntry& entry = packet.events[i];
+        if (entry.stage_instance_id != state.net_session.stage_instance_id ||
+            entry.event_id == kInvalidNetEventId) {
+            continue;
+        }
+        if (entry.source_player_id == state.net_session.local_player_id) {
+            MarkLocalEchoEventApplied(state.net_session, MakePresentationCommandEvent(entry));
+            continue;
+        }
+        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+            continue;
+        }
+        state.net_session.EnqueueOrderedEvent(MakePresentationCommandEvent(entry));
     }
 }
 
@@ -1203,6 +1639,7 @@ NetRemotePlayerTarget& EnsureRemotePlayerTarget(
             target.animate = snapshot.animate;
             target.animation_id = snapshot.animation_id;
             target.animation_frame = snapshot.animation_frame;
+            target.animation_flags = snapshot.animation_flags;
             target.animation_time = snapshot.animation_time;
             target.animation_speed = snapshot.animation_speed;
             target.sequence = sequence;
@@ -1226,6 +1663,7 @@ NetRemotePlayerTarget& EnsureRemotePlayerTarget(
         .animate = snapshot.animate,
         .animation_id = snapshot.animation_id,
         .animation_frame = snapshot.animation_frame,
+        .animation_flags = snapshot.animation_flags,
         .animation_time = snapshot.animation_time,
         .animation_speed = snapshot.animation_speed,
         .sequence = sequence,
@@ -1302,19 +1740,19 @@ void StepRemotePlayerInterpolation(
             continue;
         }
 
+        const bool target_is_world_anchored =
+            target.grounded != 0 ||
+            (target.animation_flags & (kPlayerSnapshotFlagClimbing | kPlayerSnapshotFlagHanging)) != 0;
         const bool locally_predicted_thrown =
             entity->projectile_contact_timer > 0 &&
             !entity->held_by_vid.has_value() &&
-            entity->attachment_mode == AttachmentMode::None;
-        if (locally_predicted_thrown) {
-            state.UpdateSidForEntity(entity->vid.id, graphics);
-            continue;
-        }
+            entity->attachment_mode == AttachmentMode::None &&
+            !target_is_world_anchored;
 
         const bool attachment_driven =
             entity->held_by_vid.has_value() || entity->attachment_mode != AttachmentMode::None;
         const Vec2 final_target_pos = Vec2::New(target.pos_x, target.pos_y);
-        if (!attachment_driven) {
+        if (!attachment_driven && !locally_predicted_thrown) {
             Vec2 display_target_pos = final_target_pos;
             if (delay_frames > 0.0F) {
                 const float age_frames = static_cast<float>(state.frame - target.interpolation_start_frame);
@@ -1335,6 +1773,18 @@ void StepRemotePlayerInterpolation(
         }
         entity->facing = target.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
         entity->condition = static_cast<EntityCondition>(target.condition);
+        SetMovementFlag(
+            *entity,
+            EntityMovementFlag::Climbing,
+            (target.animation_flags & kPlayerSnapshotFlagClimbing) != 0
+        );
+        if ((target.animation_flags & kPlayerSnapshotFlagHanging) != 0) {
+            entity->hang_side = (target.animation_flags & kPlayerSnapshotFlagHangRight) != 0
+                                    ? LeftOrRight::Right
+                                    : LeftOrRight::Left;
+        } else {
+            entity->hang_side.reset();
+        }
         if (target.animation_id != kInvalidFrameDataId) {
             FrameDataAnimator& animator = entity->frame_data_animator;
             if (animator.animation_id != target.animation_id) {
@@ -1636,6 +2086,12 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
+        if (const std::optional<DurableEventAckPacket> ack =
+                TryDecodeDurableEventAck(packet->bytes.data(), packet->size)) {
+            HandleDurableEventAckAsCoordinator(state, transport, packet->endpoint, *ack);
+            continue;
+        }
+
         if (const std::optional<PlayerSnapshotsPacket> snapshots =
                 TryDecodePlayerSnapshots(packet->bytes.data(), packet->size)) {
             ApplyPlayerSnapshots(state, graphics, transport, *snapshots);
@@ -1670,6 +2126,12 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (const std::optional<EntityCarryEventsPacket> entity_events =
                 TryDecodeEntityCarryEvents(packet->bytes.data(), packet->size)) {
             HandleEntityCarryEventsAsCoordinator(state, *entity_events);
+            continue;
+        }
+
+        if (const std::optional<PresentationCommandEventsPacket> presentation_events =
+                TryDecodePresentationCommandEvents(packet->bytes.data(), packet->size)) {
+            HandlePresentationCommandEventsAsCoordinator(state, *presentation_events);
             continue;
         }
     }
@@ -1746,6 +2208,12 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (const std::optional<EntityCarryEventsPacket> entity_events =
                 TryDecodeEntityCarryEvents(packet->bytes.data(), packet->size)) {
             HandleEntityCarryEventsAsPeer(state, *entity_events);
+            continue;
+        }
+
+        if (const std::optional<PresentationCommandEventsPacket> presentation_events =
+                TryDecodePresentationCommandEvents(packet->bytes.data(), packet->size)) {
+            HandlePresentationCommandEventsAsPeer(state, *presentation_events);
             continue;
         }
     }
@@ -1992,6 +2460,7 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
             SendStageSyncToAllRemotes(state, *state.net_transport);
             SendSnapshotsToAllRemotes(state, *state.net_transport);
             SendReplicatedEntityStatePatchesToAllRemotes(state, *state.net_transport);
+            SendCoordinatorEntityRepairPatchesToAllRemotes(state, *state.net_transport);
             SendOrderedTileEventsToAllRemotes(state, *state.net_transport);
         }
     } else if (state.net_session.role == NetRole::Peer) {
@@ -2005,6 +2474,7 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
             );
             SendReplicatedEntityStatePatchesToCoordinator(state, *state.net_transport);
             SendPendingTileEventsToCoordinator(state, *state.net_transport);
+            SendDurableEventAckToCoordinator(state, *state.net_transport);
         }
     }
     StepRemotePlayerInterpolation(state, *state.net_transport, graphics);

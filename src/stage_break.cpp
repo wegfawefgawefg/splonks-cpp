@@ -1,8 +1,7 @@
 #include "stage_break.hpp"
 
 #include "entity/archetype.hpp"
-#include "network/net_event.hpp"
-#include "network/net_session.hpp"
+#include "gameplay_events.hpp"
 #include "on_damage_effects.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
@@ -17,20 +16,29 @@ namespace splonks {
 
 namespace {
 
-void SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
+Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
-        return;
+        return nullptr;
     }
 
     Entity* const entity = state.entity_manager.GetEntityMut(*vid);
     if (entity == nullptr) {
-        return;
+        return nullptr;
     }
 
     SetEntityAs(*entity, type_);
     entity->SetCenter(center);
     entity->vel = Vec2::New(0.0F, 0.0F);
+    return entity;
+}
+
+void SpawnAndReplicateEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
+    Entity* const entity = SpawnEntityAtCenter(type_, center, state);
+    if (entity == nullptr) {
+        return;
+    }
+    EmitEntitySpawnedGameplayEvent(state, *entity);
 }
 
 void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
@@ -55,7 +63,7 @@ void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const
             continue;
         }
         for (int i = 0; i < drop.count; ++i) {
-            SpawnEntityAtCenter(
+            SpawnAndReplicateEntityAtCenter(
                 drop.type_,
                 center + kDropOffsets[offset_index % kDropOffsets.size()],
                 state
@@ -93,21 +101,6 @@ void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& a
     }
 }
 
-void EmitTileBrokenNetworkEvent(const IVec2& tile_pos, State& state) {
-    if (state.net_session.role == network::NetRole::Offline) {
-        return;
-    }
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::TileBroken;
-    event.payload = network::TileBrokenEvent{
-        .tile_pos = tile_pos,
-        .source_entity_id = network::kInvalidNetEntityId,
-    };
-    state.net_session.EnqueueLocalEvent(event);
-}
-
 void BreakStageTilesAtCoordsInternal(
     const std::vector<IVec2>& tile_positions,
     State& state,
@@ -115,7 +108,8 @@ void BreakStageTilesAtCoordsInternal(
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
     std::optional<Vec2> sound_center,
-    bool suppress_network_event
+    bool suppress_network_event,
+    bool suppress_drop_spawns
 ) {
     std::optional<AudioAssetId> break_sound = std::nullopt;
     bool broke_any_tiles = false;
@@ -139,7 +133,7 @@ void BreakStageTilesAtCoordsInternal(
         if (tile_archetype.break_animation.has_value()) {
             SpawnTileBreakAnimation(*tile_archetype.break_animation, tile_pos, state);
         }
-        if (tile_archetype.on_break != nullptr) {
+        if (!suppress_drop_spawns && tile_archetype.on_break != nullptr) {
             tile_archetype.on_break(tile_pos, state, audio);
         }
         DispatchStageTileDestroyed(tile_pos, state, audio);
@@ -150,13 +144,15 @@ void BreakStageTilesAtCoordsInternal(
             if (embedded_treasure.break_sound != kInvalidAudioAssetId) {
                 break_sound = embedded_treasure.break_sound;
             }
-            SpawnEmbeddedTreasureDrops(embedded_treasure, tile_pos, state);
+            if (!suppress_drop_spawns) {
+                SpawnEmbeddedTreasureDrops(embedded_treasure, tile_pos, state);
+            }
         }
 
         state.stage.SetTile(tile_pos, Tile::Air);
         changed_tiles.push_back(tile_pos);
         if (!suppress_network_event) {
-            EmitTileBrokenNetworkEvent(tile_pos, state);
+            EmitTileBrokenGameplayEvent(state, tile_pos);
         }
         broke_any_tiles = true;
     }
@@ -181,7 +177,8 @@ void BreakStageTilesInRectWc(
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
-    bool suppress_network_event
+    bool suppress_network_event,
+    bool suppress_drop_spawns
 ) {
     std::vector<IVec2> tile_positions;
     const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);
@@ -198,7 +195,8 @@ void BreakStageTilesInRectWc(
         override_break_sound,
         suppress_tile_break_sound,
         (area.tl + area.br) / 2.0F,
-        suppress_network_event
+        suppress_network_event,
+        suppress_drop_spawns
     );
 }
 
@@ -208,7 +206,8 @@ void BreakStageTilesAtCoords(
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
-    bool suppress_network_event
+    bool suppress_network_event,
+    bool suppress_drop_spawns
 ) {
     Vec2 sound_center = Vec2::New(0.0F, 0.0F);
     if (!tile_positions.empty()) {
@@ -227,7 +226,8 @@ void BreakStageTilesAtCoords(
         override_break_sound,
         suppress_tile_break_sound,
         sound_center,
-        suppress_network_event
+        suppress_network_event,
+        suppress_drop_spawns
     );
 }
 

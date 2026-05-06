@@ -284,6 +284,7 @@ add_executable(splonks-cpp
     src/network/net_fuzzer.cpp
     src/network/net_entity_links.cpp
     src/network/net_event_apply.cpp
+    src/network/net_gameplay_replication.cpp
     src/network/net_lobby.cpp
     src/network/net_progression.cpp
     src/network/net_protocol.cpp
@@ -291,6 +292,7 @@ add_executable(splonks-cpp
     src/network/net_transport.cpp
     src/on_damage_effects.cpp
     src/player_registry.cpp
+    src/presentation_commands.cpp
     src/room.cpp
     src/render/render.cpp
     src/render/camera.cpp

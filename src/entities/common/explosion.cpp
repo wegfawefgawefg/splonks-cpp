@@ -1,6 +1,8 @@
 #include "entities/common/common.hpp"
 #include "particles/sprite_particle.hpp"
 
+#include "gameplay_events.hpp"
+#include "presentation_commands.hpp"
 #include "stage_break.hpp"
 #include "stage_lighting.hpp"
 #include "world_query.hpp"
@@ -117,6 +119,11 @@ void DoExplosion(
         state.particles.Add(std::move(effect));
     }
     (void)PlayWorldSoundEmitter(state, center, audio_asset_ids::BombExplosion);
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::PlaySoundAt,
+        .audio_asset_id = audio_asset_ids::BombExplosion,
+        .source_pos = center,
+    });
     AddShake(
         state,
         center,
@@ -125,6 +132,14 @@ void DoExplosion(
         kExplosionShakeEntityAmount,
         kExplosionShakeRadiusTiles
     );
+    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+        .kind = PresentationCommandKind::ShakeArea,
+        .source_pos = center,
+        .param_a = kExplosionShakeForegroundAmount,
+        .param_b = kExplosionShakeBackgroundAmount,
+        .param_c = kExplosionShakeEntityAmount,
+        .param_d = kExplosionShakeRadiusTiles,
+    });
     AddTransientLight(state, center, 2.4F, Color3::New(1.0F, 0.48F, 0.12F), 9, 14);
 
     const std::vector<IVec2> explosion_tiles = BuildExplosionFootprintTiles(state.stage, center);

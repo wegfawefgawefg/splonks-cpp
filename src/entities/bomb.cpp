@@ -4,6 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_authority.hpp"
 #include "state.hpp"
 
 #include <cmath>
@@ -158,6 +159,12 @@ void StepEntityLogicAsBomb(
     (void)dt;
     Entity& bomb = state.entity_manager.entities[entity_idx];
     UpdateStickyBombAttachment(bomb, state);
+
+    if (!HasLocalGameplayAuthorityForEntity(state, bomb.vid)) {
+        UpdateBombFuseLight(bomb);
+        UpdateBombRotation(bomb);
+        return;
+    }
 
     // if bomb is in winding up
     // set animation and display state

@@ -207,6 +207,15 @@ void SetPlayingInputSnapshot(State& state) {
     state.playing_input_snapshot = new_inputs;
 }
 
+void LatchImmediatePlayingInputsForFrame(State& state) {
+    SetPlayingInputSnapshot(state);
+    state.immediate_playing_inputs = BuildPlayingInputs(
+        state.playing_input_snapshot,
+        state.previous_immediate_playing_input_snapshot
+    );
+    state.previous_immediate_playing_input_snapshot = state.playing_input_snapshot;
+}
+
 void ProcessInputPlaying(
     SDL_Window* window,
     State& state,
@@ -261,6 +270,10 @@ void ProcessInputStageTransition(
     (void)dt;
     if (state.menu_inputs.back.pressed) {
         state.running = false;
+    }
+
+    if (state.net_session.role != network::NetRole::Offline) {
+        return;
     }
 
     if (state.menu_inputs.confirm.down && state.scene_frame >= 60) {
@@ -396,12 +409,12 @@ void ProcessInput(
 
     switch (state.mode) {
     case Mode::Playing:
-        SetPlayingInputSnapshot(state);
-        state.immediate_playing_inputs = BuildPlayingInputs(
-            state.playing_input_snapshot,
-            state.previous_immediate_playing_input_snapshot
-        );
-        state.previous_immediate_playing_input_snapshot = state.playing_input_snapshot;
+        LatchImmediatePlayingInputsForFrame(state);
+        break;
+    case Mode::GameOver:
+        LatchImmediatePlayingInputsForFrame(state);
+        SetMenuInputSnapshot(state);
+        LatchMenuInputsForFrame(state, dt);
         break;
     default:
         SetMenuInputSnapshot(state);

@@ -5,6 +5,8 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_authority.hpp"
+#include "gameplay_events.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -176,15 +178,15 @@ Entity* SpawnArrow(State& state, const Vec2& center, int direction, const VID& t
     return arrow;
 }
 
-void SpawnLooseArrow(State& state, const Vec2& center) {
+Entity* SpawnLooseArrow(State& state, const Vec2& center) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
-        return;
+        return nullptr;
     }
 
     Entity* const arrow = state.entity_manager.GetEntityMut(*vid);
     if (arrow == nullptr) {
-        return;
+        return nullptr;
     }
 
     SetEntityAs(*arrow, EntityType::Arrow);
@@ -196,6 +198,7 @@ void SpawnLooseArrow(State& state, const Vec2& center) {
     arrow->projectile_contact_damage_amount = kArrowDamage;
     arrow->can_apply_projectile_contact = false;
     arrow->thrown_by.reset();
+    return arrow;
 }
 
 void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
@@ -204,15 +207,20 @@ void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
     if (HasFired(trap)) {
         return;
     }
+    if (!HasLocalGameplayAuthorityForEntity(state, trap.vid)) {
+        return;
+    }
 
     const int direction = DirectionForTrap(trap);
     const Vec2 arrow_center = trap.GetCenter() + Vec2::New(
         static_cast<float>(direction) * 10.0F,
         -4.0F
     );
-    if (SpawnArrow(state, arrow_center, direction, trap.vid) == nullptr) {
+    Entity* const arrow = SpawnArrow(state, arrow_center, direction, trap.vid);
+    if (arrow == nullptr) {
         return;
     }
+    EmitEntitySpawnedGameplayEvent(state, *arrow);
 
     trap.counter_a = 1.0F;
     (void)PlayWorldSoundEmitter(state, arrow_center, audio_asset_ids::Throw);
@@ -396,6 +404,7 @@ void StickArrowToEntity(Entity& arrow, Entity& other, State& state) {
     arrow.thrown_immunity_timer = 0;
     arrow.vel = Vec2::New(0.0F, 0.0F);
     arrow.acc = Vec2::New(0.0F, 0.0F);
+    EmitEntityStatePatchedGameplayEvent(state, arrow, arrow);
 }
 
 void ApplyArrowImpactImpulse(const Entity& arrow, Entity& other) {
@@ -430,6 +439,9 @@ entities::common::ContactResolution OnEntityContactAsArrow(
     }
 
     if (!CanArrowHitEntity(arrow, state.entity_manager.entities[other_entity_idx])) {
+        return {};
+    }
+    if (!HasLocalGameplayAuthorityForEntity(state, arrow.vid)) {
         return {};
     }
 
@@ -517,7 +529,13 @@ void OnDeathAsArrowTrap(std::size_t entity_idx, State& state, Audio& audio) {
     if (HasFired(trap)) {
         return;
     }
-    SpawnLooseArrow(state, trap.GetCenter());
+    if (!HasLocalGameplayAuthorityForEntity(state, trap.vid)) {
+        return;
+    }
+    Entity* const arrow = SpawnLooseArrow(state, trap.GetCenter());
+    if (arrow != nullptr) {
+        EmitEntitySpawnedGameplayEvent(state, *arrow);
+    }
 }
 
 } // namespace
