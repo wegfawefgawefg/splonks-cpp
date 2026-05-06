@@ -155,28 +155,48 @@ void DoExplosion(
     const std::vector<VID> results = QueryEntitiesInAabb(state, area, this_vid);
     for (const VID& vid : results) {
         if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {
-            (void)TryDamageEntity(vid.id, state, audio, DamageType::Explosion, 10);
-            if (!entity->active || !entity->has_physics || entity->impassable) {
-                continue;
-            }
-
             const Vec2 delta = GetNearestWorldDelta(state.stage, center, entity->GetCenter());
-            if (!IsInSpelunkyExplosionFootprint(delta)) {
+            const bool can_receive_push =
+                entity->active &&
+                entity->has_physics &&
+                !entity->impassable &&
+                IsInSpelunkyExplosionFootprint(delta);
+            if (!can_receive_push) {
+                (void)TryDamageEntity(
+                    vid.id,
+                    state,
+                    audio,
+                    DamageType::Explosion,
+                    10,
+                    DamageOptions{
+                        .source_vid = this_vid,
+                        .allow_remote_player_target = true,
+                    }
+                );
                 continue;
             }
             Vec2 knockback_dir = NormalizeOrZero(delta);
             if (knockback_dir == Vec2::New(0.0F, 0.0F)) {
                 knockback_dir = Vec2::New(0.0F, -1.0F);
             }
-            ApplyKnockback(
-                *entity,
-                KnockbackSpec{
-                    .velocity = knockback_dir * push_magnitude,
-                    .clear_velocity = true,
-                    .clear_acceleration = true,
-                    .projectile_contact_damage_type = DamageType::Attack,
-                    .projectile_contact_damage_amount = 1,
-                    .projectile_contact_duration = kProjectileContactDuration,
+            (void)TryHitEntity(
+                vid.id,
+                state,
+                audio,
+                DamageType::Explosion,
+                10,
+                HitOptions{
+                    .source_vid = this_vid,
+                    .knockback = KnockbackSpec{
+                        .velocity = knockback_dir * push_magnitude,
+                        .clear_velocity = true,
+                        .clear_acceleration = true,
+                        .thrown_by = this_vid,
+                        .projectile_contact_damage_type = DamageType::Attack,
+                        .projectile_contact_damage_amount = 1,
+                        .projectile_contact_duration = kProjectileContactDuration,
+                    },
+                    .allow_remote_player_target = true,
                 }
             );
         }

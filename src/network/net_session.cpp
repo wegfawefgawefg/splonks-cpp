@@ -25,13 +25,13 @@ const char* NetRoleName(NetRole role) {
 
 const char* NetEventLogPhaseName(NetEventLogPhase phase) {
     switch (phase) {
-    case NetEventLogPhase::EnqueuedLocal:
-        return "local";
+    case NetEventLogPhase::EnqueuedOutbound:
+        return "outbound";
     case NetEventLogPhase::EnqueuedOrdered:
         return "ordered";
     case NetEventLogPhase::Applied:
         return "applied";
-    case NetEventLogPhase::SkippedLocal:
+    case NetEventLogPhase::SkippedLocalApply:
         return "skip-local";
     }
     return "unknown";
@@ -41,6 +41,8 @@ const char* NetEventTypeName(NetEventType type) {
     switch (type) {
     case NetEventType::EntitySpawned:
         return "EntitySpawned";
+    case NetEventType::EntityDeactivated:
+        return "EntityDeactivated";
     case NetEventType::EntityStatePatched:
         return "EntityStatePatched";
     case NetEventType::EntityHeld:
@@ -65,6 +67,8 @@ const char* NetEventTypeName(NetEventType type) {
         return "FavorChanged";
     case NetEventType::StageLoaded:
         return "StageLoaded";
+    case NetEventType::ActionRequest:
+        return "ActionRequest";
     default:
         return "Other";
     }
@@ -113,18 +117,16 @@ NetEntityId NetSessionState::AllocateLocalEntityId() {
     return player_component | next_local_entity_id++;
 }
 
-void NetSessionState::EnqueueLocalEvent(NetEvent event) {
+void NetSessionState::EnqueueNetEvent(NetEvent event) {
     if (event.header.event_id == kInvalidNetEventId) {
         event.header = MakeLocalEventHeader(0);
     }
-    AddEventLog(NetEventLogPhase::EnqueuedLocal, event);
-    pending_local_events.push_back(event);
-}
-
-std::vector<NetEvent> NetSessionState::DrainPendingLocalEvents() {
-    std::vector<NetEvent> drained;
-    drained.swap(pending_local_events);
-    return drained;
+    if (role == NetRole::Coordinator || role == NetRole::Offline) {
+        EnqueueOrderedEvent(event);
+        return;
+    }
+    AddEventLog(NetEventLogPhase::EnqueuedOutbound, event);
+    pending_outbound_events.push_back(event);
 }
 
 void NetSessionState::EnqueueOrderedEvent(NetEvent event) {
@@ -149,15 +151,6 @@ void NetSessionState::EnqueueTransientEvent(NetEvent event) {
     event.header.coordinator_order = 0;
     AddEventLog(NetEventLogPhase::EnqueuedOrdered, event);
     ordered_events.push_back(event);
-}
-
-std::size_t NetSessionState::DrainPendingLocalEventsToOrdered() {
-    std::vector<NetEvent> drained = DrainPendingLocalEvents();
-    const std::size_t count = drained.size();
-    for (NetEvent& event : drained) {
-        EnqueueOrderedEvent(event);
-    }
-    return count;
 }
 
 std::size_t NetSessionState::MarkAllOrderedEventsApplied() {
@@ -268,7 +261,7 @@ void NetSessionState::ClearStageEntityLinks() {
     applied_event_ids.clear();
     applied_coordinator_orders.clear();
     ordered_events.clear();
-    pending_local_events.clear();
+    pending_outbound_events.clear();
     event_log.clear();
     next_expected_coordinator_order = 1;
     highest_applied_coordinator_order = 0;

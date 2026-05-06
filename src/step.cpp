@@ -130,10 +130,6 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
 }
 
 void DrainAndApplyLocalNetworkEvents(State& state, Audio& audio, Graphics& graphics) {
-    if (state.net_session.role == network::NetRole::Offline ||
-        state.net_session.role == network::NetRole::Coordinator) {
-        (void)state.net_session.DrainPendingLocalEventsToOrdered();
-    }
     (void)network::ApplyOrderedEvents(state.net_session, state, &audio, &graphics);
 }
 
@@ -325,7 +321,17 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     const std::optional<VID> primary_player_vid = GetPrimaryLocalPlayerVid(state);
     if (primary_player_vid.has_value() && state.playing_inputs.equip_button.pressed &&
         !state.IsInteractClaimedForEntity(*primary_player_vid)) {
-        (void)TryBuyOverlappingEntity(primary_player_vid->id, state, graphics, audio);
+        const std::optional<std::size_t> buyable_idx =
+            FindOverlappingBuyableEntityIdx(state, graphics, primary_player_vid->id);
+        if (buyable_idx.has_value()) {
+            (void)TryRequestOrApplyInteractEntity(
+                *primary_player_vid,
+                state.entity_manager.entities[*buyable_idx].vid,
+                state,
+                graphics,
+                audio
+            );
+        }
     }
     state.particles.Step(graphics.frame_data_db, dt);
 

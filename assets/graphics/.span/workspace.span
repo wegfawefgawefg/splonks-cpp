@@ -29,7 +29,7 @@
   ],
   "activePaletteId": "sweetie-16-manual",
   "lastOpenSheetPath": "sprites/entities.png",
-  "selectedAnnotationId": "5739d224-9a26-472e-9316-3824dcbb0d85",
+  "selectedAnnotationId": "ee746b8c-ecdf-408e-93d3-7ccde176473f",
   "sheets": [
     {
       "path": "images/title.png",
@@ -12431,9 +12431,9 @@
         "gridEnabled": true,
         "gridWidth": 16,
         "gridHeight": 16,
-        "zoom": 2.199,
-        "centerX": 172.57844474761256,
-        "centerY": 246.47567075943613
+        "zoom": 20.481,
+        "centerX": 136.00410136223817,
+        "centerY": 200.96674967042622
       }
     },
     {

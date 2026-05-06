@@ -27,6 +27,13 @@ using EntityOnDamage = EntityDamageEffectResult (*) (
     bool damage_applied
 );
 using EntityOnUse = void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
+using EntityOnInteract = bool (*) (
+    std::size_t entity_idx,
+    std::size_t interactor_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+);
 using EntityOnTryBuy = bool (*) (
     std::size_t entity_idx,
     std::size_t buyer_idx,

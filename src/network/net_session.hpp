@@ -32,14 +32,14 @@ struct NetEntityIdAlias {
 };
 
 enum class NetEventLogPhase : std::uint8_t {
-    EnqueuedLocal,
+    EnqueuedOutbound,
     EnqueuedOrdered,
     Applied,
-    SkippedLocal,
+    SkippedLocalApply,
 };
 
 struct NetEventLogEntry {
-    NetEventLogPhase phase = NetEventLogPhase::EnqueuedLocal;
+    NetEventLogPhase phase = NetEventLogPhase::EnqueuedOutbound;
     NetEventId event_id = kInvalidNetEventId;
     std::uint64_t coordinator_order = 0;
     std::uint64_t source_local_frame = 0;
@@ -65,7 +65,7 @@ struct NetSessionState {
     std::vector<NetPeerState> peers;
     std::vector<NetEntityLink> entity_links;
     std::vector<NetEntityIdAlias> entity_id_aliases;
-    std::vector<NetEvent> pending_local_events;
+    std::vector<NetEvent> pending_outbound_events;
     std::vector<NetEvent> ordered_events;
     std::vector<NetEventId> applied_event_ids;
     std::vector<std::uint64_t> applied_coordinator_orders;
@@ -81,11 +81,9 @@ struct NetSessionState {
     NetEventHeader MakeLocalTransientEventHeader(std::uint64_t source_local_frame);
     NetEntityId AllocateLocalEntityId();
 
-    void EnqueueLocalEvent(NetEvent event);
-    std::vector<NetEvent> DrainPendingLocalEvents();
+    void EnqueueNetEvent(NetEvent event);
     void EnqueueOrderedEvent(NetEvent event);
     void EnqueueTransientEvent(NetEvent event);
-    std::size_t DrainPendingLocalEventsToOrdered();
     std::size_t MarkAllOrderedEventsApplied();
     bool MarkEventApplied(NetEventId event_id);
     bool HasAppliedEvent(NetEventId event_id) const;

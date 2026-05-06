@@ -87,7 +87,7 @@ void ApplyStageSync(
     state.net_session.stage_seed = packet.stage_seed;
     state.net_session.ClearStageEntityLinks();
     state.net_session.ordered_events.clear();
-    state.net_session.pending_local_events.clear();
+    state.net_session.pending_outbound_events.clear();
     state.net_session.applied_event_ids.clear();
     transport.remote_player_targets.clear();
 
@@ -108,38 +108,6 @@ void ApplyStageSync(
     }
 }
 
-void HandleStageExitRequestAsCoordinator(State& state, const StageExitRequestPacket& request) {
-    if (request.stage_instance_id != state.net_session.stage_instance_id ||
-        state.pending_stage_transition.has_value()) {
-        return;
-    }
-
-    const StageExitId exit_id = static_cast<StageExitId>(request.exit_id);
-    if (!IsStageExitAllowed(state, exit_id)) {
-        return;
-    }
-
-    QueueStageExitTransition(state, exit_id);
-}
-
-void RequestStageExit(State& state, StageExitId exit_id) {
-    if (state.net_session.role != NetRole::Peer ||
-        !state.net_transport ||
-        !state.net_transport->socket.IsOpen()) {
-        return;
-    }
-
-    StageExitRequestPacket request;
-    request.stage_instance_id = state.net_session.stage_instance_id;
-    request.player_id = state.net_session.local_player_id;
-    request.exit_id = static_cast<std::int32_t>(exit_id);
-    SendEncodedPacket(
-        *state.net_transport,
-        state.net_transport->coordinator_endpoint,
-        EncodeStageExitRequest(request)
-    );
-}
-
 void NotifyStageLoaded(State& state) {
     if (state.net_session.role != NetRole::Coordinator || state.stage.quest_id.empty()) {
         return;
@@ -151,7 +119,7 @@ void NotifyStageLoaded(State& state) {
     state.net_session.stage_instance_id += 1;
     state.net_session.ClearStageEntityLinks();
     state.net_session.ordered_events.clear();
-    state.net_session.pending_local_events.clear();
+    state.net_session.pending_outbound_events.clear();
     state.net_session.applied_event_ids.clear();
     RegisterStageEntityLinks(state);
     if (state.net_transport) {

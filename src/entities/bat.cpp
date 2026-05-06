@@ -11,6 +11,7 @@
 #include "world_query.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <random>
 #include <vector>
 
@@ -44,6 +45,39 @@ bool IsAtPerchOrRoof(const Entity& bat, const State& state) {
         }
     }
     return false;
+}
+
+std::optional<Vec2> FindBatTargetPosition(const Entity& bat, const State& state) {
+    constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
+    constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
+
+    std::optional<Vec2> best_target;
+    float best_dist_sq = std::numeric_limits<float>::max();
+    const Vec2 bat_pos = bat.pos;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
+            continue;
+        }
+
+        const Vec2 player_delta = GetNearestWorldDelta(state.stage, bat_pos, player->pos);
+        if (player_delta.y <= 0.0F ||
+            std::abs(player_delta.y) >= static_cast<float>(kVerticalDetectDist) ||
+            std::abs(player_delta.x) >= static_cast<float>(kHorizontalChaseDist)) {
+            continue;
+        }
+
+        const float dist_sq = player_delta.x * player_delta.x + player_delta.y * player_delta.y;
+        if (dist_sq < best_dist_sq) {
+            best_dist_sq = dist_sq;
+            best_target = bat_pos + player_delta;
+        }
+    }
+    return best_target;
 }
 
 void SnapBatToRoof(Entity& bat, const State& state) {
@@ -175,26 +209,7 @@ void StepEntityLogicAsBat(
     const EntityCondition bat_condition = bat.condition;
 
     if (bat_condition == EntityCondition::Normal) {
-        constexpr int kVerticalDetectDist = 8 * static_cast<int>(kTileSize);
-        constexpr int kHorizontalChaseDist = 4 * static_cast<int>(kTileSize);
-
-        // Check for player, acquire his position
-        std::optional<Vec2> target_position;
-        {
-            const Vec2 bat_pos = state.entity_manager.entities[entity_idx].pos;
-            if (state.player_vid.has_value()) {
-                if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-                    const Vec2 player_delta =
-                        GetNearestWorldDelta(state.stage, bat_pos, player->pos);
-                    if (player_delta.y > 0.0F &&
-                        std::abs(player_delta.y) < static_cast<float>(kVerticalDetectDist) &&
-                        std::abs(player_delta.x) < static_cast<float>(kHorizontalChaseDist) &&
-                        player->condition == EntityCondition::Normal) {
-                        target_position = bat_pos + player_delta;
-                    }
-                }
-            }
-        }
+        const std::optional<Vec2> target_position = FindBatTargetPosition(bat, state);
 
         //  State Machine
         Entity& mutable_bat = state.entity_manager.entities[entity_idx];

@@ -2,7 +2,6 @@
 
 #include "effects.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
 #include "tile_contact_data.hpp"
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
@@ -227,15 +226,30 @@ void MaybeHurtAndStunOnContact(
                             )) {
                             continue;
                         }
-                        const DamageResult damage_result =
-                            TryDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, 1);
+                        const DamageResult damage_result = TryHitEntity(
+                            other_entity->vid.id,
+                            state,
+                            audio,
+                            DamageType::Attack,
+                            1,
+                            HitOptions{
+                                .source_vid = entity.vid,
+                                .knockback = BuildBodyContactKnockback(entity, *other_entity, state.stage),
+                                .allow_remote_player_target = true,
+                            }
+                        );
                         switch (damage_result) {
                         case DamageResult::Died:
                         case DamageResult::Hurt:
-                            ApplyKnockback(
-                                *other_entity,
-                                BuildBodyContactKnockback(entity, *other_entity, state.stage)
+                            state.contact.AddInteractionCooldown(
+                                entity.vid,
+                                other_entity->vid,
+                                InteractionCooldownKind::Harm,
+                                state.stage_frame,
+                                kHarmContactCooldownFrames
                             );
+                            break;
+                        case DamageResult::Requested:
                             state.contact.AddInteractionCooldown(
                                 entity.vid,
                                 other_entity->vid,
@@ -320,6 +334,7 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics,
             entity.vel.x = 0.0F;
             (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::AnimalCrush2);
             break;
+        case DamageResult::Requested:
         case DamageResult::None:
             break;
         }
@@ -383,33 +398,33 @@ bool TryApplyProjectileContactToEntity(
         return false;
     }
 
-    const DamageOptions damage_options{
-        .source_vid = entity.vid,
-        .allow_remote_player_target = source_has_local_authority,
-        .defer_replication = true,
-    };
+    const KnockbackSpec knockback = BuildProjectileContactKnockback(entity, other_entity, state.stage);
     const DamageResult damage_result =
         entity.projectile_contact_damage_amount > 0
-            ? TryDamageEntity(
+            ? TryHitEntity(
                   other_entity_idx,
                   state,
                   audio,
                   entity.projectile_contact_damage_type,
                   entity.projectile_contact_damage_amount,
-                  damage_options
+                  HitOptions{
+                      .source_vid = entity.vid,
+                      .knockback = knockback,
+                      .allow_remote_player_target = source_has_local_authority,
+                  }
               )
             : DamageResult::None;
     switch (damage_result) {
     case DamageResult::Hurt:
     case DamageResult::Died:
+    case DamageResult::Requested:
     case DamageResult::None: {
         Entity& other_entity_mut = state.entity_manager.entities[other_entity_idx];
-        if (!other_entity_mut.held_by_vid.has_value() &&
+        if (entity.projectile_contact_damage_amount == 0 &&
+            damage_result != DamageResult::Requested &&
+            !other_entity_mut.held_by_vid.has_value() &&
             other_entity_mut.attachment_mode == AttachmentMode::None) {
-            ApplyKnockback(
-                other_entity_mut,
-                BuildProjectileContactKnockback(entity, other_entity_mut, state.stage)
-            );
+            ApplyKnockback(other_entity_mut, knockback);
         }
         state.contact.AddProjectileBodyImpactCooldown(
             entity.vid,
@@ -419,16 +434,6 @@ bool TryApplyProjectileContactToEntity(
         );
         if (entity.collide_sound.has_value()) {
             (void)PlayEntityCenterSoundEmitter(state, entity, *entity.collide_sound);
-        }
-        if (source_has_local_authority &&
-            (damage_result == DamageResult::Hurt || damage_result == DamageResult::Died)) {
-            EmitEntityDamagedGameplayEvent(
-                state,
-                other_entity_mut,
-                entity.projectile_contact_damage_type,
-                entity.projectile_contact_damage_amount,
-                entity.vid
-            );
         }
         return true;
     }

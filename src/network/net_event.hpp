@@ -24,6 +24,7 @@ enum class NetEventType : std::uint16_t {
     StageTransitionStarted,
     StageTransitionCommitted,
     RepairSnapshot,
+    ActionRequest,
 
     EntitySpawned,
     EntityDeactivated,
@@ -63,6 +64,21 @@ enum class NetEventType : std::uint16_t {
     SacrificeApplied,
 };
 
+enum class NetActionKind : std::uint16_t {
+    None,
+    UseTool,
+    PickupEntity,
+    DropEntity,
+    ThrowEntity,
+    UseHeldEntity,
+    UseBackEntity,
+    InteractEntity,
+    PushEntity,
+    BreakTile,
+    DamageEntity,
+    HitEntity,
+};
+
 struct NetEventHeader {
     NetEventId event_id = kInvalidNetEventId;
     PlayerId source_player_id = kInvalidPlayerId;
@@ -77,10 +93,16 @@ struct EntitySpawnedEvent {
     NetEntityId held_by_id = kInvalidNetEntityId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
+    Vec2 acc = Vec2::New(0.0F, 0.0F);
     NetEntityOwner owner = NetEntityOwner::Coordinator();
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     bool use_pressed = false;
+    std::uint8_t animate = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    std::uint16_t animation_frame = 0;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
 };
 
 struct EntityIdEvent {
@@ -149,6 +171,11 @@ struct EntityStatePatchedEvent {
     std::uint8_t can_collide = 1;
     std::uint8_t can_apply_projectile_contact = 1;
     std::uint8_t facing = 0;
+    std::uint8_t animate = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    std::uint16_t animation_frame = 0;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
 };
 
 struct TileChangedEvent {
@@ -203,6 +230,26 @@ struct StageLoadedEvent {
     std::uint32_t seed = 0;
 };
 
+struct ActionRequestEvent {
+    NetActionKind kind = NetActionKind::None;
+    NetEntityId source_entity_id = kInvalidNetEntityId;
+    NetEntityId target_entity_id = kInvalidNetEntityId;
+    IVec2 tile_pos = IVec2::New(0, 0);
+    IVec2 direction = IVec2::New(0, 0);
+    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    Vec2 velocity = Vec2::New(0.0F, 0.0F);
+    DamageType damage_type = DamageType::Attack;
+    DamageType projectile_contact_damage_type = DamageType::Attack;
+    unsigned int amount = 0;
+    unsigned int projectile_contact_damage_amount = 0;
+    std::uint32_t thrown_immunity_timer = 0;
+    std::uint32_t projectile_contact_duration = 0;
+    bool clear_velocity = true;
+    bool clear_acceleration = true;
+    std::uint32_t param_a = 0;
+    std::uint32_t param_b = 0;
+};
+
 struct NetEvent {
     NetEventHeader header{};
     NetEventType type = NetEventType::None;
@@ -223,7 +270,8 @@ struct NetEvent {
         MoneyChangedEvent,
         FavorChangedEvent,
         QuestFlagChangedEvent,
-        StageLoadedEvent
+        StageLoadedEvent,
+        ActionRequestEvent
     > payload{};
 };
 

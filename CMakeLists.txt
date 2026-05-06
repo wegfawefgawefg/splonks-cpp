@@ -286,6 +286,10 @@ add_executable(splonks-cpp
     src/network/net_event_apply.cpp
     src/network/net_gameplay_replication.cpp
     src/network/net_lobby.cpp
+    src/network/net_lobby_entity_state.cpp
+    src/network/net_lobby_events.cpp
+    src/network/net_lobby_packets.cpp
+    src/network/net_lobby_snapshots.cpp
     src/network/net_progression.cpp
     src/network/net_protocol.cpp
     src/network/net_session.cpp

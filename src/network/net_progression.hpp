@@ -18,8 +18,6 @@ void ApplyStageSync(
     NetTransportRuntime& transport,
     const StageSyncPacket& packet
 );
-void HandleStageExitRequestAsCoordinator(State& state, const StageExitRequestPacket& request);
-void RequestStageExit(State& state, StageExitId exit_id);
 void NotifyStageLoaded(State& state);
 
 } // namespace network

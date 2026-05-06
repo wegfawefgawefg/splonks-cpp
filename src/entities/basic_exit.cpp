@@ -125,7 +125,6 @@ void StepEntityLogicAsBasicExit(
     Audio& audio,
     float dt
 ) {
-    (void)audio;
     (void)dt;
 
     if (state.mode != Mode::Playing) {
@@ -180,14 +179,42 @@ void StepEntityLogicAsBasicExit(
             continue;
         }
 
-        (void)PlayEntityCenterSoundEmitter(state, exit_entity, audio_asset_ids::StageWin);
-        if (exit_entity.transition_target.has_value()) {
-            EmitStageTransitionRequested(state, *exit_entity.transition_target, slot.player_id);
-        } else {
-            EmitStageExitRequested(state, exit_entity.stage_exit_id, slot.player_id);
-        }
+        (void)TryRequestOrApplyInteractEntity(player->vid, exit_entity.vid, state, graphics, audio);
         return;
     }
+}
+
+bool OnInteractAsBasicExit(
+    std::size_t entity_idx,
+    std::size_t interactor_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
+    (void)audio;
+    const Entity* const exit_entity = GetActiveBasicExitEntity(entity_idx, state);
+    if (exit_entity == nullptr ||
+        interactor_idx >= state.entity_manager.entities.size() ||
+        state.pending_stage_transition.has_value()) {
+        return false;
+    }
+
+    const Entity& interactor = state.entity_manager.entities[interactor_idx];
+    if (!interactor.active ||
+        !IsEntityTouchingBasicExit(interactor, state, graphics) ||
+        !IsStageExitAllowed(state, exit_entity->stage_exit_id)) {
+        return false;
+    }
+
+    const PlayerId player_id =
+        state.players.FindPlayerIdForEntity(interactor.vid).value_or(kInvalidPlayerId);
+    (void)PlayEntityCenterSoundEmitter(state, *exit_entity, audio_asset_ids::StageWin);
+    if (exit_entity->transition_target.has_value()) {
+        EmitStageTransitionRequested(state, *exit_entity->transition_target, player_id);
+    } else {
+        EmitStageExitRequested(state, exit_entity->stage_exit_id, player_id);
+    }
+    return true;
 }
 
 extern const EntityArchetype kBasicExitArchetype{
@@ -208,6 +235,7 @@ extern const EntityArchetype kBasicExitArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
+    .on_interact = OnInteractAsBasicExit,
     .step_logic = StepEntityLogicAsBasicExit,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Exit),

@@ -313,32 +313,42 @@ EntityStrikeOutcome TryStrikeEntitiesWithMattock(
 
         const DamageType damage_type = GetMattockDamageType(*other_entity_const);
         const bool is_heavy_target = other_entity_const->impassable || other_entity_const->stone;
+        const float knockback_x = mattock.facing == LeftOrRight::Left ? -4.0F : 4.0F;
         const common::DamageResult damage_result =
-            common::TryDamageEntity(other_entity_const->vid.id, state, audio, damage_type, 1);
+            common::TryHitEntity(
+                other_entity_const->vid.id,
+                state,
+                audio,
+                damage_type,
+                1,
+                common::HitOptions{
+                    .source_vid = mattock.vid,
+                    .knockback = common::KnockbackSpec{
+                        .velocity = Vec2::New(knockback_x, -2.0F),
+                        .clear_velocity = !other_entity_const->impassable,
+                        .clear_acceleration = !other_entity_const->impassable,
+                        .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
+                        .thrown_immunity_timer = common::kThrownByImmunityDuration,
+                        .projectile_contact_damage_type = damage_type,
+                        .projectile_contact_damage_amount = 1,
+                        .projectile_contact_duration = other_entity_const->impassable
+                            ? 0U
+                            : common::kProjectileContactDuration,
+                    },
+                    .allow_remote_player_target = true,
+                }
+            );
         if (damage_result == common::DamageResult::None) {
             continue;
         }
         if (is_heavy_target && damage_result == common::DamageResult::Died) {
             (void)PlayWorldSoundEmitter(state, (other_aabb.tl + other_aabb.br) * 0.5F, audio_asset_ids::PotShatter);
         }
+        if (damage_result == common::DamageResult::Requested) {
+            continue;
+        }
 
         if (Entity* const other_entity = state.entity_manager.GetEntityMut(other_entity_const->vid)) {
-            if (!other_entity->impassable) {
-                const float knockback_x = mattock.facing == LeftOrRight::Left ? -4.0F : 4.0F;
-                common::ApplyKnockback(
-                    *other_entity,
-                    common::KnockbackSpec{
-                        .velocity = Vec2::New(knockback_x, -2.0F),
-                        .clear_velocity = true,
-                        .clear_acceleration = true,
-                        .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
-                        .thrown_immunity_timer = common::kThrownByImmunityDuration,
-                        .projectile_contact_damage_type = damage_type,
-                        .projectile_contact_damage_amount = 1,
-                        .projectile_contact_duration = common::kProjectileContactDuration,
-                    }
-                );
-            }
             result.sound_pos = other_entity->GetCenter();
         } else {
             result.sound_pos = (other_aabb.tl + other_aabb.br) * 0.5F;

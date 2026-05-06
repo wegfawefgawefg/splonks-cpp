@@ -95,7 +95,6 @@ extern const EntityArchetype kEntranceArchetype{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
-    .step_without_local_authority = true,
     .draw_layer = DrawLayer::Background,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

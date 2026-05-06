@@ -137,6 +137,26 @@ void AttachEntityAsHeld(Entity& holder, Entity& held);
 void ReleaseEntityFromHolder(Entity& entity, State& state);
 void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state);
 void DropHeldItemFromEntity(Entity& entity, State& state);
+bool TryPickupEntityByVid(
+    VID holder_vid,
+    VID held_vid,
+    State& state,
+    const Graphics& graphics
+);
+bool TryDropEntityByVid(
+    VID holder_vid,
+    VID held_vid,
+    State& state,
+    const Graphics& graphics
+);
+bool TryThrowEntityByVid(
+    VID thrower_vid,
+    VID thrown_vid,
+    Vec2 throw_velocity,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+);
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
     State& state,
@@ -157,6 +177,13 @@ bool TryApplyStompContactToEntity(
 );
 void TryPushBlocks(
     std::size_t entity_idx,
+    State& state,
+    const Graphics& graphics
+);
+bool TryApplyPushEntityAction(
+    VID pusher_vid,
+    VID pushed_vid,
+    float push_acc_delta,
     State& state,
     const Graphics& graphics
 );
@@ -185,7 +212,8 @@ bool TrySpawnAndThrowEntityForToolUse(
     std::uint16_t cooldown_frames,
     std::uint32_t thrown_immunity_timer,
     void (*setup_entity)(Entity&),
-    ToolThrowVelocityBuilder build_throw_velocity = nullptr
+    ToolThrowVelocityBuilder build_throw_velocity = nullptr,
+    std::optional<Vec2> throw_velocity_override = std::nullopt
 );
 bool TryUseToolSlot(
     std::size_t entity_idx,
@@ -194,11 +222,13 @@ bool TryUseToolSlot(
     Audio& audio,
     std::size_t tool_slot_index,
     bool trigger_pressed,
-    ToolThrowVelocityBuilder build_throw_velocity = nullptr
+    ToolThrowVelocityBuilder build_throw_velocity = nullptr,
+    std::optional<Vec2> throw_velocity_override = std::nullopt
 );
 
 enum class DamageResult {
     None,
+    Requested,
     Hurt,
     Died,
 };
@@ -209,6 +239,12 @@ struct DamageOptions {
     bool defer_replication = false;
 };
 
+struct HitOptions {
+    std::optional<VID> source_vid = std::nullopt;
+    KnockbackSpec knockback;
+    bool allow_remote_player_target = true;
+};
+
 bool CanEntityTakeDamageType(const Entity& entity, DamageType damage_type);
 DamageResult TryDamageEntity(
     std::size_t entity_idx,
@@ -217,6 +253,14 @@ DamageResult TryDamageEntity(
     DamageType damage_type,
     unsigned int amount,
     DamageOptions options = {}
+);
+DamageResult TryHitEntity(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    DamageType damage_type,
+    unsigned int amount,
+    HitOptions options
 );
 bool TryApplyProjectileContactToEntity(
     std::size_t entity_idx,

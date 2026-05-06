@@ -21,7 +21,11 @@ bool TryBuyEntityForMoney(
     Audio& audio
 );
 void AddBuyPromptsForPlayer(State& state, const Graphics& graphics);
-bool TryBuyOverlappingEntity(std::size_t buyer_idx, State& state, Graphics& graphics, Audio& audio);
+std::optional<std::size_t> FindOverlappingBuyableEntityIdx(
+    const State& state,
+    const Graphics& graphics,
+    std::size_t buyer_idx
+);
 bool TryBuyEntity(
     std::size_t entity_idx,
     std::size_t buyer_idx,

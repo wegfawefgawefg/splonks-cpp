@@ -1,5 +1,6 @@
 #include "entities/common/common.hpp"
 #include "entity/archetype.hpp"
+#include "gameplay_events.hpp"
 
 #include "tile.hpp"
 #include "world_query.hpp"
@@ -20,6 +21,7 @@ void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
     const bool vanish_on_death = entity.vanish_on_death;
     if ((vanish_on_death && entity.condition == EntityCondition::Dead) ||
         entity.marked_for_destruction) {
+        EmitEntityDeactivatedGameplayEvent(state, entity);
         state.entity_manager.SetInactive(entity_idx);
     }
 }

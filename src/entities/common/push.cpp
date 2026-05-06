@@ -72,6 +72,52 @@ bool IsAtCrusherLeadingFace(
 
 } // namespace
 
+bool TryApplyPushEntityAction(
+    VID pusher_vid,
+    VID pushed_vid,
+    float push_acc_delta,
+    State& state,
+    const Graphics& graphics
+) {
+    if (push_acc_delta == 0.0F) {
+        return false;
+    }
+
+    Entity* const pusher = state.entity_manager.GetEntityMut(pusher_vid);
+    Entity* const pushed = state.entity_manager.GetEntityMut(pushed_vid);
+    if (pusher == nullptr || pushed == nullptr || !pusher->active || !pushed->active ||
+        !pushed->pushable || pusher->condition == EntityCondition::Dead || !pusher->grounded) {
+        return false;
+    }
+
+    const AABB pusher_aabb = GetContactAabbForEntity(*pusher, graphics);
+    const AABB push_zone{
+        .tl = pusher_aabb.tl - Vec2::New(6.0F, 0.0F),
+        .br = pusher_aabb.br + Vec2::New(6.0F, 0.0F),
+    };
+    const Vec2 pusher_center = (pusher_aabb.tl + pusher_aabb.br) / 2.0F;
+    const AABB pushed_aabb = GetNearestWorldAabb(
+        state.stage,
+        pusher_center,
+        GetContactAabbForEntity(*pushed, graphics)
+    );
+    if (!AabbsIntersect(push_zone, pushed_aabb)) {
+        return false;
+    }
+
+    const Vec2 pushed_center = (pushed_aabb.tl + pushed_aabb.br) / 2.0F;
+    if (push_acc_delta > 0.0F && pushed_center.x < pusher_center.x) {
+        return false;
+    }
+    if (push_acc_delta < 0.0F && pushed_center.x > pusher_center.x) {
+        return false;
+    }
+
+    pushed->acc.x += push_acc_delta;
+    EmitEntityStatePatchedGameplayEvent(state, *pusher, *pushed);
+    return true;
+}
+
 void TryPushBlocks(
     std::size_t entity_idx,
     State& state,
@@ -112,10 +158,28 @@ void TryPushBlocks(
                            block_br.x < push_zone_right_x) {
                     block_x_acc_delta = -block_entity->push_acc;
                 }
-                block_entity->acc.x += block_x_acc_delta;
-                if (block_x_acc_delta != 0.0F &&
-                    HasLocalGameplayAuthorityForInteractionSource(state, entity.vid)) {
-                    EmitEntityStatePatchedGameplayEvent(state, entity, *block_entity);
+                if (block_x_acc_delta != 0.0F) {
+                    const bool source_auth =
+                        HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
+                    const bool target_auth =
+                        HasLocalGameplayAuthorityForEntity(state, block_entity->vid);
+                    if (source_auth && !target_auth) {
+                        EmitGameplayActionRequested(
+                            state,
+                            GameplayActionRequested{
+                                .kind = GameplayActionKind::PushEntity,
+                                .source_vid = entity.vid,
+                                .target_vid = block_entity->vid,
+                                .direction = IVec2::New(block_x_acc_delta > 0.0F ? 1 : -1, 0),
+                                .velocity = Vec2::New(block_x_acc_delta, 0.0F),
+                            }
+                        );
+                    } else {
+                        block_entity->acc.x += block_x_acc_delta;
+                        if (source_auth) {
+                            EmitEntityStatePatchedGameplayEvent(state, entity, *block_entity);
+                        }
+                    }
                 }
                 break;
             }

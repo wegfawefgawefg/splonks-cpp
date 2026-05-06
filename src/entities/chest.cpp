@@ -7,11 +7,13 @@
 #include "entity/archetype.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_query.hpp"
 
 #include <memory>
 #include <optional>
@@ -145,6 +147,7 @@ void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
         kChestLootLaunchY
     );
     SetAnimation(*bomb, frame_data_ids::LiveGrenade);
+    EmitEntitySpawnedGameplayEvent(state, *bomb);
 }
 
 void SpawnChestTreasure(
@@ -159,6 +162,7 @@ void SpawnChestTreasure(
             return;
         }
         LaunchChestLoot(*gem, opener_vid);
+        EmitEntitySpawnedGameplayEvent(state, *gem);
     }
 
     if (rng::RandomIntInclusive(1, kChestBonusGemOdds) != 1) {
@@ -170,31 +174,29 @@ void SpawnChestTreasure(
         return;
     }
     LaunchChestLoot(*gem, opener_vid);
+    EmitEntitySpawnedGameplayEvent(state, *gem);
 }
 
-bool CanPlayerUseChestFromContact(
+bool IsEntityOverlappingChest(
     std::size_t chest_idx,
+    const Entity& interactor,
     const State& state,
     const Graphics& graphics
 ) {
-    if (!state.player_vid.has_value()) {
+    if (!interactor.active || chest_idx >= state.entity_manager.entities.size()) {
         return false;
     }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
-        return false;
-    }
-
-    const controls::ControlIntent control = controls::GetControlIntentForEntity(*player, state);
-    if (!control.use_pressed) {
-        return false;
-    }
-
     const Entity& chest = state.entity_manager.entities[chest_idx];
-    return AabbsIntersect(
-        common::GetContactAabbForEntity(*player, graphics),
+    const AABB interactor_aabb = common::GetContactAabbForEntity(interactor, graphics);
+    const Vec2 interactor_center = (interactor_aabb.tl + interactor_aabb.br) / 2.0F;
+    const AABB chest_aabb = GetNearestWorldAabb(
+        state.stage,
+        interactor_center,
         common::GetContactAabbForEntity(chest, graphics)
+    );
+    return AabbsIntersect(
+        interactor_aabb,
+        chest_aabb
     );
 }
 
@@ -286,14 +288,20 @@ bool TryOpenTreasureChestAt(
     return true;
 }
 
-bool TryOpenTreasureChest(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+bool TryOpenTreasureChest(
+    std::size_t entity_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
+    std::optional<VID> opener_vid = std::nullopt
+) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return false;
     }
 
     const Entity& chest = state.entity_manager.entities[entity_idx];
     const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
-    return TryOpenTreasureChestAt(entity_idx, emit_pos, state, audio, state.player_vid);
+    return TryOpenTreasureChestAt(entity_idx, emit_pos, state, audio, opener_vid);
 }
 
 EntityDamageEffectResult OnDamageEffectAsChest(
@@ -344,6 +352,7 @@ bool TryOpenKeyChest(std::size_t entity_idx, State& state, Graphics& graphics, A
     Entity* const udjat_eye = SpawnEntityAtCenter(EntityType::UdjatEye, emit_pos, state);
     if (udjat_eye != nullptr) {
         LaunchChestLoot(*udjat_eye, holder != nullptr ? std::optional<VID>(holder->vid) : state.player_vid);
+        EmitEntitySpawnedGameplayEvent(state, *udjat_eye);
     }
     if (holder != nullptr && key != nullptr) {
         ConsumeHeldChestKey(holder, *key, state, graphics);
@@ -360,7 +369,25 @@ void OnUseAsChest(std::size_t entity_idx, State& state, Graphics& graphics, Audi
         return;
     }
 
-    TryOpenTreasureChest(entity_idx, state, graphics, audio);
+    TryOpenTreasureChest(entity_idx, state, graphics, audio, chest.use_state.user_vid);
+}
+
+bool OnInteractAsChest(
+    std::size_t entity_idx,
+    std::size_t interactor_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
+    if (interactor_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+    const Entity& interactor = state.entity_manager.entities[interactor_idx];
+    if (interactor.condition == EntityCondition::Dead ||
+        !IsEntityOverlappingChest(entity_idx, interactor, state, graphics)) {
+        return false;
+    }
+    return TryOpenTreasureChest(entity_idx, state, graphics, audio, interactor.vid);
 }
 
 void StepEntityLogicAsChest(
@@ -371,11 +398,33 @@ void StepEntityLogicAsChest(
     float dt
 ) {
     (void)dt;
-    if (!CanPlayerUseChestFromContact(entity_idx, state, graphics)) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected ||
+            slot.connection_kind != PlayerConnectionKind::Local ||
+            !slot.entity_vid.has_value()) {
+            continue;
+        }
+
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || player->condition != EntityCondition::Normal ||
+            !IsEntityOverlappingChest(entity_idx, *player, state, graphics)) {
+            continue;
+        }
+
+        const controls::ControlIntent control = controls::GetControlIntentForEntity(*player, state);
+        if (!control.use_pressed) {
+            continue;
+        }
+
+        (void)TryRequestOrApplyInteractEntity(
+            player->vid,
+            state.entity_manager.entities[entity_idx].vid,
+            state,
+            graphics,
+            audio
+        );
         return;
     }
-
-    TryOpenTreasureChest(entity_idx, state, graphics, audio);
 }
 
 void StepEntityLogicAsKeyChest(
@@ -409,6 +458,7 @@ extern const EntityArchetype kChestArchetype{
     .can_apply_projectile_contact = true,
     .on_damage = OnDamageEffectAsChest,
     .on_use = OnUseAsChest,
+    .on_interact = OnInteractAsChest,
     .step_logic = StepEntityLogicAsChest,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Chest),

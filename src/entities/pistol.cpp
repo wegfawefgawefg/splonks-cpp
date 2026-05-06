@@ -125,19 +125,22 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
         SpawnPistolImpactEffect(state, ToVec2(hit.point), direction);
     }
     if (hit.type == HitscanHitType::Entity && hit.entity_vid.has_value()) {
-        common::TryDamageEntity(hit.entity_vid->id, state, audio, DamageType::IgnitingAttack, kPistolDamage);
-        if (hit.entity_vid->id < state.entity_manager.entities.size()) {
-            if (Entity* const hit_entity = state.entity_manager.GetEntityMut(*hit.entity_vid)) {
-                common::ApplyKnockback(
-                    *hit_entity,
-                    common::KnockbackSpec{
-                        .velocity = Vec2::New(1.0F * static_cast<float>(direction), -1.0F),
-                        .clear_velocity = true,
-                        .clear_acceleration = true,
-                    }
-                );
+        common::TryHitEntity(
+            hit.entity_vid->id,
+            state,
+            audio,
+            DamageType::IgnitingAttack,
+            kPistolDamage,
+            common::HitOptions{
+                .source_vid = pistol.vid,
+                .knockback = common::KnockbackSpec{
+                    .velocity = Vec2::New(1.0F * static_cast<float>(direction), -1.0F),
+                    .clear_velocity = true,
+                    .clear_acceleration = true,
+                },
+                .allow_remote_player_target = true,
             }
-        }
+        );
     }
 }
 

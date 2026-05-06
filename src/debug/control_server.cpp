@@ -411,7 +411,7 @@ std::string HandleNetCommand(const State& state) {
         << ",\"quest\":" << JsonString(state.net_session.quest_id)
         << ",\"stage\":" << JsonString(state.net_session.quest_stage_id)
         << ",\"seed\":" << state.net_session.stage_seed
-        << ",\"pending_local_events\":" << state.net_session.pending_local_events.size()
+        << ",\"pending_outbound_events\":" << state.net_session.pending_outbound_events.size()
         << ",\"ordered_events\":" << state.net_session.ordered_events.size()
         << ",\"applied_events\":" << state.net_session.applied_event_ids.size()
         << ",\"next_expected_coordinator_order\":" << state.net_session.next_expected_coordinator_order

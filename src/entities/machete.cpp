@@ -172,8 +172,29 @@ void TryApplyMacheteStrike(std::size_t entity_idx, State& state, const Graphics&
         }
 
         const Entity victim_before_damage = *other_entity;
+        const float knockback_x = machete.facing == LeftOrRight::Left ? -3.5F : 3.5F;
         const common::DamageResult damage_result =
-            common::TryDamageEntity(other_entity->vid.id, state, audio, DamageType::Attack, kMacheteDamage);
+            common::TryHitEntity(
+                other_entity->vid.id,
+                state,
+                audio,
+                DamageType::Attack,
+                kMacheteDamage,
+                common::HitOptions{
+                    .source_vid = machete.vid,
+                    .knockback = common::KnockbackSpec{
+                        .velocity = Vec2::New(knockback_x, -1.5F),
+                        .clear_velocity = true,
+                        .clear_acceleration = true,
+                        .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
+                        .thrown_immunity_timer = common::kThrownByImmunityDuration,
+                        .projectile_contact_damage_type = DamageType::Attack,
+                        .projectile_contact_damage_amount = kMacheteDamage,
+                        .projectile_contact_duration = common::kProjectileContactDuration,
+                    },
+                    .allow_remote_player_target = true,
+                }
+            );
         if (damage_result == common::DamageResult::None) {
             continue;
         }
@@ -182,22 +203,10 @@ void TryApplyMacheteStrike(std::size_t entity_idx, State& state, const Graphics&
             HandleHeldKillFavor(machete, victim_before_damage, state, graphics, audio);
         }
 
-        if (Entity* const damaged_entity = state.entity_manager.GetEntityMut(other_vid)) {
-            const float knockback_x = machete.facing == LeftOrRight::Left ? -3.5F : 3.5F;
-            common::ApplyKnockback(
-                *damaged_entity,
-                common::KnockbackSpec{
-                    .velocity = Vec2::New(knockback_x, -1.5F),
-                    .clear_velocity = true,
-                    .clear_acceleration = true,
-                    .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
-                    .thrown_immunity_timer = common::kThrownByImmunityDuration,
-                    .projectile_contact_damage_type = DamageType::Attack,
-                    .projectile_contact_damage_amount = kMacheteDamage,
-                    .projectile_contact_duration = common::kProjectileContactDuration,
-                }
-            );
+        if (damage_result == common::DamageResult::Requested) {
+            continue;
         }
+
     }
 }
 

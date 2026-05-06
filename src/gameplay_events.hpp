@@ -23,7 +23,9 @@ struct State;
 enum class GameplayEventType {
     StageExitRequested,
     StageTransitionRequested,
+    ActionRequested,
     EntitySpawned,
+    EntityDeactivated,
     EntityHeld,
     EntityDropped,
     EntityThrown,
@@ -32,6 +34,21 @@ enum class GameplayEventType {
     TileBroken,
     RopeTilePlaced,
     PresentationCommand,
+};
+
+enum class GameplayActionKind : std::uint16_t {
+    None,
+    UseTool,
+    PickupEntity,
+    DropEntity,
+    ThrowEntity,
+    UseHeldEntity,
+    UseBackEntity,
+    InteractEntity,
+    PushEntity,
+    BreakTile,
+    DamageEntity,
+    HitEntity,
 };
 
 struct GameplayStageExitRequested {
@@ -44,15 +61,45 @@ struct GameplayStageTransitionRequested {
     PlayerId player_id = kInvalidPlayerId;
 };
 
+struct GameplayActionRequested {
+    GameplayActionKind kind = GameplayActionKind::None;
+    std::optional<VID> source_vid = std::nullopt;
+    std::optional<VID> target_vid = std::nullopt;
+    IVec2 tile_pos = IVec2::New(0, 0);
+    IVec2 direction = IVec2::New(0, 0);
+    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    Vec2 velocity = Vec2::New(0.0F, 0.0F);
+    DamageType damage_type = DamageType::Attack;
+    DamageType projectile_contact_damage_type = DamageType::Attack;
+    unsigned int amount = 0;
+    unsigned int projectile_contact_damage_amount = 0;
+    std::uint32_t thrown_immunity_timer = 0;
+    std::uint32_t projectile_contact_duration = 0;
+    bool clear_velocity = true;
+    bool clear_acceleration = true;
+    std::uint32_t param_a = 0;
+    std::uint32_t param_b = 0;
+};
+
 struct GameplayEntitySpawned {
     VID entity_vid{};
     std::optional<VID> held_by_vid = std::nullopt;
     EntityType entity_type = EntityType::None;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
+    Vec2 acc = Vec2::New(0.0F, 0.0F);
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     bool use_pressed = false;
+    std::uint8_t animate = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    std::uint16_t animation_frame = 0;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
+};
+
+struct GameplayEntityDeactivated {
+    VID entity_vid{};
 };
 
 struct GameplayEntityHeld {
@@ -113,6 +160,11 @@ struct GameplayEntityStatePatched {
     std::uint8_t can_collide = 1;
     std::uint8_t can_apply_projectile_contact = 1;
     std::uint8_t facing = 0;
+    std::uint8_t animate = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    std::uint16_t animation_frame = 0;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
 };
 
 struct GameplayRopeTilePlaced {
@@ -128,7 +180,9 @@ struct GameplayEvent {
     GameplayEventType type = GameplayEventType::StageExitRequested;
     GameplayStageExitRequested stage_exit;
     GameplayStageTransitionRequested stage_transition;
+    GameplayActionRequested action_requested;
     GameplayEntitySpawned entity_spawned;
+    GameplayEntityDeactivated entity_deactivated;
     GameplayEntityHeld entity_held;
     GameplayEntityDropped entity_dropped;
     GameplayEntityThrown entity_thrown;
@@ -141,11 +195,20 @@ struct GameplayEvent {
 
 void EmitStageExitRequested(State& state, StageExitId exit_id, PlayerId player_id);
 void EmitStageTransitionRequested(State& state, const StageTransitionTarget& target, PlayerId player_id);
+void EmitGameplayActionRequested(State& state, const GameplayActionRequested& request);
+bool TryRequestOrApplyInteractEntity(
+    VID source_vid,
+    VID target_vid,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+);
 void EmitEntitySpawnedGameplayEvent(
     State& state,
     const Entity& spawned_entity,
     std::optional<VID> held_by_vid = std::nullopt
 );
+void EmitEntityDeactivatedGameplayEvent(State& state, const Entity& entity);
 void EmitEntityHeldGameplayEvent(State& state, const Entity& holder, const Entity& held);
 void EmitEntityDroppedGameplayEvent(
     State& state,

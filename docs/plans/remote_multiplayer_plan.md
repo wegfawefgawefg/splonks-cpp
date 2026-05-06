@@ -239,6 +239,51 @@ Important rules:
 - Result events are generic and idempotent. They identify content by entity
   type/archetype/tool/effect ids, not by hardcoded item packet families.
 
+## Mutation Prescan
+
+Current code paths that can fork multiplayer state if they run canonically on a
+peer:
+
+- Tile mutation: `BreakStageTiles*`, tile break drops, rope tile placement, and
+  tile trigger side effects.
+- Entity spawn: tool spawns in `entities/common/throw.cpp`, trap/projectile
+  spawns, pot/box/chest drops, altar rewards, skeleton skulls, cobra/web shots,
+  and tile break drops.
+- Entity damage/death: `entities::common::TryDamageEntity` plus death-consumed
+  effects such as Meathead/Ankh-style behavior.
+- Entity deactivation/destruction: `SetInactive*`, `marked_for_destruction`,
+  pickup collection, projectile expiry, rope-ball expiry, altar sacrifice, and
+  telefrag/crush cleanup.
+- Entity impulse/state patch: `ApplyKnockback`, pushblock movement, projectile
+  attachment, carried/held state, and thrown projectile ownership.
+- Inventory/economy: tool counts, passive/effect acquisition, money, favor,
+  shop buying/theft, and quest flags.
+
+Do not create one packet per content item from this list. Add generic request
+categories only when a new durable mutation family is needed, then let the
+coordinator run the existing content code and emit generic result events.
+
+Current generic request coverage:
+
+- `BreakTile`: peer requests a tile break; coordinator runs `BreakStageTiles*`
+  and emits ordered tile/spawn results.
+- `DamageEntity`: peer requests damage from a locally-owned source to a
+  non-local target; coordinator runs `TryDamageEntity` and emits normal damage
+  results.
+- `HitEntity`: peer requests damage plus hit impulse/projectile contact metadata
+  from a locally-owned source to a non-local target; coordinator runs
+  `TryHitEntity`, applies the content-owned knockback, then emits the final
+  damage or state result.
+
+Likely next request categories:
+
+- `UseEntity` / `UseTool`: source entity/tool asks coordinator to run the same
+  content-owned use callback that offline mode uses.
+- `DestroyEntity` or `ContainerOpened`: source requests break/open/sacrifice
+  resolution for boxes, pots, chests, and other loot containers.
+- `CollectEntity`: source requests pickup/buy/collect resolution with conflict
+  handling.
+
 Canonical result categories:
 
 - `EntitySpawnedResult`: coordinator net id, entity type/archetype id, position,
@@ -781,17 +826,19 @@ Remote player movement path:
 - Test with two or three separate processes, including multiple local players
   owned by one process.
 
-After movement is readable, add the first reliable durable event. `TileBroken`
-is the preferred first target because it proves "one player changed the shared
-world and every process saw it" without item ownership complexity:
+After movement is readable, add the first request/result world mutation.
+`BreakTile` is the preferred first target because it proves "one player changed
+the shared world and every process saw it" without item ownership complexity:
 
-1. Packet carries event id, source player, event kind, and payload.
-2. Peer applies its own tile break locally immediately and sends `TileBroken`
-   to the coordinator.
-3. Coordinator assigns order, applies if still relevant, and rebroadcasts.
-4. Peers apply idempotently. Already-air/already-broken tile is a no-op.
-5. Debug event log shows sent, received, ordered, applied, duplicate, and no-op
-   tile events.
+1. Peer attempts to break a canonical tile.
+2. Peer does not apply the canonical tile mutation or roll drops locally.
+3. Peer sends generic `ActionRequest{BreakTile}` to the coordinator.
+4. Coordinator applies normal stage-break gameplay if still relevant.
+5. Coordinator emits generic `TileBroken` and any spawned loot/entity results.
+6. Peers apply coordinator results idempotently. Already-air/already-broken
+   tile is a no-op.
+7. Debug event log shows requested, received, applied, duplicate, and no-op
+   action/result events.
 
 Then do `EntityDamaged`/`EntityKilled`, then pickup/drop/throw ownership.
 
@@ -905,15 +952,16 @@ This is useful as a stepping stone, but it should not define the remote model.
   - Tool usage is disabled by default and can be toggled per bot.
 - [x] Added network fuzzer config/stat shell and latency presets.
   - Files: `src/network/net_fuzzer.hpp`, `src/network/net_fuzzer.cpp`.
-- [x] Added a debug-drivable local event queue, ordered queue, and first apply
-  path.
+- [x] Added net event queues and first apply path.
   - Files: `src/network/net_event_apply.hpp`,
     `src/network/net_event_apply.cpp`, `src/debug/playback_ui_network.cpp`.
-  - The `Debug: Network` window can emit a local `MoneyChanged` event, drain it
-    into coordinator order, and apply it to visible money.
-- [x] Add in-process durable event bus apply/drain point in the gameplay step.
-  - Offline/coordinator sessions drain local events into ordered events, then
-    apply ordered events once per playing tick.
+  - The `Debug: Network` window can emit a test `MoneyChanged` net event and
+    apply ordered events.
+  - The old manual local-to-ordered drain path was removed. Peers keep pending
+    outbound action/presentation events; the coordinator owns ordered result
+    events.
+- [x] Add in-process durable event apply point in the gameplay step.
+  - The playing tick applies coordinator-ordered events once per frame.
 - [x] Added first real UDP host/join transport.
   - Files: `src/network/net_transport.hpp`,
     `src/network/net_transport.cpp`, `src/network/net_protocol.hpp`,
@@ -943,11 +991,36 @@ This is useful as a stepping stone, but it should not define the remote model.
 - [x] Added remote player animation state to UDP snapshots.
   - Player snapshots now carry animation id, frame, time, speed, and animate
     flag so remote player bodies do not freeze in stale local animation states.
-- [x] Added first UDP durable world mutation: `TileBroken`.
-  - Central stage tile breaking emits generic `TileBroken` events.
-  - Peers send pending tile breaks to the coordinator until the ordered echo is
-    seen. The coordinator assigns order, applies idempotently, and rebroadcasts
-    ordered tile breaks to connected peers.
+- [x] Added first UDP request/result world mutation: `BreakTile` -> `TileBroken`.
+  - Peer-side stage tile breaking emits generic `ActionRequest{BreakTile}`
+    instead of mutating canonical tiles or rolling loot locally.
+  - Coordinator-side stage tile breaking emits generic `TileBroken` result
+    events after normal gameplay break logic runs.
+  - Peers apply ordered `TileBroken` results without re-emitting network events
+    or duplicating drop spawns.
+  - Peer `BreakTile` requests retry until a matching `TileBroken` result is
+    received for that tile.
+- [x] Added first generic shared damage request: `DamageEntity`.
+  - Non-authoritative damage attempts from locally-owned sources emit
+    `ActionRequest{DamageEntity}` instead of directly applying canonical damage
+    to remote/coordinator-owned targets.
+  - The coordinator applies the request through normal `TryDamageEntity`, so
+    on-damage/on-death callbacks and death-consumed effects still run in the
+    content-owned damage path.
+  - Current limitation: damage requests do not yet carry a full authoritative
+    knockback/impulse spec. Existing ordered damage events can carry final
+    pos/vel once the coordinator applies them, but source-specific hit impulse
+    should be folded into the next `HitEntity`/damage request shape rather than
+    patched per weapon.
+- [x] Added generic shared hit request: `HitEntity`.
+  - `HitEntity` carries damage type/amount, knockback velocity, clear flags,
+    thrown immunity, and projectile-contact metadata.
+  - Coordinator-side apply uses `TryHitEntity`, so damage and impulse are
+    ordered together and the replicated damage/state result includes the final
+    post-hit velocity.
+  - Main routed paths now include bat hits, stomp victim hits, body/projectile
+    contact hits, machete/mattock strikes, pistol hits, arrow entity hits, and
+    explosion push hits.
 - [x] Added repo-local two-process multiplayer launcher and read-only live CLI.
   - `scripts/run_multiplayer_pair_i3.sh` builds, opens workspace 2 on
     `DisplayPort-0`, launches the top instance as host and the bottom instance

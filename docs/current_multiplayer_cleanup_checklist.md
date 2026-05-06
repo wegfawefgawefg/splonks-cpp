@@ -69,9 +69,9 @@ Review date: 2026-05-06
 
 Scope: current large multiplayer commit after durable ordering, coordinator repair, presentation commands, and authority cleanup.
 
-- [ ] Split `src/network/net_lobby.cpp`.
-  - It is currently around 2500 lines, which violates the repo's preferred 300-500 line target.
-  - Split by responsibility: lobby/session setup, packet send helpers, coordinator packet handlers, peer packet handlers, player snapshots, entity repair/state patches, and debug/status helpers.
+- [x] Split `src/network/net_lobby.cpp`.
+  - Split out packet send/translation helpers, durable event handlers, player snapshots/interpolation, and entity repair/state patches.
+  - Remaining `net_lobby.cpp` is still a high-level session/orchestration file, but no longer owns packet serialization or per-entity repair logic.
 
 - [ ] Decide whether scripted presentation effects need a content registry.
   - `presentation_commands` are generic at the network layer, but `TeleportSplit` and `TeleportMerge` are hardcoded presentation scripts.
@@ -96,3 +96,60 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - Peers must not create canonical non-player entities, break canonical tiles, roll canonical loot, or apply canonical shared damage directly.
   - Add assert/log guard rails before more content-specific sync patches.
   - Route peer attempts through generic request categories and let the coordinator emit generic result events.
+  - Done first slice: peer tile breaks now request generic `BreakTile`; coordinator applies the break and emits `TileBroken`/spawn results.
+  - Done second slice: non-authoritative damage attempts from locally-owned sources now request generic `DamageEntity`; coordinator applies normal content damage.
+  - Done third slice: non-authoritative hits now request generic `HitEntity`; coordinator applies damage plus knockback and emits final damage/state results.
+  - Done fourth slice: peers no longer originate canonical `EntitySpawned`, `EntityDamaged`, or broad `EntityStatePatched` result events.
+  - Done fifth slice: basic throw tools now use generic `UseTool` action requests from peers; the coordinator runs the tool content and emits canonical spawn results.
+  - Done sixth slice: canonical spawns/state patches now carry current animation presentation, spawn results carry initial acceleration, and common deactivation paths emit ordered `EntityDeactivated` results.
+  - Done seventh slice: peers no longer send legacy tile/entity result packet families or transient entity-state patches to the coordinator; peer-to-coordinator gameplay traffic is action requests plus currently allowed presentation commands.
+  - Done eighth slice: removed the old local-event drain path, renamed the queue to pending outbound events, and removed the debug/manual path that moved local events directly into ordered events.
+  - Done ninth slice: removed the special `StageExitRequest` packet path; exits now use the generic `InteractEntity` request and coordinator-side exit callback.
+  - Done tenth slice: split `EntityDeactivated` out of carry packets into an entity lifecycle packet so carry packets only transport held/drop/throw results.
+  - Note: presentation commands remain allowed peer-to-coordinator for cosmetic sound/effect/shake presentation only, including sound positions/settings and scripted visual effects; they must not encode durable gameplay state.
+  - Remaining: generic request/result coverage for all special deactivation sites, loot/container interactions, held-entity edge cases, direct entity interactions, and inventory/effect results.
+
+- [ ] Replace remaining peer-authored carry/drop/throw result paths with action requests.
+  - `EntityHeld`, `EntityDropped`, and `EntityThrown` remain as coordinator-authored result events.
+  - Peer carry/throw input now requests coordinator approval instead of directly authoring shared carry state.
+  - Target shape: `PickupEntity`, `DropEntity`, and `ThrowEntity` requests, then coordinator emits canonical carry/drop/throw/state results.
+  - Migration list:
+    - [x] Add generic `PickupEntity`, `DropEntity`, and `ThrowEntity` action request kinds.
+    - [x] Make peer pickup/drop/throw input send requests instead of mutating canonical carry state locally.
+    - [x] Make the coordinator apply those requests through the same carry helpers offline gameplay uses.
+    - [x] Restrict `EntityHeld`, `EntityDropped`, and `EntityThrown` replication to coordinator-authored result events.
+    - [x] Ignore any remaining legacy peer-authored carry result packets at the coordinator/peer boundary.
+    - [ ] Smoke test player carry/throw, item carry/throw, forced drops, and throw velocity in both directions.
+
+- [ ] Add generic requests for held-entity use and direct entity interaction.
+  - Bat/pistol/bow/web cannon/mattock/machete are held entities, not tool slots.
+  - Chests/shops/exits/use prompts need `InteractEntity` or equivalent.
+  - Target shape: peer sends intent plus compact aim/velocity payload; coordinator runs content callback and emits generic results/presentation.
+  - Held/back use migration:
+    - [x] Add generic `UseHeldEntity` and `UseBackEntity` action request kinds.
+    - [x] Make peer held/back item input send use-state requests instead of calling `UseEntity` locally.
+    - [x] Make the coordinator validate holder/item attachment and apply `UseEntity`/`StopUsingEntity`.
+    - [ ] Smoke test bat, bow, web cannon, pistol, mattock, machete, cape, teleporter, and telepack.
+  - Direct interaction migration:
+    - [x] Add generic `InteractEntity` request kind.
+    - [x] Add `EntityArchetype::on_interact` so content owns interaction behavior and netcode only transports source/target ids.
+    - [x] Convert shop buy prompts to request/apply `InteractEntity`; coordinator runs the normal buy callback.
+    - [x] Convert exits to request/apply `InteractEntity`; the exit callback emits the normal stage transition event.
+    - [x] Convert normal chests to request/apply `InteractEntity`; chest loot now emits normal entity-spawn events.
+    - [ ] Convert key chest unlock to request/apply or an equivalent coordinator-owned contact action.
+    - [ ] Review sacrifice, altar, craps, shop theft, and other area/contact interactions for coordinator-only result events.
+    - [ ] Add replication for buyable-state changes and player inventory/money changes; current generic interaction can run the buy on the coordinator, but not every resulting field is represented in durable result events yet.
+
+## Sync Audit Notes
+
+- Tile break sensors should come along automatically when the coordinator is the side calling `BreakStageTilesAtCoords`: the break path emits `TileBroken`, runs tile-trigger callbacks, and emits tile-break spawn results from one place.
+- Entity spawns are safe only if the content path emits `EmitEntitySpawnedGameplayEvent` after finalizing the spawned entity's type, position, velocity, acceleration, key state, and animation state. Boxes, pots, stage-break drops, tool throws, arrow traps, boulders, and now chest loot do this. Remaining direct `NewEntity()` sites need individual review before assuming multiplayer parity.
+- Entity deactivation/state changes are safe only if they emit a durable result such as damage/state patch/drop/throw/deactivation or are covered by coordinator repair. Common vanish/marked-for-destruction and collected/bought pickup paths now emit `EntityDeactivated`; special one-off `SetInactive` paths still need audit because a periodic repair patch is not the same thing as an ordered gameplay result.
+- Buy/pickup effects are not fully represented yet. Money, tool counts, effect lists, and buyable flags need explicit result coverage or a broader player/inventory state patch before shops can be considered synced.
+
+### Remaining Direct Mutation Audit
+
+- `NewEntity()` sites that already emit spawn results: `stage_break.cpp`, `entities/arrow_trap.cpp`, `entities/box.cpp`, `entities/chest.cpp`, `entities/common/throw.cpp`, `entities/giant_tiki_head.cpp`, `entities/player.cpp`, `entities/pot.cpp`.
+- `NewEntity()` sites still needing review/result coverage: `entities/bow.cpp`, `entities/barrier_emitter.cpp`, `entities/cobra.cpp`, `entities/gear_items.cpp`, `entities/monkey.cpp`, `entities/sac_altar.cpp`, `entities/shopkeeper.cpp`, `entities/skeleton.cpp`, `entities/spider.cpp`, `entities/web_cannon.cpp`.
+- `SetInactive()` sites still needing review/result coverage: special entity lifetimes, chest key consumption, shop buy state beyond purchased pickup deactivation, rope deployment, webball/cobweb replacement, teleporter/player splat, altar sacrifice, and item depletion.
+- State fields needing explicit player/inventory replication before shops/items are complete: `money`, tool slot counts/kinds, effect list/counts, buyable flags, held/back slot changes not covered by carry result events.

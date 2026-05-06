@@ -1,5 +1,7 @@
 #include "entities/common/common.hpp"
 
+#include "gameplay_events.hpp"
+
 namespace splonks::entities::common {
 
 bool CanCollectPickupFromContact(
@@ -26,6 +28,7 @@ void DeactivateCollectedPickup(std::size_t pickup_idx, State& state, const Graph
         return;
     }
 
+    EmitEntityDeactivatedGameplayEvent(state, state.entity_manager.entities[pickup_idx]);
     state.entity_manager.SetInactive(pickup_idx);
     state.UpdateSidForEntity(pickup_idx, graphics);
 }

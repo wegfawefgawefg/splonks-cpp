@@ -167,6 +167,28 @@ DamageResult TryDamageEntity(
     DamageOptions options
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    const bool coordinator_can_author_remote_player_target =
+        state.net_session.role == network::NetRole::Coordinator &&
+        options.allow_remote_player_target;
+    if (!HasLocalGameplayAuthorityForEntity(state, entity.vid) &&
+        !coordinator_can_author_remote_player_target) {
+        if (options.source_vid.has_value() &&
+            HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid)) {
+            EmitGameplayActionRequested(
+                state,
+                GameplayActionRequested{
+                    .kind = GameplayActionKind::DamageEntity,
+                    .source_vid = options.source_vid,
+                    .target_vid = entity.vid,
+                    .world_pos = entity.GetCenter(),
+                    .damage_type = damage_type,
+                    .amount = amount,
+                }
+            );
+            return DamageResult::Requested;
+        }
+        return DamageResult::None;
+    }
     if (IsRemotePlayerEntity(state, entity) && !options.allow_remote_player_target) {
         return DamageResult::None;
     }
@@ -256,6 +278,75 @@ DamageResult TryDamageEntity(
         }
     }
     return DamageResult::None;
+}
+
+DamageResult TryHitEntity(
+    std::size_t entity_idx,
+    State& state,
+    Audio& audio,
+    DamageType damage_type,
+    unsigned int amount,
+    HitOptions options
+) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return DamageResult::None;
+    }
+
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    const bool coordinator_can_author_remote_player_target =
+        state.net_session.role == network::NetRole::Coordinator &&
+        options.allow_remote_player_target;
+    if (!HasLocalGameplayAuthorityForEntity(state, entity.vid) &&
+        !coordinator_can_author_remote_player_target) {
+        if (options.source_vid.has_value() &&
+            HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid)) {
+            EmitGameplayActionRequested(
+                state,
+                GameplayActionRequested{
+                    .kind = GameplayActionKind::HitEntity,
+                    .source_vid = options.source_vid,
+                    .target_vid = entity.vid,
+                    .world_pos = entity.GetCenter(),
+                    .velocity = options.knockback.velocity,
+                    .damage_type = damage_type,
+                    .projectile_contact_damage_type = options.knockback.projectile_contact_damage_type,
+                    .amount = amount,
+                    .projectile_contact_damage_amount =
+                        options.knockback.projectile_contact_damage_amount,
+                    .thrown_immunity_timer = options.knockback.thrown_immunity_timer,
+                    .projectile_contact_duration = options.knockback.projectile_contact_duration,
+                    .clear_velocity = options.knockback.clear_velocity,
+                    .clear_acceleration = options.knockback.clear_acceleration,
+                }
+            );
+            return DamageResult::Requested;
+        }
+        return DamageResult::None;
+    }
+
+    ApplyKnockback(entity, options.knockback);
+    const DamageResult damage_result = TryDamageEntity(
+        entity_idx,
+        state,
+        audio,
+        damage_type,
+        amount,
+        DamageOptions{
+            .source_vid = options.source_vid,
+            .allow_remote_player_target = options.allow_remote_player_target,
+            .defer_replication = true,
+        }
+    );
+
+    if (damage_result == DamageResult::Hurt || damage_result == DamageResult::Died) {
+        EmitEntityDamagedGameplayEvent(state, entity, damage_type, amount, options.source_vid);
+    } else if (damage_result == DamageResult::None && options.source_vid.has_value()) {
+        if (const Entity* const source = state.entity_manager.GetEntity(*options.source_vid)) {
+            EmitEntityStatePatchedGameplayEvent(state, *source, entity);
+        }
+    }
+
+    return damage_result;
 }
 
 } // namespace splonks::entities::common

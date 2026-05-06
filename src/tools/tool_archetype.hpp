@@ -40,7 +40,8 @@ using ToolUseFn = bool (*) (
     Audio& audio,
     std::size_t tool_slot_index,
     bool trigger_pressed,
-    ToolThrowVelocityBuilder build_throw_velocity
+    ToolThrowVelocityBuilder build_throw_velocity,
+    std::optional<Vec2> throw_velocity_override
 );
 
 struct ToolArchetype {

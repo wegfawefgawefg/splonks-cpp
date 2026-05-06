@@ -72,6 +72,7 @@ struct EntityArchetype {
     EntityOnDeath on_death = nullptr;
     EntityOnDamage on_damage = nullptr;
     EntityOnUse on_use = nullptr;
+    EntityOnInteract on_interact = nullptr;
     EntityOnAreaEnter on_area_enter = nullptr;
     EntityOnAreaExit on_area_exit = nullptr;
     EntityOnAreaTileChanged on_area_tile_changed = nullptr;

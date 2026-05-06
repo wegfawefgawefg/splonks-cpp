@@ -138,34 +138,34 @@ bool TryApplyStompContactToEntity(
     if (stomp_damage == 0) {
         return false;
     }
-    const DamageResult damage_result = TryDamageEntity(
+    const Vec2 stomp_delta = GetNearestWorldDelta(state.stage, stomper.GetCenter(), stomped->GetCenter());
+    const float stomp_knockback_x =
+        stomp_delta.x < 0.0F ? -kStompVictimKnockbackVelocityX : kStompVictimKnockbackVelocityX;
+    const KnockbackSpec knockback{
+        .velocity = Vec2::New(stomp_knockback_x, kStompVictimKnockbackVelocityY),
+        .clear_velocity = true,
+        .clear_acceleration = true,
+        .thrown_by = stomper.vid,
+        .thrown_immunity_timer = kThrownByImmunityDuration,
+        .projectile_contact_damage_type = DamageType::Attack,
+        .projectile_contact_damage_amount = 1,
+        .projectile_contact_duration = kProjectileContactDuration,
+    };
+    const DamageResult damage_result = TryHitEntity(
         stomped->vid.id,
         state,
         audio,
         DamageType::JumpOn,
-        stomp_damage
+        stomp_damage,
+        HitOptions{
+            .source_vid = stomper.vid,
+            .knockback = knockback,
+            .allow_remote_player_target = true,
+        }
     );
-    if (stomped->can_be_stunned) {
+    if (damage_result != DamageResult::Requested && stomped->can_be_stunned) {
         stomped->condition = EntityCondition::Stunned;
         stomped->stun_timer = kDefaultStunTimer;
-    }
-    if (damage_result == DamageResult::Died || damage_result == DamageResult::Hurt) {
-        const Vec2 stomp_delta = GetNearestWorldDelta(state.stage, stomper.GetCenter(), stomped->GetCenter());
-        const float stomp_knockback_x =
-            stomp_delta.x < 0.0F ? -kStompVictimKnockbackVelocityX : kStompVictimKnockbackVelocityX;
-        ApplyKnockback(
-            *stomped,
-            KnockbackSpec{
-                .velocity = Vec2::New(stomp_knockback_x, kStompVictimKnockbackVelocityY),
-                .clear_velocity = true,
-                .clear_acceleration = true,
-                .thrown_by = stomper.vid,
-                .thrown_immunity_timer = kThrownByImmunityDuration,
-                .projectile_contact_damage_type = DamageType::Attack,
-                .projectile_contact_damage_amount = 1,
-                .projectile_contact_duration = kProjectileContactDuration,
-            }
-        );
     }
     state.contact.AddInteractionCooldown(
         stomped->vid,

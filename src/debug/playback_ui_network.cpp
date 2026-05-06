@@ -48,6 +48,8 @@ const char* NetEventTypeName(network::NetEventType type) {
         return "StageTransitionCommitted";
     case network::NetEventType::RepairSnapshot:
         return "RepairSnapshot";
+    case network::NetEventType::ActionRequest:
+        return "ActionRequest";
     case network::NetEventType::EntitySpawned:
         return "EntitySpawned";
     case network::NetEventType::EntityDeactivated:
@@ -120,13 +122,13 @@ const char* NetEventTypeName(network::NetEventType type) {
 
 const char* NetEventLogPhaseName(network::NetEventLogPhase phase) {
     switch (phase) {
-    case network::NetEventLogPhase::EnqueuedLocal:
-        return "local";
+    case network::NetEventLogPhase::EnqueuedOutbound:
+        return "outbound";
     case network::NetEventLogPhase::EnqueuedOrdered:
         return "ordered";
     case network::NetEventLogPhase::Applied:
         return "applied";
-    case network::NetEventLogPhase::SkippedLocal:
+    case network::NetEventLogPhase::SkippedLocalApply:
         return "skip-local";
     }
     return "unknown";
@@ -171,8 +173,8 @@ void EmitDebugMoneyEvent(DebugPlayback& debug, State& state) {
     event.header = state.net_session.MakeLocalEventHeader(state.frame);
     event.type = network::NetEventType::MoneyChanged;
     event.payload = payload;
-    state.net_session.EnqueueLocalEvent(event);
-    debug.network_status = "Queued local MoneyChanged event.";
+    state.net_session.EnqueueNetEvent(event);
+    debug.network_status = "Queued MoneyChanged net event.";
 }
 
 void DrawRecentOrderedEvents(const network::NetSessionState& session) {
@@ -474,7 +476,7 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Text("Next coordinator order: %llu", static_cast<unsigned long long>(session.next_coordinator_order));
     ImGui::Separator();
 
-    ImGui::Text("Pending local events: %zu", session.pending_local_events.size());
+    ImGui::Text("Pending outbound events: %zu", session.pending_outbound_events.size());
     ImGui::Text("Ordered events: %zu", session.ordered_events.size());
     ImGui::Text("Applied events: %zu", session.applied_event_ids.size());
     ImGui::Text("Entity links: %zu", session.entity_links.size());
@@ -492,15 +494,10 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     DrawDebugLocalPlayers(state, debug, graphics);
     ImGui::Separator();
 
-    ImGui::TextUnformatted("Local Event Harness");
+    ImGui::TextUnformatted("Net Event Harness");
     ImGui::InputInt("Money delta", &debug.network_test_money_delta);
     if (ImGui::Button("Emit MoneyChanged")) {
         EmitDebugMoneyEvent(debug, state);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Drain Pending To Ordered")) {
-        const std::size_t count = session.DrainPendingLocalEventsToOrdered();
-        debug.network_status = "Moved " + std::to_string(count) + " local events into ordered queue.";
     }
     if (ImGui::Button("Apply Ordered Events")) {
         const std::size_t count = network::ApplyOrderedEvents(session, state);
@@ -508,7 +505,7 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     }
     ImGui::SameLine();
     if (ImGui::Button("Clear Queues")) {
-        session.pending_local_events.clear();
+        session.pending_outbound_events.clear();
         session.ordered_events.clear();
         session.applied_event_ids.clear();
         debug.network_status = "Cleared network event queues.";

@@ -5,7 +5,6 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
@@ -87,6 +86,7 @@ extern const EntityArchetype kBaseballBatArchetype{
     .impassable = false,
     .hurt_on_contact = false,
     .can_be_stunned = false,
+    .step_without_local_authority = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
@@ -173,37 +173,27 @@ bool TryApplyBatContactToEntity(
                                  : Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
             break;
         }
-        common::ApplyKnockback(
-            *other_entity,
-            common::KnockbackSpec{
-                .velocity = knock_back_vel,
-                .clear_velocity = true,
-                .clear_acceleration = true,
-                .thrown_by = held_by_vid,
-                .thrown_immunity_timer = common::kThrownByImmunityDuration,
-                .projectile_contact_damage_type = DamageType::Attack,
-                .projectile_contact_damage_amount = 1,
-                .projectile_contact_duration = common::kProjectileContactDuration,
-            }
-        );
-
-        const common::DamageResult damage_result = common::TryDamageEntity(
+        const common::DamageResult damage_result = common::TryHitEntity(
             other_entity->vid.id,
             state,
             audio,
             DamageType::Attack,
             1,
-            common::DamageOptions{
+            common::HitOptions{
                 .source_vid = bat_entity.vid,
+                .knockback = common::KnockbackSpec{
+                    .velocity = knock_back_vel,
+                    .clear_velocity = true,
+                    .clear_acceleration = true,
+                    .thrown_by = held_by_vid,
+                    .thrown_immunity_timer = common::kThrownByImmunityDuration,
+                    .projectile_contact_damage_type = DamageType::Attack,
+                    .projectile_contact_damage_amount = 1,
+                    .projectile_contact_duration = common::kProjectileContactDuration,
+                },
                 .allow_remote_player_target = source_has_local_authority,
-                .defer_replication = true,
             }
         );
-        if (source_has_local_authority &&
-            (damage_result == common::DamageResult::Hurt ||
-             damage_result == common::DamageResult::Died)) {
-            EmitEntityDamagedGameplayEvent(state, *other_entity, DamageType::Attack, 1, bat_entity.vid);
-        }
         switch (damage_result) {
         case common::DamageResult::Died: {
             const int random_number = rng::RandomIntInclusive(0, 10);
@@ -231,6 +221,7 @@ bool TryApplyBatContactToEntity(
             (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::BaseballBatMetalDink1);
             break;
         }
+        case common::DamageResult::Requested:
         case common::DamageResult::Hurt:
             (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::Thud);
             break;

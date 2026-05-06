@@ -5,6 +5,7 @@
 #include "entity/archetype_restore.hpp"
 #include "controls.hpp"
 #include "gameplay_events.hpp"
+#include "gameplay_authority.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -105,6 +106,47 @@ bool CanPickUpCandidate(const Entity& picker, const Entity& candidate, const Sta
     return !candidate.can_only_be_picked_up_if_dead_or_stunned || dead_or_stunned;
 }
 
+bool ShouldRequestCarryAction(const State& state, const Entity& entity) {
+    return state.net_session.role == network::NetRole::Peer &&
+           HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
+}
+
+void EmitCarryActionRequest(
+    State& state,
+    GameplayActionKind kind,
+    VID source_vid,
+    std::optional<VID> target_vid,
+    Vec2 velocity = Vec2::New(0.0F, 0.0F)
+) {
+    EmitGameplayActionRequested(
+        state,
+        GameplayActionRequested{
+            .kind = kind,
+            .source_vid = source_vid,
+            .target_vid = target_vid,
+            .velocity = velocity,
+        }
+    );
+}
+
+void EmitAttachmentUseActionRequest(
+    State& state,
+    GameplayActionKind kind,
+    VID holder_vid,
+    VID item_vid,
+    bool pressed
+) {
+    EmitGameplayActionRequested(
+        state,
+        GameplayActionRequested{
+            .kind = kind,
+            .source_vid = holder_vid,
+            .target_vid = item_vid,
+            .param_a = pressed ? 1U : 0U,
+        }
+    );
+}
+
 void SyncHeldAttachmentForHolder(
     const Entity& holder,
     State& state,
@@ -195,6 +237,60 @@ void SyncBackAttachmentForHolder(
     SnapPlacedAttachmentToPixels(*back_item);
     back_item->grounded = false;
     state.UpdateSidForEntity(back_item->vid.id, graphics);
+}
+
+void ApplyThrowState(
+    Entity& thrower,
+    Entity& thrown,
+    Vec2 throw_velocity,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    ReleaseEntityFromHolder(thrown, state);
+
+    thrown.thrown_by = thrower.vid;
+    thrown.thrown_immunity_timer = kThrownByImmunityDuration;
+    const EntityArchetype& thrown_archetype = GetEntityArchetype(thrown.type_);
+    thrown.can_apply_projectile_contact = thrown_archetype.can_apply_projectile_contact;
+    thrown.projectile_contact_damage_type = thrown_archetype.projectile_contact_damage_type;
+    thrown.projectile_contact_damage_amount = thrown_archetype.projectile_contact_damage_amount;
+    thrown.projectile_contact_timer = kProjectileContactDuration;
+
+    if (GetModifiedEffectValue(thrower, EffectModifierTarget::ThrowHorizontalBoost, 0.0F) != 0.0F) {
+        DispatchEffectEventToEntity(
+            thrower,
+            state,
+            &audio,
+            EffectEvent{
+                .type = EffectEventType::Throw,
+                .actor_vid = thrower.vid,
+                .target_vid = thrown.vid,
+                .world_pos = thrown.GetCenter(),
+            }
+        );
+    } else {
+        RemoveEffect(thrown, EffectId::NoGravityUntilContact);
+    }
+
+    const Vec2 thrower_center = thrower.GetCenter();
+    if (thrower.size.y <= thrown.size.y) {
+        const float delta = std::abs(thrower.size.y - thrown.size.y) / 2.0F;
+        thrown.SetCenter(thrower_center - Vec2::New(0.0F, delta));
+    } else {
+        thrown.SetCenter(thrower_center);
+    }
+
+    if (IsPlayerEntity(thrown, state)) {
+        thrown.vel = throw_velocity;
+        thrown.acc = Vec2::New(0.0F, 0.0F);
+    } else {
+        thrown.vel = Vec2::New(0.0F, 0.0F);
+        thrown.acc = throw_velocity;
+    }
+    state.UpdateSidForEntity(thrown.vid.id, graphics);
+    EmitEntityThrownGameplayEvent(state, thrower, thrown, throw_velocity);
+    (void)PlayEntityCenterSoundEmitter(state, thrower, audio_asset_ids::Throw);
 }
 
 } // namespace
@@ -302,6 +398,77 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     EmitEntityThrownGameplayEvent(state, entity, *held, held->vel);
 }
 
+bool TryPickupEntityByVid(
+    VID holder_vid,
+    VID held_vid,
+    State& state,
+    const Graphics& graphics
+) {
+    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+    Entity* const held = state.entity_manager.GetEntityMut(held_vid);
+    if (holder == nullptr || held == nullptr || !holder->active || !held->active) {
+        return false;
+    }
+    if (holder->holding_vid.has_value()) {
+        return false;
+    }
+    if (!CanPickUpCandidate(*holder, *held, state)) {
+        return false;
+    }
+
+    holder->holding_timer = kDefaultHoldingTimer;
+    AttachEntityAsHeld(*holder, *held);
+    SyncHeldAttachmentForHolder(*holder, state, graphics);
+    EmitEntityHeldGameplayEvent(state, *holder, *held);
+    return true;
+}
+
+bool TryDropEntityByVid(
+    VID holder_vid,
+    VID held_vid,
+    State& state,
+    const Graphics& graphics
+) {
+    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+    Entity* const held = state.entity_manager.GetEntityMut(held_vid);
+    if (holder == nullptr || held == nullptr || !holder->active || !held->active) {
+        return false;
+    }
+    if ((!holder->holding_vid.has_value() || *holder->holding_vid != held_vid) &&
+        (!held->held_by_vid.has_value() || *held->held_by_vid != holder_vid)) {
+        return false;
+    }
+
+    ReleaseEntityFromHolder(*held, state);
+    held->vel = Vec2::New(0.0F, 0.0F);
+    held->acc = Vec2::New(0.0F, 0.0F);
+    state.UpdateSidForEntity(held->vid.id, graphics);
+    EmitEntityDroppedGameplayEvent(state, *held, holder->vid);
+    return true;
+}
+
+bool TryThrowEntityByVid(
+    VID thrower_vid,
+    VID thrown_vid,
+    Vec2 throw_velocity,
+    State& state,
+    const Graphics& graphics,
+    Audio& audio
+) {
+    Entity* const thrower = state.entity_manager.GetEntityMut(thrower_vid);
+    Entity* const thrown = state.entity_manager.GetEntityMut(thrown_vid);
+    if (thrower == nullptr || thrown == nullptr || !thrower->active || !thrown->active) {
+        return false;
+    }
+    if ((!thrower->holding_vid.has_value() || *thrower->holding_vid != thrown_vid) &&
+        (!thrown->held_by_vid.has_value() || *thrown->held_by_vid != thrower_vid)) {
+        return false;
+    }
+
+    ApplyThrowState(*thrower, *thrown, throw_velocity, state, graphics, audio);
+    return true;
+}
+
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return;
@@ -351,9 +518,11 @@ void UpdateCarryAndBackItems(
                 if (entity.holding_vid.has_value()) {
                     if (entity.holding_timer == 0) {
                         thrown_vid = entity.holding_vid;
-                        entity.holding_vid.reset();
-                        entity.holding = false;
                         entity.holding_timer = kDefaultHoldingTimer;
+                        if (!ShouldRequestCarryAction(state, entity)) {
+                            entity.holding_vid.reset();
+                            entity.holding = false;
+                        }
                     }
                 } else {
                     if (!entity.IsHanging() && !entity.IsClimbing() && entity.holding_timer == 0) {
@@ -387,23 +556,30 @@ void UpdateCarryAndBackItems(
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
             if (trying_to_pick_this_up_vid.has_value()) {
-                if (Entity* const pick_up_entity =
-                        state.entity_manager.GetEntityMut(*trying_to_pick_this_up_vid)) {
-                    AttachEntityAsHeld(entity, *pick_up_entity);
-                    EmitEntityHeldGameplayEvent(state, entity, *pick_up_entity);
+                if (ShouldRequestCarryAction(state, entity)) {
+                    EmitCarryActionRequest(
+                        state,
+                        GameplayActionKind::PickupEntity,
+                        entity.vid,
+                        trying_to_pick_this_up_vid
+                    );
+                } else {
+                    (void)TryPickupEntityByVid(
+                        entity.vid,
+                        *trying_to_pick_this_up_vid,
+                        state,
+                        graphics
+                    );
                 }
             }
         }
 
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
-            const VID entity_vid = entity.vid;
-            const Vec2 entity_center = entity.GetCenter();
             const bool trying_to_go_down = control.down;
             const bool trying_to_go_up = control.up;
             const bool trying_to_go_left = control.left;
             const bool trying_to_go_right = control.right;
-            const Vec2 entity_size = entity.size;
             const float mitt_throw_boost =
                 entity.grounded && trying_to_go_down
                     ? 0.0F
@@ -412,19 +588,6 @@ void UpdateCarryAndBackItems(
 
             if (thrown_vid.has_value()) {
                 if (Entity* const thrown = state.entity_manager.GetEntityMut(*thrown_vid)) {
-                    thrown->has_physics = true;
-                    thrown->can_collide = true;
-                    thrown->thrown_by = entity_vid;
-                    thrown->held_by_vid.reset();
-                    thrown->attachment_mode = AttachmentMode::None;
-                    StopUsingEntity(*thrown);
-                    thrown->thrown_immunity_timer = kThrownByImmunityDuration;
-                    const EntityArchetype& thrown_archetype = GetEntityArchetype(thrown->type_);
-                    thrown->can_apply_projectile_contact = thrown_archetype.can_apply_projectile_contact;
-                    thrown->projectile_contact_damage_type = thrown_archetype.projectile_contact_damage_type;
-                    thrown->projectile_contact_damage_amount = thrown_archetype.projectile_contact_damage_amount;
-                    thrown->projectile_contact_timer = kProjectileContactDuration;
-
                     Vec2 throw_vel = Vec2::New(0.0F, 0.0F);
                     if (trying_to_go_left) {
                         throw_vel.x = -10.0F;
@@ -452,37 +615,27 @@ void UpdateCarryAndBackItems(
                         } else if (trying_to_go_down) {
                             throw_vel.y = 6.0F;
                         }
-                        DispatchEffectEventToEntity(
-                            entity,
-                            state,
-                            &audio,
-                            EffectEvent{
-                                .type = EffectEventType::Throw,
-                                .actor_vid = entity.vid,
-                                .target_vid = thrown->vid,
-                                .world_pos = thrown->GetCenter(),
-                            }
-                        );
-                    } else {
-                        RemoveEffect(*thrown, EffectId::NoGravityUntilContact);
                     }
 
-                    if (entity_size.y <= thrown->size.y) {
-                        const float delta = std::abs(entity_size.y - thrown->size.y) / 2.0F;
-                        thrown->SetCenter(entity_center - Vec2::New(0.0F, delta));
-                    } else {
-                        thrown->SetCenter(entity_center);
-                    }
                     const Vec2 scaled_throw_vel = throw_vel * entity.throw_velocity_scale;
-                    if (IsPlayerEntity(*thrown, state)) {
-                        thrown->vel = scaled_throw_vel;
-                        thrown->acc = Vec2::New(0.0F, 0.0F);
+                    if (ShouldRequestCarryAction(state, entity)) {
+                        EmitCarryActionRequest(
+                            state,
+                            GameplayActionKind::ThrowEntity,
+                            entity.vid,
+                            thrown->vid,
+                            scaled_throw_vel
+                        );
                     } else {
-                        thrown->acc += scaled_throw_vel;
+                        (void)TryThrowEntityByVid(
+                            entity.vid,
+                            thrown->vid,
+                            scaled_throw_vel,
+                            state,
+                            graphics,
+                            audio
+                        );
                     }
-                    state.UpdateSidForEntity(thrown->vid.id, graphics);
-                    EmitEntityThrownGameplayEvent(state, entity, *thrown, scaled_throw_vel);
-                    (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Throw);
                 }
             }
         }
@@ -558,7 +711,15 @@ void UpdateCarryAndBackItems(
         const Entity& entity = state.entity_manager.entities[entity_idx];
         if (entity.holding_vid.has_value()) {
             if (Entity* const holding = state.entity_manager.GetEntityMut(*entity.holding_vid)) {
-                if (control.use_held) {
+                if (ShouldRequestCarryAction(state, entity)) {
+                    EmitAttachmentUseActionRequest(
+                        state,
+                        GameplayActionKind::UseHeldEntity,
+                        entity.vid,
+                        holding->vid,
+                        control.use_held
+                    );
+                } else if (control.use_held) {
                     UseEntity(*holding, entity.vid, AttachmentMode::Held);
                 } else {
                     StopUsingEntity(*holding);
@@ -567,7 +728,15 @@ void UpdateCarryAndBackItems(
         }
         if (entity.back_vid.has_value()) {
             if (Entity* const back_item = state.entity_manager.GetEntityMut(*entity.back_vid)) {
-                if (control.use_back) {
+                if (ShouldRequestCarryAction(state, entity)) {
+                    EmitAttachmentUseActionRequest(
+                        state,
+                        GameplayActionKind::UseBackEntity,
+                        entity.vid,
+                        back_item->vid,
+                        control.use_back
+                    );
+                } else if (control.use_back) {
                     UseEntity(*back_item, entity.vid, AttachmentMode::Back);
                 } else {
                     StopUsingEntity(*back_item);

@@ -407,13 +407,6 @@ void StickArrowToEntity(Entity& arrow, Entity& other, State& state) {
     EmitEntityStatePatchedGameplayEvent(state, arrow, arrow);
 }
 
-void ApplyArrowImpactImpulse(const Entity& arrow, Entity& other) {
-    if (!other.has_physics || other.impassable) {
-        return;
-    }
-    other.vel += arrow.vel * kArrowImpactVelocityScale;
-}
-
 entities::common::ContactResolution OnEntityContactAsArrow(
     std::size_t entity_idx,
     std::size_t other_entity_idx,
@@ -449,17 +442,31 @@ entities::common::ContactResolution OnEntityContactAsArrow(
     if (arrow.collide_sound.has_value()) {
         (void)PlayWorldSoundEmitter(state, arrow.GetCenter(), *arrow.collide_sound);
     }
-    (void)entities::common::TryDamageEntity(
+    const entities::common::DamageResult damage_result = entities::common::TryHitEntity(
         other_entity_idx,
         state,
         *audio,
         arrow.projectile_contact_damage_type,
-        arrow.projectile_contact_damage_amount
+        arrow.projectile_contact_damage_amount,
+        entities::common::HitOptions{
+            .source_vid = arrow.vid,
+            .knockback = entities::common::KnockbackSpec{
+                .velocity = arrow.vel * kArrowImpactVelocityScale,
+                .clear_velocity = false,
+                .clear_acceleration = true,
+                .thrown_by = arrow.thrown_by,
+                .thrown_immunity_timer = entities::common::kThrownByImmunityDuration,
+                .projectile_contact_damage_type = DamageType::Attack,
+                .projectile_contact_damage_amount = 1,
+                .projectile_contact_duration = entities::common::kProjectileContactDuration,
+            },
+            .allow_remote_player_target = true,
+        }
     );
+    (void)damage_result;
     arrow.vel = impact_velocity;
     Entity& updated_other_entity = state.entity_manager.entities[other_entity_idx];
     if (updated_other_entity.active) {
-        ApplyArrowImpactImpulse(arrow, updated_other_entity);
         StickArrowToEntity(arrow, updated_other_entity, state);
     } else {
         state.entity_manager.SetInactive(entity_idx);

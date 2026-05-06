@@ -4,6 +4,8 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_authority.hpp"
+#include "gameplay_events.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 
@@ -29,20 +31,29 @@ int RandInclusive(int minimum, int maximum) {
 }
 
 
-void SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
+Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
-        return;
+        return nullptr;
     }
 
     Entity* const entity = state.entity_manager.GetEntityMut(*vid);
     if (entity == nullptr) {
-        return;
+        return nullptr;
     }
 
     SetEntityAs(*entity, type_);
     entity->pos = pos;
     entity->vel = Vec2::New(0.0F, 0.0F);
+    return entity;
+}
+
+void SpawnAndReplicateEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
+    Entity* const entity = SpawnEntityAtTopLeft(type_, pos, state);
+    if (entity == nullptr) {
+        return;
+    }
+    EmitEntitySpawnedGameplayEvent(state, *entity);
 }
 
 EntityType RandomTeleporterVariant() {
@@ -178,6 +189,10 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     (void)audio;
 
     const Entity& box = state.entity_manager.entities[entity_idx];
+    if (!HasLocalGameplayAuthorityForEntity(state, box.vid)) {
+        return;
+    }
+
     const Vec2 spawn_pos = box.pos;
     SpawnBreakawayContainerShards(box.GetCenter(), state);
 
@@ -185,45 +200,45 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     // intentionally substituted by Pistol for now. HD/2 use the same common
     // tail shape: 1/2 RopePile, otherwise guaranteed BombBag.
     if (RandInclusive(1, 500) == 1) {
-        SpawnEntityAtTopLeft(EntityType::JetPack, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::JetPack, spawn_pos, state);
     } else if (RandInclusive(1, 200) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Cape, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Cape, spawn_pos, state);
     } else if (RandInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
     } else if (RandInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Mattock, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Mattock, spawn_pos, state);
     } else if (RandInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(RandomTeleporterVariant(), spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(RandomTeleporterVariant(), spawn_pos, state);
     } else if (RandInclusive(1, 90) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Gloves, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Gloves, spawn_pos, state);
     } else if (RandInclusive(1, 90) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Spectacles, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Spectacles, spawn_pos, state);
     } else if (RandInclusive(1, 80) == 1) {
-        SpawnEntityAtTopLeft(EntityType::WebCannon, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::WebCannon, spawn_pos, state);
     } else if (RandInclusive(1, 80) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
     } else if (RandInclusive(1, 80) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Mitt, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Mitt, spawn_pos, state);
     } else if (RandInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Paste, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Paste, spawn_pos, state);
     } else if (RandInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::SpringShoes, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::SpringShoes, spawn_pos, state);
     } else if (RandInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::SpikeShoes, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::SpikeShoes, spawn_pos, state);
     } else if (RandInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Machete, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Machete, spawn_pos, state);
     } else if (RandInclusive(1, 40) == 1) {
-        SpawnEntityAtTopLeft(EntityType::BombBox, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::BombBox, spawn_pos, state);
     } else if (RandInclusive(1, 40) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Bow, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Bow, spawn_pos, state);
     } else if (RandInclusive(1, 20) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Compass, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Compass, spawn_pos, state);
     } else if (RandInclusive(1, 10) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Parachute, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::Parachute, spawn_pos, state);
     } else if (RandInclusive(1, 2) == 1) {
-        SpawnEntityAtTopLeft(EntityType::RopePile, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::RopePile, spawn_pos, state);
     } else {
-        SpawnEntityAtTopLeft(EntityType::BombBag, spawn_pos, state);
+        SpawnAndReplicateEntityAtTopLeft(EntityType::BombBag, spawn_pos, state);
     }
 }
 
@@ -244,6 +259,25 @@ bool TryApplyBoxImpact(
         return false;
     }
     if (std::abs(context.impact_velocity) <= kBoxBreakawayImpactSpeed) {
+        return false;
+    }
+
+    if (!HasLocalGameplayAuthorityForEntity(state, box.vid)) {
+        if (context.mover_vid.has_value() &&
+            HasLocalGameplayAuthorityForInteractionSource(state, *context.mover_vid)) {
+            EmitGameplayActionRequested(
+                state,
+                GameplayActionRequested{
+                    .kind = GameplayActionKind::DamageEntity,
+                    .source_vid = context.mover_vid,
+                    .target_vid = box.vid,
+                    .world_pos = box.GetCenter(),
+                    .damage_type = DamageType::Attack,
+                    .amount = 1,
+                }
+            );
+            return true;
+        }
         return false;
     }
 

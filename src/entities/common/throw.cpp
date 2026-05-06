@@ -39,7 +39,8 @@ bool TrySpawnAndThrowEntityForToolUse(
     std::uint16_t cooldown_frames,
     std::uint32_t thrown_immunity_timer,
     void (*setup_entity)(Entity&),
-    ToolThrowVelocityBuilder build_throw_velocity
+    ToolThrowVelocityBuilder build_throw_velocity,
+    std::optional<Vec2> throw_velocity_override
 ) {
     (void)audio;
     if (!trigger_pressed) {
@@ -77,7 +78,12 @@ bool TrySpawnAndThrowEntityForToolUse(
     const ToolThrowVelocityBuilder velocity_builder =
         build_throw_velocity == nullptr ? BuildThrowVelocity : build_throw_velocity;
     spawned_entity->SetCenter(thrower.GetCenter());
-    spawned_entity->acc += velocity_builder(control) * thrower.throw_velocity_scale;
+    const Vec2 throw_velocity =
+        throw_velocity_override.value_or(velocity_builder(control) * thrower.throw_velocity_scale);
+    spawned_entity->acc += throw_velocity;
+    if (spawned_entity->on_use != nullptr) {
+        spawned_entity->on_use(vid->id, state, graphics, audio);
+    }
     state.UpdateSidForEntity(vid->id, graphics);
     EmitEntitySpawnedGameplayEvent(state, *spawned_entity);
 

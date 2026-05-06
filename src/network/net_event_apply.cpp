@@ -136,6 +136,36 @@ void ApplyDamagePresentation(Entity& entity, const EntityDamagedEvent& payload) 
     animator.animate = payload.animate != 0;
 }
 
+void ApplyStatePatchPresentation(Entity& entity, const EntityStatePatchedEvent& payload) {
+    if (payload.animation_id == kInvalidFrameDataId) {
+        return;
+    }
+
+    FrameDataAnimator& animator = entity.frame_data_animator;
+    if (animator.animation_id != payload.animation_id) {
+        animator.SetAnimation(payload.animation_id);
+    }
+    animator.current_frame = payload.animation_frame;
+    animator.current_time = payload.animation_time;
+    animator.speed = payload.animation_speed;
+    animator.animate = payload.animate != 0;
+}
+
+void ApplySpawnPresentation(Entity& entity, const EntitySpawnedEvent& payload) {
+    if (payload.animation_id == kInvalidFrameDataId) {
+        return;
+    }
+
+    FrameDataAnimator& animator = entity.frame_data_animator;
+    if (animator.animation_id != payload.animation_id) {
+        animator.SetAnimation(payload.animation_id);
+    }
+    animator.current_frame = payload.animation_frame;
+    animator.current_time = payload.animation_time;
+    animator.speed = payload.animation_speed;
+    animator.animate = payload.animate != 0;
+}
+
 void ApplyEntitySpawnedEvent(
     NetSessionState& session,
     State& state,
@@ -162,9 +192,10 @@ void ApplyEntitySpawnedEvent(
     SetEntityAs(*entity, payload.entity_type);
     entity->pos = payload.pos;
     entity->vel = payload.vel;
-    entity->acc = Vec2::New(0.0F, 0.0F);
+    entity->acc = payload.acc;
     entity->counter_a = payload.counter_a;
     entity->counter_b = payload.counter_b;
+    ApplySpawnPresentation(*entity, payload);
     if (payload.held_by_id != kInvalidNetEntityId) {
         if (const std::optional<VID> holder_vid =
                 FindEntityVidForEvent(session, state, payload.held_by_id)) {
@@ -184,6 +215,22 @@ void ApplyEntitySpawnedEvent(
     session.SetEntityOwner(payload.entity_id, payload.owner.player_id);
     if (graphics != nullptr) {
         state.UpdateSidForEntity(entity->vid.id, *graphics);
+    }
+}
+
+void ApplyEntityDeactivatedEvent(
+    NetSessionState& session,
+    State& state,
+    Graphics* graphics,
+    const EntityIdEvent& payload
+) {
+    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
+    if (!vid.has_value()) {
+        return;
+    }
+    state.entity_manager.SetInactive(vid->id);
+    if (graphics != nullptr) {
+        state.UpdateSidForEntity(vid->id, *graphics);
     }
 }
 
@@ -360,7 +407,9 @@ void ApplyEntityStatePatchedEvent(
     entity->health = payload.health;
     entity->stun_timer = payload.stun_timer;
     entity->condition = static_cast<EntityCondition>(payload.condition);
-    (void)ApplyConditionPresentation(*entity, entity->condition);
+    if (!ApplyConditionPresentation(*entity, entity->condition)) {
+        ApplyStatePatchPresentation(*entity, payload);
+    }
     state.stage.NormalizeEntityPositionForWrap(*entity);
     if (graphics != nullptr) {
         state.UpdateSidForEntity(entity->vid.id, *graphics);
@@ -387,6 +436,7 @@ bool IsImmediateLocalGameplayEvent(NetEventType type) {
     switch (type) {
     case NetEventType::EntitySpawned:
     case NetEventType::EntityDamaged:
+    case NetEventType::EntityDeactivated:
     case NetEventType::EntityHeld:
     case NetEventType::EntityDropped:
     case NetEventType::EntityThrown:
@@ -586,7 +636,7 @@ std::size_t ApplyOrderedEvents(
             IsImmediateLocalGameplayEvent(event.type)) {
             if (session.MarkEventApplied(event.header.event_id)) {
                 NoteAppliedCoordinatorOrder(session, event);
-                session.AddEventLog(NetEventLogPhase::SkippedLocal, event);
+                session.AddEventLog(NetEventLogPhase::SkippedLocalApply, event);
                 ++applied_count;
             }
             continue;
@@ -601,6 +651,11 @@ std::size_t ApplyOrderedEvents(
         case NetEventType::EntityDamaged:
             if (const auto* payload = std::get_if<EntityDamagedEvent>(&event.payload)) {
                 ApplyEntityDamagedEvent(session, state, audio, event.header.source_player_id, *payload);
+            }
+            break;
+        case NetEventType::EntityDeactivated:
+            if (const auto* payload = std::get_if<EntityIdEvent>(&event.payload)) {
+                ApplyEntityDeactivatedEvent(session, state, graphics, *payload);
             }
             break;
         case NetEventType::EntityStatePatched:
@@ -648,6 +703,7 @@ std::size_t ApplyOrderedEvents(
                         *audio,
                         std::nullopt,
                         false,
+                        true,
                         true,
                         true
                     );

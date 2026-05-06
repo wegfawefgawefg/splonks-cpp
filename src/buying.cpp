@@ -2,6 +2,7 @@
 
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -83,7 +84,9 @@ std::vector<OverlappingBuyableEntity> FindOverlappingBuyableEntities(
     return overlaps;
 }
 
-std::optional<std::size_t> FindOverlappingBuyableEntity(
+} // namespace
+
+std::optional<std::size_t> FindOverlappingBuyableEntityIdx(
     const State& state,
     const Graphics& graphics,
     std::size_t buyer_idx
@@ -95,8 +98,6 @@ std::optional<std::size_t> FindOverlappingBuyableEntity(
     }
     return overlaps.front().entity_idx;
 }
-
-} // namespace
 
 void ClearEntityBuyableState(Entity& entity) {
     entity.buyable.active = false;
@@ -156,6 +157,7 @@ bool TryBuyEntityForMoney(
 
     ClearEntityBuyableState(item);
     if (TryCollectInventoryPickup(state, buyer, item)) {
+        EmitEntityDeactivatedGameplayEvent(state, item);
         state.entity_manager.SetInactive(entity_idx);
         state.UpdateSidForEntity(entity_idx, graphics);
     }
@@ -209,14 +211,6 @@ bool TryBuyEntity(
     }
 
     return item.buyable.on_try_buy(entity_idx, buyer_idx, state, graphics, audio);
-}
-
-bool TryBuyOverlappingEntity(std::size_t buyer_idx, State& state, Graphics& graphics, Audio& audio) {
-    const std::optional<std::size_t> item_idx = FindOverlappingBuyableEntity(state, graphics, buyer_idx);
-    if (!item_idx.has_value()) {
-        return false;
-    }
-    return TryBuyEntity(*item_idx, buyer_idx, state, graphics, audio);
 }
 
 } // namespace splonks

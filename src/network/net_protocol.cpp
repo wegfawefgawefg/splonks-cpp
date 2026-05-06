@@ -8,10 +8,11 @@ static_assert(sizeof(EntityDamageEventsPacket) <= kNetPacketMaxBytes - sizeof(Ne
 static_assert(sizeof(EntitySpawnedEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityCarryEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(EntityLifecycleEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PresentationCommandEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(ActionRequestEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(StageExitRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(DurableEventAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
@@ -98,8 +99,16 @@ EncodedNetPacket EncodeEntityCarryEvents(const EntityCarryEventsPacket& packet) 
     return EncodePayload(NetPacketType::EntityCarryEvents, packet);
 }
 
+EncodedNetPacket EncodeEntityLifecycleEvents(const EntityLifecycleEventsPacket& packet) {
+    return EncodePayload(NetPacketType::EntityLifecycleEvents, packet);
+}
+
 EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEventsPacket& packet) {
     return EncodePayload(NetPacketType::PresentationCommandEvents, packet);
+}
+
+EncodedNetPacket EncodeActionRequestEvents(const ActionRequestEventsPacket& packet) {
+    return EncodePayload(NetPacketType::ActionRequestEvents, packet);
 }
 
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet) {
@@ -108,10 +117,6 @@ EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet) {
 
 EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet) {
     return EncodePayload(NetPacketType::StageSync, packet);
-}
-
-EncodedNetPacket EncodeStageExitRequest(const StageExitRequestPacket& packet) {
-    return EncodePayload(NetPacketType::StageExitRequest, packet);
 }
 
 EncodedNetPacket EncodeDurableEventAck(const DurableEventAckPacket& packet) {
@@ -238,12 +243,44 @@ std::optional<EntityCarryEventsPacket> TryDecodeEntityCarryEvents(const std::uin
     return packet;
 }
 
+std::optional<EntityLifecycleEventsPacket> TryDecodeEntityLifecycleEvents(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::EntityLifecycleEvents, offset)) {
+        return std::nullopt;
+    }
+    EntityLifecycleEventsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.event_count = std::min<std::uint32_t>(
+        packet.event_count,
+        static_cast<std::uint32_t>(packet.events.size())
+    );
+    return packet;
+}
+
 std::optional<PresentationCommandEventsPacket> TryDecodePresentationCommandEvents(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
     if (!ReadHeader(bytes, size, NetPacketType::PresentationCommandEvents, offset)) {
         return std::nullopt;
     }
     PresentationCommandEventsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.event_count = std::min<std::uint32_t>(
+        packet.event_count,
+        static_cast<std::uint32_t>(packet.events.size())
+    );
+    return packet;
+}
+
+std::optional<ActionRequestEventsPacket> TryDecodeActionRequestEvents(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::ActionRequestEvents, offset)) {
+        return std::nullopt;
+    }
+    ActionRequestEventsPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
@@ -276,18 +313,6 @@ std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std
         return std::nullopt;
     }
     StageSyncPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    return packet;
-}
-
-std::optional<StageExitRequestPacket> TryDecodeStageExitRequest(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::StageExitRequest, offset)) {
-        return std::nullopt;
-    }
-    StageExitRequestPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
