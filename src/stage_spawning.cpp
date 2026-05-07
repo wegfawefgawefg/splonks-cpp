@@ -22,6 +22,7 @@ namespace {
 
 constexpr std::uint16_t kPlayerInitialBombs = 400;
 constexpr std::uint16_t kPlayerInitialRopes = 400;
+constexpr std::uint32_t kPlayerInitialTestingMoney = 100000;
 
 EntityType GetConfiguredPlayerSpawnType(const State& state) {
     if (!state.settings.debug_ui.default_spawn_enabled) {
@@ -305,6 +306,7 @@ std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, cons
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
             player->acc = Vec2::New(0.0F, 0.0F);
+            player->money = kPlayerInitialTestingMoney;
             state.players.AssignEntity(player_id, *player_vid);
 
             if (spawn_type == EntityType::Player) {

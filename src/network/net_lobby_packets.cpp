@@ -417,24 +417,6 @@ bool IsReplicatedEntityStateEvent(const NetEvent& event) {
            std::holds_alternative<EntityStatePatchedEvent>(event.payload);
 }
 
-bool IsOneShotActionRequestEvent(const NetEvent& event) {
-    if (event.header.coordinator_order != 0) {
-        return false;
-    }
-    const ActionRequestEvent* const action = std::get_if<ActionRequestEvent>(&event.payload);
-    return action != nullptr &&
-           (action->kind == NetActionKind::UseTool ||
-            action->kind == NetActionKind::PickupEntity ||
-            action->kind == NetActionKind::DropEntity ||
-            action->kind == NetActionKind::ThrowEntity ||
-            action->kind == NetActionKind::UseHeldEntity ||
-            action->kind == NetActionKind::UseBackEntity ||
-            action->kind == NetActionKind::PutHeldEntityOnBack ||
-            action->kind == NetActionKind::TakeOffBackEntity ||
-            action->kind == NetActionKind::InteractEntity ||
-            action->kind == NetActionKind::PushEntity);
-}
-
 NetEvent MakeTileEvent(const TileEventEntry& entry) {
     NetEvent event;
     event.header = NetEventHeader{

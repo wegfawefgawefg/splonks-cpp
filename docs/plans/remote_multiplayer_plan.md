@@ -238,6 +238,15 @@ consistently:
   join/leave.
 - `PresentationCommand`: cosmetic sound, shake, particles, phase/warp visuals.
   It must never be the only carrier of durable gameplay state.
+- `ActionRequestAck`: coordinator acknowledgment for generic peer requests.
+  Peers retry requests until this ack clears the request id; coordinator dedupes
+  repeated ids and runs content at most once.
+- Continuous held/back item use is input-state driven, not item-packet driven.
+  Player snapshots synthesize remote button pressed/released edges; the
+  coordinator applies `UseEntity`/`StopUsingEntity` to the attached held/back
+  entity every frame from that replicated input. Generic `UseHeldEntity` and
+  `UseBackEntity` requests remain edge/ack requests for quick taps and loss
+  recovery.
 
 ## Request / Apply API Shape
 
@@ -320,6 +329,13 @@ Do not create one packet per content item from this list. Add generic request
 categories only when a new durable mutation family is needed, then let the
 coordinator run the existing content code and emit generic result events.
 
+Hard rule: peers must not author canonical money, inventory, tool, effect,
+entity, tile, or run-state deltas. Peers send input/action requests only. The
+coordinator validates them, runs normal gameplay/content code, and broadcasts
+the canonical result. This intentionally follows Terraria's broad message-lane
+model: world/tile/tile-entity/NPC-style state is server-owned, while clients
+request actions or sync only explicitly client-owned control state.
+
 Current generic request coverage:
 
 - `BreakTile`: peer requests a tile break; coordinator runs `BreakStageTiles*`
@@ -331,6 +347,9 @@ Current generic request coverage:
   from a locally-owned source to a non-local target; coordinator runs
   `TryHitEntity`, applies the content-owned knockback, then emits the final
   damage or state result.
+- `CollectEntity`: peer requests pickup/collect resolution; coordinator
+  validates overlap and collectability, runs the target's normal contact
+  callback, then emits player-state and entity-deactivation results.
 
 Likely next request categories:
 
@@ -338,8 +357,6 @@ Likely next request categories:
   content-owned use callback that offline mode uses.
 - `DestroyEntity` or `ContainerOpened`: source requests break/open/sacrifice
   resolution for boxes, pots, chests, and other loot containers.
-- `CollectEntity`: source requests pickup/buy/collect resolution with conflict
-  handling.
 
 Canonical result categories:
 

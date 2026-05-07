@@ -45,6 +45,9 @@ common::ContactResolution OnEntityContactAsUdjatEye(
         !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
         return common::ContactResolution{};
     }
+    if (common::TryRequestCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
+        return common::ContactResolution{};
+    }
 
     Entity& collector = state.entity_manager.entities[other_entity_idx];
     const Entity& pickup = state.entity_manager.entities[entity_idx];
@@ -219,6 +222,7 @@ bool CanUnlockKeyChestFromHeldKey(
     std::size_t chest_idx,
     State& state,
     const Graphics& graphics,
+    std::optional<VID> required_key_vid,
     Entity** holder_out,
     Entity** key_out
 ) {
@@ -243,7 +247,8 @@ bool CanUnlockKeyChestFromHeldKey(
     for (const VID vid : touched) {
         Entity* const key = state.entity_manager.GetEntityMut(vid);
         if (key == nullptr || !key->active || key->type_ != EntityType::ChestKey ||
-            !key->held_by_vid.has_value()) {
+            !key->held_by_vid.has_value() ||
+            (required_key_vid.has_value() && key->vid != *required_key_vid)) {
             continue;
         }
 
@@ -256,6 +261,23 @@ bool CanUnlockKeyChestFromHeldKey(
         return true;
     }
     return false;
+}
+
+bool CanUnlockKeyChestFromHeldKey(
+    std::size_t chest_idx,
+    State& state,
+    const Graphics& graphics,
+    Entity** holder_out,
+    Entity** key_out
+) {
+    return CanUnlockKeyChestFromHeldKey(
+        chest_idx,
+        state,
+        graphics,
+        std::nullopt,
+        holder_out,
+        key_out
+    );
 }
 
 bool TryOpenTreasureChestAt(
@@ -277,6 +299,7 @@ bool TryOpenTreasureChestAt(
     }
 
     SetAnimation(chest, frame_data_ids::ChestOpen);
+    EmitEntityStatePatchedGameplayEvent(state, chest, chest);
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
 
@@ -336,7 +359,13 @@ EntityDamageEffectResult OnDamageEffectAsChest(
     return EntityDamageEffectResult::Consumed;
 }
 
-bool TryOpenKeyChest(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+bool TryOpenKeyChestWithKey(
+    std::size_t entity_idx,
+    VID key_vid,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
     (void)audio;
     if (entity_idx >= state.entity_manager.entities.size()) {
         return false;
@@ -347,11 +376,12 @@ bool TryOpenKeyChest(std::size_t entity_idx, State& state, Graphics& graphics, A
     Entity& chest = state.entity_manager.entities[entity_idx];
     if (!chest.active || chest.condition == EntityCondition::Dead ||
         IsOpenWithAnimation(chest, frame_data_ids::KeyChestOpen) ||
-        !CanUnlockKeyChestFromHeldKey(entity_idx, state, graphics, &holder, &key)) {
+        !CanUnlockKeyChestFromHeldKey(entity_idx, state, graphics, key_vid, &holder, &key)) {
         return false;
     }
 
     SetAnimation(chest, frame_data_ids::KeyChestOpen);
+    EmitEntityStatePatchedGameplayEvent(state, chest, chest);
     const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Unlock);
@@ -400,6 +430,29 @@ bool OnInteractAsChest(
     return TryOpenTreasureChest(entity_idx, state, graphics, audio, interactor.vid);
 }
 
+bool OnInteractAsKeyChest(
+    std::size_t entity_idx,
+    std::size_t interactor_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
+    if (interactor_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    const Entity& key = state.entity_manager.entities[interactor_idx];
+    if (!key.active || key.type_ != EntityType::ChestKey || !key.held_by_vid.has_value()) {
+        return false;
+    }
+    const Entity* const holder = state.entity_manager.GetEntity(*key.held_by_vid);
+    if (holder == nullptr || !holder->active || holder->condition == EntityCondition::Dead) {
+        return false;
+    }
+
+    return TryOpenKeyChestWithKey(entity_idx, key.vid, state, graphics, audio);
+}
+
 void StepEntityLogicAsChest(
     std::size_t entity_idx,
     State& state,
@@ -445,7 +498,56 @@ void StepEntityLogicAsKeyChest(
     float dt
 ) {
     (void)dt;
-    TryOpenKeyChest(entity_idx, state, graphics, audio);
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+    Entity& chest = state.entity_manager.entities[entity_idx];
+    if (!chest.active || chest.condition == EntityCondition::Dead ||
+        IsOpenWithAnimation(chest, frame_data_ids::KeyChestOpen)) {
+        return;
+    }
+
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected ||
+            slot.connection_kind != PlayerConnectionKind::Local ||
+            !slot.entity_vid.has_value()) {
+            continue;
+        }
+
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || player->condition == EntityCondition::Dead ||
+            !player->holding_vid.has_value()) {
+            continue;
+        }
+
+        const Entity* const key = state.entity_manager.GetEntity(*player->holding_vid);
+        if (key == nullptr || key->type_ != EntityType::ChestKey ||
+            key->held_by_vid != player->vid) {
+            continue;
+        }
+
+        Entity* holder = nullptr;
+        Entity* held_key = nullptr;
+        if (!CanUnlockKeyChestFromHeldKey(
+                entity_idx,
+                state,
+                graphics,
+                key->vid,
+                &holder,
+                &held_key) ||
+            holder == nullptr || held_key == nullptr || holder->vid != player->vid) {
+            continue;
+        }
+
+        (void)TryRequestOrApplyInteractEntity(
+            key->vid,
+            chest.vid,
+            state,
+            graphics,
+            audio
+        );
+        return;
+    }
 }
 
 extern const EntityArchetype kChestArchetype{
@@ -470,6 +572,7 @@ extern const EntityArchetype kChestArchetype{
     .on_use = OnUseAsChest,
     .on_interact = OnInteractAsChest,
     .step_logic = StepEntityLogicAsChest,
+    .replica_logic = StepEntityLogicAsChest,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Chest),
 };
@@ -492,7 +595,9 @@ extern const EntityArchetype kKeyChestArchetype{
     .damage_vulnerability = DamageVulnerability::Immune,
     .projectile_contact_damage_amount = 1,
     .can_apply_projectile_contact = true,
+    .on_interact = OnInteractAsKeyChest,
     .step_logic = StepEntityLogicAsKeyChest,
+    .replica_logic = StepEntityLogicAsKeyChest,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::KeyChest),
 };

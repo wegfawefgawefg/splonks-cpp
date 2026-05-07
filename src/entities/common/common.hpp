@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace splonks::controls {
 struct ControlIntent;
@@ -131,11 +132,17 @@ bool CanCollectPickupFromContact(
     std::size_t collector_idx,
     const State& state
 );
+bool TryRequestCollectPickupFromContact(
+    std::size_t pickup_idx,
+    std::size_t collector_idx,
+    State& state
+);
 void DeactivateCollectedPickup(std::size_t pickup_idx, State& state, const Graphics& graphics);
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state);
 void AttachEntityAsHeld(Entity& holder, Entity& held);
 void ReleaseEntityFromHolder(Entity& entity, State& state);
 void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state);
+std::vector<VID> SeverEntityCarryLinksForReset(Entity& entity, State& state);
 void DropHeldItemFromEntity(Entity& entity, State& state);
 bool TryPickupEntityByVid(
     VID holder_vid,

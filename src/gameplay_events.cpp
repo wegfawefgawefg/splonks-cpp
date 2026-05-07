@@ -171,6 +171,49 @@ bool TryApplyInteractEntityAction(
     return archetype.on_interact(target->vid.id, source->vid.id, state, graphics, audio);
 }
 
+bool TryApplyCollectEntityAction(
+    State& state,
+    const GameplayActionRequested& request,
+    Graphics& graphics,
+    Audio& audio
+) {
+    if (!request.source_vid.has_value() || !request.target_vid.has_value()) {
+        return false;
+    }
+
+    Entity* const source = state.entity_manager.GetEntityMut(*request.source_vid);
+    Entity* const target = state.entity_manager.GetEntityMut(*request.target_vid);
+    if (source == nullptr || target == nullptr ||
+        !source->active || !target->active ||
+        source->condition == EntityCondition::Dead ||
+        target->buyable.active ||
+        !source->can_collect_pickups ||
+        !AreEntitiesOverlappingForInteract(*source, *target, state, graphics)) {
+        return false;
+    }
+
+    const EntityArchetype& archetype = GetEntityArchetype(target->type_);
+    if (archetype.on_entity_contact == nullptr) {
+        return false;
+    }
+
+    const bool was_active = target->active;
+    (void)archetype.on_entity_contact(
+        target->vid.id,
+        source->vid.id,
+        entities::common::ContactContext{
+            .phase = entities::common::ContactPhase::SweptEntered,
+            .has_impact = false,
+            .mover_vid = source->vid,
+            .other_vid = target->vid,
+        },
+        state,
+        &graphics,
+        &audio
+    );
+    return was_active && !target->active;
+}
+
 } // namespace
 
 void EmitStageExitRequested(State& state, StageExitId exit_id, PlayerId player_id) {
@@ -536,6 +579,9 @@ void ProcessGameplayEvents(State& state, Graphics& graphics, Audio& audio) {
                 break;
             case GameplayActionKind::InteractEntity:
                 (void)TryApplyInteractEntityAction(state, event.action_requested, graphics, audio);
+                break;
+            case GameplayActionKind::CollectEntity:
+                (void)TryApplyCollectEntityAction(state, event.action_requested, graphics, audio);
                 break;
             case GameplayActionKind::PushEntity:
                 if (event.action_requested.source_vid.has_value() &&

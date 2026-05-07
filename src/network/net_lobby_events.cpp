@@ -72,19 +72,6 @@ void RemovePendingEntityActionRequestsForResult(
     );
 }
 
-void RemoveOneShotActionRequests(NetSessionState& session) {
-    session.pending_outbound_events.erase(
-        std::remove_if(
-            session.pending_outbound_events.begin(),
-            session.pending_outbound_events.end(),
-            [](const NetEvent& event) {
-                return IsOneShotActionRequestEvent(event);
-            }
-        ),
-        session.pending_outbound_events.end()
-    );
-}
-
 bool HasQueuedOrAppliedEvent(const NetSessionState& session, NetEventId event_id) {
     if (session.HasAppliedEvent(event_id)) {
         return true;
@@ -191,6 +178,8 @@ GameplayActionKind ToGameplayActionKind(NetActionKind kind) {
         return GameplayActionKind::TakeOffBackEntity;
     case NetActionKind::InteractEntity:
         return GameplayActionKind::InteractEntity;
+    case NetActionKind::CollectEntity:
+        return GameplayActionKind::CollectEntity;
     case NetActionKind::PushEntity:
         return GameplayActionKind::PushEntity;
     case NetActionKind::BreakTile:
@@ -203,6 +192,21 @@ GameplayActionKind ToGameplayActionKind(NetActionKind kind) {
         return GameplayActionKind::None;
     }
     return GameplayActionKind::None;
+}
+
+bool EndpointOwnsPlayer(
+    const NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    PlayerId player_id
+) {
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (!EndpointsEqual(remote.endpoint, endpoint)) {
+            continue;
+        }
+        return std::find(remote.player_ids.begin(), remote.player_ids.end(), player_id) !=
+               remote.player_ids.end();
+    }
+    return false;
 }
 
 } // namespace
@@ -221,7 +225,36 @@ void SendPendingPeerEventsToCoordinator(State& state, NetTransportRuntime& trans
         transport.coordinator_endpoint,
         state.net_session.pending_outbound_events
     );
-    RemoveOneShotActionRequests(state.net_session);
+}
+
+void SendActionRequestAck(
+    State& state,
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEventId>& event_ids
+) {
+    if (event_ids.empty()) {
+        return;
+    }
+
+    ActionRequestAckPacket packet;
+    packet.stage_instance_id = state.net_session.stage_instance_id;
+    packet.coordinator_player_id = state.net_session.local_player_id;
+    for (NetEventId event_id : event_ids) {
+        if (event_id == kInvalidNetEventId) {
+            continue;
+        }
+        if (packet.ack_count == packet.event_ids.size()) {
+            SendEncodedPacket(transport, endpoint, EncodeActionRequestAck(packet));
+            packet = ActionRequestAckPacket{};
+            packet.stage_instance_id = state.net_session.stage_instance_id;
+            packet.coordinator_player_id = state.net_session.local_player_id;
+        }
+        packet.event_ids[packet.ack_count++] = event_id;
+    }
+    if (packet.ack_count > 0) {
+        SendEncodedPacket(transport, endpoint, EncodeActionRequestAck(packet));
+    }
 }
 
 void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport) {
@@ -313,12 +346,7 @@ void HandleDurableEventAckAsCoordinator(
         if (!EndpointsEqual(remote.endpoint, endpoint)) {
             continue;
         }
-        const bool owns_player = std::find(
-            remote.player_ids.begin(),
-            remote.player_ids.end(),
-            ack.player_id
-        ) != remote.player_ids.end();
-        if (!owns_player) {
+        if (!EndpointOwnsPlayer(transport, endpoint, ack.player_id)) {
             return;
         }
         remote.highest_acked_coordinator_order = std::max(
@@ -523,13 +551,23 @@ void HandlePresentationCommandEventsAsPeer(State& state, const PresentationComma
     }
 }
 
-void HandleActionRequestEventsAsCoordinator(State& state, const ActionRequestEventsPacket& packet) {
+void HandleActionRequestEventsAsCoordinator(
+    State& state,
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const ActionRequestEventsPacket& packet
+) {
+    std::vector<NetEventId> ack_event_ids;
+    ack_event_ids.reserve(packet.event_count);
     for (std::uint32_t i = 0; i < packet.event_count; ++i) {
         NetEvent event = MakeActionRequestEvent(packet.events[i]);
         if (event.header.stage_instance_id != state.net_session.stage_instance_id ||
             event.header.event_id == kInvalidNetEventId ||
-            event.type != NetEventType::ActionRequest ||
-            HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
+            event.type != NetEventType::ActionRequest) {
+            continue;
+        }
+        ack_event_ids.push_back(event.header.event_id);
+        if (HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
             continue;
         }
 
@@ -566,6 +604,18 @@ void HandleActionRequestEventsAsCoordinator(State& state, const ActionRequestEve
         if (state.net_session.MarkEventApplied(event.header.event_id)) {
             state.net_session.AddEventLog(NetEventLogPhase::Applied, event);
         }
+    }
+    SendActionRequestAck(state, transport, endpoint, ack_event_ids);
+}
+
+void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& packet) {
+    if (packet.stage_instance_id != state.net_session.stage_instance_id ||
+        packet.coordinator_player_id != state.net_session.coordinator_player_id) {
+        return;
+    }
+
+    for (std::uint32_t i = 0; i < packet.ack_count; ++i) {
+        RemovePendingOutboundEvent(state.net_session, packet.event_ids[i]);
     }
 }
 

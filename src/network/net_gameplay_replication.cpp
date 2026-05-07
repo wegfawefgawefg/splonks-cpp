@@ -16,15 +16,6 @@ namespace splonks::network {
 
 namespace {
 
-bool ShouldReplicateEntityEvent(const State& state, VID entity_vid) {
-    if (state.net_session.role == NetRole::Offline) {
-        return false;
-    }
-    const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity_vid);
-    return player_slot == nullptr ||
-           player_slot->connection_kind != PlayerConnectionKind::Remote;
-}
-
 bool ShouldReplicateInteractionSourceEvent(const State& state, VID source_vid) {
     return state.net_session.role != NetRole::Offline &&
            HasLocalGameplayAuthorityForInteractionSource(state, source_vid);
@@ -184,14 +175,6 @@ void EnqueueEntityDamagedReplicationEvent(State& state, const GameplayEntityDama
         return;
     }
 
-    const bool should_replicate =
-        gameplay_event.source_vid.has_value()
-            ? ShouldReplicateInteractionSourceEvent(state, *gameplay_event.source_vid)
-            : ShouldReplicateEntityEvent(state, gameplay_event.entity_vid);
-    if (!should_replicate) {
-        return;
-    }
-
     const NetEntityId entity_id = GetOrAssignReplicatedEntityId(state, gameplay_event.entity_vid);
 
     NetEvent event;
@@ -226,10 +209,6 @@ void EnqueueEntityStatePatchedReplicationEvent(
     const GameplayEntityStatePatched& gameplay_event
 ) {
     if (state.net_session.role != NetRole::Coordinator) {
-        return;
-    }
-
-    if (!ShouldReplicateInteractionSourceEvent(state, gameplay_event.source_vid)) {
         return;
     }
 
@@ -419,7 +398,8 @@ void EnqueuePresentationCommandReplicationEvent(State& state, const Presentation
     if (state.net_session.role == NetRole::Offline) {
         return;
     }
-    if (command.source_vid.has_value() &&
+    if (state.net_session.role == NetRole::Peer &&
+        command.source_vid.has_value() &&
         !ShouldReplicateInteractionSourceEvent(state, *command.source_vid)) {
         return;
     }

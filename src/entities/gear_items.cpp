@@ -28,6 +28,9 @@ common::ContactResolution OnEntityContactAsInventoryPickup(
         !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
         return common::ContactResolution{};
     }
+    if (common::TryRequestCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
+        return common::ContactResolution{};
+    }
 
     Entity& collector = state.entity_manager.entities[other_entity_idx];
     const Entity& pickup = state.entity_manager.entities[entity_idx];

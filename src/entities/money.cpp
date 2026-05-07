@@ -31,6 +31,9 @@ common::ContactResolution TryCollectMoneyPickup(
         !common::CanCollectPickupFromContact(pickup_idx, collector_idx, state)) {
         return common::ContactResolution{};
     }
+    if (common::TryRequestCollectPickupFromContact(pickup_idx, collector_idx, state)) {
+        return common::ContactResolution{};
+    }
 
     Entity& collector = state.entity_manager.entities[collector_idx];
     const Entity& pickup = state.entity_manager.entities[pickup_idx];

@@ -78,6 +78,7 @@ struct EntityArchetype {
     EntityOnAreaTileChanged on_area_tile_changed = nullptr;
     EntityControlLogic control_logic = nullptr;
     EntityStepLogic step_logic = nullptr;
+    EntityStepLogic replica_logic = nullptr;
     EntityStepPhysics step_physics = nullptr;
     EntityOnEntityContact on_entity_contact = nullptr;
     EntityOnTileContact on_tile_contact = nullptr;

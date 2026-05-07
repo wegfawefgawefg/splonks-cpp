@@ -229,7 +229,6 @@ extern const EntityArchetype kBasicExitArchetype{
     .can_be_hung_on = false,
     .hurt_on_contact = false,
     .can_be_stomped = false,
-    .step_as_replica = true,
     .draw_layer = DrawLayer::Background,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
@@ -237,6 +236,7 @@ extern const EntityArchetype kBasicExitArchetype{
     .damage_vulnerability = DamageVulnerability::Immune,
     .on_interact = OnInteractAsBasicExit,
     .step_logic = StepEntityLogicAsBasicExit,
+    .replica_logic = StepEntityLogicAsBasicExit,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Exit),
 };

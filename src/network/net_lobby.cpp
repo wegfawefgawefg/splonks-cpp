@@ -6,6 +6,8 @@
 #include "network/net_lobby_internal.hpp"
 #include "network/net_progression.hpp"
 #include "network/net_protocol.hpp"
+#include "entities/common/common.hpp"
+#include "gameplay_events.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_spawning.hpp"
 #include "state.hpp"
@@ -576,7 +578,7 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
 
         if (const std::optional<ActionRequestEventsPacket> action_requests =
                 TryDecodeActionRequestEvents(packet->bytes.data(), packet->size)) {
-            HandleActionRequestEventsAsCoordinator(state, *action_requests);
+            HandleActionRequestEventsAsCoordinator(state, transport, packet->endpoint, *action_requests);
             continue;
         }
 
@@ -685,6 +687,12 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
             HandlePresentationCommandEventsAsPeer(state, *presentation_events);
             continue;
         }
+
+        if (const std::optional<ActionRequestAckPacket> action_ack =
+                TryDecodeActionRequestAck(packet->bytes.data(), packet->size)) {
+            HandleActionRequestAckAsPeer(state, *action_ack);
+            continue;
+        }
     }
 }
 
@@ -786,14 +794,18 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         return false;
     }
 
-    int local_index = 0;
+    std::vector<VID> changed_entities;
+    int respawn_index = 0;
     for (PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local) {
+        if (!slot.connected ||
+            (state.net_session.role != NetRole::Coordinator &&
+             slot.connection_kind != PlayerConnectionKind::Local)) {
             continue;
         }
 
-        const Vec2 spawn_pos = *entrance_pos + Vec2::New(static_cast<float>(local_index) * 8.0F, 0.0F);
-        ++local_index;
+        const Vec2 spawn_pos =
+            *entrance_pos + Vec2::New(static_cast<float>(respawn_index) * 8.0F, 0.0F);
+        ++respawn_index;
 
         Entity* entity = nullptr;
         if (slot.entity_vid.has_value()) {
@@ -811,6 +823,13 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             continue;
         }
 
+        for (const VID changed_vid :
+             entities::common::SeverEntityCarryLinksForReset(*entity, state)) {
+            if (std::find(changed_entities.begin(), changed_entities.end(), changed_vid) ==
+                changed_entities.end()) {
+                changed_entities.push_back(changed_vid);
+            }
+        }
         const EntityType respawn_type =
             IsPlayerLikeEntityType(entity->type_) ? entity->type_ : EntityType::Player;
         SetEntityAs(*entity, respawn_type);
@@ -823,8 +842,20 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         entity->stun_timer = 0;
         entity->render_enabled = GetEntityArchetype(entity->type_).render_enabled;
         state.UpdateSidForEntity(entity->vid.id, graphics);
+        if (std::find(changed_entities.begin(), changed_entities.end(), entity->vid) ==
+            changed_entities.end()) {
+            changed_entities.push_back(entity->vid);
+        }
         if (slot.primary_local) {
             state.controlled_entity_vid = entity->vid;
+        }
+    }
+
+    for (const VID changed_vid : changed_entities) {
+        if (const Entity* const changed_entity = state.entity_manager.GetEntity(changed_vid)) {
+            if (changed_entity->active) {
+                EmitEntityStatePatchedGameplayEvent(state, *changed_entity, *changed_entity);
+            }
         }
     }
 

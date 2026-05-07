@@ -7,6 +7,7 @@
 #include "entity/archetype.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_authority.hpp"
 #include "gameplay_events.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
@@ -156,6 +157,29 @@ bool PlayerOverlapsTable(const Entity& table, const Entity& player, const Graphi
     return WorldAabbsIntersect(stage, table_aabb, player_aabb);
 }
 
+bool TryStartCrapsRoll(
+    Entity& table,
+    Entity& player,
+    State& state,
+    Audio& audio
+) {
+    Entity* const dice = GetLinkedEntity(state, table.entity_b);
+    if (GetTableState(table) != TableState::Idle ||
+        dice == nullptr ||
+        !dice->active ||
+        IsShopDisturbed(table, state) ||
+        !TrySpendMoney(player.vid.id, kCrapsBetAmount, state, audio)) {
+        return false;
+    }
+
+    LaunchDice(table, *dice);
+    SetTableState(table, TableState::Rolling);
+    EmitEntityStatePatchedGameplayEvent(state, table, table);
+    EmitEntityStatePatchedGameplayEvent(state, *dice, *dice);
+    (void)PlayEntityCenterSoundEmitter(state, table, audio_asset_ids::Throw);
+    return true;
+}
+
 void StepEntityLogicAsCrapsTable(
     std::size_t entity_idx,
     State& state,
@@ -175,15 +199,18 @@ void StepEntityLogicAsCrapsTable(
 
     Entity* const dice = GetLinkedEntity(state, table.entity_b);
     Entity* const prize = GetLinkedEntity(state, table.entity_c);
-    if (dice != nullptr && dice->active) {
-        PrepareCrapsDice(*dice);
-    }
-    if (prize != nullptr && prize->active && table.counter_d == 0.0F) {
-        LockPrize(*prize);
-        table.counter_d = 1.0F;
+    const bool has_authority = HasLocalGameplayAuthorityForEntity(state, table.vid);
+    if (has_authority) {
+        if (dice != nullptr && dice->active) {
+            PrepareCrapsDice(*dice);
+        }
+        if (prize != nullptr && prize->active && table.counter_d == 0.0F) {
+            LockPrize(*prize);
+            table.counter_d = 1.0F;
+        }
     }
 
-    Entity* player = nullptr;
+    Entity* result_player = nullptr;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.entity_vid.has_value()) {
             continue;
@@ -191,49 +218,94 @@ void StepEntityLogicAsCrapsTable(
         Entity* const candidate = state.entity_manager.GetEntityMut(*slot.entity_vid);
         if (candidate != nullptr && candidate->active &&
             PlayerOverlapsTable(table, *candidate, graphics, state.stage)) {
-            player = candidate;
+            result_player = candidate;
             break;
         }
     }
-    const bool player_overlap =
-        player != nullptr && player->active && PlayerOverlapsTable(table, *player, graphics, state.stage);
 
-    if (GetTableState(table) == TableState::Rolling) {
-        if (dice != nullptr && dice->active && player != nullptr && player->active &&
+    if (has_authority && GetTableState(table) == TableState::Rolling) {
+        if (dice != nullptr && dice->active && result_player != nullptr && result_player->active &&
             DiceHasSettled(*dice)) {
-            PayCrapsResult(table, *dice, prize, *player, state, audio);
+            PayCrapsResult(table, *dice, prize, *result_player, state, audio);
+            EmitEntityStatePatchedGameplayEvent(state, table, table);
+            EmitEntityStatePatchedGameplayEvent(state, *dice, *dice);
+            if (prize != nullptr && prize->active) {
+                EmitEntityStatePatchedGameplayEvent(state, *prize, *prize);
+            }
         }
-    } else if (GetTableState(table) == TableState::Result) {
+    } else if (has_authority && GetTableState(table) == TableState::Result) {
         table.counter_b -= 1.0F;
         if (table.counter_b <= 0.0F) {
             table.counter_b = 0.0F;
             table.counter_c = 0.0F;
             SetTableState(table, TableState::Idle);
+            EmitEntityStatePatchedGameplayEvent(state, table, table);
         }
     }
 
-    if (!player_overlap || player == nullptr || IsShopDisturbed(table, state)) {
+    if (IsShopDisturbed(table, state)) {
         return;
     }
 
-    state.ClaimInteractForEntity(player->vid);
-    if (GetTableState(table) == TableState::Idle) {
-        AddCrapsPrompt(table, state, "bet", kCrapsBetAmount);
-        if (state.playing_inputs.equip_button.pressed && dice != nullptr && dice->active &&
-            TrySpendMoney(player->vid.id, kCrapsBetAmount, state, audio)) {
-            LaunchDice(table, *dice);
-            SetTableState(table, TableState::Rolling);
-            (void)PlayEntityCenterSoundEmitter(state, table, audio_asset_ids::Throw);
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected ||
+            slot.connection_kind != PlayerConnectionKind::Local ||
+            !slot.entity_vid.has_value()) {
+            continue;
         }
-    } else if (GetTableState(table) == TableState::Rolling) {
-        AddCrapsPrompt(table, state, "rolling", 0);
-    } else if (table.counter_c == 2.0F) {
-        AddCrapsPrompt(table, state, "prize", 0);
-    } else if (table.counter_c > 0.0F) {
-        AddCrapsPrompt(table, state, "win", 0);
-    } else if (table.counter_c < 0.0F) {
-        AddCrapsPrompt(table, state, "lose", 0);
+
+        Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        if (player == nullptr || !player->active ||
+            !PlayerOverlapsTable(table, *player, graphics, state.stage)) {
+            continue;
+        }
+
+        state.ClaimInteractForEntity(player->vid);
+        if (GetTableState(table) == TableState::Idle) {
+            AddCrapsPrompt(table, state, "bet", kCrapsBetAmount);
+            if (slot.inputs.equip_button.pressed) {
+                (void)TryRequestOrApplyInteractEntity(
+                    player->vid,
+                    table.vid,
+                    state,
+                    graphics,
+                    audio
+                );
+                return;
+            }
+        } else if (GetTableState(table) == TableState::Rolling) {
+            AddCrapsPrompt(table, state, "rolling", 0);
+        } else if (table.counter_c == 2.0F) {
+            AddCrapsPrompt(table, state, "prize", 0);
+        } else if (table.counter_c > 0.0F) {
+            AddCrapsPrompt(table, state, "win", 0);
+        } else if (table.counter_c < 0.0F) {
+            AddCrapsPrompt(table, state, "lose", 0);
+        }
     }
+}
+
+bool OnInteractAsCrapsTable(
+    std::size_t entity_idx,
+    std::size_t interactor_idx,
+    State& state,
+    Graphics& graphics,
+    Audio& audio
+) {
+    if (entity_idx >= state.entity_manager.entities.size() ||
+        interactor_idx >= state.entity_manager.entities.size()) {
+        return false;
+    }
+
+    Entity& table = state.entity_manager.entities[entity_idx];
+    Entity& player = state.entity_manager.entities[interactor_idx];
+    if (!table.active ||
+        !player.active ||
+        !PlayerOverlapsTable(table, player, graphics, state.stage)) {
+        return false;
+    }
+
+    return TryStartCrapsRoll(table, player, state, audio);
 }
 
 } // namespace
@@ -254,7 +326,9 @@ extern const EntityArchetype kCrapsTableArchetype{
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
     .damage_vulnerability = DamageVulnerability::Immune,
+    .on_interact = OnInteractAsCrapsTable,
     .step_logic = StepEntityLogicAsCrapsTable,
+    .replica_logic = StepEntityLogicAsCrapsTable,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
 };
 

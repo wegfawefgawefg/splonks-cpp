@@ -18,7 +18,6 @@ void SendEncodedPacket(
 );
 
 bool IsReplicatedEntityStateEvent(const NetEvent& event);
-bool IsOneShotActionRequestEvent(const NetEvent& event);
 
 NetEvent MakeTileEvent(const TileEventEntry& entry);
 NetEvent MakeEntitySpawnedEvent(const EntitySpawnedEventEntry& entry);
@@ -81,6 +80,12 @@ void SendActionRequestEvents(
     const NetEndpoint& endpoint,
     const std::vector<NetEvent>& events
 );
+void SendActionRequestAck(
+    State& state,
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEventId>& event_ids
+);
 
 void SendPendingPeerEventsToCoordinator(State& state, NetTransportRuntime& transport);
 void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport);
@@ -105,7 +110,13 @@ void HandlePresentationCommandEventsAsCoordinator(
     const PresentationCommandEventsPacket& packet
 );
 void HandlePresentationCommandEventsAsPeer(State& state, const PresentationCommandEventsPacket& packet);
-void HandleActionRequestEventsAsCoordinator(State& state, const ActionRequestEventsPacket& packet);
+void HandleActionRequestEventsAsCoordinator(
+    State& state,
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const ActionRequestEventsPacket& packet
+);
+void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& packet);
 
 void EnsureSpawnedPlayer(
     State& state,

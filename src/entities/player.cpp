@@ -380,30 +380,13 @@ void StepEntityLogicAsPlayer(
         // SKIP CONDITIONS
         Entity& player = state.entity_manager.entities[entity_idx];
         const EntityCondition player_condition = player.condition;
-        const std::optional<VID> player_holding_vid = player.holding_vid;
-        const std::optional<VID> player_back_vid = player.back_vid;
         if (player_condition == EntityCondition::Dead) {
-            // if you are holding something, unhold it
-            if (player_holding_vid.has_value()) {
-                if (Entity* const holding = state.entity_manager.GetEntityMut(*player_holding_vid)) {
-                    holding->held_by_vid.reset();
-                    holding->attachment_mode = AttachmentMode::None;
-                    StopUsingEntity(*holding);
-                    holding->has_physics = true;
-                    holding->can_collide = true;
+            for (const VID changed_vid : common::SeverEntityCarryLinksForReset(player, state)) {
+                if (const Entity* const changed_entity = state.entity_manager.GetEntity(changed_vid)) {
+                    if (changed_entity->active) {
+                        EmitEntityStatePatchedGameplayEvent(state, player, *changed_entity);
+                    }
                 }
-                player.holding_vid.reset();
-            }
-            // backpack release
-            if (player_back_vid.has_value()) {
-                if (Entity* const back = state.entity_manager.GetEntityMut(*player_back_vid)) {
-                    back->held_by_vid.reset();
-                    back->attachment_mode = AttachmentMode::None;
-                    StopUsingEntity(*back);
-                    back->has_physics = true;
-                    back->can_collide = true;
-                }
-                player.back_vid.reset();
             }
             gear_items::ClearEquippedPassiveItemVisuals(player, state, graphics);
 

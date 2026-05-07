@@ -36,6 +36,7 @@ constexpr std::size_t kNetPlayerStateToolSlotCount = 2;
 constexpr std::size_t kNetPlayerStateEffectCount = 12;
 constexpr std::size_t kNetPresentationCommandEventsPerPacket = 4;
 constexpr std::size_t kNetActionRequestEventsPerPacket = 4;
+constexpr std::size_t kNetActionRequestAckEventIdsPerPacket = 16;
 
 enum class NetPacketType : std::uint16_t {
     JoinRequest = 1,
@@ -54,6 +55,7 @@ enum class NetPacketType : std::uint16_t {
     EntityLifecycleEvents = 14,
     PlayerStateEvents = 15,
     RunStateEvents = 16,
+    ActionRequestAck = 17,
 };
 
 struct NetPacketHeader {
@@ -409,6 +411,13 @@ struct ActionRequestEventsPacket {
     std::array<ActionRequestEventEntry, kNetActionRequestEventsPerPacket> events{};
 };
 
+struct ActionRequestAckPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    PlayerId coordinator_player_id = kInvalidPlayerId;
+    std::uint32_t ack_count = 0;
+    std::array<NetEventId, kNetActionRequestAckEventIdsPerPacket> event_ids{};
+};
+
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -427,6 +436,7 @@ EncodedNetPacket EncodePlayerStateEvents(const PlayerStateEventsPacket& packet);
 EncodedNetPacket EncodeRunStateEvents(const RunStateEventsPacket& packet);
 EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEventsPacket& packet);
 EncodedNetPacket EncodeActionRequestEvents(const ActionRequestEventsPacket& packet);
+EncodedNetPacket EncodeActionRequestAck(const ActionRequestAckPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet);
 EncodedNetPacket EncodeDurableEventAck(const DurableEventAckPacket& packet);
@@ -443,6 +453,7 @@ std::optional<PlayerStateEventsPacket> TryDecodePlayerStateEvents(const std::uin
 std::optional<RunStateEventsPacket> TryDecodeRunStateEvents(const std::uint8_t* bytes, std::size_t size);
 std::optional<PresentationCommandEventsPacket> TryDecodePresentationCommandEvents(const std::uint8_t* bytes, std::size_t size);
 std::optional<ActionRequestEventsPacket> TryDecodeActionRequestEvents(const std::uint8_t* bytes, std::size_t size);
+std::optional<ActionRequestAckPacket> TryDecodeActionRequestAck(const std::uint8_t* bytes, std::size_t size);
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std::size_t size);
 std::optional<DurableEventAckPacket> TryDecodeDurableEventAck(const std::uint8_t* bytes, std::size_t size);

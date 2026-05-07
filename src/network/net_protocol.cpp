@@ -13,6 +13,7 @@ static_assert(sizeof(PlayerStateEventsPacket) <= kNetPacketMaxBytes - sizeof(Net
 static_assert(sizeof(RunStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PresentationCommandEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(ActionRequestEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(ActionRequestAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(DurableEventAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
@@ -119,6 +120,10 @@ EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEvents
 
 EncodedNetPacket EncodeActionRequestEvents(const ActionRequestEventsPacket& packet) {
     return EncodePayload(NetPacketType::ActionRequestEvents, packet);
+}
+
+EncodedNetPacket EncodeActionRequestAck(const ActionRequestAckPacket& packet) {
+    return EncodePayload(NetPacketType::ActionRequestAck, packet);
 }
 
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet) {
@@ -335,6 +340,22 @@ std::optional<ActionRequestEventsPacket> TryDecodeActionRequestEvents(const std:
     packet.event_count = std::min<std::uint32_t>(
         packet.event_count,
         static_cast<std::uint32_t>(packet.events.size())
+    );
+    return packet;
+}
+
+std::optional<ActionRequestAckPacket> TryDecodeActionRequestAck(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::ActionRequestAck, offset)) {
+        return std::nullopt;
+    }
+    ActionRequestAckPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.ack_count = std::min<std::uint32_t>(
+        packet.ack_count,
+        static_cast<std::uint32_t>(packet.event_ids.size())
     );
     return packet;
 }

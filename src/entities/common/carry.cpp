@@ -8,6 +8,7 @@
 #include "gameplay_authority.hpp"
 #include "world_query.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <optional>
 #include <vector>
@@ -38,6 +39,24 @@ void ApplyHeldState(Entity& entity) {
     if (entity.condition == EntityCondition::Normal) {
         TrySetAnimation(entity, EntityDisplayState::Neutral);
     }
+}
+
+void TrackChangedEntity(std::vector<VID>& changed_entities, VID vid) {
+    if (std::find(changed_entities.begin(), changed_entities.end(), vid) != changed_entities.end()) {
+        return;
+    }
+    changed_entities.push_back(vid);
+}
+
+void RestoreDetachedCarryEntity(Entity& entity) {
+    entity.held_by_vid.reset();
+    entity.attachment_mode = AttachmentMode::None;
+    StopUsingEntity(entity);
+    RestoreEntityHasPhysicsFromArchetype(entity);
+    RestoreEntityCanCollideFromArchetype(entity);
+    RestoreEntityDrawLayerFromArchetype(entity);
+    entity.grounded = false;
+    RemoveEffect(entity, EffectId::NoGravityUntilContact);
 }
 
 void SnapPlacedAttachmentToPixels(Entity& entity) {
@@ -363,6 +382,79 @@ void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state) {
     const std::optional<VID> dropped_by_vid = entity.held_by_vid;
     ReleaseEntityFromHolder(entity, state);
     EmitEntityDroppedGameplayEvent(state, entity, dropped_by_vid);
+}
+
+std::vector<VID> SeverEntityCarryLinksForReset(Entity& entity, State& state) {
+    std::vector<VID> changed_entities;
+
+    const std::optional<VID> held_vid = entity.holding_vid;
+    const std::optional<VID> back_vid = entity.back_vid;
+    if (held_vid.has_value()) {
+        if (Entity* const held = state.entity_manager.GetEntityMut(*held_vid)) {
+            RestoreDetachedCarryEntity(*held);
+            TrackChangedEntity(changed_entities, held->vid);
+        }
+    }
+    if (back_vid.has_value()) {
+        if (Entity* const back = state.entity_manager.GetEntityMut(*back_vid)) {
+            RestoreDetachedCarryEntity(*back);
+            TrackChangedEntity(changed_entities, back->vid);
+        }
+    }
+
+    const std::optional<VID> holder_vid = entity.held_by_vid;
+    if (holder_vid.has_value()) {
+        if (Entity* const holder = state.entity_manager.GetEntityMut(*holder_vid)) {
+            bool holder_changed = false;
+            if (holder->holding_vid.has_value() && *holder->holding_vid == entity.vid) {
+                holder->holding_vid.reset();
+                holder->holding = false;
+                holder->holding_timer = kDefaultHoldingTimer;
+                holder_changed = true;
+            }
+            if (holder->back_vid.has_value() && *holder->back_vid == entity.vid) {
+                holder->back_vid.reset();
+                holder_changed = true;
+            }
+            if (holder_changed) {
+                TrackChangedEntity(changed_entities, holder->vid);
+            }
+        }
+    }
+
+    // Repair asymmetric references too; resets may happen after one side has
+    // already been respawned or corrected by a network state patch.
+    for (Entity& candidate : state.entity_manager.entities) {
+        if (!candidate.active || candidate.vid == entity.vid) {
+            continue;
+        }
+
+        bool candidate_changed = false;
+        if (candidate.holding_vid.has_value() && *candidate.holding_vid == entity.vid) {
+            candidate.holding_vid.reset();
+            candidate.holding = false;
+            candidate.holding_timer = kDefaultHoldingTimer;
+            candidate_changed = true;
+        }
+        if (candidate.back_vid.has_value() && *candidate.back_vid == entity.vid) {
+            candidate.back_vid.reset();
+            candidate_changed = true;
+        }
+        if (candidate.held_by_vid.has_value() && *candidate.held_by_vid == entity.vid) {
+            RestoreDetachedCarryEntity(candidate);
+            candidate_changed = true;
+        }
+        if (candidate_changed) {
+            TrackChangedEntity(changed_entities, candidate.vid);
+        }
+    }
+
+    entity.holding = false;
+    entity.holding_vid.reset();
+    entity.back_vid.reset();
+    RestoreDetachedCarryEntity(entity);
+    TrackChangedEntity(changed_entities, entity.vid);
+    return changed_entities;
 }
 
 void DropHeldItemFromEntity(Entity& entity, State& state) {
@@ -791,14 +883,16 @@ void UpdateCarryAndBackItems(
         if (entity.holding_vid.has_value()) {
             if (Entity* const holding = state.entity_manager.GetEntityMut(*entity.holding_vid)) {
                 if (ShouldRequestCarryAction(state, entity)) {
-                    EmitAttachmentUseActionRequest(
-                        state,
-                        GameplayActionKind::UseHeldEntity,
-                        entity.vid,
-                        holding->vid,
-                        control.use_held,
-                        control
-                    );
+                    if (control.use_pressed || control.use_released) {
+                        EmitAttachmentUseActionRequest(
+                            state,
+                            GameplayActionKind::UseHeldEntity,
+                            entity.vid,
+                            holding->vid,
+                            control.use_held,
+                            control
+                        );
+                    }
                 } else if (control.use_held) {
                     UseEntity(*holding, entity.vid, AttachmentMode::Held);
                 } else {
@@ -809,14 +903,16 @@ void UpdateCarryAndBackItems(
         if (entity.back_vid.has_value()) {
             if (Entity* const back_item = state.entity_manager.GetEntityMut(*entity.back_vid)) {
                 if (ShouldRequestCarryAction(state, entity)) {
-                    EmitAttachmentUseActionRequest(
-                        state,
-                        GameplayActionKind::UseBackEntity,
-                        entity.vid,
-                        back_item->vid,
-                        control.use_back,
-                        control
-                    );
+                    if (control.use_back_pressed || control.use_back_released) {
+                        EmitAttachmentUseActionRequest(
+                            state,
+                            GameplayActionKind::UseBackEntity,
+                            entity.vid,
+                            back_item->vid,
+                            control.use_back,
+                            control
+                        );
+                    }
                 } else if (control.use_back) {
                     UseEntity(*back_item, entity.vid, AttachmentMode::Back);
                 } else {

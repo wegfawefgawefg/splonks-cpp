@@ -61,6 +61,7 @@ enum class NetActionKind : std::uint16_t {
     PutHeldEntityOnBack,
     TakeOffBackEntity,
     InteractEntity,
+    CollectEntity,
     PushEntity,
     BreakTile,
     DamageEntity,

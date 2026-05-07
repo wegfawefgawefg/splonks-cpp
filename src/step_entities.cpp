@@ -60,6 +60,9 @@ void StepAreaEntityOverlaps(State& state, Graphics& graphics, Audio& audio) {
         if (!area_entity.active || !HasAreaCallbacks(area_entity)) {
             continue;
         }
+        if (!HasLocalGameplayAuthorityForEntity(state, area_entity.vid)) {
+            continue;
+        }
 
         const std::vector<VID> previous_overlaps = area_entity.inside_vids.value_or(std::vector<VID>{});
         const std::vector<VID> current_overlaps = GetAreaOverlapVids(area_idx, state);
@@ -249,6 +252,12 @@ void StepNonAuthorityEntityPresentation(
     }
 
     ClearTransientMovementFlags(entity);
+    if (const EntityStepLogic replica_logic = GetEntityArchetype(entity.type_).replica_logic) {
+        replica_logic(entity_idx, state, graphics, audio, dt);
+    }
+    if (!entity.active) {
+        return;
+    }
     entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
     if (!entity.active) {
         return;
@@ -330,6 +339,48 @@ void TryReleaseHeldPlayerSlotFromJump(const PlayerSlot& slot, State& state) {
     entity->coyote_time = 2;
 }
 
+void ApplyCoordinatorRemoteAttachmentUseState(const PlayerSlot& slot, State& state) {
+    if (state.net_session.role != network::NetRole::Coordinator ||
+        slot.connection_kind != PlayerConnectionKind::Remote ||
+        !slot.entity_vid.has_value()) {
+        return;
+    }
+
+    Entity* const holder = state.entity_manager.GetEntityMut(*slot.entity_vid);
+    if (holder == nullptr || !holder->active || holder->condition != EntityCondition::Normal) {
+        return;
+    }
+
+    const controls::ControlIntent control = controls::GetControlIntentForEntity(*holder, state);
+    if (holder->holding_vid.has_value()) {
+        if (Entity* const held = state.entity_manager.GetEntityMut(*holder->holding_vid)) {
+            const bool valid_held =
+                held->active &&
+                held->held_by_vid == holder->vid &&
+                held->attachment_mode == AttachmentMode::Held;
+            if (valid_held && control.use_held) {
+                UseEntity(*held, holder->vid, AttachmentMode::Held);
+            } else if (valid_held) {
+                StopUsingEntity(*held);
+            }
+        }
+    }
+
+    if (holder->back_vid.has_value()) {
+        if (Entity* const back_item = state.entity_manager.GetEntityMut(*holder->back_vid)) {
+            const bool valid_back =
+                back_item->active &&
+                back_item->held_by_vid == holder->vid &&
+                back_item->attachment_mode == AttachmentMode::Back;
+            if (valid_back && control.use_back) {
+                UseEntity(*back_item, holder->vid, AttachmentMode::Back);
+            } else if (valid_back) {
+                StopUsingEntity(*back_item);
+            }
+        }
+    }
+}
+
 } // namespace
 
 void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
@@ -340,6 +391,7 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
             TryReleaseHeldPlayerSlotFromJump(slot, state);
             StepOneEntity(slot.entity_vid->id, state, audio, graphics, dt);
         } else if (slot.connection_kind == PlayerConnectionKind::Remote) {
+            ApplyCoordinatorRemoteAttachmentUseState(slot, state);
             StepPredictedThrownRemotePlayer(slot, state, audio, graphics, dt);
         }
     }

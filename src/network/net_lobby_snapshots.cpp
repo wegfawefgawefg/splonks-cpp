@@ -45,13 +45,39 @@ std::uint16_t BuildInputFlags(const PlayingInputs& inputs) {
     return flags;
 }
 
+ButtonState BuildButtonStateFromNetwork(bool down, const ButtonState& previous) {
+    return ButtonState{
+        .down = down,
+        .pressed = down && !previous.down,
+        .released = !down && previous.down,
+    };
+}
+
 void ApplyInputFlags(PlayerSlot& slot, std::uint16_t flags) {
-    slot.inputs.left.down = (flags & kPlayerSnapshotInputLeft) != 0;
-    slot.inputs.right.down = (flags & kPlayerSnapshotInputRight) != 0;
-    slot.inputs.up.down = (flags & kPlayerSnapshotInputUp) != 0;
-    slot.inputs.down.down = (flags & kPlayerSnapshotInputDown) != 0;
-    slot.inputs.attack.down = (flags & kPlayerSnapshotInputAttack) != 0;
-    slot.inputs.use_button.down = (flags & kPlayerSnapshotInputUseBack) != 0;
+    slot.inputs.left = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputLeft) != 0,
+        slot.inputs.left
+    );
+    slot.inputs.right = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputRight) != 0,
+        slot.inputs.right
+    );
+    slot.inputs.up = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputUp) != 0,
+        slot.inputs.up
+    );
+    slot.inputs.down = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputDown) != 0,
+        slot.inputs.down
+    );
+    slot.inputs.attack = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputAttack) != 0,
+        slot.inputs.attack
+    );
+    slot.inputs.use_button = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputUseBack) != 0,
+        slot.inputs.use_button
+    );
     slot.immediate_inputs = slot.inputs;
 }
 

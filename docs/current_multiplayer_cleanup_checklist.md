@@ -6,6 +6,12 @@ Scope: current uncommitted multiplayer/gameplay-event work. Goal is to keep sing
 
 ## Checklist
 
+- [ ] Add a gated network debug/admin command lane.
+  - Raw debug editor actions currently are not guaranteed to sync unless they route through normal gameplay requests/results.
+  - Desired commands: spawn entity, patch entity state, set stage/quest/debug stage, paint fluids, brush sounds/presentation, and other test-only world mutations.
+  - Shape should be coordinator-routed and permission-gated later: any client may request a debug command, the coordinator validates/applies it, then normal generic spawn/state/tile/fluid/stage result replication carries the actual mutation.
+  - Do not let debug UI directly mutate shared world state in peer mode unless it is explicitly local-only presentation.
+
 - [x] Fix network stage transition authority.
   - Peer exit requests should ask the coordinator and then wait for stage sync.
   - Peer-side `ProcessGameplayEvents` should not queue/apply its own quest-stage transition after sending the request.
@@ -115,6 +121,7 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - Done sixteenth slice: barrier emitters now emit canonical beam segment spawn/deactivation results instead of local-only beam children.
   - Done seventeenth slice: skeleton skull drops, giant spider loot drops, sac altar rewards/punishments, sacrifice deactivation, altar-piece deactivation, and shopkeeper starting pistol now emit generic spawn/deactivate/player-state/held results.
   - Done eighteenth slice: direct deactivations for chest keys, rope deployment, arrow-on-kill cleanup, boulders, idols, telefrags, temporary bat swings, damsel rescue, fleshguy splat, machete corpse carving, and explosion-on-death now emit generic deactivation/player-state results.
+  - Done nineteenth slice: coordinator-authored damage/state/presentation results are no longer filtered out just because their source is a remote player or remote-held item.
   - Reviewed `gear_items.cpp`: open parachute is currently a non-colliding presentation helper owned by the equipped entity, not durable gameplay. Do not promote it to a canonical net entity unless we decide remote presentation cannot be driven from replicated player/effect state.
   - Note: presentation commands remain allowed peer-to-coordinator for cosmetic sound/effect/shake presentation only, including sound positions/settings and scripted visual effects; they must not encode durable gameplay state.
   - Remaining: generic request/result coverage for all special deactivation sites, loot/container interactions, held-entity edge cases, direct entity interactions, and inventory/effect results.
@@ -123,7 +130,9 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - Broad lanes only: player action requests, player move/state patches, entity spawn/state/lifecycle, tile mutation, player/inventory/effect patch, stage progression, and cosmetic presentation.
   - No new item-named packet families such as `UseTeleporter`, `BreakBox`, `MacheteReset`, or `WebCannonFired`.
   - Coordinator/offline content code may emit durable facts after normal mutation. Peers must send action requests and wait for coordinator-authored durable results/repair.
+  - Hard rule: peers must not author canonical money, inventory, tool, effect, entity, tile, or run-state deltas. If a peer wants a durable mutation, it sends a generic request and the coordinator validates/applies it.
   - Network code may serialize ids, replicated fields, and compact archetype payloads. It must not encode content rules for specific weapons/items.
+  - Done: added generic `ActionRequestAck` packets so peer action requests retry until the coordinator acknowledges the request id instead of being fire-and-forget UDP.
   - Finish by deleting or disabling any old peer-authored durable result path that bypasses coordinator apply.
   - Add a short smoke checklist for every broad lane after changes: tile break/drop, box/chest loot, thrown bomb, rope deploy, bat/machete swing, pistol/web/bow shot, pickup/drop/throw, back equip/use, shop buy, exit transition.
 
@@ -145,16 +154,25 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - Target shape: peer sends intent plus compact aim/velocity payload; coordinator runs content callback and emits generic results/presentation.
   - Held/back use migration:
     - [x] Add generic `UseHeldEntity` and `UseBackEntity` action request kinds.
-    - [x] Make peer held/back item input send use-state requests instead of calling `UseEntity` locally.
-    - [x] Make the coordinator validate holder/item attachment and apply `UseEntity`/`StopUsingEntity`.
+    - [x] Make peer held/back item input send edge requests instead of calling `UseEntity` locally.
+    - [x] Synthesize remote input pressed/released edges from player snapshots so coordinator-side remote slots have normal button state.
+    - [x] Make the coordinator validate holder/item attachment and apply continuous `UseEntity`/`StopUsingEntity` from replicated input state.
+    - [x] Keep reliable edge requests plus `ActionRequestAck` for quick taps and packet loss recovery.
     - [ ] Smoke test bat, bow, web cannon, pistol, mattock, machete, cape, teleporter, and telepack.
   - Direct interaction migration:
     - [x] Add generic `InteractEntity` request kind.
     - [x] Add `EntityArchetype::on_interact` so content owns interaction behavior and netcode only transports source/target ids.
     - [x] Convert shop buy prompts to request/apply `InteractEntity`; coordinator runs the normal buy callback.
     - [x] Convert exits to request/apply `InteractEntity`; the exit callback emits the normal stage transition event.
+    - [x] Convert craps/chance table betting to request/apply `InteractEntity`; coordinator runs the normal dice callback.
+    - [x] Convert money/gem/inventory pickup contact to generic `CollectEntity`; coordinator validates overlap and runs the normal pickup contact callback.
     - [x] Convert normal chests to request/apply `InteractEntity`; chest loot now emits normal entity-spawn events.
-    - [ ] Convert key chest unlock to request/apply or an equivalent coordinator-owned contact action.
+    - [x] Move death/respawn carry cleanup into shared content-owned `SeverEntityCarryLinksForReset`; coordinator respawn now clears every connected player slot and broadcasts canonical state patches.
+    - [x] Convert key chest unlock to request/apply `InteractEntity`; the held key is the interaction source, the coordinator runs unlock logic, and chest open state/key deactivation/Udjat spawn are generic results.
+    - [x] Add archetype `replica_logic` for client-side prompt/request generation without running non-authority physics or durable step progression.
+    - [x] Allow chest/key-chest replica logic only for client-side request generation; the actual open/unlock mutation remains coordinator-owned.
+    - [x] Split craps replica logic so peers can show prompts/request bets but only the coordinator rolls dice, locks/unlocks prizes, pays money, and advances table state.
+    - [x] Gate area-listener callbacks by gameplay authority so shop area disturbance cannot be authored by non-coordinator peers.
     - [ ] Review sacrifice, altar, craps, shop theft, and other area/contact interactions for coordinator-only result events.
     - [ ] Add replication for buyable-state changes and player inventory/money changes; current generic interaction can run the buy on the coordinator, but not every resulting field is represented in durable result events yet.
       - [x] Added generic `PlayerStatePatched` durable result carrying player health, wanted state, money, tool slots, and effect list.
@@ -180,3 +198,94 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
 - `NewEntity()` sites still needing review/result coverage: none in content gameplay paths. Remaining raw `NewEntity()` calls are covered spawn paths, stage/debug initialization, net apply, or reviewed presentation-only parachute visuals.
 - `SetInactive()` sites still needing review/result coverage: remaining special entity lifetimes are either covered by generic deactivation events or reviewed as presentation-only.
 - State fields still needing explicit replication before shops/items are complete: none known in the player/shop/sacrifice/back-slot path; continue discovering through multiplayer playtests.
+
+## API Coverage Audit
+
+Review date: 2026-05-07
+
+Goal: prove every durable mutation has one of these classifications before we chase interpolation or cosmetic polish:
+
+- Coordinator request lane: peers ask for intent, coordinator validates and applies.
+- Coordinator result lane: coordinator/offline content mutates state and emits ordered generic facts.
+- Repair/snapshot lane: high-frequency or derived state is periodically corrected by coordinator snapshots.
+- Stage-load only: generated once and replaced wholesale on stage load/transition.
+- Local-only presentation: cosmetic and allowed to diverge without affecting gameplay.
+
+### Covered Broad Lanes
+
+- [x] Player action intent has a generic request lane.
+  - Covered actions: `UseTool`, `PickupEntity`, `DropEntity`, `ThrowEntity`, `UseHeldEntity`, `UseBackEntity`, `PutHeldEntityOnBack`, `TakeOffBackEntity`, `InteractEntity`, `CollectEntity`, `PushEntity`, `BreakTile`, `DamageEntity`, and `HitEntity`.
+  - Keep future content inside these lanes where possible before adding any new action kind.
+
+- [x] Entity lifecycle and physics state have generic result/repair lanes.
+  - Covered results: `EntitySpawned`, `EntityDeactivated`, `EntityHeld`, `EntityDropped`, `EntityThrown`, `EntityDamaged`, and `EntityStatePatched`.
+  - `EntityStatePatched` currently carries the fields needed for player carry, shop/buyable display, AI/wanted, links, counters, position, velocity, acceleration, condition, collision flags, and animation state.
+
+- [x] Player inventory/effect/money state has a generic result lane.
+  - `PlayerStatePatched` carries health, money, wanted state, tool slots, and the effect list.
+  - Current count limits are fixed in the network event schema: two tool slots and twelve effects.
+
+- [x] Basic run-level altar state has a generic result lane.
+  - `RunStatePatched` currently carries sacrifice favor and sacrifice reward tier.
+  - This is not a complete quest/run-state API yet.
+
+- [x] Tile breaking and rope placement have coordinator result lanes.
+  - `TileBroken` covers normal break flow, tile triggers, and break-spawn fallout when the coordinator owns the break.
+  - `RopeTilePlaced` covers deployed rope tiles.
+
+- [x] Presentation has a generic cosmetic lane.
+  - `PresentationCommand` can transport sound, shake, and scripted visual presentation.
+  - This lane must stay non-durable: no money, entity, tile, inventory, effect, or quest state should be encoded here.
+
+### Missing Or Incomplete API Lanes
+
+- [ ] Add a generic tile patch lane.
+  - `NetEventType::TileChanged` exists, but gameplay events currently only expose `TileBroken` and `RopeTilePlaced`.
+  - Needed shape: `TilePatched`/`TileChanged` coordinator result carrying foreground tile and rotation.
+  - Likely follow-up: decide whether backwall tile mutation is part of the same lane or a separate `BackwallTilePatched` lane.
+  - This should cover world rotation, debug tile edits, non-break tile transforms, one-way/rotated tile edits, and any future content that sets tiles without going through `BreakStageTilesAtCoords`.
+
+- [ ] Add a fluid state lane or explicitly classify fluids as coordinator-local until implemented.
+  - `Stage` owns fluid grids: amount, display amount, velocity, gravity, gravity strength, temporary gravity, and fluid tile type.
+  - `StepStageFluids` mutates these every simulation tick, and debug brushes can mutate fluid state directly.
+  - Do not send per-cell reliable events every frame by default.
+  - Candidate shape: coordinator-owned fluid sim plus periodic lossy fluid snapshots/patches for visible state, with debug/admin commands for painting fluid and gravity.
+  - If fluids affect movement/damage/physics in multiplayer, they cannot remain unsynced local simulation.
+
+- [ ] Add a quest/run-state patch lane beyond altar state.
+  - Classic quest flags such as Udjat/key-chest state affect future generation and progression.
+  - Example current mutation: key chest/Udjat pickup updates `state.quest_state.classic`.
+  - Candidate shape: `QuestStatePatched` or a broader `RunStatePatched` payload that includes quest-specific typed data.
+  - Stage-load sync may be enough for some flags, but runtime pickup flags need an explicit coordinator-authored fact if peers display or use them before the next stage load.
+
+- [ ] Classify every `Entity` field as replicated, archetype/static, result-specific, repair-only, or local-only.
+  - The current state patch is broad enough for recent playtests but is not a proven full entity-state schema.
+  - Fields needing classification include render flags, draw layer, collision/pickup/stomp flags, entity labels/points beyond the currently patched fields, child/inside links, extra counters/thresholds, lighting, buoyancy, movement flags, and content-specific scratch fields.
+  - Do not blindly add every field to every patch. First classify which fields can actually mutate durably during gameplay.
+
+- [ ] Add a debug/admin command lane.
+  - Debug spawn, entity editor patches, stage selection, fluid brush, sound brush, and future live inspection tools should be coordinator-routed when multiplayer is active.
+  - This can stay permission-gated/test-only, but the path should use the same generic spawn/state/tile/fluid/stage results as gameplay.
+
+- [ ] Audit mechanics settings and live tuning sliders.
+  - Player tuning, fluid settings, water effect values, lighting settings, and other debug sliders can change simulation behavior.
+  - Decide per setting: local visual/debug only, stage-load config, or coordinator-synced mechanics setting.
+  - If a slider changes physics or damage during multiplayer, peers should not apply it independently without a coordinator/admin lane.
+
+- [ ] Audit presentation coverage separately from durable sync.
+  - Many content paths play sounds or spawn particles locally after a durable mutation.
+  - Missing cosmetic replication is acceptable short-term, but important feedback such as explosions, teleports, death, buying, and weapon fire should emit generic presentation commands from the authority path.
+  - Do not block authoritative gameplay cleanup on perfect cosmetic parity.
+
+- [ ] Add an explicit stage metadata classification.
+  - Stage tiles/backwalls/fluid grids/background stamps/lights/embedded treasures/triggers/borders/wrap settings are currently a mix of generated state and runtime state.
+  - Decide what is stage-load only, what can mutate at runtime, and what needs patch/snapshot coverage.
+  - Embedded treasure is probably safe when tile breaking is coordinator-owned, but debug edits and non-break tile transforms need an explicit lane before assuming parity.
+
+### Immediate API Work Order
+
+- [ ] Implement generic tile patch events before adding more tile-changing content.
+- [ ] Implement debug/admin command routing for spawn/entity patch/stage load/tile paint/fluid paint.
+- [ ] Classify mutable `Entity` fields and either extend `EntityStatePatched` or mark fields as archetype/local-only.
+- [ ] Decide fluid multiplayer model before using water/lava as required gameplay in networked stages.
+- [ ] Expand run/quest state patching before adding more quest flags beyond altar and stage progression.
