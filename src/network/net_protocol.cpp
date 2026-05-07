@@ -9,6 +9,8 @@ static_assert(sizeof(EntitySpawnedEventsPacket) <= kNetPacketMaxBytes - sizeof(N
 static_assert(sizeof(EntityStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityCarryEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityLifecycleEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(PlayerStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(RunStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PresentationCommandEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(ActionRequestEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
@@ -101,6 +103,14 @@ EncodedNetPacket EncodeEntityCarryEvents(const EntityCarryEventsPacket& packet) 
 
 EncodedNetPacket EncodeEntityLifecycleEvents(const EntityLifecycleEventsPacket& packet) {
     return EncodePayload(NetPacketType::EntityLifecycleEvents, packet);
+}
+
+EncodedNetPacket EncodePlayerStateEvents(const PlayerStateEventsPacket& packet) {
+    return EncodePayload(NetPacketType::PlayerStateEvents, packet);
+}
+
+EncodedNetPacket EncodeRunStateEvents(const RunStateEventsPacket& packet) {
+    return EncodePayload(NetPacketType::RunStateEvents, packet);
 }
 
 EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEventsPacket& packet) {
@@ -249,6 +259,44 @@ std::optional<EntityLifecycleEventsPacket> TryDecodeEntityLifecycleEvents(const 
         return std::nullopt;
     }
     EntityLifecycleEventsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.event_count = std::min<std::uint32_t>(
+        packet.event_count,
+        static_cast<std::uint32_t>(packet.events.size())
+    );
+    return packet;
+}
+
+std::optional<PlayerStateEventsPacket> TryDecodePlayerStateEvents(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::PlayerStateEvents, offset)) {
+        return std::nullopt;
+    }
+    PlayerStateEventsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.event_count = std::min<std::uint32_t>(
+        packet.event_count,
+        static_cast<std::uint32_t>(packet.events.size())
+    );
+    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
+        packet.events[i].effect_count = std::min<std::uint8_t>(
+            packet.events[i].effect_count,
+            static_cast<std::uint8_t>(packet.events[i].effects.size())
+        );
+    }
+    return packet;
+}
+
+std::optional<RunStateEventsPacket> TryDecodeRunStateEvents(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::RunStateEvents, offset)) {
+        return std::nullopt;
+    }
+    RunStateEventsPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

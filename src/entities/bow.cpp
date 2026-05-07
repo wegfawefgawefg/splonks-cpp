@@ -6,6 +6,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "state.hpp"
 
 #include <algorithm>
@@ -158,6 +159,7 @@ void SpawnArrowFromBow(Entity& bow, State& state, const BowAim& aim) {
     arrow->projectile_contact_timer = entities::common::kProjectileContactDuration;
     arrow->can_apply_projectile_contact = false;
     (void)AddEffect(*arrow, EffectId::NoGravityUntilContact);
+    EmitEntitySpawnedGameplayEvent(state, *arrow);
 }
 
 void FireBow(Entity& bow, State& state) {
@@ -174,6 +176,7 @@ void FireBow(Entity& bow, State& state) {
     bow.entity_a.reset();
     SetAnimation(bow, GetLooseAnimationId(bow));
     (void)PlayWorldSoundEmitter(state, bow.GetCenter(), audio_asset_ids::Throw);
+    EmitEntityStatePatchedGameplayEvent(state, bow, bow);
 }
 
 } // namespace

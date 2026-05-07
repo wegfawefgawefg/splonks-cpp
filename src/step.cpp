@@ -15,6 +15,7 @@
 #include "network/net_event_apply.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_progression.hpp"
+#include "player_queries.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
@@ -56,18 +57,9 @@ float GetSimulationTickInterval(const State& state) {
     return kTimestep;
 }
 
-std::optional<VID> GetPrimaryLocalPlayerVid(const State& state) {
-    if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
-        if (primary->entity_vid.has_value()) {
-            return primary->entity_vid;
-        }
-    }
-    return state.player_vid;
-}
-
 void UpdateControlledEntity(State& state) {
     if (!state.controlled_entity_vid.has_value()) {
-        state.controlled_entity_vid = GetPrimaryLocalPlayerVid(state);
+        state.controlled_entity_vid = FindPrimaryLocalPlayerVid(state);
         return;
     }
 
@@ -79,7 +71,7 @@ void UpdateControlledEntity(State& state) {
         return;
     }
 
-    if (const std::optional<VID> primary_player_vid = GetPrimaryLocalPlayerVid(state)) {
+    if (const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state)) {
         const Entity* player = state.entity_manager.GetEntity(*primary_player_vid);
         if (player != nullptr && player->active &&
             player->condition != EntityCondition::Dead) {
@@ -318,7 +310,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     }
     state.stage.AttenuateTileShake(kShakeAttenuationRate);
     AddBuyPromptsForPlayer(state, graphics);
-    const std::optional<VID> primary_player_vid = GetPrimaryLocalPlayerVid(state);
+    const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state);
     if (primary_player_vid.has_value() && state.playing_inputs.equip_button.pressed &&
         !state.IsInteractClaimedForEntity(*primary_player_vid)) {
         const std::optional<std::size_t> buyable_idx =
@@ -366,6 +358,12 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         (void)PlayWorldSoundEmitter(state, game_over_pos, audio_asset_ids::GameOver);
         state.SetMode(Mode::GameOver);
     } else if (state.pending_stage_transition.has_value()) {
+        if (state.net_session.role == network::NetRole::Coordinator && state.net_transport) {
+            (void)network::SendPendingStageTransitionSyncToAllRemotes(
+                state,
+                *state.net_transport
+            );
+        }
         StopAllSoundEmitters(state, audio);
         state.SetMode(Mode::StageTransition);
         state.frame = 0;
@@ -386,6 +384,13 @@ void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
         return;
     }
     if (state.net_session.role == network::NetRole::Peer) {
+        if (state.scene_frame < kNetworkStageTransitionFrames) {
+            return;
+        }
+        if (network::ApplyPendingPeerStageSync(state, graphics)) {
+            state.scene_frame = 0;
+            state.SetMode(Mode::Playing);
+        }
         return;
     }
     if (!state.pending_stage_transition.has_value()) {

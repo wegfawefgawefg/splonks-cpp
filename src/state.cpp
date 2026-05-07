@@ -168,7 +168,6 @@ State State::New() {
     state.pending_stage_transition.reset();
     state.stage_lighting = StageLighting::New();
     state.stage_acoustics = StageAcoustics::New();
-    state.player_vid.reset();
     state.controlled_entity_vid.reset();
     state.mouse_trailer_vid.reset();
     state.contact = ContactBookkeeping{};

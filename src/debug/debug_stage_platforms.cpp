@@ -3,6 +3,7 @@
 #include "debug/debug_stage_common.hpp"
 #include "effects.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "stage_spawning.hpp"
 
 #include <optional>
@@ -238,10 +239,8 @@ void InitParachuteTestStage(State& state) {
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 5.0F * static_cast<float>(kTileSize) - 14.0F;
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
-    if (state.player_vid.has_value()) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-            (void)AddEffect(*player, EffectId::Parachute, 1);
-        }
+    if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
+        (void)AddEffect(*player, EffectId::Parachute, 1);
     }
 }
 

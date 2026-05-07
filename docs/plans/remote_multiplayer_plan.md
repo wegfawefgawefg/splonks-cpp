@@ -65,9 +65,11 @@ coordinator-authoritative shared world state.
   problem, not as a reason to make every action server-authoritative.
 
 This is not lockstep, not GGPO-style whole-game rollback, and not pure
-client/server input authority. It is permissive where latency matters most
-(`PlayerId` control) and authoritative where ad hoc sync would otherwise slow
-content development (shared world/entity state).
+client/server input authority. The chosen target is Terraria-style broad
+coordinator authority: clients keep local player controls responsive, but shared
+world mutations are requests sent to the coordinator, and the coordinator
+executes normal content code before broadcasting broad result/snapshot messages.
+This keeps content authoring from turning into per-item networking work.
 
 ## Hard Authority Rules
 
@@ -88,12 +90,14 @@ These are the multiplayer architecture rules to enforce going forward:
 - The coordinator owns canonical shared world state: stage transitions, tiles,
   loose items, enemies, props, entity health/condition, held/attached state, and
   durable inventory/economy changes.
-- Clients may optimistically present local action results, but the durable result
-  is not canonical until the coordinator orders or repairs it.
+- Clients may optimistically present local action intent, but they must not
+  author durable shared results. The durable result is not canonical until the
+  coordinator runs the content path and broadcasts an ordered result or repair.
 - Peers must not roll canonical loot, spawn canonical non-player entities, break
   canonical tiles, or apply canonical damage to shared non-player entities.
 - Durable mutations use stable message categories, not item-specific packet
-  families.
+  families. Adding a new held item should normally require no networking code if
+  it mutates state through the existing spawn/state/tile/player result lanes.
 - Cosmetic-only presentation uses generic presentation commands and remains
   non-authoritative.
 - Packet loss must not permanently fork durable state. Reliable delivery or
@@ -109,8 +113,12 @@ so controls stay simple and responsive.
 
 Use gameplay events only as a replication/progression seam:
 
-- Gameplay code emits durable facts after the local mutation happened.
-- The replication layer converts those facts to `NetEvent`s and packets.
+- Coordinator/offline gameplay code emits durable facts after the mutation
+  happened.
+- Peer gameplay code sends action requests for shared mutations instead of
+  emitting durable facts directly.
+- The replication layer converts coordinator-authored facts to `NetEvent`s and
+  packets.
 - The progression layer handles stage-exit requests/sync.
 - Entity code must not construct network packets or know about sockets.
 - Networking should not know entity-specific rules like sacrifice, shop
@@ -119,7 +127,7 @@ Use gameplay events only as a replication/progression seam:
   durable mutations directly. It should emit/request the attempted action and
   let the coordinator run the content callback that mutates shared state.
 
-This gives a permissive co-op model without forcing every behavior through an
+This gives a responsive co-op model without forcing every behavior through an
 abstract event bus. If a gameplay fact is not durable or not useful for remote
 readability, it should stay local.
 
@@ -139,15 +147,15 @@ exist. Direct calls are acceptable when they cross a clear ownership boundary:
 
 ## Interaction Authority Rule
 
-Durable interactions start as source-predicted presentation, but canonical
+Durable interactions start as source-predicted input/presentation only; canonical
 shared-world effects are coordinator-owned.
 
 - If a local player or locally-owned held/projectile entity hits, carries,
   drops, throws, or otherwise mutates another entity, that local source may
-  predict/present the result immediately.
-- The source sends an action request to the coordinator. It must not permanently
-  create the canonical shared result locally unless this process is the
-  coordinator or offline.
+  present intent immediately.
+- The source sends an action request to the coordinator. It must not create the
+  canonical shared result locally unless this process is the coordinator or
+  offline.
 - The coordinator orders, confirms, rebroadcasts, or repairs the result.
 - This includes remote player targets. Picking up or hitting a remote player may
   be predicted by the holder/attacker, but the coordinator must be able to repair
@@ -181,6 +189,55 @@ content-specific network families. Use generic categories that carry entity type
 archetype id, tool slot, tile coordinate, interaction kind, and compact content
 payloads. Coordinator-side content callbacks interpret those ids and produce
 generic results.
+
+### Terraria-Style Rules For Splonks
+
+Use this as the implementation north star:
+
+- Network packets are broad categories: player state, player action requests,
+  entity spawn, entity state patch/snapshot, tile mutation, inventory/player
+  patch, stage progression, and presentation command.
+- Content-specific behavior lives in entity/tool/effect/tile archetype code, not
+  in `network/`. The coordinator calls the same content callbacks that
+  singleplayer uses.
+- `network/` may know ids, enums, payload bytes, and replicated field layouts. It
+  must not know that a web cannon makes cobwebs, a teleporter phases entities, or
+  a machete has a particular animation reset.
+- If an archetype needs custom durable data beyond the broad fields, add an
+  optional archetype serializer/deserializer or compact `ContentCommand`
+  extension lane. Do not add a one-off packet family named after the item.
+- Peers are allowed to predict local player presentation and UI feel. Peers are
+  not allowed to roll loot, create canonical projectile entities, break
+  canonical tiles, apply canonical damage, or decide canonical carry/attachment
+  results.
+- Coordinator repair snapshots are expected. The protocol should make wrong
+  local prediction cheap to correct rather than trying to make every peer
+  simulate every prop perfectly.
+
+### Required Broad Lanes
+
+Before adding more gameplay content, these lanes should exist and be used
+consistently:
+
+- `PlayerMoveState`: local player body presentation, animation/control flags,
+  health/money/tool/effect summary when needed.
+- `PlayerActionRequest`: use tool, use held/back entity, interact, pickup, drop,
+  throw, emote, hit tile/entity.
+- `EntitySpawned`: coordinator-assigned net id, archetype id, initial transform,
+  velocity/acceleration, owner lane, links, counters, animation.
+- `EntityStatePatch`: transform, velocity/acceleration, condition, AI state,
+  timers/counters, health, collision/projectile flags, attachment links,
+  buyable/shop display state, animation id/frame/speed/loop/finished.
+- `EntityLifecycle`: deactivate/destroy/splat/collect when the entity should no
+  longer exist or should switch to a non-active durable state.
+- `TileMutation`: break/change/place tile, rope placement, trigger-driven tile
+  changes, tile-break drops.
+- `PlayerStatePatch`: health, stun/death, money, tools, effects, wanted state,
+  inventory/passive/equipment state.
+- `StageProgression`: exit request, accepted transition, stage load, respawn,
+  join/leave.
+- `PresentationCommand`: cosmetic sound, shake, particles, phase/warp visuals.
+  It must never be the only carrier of durable gameplay state.
 
 ## Request / Apply API Shape
 
@@ -457,12 +514,13 @@ Prefer category messages over one-off content packet families:
 
 - `PlayerMoveState`: position, velocity, facing, animation/control state, carried
   attachment presentation state.
-- `PlayerActionRequest`: use tool, use held entity, interact, pickup, drop,
-  throw, emote.
+- `PlayerActionRequest`: use tool, use held entity, use back entity, interact,
+  pickup, drop, throw, emote, hit tile/entity.
 - `EntitySpawned`: coordinator-assigned net id, archetype id, position, initial
   state, owner lane.
-- `EntityStateSnapshot`: position, velocity, condition, display state, animation
-  id/frame, held/attached state, health, relevant effect summary.
+- `EntityStateSnapshot`: position, velocity, acceleration, condition, display
+  state, animation id/frame, held/attached state, health, timers/counters,
+  relevant effect summary.
 - `EntityStatePatch`: small reliable changes such as condition, sprite/display,
   flags, health, inventory count, effect add/remove.
 - `EntityInteraction`: damage, stun, knockback, pickup, drop, throw, attach,
@@ -592,45 +650,27 @@ Entity graph:
 - `EntitySpawned`
 - `EntityDeactivated`
 - `EntityStatePatched`
-- `EntityOwnerChanged`
 - `EntityHeld`
 - `EntityDropped`
 - `EntityThrown`
 - `EntityDamaged`
-- `EntityKilled`
-- `EntityStunned`
 
 World:
 
 - `TileChanged`
 - `TileBroken`
-- `TileTriggerFired`
 - `RopeTilePlaced`
-- `FluidPatched`
 
 Inventory/economy/quest:
 
-- `ToolSlotChanged`
-- `EffectAdded`
-- `EffectRemoved`
-- `MoneyChanged`
-- `FavorChanged`
-- `ShopDisturbed`
-- `ShopItemBought`
-- `QuestFlagChanged`
-
-Action-specific first targets:
-
-- `BombPlaced`
-- `BombExploded`
-- `RopeThrown`
-- `ArrowFired`
-- `ProjectileHit`
-- `MattockDug`
+- `PlayerStatePatched` for player health, wanted state, money, tools, and effect list
+- `RunStatePatched` for small run-level state such as favor and reward tiers
 - `PresentationCommand`
-- `CrateOpened`
-- `ChestOpened`
-- `SacrificeApplied`
+
+Avoid adding action-specific net events for content such as bombs, ropes,
+projectiles, crates, chests, shops, or sacrifices. The coordinator should run
+the normal content callback and emit generic entity, tile, player-state, and
+run-state results.
 
 Local-only events should not be networked: particles, short-lived audio, camera
 shake, debug annotations, and cosmetic lighting flicker. If a cosmetic effect is
@@ -728,11 +768,11 @@ Gameplay systems should expose durable-event hooks without importing transport:
 - tool inventory changes
 - tile break/change
 - stage transition
-- shop/favor/quest state mutation
+- shop/favor/run-state mutation
 
 Avoid putting entity-specific networking cases in engine code. If `SacAltar`
-creates favor, it emits or requests a generic `FavorChanged`/`SacrificeApplied`
-event. The network layer serializes the event; it does not know sacrifice rules.
+changes favor or reward tier, it emits a generic `RunStatePatched` result. The
+network layer serializes the state patch; it does not know sacrifice rules.
 
 ## Transport
 
@@ -840,7 +880,8 @@ the shared world and every process saw it" without item ownership complexity:
 7. Debug event log shows requested, received, applied, duplicate, and no-op
    action/result events.
 
-Then do `EntityDamaged`/`EntityKilled`, then pickup/drop/throw ownership.
+Then do `EntityDamaged` plus deactivation/state results, then
+pickup/drop/throw ownership.
 
 ## Conflict Resolution
 
@@ -857,12 +898,14 @@ Examples:
 
 - Two players pick up the same item: first ordered `EntityHeld` wins. The loser
   drops/clears their local optimistic hold.
-- Two players kill the same enemy: first `EntityKilled` wins. Later damage/kill
-  events against inactive/dead entity become no-ops.
+- Two players kill the same enemy: first ordered `EntityDamaged`/`EntityDeactivated`
+  result wins. Later damage/deactivation events against inactive/dead entities
+  become no-ops.
 - Two bombs break the same tile: first `TileBroken` changes it. Later duplicate
   breaks are no-ops but can still spawn local cosmetics if desired.
 - One player buys an item while another steals it: event order decides whether
-  `ShopItemBought` or theft/disturbance applies first.
+  the buy's generic player/entity state patches or theft/disturbance patches
+  apply first.
 
 This needs idempotent apply functions. Most bugs in this model will come from
 events that assume the old state still exists.
@@ -938,8 +981,8 @@ This is useful as a stepping stone, but it should not define the remote model.
 - [x] Added the gameplay player registry spine.
   - Files: `src/player_id.hpp`, `src/player_registry.hpp`,
     `src/player_registry.cpp`.
-  - `State` owns `PlayerRegistry players`; current `player_vid` remains
-    compatibility for primary local player while gameplay code is swept.
+  - `State` owns `PlayerRegistry players`; gameplay must not use a global
+    player VID. Primary-local needs are resolved through player-query helpers.
   - Control intent now resolves through `PlayerId -> entity VID -> inputs`
     before falling back to legacy `controlled_entity_vid`.
   - The playing tick runs control logic for every player slot with an entity;
@@ -955,8 +998,7 @@ This is useful as a stepping stone, but it should not define the remote model.
 - [x] Added net event queues and first apply path.
   - Files: `src/network/net_event_apply.hpp`,
     `src/network/net_event_apply.cpp`, `src/debug/playback_ui_network.cpp`.
-  - The `Debug: Network` window can emit a test `MoneyChanged` net event and
-    apply ordered events.
+  - The `Debug: Network` window can manually apply queued ordered events.
   - The old manual local-to-ordered drain path was removed. Peers keep pending
     outbound action/presentation events; the coordinator owns ordered result
     events.

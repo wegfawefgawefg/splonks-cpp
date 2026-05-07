@@ -7,6 +7,7 @@
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -79,38 +80,42 @@ bool CanSeePlayerAhead(
     const State& state,
     const Graphics& graphics
 ) {
-    if (!state.player_vid.has_value()) {
-        return false;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
-        return false;
-    }
-
     const Vec2 caveman_center = caveman.GetCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, caveman_center, player->GetCenter());
-    const Vec2 player_delta = player_center - caveman_center;
-    if (std::abs(player_delta.y) > kCavemanSightVerticalTolerance ||
-        std::abs(player_delta.x) > static_cast<float>(kCavemanSightDistance)) {
-        return false;
-    }
-
     const int direction = caveman.facing == LeftOrRight::Left ? -1 : 1;
-    if ((direction < 0 && player_delta.x >= 0.0F) || (direction > 0 && player_delta.x <= 0.0F)) {
-        return false;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
+            continue;
+        }
+        const Vec2 player_center =
+            GetNearestWorldPoint(state.stage, caveman_center, player->GetCenter());
+        const Vec2 player_delta = player_center - caveman_center;
+        if (std::abs(player_delta.y) > kCavemanSightVerticalTolerance ||
+            std::abs(player_delta.x) > static_cast<float>(kCavemanSightDistance)) {
+            continue;
+        }
+        if ((direction < 0 && player_delta.x >= 0.0F) ||
+            (direction > 0 && player_delta.x <= 0.0F)) {
+            continue;
+        }
+        const WorldRayHit hit = RaycastHorizontal(
+            caveman,
+            caveman_center,
+            direction,
+            static_cast<int>(std::abs(player_delta.x)),
+            state,
+            graphics,
+            caveman.vid
+        );
+        if (hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() &&
+            *hit.entity_vid == player->vid) {
+            return true;
+        }
     }
-
-    const WorldRayHit hit = RaycastHorizontal(
-        caveman,
-        caveman_center,
-        direction,
-        static_cast<int>(std::abs(player_delta.x)),
-        state,
-        graphics,
-        caveman.vid
-    );
-    return hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() && *hit.entity_vid == player->vid;
+    return false;
 }
 
 void MaybeWallHopWhileIdle(Entity& caveman, const State& state, const Graphics& graphics) {
@@ -152,10 +157,8 @@ void StepEntityLogicAsCaveman(
     if (caveman.ai_state != EntityAiState::Pursuing &&
         ShouldRunSightScan(caveman, state.stage_frame) &&
         CanSeePlayerAhead(caveman, state, graphics)) {
-        if (state.player_vid.has_value()) {
-            if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-                FaceTowards(caveman, player->GetCenter(), state.stage);
-            }
+        if (const Entity* const player = FindNearestPlayer(state, caveman.GetCenter())) {
+            FaceTowards(caveman, player->GetCenter(), state.stage);
         }
         if (caveman.grounded) {
             caveman.vel.y = kCavemanAlertHopSpeedY;

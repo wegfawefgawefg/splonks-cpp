@@ -421,6 +421,7 @@ void SplatTelefraggedEntity(std::size_t entity_idx, State& state, const Graphics
     common::DropHeldItemFromEntity(entity, state);
     common::ReleaseEntityFromHolder(entity, state);
     entity.marked_for_destruction = true;
+    EmitEntityDeactivatedGameplayEvent(state, entity);
     state.entity_manager.SetInactive(entity_idx);
 }
 

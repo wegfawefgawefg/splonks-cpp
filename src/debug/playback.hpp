@@ -66,7 +66,6 @@ struct GameplaySnapshot {
     DebugLevelConfig debug_level;
     EntityManager entity_manager;
     Stage stage;
-    std::optional<VID> player_vid;
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
     std::vector<EntityToolState> entity_tool_states;
@@ -132,7 +131,6 @@ struct DebugPlayback {
     int quest_stage_seed = 1;
     std::string quest_stage_status;
     std::string frame_data_reload_status;
-    int network_test_money_delta = 100;
     int network_host_port = 42424;
     int network_join_port = 42424;
     std::array<char, 64> network_join_host{};

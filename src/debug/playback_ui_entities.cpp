@@ -3,6 +3,7 @@
 #include "entity/archetype.hpp"
 #include "entity/archetype_restore.hpp"
 #include "frame_data.hpp"
+#include "player_queries.hpp"
 #include "tools/tool_archetype.hpp"
 
 #include <imgui.h>
@@ -195,19 +196,15 @@ Entity* FindSwapSourceEntity(State& state, Entity* selected_entity) {
             return controlled;
         }
     }
-    if (state.player_vid.has_value()) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-            return player;
-        }
+    if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
+        return player;
     }
     return selected_entity;
 }
 
 const Entity* FindSwapStatsEntity(const State& state, const Entity* source_entity) {
-    if (state.player_vid.has_value()) {
-        if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-            return player;
-        }
+    if (const Entity* const player = GetPrimaryLocalPlayer(state)) {
+        return player;
     }
     return source_entity;
 }
@@ -308,7 +305,7 @@ bool SwapControlledCharacter(
     const Vec2 spawn_center = source_entity->GetCenter();
     const LeftOrRight facing = source_entity->facing;
     const VID replacement_vid = source_entity->vid;
-    const std::optional<VID> old_player_vid = state.player_vid;
+    const std::optional<VID> old_player_vid = FindPrimaryLocalPlayerVid(state);
     const EntityEffects* const effects =
         stats_entity != nullptr ? stats_entity->effects.get() : nullptr;
     const std::uint32_t money = stats_entity != nullptr ? stats_entity->money : 0;
@@ -353,7 +350,9 @@ bool SwapControlledCharacter(
         GrantFreshStarterTools(state, replacement_vid, target_type);
     }
 
-    state.player_vid = replacement_vid;
+    if (PlayerSlot* const slot = state.players.FindPrimaryLocal()) {
+        slot->entity_vid = replacement_vid;
+    }
     state.controlled_entity_vid = replacement_vid;
     state.UpdateSidForEntity(replacement_vid.id, graphics);
     debug.selected_entity_id = replacement_vid.id;
@@ -492,9 +491,9 @@ bool SpawnDebugEntity(
     spawned->SetCenter(spawn_center);
 
     if (debug.spawn_held_by_player) {
-        if (!state.player_vid.has_value()) {
+        if (!FindPrimaryLocalPlayerVid(state).has_value()) {
             debug.spawn_status = "No player to hold spawned entity.";
-        } else if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+        } else if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
             if (player->holding_vid.has_value()) {
                 debug.spawn_status = "Player is already holding something.";
             } else {
@@ -675,10 +674,10 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     if (ImGui::Button("Control Selected")) {
         state.controlled_entity_vid = entity.vid;
     }
-    if (state.player_vid.has_value()) {
+    if (const std::optional<VID> player_vid = FindPrimaryLocalPlayerVid(state)) {
         ImGui::SameLine();
         if (ImGui::Button("Control Player")) {
-            state.controlled_entity_vid = *state.player_vid;
+            state.controlled_entity_vid = *player_vid;
         }
     }
     ImGui::Text("Animation Id: %u", entity.frame_data_animator.animation_id);

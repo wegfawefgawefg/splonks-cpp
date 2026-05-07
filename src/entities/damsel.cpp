@@ -7,9 +7,11 @@
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -80,7 +82,11 @@ Vec2 GetRescueKissPosForEntity(std::optional<VID> target_vid, const State& state
 }
 
 Vec2 GetRescueKissPos(const State& state, const Entity& damsel) {
-    return GetRescueKissPosForEntity(state.player_vid, state, damsel);
+    return GetRescueKissPosForEntity(
+        FindNearestPlayerVid(state, damsel.GetCenter(), false),
+        state,
+        damsel
+    );
 }
 
 void AwardDamselRescueHealthToEntity(std::optional<VID> target_vid, State& state) {
@@ -94,10 +100,11 @@ void AwardDamselRescueHealthToEntity(std::optional<VID> target_vid, State& state
     }
 
     target->health += kDamselRescueHealthGain;
+    EmitPlayerStatePatchedGameplayEvent(state, *target);
 }
 
 void AwardDamselRescueHealth(State& state) {
-    AwardDamselRescueHealthToEntity(state.player_vid, state);
+    AwardDamselRescueHealthToEntity(FindFirstConnectedPlayerVid(state), state);
 }
 
 void DetachDamselFromHolder(Entity& damsel, State& state) {
@@ -167,6 +174,7 @@ void RescueDamsel(
     damsel.damage_vulnerability = DamageVulnerability::Immune;
     damsel.can_collide = false;
     damsel.has_physics = false;
+    EmitEntityDeactivatedGameplayEvent(state, damsel);
     state.entity_manager.SetInactive(entity_idx);
     state.UpdateSidForEntity(entity_idx, graphics);
 }
@@ -192,7 +200,13 @@ bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graph
         return false;
     }
 
-    RescueDamsel(entity_idx, state.player_vid, state, graphics, audio);
+    RescueDamsel(
+        entity_idx,
+        FindNearestPlayerVid(state, damsel.GetCenter(), false),
+        state,
+        graphics,
+        audio
+    );
     return true;
 }
 

@@ -57,7 +57,6 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.debug_level = state.debug_level;
     snapshot.entity_manager = state.entity_manager;
     snapshot.stage = state.stage;
-    snapshot.player_vid = state.player_vid;
     snapshot.controlled_entity_vid = state.controlled_entity_vid;
     snapshot.mouse_trailer_vid = state.mouse_trailer_vid;
     snapshot.entity_tool_states = state.entity_tools.tool_states;
@@ -120,7 +119,6 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.particles.Clear();
     state.stage = snapshot.stage;
     state.stage_acoustics = StageAcoustics::New();
-    state.player_vid = snapshot.player_vid;
     state.controlled_entity_vid = snapshot.controlled_entity_vid;
     state.mouse_trailer_vid = snapshot.mouse_trailer_vid;
     state.entity_tools.tool_states = snapshot.entity_tool_states;

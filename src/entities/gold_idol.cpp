@@ -8,8 +8,10 @@
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -47,19 +49,13 @@ void SpawnRewardParticle(State& state, const Vec2& pos, FrameDataId animation_id
 }
 
 std::optional<VID> GetRewardTargetVid(const Entity& idol, const State& state) {
-    if (state.player_vid.has_value()) {
-        const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-        if (player != nullptr && player->active && player->condition != EntityCondition::Dead) {
-            return player->vid;
-        }
-    }
     if (idol.held_by_vid.has_value()) {
         const Entity* const holder = state.entity_manager.GetEntity(*idol.held_by_vid);
         if (holder != nullptr && holder->active && holder->condition != EntityCondition::Dead) {
             return holder->vid;
         }
     }
-    return std::nullopt;
+    return FindNearestPlayerVid(state, idol.GetCenter(), false);
 }
 
 Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Entity& idol) {
@@ -108,6 +104,7 @@ void AwardMoneyToTarget(std::optional<VID> target_vid, std::uint32_t amount, Sta
         return;
     }
     target->money += amount;
+    EmitPlayerStatePatchedGameplayEvent(state, *target);
 }
 
 void RedeemGoldIdol(
@@ -137,6 +134,7 @@ void RedeemGoldIdol(
     idol.damage_vulnerability = DamageVulnerability::Immune;
     idol.can_collide = false;
     idol.has_physics = false;
+    EmitEntityDeactivatedGameplayEvent(state, idol);
     state.entity_manager.SetInactive(entity_idx);
     state.UpdateSidForEntity(entity_idx, graphics);
 }

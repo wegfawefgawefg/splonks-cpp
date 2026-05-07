@@ -4,6 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "gameplay_authority.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "state.hpp"
@@ -86,7 +87,7 @@ extern const EntityArchetype kBaseballBatArchetype{
     .impassable = false,
     .hurt_on_contact = false,
     .can_be_stunned = false,
-    .step_without_local_authority = true,
+    .step_as_replica = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
@@ -245,10 +246,12 @@ void StepBaseballBat(
     Entity& baseball_bat = state.entity_manager.entities[entity_idx];
     const std::optional<VID> held_by_vid = baseball_bat.held_by_vid;
     if (!held_by_vid.has_value()) {
+        EmitEntityDeactivatedGameplayEvent(state, baseball_bat);
         state.entity_manager.SetInactive(entity_idx);
         return;
     }
     if (baseball_bat.frame_data_animator.IsFinished()) {
+        EmitEntityDeactivatedGameplayEvent(state, baseball_bat);
         state.entity_manager.SetInactive(entity_idx);
         return;
     }

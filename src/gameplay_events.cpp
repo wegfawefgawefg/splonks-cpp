@@ -101,6 +101,20 @@ void ApplyAttachmentUseAction(
         return;
     }
 
+    if (PlayerSlot* const slot = state.players.FindByEntityVid(holder->vid);
+        slot != nullptr && slot->connection_kind == PlayerConnectionKind::Remote) {
+        slot->inputs.left.down = request.direction.x < 0;
+        slot->inputs.right.down = request.direction.x > 0;
+        slot->inputs.up.down = request.direction.y < 0;
+        slot->inputs.down.down = request.direction.y > 0;
+        if (source == AttachmentMode::Held) {
+            slot->inputs.attack.down = request.param_a != 0;
+        } else {
+            slot->inputs.use_button.down = request.param_a != 0;
+        }
+        slot->immediate_inputs = slot->inputs;
+    }
+
     if (request.param_a != 0) {
         UseEntity(*item, holder->vid, source);
     } else {
@@ -241,12 +255,18 @@ void EmitEntityDeactivatedGameplayEvent(State& state, const Entity& entity) {
     state.gameplay_events.push_back(event);
 }
 
-void EmitEntityHeldGameplayEvent(State& state, const Entity& holder, const Entity& held) {
+void EmitEntityHeldGameplayEvent(
+    State& state,
+    const Entity& holder,
+    const Entity& held,
+    AttachmentMode attachment_mode
+) {
     GameplayEvent event;
     event.type = GameplayEventType::EntityHeld;
     event.entity_held = GameplayEntityHeld{
         .holder_vid = holder.vid,
         .held_vid = held.vid,
+        .attachment_mode = attachment_mode,
     };
     state.gameplay_events.push_back(event);
 }
@@ -324,9 +344,14 @@ void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, con
         .entity_vid = entity.vid,
         .source_vid = source.vid,
         .entity_a_vid = entity.entity_a,
+        .holding_vid = entity.holding_vid,
+        .held_by_vid = entity.held_by_vid,
+        .back_vid = entity.back_vid,
         .pos = entity.pos,
         .vel = entity.vel,
         .acc = entity.acc,
+        .counter_a = entity.counter_a,
+        .counter_b = entity.counter_b,
         .point_a = entity.point_a,
         .health = entity.health,
         .stun_timer = entity.stun_timer,
@@ -340,12 +365,35 @@ void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, con
         .can_apply_projectile_contact =
             static_cast<std::uint8_t>(entity.can_apply_projectile_contact ? 1 : 0),
         .facing = static_cast<std::uint8_t>(entity.facing == LeftOrRight::Right ? 1 : 0),
+        .ai_state = static_cast<std::uint8_t>(entity.ai_state),
+        .wanted = static_cast<std::uint8_t>(entity.wanted ? 1 : 0),
+        .attachment_mode = static_cast<std::uint8_t>(entity.attachment_mode),
+        .buyable_active = static_cast<std::uint8_t>(entity.buyable.active ? 1 : 0),
+        .buyable_display_quantity = entity.buyable.display_quantity,
+        .buyable_display_icon_animation_id =
+            entity.buyable.display_icon_animation_id.value_or(kInvalidFrameDataId),
+        .buyable_shop_owner_vid = entity.buyable.shop_owner_vid,
         .animate = presentation.animate,
         .animation_id = presentation.animation_id,
         .animation_frame = presentation.animation_frame,
         .animation_time = presentation.animation_time,
         .animation_speed = presentation.animation_speed,
     };
+    state.gameplay_events.push_back(event);
+}
+
+void EmitPlayerStatePatchedGameplayEvent(State& state, const Entity& player) {
+    GameplayEvent event;
+    event.type = GameplayEventType::PlayerStatePatched;
+    event.player_state_patched = GameplayPlayerStatePatched{
+        .player_vid = player.vid,
+    };
+    state.gameplay_events.push_back(event);
+}
+
+void EmitRunStatePatchedGameplayEvent(State& state) {
+    GameplayEvent event;
+    event.type = GameplayEventType::RunStatePatched;
     state.gameplay_events.push_back(event);
 }
 
@@ -464,6 +512,28 @@ void ProcessGameplayEvents(State& state, Graphics& graphics, Audio& audio) {
             case GameplayActionKind::UseBackEntity:
                 ApplyAttachmentUseAction(state, event.action_requested, AttachmentMode::Back);
                 break;
+            case GameplayActionKind::PutHeldEntityOnBack:
+                if (event.action_requested.source_vid.has_value() &&
+                    event.action_requested.target_vid.has_value()) {
+                    (void)entities::common::TryPutHeldEntityOnBackByVid(
+                        *event.action_requested.source_vid,
+                        *event.action_requested.target_vid,
+                        state,
+                        graphics
+                    );
+                }
+                break;
+            case GameplayActionKind::TakeOffBackEntity:
+                if (event.action_requested.source_vid.has_value() &&
+                    event.action_requested.target_vid.has_value()) {
+                    (void)entities::common::TryTakeOffBackEntityByVid(
+                        *event.action_requested.source_vid,
+                        *event.action_requested.target_vid,
+                        state,
+                        graphics
+                    );
+                }
+                break;
             case GameplayActionKind::InteractEntity:
                 (void)TryApplyInteractEntityAction(state, event.action_requested, graphics, audio);
                 break;
@@ -536,6 +606,8 @@ void ProcessGameplayEvents(State& state, Graphics& graphics, Audio& audio) {
         case GameplayEventType::EntityThrown:
         case GameplayEventType::EntityDamaged:
         case GameplayEventType::EntityStatePatched:
+        case GameplayEventType::PlayerStatePatched:
+        case GameplayEventType::RunStatePatched:
         case GameplayEventType::TileBroken:
         case GameplayEventType::RopeTilePlaced:
         case GameplayEventType::PresentationCommand:

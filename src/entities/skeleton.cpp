@@ -5,8 +5,10 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "particles/sprite_particle.hpp"
 #include "on_damage_effects.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -29,12 +31,8 @@ constexpr float kSkeletonWalkAcceleration = 0.2F;
 constexpr float kSkullBreakImpactSpeed = 2.25F;
 
 std::optional<Vec2> GetNearestPlayerDelta(const Entity& entity, const State& state) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+    const Entity* const player = FindNearestPlayer(state, entity.GetCenter(), false);
+    if (player == nullptr || player->condition == EntityCondition::Dead) {
         return std::nullopt;
     }
 
@@ -203,6 +201,7 @@ void DropLooseSkull(const Vec2& center, State& state) {
         rng::RandomFloat(-1.0F, 1.0F),
         rng::RandomFloat(-1.8F, -0.8F)
     );
+    EmitEntitySpawnedGameplayEvent(state, *skull);
 }
 
 bool BreakSkull(std::size_t entity_idx, State& state) {
@@ -307,6 +306,7 @@ void OnDeathAsSkeleton(std::size_t entity_idx, State& state, Audio& audio) {
     const Vec2 center = skeleton.GetCenter();
     SpawnSkeletonDeathEffects(center, state);
     DropLooseSkull(center, state);
+    EmitEntityDeactivatedGameplayEvent(state, skeleton);
     state.entity_manager.SetInactive(entity_idx);
 }
 

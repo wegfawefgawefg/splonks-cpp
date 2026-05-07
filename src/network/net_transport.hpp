@@ -74,11 +74,61 @@ struct NetRemotePlayerTarget {
     std::uint64_t last_received_frame = 0;
 };
 
+struct NetReplicatedEntityStateSignature {
+    NetEntityId entity_id = kInvalidNetEntityId;
+    NetEntityId entity_a_id = kInvalidNetEntityId;
+    NetEntityId holding_id = kInvalidNetEntityId;
+    NetEntityId held_by_id = kInvalidNetEntityId;
+    NetEntityId back_id = kInvalidNetEntityId;
+    NetEntityId buyable_shop_owner_id = kInvalidNetEntityId;
+    FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    float pos_x = 0.0F;
+    float pos_y = 0.0F;
+    float vel_x = 0.0F;
+    float vel_y = 0.0F;
+    float acc_x = 0.0F;
+    float acc_y = 0.0F;
+    float counter_a = 0.0F;
+    float counter_b = 0.0F;
+    float rotation = 0.0F;
+    float animation_speed = 1.0F;
+    std::uint32_t health = 0;
+    std::uint32_t stun_timer = 0;
+    std::uint32_t projectile_contact_timer = 0;
+    std::uint32_t buyable_display_quantity = 0;
+    std::uint16_t animation_frame = 0;
+    std::uint8_t condition = 0;
+    std::uint8_t grounded = 0;
+    std::uint8_t active = 0;
+    std::uint8_t has_physics = 0;
+    std::uint8_t can_collide = 0;
+    std::uint8_t can_apply_projectile_contact = 0;
+    std::uint8_t facing = 0;
+    std::uint8_t ai_state = 0;
+    std::uint8_t wanted = 0;
+    std::uint8_t attachment_mode = 0;
+    std::uint8_t buyable_active = 0;
+    std::uint8_t animate = 0;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
+};
+
+struct NetReplicatedEntityStateCache {
+    NetReplicatedEntityStateSignature signature;
+};
+
 struct NetTransportRuntime {
     UdpSocket socket;
     std::vector<NetRemoteEndpoint> remotes;
     std::vector<NetRemotePlayerTarget> remote_player_targets;
+    std::vector<NetReplicatedEntityStateCache> replicated_entity_state_cache;
     NetEndpoint coordinator_endpoint;
+    bool pending_stage_sync = false;
+    StageInstanceId pending_stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t pending_stage_seed = 1;
+    std::string pending_quest_id;
+    std::string pending_quest_stage_id;
     bool join_request_pending = false;
     std::uint32_t join_request_retry_frames = 0;
     std::uint32_t next_snapshot_sequence = 1;

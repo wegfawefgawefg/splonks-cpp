@@ -91,6 +91,49 @@ AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, 
     );
 }
 
+bool TrySnapToDownwardBlockingSurface(
+    Entity& entity,
+    const BlockingContactSet& contacts,
+    const Stage& stage
+) {
+    const AABB current_aabb = entity.GetAABB();
+    const float next_bottom = current_aabb.br.y + 1.0F;
+
+    if (contacts.touches_stage_bounds &&
+        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom) &&
+        next_bottom > static_cast<float>(stage.GetHeight() - 1)) {
+        entity.pos.y = std::round(static_cast<float>(stage.GetHeight()) - entity.size.y);
+        return true;
+    }
+
+    std::optional<float> nearest_floor_top;
+    const Vec2 anchor = (current_aabb.tl + current_aabb.br) / 2.0F;
+    for (const TileContact& tile_contact : contacts.tile_contacts) {
+        if (!tile_contact.blocks_movement) {
+            continue;
+        }
+
+        const AABB tile_aabb = GetTileAabbForContact(tile_contact, stage, anchor);
+        if (tile_aabb.tl.y < current_aabb.br.y) {
+            continue;
+        }
+        if (tile_aabb.tl.y > next_bottom) {
+            continue;
+        }
+
+        if (!nearest_floor_top.has_value() || tile_aabb.tl.y < *nearest_floor_top) {
+            nearest_floor_top = tile_aabb.tl.y;
+        }
+    }
+
+    if (!nearest_floor_top.has_value()) {
+        return false;
+    }
+
+    entity.pos.y = std::round(*nearest_floor_top - entity.size.y);
+    return true;
+}
+
 bool DoesOneWayTopContactBlock(
     const Entity& entity,
     const TileContact& tile_contact,
@@ -487,8 +530,6 @@ void MoveEntityPixelStep(
                     .direction = 1,
                     .mover_vid = entity.vid,
                 };
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
                 const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
                     entity_idx,
                     contacts.entity_vids,
@@ -497,6 +538,14 @@ void MoveEntityPixelStep(
                     graphics,
                     audio
                 );
+                if (entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.x = 0.0F;
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
                 if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
                     entity.collided = true;
                     entity.vel.x = 0.0F;
@@ -572,8 +621,6 @@ void MoveEntityPixelStep(
                     .direction = -1,
                     .mover_vid = entity.vid,
                 };
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
                 const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
                     entity_idx,
                     contacts.entity_vids,
@@ -582,6 +629,14 @@ void MoveEntityPixelStep(
                     graphics,
                     audio
                 );
+                if (entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.x = 0.0F;
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
                 if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
                     entity.collided = true;
                     entity.vel.x = 0.0F;
@@ -665,8 +720,6 @@ void MoveEntityPixelStep(
                     .direction = 1,
                     .mover_vid = entity.vid,
                 };
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
                 const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
                     entity_idx,
                     contacts.entity_vids,
@@ -675,12 +728,23 @@ void MoveEntityPixelStep(
                     graphics,
                     audio
                 );
-                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
+                if (entity_resolution.stop_sweep) {
                     entity.collided = true;
                     entity.vel.y = 0.0F;
+                    (void)TrySnapToDownwardBlockingSurface(entity, contacts, state.stage);
                     StoreDistanceTraveled(entity_idx, state, start_pos);
                     return;
                 }
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
+                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.y = 0.0F;
+                    (void)TrySnapToDownwardBlockingSurface(entity, contacts, state.stage);
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
+                (void)TrySnapToDownwardBlockingSurface(entity, contacts, state.stage);
                 entity.vel.y = 0.0F;
                 entity.collided = true;
                 break;
@@ -756,8 +820,6 @@ void MoveEntityPixelStep(
                     .direction = -1,
                     .mover_vid = entity.vid,
                 };
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
                 const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
                     entity_idx,
                     contacts.entity_vids,
@@ -766,6 +828,14 @@ void MoveEntityPixelStep(
                     graphics,
                     audio
                 );
+                if (entity_resolution.stop_sweep) {
+                    entity.collided = true;
+                    entity.vel.y = 0.0F;
+                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                    return;
+                }
+                const ContactResolution tile_resolution =
+                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
                 if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
                     entity.collided = true;
                     entity.vel.y = 0.0F;
@@ -981,19 +1051,15 @@ void GroundedCheck(
 bool IsGroundedOnTiles(std::size_t entity_idx, State& state) {
     Entity& entity = state.entity_manager.entities[entity_idx];
 
-    const auto [entity_tl, entity_br] = entity.GetBounds();
-    const Vec2 feet_tl = Vec2::New(entity_tl.x, entity_br.y);
-    const Vec2 feet_br = entity_br + Vec2::New(0.0F, 1.0F);
-    const AABB feet_aabb = AABB::New(feet_tl, feet_br);
-    if (feet_br.y >= static_cast<float>(state.stage.GetHeight()) &&
-        state.stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
+    const AABB feet_aabb = entity.GetGroundProbe();
+    if (entity.TrySnapToBlockingStageBottom(state.stage)) {
         return true;
     }
 
     for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
              state.stage,
-             ToIVec2(feet_tl),
-             ToIVec2(feet_br))) {
+             ToIVec2(feet_aabb.tl),
+             ToIVec2(feet_aabb.br))) {
         if (tile_query.tile != nullptr &&
             (IsTileCollidable(*tile_query.tile) ||
              (!entity.IsClimbing() && IsOneWayTopTileSupportingAabb(state.stage, tile_query, feet_aabb)))) {

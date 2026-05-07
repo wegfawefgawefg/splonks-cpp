@@ -47,7 +47,7 @@ bool TrySpawnAndThrowEntityForToolUse(
         return false;
     }
 
-    const Entity& thrower = state.entity_manager.entities[thrower_idx];
+    Entity& thrower = state.entity_manager.entities[thrower_idx];
     if (!tool_slot.active || tool_slot.count == 0 || tool_slot.cooldown > 0) {
         return false;
     }
@@ -89,6 +89,7 @@ bool TrySpawnAndThrowEntityForToolUse(
 
     tool_slot.count -= 1;
     tool_slot.cooldown = cooldown_frames;
+    EmitPlayerStatePatchedGameplayEvent(state, thrower);
     (void)PlayEntityCenterSoundEmitter(state, thrower, audio_asset_ids::Throw);
     return true;
 }

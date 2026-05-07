@@ -230,7 +230,7 @@ bool ShouldRunFullLocalStepForNonPlayerEntity(const State& state, const Entity& 
     if (IsHeldByLocalPlayerChain(state, entity)) {
         return true;
     }
-    return GetEntityArchetype(entity.type_).step_without_local_authority;
+    return GetEntityArchetype(entity.type_).step_as_replica;
 }
 
 void StepNonAuthorityEntityPresentation(

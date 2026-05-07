@@ -59,12 +59,12 @@ const char* NetEventTypeName(NetEventType type) {
         return "TileBroken";
     case NetEventType::RopeTilePlaced:
         return "RopeTilePlaced";
+    case NetEventType::PlayerStatePatched:
+        return "PlayerStatePatched";
+    case NetEventType::RunStatePatched:
+        return "RunStatePatched";
     case NetEventType::PresentationCommand:
         return "PresentationCommand";
-    case NetEventType::MoneyChanged:
-        return "MoneyChanged";
-    case NetEventType::FavorChanged:
-        return "FavorChanged";
     case NetEventType::StageLoaded:
         return "StageLoaded";
     case NetEventType::ActionRequest:
@@ -263,6 +263,7 @@ void NetSessionState::ClearStageEntityLinks() {
     ordered_events.clear();
     pending_outbound_events.clear();
     event_log.clear();
+    next_coordinator_order = 1;
     next_expected_coordinator_order = 1;
     highest_applied_coordinator_order = 0;
 }

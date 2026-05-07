@@ -1,5 +1,7 @@
 #include "network/net_lobby_internal.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <variant>
 
 namespace splonks::network {
@@ -56,6 +58,16 @@ bool IsReplicatedEntityCarryEvent(const NetEvent& event) {
 bool IsReplicatedEntityLifecycleEvent(const NetEvent& event) {
     return event.type == NetEventType::EntityDeactivated &&
            std::holds_alternative<EntityIdEvent>(event.payload);
+}
+
+bool IsReplicatedPlayerStateEvent(const NetEvent& event) {
+    return event.type == NetEventType::PlayerStatePatched &&
+           std::holds_alternative<PlayerStatePatchedEvent>(event.payload);
+}
+
+bool IsReplicatedRunStateEvent(const NetEvent& event) {
+    return event.type == NetEventType::RunStatePatched &&
+           std::holds_alternative<RunStatePatchedEvent>(event.payload);
 }
 
 bool IsReplicatedPresentationCommandEvent(const NetEvent& event) {
@@ -175,12 +187,17 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .entity_id = payload != nullptr ? payload->entity_id : kInvalidNetEntityId,
         .source_entity_id = payload != nullptr ? payload->source_entity_id : kInvalidNetEntityId,
         .entity_a_id = payload != nullptr ? payload->entity_a_id : kInvalidNetEntityId,
+        .holding_id = payload != nullptr ? payload->holding_id : kInvalidNetEntityId,
+        .held_by_id = payload != nullptr ? payload->held_by_id : kInvalidNetEntityId,
+        .back_id = payload != nullptr ? payload->back_id : kInvalidNetEntityId,
         .pos_x = payload != nullptr ? payload->pos.x : 0.0F,
         .pos_y = payload != nullptr ? payload->pos.y : 0.0F,
         .vel_x = payload != nullptr ? payload->vel.x : 0.0F,
         .vel_y = payload != nullptr ? payload->vel.y : 0.0F,
         .acc_x = payload != nullptr ? payload->acc.x : 0.0F,
         .acc_y = payload != nullptr ? payload->acc.y : 0.0F,
+        .counter_a = payload != nullptr ? payload->counter_a : 0.0F,
+        .counter_b = payload != nullptr ? payload->counter_b : 0.0F,
         .point_a_x = payload != nullptr ? payload->point_a.x : 0,
         .point_a_y = payload != nullptr ? payload->point_a.y : 0,
         .health = payload != nullptr ? payload->health : 0U,
@@ -195,7 +212,19 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .can_apply_projectile_contact =
             payload != nullptr ? payload->can_apply_projectile_contact : static_cast<std::uint8_t>(1),
         .facing = payload != nullptr ? payload->facing : static_cast<std::uint8_t>(0),
+        .ai_state = payload != nullptr ? payload->ai_state : static_cast<std::uint8_t>(0),
+        .wanted = payload != nullptr ? payload->wanted : static_cast<std::uint8_t>(0),
+        .attachment_mode = payload != nullptr ? payload->attachment_mode : static_cast<std::uint8_t>(0),
+        .buyable_active = payload != nullptr ? payload->buyable_active : static_cast<std::uint8_t>(0),
+        .buyable_display_quantity = payload != nullptr ? payload->buyable_display_quantity : 0U,
+        .buyable_display_icon_animation_id =
+            payload != nullptr ? payload->buyable_display_icon_animation_id : kInvalidFrameDataId,
+        .buyable_shop_owner_id =
+            payload != nullptr ? payload->buyable_shop_owner_id : kInvalidNetEntityId,
         .animate = payload != nullptr ? payload->animate : static_cast<std::uint8_t>(0),
+        .animation_loop = payload != nullptr ? payload->animation_loop : static_cast<std::uint8_t>(1),
+        .animation_finished =
+            payload != nullptr ? payload->animation_finished : static_cast<std::uint8_t>(0),
         .animation_id = payload != nullptr ? payload->animation_id : kInvalidFrameDataId,
         .animation_frame = payload != nullptr ? payload->animation_frame : static_cast<std::uint16_t>(0),
         .animation_time = payload != nullptr ? payload->animation_time : 0.0F,
@@ -216,6 +245,7 @@ EntityCarryEventEntry MakeEntityCarryEventEntry(const NetEvent& event) {
     if (const EntityHeldEvent* const held_payload = std::get_if<EntityHeldEvent>(&event.payload)) {
         entry.entity_id = held_payload->held_id;
         entry.holder_id = held_payload->holder_id;
+        entry.attachment_mode = static_cast<std::uint16_t>(held_payload->attachment_mode);
     } else if (const EntityDroppedEvent* const dropped_payload = std::get_if<EntityDroppedEvent>(&event.payload)) {
         entry.entity_id = dropped_payload->entity_id;
         entry.pos_x = dropped_payload->pos.x;
@@ -249,6 +279,60 @@ EntityLifecycleEventEntry MakeEntityLifecycleEventEntry(const NetEvent& event) {
     }
 
     return entry;
+}
+
+PlayerStateEventEntry MakePlayerStateEventEntry(const NetEvent& event) {
+    const PlayerStatePatchedEvent* const payload = std::get_if<PlayerStatePatchedEvent>(&event.payload);
+    PlayerStateEventEntry entry{
+        .event_id = event.header.event_id,
+        .source_player_id = event.header.source_player_id,
+        .stage_instance_id = event.header.stage_instance_id,
+        .source_local_frame = event.header.source_local_frame,
+        .coordinator_order = event.header.coordinator_order,
+        .player_entity_id = payload != nullptr ? payload->player_entity_id : kInvalidNetEntityId,
+        .health = payload != nullptr ? payload->health : 0U,
+        .money = payload != nullptr ? payload->money : 0U,
+        .wanted = payload != nullptr ? payload->wanted : static_cast<std::uint8_t>(0),
+        .effect_count = payload != nullptr ? payload->effect_count : static_cast<std::uint8_t>(0),
+    };
+    if (payload == nullptr) {
+        return entry;
+    }
+    for (std::size_t i = 0; i < entry.tool_slots.size() && i < payload->tool_slots.size(); ++i) {
+        const PlayerStatePatchedToolSlot& slot = payload->tool_slots[i];
+        entry.tool_slots[i] = PlayerStateToolSlotEntry{
+            .kind = static_cast<std::uint16_t>(slot.kind),
+            .count = slot.count,
+            .cooldown = slot.cooldown,
+            .active = slot.active,
+        };
+    }
+    entry.effect_count = static_cast<std::uint8_t>(
+        std::min<std::size_t>(entry.effect_count, entry.effects.size())
+    );
+    for (std::size_t i = 0; i < entry.effect_count; ++i) {
+        const PlayerStatePatchedEffect& effect = payload->effects[i];
+        entry.effects[i] = PlayerStateEffectEntry{
+            .id = static_cast<std::uint16_t>(effect.id),
+            .count = effect.count,
+            .value = effect.value,
+            .frames_remaining = effect.frames_remaining,
+        };
+    }
+    return entry;
+}
+
+RunStateEventEntry MakeRunStateEventEntry(const NetEvent& event) {
+    const RunStatePatchedEvent* const payload = std::get_if<RunStatePatchedEvent>(&event.payload);
+    return RunStateEventEntry{
+        .event_id = event.header.event_id,
+        .source_player_id = event.header.source_player_id,
+        .stage_instance_id = event.header.stage_instance_id,
+        .source_local_frame = event.header.source_local_frame,
+        .coordinator_order = event.header.coordinator_order,
+        .sac_altar_favor = payload != nullptr ? payload->sac_altar_favor : 0,
+        .sac_altar_reward_tier = payload != nullptr ? payload->sac_altar_reward_tier : 0U,
+    };
 }
 
 PresentationCommandEventEntry MakePresentationCommandEventEntry(const NetEvent& event) {
@@ -345,6 +429,8 @@ bool IsOneShotActionRequestEvent(const NetEvent& event) {
             action->kind == NetActionKind::ThrowEntity ||
             action->kind == NetActionKind::UseHeldEntity ||
             action->kind == NetActionKind::UseBackEntity ||
+            action->kind == NetActionKind::PutHeldEntityOnBack ||
+            action->kind == NetActionKind::TakeOffBackEntity ||
             action->kind == NetActionKind::InteractEntity ||
             action->kind == NetActionKind::PushEntity);
 }
@@ -464,9 +550,14 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .entity_id = entry.entity_id,
         .source_entity_id = entry.source_entity_id,
         .entity_a_id = entry.entity_a_id,
+        .holding_id = entry.holding_id,
+        .held_by_id = entry.held_by_id,
+        .back_id = entry.back_id,
         .pos = Vec2::New(entry.pos_x, entry.pos_y),
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
+        .counter_a = entry.counter_a,
+        .counter_b = entry.counter_b,
         .point_a = IVec2::New(entry.point_a_x, entry.point_a_y),
         .health = entry.health,
         .stun_timer = entry.stun_timer,
@@ -479,7 +570,16 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .can_collide = entry.can_collide,
         .can_apply_projectile_contact = entry.can_apply_projectile_contact,
         .facing = entry.facing,
+        .ai_state = entry.ai_state,
+        .wanted = entry.wanted,
+        .attachment_mode = entry.attachment_mode,
+        .buyable_active = entry.buyable_active,
+        .buyable_display_quantity = entry.buyable_display_quantity,
+        .buyable_display_icon_animation_id = entry.buyable_display_icon_animation_id,
+        .buyable_shop_owner_id = entry.buyable_shop_owner_id,
         .animate = entry.animate,
+        .animation_loop = entry.animation_loop,
+        .animation_finished = entry.animation_finished,
         .animation_id = entry.animation_id,
         .animation_frame = entry.animation_frame,
         .animation_time = entry.animation_time,
@@ -503,6 +603,10 @@ NetEvent MakeEntityCarryEvent(const EntityCarryEventEntry& entry) {
         event.payload = EntityHeldEvent{
             .holder_id = entry.holder_id,
             .held_id = entry.entity_id,
+            .attachment_mode =
+                entry.attachment_mode == static_cast<std::uint16_t>(AttachmentMode::Back)
+                    ? AttachmentMode::Back
+                    : AttachmentMode::Held,
         };
         break;
     case NetEventType::EntityDropped:
@@ -549,6 +653,65 @@ NetEvent MakeEntityLifecycleEvent(const EntityLifecycleEventEntry& entry) {
         event.payload = std::monostate{};
         break;
     }
+    return event;
+}
+
+NetEvent MakePlayerStateEvent(const PlayerStateEventEntry& entry) {
+    NetEvent event;
+    event.header = NetEventHeader{
+        .event_id = entry.event_id,
+        .source_player_id = entry.source_player_id,
+        .stage_instance_id = entry.stage_instance_id,
+        .source_local_frame = entry.source_local_frame,
+        .coordinator_order = entry.coordinator_order,
+    };
+    PlayerStatePatchedEvent payload{
+        .player_entity_id = entry.player_entity_id,
+        .health = entry.health,
+        .money = entry.money,
+        .wanted = entry.wanted,
+        .effect_count = entry.effect_count,
+    };
+    for (std::size_t i = 0; i < payload.tool_slots.size() && i < entry.tool_slots.size(); ++i) {
+        const PlayerStateToolSlotEntry& slot = entry.tool_slots[i];
+        payload.tool_slots[i] = PlayerStatePatchedToolSlot{
+            .kind = static_cast<ToolKind>(slot.kind),
+            .count = slot.count,
+            .cooldown = slot.cooldown,
+            .active = slot.active,
+        };
+    }
+    payload.effect_count = static_cast<std::uint8_t>(
+        std::min<std::size_t>(payload.effect_count, payload.effects.size())
+    );
+    for (std::size_t i = 0; i < payload.effect_count; ++i) {
+        const PlayerStateEffectEntry& effect = entry.effects[i];
+        payload.effects[i] = PlayerStatePatchedEffect{
+            .id = static_cast<EffectId>(effect.id),
+            .count = effect.count,
+            .value = effect.value,
+            .frames_remaining = effect.frames_remaining,
+        };
+    }
+    event.type = NetEventType::PlayerStatePatched;
+    event.payload = payload;
+    return event;
+}
+
+NetEvent MakeRunStateEvent(const RunStateEventEntry& entry) {
+    NetEvent event;
+    event.header = NetEventHeader{
+        .event_id = entry.event_id,
+        .source_player_id = entry.source_player_id,
+        .stage_instance_id = entry.stage_instance_id,
+        .source_local_frame = entry.source_local_frame,
+        .coordinator_order = entry.coordinator_order,
+    };
+    event.type = NetEventType::RunStatePatched;
+    event.payload = RunStatePatchedEvent{
+        .sac_altar_favor = entry.sac_altar_favor,
+        .sac_altar_reward_tier = entry.sac_altar_reward_tier,
+    };
     return event;
 }
 
@@ -735,6 +898,48 @@ void SendEntityLifecycleEvents(
     }
     if (packet.event_count > 0) {
         SendEncodedPacket(transport, endpoint, EncodeEntityLifecycleEvents(packet));
+    }
+}
+
+void SendPlayerStateEvents(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEvent>& events
+) {
+    PlayerStateEventsPacket packet;
+    for (const NetEvent& event : events) {
+        if (!IsReplicatedPlayerStateEvent(event)) {
+            continue;
+        }
+        if (packet.event_count >= packet.events.size()) {
+            SendEncodedPacket(transport, endpoint, EncodePlayerStateEvents(packet));
+            packet = PlayerStateEventsPacket{};
+        }
+        packet.events[packet.event_count++] = MakePlayerStateEventEntry(event);
+    }
+    if (packet.event_count > 0) {
+        SendEncodedPacket(transport, endpoint, EncodePlayerStateEvents(packet));
+    }
+}
+
+void SendRunStateEvents(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEvent>& events
+) {
+    RunStateEventsPacket packet;
+    for (const NetEvent& event : events) {
+        if (!IsReplicatedRunStateEvent(event)) {
+            continue;
+        }
+        if (packet.event_count >= packet.events.size()) {
+            SendEncodedPacket(transport, endpoint, EncodeRunStateEvents(packet));
+            packet = RunStateEventsPacket{};
+        }
+        packet.events[packet.event_count++] = MakeRunStateEventEntry(event);
+    }
+    if (packet.event_count > 0) {
+        SendEncodedPacket(transport, endpoint, EncodeRunStateEvents(packet));
     }
 }
 

@@ -49,7 +49,7 @@ struct EntityArchetype {
     Color3 light_color = Color3::White();
     int light_radius = 0;
     bool preserve_held_aim = false;
-    bool step_without_local_authority = false;
+    bool step_as_replica = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     bool render_enabled = true;
     LeftOrRight facing = LeftOrRight::Left;

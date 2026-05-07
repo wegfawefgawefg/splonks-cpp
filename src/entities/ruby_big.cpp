@@ -8,6 +8,7 @@
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "math_types.hpp"
 
 namespace splonks::entities::ruby_big {
@@ -30,6 +31,7 @@ common::ContactResolution OnEntityContactAsRubyBig(
     Entity& collector = state.entity_manager.entities[other_entity_idx];
     const Entity& gem = state.entity_manager.entities[entity_idx];
     collector.money += 1600;
+    EmitPlayerStatePatchedGameplayEvent(state, collector);
     (void)PlayEntityCenterSoundEmitter(state, gem, audio_asset_ids::GoldStack);
     effects::SpawnTreasurePickupSparkles(gem, state, Color3::New(1.0F, 0.16F, 0.26F), 8);
     common::DeactivateCollectedPickup(entity_idx, state, *graphics);

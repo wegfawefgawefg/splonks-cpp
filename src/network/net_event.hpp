@@ -2,16 +2,23 @@
 
 #include "damage_types.hpp"
 #include "entity/core_types.hpp"
+#include "effects/effect_id.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
 #include "network/net_ids.hpp"
 #include "tile.hpp"
+#include "tools/tool_archetype.hpp"
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <variant>
 
 namespace splonks::network {
+
+constexpr std::size_t kPlayerStatePatchedToolSlotCount = 2;
+constexpr std::size_t kPlayerStatePatchedEffectCount = 12;
 
 enum class NetEventType : std::uint16_t {
     None,
@@ -29,39 +36,18 @@ enum class NetEventType : std::uint16_t {
     EntitySpawned,
     EntityDeactivated,
     EntityStatePatched,
-    EntityOwnerChanged,
     EntityHeld,
     EntityDropped,
     EntityThrown,
     EntityDamaged,
-    EntityKilled,
-    EntityStunned,
 
     TileChanged,
     TileBroken,
-    TileTriggerFired,
     RopeTilePlaced,
-    FluidPatched,
 
-    ToolSlotChanged,
-    EffectAdded,
-    EffectRemoved,
-    MoneyChanged,
-    FavorChanged,
-    ShopDisturbed,
-    ShopItemBought,
-    QuestFlagChanged,
-
-    BombPlaced,
-    BombExploded,
-    RopeThrown,
-    ArrowFired,
-    ProjectileHit,
-    MattockDug,
+    PlayerStatePatched,
+    RunStatePatched,
     PresentationCommand,
-    CrateOpened,
-    ChestOpened,
-    SacrificeApplied,
 };
 
 enum class NetActionKind : std::uint16_t {
@@ -72,6 +58,8 @@ enum class NetActionKind : std::uint16_t {
     ThrowEntity,
     UseHeldEntity,
     UseBackEntity,
+    PutHeldEntityOnBack,
+    TakeOffBackEntity,
     InteractEntity,
     PushEntity,
     BreakTile,
@@ -109,14 +97,10 @@ struct EntityIdEvent {
     NetEntityId entity_id = kInvalidNetEntityId;
 };
 
-struct EntityOwnerChangedEvent {
-    NetEntityId entity_id = kInvalidNetEntityId;
-    NetEntityOwner owner = NetEntityOwner::Coordinator();
-};
-
 struct EntityHeldEvent {
     NetEntityId holder_id = kInvalidNetEntityId;
     NetEntityId held_id = kInvalidNetEntityId;
+    AttachmentMode attachment_mode = AttachmentMode::Held;
 };
 
 struct EntityDroppedEvent {
@@ -156,9 +140,14 @@ struct EntityStatePatchedEvent {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId source_entity_id = kInvalidNetEntityId;
     NetEntityId entity_a_id = kInvalidNetEntityId;
+    NetEntityId holding_id = kInvalidNetEntityId;
+    NetEntityId held_by_id = kInvalidNetEntityId;
+    NetEntityId back_id = kInvalidNetEntityId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    float counter_a = 0.0F;
+    float counter_b = 0.0F;
     IVec2 point_a = IVec2::New(0, 0);
     std::uint32_t health = 0;
     std::uint32_t stun_timer = 0;
@@ -171,7 +160,16 @@ struct EntityStatePatchedEvent {
     std::uint8_t can_collide = 1;
     std::uint8_t can_apply_projectile_contact = 1;
     std::uint8_t facing = 0;
+    std::uint8_t ai_state = 0;
+    std::uint8_t wanted = 0;
+    std::uint8_t attachment_mode = 0;
+    std::uint8_t buyable_active = 0;
+    std::uint32_t buyable_display_quantity = 0;
+    FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
+    NetEntityId buyable_shop_owner_id = kInvalidNetEntityId;
     std::uint8_t animate = 0;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
     float animation_time = 0.0F;
@@ -210,19 +208,33 @@ struct PresentationCommandEvent {
     float param_d = 0.0F;
 };
 
-struct MoneyChangedEvent {
-    PlayerId player_id = kInvalidPlayerId;
-    std::int32_t delta = 0;
+struct PlayerStatePatchedToolSlot {
+    ToolKind kind = ToolKind::ThrowPot;
+    std::uint16_t count = 0;
+    std::uint16_t cooldown = 0;
+    std::uint8_t active = 0;
 };
 
-struct FavorChangedEvent {
-    std::int32_t delta = 0;
-    NetEntityId source_entity_id = kInvalidNetEntityId;
+struct PlayerStatePatchedEffect {
+    EffectId id = EffectId::None;
+    std::int32_t count = 0;
+    float value = 0.0F;
+    std::uint32_t frames_remaining = 0;
 };
 
-struct QuestFlagChangedEvent {
-    std::uint32_t flag_id = 0;
-    bool value = false;
+struct PlayerStatePatchedEvent {
+    NetEntityId player_entity_id = kInvalidNetEntityId;
+    std::uint32_t health = 0;
+    std::uint32_t money = 0;
+    std::uint8_t wanted = 0;
+    std::uint8_t effect_count = 0;
+    std::array<PlayerStatePatchedToolSlot, kPlayerStatePatchedToolSlotCount> tool_slots{};
+    std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount> effects{};
+};
+
+struct RunStatePatchedEvent {
+    std::int32_t sac_altar_favor = 0;
+    std::uint32_t sac_altar_reward_tier = 0;
 };
 
 struct StageLoadedEvent {
@@ -257,7 +269,6 @@ struct NetEvent {
         std::monostate,
         EntitySpawnedEvent,
         EntityIdEvent,
-        EntityOwnerChangedEvent,
         EntityHeldEvent,
         EntityDroppedEvent,
         EntityThrownEvent,
@@ -267,9 +278,8 @@ struct NetEvent {
         TileBrokenEvent,
         RopeTilePlacedEvent,
         PresentationCommandEvent,
-        MoneyChangedEvent,
-        FavorChangedEvent,
-        QuestFlagChangedEvent,
+        PlayerStatePatchedEvent,
+        RunStatePatchedEvent,
         StageLoadedEvent,
         ActionRequestEvent
     > payload{};

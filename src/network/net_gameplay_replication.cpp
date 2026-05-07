@@ -1,11 +1,16 @@
 #include "network/net_gameplay_replication.hpp"
 
 #include "entity.hpp"
+#include "effects.hpp"
+#include "entity_tool_inventory.hpp"
 #include "gameplay_authority.hpp"
 #include "network/net_entity_links.hpp"
 #include "network/net_event.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
+
+#include <algorithm>
+#include <cstddef>
 
 namespace splonks::network {
 
@@ -127,6 +132,7 @@ void EnqueueEntityHeldReplicationEvent(State& state, const GameplayEntityHeld& g
     event.payload = EntityHeldEvent{
         .holder_id = GetOrAssignReplicatedEntityId(state, gameplay_event.holder_vid),
         .held_id = held_id,
+        .attachment_mode = gameplay_event.attachment_mode,
     };
     state.net_session.EnqueueNetEvent(event);
 }
@@ -236,9 +242,14 @@ void EnqueueEntityStatePatchedReplicationEvent(
         .entity_id = entity_id,
         .source_entity_id = GetOrAssignReplicatedEntityId(state, gameplay_event.source_vid),
         .entity_a_id = GetReplicatedEntityLinkId(state, gameplay_event.entity_a_vid),
+        .holding_id = GetReplicatedEntityLinkId(state, gameplay_event.holding_vid),
+        .held_by_id = GetReplicatedEntityLinkId(state, gameplay_event.held_by_vid),
+        .back_id = GetReplicatedEntityLinkId(state, gameplay_event.back_vid),
         .pos = gameplay_event.pos,
         .vel = gameplay_event.vel,
         .acc = gameplay_event.acc,
+        .counter_a = gameplay_event.counter_a,
+        .counter_b = gameplay_event.counter_b,
         .point_a = gameplay_event.point_a,
         .health = gameplay_event.health,
         .stun_timer = gameplay_event.stun_timer,
@@ -251,11 +262,90 @@ void EnqueueEntityStatePatchedReplicationEvent(
         .can_collide = gameplay_event.can_collide,
         .can_apply_projectile_contact = gameplay_event.can_apply_projectile_contact,
         .facing = gameplay_event.facing,
+        .ai_state = gameplay_event.ai_state,
+        .wanted = gameplay_event.wanted,
+        .attachment_mode = gameplay_event.attachment_mode,
+        .buyable_active = gameplay_event.buyable_active,
+        .buyable_display_quantity = gameplay_event.buyable_display_quantity,
+        .buyable_display_icon_animation_id = gameplay_event.buyable_display_icon_animation_id,
+        .buyable_shop_owner_id = GetReplicatedEntityLinkId(state, gameplay_event.buyable_shop_owner_vid),
         .animate = gameplay_event.animate,
         .animation_id = gameplay_event.animation_id,
         .animation_frame = gameplay_event.animation_frame,
         .animation_time = gameplay_event.animation_time,
         .animation_speed = gameplay_event.animation_speed,
+    };
+    state.net_session.EnqueueNetEvent(event);
+}
+
+void EnqueuePlayerStatePatchedReplicationEvent(
+    State& state,
+    const GameplayPlayerStatePatched& gameplay_event
+) {
+    if (state.net_session.role != NetRole::Coordinator) {
+        return;
+    }
+
+    const Entity* const player = state.entity_manager.GetEntity(gameplay_event.player_vid);
+    if (player == nullptr || !player->active) {
+        return;
+    }
+    if (state.players.FindByEntityVid(player->vid) == nullptr) {
+        return;
+    }
+
+    PlayerStatePatchedEvent payload{
+        .player_entity_id = GetOrAssignReplicatedEntityId(state, player->vid),
+        .health = player->health,
+        .money = player->money,
+        .wanted = static_cast<std::uint8_t>(player->wanted ? 1 : 0),
+    };
+
+    if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player->vid)) {
+        for (std::size_t i = 0; i < payload.tool_slots.size() && i < tools->slots.size(); ++i) {
+            const ToolSlot& slot = tools->slots[i];
+            payload.tool_slots[i] = PlayerStatePatchedToolSlot{
+                .kind = slot.kind,
+                .count = slot.count,
+                .cooldown = slot.cooldown,
+                .active = static_cast<std::uint8_t>(slot.active ? 1 : 0),
+            };
+        }
+    }
+
+    if (const EntityEffects* const effects = player->effects.get()) {
+        payload.effect_count = static_cast<std::uint8_t>(
+            std::min<std::size_t>(effects->count, payload.effects.size())
+        );
+        for (std::size_t i = 0; i < payload.effect_count; ++i) {
+            const EffectInstance& effect = effects->effects[i];
+            payload.effects[i] = PlayerStatePatchedEffect{
+                .id = effect.id,
+                .count = effect.count,
+                .value = effect.value,
+                .frames_remaining = effect.frames_remaining,
+            };
+        }
+    }
+
+    NetEvent event;
+    event.header = state.net_session.MakeLocalEventHeader(state.frame);
+    event.type = NetEventType::PlayerStatePatched;
+    event.payload = payload;
+    state.net_session.EnqueueNetEvent(event);
+}
+
+void EnqueueRunStatePatchedReplicationEvent(State& state) {
+    if (state.net_session.role != NetRole::Coordinator) {
+        return;
+    }
+
+    NetEvent event;
+    event.header = state.net_session.MakeLocalEventHeader(state.frame);
+    event.type = NetEventType::RunStatePatched;
+    event.payload = RunStatePatchedEvent{
+        .sac_altar_favor = state.sac_altar_favor,
+        .sac_altar_reward_tier = state.sac_altar_reward_tier,
     };
     state.net_session.EnqueueNetEvent(event);
 }
@@ -386,6 +476,12 @@ void ReplicateGameplayEvent(State& state, const GameplayEvent& event) {
         break;
     case GameplayEventType::EntityStatePatched:
         EnqueueEntityStatePatchedReplicationEvent(state, event.entity_state_patched);
+        break;
+    case GameplayEventType::PlayerStatePatched:
+        EnqueuePlayerStatePatchedReplicationEvent(state, event.player_state_patched);
+        break;
+    case GameplayEventType::RunStatePatched:
+        EnqueueRunStatePatchedReplicationEvent(state);
         break;
     case GameplayEventType::TileBroken:
         EnqueueTileBrokenReplicationEvent(state, event.tile_broken);

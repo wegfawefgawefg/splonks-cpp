@@ -150,6 +150,14 @@ void CanonicalizeIncomingEventEntityIds(NetSessionState& session, NetEvent& even
         payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
         payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
         payload->entity_a_id = CanonicalizeIncomingEntityId(session, payload->entity_a_id);
+        payload->holding_id = CanonicalizeIncomingEntityId(session, payload->holding_id);
+        payload->held_by_id = CanonicalizeIncomingEntityId(session, payload->held_by_id);
+        payload->back_id = CanonicalizeIncomingEntityId(session, payload->back_id);
+        payload->buyable_shop_owner_id = CanonicalizeIncomingEntityId(session, payload->buyable_shop_owner_id);
+        return;
+    }
+    if (PlayerStatePatchedEvent* const payload = std::get_if<PlayerStatePatchedEvent>(&event.payload)) {
+        payload->player_entity_id = CanonicalizeIncomingEntityId(session, payload->player_entity_id);
         return;
     }
     if (PresentationCommandEvent* const payload = std::get_if<PresentationCommandEvent>(&event.payload)) {
@@ -177,6 +185,10 @@ GameplayActionKind ToGameplayActionKind(NetActionKind kind) {
         return GameplayActionKind::UseHeldEntity;
     case NetActionKind::UseBackEntity:
         return GameplayActionKind::UseBackEntity;
+    case NetActionKind::PutHeldEntityOnBack:
+        return GameplayActionKind::PutHeldEntityOnBack;
+    case NetActionKind::TakeOffBackEntity:
+        return GameplayActionKind::TakeOffBackEntity;
     case NetActionKind::InteractEntity:
         return GameplayActionKind::InteractEntity;
     case NetActionKind::PushEntity:
@@ -234,6 +246,8 @@ void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport)
         SendEntityStateEvents(transport, remote.endpoint, unacked_events);
         SendEntityCarryEvents(transport, remote.endpoint, unacked_events);
         SendEntityLifecycleEvents(transport, remote.endpoint, unacked_events);
+        SendPlayerStateEvents(transport, remote.endpoint, unacked_events);
+        SendRunStateEvents(transport, remote.endpoint, unacked_events);
         SendPresentationCommandEvents(transport, remote.endpoint, unacked_events);
     }
 }
@@ -440,6 +454,40 @@ void HandleEntityLifecycleEventsAsPeer(State& state, const EntityLifecycleEvents
         if (event.type != NetEventType::None) {
             state.net_session.EnqueueOrderedEvent(event);
         }
+    }
+}
+
+void HandlePlayerStateEventsAsPeer(State& state, const PlayerStateEventsPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
+        const PlayerStateEventEntry& entry = packet.events[i];
+        if (entry.stage_instance_id != state.net_session.stage_instance_id ||
+            entry.event_id == kInvalidNetEventId) {
+            continue;
+        }
+        if (entry.source_player_id != state.net_session.coordinator_player_id) {
+            continue;
+        }
+        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+            continue;
+        }
+        state.net_session.EnqueueOrderedEvent(MakePlayerStateEvent(entry));
+    }
+}
+
+void HandleRunStateEventsAsPeer(State& state, const RunStateEventsPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
+        const RunStateEventEntry& entry = packet.events[i];
+        if (entry.stage_instance_id != state.net_session.stage_instance_id ||
+            entry.event_id == kInvalidNetEventId) {
+            continue;
+        }
+        if (entry.source_player_id != state.net_session.coordinator_player_id) {
+            continue;
+        }
+        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+            continue;
+        }
+        state.net_session.EnqueueOrderedEvent(MakeRunStateEvent(entry));
     }
 }
 

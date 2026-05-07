@@ -3,6 +3,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "stage_progression.hpp"
 #include "world_query.hpp"
 
@@ -53,7 +54,7 @@ void MaybeQueueTransitionOnPlayerContact(
     State& state,
     const Graphics& graphics
 ) {
-    if (state.pending_stage_transition.has_value() || !state.player_vid.has_value()) {
+    if (state.pending_stage_transition.has_value()) {
         return;
     }
 
@@ -62,7 +63,7 @@ void MaybeQueueTransitionOnPlayerContact(
         return;
     }
 
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
+    const Entity* const player = FindNearestPlayer(state, entity.GetCenter(), false);
     if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
         return;
     }

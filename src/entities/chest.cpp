@@ -11,6 +11,7 @@
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
@@ -209,6 +210,7 @@ void ConsumeHeldChestKey(Entity* holder, Entity& key, State& state, const Graphi
     key.held_by_vid.reset();
     key.attachment_mode = AttachmentMode::None;
     StopUsingEntity(key);
+    EmitEntityDeactivatedGameplayEvent(state, key);
     state.entity_manager.SetInactive(key.vid.id);
     state.UpdateSidForEntity(key.vid.id, graphics);
 }
@@ -323,7 +325,12 @@ EntityDamageEffectResult OnDamageEffectAsChest(
     }
 
     const Entity& chest = state.entity_manager.entities[entity_idx];
-    if (!TryOpenTreasureChestAt(entity_idx, chest.GetCenter(), state, audio, state.player_vid)) {
+    if (!TryOpenTreasureChestAt(
+            entity_idx,
+            chest.GetCenter(),
+            state,
+            audio,
+            FindNearestPlayerVid(state, chest.GetCenter(), false))) {
         return EntityDamageEffectResult::None;
     }
     return EntityDamageEffectResult::Consumed;
@@ -351,7 +358,10 @@ bool TryOpenKeyChest(std::size_t entity_idx, State& state, Graphics& graphics, A
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
     Entity* const udjat_eye = SpawnEntityAtCenter(EntityType::UdjatEye, emit_pos, state);
     if (udjat_eye != nullptr) {
-        LaunchChestLoot(*udjat_eye, holder != nullptr ? std::optional<VID>(holder->vid) : state.player_vid);
+        LaunchChestLoot(
+            *udjat_eye,
+            holder != nullptr ? std::optional<VID>(holder->vid)
+                              : FindNearestPlayerVid(state, chest.GetCenter(), false));
         EmitEntitySpawnedGameplayEvent(state, *udjat_eye);
     }
     if (holder != nullptr && key != nullptr) {

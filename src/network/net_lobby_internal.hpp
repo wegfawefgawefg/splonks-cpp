@@ -26,6 +26,8 @@ NetEvent MakeEntityDamageEvent(const EntityDamageEventEntry& entry);
 NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry);
 NetEvent MakeEntityCarryEvent(const EntityCarryEventEntry& entry);
 NetEvent MakeEntityLifecycleEvent(const EntityLifecycleEventEntry& entry);
+NetEvent MakePlayerStateEvent(const PlayerStateEventEntry& entry);
+NetEvent MakeRunStateEvent(const RunStateEventEntry& entry);
 NetEvent MakePresentationCommandEvent(const PresentationCommandEventEntry& entry);
 NetEvent MakeActionRequestEvent(const ActionRequestEventEntry& entry);
 
@@ -59,6 +61,16 @@ void SendEntityLifecycleEvents(
     const NetEndpoint& endpoint,
     const std::vector<NetEvent>& events
 );
+void SendPlayerStateEvents(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEvent>& events
+);
+void SendRunStateEvents(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEvent>& events
+);
 void SendPresentationCommandEvents(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
@@ -86,6 +98,8 @@ void HandleEntityDamageEventsAsPeer(State& state, const EntityDamageEventsPacket
 void HandleEntityStateEventsAsPeer(State& state, const EntityStateEventsPacket& packet);
 void HandleEntityCarryEventsAsPeer(State& state, const EntityCarryEventsPacket& packet);
 void HandleEntityLifecycleEventsAsPeer(State& state, const EntityLifecycleEventsPacket& packet);
+void HandlePlayerStateEventsAsPeer(State& state, const PlayerStateEventsPacket& packet);
+void HandleRunStateEventsAsPeer(State& state, const RunStateEventsPacket& packet);
 void HandlePresentationCommandEventsAsCoordinator(
     State& state,
     const PresentationCommandEventsPacket& packet

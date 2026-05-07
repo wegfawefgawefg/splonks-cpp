@@ -5,7 +5,9 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "particles/sprite_particle.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -66,38 +68,41 @@ bool ShouldRunSightScan(const Entity& cobra, std::uint64_t stage_frame) {
 }
 
 bool CanSeePlayerAhead(const Entity& cobra, const State& state, const Graphics& graphics) {
-    if (!state.player_vid.has_value()) {
-        return false;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
-        return false;
-    }
-
     const Vec2 spit_origin = common::GetEmitPointForEntity(cobra, graphics, cobra.GetCenter());
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, spit_origin, player->GetCenter());
-    const Vec2 player_delta = player_center - spit_origin;
-    if (std::abs(player_delta.y) > kCobraSightVerticalTolerance ||
-        std::abs(player_delta.x) > static_cast<float>(kCobraSightDistance)) {
-        return false;
-    }
-
     const int direction = cobra.facing == LeftOrRight::Left ? -1 : 1;
-    if ((direction < 0 && player_delta.x >= 0.0F) || (direction > 0 && player_delta.x <= 0.0F)) {
-        return false;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
+            continue;
+        }
+        const Vec2 player_center = GetNearestWorldPoint(state.stage, spit_origin, player->GetCenter());
+        const Vec2 player_delta = player_center - spit_origin;
+        if (std::abs(player_delta.y) > kCobraSightVerticalTolerance ||
+            std::abs(player_delta.x) > static_cast<float>(kCobraSightDistance)) {
+            continue;
+        }
+        if ((direction < 0 && player_delta.x >= 0.0F) ||
+            (direction > 0 && player_delta.x <= 0.0F)) {
+            continue;
+        }
+        const WorldRayHit hit = RaycastHorizontal(
+            cobra,
+            spit_origin,
+            direction,
+            static_cast<int>(std::abs(player_delta.x)),
+            state,
+            graphics,
+            cobra.vid
+        );
+        if (hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() &&
+            *hit.entity_vid == player->vid) {
+            return true;
+        }
     }
-
-    const WorldRayHit hit = RaycastHorizontal(
-        cobra,
-        spit_origin,
-        direction,
-        static_cast<int>(std::abs(player_delta.x)),
-        state,
-        graphics,
-        cobra.vid
-    );
-    return hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() && *hit.entity_vid == player->vid;
+    return false;
 }
 
 void SpawnSpitParticle(State& state, const Vec2& pos, const Vec2& vel, float alpha, float size_jitter) {
@@ -204,6 +209,7 @@ void FireCobraSpit(std::size_t entity_idx, State& state, Graphics& graphics) {
     spit->projectile_contact_timer = common::kProjectileContactDuration;
     spit->counter_a = kCobraSpitLifetimeFrames;
     spit->counter_b = 0.0F;
+    EmitEntitySpawnedGameplayEvent(state, *spit);
 
     (void)PlayWorldSoundEmitter(state, spit_origin, audio_asset_ids::Tube);
     SpawnSpitSpray(state, spit_origin, direction);
@@ -220,6 +226,7 @@ void DestroyCobraSpit(std::size_t entity_idx, State& state) {
     }
 
     SpawnSpitImpact(state, spit.GetCenter());
+    EmitEntityDeactivatedGameplayEvent(state, spit);
     state.entity_manager.SetInactive(entity_idx);
 }
 
@@ -249,10 +256,8 @@ void StepEntityLogicAsCobra(
 
     if (ShouldRunSightScan(cobra, state.stage_frame) && cobra.counter_b <= 0.0F &&
         CanSeePlayerAhead(cobra, state, graphics)) {
-        if (state.player_vid.has_value()) {
-            if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-                FaceTowards(cobra, player->GetCenter(), state.stage);
-            }
+        if (const Entity* const player = FindNearestPlayer(state, cobra.GetCenter())) {
+            FaceTowards(cobra, player->GetCenter(), state.stage);
         }
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnimation(cobra, EntityDisplayState::Walk);

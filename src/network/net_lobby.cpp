@@ -291,7 +291,6 @@ void ClearLocalPlayersForJoin(State& state) {
         state.players.Remove(player_id);
     }
     state.debug_local_player_bots.clear();
-    state.player_vid.reset();
     state.controlled_entity_vid.reset();
 }
 
@@ -467,9 +466,9 @@ void HandleJoinAccept(
     transport.join_request_pending = false;
 
     state.players = PlayerRegistry::New();
-    state.player_vid.reset();
     state.controlled_entity_vid.reset();
     transport.remote_player_targets.clear();
+    transport.replicated_entity_state_cache.clear();
     state.net_session.ClearStageEntityLinks();
 
     if (!LoadNetworkQuestStage(
@@ -669,6 +668,18 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
+        if (const std::optional<PlayerStateEventsPacket> player_state_events =
+                TryDecodePlayerStateEvents(packet->bytes.data(), packet->size)) {
+            HandlePlayerStateEventsAsPeer(state, *player_state_events);
+            continue;
+        }
+
+        if (const std::optional<RunStateEventsPacket> run_state_events =
+                TryDecodeRunStateEvents(packet->bytes.data(), packet->size)) {
+            HandleRunStateEventsAsPeer(state, *run_state_events);
+            continue;
+        }
+
         if (const std::optional<PresentationCommandEventsPacket> presentation_events =
                 TryDecodePresentationCommandEvents(packet->bytes.data(), packet->size)) {
             HandlePresentationCommandEventsAsPeer(state, *presentation_events);
@@ -704,6 +715,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     RegisterStageEntityLinks(state);
     transport.remotes.clear();
     transport.remote_player_targets.clear();
+    transport.replicated_entity_state_cache.clear();
     transport.join_request_pending = false;
     if (status_out != nullptr) {
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
@@ -733,6 +745,7 @@ bool JoinHostSession(
     transport.coordinator_endpoint = NetEndpoint{.address = host, .port = port};
     transport.remotes.clear();
     transport.remote_player_targets.clear();
+    transport.replicated_entity_state_cache.clear();
     transport.join_request_pending = true;
     transport.join_request_retry_frames = 0;
     SendJoinRequest(state);
@@ -748,6 +761,7 @@ void DisconnectSession(State& state, std::string* status_out) {
         state.net_transport->socket.Close();
         state.net_transport->remotes.clear();
         state.net_transport->remote_player_targets.clear();
+        state.net_transport->replicated_entity_state_cache.clear();
         state.net_transport->join_request_pending = false;
     }
     state.net_session = NetSessionState::NewOffline();
@@ -810,7 +824,6 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         entity->render_enabled = GetEntityArchetype(entity->type_).render_enabled;
         state.UpdateSidForEntity(entity->vid.id, graphics);
         if (slot.primary_local) {
-            state.player_vid = entity->vid;
             state.controlled_entity_vid = entity->vid;
         }
     }
@@ -866,6 +879,7 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
     state.players = PlayerRegistry::New();
     if (state.net_transport) {
         state.net_transport->remote_player_targets.clear();
+        state.net_transport->replicated_entity_state_cache.clear();
     }
     const bool loaded = LoadNetworkQuestStage(
         state,
@@ -882,11 +896,7 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
     }
     RegisterStageEntityLinks(state);
     const Vec2 spawn_base = GetPrimaryPlayerSpawnPos(state);
-    if (state.player_vid.has_value()) {
-        state.entity_manager.SetInactiveVid(*state.player_vid);
-    }
     state.players.slots.clear();
-    state.player_vid.reset();
     state.controlled_entity_vid.reset();
     for (std::size_t i = 0; i < saved_slots.size(); ++i) {
         const SavedPlayerSlot& slot = saved_slots[i];

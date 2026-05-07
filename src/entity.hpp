@@ -98,6 +98,7 @@ struct Entity {
     std::optional<EffectId> pickup_effect = std::nullopt;
     std::uint32_t money = 0;
     Buyable buyable;
+    std::optional<std::size_t> stage_spawn_index;
     std::optional<VID> back_vid;
     AttachmentMode attachment_mode = AttachmentMode::None;
     UseState use_state;
@@ -184,6 +185,8 @@ struct Entity {
     bool IsHanging() const;
     bool IsClimbing() const;
     AABB GetFeet() const;
+    AABB GetGroundProbe() const;
+    bool TrySnapToBlockingStageBottom(const Stage& stage);
     void SetGrounded(const Stage& stage);
     std::tuple<Vec2, Vec2> GetTlAndTrCorners() const;
     HangHands GetHangHands() const;

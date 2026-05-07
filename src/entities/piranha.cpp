@@ -6,6 +6,7 @@
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "water.hpp"
 #include "world_query.hpp"
@@ -34,11 +35,8 @@ bool IsPiranhaInWater(const Entity& piranha, const State& state) {
 }
 
 std::optional<Vec2> FindPiranhaTarget(const Entity& piranha, const State& state) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
+    const Entity* const player = FindNearestPlayer(state, piranha.GetCenter());
+    if (player == nullptr) {
         return std::nullopt;
     }
 

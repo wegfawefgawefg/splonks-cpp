@@ -4,7 +4,9 @@
 #include "entities/common/common.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "on_damage_effects.hpp"
+#include "player_queries.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
 
@@ -27,12 +29,8 @@ constexpr float kGiantSpiderHopSpeedX = 2.5F;
 constexpr float kSpiderIdleSpeedThreshold = 0.1F;
 
 std::optional<Vec2> GetNearestPlayerDelta(const Entity& entity, const State& state) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+    const Entity* const player = FindNearestPlayer(state, entity.GetCenter(), false);
+    if (player == nullptr || player->condition == EntityCondition::Dead) {
         return std::nullopt;
     }
 
@@ -85,10 +83,16 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
                 rng::RandomFloat(-2.0F, 2.0F),
                 -2.0F
             );
+            EmitEntitySpawnedGameplayEvent(state, *gem);
         }
     }
 
-    SpawnEntityAtCenter(EntityType::Paste, center, state);
+    const std::optional<VID> paste_vid = SpawnEntityAtCenter(EntityType::Paste, center, state);
+    if (paste_vid.has_value()) {
+        if (const Entity* const paste = state.entity_manager.GetEntity(*paste_vid)) {
+            EmitEntitySpawnedGameplayEvent(state, *paste);
+        }
+    }
 }
 
 void HandleGiantSpiderDeath(std::size_t entity_idx, State& state, Audio& audio) {

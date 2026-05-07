@@ -795,7 +795,6 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.debug_level);
     WriteEntityManager(out, snapshot.entity_manager);
     WriteStage(out, snapshot.stage);
-    WriteOptionalPod(out, snapshot.player_vid);
     WriteOptionalPod(out, snapshot.controlled_entity_vid);
     WriteOptionalPod(out, snapshot.mouse_trailer_vid);
     WriteVectorPod(out, snapshot.entity_tool_states);
@@ -850,7 +849,6 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.debug_level) &&
            ReadEntityManager(in, snapshot.entity_manager) &&
            ReadStage(in, snapshot.stage) &&
-           ReadOptionalPod(in, snapshot.player_vid) &&
            ReadOptionalPod(in, snapshot.controlled_entity_vid) &&
            ReadOptionalPod(in, snapshot.mouse_trailer_vid) &&
            ReadVectorPod(in, snapshot.entity_tool_states) &&

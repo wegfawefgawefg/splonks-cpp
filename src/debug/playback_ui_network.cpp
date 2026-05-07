@@ -56,8 +56,6 @@ const char* NetEventTypeName(network::NetEventType type) {
         return "EntityDeactivated";
     case network::NetEventType::EntityStatePatched:
         return "EntityStatePatched";
-    case network::NetEventType::EntityOwnerChanged:
-        return "EntityOwnerChanged";
     case network::NetEventType::EntityHeld:
         return "EntityHeld";
     case network::NetEventType::EntityDropped:
@@ -66,56 +64,18 @@ const char* NetEventTypeName(network::NetEventType type) {
         return "EntityThrown";
     case network::NetEventType::EntityDamaged:
         return "EntityDamaged";
-    case network::NetEventType::EntityKilled:
-        return "EntityKilled";
-    case network::NetEventType::EntityStunned:
-        return "EntityStunned";
     case network::NetEventType::TileChanged:
         return "TileChanged";
     case network::NetEventType::TileBroken:
         return "TileBroken";
-    case network::NetEventType::TileTriggerFired:
-        return "TileTriggerFired";
     case network::NetEventType::RopeTilePlaced:
         return "RopeTilePlaced";
-    case network::NetEventType::FluidPatched:
-        return "FluidPatched";
-    case network::NetEventType::ToolSlotChanged:
-        return "ToolSlotChanged";
-    case network::NetEventType::EffectAdded:
-        return "EffectAdded";
-    case network::NetEventType::EffectRemoved:
-        return "EffectRemoved";
-    case network::NetEventType::MoneyChanged:
-        return "MoneyChanged";
-    case network::NetEventType::FavorChanged:
-        return "FavorChanged";
-    case network::NetEventType::ShopDisturbed:
-        return "ShopDisturbed";
-    case network::NetEventType::ShopItemBought:
-        return "ShopItemBought";
-    case network::NetEventType::QuestFlagChanged:
-        return "QuestFlagChanged";
-    case network::NetEventType::BombPlaced:
-        return "BombPlaced";
-    case network::NetEventType::BombExploded:
-        return "BombExploded";
-    case network::NetEventType::RopeThrown:
-        return "RopeThrown";
-    case network::NetEventType::ArrowFired:
-        return "ArrowFired";
-    case network::NetEventType::ProjectileHit:
-        return "ProjectileHit";
-    case network::NetEventType::MattockDug:
-        return "MattockDug";
+    case network::NetEventType::PlayerStatePatched:
+        return "PlayerStatePatched";
+    case network::NetEventType::RunStatePatched:
+        return "RunStatePatched";
     case network::NetEventType::PresentationCommand:
         return "PresentationCommand";
-    case network::NetEventType::CrateOpened:
-        return "CrateOpened";
-    case network::NetEventType::ChestOpened:
-        return "ChestOpened";
-    case network::NetEventType::SacrificeApplied:
-        return "SacrificeApplied";
     }
     return "Unknown";
 }
@@ -162,19 +122,6 @@ void DrawFuzzerControls(network::NetFuzzerConfig& config) {
     ImGui::Checkbox("Burst loss", &config.burst_loss_enabled);
     ImGui::SliderFloat("Burst loss %", &config.burst_loss_percent, 0.0F, 50.0F, "%.2f");
     ImGui::SliderFloat("Clock drift %", &config.clock_drift_percent, -5.0F, 5.0F, "%.3f");
-}
-
-void EmitDebugMoneyEvent(DebugPlayback& debug, State& state) {
-    network::MoneyChangedEvent payload;
-    payload.player_id = state.net_session.local_player_id;
-    payload.delta = debug.network_test_money_delta;
-
-    network::NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = network::NetEventType::MoneyChanged;
-    event.payload = payload;
-    state.net_session.EnqueueNetEvent(event);
-    debug.network_status = "Queued MoneyChanged net event.";
 }
 
 void DrawRecentOrderedEvents(const network::NetSessionState& session) {
@@ -495,10 +442,6 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Separator();
 
     ImGui::TextUnformatted("Net Event Harness");
-    ImGui::InputInt("Money delta", &debug.network_test_money_delta);
-    if (ImGui::Button("Emit MoneyChanged")) {
-        EmitDebugMoneyEvent(debug, state);
-    }
     if (ImGui::Button("Apply Ordered Events")) {
         const std::size_t count = network::ApplyOrderedEvents(session, state);
         debug.network_status = "Applied " + std::to_string(count) + " ordered events.";

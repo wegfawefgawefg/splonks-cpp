@@ -15,6 +15,45 @@ namespace {
 constexpr std::uint16_t kPlayerSnapshotFlagClimbing = 1U << 0U;
 constexpr std::uint16_t kPlayerSnapshotFlagHanging = 1U << 1U;
 constexpr std::uint16_t kPlayerSnapshotFlagHangRight = 1U << 2U;
+constexpr std::uint16_t kPlayerSnapshotInputLeft = 1U << 0U;
+constexpr std::uint16_t kPlayerSnapshotInputRight = 1U << 1U;
+constexpr std::uint16_t kPlayerSnapshotInputUp = 1U << 2U;
+constexpr std::uint16_t kPlayerSnapshotInputDown = 1U << 3U;
+constexpr std::uint16_t kPlayerSnapshotInputAttack = 1U << 4U;
+constexpr std::uint16_t kPlayerSnapshotInputUseBack = 1U << 5U;
+
+std::uint16_t BuildInputFlags(const PlayingInputs& inputs) {
+    std::uint16_t flags = 0;
+    if (inputs.left.down) {
+        flags |= kPlayerSnapshotInputLeft;
+    }
+    if (inputs.right.down) {
+        flags |= kPlayerSnapshotInputRight;
+    }
+    if (inputs.up.down) {
+        flags |= kPlayerSnapshotInputUp;
+    }
+    if (inputs.down.down) {
+        flags |= kPlayerSnapshotInputDown;
+    }
+    if (inputs.attack.down) {
+        flags |= kPlayerSnapshotInputAttack;
+    }
+    if (inputs.use_button.down) {
+        flags |= kPlayerSnapshotInputUseBack;
+    }
+    return flags;
+}
+
+void ApplyInputFlags(PlayerSlot& slot, std::uint16_t flags) {
+    slot.inputs.left.down = (flags & kPlayerSnapshotInputLeft) != 0;
+    slot.inputs.right.down = (flags & kPlayerSnapshotInputRight) != 0;
+    slot.inputs.up.down = (flags & kPlayerSnapshotInputUp) != 0;
+    slot.inputs.down.down = (flags & kPlayerSnapshotInputDown) != 0;
+    slot.inputs.attack.down = (flags & kPlayerSnapshotInputAttack) != 0;
+    slot.inputs.use_button.down = (flags & kPlayerSnapshotInputUseBack) != 0;
+    slot.immediate_inputs = slot.inputs;
+}
 
 std::optional<PlayerSnapshotEntry> MakeSnapshotForSlot(const State& state, const PlayerSlot& slot) {
     if (!slot.entity_vid.has_value()) {
@@ -35,6 +74,7 @@ std::optional<PlayerSnapshotEntry> MakeSnapshotForSlot(const State& state, const
     snapshot.condition = static_cast<std::uint8_t>(entity->condition);
     snapshot.grounded = entity->grounded ? 1 : 0;
     snapshot.animate = entity->frame_data_animator.animate ? 1 : 0;
+    snapshot.input_flags = BuildInputFlags(slot.inputs);
     snapshot.animation_id = entity->frame_data_animator.animation_id;
     snapshot.animation_frame = static_cast<std::uint16_t>(std::min<std::size_t>(
         entity->frame_data_animator.current_frame,
@@ -152,7 +192,6 @@ void EnsureSpawnedPlayer(
                 entity->pos = pos;
                 state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), entity->vid);
                 if (local && primary) {
-                    state.player_vid = entity->vid;
                     state.controlled_entity_vid = entity->vid;
                 }
                 return;
@@ -166,7 +205,6 @@ void EnsureSpawnedPlayer(
         state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), *vid);
         state.UpdateSidForEntity(vid->id, graphics);
         if (local && primary) {
-            state.player_vid = *vid;
             state.controlled_entity_vid = *vid;
         }
     }
@@ -244,6 +282,10 @@ void ApplyPlayerSnapshots(
                 Vec2::New(snapshot.pos_x, snapshot.pos_y),
                 graphics
             );
+        }
+        if (PlayerSlot* const slot = state.players.Find(snapshot.player_id);
+            slot != nullptr && slot->connection_kind == PlayerConnectionKind::Remote) {
+            ApplyInputFlags(*slot, snapshot.input_flags);
         }
         (void)EnsureRemotePlayerTarget(transport, snapshot, current_pos, packet.sequence, state.frame);
     }

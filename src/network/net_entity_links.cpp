@@ -8,12 +8,29 @@ namespace splonks::network {
 
 namespace {
 
-NetEntityId MakeStageEntityId(VID entity_vid) {
-    return static_cast<NetEntityId>(entity_vid.id) + 1U;
+NetEntityId MakeStageEntityId(std::size_t stage_entity_index) {
+    return static_cast<NetEntityId>(stage_entity_index) + 1U;
 }
 
 bool IsStageLinkedEntity(const State& state, const Entity& entity) {
-    return entity.active && !state.players.FindPlayerIdForEntity(entity.vid).has_value();
+    return entity.active &&
+           entity.stage_spawn_index.has_value() &&
+           !state.players.FindPlayerIdForEntity(entity.vid).has_value();
+}
+
+void RegisterPlayerEntityLinks(State& state) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.entity_vid.has_value()) {
+            continue;
+        }
+
+        const Entity* const entity = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (entity == nullptr || !entity->active) {
+            continue;
+        }
+
+        state.net_session.LinkEntity(MakePlayerNetEntityId(slot.player_id), entity->vid);
+    }
 }
 
 } // namespace
@@ -23,6 +40,8 @@ void RegisterStageEntityLinks(State& state) {
         return;
     }
 
+    RegisterPlayerEntityLinks(state);
+
     for (const Entity& entity : state.entity_manager.entities) {
         if (!IsStageLinkedEntity(state, entity)) {
             continue;
@@ -30,7 +49,7 @@ void RegisterStageEntityLinks(State& state) {
         if (state.net_session.FindNetEntityId(entity.vid).has_value()) {
             continue;
         }
-        state.net_session.LinkEntity(MakeStageEntityId(entity.vid), entity.vid);
+        state.net_session.LinkEntity(MakeStageEntityId(*entity.stage_spawn_index), entity.vid);
     }
 }
 

@@ -5,6 +5,8 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "tools/tool_archetype.hpp"
 #include "world_query.hpp"
@@ -143,11 +145,8 @@ bool ShouldClimbUp(const Entity& monkey, const State& state, const std::optional
 }
 
 std::optional<Vec2> GetNearestPlayerDelta(const Entity& monkey, const State& state) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+    const Entity* const player = FindNearestPlayer(state, monkey.GetCenter(), false);
+    if (player == nullptr || player->condition == EntityCondition::Dead) {
         return std::nullopt;
     }
     return GetNearestWorldDelta(state.stage, monkey.GetCenter(), player->GetCenter());
@@ -263,6 +262,7 @@ bool TryStealRandomToolAndCast(
     ToolSlot& player_slot = mutable_player_tool_state->slots[selected_slot_index];
     if (player_slot.active && player_slot.kind == stolen_kind && player_slot.count > 0) {
         player_slot.count -= 1;
+        EmitPlayerStatePatchedGameplayEvent(state, player);
     }
     return true;
 }
@@ -409,12 +409,14 @@ void RobPlayer(std::size_t monkey_idx, Entity& monkey, Entity& player, State& st
         (void)PlayEntityCenterSoundEmitter(state, player, audio_asset_ids::Thud);
     } else if (player.money >= kMonkeyRobMoneyAmount && rng::RandomIntInclusive(1, 10) <= 8) {
         player.money -= kMonkeyRobMoneyAmount;
+        EmitPlayerStatePatchedGameplayEvent(state, player);
         if (Entity* const gold = SpawnEntityAtCenter(EntityType::GoldNugget, monkey.GetCenter(), state, graphics)) {
             gold->vel = Vec2::New(
                 static_cast<float>(rng::RandomIntInclusive(-2, 2)),
                 -static_cast<float>(rng::RandomIntInclusive(3, 4))
             );
             gold->acc = Vec2::New(0.0F, 0.0F);
+            EmitEntitySpawnedGameplayEvent(state, *gold);
         }
         (void)PlayEntityCenterSoundEmitter(state, monkey, audio_asset_ids::Throw);
     } else {
@@ -678,7 +680,7 @@ common::ContactResolution OnEntityContactAsMonkey(
         return {};
     }
 
-    if (state.player_vid.has_value() && other.vid == *state.player_vid &&
+    if (state.players.FindByEntityVid(other.vid) != nullptr &&
         monkey.counter_b <= 0.0F && other.condition == EntityCondition::Normal) {
         AttachToPlayer(monkey, other, state);
         return {};

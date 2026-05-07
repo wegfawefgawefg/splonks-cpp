@@ -187,7 +187,15 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
         << (entity.can_apply_projectile_contact ? "true" : "false")
         << ",\"projectile_contact_timer\":" << entity.projectile_contact_timer
         << ",\"rotation\":" << entity.rotation
-        << ",\"facing\":" << JsonString(entity.facing == LeftOrRight::Right ? "right" : "left");
+        << ",\"facing\":" << JsonString(entity.facing == LeftOrRight::Right ? "right" : "left")
+        << ",\"animation\":{\"id\":" << entity.frame_data_animator.animation_id
+        << ",\"frame\":" << entity.frame_data_animator.current_frame
+        << ",\"time\":" << entity.frame_data_animator.current_time
+        << ",\"speed\":" << entity.frame_data_animator.speed
+        << ",\"animate\":" << (entity.frame_data_animator.animate ? "true" : "false")
+        << ",\"loop\":" << (entity.frame_data_animator.loop ? "true" : "false")
+        << ",\"finished\":" << (entity.frame_data_animator.finished ? "true" : "false")
+        << "}";
     if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
         out << ",\"player_id\":" << *player_id;
     } else {

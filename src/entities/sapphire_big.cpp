@@ -8,6 +8,7 @@
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "math_types.hpp"
 
 namespace splonks::entities::sapphire_big {
@@ -30,6 +31,7 @@ common::ContactResolution OnEntityContactAsSapphireBig(
     Entity& collector = state.entity_manager.entities[other_entity_idx];
     const Entity& gem = state.entity_manager.entities[entity_idx];
     collector.money += 1200;
+    EmitPlayerStatePatchedGameplayEvent(state, collector);
     (void)PlayEntityCenterSoundEmitter(state, gem, audio_asset_ids::GoldStack);
     effects::SpawnTreasurePickupSparkles(gem, state, Color3::New(0.24F, 0.46F, 1.0F), 7);
     common::DeactivateCollectedPickup(entity_idx, state, *graphics);

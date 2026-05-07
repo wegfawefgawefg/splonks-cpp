@@ -322,7 +322,6 @@ struct State {
     StageLighting stage_lighting;
 
     // Common entity references.
-    std::optional<VID> player_vid;
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
 

@@ -157,6 +157,18 @@ bool TryThrowEntityByVid(
     const Graphics& graphics,
     Audio& audio
 );
+bool TryPutHeldEntityOnBackByVid(
+    VID holder_vid,
+    VID held_vid,
+    State& state,
+    const Graphics& graphics
+);
+bool TryTakeOffBackEntityByVid(
+    VID holder_vid,
+    VID back_vid,
+    State& state,
+    const Graphics& graphics
+);
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
     State& state,

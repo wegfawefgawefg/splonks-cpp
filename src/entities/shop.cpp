@@ -3,6 +3,8 @@
 #include "buying.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -67,20 +69,33 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
 
     const bool already_disturbed = shop.ai_state == EntityAiState::Disturbed;
     shop.ai_state = EntityAiState::Disturbed;
+    EmitEntityStatePatchedGameplayEvent(state, shop, shop);
 
     if (!already_disturbed) {
         (void)PlayEntityCenterSoundEmitter(state, shop, audio_asset_ids::ShopkeepAnger0);
     }
 
-    if (state.player_vid.has_value()) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        if (Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid);
+            player != nullptr && player->active) {
+            const bool was_wanted = player->wanted;
             player->wanted = true;
+            if (!was_wanted) {
+                EmitPlayerStatePatchedGameplayEvent(state, *player);
+            }
         }
     }
 
     if (shop.entity_a.has_value()) {
         if (Entity* const shopkeeper = state.entity_manager.GetEntityMut(*shop.entity_a)) {
+            const bool was_wanted = shopkeeper->wanted;
             shopkeeper->wanted = true;
+            if (!was_wanted) {
+                EmitEntityStatePatchedGameplayEvent(state, shop, *shopkeeper);
+            }
         }
     }
 
@@ -94,6 +109,7 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
             continue;
         }
         ClearOwnedBuyableIfPresent(*child, shop.vid);
+        EmitEntityStatePatchedGameplayEvent(state, shop, *child);
     }
 
 }

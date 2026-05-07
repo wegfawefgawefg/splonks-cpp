@@ -7,6 +7,8 @@
 #include "entity/archetype.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
@@ -124,6 +126,7 @@ void PayCrapsResult(
         table.counter_c = 2.0F;
     } else if (roll > 7) {
         player.money += kCrapsBetAmount * 2U;
+        EmitPlayerStatePatchedGameplayEvent(state, player);
         (void)PlayEntityCenterSoundEmitter(state, player, audio_asset_ids::CashRegister);
         table.counter_c = 1.0F;
     } else {
@@ -180,9 +183,18 @@ void StepEntityLogicAsCrapsTable(
         table.counter_d = 1.0F;
     }
 
-    Entity* const player = state.player_vid.has_value()
-        ? state.entity_manager.GetEntityMut(*state.player_vid)
-        : nullptr;
+    Entity* player = nullptr;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        Entity* const candidate = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        if (candidate != nullptr && candidate->active &&
+            PlayerOverlapsTable(table, *candidate, graphics, state.stage)) {
+            player = candidate;
+            break;
+        }
+    }
     const bool player_overlap =
         player != nullptr && player->active && PlayerOverlapsTable(table, *player, graphics, state.stage);
 

@@ -8,6 +8,7 @@
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "math_types.hpp"
 
 namespace splonks::entities::emerald_big {
@@ -30,6 +31,7 @@ common::ContactResolution OnEntityContactAsEmeraldBig(
     Entity& collector = state.entity_manager.entities[other_entity_idx];
     const Entity& gem = state.entity_manager.entities[entity_idx];
     collector.money += 800;
+    EmitPlayerStatePatchedGameplayEvent(state, collector);
     (void)PlayEntityCenterSoundEmitter(state, gem, audio_asset_ids::GoldStack);
     effects::SpawnTreasurePickupSparkles(gem, state, Color3::New(0.18F, 1.0F, 0.38F), 6);
     common::DeactivateCollectedPickup(entity_idx, state, *graphics);

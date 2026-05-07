@@ -7,8 +7,10 @@
 #include "entities/shop.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -45,40 +47,41 @@ std::optional<std::size_t> GetShopIdxForShopkeeper(const Entity& shopkeeper, con
 }
 
 bool CanSeePlayerAhead(const Entity& shopkeeper, const State& state, const Graphics& graphics) {
-    if (!state.player_vid.has_value()) {
-        return false;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        return false;
-    }
-
     const Vec2 shopkeeper_center = shopkeeper.GetCenter();
-    const Vec2 player_center =
-        GetNearestWorldPoint(state.stage, shopkeeper_center, player->GetCenter());
-    const Vec2 delta = player_center - shopkeeper_center;
-    if (std::abs(delta.y) > kShopkeeperSightVerticalTolerance ||
-        std::abs(delta.x) > kShopkeeperShootDistance) {
-        return false;
-    }
-
     const int direction = shopkeeper.facing == LeftOrRight::Left ? -1 : 1;
-    if ((direction < 0 && delta.x >= 0.0F) || (direction > 0 && delta.x <= 0.0F)) {
-        return false;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+            continue;
+        }
+        const Vec2 player_center =
+            GetNearestWorldPoint(state.stage, shopkeeper_center, player->GetCenter());
+        const Vec2 delta = player_center - shopkeeper_center;
+        if (std::abs(delta.y) > kShopkeeperSightVerticalTolerance ||
+            std::abs(delta.x) > kShopkeeperShootDistance) {
+            continue;
+        }
+        if ((direction < 0 && delta.x >= 0.0F) || (direction > 0 && delta.x <= 0.0F)) {
+            continue;
+        }
+        const WorldRayHit hit = RaycastHorizontal(
+            shopkeeper,
+            shopkeeper_center,
+            direction,
+            static_cast<int>(std::abs(delta.x)),
+            state,
+            graphics,
+            shopkeeper.vid
+        );
+        if (hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() &&
+            *hit.entity_vid == player->vid) {
+            return true;
+        }
     }
-
-    const WorldRayHit hit = RaycastHorizontal(
-        shopkeeper,
-        shopkeeper_center,
-        direction,
-        static_cast<int>(std::abs(delta.x)),
-        state,
-        graphics,
-        shopkeeper.vid
-    );
-    return hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() &&
-           *hit.entity_vid == player->vid;
+    return false;
 }
 
 bool SpawnShopkeeperPistolIntoHands(std::size_t entity_idx, State& state, const Graphics& graphics) {
@@ -109,6 +112,8 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t entity_idx, State& state, const 
     shopkeeper.holding = true;
     shopkeeper.entity_b = pistol->vid;
     state.UpdateSidForEntity(pistol_vid->id, graphics);
+    EmitEntitySpawnedGameplayEvent(state, *pistol, shopkeeper.vid);
+    EmitEntityHeldGameplayEvent(state, shopkeeper, *pistol);
     return true;
 }
 
@@ -301,12 +306,8 @@ void StepEntityLogicAsShopkeeper(
         return;
     }
 
-    if (!state.player_vid.has_value()) {
-        return;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+    const Entity* const player = FindNearestPlayer(state, shopkeeper.GetCenter(), false);
+    if (player == nullptr || player->condition == EntityCondition::Dead) {
         return;
     }
 

@@ -2,6 +2,7 @@
 
 #include "debug/debug_stage_common.hpp"
 #include "entity/archetype.hpp"
+#include "player_queries.hpp"
 #include "stage_spawning.hpp"
 
 #include <algorithm>
@@ -27,11 +28,7 @@ constexpr std::array<Color3, 8> kDebugLightColors{{
 }};
 
 void SpawnJetpackOnPlayer(State& state) {
-    if (!state.player_vid.has_value()) {
-        return;
-    }
-
-    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
+    Entity* const player = GetPrimaryLocalPlayerMut(state);
     if (player == nullptr) {
         return;
     }

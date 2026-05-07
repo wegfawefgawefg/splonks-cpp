@@ -4,6 +4,7 @@
 #include "audio.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "particles/sprite_particle.hpp"
 #include "stage_break.hpp"
 #include "state.hpp"
@@ -356,7 +357,9 @@ void OnDeathAsBoulder(std::size_t entity_idx, State& state, Audio& audio) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return;
     }
-    SpawnBoulderBreakEffects(state.entity_manager.entities[entity_idx].GetCenter(), state);
+    Entity& boulder = state.entity_manager.entities[entity_idx];
+    SpawnBoulderBreakEffects(boulder.GetCenter(), state);
+    EmitEntityDeactivatedGameplayEvent(state, boulder);
     state.entity_manager.SetInactive(entity_idx);
 }
 

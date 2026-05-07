@@ -134,14 +134,24 @@ void EmitAttachmentUseActionRequest(
     GameplayActionKind kind,
     VID holder_vid,
     VID item_vid,
-    bool pressed
+    bool pressed,
+    const controls::ControlIntent& control
 ) {
+    const int direction_x =
+        control.left && !control.right ? -1 :
+        control.right && !control.left ? 1 :
+        0;
+    const int direction_y =
+        control.up && !control.down ? -1 :
+        control.down && !control.up ? 1 :
+        0;
     EmitGameplayActionRequested(
         state,
         GameplayActionRequested{
             .kind = kind,
             .source_vid = holder_vid,
             .target_vid = item_vid,
+            .direction = IVec2::New(direction_x, direction_y),
             .param_a = pressed ? 1U : 0U,
         }
     );
@@ -469,6 +479,76 @@ bool TryThrowEntityByVid(
     return true;
 }
 
+bool TryPutHeldEntityOnBackByVid(
+    VID holder_vid,
+    VID held_vid,
+    State& state,
+    const Graphics& graphics
+) {
+    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+    Entity* const held = state.entity_manager.GetEntityMut(held_vid);
+    if (holder == nullptr || held == nullptr || !holder->active || !held->active) {
+        return false;
+    }
+    if (!holder->holding_vid.has_value() || *holder->holding_vid != held_vid ||
+        holder->back_vid.has_value() || !held->can_go_on_back) {
+        return false;
+    }
+
+    holder->back_vid = held->vid;
+    holder->holding_vid.reset();
+    holder->holding = false;
+    holder->holding_timer = kDefaultHoldingTimer;
+
+    ApplyHeldState(*held);
+    held->held_by_vid = holder->vid;
+    held->attachment_mode = AttachmentMode::Back;
+    held->has_physics = false;
+    held->can_collide = false;
+    SyncEntityAttachments(holder->vid.id, state, graphics);
+    EmitEntityHeldGameplayEvent(state, *holder, *held, AttachmentMode::Back);
+    EmitEntityStatePatchedGameplayEvent(state, *holder, *holder);
+    EmitEntityStatePatchedGameplayEvent(state, *holder, *held);
+    return true;
+}
+
+bool TryTakeOffBackEntityByVid(
+    VID holder_vid,
+    VID back_vid,
+    State& state,
+    const Graphics& graphics
+) {
+    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+    Entity* const back_item = state.entity_manager.GetEntityMut(back_vid);
+    if (holder == nullptr || back_item == nullptr || !holder->active || !back_item->active) {
+        return false;
+    }
+    if (!holder->back_vid.has_value() || *holder->back_vid != back_vid) {
+        return false;
+    }
+
+    back_item->has_physics = true;
+    back_item->can_collide = true;
+    TrySetAnimation(*back_item, EntityDisplayState::Neutral);
+    back_item->held_by_vid.reset();
+    back_item->attachment_mode = AttachmentMode::None;
+    StopUsingEntity(*back_item);
+    back_item->thrown_by = holder->vid;
+    back_item->thrown_immunity_timer = kThrownByImmunityDuration;
+    const EntityArchetype& back_item_archetype = GetEntityArchetype(back_item->type_);
+    back_item->can_apply_projectile_contact = back_item_archetype.can_apply_projectile_contact;
+    back_item->projectile_contact_damage_type = back_item_archetype.projectile_contact_damage_type;
+    back_item->projectile_contact_damage_amount = back_item_archetype.projectile_contact_damage_amount;
+    back_item->projectile_contact_timer = kProjectileContactDuration;
+    RemoveEffect(*back_item, EffectId::NoGravityUntilContact);
+
+    holder->back_vid.reset();
+    state.UpdateSidForEntity(back_item->vid.id, graphics);
+    EmitEntityStatePatchedGameplayEvent(state, *holder, *holder);
+    EmitEntityStatePatchedGameplayEvent(state, *holder, *back_item);
+    return true;
+}
+
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
     if (entity_idx >= state.entity_manager.entities.size()) {
         return;
@@ -675,34 +755,33 @@ void UpdateCarryAndBackItems(
         const VID entity_vid = state.entity_manager.entities[entity_idx].vid;
 
         if (take_off_back_vid.has_value()) {
-            if (Entity* const item_taken_off_back = state.entity_manager.GetEntityMut(*take_off_back_vid)) {
-                item_taken_off_back->has_physics = true;
-                item_taken_off_back->can_collide = true;
-                TrySetAnimation(*item_taken_off_back, EntityDisplayState::Neutral);
-                item_taken_off_back->held_by_vid.reset();
-                item_taken_off_back->attachment_mode = AttachmentMode::None;
-                StopUsingEntity(*item_taken_off_back);
-                item_taken_off_back->thrown_by = entity_vid;
-                item_taken_off_back->thrown_immunity_timer = kThrownByImmunityDuration;
-                const EntityArchetype& back_item_archetype = GetEntityArchetype(item_taken_off_back->type_);
-                item_taken_off_back->can_apply_projectile_contact =
-                    back_item_archetype.can_apply_projectile_contact;
-                item_taken_off_back->projectile_contact_damage_type = back_item_archetype.projectile_contact_damage_type;
-                item_taken_off_back->projectile_contact_damage_amount = back_item_archetype.projectile_contact_damage_amount;
-                item_taken_off_back->projectile_contact_timer = kProjectileContactDuration;
-                RemoveEffect(*item_taken_off_back, EffectId::NoGravityUntilContact);
+            const Entity& entity = state.entity_manager.entities[entity_idx];
+            if (ShouldRequestCarryAction(state, entity)) {
+                EmitCarryActionRequest(
+                    state,
+                    GameplayActionKind::TakeOffBackEntity,
+                    entity.vid,
+                    take_off_back_vid
+                );
+            } else {
+                (void)TryTakeOffBackEntityByVid(entity_vid, *take_off_back_vid, state, graphics);
             }
-
-            Entity& entity = state.entity_manager.entities[entity_idx];
-            entity.back_vid.reset();
         }
 
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
             if (put_held_on_back) {
-                entity.back_vid = entity.holding_vid;
-                entity.holding_vid.reset();
-                entity.holding = false;
+                const std::optional<VID> held_vid = entity.holding_vid;
+                if (held_vid.has_value() && ShouldRequestCarryAction(state, entity)) {
+                    EmitCarryActionRequest(
+                        state,
+                        GameplayActionKind::PutHeldEntityOnBack,
+                        entity.vid,
+                        held_vid
+                    );
+                } else if (held_vid.has_value()) {
+                    (void)TryPutHeldEntityOnBackByVid(entity.vid, *held_vid, state, graphics);
+                }
             }
         }
     }
@@ -717,7 +796,8 @@ void UpdateCarryAndBackItems(
                         GameplayActionKind::UseHeldEntity,
                         entity.vid,
                         holding->vid,
-                        control.use_held
+                        control.use_held,
+                        control
                     );
                 } else if (control.use_held) {
                     UseEntity(*holding, entity.vid, AttachmentMode::Held);
@@ -734,7 +814,8 @@ void UpdateCarryAndBackItems(
                         GameplayActionKind::UseBackEntity,
                         entity.vid,
                         back_item->vid,
-                        control.use_back
+                        control.use_back,
+                        control
                     );
                 } else if (control.use_back) {
                     UseEntity(*back_item, entity.vid, AttachmentMode::Back);

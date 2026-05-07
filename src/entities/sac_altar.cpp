@@ -6,10 +6,12 @@
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "on_damage_effects.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
@@ -95,10 +97,7 @@ AABB GetSacrificeArea(const Entity& altar) {
 }
 
 Entity* GetPlayerMut(State& state) {
-    if (!state.player_vid.has_value()) {
-        return nullptr;
-    }
-    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
+    Entity* const player = GetPrimaryLocalPlayerMut(state);
     if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
         return nullptr;
     }
@@ -106,11 +105,7 @@ Entity* GetPlayerMut(State& state) {
 }
 
 bool PlayerHasBallAndChainPunishment(const State& state) {
-    if (!state.player_vid.has_value()) {
-        return false;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
+    const Entity* const player = GetPrimaryLocalPlayer(state);
     if (player == nullptr || !player->active || !player->entity_d.has_value()) {
         return false;
     }
@@ -138,10 +133,12 @@ void SpawnBallAndChainPunishment(State& state) {
     ball->vel = player->vel;
     ball->acc = Vec2::New(0.0F, 0.0F);
     player->entity_d = ball->vid;
+    EmitEntitySpawnedGameplayEvent(state, *ball);
 }
 
 void ApplySacAltarFavorDelta(State& state, std::int32_t favor_delta) {
     state.sac_altar_favor += favor_delta;
+    EmitRunStatePatchedGameplayEvent(state);
     if (state.sac_altar_favor <= kBallAndChainPunishmentFavorThreshold) {
         SpawnBallAndChainPunishment(state);
     }
@@ -245,15 +242,11 @@ EntityType PickAccessoryReward(std::optional<VID> reward_target_vid, State& stat
 }
 
 std::optional<VID> GetRewardTargetVid(const State& state) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
+    const Entity* const player = GetPrimaryLocalPlayer(state);
     if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
         return std::nullopt;
     }
-    return state.player_vid;
+    return player->vid;
 }
 
 Vec2 GetAltarEffectPos(const Entity& altar, const State& state, const Graphics& graphics) {
@@ -446,6 +439,7 @@ void DeactivateAltarEntity(Entity& entity, State& state) {
     entity.condition = EntityCondition::Dead;
     entity.render_enabled = false;
     entity.marked_for_destruction = false;
+    EmitEntityDeactivatedGameplayEvent(state, entity);
     state.entity_manager.SetInactive(entity.vid.id);
 }
 
@@ -499,7 +493,9 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
         }
 
         reward->vel = Vec2::New(rng::RandomFloat(-0.55F, 0.55F), -1.7F);
+        EmitEntitySpawnedGameplayEvent(state, *reward);
         state.sac_altar_reward_tier = 1;
+        EmitRunStatePatchedGameplayEvent(state);
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
@@ -514,7 +510,9 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
         reward->draw_layer = DrawLayer::Middle;
         reward->vel = Vec2::New(0.0F, 0.0F);
         reward->acc = Vec2::New(0.0F, 0.0F);
+        EmitEntitySpawnedGameplayEvent(state, *reward);
         state.sac_altar_reward_tier = 2;
+        EmitRunStatePatchedGameplayEvent(state);
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
@@ -523,10 +521,12 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
         if (const std::optional<VID> reward_target_vid = GetRewardTargetVid(state); reward_target_vid.has_value()) {
             if (Entity* const reward_target = state.entity_manager.GetEntityMut(*reward_target_vid)) {
                 reward_target->health += kHealthRewardAmount;
+                EmitPlayerStatePatchedGameplayEvent(state, *reward_target);
             }
         }
         SpawnSacrificeSmoke(state, emit_pos);
         state.sac_altar_reward_tier = 3;
+        EmitRunStatePatchedGameplayEvent(state);
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
@@ -556,6 +556,7 @@ void SacrificeVictim(
     common::DropHeldItemFromEntity(victim, state);
     common::ReleaseEntityFromHolder(victim, state);
     victim.marked_for_destruction = true;
+    EmitEntityDeactivatedGameplayEvent(state, victim);
     state.entity_manager.SetInactive(victim.vid.id);
     state.UpdateSidForEntity(victim.vid.id, graphics);
 

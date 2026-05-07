@@ -2,10 +2,12 @@
 
 #include "buying.hpp"
 #include "entity/archetype.hpp"
+#include "entity/archetype_restore.hpp"
 #include "entities/common/common.hpp"
 #include "entities/shop.hpp"
 #include "entities/store_light.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "tools/tool_archetype.hpp"
 
 #include <algorithm>
@@ -82,8 +84,16 @@ void PrepareEntityForStageEntry(Entity& entity) {
     entity.acc = Vec2::New(0.0F, 0.0F);
     entity.grounded = false;
     entity.coyote_time = 0;
+    entity.fall_timer = 0;
+    entity.stun_timer = 0;
+    entity.holding_timer = kDefaultHoldingTimer;
     entity.dist_traveled_this_frame = 0.0F;
     entity.jumped_this_frame = false;
+    entity.hang_side.reset();
+    entity.hang_count = 0;
+    entity.climb_detach_cooldown = 0;
+    entity.jump_hold_gravity_frames_remaining = 0;
+    entity.movement_flags = 0;
     entity.use_state = UseState{};
     entity.collided = false;
     entity.collided_last_frame = false;
@@ -96,6 +106,17 @@ void PrepareEntityForStageEntry(Entity& entity) {
     entity.projectile_contact_timer = 0;
 }
 
+void PreparePlayerForStageEntry(Entity& player) {
+    PrepareEntityForStageEntry(player);
+    RestoreEntityConditionFromArchetype(player);
+    RestoreEntitySizeFromArchetype(player);
+    RestoreEntityHasPhysicsFromArchetype(player);
+    RestoreEntityCanCollideFromArchetype(player);
+    RestoreEntityDrawLayerFromArchetype(player);
+    RestoreEntityRenderEnabledFromArchetype(player);
+    RestoreEntityFrameDataAnimatorFromArchetype(player);
+}
+
 } // namespace
 
 void InitCommonStageState(State& state) {
@@ -105,7 +126,6 @@ void InitCommonStageState(State& state) {
     state.contact = ContactBookkeeping{};
     state.particles.Clear();
     state.players.ClearEntityRefs();
-    state.player_vid.reset();
     state.controlled_entity_vid.reset();
     state.gameplay_camera_anchor_world_pos.reset();
     state.mouse_trailer_vid.reset();
@@ -170,7 +190,7 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
         }
 
         Entity player = *player_carryover.player;
-        PrepareEntityForStageEntry(player);
+        PreparePlayerForStageEntry(player);
         if (player_carryover.held_item.has_value()) {
             player.holding = true;
             player.holding_vid = player_carryover.held_item->vid;
@@ -182,11 +202,9 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
         state.players.AssignEntity(player_carryover.player_id, player.vid);
         if (const PlayerSlot* const slot = state.players.Find(player_carryover.player_id);
             slot != nullptr && slot->primary_local) {
-            state.player_vid = player.vid;
             state.controlled_entity_vid = player.vid;
         }
-        if (!state.player_vid.has_value()) {
-            state.player_vid = player.vid;
+        if (!state.controlled_entity_vid.has_value()) {
             state.controlled_entity_vid = player.vid;
         }
 
@@ -217,10 +235,7 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
 }
 
 void PlacePlayerAtPosition(State& state, const Vec2& pos) {
-    if (!state.player_vid.has_value()) {
-        return;
-    }
-    Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid);
+    Entity* const player = GetPrimaryLocalPlayerMut(state);
     if (player == nullptr) {
         return;
     }
@@ -279,7 +294,6 @@ void SpawnPlayer(State& state, const Vec2& pos) {
     if (!player_vid.has_value()) {
         return;
     }
-    state.player_vid = player_vid;
     state.controlled_entity_vid = player_vid;
 }
 
@@ -357,6 +371,7 @@ void SpawnAuthoredStageEntities(State& state) {
         }
 
         SetEntityAs(*entity, spawn.type_);
+        entity->stage_spawn_index = i;
         entity->pos = spawn.pos;
         if (spawn.size_override.has_value()) {
             entity->size = *spawn.size_override;

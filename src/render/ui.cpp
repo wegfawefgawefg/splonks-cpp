@@ -6,6 +6,7 @@
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
 #include "hud/entries.hpp"
+#include "player_queries.hpp"
 #include "tools/tool_archetype.hpp"
 #include "state.hpp"
 #include "step.hpp"
@@ -457,15 +458,13 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
     unsigned int health = 0;
     unsigned int money = 0;
     const int favor = state.sac_altar_favor;
-    std::optional<VID> player_vid;
+    std::optional<VID> hud_player_vid;
     const Entity* player_entity = nullptr;
-    if (state.player_vid.has_value()) {
-        if (const Entity* const player = state.entity_manager.GetEntity(*state.player_vid)) {
-            health = player->health;
-            money = player->money;
-            player_vid = player->vid;
-            player_entity = player;
-        }
+    if (const Entity* const player = GetPrimaryLocalPlayer(state)) {
+        health = player->health;
+        money = player->money;
+        hud_player_vid = player->vid;
+        player_entity = player;
     }
 
     const float hud_icon_scale = std::clamp(state.settings.ui.icon_scale, 0.25F, 1.50F);
@@ -528,7 +527,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
     cursor = cursor + (status_cursor_advance * 3);
 
     // TOOLS
-    if (player_vid.has_value()) {
+    if (hud_player_vid.has_value()) {
         for (std::size_t slot_index = 0; slot_index < kToolSlotCount; ++slot_index) {
             const IVec2 icon_cursor = cursor;
             DrawFrameDataIcon(
@@ -540,7 +539,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
                 tool_slot_size
             );
 
-            const ToolSlot* const slot = state.entity_tools.FindToolSlot(*player_vid, slot_index);
+            const ToolSlot* const slot = state.entity_tools.FindToolSlot(*hud_player_vid, slot_index);
             if (slot != nullptr && slot->active) {
                 const IVec2 tool_icon_cursor = IVec2::New(
                     icon_cursor.x + (tool_slot_size.x - tool_icon_size.x) / 2,

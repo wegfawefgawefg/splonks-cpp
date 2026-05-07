@@ -83,9 +83,10 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - A listener/dispatcher should only be added if more independent systems need to consume the same gameplay facts, or if `ProcessGameplayEvents` starts growing into another ownerless coordinator.
   - Do not convert offline gameplay into event-driven architecture just for symmetry.
 
-- [ ] Rename or reshape `EntityArchetype::step_without_local_authority`.
+- [x] Rename or reshape `EntityArchetype::step_without_local_authority`.
   - The behavior is useful, but the name is network-shaped inside entity archetypes.
   - Consider a content-owned name such as `remote_presentation_step_mode` or an explicit presentation-step enum if more modes appear.
+  - Done: renamed the flag to `step_as_replica`; behavior is unchanged.
 
 - [ ] Review playtest/editor state files before commit.
   - `data/settings.cfg` changed debug defaults.
@@ -106,8 +107,25 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - Done eighth slice: removed the old local-event drain path, renamed the queue to pending outbound events, and removed the debug/manual path that moved local events directly into ordered events.
   - Done ninth slice: removed the special `StageExitRequest` packet path; exits now use the generic `InteractEntity` request and coordinator-side exit callback.
   - Done tenth slice: split `EntityDeactivated` out of carry packets into an entity lifecycle packet so carry packets only transport held/drop/throw results.
+  - Done eleventh slice: removed stale per-field inventory/effect/money net events; player health/money/tools/effects now use `PlayerStatePatched`.
+  - Done twelfth slice: entity state patches now carry `counter_a`/`counter_b`, and bow fire emits canonical arrow spawn plus bow state patch instead of relying on local-only ammo/spawn state.
+  - Done thirteenth slice: web cannon now emits canonical webball/cobweb spawns, webball/cobweb deactivations, and weapon counter state patches through generic result events.
+  - Done fourteenth slice: monkey robbery now emits canonical stolen gold spawn and player tool-state patch when it steals/casts a tool.
+  - Done fifteenth slice: cobra spit now emits canonical projectile spawn and deactivation results.
+  - Done sixteenth slice: barrier emitters now emit canonical beam segment spawn/deactivation results instead of local-only beam children.
+  - Done seventeenth slice: skeleton skull drops, giant spider loot drops, sac altar rewards/punishments, sacrifice deactivation, altar-piece deactivation, and shopkeeper starting pistol now emit generic spawn/deactivate/player-state/held results.
+  - Done eighteenth slice: direct deactivations for chest keys, rope deployment, arrow-on-kill cleanup, boulders, idols, telefrags, temporary bat swings, damsel rescue, fleshguy splat, machete corpse carving, and explosion-on-death now emit generic deactivation/player-state results.
+  - Reviewed `gear_items.cpp`: open parachute is currently a non-colliding presentation helper owned by the equipped entity, not durable gameplay. Do not promote it to a canonical net entity unless we decide remote presentation cannot be driven from replicated player/effect state.
   - Note: presentation commands remain allowed peer-to-coordinator for cosmetic sound/effect/shake presentation only, including sound positions/settings and scripted visual effects; they must not encode durable gameplay state.
   - Remaining: generic request/result coverage for all special deactivation sites, loot/container interactions, held-entity edge cases, direct entity interactions, and inventory/effect results.
+
+- [ ] Align remaining multiplayer implementation with the Terraria-style broad-lane model.
+  - Broad lanes only: player action requests, player move/state patches, entity spawn/state/lifecycle, tile mutation, player/inventory/effect patch, stage progression, and cosmetic presentation.
+  - No new item-named packet families such as `UseTeleporter`, `BreakBox`, `MacheteReset`, or `WebCannonFired`.
+  - Coordinator/offline content code may emit durable facts after normal mutation. Peers must send action requests and wait for coordinator-authored durable results/repair.
+  - Network code may serialize ids, replicated fields, and compact archetype payloads. It must not encode content rules for specific weapons/items.
+  - Finish by deleting or disabling any old peer-authored durable result path that bypasses coordinator apply.
+  - Add a short smoke checklist for every broad lane after changes: tile break/drop, box/chest loot, thrown bomb, rope deploy, bat/machete swing, pistol/web/bow shot, pickup/drop/throw, back equip/use, shop buy, exit transition.
 
 - [ ] Replace remaining peer-authored carry/drop/throw result paths with action requests.
   - `EntityHeld`, `EntityDropped`, and `EntityThrown` remain as coordinator-authored result events.
@@ -139,17 +157,26 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
     - [ ] Convert key chest unlock to request/apply or an equivalent coordinator-owned contact action.
     - [ ] Review sacrifice, altar, craps, shop theft, and other area/contact interactions for coordinator-only result events.
     - [ ] Add replication for buyable-state changes and player inventory/money changes; current generic interaction can run the buy on the coordinator, but not every resulting field is represented in durable result events yet.
+      - [x] Added generic `PlayerStatePatched` durable result carrying player health, wanted state, money, tool slots, and effect list.
+      - [x] Emit player state patches from common money/gem/idol/craps/monkey money mutations, inventory/effect pickups, shop spending, and tool-slot use.
+      - [x] Add buyable-state patching for purchased/shop entities so price/purchased state does not rely only on deactivation.
+      - [x] Add generic `RunStatePatched` durable result for run-level favor/reward-tier state.
+      - [x] Replicate shop disturbance through generic player/entity state patches instead of a shop-specific net message.
+      - [x] Route back-slot equip/takeoff through generic coordinator action requests and include attachment links in entity state patches.
+      - [x] Updated coordinator repair state patches to carry the full entity patch payload, including links, counters, AI/wanted state, attachment mode, and buyable display state.
+      - [x] Fixed transient entity state patches skipped by local apply so they are pruned instead of resending forever.
+      - [x] Entity-state apply now distinguishes an explicitly empty link from an unresolved replicated id, so out-of-order transient repairs do not clear holder/back/buyable links.
 
 ## Sync Audit Notes
 
 - Tile break sensors should come along automatically when the coordinator is the side calling `BreakStageTilesAtCoords`: the break path emits `TileBroken`, runs tile-trigger callbacks, and emits tile-break spawn results from one place.
-- Entity spawns are safe only if the content path emits `EmitEntitySpawnedGameplayEvent` after finalizing the spawned entity's type, position, velocity, acceleration, key state, and animation state. Boxes, pots, stage-break drops, tool throws, arrow traps, boulders, and now chest loot do this. Remaining direct `NewEntity()` sites need individual review before assuming multiplayer parity.
+- Entity spawns are safe only if the content path emits `EmitEntitySpawnedGameplayEvent` after finalizing the spawned entity's type, position, velocity, acceleration, key state, and animation state. Boxes, pots, stage-break drops, tool throws, arrow traps, boulders, chest loot, bow arrows, web balls, cobwebs, monkey-stolen gold, cobra spit, beam segments, loose skull drops, giant spider loot, sac altar rewards/punishments, and shopkeeper pistols do this. Remaining direct `NewEntity()` sites need individual review before assuming multiplayer parity.
 - Entity deactivation/state changes are safe only if they emit a durable result such as damage/state patch/drop/throw/deactivation or are covered by coordinator repair. Common vanish/marked-for-destruction and collected/bought pickup paths now emit `EntityDeactivated`; special one-off `SetInactive` paths still need audit because a periodic repair patch is not the same thing as an ordered gameplay result.
-- Buy/pickup effects are not fully represented yet. Money, tool counts, effect lists, and buyable flags need explicit result coverage or a broader player/inventory state patch before shops can be considered synced.
+- Buy/pickup/rescue effects now have broad player-side coverage through `PlayerStatePatched`: health, wanted state, money, tool counts/cooldowns/kinds, and effect lists are coordinator-authored results. Buyable display flags and shop disturbance/wanted state are carried by generic entity/player state patches.
 
 ### Remaining Direct Mutation Audit
 
 - `NewEntity()` sites that already emit spawn results: `stage_break.cpp`, `entities/arrow_trap.cpp`, `entities/box.cpp`, `entities/chest.cpp`, `entities/common/throw.cpp`, `entities/giant_tiki_head.cpp`, `entities/player.cpp`, `entities/pot.cpp`.
-- `NewEntity()` sites still needing review/result coverage: `entities/bow.cpp`, `entities/barrier_emitter.cpp`, `entities/cobra.cpp`, `entities/gear_items.cpp`, `entities/monkey.cpp`, `entities/sac_altar.cpp`, `entities/shopkeeper.cpp`, `entities/skeleton.cpp`, `entities/spider.cpp`, `entities/web_cannon.cpp`.
-- `SetInactive()` sites still needing review/result coverage: special entity lifetimes, chest key consumption, shop buy state beyond purchased pickup deactivation, rope deployment, webball/cobweb replacement, teleporter/player splat, altar sacrifice, and item depletion.
-- State fields needing explicit player/inventory replication before shops/items are complete: `money`, tool slot counts/kinds, effect list/counts, buyable flags, held/back slot changes not covered by carry result events.
+- `NewEntity()` sites still needing review/result coverage: none in content gameplay paths. Remaining raw `NewEntity()` calls are covered spawn paths, stage/debug initialization, net apply, or reviewed presentation-only parachute visuals.
+- `SetInactive()` sites still needing review/result coverage: remaining special entity lifetimes are either covered by generic deactivation events or reviewed as presentation-only.
+- State fields still needing explicit replication before shops/items are complete: none known in the player/shop/sacrifice/back-slot path; continue discovering through multiplayer playtests.

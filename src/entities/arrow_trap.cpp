@@ -421,17 +421,24 @@ entities::common::ContactResolution OnEntityContactAsArrow(
         return {};
     }
 
-    if (context.phase != entities::common::ContactPhase::SweptEntered || audio == nullptr ||
-        entity_idx >= state.entity_manager.entities.size()) {
+    if (entity_idx >= state.entity_manager.entities.size() ||
+        other_entity_idx >= state.entity_manager.entities.size()) {
         return {};
     }
 
     Entity& arrow = state.entity_manager.entities[entity_idx];
-    if (other_entity_idx >= state.entity_manager.entities.size()) {
+    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
+
+    const bool swept_contact = context.phase == entities::common::ContactPhase::SweptEntered;
+    const bool blocked_impassable_contact =
+        context.phase == entities::common::ContactPhase::AttemptedBlocked &&
+        context.has_impact &&
+        other_entity.impassable;
+    if ((!swept_contact && !blocked_impassable_contact) || audio == nullptr) {
         return {};
     }
 
-    if (!CanArrowHitEntity(arrow, state.entity_manager.entities[other_entity_idx])) {
+    if (!CanArrowHitEntity(arrow, other_entity)) {
         return {};
     }
     if (!HasLocalGameplayAuthorityForEntity(state, arrow.vid)) {
@@ -469,6 +476,7 @@ entities::common::ContactResolution OnEntityContactAsArrow(
     if (updated_other_entity.active) {
         StickArrowToEntity(arrow, updated_other_entity, state);
     } else {
+        EmitEntityDeactivatedGameplayEvent(state, arrow);
         state.entity_manager.SetInactive(entity_idx);
     }
 
@@ -498,6 +506,7 @@ entities::common::ContactResolution OnTileContactAsArrow(
     arrow.thrown_by.reset();
     arrow.has_physics = false;
     SnapArrowPositionToPixels(arrow);
+    EmitEntityStatePatchedGameplayEvent(state, arrow, arrow);
     return entities::common::ContactResolution{.stop_sweep = true};
 }
 

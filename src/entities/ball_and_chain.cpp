@@ -2,6 +2,7 @@
 
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -65,12 +66,10 @@ void StepEntityLogicAsBallAndChainBall(
 
     Entity* const player = state.entity_manager.GetEntityMut(*ball.entity_a);
     if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        if (state.player_vid.has_value()) {
-            if (Entity* const current_player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-                if (current_player->entity_d.has_value() && *current_player->entity_d == ball.vid) {
-                    current_player->entity_d.reset();
-                }
-            }
+        if (Entity* const current_player = GetPrimaryLocalPlayerMut(state);
+            current_player != nullptr && current_player->entity_d.has_value() &&
+            *current_player->entity_d == ball.vid) {
+            current_player->entity_d.reset();
         }
         ball.active = false;
         return;

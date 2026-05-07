@@ -6,6 +6,7 @@
 #include "entities/common/common.hpp"
 #include "entities/player.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "particles/particle_archetypes.hpp"
 #include "particles/scripted_particle.hpp"
 #include "state.hpp"
@@ -492,6 +493,7 @@ void OnDeathAsFleshGuy(std::size_t entity_idx, State& state, Audio& audio) {
                    QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetCenter())) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*center_surface, state.stage));
     }
+    EmitEntityDeactivatedGameplayEvent(state, flesh_guy);
     state.entity_manager.SetInactive(entity_idx);
 }
 

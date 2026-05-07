@@ -4,6 +4,7 @@
 #include "entities/shop.hpp"
 #include "entities/shop_tile_triggers.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "stage_spawning.hpp"
 #include "tile_archetype.hpp"
 
@@ -328,10 +329,8 @@ void InitShopTestStage(State& state) {
     const float player_spawn_x = static_cast<float>(3 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(10 * static_cast<int>(kTileSize) - 14);
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
-    if (state.player_vid.has_value()) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*state.player_vid)) {
-            player->money = 50000;
-        }
+    if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
+        player->money = 50000;
     }
 
     (void)SpawnStageEntityAtTopLeft(

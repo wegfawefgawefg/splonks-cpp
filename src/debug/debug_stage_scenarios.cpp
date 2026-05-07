@@ -3,6 +3,7 @@
 #include "debug/debug_stage_common.hpp"
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
+#include "player_queries.hpp"
 #include "stage_spawning.hpp"
 
 #include <array>
@@ -370,8 +371,8 @@ void InitWaterPiranhaTestStage(State& state) {
             13.0F * static_cast<float>(kTileSize) - 14.0F
         )
     );
-    if (state.player_vid.has_value()) {
-        GiveHeldMattockToEntity(state, *state.player_vid);
+    if (const std::optional<VID> player_vid = FindPrimaryLocalPlayerVid(state)) {
+        GiveHeldMattockToEntity(state, *player_vid);
     }
 
     const std::array<Vec2, 3> piranha_centers{{

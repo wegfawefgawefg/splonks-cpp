@@ -4,6 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 
 namespace splonks::entities::ghost_ball {
@@ -45,9 +46,7 @@ void StepEntityLogicAsGhostBall(
         // check if a there is a target.
         // if no, target the player.
         if (!ghost_ball.entity_a.has_value()) {
-            if (state.player_vid.has_value()) {
-                ghost_ball.entity_a = state.player_vid;
-            }
+            ghost_ball.entity_a = FindNearestPlayerVid(state, ghost_ball.GetCenter(), false);
         }
     }
 

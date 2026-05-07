@@ -4,6 +4,7 @@
 #include "entities/spider.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
 
@@ -26,12 +27,8 @@ bool HasCeilingSupport(const Entity& entity, const State& state) {
 }
 
 std::optional<Vec2> GetPlayerDeltaBelow(const Entity& entity, const State& state, int max_distance) {
-    if (!state.player_vid.has_value()) {
-        return std::nullopt;
-    }
-
-    const Entity* const player = state.entity_manager.GetEntity(*state.player_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+    const Entity* const player = FindNearestPlayer(state, entity.GetCenter(), false);
+    if (player == nullptr || player->condition == EntityCondition::Dead) {
         return std::nullopt;
     }
 

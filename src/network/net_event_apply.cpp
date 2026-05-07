@@ -6,6 +6,8 @@
 #include "entity.hpp"
 #include "entity/archetype.hpp"
 #include "entity/display_states.hpp"
+#include "entity_tool_inventory.hpp"
+#include "effects.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
 #include "on_damage_effects.hpp"
@@ -84,6 +86,21 @@ void ApplyEntityLinkSlot(
     }
 }
 
+void ApplyOptionalEntityLinkSlot(
+    NetSessionState& session,
+    State& state,
+    std::optional<VID>& slot,
+    NetEntityId entity_id
+) {
+    if (entity_id == kInvalidNetEntityId) {
+        slot.reset();
+        return;
+    }
+    if (const std::optional<VID> resolved = FindEntityVidForEvent(session, state, entity_id)) {
+        slot = *resolved;
+    }
+}
+
 bool ApplyConditionPresentation(Entity& entity, EntityCondition condition) {
     std::optional<EntityDisplayState> display_state;
     if (condition == EntityCondition::Dead) {
@@ -149,6 +166,8 @@ void ApplyStatePatchPresentation(Entity& entity, const EntityStatePatchedEvent& 
     animator.current_time = payload.animation_time;
     animator.speed = payload.animation_speed;
     animator.animate = payload.animate != 0;
+    animator.loop = payload.animation_loop != 0;
+    animator.finished = payload.animation_finished != 0;
 }
 
 void ApplySpawnPresentation(Entity& entity, const EntitySpawnedEvent& payload) {
@@ -387,6 +406,10 @@ void ApplyEntityStatePatchedEvent(
         return;
     }
     ApplyEntityLinkSlot(session, state, *entity, payload);
+    ApplyOptionalEntityLinkSlot(session, state, entity->holding_vid, payload.holding_id);
+    ApplyOptionalEntityLinkSlot(session, state, entity->held_by_vid, payload.held_by_id);
+    ApplyOptionalEntityLinkSlot(session, state, entity->back_vid, payload.back_id);
+    entity->attachment_mode = static_cast<AttachmentMode>(payload.attachment_mode);
     if (payload.active == 0) {
         state.entity_manager.SetInactive(entity->vid.id);
         return;
@@ -398,12 +421,28 @@ void ApplyEntityStatePatchedEvent(
         entity->acc = payload.acc;
         entity->grounded = payload.grounded != 0;
     }
+    entity->counter_a = payload.counter_a;
+    entity->counter_b = payload.counter_b;
     entity->has_physics = payload.has_physics != 0;
     entity->can_collide = payload.can_collide != 0;
     entity->can_apply_projectile_contact = payload.can_apply_projectile_contact != 0;
     entity->projectile_contact_timer = payload.projectile_contact_timer;
     entity->rotation = payload.rotation;
     entity->facing = payload.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
+    entity->ai_state = static_cast<EntityAiState>(payload.ai_state);
+    entity->wanted = payload.wanted != 0;
+    entity->buyable.active = payload.buyable_active != 0;
+    entity->buyable.display_quantity = payload.buyable_display_quantity;
+    entity->buyable.display_icon_animation_id =
+        payload.buyable_display_icon_animation_id != kInvalidFrameDataId
+            ? std::optional<FrameDataId>(payload.buyable_display_icon_animation_id)
+            : std::nullopt;
+    ApplyOptionalEntityLinkSlot(
+        session,
+        state,
+        entity->buyable.shop_owner_vid,
+        payload.buyable_shop_owner_id
+    );
     entity->health = payload.health;
     entity->stun_timer = payload.stun_timer;
     entity->condition = static_cast<EntityCondition>(payload.condition);
@@ -443,6 +482,7 @@ bool IsImmediateLocalGameplayEvent(NetEventType type) {
     case NetEventType::TileBroken:
     case NetEventType::RopeTilePlaced:
     case NetEventType::TileChanged:
+    case NetEventType::PlayerStatePatched:
     case NetEventType::PresentationCommand:
         return true;
     default:
@@ -477,14 +517,34 @@ void ApplyEntityHeldEvent(
         (!held->held_by_vid.has_value() || *held->held_by_vid != holder->vid)) {
         return;
     }
-    if (holder->holding_vid.has_value() && *holder->holding_vid != held->vid) {
-        return;
-    }
     if (IsVidInHolderChain(held->vid, *holder, state)) {
         return;
     }
 
-    entities::common::AttachEntityAsHeld(*holder, *held);
+    if (payload.attachment_mode == AttachmentMode::Back) {
+        if (holder->back_vid.has_value() && *holder->back_vid != held->vid) {
+            return;
+        }
+        if (holder->holding_vid.has_value() && *holder->holding_vid != held->vid) {
+            return;
+        }
+
+        holder->back_vid = held->vid;
+        if (holder->holding_vid.has_value() && *holder->holding_vid == held->vid) {
+            holder->holding_vid.reset();
+            holder->holding = false;
+            holder->holding_timer = kDefaultHoldingTimer;
+        }
+        held->held_by_vid = holder->vid;
+        held->attachment_mode = AttachmentMode::Back;
+        held->has_physics = false;
+        held->can_collide = false;
+    } else {
+        if (holder->holding_vid.has_value() && *holder->holding_vid != held->vid) {
+            return;
+        }
+        entities::common::AttachEntityAsHeld(*holder, *held);
+    }
     if (graphics != nullptr) {
         entities::common::SyncEntityAttachments(holder->vid.id, state, *graphics);
         state.UpdateSidForEntity(holder->vid.id, *graphics);
@@ -598,6 +658,51 @@ void ApplyPresentationCommandEvent(
     PlayPresentationCommand(state, *graphics, command);
 }
 
+void ApplyPlayerStatePatchedEvent(
+    NetSessionState& session,
+    State& state,
+    const PlayerStatePatchedEvent& payload
+) {
+    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.player_entity_id);
+    if (!vid.has_value()) {
+        return;
+    }
+    Entity* const player = state.entity_manager.GetEntityMut(*vid);
+    if (player == nullptr || !player->active || state.players.FindByEntityVid(player->vid) == nullptr) {
+        return;
+    }
+
+    player->health = payload.health;
+    player->money = payload.money;
+    player->wanted = payload.wanted != 0;
+
+    for (std::size_t i = 0; i < payload.tool_slots.size(); ++i) {
+        ToolSlot& slot = state.entity_tools.EnsureToolSlot(player->vid, i);
+        const PlayerStatePatchedToolSlot& patch = payload.tool_slots[i];
+        slot.kind = patch.kind;
+        slot.count = patch.count;
+        slot.cooldown = patch.cooldown;
+        slot.active = patch.active != 0;
+    }
+
+    player->effects.reset();
+    const std::size_t effect_count =
+        std::min<std::size_t>(payload.effect_count, payload.effects.size());
+    if (effect_count > 0) {
+        EntityEffects& effects = player->effects.emplace();
+        effects.count = static_cast<std::uint8_t>(effect_count);
+        for (std::size_t i = 0; i < effect_count; ++i) {
+            const PlayerStatePatchedEffect& patch = payload.effects[i];
+            effects.effects[i] = EffectInstance{
+                .id = patch.id,
+                .count = patch.count,
+                .value = patch.value,
+                .frames_remaining = patch.frames_remaining,
+            };
+        }
+    }
+}
+
 } // namespace
 
 std::size_t ApplyOrderedEvents(
@@ -638,6 +743,9 @@ std::size_t ApplyOrderedEvents(
                 NoteAppliedCoordinatorOrder(session, event);
                 session.AddEventLog(NetEventLogPhase::SkippedLocalApply, event);
                 ++applied_count;
+                if (event.type == NetEventType::EntityStatePatched) {
+                    transient_applied_event_ids.push_back(event.header.event_id);
+                }
             }
             continue;
         }
@@ -684,14 +792,15 @@ std::size_t ApplyOrderedEvents(
                 ApplyEntityThrownEvent(session, state, graphics, *payload);
             }
             break;
-        case NetEventType::MoneyChanged:
-            if (const auto* payload = std::get_if<MoneyChangedEvent>(&event.payload)) {
-                state.points = AddSignedClamped(state.points, payload->delta);
+        case NetEventType::PlayerStatePatched:
+            if (const auto* payload = std::get_if<PlayerStatePatchedEvent>(&event.payload)) {
+                ApplyPlayerStatePatchedEvent(session, state, *payload);
             }
             break;
-        case NetEventType::FavorChanged:
-            if (const auto* payload = std::get_if<FavorChangedEvent>(&event.payload)) {
-                state.sac_altar_favor += payload->delta;
+        case NetEventType::RunStatePatched:
+            if (const auto* payload = std::get_if<RunStatePatchedEvent>(&event.payload)) {
+                state.sac_altar_favor = payload->sac_altar_favor;
+                state.sac_altar_reward_tier = payload->sac_altar_reward_tier;
             }
             break;
         case NetEventType::TileBroken:

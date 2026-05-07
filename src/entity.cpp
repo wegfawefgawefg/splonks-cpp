@@ -4,10 +4,12 @@
 #include "entity/display_support.hpp"
 #include "entity/archetype_restore.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "tile.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 namespace splonks {
@@ -17,6 +19,8 @@ namespace {
 constexpr std::uint32_t MovementFlagBit(EntityMovementFlag movement_flag) {
     return 1U << static_cast<unsigned int>(movement_flag);
 }
+
+constexpr float kGroundProbeFractionalEpsilon = 0.125F;
 
 } // namespace
 
@@ -81,6 +85,7 @@ Entity Entity::New() {
     entity.pickup_effect.reset();
     entity.money = 0;
     entity.buyable = Buyable{};
+    entity.stage_spawn_index.reset();
     entity.attachment_mode = AttachmentMode::None;
     entity.use_state = UseState{};
     entity.travel_sound_countdown = kTravelSoundDistInterval;
@@ -244,10 +249,29 @@ AABB Entity::GetFeet() const {
     return AABB::New(Vec2::New(tl.x, br.y), br + Vec2::New(0.0F, 1.0F));
 }
 
+AABB Entity::GetGroundProbe() const {
+    AABB feet = GetFeet();
+    feet.br.y += kGroundProbeFractionalEpsilon;
+    return feet;
+}
+
+bool Entity::TrySnapToBlockingStageBottom(const Stage& stage) {
+    if (!stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
+        return false;
+    }
+
+    const AABB ground_probe = GetGroundProbe();
+    if (ground_probe.br.y < static_cast<float>(stage.GetHeight())) {
+        return false;
+    }
+
+    pos.y = std::round(static_cast<float>(stage.GetHeight()) - size.y);
+    return true;
+}
+
 void Entity::SetGrounded(const Stage& stage) {
-    const AABB feet = GetFeet();
-    if (feet.br.y >= static_cast<float>(stage.GetHeight()) &&
-        stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
+    const AABB feet = GetGroundProbe();
+    if (TrySnapToBlockingStageBottom(stage)) {
         grounded |= true;
         return;
     }
@@ -335,6 +359,9 @@ bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& picku
     }
     if (TryCollectEffectPickup(entity, pickup)) {
         collected = true;
+    }
+    if (collected) {
+        EmitPlayerStatePatchedGameplayEvent(state, entity);
     }
     return collected;
 }

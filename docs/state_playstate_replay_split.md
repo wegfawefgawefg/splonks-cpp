@@ -60,7 +60,7 @@ struct PlayState {
     ContactBookkeeping contact;
     SID sid;
 
-    std::optional<VID> player_vid;
+    PlayerRegistry players;
     std::optional<VID> controlled_entity_vid;
     std::optional<VID> mouse_trailer_vid;
     prompts and transient per-frame gameplay lists;

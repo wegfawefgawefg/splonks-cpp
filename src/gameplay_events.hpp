@@ -31,6 +31,8 @@ enum class GameplayEventType {
     EntityThrown,
     EntityDamaged,
     EntityStatePatched,
+    PlayerStatePatched,
+    RunStatePatched,
     TileBroken,
     RopeTilePlaced,
     PresentationCommand,
@@ -44,6 +46,8 @@ enum class GameplayActionKind : std::uint16_t {
     ThrowEntity,
     UseHeldEntity,
     UseBackEntity,
+    PutHeldEntityOnBack,
+    TakeOffBackEntity,
     InteractEntity,
     PushEntity,
     BreakTile,
@@ -105,6 +109,7 @@ struct GameplayEntityDeactivated {
 struct GameplayEntityHeld {
     VID holder_vid{};
     VID held_vid{};
+    AttachmentMode attachment_mode = AttachmentMode::Held;
 };
 
 struct GameplayEntityDropped {
@@ -145,9 +150,14 @@ struct GameplayEntityStatePatched {
     VID entity_vid{};
     VID source_vid{};
     std::optional<VID> entity_a_vid;
+    std::optional<VID> holding_vid;
+    std::optional<VID> held_by_vid;
+    std::optional<VID> back_vid;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    float counter_a = 0.0F;
+    float counter_b = 0.0F;
     IVec2 point_a = IVec2::New(0, 0);
     unsigned int health = 0;
     std::uint32_t stun_timer = 0;
@@ -160,11 +170,25 @@ struct GameplayEntityStatePatched {
     std::uint8_t can_collide = 1;
     std::uint8_t can_apply_projectile_contact = 1;
     std::uint8_t facing = 0;
+    std::uint8_t ai_state = 0;
+    std::uint8_t wanted = 0;
+    std::uint8_t attachment_mode = 0;
+    std::uint8_t buyable_active = 0;
+    std::uint32_t buyable_display_quantity = 0;
+    FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
+    std::optional<VID> buyable_shop_owner_vid;
     std::uint8_t animate = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
     float animation_time = 0.0F;
     float animation_speed = 1.0F;
+};
+
+struct GameplayPlayerStatePatched {
+    VID player_vid{};
+};
+
+struct GameplayRunStatePatched {
 };
 
 struct GameplayRopeTilePlaced {
@@ -188,6 +212,8 @@ struct GameplayEvent {
     GameplayEntityThrown entity_thrown;
     GameplayEntityDamaged entity_damaged;
     GameplayEntityStatePatched entity_state_patched;
+    GameplayPlayerStatePatched player_state_patched;
+    GameplayRunStatePatched run_state_patched;
     GameplayTileBroken tile_broken;
     GameplayRopeTilePlaced rope_tile_placed;
     PresentationCommand presentation_command;
@@ -209,7 +235,12 @@ void EmitEntitySpawnedGameplayEvent(
     std::optional<VID> held_by_vid = std::nullopt
 );
 void EmitEntityDeactivatedGameplayEvent(State& state, const Entity& entity);
-void EmitEntityHeldGameplayEvent(State& state, const Entity& holder, const Entity& held);
+void EmitEntityHeldGameplayEvent(
+    State& state,
+    const Entity& holder,
+    const Entity& held,
+    AttachmentMode attachment_mode = AttachmentMode::Held
+);
 void EmitEntityDroppedGameplayEvent(
     State& state,
     const Entity& entity,
@@ -224,6 +255,8 @@ void EmitEntityDamagedGameplayEvent(
     std::optional<VID> source_vid = std::nullopt
 );
 void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, const Entity& entity);
+void EmitPlayerStatePatchedGameplayEvent(State& state, const Entity& player);
+void EmitRunStatePatchedGameplayEvent(State& state);
 void EmitTileBrokenGameplayEvent(State& state, const IVec2& tile_pos);
 void EmitRopeTilePlacedGameplayEvent(State& state, const Entity& source_entity, const IVec2& tile_pos);
 void EmitPresentationCommandGameplayEvent(State& state, const PresentationCommand& command);

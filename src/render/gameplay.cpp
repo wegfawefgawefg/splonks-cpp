@@ -3,6 +3,7 @@
 #include "entity/manager.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
+#include "player_queries.hpp"
 #include "render/camera.hpp"
 #include "render/tiles_and_entities.hpp"
 #include "state.hpp"
@@ -128,8 +129,8 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
         camera_target_entity = state.entity_manager.GetEntity(*state.controlled_entity_vid);
     }
     if ((camera_target_entity == nullptr || !camera_target_entity->active) &&
-        state.mode == Mode::GameOver && state.player_vid.has_value()) {
-        camera_target_entity = state.entity_manager.GetEntity(*state.player_vid);
+        state.mode == Mode::GameOver) {
+        camera_target_entity = GetPrimaryLocalPlayer(state);
     }
 
     if (graphics.camera_mode == CameraMode::StageFit) {

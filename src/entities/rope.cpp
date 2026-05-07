@@ -53,7 +53,7 @@ extern const EntityArchetype kRopeArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .affected_by_ground_friction = false,
-    .step_without_local_authority = true,
+    .step_as_replica = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
@@ -152,6 +152,8 @@ void StepEntityLogicAsRope(
         if (atleast_one_tile_converted) {
             (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[entity_idx], audio_asset_ids::RopeDeploy);
         }
+        EmitEntityDeactivatedGameplayEvent(state, rope);
+        state.entity_manager.SetInactive(entity_idx);
     }
 }
 

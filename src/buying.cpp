@@ -3,6 +3,7 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "gameplay_events.hpp"
+#include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -128,6 +129,7 @@ bool TrySpendMoney(std::size_t buyer_idx, std::uint32_t amount, State& state, Au
     }
 
     buyer.money -= amount;
+    EmitPlayerStatePatchedGameplayEvent(state, buyer);
     if (amount > 0) {
         (void)PlayEntityCenterSoundEmitter(state, buyer, audio_asset_ids::Gold);
     }
@@ -156,6 +158,8 @@ bool TryBuyEntityForMoney(
     }
 
     ClearEntityBuyableState(item);
+    EmitEntityStatePatchedGameplayEvent(state, item, item);
+    EmitPlayerStatePatchedGameplayEvent(state, buyer);
     if (TryCollectInventoryPickup(state, buyer, item)) {
         EmitEntityDeactivatedGameplayEvent(state, item);
         state.entity_manager.SetInactive(entity_idx);
@@ -165,10 +169,11 @@ bool TryBuyEntityForMoney(
 }
 
 void AddBuyPromptsForPlayer(State& state, const Graphics& graphics) {
-    if (!state.player_vid.has_value()) {
+    const std::optional<VID> buyer_vid = FindPrimaryLocalPlayerVid(state);
+    if (!buyer_vid.has_value()) {
         return;
     }
-    const std::size_t buyer_idx = state.player_vid->id;
+    const std::size_t buyer_idx = buyer_vid->id;
     if (buyer_idx >= state.entity_manager.entities.size()) {
         return;
     }

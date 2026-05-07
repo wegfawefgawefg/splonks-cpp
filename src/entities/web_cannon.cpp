@@ -5,6 +5,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
@@ -316,6 +317,7 @@ Entity* SpawnCobwebEntity(State& state, const Vec2& center, bool temporary) {
     cobweb->counter_a = temporary ? kTemporaryCobwebLifetimeFrames : 0.0F;
     cobweb->counter_d = kCobwebWearIntervalFrames;
     cobweb->health = kCobwebDurability;
+    EmitEntitySpawnedGameplayEvent(state, *cobweb);
     return cobweb;
 }
 
@@ -330,6 +332,7 @@ void DestroyCobweb(std::size_t entity_idx, State& state) {
     }
 
     SpawnCobwebBurst(state, cobweb.GetCenter());
+    EmitEntityDeactivatedGameplayEvent(state, cobweb);
     state.entity_manager.SetInactive(entity_idx);
 }
 
@@ -351,6 +354,7 @@ void TriggerWebBallBurst(std::size_t entity_idx, State& state, bool spawn_cobweb
         }
     }
     SpawnCobwebBurst(state, impact_center);
+    EmitEntityDeactivatedGameplayEvent(state, web_ball);
     state.entity_manager.SetInactive(entity_idx);
 }
 
@@ -369,6 +373,7 @@ void TriggerWebBallBurstAtTile(std::size_t entity_idx, State& state, const IVec2
         (void)SpawnCobwebEntity(state, TileCenterToWorld(tile_pos), true);
     }
     SpawnCobwebBurst(state, impact_center);
+    EmitEntityDeactivatedGameplayEvent(state, web_ball);
     state.entity_manager.SetInactive(entity_idx);
 }
 
@@ -413,6 +418,7 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
         web_ball->counter_a = kWebBallLifetimeFrames;
         web_ball->counter_b = 0.0F;
         web_ball->counter_c = kWebBallEntityArmDelayFrames;
+        EmitEntitySpawnedGameplayEvent(state, *web_ball);
     }
 
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
@@ -648,6 +654,7 @@ void OnUseAsWebCannon(std::size_t entity_idx, State& state, Graphics& graphics, 
     FireWebGun(entity_idx, state, graphics, audio);
     weapon.counter_b -= 1.0F;
     weapon.counter_a = weapon.counter_b <= 0.0F ? kWebGunReloadCooldownFrames : kWebGunFireCooldownFrames;
+    EmitEntityStatePatchedGameplayEvent(state, weapon, weapon);
 
     if (weapon.use_state.source == AttachmentMode::None) {
         StopUsingEntity(weapon);

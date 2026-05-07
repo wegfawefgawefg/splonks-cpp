@@ -105,8 +105,8 @@ void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio) {
     }
 
     DoExplosion(entity_idx, entity.GetCenter(), 2.0F, 6.0F, state, audio);
+    EmitEntityDeactivatedGameplayEvent(state, entity);
     state.entity_manager.SetInactive(entity_idx);
-    EmitEntityStatePatchedGameplayEvent(state, entity, entity);
 }
 
 void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
@@ -192,7 +192,24 @@ DamageResult TryDamageEntity(
     if (IsRemotePlayerEntity(state, entity) && !options.allow_remote_player_target) {
         return DamageResult::None;
     }
+    const bool should_request_coordinator_damage =
+        state.net_session.role == network::NetRole::Peer &&
+        !options.source_vid.has_value() &&
+        HasLocalGameplayAuthorityForEntity(state, entity.vid);
     const auto finish = [&](DamageResult result) {
+        if (should_request_coordinator_damage &&
+            (result == DamageResult::Hurt || result == DamageResult::Died)) {
+            EmitGameplayActionRequested(
+                state,
+                GameplayActionRequested{
+                    .kind = GameplayActionKind::DamageEntity,
+                    .target_vid = entity.vid,
+                    .world_pos = entity.GetCenter(),
+                    .damage_type = damage_type,
+                    .amount = amount,
+                }
+            );
+        }
         if (!options.defer_replication &&
             (result == DamageResult::Hurt || result == DamageResult::Died)) {
             EmitEntityDamagedGameplayEvent(state, entity, damage_type, amount, options.source_vid);
