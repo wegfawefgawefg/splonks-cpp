@@ -4,8 +4,8 @@
 #include "entity/display_support.hpp"
 #include "entity/archetype_restore.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "tile.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -361,7 +361,7 @@ bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& picku
         collected = true;
     }
     if (collected) {
-        EmitPlayerStatePatchedGameplayEvent(state, entity);
+        world_ops::PatchPlayerState(state, entity);
     }
     return collected;
 }

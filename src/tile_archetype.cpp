@@ -1,8 +1,8 @@
 #include "tile_archetype.hpp"
 
 #include "entity/archetype.hpp"
-#include "gameplay_events.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 
 #include <array>
 #include <stdexcept>
@@ -16,28 +16,14 @@ constexpr std::size_t TileIndex(Tile tile) {
 }
 
 Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*entity, type_);
-    entity->SetCenter(center);
-    entity->vel = Vec2::New(0.0F, 0.0F);
-    return entity;
+    return world_ops::SpawnEntity(state, type_, [center](Entity& entity) {
+        entity.SetCenter(center);
+        entity.vel = Vec2::New(0.0F, 0.0F);
+    });
 }
 
 void SpawnAndReplicateEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    Entity* const entity = SpawnEntityAtCenter(type_, center, state);
-    if (entity == nullptr) {
-        return;
-    }
-    EmitEntitySpawnedGameplayEvent(state, *entity);
+    (void)SpawnEntityAtCenter(type_, center, state);
 }
 
 void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio) {

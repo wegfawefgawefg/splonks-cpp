@@ -31,7 +31,7 @@ Each archetype can provide:
 - a HUD icon
 - a UI kind, such as hidden or passive
 - simple numeric modifiers
-- an optional event handler
+- an optional hook handler
 - an optional expiry predicate
 
 Common systems should not branch on concrete passive names. They should ask for an effective value:
@@ -40,7 +40,7 @@ Common systems should not branch on concrete passive names. They should ask for 
 GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F);
 ```
 
-Special behavior belongs in the effect event handler. Example: mitt reacts to a throw event and applies `NoGravityUntilContact` to the thrown entity.
+Special behavior belongs in the effect hook handler. Example: mitt reacts to a throw hook and applies `NoGravityUntilContact` to the thrown entity.
 
 ## Implemented Effects
 
@@ -53,7 +53,7 @@ Special behavior belongs in the effect event handler. Example: mitt reacts to a 
 - `UdjatEye`: reveals hidden treasure via `HiddenTreasureVisibility`.
 - `Meathead`: persistent passive with point count stored in `EffectInstance::count`.
 - `Parachute`: persistent counted effect consumed on deploy.
-- `NoGravityUntilContact`: hidden temporary effect cleared on grounded or blocking contact events.
+- `NoGravityUntilContact`: hidden temporary effect cleared on grounded or blocking contact hooks.
 
 ## Remaining Cleanup
 
@@ -66,13 +66,13 @@ Examples:
 - compass HUD rendering
 - parachute deployment visuals
 
-Those checks are acceptable for now because they are in gameplay/content-facing code, not engine plumbing. If more effects need the same interaction, add a generic modifier target or gameplay event rather than adding more scattered concrete checks.
+Those checks are acceptable for now because they are in gameplay/content-facing code, not engine plumbing. If more effects need the same interaction, add a generic modifier target or a narrow content hook rather than adding more scattered concrete checks.
 
 ## Future Direction
 
 Timed effects should use `frames_remaining` and a timer expiry predicate.
 
-More event types can be added as real use cases appear. Avoid adding opinionated hook fields like `on_jump`, `on_stomp`, and `on_spike_contact` unless the generic event model becomes too vague in practice.
+More hook types can be added as real use cases appear. Avoid adding opinionated hook fields like `on_jump`, `on_stomp`, and `on_spike_contact` unless the generic hook model becomes too vague in practice.
 
 Effects and tools remain separate:
 

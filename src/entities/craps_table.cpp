@@ -8,10 +8,10 @@
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -127,7 +127,7 @@ void PayCrapsResult(
         table.counter_c = 2.0F;
     } else if (roll > 7) {
         player.money += kCrapsBetAmount * 2U;
-        EmitPlayerStatePatchedGameplayEvent(state, player);
+        world_ops::PatchPlayerState(state, player);
         (void)PlayEntityCenterSoundEmitter(state, player, audio_asset_ids::CashRegister);
         table.counter_c = 1.0F;
     } else {
@@ -174,8 +174,8 @@ bool TryStartCrapsRoll(
 
     LaunchDice(table, *dice);
     SetTableState(table, TableState::Rolling);
-    EmitEntityStatePatchedGameplayEvent(state, table, table);
-    EmitEntityStatePatchedGameplayEvent(state, *dice, *dice);
+    world_ops::PatchEntityState(state, table, table);
+    world_ops::PatchEntityState(state, *dice, *dice);
     (void)PlayEntityCenterSoundEmitter(state, table, audio_asset_ids::Throw);
     return true;
 }
@@ -227,10 +227,10 @@ void StepEntityLogicAsCrapsTable(
         if (dice != nullptr && dice->active && result_player != nullptr && result_player->active &&
             DiceHasSettled(*dice)) {
             PayCrapsResult(table, *dice, prize, *result_player, state, audio);
-            EmitEntityStatePatchedGameplayEvent(state, table, table);
-            EmitEntityStatePatchedGameplayEvent(state, *dice, *dice);
+            world_ops::PatchEntityState(state, table, table);
+            world_ops::PatchEntityState(state, *dice, *dice);
             if (prize != nullptr && prize->active) {
-                EmitEntityStatePatchedGameplayEvent(state, *prize, *prize);
+                world_ops::PatchEntityState(state, *prize, *prize);
             }
         }
     } else if (has_authority && GetTableState(table) == TableState::Result) {
@@ -239,7 +239,7 @@ void StepEntityLogicAsCrapsTable(
             table.counter_b = 0.0F;
             table.counter_c = 0.0F;
             SetTableState(table, TableState::Idle);
-            EmitEntityStatePatchedGameplayEvent(state, table, table);
+            world_ops::PatchEntityState(state, table, table);
         }
     }
 
@@ -264,7 +264,7 @@ void StepEntityLogicAsCrapsTable(
         if (GetTableState(table) == TableState::Idle) {
             AddCrapsPrompt(table, state, "bet", kCrapsBetAmount);
             if (slot.inputs.equip_button.pressed) {
-                (void)TryRequestOrApplyInteractEntity(
+                (void)world_ops::TryRequestOrApplyInteractEntity(
                     player->vid,
                     table.vid,
                     state,

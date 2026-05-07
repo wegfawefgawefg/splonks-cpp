@@ -8,12 +8,12 @@ namespace splonks::entities::meathead {
 
 extern const EntityArchetype kMeatheadArchetype;
 void MaybePreviewMeatheadPassive(const Entity& player, State& state);
-void OnMeatheadEffectEvent(
+void OnMeatheadEffectHook(
     Entity& owner,
     EffectInstance& effect,
     State& state,
     Audio* audio,
-    const EffectEvent& event
+    const EffectHookContext& hook
 );
 
 } // namespace splonks::entities::meathead

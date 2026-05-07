@@ -232,7 +232,7 @@ float GetModifiedEffectValue(
     return value;
 }
 
-void DispatchEffectEventToEntity(Entity& entity, State& state, Audio* audio, const EffectEvent& event) {
+void ApplyEffectHookToEntity(Entity& entity, State& state, Audio* audio, const EffectHookContext& hook) {
     if (entity.effects.get() == nullptr) {
         return;
     }
@@ -242,10 +242,10 @@ void DispatchEffectEventToEntity(Entity& entity, State& state, Audio* audio, con
         const EffectArchetype& archetype = GetEffectArchetype(effect.id);
         bool expired = false;
         if (archetype.should_expire != nullptr) {
-            expired = archetype.should_expire(entity, effect, state, event);
+            expired = archetype.should_expire(entity, effect, state, hook);
         }
-        if (!expired && archetype.on_event != nullptr) {
-            archetype.on_event(entity, effect, state, audio, event);
+        if (!expired && archetype.on_hook != nullptr) {
+            archetype.on_hook(entity, effect, state, audio, hook);
         }
         if (expired) {
             RemoveEffectAt(entity, effect_index);
@@ -255,12 +255,12 @@ void DispatchEffectEventToEntity(Entity& entity, State& state, Audio* audio, con
     }
 }
 
-void DispatchEffectEventToAll(State& state, Audio* audio, const EffectEvent& event) {
+void ApplyEffectHookToAll(State& state, Audio* audio, const EffectHookContext& hook) {
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
             continue;
         }
-        DispatchEffectEventToEntity(entity, state, audio, event);
+        ApplyEffectHookToEntity(entity, state, audio, hook);
     }
 }
 

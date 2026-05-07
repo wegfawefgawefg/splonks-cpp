@@ -5,8 +5,8 @@
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <limits>
@@ -77,31 +77,24 @@ std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio)
         return std::nullopt;
     }
 
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return std::nullopt;
-    }
+    Entity* const boulder = world_ops::SpawnEntity(state, EntityType::Boulder, [&](Entity& spawned_boulder) {
+        spawned_boulder.SetCenter(head.GetCenter());
 
-    Entity* const boulder = state.entity_manager.GetEntityMut(*vid);
+        const Entity* const player = FindClosestPlayerToHead(head, state);
+        if (player != nullptr) {
+            const Vec2 delta = GetNearestWorldDelta(state.stage, head.GetCenter(), player->GetCenter());
+            spawned_boulder.facing = delta.x < 0.0F ? LeftOrRight::Left : LeftOrRight::Right;
+        } else {
+            spawned_boulder.facing = LeftOrRight::Right;
+        }
+    }, std::nullopt);
     if (boulder == nullptr) {
         return std::nullopt;
     }
 
-    SetEntityAs(*boulder, EntityType::Boulder);
-    boulder->SetCenter(head.GetCenter());
-
-    const Entity* const player = FindClosestPlayerToHead(head, state);
-    if (player != nullptr) {
-        const Vec2 delta = GetNearestWorldDelta(state.stage, head.GetCenter(), player->GetCenter());
-        boulder->facing = delta.x < 0.0F ? LeftOrRight::Left : LeftOrRight::Right;
-    } else {
-        boulder->facing = LeftOrRight::Right;
-    }
-    EmitEntitySpawnedGameplayEvent(state, *boulder, std::nullopt);
-
     AddTikiHeadReleaseShake(state, head);
     (void)PlayWorldSoundEmitter(state, head.GetCenter(), audio_asset_ids::BoulderHitGround);
-    return vid;
+    return boulder->vid;
 }
 
 } // namespace

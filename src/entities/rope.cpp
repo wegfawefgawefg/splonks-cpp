@@ -5,14 +5,12 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "stage.hpp"
 #include "state.hpp"
-#include "stage_lighting.hpp"
-#include "stage_acoustics.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 namespace splonks::entities::rope {
@@ -116,7 +114,6 @@ void StepEntityLogicAsRope(
         // get rope tile position,
         const Vec2 rope_center = rope.GetCenter();
         bool atleast_one_tile_converted = false;
-        std::vector<IVec2> changed_tiles;
         const std::optional<WorldTileQueryResult> rope_tile =
             QueryTileAtWorldPos(state.stage, ToIVec2(rope_center));
         if (rope_tile.has_value()) {
@@ -135,25 +132,20 @@ void StepEntityLogicAsRope(
                 const Tile tile = *tile_query->tile;
                 // if the tile is air, set it to rope
                 if (tile == Tile::Air || tile == Tile::Rope || tile == Tile::Entrance) {
-                    state.stage.SetTile(p, Tile::Rope);
-                    graphics.ResetTileVariation(p);
-                    EmitRopeTilePlacedGameplayEvent(state, rope, p);
-                    changed_tiles.push_back(p);
-                    atleast_one_tile_converted = true;
+                    if (world_ops::PlaceRopeTile(state, rope, p)) {
+                        graphics.ResetTileVariation(p);
+                        atleast_one_tile_converted = true;
+                    }
                 } else {
                     break;
                 }
             }
         }
 
-        UpdateStageLightingForTileChanges(state, changed_tiles);
-        UpdateStageAcousticsForTileChanges(state, changed_tiles);
-
         if (atleast_one_tile_converted) {
             (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[entity_idx], audio_asset_ids::RopeDeploy);
         }
-        EmitEntityDeactivatedGameplayEvent(state, rope);
-        state.entity_manager.SetInactive(entity_idx);
+        (void)world_ops::DeactivateEntity(state, rope.vid);
     }
 }
 

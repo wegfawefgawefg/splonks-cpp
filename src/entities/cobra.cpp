@@ -5,10 +5,10 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "particles/sprite_particle.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -170,46 +170,30 @@ void SpawnSpitImpact(State& state, const Vec2& origin) {
     }
 }
 
-Entity* SpawnCobraSpitEntity(State& state, const Vec2& pos) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const spit = state.entity_manager.GetEntityMut(*vid);
-    if (spit == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*spit, EntityType::CobraSpit);
-    spit->SetCenter(pos);
-    return spit;
-}
-
 void FireCobraSpit(std::size_t entity_idx, State& state, Graphics& graphics) {
     Entity& cobra = state.entity_manager.entities[entity_idx];
     const int direction = cobra.facing == LeftOrRight::Left ? -1 : 1;
     const Vec2 spit_origin = common::GetEmitPointForEntity(cobra, graphics, cobra.GetCenter());
 
-    Entity* const spit = SpawnCobraSpitEntity(state, spit_origin);
+    Entity* const spit = world_ops::SpawnEntity(state, EntityType::CobraSpit, [&](Entity& spawned_spit) {
+        spawned_spit.SetCenter(spit_origin);
+        spawned_spit.facing = cobra.facing;
+        spawned_spit.vel = Vec2::New(
+            static_cast<float>(direction) * kCobraSpitVelocityX,
+            kCobraSpitVelocityY
+        );
+        spawned_spit.acc = Vec2::New(0.0F, 0.0F);
+        spawned_spit.thrown_by = cobra.vid;
+        spawned_spit.thrown_immunity_timer = common::kThrownByImmunityDuration;
+        spawned_spit.projectile_contact_damage_type = DamageType::Attack;
+        spawned_spit.projectile_contact_damage_amount = kCobraVenomDamage;
+        spawned_spit.projectile_contact_timer = common::kProjectileContactDuration;
+        spawned_spit.counter_a = kCobraSpitLifetimeFrames;
+        spawned_spit.counter_b = 0.0F;
+    });
     if (spit == nullptr) {
         return;
     }
-
-    spit->facing = cobra.facing;
-    spit->vel = Vec2::New(
-        static_cast<float>(direction) * kCobraSpitVelocityX,
-        kCobraSpitVelocityY
-    );
-    spit->acc = Vec2::New(0.0F, 0.0F);
-    spit->thrown_by = cobra.vid;
-    spit->thrown_immunity_timer = common::kThrownByImmunityDuration;
-    spit->projectile_contact_damage_type = DamageType::Attack;
-    spit->projectile_contact_damage_amount = kCobraVenomDamage;
-    spit->projectile_contact_timer = common::kProjectileContactDuration;
-    spit->counter_a = kCobraSpitLifetimeFrames;
-    spit->counter_b = 0.0F;
-    EmitEntitySpawnedGameplayEvent(state, *spit);
 
     (void)PlayWorldSoundEmitter(state, spit_origin, audio_asset_ids::Tube);
     SpawnSpitSpray(state, spit_origin, direction);
@@ -226,8 +210,7 @@ void DestroyCobraSpit(std::size_t entity_idx, State& state) {
     }
 
     SpawnSpitImpact(state, spit.GetCenter());
-    EmitEntityDeactivatedGameplayEvent(state, spit);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, spit.vid);
 }
 
 } // namespace

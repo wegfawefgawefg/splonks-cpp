@@ -3,41 +3,14 @@
 #include "damage_types.hpp"
 #include "entity/core_types.hpp"
 #include "math_types.hpp"
-#include "player_id.hpp"
 #include "presentation_commands.hpp"
 #include "stage.hpp"
-#include "stage_progression.hpp"
 #include "vid.hpp"
 
 #include <optional>
 #include <cstdint>
-#include <vector>
 
 namespace splonks {
-
-struct Audio;
-struct Entity;
-struct Graphics;
-struct State;
-
-enum class GameplayEventType {
-    StageExitRequested,
-    StageTransitionRequested,
-    ActionRequested,
-    EntitySpawned,
-    EntityDeactivated,
-    EntityHeld,
-    EntityDropped,
-    EntityThrown,
-    EntityDamaged,
-    EntityStatePatched,
-    PlayerStatePatched,
-    RunStatePatched,
-    TileChanged,
-    TileBroken,
-    RopeTilePlaced,
-    PresentationCommand,
-};
 
 enum class GameplayTileLayer : std::uint8_t {
     Foreground,
@@ -60,16 +33,6 @@ enum class GameplayActionKind : std::uint16_t {
     BreakTile,
     DamageEntity,
     HitEntity,
-};
-
-struct GameplayStageExitRequested {
-    StageExitId exit_id = kInvalidStageExitId;
-    PlayerId player_id = kInvalidPlayerId;
-};
-
-struct GameplayStageTransitionRequested {
-    StageTransitionTarget target;
-    PlayerId player_id = kInvalidPlayerId;
 };
 
 struct GameplayActionRequested {
@@ -225,75 +188,5 @@ struct GameplayTileChanged {
 struct GameplayTileBroken {
     IVec2 tile_pos = IVec2::New(0, 0);
 };
-
-struct GameplayEvent {
-    GameplayEventType type = GameplayEventType::StageExitRequested;
-    GameplayStageExitRequested stage_exit;
-    GameplayStageTransitionRequested stage_transition;
-    GameplayActionRequested action_requested;
-    GameplayEntitySpawned entity_spawned;
-    GameplayEntityDeactivated entity_deactivated;
-    GameplayEntityHeld entity_held;
-    GameplayEntityDropped entity_dropped;
-    GameplayEntityThrown entity_thrown;
-    GameplayEntityDamaged entity_damaged;
-    GameplayEntityStatePatched entity_state_patched;
-    GameplayPlayerStatePatched player_state_patched;
-    GameplayRunStatePatched run_state_patched;
-    GameplayTileChanged tile_changed;
-    GameplayTileBroken tile_broken;
-    GameplayRopeTilePlaced rope_tile_placed;
-    PresentationCommand presentation_command;
-};
-
-void EmitStageExitRequested(State& state, StageExitId exit_id, PlayerId player_id);
-void EmitStageTransitionRequested(State& state, const StageTransitionTarget& target, PlayerId player_id);
-void EmitGameplayActionRequested(State& state, const GameplayActionRequested& request);
-bool TryRequestOrApplyInteractEntity(
-    VID source_vid,
-    VID target_vid,
-    State& state,
-    Graphics& graphics,
-    Audio& audio
-);
-void EmitEntitySpawnedGameplayEvent(
-    State& state,
-    const Entity& spawned_entity,
-    std::optional<VID> held_by_vid = std::nullopt
-);
-void EmitEntityDeactivatedGameplayEvent(State& state, const Entity& entity);
-void EmitEntityHeldGameplayEvent(
-    State& state,
-    const Entity& holder,
-    const Entity& held,
-    AttachmentMode attachment_mode = AttachmentMode::Held
-);
-void EmitEntityDroppedGameplayEvent(
-    State& state,
-    const Entity& entity,
-    std::optional<VID> dropped_by_vid = std::nullopt
-);
-void EmitEntityThrownGameplayEvent(State& state, const Entity& thrower, const Entity& thrown, Vec2 throw_velocity);
-void EmitEntityDamagedGameplayEvent(
-    State& state,
-    const Entity& entity,
-    DamageType damage_type,
-    unsigned int amount,
-    std::optional<VID> source_vid = std::nullopt
-);
-void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, const Entity& entity);
-void EmitPlayerStatePatchedGameplayEvent(State& state, const Entity& player);
-void EmitRunStatePatchedGameplayEvent(State& state);
-void EmitTileChangedGameplayEvent(
-    State& state,
-    const IVec2& tile_pos,
-    Tile tile,
-    TileRotation rotation = kTileRotation0,
-    GameplayTileLayer layer = GameplayTileLayer::Foreground
-);
-void EmitTileBrokenGameplayEvent(State& state, const IVec2& tile_pos);
-void EmitRopeTilePlacedGameplayEvent(State& state, const Entity& source_entity, const IVec2& tile_pos);
-void EmitPresentationCommandGameplayEvent(State& state, const PresentationCommand& command);
-void ProcessGameplayEvents(State& state, Graphics& graphics, Audio& audio);
 
 } // namespace splonks

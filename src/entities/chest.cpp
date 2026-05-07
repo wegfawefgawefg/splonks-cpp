@@ -7,13 +7,13 @@
 #include "entity/archetype.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <memory>
@@ -58,7 +58,7 @@ common::ContactResolution OnEntityContactAsUdjatEye(
     if (state.quest_state.quest_id == QuestId::Classic) {
         state.quest_state.classic.made_udjat_eye = true;
         state.quest_state.classic.has_udjat_eye = true;
-        EmitRunStatePatchedGameplayEvent(state);
+        world_ops::PatchRunState(state);
     }
 
     (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
@@ -78,24 +78,6 @@ void LaunchChestLoot(Entity& entity, std::optional<VID> opener_vid = std::nullop
     entity.thrown_by = opener_vid;
     entity.thrown_immunity_timer =
         opener_vid.has_value() ? common::kThrownByImmunityDuration : 0;
-}
-
-Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*entity, type_);
-    entity->SetCenter(center);
-    entity->vel = Vec2::New(0.0F, 0.0F);
-    entity->acc = Vec2::New(0.0F, 0.0F);
-    return entity;
 }
 
 EntityType RandomChestGemType() {
@@ -141,18 +123,16 @@ void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
 }
 
 void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
-    Entity* const bomb = SpawnEntityAtCenter(EntityType::Bomb, spawn_center, state);
-    if (bomb == nullptr) {
-        return;
-    }
-
-    bomb->counter_a = kChestTrapFuseFrames;
-    bomb->vel = Vec2::New(
-        static_cast<float>(rng::RandomIntInclusive(0, 3) - rng::RandomIntInclusive(0, 3)),
-        kChestLootLaunchY
-    );
-    SetAnimation(*bomb, frame_data_ids::LiveGrenade);
-    EmitEntitySpawnedGameplayEvent(state, *bomb);
+    (void)world_ops::SpawnEntity(state, EntityType::Bomb, [&](Entity& bomb) {
+        bomb.SetCenter(spawn_center);
+        bomb.vel = Vec2::New(
+            static_cast<float>(rng::RandomIntInclusive(0, 3) - rng::RandomIntInclusive(0, 3)),
+            kChestLootLaunchY
+        );
+        bomb.acc = Vec2::New(0.0F, 0.0F);
+        bomb.counter_a = kChestTrapFuseFrames;
+        SetAnimation(bomb, frame_data_ids::LiveGrenade);
+    });
 }
 
 void SpawnChestTreasure(
@@ -162,24 +142,26 @@ void SpawnChestTreasure(
 ) {
     const int gem_count = rng::RandomIntInclusive(kChestTreasureDropMin, kChestTreasureDropMax);
     for (int i = 0; i < gem_count; ++i) {
-        Entity* const gem = SpawnEntityAtCenter(RandomChestGemType(), spawn_center, state);
-        if (gem == nullptr) {
+        if (world_ops::SpawnEntity(state, RandomChestGemType(), [&](Entity& gem) {
+                gem.SetCenter(spawn_center);
+                gem.vel = Vec2::New(0.0F, 0.0F);
+                gem.acc = Vec2::New(0.0F, 0.0F);
+                LaunchChestLoot(gem, opener_vid);
+            }) == nullptr) {
             return;
         }
-        LaunchChestLoot(*gem, opener_vid);
-        EmitEntitySpawnedGameplayEvent(state, *gem);
     }
 
     if (rng::RandomIntInclusive(1, kChestBonusGemOdds) != 1) {
         return;
     }
 
-    Entity* const gem = SpawnEntityAtCenter(RandomChestGemType(), spawn_center, state);
-    if (gem == nullptr) {
-        return;
-    }
-    LaunchChestLoot(*gem, opener_vid);
-    EmitEntitySpawnedGameplayEvent(state, *gem);
+    (void)world_ops::SpawnEntity(state, RandomChestGemType(), [&](Entity& gem) {
+        gem.SetCenter(spawn_center);
+        gem.vel = Vec2::New(0.0F, 0.0F);
+        gem.acc = Vec2::New(0.0F, 0.0F);
+        LaunchChestLoot(gem, opener_vid);
+    });
 }
 
 bool IsEntityOverlappingChest(
@@ -214,8 +196,7 @@ void ConsumeHeldChestKey(Entity* holder, Entity& key, State& state, const Graphi
     key.held_by_vid.reset();
     key.attachment_mode = AttachmentMode::None;
     StopUsingEntity(key);
-    EmitEntityDeactivatedGameplayEvent(state, key);
-    state.entity_manager.SetInactive(key.vid.id);
+    (void)world_ops::DeactivateEntity(state, key.vid);
     state.UpdateSidForEntity(key.vid.id, graphics);
 }
 
@@ -300,7 +281,7 @@ bool TryOpenTreasureChestAt(
     }
 
     SetAnimation(chest, frame_data_ids::ChestOpen);
-    EmitEntityStatePatchedGameplayEvent(state, chest, chest);
+    world_ops::PatchEntityState(state, chest, chest);
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
 
@@ -382,19 +363,20 @@ bool TryOpenKeyChestWithKey(
     }
 
     SetAnimation(chest, frame_data_ids::KeyChestOpen);
-    EmitEntityStatePatchedGameplayEvent(state, chest, chest);
+    world_ops::PatchEntityState(state, chest, chest);
     const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Unlock);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
-    Entity* const udjat_eye = SpawnEntityAtCenter(EntityType::UdjatEye, emit_pos, state);
-    if (udjat_eye != nullptr) {
+    (void)world_ops::SpawnEntity(state, EntityType::UdjatEye, [&](Entity& udjat_eye) {
+        udjat_eye.SetCenter(emit_pos);
+        udjat_eye.vel = Vec2::New(0.0F, 0.0F);
+        udjat_eye.acc = Vec2::New(0.0F, 0.0F);
         LaunchChestLoot(
-            *udjat_eye,
+            udjat_eye,
             holder != nullptr ? std::optional<VID>(holder->vid)
                               : FindNearestPlayerVid(state, chest.GetCenter(), false));
-        EmitEntitySpawnedGameplayEvent(state, *udjat_eye);
-    }
+    });
     if (holder != nullptr && key != nullptr) {
         ConsumeHeldChestKey(holder, *key, state, graphics);
     }
@@ -480,7 +462,7 @@ void StepEntityLogicAsChest(
             continue;
         }
 
-        (void)TryRequestOrApplyInteractEntity(
+        (void)world_ops::TryRequestOrApplyInteractEntity(
             player->vid,
             state.entity_manager.entities[entity_idx].vid,
             state,
@@ -540,7 +522,7 @@ void StepEntityLogicAsKeyChest(
             continue;
         }
 
-        (void)TryRequestOrApplyInteractEntity(
+        (void)world_ops::TryRequestOrApplyInteractEntity(
             key->vid,
             chest.vid,
             state,

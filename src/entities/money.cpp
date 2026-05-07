@@ -8,8 +8,8 @@
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "math_types.hpp"
+#include "world_ops.hpp"
 
 namespace splonks::entities::money {
 
@@ -38,7 +38,7 @@ common::ContactResolution TryCollectMoneyPickup(
     Entity& collector = state.entity_manager.entities[collector_idx];
     const Entity& pickup = state.entity_manager.entities[pickup_idx];
     collector.money += amount;
-    EmitPlayerStatePatchedGameplayEvent(state, collector);
+    world_ops::PatchPlayerState(state, collector);
     (void)PlayEntityCenterSoundEmitter(state, pickup, sound);
     effects::SpawnTreasurePickupSparkles(pickup, state, kGoldLightColor, sparkle_count);
     common::DeactivateCollectedPickup(pickup_idx, state, *graphics);

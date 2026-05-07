@@ -1,7 +1,8 @@
 #include "network/net_lobby_internal.hpp"
 
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
 #include "network/net_ids.hpp"
+#include "world_ops.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -596,7 +597,7 @@ void HandleActionRequestEventsAsCoordinator(
         const std::optional<VID> source_vid = state.net_session.FindLocalVid(payload->source_entity_id);
         const std::optional<VID> target_vid = state.net_session.FindLocalVid(payload->target_entity_id);
 
-        EmitGameplayActionRequested(
+        world_ops::QueuePendingGameplayAction(
             state,
             GameplayActionRequested{
                 .kind = ToGameplayActionKind(payload->kind),

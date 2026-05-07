@@ -5,11 +5,11 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "particles/sprite_particle.hpp"
 #include "on_damage_effects.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -126,24 +126,6 @@ bool IsGroundedInNarrowPit(const Entity& entity, const State& state, const Graph
            common::HasWallAheadForGroundWalker(entity, state, graphics, 1);
 }
 
-std::optional<VID> SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return std::nullopt;
-    }
-
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
-        return std::nullopt;
-    }
-
-    SetEntityAs(*entity, type_);
-    entity->SetCenter(center);
-    entity->vel = Vec2::New(0.0F, 0.0F);
-    entity->acc = Vec2::New(0.0F, 0.0F);
-    return vid;
-}
-
 void SpawnSkullBreakEffects(const Vec2& center, State& state) {
     SpawnBreakawayContainerShards(center, state);
 
@@ -187,21 +169,14 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
 }
 
 void DropLooseSkull(const Vec2& center, State& state) {
-    const std::optional<VID> skull_vid = SpawnEntityAtCenter(EntityType::Skull, center, state);
-    if (!skull_vid.has_value()) {
-        return;
-    }
-
-    Entity* const skull = state.entity_manager.GetEntityMut(*skull_vid);
-    if (skull == nullptr) {
-        return;
-    }
-
-    skull->vel = Vec2::New(
-        rng::RandomFloat(-1.0F, 1.0F),
-        rng::RandomFloat(-1.8F, -0.8F)
-    );
-    EmitEntitySpawnedGameplayEvent(state, *skull);
+    (void)world_ops::SpawnEntity(state, EntityType::Skull, [&](Entity& skull) {
+        skull.SetCenter(center);
+        skull.vel = Vec2::New(
+            rng::RandomFloat(-1.0F, 1.0F),
+            rng::RandomFloat(-1.8F, -0.8F)
+        );
+        skull.acc = Vec2::New(0.0F, 0.0F);
+    });
 }
 
 bool BreakSkull(std::size_t entity_idx, State& state) {
@@ -306,8 +281,7 @@ void OnDeathAsSkeleton(std::size_t entity_idx, State& state, Audio& audio) {
     const Vec2 center = skeleton.GetCenter();
     SpawnSkeletonDeathEffects(center, state);
     DropLooseSkull(center, state);
-    EmitEntityDeactivatedGameplayEvent(state, skeleton);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, skeleton.vid);
 }
 
 bool TryApplySkullTileImpact(

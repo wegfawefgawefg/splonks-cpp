@@ -1,10 +1,10 @@
 #include "entities/common/common.hpp"
 #include "particles/sprite_particle.hpp"
 
-#include "gameplay_events.hpp"
 #include "presentation_commands.hpp"
 #include "stage_break.hpp"
 #include "stage_lighting.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <memory>
@@ -119,7 +119,7 @@ void DoExplosion(
         state.particles.Add(std::move(effect));
     }
     (void)PlayWorldSoundEmitter(state, center, audio_asset_ids::BombExplosion);
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::PlaySoundAt,
         .audio_asset_id = audio_asset_ids::BombExplosion,
         .source_pos = center,
@@ -132,7 +132,7 @@ void DoExplosion(
         kExplosionShakeEntityAmount,
         kExplosionShakeRadiusTiles
     );
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::ShakeArea,
         .source_pos = center,
         .param_a = kExplosionShakeForegroundAmount,

@@ -6,8 +6,8 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -152,53 +152,33 @@ bool SensorTouchesMovingEntity(
 }
 
 Entity* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap_vid) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const arrow = state.entity_manager.GetEntityMut(*vid);
-    if (arrow == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*arrow, EntityType::Arrow);
-    arrow->SetCenter(center);
-    arrow->vel = Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F);
-    arrow->acc = Vec2::New(0.0F, 0.0F);
-    arrow->facing = direction < 0 ? LeftOrRight::Left : LeftOrRight::Right;
-    arrow->rotation = 0.0F;
-    arrow->thrown_by = trap_vid;
-    arrow->thrown_immunity_timer = entities::common::kThrownByImmunityDuration;
-    arrow->projectile_contact_damage_type = DamageType::Attack;
-    arrow->projectile_contact_damage_amount = kArrowDamage;
-    arrow->projectile_contact_timer = entities::common::kProjectileContactDuration;
-    arrow->can_apply_projectile_contact = false;
-    (void)AddEffect(*arrow, EffectId::NoGravityUntilContact);
-    return arrow;
+    return world_ops::SpawnEntity(state, EntityType::Arrow, [&](Entity& arrow) {
+        arrow.SetCenter(center);
+        arrow.vel = Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F);
+        arrow.acc = Vec2::New(0.0F, 0.0F);
+        arrow.facing = direction < 0 ? LeftOrRight::Left : LeftOrRight::Right;
+        arrow.rotation = 0.0F;
+        arrow.thrown_by = trap_vid;
+        arrow.thrown_immunity_timer = entities::common::kThrownByImmunityDuration;
+        arrow.projectile_contact_damage_type = DamageType::Attack;
+        arrow.projectile_contact_damage_amount = kArrowDamage;
+        arrow.projectile_contact_timer = entities::common::kProjectileContactDuration;
+        arrow.can_apply_projectile_contact = false;
+        (void)AddEffect(arrow, EffectId::NoGravityUntilContact);
+    });
 }
 
 Entity* SpawnLooseArrow(State& state, const Vec2& center) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const arrow = state.entity_manager.GetEntityMut(*vid);
-    if (arrow == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*arrow, EntityType::Arrow);
-    arrow->SetCenter(center);
-    SnapArrowPositionToPixels(*arrow);
-    arrow->vel = Vec2::New(0.0F, 0.0F);
-    arrow->acc = Vec2::New(0.0F, 0.0F);
-    arrow->projectile_contact_timer = 0;
-    arrow->projectile_contact_damage_amount = kArrowDamage;
-    arrow->can_apply_projectile_contact = false;
-    arrow->thrown_by.reset();
-    return arrow;
+    return world_ops::SpawnEntity(state, EntityType::Arrow, [&](Entity& arrow) {
+        arrow.SetCenter(center);
+        SnapArrowPositionToPixels(arrow);
+        arrow.vel = Vec2::New(0.0F, 0.0F);
+        arrow.acc = Vec2::New(0.0F, 0.0F);
+        arrow.projectile_contact_timer = 0;
+        arrow.projectile_contact_damage_amount = kArrowDamage;
+        arrow.can_apply_projectile_contact = false;
+        arrow.thrown_by.reset();
+    });
 }
 
 void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
@@ -220,8 +200,6 @@ void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
     if (arrow == nullptr) {
         return;
     }
-    EmitEntitySpawnedGameplayEvent(state, *arrow);
-
     trap.counter_a = 1.0F;
     (void)PlayWorldSoundEmitter(state, arrow_center, audio_asset_ids::Throw);
 }
@@ -404,7 +382,7 @@ void StickArrowToEntity(Entity& arrow, Entity& other, State& state) {
     arrow.thrown_immunity_timer = 0;
     arrow.vel = Vec2::New(0.0F, 0.0F);
     arrow.acc = Vec2::New(0.0F, 0.0F);
-    EmitEntityStatePatchedGameplayEvent(state, arrow, arrow);
+    world_ops::PatchEntityState(state, arrow, arrow);
 }
 
 entities::common::ContactResolution OnEntityContactAsArrow(
@@ -476,8 +454,7 @@ entities::common::ContactResolution OnEntityContactAsArrow(
     if (updated_other_entity.active) {
         StickArrowToEntity(arrow, updated_other_entity, state);
     } else {
-        EmitEntityDeactivatedGameplayEvent(state, arrow);
-        state.entity_manager.SetInactive(entity_idx);
+        (void)world_ops::DeactivateEntity(state, arrow.vid);
     }
 
     return entities::common::ContactResolution{.stop_sweep = true};
@@ -506,7 +483,7 @@ entities::common::ContactResolution OnTileContactAsArrow(
     arrow.thrown_by.reset();
     arrow.has_physics = false;
     SnapArrowPositionToPixels(arrow);
-    EmitEntityStatePatchedGameplayEvent(state, arrow, arrow);
+    world_ops::PatchEntityState(state, arrow, arrow);
     return entities::common::ContactResolution{.stop_sweep = true};
 }
 
@@ -548,10 +525,7 @@ void OnDeathAsArrowTrap(std::size_t entity_idx, State& state, Audio& audio) {
     if (!HasLocalGameplayAuthorityForEntity(state, trap.vid)) {
         return;
     }
-    Entity* const arrow = SpawnLooseArrow(state, trap.GetCenter());
-    if (arrow != nullptr) {
-        EmitEntitySpawnedGameplayEvent(state, *arrow);
-    }
+    (void)SpawnLooseArrow(state, trap.GetCenter());
 }
 
 } // namespace

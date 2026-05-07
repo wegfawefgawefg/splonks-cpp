@@ -2,8 +2,9 @@
 
 #include "controls.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
 #include "tools/tool_archetype.hpp"
+#include "world_ops.hpp"
 
 namespace splonks::entities::common {
 
@@ -58,7 +59,7 @@ bool TryUseToolSlot(
         const controls::ControlIntent control = controls::GetControlIntentForEntity(entity, state);
         const ToolThrowVelocityBuilder velocity_builder =
             build_throw_velocity == nullptr ? BuildDefaultToolThrowVelocity : build_throw_velocity;
-        EmitGameplayActionRequested(
+        world_ops::RequestGameplayAction(
             state,
             GameplayActionRequested{
                 .kind = GameplayActionKind::UseTool,

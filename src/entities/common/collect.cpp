@@ -1,7 +1,8 @@
 #include "entities/common/common.hpp"
 
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
 #include "network/net_ids.hpp"
+#include "world_ops.hpp"
 
 namespace splonks::entities::common {
 
@@ -42,7 +43,7 @@ bool TryRequestCollectPickupFromContact(
         return false;
     }
 
-    EmitGameplayActionRequested(
+    world_ops::RequestGameplayAction(
         state,
         GameplayActionRequested{
             .kind = GameplayActionKind::CollectEntity,
@@ -58,8 +59,7 @@ void DeactivateCollectedPickup(std::size_t pickup_idx, State& state, const Graph
         return;
     }
 
-    EmitEntityDeactivatedGameplayEvent(state, state.entity_manager.entities[pickup_idx]);
-    state.entity_manager.SetInactive(pickup_idx);
+    (void)world_ops::DeactivateEntity(state, state.entity_manager.entities[pickup_idx].vid);
     state.UpdateSidForEntity(pickup_idx, graphics);
 }
 

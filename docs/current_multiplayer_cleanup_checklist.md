@@ -2,7 +2,7 @@
 
 Review date: 2026-05-04
 
-Scope: current uncommitted multiplayer/gameplay-event work. Goal is to keep singleplayer behavior clean while making permissive co-op sync less ad hoc.
+Scope: current uncommitted multiplayer/world-ops work. Goal is to keep singleplayer behavior clean while making permissive co-op sync less ad hoc.
 
 ## Checklist
 
@@ -15,9 +15,9 @@ Scope: current uncommitted multiplayer/gameplay-event work. Goal is to keep sing
 
 - [x] Fix network stage transition authority.
   - Peer exit requests should ask the coordinator and then wait for stage sync.
-  - Peer-side `ProcessGameplayEvents` should not queue/apply its own quest-stage transition after sending the request.
+  - Peer-side exit handling should not queue/apply its own quest-stage transition after sending the request.
   - Coordinator/offline transitions should use one path that calls the stage load notification/sync hook when appropriate.
-  - Current suspect sites: `src/gameplay_events.cpp`, `src/inputs.cpp`, `src/step.cpp`, `src/network/net_progression.cpp`.
+  - Current suspect sites were resolved or moved behind `world_ops` / stage progression.
 
 - [x] Stop non-authoritative attack/projectile replicas from mutating non-player entities.
   - Remote-owned bats/projectiles should not locally damage/knock back enemies, blocks, props, or breakables.
@@ -29,13 +29,13 @@ Scope: current uncommitted multiplayer/gameplay-event work. Goal is to keep sing
   - Picking up a dead/stunned bat/snake/etc. should not force its display to neutral/alive.
   - Current suspect site: `src/entities/common/carry.cpp`.
 
-- [x] Split gameplay event storage from network replication conversion.
-  - Keep entity/gameplay code emitting gameplay facts.
-  - Move `NetEvent` construction out of `gameplay_events.cpp` into a network-owned listener/converter file.
-  - Candidate file: `src/network/net_gameplay_replication.cpp`.
+- [x] Remove gameplay event storage from network replication conversion.
+  - Superseded by removing the internal gameplay-event queue entirely.
+  - `NetEvent` construction now lives in network-owned broad-lane replication code.
+  - Payload/action structs live in `src/gameplay_messages.hpp`.
 
-- [x] Route tile break replication through the same gameplay-event seam.
-  - Done: `stage_break.cpp` emits `GameplayTileBroken`; `network/net_gameplay_replication.cpp` converts it to `TileBroken`.
+- [x] Route tile break replication through the same `world_ops` seam.
+  - Superseded by `world_ops`: `stage_break.cpp` commits tile-broken facts through `world_ops`, which queues the broad network result.
 
 - [x] Replace content-specific presentation replication with generic presentation commands.
   - Netcode should not know about `Teleporter`, cape, bow, or future modded item behavior.
@@ -84,11 +84,11 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - `presentation_commands` are generic at the network layer, but `TeleportSplit` and `TeleportMerge` are hardcoded presentation scripts.
   - This is acceptable as content-side code for now, but a small registry/table would scale better if many items start adding cosmetic scripts.
 
-- [ ] Revisit `ProcessGameplayEvents` coupling.
-  - It currently calls network replication and progression directly.
-  - This is not a current blocker: direct calls are simpler and easier to debug than a generic listener bus.
-  - A listener/dispatcher should only be added if more independent systems need to consume the same gameplay facts, or if `ProcessGameplayEvents` starts growing into another ownerless coordinator.
+- [x] Remove `ProcessGameplayEvents` coupling.
+  - Removed the internal `GameplayEvent` union/queue and deleted `src/gameplay_events.cpp`.
+  - Direct calls through `world_ops` are simpler and easier to debug than a generic listener bus.
   - Do not convert offline gameplay into event-driven architecture just for symmetry.
+  - `src/gameplay_messages.hpp` now only holds plain action/result payload structs shared by `world_ops` and network serialization.
 
 - [x] Rename or reshape `EntityArchetype::step_without_local_authority`.
   - The behavior is useful, but the name is network-shaped inside entity archetypes.
@@ -188,15 +188,16 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
 
 ## Sync Audit Notes
 
-- Tile break sensors should come along automatically when the coordinator is the side calling `BreakStageTilesAtCoords`: the break path emits `TileBroken`, runs tile-trigger callbacks, and emits tile-break spawn results from one place.
-- Entity spawns are safe only if the content path emits `EmitEntitySpawnedGameplayEvent` after finalizing the spawned entity's type, position, velocity, acceleration, key state, and animation state. Boxes, pots, stage-break drops, tool throws, arrow traps, boulders, chest loot, bow arrows, web balls, cobwebs, monkey-stolen gold, cobra spit, beam segments, loose skull drops, giant spider loot, sac altar rewards/punishments, and shopkeeper pistols do this. Remaining direct `NewEntity()` sites need individual review before assuming multiplayer parity.
+- Tile break sensors should come along automatically when the coordinator is the side calling `BreakStageTilesAtCoords`: the break path runs tile-trigger callbacks and commits the tile-broken result through `world_ops`.
+- Entity spawns are safe only if the content path calls `world_ops::SpawnEntity`/`SpawnConfiguredEntity` after finalizing the spawned entity's type, position, velocity, acceleration, key state, and animation state. Boxes, pots, stage-break drops, tool throws, arrow traps, boulders, chest loot, bow arrows, web balls, cobwebs, monkey-stolen gold, cobra spit, beam segments, loose skull drops, giant spider loot, sac altar rewards/punishments, and shopkeeper pistols do this. Remaining direct `NewEntity()` sites need individual review before assuming multiplayer parity.
 - Entity deactivation/state changes are safe only if they emit a durable result such as damage/state patch/drop/throw/deactivation or are covered by coordinator repair. Common vanish/marked-for-destruction and collected/bought pickup paths now emit `EntityDeactivated`; special one-off `SetInactive` paths still need audit because a periodic repair patch is not the same thing as an ordered gameplay result.
 - Buy/pickup/rescue effects now have broad player-side coverage through `PlayerStatePatched`: health, wanted state, money, tool counts/cooldowns/kinds, and effect lists are coordinator-authored results. Buyable display flags and shop disturbance/wanted state are carried by generic entity/player state patches.
 
 ### Remaining Direct Mutation Audit
 
-- `NewEntity()` sites that already emit spawn results: `stage_break.cpp`, `entities/arrow_trap.cpp`, `entities/box.cpp`, `entities/chest.cpp`, `entities/common/throw.cpp`, `entities/giant_tiki_head.cpp`, `entities/player.cpp`, `entities/pot.cpp`.
-- `NewEntity()` sites still needing review/result coverage: none in content gameplay paths. Remaining raw `NewEntity()` calls are covered spawn paths, stage/debug initialization, net apply, or reviewed presentation-only parachute visuals.
+- Live content spawn sites now route through `world_ops::SpawnEntity` or `world_ops::SpawnConfiguredEntity`; raw spawn emits are no longer used outside `world_ops`.
+- Live content action request sites now route through `world_ops::RequestGameplayAction`; raw action request emits are no longer used outside `world_ops`.
+- `NewEntity()` sites still needing review/result coverage: none in content gameplay paths. Remaining raw `NewEntity()` calls are stage/debug initialization, net apply, or reviewed presentation-only parachute visuals.
 - `SetInactive()` sites still needing review/result coverage: remaining special entity lifetimes are either covered by generic deactivation events or reviewed as presentation-only.
 - State fields still needing explicit replication before shops/items are complete: none known in the player/shop/sacrifice/back-slot path; continue discovering through multiplayer playtests.
 
@@ -241,7 +242,7 @@ Goal: prove every durable mutation has one of these classifications before we ch
 ### Missing Or Incomplete API Lanes
 
 - [x] Add a generic tile patch lane.
-  - `TileChanged` now exists as a gameplay event and net result carrying tile, rotation, and foreground/backwall layer.
+  - `TileChanged` now exists as a `world_ops`/network result carrying tile, rotation, and foreground/backwall layer.
   - This covers world rotation, debug tile edits, non-break tile transforms, one-way/rotated tile edits, and future content that sets tiles without going through `BreakStageTilesAtCoords`.
 
 - [x] Add a fluid state lane or explicitly classify fluids as coordinator-local until implemented.
@@ -269,22 +270,26 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - Debug spawn, entity editor patches, stage selection, fluid brush, sound brush, and future live inspection tools should be coordinator-routed when multiplayer is active.
   - This can stay permission-gated/test-only, but the path should use the same generic spawn/state/tile/fluid/stage results as gameplay.
   - Guardrail in place: peer-side shared-world debug mutation is disabled instead of being allowed to fork state.
+  - Current scope decision: host/admin-only is enough for now. Client-requested admin commands are optional later.
 
-- [ ] Audit mechanics settings and live tuning sliders.
+- [x] Audit mechanics settings and live tuning sliders.
   - Player tuning, fluid settings, water effect values, lighting settings, and other debug sliders can change simulation behavior.
   - Decide per setting: local visual/debug only, stage-load config, or coordinator-synced mechanics setting.
   - If a slider changes physics or damage during multiplayer, peers should not apply it independently without a coordinator/admin lane.
   - Guardrail in place: peer-side player tuning and fluid/water-effect tuning windows are read-only/disabled for mechanics mutation.
+  - Decision: these are dev tuning tools for establishing good defaults, not live multiplayer gameplay features. Keep them host/offline-only for now.
+  - Details: `docs/network_stage_and_settings_classification.md`.
 
 - [ ] Audit presentation coverage separately from durable sync.
   - Many content paths play sounds or spawn particles locally after a durable mutation.
   - Missing cosmetic replication is acceptable short-term, but important feedback such as explosions, teleports, death, buying, and weapon fire should emit generic presentation commands from the authority path.
   - Do not block authoritative gameplay cleanup on perfect cosmetic parity.
 
-- [ ] Add an explicit stage metadata classification.
+- [x] Add an explicit stage metadata classification.
   - Stage tiles/backwalls/fluid grids/background stamps/lights/embedded treasures/triggers/borders/wrap settings are currently a mix of generated state and runtime state.
   - Decide what is stage-load only, what can mutate at runtime, and what needs patch/snapshot coverage.
   - Embedded treasure is probably safe when tile breaking is coordinator-owned, but debug edits and non-break tile transforms need an explicit lane before assuming parity.
+  - Done: `docs/network_stage_and_settings_classification.md`.
 
 - [ ] Add headless multiplayer scenario tests.
   - Target: one coordinator plus N peers with no renderer/audio, preferably in-process through a fake transport.
@@ -293,12 +298,25 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - Required comparison lanes: tiles, fluids, entity net ids, entity transforms/state/links/health/animation, player inventory/effects, run/quest state, and stage metadata.
   - Initial scenarios should cover tile break/drop, bomb/rope, box/chest/pot loot, carry/drop/throw, pushblock/projectile attachment, held weapons, shop buy/theft, exit transition, death/respawn while held, and fuzzer presets.
   - Failure output should be a structured diff, not only a hash mismatch.
+  - First slice done: `--check-state-equality-smoke` loads two independent seeded states, compares canonical fingerprints, applies deterministic `world_ops` tile/entity mutations to both, and compares again.
+  - The canonical fingerprint intentionally ignores `VID.version`; versions are allocator stale-reference guards, not durable gameplay state, and can legitimately differ across independently loaded states or peers.
+  - Second slice done: `--check-network-protocol-smoke` has a coordinator emit real network result records for tile change, rope tile placement, entity spawn, entity state patch, and entity deactivation; a peer applies them through `ApplyOrderedEvents`; fingerprints are compared after each lane.
 
 - [ ] Document and enforce message-category ownership.
   - Terraria/tModLoader is message-id based at the network boundary, not pure internal gameplay-event driven.
-  - Splonks should keep direct content callbacks for offline/coordinator gameplay and use gameplay events only as a replication/progression seam.
+  - Splonks should keep direct content callbacks for offline/coordinator gameplay and route durable boundaries through `world_ops`.
   - Network code should stay broad-lane/category based; entity/tool/tile content should not construct packets.
   - Do not add item-named packet families unless the gameplay introduces a genuinely new durable category.
+
+- [x] Migrate durable mutations to canonical `world_ops`.
+  - Target helpers: tile break/patch, entity spawn/deactivate/state patch, damage/hit, carry/drop/throw, player state patch, run/quest state patch, and fluid cell patch.
+  - Each helper should mutate coordinator/offline state and enqueue the corresponding broad result lane when networking is active.
+  - Peer-side calls should send generic action/admin requests or be rejected by authority guards.
+  - This is the replacement path for relying on internal event capture everywhere.
+  - Do not use `Authoritative` in every symbol name; keep authority in docs/guards and use normal canonical gameplay names in code.
+  - Implemented as a module under `src/world_ops/` rather than a single fat file.
+  - Current slices: action requests, entity spawn/deactivate/state/damage/carry, presentation commands, foreground tile patch, rope placement, and tile-broken commit.
+  - Remaining future expansion: real first-class `BreakTile`, `DamageEntity`, and fluid helpers instead of some existing content-owned implementations calling commit helpers internally.
 
 ### Immediate API Work Order
 
@@ -308,3 +326,9 @@ Goal: prove every durable mutation has one of these classifications before we ch
 - [x] Decide fluid multiplayer model before using water/lava as required gameplay in networked stages.
 - [x] Expand run/quest state patching before adding more quest flags beyond altar and stage progression.
 - [ ] Add headless scenario harness and canonical state diff before more multiplayer feature work.
+  - First local equality smoke exists as `build/splonks-cpp --check-state-equality-smoke`.
+  - First protocol apply smoke exists as `build/splonks-cpp --check-network-protocol-smoke`.
+  - Remaining: fake transport or process-driven coordinator/peer scenario that compares fingerprints after queues drain from action requests, not only direct coordinator result records.
+- [x] Replace broad durable-fact capture with canonical `world_ops` helpers.
+- [x] Extend `--check-state-fingerprint-smoke` from single-state stability to two-state equality once stage/init nondeterminism is audited.
+  - Added `--check-state-equality-smoke`.

@@ -8,11 +8,11 @@
 #include "entity/core_types.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <cstdint>
@@ -104,7 +104,7 @@ void AwardMoneyToTarget(std::optional<VID> target_vid, std::uint32_t amount, Sta
         return;
     }
     target->money += amount;
-    EmitPlayerStatePatchedGameplayEvent(state, *target);
+    world_ops::PatchPlayerState(state, *target);
 }
 
 void RedeemGoldIdol(
@@ -134,8 +134,7 @@ void RedeemGoldIdol(
     idol.damage_vulnerability = DamageVulnerability::Immune;
     idol.can_collide = false;
     idol.has_physics = false;
-    EmitEntityDeactivatedGameplayEvent(state, idol);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, idol.vid);
     state.UpdateSidForEntity(entity_idx, graphics);
 }
 

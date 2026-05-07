@@ -7,10 +7,10 @@
 #include "entities/sac_altar.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -79,8 +79,7 @@ void CarveCorpse(Entity& machete, Entity& victim, State& state, const Graphics& 
     common::DropHeldItemFromEntity(victim, state);
     common::ReleaseEntityFromHolder(victim, state);
     victim.marked_for_destruction = true;
-    EmitEntityDeactivatedGameplayEvent(state, victim);
-    state.entity_manager.SetInactive(victim.vid.id);
+    (void)world_ops::DeactivateEntity(state, victim.vid);
     state.UpdateSidForEntity(victim.vid.id, graphics);
     AddPendingFavor(machete, kCorpseCutFavor);
     entities::sac_altar::SpawnSacrificeGainEffects(state, audio, effect_pos);

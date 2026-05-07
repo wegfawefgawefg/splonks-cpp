@@ -1,7 +1,7 @@
 #include "stage_break.hpp"
 
 #include "entity/archetype.hpp"
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
 #include "on_damage_effects.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
@@ -9,6 +9,7 @@
 #include "tile.hpp"
 #include "tile_archetype.hpp"
 #include "network/net_session.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <array>
@@ -18,28 +19,14 @@ namespace splonks {
 namespace {
 
 Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*entity, type_);
-    entity->SetCenter(center);
-    entity->vel = Vec2::New(0.0F, 0.0F);
-    return entity;
+    return world_ops::SpawnEntity(state, type_, [center](Entity& entity) {
+        entity.SetCenter(center);
+        entity.vel = Vec2::New(0.0F, 0.0F);
+    });
 }
 
 void SpawnAndReplicateEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    Entity* const entity = SpawnEntityAtCenter(type_, center, state);
-    if (entity == nullptr) {
-        return;
-    }
-    EmitEntitySpawnedGameplayEvent(state, *entity);
+    (void)SpawnEntityAtCenter(type_, center, state);
 }
 
 void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
@@ -131,7 +118,7 @@ void BreakStageTilesAtCoordsInternal(
         }
 
         if (request_coordinator_apply) {
-            EmitGameplayActionRequested(
+            world_ops::RequestGameplayAction(
                 state,
                 GameplayActionRequested{
                     .kind = GameplayActionKind::BreakTile,
@@ -155,7 +142,7 @@ void BreakStageTilesAtCoordsInternal(
         if (!suppress_drop_spawns && tile_archetype.on_break != nullptr) {
             tile_archetype.on_break(tile_pos, state, audio);
         }
-        DispatchStageTileDestroyed(tile_pos, state, audio);
+        RunStageTileDestroyedTriggers(tile_pos, state, audio);
         NotifyAreaEntitiesTileChanged(tile_pos, state, audio);
 
         const EmbeddedTreasure embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
@@ -171,7 +158,7 @@ void BreakStageTilesAtCoordsInternal(
         state.stage.SetTile(tile_pos, Tile::Air);
         changed_tiles.push_back(tile_pos);
         if (!suppress_network_event) {
-            EmitTileBrokenGameplayEvent(state, tile_pos);
+            world_ops::CommitTileBroken(state, tile_pos);
         }
         broke_any_tiles = true;
     }

@@ -111,39 +111,86 @@ Do not convert the whole game to local event-driven gameplay. Normal offline
 gameplay should remain direct: entity code mutates entity/tile state immediately
 so controls stay simple and responsive.
 
-Use gameplay events only as a replication/progression seam:
+Current seam: canonical `world_ops` helpers own durable mutation boundaries:
 
-- Coordinator/offline gameplay code emits durable facts after the mutation
-  happened.
+- Coordinator/offline gameplay code calls `world_ops` while applying normal
+  content rules.
 - Peer gameplay code sends action requests for shared mutations instead of
-  emitting durable facts directly.
-- The replication layer converts coordinator-authored facts to `NetEvent`s and
-  packets.
+  mutating shared state directly.
+- `world_ops` queues broad network result/action messages directly when
+  networking is active.
 - The progression layer handles stage-exit requests/sync.
 - Entity code must not construct network packets or know about sockets.
 - Networking should not know entity-specific rules like sacrifice, shop
   behavior, weapon hitboxes, or tool internals.
 - In multiplayer peer mode, gameplay code should not perform shared-world
-  durable mutations directly. It should emit/request the attempted action and
-  let the coordinator run the content callback that mutates shared state.
+  durable mutations directly. It should request the attempted action and let
+  the coordinator run the content callback that mutates shared state.
 
-This gives a responsive co-op model without forcing every behavior through an
-abstract event bus. If a gameplay fact is not durable or not useful for remote
-readability, it should stay local.
+This gives a responsive co-op model during migration without forcing every
+behavior through an abstract event bus. If a gameplay fact is not durable or not
+useful for remote readability, it should stay local.
+
+Durable mutations should stay behind the canonical `world_ops` API instead of
+relying on broad internal event capture. These functions should not use an
+`Authoritative` suffix in code; authority is a property of where the function is
+called and what the session role is, not part of every symbol name.
+`world_ops` is a module, not one fat file: keep entity lifecycle/state, tile
+mutation, action requests, presentation commands, and future fluid/player/run
+patches in separate implementation files under `src/world_ops/`.
+Example shape:
+
+```cpp
+world_ops::BreakTile(state, tile_coord, source);
+world_ops::SetTile(state, tile_coord, tile_patch, source);
+world_ops::SpawnEntity(state, spawn_spec, source);
+world_ops::DeactivateEntity(state, target, reason, source);
+world_ops::DamageEntity(state, target, damage_spec, source);
+world_ops::PatchPlayerState(state, player_id, player_patch, source);
+world_ops::PatchRunState(state, run_patch, source);
+world_ops::PatchFluidCell(state, cell_coord, fluid_patch, source);
+```
+
+These helpers own both sides of a durable mutation:
+
+- mutate the coordinator/offline state through normal content rules;
+- enqueue the broad network/result patch when networking is active;
+- no-op or apply local-only presentation when the result is cosmetic;
+- reject or convert peer-side calls into coordinator action requests.
+
+This target is closer to Terraria's direct message/category style and avoids
+turning the game's internal architecture into a listener graph. There is no
+internal `GameplayEvent` union/queue. `src/gameplay_messages.hpp` only defines
+plain action/result payload structs that `world_ops` and network serialization
+share.
+
+Strict migration rules:
+
+- New durable gameplay code should call `world_ops`.
+- New peer intent code should call `world_ops::RequestGameplayAction` or a
+  narrower `world_ops` request helper.
+- Raw entity/tile/player/run/fluid mutation plus a separate replication emit is
+  transitional and should be removed category by category.
+- Stage generation, debug-stage construction, replay loading, and net-event
+  apply may still use raw storage writes because they are not normal live
+  gameplay mutation paths.
+- When a durable category has a `world_ops` helper, direct call sites in content
+  should be migrated to it before new content uses that category.
 
 ### No Generic Listener Bus Requirement
 
-Do not add a generic listener/event-bus system just because gameplay events now
-exist. Direct calls are acceptable when they cross a clear ownership boundary:
+Do not add a generic listener/event-bus system. Direct calls are acceptable when
+they cross a clear ownership boundary:
 
-- `ProcessGameplayEvents` may directly call network replication/progression
-  while it remains small and explicit.
+- `world_ops` may directly call network replication/progression while it remains
+  small and explicit.
 - A listener/dispatcher is only justified if many independent systems need the
-  same gameplay facts or if `ProcessGameplayEvents` becomes a large ownerless
-  switchboard.
+  same gameplay facts and direct `world_ops` calls become insufficient.
 - The important boundary is not "everything listens to events." The important
   boundary is "peers request shared mutations; coordinator applies shared
   mutations."
+- Prefer explicit `world_ops` helper calls over adding more internal event
+  fanout.
 
 ## Interaction Authority Rule
 
@@ -201,8 +248,8 @@ through a pure event bus.
 For Splonks, keep these concerns separate:
 
 - Network messages are transport/protocol categories.
-- Gameplay events are our current seam for observing durable facts after normal
-  content code mutates state.
+- `world_ops` is our current seam for applying or requesting durable facts from
+  normal content code.
 - Singleplayer/offline content does not need to be rewritten into a pure
   listener/event-bus architecture.
 - Peers should send generic action requests to the coordinator instead of
@@ -210,10 +257,10 @@ For Splonks, keep these concerns separate:
 - The coordinator should run normal content callbacks and then publish broad
   result messages.
 
-The reason to keep gameplay events is not "Terraria does internal events." The
-reason is practical ownership: they let content stay direct/offline-friendly
-while networking observes coordinator-authored durable facts without packet code
-inside entities.
+We intentionally removed the internal gameplay-event queue. The practical
+ownership rule is now simpler: content stays direct/offline-friendly by calling
+`world_ops`, and `world_ops` is the only live gameplay seam that may enqueue
+network results without putting packet code inside entities.
 
 Terraria-style protocol shape:
 
@@ -818,9 +865,10 @@ struct PlayerSlot {
 ```
 
 Store networking state outside pure entity behavior. Entities should not know
-about sockets or peers. Entity-owned logic can emit local gameplay events through
-helpers; the networking layer decides whether those events are local-only or
-durable replicated events.
+about sockets or peers. Entity-owned logic should eventually call canonical
+`world_ops` helpers for durable mutation. Entity-owned logic should not emit a
+local gameplay event and wait for a listener; it should either mutate purely
+local presentation state or call the appropriate `world_ops` helper/request.
 
 ## Required Code Boundaries
 
@@ -1013,13 +1061,17 @@ This is useful as a stepping stone, but it should not define the remote model.
    - Add `PlayerId`, `NetEntityId`, `NetEventId`, `StageInstanceId`.
    - Add local mapping between `NetEntityId` and `VID`.
    - Add coordinator-order field, even before real networking exists.
-2. Add an in-process event bus for durable gameplay events.
-   - Events are emitted locally and applied locally in offline mode.
-   - This lets us migrate gameplay to event-sourced durable changes before
-     sockets exist.
-3. Convert key durable systems to emit/apply events.
+2. Add a narrow transitional durable-fact seam.
+   - Gameplay events are acceptable as a migration aid, but they are not the
+     target internal architecture.
+   - Do not build a broad in-process listener bus.
+3. Convert key durable systems to canonical `world_ops` helpers.
    - Start with spawn/deactivate, pickup/drop/throw, tile break/change,
-     tool inventory changes, damage/death, and stage transition.
+     tool inventory changes, damage/death, fluid patches, run-state patches, and
+     stage transition.
+   - Helpers mutate coordinator/offline state and enqueue broad results.
+   - Peer-side calls become action requests rather than local canonical
+     mutation.
 4. Support multiple player ids locally.
    - Spawn multiple player entities in one `State`.
    - Route input by `PlayerId`.
@@ -1238,6 +1290,21 @@ This is a normal way to test netcode. The important part is making the test
 harness compare authoritative durable state, not presentation-only particles or
 sounds.
 
+Strict first implementation steps:
+
+1. Add a canonical state fingerprint/diff utility that can run on one `State`.
+   It should ignore particles, audio emitters, UI windows, and other local
+   presentation state.
+2. Add one CLI smoke command that builds a headless `State` and proves the
+   fingerprint is stable before networking is involved.
+3. Add a fake transport or process-driven harness that starts one coordinator
+   and one peer, steps fixed ticks, and compares fingerprints after ordered
+   network queues drain.
+4. Add scripted scenario helpers only through player inputs, debug/admin
+   requests, or `world_ops`; do not mutate peer state directly from the test.
+5. Expand to N peers after the one-coordinator/one-peer path catches tile,
+   spawn, damage, carry, and stage-transition regressions.
+
 ## Network Fuzzer / Degradation Tool
 
 Add this early. It should work before real internet multiplayer is stable.
@@ -1293,7 +1360,11 @@ If only rendering or high-level events are fuzzed, the test will lie.
 
 ## Recommendation
 
-Build toward trusted co-op, event-sourced durable gameplay, and a lightweight
-coordinator that orders events and repairs drift. This gives the desired
-Japan-to-Texas feel: local motion and local tools are instant, while other
-players and world consequences may arrive late or correct smoothly.
+Build toward canonical `world_ops` mutation plus broad Terraria-style network
+lanes. The coordinator owns durable shared outcomes; clients keep local player
+control responsive and may present local prediction, but canonical tile, entity,
+fluid, inventory, run, and stage state comes from coordinator results or repair
+snapshots. Gameplay events are transitional glue, not the final internal
+architecture.
+The old internal gameplay-event queue has since been removed; do not reintroduce
+it as transitional glue.

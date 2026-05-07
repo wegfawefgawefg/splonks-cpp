@@ -580,7 +580,7 @@ bool IsVidInHolderChain(VID needle, const Entity& entity, const State& state) {
     return false;
 }
 
-bool IsImmediateLocalGameplayEvent(NetEventType type) {
+bool IsImmediateLocalNetResult(NetEventType type) {
     switch (type) {
     case NetEventType::EntitySpawned:
     case NetEventType::EntityDamaged:
@@ -848,7 +848,7 @@ std::size_t ApplyOrderedEvents(
             continue;
         }
         if (event.header.source_player_id == session.local_player_id &&
-            IsImmediateLocalGameplayEvent(event.type)) {
+            IsImmediateLocalNetResult(event.type)) {
             if (session.MarkEventApplied(event.header.event_id)) {
                 NoteAppliedCoordinatorOrder(session, event);
                 session.AddEventLog(NetEventLogPhase::SkippedLocalApply, event);

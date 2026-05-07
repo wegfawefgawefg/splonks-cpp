@@ -13,7 +13,7 @@ constexpr const char* kShopVandalismTriggerLabel = "shop vandalism trigger";
 StageTileTrigger MakeShopVandalismTileTrigger(const IVec2& tile_pos, std::size_t target_spawn_index) {
     return StageTileTrigger{
         .tile_pos = tile_pos,
-        .event = StageTileTriggerEvent::Destroyed,
+        .kind = StageTileTriggerKind::Destroyed,
         .target_spawn_index = target_spawn_index,
         .on_triggered = OnShopVandalismTileDestroyed,
         .debug_label = kShopVandalismTriggerLabel,
@@ -23,7 +23,7 @@ StageTileTrigger MakeShopVandalismTileTrigger(const IVec2& tile_pos, std::size_t
 StageTileTrigger MakeShopVandalismTileTrigger(const IVec2& tile_pos, VID target_vid) {
     return StageTileTrigger{
         .tile_pos = tile_pos,
-        .event = StageTileTriggerEvent::Destroyed,
+        .kind = StageTileTriggerKind::Destroyed,
         .target_vid = target_vid,
         .on_triggered = OnShopVandalismTileDestroyed,
         .debug_label = kShopVandalismTriggerLabel,

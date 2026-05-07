@@ -1,7 +1,8 @@
 #include "entities/common/common.hpp"
 
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -114,7 +115,7 @@ bool TryApplyPushEntityAction(
     }
 
     pushed->acc.x += push_acc_delta;
-    EmitEntityStatePatchedGameplayEvent(state, *pusher, *pushed);
+    world_ops::PatchEntityState(state, *pusher, *pushed);
     return true;
 }
 
@@ -164,7 +165,7 @@ void TryPushBlocks(
                     const bool target_auth =
                         HasLocalGameplayAuthorityForEntity(state, block_entity->vid);
                     if (source_auth && !target_auth) {
-                        EmitGameplayActionRequested(
+                        world_ops::RequestGameplayAction(
                             state,
                             GameplayActionRequested{
                                 .kind = GameplayActionKind::PushEntity,
@@ -177,7 +178,7 @@ void TryPushBlocks(
                     } else {
                         block_entity->acc.x += block_x_acc_delta;
                         if (source_auth) {
-                            EmitEntityStatePatchedGameplayEvent(state, entity, *block_entity);
+                            world_ops::PatchEntityState(state, entity, *block_entity);
                         }
                     }
                 }

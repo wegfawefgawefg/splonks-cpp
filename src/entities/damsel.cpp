@@ -7,12 +7,12 @@
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -100,7 +100,7 @@ void AwardDamselRescueHealthToEntity(std::optional<VID> target_vid, State& state
     }
 
     target->health += kDamselRescueHealthGain;
-    EmitPlayerStatePatchedGameplayEvent(state, *target);
+    world_ops::PatchPlayerState(state, *target);
 }
 
 void AwardDamselRescueHealth(State& state) {
@@ -174,8 +174,7 @@ void RescueDamsel(
     damsel.damage_vulnerability = DamageVulnerability::Immune;
     damsel.can_collide = false;
     damsel.has_physics = false;
-    EmitEntityDeactivatedGameplayEvent(state, damsel);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, damsel.vid);
     state.UpdateSidForEntity(entity_idx, graphics);
 }
 

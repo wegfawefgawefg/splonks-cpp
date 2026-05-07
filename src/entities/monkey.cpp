@@ -5,10 +5,10 @@
 #include "entities/common/common.hpp"
 #include "entities/common/ground_walker.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
 #include "tools/tool_archetype.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -167,23 +167,6 @@ AudioAssetId RandomMonkeyNoise(int min_index, int max_index) {
     }
 }
 
-Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state, const Graphics& graphics) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*entity, type_);
-    entity->SetCenter(center);
-    state.UpdateSidForEntity(vid->id, graphics);
-    return entity;
-}
-
 void ThrowSpawnedEntity(Entity& entity, const Entity& monkey) {
     const float throw_x = monkey.facing == LeftOrRight::Right
                               ? kMonkeyItemThrowSpeedX
@@ -262,7 +245,7 @@ bool TryStealRandomToolAndCast(
     ToolSlot& player_slot = mutable_player_tool_state->slots[selected_slot_index];
     if (player_slot.active && player_slot.kind == stolen_kind && player_slot.count > 0) {
         player_slot.count -= 1;
-        EmitPlayerStatePatchedGameplayEvent(state, player);
+        world_ops::PatchPlayerState(state, player);
     }
     return true;
 }
@@ -409,14 +392,16 @@ void RobPlayer(std::size_t monkey_idx, Entity& monkey, Entity& player, State& st
         (void)PlayEntityCenterSoundEmitter(state, player, audio_asset_ids::Thud);
     } else if (player.money >= kMonkeyRobMoneyAmount && rng::RandomIntInclusive(1, 10) <= 8) {
         player.money -= kMonkeyRobMoneyAmount;
-        EmitPlayerStatePatchedGameplayEvent(state, player);
-        if (Entity* const gold = SpawnEntityAtCenter(EntityType::GoldNugget, monkey.GetCenter(), state, graphics)) {
-            gold->vel = Vec2::New(
-                static_cast<float>(rng::RandomIntInclusive(-2, 2)),
-                -static_cast<float>(rng::RandomIntInclusive(3, 4))
-            );
-            gold->acc = Vec2::New(0.0F, 0.0F);
-            EmitEntitySpawnedGameplayEvent(state, *gold);
+        world_ops::PatchPlayerState(state, player);
+        if (world_ops::SpawnEntity(state, EntityType::GoldNugget, [&](Entity& gold) {
+                gold.SetCenter(monkey.GetCenter());
+                state.UpdateSidForEntity(gold.vid.id, graphics);
+                gold.vel = Vec2::New(
+                    static_cast<float>(rng::RandomIntInclusive(-2, 2)),
+                    -static_cast<float>(rng::RandomIntInclusive(3, 4))
+                );
+                gold.acc = Vec2::New(0.0F, 0.0F);
+            }) != nullptr) {
         }
         (void)PlayEntityCenterSoundEmitter(state, monkey, audio_asset_ids::Throw);
     } else {

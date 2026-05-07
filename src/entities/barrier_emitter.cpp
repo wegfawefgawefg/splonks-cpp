@@ -5,8 +5,8 @@
 #include "entities/common/common.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <optional>
@@ -35,21 +35,13 @@ std::vector<VID>& EnsureChildBeamVids(Entity& emitter) {
     return *emitter.child_vids;
 }
 
-Entity* SpawnBeamSegment(State& state, const Vec2& center, const VID& emitter_vid) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const beam = state.entity_manager.GetEntityMut(*vid);
-    if (beam == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*beam, EntityType::Beam);
-    beam->SetCenter(center);
-    beam->entity_a = emitter_vid;
-    return beam;
+Entity* SpawnBeamSegment(State& state, const Vec2& center, const Entity& emitter) {
+    return world_ops::SpawnEntity(state, EntityType::Beam, [&](Entity& beam) {
+        beam.SetCenter(center);
+        beam.entity_a = emitter.vid;
+        beam.facing = emitter.facing;
+        beam.alpha = emitter.alpha;
+    });
 }
 
 void DestroyBeamChildren(Entity& emitter, State& state) {
@@ -58,10 +50,7 @@ void DestroyBeamChildren(Entity& emitter, State& state) {
     }
 
     for (const VID& child_vid : *emitter.child_vids) {
-        if (Entity* const child = state.entity_manager.GetEntityMut(child_vid)) {
-            EmitEntityDeactivatedGameplayEvent(state, *child);
-            state.entity_manager.SetInactiveVid(child_vid);
-        }
+        (void)world_ops::DeactivateEntity(state, child_vid);
     }
     emitter.child_vids->clear();
 }
@@ -75,24 +64,19 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
         const Vec2 segment_center =
             emitter.GetCenter() + Vec2::New(0.0F, kBeamSegmentSize * static_cast<float>(segment_idx + 1));
         Entity* beam = state.entity_manager.GetEntityMut(beam_vids[segment_idx]);
-        bool spawned_beam = false;
         if (beam == nullptr || !beam->active || beam->type_ != EntityType::Beam ||
             beam->entity_a != emitter.vid) {
-            beam = SpawnBeamSegment(state, segment_center, emitter.vid);
+            beam = SpawnBeamSegment(state, segment_center, emitter);
             if (beam == nullptr) {
                 beam_vids[segment_idx] = VID{};
                 continue;
             }
             beam_vids[segment_idx] = beam->vid;
-            spawned_beam = true;
         }
 
         beam->SetCenter(segment_center);
         beam->facing = emitter.facing;
         beam->alpha = emitter.alpha;
-        if (spawned_beam) {
-            EmitEntitySpawnedGameplayEvent(state, *beam);
-        }
     }
 }
 
@@ -139,15 +123,13 @@ void StepEntityLogicAsBeam(
 
     Entity& beam = state.entity_manager.entities[entity_idx];
     if (!beam.entity_a.has_value()) {
-        EmitEntityDeactivatedGameplayEvent(state, beam);
-        state.entity_manager.SetInactive(entity_idx);
+        (void)world_ops::DeactivateEntity(state, beam.vid);
         return;
     }
 
     const Entity* const emitter = state.entity_manager.GetEntity(*beam.entity_a);
     if (emitter == nullptr || !emitter->active || emitter->condition == EntityCondition::Dead) {
-        EmitEntityDeactivatedGameplayEvent(state, beam);
-        state.entity_manager.SetInactive(entity_idx);
+        (void)world_ops::DeactivateEntity(state, beam.vid);
     }
 }
 

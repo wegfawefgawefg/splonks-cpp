@@ -66,7 +66,7 @@ enum class EffectModifierOp : std::uint8_t {
     Max,
 };
 
-enum class EffectEventType : std::uint8_t {
+enum class EffectHookType : std::uint8_t {
     Throw,
     Death,
     Grounded,
@@ -126,15 +126,15 @@ struct EffectModifier {
     float value = 0.0F;
 };
 
-struct EffectEvent {
-    EffectEventType type = EffectEventType::Throw;
+struct EffectHookContext {
+    EffectHookType type = EffectHookType::Throw;
     std::optional<VID> actor_vid = std::nullopt;
     std::optional<VID> target_vid = std::nullopt;
     Vec2 world_pos = Vec2::New(0.0F, 0.0F);
 };
 
-using EffectEventHandler = void (*)(Entity& owner, EffectInstance& effect, State& state, Audio* audio, const EffectEvent& event);
-using EffectExpiryPredicate = bool (*)(const Entity& owner, const EffectInstance& effect, const State& state, const EffectEvent& event);
+using EffectHookHandler = void (*)(Entity& owner, EffectInstance& effect, State& state, Audio* audio, const EffectHookContext& hook);
+using EffectExpiryPredicate = bool (*)(const Entity& owner, const EffectInstance& effect, const State& state, const EffectHookContext& hook);
 using EffectHudCountTextFn = std::optional<std::string> (*)(const EffectInstance& effect);
 using EffectWorldOverlayFn = void (*)(
     SDL_Renderer* renderer,
@@ -154,7 +154,7 @@ struct EffectArchetype {
     HudAnchor hud_count_anchor = HudAnchor::BottomRight;
     EffectWorldOverlayFn render_world_overlay = nullptr;
     std::vector<EffectModifier> modifiers;
-    EffectEventHandler on_event = nullptr;
+    EffectHookHandler on_hook = nullptr;
     EffectExpiryPredicate should_expire = nullptr;
 };
 
@@ -173,7 +173,7 @@ float GetModifiedEffectValue(
     float base_value,
     const State* state = nullptr
 );
-void DispatchEffectEventToEntity(Entity& entity, State& state, Audio* audio, const EffectEvent& event);
-void DispatchEffectEventToAll(State& state, Audio* audio, const EffectEvent& event);
+void ApplyEffectHookToEntity(Entity& entity, State& state, Audio* audio, const EffectHookContext& hook);
+void ApplyEffectHookToAll(State& state, Audio* audio, const EffectHookContext& hook);
 
 } // namespace splonks

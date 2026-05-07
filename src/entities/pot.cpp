@@ -5,9 +5,10 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
 #include "state.hpp"
 #include "controls.hpp"
+#include "world_ops.hpp"
 
 #include <cmath>
 #include <random>
@@ -32,28 +33,14 @@ int RandInclusive(int minimum, int maximum) {
 
 
 Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*entity, type_);
-    entity->pos = pos;
-    entity->vel = Vec2::New(0.0F, 0.0F);
-    return entity;
+    return world_ops::SpawnEntity(state, type_, [pos](Entity& entity) {
+        entity.pos = pos;
+        entity.vel = Vec2::New(0.0F, 0.0F);
+    });
 }
 
 void SpawnAndReplicateEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
-    Entity* const entity = SpawnEntityAtTopLeft(type_, pos, state);
-    if (entity == nullptr) {
-        return;
-    }
-    EmitEntitySpawnedGameplayEvent(state, *entity);
+    (void)SpawnEntityAtTopLeft(type_, pos, state);
 }
 
 void StepControlledPot(Entity& pot, const controls::ControlIntent& control) {
@@ -239,7 +226,7 @@ bool TryApplyPotImpact(
     if (!HasLocalGameplayAuthorityForEntity(state, pot.vid)) {
         if (context.mover_vid.has_value() &&
             HasLocalGameplayAuthorityForInteractionSource(state, *context.mover_vid)) {
-            EmitGameplayActionRequested(
+            world_ops::RequestGameplayAction(
                 state,
                 GameplayActionRequested{
                     .kind = GameplayActionKind::DamageEntity,

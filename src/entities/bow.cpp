@@ -6,8 +6,8 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -134,32 +134,22 @@ void ArmBow(Entity& bow, State& state) {
 }
 
 void SpawnArrowFromBow(Entity& bow, State& state, const BowAim& aim) {
-    const std::optional<VID> arrow_vid = state.entity_manager.NewEntity();
-    if (!arrow_vid.has_value()) {
-        return;
-    }
-
-    Entity* const arrow = state.entity_manager.GetEntityMut(*arrow_vid);
-    if (arrow == nullptr) {
-        return;
-    }
-
-    SetEntityAs(*arrow, EntityType::Arrow);
-    const Vec2 direction = aim.direction;
-    const Vec2 spawn_center = bow.GetCenter() + direction * 12.0F;
-    arrow->SetCenter(Vec2::New(std::round(spawn_center.x), std::round(spawn_center.y)));
-    arrow->vel = direction * kBowArrowSpeed;
-    arrow->acc = Vec2::New(0.0F, 0.0F);
-    arrow->facing = aim.facing;
-    arrow->rotation = aim.rotation;
-    arrow->thrown_by = bow.entity_a.has_value() ? bow.entity_a : bow.held_by_vid;
-    arrow->thrown_immunity_timer = entities::common::kThrownByImmunityDuration;
-    arrow->projectile_contact_damage_type = DamageType::Attack;
-    arrow->projectile_contact_damage_amount = kBowArrowDamage;
-    arrow->projectile_contact_timer = entities::common::kProjectileContactDuration;
-    arrow->can_apply_projectile_contact = false;
-    (void)AddEffect(*arrow, EffectId::NoGravityUntilContact);
-    EmitEntitySpawnedGameplayEvent(state, *arrow);
+    (void)world_ops::SpawnEntity(state, EntityType::Arrow, [&](Entity& arrow) {
+        const Vec2 direction = aim.direction;
+        const Vec2 spawn_center = bow.GetCenter() + direction * 12.0F;
+        arrow.SetCenter(Vec2::New(std::round(spawn_center.x), std::round(spawn_center.y)));
+        arrow.vel = direction * kBowArrowSpeed;
+        arrow.acc = Vec2::New(0.0F, 0.0F);
+        arrow.facing = aim.facing;
+        arrow.rotation = aim.rotation;
+        arrow.thrown_by = bow.entity_a.has_value() ? bow.entity_a : bow.held_by_vid;
+        arrow.thrown_immunity_timer = entities::common::kThrownByImmunityDuration;
+        arrow.projectile_contact_damage_type = DamageType::Attack;
+        arrow.projectile_contact_damage_amount = kBowArrowDamage;
+        arrow.projectile_contact_timer = entities::common::kProjectileContactDuration;
+        arrow.can_apply_projectile_contact = false;
+        (void)AddEffect(arrow, EffectId::NoGravityUntilContact);
+    });
 }
 
 void FireBow(Entity& bow, State& state) {
@@ -176,7 +166,7 @@ void FireBow(Entity& bow, State& state) {
     bow.entity_a.reset();
     SetAnimation(bow, GetLooseAnimationId(bow));
     (void)PlayWorldSoundEmitter(state, bow.GetCenter(), audio_asset_ids::Throw);
-    EmitEntityStatePatchedGameplayEvent(state, bow, bow);
+    world_ops::PatchEntityState(state, bow, bow);
 }
 
 } // namespace

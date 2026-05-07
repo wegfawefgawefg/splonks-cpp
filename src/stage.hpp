@@ -54,7 +54,7 @@ using StageExitId = int;
 constexpr StageExitId kInvalidStageExitId = -1;
 
 struct StageTileTrigger;
-enum class StageTileTriggerEvent {
+enum class StageTileTriggerKind {
     Destroyed,
     Changed,
     Entered,
@@ -64,7 +64,7 @@ using StageTileTriggerHandler = void (*)(const StageTileTrigger&, const IVec2&, 
 
 struct StageTileTrigger {
     IVec2 tile_pos = IVec2::New(0, 0);
-    StageTileTriggerEvent event = StageTileTriggerEvent::Destroyed;
+    StageTileTriggerKind kind = StageTileTriggerKind::Destroyed;
     std::optional<std::size_t> target_spawn_index = std::nullopt;
     std::optional<VID> target_vid = std::nullopt;
     std::uint32_t payload_id = 0;

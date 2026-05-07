@@ -925,14 +925,14 @@ void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
     (void)dt;
     Entity& entity = state.entity_manager.entities[entity_idx];
     if (entity.grounded) {
-        DispatchEffectEventToEntity(entity, state, nullptr, EffectEvent{.type = EffectEventType::Grounded});
+        ApplyEffectHookToEntity(entity, state, nullptr, EffectHookContext{.type = EffectHookType::Grounded});
         if (entity.vel.y > 0.0F) {
             entity.vel.y = 0.0F;
         }
         return;
     }
     if (entity.collided_last_frame) {
-        DispatchEffectEventToEntity(entity, state, nullptr, EffectEvent{.type = EffectEventType::BlockingContact});
+        ApplyEffectHookToEntity(entity, state, nullptr, EffectHookContext{.type = EffectHookType::BlockingContact});
     }
     const float gravity_scale =
         GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F, &state);

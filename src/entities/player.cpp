@@ -6,10 +6,10 @@
 #include "entities/gear_items.hpp"
 #include "entities/meathead.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "controls.hpp"
+#include "world_ops.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -384,7 +384,7 @@ void StepEntityLogicAsPlayer(
             for (const VID changed_vid : common::SeverEntityCarryLinksForReset(player, state)) {
                 if (const Entity* const changed_entity = state.entity_manager.GetEntity(changed_vid)) {
                     if (changed_entity->active) {
-                        EmitEntityStatePatchedGameplayEvent(state, player, *changed_entity);
+                        world_ops::PatchEntityState(state, player, *changed_entity);
                     }
                 }
             }
@@ -537,16 +537,20 @@ void StepEntityLogicAsPlayer(
 
         bool attacked = false;
         if (trying_to_attack && attack_delay_countdown == 0 && !has_held_item) {
-            if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
-                    SetEntityAs(*entity, EntityType::BaseballBat);
-                    entity->pos = player_pos;
-                    entity->held_by_vid = player_vid;
-                    entity->attachment_mode = AttachmentMode::Held;
-                    state.UpdateSidForEntity(vid->id, graphics);
-                    EmitEntitySpawnedGameplayEvent(state, *entity, player_vid);
-                    attacked = true;
-                    (void)PlayEntitySoundEmitter(state, player, audio_asset_ids::BaseballBatSwing);
+            if (world_ops::SpawnEntity(
+                    state,
+                    EntityType::BaseballBat,
+                    [&](Entity& entity) {
+                        entity.pos = player_pos;
+                        entity.held_by_vid = player_vid;
+                        entity.attachment_mode = AttachmentMode::Held;
+                        state.UpdateSidForEntity(entity.vid.id, graphics);
+                    },
+                    player_vid
+                ) != nullptr) {
+                attacked = true;
+                if (const Entity* const sound_player = state.entity_manager.GetEntity(player_vid)) {
+                    (void)PlayEntitySoundEmitter(state, *sound_player, audio_asset_ids::BaseballBatSwing);
                 }
             }
         }

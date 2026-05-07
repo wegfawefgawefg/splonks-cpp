@@ -6,12 +6,12 @@
 #include "entities/common/common.hpp"
 #include "entities/player.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "particles/particle_archetypes.hpp"
 #include "particles/scripted_particle.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -493,8 +493,7 @@ void OnDeathAsFleshGuy(std::size_t entity_idx, State& state, Audio& audio) {
                    QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetCenter())) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*center_surface, state.stage));
     }
-    EmitEntityDeactivatedGameplayEvent(state, flesh_guy);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, flesh_guy.vid);
 }
 
 void ControlEntityAsFleshGuy(

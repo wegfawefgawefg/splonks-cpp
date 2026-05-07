@@ -4,10 +4,10 @@
 #include "entities/common/common.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "on_damage_effects.hpp"
 #include "player_queries.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -39,23 +39,6 @@ std::optional<Vec2> GetNearestPlayerDelta(const Entity& entity, const State& sta
     return player_center - entity_center;
 }
 
-std::optional<VID> SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return std::nullopt;
-    }
-
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
-        return std::nullopt;
-    }
-
-    SetEntityAs(*entity, type_);
-    entity->SetCenter(center);
-    entity->vel = Vec2::New(0.0F, 0.0F);
-    return vid;
-}
-
 void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
     const int gem_count = rng::RandomIntInclusive(1, 3);
     for (int i = 0; i < gem_count; ++i) {
@@ -72,27 +55,21 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
             break;
         }
 
-        const std::optional<VID> gem_vid = SpawnEntityAtCenter(gem_type, center, state);
-        if (!gem_vid.has_value()) {
+        if (world_ops::SpawnEntity(state, gem_type, [&](Entity& gem) {
+                gem.SetCenter(center);
+                gem.vel = Vec2::New(
+                    rng::RandomFloat(-2.0F, 2.0F),
+                    -2.0F
+                );
+            }) == nullptr) {
             continue;
         }
-
-        Entity* const gem = state.entity_manager.GetEntityMut(*gem_vid);
-        if (gem != nullptr) {
-            gem->vel = Vec2::New(
-                rng::RandomFloat(-2.0F, 2.0F),
-                -2.0F
-            );
-            EmitEntitySpawnedGameplayEvent(state, *gem);
-        }
     }
 
-    const std::optional<VID> paste_vid = SpawnEntityAtCenter(EntityType::Paste, center, state);
-    if (paste_vid.has_value()) {
-        if (const Entity* const paste = state.entity_manager.GetEntity(*paste_vid)) {
-            EmitEntitySpawnedGameplayEvent(state, *paste);
-        }
-    }
+    (void)world_ops::SpawnEntity(state, EntityType::Paste, [&](Entity& paste) {
+        paste.SetCenter(center);
+        paste.vel = Vec2::New(0.0F, 0.0F);
+    });
 }
 
 void HandleGiantSpiderDeath(std::size_t entity_idx, State& state, Audio& audio) {

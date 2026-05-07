@@ -4,11 +4,11 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "gameplay_authority.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <memory>
@@ -246,13 +246,11 @@ void StepBaseballBat(
     Entity& baseball_bat = state.entity_manager.entities[entity_idx];
     const std::optional<VID> held_by_vid = baseball_bat.held_by_vid;
     if (!held_by_vid.has_value()) {
-        EmitEntityDeactivatedGameplayEvent(state, baseball_bat);
-        state.entity_manager.SetInactive(entity_idx);
+        (void)world_ops::DeactivateEntity(state, baseball_bat.vid);
         return;
     }
     if (baseball_bat.frame_data_animator.IsFinished()) {
-        EmitEntityDeactivatedGameplayEvent(state, baseball_bat);
-        state.entity_manager.SetInactive(entity_idx);
+        (void)world_ops::DeactivateEntity(state, baseball_bat.vid);
         return;
     }
 

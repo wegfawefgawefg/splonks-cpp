@@ -4,13 +4,13 @@
 
 Replace scattered passive bit checks with a unified `Effect` system.
 
-In this model, current "passives" are persistent effects. Temporary buffs/debuffs are timed or event-expiring effects. Both use the same modifier and gameplay event plumbing.
+In this model, current "passives" are persistent effects. Temporary buffs/debuffs are timed or condition-expiring effects. Effect-specific behavior uses narrow hooks, not a global internal event bus.
 
 This should improve separation between content and shared gameplay code:
 
 - common systems should not know about specific effects like mitt, spike shoes, spring shoes, or poison.
 - common systems should ask for effective values through modifier getters.
-- special behavior should live in effect archetype event handlers.
+- special behavior should live in effect archetype hook handlers.
 - effects should be applied in arbitrary order and may carry instance state, such as counters.
 - tools remain physical entities and are not folded into this system.
 
@@ -36,7 +36,7 @@ Those checks leak passive identity into player control, damage, physics, render,
 
 `Modifier`: a typed numeric operation contributed by an effect. Examples: add jump impulse, override spike damage taken, add throw boost, multiply gravity.
 
-`Gameplay event`: a fact emitted by gameplay code that effects can react to. Examples: throw, jump, stomp, fall update, contact, nearby death, render UI.
+`Effect hook`: a narrow callback point that effects can react to. Examples: throw, jump, stomp, fall update, contact, nearby death, render UI.
 
 `Tool`: physical entity that can be held, equipped, or used. Tools stay separate.
 
@@ -90,8 +90,8 @@ struct EffectArchetype {
 
     std::span<const Modifier> modifiers;
 
-    GameplayEventMask event_mask;
-    EffectEventHandler on_event = nullptr;
+    EffectHookMask hook_mask;
+    EffectHookHandler on_hook = nullptr;
 };
 ```
 
@@ -115,7 +115,7 @@ Use reusable C++ expiry policy functions instead of a growing `UntilX` lifetime 
 ```cpp
 using EffectShouldExpire = bool (*)(
     const EffectInstance& effect,
-    const GameplayEvent& event,
+    const EffectHookContext& hook,
     const EffectContext& ctx
 );
 
@@ -136,7 +136,7 @@ extern const EffectExpiryPolicy kExpireOnGrounded;
 extern const EffectExpiryPolicy kExpireOnBlockingContactOrGrounded;
 ```
 
-Effects can also remove themselves explicitly from `on_event`, as parachute likely will.
+Effects can also remove themselves explicitly from `on_hook`, as parachute likely will.
 
 Examples:
 
@@ -206,12 +206,12 @@ The operation order must be deterministic. Proposed order:
 
 This keeps simple effects data-like while still allowing C++ behavior where needed.
 
-## Gameplay Events
+## Effect Hooks
 
-Special behavior should use generic gameplay events rather than a long list of effect-specific hook fields.
+Special behavior should use narrow effect/content hooks rather than a long list of effect-specific hook fields.
 
 ```cpp
-enum class GameplayEventType {
+enum class EffectHook {
     Throw,
     Jump,
     Stomp,
@@ -226,8 +226,8 @@ enum class GameplayEventType {
     RenderUi,
 };
 
-struct GameplayEvent {
-    GameplayEventType type;
+struct EffectHookContext {
+    EffectHook type;
     VID actor;
     VID target;
     Vec2 pos;
@@ -237,13 +237,13 @@ struct GameplayEvent {
 };
 ```
 
-Each effect archetype has an event mask. The dispatcher only calls effects that opted into the event.
+Each effect archetype has a hook mask. The hook runner only calls effects that opted into the hook.
 
 ```cpp
-using EffectEventHandler = void (*)(
-    EffectEventContext& ctx,
+using EffectHookHandler = void (*)(
+    EffectContext& ctx,
     EffectInstance& effect,
-    const GameplayEvent& event
+    const EffectHookContext& hook
 );
 ```
 
@@ -259,7 +259,7 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
   - `kExpireNever`
 - modifiers:
   - `ThrowHorizontalBoost Add 6.0`
-- event handler:
+- hook handler:
   - on `Throw`, apply `NoGravityUntilContact` to the thrown entity.
 - note:
   - the player added a `mitt_no_grab` UI asset. This can be used later for failed auto-catch feedback or a temporary "cannot catch" status if needed.
@@ -272,7 +272,7 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
   - `kExpireOnBlockingContactOrGrounded`
 - modifiers:
   - `GravityScale Override 0.0`
-- event handler:
+- hook handler:
   - none required.
 
 `SpringShoes`
@@ -324,7 +324,7 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
 - modifiers:
   - `HiddenTreasureVisibility Max 1.0`
 - future behavior:
-  - black market or special-exit guidance should be event/UI driven, not embedded in visibility checks.
+  - black market or special-exit guidance should be hook/UI driven, not embedded in visibility checks.
 
 `Compass`
 
@@ -332,10 +332,10 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
   - `Passive`
 - expiry:
   - `kExpireNever`
-- event handler:
-  - on `RenderUi` or equivalent HUD/world-overlay event, draw compass guidance.
+- hook handler:
+  - on `RenderUi` or equivalent HUD/world-overlay hook, draw compass guidance.
 - alternative:
-  - a generic modifier target could expose compass behavior, but an event handler is likely cleaner.
+  - a generic modifier target could expose compass behavior, but a hook handler is likely cleaner.
 
 `Meathead`
 
@@ -343,7 +343,7 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
   - `Passive`
 - expiry:
   - `kExpireNever`
-- event handler:
+- hook handler:
   - on `DeathNearby`, increment `effect.count`.
   - when count reaches threshold, spend points and grant health.
 
@@ -355,7 +355,7 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
   - `kExpireNever`
 - instance state:
   - `count` is deploy charges.
-- event handler:
+- hook handler:
   - on `FallUpdate`, deploy when fall conditions are met.
   - decrement `effect.count`.
   - remove effect when count reaches zero.
@@ -365,7 +365,7 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
 Be strict during migration:
 
 - Do not add new `HasPassiveItem(...)` checks.
-- Existing passive checks should be converted to either a modifier getter or a gameplay event.
+- Existing passive checks should be converted to either a modifier getter or a narrow effect/content hook.
 - Common physics/combat/movement code should ask for effective values, not passive identity.
 - Effect-specific behavior belongs in effect archetype handlers.
 - Tools stay physical entities.
@@ -390,15 +390,15 @@ if (HasPassiveItem(holder, EntityPassiveItem::Mitt)) {
 }
 
 // Prefer:
-EmitGameplayEvent(ThrowEvent{holder.vid, thrown.vid});
+ApplyEffectHook(EffectHook::Throw, holder.vid, thrown.vid);
 ```
 
 ## Migration Order
 
-1. [x] Add effect ids, effect instances, effect archetypes, modifier getters, expiry predicates, and event dispatch plumbing.
+1. [x] Add effect ids, effect instances, effect archetypes, modifier getters, expiry predicates, and hook plumbing.
 2. [x] Replace passive pickup data with `pickup_effect`.
 3. [x] Migrate `SpringShoes` and `SpikeShoes`.
-4. [x] Migrate `Mitt` throw boost and throw event behavior.
+4. [x] Migrate `Mitt` throw boost and throw hook behavior.
 5. [x] Migrate `NoGravityUntilContact` from interim temp flag into an effect archetype.
 6. [x] Migrate `Spectacles` and `UdjatEye` visibility checks.
 7. [x] Migrate `Compass` UI behavior.
@@ -417,4 +417,4 @@ EmitGameplayEvent(ThrowEvent{holder.vid, thrown.vid});
 
 The old passive bitset and interim temporary-effect bitset have been removed.
 
-`NoGravityUntilContact` is now a hidden effect. Mitt dispatches a generic throw event, and the mitt effect handler applies that hidden effect to the thrown entity.
+`NoGravityUntilContact` is now a hidden effect. Mitt runs a generic throw hook, and the mitt effect hook applies that hidden effect to the thrown entity.

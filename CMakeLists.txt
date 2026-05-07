@@ -269,7 +269,6 @@ add_executable(splonks-cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp
     src/gameplay_authority.cpp
-    src/gameplay_events.cpp
     src/graphics.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
@@ -333,7 +332,12 @@ add_executable(splonks-cpp
     src/stage_rotation.cpp
     src/stage_wrap.cpp
     src/stage_tile_triggers.cpp
+    src/state_fingerprint.cpp
     src/water.cpp
+    src/world_ops/entity.cpp
+    src/world_ops/action.cpp
+    src/world_ops/presentation.cpp
+    src/world_ops/tile.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/classic/ambient_passes.cpp
     src/stage_gen/classic/glyph_actions.cpp

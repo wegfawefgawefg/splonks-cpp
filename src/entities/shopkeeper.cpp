@@ -7,11 +7,11 @@
 #include "entities/shop.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -90,30 +90,23 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t entity_idx, State& state, const 
         return false;
     }
 
-    const std::optional<VID> pistol_vid = state.entity_manager.NewEntity();
-    if (!pistol_vid.has_value()) {
-        return false;
-    }
-
-    Entity* const pistol = state.entity_manager.GetEntityMut(*pistol_vid);
+    Entity* const pistol = world_ops::SpawnEntity(state, EntityType::Pistol, [&](Entity& spawned_pistol) {
+        spawned_pistol.held_by_vid = shopkeeper.vid;
+        spawned_pistol.attachment_mode = AttachmentMode::Held;
+        spawned_pistol.has_physics = false;
+        spawned_pistol.can_collide = false;
+        spawned_pistol.counter_b = 9999.0F;
+        spawned_pistol.facing = shopkeeper.facing;
+        spawned_pistol.SetCenter(shopkeeper.GetCenter() + Vec2::New(4.0F, 1.0F));
+        shopkeeper.holding_vid = spawned_pistol.vid;
+        shopkeeper.holding = true;
+        shopkeeper.entity_b = spawned_pistol.vid;
+        state.UpdateSidForEntity(spawned_pistol.vid.id, graphics);
+    }, shopkeeper.vid);
     if (pistol == nullptr) {
         return false;
     }
-
-    SetEntityAs(*pistol, EntityType::Pistol);
-    pistol->held_by_vid = shopkeeper.vid;
-    pistol->attachment_mode = AttachmentMode::Held;
-    pistol->has_physics = false;
-    pistol->can_collide = false;
-    pistol->counter_b = 9999.0F;
-    pistol->facing = shopkeeper.facing;
-    pistol->SetCenter(shopkeeper.GetCenter() + Vec2::New(4.0F, 1.0F));
-    shopkeeper.holding_vid = pistol->vid;
-    shopkeeper.holding = true;
-    shopkeeper.entity_b = pistol->vid;
-    state.UpdateSidForEntity(pistol_vid->id, graphics);
-    EmitEntitySpawnedGameplayEvent(state, *pistol, shopkeeper.vid);
-    EmitEntityHeldGameplayEvent(state, shopkeeper, *pistol);
+    world_ops::MarkEntityHeld(state, shopkeeper, *pistol);
     return true;
 }
 

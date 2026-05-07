@@ -152,23 +152,23 @@ bool IsNoGravityUntilContactExpired(
     const Entity&,
     const EffectInstance&,
     const State&,
-    const EffectEvent& event
+    const EffectHookContext& hook
 ) {
-    return event.type == EffectEventType::Grounded || event.type == EffectEventType::BlockingContact;
+    return hook.type == EffectHookType::Grounded || hook.type == EffectHookType::BlockingContact;
 }
 
-void OnMittEffectEvent(
+void OnMittEffectHook(
     Entity&,
     EffectInstance&,
     State& state,
     Audio*,
-    const EffectEvent& event
+    const EffectHookContext& hook
 ) {
-    if (event.type != EffectEventType::Throw || !event.target_vid.has_value()) {
+    if (hook.type != EffectHookType::Throw || !hook.target_vid.has_value()) {
         return;
     }
 
-    Entity* const thrown = state.entity_manager.GetEntityMut(*event.target_vid);
+    Entity* const thrown = state.entity_manager.GetEntityMut(*hook.target_vid);
     if (thrown == nullptr) {
         return;
     }
@@ -209,15 +209,15 @@ void SnapBackItemToOwner(Entity& owner, State& state) {
     back_item->SetCenter(owner.GetCenter());
 }
 
-void OnAnkhEffectEvent(
+void OnAnkhEffectHook(
     Entity& owner,
     EffectInstance&,
     State& state,
     Audio* audio,
-    const EffectEvent& event
+    const EffectHookContext& hook
 ) {
-    if (event.type != EffectEventType::Death || !event.target_vid.has_value() ||
-        *event.target_vid != owner.vid) {
+    if (hook.type != EffectHookType::Death || !hook.target_vid.has_value() ||
+        *hook.target_vid != owner.vid) {
         return;
     }
 
@@ -290,7 +290,7 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .icon_animation_id = frame_data_ids::Mitt,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = MakeModifierVector(kMittModifiers),
-        .on_event = OnMittEffectEvent,
+        .on_hook = OnMittEffectHook,
     },
     EffectArchetype{
         .id = EffectId::SpringShoes,
@@ -319,7 +319,7 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .icon_animation_id = frame_data_ids::Ankh,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = {},
-        .on_event = OnAnkhEffectEvent,
+        .on_hook = OnAnkhEffectHook,
     },
     EffectArchetype{
         .id = EffectId::Meathead,
@@ -329,7 +329,7 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
         .hud_count_text = FormatMeatheadCountdownText,
         .hud_count_anchor = HudAnchor::BottomRight,
         .modifiers = {},
-        .on_event = entities::meathead::OnMeatheadEffectEvent,
+        .on_hook = entities::meathead::OnMeatheadEffectHook,
     },
     EffectArchetype{
         .id = EffectId::Parachute,

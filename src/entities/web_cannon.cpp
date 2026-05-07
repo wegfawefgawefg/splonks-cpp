@@ -5,10 +5,10 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -285,40 +285,13 @@ void SpawnCobwebBurst(State& state, const Vec2& origin) {
     }
 }
 
-Entity* SpawnWebBallEntity(State& state, const Vec2& pos) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const web_ball = state.entity_manager.GetEntityMut(*vid);
-    if (web_ball == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*web_ball, EntityType::WebBall);
-    web_ball->SetCenter(pos);
-    return web_ball;
-}
-
 Entity* SpawnCobwebEntity(State& state, const Vec2& center, bool temporary) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        return nullptr;
-    }
-
-    Entity* const cobweb = state.entity_manager.GetEntityMut(*vid);
-    if (cobweb == nullptr) {
-        return nullptr;
-    }
-
-    SetEntityAs(*cobweb, EntityType::Cobweb);
-    cobweb->SetCenter(center);
-    cobweb->counter_a = temporary ? kTemporaryCobwebLifetimeFrames : 0.0F;
-    cobweb->counter_d = kCobwebWearIntervalFrames;
-    cobweb->health = kCobwebDurability;
-    EmitEntitySpawnedGameplayEvent(state, *cobweb);
-    return cobweb;
+    return world_ops::SpawnEntity(state, EntityType::Cobweb, [&](Entity& cobweb) {
+        cobweb.SetCenter(center);
+        cobweb.counter_a = temporary ? kTemporaryCobwebLifetimeFrames : 0.0F;
+        cobweb.counter_d = kCobwebWearIntervalFrames;
+        cobweb.health = kCobwebDurability;
+    });
 }
 
 void DestroyCobweb(std::size_t entity_idx, State& state) {
@@ -332,8 +305,7 @@ void DestroyCobweb(std::size_t entity_idx, State& state) {
     }
 
     SpawnCobwebBurst(state, cobweb.GetCenter());
-    EmitEntityDeactivatedGameplayEvent(state, cobweb);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, cobweb.vid);
 }
 
 void TriggerWebBallBurst(std::size_t entity_idx, State& state, bool spawn_cobweb) {
@@ -354,8 +326,7 @@ void TriggerWebBallBurst(std::size_t entity_idx, State& state, bool spawn_cobweb
         }
     }
     SpawnCobwebBurst(state, impact_center);
-    EmitEntityDeactivatedGameplayEvent(state, web_ball);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, web_ball.vid);
 }
 
 void TriggerWebBallBurstAtTile(std::size_t entity_idx, State& state, const IVec2& tile_pos) {
@@ -373,8 +344,7 @@ void TriggerWebBallBurstAtTile(std::size_t entity_idx, State& state, const IVec2
         (void)SpawnCobwebEntity(state, TileCenterToWorld(tile_pos), true);
     }
     SpawnCobwebBurst(state, impact_center);
-    EmitEntityDeactivatedGameplayEvent(state, web_ball);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, web_ball.vid);
 }
 
 void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
@@ -407,19 +377,19 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
         return;
     }
 
-    Entity* const web_ball = SpawnWebBallEntity(state, spawn_pos);
-    if (web_ball != nullptr) {
-        web_ball->facing = aim.facing;
-        web_ball->vel = (aim.direction * kWebBallSpeedX) +
-                        (holder != nullptr ? holder->vel * 0.35F : Vec2::New(0.0F, 0.0F));
-        web_ball->acc = Vec2::New(0.0F, 0.0F);
-        web_ball->thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : weapon.use_state.user_vid;
-        web_ball->thrown_immunity_timer = common::kThrownByImmunityDuration;
-        web_ball->counter_a = kWebBallLifetimeFrames;
-        web_ball->counter_b = 0.0F;
-        web_ball->counter_c = kWebBallEntityArmDelayFrames;
-        EmitEntitySpawnedGameplayEvent(state, *web_ball);
-    }
+    (void)world_ops::SpawnEntity(state, EntityType::WebBall, [&](Entity& spawned_web_ball) {
+        spawned_web_ball.SetCenter(spawn_pos);
+        spawned_web_ball.facing = aim.facing;
+        spawned_web_ball.vel = (aim.direction * kWebBallSpeedX) +
+                               (holder != nullptr ? holder->vel * 0.35F : Vec2::New(0.0F, 0.0F));
+        spawned_web_ball.acc = Vec2::New(0.0F, 0.0F);
+        spawned_web_ball.thrown_by =
+            holder != nullptr ? std::optional<VID>(holder->vid) : weapon.use_state.user_vid;
+        spawned_web_ball.thrown_immunity_timer = common::kThrownByImmunityDuration;
+        spawned_web_ball.counter_a = kWebBallLifetimeFrames;
+        spawned_web_ball.counter_b = 0.0F;
+        spawned_web_ball.counter_c = kWebBallEntityArmDelayFrames;
+    });
 
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
     SpawnWebSpray(state, muzzle_pos, aim.direction);
@@ -654,7 +624,7 @@ void OnUseAsWebCannon(std::size_t entity_idx, State& state, Graphics& graphics, 
     FireWebGun(entity_idx, state, graphics, audio);
     weapon.counter_b -= 1.0F;
     weapon.counter_a = weapon.counter_b <= 0.0F ? kWebGunReloadCooldownFrames : kWebGunFireCooldownFrames;
-    EmitEntityStatePatchedGameplayEvent(state, weapon, weapon);
+    world_ops::PatchEntityState(state, weapon, weapon);
 
     if (weapon.use_state.source == AttachmentMode::None) {
         StopUsingEntity(weapon);

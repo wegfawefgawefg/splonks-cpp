@@ -1,8 +1,9 @@
 #include "entities/common/common.hpp"
 
 #include "gameplay_authority.hpp"
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
 #include "on_damage_effects.hpp"
+#include "world_ops.hpp"
 
 namespace splonks::entities::common {
 
@@ -46,11 +47,11 @@ bool IsRemotePlayerEntity(const State& state, const Entity& entity) {
 
 void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
     Entity& entity = state.entity_manager.entities[entity_idx];
-    DispatchEffectEventToAll(
+    ApplyEffectHookToAll(
         state,
         &audio,
-        EffectEvent{
-            .type = EffectEventType::Death,
+        EffectHookContext{
+            .type = EffectHookType::Death,
             .target_vid = entity.vid,
             .world_pos = entity.GetCenter(),
         }
@@ -105,8 +106,7 @@ void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio) {
     }
 
     DoExplosion(entity_idx, entity.GetCenter(), 2.0F, 6.0F, state, audio);
-    EmitEntityDeactivatedGameplayEvent(state, entity);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, entity.vid);
 }
 
 void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
@@ -174,7 +174,7 @@ DamageResult TryDamageEntity(
         !coordinator_can_author_remote_player_target) {
         if (options.source_vid.has_value() &&
             HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid)) {
-            EmitGameplayActionRequested(
+            world_ops::RequestGameplayAction(
                 state,
                 GameplayActionRequested{
                     .kind = GameplayActionKind::DamageEntity,
@@ -199,7 +199,7 @@ DamageResult TryDamageEntity(
     const auto finish = [&](DamageResult result) {
         if (should_request_coordinator_damage &&
             (result == DamageResult::Hurt || result == DamageResult::Died)) {
-            EmitGameplayActionRequested(
+            world_ops::RequestGameplayAction(
                 state,
                 GameplayActionRequested{
                     .kind = GameplayActionKind::DamageEntity,
@@ -212,7 +212,7 @@ DamageResult TryDamageEntity(
         }
         if (!options.defer_replication &&
             (result == DamageResult::Hurt || result == DamageResult::Died)) {
-            EmitEntityDamagedGameplayEvent(state, entity, damage_type, amount, options.source_vid);
+            world_ops::CommitEntityDamaged(state, entity, damage_type, amount, options.source_vid);
         }
         return result;
     };
@@ -317,7 +317,7 @@ DamageResult TryHitEntity(
         !coordinator_can_author_remote_player_target) {
         if (options.source_vid.has_value() &&
             HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid)) {
-            EmitGameplayActionRequested(
+            world_ops::RequestGameplayAction(
                 state,
                 GameplayActionRequested{
                     .kind = GameplayActionKind::HitEntity,
@@ -356,10 +356,10 @@ DamageResult TryHitEntity(
     );
 
     if (damage_result == DamageResult::Hurt || damage_result == DamageResult::Died) {
-        EmitEntityDamagedGameplayEvent(state, entity, damage_type, amount, options.source_vid);
+        world_ops::CommitEntityDamaged(state, entity, damage_type, amount, options.source_vid);
     } else if (damage_result == DamageResult::None && options.source_vid.has_value()) {
         if (const Entity* const source = state.entity_manager.GetEntity(*options.source_vid)) {
-            EmitEntityStatePatchedGameplayEvent(state, *source, entity);
+            world_ops::PatchEntityState(state, *source, entity);
         }
     }
 

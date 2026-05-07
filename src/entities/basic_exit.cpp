@@ -2,8 +2,8 @@
 
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_events.hpp"
 #include "stage_progression.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <limits>
@@ -179,7 +179,7 @@ void StepEntityLogicAsBasicExit(
             continue;
         }
 
-        (void)TryRequestOrApplyInteractEntity(player->vid, exit_entity.vid, state, graphics, audio);
+        (void)world_ops::TryRequestOrApplyInteractEntity(player->vid, exit_entity.vid, state, graphics, audio);
         return;
     }
 }
@@ -206,13 +206,11 @@ bool OnInteractAsBasicExit(
         return false;
     }
 
-    const PlayerId player_id =
-        state.players.FindPlayerIdForEntity(interactor.vid).value_or(kInvalidPlayerId);
     (void)PlayEntityCenterSoundEmitter(state, *exit_entity, audio_asset_ids::StageWin);
     if (exit_entity->transition_target.has_value()) {
-        EmitStageTransitionRequested(state, *exit_entity->transition_target, player_id);
+        QueueStageTransition(state, *exit_entity->transition_target);
     } else {
-        EmitStageExitRequested(state, exit_entity->stage_exit_id, player_id);
+        QueueStageExitTransition(state, exit_entity->stage_exit_id);
     }
     return true;
 }

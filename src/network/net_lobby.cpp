@@ -7,10 +7,11 @@
 #include "network/net_progression.hpp"
 #include "network/net_protocol.hpp"
 #include "entities/common/common.hpp"
-#include "gameplay_events.hpp"
+#include "gameplay_messages.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_spawning.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -864,7 +865,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
     for (const VID changed_vid : changed_entities) {
         if (const Entity* const changed_entity = state.entity_manager.GetEntity(changed_vid)) {
             if (changed_entity->active) {
-                EmitEntityStatePatchedGameplayEvent(state, *changed_entity, *changed_entity);
+                world_ops::PatchEntityState(state, *changed_entity, *changed_entity);
             }
         }
     }

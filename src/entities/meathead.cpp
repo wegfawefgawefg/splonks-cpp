@@ -177,19 +177,19 @@ void MaybePreviewMeatheadPassive(const Entity& player, State& state) {
     SpawnMeatheadPopup(state, player);
 }
 
-void OnMeatheadEffectEvent(
+void OnMeatheadEffectHook(
     Entity& owner,
     EffectInstance& effect,
     State& state,
     Audio* audio,
-    const EffectEvent& event
+    const EffectHookContext& hook
 ) {
     (void)audio;
-    if (event.type != EffectEventType::Death || !event.target_vid.has_value()) {
+    if (hook.type != EffectHookType::Death || !hook.target_vid.has_value()) {
         return;
     }
 
-    const Entity* const victim = state.entity_manager.GetEntity(*event.target_vid);
+    const Entity* const victim = state.entity_manager.GetEntity(*hook.target_vid);
     if (victim == nullptr || !victim->active || victim->condition != EntityCondition::Dead) {
         return;
     }

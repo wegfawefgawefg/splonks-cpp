@@ -6,7 +6,6 @@
 #include "entities/common/common.hpp"
 #include "entities/basic_exit.hpp"
 #include "buying.hpp"
-#include "gameplay_events.hpp"
 #include "step_entities.hpp"
 #include "stage_progression.hpp"
 #include "stage_fluids.hpp"
@@ -17,6 +16,7 @@
 #include "network/net_progression.hpp"
 #include "player_queries.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 
 #include <algorithm>
 
@@ -298,7 +298,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
-    ProcessGameplayEvents(state, graphics, audio);
+    world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
     DrainAndApplyLocalNetworkEvents(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);
@@ -316,7 +316,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         const std::optional<std::size_t> buyable_idx =
             FindOverlappingBuyableEntityIdx(state, graphics, primary_player_vid->id);
         if (buyable_idx.has_value()) {
-            (void)TryRequestOrApplyInteractEntity(
+            (void)world_ops::TryRequestOrApplyInteractEntity(
                 *primary_player_vid,
                 state.entity_manager.entities[*buyable_idx].vid,
                 state,
@@ -426,7 +426,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
-    ProcessGameplayEvents(state, graphics, audio);
+    world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
     DrainAndApplyLocalNetworkEvents(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);

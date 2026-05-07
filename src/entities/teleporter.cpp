@@ -4,11 +4,11 @@
 #include "audio_emitters.hpp"
 #include "controls.hpp"
 #include "entities/common/common.hpp"
-#include "gameplay_events.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
@@ -421,8 +421,7 @@ void SplatTelefraggedEntity(std::size_t entity_idx, State& state, const Graphics
     common::DropHeldItemFromEntity(entity, state);
     common::ReleaseEntityFromHolder(entity, state);
     entity.marked_for_destruction = true;
-    EmitEntityDeactivatedGameplayEvent(state, entity);
-    state.entity_manager.SetInactive(entity_idx);
+    (void)world_ops::DeactivateEntity(state, entity.vid);
 }
 
 void ApplyTelefragToCandidate(const TeleportProbeCandidate& candidate, State& state, Audio& audio, const Graphics& graphics) {
@@ -481,7 +480,7 @@ void ApplyTeleportAreaShake(
 }
 
 void EmitTeleportSoundPresentation(State& state, const Entity& holder, const Vec2& source_center) {
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::PlaySoundAt,
         .audio_asset_id = audio_asset_ids::Teleport,
         .source_vid = holder.vid,
@@ -497,19 +496,19 @@ void EmitTeleportPhasePresentation(
     const IVec2& direction,
     ScriptedPresentationEffectId effect_id
 ) {
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::ShakeEntity,
         .source_vid = holder.vid,
         .source_pos = world_center,
         .param_a = 0.5F,
     });
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::ShakeEntity,
         .source_vid = teleporter.vid,
         .source_pos = world_center,
         .param_a = 0.5F,
     });
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::ShakeArea,
         .source_vid = holder.vid,
         .source_pos = world_center,
@@ -518,14 +517,14 @@ void EmitTeleportPhasePresentation(
         .param_c = 1.0F,
         .param_d = 1.5F,
     });
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::SpawnScriptedEffect,
         .effect_id = effect_id,
         .source_vid = holder.vid,
         .source_pos = world_center,
         .direction = direction,
     });
-    EmitPresentationCommandGameplayEvent(state, PresentationCommand{
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::SpawnScriptedEffect,
         .effect_id = effect_id,
         .source_vid = teleporter.vid,
