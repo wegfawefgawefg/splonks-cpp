@@ -21,6 +21,10 @@ namespace {
 
 constexpr double kSpawnAtMouseDelaySeconds = 2.0;
 
+bool IsPeerDebugWorldMutationDisabled(const State& state) {
+    return state.net_session.role == network::NetRole::Peer;
+}
+
 bool SpawnSearchMatches(const char* query, const char* candidate) {
     if (query == nullptr || query[0] == '\0') {
         return true;
@@ -370,6 +374,10 @@ void DrawCharacterSwapControls(
     Entity* selected_entity
 ) {
     ImGui::SeparatorText("Character Swap");
+    if (IsPeerDebugWorldMutationDisabled(state)) {
+        ImGui::TextDisabled("Disabled on multiplayer peers until debug/admin commands are coordinator-routed.");
+        return;
+    }
     if (debug.playback_active) {
         ImGui::TextDisabled("Character swapping disabled during playback.");
         return;
@@ -458,6 +466,11 @@ bool SpawnDebugEntity(
     EntityType type_,
     const Entity* selected_entity
 ) {
+    if (IsPeerDebugWorldMutationDisabled(state)) {
+        debug.spawn_status =
+            "Debug spawning is disabled on multiplayer peers until admin commands are coordinator-routed.";
+        return false;
+    }
     if (type_ == EntityType::None) {
         debug.spawn_status = "Select an entity type first.";
         return false;
@@ -572,7 +585,11 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         }
     }
 
-    if (debug.playback_active) {
+    if (IsPeerDebugWorldMutationDisabled(state)) {
+        debug.pending_spawn_at_mouse = false;
+        ImGui::SeparatorText("Spawner");
+        ImGui::TextDisabled("Entity spawning disabled on multiplayer peers.");
+    } else if (debug.playback_active) {
         debug.pending_spawn_at_mouse = false;
         ImGui::SeparatorText("Spawner");
         ImGui::TextDisabled("Entity spawning disabled during playback.");
@@ -683,6 +700,10 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("Animation Id: %u", entity.frame_data_animator.animation_id);
     ImGui::Text("Condition: %s", ConditionToString(entity.condition));
     ImGui::Text("AI: %s", AiStateToString(entity.ai_state));
+    const bool peer_mutation_disabled = IsPeerDebugWorldMutationDisabled(state);
+    if (peer_mutation_disabled) {
+        ImGui::BeginDisabled();
+    }
     bool stone = entity.stone;
     if (ImGui::Checkbox("Stone", &stone)) {
         if (stone) {
@@ -695,6 +716,10 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Checkbox("Crusher/Pusher", &entity.crusher_pusher);
     ImGui::Checkbox("Pushable", &entity.pushable);
     ImGui::DragFloat("Push Acc", &entity.push_acc, 0.01F, 0.0F, 5.0F, "%.2f");
+    if (peer_mutation_disabled) {
+        ImGui::EndDisabled();
+        ImGui::TextDisabled("Entity edits are disabled on multiplayer peers until admin commands are coordinator-routed.");
+    }
     ImGui::Text("Facing: %s", LeftOrRightToString(entity.facing));
     ImGui::Text("Grounded: %s", entity.grounded ? "true" : "false");
     ImGui::Text("Pos: (%.2f, %.2f)", entity.pos.x, entity.pos.y);
@@ -708,10 +733,18 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("Health: %u", entity.health);
     ImGui::Text("Money: %u", entity.money);
     ImGui::SeparatorText("Effects");
+    if (peer_mutation_disabled) {
+        ImGui::BeginDisabled();
+    }
     DrawEntityEffectsEditor(entity);
+    if (peer_mutation_disabled) {
+        ImGui::EndDisabled();
+    }
     ImGui::Separator();
     ImGui::TextUnformatted("Tools");
-    if (debug.playback_active) {
+    if (peer_mutation_disabled) {
+        ImGui::TextDisabled("Tool editing disabled on multiplayer peers.");
+    } else if (debug.playback_active) {
         ImGui::TextDisabled("Tool editing disabled during playback.");
     } else {
         const bool has_sticky_bombs = HasStickyBombTool(state.entity_tools, entity.vid);

@@ -471,6 +471,7 @@ void HandleJoinAccept(
     state.controlled_entity_vid.reset();
     transport.remote_player_targets.clear();
     transport.replicated_entity_state_cache.clear();
+    transport.replicated_fluid_cell_cache.clear();
     state.net_session.ClearStageEntityLinks();
 
     if (!LoadNetworkQuestStage(
@@ -640,6 +641,12 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
+        if (const std::optional<FluidCellEventsPacket> fluid_events =
+                TryDecodeFluidCellEvents(packet->bytes.data(), packet->size)) {
+            HandleFluidCellEventsAsPeer(state, *fluid_events);
+            continue;
+        }
+
         if (const std::optional<EntitySpawnedEventsPacket> entity_events =
                 TryDecodeEntitySpawnedEvents(packet->bytes.data(), packet->size)) {
             HandleEntitySpawnedEventsAsPeer(state, *entity_events);
@@ -724,6 +731,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     transport.remotes.clear();
     transport.remote_player_targets.clear();
     transport.replicated_entity_state_cache.clear();
+    transport.replicated_fluid_cell_cache.clear();
     transport.join_request_pending = false;
     if (status_out != nullptr) {
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
@@ -754,6 +762,7 @@ bool JoinHostSession(
     transport.remotes.clear();
     transport.remote_player_targets.clear();
     transport.replicated_entity_state_cache.clear();
+    transport.replicated_fluid_cell_cache.clear();
     transport.join_request_pending = true;
     transport.join_request_retry_frames = 0;
     SendJoinRequest(state);
@@ -770,6 +779,7 @@ void DisconnectSession(State& state, std::string* status_out) {
         state.net_transport->remotes.clear();
         state.net_transport->remote_player_targets.clear();
         state.net_transport->replicated_entity_state_cache.clear();
+        state.net_transport->replicated_fluid_cell_cache.clear();
         state.net_transport->join_request_pending = false;
     }
     state.net_session = NetSessionState::NewOffline();
@@ -911,6 +921,7 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
     if (state.net_transport) {
         state.net_transport->remote_player_targets.clear();
         state.net_transport->replicated_entity_state_cache.clear();
+        state.net_transport->replicated_fluid_cell_cache.clear();
     }
     const bool loaded = LoadNetworkQuestStage(
         state,
@@ -959,6 +970,7 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
             SendStageSyncToAllRemotes(state, *state.net_transport);
             SendSnapshotsToAllRemotes(state, *state.net_transport);
             SendReplicatedEntityStatePatchesToAllRemotes(state, *state.net_transport);
+            SendReplicatedFluidCellPatchesToAllRemotes(state, *state.net_transport);
             SendCoordinatorEntityRepairPatchesToAllRemotes(state, *state.net_transport);
             SendOrderedEventsToAllRemotes(state, *state.net_transport);
         }

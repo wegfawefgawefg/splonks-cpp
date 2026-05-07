@@ -29,6 +29,10 @@ constexpr float kMaxTimeScale = 2.0F;
 constexpr int kMinSnapshots = 1;
 constexpr int kMaxSnapshots = 20000;
 
+bool IsPeerDebugWorldMutationDisabled(const State& state) {
+    return state.net_session.role == network::NetRole::Peer;
+}
+
 const char* StageRotationWrapPolicyName(StageRotationWrapPolicy policy) {
     switch (policy) {
     case StageRotationWrapPolicy::DoNotChangeWrap:
@@ -349,8 +353,12 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         return;
     }
 
-    if (debug.playback_active) {
+    const bool peer_mutation_disabled = IsPeerDebugWorldMutationDisabled(state);
+    if (debug.playback_active || peer_mutation_disabled) {
         ImGui::BeginDisabled();
+    }
+    if (peer_mutation_disabled) {
+        ImGui::TextDisabled("Stage/debug world mutation disabled on multiplayer peers until admin commands are coordinator-routed.");
     }
 
     const auto apply_stage_fit_camera = [&state, &graphics]() {
@@ -566,7 +574,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         InvalidateStageAcoustics(state);
     }
 
-    if (debug.playback_active) {
+    if (debug.playback_active || peer_mutation_disabled) {
         ImGui::EndDisabled();
     }
 

@@ -2,6 +2,7 @@
 
 #include "entity.hpp"
 #include "effects.hpp"
+#include "entity/replicated_runtime_flags.hpp"
 #include "entity_tool_inventory.hpp"
 #include "gameplay_authority.hpp"
 #include "network/net_entity_links.hpp"
@@ -221,6 +222,9 @@ void EnqueueEntityStatePatchedReplicationEvent(
         .entity_id = entity_id,
         .source_entity_id = GetOrAssignReplicatedEntityId(state, gameplay_event.source_vid),
         .entity_a_id = GetReplicatedEntityLinkId(state, gameplay_event.entity_a_vid),
+        .entity_b_id = GetReplicatedEntityLinkId(state, gameplay_event.entity_b_vid),
+        .entity_c_id = GetReplicatedEntityLinkId(state, gameplay_event.entity_c_vid),
+        .entity_d_id = GetReplicatedEntityLinkId(state, gameplay_event.entity_d_vid),
         .holding_id = GetReplicatedEntityLinkId(state, gameplay_event.holding_vid),
         .held_by_id = GetReplicatedEntityLinkId(state, gameplay_event.held_by_vid),
         .back_id = GetReplicatedEntityLinkId(state, gameplay_event.back_vid),
@@ -229,7 +233,14 @@ void EnqueueEntityStatePatchedReplicationEvent(
         .acc = gameplay_event.acc,
         .counter_a = gameplay_event.counter_a,
         .counter_b = gameplay_event.counter_b,
+        .counter_c = gameplay_event.counter_c,
+        .counter_d = gameplay_event.counter_d,
+        .threshold_a = gameplay_event.threshold_a,
+        .threshold_b = gameplay_event.threshold_b,
         .point_a = gameplay_event.point_a,
+        .point_b = gameplay_event.point_b,
+        .point_c = gameplay_event.point_c,
+        .point_d = gameplay_event.point_d,
         .health = gameplay_event.health,
         .stun_timer = gameplay_event.stun_timer,
         .projectile_contact_timer = gameplay_event.projectile_contact_timer,
@@ -244,6 +255,8 @@ void EnqueueEntityStatePatchedReplicationEvent(
         .ai_state = gameplay_event.ai_state,
         .wanted = gameplay_event.wanted,
         .attachment_mode = gameplay_event.attachment_mode,
+        .draw_layer = gameplay_event.draw_layer,
+        .runtime_flags = gameplay_event.runtime_flags,
         .buyable_active = gameplay_event.buyable_active,
         .buyable_display_quantity = gameplay_event.buyable_display_quantity,
         .buyable_display_icon_animation_id = gameplay_event.buyable_display_icon_animation_id,
@@ -323,6 +336,21 @@ void EnqueueRunStatePatchedReplicationEvent(State& state) {
     event.header = state.net_session.MakeLocalEventHeader(state.frame);
     event.type = NetEventType::RunStatePatched;
     event.payload = RunStatePatchedEvent{
+        .quest_id = state.quest_state.quest_id,
+        .classic_made_black_market =
+            static_cast<std::uint8_t>(state.quest_state.classic.made_black_market ? 1 : 0),
+        .classic_made_udjat_eye =
+            static_cast<std::uint8_t>(state.quest_state.classic.made_udjat_eye ? 1 : 0),
+        .classic_has_udjat_eye =
+            static_cast<std::uint8_t>(state.quest_state.classic.has_udjat_eye ? 1 : 0),
+        .classic_made_moai =
+            static_cast<std::uint8_t>(state.quest_state.classic.made_moai ? 1 : 0),
+        .classic_has_hedjet =
+            static_cast<std::uint8_t>(state.quest_state.classic.has_hedjet ? 1 : 0),
+        .classic_has_sceptre =
+            static_cast<std::uint8_t>(state.quest_state.classic.has_sceptre ? 1 : 0),
+        .classic_has_book_of_dead =
+            static_cast<std::uint8_t>(state.quest_state.classic.has_book_of_dead ? 1 : 0),
         .sac_altar_favor = state.sac_altar_favor,
         .sac_altar_reward_tier = state.sac_altar_reward_tier,
     };
@@ -356,6 +384,25 @@ void EnqueueTileBrokenReplicationEvent(State& state, const GameplayTileBroken& g
     event.payload = TileBrokenEvent{
         .tile_pos = gameplay_event.tile_pos,
         .source_entity_id = kInvalidNetEntityId,
+    };
+    state.net_session.EnqueueNetEvent(event);
+}
+
+void EnqueueTileChangedReplicationEvent(State& state, const GameplayTileChanged& gameplay_event) {
+    if (state.net_session.role != NetRole::Coordinator) {
+        return;
+    }
+
+    NetEvent event;
+    event.header = state.net_session.MakeLocalEventHeader(state.frame);
+    event.type = NetEventType::TileChanged;
+    event.payload = TileChangedEvent{
+        .tile_pos = gameplay_event.tile_pos,
+        .tile = gameplay_event.tile,
+        .rotation = gameplay_event.rotation,
+        .layer = gameplay_event.layer == GameplayTileLayer::Backwall
+            ? NetTileLayer::Backwall
+            : NetTileLayer::Foreground,
     };
     state.net_session.EnqueueNetEvent(event);
 }
@@ -462,6 +509,9 @@ void ReplicateGameplayEvent(State& state, const GameplayEvent& event) {
         break;
     case GameplayEventType::RunStatePatched:
         EnqueueRunStatePatchedReplicationEvent(state);
+        break;
+    case GameplayEventType::TileChanged:
+        EnqueueTileChangedReplicationEvent(state, event.tile_changed);
         break;
     case GameplayEventType::TileBroken:
         EnqueueTileBrokenReplicationEvent(state, event.tile_broken);

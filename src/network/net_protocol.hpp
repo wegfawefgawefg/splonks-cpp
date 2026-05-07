@@ -25,9 +25,10 @@ constexpr std::size_t kNetQuestStageIdBytes = 64;
 constexpr std::size_t kNetPlayersPerProcess = 16;
 constexpr std::size_t kNetPlayerSnapshotsPerPacket = 8;
 constexpr std::size_t kNetTileEventsPerPacket = 8;
+constexpr std::size_t kNetFluidCellEventsPerPacket = 4;
 constexpr std::size_t kNetEntitySpawnedEventsPerPacket = 4;
 constexpr std::size_t kNetEntityDamageEventsPerPacket = 4;
-constexpr std::size_t kNetEntityStateEventsPerPacket = 2;
+constexpr std::size_t kNetEntityStateEventsPerPacket = 1;
 constexpr std::size_t kNetEntityCarryEventsPerPacket = 5;
 constexpr std::size_t kNetEntityLifecycleEventsPerPacket = 8;
 constexpr std::size_t kNetPlayerStateEventsPerPacket = 1;
@@ -56,6 +57,7 @@ enum class NetPacketType : std::uint16_t {
     PlayerStateEvents = 15,
     RunStateEvents = 16,
     ActionRequestAck = 17,
+    FluidCellEvents = 18,
 };
 
 struct NetPacketHeader {
@@ -136,6 +138,9 @@ struct TileEventEntry {
     std::uint64_t coordinator_order = 0;
     std::uint16_t event_type = 0;
     std::uint16_t tile = 0;
+    std::uint8_t rotation = 0;
+    std::uint8_t layer = 0;
+    std::uint16_t reserved = 0;
     std::int32_t tile_x = 0;
     std::int32_t tile_y = 0;
 };
@@ -143,6 +148,31 @@ struct TileEventEntry {
 struct TileEventsPacket {
     std::uint32_t event_count = 0;
     std::array<TileEventEntry, kNetTileEventsPerPacket> events{};
+};
+
+struct FluidCellEventEntry {
+    NetEventId event_id = kInvalidNetEventId;
+    PlayerId source_player_id = kInvalidPlayerId;
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint64_t source_local_frame = 0;
+    std::uint64_t coordinator_order = 0;
+    std::uint16_t tile = 0;
+    std::uint16_t reserved = 0;
+    std::int32_t tile_x = 0;
+    std::int32_t tile_y = 0;
+    float amount = 0.0F;
+    float velocity_x = 0.0F;
+    float velocity_y = 0.0F;
+    float gravity_x = 0.0F;
+    float gravity_y = 0.0F;
+    float temp_gravity_x = 0.0F;
+    float temp_gravity_y = 0.0F;
+    float gravity_strength = 0.0F;
+};
+
+struct FluidCellEventsPacket {
+    std::uint32_t event_count = 0;
+    std::array<FluidCellEventEntry, kNetFluidCellEventsPerPacket> events{};
 };
 
 struct EntitySpawnedEventEntry {
@@ -217,6 +247,9 @@ struct EntityStateEventEntry {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId source_entity_id = kInvalidNetEntityId;
     NetEntityId entity_a_id = kInvalidNetEntityId;
+    NetEntityId entity_b_id = kInvalidNetEntityId;
+    NetEntityId entity_c_id = kInvalidNetEntityId;
+    NetEntityId entity_d_id = kInvalidNetEntityId;
     NetEntityId holding_id = kInvalidNetEntityId;
     NetEntityId held_by_id = kInvalidNetEntityId;
     NetEntityId back_id = kInvalidNetEntityId;
@@ -228,8 +261,18 @@ struct EntityStateEventEntry {
     float acc_y = 0.0F;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float counter_c = 0.0F;
+    float counter_d = 0.0F;
+    float threshold_a = 0.0F;
+    float threshold_b = 0.0F;
     std::int32_t point_a_x = 0;
     std::int32_t point_a_y = 0;
+    std::int32_t point_b_x = 0;
+    std::int32_t point_b_y = 0;
+    std::int32_t point_c_x = 0;
+    std::int32_t point_c_y = 0;
+    std::int32_t point_d_x = 0;
+    std::int32_t point_d_y = 0;
     std::uint32_t health = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
@@ -244,6 +287,8 @@ struct EntityStateEventEntry {
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
     std::uint8_t attachment_mode = 0;
+    std::uint8_t draw_layer = 0;
+    std::uint32_t runtime_flags = 0;
     std::uint8_t buyable_active = 0;
     std::uint32_t buyable_display_quantity = 0;
     FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
@@ -342,6 +387,15 @@ struct RunStateEventEntry {
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
     std::uint64_t coordinator_order = 0;
+    std::uint16_t quest_id = 0;
+    std::uint8_t classic_made_black_market = 0;
+    std::uint8_t classic_made_udjat_eye = 0;
+    std::uint8_t classic_has_udjat_eye = 0;
+    std::uint8_t classic_made_moai = 0;
+    std::uint8_t classic_has_hedjet = 0;
+    std::uint8_t classic_has_sceptre = 0;
+    std::uint8_t classic_has_book_of_dead = 0;
+    std::uint8_t reserved = 0;
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
 };
@@ -427,6 +481,7 @@ EncodedNetPacket EncodeJoinRequest(const JoinRequestPacket& packet);
 EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet);
 EncodedNetPacket EncodePlayerSnapshots(const PlayerSnapshotsPacket& packet);
 EncodedNetPacket EncodeTileEvents(const TileEventsPacket& packet);
+EncodedNetPacket EncodeFluidCellEvents(const FluidCellEventsPacket& packet);
 EncodedNetPacket EncodeEntitySpawnedEvents(const EntitySpawnedEventsPacket& packet);
 EncodedNetPacket EncodeEntityDamageEvents(const EntityDamageEventsPacket& packet);
 EncodedNetPacket EncodeEntityStateEvents(const EntityStateEventsPacket& packet);
@@ -444,6 +499,7 @@ std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes,
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PlayerSnapshotsPacket> TryDecodePlayerSnapshots(const std::uint8_t* bytes, std::size_t size);
 std::optional<TileEventsPacket> TryDecodeTileEvents(const std::uint8_t* bytes, std::size_t size);
+std::optional<FluidCellEventsPacket> TryDecodeFluidCellEvents(const std::uint8_t* bytes, std::size_t size);
 std::optional<EntitySpawnedEventsPacket> TryDecodeEntitySpawnedEvents(const std::uint8_t* bytes, std::size_t size);
 std::optional<EntityDamageEventsPacket> TryDecodeEntityDamageEvents(const std::uint8_t* bytes, std::size_t size);
 std::optional<EntityStateEventsPacket> TryDecodeEntityStateEvents(const std::uint8_t* bytes, std::size_t size);

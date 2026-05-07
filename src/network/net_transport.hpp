@@ -77,6 +77,9 @@ struct NetRemotePlayerTarget {
 struct NetReplicatedEntityStateSignature {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId entity_a_id = kInvalidNetEntityId;
+    NetEntityId entity_b_id = kInvalidNetEntityId;
+    NetEntityId entity_c_id = kInvalidNetEntityId;
+    NetEntityId entity_d_id = kInvalidNetEntityId;
     NetEntityId holding_id = kInvalidNetEntityId;
     NetEntityId held_by_id = kInvalidNetEntityId;
     NetEntityId back_id = kInvalidNetEntityId;
@@ -91,6 +94,10 @@ struct NetReplicatedEntityStateSignature {
     float acc_y = 0.0F;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float counter_c = 0.0F;
+    float counter_d = 0.0F;
+    float threshold_a = 0.0F;
+    float threshold_b = 0.0F;
     float rotation = 0.0F;
     float animation_speed = 1.0F;
     std::uint32_t health = 0;
@@ -98,6 +105,15 @@ struct NetReplicatedEntityStateSignature {
     std::uint32_t projectile_contact_timer = 0;
     std::uint32_t buyable_display_quantity = 0;
     std::uint16_t animation_frame = 0;
+    std::int32_t point_a_x = 0;
+    std::int32_t point_a_y = 0;
+    std::int32_t point_b_x = 0;
+    std::int32_t point_b_y = 0;
+    std::int32_t point_c_x = 0;
+    std::int32_t point_c_y = 0;
+    std::int32_t point_d_x = 0;
+    std::int32_t point_d_y = 0;
+    std::uint32_t runtime_flags = 0;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
     std::uint8_t active = 0;
@@ -108,6 +124,7 @@ struct NetReplicatedEntityStateSignature {
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
     std::uint8_t attachment_mode = 0;
+    std::uint8_t draw_layer = 0;
     std::uint8_t buyable_active = 0;
     std::uint8_t animate = 0;
     std::uint8_t animation_loop = 1;
@@ -118,11 +135,31 @@ struct NetReplicatedEntityStateCache {
     NetReplicatedEntityStateSignature signature;
 };
 
+struct NetReplicatedFluidCellSignature {
+    std::int32_t tile_x = 0;
+    std::int32_t tile_y = 0;
+    std::uint16_t tile = 0;
+    std::int32_t amount = 0;
+    std::int32_t velocity_x = 0;
+    std::int32_t velocity_y = 0;
+    std::int32_t gravity_x = 0;
+    std::int32_t gravity_y = 0;
+    std::int32_t temp_gravity_x = 0;
+    std::int32_t temp_gravity_y = 0;
+    std::int32_t gravity_strength = 0;
+};
+
+struct NetReplicatedFluidCellCache {
+    NetReplicatedFluidCellSignature signature;
+    std::uint8_t empty_resend_frames_remaining = 0;
+};
+
 struct NetTransportRuntime {
     UdpSocket socket;
     std::vector<NetRemoteEndpoint> remotes;
     std::vector<NetRemotePlayerTarget> remote_player_targets;
     std::vector<NetReplicatedEntityStateCache> replicated_entity_state_cache;
+    std::vector<NetReplicatedFluidCellCache> replicated_fluid_cell_cache;
     NetEndpoint coordinator_endpoint;
     bool pending_stage_sync = false;
     StageInstanceId pending_stage_instance_id = kInvalidStageInstanceId;

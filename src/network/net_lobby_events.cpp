@@ -384,6 +384,23 @@ void HandleTileEventsAsPeer(State& state, const TileEventsPacket& packet) {
     }
 }
 
+void HandleFluidCellEventsAsPeer(State& state, const FluidCellEventsPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
+        const FluidCellEventEntry& entry = packet.events[i];
+        if (entry.stage_instance_id != state.net_session.stage_instance_id ||
+            entry.event_id == kInvalidNetEventId) {
+            continue;
+        }
+        if (entry.source_player_id != state.net_session.coordinator_player_id) {
+            continue;
+        }
+        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+            continue;
+        }
+        state.net_session.EnqueueTransientEvent(MakeFluidCellEvent(entry));
+    }
+}
+
 void HandleEntitySpawnedEventsAsPeer(State& state, const EntitySpawnedEventsPacket& packet) {
     for (std::uint32_t i = 0; i < packet.event_count; ++i) {
         const EntitySpawnedEventEntry& entry = packet.events[i];

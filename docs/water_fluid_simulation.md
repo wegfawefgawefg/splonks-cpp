@@ -132,6 +132,29 @@ Initial rules:
 - Water-specific entities, like piranhas, may still use water query helpers in their own content logic.
 - Fluids render as a late transparent pass over terrain/entities.
 
+## Multiplayer Ownership
+
+Terraria stores liquid amount/type as tile data, so liquid sync can use the same
+tile/world section machinery that repairs tiles. Splonks stores fluids as an
+overlay grid parallel to terrain, so the ownership rule has to be explicit:
+
+- The coordinator owns canonical fluid simulation when fluid affects gameplay.
+- Peers do not step canonical fluids locally.
+- The coordinator sends changed fluid cells and periodic repair/refresh patches.
+- Peer debug/admin fluid edits must become coordinator-routed commands before
+  they are enabled again in multiplayer.
+- Heavy water stages need packet counters and profiling before increasing patch
+  frequency or patch area.
+
+Current replicated cell payload:
+
+- fluid tile/type;
+- amount;
+- velocity;
+- permanent gravity vector;
+- gravity strength / override marker;
+- temporary gravity vector.
+
 ## Gameplay Interaction Plan
 
 Current state:

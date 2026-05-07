@@ -6,6 +6,7 @@
 #include "frame_data_id.hpp"
 #include "math_types.hpp"
 #include "network/net_ids.hpp"
+#include "quest.hpp"
 #include "tile.hpp"
 #include "tools/tool_archetype.hpp"
 
@@ -19,6 +20,11 @@ namespace splonks::network {
 
 constexpr std::size_t kPlayerStatePatchedToolSlotCount = 2;
 constexpr std::size_t kPlayerStatePatchedEffectCount = 12;
+
+enum class NetTileLayer : std::uint8_t {
+    Foreground,
+    Backwall,
+};
 
 enum class NetEventType : std::uint16_t {
     None,
@@ -44,6 +50,7 @@ enum class NetEventType : std::uint16_t {
     TileChanged,
     TileBroken,
     RopeTilePlaced,
+    FluidCellPatched,
 
     PlayerStatePatched,
     RunStatePatched,
@@ -141,6 +148,9 @@ struct EntityStatePatchedEvent {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId source_entity_id = kInvalidNetEntityId;
     NetEntityId entity_a_id = kInvalidNetEntityId;
+    NetEntityId entity_b_id = kInvalidNetEntityId;
+    NetEntityId entity_c_id = kInvalidNetEntityId;
+    NetEntityId entity_d_id = kInvalidNetEntityId;
     NetEntityId holding_id = kInvalidNetEntityId;
     NetEntityId held_by_id = kInvalidNetEntityId;
     NetEntityId back_id = kInvalidNetEntityId;
@@ -149,7 +159,14 @@ struct EntityStatePatchedEvent {
     Vec2 acc = Vec2::New(0.0F, 0.0F);
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float counter_c = 0.0F;
+    float counter_d = 0.0F;
+    float threshold_a = 0.0F;
+    float threshold_b = 0.0F;
     IVec2 point_a = IVec2::New(0, 0);
+    IVec2 point_b = IVec2::New(0, 0);
+    IVec2 point_c = IVec2::New(0, 0);
+    IVec2 point_d = IVec2::New(0, 0);
     std::uint32_t health = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
@@ -164,6 +181,8 @@ struct EntityStatePatchedEvent {
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
     std::uint8_t attachment_mode = 0;
+    std::uint8_t draw_layer = 0;
+    std::uint32_t runtime_flags = 0;
     std::uint8_t buyable_active = 0;
     std::uint32_t buyable_display_quantity = 0;
     FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
@@ -181,6 +200,7 @@ struct TileChangedEvent {
     IVec2 tile_pos = IVec2::New(0, 0);
     Tile tile = Tile::Air;
     TileRotation rotation = kTileRotation0;
+    NetTileLayer layer = NetTileLayer::Foreground;
 };
 
 struct TileBrokenEvent {
@@ -191,6 +211,16 @@ struct TileBrokenEvent {
 struct RopeTilePlacedEvent {
     IVec2 tile_pos = IVec2::New(0, 0);
     NetEntityId source_entity_id = kInvalidNetEntityId;
+};
+
+struct FluidCellPatchedEvent {
+    IVec2 tile_pos = IVec2::New(0, 0);
+    Tile tile = Tile::Air;
+    float amount = 0.0F;
+    Vec2 velocity = Vec2::New(0.0F, 0.0F);
+    Vec2 gravity = Vec2::New(0.0F, 0.0F);
+    Vec2 temp_gravity = Vec2::New(0.0F, 0.0F);
+    float gravity_strength = 0.0F;
 };
 
 struct PresentationCommandEvent {
@@ -234,6 +264,14 @@ struct PlayerStatePatchedEvent {
 };
 
 struct RunStatePatchedEvent {
+    QuestId quest_id = QuestId::None;
+    std::uint8_t classic_made_black_market = 0;
+    std::uint8_t classic_made_udjat_eye = 0;
+    std::uint8_t classic_has_udjat_eye = 0;
+    std::uint8_t classic_made_moai = 0;
+    std::uint8_t classic_has_hedjet = 0;
+    std::uint8_t classic_has_sceptre = 0;
+    std::uint8_t classic_has_book_of_dead = 0;
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
 };
@@ -278,6 +316,7 @@ struct NetEvent {
         TileChangedEvent,
         TileBrokenEvent,
         RopeTilePlacedEvent,
+        FluidCellPatchedEvent,
         PresentationCommandEvent,
         PlayerStatePatchedEvent,
         RunStatePatchedEvent,

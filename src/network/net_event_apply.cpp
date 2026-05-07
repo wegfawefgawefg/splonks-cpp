@@ -6,6 +6,7 @@
 #include "entity.hpp"
 #include "entity/archetype.hpp"
 #include "entity/display_states.hpp"
+#include "entity/replicated_runtime_flags.hpp"
 #include "entity_tool_inventory.hpp"
 #include "effects.hpp"
 #include "entities/common/common.hpp"
@@ -16,8 +17,10 @@
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "state.hpp"
+#include "tile_archetype.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -48,6 +51,90 @@ void SetTileIfChanged(State& state, const IVec2& tile_pos, Tile tile) {
     const std::vector<IVec2> changed_tiles{wrapped_pos};
     UpdateStageLightingForTileChanges(state, changed_tiles);
     UpdateStageAcousticsForTileChanges(state, changed_tiles);
+}
+
+void ApplyTileChangedEvent(State& state, const TileChangedEvent& payload) {
+    const IVec2 wrapped_pos = state.stage.WrapTileCoord(payload.tile_pos);
+    if (!state.stage.IsTileCoordInside(wrapped_pos.x, wrapped_pos.y)) {
+        return;
+    }
+
+    if (payload.layer == NetTileLayer::Backwall) {
+        const Tile current = state.stage.GetBackwallTile(
+            static_cast<unsigned int>(wrapped_pos.x),
+            static_cast<unsigned int>(wrapped_pos.y)
+        );
+        if (current == payload.tile) {
+            return;
+        }
+        state.stage.SetBackwallTile(wrapped_pos, payload.tile);
+    } else {
+        const Tile current = state.stage.GetTile(
+            static_cast<unsigned int>(wrapped_pos.x),
+            static_cast<unsigned int>(wrapped_pos.y)
+        );
+        const TileRotation current_rotation = state.stage.GetTileRotation(
+            static_cast<unsigned int>(wrapped_pos.x),
+            static_cast<unsigned int>(wrapped_pos.y)
+        );
+        const TileRotation rotation = NormalizeTileRotation(payload.rotation);
+        if (current == payload.tile && current_rotation == rotation) {
+            return;
+        }
+        state.stage.SetTile(wrapped_pos, payload.tile);
+        state.stage.SetTileRotation(wrapped_pos, rotation);
+    }
+
+    const std::vector<IVec2> changed_tiles{wrapped_pos};
+    UpdateStageLightingForTileChanges(state, changed_tiles);
+    UpdateStageAcousticsForTileChanges(state, changed_tiles);
+}
+
+bool IsSimulatedFluidTile(Tile tile) {
+    return tile != Tile::Air && GetTileArchetype(tile).simulated_fluid;
+}
+
+void ApplyFluidCellPatchedEvent(State& state, const FluidCellPatchedEvent& payload) {
+    const IVec2 wrapped_pos = state.stage.WrapTileCoord(payload.tile_pos);
+    if (!state.stage.IsTileCoordInside(wrapped_pos.x, wrapped_pos.y)) {
+        return;
+    }
+
+    Stage& stage = state.stage;
+    stage.SyncTileInstanceMetadataGrid();
+    const std::size_t y = static_cast<std::size_t>(wrapped_pos.y);
+    const std::size_t x = static_cast<std::size_t>(wrapped_pos.x);
+    const Tile current_tile = stage.fluid_tiles[y][x];
+    const float current_amount = stage.fluid_amount[y][x];
+
+    Tile next_tile = IsSimulatedFluidTile(payload.tile) ? payload.tile : Tile::Air;
+    float next_amount = std::clamp(payload.amount, 0.0F, 1.0F);
+    Vec2 next_velocity = payload.velocity;
+    Vec2 next_temp_gravity = payload.temp_gravity;
+    if (next_tile == Tile::Air || next_amount <= 0.0001F) {
+        next_tile = Tile::Air;
+        next_amount = 0.0F;
+        next_velocity = Vec2::New(0.0F, 0.0F);
+        next_temp_gravity = Vec2::New(0.0F, 0.0F);
+    }
+
+    const bool lighting_changed =
+        current_tile != next_tile ||
+        std::abs(current_amount - next_amount) > 0.0001F;
+    stage.fluid_tiles[y][x] = next_tile;
+    stage.fluid_amount[y][x] = next_amount;
+    stage.fluid_display_amount[y][x] = next_amount;
+    stage.fluid_velocity[y][x] = next_velocity;
+    stage.fluid_gravity[y][x] = payload.gravity;
+    stage.fluid_gravity_strength[y][x] = std::max(0.0F, payload.gravity_strength);
+    stage.fluid_temp_gravity[y][x] = next_temp_gravity;
+
+    if (lighting_changed) {
+        stage.tile_change_generation += 1;
+        const std::vector<IVec2> changed_tiles{wrapped_pos};
+        UpdateStageLightingForTileChanges(state, changed_tiles);
+        UpdateStageAcousticsForTileChanges(state, changed_tiles);
+    }
 }
 
 std::optional<VID> FindEntityVidForEvent(
@@ -99,6 +186,17 @@ void ApplyOptionalEntityLinkSlot(
     if (const std::optional<VID> resolved = FindEntityVidForEvent(session, state, entity_id)) {
         slot = *resolved;
     }
+}
+
+void ApplyEntityScratchLinks(
+    NetSessionState& session,
+    State& state,
+    Entity& entity,
+    const EntityStatePatchedEvent& payload
+) {
+    ApplyOptionalEntityLinkSlot(session, state, entity.entity_b, payload.entity_b_id);
+    ApplyOptionalEntityLinkSlot(session, state, entity.entity_c, payload.entity_c_id);
+    ApplyOptionalEntityLinkSlot(session, state, entity.entity_d, payload.entity_d_id);
 }
 
 bool ApplyConditionPresentation(Entity& entity, EntityCondition condition) {
@@ -406,6 +504,7 @@ void ApplyEntityStatePatchedEvent(
         return;
     }
     ApplyEntityLinkSlot(session, state, *entity, payload);
+    ApplyEntityScratchLinks(session, state, *entity, payload);
     ApplyOptionalEntityLinkSlot(session, state, entity->holding_vid, payload.holding_id);
     ApplyOptionalEntityLinkSlot(session, state, entity->held_by_vid, payload.held_by_id);
     ApplyOptionalEntityLinkSlot(session, state, entity->back_vid, payload.back_id);
@@ -423,6 +522,14 @@ void ApplyEntityStatePatchedEvent(
     }
     entity->counter_a = payload.counter_a;
     entity->counter_b = payload.counter_b;
+    entity->counter_c = payload.counter_c;
+    entity->counter_d = payload.counter_d;
+    entity->threshold_a = payload.threshold_a;
+    entity->threshold_b = payload.threshold_b;
+    entity->point_a = payload.point_a;
+    entity->point_b = payload.point_b;
+    entity->point_c = payload.point_c;
+    entity->point_d = payload.point_d;
     entity->has_physics = payload.has_physics != 0;
     entity->can_collide = payload.can_collide != 0;
     entity->can_apply_projectile_contact = payload.can_apply_projectile_contact != 0;
@@ -431,6 +538,8 @@ void ApplyEntityStatePatchedEvent(
     entity->facing = payload.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
     entity->ai_state = static_cast<EntityAiState>(payload.ai_state);
     entity->wanted = payload.wanted != 0;
+    entity->draw_layer = static_cast<DrawLayer>(payload.draw_layer);
+    ApplyReplicatedRuntimeFlags(*entity, payload.runtime_flags);
     entity->buyable.active = payload.buyable_active != 0;
     entity->buyable.display_quantity = payload.buyable_display_quantity;
     entity->buyable.display_icon_animation_id =
@@ -482,6 +591,7 @@ bool IsImmediateLocalGameplayEvent(NetEventType type) {
     case NetEventType::TileBroken:
     case NetEventType::RopeTilePlaced:
     case NetEventType::TileChanged:
+    case NetEventType::FluidCellPatched:
     case NetEventType::PlayerStatePatched:
     case NetEventType::PresentationCommand:
         return true;
@@ -799,6 +909,21 @@ std::size_t ApplyOrderedEvents(
             break;
         case NetEventType::RunStatePatched:
             if (const auto* payload = std::get_if<RunStatePatchedEvent>(&event.payload)) {
+                state.quest_state.quest_id = payload->quest_id;
+                state.quest_state.classic.made_black_market =
+                    payload->classic_made_black_market != 0;
+                state.quest_state.classic.made_udjat_eye =
+                    payload->classic_made_udjat_eye != 0;
+                state.quest_state.classic.has_udjat_eye =
+                    payload->classic_has_udjat_eye != 0;
+                state.quest_state.classic.made_moai =
+                    payload->classic_made_moai != 0;
+                state.quest_state.classic.has_hedjet =
+                    payload->classic_has_hedjet != 0;
+                state.quest_state.classic.has_sceptre =
+                    payload->classic_has_sceptre != 0;
+                state.quest_state.classic.has_book_of_dead =
+                    payload->classic_has_book_of_dead != 0;
                 state.sac_altar_favor = payload->sac_altar_favor;
                 state.sac_altar_reward_tier = payload->sac_altar_reward_tier;
             }
@@ -840,7 +965,12 @@ std::size_t ApplyOrderedEvents(
             break;
         case NetEventType::TileChanged:
             if (const auto* payload = std::get_if<TileChangedEvent>(&event.payload)) {
-                SetTileIfChanged(state, payload->tile_pos, payload->tile);
+                ApplyTileChangedEvent(state, *payload);
+            }
+            break;
+        case NetEventType::FluidCellPatched:
+            if (const auto* payload = std::get_if<FluidCellPatchedEvent>(&event.payload)) {
+                ApplyFluidCellPatchedEvent(state, *payload);
             }
             break;
         default:
@@ -851,7 +981,8 @@ std::size_t ApplyOrderedEvents(
             NoteAppliedCoordinatorOrder(session, event);
             session.AddEventLog(NetEventLogPhase::Applied, event);
             ++applied_count;
-            if (event.type == NetEventType::EntityStatePatched) {
+            if (event.type == NetEventType::EntityStatePatched ||
+                event.type == NetEventType::FluidCellPatched) {
                 transient_applied_event_ids.push_back(event.header.event_id);
             }
         }
@@ -862,7 +993,8 @@ std::size_t ApplyOrderedEvents(
                 session.ordered_events.begin(),
                 session.ordered_events.end(),
                 [&](const NetEvent& event) {
-                    return event.type == NetEventType::EntityStatePatched &&
+                    return (event.type == NetEventType::EntityStatePatched ||
+                              event.type == NetEventType::FluidCellPatched) &&
                            std::find(
                                transient_applied_event_ids.begin(),
                                transient_applied_event_ids.end(),

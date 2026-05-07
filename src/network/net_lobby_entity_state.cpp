@@ -1,5 +1,6 @@
 #include "network/net_lobby_internal.hpp"
 
+#include "entity/replicated_runtime_flags.hpp"
 #include "network/net_entity_links.hpp"
 
 #include <algorithm>
@@ -52,6 +53,9 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .entity_id = GetOrAssignReplicatedEntityId(state, entity.vid),
         .source_entity_id = kInvalidNetEntityId,
         .entity_a_id = GetReplicatedEntityLinkId(state, entity.entity_a),
+        .entity_b_id = GetReplicatedEntityLinkId(state, entity.entity_b),
+        .entity_c_id = GetReplicatedEntityLinkId(state, entity.entity_c),
+        .entity_d_id = GetReplicatedEntityLinkId(state, entity.entity_d),
         .holding_id = GetReplicatedEntityLinkId(state, entity.holding_vid),
         .held_by_id = GetReplicatedEntityLinkId(state, entity.held_by_vid),
         .back_id = GetReplicatedEntityLinkId(state, entity.back_vid),
@@ -60,7 +64,14 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .acc = entity.acc,
         .counter_a = entity.counter_a,
         .counter_b = entity.counter_b,
+        .counter_c = entity.counter_c,
+        .counter_d = entity.counter_d,
+        .threshold_a = entity.threshold_a,
+        .threshold_b = entity.threshold_b,
         .point_a = entity.point_a,
+        .point_b = entity.point_b,
+        .point_c = entity.point_c,
+        .point_d = entity.point_d,
         .health = entity.health,
         .stun_timer = entity.stun_timer,
         .projectile_contact_timer = entity.projectile_contact_timer,
@@ -76,6 +87,8 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .ai_state = static_cast<std::uint8_t>(entity.ai_state),
         .wanted = static_cast<std::uint8_t>(entity.wanted ? 1 : 0),
         .attachment_mode = static_cast<std::uint8_t>(entity.attachment_mode),
+        .draw_layer = static_cast<std::uint8_t>(entity.draw_layer),
+        .runtime_flags = CaptureReplicatedRuntimeFlags(entity),
         .buyable_active = static_cast<std::uint8_t>(entity.buyable.active ? 1 : 0),
         .buyable_display_quantity = entity.buyable.display_quantity,
         .buyable_display_icon_animation_id =
@@ -95,6 +108,9 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
     return NetReplicatedEntityStateSignature{
         .entity_id = payload.entity_id,
         .entity_a_id = payload.entity_a_id,
+        .entity_b_id = payload.entity_b_id,
+        .entity_c_id = payload.entity_c_id,
+        .entity_d_id = payload.entity_d_id,
         .holding_id = payload.holding_id,
         .held_by_id = payload.held_by_id,
         .back_id = payload.back_id,
@@ -109,6 +125,10 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
         .acc_y = payload.acc.y,
         .counter_a = payload.counter_a,
         .counter_b = payload.counter_b,
+        .counter_c = payload.counter_c,
+        .counter_d = payload.counter_d,
+        .threshold_a = payload.threshold_a,
+        .threshold_b = payload.threshold_b,
         .rotation = payload.rotation,
         .animation_speed = payload.animation_speed,
         .health = payload.health,
@@ -116,6 +136,15 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
         .projectile_contact_timer = payload.projectile_contact_timer,
         .buyable_display_quantity = payload.buyable_display_quantity,
         .animation_frame = payload.animation_frame,
+        .point_a_x = payload.point_a.x,
+        .point_a_y = payload.point_a.y,
+        .point_b_x = payload.point_b.x,
+        .point_b_y = payload.point_b.y,
+        .point_c_x = payload.point_c.x,
+        .point_c_y = payload.point_c.y,
+        .point_d_x = payload.point_d.x,
+        .point_d_y = payload.point_d.y,
+        .runtime_flags = payload.runtime_flags,
         .condition = payload.condition,
         .grounded = payload.grounded,
         .active = payload.active,
@@ -126,6 +155,7 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
         .ai_state = payload.ai_state,
         .wanted = payload.wanted,
         .attachment_mode = payload.attachment_mode,
+        .draw_layer = payload.draw_layer,
         .buyable_active = payload.buyable_active,
         .animate = payload.animate,
         .animation_loop = payload.animation_loop,
@@ -139,6 +169,9 @@ bool StateSignaturesEqual(
 ) {
     return a.entity_id == b.entity_id &&
            a.entity_a_id == b.entity_a_id &&
+           a.entity_b_id == b.entity_b_id &&
+           a.entity_c_id == b.entity_c_id &&
+           a.entity_d_id == b.entity_d_id &&
            a.holding_id == b.holding_id &&
            a.held_by_id == b.held_by_id &&
            a.back_id == b.back_id &&
@@ -153,6 +186,10 @@ bool StateSignaturesEqual(
            a.acc_y == b.acc_y &&
            a.counter_a == b.counter_a &&
            a.counter_b == b.counter_b &&
+           a.counter_c == b.counter_c &&
+           a.counter_d == b.counter_d &&
+           a.threshold_a == b.threshold_a &&
+           a.threshold_b == b.threshold_b &&
            a.rotation == b.rotation &&
            a.animation_speed == b.animation_speed &&
            a.health == b.health &&
@@ -160,6 +197,15 @@ bool StateSignaturesEqual(
            a.projectile_contact_timer == b.projectile_contact_timer &&
            a.buyable_display_quantity == b.buyable_display_quantity &&
            a.animation_frame == b.animation_frame &&
+           a.point_a_x == b.point_a_x &&
+           a.point_a_y == b.point_a_y &&
+           a.point_b_x == b.point_b_x &&
+           a.point_b_y == b.point_b_y &&
+           a.point_c_x == b.point_c_x &&
+           a.point_c_y == b.point_c_y &&
+           a.point_d_x == b.point_d_x &&
+           a.point_d_y == b.point_d_y &&
+           a.runtime_flags == b.runtime_flags &&
            a.condition == b.condition &&
            a.grounded == b.grounded &&
            a.active == b.active &&
@@ -170,6 +216,7 @@ bool StateSignaturesEqual(
            a.ai_state == b.ai_state &&
            a.wanted == b.wanted &&
            a.attachment_mode == b.attachment_mode &&
+           a.draw_layer == b.draw_layer &&
            a.buyable_active == b.buyable_active &&
            a.animate == b.animate &&
            a.animation_loop == b.animation_loop &&

@@ -31,6 +31,11 @@ bool IsReplicatedTileEvent(const NetEvent& event) {
                std::holds_alternative<TileChangedEvent>(event.payload));
 }
 
+bool IsReplicatedFluidCellEvent(const NetEvent& event) {
+    return event.type == NetEventType::FluidCellPatched &&
+           std::holds_alternative<FluidCellPatchedEvent>(event.payload);
+}
+
 bool IsReplicatedEntitySpawnedEvent(const NetEvent& event) {
     return event.type == NetEventType::EntitySpawned &&
            std::holds_alternative<EntitySpawnedEvent>(event.payload);
@@ -98,6 +103,20 @@ Tile GetTileEventTile(const NetEvent& event) {
     return Tile::Air;
 }
 
+TileRotation GetTileEventRotation(const NetEvent& event) {
+    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
+        return payload->rotation;
+    }
+    return kTileRotation0;
+}
+
+NetTileLayer GetTileEventLayer(const NetEvent& event) {
+    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
+        return payload->layer;
+    }
+    return NetTileLayer::Foreground;
+}
+
 TileEventEntry MakeTileEventEntry(const NetEvent& event) {
     const IVec2 tile_pos = GetTileEventPos(event);
     return TileEventEntry{
@@ -108,8 +127,34 @@ TileEventEntry MakeTileEventEntry(const NetEvent& event) {
         .coordinator_order = event.header.coordinator_order,
         .event_type = static_cast<std::uint16_t>(event.type),
         .tile = static_cast<std::uint16_t>(GetTileEventTile(event)),
+        .rotation = GetTileEventRotation(event),
+        .layer = static_cast<std::uint8_t>(GetTileEventLayer(event)),
         .tile_x = static_cast<std::int32_t>(tile_pos.x),
         .tile_y = static_cast<std::int32_t>(tile_pos.y),
+    };
+}
+
+FluidCellEventEntry MakeFluidCellEventEntry(const NetEvent& event) {
+    const FluidCellPatchedEvent* const payload = std::get_if<FluidCellPatchedEvent>(&event.payload);
+    return FluidCellEventEntry{
+        .event_id = event.header.event_id,
+        .source_player_id = event.header.source_player_id,
+        .stage_instance_id = event.header.stage_instance_id,
+        .source_local_frame = event.header.source_local_frame,
+        .coordinator_order = event.header.coordinator_order,
+        .tile = payload != nullptr
+            ? static_cast<std::uint16_t>(payload->tile)
+            : static_cast<std::uint16_t>(0),
+        .tile_x = payload != nullptr ? payload->tile_pos.x : 0,
+        .tile_y = payload != nullptr ? payload->tile_pos.y : 0,
+        .amount = payload != nullptr ? payload->amount : 0.0F,
+        .velocity_x = payload != nullptr ? payload->velocity.x : 0.0F,
+        .velocity_y = payload != nullptr ? payload->velocity.y : 0.0F,
+        .gravity_x = payload != nullptr ? payload->gravity.x : 0.0F,
+        .gravity_y = payload != nullptr ? payload->gravity.y : 0.0F,
+        .temp_gravity_x = payload != nullptr ? payload->temp_gravity.x : 0.0F,
+        .temp_gravity_y = payload != nullptr ? payload->temp_gravity.y : 0.0F,
+        .gravity_strength = payload != nullptr ? payload->gravity_strength : 0.0F,
     };
 }
 
@@ -187,6 +232,9 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .entity_id = payload != nullptr ? payload->entity_id : kInvalidNetEntityId,
         .source_entity_id = payload != nullptr ? payload->source_entity_id : kInvalidNetEntityId,
         .entity_a_id = payload != nullptr ? payload->entity_a_id : kInvalidNetEntityId,
+        .entity_b_id = payload != nullptr ? payload->entity_b_id : kInvalidNetEntityId,
+        .entity_c_id = payload != nullptr ? payload->entity_c_id : kInvalidNetEntityId,
+        .entity_d_id = payload != nullptr ? payload->entity_d_id : kInvalidNetEntityId,
         .holding_id = payload != nullptr ? payload->holding_id : kInvalidNetEntityId,
         .held_by_id = payload != nullptr ? payload->held_by_id : kInvalidNetEntityId,
         .back_id = payload != nullptr ? payload->back_id : kInvalidNetEntityId,
@@ -198,8 +246,18 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .acc_y = payload != nullptr ? payload->acc.y : 0.0F,
         .counter_a = payload != nullptr ? payload->counter_a : 0.0F,
         .counter_b = payload != nullptr ? payload->counter_b : 0.0F,
+        .counter_c = payload != nullptr ? payload->counter_c : 0.0F,
+        .counter_d = payload != nullptr ? payload->counter_d : 0.0F,
+        .threshold_a = payload != nullptr ? payload->threshold_a : 0.0F,
+        .threshold_b = payload != nullptr ? payload->threshold_b : 0.0F,
         .point_a_x = payload != nullptr ? payload->point_a.x : 0,
         .point_a_y = payload != nullptr ? payload->point_a.y : 0,
+        .point_b_x = payload != nullptr ? payload->point_b.x : 0,
+        .point_b_y = payload != nullptr ? payload->point_b.y : 0,
+        .point_c_x = payload != nullptr ? payload->point_c.x : 0,
+        .point_c_y = payload != nullptr ? payload->point_c.y : 0,
+        .point_d_x = payload != nullptr ? payload->point_d.x : 0,
+        .point_d_y = payload != nullptr ? payload->point_d.y : 0,
         .health = payload != nullptr ? payload->health : 0U,
         .stun_timer = payload != nullptr ? payload->stun_timer : 0U,
         .projectile_contact_timer = payload != nullptr ? payload->projectile_contact_timer : 0U,
@@ -215,6 +273,8 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .ai_state = payload != nullptr ? payload->ai_state : static_cast<std::uint8_t>(0),
         .wanted = payload != nullptr ? payload->wanted : static_cast<std::uint8_t>(0),
         .attachment_mode = payload != nullptr ? payload->attachment_mode : static_cast<std::uint8_t>(0),
+        .draw_layer = payload != nullptr ? payload->draw_layer : static_cast<std::uint8_t>(0),
+        .runtime_flags = payload != nullptr ? payload->runtime_flags : 0U,
         .buyable_active = payload != nullptr ? payload->buyable_active : static_cast<std::uint8_t>(0),
         .buyable_display_quantity = payload != nullptr ? payload->buyable_display_quantity : 0U,
         .buyable_display_icon_animation_id =
@@ -330,6 +390,23 @@ RunStateEventEntry MakeRunStateEventEntry(const NetEvent& event) {
         .stage_instance_id = event.header.stage_instance_id,
         .source_local_frame = event.header.source_local_frame,
         .coordinator_order = event.header.coordinator_order,
+        .quest_id = payload != nullptr
+            ? static_cast<std::uint16_t>(payload->quest_id)
+            : static_cast<std::uint16_t>(QuestId::None),
+        .classic_made_black_market =
+            payload != nullptr ? payload->classic_made_black_market : static_cast<std::uint8_t>(0),
+        .classic_made_udjat_eye =
+            payload != nullptr ? payload->classic_made_udjat_eye : static_cast<std::uint8_t>(0),
+        .classic_has_udjat_eye =
+            payload != nullptr ? payload->classic_has_udjat_eye : static_cast<std::uint8_t>(0),
+        .classic_made_moai =
+            payload != nullptr ? payload->classic_made_moai : static_cast<std::uint8_t>(0),
+        .classic_has_hedjet =
+            payload != nullptr ? payload->classic_has_hedjet : static_cast<std::uint8_t>(0),
+        .classic_has_sceptre =
+            payload != nullptr ? payload->classic_has_sceptre : static_cast<std::uint8_t>(0),
+        .classic_has_book_of_dead =
+            payload != nullptr ? payload->classic_has_book_of_dead : static_cast<std::uint8_t>(0),
         .sac_altar_favor = payload != nullptr ? payload->sac_altar_favor : 0,
         .sac_altar_reward_tier = payload != nullptr ? payload->sac_altar_reward_tier : 0U,
     };
@@ -445,7 +522,8 @@ NetEvent MakeTileEvent(const TileEventEntry& entry) {
         event.payload = TileChangedEvent{
             .tile_pos = tile_pos,
             .tile = static_cast<Tile>(entry.tile),
-            .rotation = kTileRotation0,
+            .rotation = NormalizeTileRotation(entry.rotation),
+            .layer = static_cast<NetTileLayer>(entry.layer),
         };
         break;
     default:
@@ -453,6 +531,28 @@ NetEvent MakeTileEvent(const TileEventEntry& entry) {
         event.payload = std::monostate{};
         break;
     }
+    return event;
+}
+
+NetEvent MakeFluidCellEvent(const FluidCellEventEntry& entry) {
+    NetEvent event;
+    event.header = NetEventHeader{
+        .event_id = entry.event_id,
+        .source_player_id = entry.source_player_id,
+        .stage_instance_id = entry.stage_instance_id,
+        .source_local_frame = entry.source_local_frame,
+        .coordinator_order = entry.coordinator_order,
+    };
+    event.type = NetEventType::FluidCellPatched;
+    event.payload = FluidCellPatchedEvent{
+        .tile_pos = IVec2::New(entry.tile_x, entry.tile_y),
+        .tile = static_cast<Tile>(entry.tile),
+        .amount = entry.amount,
+        .velocity = Vec2::New(entry.velocity_x, entry.velocity_y),
+        .gravity = Vec2::New(entry.gravity_x, entry.gravity_y),
+        .temp_gravity = Vec2::New(entry.temp_gravity_x, entry.temp_gravity_y),
+        .gravity_strength = entry.gravity_strength,
+    };
     return event;
 }
 
@@ -532,6 +632,9 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .entity_id = entry.entity_id,
         .source_entity_id = entry.source_entity_id,
         .entity_a_id = entry.entity_a_id,
+        .entity_b_id = entry.entity_b_id,
+        .entity_c_id = entry.entity_c_id,
+        .entity_d_id = entry.entity_d_id,
         .holding_id = entry.holding_id,
         .held_by_id = entry.held_by_id,
         .back_id = entry.back_id,
@@ -540,7 +643,14 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
         .counter_a = entry.counter_a,
         .counter_b = entry.counter_b,
+        .counter_c = entry.counter_c,
+        .counter_d = entry.counter_d,
+        .threshold_a = entry.threshold_a,
+        .threshold_b = entry.threshold_b,
         .point_a = IVec2::New(entry.point_a_x, entry.point_a_y),
+        .point_b = IVec2::New(entry.point_b_x, entry.point_b_y),
+        .point_c = IVec2::New(entry.point_c_x, entry.point_c_y),
+        .point_d = IVec2::New(entry.point_d_x, entry.point_d_y),
         .health = entry.health,
         .stun_timer = entry.stun_timer,
         .projectile_contact_timer = entry.projectile_contact_timer,
@@ -555,6 +665,8 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .ai_state = entry.ai_state,
         .wanted = entry.wanted,
         .attachment_mode = entry.attachment_mode,
+        .draw_layer = entry.draw_layer,
+        .runtime_flags = entry.runtime_flags,
         .buyable_active = entry.buyable_active,
         .buyable_display_quantity = entry.buyable_display_quantity,
         .buyable_display_icon_animation_id = entry.buyable_display_icon_animation_id,
@@ -691,6 +803,14 @@ NetEvent MakeRunStateEvent(const RunStateEventEntry& entry) {
     };
     event.type = NetEventType::RunStatePatched;
     event.payload = RunStatePatchedEvent{
+        .quest_id = static_cast<QuestId>(entry.quest_id),
+        .classic_made_black_market = entry.classic_made_black_market,
+        .classic_made_udjat_eye = entry.classic_made_udjat_eye,
+        .classic_has_udjat_eye = entry.classic_has_udjat_eye,
+        .classic_made_moai = entry.classic_made_moai,
+        .classic_has_hedjet = entry.classic_has_hedjet,
+        .classic_has_sceptre = entry.classic_has_sceptre,
+        .classic_has_book_of_dead = entry.classic_has_book_of_dead,
         .sac_altar_favor = entry.sac_altar_favor,
         .sac_altar_reward_tier = entry.sac_altar_reward_tier,
     };
@@ -775,6 +895,27 @@ void SendTileEvents(
     }
     if (packet.event_count > 0) {
         SendEncodedPacket(transport, endpoint, EncodeTileEvents(packet));
+    }
+}
+
+void SendFluidCellEvents(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEvent>& events
+) {
+    FluidCellEventsPacket packet;
+    for (const NetEvent& event : events) {
+        if (!IsReplicatedFluidCellEvent(event)) {
+            continue;
+        }
+        if (packet.event_count >= packet.events.size()) {
+            SendEncodedPacket(transport, endpoint, EncodeFluidCellEvents(packet));
+            packet = FluidCellEventsPacket{};
+        }
+        packet.events[packet.event_count++] = MakeFluidCellEventEntry(event);
+    }
+    if (packet.event_count > 0) {
+        SendEncodedPacket(transport, endpoint, EncodeFluidCellEvents(packet));
     }
 }
 

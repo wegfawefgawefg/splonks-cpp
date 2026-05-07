@@ -5,6 +5,7 @@
 #include "entity.hpp"
 #include "entity/archetype.hpp"
 #include "entity/display_states.hpp"
+#include "entity/replicated_runtime_flags.hpp"
 #include "graphics.hpp"
 #include "network/net_gameplay_replication.hpp"
 #include "network/net_progression.hpp"
@@ -387,6 +388,9 @@ void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, con
         .entity_vid = entity.vid,
         .source_vid = source.vid,
         .entity_a_vid = entity.entity_a,
+        .entity_b_vid = entity.entity_b,
+        .entity_c_vid = entity.entity_c,
+        .entity_d_vid = entity.entity_d,
         .holding_vid = entity.holding_vid,
         .held_by_vid = entity.held_by_vid,
         .back_vid = entity.back_vid,
@@ -395,7 +399,14 @@ void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, con
         .acc = entity.acc,
         .counter_a = entity.counter_a,
         .counter_b = entity.counter_b,
+        .counter_c = entity.counter_c,
+        .counter_d = entity.counter_d,
+        .threshold_a = entity.threshold_a,
+        .threshold_b = entity.threshold_b,
         .point_a = entity.point_a,
+        .point_b = entity.point_b,
+        .point_c = entity.point_c,
+        .point_d = entity.point_d,
         .health = entity.health,
         .stun_timer = entity.stun_timer,
         .projectile_contact_timer = entity.projectile_contact_timer,
@@ -411,6 +422,8 @@ void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, con
         .ai_state = static_cast<std::uint8_t>(entity.ai_state),
         .wanted = static_cast<std::uint8_t>(entity.wanted ? 1 : 0),
         .attachment_mode = static_cast<std::uint8_t>(entity.attachment_mode),
+        .draw_layer = static_cast<std::uint8_t>(entity.draw_layer),
+        .runtime_flags = CaptureReplicatedRuntimeFlags(entity),
         .buyable_active = static_cast<std::uint8_t>(entity.buyable.active ? 1 : 0),
         .buyable_display_quantity = entity.buyable.display_quantity,
         .buyable_display_icon_animation_id =
@@ -437,6 +450,24 @@ void EmitPlayerStatePatchedGameplayEvent(State& state, const Entity& player) {
 void EmitRunStatePatchedGameplayEvent(State& state) {
     GameplayEvent event;
     event.type = GameplayEventType::RunStatePatched;
+    state.gameplay_events.push_back(event);
+}
+
+void EmitTileChangedGameplayEvent(
+    State& state,
+    const IVec2& tile_pos,
+    Tile tile,
+    TileRotation rotation,
+    GameplayTileLayer layer
+) {
+    GameplayEvent event;
+    event.type = GameplayEventType::TileChanged;
+    event.tile_changed = GameplayTileChanged{
+        .tile_pos = tile_pos,
+        .tile = tile,
+        .rotation = NormalizeTileRotation(rotation),
+        .layer = layer,
+    };
     state.gameplay_events.push_back(event);
 }
 
@@ -654,6 +685,7 @@ void ProcessGameplayEvents(State& state, Graphics& graphics, Audio& audio) {
         case GameplayEventType::EntityStatePatched:
         case GameplayEventType::PlayerStatePatched:
         case GameplayEventType::RunStatePatched:
+        case GameplayEventType::TileChanged:
         case GameplayEventType::TileBroken:
         case GameplayEventType::RopeTilePlaced:
         case GameplayEventType::PresentationCommand:

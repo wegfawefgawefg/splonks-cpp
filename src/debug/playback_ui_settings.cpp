@@ -15,6 +15,10 @@ namespace splonks::debug_playback_internal {
 
 namespace {
 
+bool IsPeerMechanicsTuningDisabled(const State& state) {
+    return state.net_session.role == network::NetRole::Peer;
+}
+
 const char* CameraModeToString(CameraMode mode) {
     switch (mode) {
     case CameraMode::Follow:
@@ -232,6 +236,11 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     DebugFluidBrushState& brush = state.debug_fluid_brush;
     FluidSettings& fluid = state.settings.fluid;
     bool save_settings = false;
+    const bool peer_tuning_disabled = IsPeerMechanicsTuningDisabled(state);
+    if (peer_tuning_disabled) {
+        ImGui::BeginDisabled();
+        ImGui::TextDisabled("Disabled on multiplayer peers until mechanics settings are coordinator-routed.");
+    }
     ImGui::Checkbox("Enable Fluid Brush", &brush.enabled);
     save_settings |= ImGui::Checkbox("Run Fluid Simulation", &fluid.simulation_enabled);
     int brush_mode = static_cast<int>(brush.mode);
@@ -406,10 +415,13 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
     ImGui::Text("Mouse Tile: (%d, %d)", mouse_tile.x, mouse_tile.y);
     ImGui::TextUnformatted("Hold left mouse to paint water. Hold right mouse to erase simulated fluid.");
+    if (peer_tuning_disabled) {
+        ImGui::EndDisabled();
+    }
 
     ImGui::End();
     SyncDebugUiSettings(debug, state);
-    if (save_settings) {
+    if (save_settings && !peer_tuning_disabled) {
         SaveSettings(state.settings);
     }
 }
@@ -711,6 +723,13 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     ImGui::SetNextWindowPos(ImVec2(1080.0F, 220.0F), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Debug: Player Tuning", &debug.player_tuning_window_visible)) {
         ImGui::End();
+        return;
+    }
+
+    if (IsPeerMechanicsTuningDisabled(state)) {
+        ImGui::TextDisabled("Player tuning disabled on multiplayer peers until mechanics settings are coordinator-routed.");
+        ImGui::End();
+        SyncDebugUiSettings(debug, state);
         return;
     }
 

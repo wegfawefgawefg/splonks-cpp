@@ -33,9 +33,15 @@ enum class GameplayEventType {
     EntityStatePatched,
     PlayerStatePatched,
     RunStatePatched,
+    TileChanged,
     TileBroken,
     RopeTilePlaced,
     PresentationCommand,
+};
+
+enum class GameplayTileLayer : std::uint8_t {
+    Foreground,
+    Backwall,
 };
 
 enum class GameplayActionKind : std::uint16_t {
@@ -151,6 +157,9 @@ struct GameplayEntityStatePatched {
     VID entity_vid{};
     VID source_vid{};
     std::optional<VID> entity_a_vid;
+    std::optional<VID> entity_b_vid;
+    std::optional<VID> entity_c_vid;
+    std::optional<VID> entity_d_vid;
     std::optional<VID> holding_vid;
     std::optional<VID> held_by_vid;
     std::optional<VID> back_vid;
@@ -159,7 +168,14 @@ struct GameplayEntityStatePatched {
     Vec2 acc = Vec2::New(0.0F, 0.0F);
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float counter_c = 0.0F;
+    float counter_d = 0.0F;
+    float threshold_a = 0.0F;
+    float threshold_b = 0.0F;
     IVec2 point_a = IVec2::New(0, 0);
+    IVec2 point_b = IVec2::New(0, 0);
+    IVec2 point_c = IVec2::New(0, 0);
+    IVec2 point_d = IVec2::New(0, 0);
     unsigned int health = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
@@ -174,6 +190,8 @@ struct GameplayEntityStatePatched {
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
     std::uint8_t attachment_mode = 0;
+    std::uint8_t draw_layer = 0;
+    std::uint32_t runtime_flags = 0;
     std::uint8_t buyable_active = 0;
     std::uint32_t buyable_display_quantity = 0;
     FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
@@ -197,6 +215,13 @@ struct GameplayRopeTilePlaced {
     IVec2 tile_pos = IVec2::New(0, 0);
 };
 
+struct GameplayTileChanged {
+    IVec2 tile_pos = IVec2::New(0, 0);
+    Tile tile = Tile::Air;
+    TileRotation rotation = kTileRotation0;
+    GameplayTileLayer layer = GameplayTileLayer::Foreground;
+};
+
 struct GameplayTileBroken {
     IVec2 tile_pos = IVec2::New(0, 0);
 };
@@ -215,6 +240,7 @@ struct GameplayEvent {
     GameplayEntityStatePatched entity_state_patched;
     GameplayPlayerStatePatched player_state_patched;
     GameplayRunStatePatched run_state_patched;
+    GameplayTileChanged tile_changed;
     GameplayTileBroken tile_broken;
     GameplayRopeTilePlaced rope_tile_placed;
     PresentationCommand presentation_command;
@@ -258,6 +284,13 @@ void EmitEntityDamagedGameplayEvent(
 void EmitEntityStatePatchedGameplayEvent(State& state, const Entity& source, const Entity& entity);
 void EmitPlayerStatePatchedGameplayEvent(State& state, const Entity& player);
 void EmitRunStatePatchedGameplayEvent(State& state);
+void EmitTileChangedGameplayEvent(
+    State& state,
+    const IVec2& tile_pos,
+    Tile tile,
+    TileRotation rotation = kTileRotation0,
+    GameplayTileLayer layer = GameplayTileLayer::Foreground
+);
 void EmitTileBrokenGameplayEvent(State& state, const IVec2& tile_pos);
 void EmitRopeTilePlacedGameplayEvent(State& state, const Entity& source_entity, const IVec2& tile_pos);
 void EmitPresentationCommandGameplayEvent(State& state, const PresentationCommand& command);

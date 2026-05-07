@@ -66,6 +66,8 @@ const char* NetEventTypeName(network::NetEventType type) {
         return "EntityDamaged";
     case network::NetEventType::TileChanged:
         return "TileChanged";
+    case network::NetEventType::FluidCellPatched:
+        return "FluidCellPatched";
     case network::NetEventType::TileBroken:
         return "TileBroken";
     case network::NetEventType::RopeTilePlaced:

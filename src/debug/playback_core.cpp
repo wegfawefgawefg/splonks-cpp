@@ -173,6 +173,9 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
     if (state.mode != Mode::Playing || !IsFluidBrushActive(state) || ImGuiWantsMouse()) {
         return;
     }
+    if (state.net_session.role == network::NetRole::Peer) {
+        return;
+    }
 
     float mouse_x = 0.0F;
     float mouse_y = 0.0F;

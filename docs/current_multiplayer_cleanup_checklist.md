@@ -11,6 +11,7 @@ Scope: current uncommitted multiplayer/gameplay-event work. Goal is to keep sing
   - Desired commands: spawn entity, patch entity state, set stage/quest/debug stage, paint fluids, brush sounds/presentation, and other test-only world mutations.
   - Shape should be coordinator-routed and permission-gated later: any client may request a debug command, the coordinator validates/applies it, then normal generic spawn/state/tile/fluid/stage result replication carries the actual mutation.
   - Do not let debug UI directly mutate shared world state in peer mode unless it is explicitly local-only presentation.
+  - Guardrail in place: multiplayer peers cannot directly debug-spawn entities, swap/edit entities, edit entity tools/effects, reroll/load stages, paint fluids, or edit fluid/player mechanics tuning. This prevents test-only desync while the real admin command lane is still missing.
 
 - [x] Fix network stage transition authority.
   - Peer exit requests should ask the coordinator and then wait for stage sync.
@@ -225,9 +226,9 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - `PlayerStatePatched` carries health, money, wanted state, tool slots, and the effect list.
   - Current count limits are fixed in the network event schema: two tool slots and twelve effects.
 
-- [x] Basic run-level altar state has a generic result lane.
-  - `RunStatePatched` currently carries sacrifice favor and sacrifice reward tier.
-  - This is not a complete quest/run-state API yet.
+- [x] Basic run-level quest/altar state has a generic result lane.
+  - `RunStatePatched` carries sacrifice favor/reward-tier state plus current classic quest flags used by key chest/Udjat/progression.
+  - Add new typed fields here when a quest adds new durable runtime state.
 
 - [x] Tile breaking and rope placement have coordinator result lanes.
   - `TileBroken` covers normal break flow, tile triggers, and break-spawn fallout when the coordinator owns the break.
@@ -239,38 +240,41 @@ Goal: prove every durable mutation has one of these classifications before we ch
 
 ### Missing Or Incomplete API Lanes
 
-- [ ] Add a generic tile patch lane.
-  - `NetEventType::TileChanged` exists, but gameplay events currently only expose `TileBroken` and `RopeTilePlaced`.
-  - Needed shape: `TilePatched`/`TileChanged` coordinator result carrying foreground tile and rotation.
-  - Likely follow-up: decide whether backwall tile mutation is part of the same lane or a separate `BackwallTilePatched` lane.
-  - This should cover world rotation, debug tile edits, non-break tile transforms, one-way/rotated tile edits, and any future content that sets tiles without going through `BreakStageTilesAtCoords`.
+- [x] Add a generic tile patch lane.
+  - `TileChanged` now exists as a gameplay event and net result carrying tile, rotation, and foreground/backwall layer.
+  - This covers world rotation, debug tile edits, non-break tile transforms, one-way/rotated tile edits, and future content that sets tiles without going through `BreakStageTilesAtCoords`.
 
-- [ ] Add a fluid state lane or explicitly classify fluids as coordinator-local until implemented.
+- [x] Add a fluid state lane or explicitly classify fluids as coordinator-local until implemented.
   - `Stage` owns fluid grids: amount, display amount, velocity, gravity, gravity strength, temporary gravity, and fluid tile type.
   - `StepStageFluids` mutates these every simulation tick, and debug brushes can mutate fluid state directly.
   - Do not send per-cell reliable events every frame by default.
   - Candidate shape: coordinator-owned fluid sim plus periodic lossy fluid snapshots/patches for visible state, with debug/admin commands for painting fluid and gravity.
   - If fluids affect movement/damage/physics in multiplayer, they cannot remain unsynced local simulation.
+  - Current classification: coordinator-owned fluid sim with lossy visible/gameplay cell patches to peers.
+  - Required payload coverage: tile type, amount, velocity, permanent gravity, gravity strength, and temporary gravity if temp gravity becomes gameplay-relevant.
+  - Done: `FluidCellPatched` carries tile type, amount, velocity, permanent gravity, gravity strength, and temporary gravity; peers apply patches and do not locally step the fluid sim.
+  - Clear patches repeat briefly so a dropped "cell became empty" packet is unlikely to leave stale remote water.
+  - tModLoader/Terraria reference: Terraria stores liquid amount/type as tile data, so its water sync rides with tile/world data paths. Splonks fluids are an overlay grid, so our equivalent is coordinator-owned fluid simulation plus changed-cell/repair patches.
 
-- [ ] Add a quest/run-state patch lane beyond altar state.
-  - Classic quest flags such as Udjat/key-chest state affect future generation and progression.
-  - Example current mutation: key chest/Udjat pickup updates `state.quest_state.classic`.
-  - Candidate shape: `QuestStatePatched` or a broader `RunStatePatched` payload that includes quest-specific typed data.
-  - Stage-load sync may be enough for some flags, but runtime pickup flags need an explicit coordinator-authored fact if peers display or use them before the next stage load.
+- [x] Add a quest/run-state patch lane beyond altar state.
+  - `RunStatePatched` now includes `quest_id` plus current classic flags: Black Market made, Udjat made/held, Moai made, Hedjet held, Sceptre held, and Book of the Dead held.
+  - Runtime Udjat pickup now emits this patch instead of relying on the next stage load to converge quest state.
 
-- [ ] Classify every `Entity` field as replicated, archetype/static, result-specific, repair-only, or local-only.
-  - The current state patch is broad enough for recent playtests but is not a proven full entity-state schema.
-  - Fields needing classification include render flags, draw layer, collision/pickup/stomp flags, entity labels/points beyond the currently patched fields, child/inside links, extra counters/thresholds, lighting, buoyancy, movement flags, and content-specific scratch fields.
-  - Do not blindly add every field to every patch. First classify which fields can actually mutate durably during gameplay.
+- [x] Classify and extend the main mutable `Entity` repair payload.
+  - `EntityStatePatched` now includes b/c/d links, point b/c/d, counter c/d, threshold a/b, draw layer, and a packed runtime flag mask for render/pickup/impassable/hang/stomp/push/contact capability flags.
+  - Still local/static by classification: callbacks, labels, inside/child vectors, stage-spawn indices, most sound/asset fields, water/light tuning unless promoted later, and transient per-frame flags.
+  - Entity state packets now send one state event per packet to stay under the 512-byte packet budget.
 
 - [ ] Add a debug/admin command lane.
   - Debug spawn, entity editor patches, stage selection, fluid brush, sound brush, and future live inspection tools should be coordinator-routed when multiplayer is active.
   - This can stay permission-gated/test-only, but the path should use the same generic spawn/state/tile/fluid/stage results as gameplay.
+  - Guardrail in place: peer-side shared-world debug mutation is disabled instead of being allowed to fork state.
 
 - [ ] Audit mechanics settings and live tuning sliders.
   - Player tuning, fluid settings, water effect values, lighting settings, and other debug sliders can change simulation behavior.
   - Decide per setting: local visual/debug only, stage-load config, or coordinator-synced mechanics setting.
   - If a slider changes physics or damage during multiplayer, peers should not apply it independently without a coordinator/admin lane.
+  - Guardrail in place: peer-side player tuning and fluid/water-effect tuning windows are read-only/disabled for mechanics mutation.
 
 - [ ] Audit presentation coverage separately from durable sync.
   - Many content paths play sounds or spawn particles locally after a durable mutation.
@@ -282,10 +286,25 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - Decide what is stage-load only, what can mutate at runtime, and what needs patch/snapshot coverage.
   - Embedded treasure is probably safe when tile breaking is coordinator-owned, but debug edits and non-break tile transforms need an explicit lane before assuming parity.
 
+- [ ] Add headless multiplayer scenario tests.
+  - Target: one coordinator plus N peers with no renderer/audio, preferably in-process through a fake transport.
+  - First fallback is acceptable: spawn real headless processes and drive them through the existing debug-control server.
+  - Each scenario should set a stage/seed, apply scripted inputs/actions, step fixed ticks, then compare canonical state.
+  - Required comparison lanes: tiles, fluids, entity net ids, entity transforms/state/links/health/animation, player inventory/effects, run/quest state, and stage metadata.
+  - Initial scenarios should cover tile break/drop, bomb/rope, box/chest/pot loot, carry/drop/throw, pushblock/projectile attachment, held weapons, shop buy/theft, exit transition, death/respawn while held, and fuzzer presets.
+  - Failure output should be a structured diff, not only a hash mismatch.
+
+- [ ] Document and enforce message-category ownership.
+  - Terraria/tModLoader is message-id based at the network boundary, not pure internal gameplay-event driven.
+  - Splonks should keep direct content callbacks for offline/coordinator gameplay and use gameplay events only as a replication/progression seam.
+  - Network code should stay broad-lane/category based; entity/tool/tile content should not construct packets.
+  - Do not add item-named packet families unless the gameplay introduces a genuinely new durable category.
+
 ### Immediate API Work Order
 
-- [ ] Implement generic tile patch events before adding more tile-changing content.
+- [x] Implement generic tile patch events before adding more tile-changing content.
 - [ ] Implement debug/admin command routing for spawn/entity patch/stage load/tile paint/fluid paint.
-- [ ] Classify mutable `Entity` fields and either extend `EntityStatePatched` or mark fields as archetype/local-only.
-- [ ] Decide fluid multiplayer model before using water/lava as required gameplay in networked stages.
-- [ ] Expand run/quest state patching before adding more quest flags beyond altar and stage progression.
+- [x] Classify mutable `Entity` fields and either extend `EntityStatePatched` or mark fields as archetype/local-only.
+- [x] Decide fluid multiplayer model before using water/lava as required gameplay in networked stages.
+- [x] Expand run/quest state patching before adding more quest flags beyond altar and stage progression.
+- [ ] Add headless scenario harness and canonical state diff before more multiplayer feature work.

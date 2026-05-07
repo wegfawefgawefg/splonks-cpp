@@ -190,6 +190,63 @@ archetype id, tool slot, tile coordinate, interaction kind, and compact content
 payloads. Coordinator-side content callbacks interpret those ids and produce
 generic results.
 
+### Message IDs Versus Internal Events
+
+Terraria/tModLoader is message-id based at the network protocol boundary. That
+means packets are explicit categories such as player controls, NPC sync,
+projectile sync, item sync, tile manipulation, tile square repair, world data,
+and mod packets. It does not mean Terraria internally routes all gameplay
+through a pure event bus.
+
+For Splonks, keep these concerns separate:
+
+- Network messages are transport/protocol categories.
+- Gameplay events are our current seam for observing durable facts after normal
+  content code mutates state.
+- Singleplayer/offline content does not need to be rewritten into a pure
+  listener/event-bus architecture.
+- Peers should send generic action requests to the coordinator instead of
+  authoring durable state locally.
+- The coordinator should run normal content callbacks and then publish broad
+  result messages.
+
+The reason to keep gameplay events is not "Terraria does internal events." The
+reason is practical ownership: they let content stay direct/offline-friendly
+while networking observes coordinator-authored durable facts without packet code
+inside entities.
+
+Terraria-style protocol shape:
+
+- `PlayerControls` / player state: compact player input/movement/action state.
+- `SyncNPC`, `SyncProjectile`, `SyncItem`: broad full-state sync for moving
+  world objects.
+- `TileManipulation`, `TileSquare`, section/world data: tile and world repair.
+- `ModPacket`: mod-owned extension payloads after mod identity negotiation.
+- Mod extra AI/world/player hooks: content can append custom state without
+  adding a packet family per item.
+
+Splonks should mirror that shape, not the exact names: broad lanes plus compact
+content payload hooks when broad fields are insufficient.
+
+### Fluid Networking Reference
+
+Terraria has water/lava/honey/shimmer as liquid data stored on tiles. tModLoader
+tile data stores liquid amount and liquid type/flags as tile data, so liquid
+sync can ride with tile-square/section/world synchronization rather than
+requiring entity-like per-liquid packets.
+
+Splonks differs because fluids are a separate overlay grid, not terrain tiles.
+The equivalent multiplayer rule is:
+
+- The coordinator owns fluid simulation when fluids affect gameplay.
+- Peers do not step canonical fluids locally.
+- Peers receive changed-cell fluid patches and occasional repair/refresh data.
+- Heavy water stages need counters/profiling before we raise patch frequency.
+
+This is not byte-for-byte Terraria, but it matches the authority split: the
+server/coordinator owns mutable liquid/world data, clients render and interact
+with replicated state.
+
 ### Terraria-Style Rules For Splonks
 
 Use this as the implementation north star:
@@ -1140,6 +1197,46 @@ adjustment before adding shops, sacrifices, fluids, or full quest progression.
   - `scripts/splonksctl --port 41000 perf`
   - Keep it localhost-only. Mutating commands can come later, after read-only
     inspection proves useful.
+
+## Headless Scenario Smoke Tests
+
+Add a deterministic multiplayer scenario harness before more feature work. The
+goal is to catch desync regressions in CI/local CLI, not to replace manual feel
+tests.
+
+Preferred shape:
+
+- Run one coordinator and N peers in-process using a fake transport and no
+  renderer/audio.
+- If in-process is too invasive at first, use real headless processes driven by
+  the existing debug-control server, then migrate to fake transport later.
+- Each scenario sets a stage, seeds RNG, spawns local/remote players, applies
+  scripted inputs or admin actions, steps fixed ticks, and compares canonical
+  state.
+- Compare structured state hashes/diffs for tiles, fluids, entity net ids,
+  entity transforms/state/links/health/animation, player inventory/effects,
+  run/quest state, and stage metadata.
+- Failure output should name the first divergent lane and object, not just
+  print "hash mismatch."
+
+Initial scenarios:
+
+- Host/client move without shared mutation.
+- Client breaks tile and receives break drops.
+- Host and client throw bombs/ropes near the same area.
+- Box/chest/pot loot rolls match on every peer.
+- Pickup/drop/throw item and player, including forced drop on damage/death.
+- Push block plus arrow/projectile attachment.
+- Bat/machete/mattock/pistol/bow/web cannon use from peer and host.
+- Shop buy, shop theft/disturbance, craps/chance buy.
+- Stage exit from host and peer, with and without a carried player.
+- Death/respawn while holding or being held.
+- Fluid paint/debug/admin command once the admin lane exists.
+- Fuzzer presets for LAN, cross-country, and Japan-to-Texas latency/loss.
+
+This is a normal way to test netcode. The important part is making the test
+harness compare authoritative durable state, not presentation-only particles or
+sounds.
 
 ## Network Fuzzer / Degradation Tool
 

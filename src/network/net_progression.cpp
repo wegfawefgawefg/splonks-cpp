@@ -177,6 +177,7 @@ void ApplyStageSyncNow(
     state.net_session.applied_event_ids.clear();
     transport.remote_player_targets.clear();
     transport.replicated_entity_state_cache.clear();
+    transport.replicated_fluid_cell_cache.clear();
 
     if (!LoadNetworkQuestStage(state, quest_id, quest_stage_id, stage_seed, true)) {
         transport.last_error = "Stage sync failed: could not load " + quest_stage_id + ".";
@@ -277,6 +278,7 @@ void NotifyStageLoaded(State& state) {
         ResetRemoteStageAckState(*state.net_transport);
         state.net_transport->remote_player_targets.clear();
         state.net_transport->replicated_entity_state_cache.clear();
+        state.net_transport->replicated_fluid_cell_cache.clear();
         SendStageSyncToAllRemotes(state, *state.net_transport);
     }
 }

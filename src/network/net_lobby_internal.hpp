@@ -20,6 +20,7 @@ void SendEncodedPacket(
 bool IsReplicatedEntityStateEvent(const NetEvent& event);
 
 NetEvent MakeTileEvent(const TileEventEntry& entry);
+NetEvent MakeFluidCellEvent(const FluidCellEventEntry& entry);
 NetEvent MakeEntitySpawnedEvent(const EntitySpawnedEventEntry& entry);
 NetEvent MakeEntityDamageEvent(const EntityDamageEventEntry& entry);
 NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry);
@@ -31,6 +32,11 @@ NetEvent MakePresentationCommandEvent(const PresentationCommandEventEntry& entry
 NetEvent MakeActionRequestEvent(const ActionRequestEventEntry& entry);
 
 void SendTileEvents(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetEvent>& events
+);
+void SendFluidCellEvents(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
     const std::vector<NetEvent>& events
@@ -98,6 +104,7 @@ void HandleDurableEventAckAsCoordinator(
     const DurableEventAckPacket& ack
 );
 void HandleTileEventsAsPeer(State& state, const TileEventsPacket& packet);
+void HandleFluidCellEventsAsPeer(State& state, const FluidCellEventsPacket& packet);
 void HandleEntitySpawnedEventsAsPeer(State& state, const EntitySpawnedEventsPacket& packet);
 void HandleEntityDamageEventsAsPeer(State& state, const EntityDamageEventsPacket& packet);
 void HandleEntityStateEventsAsPeer(State& state, const EntityStateEventsPacket& packet);
@@ -154,5 +161,6 @@ bool ShouldSendSnapshots(const State& state, const NetTransportRuntime& transpor
 
 void SendReplicatedEntityStatePatchesToAllRemotes(State& state, NetTransportRuntime& transport);
 void SendCoordinatorEntityRepairPatchesToAllRemotes(State& state, NetTransportRuntime& transport);
+void SendReplicatedFluidCellPatchesToAllRemotes(State& state, NetTransportRuntime& transport);
 
 } // namespace splonks::network

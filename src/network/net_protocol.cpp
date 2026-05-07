@@ -5,6 +5,7 @@
 namespace splonks::network {
 
 static_assert(sizeof(EntityDamageEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(FluidCellEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntitySpawnedEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityCarryEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
@@ -84,6 +85,10 @@ EncodedNetPacket EncodePlayerSnapshots(const PlayerSnapshotsPacket& packet) {
 
 EncodedNetPacket EncodeTileEvents(const TileEventsPacket& packet) {
     return EncodePayload(NetPacketType::TileEvents, packet);
+}
+
+EncodedNetPacket EncodeFluidCellEvents(const FluidCellEventsPacket& packet) {
+    return EncodePayload(NetPacketType::FluidCellEvents, packet);
 }
 
 EncodedNetPacket EncodeEntitySpawnedEvents(const EntitySpawnedEventsPacket& packet) {
@@ -184,6 +189,22 @@ std::optional<TileEventsPacket> TryDecodeTileEvents(const std::uint8_t* bytes, s
         return std::nullopt;
     }
     TileEventsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.event_count = std::min<std::uint32_t>(
+        packet.event_count,
+        static_cast<std::uint32_t>(packet.events.size())
+    );
+    return packet;
+}
+
+std::optional<FluidCellEventsPacket> TryDecodeFluidCellEvents(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::FluidCellEvents, offset)) {
+        return std::nullopt;
+    }
+    FluidCellEventsPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
