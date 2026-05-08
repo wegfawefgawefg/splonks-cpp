@@ -29,6 +29,8 @@ namespace splonks::network {
 
 namespace {
 
+constexpr std::uint32_t kForcedPlayerDropHarmCooldownFrames = 12;
+
 std::uint32_t AddSignedClamped(std::uint32_t value, std::int32_t delta) {
     const std::int64_t next = static_cast<std::int64_t>(value) + static_cast<std::int64_t>(delta);
     const std::int64_t clamped =
@@ -281,6 +283,30 @@ void ApplySpawnPresentation(Entity& entity, const EntitySpawnedEvent& payload) {
     animator.current_time = payload.animation_time;
     animator.speed = payload.animation_speed;
     animator.animate = payload.animate != 0;
+    animator.loop = payload.animation_loop != 0;
+    animator.finished = payload.animation_finished != 0;
+}
+
+template <typename Payload>
+void ApplyReplicatedEffects(Entity& entity, const Payload& payload) {
+    entity.effects.reset();
+    const std::size_t effect_count =
+        std::min<std::size_t>(payload.effect_count, payload.effects.size());
+    if (effect_count == 0) {
+        return;
+    }
+
+    EntityEffects& effects = entity.effects.emplace();
+    effects.count = static_cast<std::uint8_t>(effect_count);
+    for (std::size_t i = 0; i < effect_count; ++i) {
+        const EntityReplicatedEffect& effect = payload.effects[i];
+        effects.effects[i] = EffectInstance{
+            .id = effect.id,
+            .count = effect.count,
+            .value = effect.value,
+            .frames_remaining = effect.frames_remaining,
+        };
+    }
 }
 
 void ApplyEntitySpawnedEvent(
@@ -310,18 +336,25 @@ void ApplyEntitySpawnedEvent(
     entity->pos = payload.pos;
     entity->vel = payload.vel;
     entity->acc = payload.acc;
+    entity->size = payload.size;
     entity->counter_a = payload.counter_a;
     entity->counter_b = payload.counter_b;
+    entity->movement_flags = payload.movement_flags;
+    ApplyReplicatedEffects(*entity, payload);
     ApplySpawnPresentation(*entity, payload);
+    std::optional<VID> holder_to_sync;
     if (payload.held_by_id != kInvalidNetEntityId) {
         if (const std::optional<VID> holder_vid =
                 FindEntityVidForEvent(session, state, payload.held_by_id)) {
-            const Entity* const holder = state.entity_manager.GetEntity(*holder_vid);
+            Entity* const holder = state.entity_manager.GetEntityMut(*holder_vid);
             if (holder != nullptr && holder->active) {
+                holder->holding_vid = entity->vid;
+                holder->holding = true;
                 entity->held_by_vid = holder->vid;
                 entity->attachment_mode = AttachmentMode::Held;
                 entity->has_physics = false;
                 entity->can_collide = false;
+                holder_to_sync = holder->vid;
             }
         }
     }
@@ -331,6 +364,9 @@ void ApplyEntitySpawnedEvent(
     session.LinkEntity(payload.entity_id, entity->vid);
     session.SetEntityOwner(payload.entity_id, payload.owner.player_id);
     if (graphics != nullptr) {
+        if (holder_to_sync.has_value()) {
+            entities::common::SyncEntityAttachments(holder_to_sync->id, state, *graphics);
+        }
         state.UpdateSidForEntity(entity->vid.id, *graphics);
     }
 }
@@ -383,6 +419,7 @@ void ApplyEntityDamagedEvent(
     PlayerId source_player_id,
     const EntityDamagedEvent& payload
 ) {
+    (void)source_player_id;
     const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
     if (!vid.has_value()) {
         return;
@@ -408,31 +445,9 @@ void ApplyEntityDamagedEvent(
         return;
     }
 
-    const PlayerSlot* const target_player_slot = state.players.FindByEntityVid(entity->vid);
-    const bool target_is_local_player =
-        target_player_slot != nullptr &&
-        target_player_slot->connection_kind == PlayerConnectionKind::Local;
-    const bool has_explicit_remote_source =
-        target_player_slot != nullptr &&
-        payload.source_entity_id != kInvalidNetEntityId &&
-        source_player_id != target_player_slot->player_id;
-    if (target_is_local_player &&
-        target_player_slot->player_id != source_player_id &&
-        !has_explicit_remote_source) {
-        // Remote simulations can have stale/enemy-overlap disagreement for our
-        // local player body. Local players own their own damage; remote attacks
-        // must name their source entity so generic stale damage cannot take
-        // over the local body.
-        return;
-    }
-
-    const bool remote_hit_on_local_player =
-        target_is_local_player && target_player_slot->player_id != source_player_id;
     const bool attachment_driven = IsAttachmentDriven(*entity);
     if (!attachment_driven) {
-        if (!remote_hit_on_local_player) {
-            entity->pos = payload.pos;
-        }
+        entity->pos = payload.pos;
         entity->vel = payload.vel;
         entity->acc = payload.acc;
         entity->grounded = payload.grounded != 0;
@@ -503,6 +518,13 @@ void ApplyEntityStatePatchedEvent(
     if (entity == nullptr) {
         return;
     }
+    const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity->vid);
+    const bool target_is_local_player =
+        player_slot != nullptr && player_slot->connection_kind == PlayerConnectionKind::Local;
+    const bool preserve_local_player_motion =
+        from_coordinator &&
+        target_is_local_player &&
+        !has_explicit_source;
     ApplyEntityLinkSlot(session, state, *entity, payload);
     ApplyEntityScratchLinks(session, state, *entity, payload);
     ApplyOptionalEntityLinkSlot(session, state, entity->holding_vid, payload.holding_id);
@@ -514,12 +536,13 @@ void ApplyEntityStatePatchedEvent(
         return;
     }
     const bool attachment_driven = IsAttachmentDriven(*entity);
-    if (!attachment_driven) {
+    if (!attachment_driven && !preserve_local_player_motion) {
         entity->pos = payload.pos;
         entity->vel = payload.vel;
         entity->acc = payload.acc;
-        entity->grounded = payload.grounded != 0;
     }
+    entity->grounded = payload.grounded != 0;
+    entity->size = payload.size;
     entity->counter_a = payload.counter_a;
     entity->counter_b = payload.counter_b;
     entity->counter_c = payload.counter_c;
@@ -539,7 +562,9 @@ void ApplyEntityStatePatchedEvent(
     entity->ai_state = static_cast<EntityAiState>(payload.ai_state);
     entity->wanted = payload.wanted != 0;
     entity->draw_layer = static_cast<DrawLayer>(payload.draw_layer);
+    entity->movement_flags = payload.movement_flags;
     ApplyReplicatedRuntimeFlags(*entity, payload.runtime_flags);
+    ApplyReplicatedEffects(*entity, payload);
     entity->buyable.active = payload.buyable_active != 0;
     entity->buyable.display_quantity = payload.buyable_display_quantity;
     entity->buyable.display_icon_animation_id =
@@ -553,13 +578,16 @@ void ApplyEntityStatePatchedEvent(
         payload.buyable_shop_owner_id
     );
     entity->health = payload.health;
+    entity->coyote_time = payload.coyote_time;
+    entity->fall_timer = payload.fall_timer;
     entity->stun_timer = payload.stun_timer;
     entity->condition = static_cast<EntityCondition>(payload.condition);
-    if (!ApplyConditionPresentation(*entity, entity->condition)) {
-        ApplyStatePatchPresentation(*entity, payload);
-    }
+    ApplyStatePatchPresentation(*entity, payload);
     state.stage.NormalizeEntityPositionForWrap(*entity);
     if (graphics != nullptr) {
+        if (attachment_driven && entity->held_by_vid.has_value()) {
+            entities::common::SyncEntityAttachments(entity->held_by_vid->id, state, *graphics);
+        }
         state.UpdateSidForEntity(entity->vid.id, *graphics);
     }
 }
@@ -583,13 +611,8 @@ bool IsVidInHolderChain(VID needle, const Entity& entity, const State& state) {
 bool IsImmediateLocalNetResult(NetEventType type) {
     switch (type) {
     case NetEventType::EntitySpawned:
-    case NetEventType::EntityDamaged:
     case NetEventType::EntityDeactivated:
-    case NetEventType::EntityHeld:
-    case NetEventType::EntityDropped:
-    case NetEventType::EntityThrown:
     case NetEventType::TileBroken:
-    case NetEventType::RopeTilePlaced:
     case NetEventType::TileChanged:
     case NetEventType::FluidCellPatched:
     case NetEventType::PlayerStatePatched:
@@ -598,6 +621,29 @@ bool IsImmediateLocalNetResult(NetEventType type) {
     default:
         return false;
     }
+}
+
+bool IsTransientStateRepairEvent(const NetEvent& event) {
+    if (event.type == NetEventType::FluidCellPatched) {
+        return true;
+    }
+    if (event.type != NetEventType::EntityStatePatched) {
+        return false;
+    }
+    const auto* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
+    return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
+}
+
+bool ShouldSkipImmediateLocalApply(const NetSessionState& session, const NetEvent& event) {
+    if (event.header.source_player_id != session.local_player_id ||
+        !IsImmediateLocalNetResult(event.type)) {
+        return false;
+    }
+    if (event.type == NetEventType::EntityStatePatched) {
+        const auto* payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
+        return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
+    }
+    return true;
 }
 
 void NoteAppliedCoordinatorOrder(NetSessionState& session, const NetEvent& event) {
@@ -677,7 +723,27 @@ void ApplyEntityDroppedEvent(
         return;
     }
 
+    const std::optional<VID> dropped_by_vid =
+        payload.dropped_by_id != kInvalidNetEntityId
+            ? FindEntityVidForEvent(session, state, payload.dropped_by_id)
+            : std::nullopt;
     entities::common::ReleaseEntityFromHolder(*entity, state);
+    if (dropped_by_vid.has_value()) {
+        state.contact.AddInteractionCooldown(
+            *dropped_by_vid,
+            entity->vid,
+            InteractionCooldownKind::Harm,
+            state.stage_frame,
+            kForcedPlayerDropHarmCooldownFrames
+        );
+        state.contact.AddInteractionCooldown(
+            entity->vid,
+            *dropped_by_vid,
+            InteractionCooldownKind::Harm,
+            state.stage_frame,
+            kForcedPlayerDropHarmCooldownFrames
+        );
+    }
     if (IsPlayerNetEntityId(payload.entity_id)) {
         const PlayerId player_id = GetPlayerIdFromNetEntityId(payload.entity_id);
         const PlayerSlot* const slot = state.players.Find(player_id);
@@ -722,8 +788,13 @@ void ApplyEntityThrownEvent(
 
     entities::common::ReleaseEntityFromHolder(*entity, state);
     entity->pos = payload.pos;
-    entity->vel = payload.vel;
-    entity->acc = Vec2::New(0.0F, 0.0F);
+    if (state.players.FindByEntityVid(entity->vid) != nullptr) {
+        entity->vel = payload.vel;
+        entity->acc = Vec2::New(0.0F, 0.0F);
+    } else {
+        entity->vel = Vec2::New(0.0F, 0.0F);
+        entity->acc = payload.vel;
+    }
     entity->thrown_by = thrower_vid;
     entity->thrown_immunity_timer = entities::common::kThrownByImmunityDuration;
     const EntityArchetype& archetype = GetEntityArchetype(entity->type_);
@@ -847,13 +918,12 @@ std::size_t ApplyOrderedEvents(
             event.header.coordinator_order > session.next_expected_coordinator_order) {
             continue;
         }
-        if (event.header.source_player_id == session.local_player_id &&
-            IsImmediateLocalNetResult(event.type)) {
+        if (ShouldSkipImmediateLocalApply(session, event)) {
             if (session.MarkEventApplied(event.header.event_id)) {
                 NoteAppliedCoordinatorOrder(session, event);
                 session.AddEventLog(NetEventLogPhase::SkippedLocalApply, event);
                 ++applied_count;
-                if (event.type == NetEventType::EntityStatePatched) {
+                if (IsTransientStateRepairEvent(event)) {
                     transient_applied_event_ids.push_back(event.header.event_id);
                 }
             }
@@ -953,11 +1023,6 @@ std::size_t ApplyOrderedEvents(
                 }
             }
             break;
-        case NetEventType::RopeTilePlaced:
-            if (const auto* payload = std::get_if<RopeTilePlacedEvent>(&event.payload)) {
-                SetTileIfChanged(state, payload->tile_pos, Tile::Rope);
-            }
-            break;
         case NetEventType::PresentationCommand:
             if (const auto* payload = std::get_if<PresentationCommandEvent>(&event.payload)) {
                 ApplyPresentationCommandEvent(session, state, graphics, *payload);
@@ -981,8 +1046,7 @@ std::size_t ApplyOrderedEvents(
             NoteAppliedCoordinatorOrder(session, event);
             session.AddEventLog(NetEventLogPhase::Applied, event);
             ++applied_count;
-            if (event.type == NetEventType::EntityStatePatched ||
-                event.type == NetEventType::FluidCellPatched) {
+            if (IsTransientStateRepairEvent(event)) {
                 transient_applied_event_ids.push_back(event.header.event_id);
             }
         }
@@ -993,8 +1057,7 @@ std::size_t ApplyOrderedEvents(
                 session.ordered_events.begin(),
                 session.ordered_events.end(),
                 [&](const NetEvent& event) {
-                    return (event.type == NetEventType::EntityStatePatched ||
-                              event.type == NetEventType::FluidCellPatched) &&
+                    return IsTransientStateRepairEvent(event) &&
                            std::find(
                                transient_applied_event_ids.begin(),
                                transient_applied_event_ids.end(),

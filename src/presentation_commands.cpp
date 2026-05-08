@@ -3,6 +3,7 @@
 #include "audio_emitters.hpp"
 #include "entity.hpp"
 #include "entities/common/common.hpp"
+#include "frame_data_id.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
@@ -93,7 +94,34 @@ void SpawnTeleportMergeEffectAt(
     SpawnEntityPhaseParticleAt(entity, graphics, visual_center, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
 }
 
+void SpawnJetpackSmokeAt(State& state, const Vec2& pos) {
+    for (int i = 0; i < 16; ++i) {
+        const float vel = rng::RandomFloat(0.1F, 0.5F);
+        const float svel = rng::RandomFloat(vel * 0.1F, vel * 1.0F);
+        const float sacc = rng::RandomFloat(vel * 0.01F, vel * 0.02F);
+        SpriteParticle effect{};
+        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        effect.draw_layer = DrawLayer::Foreground;
+        effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
+        effect.pos = pos;
+        effect.size = Vec2::New(1.0F, 1.0F) * 2.0F;
+        effect.rot = rng::RandomFloat(0.0F, 360.0F);
+        effect.alpha = 1.0F;
+        effect.vel = Vec2::New(0.0F, rng::RandomFloat(0.0F, 0.3F));
+        effect.svel = Vec2::New(svel, svel);
+        effect.rotvel = rng::RandomFloat(-0.2F, -0.01F);
+        effect.alpha_vel = vel * 0.001F;
+        effect.sacc = Vec2::New(sacc, sacc);
+        state.particles.Add(std::move(effect));
+    }
+}
+
 void PlayScriptedEffect(State& state, Graphics& graphics, const PresentationCommand& command) {
+    if (command.effect_id == ScriptedPresentationEffectId::JetpackSmoke) {
+        SpawnJetpackSmokeAt(state, command.source_pos + Vec2::New(3.0F, 3.0F));
+        SpawnJetpackSmokeAt(state, command.source_pos + Vec2::New(-3.0F, 3.0F));
+        return;
+    }
     if (!command.source_vid.has_value()) {
         return;
     }
@@ -108,6 +136,8 @@ void PlayScriptedEffect(State& state, Graphics& graphics, const PresentationComm
         break;
     case ScriptedPresentationEffectId::TeleportMerge:
         SpawnTeleportMergeEffectAt(*entity, graphics, command.source_pos, command.direction, state);
+        break;
+    case ScriptedPresentationEffectId::JetpackSmoke:
         break;
     case ScriptedPresentationEffectId::None:
         break;

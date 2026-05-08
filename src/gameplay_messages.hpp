@@ -51,6 +51,7 @@ struct GameplayActionRequested {
     std::uint32_t projectile_contact_duration = 0;
     bool clear_velocity = true;
     bool clear_acceleration = true;
+    bool knockback_on_no_damage = false;
     std::uint32_t param_a = 0;
     std::uint32_t param_b = 0;
 };
@@ -62,10 +63,14 @@ struct GameplayEntitySpawned {
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    Vec2 size = Vec2::New(0.0F, 0.0F);
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    std::uint32_t movement_flags = 0;
     bool use_pressed = false;
     std::uint8_t animate = 0;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
     float animation_time = 0.0F;
@@ -129,6 +134,7 @@ struct GameplayEntityStatePatched {
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    Vec2 size = Vec2::New(0.0F, 0.0F);
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     float counter_c = 0.0F;
@@ -140,6 +146,8 @@ struct GameplayEntityStatePatched {
     IVec2 point_c = IVec2::New(0, 0);
     IVec2 point_d = IVec2::New(0, 0);
     unsigned int health = 0;
+    std::uint32_t coyote_time = 0;
+    std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
     float rotation = 0.0F;
@@ -154,12 +162,15 @@ struct GameplayEntityStatePatched {
     std::uint8_t wanted = 0;
     std::uint8_t attachment_mode = 0;
     std::uint8_t draw_layer = 0;
+    std::uint32_t movement_flags = 0;
     std::uint32_t runtime_flags = 0;
     std::uint8_t buyable_active = 0;
     std::uint32_t buyable_display_quantity = 0;
     FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
     std::optional<VID> buyable_shop_owner_vid;
     std::uint8_t animate = 0;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
     float animation_time = 0.0F;
@@ -171,11 +182,6 @@ struct GameplayPlayerStatePatched {
 };
 
 struct GameplayRunStatePatched {
-};
-
-struct GameplayRopeTilePlaced {
-    VID source_vid{};
-    IVec2 tile_pos = IVec2::New(0, 0);
 };
 
 struct GameplayTileChanged {

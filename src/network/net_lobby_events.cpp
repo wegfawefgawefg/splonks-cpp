@@ -73,6 +73,23 @@ void RemovePendingEntityActionRequestsForResult(
     );
 }
 
+bool IsOneShotTransientCoordinatorEvent(const NetEvent& event) {
+    return event.header.coordinator_order == 0 &&
+           (event.type == NetEventType::EntityStatePatched ||
+            event.type == NetEventType::FluidCellPatched);
+}
+
+void PruneSentTransientCoordinatorEvents(NetSessionState& session) {
+    session.ordered_events.erase(
+        std::remove_if(
+            session.ordered_events.begin(),
+            session.ordered_events.end(),
+            [](const NetEvent& event) { return IsOneShotTransientCoordinatorEvent(event); }
+        ),
+        session.ordered_events.end()
+    );
+}
+
 bool HasQueuedOrAppliedEvent(const NetSessionState& session, NetEventId event_id) {
     if (session.HasAppliedEvent(event_id)) {
         return true;
@@ -210,6 +227,14 @@ bool EndpointOwnsPlayer(
     return false;
 }
 
+bool IsTransientEntityStatePatch(const NetEvent& event) {
+    if (event.type != NetEventType::EntityStatePatched) {
+        return false;
+    }
+    const auto* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
+    return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
+}
+
 } // namespace
 
 void SendPendingPeerEventsToCoordinator(State& state, NetTransportRuntime& transport) {
@@ -284,6 +309,7 @@ void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport)
         SendRunStateEvents(transport, remote.endpoint, unacked_events);
         SendPresentationCommandEvents(transport, remote.endpoint, unacked_events);
     }
+    PruneSentTransientCoordinatorEvents(state.net_session);
 }
 
 void PruneAckedOrderedEvents(State& state, const NetTransportRuntime& transport) {
@@ -459,7 +485,12 @@ void HandleEntityStateEventsAsPeer(State& state, const EntityStateEventsPacket& 
         if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
             continue;
         }
-        state.net_session.EnqueueTransientEvent(MakeEntityStateEvent(entry));
+        NetEvent event = MakeEntityStateEvent(entry);
+        if (IsTransientEntityStatePatch(event)) {
+            state.net_session.EnqueueTransientEvent(event);
+        } else {
+            state.net_session.EnqueueOrderedEvent(event);
+        }
     }
 }
 
@@ -615,6 +646,7 @@ void HandleActionRequestEventsAsCoordinator(
                 .projectile_contact_duration = payload->projectile_contact_duration,
                 .clear_velocity = payload->clear_velocity,
                 .clear_acceleration = payload->clear_acceleration,
+                .knockback_on_no_damage = payload->knockback_on_no_damage,
                 .param_a = payload->param_a,
                 .param_b = payload->param_b,
             }

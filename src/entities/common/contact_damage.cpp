@@ -411,6 +411,7 @@ bool TryApplyProjectileContactToEntity(
                       .source_vid = entity.vid,
                       .knockback = knockback,
                       .allow_remote_player_target = source_has_local_authority,
+                      .knockback_on_no_damage = true,
                   }
               )
             : DamageResult::None;

@@ -16,7 +16,10 @@ constexpr float kReplicatedEntityStateMinDist = 0.01F;
 constexpr std::uint32_t kCoordinatorRepairSnapshotIntervalFrames = 30;
 
 bool ShouldConsiderEntityStatePatch(const State& state, const Entity& entity) {
-    if (!entity.active || state.players.FindPlayerIdForEntity(entity.vid).has_value()) {
+    if (!entity.active) {
+        return false;
+    }
+    if (state.players.FindPlayerIdForEntity(entity.vid).has_value()) {
         return false;
     }
     if (!state.net_session.HasLocalAuthorityForEntity(entity.vid)) {
@@ -48,8 +51,28 @@ NetEntityId GetReplicatedEntityLinkId(State& state, const std::optional<VID>& vi
     return GetOrAssignReplicatedEntityId(state, *vid);
 }
 
+template <typename Payload>
+void CopyEntityEffectsToPayload(const Entity& entity, Payload& payload) {
+    const EntityEffects* const effects = entity.effects.get();
+    if (effects == nullptr) {
+        return;
+    }
+    payload.effect_count = static_cast<std::uint8_t>(
+        std::min<std::size_t>(effects->count, payload.effects.size())
+    );
+    for (std::size_t i = 0; i < payload.effect_count; ++i) {
+        const EffectInstance& effect = effects->effects[i];
+        payload.effects[i] = EntityReplicatedEffect{
+            .id = effect.id,
+            .count = effect.count,
+            .value = effect.value,
+            .frames_remaining = effect.frames_remaining,
+        };
+    }
+}
+
 EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entity) {
-    return EntityStatePatchedEvent{
+    EntityStatePatchedEvent payload{
         .entity_id = GetOrAssignReplicatedEntityId(state, entity.vid),
         .source_entity_id = kInvalidNetEntityId,
         .entity_a_id = GetReplicatedEntityLinkId(state, entity.entity_a),
@@ -62,6 +85,7 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .pos = entity.pos,
         .vel = entity.vel,
         .acc = entity.acc,
+        .size = entity.size,
         .counter_a = entity.counter_a,
         .counter_b = entity.counter_b,
         .counter_c = entity.counter_c,
@@ -73,6 +97,8 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .point_c = entity.point_c,
         .point_d = entity.point_d,
         .health = entity.health,
+        .coyote_time = entity.coyote_time,
+        .fall_timer = entity.fall_timer,
         .stun_timer = entity.stun_timer,
         .projectile_contact_timer = entity.projectile_contact_timer,
         .rotation = entity.rotation,
@@ -88,6 +114,7 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .wanted = static_cast<std::uint8_t>(entity.wanted ? 1 : 0),
         .attachment_mode = static_cast<std::uint8_t>(entity.attachment_mode),
         .draw_layer = static_cast<std::uint8_t>(entity.draw_layer),
+        .movement_flags = entity.movement_flags,
         .runtime_flags = CaptureReplicatedRuntimeFlags(entity),
         .buyable_active = static_cast<std::uint8_t>(entity.buyable.active ? 1 : 0),
         .buyable_display_quantity = entity.buyable.display_quantity,
@@ -102,10 +129,12 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .animation_time = entity.frame_data_animator.current_time,
         .animation_speed = entity.frame_data_animator.speed,
     };
+    CopyEntityEffectsToPayload(entity, payload);
+    return payload;
 }
 
 NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEvent& payload) {
-    return NetReplicatedEntityStateSignature{
+    NetReplicatedEntityStateSignature signature{
         .entity_id = payload.entity_id,
         .entity_a_id = payload.entity_a_id,
         .entity_b_id = payload.entity_b_id,
@@ -132,6 +161,8 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
         .rotation = payload.rotation,
         .animation_speed = payload.animation_speed,
         .health = payload.health,
+        .coyote_time = payload.coyote_time,
+        .fall_timer = payload.fall_timer,
         .stun_timer = payload.stun_timer,
         .projectile_contact_timer = payload.projectile_contact_timer,
         .buyable_display_quantity = payload.buyable_display_quantity,
@@ -144,7 +175,9 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
         .point_c_y = payload.point_c.y,
         .point_d_x = payload.point_d.x,
         .point_d_y = payload.point_d.y,
+        .movement_flags = payload.movement_flags,
         .runtime_flags = payload.runtime_flags,
+        .effect_count = payload.effect_count,
         .condition = payload.condition,
         .grounded = payload.grounded,
         .active = payload.active,
@@ -161,6 +194,15 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
         .animation_loop = payload.animation_loop,
         .animation_finished = payload.animation_finished,
     };
+    for (std::size_t i = 0;
+         i < signature.effect_ids.size() && i < payload.effects.size();
+         ++i) {
+        signature.effect_ids[i] = payload.effects[i].id;
+        signature.effect_counts[i] = payload.effects[i].count;
+        signature.effect_values[i] = payload.effects[i].value;
+        signature.effect_frames[i] = payload.effects[i].frames_remaining;
+    }
+    return signature;
 }
 
 bool StateSignaturesEqual(
@@ -193,6 +235,8 @@ bool StateSignaturesEqual(
            a.rotation == b.rotation &&
            a.animation_speed == b.animation_speed &&
            a.health == b.health &&
+           a.coyote_time == b.coyote_time &&
+           a.fall_timer == b.fall_timer &&
            a.stun_timer == b.stun_timer &&
            a.projectile_contact_timer == b.projectile_contact_timer &&
            a.buyable_display_quantity == b.buyable_display_quantity &&
@@ -205,7 +249,13 @@ bool StateSignaturesEqual(
            a.point_c_y == b.point_c_y &&
            a.point_d_x == b.point_d_x &&
            a.point_d_y == b.point_d_y &&
+           a.movement_flags == b.movement_flags &&
            a.runtime_flags == b.runtime_flags &&
+           a.effect_count == b.effect_count &&
+           a.effect_ids == b.effect_ids &&
+           a.effect_counts == b.effect_counts &&
+           a.effect_values == b.effect_values &&
+           a.effect_frames == b.effect_frames &&
            a.condition == b.condition &&
            a.grounded == b.grounded &&
            a.active == b.active &&

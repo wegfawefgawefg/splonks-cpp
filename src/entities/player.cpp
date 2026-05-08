@@ -252,6 +252,9 @@ void ApplyClassicFallDamageOnLanding(
     }
 
     const float fall_damage_timer = GetFallDamageTimer(player, state);
+    const bool was_holding_player =
+        player.holding_vid.has_value() &&
+        state.players.FindByEntityVid(*player.holding_vid) != nullptr;
     player.fall_timer = 0;
     if (fall_damage_timer <= static_cast<float>(tuning.fall_damage_min_frames) ||
         player.condition == EntityCondition::Dead) {
@@ -266,8 +269,13 @@ void ApplyClassicFallDamageOnLanding(
     }
 
     Entity& mutable_player = state.entity_manager.entities[entity_idx];
-    mutable_player.vel.y = kFallDamageBounceVelocityY;
-    mutable_player.grounded = false;
+    if (was_holding_player) {
+        mutable_player.vel.y = 0.0F;
+        mutable_player.grounded = true;
+    } else {
+        mutable_player.vel.y = kFallDamageBounceVelocityY;
+        mutable_player.grounded = false;
+    }
     SpawnFallDamagePoofs(mutable_player, state);
     (void)PlayEntityCenterSoundEmitter(state, mutable_player, audio_asset_ids::Thud);
 }

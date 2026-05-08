@@ -19,6 +19,7 @@
 #include "world_ops.hpp"
 
 #include <algorithm>
+#include <string>
 
 namespace splonks {
 
@@ -47,6 +48,10 @@ void ApplyPendingStageTransitionNow(State& state, Graphics& graphics) {
     graphics.ResetTileVariations();
     InvalidateStageLighting(state);
     InvalidateStageAcoustics(state);
+    if (state.net_session.role != network::NetRole::Offline) {
+        std::string status;
+        (void)network::ReviveNetworkPlayersAtEntrance(state, graphics, &status);
+    }
     network::NotifyStageLoaded(state);
 }
 
@@ -121,6 +126,19 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
     return graphics.camera.target;
 }
 
+bool ShouldEnterGameOver(const State& state, std::optional<VID> primary_player_vid) {
+    if (state.net_session.role != network::NetRole::Offline) {
+        return HasAnyConnectedPlayerEntity(state) && !HasAnyConnectedLivingPlayer(state);
+    }
+
+    if (!primary_player_vid.has_value()) {
+        return false;
+    }
+
+    const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid);
+    return player == nullptr || !player->active || player->condition == EntityCondition::Dead;
+}
+
 void DrainAndApplyLocalNetworkEvents(State& state, Audio& audio, Graphics& graphics) {
     (void)network::ApplyOrderedEvents(state.net_session, state, &audio, &graphics);
 }
@@ -128,7 +146,11 @@ void DrainAndApplyLocalNetworkEvents(State& state, Audio& audio, Graphics& graph
 void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, float dt) {
     bool stepped_any_player_slot = false;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connection_kind != PlayerConnectionKind::Local) {
+        const bool should_step_control =
+            slot.connection_kind == PlayerConnectionKind::Local ||
+            (state.net_session.role == network::NetRole::Coordinator &&
+             slot.connection_kind == PlayerConnectionKind::Remote);
+        if (!should_step_control) {
             continue;
         }
         if (!slot.entity_vid.has_value()) {
@@ -327,22 +349,18 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     }
     state.particles.Step(graphics.frame_data_db, dt);
 
-    bool lost = false;
-    if (primary_player_vid.has_value()) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*primary_player_vid)) {
-            if (player->condition == EntityCondition::Dead) {
-                lost = true;
-            } else {
-                lost = false;
-            }
-        } else {
-            lost = true;
+    const bool lost = ShouldEnterGameOver(state, primary_player_vid);
+    if (state.pending_stage_transition.has_value()) {
+        if (state.net_session.role == network::NetRole::Coordinator && state.net_transport) {
+            (void)network::SendPendingStageTransitionSyncToAllRemotes(
+                state,
+                *state.net_transport
+            );
         }
-    } else {
-        lost = false;
-    }
-    if (lost) {
-        state.pending_stage_transition.reset();
+        StopAllSoundEmitters(state, audio);
+        state.SetMode(Mode::StageTransition);
+        state.frame = 0;
+    } else if (lost) {
         Vec2 game_over_pos = state.gameplay_camera_anchor_world_pos.value_or(graphics.camera.target);
         if (primary_player_vid.has_value()) {
             if (const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid)) {
@@ -357,16 +375,6 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         AddShake(state, game_over_pos, 2.2F, 3.0F, ShakeMask::All);
         (void)PlayWorldSoundEmitter(state, game_over_pos, audio_asset_ids::GameOver);
         state.SetMode(Mode::GameOver);
-    } else if (state.pending_stage_transition.has_value()) {
-        if (state.net_session.role == network::NetRole::Coordinator && state.net_transport) {
-            (void)network::SendPendingStageTransitionSyncToAllRemotes(
-                state,
-                *state.net_transport
-            );
-        }
-        StopAllSoundEmitters(state, audio);
-        state.SetMode(Mode::StageTransition);
-        state.frame = 0;
     }
 
     // step_camera(rl, rlt, state, graphics);

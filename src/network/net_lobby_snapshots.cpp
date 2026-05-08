@@ -6,21 +6,27 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <limits>
 
 namespace splonks::network {
 
 namespace {
 
-constexpr std::uint16_t kPlayerSnapshotFlagClimbing = 1U << 0U;
-constexpr std::uint16_t kPlayerSnapshotFlagHanging = 1U << 1U;
-constexpr std::uint16_t kPlayerSnapshotFlagHangRight = 1U << 2U;
 constexpr std::uint16_t kPlayerSnapshotInputLeft = 1U << 0U;
 constexpr std::uint16_t kPlayerSnapshotInputRight = 1U << 1U;
 constexpr std::uint16_t kPlayerSnapshotInputUp = 1U << 2U;
 constexpr std::uint16_t kPlayerSnapshotInputDown = 1U << 3U;
-constexpr std::uint16_t kPlayerSnapshotInputAttack = 1U << 4U;
-constexpr std::uint16_t kPlayerSnapshotInputUseBack = 1U << 5U;
+constexpr std::uint16_t kPlayerSnapshotInputJump = 1U << 4U;
+constexpr std::uint16_t kPlayerSnapshotInputRun = 1U << 5U;
+constexpr std::uint16_t kPlayerSnapshotInputUseBack = 1U << 6U;
+constexpr std::uint16_t kPlayerSnapshotInputEquip = 1U << 7U;
+constexpr std::uint16_t kPlayerSnapshotInputPickupDrop = 1U << 8U;
+constexpr std::uint16_t kPlayerSnapshotInputStop = 1U << 9U;
+constexpr std::uint16_t kPlayerSnapshotInputBomb = 1U << 10U;
+constexpr std::uint16_t kPlayerSnapshotInputRope = 1U << 11U;
+constexpr std::uint16_t kPlayerSnapshotInputAttack = 1U << 12U;
+constexpr std::uint16_t kPlayerSnapshotInputBuy = 1U << 13U;
+constexpr std::uint16_t kPlayerSnapshotInputEmoteUp = 1U << 14U;
+constexpr std::uint16_t kPlayerSnapshotInputEmoteDown = 1U << 15U;
 
 std::uint16_t BuildInputFlags(const PlayingInputs& inputs) {
     std::uint16_t flags = 0;
@@ -36,11 +42,41 @@ std::uint16_t BuildInputFlags(const PlayingInputs& inputs) {
     if (inputs.down.down) {
         flags |= kPlayerSnapshotInputDown;
     }
-    if (inputs.attack.down) {
-        flags |= kPlayerSnapshotInputAttack;
+    if (inputs.jump.down) {
+        flags |= kPlayerSnapshotInputJump;
+    }
+    if (inputs.run.down) {
+        flags |= kPlayerSnapshotInputRun;
     }
     if (inputs.use_button.down) {
         flags |= kPlayerSnapshotInputUseBack;
+    }
+    if (inputs.equip_button.down) {
+        flags |= kPlayerSnapshotInputEquip;
+    }
+    if (inputs.pick_up_drop.down) {
+        flags |= kPlayerSnapshotInputPickupDrop;
+    }
+    if (inputs.stop.down) {
+        flags |= kPlayerSnapshotInputStop;
+    }
+    if (inputs.bomb.down) {
+        flags |= kPlayerSnapshotInputBomb;
+    }
+    if (inputs.rope.down) {
+        flags |= kPlayerSnapshotInputRope;
+    }
+    if (inputs.attack.down) {
+        flags |= kPlayerSnapshotInputAttack;
+    }
+    if (inputs.buy_button.down) {
+        flags |= kPlayerSnapshotInputBuy;
+    }
+    if (inputs.emote_up.down) {
+        flags |= kPlayerSnapshotInputEmoteUp;
+    }
+    if (inputs.emote_down.down) {
+        flags |= kPlayerSnapshotInputEmoteDown;
     }
     return flags;
 }
@@ -70,13 +106,53 @@ void ApplyInputFlags(PlayerSlot& slot, std::uint16_t flags) {
         (flags & kPlayerSnapshotInputDown) != 0,
         slot.inputs.down
     );
-    slot.inputs.attack = BuildButtonStateFromNetwork(
-        (flags & kPlayerSnapshotInputAttack) != 0,
-        slot.inputs.attack
+    slot.inputs.jump = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputJump) != 0,
+        slot.inputs.jump
+    );
+    slot.inputs.run = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputRun) != 0,
+        slot.inputs.run
     );
     slot.inputs.use_button = BuildButtonStateFromNetwork(
         (flags & kPlayerSnapshotInputUseBack) != 0,
         slot.inputs.use_button
+    );
+    slot.inputs.equip_button = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputEquip) != 0,
+        slot.inputs.equip_button
+    );
+    slot.inputs.pick_up_drop = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputPickupDrop) != 0,
+        slot.inputs.pick_up_drop
+    );
+    slot.inputs.stop = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputStop) != 0,
+        slot.inputs.stop
+    );
+    slot.inputs.bomb = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputBomb) != 0,
+        slot.inputs.bomb
+    );
+    slot.inputs.rope = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputRope) != 0,
+        slot.inputs.rope
+    );
+    slot.inputs.attack = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputAttack) != 0,
+        slot.inputs.attack
+    );
+    slot.inputs.buy_button = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputBuy) != 0,
+        slot.inputs.buy_button
+    );
+    slot.inputs.emote_up = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputEmoteUp) != 0,
+        slot.inputs.emote_up
+    );
+    slot.inputs.emote_down = BuildButtonStateFromNetwork(
+        (flags & kPlayerSnapshotInputEmoteDown) != 0,
+        slot.inputs.emote_down
     );
     slot.immediate_inputs = slot.inputs;
 }
@@ -96,36 +172,33 @@ std::optional<PlayerSnapshotEntry> MakeSnapshotForSlot(const State& state, const
     snapshot.pos_y = entity->pos.y;
     snapshot.vel_x = entity->vel.x;
     snapshot.vel_y = entity->vel.y;
+    snapshot.health = entity->health;
+    snapshot.coyote_time = entity->coyote_time;
+    snapshot.fall_timer = entity->fall_timer;
+    snapshot.stun_timer = entity->stun_timer;
+    snapshot.projectile_contact_timer = entity->projectile_contact_timer;
     snapshot.facing = entity->facing == LeftOrRight::Right ? 1 : 0;
     snapshot.condition = static_cast<std::uint8_t>(entity->condition);
     snapshot.grounded = entity->grounded ? 1 : 0;
-    snapshot.animate = entity->frame_data_animator.animate ? 1 : 0;
+    snapshot.has_physics = entity->has_physics ? 1 : 0;
+    snapshot.can_collide = entity->can_collide ? 1 : 0;
     snapshot.input_flags = BuildInputFlags(slot.inputs);
-    snapshot.animation_id = entity->frame_data_animator.animation_id;
-    snapshot.animation_frame = static_cast<std::uint16_t>(std::min<std::size_t>(
-        entity->frame_data_animator.current_frame,
-        std::numeric_limits<std::uint16_t>::max()
-    ));
-    if (entity->IsClimbing()) {
-        snapshot.animation_flags |= kPlayerSnapshotFlagClimbing;
-    }
-    if (entity->hang_side.has_value()) {
-        snapshot.animation_flags |= kPlayerSnapshotFlagHanging;
-        if (*entity->hang_side == LeftOrRight::Right) {
-            snapshot.animation_flags |= kPlayerSnapshotFlagHangRight;
-        }
-    }
-    snapshot.animation_time = entity->frame_data_animator.current_time;
-    snapshot.animation_speed = entity->frame_data_animator.speed;
     return snapshot;
 }
 
-PlayerSnapshotsPacket MakeLocalPlayerSnapshots(State& state, NetTransportRuntime& transport) {
+PlayerSnapshotsPacket MakePlayerSnapshots(
+    State& state,
+    NetTransportRuntime& transport,
+    bool local_only
+) {
     PlayerSnapshotsPacket packet;
     packet.stage_instance_id = state.net_session.stage_instance_id;
     packet.sequence = transport.next_snapshot_sequence++;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connection_kind != PlayerConnectionKind::Local || !slot.connected) {
+        if (!slot.connected) {
+            continue;
+        }
+        if (local_only && slot.connection_kind != PlayerConnectionKind::Local) {
             continue;
         }
         if (packet.snapshot_count >= packet.snapshots.size()) {
@@ -158,15 +231,16 @@ NetRemotePlayerTarget& EnsureRemotePlayerTarget(
             target.pos_y = snapshot.pos_y;
             target.vel_x = snapshot.vel_x;
             target.vel_y = snapshot.vel_y;
+            target.health = snapshot.health;
+            target.coyote_time = snapshot.coyote_time;
+            target.fall_timer = snapshot.fall_timer;
+            target.stun_timer = snapshot.stun_timer;
+            target.projectile_contact_timer = snapshot.projectile_contact_timer;
             target.facing = snapshot.facing;
             target.condition = snapshot.condition;
             target.grounded = snapshot.grounded;
-            target.animate = snapshot.animate;
-            target.animation_id = snapshot.animation_id;
-            target.animation_frame = snapshot.animation_frame;
-            target.animation_flags = snapshot.animation_flags;
-            target.animation_time = snapshot.animation_time;
-            target.animation_speed = snapshot.animation_speed;
+            target.has_physics = snapshot.has_physics;
+            target.can_collide = snapshot.can_collide;
             target.sequence = sequence;
             target.interpolation_start_frame = frame;
             target.last_received_frame = frame;
@@ -182,15 +256,16 @@ NetRemotePlayerTarget& EnsureRemotePlayerTarget(
         .pos_y = snapshot.pos_y,
         .vel_x = snapshot.vel_x,
         .vel_y = snapshot.vel_y,
+        .health = snapshot.health,
+        .coyote_time = snapshot.coyote_time,
+        .fall_timer = snapshot.fall_timer,
+        .stun_timer = snapshot.stun_timer,
+        .projectile_contact_timer = snapshot.projectile_contact_timer,
         .facing = snapshot.facing,
         .condition = snapshot.condition,
         .grounded = snapshot.grounded,
-        .animate = snapshot.animate,
-        .animation_id = snapshot.animation_id,
-        .animation_frame = snapshot.animation_frame,
-        .animation_flags = snapshot.animation_flags,
-        .animation_time = snapshot.animation_time,
-        .animation_speed = snapshot.animation_speed,
+        .has_physics = snapshot.has_physics,
+        .can_collide = snapshot.can_collide,
         .sequence = sequence,
         .interpolation_start_frame = frame,
         .last_received_frame = frame,
@@ -241,7 +316,12 @@ void SendSnapshotsToEndpoint(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint
 ) {
-    const PlayerSnapshotsPacket snapshots = MakeLocalPlayerSnapshots(state, transport);
+    const bool coordinator_to_peer = state.net_session.role == NetRole::Coordinator;
+    const PlayerSnapshotsPacket snapshots = MakePlayerSnapshots(
+        state,
+        transport,
+        !coordinator_to_peer
+    );
     if (snapshots.snapshot_count == 0) {
         return;
     }
@@ -283,8 +363,12 @@ void ApplyPlayerSnapshots(
             continue;
         }
         const PlayerSlot* const existing_slot = state.players.Find(snapshot.player_id);
-        if (existing_slot != nullptr &&
-            existing_slot->connection_kind == PlayerConnectionKind::Local) {
+        const bool local_slot =
+            existing_slot != nullptr &&
+            existing_slot->connection_kind == PlayerConnectionKind::Local;
+        const bool local_prediction_repair =
+            state.net_session.role == NetRole::Peer && local_slot;
+        if (local_slot && !local_prediction_repair) {
             continue;
         }
 
@@ -328,9 +412,14 @@ void StepRemotePlayerInterpolation(
     const float snap_distance_sq = snap_distance * snap_distance;
     for (const NetRemotePlayerTarget& target : transport.remote_player_targets) {
         PlayerSlot* const slot = state.players.Find(target.player_id);
-        if (slot == nullptr ||
-            slot->connection_kind == PlayerConnectionKind::Local ||
-            !slot->entity_vid.has_value()) {
+        if (slot == nullptr || !slot->entity_vid.has_value()) {
+            continue;
+        }
+
+        const bool local_prediction_repair =
+            state.net_session.role == NetRole::Peer &&
+            slot->connection_kind == PlayerConnectionKind::Local;
+        if (slot->connection_kind == PlayerConnectionKind::Local && !local_prediction_repair) {
             continue;
         }
 
@@ -339,9 +428,17 @@ void StepRemotePlayerInterpolation(
             continue;
         }
 
-        const bool target_is_world_anchored =
-            target.grounded != 0 ||
-            (target.animation_flags & (kPlayerSnapshotFlagClimbing | kPlayerSnapshotFlagHanging)) != 0;
+        const bool peer_snapshot_on_coordinator =
+            state.net_session.role == NetRole::Coordinator &&
+            slot->connection_kind == PlayerConnectionKind::Remote;
+        if (peer_snapshot_on_coordinator) {
+            // Coordinator receives peer snapshots as input packets. Durable
+            // body state is produced by coordinator simulation, not by peer
+            // position targets.
+            continue;
+        }
+
+        const bool target_is_world_anchored = target.grounded != 0;
         const bool locally_predicted_thrown =
             entity->projectile_contact_timer > 0 &&
             !entity->held_by_vid.has_value() &&
@@ -352,8 +449,11 @@ void StepRemotePlayerInterpolation(
             entity->held_by_vid.has_value() || entity->attachment_mode != AttachmentMode::None;
         const Vec2 final_target_pos = Vec2::New(target.pos_x, target.pos_y);
         if (!attachment_driven && !locally_predicted_thrown) {
+            const Vec2 final_delta = final_target_pos - entity->pos;
+            const float final_distance_sq =
+                final_delta.x * final_delta.x + final_delta.y * final_delta.y;
             Vec2 display_target_pos = final_target_pos;
-            if (delay_frames > 0.0F) {
+            if (final_distance_sq <= snap_distance_sq && delay_frames > 0.0F) {
                 const float age_frames = static_cast<float>(state.frame - target.interpolation_start_frame);
                 const float t = std::clamp(age_frames / delay_frames, 0.0F, 1.0F);
                 const Vec2 start_pos = Vec2::New(target.start_pos_x, target.start_pos_y);
@@ -361,39 +461,23 @@ void StepRemotePlayerInterpolation(
             }
 
             const Vec2 delta = display_target_pos - entity->pos;
-            const float distance_sq = delta.x * delta.x + delta.y * delta.y;
-            if (distance_sq > snap_distance_sq) {
+            if (final_distance_sq > snap_distance_sq) {
                 entity->pos = final_target_pos;
             } else {
                 entity->pos += delta * strength;
             }
             entity->vel = Vec2::New(target.vel_x, target.vel_y);
-            entity->grounded = target.grounded != 0;
         }
-        entity->facing = target.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
+        entity->health = target.health;
+        entity->coyote_time = target.coyote_time;
+        entity->fall_timer = target.fall_timer;
+        entity->stun_timer = target.stun_timer;
+        entity->projectile_contact_timer = target.projectile_contact_timer;
         entity->condition = static_cast<EntityCondition>(target.condition);
-        SetMovementFlag(
-            *entity,
-            EntityMovementFlag::Climbing,
-            (target.animation_flags & kPlayerSnapshotFlagClimbing) != 0
-        );
-        if ((target.animation_flags & kPlayerSnapshotFlagHanging) != 0) {
-            entity->hang_side = (target.animation_flags & kPlayerSnapshotFlagHangRight) != 0
-                                    ? LeftOrRight::Right
-                                    : LeftOrRight::Left;
-        } else {
-            entity->hang_side.reset();
-        }
-        if (target.animation_id != kInvalidFrameDataId) {
-            FrameDataAnimator& animator = entity->frame_data_animator;
-            if (animator.animation_id != target.animation_id) {
-                animator.SetAnimation(target.animation_id);
-            }
-            animator.current_frame = target.animation_frame;
-            animator.current_time = target.animation_time;
-            animator.speed = target.animation_speed;
-            animator.animate = target.animate != 0;
-        }
+        entity->grounded = target.grounded != 0;
+        entity->has_physics = target.has_physics != 0;
+        entity->can_collide = target.can_collide != 0;
+        entity->facing = target.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
         state.UpdateSidForEntity(entity->vid.id, graphics);
     }
 }

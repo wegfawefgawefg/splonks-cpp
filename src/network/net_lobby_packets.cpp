@@ -6,10 +6,9 @@
 
 namespace splonks::network {
 
-namespace {
-
 constexpr std::uint16_t kActionRequestFlagClearVelocity = 1U << 0U;
 constexpr std::uint16_t kActionRequestFlagClearAcceleration = 1U << 1U;
+constexpr std::uint16_t kActionRequestFlagKnockbackOnNoDamage = 1U << 2U;
 
 std::uint16_t BuildActionRequestFlags(const ActionRequestEvent& payload) {
     std::uint16_t flags = 0;
@@ -19,14 +18,15 @@ std::uint16_t BuildActionRequestFlags(const ActionRequestEvent& payload) {
     if (payload.clear_acceleration) {
         flags |= kActionRequestFlagClearAcceleration;
     }
+    if (payload.knockback_on_no_damage) {
+        flags |= kActionRequestFlagKnockbackOnNoDamage;
+    }
     return flags;
 }
 
 bool IsReplicatedTileEvent(const NetEvent& event) {
     return (event.type == NetEventType::TileBroken &&
                std::holds_alternative<TileBrokenEvent>(event.payload)) ||
-           (event.type == NetEventType::RopeTilePlaced &&
-               std::holds_alternative<RopeTilePlacedEvent>(event.payload)) ||
            (event.type == NetEventType::TileChanged &&
                std::holds_alternative<TileChangedEvent>(event.payload));
 }
@@ -84,9 +84,6 @@ IVec2 GetTileEventPos(const NetEvent& event) {
     if (const TileBrokenEvent* const payload = std::get_if<TileBrokenEvent>(&event.payload)) {
         return payload->tile_pos;
     }
-    if (const RopeTilePlacedEvent* const payload = std::get_if<RopeTilePlacedEvent>(&event.payload)) {
-        return payload->tile_pos;
-    }
     if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
         return payload->tile_pos;
     }
@@ -96,9 +93,6 @@ IVec2 GetTileEventPos(const NetEvent& event) {
 Tile GetTileEventTile(const NetEvent& event) {
     if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
         return payload->tile;
-    }
-    if (event.type == NetEventType::RopeTilePlaced) {
-        return Tile::Rope;
     }
     return Tile::Air;
 }
@@ -160,7 +154,7 @@ FluidCellEventEntry MakeFluidCellEventEntry(const NetEvent& event) {
 
 EntitySpawnedEventEntry MakeEntitySpawnedEventEntry(const NetEvent& event) {
     const EntitySpawnedEvent* const payload = std::get_if<EntitySpawnedEvent>(&event.payload);
-    return EntitySpawnedEventEntry{
+    EntitySpawnedEventEntry entry{
         .event_id = event.header.event_id,
         .source_player_id = event.header.source_player_id,
         .stage_instance_id = event.header.stage_instance_id,
@@ -175,17 +169,38 @@ EntitySpawnedEventEntry MakeEntitySpawnedEventEntry(const NetEvent& event) {
         .vel_y = payload != nullptr ? payload->vel.y : 0.0F,
         .acc_x = payload != nullptr ? payload->acc.x : 0.0F,
         .acc_y = payload != nullptr ? payload->acc.y : 0.0F,
+        .size_x = payload != nullptr ? payload->size.x : 0.0F,
+        .size_y = payload != nullptr ? payload->size.y : 0.0F,
         .counter_a = payload != nullptr ? payload->counter_a : 0.0F,
         .counter_b = payload != nullptr ? payload->counter_b : 0.0F,
+        .movement_flags = payload != nullptr ? payload->movement_flags : 0U,
         .use_pressed = static_cast<std::uint8_t>(
             payload != nullptr && payload->use_pressed ? 1 : 0
         ),
         .animate = payload != nullptr ? payload->animate : static_cast<std::uint8_t>(0),
+        .animation_loop = payload != nullptr ? payload->animation_loop : static_cast<std::uint8_t>(1),
+        .animation_finished =
+            payload != nullptr ? payload->animation_finished : static_cast<std::uint8_t>(0),
         .animation_id = payload != nullptr ? payload->animation_id : kInvalidFrameDataId,
         .animation_frame = payload != nullptr ? payload->animation_frame : static_cast<std::uint16_t>(0),
         .animation_time = payload != nullptr ? payload->animation_time : 0.0F,
         .animation_speed = payload != nullptr ? payload->animation_speed : 1.0F,
     };
+    if (payload != nullptr) {
+        entry.effect_count = static_cast<std::uint8_t>(
+            std::min<std::size_t>(payload->effect_count, entry.effects.size())
+        );
+        for (std::size_t i = 0; i < entry.effect_count; ++i) {
+            const EntityReplicatedEffect& effect = payload->effects[i];
+            entry.effects[i] = EntityEffectEntry{
+                .id = static_cast<std::uint16_t>(effect.id),
+                .count = effect.count,
+                .value = effect.value,
+                .frames_remaining = effect.frames_remaining,
+            };
+        }
+    }
+    return entry;
 }
 
 EntityDamageEventEntry MakeEntityDamageEventEntry(const NetEvent& event) {
@@ -223,7 +238,7 @@ EntityDamageEventEntry MakeEntityDamageEventEntry(const NetEvent& event) {
 
 EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
     const EntityStatePatchedEvent* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
-    return EntityStateEventEntry{
+    EntityStateEventEntry entry{
         .event_id = event.header.event_id,
         .source_player_id = event.header.source_player_id,
         .stage_instance_id = event.header.stage_instance_id,
@@ -244,6 +259,8 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .vel_y = payload != nullptr ? payload->vel.y : 0.0F,
         .acc_x = payload != nullptr ? payload->acc.x : 0.0F,
         .acc_y = payload != nullptr ? payload->acc.y : 0.0F,
+        .size_x = payload != nullptr ? payload->size.x : 0.0F,
+        .size_y = payload != nullptr ? payload->size.y : 0.0F,
         .counter_a = payload != nullptr ? payload->counter_a : 0.0F,
         .counter_b = payload != nullptr ? payload->counter_b : 0.0F,
         .counter_c = payload != nullptr ? payload->counter_c : 0.0F,
@@ -259,6 +276,8 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .point_d_x = payload != nullptr ? payload->point_d.x : 0,
         .point_d_y = payload != nullptr ? payload->point_d.y : 0,
         .health = payload != nullptr ? payload->health : 0U,
+        .coyote_time = payload != nullptr ? payload->coyote_time : 0U,
+        .fall_timer = payload != nullptr ? payload->fall_timer : 0U,
         .stun_timer = payload != nullptr ? payload->stun_timer : 0U,
         .projectile_contact_timer = payload != nullptr ? payload->projectile_contact_timer : 0U,
         .rotation = payload != nullptr ? payload->rotation : 0.0F,
@@ -274,6 +293,7 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .wanted = payload != nullptr ? payload->wanted : static_cast<std::uint8_t>(0),
         .attachment_mode = payload != nullptr ? payload->attachment_mode : static_cast<std::uint8_t>(0),
         .draw_layer = payload != nullptr ? payload->draw_layer : static_cast<std::uint8_t>(0),
+        .movement_flags = payload != nullptr ? payload->movement_flags : 0U,
         .runtime_flags = payload != nullptr ? payload->runtime_flags : 0U,
         .buyable_active = payload != nullptr ? payload->buyable_active : static_cast<std::uint8_t>(0),
         .buyable_display_quantity = payload != nullptr ? payload->buyable_display_quantity : 0U,
@@ -290,6 +310,21 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .animation_time = payload != nullptr ? payload->animation_time : 0.0F,
         .animation_speed = payload != nullptr ? payload->animation_speed : 1.0F,
     };
+    if (payload != nullptr) {
+        entry.effect_count = static_cast<std::uint8_t>(
+            std::min<std::size_t>(payload->effect_count, entry.effects.size())
+        );
+        for (std::size_t i = 0; i < entry.effect_count; ++i) {
+            const EntityReplicatedEffect& effect = payload->effects[i];
+            entry.effects[i] = EntityEffectEntry{
+                .id = static_cast<std::uint16_t>(effect.id),
+                .count = effect.count,
+                .value = effect.value,
+                .frames_remaining = effect.frames_remaining,
+            };
+        }
+    }
+    return entry;
 }
 
 EntityCarryEventEntry MakeEntityCarryEventEntry(const NetEvent& event) {
@@ -308,6 +343,7 @@ EntityCarryEventEntry MakeEntityCarryEventEntry(const NetEvent& event) {
         entry.attachment_mode = static_cast<std::uint16_t>(held_payload->attachment_mode);
     } else if (const EntityDroppedEvent* const dropped_payload = std::get_if<EntityDroppedEvent>(&event.payload)) {
         entry.entity_id = dropped_payload->entity_id;
+        entry.holder_id = dropped_payload->dropped_by_id;
         entry.pos_x = dropped_payload->pos.x;
         entry.pos_y = dropped_payload->pos.y;
         entry.vel_x = dropped_payload->vel.x;
@@ -476,13 +512,20 @@ ActionRequestEventEntry MakeActionRequestEventEntry(const NetEvent& event) {
     };
 }
 
-} // namespace
-
 void SendEncodedPacket(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
     const EncodedNetPacket& encoded
 ) {
+    if (transport.capture_outgoing_packets) {
+        UdpPacket packet;
+        packet.endpoint = endpoint;
+        packet.size = std::min(encoded.size, packet.bytes.size());
+        std::copy_n(encoded.bytes.begin(), packet.size, packet.bytes.begin());
+        transport.captured_packets.push_back(packet);
+        return;
+    }
+
     std::string error;
     if (!transport.socket.Send(endpoint, encoded.bytes.data(), encoded.size, &error)) {
         transport.last_error = error;
@@ -508,12 +551,6 @@ NetEvent MakeTileEvent(const TileEventEntry& entry) {
     switch (event.type) {
     case NetEventType::TileBroken:
         event.payload = TileBrokenEvent{
-            .tile_pos = tile_pos,
-            .source_entity_id = kInvalidNetEntityId,
-        };
-        break;
-    case NetEventType::RopeTilePlaced:
-        event.payload = RopeTilePlacedEvent{
             .tile_pos = tile_pos,
             .source_entity_id = kInvalidNetEntityId,
         };
@@ -566,23 +603,40 @@ NetEvent MakeEntitySpawnedEvent(const EntitySpawnedEventEntry& entry) {
         .coordinator_order = entry.coordinator_order,
     };
     event.type = NetEventType::EntitySpawned;
-    event.payload = EntitySpawnedEvent{
+    EntitySpawnedEvent payload{
         .entity_id = entry.entity_id,
         .entity_type = static_cast<EntityType>(entry.entity_type),
         .held_by_id = entry.held_by_id,
         .pos = Vec2::New(entry.pos_x, entry.pos_y),
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
+        .size = Vec2::New(entry.size_x, entry.size_y),
         .owner = NetEntityOwner::Coordinator(),
         .counter_a = entry.counter_a,
         .counter_b = entry.counter_b,
+        .movement_flags = entry.movement_flags,
         .use_pressed = entry.use_pressed != 0,
         .animate = entry.animate,
+        .animation_loop = entry.animation_loop,
+        .animation_finished = entry.animation_finished,
         .animation_id = entry.animation_id,
         .animation_frame = entry.animation_frame,
         .animation_time = entry.animation_time,
         .animation_speed = entry.animation_speed,
     };
+    payload.effect_count = static_cast<std::uint8_t>(
+        std::min<std::size_t>(entry.effect_count, payload.effects.size())
+    );
+    for (std::size_t i = 0; i < payload.effect_count; ++i) {
+        const EntityEffectEntry& effect = entry.effects[i];
+        payload.effects[i] = EntityReplicatedEffect{
+            .id = static_cast<EffectId>(effect.id),
+            .count = effect.count,
+            .value = effect.value,
+            .frames_remaining = effect.frames_remaining,
+        };
+    }
+    event.payload = payload;
     return event;
 }
 
@@ -628,7 +682,7 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .coordinator_order = entry.coordinator_order,
     };
     event.type = NetEventType::EntityStatePatched;
-    event.payload = EntityStatePatchedEvent{
+    EntityStatePatchedEvent payload{
         .entity_id = entry.entity_id,
         .source_entity_id = entry.source_entity_id,
         .entity_a_id = entry.entity_a_id,
@@ -641,6 +695,7 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .pos = Vec2::New(entry.pos_x, entry.pos_y),
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
+        .size = Vec2::New(entry.size_x, entry.size_y),
         .counter_a = entry.counter_a,
         .counter_b = entry.counter_b,
         .counter_c = entry.counter_c,
@@ -652,6 +707,8 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .point_c = IVec2::New(entry.point_c_x, entry.point_c_y),
         .point_d = IVec2::New(entry.point_d_x, entry.point_d_y),
         .health = entry.health,
+        .coyote_time = entry.coyote_time,
+        .fall_timer = entry.fall_timer,
         .stun_timer = entry.stun_timer,
         .projectile_contact_timer = entry.projectile_contact_timer,
         .rotation = entry.rotation,
@@ -666,6 +723,7 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .wanted = entry.wanted,
         .attachment_mode = entry.attachment_mode,
         .draw_layer = entry.draw_layer,
+        .movement_flags = entry.movement_flags,
         .runtime_flags = entry.runtime_flags,
         .buyable_active = entry.buyable_active,
         .buyable_display_quantity = entry.buyable_display_quantity,
@@ -679,6 +737,19 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .animation_time = entry.animation_time,
         .animation_speed = entry.animation_speed,
     };
+    payload.effect_count = static_cast<std::uint8_t>(
+        std::min<std::size_t>(entry.effect_count, payload.effects.size())
+    );
+    for (std::size_t i = 0; i < payload.effect_count; ++i) {
+        const EntityEffectEntry& effect = entry.effects[i];
+        payload.effects[i] = EntityReplicatedEffect{
+            .id = static_cast<EffectId>(effect.id),
+            .count = effect.count,
+            .value = effect.value,
+            .frames_remaining = effect.frames_remaining,
+        };
+    }
+    event.payload = payload;
     return event;
 }
 
@@ -706,6 +777,7 @@ NetEvent MakeEntityCarryEvent(const EntityCarryEventEntry& entry) {
     case NetEventType::EntityDropped:
         event.payload = EntityDroppedEvent{
             .entity_id = entry.entity_id,
+            .dropped_by_id = entry.holder_id,
             .pos = Vec2::New(entry.pos_x, entry.pos_y),
             .vel = Vec2::New(entry.vel_x, entry.vel_y),
         };
@@ -871,241 +943,11 @@ NetEvent MakeActionRequestEvent(const ActionRequestEventEntry& entry) {
         .projectile_contact_duration = entry.projectile_contact_duration,
         .clear_velocity = (entry.flags & kActionRequestFlagClearVelocity) != 0,
         .clear_acceleration = (entry.flags & kActionRequestFlagClearAcceleration) != 0,
+        .knockback_on_no_damage = (entry.flags & kActionRequestFlagKnockbackOnNoDamage) != 0,
         .param_a = entry.param_a,
         .param_b = entry.param_b,
     };
     return event;
-}
-
-void SendTileEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    TileEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedTileEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeTileEvents(packet));
-            packet = TileEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeTileEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeTileEvents(packet));
-    }
-}
-
-void SendFluidCellEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    FluidCellEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedFluidCellEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeFluidCellEvents(packet));
-            packet = FluidCellEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeFluidCellEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeFluidCellEvents(packet));
-    }
-}
-
-void SendEntitySpawnedEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    EntitySpawnedEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedEntitySpawnedEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeEntitySpawnedEvents(packet));
-            packet = EntitySpawnedEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeEntitySpawnedEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeEntitySpawnedEvents(packet));
-    }
-}
-
-void SendEntityDamageEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    EntityDamageEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedEntityDamageEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeEntityDamageEvents(packet));
-            packet = EntityDamageEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeEntityDamageEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeEntityDamageEvents(packet));
-    }
-}
-
-void SendEntityStateEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    EntityStateEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedEntityStateEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeEntityStateEvents(packet));
-            packet = EntityStateEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeEntityStateEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeEntityStateEvents(packet));
-    }
-}
-
-void SendEntityCarryEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    EntityCarryEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedEntityCarryEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeEntityCarryEvents(packet));
-            packet = EntityCarryEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeEntityCarryEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeEntityCarryEvents(packet));
-    }
-}
-
-void SendEntityLifecycleEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    EntityLifecycleEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedEntityLifecycleEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeEntityLifecycleEvents(packet));
-            packet = EntityLifecycleEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeEntityLifecycleEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeEntityLifecycleEvents(packet));
-    }
-}
-
-void SendPlayerStateEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    PlayerStateEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedPlayerStateEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodePlayerStateEvents(packet));
-            packet = PlayerStateEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakePlayerStateEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodePlayerStateEvents(packet));
-    }
-}
-
-void SendRunStateEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    RunStateEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedRunStateEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeRunStateEvents(packet));
-            packet = RunStateEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeRunStateEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeRunStateEvents(packet));
-    }
-}
-
-void SendPresentationCommandEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    PresentationCommandEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedPresentationCommandEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodePresentationCommandEvents(packet));
-            packet = PresentationCommandEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakePresentationCommandEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodePresentationCommandEvents(packet));
-    }
-}
-
-void SendActionRequestEvents(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
-) {
-    ActionRequestEventsPacket packet;
-    for (const NetEvent& event : events) {
-        if (!IsReplicatedActionRequestEvent(event)) {
-            continue;
-        }
-        if (packet.event_count >= packet.events.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeActionRequestEvents(packet));
-            packet = ActionRequestEventsPacket{};
-        }
-        packet.events[packet.event_count++] = MakeActionRequestEventEntry(event);
-    }
-    if (packet.event_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeActionRequestEvents(packet));
-    }
 }
 
 } // namespace splonks::network

@@ -2,7 +2,14 @@
 
 Review date: 2026-05-04
 
-Scope: current uncommitted multiplayer/world-ops work. Goal is to keep singleplayer behavior clean while making permissive co-op sync less ad hoc.
+Scope: current uncommitted multiplayer/world-ops work. Goal is to keep singleplayer behavior clean while making remote co-op sync less ad hoc.
+
+Source of truth: `docs/multiplayer_terraria_parity_checklist.md`.
+
+This file is a working cleanup log for the current large commit. It can contain
+historical notes and slice-by-slice migration details. It is not the definition
+of done for multiplayer. If a status line here conflicts with the Terraria-style
+parity checklist, the parity checklist wins.
 
 ## Checklist
 
@@ -134,6 +141,8 @@ Scope: current large multiplayer commit after durable ordering, coordinator repa
   - Hard rule: peers must not author canonical money, inventory, tool, effect, entity, tile, or run-state deltas. If a peer wants a durable mutation, it sends a generic request and the coordinator validates/applies it.
   - Network code may serialize ids, replicated fields, and compact archetype payloads. It must not encode content rules for specific weapons/items.
   - Done: added generic `ActionRequestAck` packets so peer action requests retry until the coordinator acknowledges the request id instead of being fire-and-forget UDP.
+  - Done: removed peer-authored condition, hang/climb, and animation state from player snapshots. Snapshot packets now carry only movement/input hints; coordinator-owned patches/presentation own semantic state.
+  - Done: coordinator remote player slots now run normal control and entity stepping from replicated input; peer snapshots no longer overwrite coordinator remote-player body state.
   - Finish by deleting or disabling any old peer-authored durable result path that bypasses coordinator apply.
   - Add a short smoke checklist for every broad lane after changes: tile break/drop, box/chest loot, thrown bomb, rope deploy, bat/machete swing, pistol/web/bow shot, pickup/drop/throw, back equip/use, shop buy, exit transition.
 
@@ -233,7 +242,7 @@ Goal: prove every durable mutation has one of these classifications before we ch
 
 - [x] Tile breaking and rope placement have coordinator result lanes.
   - `TileBroken` covers normal break flow, tile triggers, and break-spawn fallout when the coordinator owns the break.
-  - `RopeTilePlaced` covers deployed rope tiles.
+  - Deployed rope tiles use generic `TileChanged`; there is no rope-specific replication command.
 
 - [x] Presentation has a generic cosmetic lane.
   - `PresentationCommand` can transport sound, shake, and scripted visual presentation.
@@ -262,7 +271,7 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - Runtime Udjat pickup now emits this patch instead of relying on the next stage load to converge quest state.
 
 - [x] Classify and extend the main mutable `Entity` repair payload.
-  - `EntityStatePatched` now includes b/c/d links, point b/c/d, counter c/d, threshold a/b, draw layer, and a packed runtime flag mask for render/pickup/impassable/hang/stomp/push/contact capability flags.
+  - `EntityStatePatched` now includes b/c/d links, point b/c/d, counter c/d, threshold a/b, coyote/fall/stun/projectile timers, draw layer, and a packed runtime flag mask for holding/render/pickup/impassable/hang/stomp/push/contact capability flags.
   - Still local/static by classification: callbacks, labels, inside/child vectors, stage-spawn indices, most sound/asset fields, water/light tuning unless promoted later, and transient per-frame flags.
   - Entity state packets now send one state event per packet to stay under the 512-byte packet budget.
 
@@ -271,6 +280,7 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - This can stay permission-gated/test-only, but the path should use the same generic spawn/state/tile/fluid/stage results as gameplay.
   - Guardrail in place: peer-side shared-world debug mutation is disabled instead of being allowed to fork state.
   - Current scope decision: host/admin-only is enough for now. Client-requested admin commands are optional later.
+  - Host debug entity spawn now routes through `world_ops::SpawnEntity`, so admin-spawned entities use the normal generic spawn replication lane.
 
 - [x] Audit mechanics settings and live tuning sliders.
   - Player tuning, fluid settings, water effect values, lighting settings, and other debug sliders can change simulation behavior.
@@ -300,7 +310,14 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - Failure output should be a structured diff, not only a hash mismatch.
   - First slice done: `--check-state-equality-smoke` loads two independent seeded states, compares canonical fingerprints, applies deterministic `world_ops` tile/entity mutations to both, and compares again.
   - The canonical fingerprint intentionally ignores `VID.version`; versions are allocator stale-reference guards, not durable gameplay state, and can legitimately differ across independently loaded states or peers.
-  - Second slice done: `--check-network-protocol-smoke` has a coordinator emit real network result records for tile change, rope tile placement, entity spawn, entity state patch, and entity deactivation; a peer applies them through `ApplyOrderedEvents`; fingerprints are compared after each lane.
+  - Second slice done: `--check-network-protocol-smoke` has a coordinator emit real network result records for tile change, rope tile-as-foreground-tile change, entity spawn, entity state patch, and entity deactivation; a peer applies them through `ApplyOrderedEvents`; fingerprints are compared after each lane.
+  - Third slice done: `--check-network-action-smoke` has a peer emit generic action requests, a coordinator resolve/apply those requests through `world_ops`, a peer apply the coordinator result records, and fingerprints compare after break-tile, collect, interact-chest, pickup/drop/throw, back-slot attach/takeoff, push, damage, hit, and use-tool lanes.
+  - Fourth slice done: `--check-network-packet-smoke` uses captured encoded packets plus the real lobby encode/decode handlers for peer action requests, coordinator result packets, request acks, durable acks, ordered peer apply, interact-chest loot replication, carry/drop/throw replication, back-slot attach/takeoff replication, push/damage/hit replication, and use-tool spawned artifact replication.
+  - Packet smoke found and fixed stale transient replay: coordinator-owned `EntityStatePatched` and `FluidCellPatched` snapshots are now one-shot sends, not durable queued facts. Durable ordered facts still remain acked/retried.
+  - Fifth slice done: `--check-network-frame-smoke` uses fake in-process transports and real `StepSingleTick` calls for a coordinator/peer pair. It covers full-frame use-tool, tile break, collect, chest interact, pickup/throw/drop, push, and idle repair/snapshot convergence.
+  - Frame smoke found and fixed two real replica gaps: entrance now has replica logic so its animation advances on peers, and generic entity spawn/state replication now carries current entity size so animation/cbox changes converge.
+  - Frame smoke now also covers peer-requested exit transition through coordinator-owned stage sync. Because coordinator and peer can apply transition load on different local animation frames, the smoke asserts durable stage metadata and tile/backwall equality instead of requiring a full frame-counter fingerprint match during the transition.
+  - Frame smoke now covers death/respawn while holding another player; this found and fixed stale player state and incomplete entity repair fields after carry links are severed.
 
 - [ ] Document and enforce message-category ownership.
   - Terraria/tModLoader is message-id based at the network boundary, not pure internal gameplay-event driven.
@@ -328,7 +345,12 @@ Goal: prove every durable mutation has one of these classifications before we ch
 - [ ] Add headless scenario harness and canonical state diff before more multiplayer feature work.
   - First local equality smoke exists as `build/splonks-cpp --check-state-equality-smoke`.
   - First protocol apply smoke exists as `build/splonks-cpp --check-network-protocol-smoke`.
-  - Remaining: fake transport or process-driven coordinator/peer scenario that compares fingerprints after queues drain from action requests, not only direct coordinator result records.
+  - First action request smoke exists as `build/splonks-cpp --check-network-action-smoke`; it now covers generic `UseTool`, `InteractEntity`, drop, push, hit/damage, and back-slot actions in addition to tile/entity actions.
+  - First packet-level coordinator/peer smoke exists as `build/splonks-cpp --check-network-packet-smoke`; it now covers encoded `UseTool`, `InteractEntity`, drop, push, hit/damage, and back-slot request/result traffic.
+  - First fake-transport full-frame smoke exists as `build/splonks-cpp --check-network-frame-smoke`; it steps the game loop and compares canonical fingerprints after each scripted action.
+  - First fake-transport stage-transition scenario is covered by `build/splonks-cpp --check-network-frame-smoke`.
+  - First fake-transport death/respawn-while-held scenario is covered by `build/splonks-cpp --check-network-frame-smoke`.
+  - Remaining: expand fake-transport/process-driven scenarios for multi-peer runs, shops, water, bombs/explosions, and fuzzer presets.
 - [x] Replace broad durable-fact capture with canonical `world_ops` helpers.
 - [x] Extend `--check-state-fingerprint-smoke` from single-state stability to two-state equality once stage/init nondeterminism is audited.
   - Added `--check-state-equality-smoke`.

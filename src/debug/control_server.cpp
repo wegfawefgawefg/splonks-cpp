@@ -166,6 +166,9 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
         << ",\"grounded\":" << (entity.grounded ? "true" : "false")
         << ",\"health\":" << entity.health
         << ",\"money\":" << entity.money
+        << ",\"stun_timer\":" << entity.stun_timer
+        << ",\"coyote_time\":" << entity.coyote_time
+        << ",\"fall_timer\":" << entity.fall_timer
         << ",\"pos\":";
     WriteVec2(out, entity.pos);
     out << ",\"vel\":";

@@ -65,32 +65,8 @@ bool PlaceRopeTile(
     const IVec2& tile_pos_raw,
     bool allow_peer_canonical_apply
 ) {
-    if (state.net_session.role == network::NetRole::Peer && !allow_peer_canonical_apply) {
-        return false;
-    }
-
-    const IVec2 tile_pos = state.stage.WrapTileCoord(tile_pos_raw);
-    if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
-        return false;
-    }
-
-    const Tile old_tile = state.stage.GetTile(
-        static_cast<unsigned int>(tile_pos.x),
-        static_cast<unsigned int>(tile_pos.y)
-    );
-    if (old_tile == Tile::Rope) {
-        return false;
-    }
-
-    state.stage.SetTile(tile_pos, Tile::Rope);
-    network::ReplicateRopeTilePlaced(
-        state,
-        GameplayRopeTilePlaced{
-            .source_vid = source_entity.vid,
-            .tile_pos = tile_pos,
-        }
-    );
-    return true;
+    (void)source_entity;
+    return SetForegroundTile(state, tile_pos_raw, Tile::Rope, kTileRotation0, allow_peer_canonical_apply);
 }
 
 void CommitTileBroken(State& state, const IVec2& tile_pos) {

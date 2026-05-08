@@ -14,6 +14,7 @@ namespace network {
 bool StartHostSession(State& state, std::uint16_t port, std::string* status_out);
 bool JoinHostSession(State& state, const std::string& host, std::uint16_t port, std::string* status_out);
 void DisconnectSession(State& state, std::string* status_out);
+bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string* status_out);
 void StepNetworkLobby(State& state, const Graphics& graphics);

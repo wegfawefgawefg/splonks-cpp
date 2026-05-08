@@ -70,8 +70,6 @@ const char* NetEventTypeName(network::NetEventType type) {
         return "FluidCellPatched";
     case network::NetEventType::TileBroken:
         return "TileBroken";
-    case network::NetEventType::RopeTilePlaced:
-        return "RopeTilePlaced";
     case network::NetEventType::PlayerStatePatched:
         return "PlayerStatePatched";
     case network::NetEventType::RunStatePatched:

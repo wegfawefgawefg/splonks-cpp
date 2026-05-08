@@ -24,6 +24,7 @@ constexpr std::uint32_t kReplicatedEntityFlagPushable = 1U << 14U;
 constexpr std::uint32_t kReplicatedEntityFlagCrusherPusher = 1U << 15U;
 constexpr std::uint32_t kReplicatedEntityFlagCanBeHit = 1U << 16U;
 constexpr std::uint32_t kReplicatedEntityFlagCanReceiveProjectileContact = 1U << 17U;
+constexpr std::uint32_t kReplicatedEntityFlagHolding = 1U << 18U;
 
 inline std::uint32_t CaptureReplicatedRuntimeFlags(const Entity& entity) {
     std::uint32_t flags = 0;
@@ -45,6 +46,7 @@ inline std::uint32_t CaptureReplicatedRuntimeFlags(const Entity& entity) {
     flags |= entity.crusher_pusher ? kReplicatedEntityFlagCrusherPusher : 0U;
     flags |= entity.can_be_hit ? kReplicatedEntityFlagCanBeHit : 0U;
     flags |= entity.can_receive_projectile_contact ? kReplicatedEntityFlagCanReceiveProjectileContact : 0U;
+    flags |= entity.holding ? kReplicatedEntityFlagHolding : 0U;
     return flags;
 }
 
@@ -68,6 +70,7 @@ inline void ApplyReplicatedRuntimeFlags(Entity& entity, std::uint32_t flags) {
     entity.can_be_hit = (flags & kReplicatedEntityFlagCanBeHit) != 0U;
     entity.can_receive_projectile_contact =
         (flags & kReplicatedEntityFlagCanReceiveProjectileContact) != 0U;
+    entity.holding = (flags & kReplicatedEntityFlagHolding) != 0U;
 }
 
 } // namespace splonks

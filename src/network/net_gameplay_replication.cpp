@@ -47,6 +47,29 @@ bool IsPlayerBodyDamageBetweenPlayers(const State& state, const GameplayEntityDa
            IsPlayerLikeEntityType(source->type_);
 }
 
+template <typename Payload>
+void CopyEntityEffectsToPayload(const Entity* entity, Payload& payload) {
+    if (entity == nullptr) {
+        return;
+    }
+    const EntityEffects* const effects = entity->effects.get();
+    if (effects == nullptr) {
+        return;
+    }
+    payload.effect_count = static_cast<std::uint8_t>(
+        std::min<std::size_t>(effects->count, payload.effects.size())
+    );
+    for (std::size_t i = 0; i < payload.effect_count; ++i) {
+        const EffectInstance& effect = effects->effects[i];
+        payload.effects[i] = EntityReplicatedEffect{
+            .id = effect.id,
+            .count = effect.count,
+            .value = effect.value,
+            .frames_remaining = effect.frames_remaining,
+        };
+    }
+}
+
 } // namespace
 
 void ReplicateEntitySpawned(State& state, const GameplayEntitySpawned& message) {
@@ -70,23 +93,29 @@ void ReplicateEntitySpawned(State& state, const GameplayEntitySpawned& message) 
     NetEvent event;
     event.header = state.net_session.MakeLocalEventHeader(state.frame);
     event.type = NetEventType::EntitySpawned;
-    event.payload = EntitySpawnedEvent{
+    EntitySpawnedEvent payload{
         .entity_id = net_id,
         .entity_type = message.entity_type,
         .held_by_id = held_by_id,
         .pos = message.pos,
         .vel = message.vel,
         .acc = message.acc,
+        .size = message.size,
         .owner = NetEntityOwner::Coordinator(),
         .counter_a = message.counter_a,
         .counter_b = message.counter_b,
+        .movement_flags = message.movement_flags,
         .use_pressed = message.use_pressed,
         .animate = message.animate,
+        .animation_loop = message.animation_loop,
+        .animation_finished = message.animation_finished,
         .animation_id = message.animation_id,
         .animation_frame = message.animation_frame,
         .animation_time = message.animation_time,
         .animation_speed = message.animation_speed,
     };
+    CopyEntityEffectsToPayload(state.entity_manager.GetEntity(message.entity_vid), payload);
+    event.payload = payload;
     state.net_session.EnqueueNetEvent(event);
 }
 
@@ -141,6 +170,9 @@ void ReplicateEntityDropped(State& state, const GameplayEntityDropped& message) 
     event.type = NetEventType::EntityDropped;
     event.payload = EntityDroppedEvent{
         .entity_id = GetOrAssignReplicatedEntityId(state, message.entity_vid),
+        .dropped_by_id = message.dropped_by_vid.has_value()
+            ? GetOrAssignReplicatedEntityId(state, *message.dropped_by_vid)
+            : kInvalidNetEntityId,
         .pos = message.pos,
         .vel = message.vel,
     };
@@ -220,7 +252,7 @@ void ReplicateEntityStatePatched(
     NetEvent event;
     event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
     event.type = NetEventType::EntityStatePatched;
-    event.payload = EntityStatePatchedEvent{
+    EntityStatePatchedEvent payload{
         .entity_id = entity_id,
         .source_entity_id = GetOrAssignReplicatedEntityId(state, message.source_vid),
         .entity_a_id = GetReplicatedEntityLinkId(state, message.entity_a_vid),
@@ -233,6 +265,7 @@ void ReplicateEntityStatePatched(
         .pos = message.pos,
         .vel = message.vel,
         .acc = message.acc,
+        .size = message.size,
         .counter_a = message.counter_a,
         .counter_b = message.counter_b,
         .counter_c = message.counter_c,
@@ -244,6 +277,8 @@ void ReplicateEntityStatePatched(
         .point_c = message.point_c,
         .point_d = message.point_d,
         .health = message.health,
+        .coyote_time = message.coyote_time,
+        .fall_timer = message.fall_timer,
         .stun_timer = message.stun_timer,
         .projectile_contact_timer = message.projectile_contact_timer,
         .rotation = message.rotation,
@@ -258,17 +293,22 @@ void ReplicateEntityStatePatched(
         .wanted = message.wanted,
         .attachment_mode = message.attachment_mode,
         .draw_layer = message.draw_layer,
+        .movement_flags = message.movement_flags,
         .runtime_flags = message.runtime_flags,
         .buyable_active = message.buyable_active,
         .buyable_display_quantity = message.buyable_display_quantity,
         .buyable_display_icon_animation_id = message.buyable_display_icon_animation_id,
         .buyable_shop_owner_id = GetReplicatedEntityLinkId(state, message.buyable_shop_owner_vid),
         .animate = message.animate,
+        .animation_loop = message.animation_loop,
+        .animation_finished = message.animation_finished,
         .animation_id = message.animation_id,
         .animation_frame = message.animation_frame,
         .animation_time = message.animation_time,
         .animation_speed = message.animation_speed,
     };
+    CopyEntityEffectsToPayload(state.entity_manager.GetEntity(message.entity_vid), payload);
+    event.payload = payload;
     state.net_session.EnqueueNetEvent(event);
 }
 
@@ -359,22 +399,6 @@ void ReplicateRunStatePatched(State& state) {
     state.net_session.EnqueueNetEvent(event);
 }
 
-void ReplicateRopeTilePlaced(State& state, const GameplayRopeTilePlaced& message) {
-    if (state.net_session.role != NetRole::Coordinator) {
-        return;
-    }
-
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::RopeTilePlaced;
-    event.payload = RopeTilePlacedEvent{
-        .tile_pos = message.tile_pos,
-        .source_entity_id = state.net_session.FindNetEntityId(message.source_vid)
-                                .value_or(kInvalidNetEntityId),
-    };
-    state.net_session.EnqueueNetEvent(event);
-}
-
 void ReplicateTileBroken(State& state, const GameplayTileBroken& message) {
     if (state.net_session.role != NetRole::Coordinator) {
         return;
@@ -437,6 +461,7 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
         .projectile_contact_duration = message.projectile_contact_duration,
         .clear_velocity = message.clear_velocity,
         .clear_acceleration = message.clear_acceleration,
+        .knockback_on_no_damage = message.knockback_on_no_damage,
         .param_a = message.param_a,
         .param_b = message.param_b,
     };

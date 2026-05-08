@@ -106,7 +106,6 @@ void StepEntityLogicAsRope(
     constexpr unsigned int kRopeLength = 6;
     if (rope_popped) {
         if (!HasLocalGameplayAuthorityForEntity(state, rope.vid)) {
-            state.entity_manager.SetInactive(entity_idx);
             return;
         }
         rope.health = 0;

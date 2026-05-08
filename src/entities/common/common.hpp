@@ -262,6 +262,7 @@ struct HitOptions {
     std::optional<VID> source_vid = std::nullopt;
     KnockbackSpec knockback;
     bool allow_remote_player_target = true;
+    bool knockback_on_no_damage = false;
 };
 
 bool CanEntityTakeDamageType(const Entity& entity, DamageType damage_type);

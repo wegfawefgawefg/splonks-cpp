@@ -20,7 +20,6 @@ void ReplicatePlayerStatePatched(State& state, const GameplayPlayerStatePatched&
 void ReplicateRunStatePatched(State& state);
 void ReplicateTileChanged(State& state, const GameplayTileChanged& changed);
 void ReplicateTileBroken(State& state, const GameplayTileBroken& broken);
-void ReplicateRopeTilePlaced(State& state, const GameplayRopeTilePlaced& placed);
 void ReplicatePresentationCommand(State& state, const PresentationCommand& command);
 
 } // namespace network

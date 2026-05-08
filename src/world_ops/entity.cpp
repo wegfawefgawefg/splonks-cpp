@@ -4,6 +4,7 @@
 #include "entity/archetype.hpp"
 #include "entity/display_states.hpp"
 #include "entity/replicated_runtime_flags.hpp"
+#include "entities/common/common.hpp"
 #include "network/net_gameplay_replication.hpp"
 #include "state.hpp"
 
@@ -16,6 +17,8 @@ namespace {
 
 struct AnimationPresentationSnapshot {
     std::uint8_t animate = 0;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
     float animation_time = 0.0F;
@@ -25,6 +28,8 @@ struct AnimationPresentationSnapshot {
 AnimationPresentationSnapshot CaptureCurrentPresentation(const Entity& entity) {
     return AnimationPresentationSnapshot{
         .animate = static_cast<std::uint8_t>(entity.frame_data_animator.animate ? 1 : 0),
+        .animation_loop = static_cast<std::uint8_t>(entity.frame_data_animator.loop ? 1 : 0),
+        .animation_finished = static_cast<std::uint8_t>(entity.frame_data_animator.finished ? 1 : 0),
         .animation_id = entity.frame_data_animator.animation_id,
         .animation_frame = static_cast<std::uint16_t>(std::min<std::size_t>(
             entity.frame_data_animator.current_frame,
@@ -52,6 +57,8 @@ AnimationPresentationSnapshot CaptureDamagePresentation(const Entity& entity) {
         });
         if (selection.has_value()) {
             presentation.animate = static_cast<std::uint8_t>(selection->animate ? 1 : 0);
+            presentation.animation_loop = 1;
+            presentation.animation_finished = 0;
             presentation.animation_id = selection->animation_id;
             presentation.animation_frame = static_cast<std::uint16_t>(
                 selection->has_forced_frame
@@ -76,6 +83,10 @@ Entity* SpawnConfiguredEntity(
     const EntitySpawnSetup& setup,
     std::optional<VID> held_by_vid
 ) {
+    if (state.net_session.role == network::NetRole::Peer) {
+        return nullptr;
+    }
+
     const std::optional<VID> vid = state.entity_manager.NewEntity();
     if (!vid.has_value()) {
         return nullptr;
@@ -99,10 +110,14 @@ Entity* SpawnConfiguredEntity(
             .pos = entity->pos,
             .vel = entity->vel,
             .acc = entity->acc,
+            .size = entity->size,
             .counter_a = entity->counter_a,
             .counter_b = entity->counter_b,
+            .movement_flags = entity->movement_flags,
             .use_pressed = entity->use_state.pressed,
             .animate = presentation.animate,
+            .animation_loop = presentation.animation_loop,
+            .animation_finished = presentation.animation_finished,
             .animation_id = presentation.animation_id,
             .animation_frame = presentation.animation_frame,
             .animation_time = presentation.animation_time,
@@ -131,10 +146,16 @@ Entity* SpawnEntity(
 }
 
 bool DeactivateEntity(State& state, VID entity_vid) {
+    if (state.net_session.role == network::NetRole::Peer) {
+        return false;
+    }
+
     Entity* const entity = state.entity_manager.GetEntityMut(entity_vid);
     if (entity == nullptr || !entity->active) {
         return false;
     }
+
+    entities::common::ReleaseEntityFromHolder(*entity, state);
 
     network::ReplicateEntityDeactivated(
         state,
@@ -163,6 +184,7 @@ void PatchEntityState(State& state, const Entity& source, const Entity& entity) 
             .pos = entity.pos,
             .vel = entity.vel,
             .acc = entity.acc,
+            .size = entity.size,
             .counter_a = entity.counter_a,
             .counter_b = entity.counter_b,
             .counter_c = entity.counter_c,
@@ -174,6 +196,8 @@ void PatchEntityState(State& state, const Entity& source, const Entity& entity) 
             .point_c = entity.point_c,
             .point_d = entity.point_d,
             .health = entity.health,
+            .coyote_time = entity.coyote_time,
+            .fall_timer = entity.fall_timer,
             .stun_timer = entity.stun_timer,
             .projectile_contact_timer = entity.projectile_contact_timer,
             .rotation = entity.rotation,
@@ -189,6 +213,7 @@ void PatchEntityState(State& state, const Entity& source, const Entity& entity) 
             .wanted = static_cast<std::uint8_t>(entity.wanted ? 1 : 0),
             .attachment_mode = static_cast<std::uint8_t>(entity.attachment_mode),
             .draw_layer = static_cast<std::uint8_t>(entity.draw_layer),
+            .movement_flags = entity.movement_flags,
             .runtime_flags = CaptureReplicatedRuntimeFlags(entity),
             .buyable_active = static_cast<std::uint8_t>(entity.buyable.active ? 1 : 0),
             .buyable_display_quantity = entity.buyable.display_quantity,
@@ -196,6 +221,8 @@ void PatchEntityState(State& state, const Entity& source, const Entity& entity) 
                 entity.buyable.display_icon_animation_id.value_or(kInvalidFrameDataId),
             .buyable_shop_owner_vid = entity.buyable.shop_owner_vid,
             .animate = presentation.animate,
+            .animation_loop = presentation.animation_loop,
+            .animation_finished = presentation.animation_finished,
             .animation_id = presentation.animation_id,
             .animation_frame = presentation.animation_frame,
             .animation_time = presentation.animation_time,

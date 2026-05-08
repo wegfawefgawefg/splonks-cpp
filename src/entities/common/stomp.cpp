@@ -97,6 +97,13 @@ bool TryApplyStompContactToEntity(
     if (!CanEntityBeStomped(*stomped)) {
         return false;
     }
+    if (state.contact.HasInteractionCooldown(
+            stomper.vid,
+            stomped->vid,
+            InteractionCooldownKind::Harm
+        )) {
+        return false;
+    }
 
     const AABB stomper_aabb = GetContactAabbForEntity(stomper, graphics);
     const AABB stomped_aabb = GetNearestWorldAabb(

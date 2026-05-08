@@ -373,6 +373,7 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
         if (holder != nullptr) {
             holder->vel.x -= aim.direction.x * 0.12F;
             holder->vel.y -= aim.direction.y * 0.12F;
+            world_ops::PatchEntityState(state, weapon, *holder);
         }
         return;
     }
@@ -396,6 +397,7 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
     if (holder != nullptr) {
         holder->vel.x -= aim.direction.x * 0.12F;
         holder->vel.y -= aim.direction.y * 0.12F;
+        world_ops::PatchEntityState(state, weapon, *holder);
     }
 }
 

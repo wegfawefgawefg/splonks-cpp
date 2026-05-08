@@ -4,6 +4,7 @@
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
 #include "state.hpp"
+#include "world_ops.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -68,30 +69,34 @@ void ClearOpenParachuteVisual(Entity& owner, State& state, const Graphics& graph
     if (parachute == nullptr) {
         return;
     }
-    state.entity_manager.SetInactive(parachute->vid.id);
-    state.UpdateSidForEntity(parachute->vid.id, graphics);
+    if (!world_ops::DeactivateEntity(state, parachute->vid)) {
+        return;
+    }
     owner.entity_b.reset();
+    state.UpdateSidForEntity(parachute->vid.id, graphics);
 }
 
 void UpdateOpenParachuteVisual(Entity& owner, State& state, const Graphics& graphics) {
     Entity* parachute = GetOpenParachuteVisual(owner, state);
+    bool spawned_visual = false;
     if (parachute == nullptr) {
-        const std::optional<VID> vid = state.entity_manager.NewEntity();
-        if (!vid.has_value()) {
-            return;
-        }
-        parachute = state.entity_manager.GetEntityMut(*vid);
+        parachute = world_ops::SpawnEntity(
+            state,
+            EntityType::Parachute,
+            [](Entity& spawned) {
+                SetAnimation(spawned, frame_data_ids::OpenParachute);
+                spawned.has_physics = false;
+                spawned.can_collide = false;
+                spawned.can_be_hit = false;
+                spawned.can_be_picked_up = false;
+                spawned.draw_layer = DrawLayer::Background;
+            }
+        );
         if (parachute == nullptr) {
             return;
         }
-        SetEntityAs(*parachute, EntityType::Parachute);
-        SetAnimation(*parachute, frame_data_ids::OpenParachute);
-        parachute->has_physics = false;
-        parachute->can_collide = false;
-        parachute->can_be_hit = false;
-        parachute->can_be_picked_up = false;
-        parachute->draw_layer = DrawLayer::Background;
-        owner.entity_b = *vid;
+        owner.entity_b = parachute->vid;
+        spawned_visual = true;
     }
 
     const Vec2 owner_visual_center =
@@ -100,6 +105,10 @@ void UpdateOpenParachuteVisual(Entity& owner, State& state, const Graphics& grap
     parachute->vel = Vec2::New(0.0F, 0.0F);
     parachute->acc = Vec2::New(0.0F, 0.0F);
     state.UpdateSidForEntity(parachute->vid.id, graphics);
+    world_ops::PatchEntityState(state, *parachute, *parachute);
+    if (spawned_visual) {
+        world_ops::PatchEntityState(state, owner, owner);
+    }
 }
 
 void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics) {

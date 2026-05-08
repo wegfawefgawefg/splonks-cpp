@@ -278,6 +278,17 @@ bool IsLocallyPredictedThrownRemotePlayer(const PlayerSlot& slot, const Entity& 
            entity.projectile_contact_timer > 0;
 }
 
+bool ShouldRunFullPlayerSlotStep(const State& state, const PlayerSlot& slot) {
+    if (!slot.entity_vid.has_value()) {
+        return false;
+    }
+    if (slot.connection_kind == PlayerConnectionKind::Local) {
+        return true;
+    }
+    return state.net_session.role == network::NetRole::Coordinator &&
+           slot.connection_kind == PlayerConnectionKind::Remote;
+}
+
 void StepPredictedThrownRemotePlayer(
     const PlayerSlot& slot,
     State& state,
@@ -387,11 +398,11 @@ void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
     // Step all player-controlled entities first so held items and attached
     // visuals follow the latest player positions.
     for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connection_kind == PlayerConnectionKind::Local && slot.entity_vid.has_value()) {
+        if (ShouldRunFullPlayerSlotStep(state, slot)) {
+            ApplyCoordinatorRemoteAttachmentUseState(slot, state);
             TryReleaseHeldPlayerSlotFromJump(slot, state);
             StepOneEntity(slot.entity_vid->id, state, audio, graphics, dt);
         } else if (slot.connection_kind == PlayerConnectionKind::Remote) {
-            ApplyCoordinatorRemoteAttachmentUseState(slot, state);
             StepPredictedThrownRemotePlayer(slot, state, audio, graphics, dt);
         }
     }

@@ -22,7 +22,9 @@ namespace {
 void ApplyAttachmentUseAction(
     State& state,
     const GameplayActionRequested& request,
-    AttachmentMode source
+    AttachmentMode source,
+    Graphics& graphics,
+    Audio& audio
 ) {
     if (!request.source_vid.has_value() || !request.target_vid.has_value()) {
         return;
@@ -60,6 +62,15 @@ void ApplyAttachmentUseAction(
         UseEntity(*item, holder->vid, source);
     } else {
         StopUsingEntity(*item);
+    }
+    if (item->on_use != nullptr) {
+        item->on_use(item->vid.id, state, graphics, audio);
+    }
+    if (holder->active) {
+        PatchEntityState(state, *holder, *holder);
+    }
+    if (item->active) {
+        PatchEntityState(state, *item, *item);
     }
 }
 
@@ -246,10 +257,10 @@ void ProcessPendingGameplayActions(State& state, Graphics& graphics, Audio& audi
             }
             break;
         case GameplayActionKind::UseHeldEntity:
-            ApplyAttachmentUseAction(state, action, AttachmentMode::Held);
+            ApplyAttachmentUseAction(state, action, AttachmentMode::Held, graphics, audio);
             break;
         case GameplayActionKind::UseBackEntity:
-            ApplyAttachmentUseAction(state, action, AttachmentMode::Back);
+            ApplyAttachmentUseAction(state, action, AttachmentMode::Back, graphics, audio);
             break;
         case GameplayActionKind::PutHeldEntityOnBack:
             if (action.source_vid.has_value() && action.target_vid.has_value()) {
@@ -328,6 +339,8 @@ void ProcessPendingGameplayActions(State& state, Graphics& graphics, Audio& audi
                                 action.projectile_contact_damage_amount,
                             .projectile_contact_duration = action.projectile_contact_duration,
                         },
+                        .allow_remote_player_target = true,
+                        .knockback_on_no_damage = action.knockback_on_no_damage,
                     }
                 );
             }

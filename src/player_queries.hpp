@@ -37,6 +37,32 @@ inline std::optional<VID> FindFirstConnectedPlayerVid(const State& state) {
     return std::nullopt;
 }
 
+inline bool HasAnyConnectedPlayerEntity(const State& state) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player != nullptr && player->active) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline bool HasAnyConnectedLivingPlayer(const State& state) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
+            continue;
+        }
+        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        if (player != nullptr && player->active && player->condition != EntityCondition::Dead) {
+            return true;
+        }
+    }
+    return false;
+}
+
 inline std::optional<VID> FindNearestPlayerVid(
     const State& state,
     Vec2 world_pos,

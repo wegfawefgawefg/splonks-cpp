@@ -2,9 +2,12 @@
 
 #include "graphics.hpp"
 #include "network/net_entity_links.hpp"
+#include "network/net_lobby.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_progression.hpp"
 #include "state.hpp"
+
+#include <algorithm>
 
 namespace splonks::network {
 
@@ -40,6 +43,15 @@ void SendEncodedPacket(
     const NetEndpoint& endpoint,
     const EncodedNetPacket& encoded
 ) {
+    if (transport.capture_outgoing_packets) {
+        UdpPacket packet;
+        packet.endpoint = endpoint;
+        packet.size = std::min(encoded.size, packet.bytes.size());
+        std::copy_n(encoded.bytes.begin(), packet.size, packet.bytes.begin());
+        transport.captured_packets.push_back(packet);
+        return;
+    }
+
     std::string error;
     if (!transport.socket.Send(endpoint, encoded.bytes.data(), encoded.size, &error)) {
         transport.last_error = error;
@@ -183,6 +195,8 @@ void ApplyStageSyncNow(
         transport.last_error = "Stage sync failed: could not load " + quest_stage_id + ".";
         return;
     }
+    std::string status;
+    (void)ReviveNetworkPlayersAtEntrance(state, graphics, &status);
     RegisterStageEntityLinks(state);
 
     state.pending_stage_transition.reset();

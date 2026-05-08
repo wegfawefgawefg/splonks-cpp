@@ -20,6 +20,7 @@ namespace splonks::network {
 
 constexpr std::size_t kPlayerStatePatchedToolSlotCount = 2;
 constexpr std::size_t kPlayerStatePatchedEffectCount = 12;
+constexpr std::size_t kEntityReplicatedEffectCount = 12;
 
 enum class NetTileLayer : std::uint8_t {
     Foreground,
@@ -49,7 +50,6 @@ enum class NetEventType : std::uint16_t {
 
     TileChanged,
     TileBroken,
-    RopeTilePlaced,
     FluidCellPatched,
 
     PlayerStatePatched,
@@ -83,6 +83,13 @@ struct NetEventHeader {
     std::uint64_t coordinator_order = 0;
 };
 
+struct EntityReplicatedEffect {
+    EffectId id = EffectId::None;
+    std::int32_t count = 0;
+    float value = 0.0F;
+    std::uint32_t frames_remaining = 0;
+};
+
 struct EntitySpawnedEvent {
     NetEntityId entity_id = kInvalidNetEntityId;
     EntityType entity_type = EntityType::None;
@@ -90,11 +97,17 @@ struct EntitySpawnedEvent {
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    Vec2 size = Vec2::New(0.0F, 0.0F);
     NetEntityOwner owner = NetEntityOwner::Coordinator();
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    std::uint32_t movement_flags = 0;
+    std::uint8_t effect_count = 0;
+    std::array<EntityReplicatedEffect, kEntityReplicatedEffectCount> effects{};
     bool use_pressed = false;
     std::uint8_t animate = 0;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
     float animation_time = 0.0F;
@@ -113,6 +126,7 @@ struct EntityHeldEvent {
 
 struct EntityDroppedEvent {
     NetEntityId entity_id = kInvalidNetEntityId;
+    NetEntityId dropped_by_id = kInvalidNetEntityId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
 };
@@ -157,6 +171,7 @@ struct EntityStatePatchedEvent {
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    Vec2 size = Vec2::New(0.0F, 0.0F);
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     float counter_c = 0.0F;
@@ -168,6 +183,8 @@ struct EntityStatePatchedEvent {
     IVec2 point_c = IVec2::New(0, 0);
     IVec2 point_d = IVec2::New(0, 0);
     std::uint32_t health = 0;
+    std::uint32_t coyote_time = 0;
+    std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
     float rotation = 0.0F;
@@ -182,7 +199,10 @@ struct EntityStatePatchedEvent {
     std::uint8_t wanted = 0;
     std::uint8_t attachment_mode = 0;
     std::uint8_t draw_layer = 0;
+    std::uint32_t movement_flags = 0;
     std::uint32_t runtime_flags = 0;
+    std::uint8_t effect_count = 0;
+    std::array<EntityReplicatedEffect, kEntityReplicatedEffectCount> effects{};
     std::uint8_t buyable_active = 0;
     std::uint32_t buyable_display_quantity = 0;
     FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;
@@ -204,11 +224,6 @@ struct TileChangedEvent {
 };
 
 struct TileBrokenEvent {
-    IVec2 tile_pos = IVec2::New(0, 0);
-    NetEntityId source_entity_id = kInvalidNetEntityId;
-};
-
-struct RopeTilePlacedEvent {
     IVec2 tile_pos = IVec2::New(0, 0);
     NetEntityId source_entity_id = kInvalidNetEntityId;
 };
@@ -297,6 +312,7 @@ struct ActionRequestEvent {
     std::uint32_t projectile_contact_duration = 0;
     bool clear_velocity = true;
     bool clear_acceleration = true;
+    bool knockback_on_no_damage = false;
     std::uint32_t param_a = 0;
     std::uint32_t param_b = 0;
 };
@@ -315,7 +331,6 @@ struct NetEvent {
         EntityStatePatchedEvent,
         TileChangedEvent,
         TileBrokenEvent,
-        RopeTilePlacedEvent,
         FluidCellPatchedEvent,
         PresentationCommandEvent,
         PlayerStatePatchedEvent,

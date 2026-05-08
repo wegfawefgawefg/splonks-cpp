@@ -5,6 +5,14 @@ across high-latency links. Remote players, enemies, pickups, particles, and even
 some world changes may visibly correct or arrive late. Local movement and local
 interaction should not wait on the network.
 
+Authoritative implementation checklist:
+`docs/multiplayer_terraria_parity_checklist.md`.
+
+This file records architecture rationale and protocol shape. If this file's
+historical notes conflict with the checklist, the checklist wins. Do not call the
+networking model complete until the gates in that checklist are checked and
+covered by tests.
+
 ## References
 
 - GGPO rollback model: https://www.ggpo.net/
@@ -275,6 +283,22 @@ Terraria-style protocol shape:
 Splonks should mirror that shape, not the exact names: broad lanes plus compact
 content payload hooks when broad fields are insufficient.
 
+### Remaining Terraria/tModLoader Divergence Removal Plan
+
+The active divergence checklist lives in
+`docs/multiplayer_terraria_parity_checklist.md`. Keep this section as a pointer
+only so we do not maintain two competing definitions of done.
+
+The high-level blocker categories are:
+
+- transport reliability under loss/reorder/duplicates;
+- complete current-world bootstrap/resync for late join and rejoin;
+- exhaustive player body repair and scenario tests;
+- broad protocol lanes instead of item-specific packet families;
+- explicit mutation classification for every durable gameplay path;
+- debug/admin mutation routing or host-only blocking;
+- headless/fake-transport proof for the full demo checklist.
+
 ### Fluid Networking Reference
 
 Terraria has water/lava/honey/shimmer as liquid data stored on tiles. tModLoader
@@ -351,6 +375,14 @@ consistently:
   entity every frame from that replicated input. Generic `UseHeldEntity` and
   `UseBackEntity` requests remain edge/ack requests for quick taps and loss
   recovery.
+- Peer player snapshots are input packets on the coordinator, not body-authority
+  packets. The coordinator simulates remote player control, physics, fall
+  damage, stun timers, attachments, and collisions from replicated inputs; it
+  must not accept peer snapshot position/velocity as canonical body state.
+- Coordinator player snapshots sent to peers are canonical body repair packets
+  for every player slot, including the receiving peer's own local player. Peers
+  may predict their local player, but they must reconcile to the coordinator
+  body state instead of letting prediction drift forever.
 
 ## Request / Apply API Shape
 
@@ -414,7 +446,7 @@ Important rules:
 Current code paths that can fork multiplayer state if they run canonically on a
 peer:
 
-- Tile mutation: `BreakStageTiles*`, tile break drops, rope tile placement, and
+- Tile mutation: `BreakStageTiles*`, tile break drops, rope tile changes, and
   tile trigger side effects.
 - Entity spawn: tool spawns in `entities/common/throw.cpp`, trap/projectile
   spawns, pot/box/chest drops, altar rewards, skeleton skulls, cobra/web shots,
@@ -780,7 +812,7 @@ World:
 
 - `TileChanged`
 - `TileBroken`
-- `RopeTilePlaced`
+- Deployed ropes are represented as normal `TileChanged` results.
 
 Inventory/economy/quest:
 
@@ -940,7 +972,7 @@ Remaining durable reliability requirements:
 
 Durable event classes that must use ack/retry:
 
-- Tile breaks/changes and rope tile placement.
+- Tile breaks/changes, including deployed rope tiles.
 - Tool-spawned entities such as grenades, arrows, ropes, bombs.
 - Entity damage/death and persistent entity deactivation.
 - Pickup/drop/throw/held/back ownership changes.
@@ -978,8 +1010,11 @@ players still look like packet-snapped puppets.
 Remote player movement path:
 
 - Add interpolation state keyed by `PlayerId`.
-- On snapshot receive, store target position, velocity, facing, condition, and
-  grounded state instead of writing entity position directly from the packet.
+- On snapshot receive, store target position, velocity, facing, grounded state,
+  and input flags instead of writing entity position directly from the packet.
+- Player snapshots must not carry authoritative gameplay semantics such as
+  condition, stun/death state, hang/climb state, or animation ids. Those come
+  from coordinator-owned state patches/presentation, not peer motion packets.
 - Each frame, move remote player entities toward their newest target after local
   simulation.
 - Snap only when the correction exceeds a debug-tunable distance threshold.
@@ -1156,9 +1191,10 @@ This is useful as a stepping stone, but it should not define the remote model.
     entity moves toward that target after normal local simulation.
   - `Debug: Network` exposes snapshot interval, interpolation strength, snap
     distance, and the current remote target list.
-- [x] Added remote player animation state to UDP snapshots.
-  - Player snapshots now carry animation id, frame, time, speed, and animate
-    flag so remote player bodies do not freeze in stale local animation states.
+- [x] Removed peer-authored semantic state from UDP player snapshots.
+  - Player snapshots now carry only movement/input hints. Condition, stun/death,
+    hang/climb state, and animation state are intentionally excluded so peer
+    packets cannot overwrite coordinator-authored gameplay results.
 - [x] Added first UDP request/result world mutation: `BreakTile` -> `TileBroken`.
   - Peer-side stage tile breaking emits generic `ActionRequest{BreakTile}`
     instead of mutating canonical tiles or rolling loot locally.

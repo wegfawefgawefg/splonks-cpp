@@ -18,6 +18,8 @@ namespace splonks::entities::common {
 
 namespace {
 
+constexpr std::uint32_t kForcedPlayerDropHarmCooldownFrames = 12;
+
 void ApplyHeldState(Entity& entity) {
     entity.thrown_by.reset();
     entity.thrown_immunity_timer = 0;
@@ -198,6 +200,8 @@ void SyncHeldAttachmentForHolder(
 
     holding->has_physics = false;
     holding->can_collide = false;
+    holding->vel = Vec2::New(0.0F, 0.0F);
+    holding->acc = Vec2::New(0.0F, 0.0F);
     holding->held_by_vid = holder.vid;
     holding->attachment_mode = AttachmentMode::Held;
     ApplyHeldState(*holding);
@@ -237,6 +241,8 @@ void SyncBackAttachmentForHolder(
 
     back_item->has_physics = false;
     back_item->can_collide = false;
+    back_item->vel = Vec2::New(0.0F, 0.0F);
+    back_item->acc = Vec2::New(0.0F, 0.0F);
     back_item->facing = holder.facing;
     back_item->held_by_vid = holder.vid;
     back_item->attachment_mode = AttachmentMode::Back;
@@ -337,15 +343,22 @@ void AttachEntityAsHeld(Entity& holder, Entity& held) {
 
 
 void ReleaseEntityFromHolder(Entity& entity, State& state) {
+    std::vector<VID> changed_holders;
     if (entity.held_by_vid.has_value()) {
         if (Entity* const holder = state.entity_manager.GetEntityMut(*entity.held_by_vid)) {
+            bool holder_changed = false;
             if (holder->holding_vid.has_value() && *holder->holding_vid == entity.vid) {
                 holder->holding_vid.reset();
                 holder->holding = false;
                 holder->holding_timer = kDefaultHoldingTimer;
+                holder_changed = true;
             }
             if (holder->back_vid.has_value() && *holder->back_vid == entity.vid) {
                 holder->back_vid.reset();
+                holder_changed = true;
+            }
+            if (holder_changed) {
+                TrackChangedEntity(changed_holders, holder->vid);
             }
         }
     }
@@ -354,15 +367,21 @@ void ReleaseEntityFromHolder(Entity& entity, State& state) {
         if (!candidate_holder.active || candidate_holder.vid == entity.vid) {
             continue;
         }
+        bool holder_changed = false;
         if (candidate_holder.holding_vid.has_value() &&
             *candidate_holder.holding_vid == entity.vid) {
             candidate_holder.holding_vid.reset();
             candidate_holder.holding = false;
             candidate_holder.holding_timer = kDefaultHoldingTimer;
+            holder_changed = true;
         }
         if (candidate_holder.back_vid.has_value() &&
             *candidate_holder.back_vid == entity.vid) {
             candidate_holder.back_vid.reset();
+            holder_changed = true;
+        }
+        if (holder_changed) {
+            TrackChangedEntity(changed_holders, candidate_holder.vid);
         }
     }
 
@@ -374,6 +393,12 @@ void ReleaseEntityFromHolder(Entity& entity, State& state) {
     RestoreEntityDrawLayerFromArchetype(entity);
     entity.grounded = false;
     RemoveEffect(entity, EffectId::NoGravityUntilContact);
+
+    for (const VID& holder_vid : changed_holders) {
+        if (Entity* const holder = state.entity_manager.GetEntityMut(holder_vid)) {
+            world_ops::PatchEntityState(state, entity, *holder);
+        }
+    }
 }
 
 void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state) {
@@ -467,6 +492,7 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     entity.holding_vid.reset();
     entity.holding = false;
     entity.holding_timer = kDefaultHoldingTimer;
+    world_ops::PatchEntityState(state, entity, entity);
     if (held == nullptr) {
         return;
     }
@@ -476,6 +502,20 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
         ReleaseEntityFromHolder(*held, state);
         held->vel = Vec2::New(0.0F, 0.0F);
         held->acc = Vec2::New(0.0F, 0.0F);
+        state.contact.AddInteractionCooldown(
+            entity.vid,
+            held->vid,
+            InteractionCooldownKind::Harm,
+            state.stage_frame,
+            kForcedPlayerDropHarmCooldownFrames
+        );
+        state.contact.AddInteractionCooldown(
+            held->vid,
+            entity.vid,
+            InteractionCooldownKind::Harm,
+            state.stage_frame,
+            kForcedPlayerDropHarmCooldownFrames
+        );
         world_ops::MarkEntityDropped(state, *held, dropped_by_vid);
         return;
     }

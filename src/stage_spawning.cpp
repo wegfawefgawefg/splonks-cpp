@@ -136,7 +136,6 @@ StageCarryover CaptureStageCarryover(const State& state) {
     StageCarryover carryover;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected ||
-            slot.connection_kind != PlayerConnectionKind::Local ||
             !slot.entity_vid.has_value()) {
             continue;
         }
@@ -247,9 +246,7 @@ void PlacePlayerAtPosition(State& state, const Vec2& pos) {
 
 void SnapAttachedItemsToPlayer(State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected ||
-            slot.connection_kind != PlayerConnectionKind::Local ||
-            !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.entity_vid.has_value()) {
             continue;
         }
 

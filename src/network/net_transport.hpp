@@ -1,5 +1,6 @@
 #pragma once
 
+#include "effects/effect_id.hpp"
 #include "network/net_ids.hpp"
 #include "frame_data_id.hpp"
 
@@ -11,6 +12,8 @@
 #include <vector>
 
 namespace splonks::network {
+
+constexpr std::size_t kReplicatedEntityStateSignatureEffectCount = 12;
 
 struct NetEndpoint {
     std::string address = "127.0.0.1";
@@ -60,15 +63,16 @@ struct NetRemotePlayerTarget {
     float pos_y = 0.0F;
     float vel_x = 0.0F;
     float vel_y = 0.0F;
+    std::uint32_t health = 0;
+    std::uint32_t coyote_time = 0;
+    std::uint32_t fall_timer = 0;
+    std::uint32_t stun_timer = 0;
+    std::uint32_t projectile_contact_timer = 0;
     std::uint8_t facing = 0;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
-    std::uint8_t animate = 0;
-    FrameDataId animation_id = kInvalidFrameDataId;
-    std::uint16_t animation_frame = 0;
-    std::uint16_t animation_flags = 0;
-    float animation_time = 0.0F;
-    float animation_speed = 1.0F;
+    std::uint8_t has_physics = 1;
+    std::uint8_t can_collide = 1;
     std::uint32_t sequence = 0;
     std::uint64_t interpolation_start_frame = 0;
     std::uint64_t last_received_frame = 0;
@@ -101,6 +105,8 @@ struct NetReplicatedEntityStateSignature {
     float rotation = 0.0F;
     float animation_speed = 1.0F;
     std::uint32_t health = 0;
+    std::uint32_t coyote_time = 0;
+    std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
     std::uint32_t buyable_display_quantity = 0;
@@ -113,7 +119,13 @@ struct NetReplicatedEntityStateSignature {
     std::int32_t point_c_y = 0;
     std::int32_t point_d_x = 0;
     std::int32_t point_d_y = 0;
+    std::uint32_t movement_flags = 0;
     std::uint32_t runtime_flags = 0;
+    std::uint8_t effect_count = 0;
+    std::array<EffectId, kReplicatedEntityStateSignatureEffectCount> effect_ids{};
+    std::array<std::int32_t, kReplicatedEntityStateSignatureEffectCount> effect_counts{};
+    std::array<float, kReplicatedEntityStateSignatureEffectCount> effect_values{};
+    std::array<std::uint32_t, kReplicatedEntityStateSignatureEffectCount> effect_frames{};
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
     std::uint8_t active = 0;
@@ -174,6 +186,8 @@ struct NetTransportRuntime {
     std::uint32_t remote_interpolation_delay_frames = 3;
     float remote_snap_distance = 32.0F;
     std::string last_error;
+    bool capture_outgoing_packets = false;
+    std::vector<UdpPacket> captured_packets;
 
     static NetTransportRuntime New();
 };

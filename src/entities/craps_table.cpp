@@ -79,6 +79,21 @@ void UnlockPrize(Entity& prize) {
     prize.acc = Vec2::New(0.0F, 0.0F);
 }
 
+Entity* SpawnWonPrize(Entity& table, const Entity& display_prize, State& state) {
+    Entity* const won_prize = world_ops::SpawnEntity(
+        state,
+        display_prize.type_,
+        [&](Entity& entity) {
+            ClearEntityBuyableState(entity);
+            entity.SetCenter(table.GetCenter() + Vec2::New(0.0F, -18.0F));
+            entity.vel = Vec2::New(0.0F, -2.25F);
+            entity.acc = Vec2::New(0.0F, 0.0F);
+            entity.grounded = false;
+        }
+    );
+    return won_prize;
+}
+
 void PrepareCrapsDice(Entity& dice) {
     dice.can_be_picked_up = false;
     dice.can_apply_projectile_contact = false;
@@ -120,9 +135,14 @@ void PayCrapsResult(
     const int roll = std::clamp(static_cast<int>(std::round(dice.counter_a)), 2, 12);
     if (roll == 7) {
         if (prize != nullptr && prize->active) {
-            UnlockPrize(*prize);
-            table.counter_d = 2.0F;
-            (void)PlayEntityCenterSoundEmitter(state, *prize, audio_asset_ids::Present);
+            Entity* const won_prize = SpawnWonPrize(table, *prize, state);
+            if (won_prize != nullptr) {
+                (void)PlayEntityCenterSoundEmitter(state, *won_prize, audio_asset_ids::Present);
+            } else {
+                UnlockPrize(*prize);
+                table.counter_d = 2.0F;
+                (void)PlayEntityCenterSoundEmitter(state, *prize, audio_asset_ids::Present);
+            }
         }
         table.counter_c = 2.0F;
     } else if (roll > 7) {

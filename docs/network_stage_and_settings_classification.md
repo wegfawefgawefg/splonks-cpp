@@ -4,6 +4,10 @@ Date: 2026-05-07
 
 Purpose: define what is durable shared state, what is stage-load metadata, what is host/admin-only debug mutation, and what is local presentation. This keeps multiplayer tests from comparing the wrong lanes and prevents dev tuning controls from becoming accidental gameplay protocol.
 
+This document is a classification reference for
+`docs/multiplayer_terraria_parity_checklist.md`; it is not a separate
+completion checklist.
+
 ## Stage State
 
 ### Stage-Load Metadata
@@ -26,7 +30,7 @@ These can change after load and must be coordinator-owned when multiplayer is ac
 - foreground tile changes and rotations
 - backwall tile changes
 - tile breaking and embedded treasure consumption
-- rope tile placement
+- rope placement as normal foreground tile changes
 - fluid cell state: tile type, amount, velocity, gravity override, gravity strength, temporary gravity if gameplay-relevant
 - stage border/wrap/rotation transforms if used during gameplay
 - runtime stage lights if they affect gameplay visibility or are intended to be shared
@@ -36,7 +40,7 @@ Existing lanes:
 
 - `TileBroken`
 - `TileChanged`
-- `RopeTilePlaced`
+- Rope placement uses generic `TileChanged` for deployed rope tiles.
 - `FluidCellPatched`
 - stage transition/load sync
 
@@ -101,4 +105,3 @@ Canonical state fingerprints should ignore:
 - net session queues/logs
 - particles/audio emitters
 - tile shake/camera/debug UI/local presentation
-

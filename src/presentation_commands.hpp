@@ -24,6 +24,7 @@ enum class ScriptedPresentationEffectId : std::uint16_t {
     None,
     TeleportSplit,
     TeleportMerge,
+    JetpackSmoke,
 };
 
 struct PresentationCommand {

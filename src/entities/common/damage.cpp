@@ -13,10 +13,10 @@ void EnterStunnedState(Entity& entity, State& state) {
     if (entity.held_by_vid.has_value() || entity.attachment_mode != AttachmentMode::None) {
         ReleaseEntityFromHolder(entity, state);
     }
-    DropHeldItemFromEntity(entity, state);
     entity.condition = EntityCondition::Stunned;
     TrySetAnimation(entity, EntityDisplayState::Stunned);
     entity.stun_timer = kDefaultStunTimer;
+    DropHeldItemFromEntity(entity, state);
 }
 
 std::optional<AudioAssetId> GetCrushAudioAssetId(EntityType type_) {
@@ -43,6 +43,85 @@ bool IsRemotePlayerEntity(const State& state, const Entity& entity) {
     const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity.vid);
     return player_slot != nullptr &&
            player_slot->connection_kind == PlayerConnectionKind::Remote;
+}
+
+bool ShouldPeerRequestDamageInsteadOfApplying(
+    const State& state,
+    const Entity& target,
+    const DamageOptions& options
+) {
+    if (state.net_session.role != network::NetRole::Peer) {
+        return false;
+    }
+    if (options.source_vid.has_value()) {
+        return HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid);
+    }
+    return HasLocalGameplayAuthorityForEntity(state, target.vid);
+}
+
+bool ShouldPeerRequestHitInsteadOfApplying(
+    const State& state,
+    const Entity& target,
+    const HitOptions& options
+) {
+    if (state.net_session.role != network::NetRole::Peer) {
+        return false;
+    }
+    if (options.source_vid.has_value()) {
+        return HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid);
+    }
+    return HasLocalGameplayAuthorityForEntity(state, target.vid);
+}
+
+DamageResult RequestCoordinatorDamage(
+    State& state,
+    const Entity& target,
+    DamageType damage_type,
+    unsigned int amount,
+    std::optional<VID> source_vid
+) {
+    world_ops::RequestGameplayAction(
+        state,
+        GameplayActionRequested{
+            .kind = GameplayActionKind::DamageEntity,
+            .source_vid = source_vid,
+            .target_vid = target.vid,
+            .world_pos = target.GetCenter(),
+            .damage_type = damage_type,
+            .amount = amount,
+        }
+    );
+    return DamageResult::Requested;
+}
+
+DamageResult RequestCoordinatorHit(
+    State& state,
+    const Entity& target,
+    DamageType damage_type,
+    unsigned int amount,
+    const HitOptions& options
+) {
+    world_ops::RequestGameplayAction(
+        state,
+        GameplayActionRequested{
+            .kind = GameplayActionKind::HitEntity,
+            .source_vid = options.source_vid,
+            .target_vid = target.vid,
+            .world_pos = target.GetCenter(),
+            .velocity = options.knockback.velocity,
+            .damage_type = damage_type,
+            .projectile_contact_damage_type = options.knockback.projectile_contact_damage_type,
+            .amount = amount,
+            .projectile_contact_damage_amount =
+                options.knockback.projectile_contact_damage_amount,
+            .thrown_immunity_timer = options.knockback.thrown_immunity_timer,
+            .projectile_contact_duration = options.knockback.projectile_contact_duration,
+            .clear_velocity = options.knockback.clear_velocity,
+            .clear_acceleration = options.knockback.clear_acceleration,
+            .knockback_on_no_damage = options.knockback_on_no_damage,
+        }
+    );
+    return DamageResult::Requested;
 }
 
 void OnDeath(std::size_t entity_idx, State& state, Audio& audio) {
@@ -167,6 +246,10 @@ DamageResult TryDamageEntity(
     DamageOptions options
 ) {
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (ShouldPeerRequestDamageInsteadOfApplying(state, entity, options)) {
+        return RequestCoordinatorDamage(state, entity, damage_type, amount, options.source_vid);
+    }
+
     const bool coordinator_can_author_remote_player_target =
         state.net_session.role == network::NetRole::Coordinator &&
         options.allow_remote_player_target;
@@ -192,24 +275,7 @@ DamageResult TryDamageEntity(
     if (IsRemotePlayerEntity(state, entity) && !options.allow_remote_player_target) {
         return DamageResult::None;
     }
-    const bool should_request_coordinator_damage =
-        state.net_session.role == network::NetRole::Peer &&
-        !options.source_vid.has_value() &&
-        HasLocalGameplayAuthorityForEntity(state, entity.vid);
     const auto finish = [&](DamageResult result) {
-        if (should_request_coordinator_damage &&
-            (result == DamageResult::Hurt || result == DamageResult::Died)) {
-            world_ops::RequestGameplayAction(
-                state,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DamageEntity,
-                    .target_vid = entity.vid,
-                    .world_pos = entity.GetCenter(),
-                    .damage_type = damage_type,
-                    .amount = amount,
-                }
-            );
-        }
         if (!options.defer_replication &&
             (result == DamageResult::Hurt || result == DamageResult::Died)) {
             world_ops::CommitEntityDamaged(state, entity, damage_type, amount, options.source_vid);
@@ -310,6 +376,10 @@ DamageResult TryHitEntity(
     }
 
     Entity& entity = state.entity_manager.entities[entity_idx];
+    if (ShouldPeerRequestHitInsteadOfApplying(state, entity, options)) {
+        return RequestCoordinatorHit(state, entity, damage_type, amount, options);
+    }
+
     const bool coordinator_can_author_remote_player_target =
         state.net_session.role == network::NetRole::Coordinator &&
         options.allow_remote_player_target;
@@ -334,6 +404,7 @@ DamageResult TryHitEntity(
                     .projectile_contact_duration = options.knockback.projectile_contact_duration,
                     .clear_velocity = options.knockback.clear_velocity,
                     .clear_acceleration = options.knockback.clear_acceleration,
+                    .knockback_on_no_damage = options.knockback_on_no_damage,
                 }
             );
             return DamageResult::Requested;
@@ -341,7 +412,6 @@ DamageResult TryHitEntity(
         return DamageResult::None;
     }
 
-    ApplyKnockback(entity, options.knockback);
     const DamageResult damage_result = TryDamageEntity(
         entity_idx,
         state,
@@ -356,8 +426,14 @@ DamageResult TryHitEntity(
     );
 
     if (damage_result == DamageResult::Hurt || damage_result == DamageResult::Died) {
+        if (entity.active) {
+            ApplyKnockback(entity, options.knockback);
+        }
         world_ops::CommitEntityDamaged(state, entity, damage_type, amount, options.source_vid);
     } else if (damage_result == DamageResult::None && options.source_vid.has_value()) {
+        if (options.knockback_on_no_damage && entity.active) {
+            ApplyKnockback(entity, options.knockback);
+        }
         if (const Entity* const source = state.entity_manager.GetEntity(*options.source_vid)) {
             world_ops::PatchEntityState(state, *source, entity);
         }

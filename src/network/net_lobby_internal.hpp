@@ -18,6 +18,28 @@ void SendEncodedPacket(
 );
 
 bool IsReplicatedEntityStateEvent(const NetEvent& event);
+bool IsReplicatedTileEvent(const NetEvent& event);
+bool IsReplicatedFluidCellEvent(const NetEvent& event);
+bool IsReplicatedEntitySpawnedEvent(const NetEvent& event);
+bool IsReplicatedEntityDamageEvent(const NetEvent& event);
+bool IsReplicatedActionRequestEvent(const NetEvent& event);
+bool IsReplicatedEntityCarryEvent(const NetEvent& event);
+bool IsReplicatedEntityLifecycleEvent(const NetEvent& event);
+bool IsReplicatedPlayerStateEvent(const NetEvent& event);
+bool IsReplicatedRunStateEvent(const NetEvent& event);
+bool IsReplicatedPresentationCommandEvent(const NetEvent& event);
+
+TileEventEntry MakeTileEventEntry(const NetEvent& event);
+FluidCellEventEntry MakeFluidCellEventEntry(const NetEvent& event);
+EntitySpawnedEventEntry MakeEntitySpawnedEventEntry(const NetEvent& event);
+EntityDamageEventEntry MakeEntityDamageEventEntry(const NetEvent& event);
+EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event);
+EntityCarryEventEntry MakeEntityCarryEventEntry(const NetEvent& event);
+EntityLifecycleEventEntry MakeEntityLifecycleEventEntry(const NetEvent& event);
+PlayerStateEventEntry MakePlayerStateEventEntry(const NetEvent& event);
+RunStateEventEntry MakeRunStateEventEntry(const NetEvent& event);
+PresentationCommandEventEntry MakePresentationCommandEventEntry(const NetEvent& event);
+ActionRequestEventEntry MakeActionRequestEventEntry(const NetEvent& event);
 
 NetEvent MakeTileEvent(const TileEventEntry& entry);
 NetEvent MakeFluidCellEvent(const FluidCellEventEntry& entry);

@@ -5,6 +5,7 @@
 #include "frame_data.hpp"
 #include "player_queries.hpp"
 #include "tools/tool_archetype.hpp"
+#include "world_ops.hpp"
 
 #include <imgui.h>
 
@@ -476,59 +477,63 @@ bool SpawnDebugEntity(
         return false;
     }
 
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
-    if (!vid.has_value()) {
-        debug.spawn_status = "Entity budget exhausted.";
-        return false;
-    }
-
-    Entity* const spawned = state.entity_manager.GetEntityMut(*vid);
-    if (spawned == nullptr) {
-        debug.spawn_status = "Spawn failed.";
-        return false;
-    }
     if (debug.spawn_center_on_selected && selected_entity == nullptr) {
-        state.entity_manager.SetInactive(vid->id);
         debug.spawn_status = "No active selected entity to center spawn on.";
         return false;
     }
 
-    SetEntityAs(*spawned, type_);
-    spawned->vel = Vec2::New(0.0F, 0.0F);
-    spawned->acc = Vec2::New(0.0F, 0.0F);
+    std::optional<VID> holding_player_vid;
+    if (debug.spawn_held_by_player) {
+        Entity* const player = GetPrimaryLocalPlayerMut(state);
+        if (player == nullptr) {
+            debug.spawn_status = "No player to hold spawned entity.";
+            return false;
+        }
+        if (player->holding_vid.has_value()) {
+            debug.spawn_status = "Player is already holding something.";
+            return false;
+        }
+        holding_player_vid = player->vid;
+    }
 
     Vec2 spawn_center = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
     if (debug.spawn_center_on_selected && selected_entity != nullptr) {
         spawn_center = selected_entity->GetCenter();
     }
-    spawned->SetCenter(spawn_center);
+
+    Entity* const spawned = world_ops::SpawnEntity(state, type_, [spawn_center](Entity& entity) {
+        entity.vel = Vec2::New(0.0F, 0.0F);
+        entity.acc = Vec2::New(0.0F, 0.0F);
+        entity.SetCenter(spawn_center);
+    });
+    if (spawned == nullptr) {
+        debug.spawn_status = "Spawn failed.";
+        return false;
+    }
 
     if (debug.spawn_held_by_player) {
-        if (!FindPrimaryLocalPlayerVid(state).has_value()) {
-            debug.spawn_status = "No player to hold spawned entity.";
-        } else if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
-            if (player->holding_vid.has_value()) {
-                debug.spawn_status = "Player is already holding something.";
-            } else {
-                player->holding_vid = spawned->vid;
-                player->holding = true;
-                player->holding_timer = kDefaultHoldingTimer;
-                spawned->held_by_vid = player->vid;
-                spawned->attachment_mode = AttachmentMode::Held;
-                spawned->has_physics = false;
-                spawned->can_collide = false;
-                spawned->facing = player->facing;
-                spawned->SetCenter(player->GetCenter());
-                debug.spawn_status =
-                    std::string("Spawned and attached ") + GetEntityTypeName(type_) + ".";
-            }
+        if (Entity* const player = state.entity_manager.GetEntityMut(*holding_player_vid)) {
+            player->holding_vid = spawned->vid;
+            player->holding = true;
+            player->holding_timer = kDefaultHoldingTimer;
+            spawned->held_by_vid = player->vid;
+            spawned->attachment_mode = AttachmentMode::Held;
+            spawned->has_physics = false;
+            spawned->can_collide = false;
+            spawned->facing = player->facing;
+            spawned->SetCenter(player->GetCenter());
+            world_ops::MarkEntityHeld(state, *player, *spawned);
+            world_ops::PatchEntityState(state, *player, *player);
+            world_ops::PatchEntityState(state, *player, *spawned);
+            debug.spawn_status =
+                std::string("Spawned and attached ") + GetEntityTypeName(type_) + ".";
         }
     } else {
         debug.spawn_status = std::string("Spawned ") + GetEntityTypeName(type_) + ".";
     }
 
-    state.UpdateSidForEntity(vid->id, graphics);
-    debug.selected_entity_id = vid->id;
+    state.UpdateSidForEntity(spawned->vid.id, graphics);
+    debug.selected_entity_id = spawned->vid.id;
     return true;
 }
 

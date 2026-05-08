@@ -10,6 +10,7 @@
 #include "menu/ui.hpp"
 #include "menu/video.hpp"
 #include "network/net_lobby.hpp"
+#include "player_queries.hpp"
 #include "settings.hpp"
 #include "stage.hpp"
 #include "stage_init.hpp"
@@ -305,6 +306,12 @@ void ProcessInputGameOver(
         return;
     }
     if (state.menu_inputs.confirm.down) {
+        if (state.net_session.role != network::NetRole::Offline &&
+            HasAnyConnectedLivingPlayer(state)) {
+            state.scene_frame = 0;
+            state.SetMode(Mode::Playing);
+            return;
+        }
         if (state.net_session.role != network::NetRole::Offline) {
             std::string status;
             if (network::RespawnLocalPlayersAtEntrance(state, graphics, &status)) {

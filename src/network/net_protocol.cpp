@@ -15,6 +15,7 @@ static_assert(sizeof(RunStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPac
 static_assert(sizeof(PresentationCommandEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(ActionRequestEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(ActionRequestAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(PlayerSnapshotsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(DurableEventAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));

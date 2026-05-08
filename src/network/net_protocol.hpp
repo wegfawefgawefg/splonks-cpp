@@ -26,7 +26,7 @@ constexpr std::size_t kNetPlayersPerProcess = 16;
 constexpr std::size_t kNetPlayerSnapshotsPerPacket = 8;
 constexpr std::size_t kNetTileEventsPerPacket = 8;
 constexpr std::size_t kNetFluidCellEventsPerPacket = 4;
-constexpr std::size_t kNetEntitySpawnedEventsPerPacket = 4;
+constexpr std::size_t kNetEntitySpawnedEventsPerPacket = 1;
 constexpr std::size_t kNetEntityDamageEventsPerPacket = 4;
 constexpr std::size_t kNetEntityStateEventsPerPacket = 1;
 constexpr std::size_t kNetEntityCarryEventsPerPacket = 5;
@@ -35,6 +35,7 @@ constexpr std::size_t kNetPlayerStateEventsPerPacket = 1;
 constexpr std::size_t kNetRunStateEventsPerPacket = 4;
 constexpr std::size_t kNetPlayerStateToolSlotCount = 2;
 constexpr std::size_t kNetPlayerStateEffectCount = 12;
+constexpr std::size_t kNetEntityEffectCount = 12;
 constexpr std::size_t kNetPresentationCommandEventsPerPacket = 4;
 constexpr std::size_t kNetActionRequestEventsPerPacket = 4;
 constexpr std::size_t kNetActionRequestAckEventIdsPerPacket = 16;
@@ -93,16 +94,17 @@ struct PlayerSnapshotEntry {
     float pos_y = 0.0F;
     float vel_x = 0.0F;
     float vel_y = 0.0F;
+    std::uint32_t health = 0;
+    std::uint32_t coyote_time = 0;
+    std::uint32_t fall_timer = 0;
+    std::uint32_t stun_timer = 0;
+    std::uint32_t projectile_contact_timer = 0;
     std::uint8_t facing = 0;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
-    std::uint8_t animate = 0;
-    FrameDataId animation_id = kInvalidFrameDataId;
-    std::uint16_t animation_frame = 0;
-    std::uint16_t animation_flags = 0;
+    std::uint8_t has_physics = 1;
+    std::uint8_t can_collide = 1;
     std::uint16_t input_flags = 0;
-    float animation_time = 0.0F;
-    float animation_speed = 1.0F;
 };
 
 struct PlayerSnapshotsPacket {
@@ -175,6 +177,14 @@ struct FluidCellEventsPacket {
     std::array<FluidCellEventEntry, kNetFluidCellEventsPerPacket> events{};
 };
 
+struct EntityEffectEntry {
+    std::uint16_t id = 0;
+    std::uint16_t reserved = 0;
+    std::int32_t count = 0;
+    float value = 0.0F;
+    std::uint32_t frames_remaining = 0;
+};
+
 struct EntitySpawnedEventEntry {
     NetEventId event_id = kInvalidNetEventId;
     PlayerId source_player_id = kInvalidPlayerId;
@@ -190,10 +200,17 @@ struct EntitySpawnedEventEntry {
     float vel_y = 0.0F;
     float acc_x = 0.0F;
     float acc_y = 0.0F;
+    float size_x = 0.0F;
+    float size_y = 0.0F;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    std::uint32_t movement_flags = 0;
+    std::uint8_t effect_count = 0;
+    std::array<EntityEffectEntry, kNetEntityEffectCount> effects{};
     std::uint8_t use_pressed = 0;
     std::uint8_t animate = 0;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     FrameDataId animation_id = kInvalidFrameDataId;
     std::uint16_t animation_frame = 0;
     float animation_time = 0.0F;
@@ -259,6 +276,8 @@ struct EntityStateEventEntry {
     float vel_y = 0.0F;
     float acc_x = 0.0F;
     float acc_y = 0.0F;
+    float size_x = 0.0F;
+    float size_y = 0.0F;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     float counter_c = 0.0F;
@@ -274,6 +293,8 @@ struct EntityStateEventEntry {
     std::int32_t point_d_x = 0;
     std::int32_t point_d_y = 0;
     std::uint32_t health = 0;
+    std::uint32_t coyote_time = 0;
+    std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
     float rotation = 0.0F;
@@ -288,7 +309,10 @@ struct EntityStateEventEntry {
     std::uint8_t wanted = 0;
     std::uint8_t attachment_mode = 0;
     std::uint8_t draw_layer = 0;
+    std::uint32_t movement_flags = 0;
     std::uint32_t runtime_flags = 0;
+    std::uint8_t effect_count = 0;
+    std::array<EntityEffectEntry, kNetEntityEffectCount> effects{};
     std::uint8_t buyable_active = 0;
     std::uint32_t buyable_display_quantity = 0;
     FrameDataId buyable_display_icon_animation_id = kInvalidFrameDataId;

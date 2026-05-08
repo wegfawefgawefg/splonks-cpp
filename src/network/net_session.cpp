@@ -59,8 +59,6 @@ const char* NetEventTypeName(NetEventType type) {
         return "FluidCellPatched";
     case NetEventType::TileBroken:
         return "TileBroken";
-    case NetEventType::RopeTilePlaced:
-        return "RopeTilePlaced";
     case NetEventType::PlayerStatePatched:
         return "PlayerStatePatched";
     case NetEventType::RunStatePatched:
@@ -74,6 +72,14 @@ const char* NetEventTypeName(NetEventType type) {
     default:
         return "Other";
     }
+}
+
+bool IsTransientEntityStatePatch(const NetEvent& event) {
+    if (event.type != NetEventType::EntityStatePatched) {
+        return false;
+    }
+    const auto* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
+    return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
 }
 
 } // namespace
@@ -135,7 +141,7 @@ void NetSessionState::EnqueueOrderedEvent(NetEvent event) {
     if (event.header.event_id == kInvalidNetEventId) {
         event.header = MakeLocalEventHeader(0);
     }
-    if (event.type == NetEventType::EntityStatePatched) {
+    if (IsTransientEntityStatePatch(event)) {
         EnqueueTransientEvent(event);
         return;
     }
@@ -253,8 +259,12 @@ void NetSessionState::AddEventLog(NetEventLogPhase phase, const NetEvent& event)
            << " local_player=" << local_player_id
            << " stage=" << event.header.stage_instance_id
            << " type=" << NetEventTypeName(entry.type)
-           << " type_id=" << static_cast<unsigned int>(entry.type)
-           << '\n';
+           << " type_id=" << static_cast<unsigned int>(entry.type);
+    if (const auto* const state_patch = std::get_if<EntityStatePatchedEvent>(&event.payload)) {
+        output << " entity=" << state_patch->entity_id
+               << " source_entity=" << state_patch->source_entity_id;
+    }
+    output << '\n';
 }
 
 void NetSessionState::ClearStageEntityLinks() {
@@ -403,10 +413,13 @@ bool NetSessionState::HasLocalAuthorityForEntity(VID local_vid) const {
     if (role == NetRole::Offline) {
         return true;
     }
+    if (role == NetRole::Coordinator) {
+        return true;
+    }
     if (const std::optional<PlayerId> owner_player_id = FindEntityOwner(local_vid)) {
         return *owner_player_id == local_player_id;
     }
-    return role == NetRole::Coordinator;
+    return false;
 }
 
 } // namespace splonks::network
