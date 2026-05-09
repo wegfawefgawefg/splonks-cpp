@@ -37,6 +37,15 @@ inline std::optional<VID> FindFirstConnectedPlayerVid(const State& state) {
     return std::nullopt;
 }
 
+inline bool HasAnyConnectedPlayerSlot(const State& state) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connected && slot.player_id != kInvalidPlayerId) {
+            return true;
+        }
+    }
+    return false;
+}
+
 inline bool HasAnyConnectedPlayerEntity(const State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.entity_vid.has_value()) {
@@ -50,17 +59,21 @@ inline bool HasAnyConnectedPlayerEntity(const State& state) {
     return false;
 }
 
-inline bool HasAnyConnectedLivingPlayer(const State& state) {
+inline std::optional<VID> FindFirstConnectedLivingPlayerVid(const State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.entity_vid.has_value()) {
             continue;
         }
         const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
         if (player != nullptr && player->active && player->condition != EntityCondition::Dead) {
-            return true;
+            return player->vid;
         }
     }
-    return false;
+    return std::nullopt;
+}
+
+inline bool HasAnyConnectedLivingPlayer(const State& state) {
+    return FindFirstConnectedLivingPlayerVid(state).has_value();
 }
 
 inline std::optional<VID> FindNearestPlayerVid(

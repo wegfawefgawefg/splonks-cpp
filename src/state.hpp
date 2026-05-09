@@ -323,6 +323,7 @@ struct State {
 
     // Common entity references.
     std::optional<VID> controlled_entity_vid;
+    std::optional<PlayerId> spectator_target_player_id;
     std::optional<VID> mouse_trailer_vid;
 
     // Contact and interaction bookkeeping.

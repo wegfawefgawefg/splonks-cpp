@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
 namespace splonks {
 
@@ -62,9 +63,104 @@ float GetSimulationTickInterval(const State& state) {
     return kTimestep;
 }
 
+const Entity* GetLivingPlayerForSlot(const State& state, const PlayerSlot& slot) {
+    if (!slot.connected || !slot.entity_vid.has_value()) {
+        return nullptr;
+    }
+    const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+        return nullptr;
+    }
+    return player;
+}
+
+std::optional<VID> FindLivingPlayerVidByPlayerId(const State& state, PlayerId player_id) {
+    const PlayerSlot* const slot = state.players.Find(player_id);
+    const Entity* const player = slot != nullptr ? GetLivingPlayerForSlot(state, *slot) : nullptr;
+    return player != nullptr ? std::optional<VID>(player->vid) : std::nullopt;
+}
+
+std::vector<PlayerId> GetLivingConnectedPlayerIds(const State& state) {
+    std::vector<PlayerId> player_ids;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.player_id != kInvalidPlayerId && GetLivingPlayerForSlot(state, slot) != nullptr) {
+            player_ids.push_back(slot.player_id);
+        }
+    }
+    return player_ids;
+}
+
+std::optional<PlayerId> CycleLivingPlayerId(
+    const State& state,
+    std::optional<PlayerId> current,
+    int direction
+) {
+    const std::vector<PlayerId> living_player_ids = GetLivingConnectedPlayerIds(state);
+    if (living_player_ids.empty()) {
+        return std::nullopt;
+    }
+    if (direction == 0 || !current.has_value()) {
+        return living_player_ids.front();
+    }
+
+    const auto iter = std::find(living_player_ids.begin(), living_player_ids.end(), *current);
+    const int count = static_cast<int>(living_player_ids.size());
+    int index = iter != living_player_ids.end()
+        ? static_cast<int>(std::distance(living_player_ids.begin(), iter))
+        : 0;
+    index = (index + direction) % count;
+    if (index < 0) {
+        index += count;
+    }
+    return living_player_ids[static_cast<std::size_t>(index)];
+}
+
+void UpdateSpectatorTarget(State& state) {
+    if (state.net_session.role == network::NetRole::Offline) {
+        state.spectator_target_player_id.reset();
+        return;
+    }
+
+    if (const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state)) {
+        const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid);
+        if (player != nullptr && player->active &&
+            player->condition != EntityCondition::Dead) {
+            state.spectator_target_player_id.reset();
+            return;
+        }
+    }
+
+    int cycle_dir = 0;
+    if (state.playing_inputs.right.pressed && !state.playing_inputs.left.pressed) {
+        cycle_dir = 1;
+    } else if (state.playing_inputs.left.pressed && !state.playing_inputs.right.pressed) {
+        cycle_dir = -1;
+    }
+    state.spectator_target_player_id =
+        CycleLivingPlayerId(state, state.spectator_target_player_id, cycle_dir);
+}
+
+std::optional<VID> FindCameraControlledPlayerVid(const State& state) {
+    if (state.spectator_target_player_id.has_value()) {
+        if (const std::optional<VID> spectator_vid =
+                FindLivingPlayerVidByPlayerId(state, *state.spectator_target_player_id)) {
+            return spectator_vid;
+        }
+    }
+
+    if (const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state)) {
+        const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid);
+        if (player != nullptr && player->active &&
+            player->condition != EntityCondition::Dead) {
+            return primary_player_vid;
+        }
+    }
+    return FindFirstConnectedLivingPlayerVid(state);
+}
+
 void UpdateControlledEntity(State& state) {
     if (!state.controlled_entity_vid.has_value()) {
-        state.controlled_entity_vid = FindPrimaryLocalPlayerVid(state);
+        state.controlled_entity_vid = FindCameraControlledPlayerVid(state);
         return;
     }
 
@@ -76,11 +172,11 @@ void UpdateControlledEntity(State& state) {
         return;
     }
 
-    if (const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state)) {
-        const Entity* player = state.entity_manager.GetEntity(*primary_player_vid);
+    if (const std::optional<VID> camera_player_vid = FindCameraControlledPlayerVid(state)) {
+        const Entity* player = state.entity_manager.GetEntity(*camera_player_vid);
         if (player != nullptr && player->active &&
             player->condition != EntityCondition::Dead) {
-            state.controlled_entity_vid = primary_player_vid;
+            state.controlled_entity_vid = camera_player_vid;
             return;
         }
     }
@@ -128,7 +224,7 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
 
 bool ShouldEnterGameOver(const State& state, std::optional<VID> primary_player_vid) {
     if (state.net_session.role != network::NetRole::Offline) {
-        return HasAnyConnectedPlayerEntity(state) && !HasAnyConnectedLivingPlayer(state);
+        return HasAnyConnectedPlayerSlot(state) && !HasAnyConnectedLivingPlayer(state);
     }
 
     if (!primary_player_vid.has_value()) {
@@ -301,10 +397,11 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::Playing as usize]);
 
-    UpdateControlledEntity(state);
-    RefreshPlayableCharacterLamp(state);
     StepTransientLights(state);
     LatchPlayingInputsForTick(state);
+    UpdateSpectatorTarget(state);
+    UpdateControlledEntity(state);
+    RefreshPlayableCharacterLamp(state);
     StepDebugLocalPlayerBots(state);
     StepPlayerSlotControls(state, graphics, audio, dt);
     state.contact.ClearEntityContactDispatchesThisTick();
@@ -420,6 +517,9 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::GameOver as usize]);
     StepTransientLights(state);
     LatchPlayingInputsForTick(state);
+    UpdateSpectatorTarget(state);
+    UpdateControlledEntity(state);
+    RefreshPlayableCharacterLamp(state);
     StepDebugLocalPlayerBots(state);
     StepPlayerSlotControls(state, graphics, audio, dt);
     state.contact.ClearEntityContactDispatchesThisTick();

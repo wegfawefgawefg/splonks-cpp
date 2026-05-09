@@ -8,6 +8,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -108,6 +109,49 @@ const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
         return "Retained At Host";
     }
     return "Unknown";
+}
+
+const char* PlayerConnectionKindName(PlayerConnectionKind kind) {
+    switch (kind) {
+    case PlayerConnectionKind::Local:
+        return "local";
+    case PlayerConnectionKind::Remote:
+        return "remote";
+    }
+    return "unknown";
+}
+
+const char* EntityConditionName(EntityCondition condition) {
+    switch (condition) {
+    case EntityCondition::Normal:
+        return "normal";
+    case EntityCondition::Dead:
+        return "dead";
+    case EntityCondition::Stunned:
+        return "stunned";
+    }
+    return "unknown";
+}
+
+const Entity* FindPlayerEntityForTarget(
+    const State& state,
+    const network::NetRemotePlayerTarget& target,
+    const PlayerSlot** slot_out
+) {
+    const PlayerSlot* const slot = state.players.Find(target.player_id);
+    if (slot_out != nullptr) {
+        *slot_out = slot;
+    }
+    if (slot == nullptr || !slot->entity_vid.has_value()) {
+        return nullptr;
+    }
+    return state.entity_manager.GetEntity(*slot->entity_vid);
+}
+
+float Vec2Distance(float ax, float ay, float bx, float by) {
+    const float dx = ax - bx;
+    const float dy = ay - by;
+    return std::sqrt(dx * dx + dy * dy);
 }
 
 void DrawFuzzerPresetButton(
@@ -427,16 +471,77 @@ void DrawMovementReplicationControls(State& state) {
     ImGui::SliderFloat("Remote snap distance", &transport.remote_snap_distance, 1.0F, 128.0F, "%.1f");
     ImGui::Text("Remote targets: %zu", transport.remote_player_targets.size());
     for (const network::NetRemotePlayerTarget& target : transport.remote_player_targets) {
+        const PlayerSlot* slot = nullptr;
+        const Entity* const entity = FindPlayerEntityForTarget(state, target, &slot);
+        const std::uint64_t age_frames =
+            state.frame > target.last_received_frame ? state.frame - target.last_received_frame : 0ULL;
         ImGui::BulletText(
-            "player=%u seq=%u pos=(%.1f, %.1f) vel=(%.2f, %.2f) age=%llu",
+            "player=%u %s seq=%u pos=(%.1f, %.1f) vel=(%.2f, %.2f) age=%llu",
             target.player_id,
+            slot != nullptr ? PlayerConnectionKindName(slot->connection_kind) : "missing",
             target.sequence,
             target.pos_x,
             target.pos_y,
             target.vel_x,
             target.vel_y,
-            static_cast<unsigned long long>(state.frame - target.last_received_frame)
+            static_cast<unsigned long long>(age_frames)
         );
+        ImGui::Indent();
+        if (entity == nullptr) {
+            ImGui::TextDisabled("no local entity for player target");
+        } else {
+            const float pos_dist =
+                Vec2Distance(entity->pos.x, entity->pos.y, target.pos_x, target.pos_y);
+            const float vel_dist =
+                Vec2Distance(entity->vel.x, entity->vel.y, target.vel_x, target.vel_y);
+            const bool over_snap = pos_dist > transport.remote_snap_distance;
+            ImGui::Text(
+                "local pos=(%.2f, %.2f) target=(%.2f, %.2f) d=(%.2f, %.2f) |d|=%.2f %s",
+                entity->pos.x,
+                entity->pos.y,
+                target.pos_x,
+                target.pos_y,
+                target.pos_x - entity->pos.x,
+                target.pos_y - entity->pos.y,
+                pos_dist,
+                over_snap ? "SNAP" : "smooth"
+            );
+            ImGui::Text(
+                "local vel=(%.2f, %.2f) target=(%.2f, %.2f) d=(%.2f, %.2f) |d|=%.2f",
+                entity->vel.x,
+                entity->vel.y,
+                target.vel_x,
+                target.vel_y,
+                target.vel_x - entity->vel.x,
+                target.vel_y - entity->vel.y,
+                vel_dist
+            );
+            ImGui::Text(
+                "fall=%u/%u coyote=%u/%u stun=%u/%u grounded=%s/%s condition=%s/%s hp=%u/%u",
+                entity->fall_timer,
+                target.fall_timer,
+                entity->coyote_time,
+                target.coyote_time,
+                entity->stun_timer,
+                target.stun_timer,
+                entity->grounded ? "yes" : "no",
+                target.grounded != 0 ? "yes" : "no",
+                EntityConditionName(entity->condition),
+                EntityConditionName(static_cast<EntityCondition>(target.condition)),
+                entity->health,
+                target.health
+            );
+            ImGui::Text(
+                "anim=%u/%u frame=%u/%u held=%s by=%s",
+                entity->frame_data_animator.animation_id,
+                target.animation_id,
+                static_cast<unsigned int>(entity->frame_data_animator.current_frame),
+                target.animation_frame,
+                entity->holding_vid.has_value() ? "yes" : "no",
+                entity->held_by_vid.has_value() ? "yes" : "no"
+            );
+        }
+        ImGui::Unindent();
     }
 }
 

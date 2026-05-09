@@ -128,9 +128,13 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     if (state.controlled_entity_vid.has_value()) {
         camera_target_entity = state.entity_manager.GetEntity(*state.controlled_entity_vid);
     }
-    if ((camera_target_entity == nullptr || !camera_target_entity->active) &&
+    if ((camera_target_entity == nullptr || !camera_target_entity->active ||
+         camera_target_entity->condition == EntityCondition::Dead) &&
         state.mode == Mode::GameOver) {
-        camera_target_entity = GetPrimaryLocalPlayer(state);
+        const std::optional<VID> spectator_vid = FindFirstConnectedLivingPlayerVid(state);
+        camera_target_entity = spectator_vid.has_value()
+            ? state.entity_manager.GetEntity(*spectator_vid)
+            : GetPrimaryLocalPlayer(state);
     }
 
     if (graphics.camera_mode == CameraMode::StageFit) {

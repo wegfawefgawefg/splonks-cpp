@@ -128,6 +128,9 @@ void ClearUseEdgesAfterFrame(Entity& entity) {
     entity.use_state.pressed = false;
     if (!entity.use_state.down) {
         entity.use_state.released = false;
+        entity.use_state.frames = 0;
+        entity.use_state.user_vid.reset();
+        entity.use_state.source = AttachmentMode::None;
     }
 }
 

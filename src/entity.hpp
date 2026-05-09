@@ -202,6 +202,8 @@ void SetAnimation(Entity& entity, FrameDataId animation_id);
 // like Neutral, Walk, Hanging, or Stunned rather than an exact authored animation id.
 bool TrySetAnimation(Entity& entity, EntityDisplayState display_state);
 void UseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source);
+void PressUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source);
+void ReleaseUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source);
 void StopUsingEntity(Entity& entity);
 bool HasMovementFlag(const Entity& entity, EntityMovementFlag movement_flag);
 void SetMovementFlag(Entity& entity, EntityMovementFlag movement_flag, bool enabled);

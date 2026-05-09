@@ -180,6 +180,20 @@ void UseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode sourc
     entity.use_state.source = source;
 }
 
+void PressUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source) {
+    UseEntity(entity, user_vid, source);
+    entity.use_state.pressed = true;
+}
+
+void ReleaseUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source) {
+    entity.use_state.down = false;
+    entity.use_state.pressed = false;
+    entity.use_state.released = true;
+    entity.use_state.frames = 0;
+    entity.use_state.user_vid = user_vid;
+    entity.use_state.source = source;
+}
+
 void StopUsingEntity(Entity& entity) {
     const bool was_down = entity.use_state.down;
     entity.use_state.down = false;

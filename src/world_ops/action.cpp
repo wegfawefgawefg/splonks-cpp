@@ -57,11 +57,18 @@ void ApplyAttachmentUseAction(
         }
         slot->immediate_inputs = slot->inputs;
     }
+    if (request.direction.x < 0) {
+        holder->facing = LeftOrRight::Left;
+        item->facing = LeftOrRight::Left;
+    } else if (request.direction.x > 0) {
+        holder->facing = LeftOrRight::Right;
+        item->facing = LeftOrRight::Right;
+    }
 
     if (request.param_a != 0) {
-        UseEntity(*item, holder->vid, source);
+        PressUseEntity(*item, holder->vid, source);
     } else {
-        StopUsingEntity(*item);
+        ReleaseUseEntity(*item, holder->vid, source);
     }
     if (item->on_use != nullptr) {
         item->on_use(item->vid.id, state, graphics, audio);

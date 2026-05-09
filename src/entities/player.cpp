@@ -256,6 +256,9 @@ void ApplyClassicFallDamageOnLanding(
         player.holding_vid.has_value() &&
         state.players.FindByEntityVid(*player.holding_vid) != nullptr;
     player.fall_timer = 0;
+    if (state.net_session.role == network::NetRole::Peer) {
+        return;
+    }
     if (fall_damage_timer <= static_cast<float>(tuning.fall_damage_min_frames) ||
         player.condition == EntityCondition::Dead) {
         return;

@@ -373,6 +373,24 @@ void CopySnapshotToTarget(NetRemotePlayerTarget& target, const PlayerSnapshotEnt
     target.hang_side = snapshot.hang_side;
 }
 
+bool ShouldApplyCanonicalTimersToLocalPrediction(
+    const Entity& entity,
+    const NetRemotePlayerTarget& target
+) {
+    if (target.condition != static_cast<std::uint8_t>(EntityCondition::Normal) ||
+        entity.condition != EntityCondition::Normal) {
+        return true;
+    }
+    if (entity.health != target.health) {
+        return true;
+    }
+    if (entity.has_physics != (target.has_physics != 0) ||
+        entity.can_collide != (target.can_collide != 0)) {
+        return true;
+    }
+    return false;
+}
+
 NetRemotePlayerTarget& EnsureRemotePlayerTarget(
     NetTransportRuntime& transport,
     const PlayerSnapshotEntry& snapshot,
@@ -418,8 +436,18 @@ void EnsureSpawnedPlayer(
     const Vec2& pos,
     const Graphics& graphics
 ) {
-    PlayerSlot& slot = local
-        ? state.players.EnsureLocalPlayer(player_id, "Player " + std::to_string(player_id), primary)
+    const bool is_peer_local_player =
+        state.net_session.role == NetRole::Peer &&
+        player_id == state.net_session.local_player_id;
+    const bool effective_local = local || is_peer_local_player;
+    const bool effective_primary = primary || is_peer_local_player;
+
+    PlayerSlot& slot = effective_local
+        ? state.players.EnsureLocalPlayer(
+              player_id,
+              "Player " + std::to_string(player_id),
+              effective_primary
+          )
         : state.players.EnsureRemotePlayer(player_id, "Remote " + std::to_string(player_id));
 
     if (slot.entity_vid.has_value()) {
@@ -427,7 +455,7 @@ void EnsureSpawnedPlayer(
             if (entity->active) {
                 entity->pos = pos;
                 state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), entity->vid);
-                if (local && primary) {
+                if (effective_local && effective_primary) {
                     state.controlled_entity_vid = entity->vid;
                 }
                 return;
@@ -440,7 +468,7 @@ void EnsureSpawnedPlayer(
     if (vid.has_value()) {
         state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), *vid);
         state.UpdateSidForEntity(vid->id, graphics);
-        if (local && primary) {
+        if (effective_local && effective_primary) {
             state.controlled_entity_vid = *vid;
         }
     }
@@ -610,7 +638,12 @@ void StepRemotePlayerInterpolation(
         entity->rotation = target.rotation;
         entity->health = target.health;
         entity->coyote_time = target.coyote_time;
-        entity->fall_timer = target.fall_timer;
+        const bool apply_canonical_timers =
+            !local_prediction_repair ||
+            ShouldApplyCanonicalTimersToLocalPrediction(*entity, target);
+        if (apply_canonical_timers) {
+            entity->fall_timer = target.fall_timer;
+        }
         entity->stun_timer = target.stun_timer;
         entity->projectile_contact_timer = target.projectile_contact_timer;
         entity->thrown_by = target.thrown_by_id != kInvalidNetEntityId

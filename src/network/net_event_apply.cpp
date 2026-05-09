@@ -594,6 +594,9 @@ void ApplyEntityStatePatchedEvent(
     ApplyStatePatchPresentation(*entity, payload);
     state.stage.NormalizeEntityPositionForWrap(*entity);
     if (graphics != nullptr) {
+        if (entity->holding_vid.has_value() || entity->back_vid.has_value()) {
+            entities::common::SyncEntityAttachments(entity->vid.id, state, *graphics);
+        }
         if (attachment_driven && entity->held_by_vid.has_value()) {
             entities::common::SyncEntityAttachments(entity->held_by_vid->id, state, *graphics);
         }

@@ -427,7 +427,7 @@ never blocked.
 - [x] Define which local actions may not be predicted because wrong prediction is
   too destructive.
 - [ ] Local player movement predicts immediately.
-- [ ] Local held/back item use can show presentation immediately where safe.
+- [x] Local held/back item use can show presentation immediately where safe.
 - [ ] Canonical spawned entities from peer actions come from coordinator.
 - [ ] Peer-predicted local artifacts either reconcile to coordinator net ids or
   are cosmetic-only and deleted.
@@ -435,13 +435,20 @@ never blocked.
 - [ ] Large body corrections snap.
 - [ ] Attachment/held/carry corrections snap links immediately.
 - [ ] Death/respawn/stage-transition corrections snap immediately.
-- [ ] Add debug overlay showing predicted vs coordinator-corrected player body.
+- [x] Add debug overlay showing predicted vs coordinator-corrected player body.
 
 Prediction policy:
 
 - Predict local player movement immediately. The owning client should feel like
   offline play; coordinator snapshots repair position, velocity, condition, and
   animation when they differ.
+- Keep local-only movement counters that affect feel, such as normal-state fall
+  timer accumulation, locally predicted until a canonical health/condition/body
+  lifecycle correction arrives. Stale periodic snapshots must not change fall
+  damage thresholds on the owning client.
+- Fall damage is still a durable damage mutation. Peers may accumulate a local
+  fall timer for movement/equipment feel, but only offline/coordinator gameplay
+  applies fall damage; peers wait for coordinator damage/repair.
 - Predict movement-derived local player presentation immediately: walk/run,
   hang/climb/fall poses, emotes, and facing. Coordinator player snapshots repair
   stale remote-facing presentation.
@@ -450,10 +457,19 @@ Prediction policy:
 - Allow safe local item presentation: bat windup, cape open/closed pose,
   jetpack flame, weapon use pose, local sound, recoil pose, and camera shake.
   These may be discarded or repaired without changing durable state.
+- Continuous attachment presentation is archetype opt-in through
+  `predict_attachment_use_presentation`. Peers still send authoritative
+  held/back use requests, but opted-in attachments may keep their local
+  `UseEntity` state held down so visuals like an open cape do not flicker while
+  waiting for coordinator repair.
 - Do not predict canonical hitboxes, damage, stun, death, pickups, money,
   inventory counts, shop/dice results, stage transitions, respawns, or exits.
 - Do not predict canonical tile mutations. Tile break/place/change comes from
   coordinator result or repair lanes.
+- `Debug: Network` now shows each player target beside the local body: position
+  and velocity deltas, snap severity, fall/coyote/stun timers, grounded,
+  condition, health, and animation frame. The control-server `net` command emits
+  the same body/delta diagnostics for live process inspection.
 - Do not predict canonical spawned entities. Bombs, ropes, arrows, webs, thrown
   pots, loot, and enemies are coordinator-assigned net ids. Local cosmetic ghosts
   are allowed only if they are clearly non-canonical and deleted on confirmation

@@ -148,12 +148,95 @@ void WriteVec2(std::ostringstream& out, const Vec2& value) {
     out << "{\"x\":" << value.x << ",\"y\":" << value.y << "}";
 }
 
+const char* AttachmentModeName(AttachmentMode mode) {
+    switch (mode) {
+    case AttachmentMode::None:
+        return "none";
+    case AttachmentMode::Held:
+        return "held";
+    case AttachmentMode::Back:
+        return "back";
+    }
+    return "unknown";
+}
+
 void WriteOptionalVid(std::ostringstream& out, const std::optional<VID>& vid) {
     if (!vid.has_value()) {
         out << "null";
         return;
     }
     out << "{\"id\":" << vid->id << ",\"version\":" << vid->version << "}";
+}
+
+float Vec2Distance(float ax, float ay, float bx, float by) {
+    const float dx = ax - bx;
+    const float dy = ay - by;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+void WriteNetTargetDiagnostics(
+    std::ostringstream& out,
+    const State& state,
+    const network::NetRemotePlayerTarget& target,
+    float snap_distance
+) {
+    const PlayerSlot* const slot = state.players.Find(target.player_id);
+    out << ",\"slot\":";
+    if (slot == nullptr) {
+        out << "null";
+    } else {
+        out << "{\"connection\":" << JsonString(ConnectionKindName(slot->connection_kind))
+            << ",\"connected\":" << (slot->connected ? "true" : "false")
+            << ",\"primary_local\":" << (slot->primary_local ? "true" : "false")
+            << ",\"entity\":";
+        WriteOptionalVid(out, slot->entity_vid);
+        out << "}";
+    }
+
+    const Entity* entity = nullptr;
+    if (slot != nullptr && slot->entity_vid.has_value()) {
+        entity = state.entity_manager.GetEntity(*slot->entity_vid);
+    }
+
+    const std::uint64_t age_frames =
+        state.frame > target.last_received_frame ? state.frame - target.last_received_frame : 0ULL;
+    out << ",\"age_frames\":" << age_frames;
+    out << ",\"target_body\":{"
+        << "\"condition\":" << JsonString(EntityConditionName(static_cast<EntityCondition>(target.condition)))
+        << ",\"grounded\":" << (target.grounded != 0 ? "true" : "false")
+        << ",\"health\":" << target.health
+        << ",\"fall_timer\":" << target.fall_timer
+        << ",\"coyote_time\":" << target.coyote_time
+        << ",\"stun_timer\":" << target.stun_timer
+        << ",\"animation_id\":" << target.animation_id
+        << ",\"animation_frame\":" << target.animation_frame
+        << "}";
+
+    out << ",\"local_body\":";
+    if (entity == nullptr) {
+        out << "null";
+        return;
+    }
+
+    const float pos_dist = Vec2Distance(entity->pos.x, entity->pos.y, target.pos_x, target.pos_y);
+    const float vel_dist = Vec2Distance(entity->vel.x, entity->vel.y, target.vel_x, target.vel_y);
+    out << "{\"condition\":" << JsonString(EntityConditionName(entity->condition))
+        << ",\"grounded\":" << (entity->grounded ? "true" : "false")
+        << ",\"health\":" << entity->health
+        << ",\"fall_timer\":" << entity->fall_timer
+        << ",\"coyote_time\":" << entity->coyote_time
+        << ",\"stun_timer\":" << entity->stun_timer
+        << ",\"animation_id\":" << entity->frame_data_animator.animation_id
+        << ",\"animation_frame\":" << entity->frame_data_animator.current_frame
+        << "}";
+    out << ",\"delta\":{\"pos\":{\"x\":" << target.pos_x - entity->pos.x
+        << ",\"y\":" << target.pos_y - entity->pos.y
+        << ",\"length\":" << pos_dist
+        << "},\"vel\":{\"x\":" << target.vel_x - entity->vel.x
+        << ",\"y\":" << target.vel_y - entity->vel.y
+        << ",\"length\":" << vel_dist
+        << "},\"over_snap_distance\":" << (pos_dist > snap_distance ? "true" : "false")
+        << "}";
 }
 
 void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& entity) {
@@ -183,6 +266,19 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
     WriteOptionalVid(out, entity.back_vid);
     out << ",\"entity_a\":";
     WriteOptionalVid(out, entity.entity_a);
+    out << ",\"counters\":{\"a\":" << entity.counter_a
+        << ",\"b\":" << entity.counter_b
+        << ",\"c\":" << entity.counter_c
+        << ",\"d\":" << entity.counter_d
+        << "}";
+    out << ",\"use\":{\"down\":" << (entity.use_state.down ? "true" : "false")
+        << ",\"pressed\":" << (entity.use_state.pressed ? "true" : "false")
+        << ",\"released\":" << (entity.use_state.released ? "true" : "false")
+        << ",\"frames\":" << entity.use_state.frames
+        << ",\"source\":" << JsonString(AttachmentModeName(entity.use_state.source))
+        << ",\"user\":";
+    WriteOptionalVid(out, entity.use_state.user_vid);
+    out << "}";
     out << ",\"point_a\":{\"x\":" << entity.point_a.x << ",\"y\":" << entity.point_a.y << "}"
         << ",\"has_physics\":" << (entity.has_physics ? "true" : "false")
         << ",\"can_collide\":" << (entity.can_collide ? "true" : "false")
@@ -465,7 +561,9 @@ std::string HandleNetCommand(const State& state) {
                 << ",\"sequence\":" << target.sequence
                 << ",\"last_received_frame\":" << target.last_received_frame
                 << ",\"pos\":{\"x\":" << target.pos_x << ",\"y\":" << target.pos_y << "}"
-                << ",\"vel\":{\"x\":" << target.vel_x << ",\"y\":" << target.vel_y << "}}";
+                << ",\"vel\":{\"x\":" << target.vel_x << ",\"y\":" << target.vel_y << "}";
+            WriteNetTargetDiagnostics(out, state, target, state.net_transport->remote_snap_distance);
+            out << "}";
         }
         out << "]}";
     } else {

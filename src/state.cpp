@@ -169,6 +169,7 @@ State State::New() {
     state.stage_lighting = StageLighting::New();
     state.stage_acoustics = StageAcoustics::New();
     state.controlled_entity_vid.reset();
+    state.spectator_target_player_id.reset();
     state.mouse_trailer_vid.reset();
     state.contact = ContactBookkeeping{};
     state.entity_tools = EntityToolInventoryState{};

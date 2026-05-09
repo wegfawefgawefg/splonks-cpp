@@ -12,6 +12,7 @@
 #include "world_ops.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <exception>
 #include <iostream>
@@ -33,6 +34,22 @@ struct PacketSmokePair {
         .port = 43202,
     };
 };
+
+bool DeliverPeerSnapshotsToCoordinator(
+    State& peer,
+    State& coordinator,
+    PacketSmokePair& pair,
+    const Graphics& graphics,
+    const char* label
+);
+
+bool DeliverCoordinatorSnapshotsToPeer(
+    State& coordinator,
+    State& peer,
+    PacketSmokePair& pair,
+    const Graphics& graphics,
+    const char* label
+);
 
 PacketSmokePair MakePacketSmokePair() {
     PacketSmokePair pair;
@@ -141,6 +158,59 @@ bool StepIdleFrameAndCompare(
         label,
         compare_after_delivery
     );
+}
+
+void SetPeerHeldUseInput(State& peer, bool attack_down, IVec2 direction) {
+    PlayingInputSnapshot input = PlayingInputSnapshot::New();
+    input.attack = attack_down;
+    input.left = direction.x < 0;
+    input.right = direction.x > 0;
+    input.up = direction.y < 0;
+    input.down = direction.y > 0;
+    peer.playing_input_snapshot = input;
+}
+
+bool StepPeerInputThroughCoordinatorFrame(
+    State& coordinator,
+    State& peer,
+    PacketSmokePair& pair,
+    Graphics& graphics,
+    Audio& audio,
+    const char* label
+) {
+    StepSingleTick(peer, audio, graphics);
+    if (!DeliverPeerSnapshotsToCoordinator(peer, coordinator, pair, graphics, label)) {
+        return false;
+    }
+    if (!DeliverPeerPacketsToCoordinator(
+            peer,
+            coordinator,
+            PeerSmokeTransport(peer),
+            CoordinatorSmokeTransport(coordinator),
+            pair.peer_endpoint,
+            label
+        )) {
+        return false;
+    }
+
+    StepSingleTick(coordinator, audio, graphics);
+    if (!DeliverCoordinatorPacketsToPeer(
+            coordinator,
+            peer,
+            CoordinatorSmokeTransport(coordinator),
+            PeerSmokeTransport(peer),
+            pair.peer_endpoint,
+            graphics,
+            audio,
+            label
+        )) {
+        return false;
+    }
+    if (!DeliverCoordinatorSnapshotsToPeer(coordinator, peer, pair, graphics, label)) {
+        return false;
+    }
+    network::StepRemotePlayerInterpolation(peer, PeerSmokeTransport(peer), graphics);
+    return true;
 }
 
 bool LinkAndCompareInitialStates(State& coordinator, State& peer) {
@@ -616,6 +686,41 @@ bool RunBasicRemoteMovementSmoke(Graphics& graphics, Audio& audio) {
                   << "," << repaired_peer_player->frame_data_animator.speed
                   << " condition=" << static_cast<int>(repaired_peer_player->condition)
                   << " grounded=" << repaired_peer_player->grounded << '\n';
+        return false;
+    }
+
+    Entity* const coordinator_player_mut = coordinator.entity_manager.GetEntityMut(coordinator_player_vid);
+    Entity* peer_predicted_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (coordinator_player_mut == nullptr || peer_predicted_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing player for local fall timer preservation\n";
+        return false;
+    }
+    coordinator_player_mut->health = 400;
+    coordinator_player_mut->condition = EntityCondition::Normal;
+    coordinator_player_mut->has_physics = true;
+    coordinator_player_mut->can_collide = true;
+    coordinator_player_mut->fall_timer = 5;
+    peer_predicted_player->health = 400;
+    peer_predicted_player->condition = EntityCondition::Normal;
+    peer_predicted_player->has_physics = true;
+    peer_predicted_player->can_collide = true;
+    peer_predicted_player->fall_timer = 23;
+    if (!DeliverCoordinatorSnapshotsToPeer(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            "frame local fall timer prediction snapshot"
+        )) {
+        return false;
+    }
+    network::StepRemotePlayerInterpolation(peer, PeerSmokeTransport(peer), graphics);
+    peer_predicted_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (peer_predicted_player == nullptr || peer_predicted_player->fall_timer != 23) {
+        std::cerr << "network frame smoke failed at frame local fall timer preservation:"
+                  << " peer fall="
+                  << (peer_predicted_player != nullptr ? peer_predicted_player->fall_timer : 999999U)
+                  << '\n';
         return false;
     }
 
@@ -1328,6 +1433,40 @@ bool PickupSpawnedEntityForFrameSmoke(
     );
 }
 
+bool ExpectMappedEntityAnimation(
+    const State& coordinator,
+    const State& peer,
+    VID peer_vid,
+    FrameDataId expected_animation_id,
+    const char* label
+) {
+    const Entity* const peer_entity = peer.entity_manager.GetEntity(peer_vid);
+    const std::optional<network::NetEntityId> entity_id =
+        peer.net_session.FindNetEntityId(peer_vid);
+    const std::optional<VID> coordinator_vid =
+        entity_id.has_value()
+            ? coordinator.net_session.FindLocalVid(*entity_id)
+            : std::nullopt;
+    const Entity* const coordinator_entity =
+        coordinator_vid.has_value()
+            ? coordinator.entity_manager.GetEntity(*coordinator_vid)
+            : nullptr;
+    if (peer_entity == nullptr || coordinator_entity == nullptr) {
+        std::cerr << "network frame smoke failed at " << label
+                  << ": missing mapped entity for animation check\n";
+        return false;
+    }
+    if (peer_entity->frame_data_animator.animation_id == expected_animation_id &&
+        coordinator_entity->frame_data_animator.animation_id == expected_animation_id) {
+        return true;
+    }
+    std::cerr << "network frame smoke failed at " << label
+              << ": expected animation " << expected_animation_id
+              << " coordinator=" << coordinator_entity->frame_data_animator.animation_id
+              << " peer=" << peer_entity->frame_data_animator.animation_id << '\n';
+    return false;
+}
+
 bool RunHeldUseScenario(
     State& coordinator,
     State& peer,
@@ -1338,7 +1477,11 @@ bool RunHeldUseScenario(
     const char* label,
     bool release_after_press,
     Graphics& graphics,
-    Audio& audio
+    Audio& audio,
+    std::optional<FrameDataId> expected_animation_after_press = std::nullopt,
+    bool stale_use_down_before_press = false,
+    bool stale_use_down_before_release = false,
+    bool expected_counter_b_decrease_after_release = false
 ) {
     const std::optional<VID> peer_item_vid = SpawnCoordinatorEntityAndResolvePeer(
         coordinator,
@@ -1364,6 +1507,32 @@ bool RunHeldUseScenario(
         return false;
     }
 
+    if (stale_use_down_before_press) {
+        const std::optional<VID> coordinator_item_vid =
+            ResolveCoordinatorVidForPeerVid(coordinator, peer, *peer_item_vid);
+        const std::optional<VID> coordinator_source_vid =
+            ResolveCoordinatorVidForPeerVid(coordinator, peer, peer_source_vid);
+        Entity* const peer_item = peer.entity_manager.GetEntityMut(*peer_item_vid);
+        Entity* const coordinator_item = coordinator_item_vid.has_value()
+            ? coordinator.entity_manager.GetEntityMut(*coordinator_item_vid)
+            : nullptr;
+        if (peer_item == nullptr || coordinator_item == nullptr ||
+            !coordinator_source_vid.has_value()) {
+            std::cerr << "network frame smoke failed at " << label
+                      << ": could not set stale held-use state\n";
+            return false;
+        }
+        for (Entity* const item : {peer_item, coordinator_item}) {
+            item->use_state.down = true;
+            item->use_state.pressed = false;
+            item->use_state.released = false;
+            item->use_state.frames = 4;
+            item->use_state.source = AttachmentMode::Held;
+        }
+        peer_item->use_state.user_vid = peer_source_vid;
+        coordinator_item->use_state.user_vid = *coordinator_source_vid;
+    }
+
     if (!StepPeerActionThroughCoordinatorFrame(
             coordinator,
             peer,
@@ -1379,11 +1548,62 @@ bool RunHeldUseScenario(
             audio,
             label
         ) ||
+        (expected_animation_after_press.has_value() &&
+         !ExpectMappedEntityAnimation(
+             coordinator,
+             peer,
+             *peer_item_vid,
+             *expected_animation_after_press,
+             label
+         )) ||
         !StepIdleFrameAndCompare(coordinator, peer, pair, graphics, audio, label)) {
         return false;
     }
 
     if (release_after_press) {
+        if (stale_use_down_before_release) {
+            const std::optional<VID> coordinator_item_vid =
+                ResolveCoordinatorVidForPeerVid(coordinator, peer, *peer_item_vid);
+            Entity* const peer_item = peer.entity_manager.GetEntityMut(*peer_item_vid);
+            Entity* const coordinator_item = coordinator_item_vid.has_value()
+                ? coordinator.entity_manager.GetEntityMut(*coordinator_item_vid)
+                : nullptr;
+            if (peer_item == nullptr || coordinator_item == nullptr) {
+                std::cerr << "network frame smoke failed at " << label
+                          << ": could not set stale release held-use state\n";
+                return false;
+            }
+            for (Entity* const item : {peer_item, coordinator_item}) {
+                item->use_state.down = false;
+                item->use_state.pressed = false;
+                item->use_state.released = false;
+                item->use_state.frames = 0;
+                item->use_state.source = AttachmentMode::None;
+                item->use_state.user_vid.reset();
+            }
+        }
+        float counter_b_before_release = 0.0F;
+        if (expected_counter_b_decrease_after_release) {
+            const std::optional<VID> coordinator_item_vid =
+                ResolveCoordinatorVidForPeerVid(coordinator, peer, *peer_item_vid);
+            const std::optional<VID> coordinator_source_vid =
+                ResolveCoordinatorVidForPeerVid(coordinator, peer, peer_source_vid);
+            Entity* const peer_item = peer.entity_manager.GetEntityMut(*peer_item_vid);
+            Entity* const coordinator_item = coordinator_item_vid.has_value()
+                ? coordinator.entity_manager.GetEntityMut(*coordinator_item_vid)
+                : nullptr;
+            if (peer_item == nullptr || coordinator_item == nullptr ||
+                !coordinator_source_vid.has_value()) {
+                std::cerr << "network frame smoke failed at " << label
+                          << ": could not read pre-release item counter\n";
+                return false;
+            }
+            peer_item->counter_b = 8.0F;
+            peer_item->entity_a = peer_source_vid;
+            coordinator_item->counter_b = 8.0F;
+            coordinator_item->entity_a = *coordinator_source_vid;
+            counter_b_before_release = coordinator_item->counter_b;
+        }
         if (!StepPeerActionThroughCoordinatorFrame(
                 coordinator,
                 peer,
@@ -1401,6 +1621,22 @@ bool RunHeldUseScenario(
             ) ||
             !StepIdleFrameAndCompare(coordinator, peer, pair, graphics, audio, label)) {
             return false;
+        }
+        if (expected_counter_b_decrease_after_release) {
+            const std::optional<VID> coordinator_item_vid =
+                ResolveCoordinatorVidForPeerVid(coordinator, peer, *peer_item_vid);
+            const Entity* const coordinator_item = coordinator_item_vid.has_value()
+                ? coordinator.entity_manager.GetEntity(*coordinator_item_vid)
+                : nullptr;
+            if (coordinator_item == nullptr ||
+                coordinator_item->counter_b >= counter_b_before_release) {
+                std::cerr << "network frame smoke failed at " << label
+                          << ": release did not spend item counter"
+                          << " before=" << counter_b_before_release
+                          << " after=" << (coordinator_item != nullptr ? coordinator_item->counter_b : -1.0F)
+                          << '\n';
+                return false;
+            }
         }
     }
     return StepPeerActionThroughCoordinatorFrame(
@@ -1498,6 +1734,17 @@ bool RunBackUseScenario(
             label,
             false
         )) {
+        return false;
+    }
+    const Entity* const peer_holder_after_back = peer.entity_manager.GetEntity(peer_source_vid);
+    const Entity* const peer_back_item_after_back = peer.entity_manager.GetEntity(*peer_item_vid);
+    if (peer_holder_after_back == nullptr || peer_back_item_after_back == nullptr ||
+        peer_holder_after_back->back_vid != *peer_item_vid ||
+        peer_back_item_after_back->held_by_vid != peer_holder_after_back->vid ||
+        peer_back_item_after_back->attachment_mode != AttachmentMode::Back ||
+        Length(peer_back_item_after_back->GetCenter() - peer_holder_after_back->GetCenter()) > 12.0F) {
+        std::cerr << "network frame smoke failed at " << label
+                  << ": peer back item was not attached visually after coordinator apply\n";
         return false;
     }
 
@@ -2700,6 +2947,229 @@ bool BuildDualPlayerFrameFixture(
     );
 }
 
+bool RunMattockDigScenario(Graphics& graphics, Audio& audio) {
+    constexpr std::uint32_t seed = 24680;
+    State coordinator = State::New();
+    State peer = State::New();
+    ConfigureProtocolSmokeCoordinator(coordinator);
+    ConfigureProtocolSmokePeer(peer);
+    if (!LoadQuestStage(coordinator, "classic", "classic_mines_1", false, seed) ||
+        !LoadQuestStage(peer, "classic", "classic_mines_1", false, seed)) {
+        std::cerr << "network frame smoke failed: could not load mattock dig stages\n";
+        return false;
+    }
+    ConfigureProtocolSmokeCoordinator(coordinator);
+    ConfigureProtocolSmokePeer(peer);
+    PacketSmokePair pair = MakePacketSmokePair();
+    AttachPacketSmokeTransports(coordinator, peer, pair);
+    if (!LinkAndCompareInitialStates(coordinator, peer)) {
+        return false;
+    }
+
+    const Entity* const peer_source = FindFirstPlayerLikeEntity(peer);
+    if (peer_source == nullptr) {
+        std::cerr << "network frame smoke failed: missing mattock dig peer source\n";
+        return false;
+    }
+    const VID peer_player_vid = peer_source->vid;
+    const Vec2 peer_source_pos = peer_source->pos;
+    const std::optional<VID> peer_mattock_vid = SpawnCoordinatorEntityAndResolvePeer(
+        coordinator,
+        peer,
+        pair,
+        graphics,
+        audio,
+        EntityType::Mattock,
+        peer_source_pos + Vec2::New(8.0F, 0.0F),
+        "frame mattock dig setup"
+    );
+    if (!peer_mattock_vid.has_value() ||
+        !PickupSpawnedEntityForFrameSmoke(
+            coordinator,
+            peer,
+            pair,
+            peer_player_vid,
+            *peer_mattock_vid,
+            graphics,
+            audio,
+            "frame mattock dig pickup"
+        )) {
+        return false;
+    }
+
+    const Entity* const peer_holder = peer.entity_manager.GetEntity(peer_player_vid);
+    if (peer_holder == nullptr) {
+        std::cerr << "network frame smoke failed: missing mattock dig holder\n";
+        return false;
+    }
+    const auto [holder_tl, holder_br] = peer_holder->GetBounds();
+    (void)holder_tl;
+    const int front_world_x = static_cast<int>(std::floor(holder_br.x)) + 7;
+    const int strike_world_y = static_cast<int>(std::floor(holder_br.y)) - 7;
+    const std::array<IVec2, 2> mattock_targets{
+        peer.stage.GetTileCoordAtWc(IVec2::New(front_world_x, strike_world_y)),
+        peer.stage.GetTileCoordAtWc(IVec2::New(front_world_x, strike_world_y + static_cast<int>(kTileSize))),
+    };
+    for (const IVec2& target : mattock_targets) {
+        coordinator.stage.SetTile(target, Tile::CaveDirt);
+        peer.stage.SetTile(target, Tile::CaveDirt);
+    }
+
+    SetPeerHeldUseInput(peer, true, IVec2::New(1, 0));
+    if (!StepPeerInputThroughCoordinatorFrame(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            audio,
+            "frame mattock dig use"
+        )) {
+        return false;
+    }
+    SetPeerHeldUseInput(peer, false, IVec2::New(0, 0));
+    if (!StepPeerInputThroughCoordinatorFrame(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            audio,
+            "frame mattock dig release"
+        )) {
+        return false;
+    }
+
+    bool dug_on_coordinator = false;
+    bool dug_on_peer = false;
+    for (int frame = 0; frame < 8; ++frame) {
+        for (const IVec2& target : mattock_targets) {
+            const Tile coordinator_tile = coordinator.stage.GetTile(
+                static_cast<unsigned int>(target.x),
+                static_cast<unsigned int>(target.y)
+            );
+            const Tile peer_tile = peer.stage.GetTile(
+                static_cast<unsigned int>(target.x),
+                static_cast<unsigned int>(target.y)
+            );
+            dug_on_coordinator = dug_on_coordinator || coordinator_tile != Tile::CaveDirt;
+            dug_on_peer = dug_on_peer || peer_tile != Tile::CaveDirt;
+        }
+        if (dug_on_coordinator && dug_on_peer) {
+            return true;
+        }
+        if (!StepIdleFrameAndCompare(
+                coordinator,
+                peer,
+                pair,
+                graphics,
+                audio,
+                "frame mattock dig wait"
+            )) {
+            return false;
+        }
+    }
+
+    std::cerr << "network frame smoke failed: mattock use did not dig coordinator="
+              << dug_on_coordinator << " peer=" << dug_on_peer << "\n";
+    return false;
+}
+
+bool RunHeldWeaponControlUseScenario(
+    Graphics& graphics,
+    Audio& audio,
+    EntityType item_type,
+    const char* label,
+    bool release_to_fire
+) {
+    constexpr std::uint32_t seed = 24681;
+    State coordinator = State::New();
+    State peer = State::New();
+    ConfigureProtocolSmokeCoordinator(coordinator);
+    ConfigureProtocolSmokePeer(peer);
+    if (!LoadQuestStage(coordinator, "classic", "classic_mines_1", false, seed) ||
+        !LoadQuestStage(peer, "classic", "classic_mines_1", false, seed)) {
+        std::cerr << "network frame smoke failed: could not load " << label << " stages\n";
+        return false;
+    }
+    ConfigureProtocolSmokeCoordinator(coordinator);
+    ConfigureProtocolSmokePeer(peer);
+    PacketSmokePair pair = MakePacketSmokePair();
+    AttachPacketSmokeTransports(coordinator, peer, pair);
+    if (!LinkAndCompareInitialStates(coordinator, peer)) {
+        return false;
+    }
+
+    const Entity* const peer_source = FindFirstPlayerLikeEntity(peer);
+    if (peer_source == nullptr) {
+        std::cerr << "network frame smoke failed: missing source for " << label << "\n";
+        return false;
+    }
+    const VID peer_player_vid = peer_source->vid;
+    const std::optional<VID> peer_item_vid = SpawnCoordinatorEntityAndResolvePeer(
+        coordinator,
+        peer,
+        pair,
+        graphics,
+        audio,
+        item_type,
+        peer_source->pos + Vec2::New(8.0F, 0.0F),
+        label
+    );
+    if (!peer_item_vid.has_value() ||
+        !PickupSpawnedEntityForFrameSmoke(
+            coordinator,
+            peer,
+            pair,
+            peer_player_vid,
+            *peer_item_vid,
+            graphics,
+            audio,
+            label
+        )) {
+        return false;
+    }
+
+    const Entity* const item_before = peer.entity_manager.GetEntity(*peer_item_vid);
+    if (item_before == nullptr) {
+        return false;
+    }
+    const float ammo_before = item_before->counter_b;
+    SetPeerHeldUseInput(peer, true, IVec2::New(1, 0));
+    if (!StepPeerInputThroughCoordinatorFrame(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            audio,
+            label
+        )) {
+        return false;
+    }
+    if (release_to_fire) {
+        SetPeerHeldUseInput(peer, false, IVec2::New(1, 0));
+        if (!StepPeerInputThroughCoordinatorFrame(
+                coordinator,
+                peer,
+                pair,
+                graphics,
+                audio,
+                label
+            )) {
+            return false;
+        }
+    }
+
+    const Entity* const item_after = peer.entity_manager.GetEntity(*peer_item_vid);
+    if (item_after == nullptr || item_after->counter_b >= ammo_before) {
+        std::cerr << "network frame smoke failed: " << label
+                  << " did not spend ammo through real peer controls"
+                  << " before=" << ammo_before
+                  << " after=" << (item_after != nullptr ? item_after->counter_b : -1.0F)
+                  << '\n';
+        return false;
+    }
+    return true;
+}
+
 bool RunStageTransitionWithDeadHostScenario(Graphics& graphics, Audio& audio) {
     State coordinator = State::New();
     State peer = State::New();
@@ -3576,6 +4046,25 @@ bool CheckNetworkFrameSmoke() {
         if (!RunArrowTrapFiringScenario(graphics, audio)) {
             return false;
         }
+        if (!RunMattockDigScenario(graphics, audio)) {
+            return false;
+        }
+        if (!RunHeldWeaponControlUseScenario(
+                graphics,
+                audio,
+                EntityType::Pistol,
+                "frame pistol real peer control use",
+                false
+            ) ||
+            !RunHeldWeaponControlUseScenario(
+                graphics,
+                audio,
+                EntityType::Bow,
+                "frame bow real peer control use",
+                true
+            )) {
+            return false;
+        }
         if (!RunFluidPatchConvergenceScenario(graphics, audio)) {
             return false;
         }
@@ -3849,7 +4338,11 @@ bool CheckNetworkFrameSmoke() {
                 "frame held bow use",
                 true,
                 graphics,
-                audio
+                audio,
+                std::nullopt,
+                false,
+                true,
+                true
             ) ||
             !RunHeldUseScenario(
                 coordinator,
@@ -3861,7 +4354,9 @@ bool CheckNetworkFrameSmoke() {
                 "frame held machete use",
                 true,
                 graphics,
-                audio
+                audio,
+                frame_data_ids::KnifeSwing,
+                true
             ) ||
             !RunHeldUseScenario(
                 coordinator,

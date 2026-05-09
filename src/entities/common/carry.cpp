@@ -20,7 +20,7 @@ namespace {
 
 constexpr std::uint32_t kForcedPlayerDropHarmCooldownFrames = 12;
 
-void ApplyHeldState(Entity& entity) {
+void ApplyHeldState(Entity& entity, bool reset_animation = true) {
     entity.thrown_by.reset();
     entity.thrown_immunity_timer = 0;
     const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
@@ -39,7 +39,7 @@ void ApplyHeldState(Entity& entity) {
     entity.jumped_this_frame = false;
     entity.grounded = false;
     entity.movement_flags = 0;
-    if (entity.condition == EntityCondition::Normal) {
+    if (reset_animation && entity.condition == EntityCondition::Normal) {
         TrySetAnimation(entity, EntityDisplayState::Neutral);
     }
 }
@@ -133,6 +133,23 @@ bool ShouldRequestCarryAction(const State& state, const Entity& entity) {
            HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
 }
 
+void ApplyPredictedAttachmentUsePresentation(
+    Entity& item,
+    VID holder_vid,
+    AttachmentMode attachment_mode,
+    bool use_down
+) {
+    if (!GetEntityArchetype(item.type_).predict_attachment_use_presentation) {
+        return;
+    }
+
+    if (use_down) {
+        UseEntity(item, holder_vid, attachment_mode);
+    } else {
+        StopUsingEntity(item);
+    }
+}
+
 void EmitCarryActionRequest(
     State& state,
     GameplayActionKind kind,
@@ -204,7 +221,7 @@ void SyncHeldAttachmentForHolder(
     holding->acc = Vec2::New(0.0F, 0.0F);
     holding->held_by_vid = holder.vid;
     holding->attachment_mode = AttachmentMode::Held;
-    ApplyHeldState(*holding);
+    ApplyHeldState(*holding, false);
     holding->facing = preserve_held_aim ? aimed_facing : holder.facing;
     if (preserve_held_aim) {
         holding->rotation = aimed_rotation;
@@ -934,6 +951,12 @@ void UpdateCarryAndBackItems(
                             control
                         );
                     }
+                    ApplyPredictedAttachmentUsePresentation(
+                        *holding,
+                        entity.vid,
+                        AttachmentMode::Held,
+                        control.use_held
+                    );
                 } else if (control.use_held) {
                     UseEntity(*holding, entity.vid, AttachmentMode::Held);
                 } else {
@@ -954,6 +977,12 @@ void UpdateCarryAndBackItems(
                             control
                         );
                     }
+                    ApplyPredictedAttachmentUsePresentation(
+                        *back_item,
+                        entity.vid,
+                        AttachmentMode::Back,
+                        control.use_back
+                    );
                 } else if (control.use_back) {
                     UseEntity(*back_item, entity.vid, AttachmentMode::Back);
                 } else {

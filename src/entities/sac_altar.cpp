@@ -32,8 +32,8 @@ constexpr std::int32_t kAltarBreakFavorPenalty = 8;
 constexpr std::int32_t kBallAndChainPunishmentFavorThreshold = -16;
 constexpr std::int32_t kGoldIdolSacrificeFavor = 8;
 constexpr std::uint32_t kHealthRewardAmount = 8;
-constexpr float kSacrificeAreaTopOffset = 18.0F;
-constexpr float kSacrificeAreaBottomOffset = 15.0F;
+constexpr float kSacrificeSurfaceTopOffset = 20.0F;
+constexpr float kSacrificeSurfaceBottomOffset = 2.0F;
 constexpr float kSacrificeSmokeScaleBias = 1.0F;
 constexpr float kTopperSacAnimationHoldFrames = 60.0F;
 constexpr float kBallAndChainSpawnOffsetY = 18.0F;
@@ -73,32 +73,28 @@ bool BelongsToOwnerAltar(const Entity& entity, const Entity& owner) {
 
 AABB GetSacrificeArea(const Entity& altar) {
     return AABB::New(
-        altar.pos + Vec2::New(-1.0F, -kSacrificeAreaTopOffset),
-        altar.pos + Vec2::New(31.0F, kSacrificeAreaBottomOffset)
+        altar.pos + Vec2::New(-1.0F, -kSacrificeSurfaceTopOffset),
+        altar.pos + Vec2::New(31.0F, kSacrificeSurfaceBottomOffset)
     );
 }
 
-Entity* GetPlayerMut(State& state) {
-    Entity* const player = GetPrimaryLocalPlayerMut(state);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        return nullptr;
-    }
-    return player;
-}
-
-bool PlayerHasBallAndChainPunishment(const State& state) {
-    const Entity* const player = GetPrimaryLocalPlayer(state);
-    if (player == nullptr || !player->active || !player->entity_d.has_value()) {
+bool PlayerHasBallAndChainPunishment(const State& state, const Entity& player) {
+    if (!player.entity_d.has_value()) {
         return false;
     }
 
-    const Entity* const ball = state.entity_manager.GetEntity(*player->entity_d);
+    const Entity* const ball = state.entity_manager.GetEntity(*player.entity_d);
     return ball != nullptr && ball->active && ball->type_ == EntityType::BallAndChainBall;
 }
 
-void SpawnBallAndChainPunishment(State& state) {
-    Entity* const player = GetPlayerMut(state);
-    if (player == nullptr || PlayerHasBallAndChainPunishment(state)) {
+void SpawnBallAndChainPunishment(State& state, const Entity* altar_context) {
+    const Vec2 search_pos = altar_context != nullptr ? altar_context->GetCenter() : Vec2::New(0.0F, 0.0F);
+    const std::optional<VID> player_vid = altar_context != nullptr
+        ? FindNearestPlayerVid(state, search_pos, true)
+        : FindFirstConnectedLivingPlayerVid(state);
+    Entity* const player = player_vid.has_value() ? state.entity_manager.GetEntityMut(*player_vid) : nullptr;
+    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead ||
+        PlayerHasBallAndChainPunishment(state, *player)) {
         return;
     }
 
@@ -119,11 +115,11 @@ void SpawnBallAndChainPunishment(State& state) {
     player->entity_d = ball->vid;
 }
 
-void ApplySacAltarFavorDelta(State& state, std::int32_t favor_delta) {
+void ApplySacAltarFavorDelta(State& state, std::int32_t favor_delta, const Entity* altar_context) {
     state.sac_altar_favor += favor_delta;
     world_ops::PatchRunState(state);
     if (state.sac_altar_favor <= kBallAndChainPunishmentFavorThreshold) {
-        SpawnBallAndChainPunishment(state);
+        SpawnBallAndChainPunishment(state, altar_context);
     }
 }
 
@@ -224,12 +220,8 @@ EntityType PickAccessoryReward(std::optional<VID> reward_target_vid, State& stat
     return EntityType::BombBox;
 }
 
-std::optional<VID> GetRewardTargetVid(const State& state) {
-    const Entity* const player = GetPrimaryLocalPlayer(state);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        return std::nullopt;
-    }
-    return player->vid;
+std::optional<VID> GetRewardTargetVid(const State& state, const Entity& altar) {
+    return FindNearestPlayerVid(state, altar.GetCenter(), true);
 }
 
 Vec2 GetAltarEffectPos(const Entity& altar, const State& state, const Graphics& graphics) {
@@ -468,7 +460,7 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
     const Vec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
 
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
-        const EntityType reward_type = PickAccessoryReward(GetRewardTargetVid(state), state);
+        const EntityType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Entity* const reward = world_ops::SpawnEntity(state, reward_type, [&](Entity& spawned_reward) {
             spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -3.0F));
             spawned_reward.vel = Vec2::New(rng::RandomFloat(-0.55F, 0.55F), -1.7F);
@@ -503,7 +495,8 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
     }
 
     if (state.sac_altar_reward_tier == 2 && state.sac_altar_favor >= kHealthRewardFavor) {
-        if (const std::optional<VID> reward_target_vid = GetRewardTargetVid(state); reward_target_vid.has_value()) {
+        if (const std::optional<VID> reward_target_vid = GetRewardTargetVid(state, altar);
+            reward_target_vid.has_value()) {
             if (Entity* const reward_target = state.entity_manager.GetEntityMut(*reward_target_vid)) {
                 reward_target->health += kHealthRewardAmount;
                 world_ops::PatchPlayerState(state, *reward_target);
@@ -544,7 +537,7 @@ void SacrificeVictim(
     (void)world_ops::DeactivateEntity(state, victim.vid);
     state.UpdateSidForEntity(victim.vid.id, graphics);
 
-    ApplySacAltarFavorDelta(state, *favor);
+    ApplySacAltarFavorDelta(state, *favor, &altar);
     TriggerTopperSacAnimation(altar, state);
     SpawnSacrificeSmoke(state, altar_emit);
     SpawnSacrificeBodySmoke(state, victim_effect_pos);
@@ -598,7 +591,7 @@ bool TryDepositStoredFavor(
 
     const Vec2 altar_emit = GetAltarEffectPos(*owner, state, graphics);
     const Vec2 altar_sound = GetAltarSoundPos(*owner, state, graphics);
-    ApplySacAltarFavorDelta(state, favor);
+    ApplySacAltarFavorDelta(state, favor, owner);
     TriggerTopperSacAnimation(*owner, state);
     SpawnSacrificeSmoke(state, altar_emit);
     (void)PlayWorldSoundEmitter(state, altar_sound, audio_asset_ids::Sacrifice);
@@ -627,7 +620,7 @@ void OnDeathAsSacAltarPiece(std::size_t entity_idx, State& state, Audio& audio) 
         return;
     }
 
-    ApplySacAltarFavorDelta(state, -kAltarBreakFavorPenalty);
+    ApplySacAltarFavorDelta(state, -kAltarBreakFavorPenalty, owner);
     const Vec2 owner_center = owner->GetCenter();
     for (const Entity& entity : state.entity_manager.entities) {
         if (!entity.active || !BelongsToOwnerAltar(entity, *owner)) {
@@ -683,6 +676,9 @@ void StepEntityLogicAsSacAltar(
         }
 
         const AABB victim_aabb = common::GetContactAabbForEntity(*victim, graphics);
+        if (victim_aabb.br.y < sacrifice_area.tl.y || victim_aabb.br.y > sacrifice_area.br.y) {
+            continue;
+        }
         if (!WorldAabbsIntersect(state.stage, sacrifice_area, victim_aabb)) {
             continue;
         }

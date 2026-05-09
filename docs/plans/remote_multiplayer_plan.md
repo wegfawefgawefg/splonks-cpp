@@ -159,6 +159,19 @@ world_ops::PatchRunState(state, run_patch, source);
 world_ops::PatchFluidCell(state, cell_coord, fluid_patch, source);
 ```
 
+## Future Protocol Cleanup
+
+`GameplayActionRequested` currently carries generic `param_a` / `param_b` fields.
+That is acceptable during migration, but it is easy to overload accidentally:
+`UseTool` uses `param_a` as a tool slot, while held/back item use uses `param_a`
+as a use-edge/down bit.
+
+Future cleanup target: replace generic action params with typed payloads or small
+explicit enums. In particular, held/back entity use should carry a named
+`UseEdge` value (`Press`, `Release`, and possibly `Held` if needed) instead of
+encoding that edge as `param_a != 0`. This keeps new items and future modded
+content from depending on undocumented payload conventions.
+
 These helpers own both sides of a durable mutation:
 
 - mutate the coordinator/offline state through normal content rules;
@@ -230,12 +243,23 @@ Prediction is allowed only where a wrong guess can be repaired without forking
 gameplay:
 
 - Local player movement predicts immediately on the owning client.
+- Normal-state movement counters that affect feel, including fall timer
+  accumulation, remain locally predicted until a canonical health/condition/body
+  lifecycle correction arrives. Periodic coordinator snapshots must not
+  downsample these counters and change gameplay thresholds on the owning client.
+- Fall damage remains coordinator-authored durable damage. Peers can keep local
+  fall counters for prediction/equipment behavior, but they do not apply fall
+  damage locally in multiplayer.
 - Local movement presentation predicts immediately: walk/run, hang/climb/fall
   pose, emote pose, facing, and player animation timing.
 - Remote players are replicas. They interpolate or snap from coordinator state;
   they do not run canonical local gameplay.
 - Safe local item presentation may predict: bat windup, cape open/closed pose,
   jetpack flame, weapon use pose, use sound, recoil pose, and camera shake.
+- Attachment presentation prediction is archetype opt-in via
+  `predict_attachment_use_presentation`. The peer still requests authoritative
+  held/back use edges; the opt-in only keeps local `UseEntity` state down for
+  attachments whose presentation/equipment feel is safe to repair.
 - Canonical hitboxes, damage, stun, death, pickups, money, inventory, shop/dice
   results, stage transitions, respawns, and exits are not predicted.
 - Canonical tile mutations are not predicted. The coordinator applies break,
@@ -1400,6 +1424,8 @@ Debug output:
 - event ack age
 - snapshot age
 - local prediction age
+- predicted-vs-coordinator body deltas, including snap threshold state, timers,
+  condition, grounded state, health, and animation frame
 - correction count by severity
 - hard resync count
 

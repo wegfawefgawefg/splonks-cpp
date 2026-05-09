@@ -74,6 +74,42 @@ const char* NetEventTypeName(NetEventType type) {
     }
 }
 
+const char* NetActionKindName(NetActionKind kind) {
+    switch (kind) {
+    case NetActionKind::None:
+        return "None";
+    case NetActionKind::UseTool:
+        return "UseTool";
+    case NetActionKind::PickupEntity:
+        return "PickupEntity";
+    case NetActionKind::DropEntity:
+        return "DropEntity";
+    case NetActionKind::ThrowEntity:
+        return "ThrowEntity";
+    case NetActionKind::UseHeldEntity:
+        return "UseHeldEntity";
+    case NetActionKind::UseBackEntity:
+        return "UseBackEntity";
+    case NetActionKind::PutHeldEntityOnBack:
+        return "PutHeldEntityOnBack";
+    case NetActionKind::TakeOffBackEntity:
+        return "TakeOffBackEntity";
+    case NetActionKind::InteractEntity:
+        return "InteractEntity";
+    case NetActionKind::CollectEntity:
+        return "CollectEntity";
+    case NetActionKind::PushEntity:
+        return "PushEntity";
+    case NetActionKind::BreakTile:
+        return "BreakTile";
+    case NetActionKind::DamageEntity:
+        return "DamageEntity";
+    case NetActionKind::HitEntity:
+        return "HitEntity";
+    }
+    return "Other";
+}
+
 bool IsTransientStatePatch(const NetEvent& event) {
     if (event.type == NetEventType::FluidCellPatched) {
         return true;
@@ -266,6 +302,14 @@ void NetSessionState::AddEventLog(NetEventLogPhase phase, const NetEvent& event)
     if (const auto* const state_patch = std::get_if<EntityStatePatchedEvent>(&event.payload)) {
         output << " entity=" << state_patch->entity_id
                << " source_entity=" << state_patch->source_entity_id;
+    } else if (const auto* const action = std::get_if<ActionRequestEvent>(&event.payload)) {
+        output << " action=" << NetActionKindName(action->kind)
+               << " action_id=" << static_cast<unsigned int>(action->kind)
+               << " source_entity=" << action->source_entity_id
+               << " target_entity=" << action->target_entity_id
+               << " param_a=" << action->param_a
+               << " param_b=" << action->param_b
+               << " dir=(" << action->direction.x << "," << action->direction.y << ")";
     }
     output << '\n';
 }
