@@ -94,6 +94,22 @@ const char* NetEventLogPhaseName(network::NetEventLogPhase phase) {
     return "unknown";
 }
 
+const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
+    switch (mode) {
+    case network::NetReconnectSpawnMode::FreshAtEntrance:
+        return "Fresh At Entrance";
+    case network::NetReconnectSpawnMode::FreshAtHost:
+        return "Fresh At Host";
+    case network::NetReconnectSpawnMode::RetainedAtEntrance:
+        return "Retained At Entrance";
+    case network::NetReconnectSpawnMode::RetainedAtLastPosition:
+        return "Retained At Last Position";
+    case network::NetReconnectSpawnMode::RetainedAtHost:
+        return "Retained At Host";
+    }
+    return "Unknown";
+}
+
 void DrawFuzzerPresetButton(
     const char* label,
     network::NetFuzzerConfig preset,
@@ -217,6 +233,66 @@ void RemoveDebugLocalPlayerBot(State& state, PlayerId player_id) {
         ),
         state.debug_local_player_bots.end()
     );
+}
+
+void DrawReconnectPolicyControls(State& state) {
+    if (!ImGui::CollapsingHeader("Reconnect Policy", ImGuiTreeNodeFlags_DefaultOpen)) {
+        return;
+    }
+
+    network::NetSessionState& session = state.net_session;
+    if (ImGui::BeginCombo(
+            "Spawn mode",
+            ReconnectSpawnModeName(session.reconnect_spawn_mode)
+        )) {
+        constexpr network::NetReconnectSpawnMode kModes[] = {
+            network::NetReconnectSpawnMode::FreshAtEntrance,
+            network::NetReconnectSpawnMode::FreshAtHost,
+            network::NetReconnectSpawnMode::RetainedAtEntrance,
+            network::NetReconnectSpawnMode::RetainedAtLastPosition,
+            network::NetReconnectSpawnMode::RetainedAtHost,
+        };
+        for (const network::NetReconnectSpawnMode mode : kModes) {
+            const bool selected = session.reconnect_spawn_mode == mode;
+            if (ImGui::Selectable(ReconnectSpawnModeName(mode), selected)) {
+                session.reconnect_spawn_mode = mode;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    int lifetime_seconds = static_cast<int>(session.retained_player_lifetime_frames / 60U);
+    if (ImGui::SliderInt("Retained lifetime sec (0=forever)", &lifetime_seconds, 0, 3600)) {
+        constexpr std::uint64_t kFramesPerSecond = 60;
+        session.retained_player_lifetime_frames =
+            static_cast<std::uint64_t>(std::max(0, lifetime_seconds)) * kFramesPerSecond;
+    }
+
+    ImGui::Text("Retained players: %zu", session.retained_players.size());
+    ImGui::SameLine();
+    if (ImGui::Button("Clear Retained Players")) {
+        session.retained_players.clear();
+    }
+
+    for (const network::NetRetainedPlayerState& retained : session.retained_players) {
+        const std::uint64_t age_frames =
+            state.frame > retained.disconnected_frame
+                ? state.frame - retained.disconnected_frame
+                : 0ULL;
+        ImGui::BulletText(
+            "player=%u type=%s hp=%u money=%u age=%llus held=%s back=%s",
+            retained.player_id,
+            EntityTypeToString(retained.entity_type),
+            retained.health,
+            retained.money,
+            static_cast<unsigned long long>(age_frames / 60U),
+            retained.held_item.valid ? EntityTypeToString(retained.held_item.entity_type) : "none",
+            retained.back_item.valid ? EntityTypeToString(retained.back_item.entity_type) : "none"
+        );
+    }
 }
 
 void DrawDebugLocalPlayers(State& state, DebugPlayback& debug, const Graphics& graphics) {
@@ -430,6 +506,9 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Separator();
 
     DrawHostJoinControls(state, debug, graphics);
+    ImGui::Separator();
+
+    DrawReconnectPolicyControls(state);
     ImGui::Separator();
 
     DrawMovementReplicationControls(state);

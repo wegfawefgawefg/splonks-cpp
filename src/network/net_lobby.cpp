@@ -6,9 +6,11 @@
 #include "network/net_lobby_internal.hpp"
 #include "network/net_progression.hpp"
 #include "network/net_protocol.hpp"
+#include "network/net_world_snapshot.hpp"
 #include "entities/common/common.hpp"
 #include "gameplay_messages.hpp"
 #include "quest_stage_loader.hpp"
+#include "stage_progression.hpp"
 #include "stage_spawning.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
@@ -46,27 +48,12 @@ Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
     return Vec2::New(24.0F, 24.0F);
 }
 
-std::optional<Vec2> FindEntranceSpawnPos(const State& state) {
-    for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
-        for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
-            if (state.stage.GetTile(x, y) == Tile::Entrance) {
-                return Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
-                       static_cast<float>(kTileSize);
-            }
-        }
-    }
-
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (entity.active && entity.type_ == EntityType::Entrance) {
-            return entity.pos;
-        }
-    }
-
-    return std::nullopt;
-}
-
 Vec2 GetRemoteSpawnPos(const State& state) {
     return GetPrimaryPlayerSpawnPos(state) + Vec2::New(16.0F, 0.0F);
+}
+
+Vec2 GetEntranceOrRemoteSpawnPos(const State& state) {
+    return FindStageEntranceSpawnPos(state).value_or(GetRemoteSpawnPos(state));
 }
 
 std::uint32_t MakeHostStageSeed(const State& state) {
@@ -92,6 +79,322 @@ bool LoadNetworkQuestStage(
         preserve_player_state,
         seed
     );
+}
+
+NetRetainedPlayerState* FindRetainedPlayerState(State& state, PlayerId player_id) {
+    for (NetRetainedPlayerState& retained : state.net_session.retained_players) {
+        if (retained.player_id == player_id) {
+            return &retained;
+        }
+    }
+    return nullptr;
+}
+
+const NetRetainedPlayerState* FindRetainedPlayerState(const State& state, PlayerId player_id) {
+    for (const NetRetainedPlayerState& retained : state.net_session.retained_players) {
+        if (retained.player_id == player_id) {
+            return &retained;
+        }
+    }
+    return nullptr;
+}
+
+void CopyEntityEffectsToRetained(
+    const Entity& entity,
+    std::uint8_t& effect_count,
+    std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount>& effects_out
+) {
+    effect_count = 0;
+    if (const EntityEffects* const effects = entity.effects.get()) {
+        effect_count = static_cast<std::uint8_t>(
+            std::min<std::size_t>(effects->count, effects_out.size())
+        );
+        for (std::size_t i = 0; i < effect_count; ++i) {
+            const EffectInstance& effect = effects->effects[i];
+            effects_out[i] = PlayerStatePatchedEffect{
+                .id = effect.id,
+                .count = effect.count,
+                .value = effect.value,
+                .frames_remaining = effect.frames_remaining,
+            };
+        }
+    }
+}
+
+void RestoreRetainedEffects(
+    Entity& entity,
+    std::uint8_t effect_count,
+    const std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount>& retained_effects
+) {
+    entity.effects.reset();
+    const std::size_t count = std::min<std::size_t>(effect_count, retained_effects.size());
+    if (count == 0) {
+        return;
+    }
+
+    EntityEffects& effects = entity.effects.emplace();
+    effects.count = static_cast<std::uint8_t>(count);
+    for (std::size_t i = 0; i < count; ++i) {
+        const PlayerStatePatchedEffect& retained_effect = retained_effects[i];
+        effects.effects[i] = EffectInstance{
+            .id = retained_effect.id,
+            .count = retained_effect.count,
+            .value = retained_effect.value,
+            .frames_remaining = retained_effect.frames_remaining,
+        };
+    }
+}
+
+NetRetainedAttachedEntityState CaptureRetainedAttachedEntity(
+    const State& state,
+    std::optional<VID> attached_vid
+) {
+    NetRetainedAttachedEntityState retained;
+    if (!attached_vid.has_value()) {
+        return retained;
+    }
+
+    const Entity* const attached = state.entity_manager.GetEntity(*attached_vid);
+    if (attached == nullptr || !attached->active || IsPlayerLikeEntityType(attached->type_)) {
+        return retained;
+    }
+
+    retained.valid = true;
+    retained.entity_type = attached->type_;
+    retained.pos = attached->pos;
+    retained.vel = attached->vel;
+    retained.acc = attached->acc;
+    retained.size = attached->size;
+    retained.rotation = attached->rotation;
+    retained.counter_a = attached->counter_a;
+    retained.counter_b = attached->counter_b;
+    retained.counter_c = attached->counter_c;
+    retained.counter_d = attached->counter_d;
+    retained.health = attached->health;
+    retained.money = attached->money;
+    retained.facing = static_cast<std::uint8_t>(attached->facing == LeftOrRight::Right ? 1 : 0);
+    retained.condition = static_cast<std::uint8_t>(attached->condition);
+    CopyEntityEffectsToRetained(*attached, retained.effect_count, retained.effects);
+    return retained;
+}
+
+void RemoveRetainedPlayerState(State& state, PlayerId player_id) {
+    state.net_session.retained_players.erase(
+        std::remove_if(
+            state.net_session.retained_players.begin(),
+            state.net_session.retained_players.end(),
+            [player_id](const NetRetainedPlayerState& retained) {
+                return retained.player_id == player_id;
+            }
+        ),
+        state.net_session.retained_players.end()
+    );
+}
+
+void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Entity& player) {
+    RemoveRetainedPlayerState(state, slot.player_id);
+
+    NetRetainedPlayerState retained;
+    retained.player_id = slot.player_id;
+    retained.display_name = slot.display_name;
+    retained.quest_id = state.stage.quest_id;
+    retained.quest_stage_id = state.stage.quest_stage_id;
+    retained.entity_type = player.type_;
+    retained.last_pos = player.pos;
+    retained.health = player.health;
+    retained.money = player.money;
+    retained.disconnected_frame = state.frame;
+    retained.held_item = CaptureRetainedAttachedEntity(state, player.holding_vid);
+    retained.back_item = CaptureRetainedAttachedEntity(state, player.back_vid);
+
+    if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player.vid)) {
+        for (std::size_t i = 0; i < retained.tool_slots.size() && i < tools->slots.size(); ++i) {
+            const ToolSlot& tool_slot = tools->slots[i];
+            retained.tool_slots[i] = PlayerStatePatchedToolSlot{
+                .kind = tool_slot.kind,
+                .count = tool_slot.count,
+                .cooldown = tool_slot.cooldown,
+                .active = static_cast<std::uint8_t>(tool_slot.active ? 1 : 0),
+            };
+        }
+    }
+
+    CopyEntityEffectsToRetained(player, retained.effect_count, retained.effects);
+
+    state.net_session.retained_players.push_back(retained);
+}
+
+void CleanupExpiredRetainedPlayerStates(State& state) {
+    const std::uint64_t lifetime = state.net_session.retained_player_lifetime_frames;
+    if (lifetime == 0) {
+        return;
+    }
+
+    state.net_session.retained_players.erase(
+        std::remove_if(
+            state.net_session.retained_players.begin(),
+            state.net_session.retained_players.end(),
+            [&](const NetRetainedPlayerState& retained) {
+                return state.frame > retained.disconnected_frame &&
+                       state.frame - retained.disconnected_frame > lifetime;
+            }
+        ),
+        state.net_session.retained_players.end()
+    );
+}
+
+void DeactivateRetainedAttachedEntity(
+    State& state,
+    const NetRetainedAttachedEntityState& retained,
+    std::optional<VID> attached_vid
+) {
+    if (!retained.valid || !attached_vid.has_value()) {
+        return;
+    }
+    if (const Entity* const attached = state.entity_manager.GetEntity(*attached_vid);
+        attached != nullptr && attached->active && attached->type_ == retained.entity_type &&
+        !IsPlayerLikeEntityType(attached->type_)) {
+        (void)world_ops::DeactivateEntity(state, attached->vid);
+    }
+}
+
+bool IsRetainedReconnectMode(NetReconnectSpawnMode mode) {
+    return mode == NetReconnectSpawnMode::RetainedAtEntrance ||
+           mode == NetReconnectSpawnMode::RetainedAtLastPosition ||
+           mode == NetReconnectSpawnMode::RetainedAtHost;
+}
+
+void ApplyRetainedAttachedEntityState(
+    State& state,
+    Entity& holder,
+    const NetRetainedAttachedEntityState& retained,
+    AttachmentMode mode,
+    const Graphics& graphics
+);
+
+Vec2 ResolveReconnectSpawnPos(
+    const State& state,
+    const NetRetainedPlayerState* retained,
+    std::size_t player_index
+) {
+    Vec2 pos = GetRemoteSpawnPos(state) + Vec2::New(static_cast<float>(player_index) * 8.0F, 0.0F);
+    switch (state.net_session.reconnect_spawn_mode) {
+    case NetReconnectSpawnMode::FreshAtEntrance:
+    case NetReconnectSpawnMode::RetainedAtEntrance:
+        pos = GetEntranceOrRemoteSpawnPos(state) + Vec2::New(static_cast<float>(player_index) * 8.0F, 0.0F);
+        break;
+    case NetReconnectSpawnMode::FreshAtHost:
+    case NetReconnectSpawnMode::RetainedAtHost:
+        pos = GetPrimaryPlayerSpawnPos(state) + Vec2::New(16.0F + static_cast<float>(player_index) * 8.0F, 0.0F);
+        break;
+    case NetReconnectSpawnMode::RetainedAtLastPosition:
+        if (retained != nullptr) {
+            pos = retained->last_pos;
+        }
+        break;
+    }
+    return pos;
+}
+
+void ApplyRetainedPlayerState(
+    State& state,
+    PlayerId player_id,
+    const NetRetainedPlayerState& retained,
+    const Vec2& spawn_pos,
+    const Graphics& graphics
+) {
+    EnsureSpawnedPlayer(state, player_id, false, false, spawn_pos, graphics);
+    PlayerSlot* const slot = state.players.Find(player_id);
+    if (slot == nullptr || !slot->entity_vid.has_value()) {
+        return;
+    }
+
+    Entity* const player = state.entity_manager.GetEntityMut(*slot->entity_vid);
+    if (player == nullptr || !player->active) {
+        return;
+    }
+
+    SetEntityAs(*player, retained.entity_type);
+    player->pos = spawn_pos;
+    player->vel = Vec2::New(0.0F, 0.0F);
+    player->acc = Vec2::New(0.0F, 0.0F);
+    player->health = retained.health;
+    player->money = retained.money;
+    player->held_by_vid.reset();
+    player->holding_vid.reset();
+    player->back_vid.reset();
+    player->attachment_mode = AttachmentMode::None;
+    player->stun_timer = 0;
+    player->fall_timer = 0;
+    player->coyote_time = 0;
+    player->hang_side.reset();
+    player->hang_count = 0;
+
+    for (std::size_t i = 0; i < retained.tool_slots.size(); ++i) {
+        const PlayerStatePatchedToolSlot& retained_tool = retained.tool_slots[i];
+        ToolSlot& tool_slot = state.entity_tools.EnsureToolSlot(player->vid, i);
+        tool_slot.kind = retained_tool.kind;
+        tool_slot.count = retained_tool.count;
+        tool_slot.cooldown = retained_tool.cooldown;
+        tool_slot.active = retained_tool.active != 0;
+    }
+
+    RestoreRetainedEffects(*player, retained.effect_count, retained.effects);
+
+    state.UpdateSidForEntity(player->vid.id, graphics);
+    ApplyRetainedAttachedEntityState(state, *player, retained.back_item, AttachmentMode::Back, graphics);
+    ApplyRetainedAttachedEntityState(state, *player, retained.held_item, AttachmentMode::Held, graphics);
+}
+
+void ApplyRetainedAttachedEntityState(
+    State& state,
+    Entity& holder,
+    const NetRetainedAttachedEntityState& retained,
+    AttachmentMode mode,
+    const Graphics& graphics
+) {
+    if (!retained.valid) {
+        return;
+    }
+
+    Entity* const attached = world_ops::SpawnEntity(
+        state,
+        retained.entity_type,
+        [&](Entity& entity) {
+            entity.pos = retained.pos;
+            entity.vel = retained.vel;
+            entity.acc = retained.acc;
+            entity.size = retained.size;
+            entity.rotation = retained.rotation;
+            entity.counter_a = retained.counter_a;
+            entity.counter_b = retained.counter_b;
+            entity.counter_c = retained.counter_c;
+            entity.counter_d = retained.counter_d;
+            entity.health = retained.health;
+            entity.money = retained.money;
+            entity.facing = retained.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
+            entity.condition = static_cast<EntityCondition>(retained.condition);
+            RestoreRetainedEffects(entity, retained.effect_count, retained.effects);
+        }
+    );
+    if (attached == nullptr) {
+        return;
+    }
+
+    if (mode == AttachmentMode::Back) {
+        holder.back_vid = attached->vid;
+        attached->held_by_vid = holder.vid;
+        attached->attachment_mode = AttachmentMode::Back;
+        attached->has_physics = false;
+        attached->can_collide = false;
+    } else {
+        entities::common::AttachEntityAsHeld(holder, *attached);
+    }
+
+    entities::common::SyncEntityAttachments(holder.vid.id, state, graphics);
+    world_ops::MarkEntityHeld(state, holder, *attached, mode);
+    world_ops::PatchEntityState(state, holder, holder);
+    world_ops::PatchEntityState(state, holder, *attached);
 }
 
 bool EnsureHostSyncedStage(State& state, std::string* status_out) {
@@ -163,20 +466,63 @@ void RemoveRemotePlayers(
             continue;
         }
         if (PlayerSlot* const slot = state.players.Find(player_id)) {
-            if (slot->entity_vid.has_value()) {
+            if (state.net_session.role == NetRole::Coordinator &&
+                slot->connection_kind == PlayerConnectionKind::Remote) {
+                if (slot->entity_vid.has_value()) {
+                    if (Entity* const entity = state.entity_manager.GetEntityMut(*slot->entity_vid)) {
+                        if (entity->active) {
+                            const std::optional<VID> held_vid = entity->holding_vid;
+                            const std::optional<VID> back_vid = entity->back_vid;
+                            StoreRetainedPlayerState(state, *slot, *entity);
+                            const NetRetainedPlayerState* const retained =
+                                FindRetainedPlayerState(state, player_id);
+                            const std::vector<VID> changed_entities =
+                                entities::common::SeverEntityCarryLinksForReset(*entity, state);
+                            for (const VID& changed_vid : changed_entities) {
+                                if (const Entity* const changed =
+                                        state.entity_manager.GetEntity(changed_vid)) {
+                                    world_ops::PatchEntityState(state, *changed, *changed);
+                                }
+                            }
+                            if (retained != nullptr) {
+                                DeactivateRetainedAttachedEntity(state, retained->held_item, held_vid);
+                                DeactivateRetainedAttachedEntity(state, retained->back_item, back_vid);
+                            }
+                            (void)world_ops::DeactivateEntity(state, entity->vid);
+                        }
+                    }
+                }
+                state.players.Remove(player_id);
+                state.net_session.UnlinkEntity(MakePlayerNetEntityId(player_id));
+            } else if (slot->entity_vid.has_value()) {
                 state.entity_manager.SetInactiveVid(*slot->entity_vid);
             }
         }
-        state.players.Remove(player_id);
-        state.net_session.UnlinkEntity(MakePlayerNetEntityId(player_id));
-        state.net_session.peers.erase(
-            std::remove_if(
-                state.net_session.peers.begin(),
-                state.net_session.peers.end(),
-                [player_id](const NetPeerState& peer) { return peer.player_id == player_id; }
-            ),
-            state.net_session.peers.end()
-        );
+        if (state.net_session.role == NetRole::Coordinator) {
+            NetPeerState* peer_state = nullptr;
+            for (NetPeerState& peer : state.net_session.peers) {
+                if (peer.player_id == player_id) {
+                    peer_state = &peer;
+                    break;
+                }
+            }
+            if (peer_state != nullptr) {
+                peer_state->connected = false;
+                peer_state->endpoint_address.clear();
+                peer_state->endpoint_port = 0;
+            }
+        } else {
+            state.players.Remove(player_id);
+            state.net_session.UnlinkEntity(MakePlayerNetEntityId(player_id));
+            state.net_session.peers.erase(
+                std::remove_if(
+                    state.net_session.peers.begin(),
+                    state.net_session.peers.end(),
+                    [player_id](const NetPeerState& peer) { return peer.player_id == player_id; }
+                ),
+                state.net_session.peers.end()
+            );
+        }
         transport.remote_player_targets.erase(
             std::remove_if(
                 transport.remote_player_targets.begin(),
@@ -263,17 +609,51 @@ std::uint32_t CountLocalPlayers(const PlayerRegistry& players) {
     return std::max<std::uint32_t>(count, 1);
 }
 
-std::vector<PlayerId> AllocateRemotePlayerIds(NetSessionState& session, std::uint32_t player_count) {
+bool IsRemotePlayerIdAvailableForJoin(const State& state, PlayerId player_id) {
+    if (player_id < kFirstRemotePlayerId || player_id == state.net_session.local_player_id) {
+        return false;
+    }
+
+    if (const PlayerSlot* const slot = state.players.Find(player_id)) {
+        return slot->connection_kind == PlayerConnectionKind::Remote && !slot->connected;
+    }
+
+    return std::none_of(
+        state.net_session.peers.begin(),
+        state.net_session.peers.end(),
+        [player_id](const NetPeerState& peer) {
+            return peer.player_id == player_id && peer.connected;
+        }
+    );
+}
+
+std::vector<PlayerId> GetPreferredJoinPlayerIds(
+    State& state,
+    const JoinRequestPacket& request,
+    std::uint32_t player_count
+) {
     std::vector<PlayerId> player_ids;
     player_ids.reserve(player_count);
+    const std::uint32_t preferred_count = std::min<std::uint32_t>(
+        request.preferred_player_count,
+        static_cast<std::uint32_t>(request.preferred_player_ids.size())
+    );
+    for (std::uint32_t i = 0; i < preferred_count && player_ids.size() < player_count; ++i) {
+        const PlayerId player_id = request.preferred_player_ids[i];
+        if (std::find(player_ids.begin(), player_ids.end(), player_id) != player_ids.end()) {
+            continue;
+        }
+        if (IsRemotePlayerIdAvailableForJoin(state, player_id)) {
+            player_ids.push_back(player_id);
+        }
+    }
+
     while (player_ids.size() < player_count) {
-        const PlayerId player_id = std::max(session.next_player_id++, kFirstRemotePlayerId);
-        const bool already_used = std::any_of(
-            session.peers.begin(),
-            session.peers.end(),
-            [player_id](const NetPeerState& peer) { return peer.player_id == player_id; }
-        );
-        if (!already_used) {
+        const PlayerId player_id = std::max(state.net_session.next_player_id++, kFirstRemotePlayerId);
+        if (std::find(player_ids.begin(), player_ids.end(), player_id) != player_ids.end()) {
+            continue;
+        }
+        if (IsRemotePlayerIdAvailableForJoin(state, player_id)) {
             player_ids.push_back(player_id);
         }
     }
@@ -304,6 +684,15 @@ void SendJoinRequest(State& state) {
 
     JoinRequestPacket request;
     request.local_player_count = CountLocalPlayers(state.players);
+    if (state.net_transport) {
+        request.preferred_player_count = static_cast<std::uint32_t>(std::min<std::size_t>(
+            state.net_transport->preferred_player_ids.size(),
+            request.preferred_player_ids.size()
+        ));
+        for (std::uint32_t i = 0; i < request.preferred_player_count; ++i) {
+            request.preferred_player_ids[i] = state.net_transport->preferred_player_ids[i];
+        }
+    }
     WriteFixedString("Player", request.display_name);
     const EncodedNetPacket encoded = EncodeJoinRequest(request);
     SendEncodedPacket(*state.net_transport, state.net_transport->coordinator_endpoint, encoded);
@@ -382,25 +771,47 @@ void HandleJoinRequest(
         }
     }
     if (player_ids.empty()) {
-        player_ids = AllocateRemotePlayerIds(state.net_session, player_count);
+        player_ids = GetPreferredJoinPlayerIds(state, request, player_count);
     }
 
     const std::string display_name = ReadFixedString(request.display_name);
-    const Vec2 remote_spawn = GetRemoteSpawnPos(state);
+    Vec2 remote_spawn = GetRemoteSpawnPos(state);
     for (std::size_t i = 0; i < player_ids.size(); ++i) {
         const PlayerId player_id = player_ids[i];
         const std::string player_name = display_name.empty()
             ? "Remote " + std::to_string(player_id)
             : display_name + " " + std::to_string(i + 1);
-        state.players.EnsureRemotePlayer(player_id, player_name);
-        EnsureSpawnedPlayer(
-            state,
-            player_id,
-            false,
-            false,
-            remote_spawn + Vec2::New(static_cast<float>(i) * 8.0F, 0.0F),
-            graphics
-        );
+        PlayerSlot& slot = state.players.EnsureRemotePlayer(player_id, player_name);
+        const NetRetainedPlayerState* const retained = FindRetainedPlayerState(state, player_id);
+        const Vec2 spawn_pos = ResolveReconnectSpawnPos(state, retained, i);
+        if (i == 0) {
+            remote_spawn = spawn_pos;
+        }
+        bool resumed_existing_body = false;
+        if (slot.entity_vid.has_value()) {
+            if (const Entity* const entity = state.entity_manager.GetEntity(*slot.entity_vid);
+                entity != nullptr && entity->active) {
+                state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), entity->vid);
+                resumed_existing_body = true;
+            }
+        }
+        if (!resumed_existing_body && retained != nullptr &&
+            IsRetainedReconnectMode(state.net_session.reconnect_spawn_mode)) {
+            ApplyRetainedPlayerState(state, player_id, *retained, spawn_pos, graphics);
+            RemoveRetainedPlayerState(state, player_id);
+        } else if (!resumed_existing_body) {
+            EnsureSpawnedPlayer(
+                state,
+                player_id,
+                false,
+                false,
+                spawn_pos,
+                graphics
+            );
+            if (retained != nullptr) {
+                RemoveRetainedPlayerState(state, player_id);
+            }
+        }
 
         NetPeerState* peer_state = nullptr;
         for (NetPeerState& peer : state.net_session.peers) {
@@ -418,6 +829,7 @@ void HandleJoinRequest(
         peer_state->display_name = player_name;
         peer_state->endpoint_address = udp_packet.endpoint.address;
         peer_state->endpoint_port = udp_packet.endpoint.port;
+        peer_state->connected = true;
     }
     RegisterRemoteEndpoint(transport, player_ids, udp_packet.endpoint, state.frame);
 
@@ -437,11 +849,13 @@ void HandleJoinRequest(
     accept.host_spawn_x = host_spawn.x;
     accept.host_spawn_y = host_spawn.y;
     accept.stage_seed = state.net_session.stage_seed;
+    accept.snapshot_start_coordinator_order = state.net_session.next_coordinator_order;
     WriteFixedString(state.net_session.quest_id, accept.quest_id);
     WriteFixedString(state.net_session.quest_stage_id, accept.quest_stage_id);
     WriteFixedString("Host", accept.coordinator_name);
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
+    EnqueueWorldSnapshotEvents(state);
 }
 
 void HandleJoinAccept(
@@ -467,6 +881,12 @@ void HandleJoinAccept(
     state.net_session.quest_stage_id = ReadFixedString(accept.quest_stage_id);
     state.net_session.stage_seed = accept.stage_seed;
     transport.join_request_pending = false;
+    transport.preferred_player_ids.clear();
+    for (std::uint32_t i = 0; i < assigned_count; ++i) {
+        if (accept.assigned_player_ids[i] != kInvalidPlayerId) {
+            transport.preferred_player_ids.push_back(accept.assigned_player_ids[i]);
+        }
+    }
 
     state.players = PlayerRegistry::New();
     state.controlled_entity_vid.reset();
@@ -485,6 +905,10 @@ void HandleJoinAccept(
         transport.last_error = "Join accepted, but synced quest stage load failed.";
         return;
     }
+    state.net_session.next_expected_coordinator_order = std::max<std::uint64_t>(
+        accept.snapshot_start_coordinator_order,
+        1
+    );
 
     ClearLocalPlayersForJoin(state);
     EnsureSpawnedPlayer(
@@ -706,6 +1130,33 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
 
 } // namespace
 
+void HandleJoinRequestAsCoordinator(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const UdpPacket& udp_packet,
+    const JoinRequestPacket& request
+) {
+    HandleJoinRequest(state, graphics, transport, udp_packet, request);
+}
+
+void HandleJoinAcceptAsPeer(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const JoinAcceptPacket& accept
+) {
+    HandleJoinAccept(state, graphics, transport, accept);
+}
+
+void HandleLeaveNoticeAsCoordinator(
+    State& state,
+    NetTransportRuntime& transport,
+    const LeaveNoticePacket& leave
+) {
+    RemoveRemotePlayers(state, transport, GetLeavePlayerIds(leave));
+}
+
 bool StartHostSession(State& state, std::uint16_t port, std::string* status_out) {
     NetTransportRuntime& transport = EnsureTransport(state);
     std::string error;
@@ -733,6 +1184,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     transport.remote_player_targets.clear();
     transport.replicated_entity_state_cache.clear();
     transport.replicated_fluid_cell_cache.clear();
+    transport.preferred_player_ids.clear();
     transport.join_request_pending = false;
     if (status_out != nullptr) {
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
@@ -797,7 +1249,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         return false;
     }
 
-    const std::optional<Vec2> entrance_pos = FindEntranceSpawnPos(state);
+    const std::optional<Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network respawn failed: no entrance was found.";
@@ -871,17 +1323,12 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         }
     }
 
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || entity.type_ != EntityType::Entrance) {
-            continue;
-        }
-        entity.counter_a = 0.0F;
-        entity.counter_b = 0.0F;
-    }
+    (void)ResetStageEntrancePresentation(state);
 
     state.game_over = false;
     state.pending_stage_transition.reset();
     state.gameplay_camera_anchor_world_pos.reset();
+    world_ops::PatchRunState(state);
     if (status_out != nullptr) {
         *status_out = "Respawned local network players at entrance.";
     }
@@ -896,7 +1343,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
         return false;
     }
 
-    const std::optional<Vec2> entrance_pos = FindEntranceSpawnPos(state);
+    const std::optional<Vec2> entrance_pos = FindStageEntranceSpawnPos(state);
     if (!entrance_pos.has_value()) {
         if (status_out != nullptr) {
             *status_out = "Network revive failed: no entrance was found.";
@@ -988,15 +1435,10 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
         }
     }
 
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || entity.type_ != EntityType::Entrance) {
-            continue;
-        }
-        entity.counter_a = 0.0F;
-        entity.counter_b = 0.0F;
-        if (std::find(changed_entities.begin(), changed_entities.end(), entity.vid) ==
+    for (const VID changed_vid : ResetStageEntrancePresentation(state)) {
+        if (std::find(changed_entities.begin(), changed_entities.end(), changed_vid) ==
             changed_entities.end()) {
-            changed_entities.push_back(entity.vid);
+            changed_entities.push_back(changed_vid);
         }
     }
 
@@ -1010,6 +1452,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
 
     state.game_over = false;
     state.gameplay_camera_anchor_world_pos.reset();
+    world_ops::PatchRunState(state);
     if (status_out != nullptr) {
         *status_out = "Revived network players at entrance.";
     }
@@ -1094,6 +1537,7 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
         return;
     }
     if (state.net_session.role == NetRole::Coordinator) {
+        CleanupExpiredRetainedPlayerStates(state);
         StepHostPackets(state, graphics, *state.net_transport);
         const bool should_send = ShouldSendSnapshots(state, *state.net_transport);
         if (should_send) {

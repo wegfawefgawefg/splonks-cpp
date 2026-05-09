@@ -193,6 +193,7 @@ void DieIfDead(std::size_t entity_idx, State& state, Audio& audio) {
     const bool entered_dead = entity.condition != EntityCondition::Dead && entity.health == 0;
     if (entity.health == 0) {
         if (entered_dead) {
+            ReleaseEntityFromHolder(entity, state);
             DropHeldItemFromEntity(entity, state);
         }
         entity.condition = EntityCondition::Dead;

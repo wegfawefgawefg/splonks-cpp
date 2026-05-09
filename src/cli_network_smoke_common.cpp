@@ -242,16 +242,37 @@ std::vector<network::UdpPacket> TakeCapturedPackets(network::NetTransportRuntime
     return packets;
 }
 
+std::vector<network::UdpPacket> ApplyPacketDeliveryPlan(
+    std::vector<network::UdpPacket> packets,
+    const PacketDeliveryPlan& plan
+) {
+    if (plan.duplicate_each_packet) {
+        std::vector<network::UdpPacket> duplicated;
+        duplicated.reserve(packets.size() * 2);
+        for (const network::UdpPacket& packet : packets) {
+            duplicated.push_back(packet);
+            duplicated.push_back(packet);
+        }
+        packets = std::move(duplicated);
+    }
+    if (plan.reverse_order) {
+        std::reverse(packets.begin(), packets.end());
+    }
+    return packets;
+}
+
 bool DeliverPeerPacketsToCoordinator(
     State& peer,
     State& coordinator,
     network::NetTransportRuntime& peer_transport,
     network::NetTransportRuntime& coordinator_transport,
     const network::NetEndpoint& peer_endpoint,
-    const char* label
+    const char* label,
+    const PacketDeliveryPlan& delivery_plan
 ) {
     network::SendPendingPeerEventsToCoordinator(peer, peer_transport);
-    const std::vector<network::UdpPacket> packets = TakeCapturedPackets(peer_transport);
+    const std::vector<network::UdpPacket> packets =
+        ApplyPacketDeliveryPlan(TakeCapturedPackets(peer_transport), delivery_plan);
     if (packets.empty()) {
         std::cerr << "network packet smoke failed at " << label
                   << ": peer captured no outbound packets\n";
@@ -296,14 +317,16 @@ bool DeliverCoordinatorPacketsToPeer(
     Graphics& graphics,
     Audio& audio,
     const char* label,
-    bool compare_after_delivery
+    bool compare_after_delivery,
+    const PacketDeliveryPlan& delivery_plan
 ) {
     network::SendStageSyncToAllRemotes(coordinator, coordinator_transport);
     network::SendReplicatedEntityStatePatchesToAllRemotes(coordinator, coordinator_transport);
     network::SendReplicatedFluidCellPatchesToAllRemotes(coordinator, coordinator_transport);
     network::SendCoordinatorEntityRepairPatchesToAllRemotes(coordinator, coordinator_transport);
     network::SendOrderedEventsToAllRemotes(coordinator, coordinator_transport);
-    const std::vector<network::UdpPacket> packets = TakeCapturedPackets(coordinator_transport);
+    const std::vector<network::UdpPacket> packets =
+        ApplyPacketDeliveryPlan(TakeCapturedPackets(coordinator_transport), delivery_plan);
     if (packets.empty() && !coordinator.net_session.ordered_events.empty()) {
         std::cerr << "network packet smoke failed at " << label
                   << ": coordinator captured no result packets for "
@@ -369,6 +392,9 @@ bool DeliverCoordinatorPacketsToPeer(
         }
         if (const std::optional<network::ActionRequestAckPacket> action_ack =
                 network::TryDecodeActionRequestAck(packet.bytes.data(), packet.size)) {
+            if (delivery_plan.drop_action_ack) {
+                continue;
+            }
             network::HandleActionRequestAckAsPeer(peer, *action_ack);
             continue;
         }
@@ -411,6 +437,25 @@ bool DeliverCoordinatorPacketsToPeer(
     return !compare_after_delivery || CompareProtocolSmokeStates(coordinator, peer, label);
 }
 
+bool DropCoordinatorPacketsToPeer(
+    State& coordinator,
+    network::NetTransportRuntime& coordinator_transport,
+    const char* label
+) {
+    network::SendStageSyncToAllRemotes(coordinator, coordinator_transport);
+    network::SendReplicatedEntityStatePatchesToAllRemotes(coordinator, coordinator_transport);
+    network::SendReplicatedFluidCellPatchesToAllRemotes(coordinator, coordinator_transport);
+    network::SendCoordinatorEntityRepairPatchesToAllRemotes(coordinator, coordinator_transport);
+    network::SendOrderedEventsToAllRemotes(coordinator, coordinator_transport);
+    const std::vector<network::UdpPacket> packets = TakeCapturedPackets(coordinator_transport);
+    if (packets.empty()) {
+        std::cerr << "network packet smoke failed at " << label
+                  << ": coordinator emitted no packets to drop\n";
+        return false;
+    }
+    return true;
+}
+
 bool RunPeerActionThroughPacketCoordinator(
     State& coordinator,
     State& peer,
@@ -420,7 +465,8 @@ bool RunPeerActionThroughPacketCoordinator(
     const GameplayActionRequested& peer_action,
     Graphics& graphics,
     Audio& audio,
-    const char* label
+    const char* label,
+    const PacketDeliveryPlan& coordinator_delivery_plan
 ) {
     world_ops::RequestGameplayAction(peer, peer_action);
     if (!DeliverPeerPacketsToCoordinator(
@@ -442,7 +488,9 @@ bool RunPeerActionThroughPacketCoordinator(
         peer_endpoint,
         graphics,
         audio,
-        label
+        label,
+        true,
+        coordinator_delivery_plan
     );
 }
 

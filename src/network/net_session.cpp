@@ -74,7 +74,10 @@ const char* NetEventTypeName(NetEventType type) {
     }
 }
 
-bool IsTransientEntityStatePatch(const NetEvent& event) {
+bool IsTransientStatePatch(const NetEvent& event) {
+    if (event.type == NetEventType::FluidCellPatched) {
+        return true;
+    }
     if (event.type != NetEventType::EntityStatePatched) {
         return false;
     }
@@ -141,7 +144,7 @@ void NetSessionState::EnqueueOrderedEvent(NetEvent event) {
     if (event.header.event_id == kInvalidNetEventId) {
         event.header = MakeLocalEventHeader(0);
     }
-    if (IsTransientEntityStatePatch(event)) {
+    if (IsTransientStatePatch(event)) {
         EnqueueTransientEvent(event);
         return;
     }

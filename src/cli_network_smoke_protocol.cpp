@@ -74,6 +74,11 @@ bool CheckNetworkProtocolApplySmoke() {
         }
 
         rock->vel = Vec2::New(2.0F, -1.0F);
+        rock->money = 321;
+        rock->stage_exit_id = 7;
+        rock->holding = true;
+        rock->render_enabled = false;
+        rock->damage_vulnerability = DamageVulnerability::ExplosionOnly;
         world_ops::PatchEntityState(coordinator, *rock, *rock);
         if (!ApplyCoordinatorEventsToPeer(coordinator, peer, "entity state patched") ||
             !CompareProtocolSmokeStates(coordinator, peer, "protocol entity state patched")) {

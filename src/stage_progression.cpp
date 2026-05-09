@@ -1,5 +1,6 @@
 #include "stage_progression.hpp"
 
+#include "entity.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
@@ -172,6 +173,38 @@ void ApplyPendingStageTransition(State& state) {
         );
         break;
     }
+}
+
+std::optional<Vec2> FindStageEntranceSpawnPos(const State& state) {
+    for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
+        for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
+            if (state.stage.GetTile(x, y) == Tile::Entrance) {
+                return Vec2::New(static_cast<float>(x), static_cast<float>(y)) *
+                       static_cast<float>(kTileSize);
+            }
+        }
+    }
+
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (entity.active && entity.type_ == EntityType::Entrance) {
+            return entity.pos;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::vector<VID> ResetStageEntrancePresentation(State& state) {
+    std::vector<VID> changed_entities;
+    for (Entity& entity : state.entity_manager.entities) {
+        if (!entity.active || entity.type_ != EntityType::Entrance) {
+            continue;
+        }
+        entity.counter_a = 0.0F;
+        entity.counter_b = 0.0F;
+        changed_entities.push_back(entity.vid);
+    }
+    return changed_entities;
 }
 
 } // namespace splonks

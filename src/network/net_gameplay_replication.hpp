@@ -17,7 +17,7 @@ void ReplicateEntityThrown(State& state, const GameplayEntityThrown& thrown);
 void ReplicateEntityDamaged(State& state, const GameplayEntityDamaged& damaged);
 void ReplicateEntityStatePatched(State& state, const GameplayEntityStatePatched& patched);
 void ReplicatePlayerStatePatched(State& state, const GameplayPlayerStatePatched& patched);
-void ReplicateRunStatePatched(State& state);
+void ReplicateRunStatePatched(State& state, bool include_snapshot_fingerprint = false);
 void ReplicateTileChanged(State& state, const GameplayTileChanged& changed);
 void ReplicateTileBroken(State& state, const GameplayTileBroken& broken);
 void ReplicatePresentationCommand(State& state, const PresentationCommand& command);

@@ -17,12 +17,15 @@
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "state.hpp"
+#include "state_fingerprint.hpp"
 #include "tile_archetype.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <optional>
+#include <string>
 #include <vector>
 
 namespace splonks::network {
@@ -132,7 +135,6 @@ void ApplyFluidCellPatchedEvent(State& state, const FluidCellPatchedEvent& paylo
     stage.fluid_temp_gravity[y][x] = next_temp_gravity;
 
     if (lighting_changed) {
-        stage.tile_change_generation += 1;
         const std::vector<IVec2> changed_tiles{wrapped_pos};
         UpdateStageLightingForTileChanges(state, changed_tiles);
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
@@ -452,6 +454,7 @@ void ApplyEntityDamagedEvent(
         entity->acc = payload.acc;
         entity->grounded = payload.grounded != 0;
     }
+    entity->fall_timer = payload.fall_timer;
     entity->stun_timer = payload.stun_timer;
     entity->projectile_contact_timer = payload.projectile_contact_timer;
 
@@ -556,13 +559,19 @@ void ApplyEntityStatePatchedEvent(
     entity->has_physics = payload.has_physics != 0;
     entity->can_collide = payload.can_collide != 0;
     entity->can_apply_projectile_contact = payload.can_apply_projectile_contact != 0;
+    entity->damage_vulnerability =
+        static_cast<DamageVulnerability>(payload.damage_vulnerability);
     entity->projectile_contact_timer = payload.projectile_contact_timer;
     entity->rotation = payload.rotation;
     entity->facing = payload.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
     entity->ai_state = static_cast<EntityAiState>(payload.ai_state);
     entity->wanted = payload.wanted != 0;
+    entity->holding = payload.holding != 0;
+    entity->render_enabled = payload.render_enabled != 0;
     entity->draw_layer = static_cast<DrawLayer>(payload.draw_layer);
     entity->movement_flags = payload.movement_flags;
+    entity->money = payload.money;
+    entity->stage_exit_id = payload.stage_exit_id;
     ApplyReplicatedRuntimeFlags(*entity, payload.runtime_flags);
     ApplyReplicatedEffects(*entity, payload);
     entity->buyable.active = payload.buyable_active != 0;
@@ -849,8 +858,27 @@ void ApplyPlayerStatePatchedEvent(
         return;
     }
     Entity* const player = state.entity_manager.GetEntityMut(*vid);
-    if (player == nullptr || !player->active || state.players.FindByEntityVid(player->vid) == nullptr) {
+    if (player == nullptr || !player->active) {
         return;
+    }
+    PlayerSlot* player_slot = state.players.FindByEntityVid(player->vid);
+    if (player_slot == nullptr && payload.player_id != kInvalidPlayerId) {
+        const bool local_player = payload.player_id == state.net_session.local_player_id;
+        if (local_player) {
+            player_slot = &state.players.EnsureLocalPlayer(payload.player_id, "Player", true);
+        } else {
+            player_slot = &state.players.EnsureRemotePlayer(
+                payload.player_id,
+                "Player " + std::to_string(payload.player_id)
+            );
+        }
+        player_slot->entity_vid = player->vid;
+    }
+    if (player_slot == nullptr) {
+        return;
+    }
+    if (player_slot->connection_kind == PlayerConnectionKind::Remote) {
+        player_slot->connected = payload.connected != 0;
     }
 
     player->health = payload.health;
@@ -894,6 +922,7 @@ std::size_t ApplyOrderedEvents(
 ) {
     std::size_t applied_count = 0;
     std::vector<NetEventId> transient_applied_event_ids;
+    std::optional<std::uint64_t> pending_snapshot_fingerprint;
     std::stable_sort(
         session.ordered_events.begin(),
         session.ordered_events.end(),
@@ -980,6 +1009,40 @@ std::size_t ApplyOrderedEvents(
         case NetEventType::RunStatePatched:
             if (const auto* payload = std::get_if<RunStatePatchedEvent>(&event.payload)) {
                 state.quest_state.quest_id = payload->quest_id;
+                state.frame = payload->frame;
+                state.stage_frame = payload->stage_frame;
+                state.depth = payload->depth;
+                state.points = payload->points;
+                state.deaths = payload->deaths;
+                state.stage.stage_type = static_cast<StageType>(payload->stage_type);
+                state.stage.quest_level_number = payload->quest_level_number;
+                state.stage.generation_seed = payload->has_generation_seed != 0
+                    ? std::optional<std::uint32_t>(payload->generation_seed)
+                    : std::nullopt;
+                state.stage.tile_change_generation = payload->tile_change_generation;
+                state.stage.gravity = payload->stage_gravity;
+                state.stage.border.left.tile = payload->border_left_tile;
+                state.stage.border.right.tile = payload->border_right_tile;
+                state.stage.border.top.tile = payload->border_top_tile;
+                state.stage.border.bottom.tile = payload->border_bottom_tile;
+                state.stage.border.wrap_x = payload->border_wrap_x != 0;
+                state.stage.border.wrap_y = payload->border_wrap_y != 0;
+                state.stage.border.void_death_y = payload->has_void_death_y != 0
+                    ? std::optional<int>(payload->void_death_y)
+                    : std::nullopt;
+                state.stage.camera_clamp_enabled = payload->camera_clamp_enabled != 0;
+                state.stage.wrap_transform_active = payload->wrap_transform_active != 0;
+                state.game_over = payload->game_over != 0;
+                state.win = payload->win != 0;
+                state.stage.wrap_padding_tiles = payload->wrap_padding_tiles;
+                state.stage.wrap_core_origin_tiles = UVec2::New(
+                    payload->wrap_core_origin_x,
+                    payload->wrap_core_origin_y
+                );
+                state.stage.wrap_core_size_tiles = UVec2::New(
+                    payload->wrap_core_size_x,
+                    payload->wrap_core_size_y
+                );
                 state.quest_state.classic.made_black_market =
                     payload->classic_made_black_market != 0;
                 state.quest_state.classic.made_udjat_eye =
@@ -996,6 +1059,9 @@ std::size_t ApplyOrderedEvents(
                     payload->classic_has_book_of_dead != 0;
                 state.sac_altar_favor = payload->sac_altar_favor;
                 state.sac_altar_reward_tier = payload->sac_altar_reward_tier;
+                if (payload->has_snapshot_fingerprint != 0) {
+                    pending_snapshot_fingerprint = payload->snapshot_fingerprint;
+                }
             }
             break;
         case NetEventType::TileBroken:
@@ -1081,6 +1147,13 @@ std::size_t ApplyOrderedEvents(
             ),
             session.applied_event_ids.end()
         );
+    }
+    if (pending_snapshot_fingerprint.has_value()) {
+        const std::uint64_t actual_fingerprint = ComputeNetworkStateFingerprint(state).value;
+        state.net_session.last_snapshot_expected_fingerprint = *pending_snapshot_fingerprint;
+        state.net_session.last_snapshot_actual_fingerprint = actual_fingerprint;
+        state.net_session.last_snapshot_fingerprint_valid =
+            actual_fingerprint == *pending_snapshot_fingerprint;
     }
     return applied_count;
 }

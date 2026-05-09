@@ -110,6 +110,7 @@ struct GameplayEntityDamaged {
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
     std::uint8_t condition = 0;
@@ -157,12 +158,17 @@ struct GameplayEntityStatePatched {
     std::uint8_t has_physics = 1;
     std::uint8_t can_collide = 1;
     std::uint8_t can_apply_projectile_contact = 1;
+    std::uint8_t damage_vulnerability = 0;
     std::uint8_t facing = 0;
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
+    std::uint8_t holding = 0;
+    std::uint8_t render_enabled = 1;
     std::uint8_t attachment_mode = 0;
     std::uint8_t draw_layer = 0;
     std::uint32_t movement_flags = 0;
+    std::uint32_t money = 0;
+    std::int32_t stage_exit_id = -1;
     std::uint32_t runtime_flags = 0;
     std::uint8_t buyable_active = 0;
     std::uint32_t buyable_display_quantity = 0;

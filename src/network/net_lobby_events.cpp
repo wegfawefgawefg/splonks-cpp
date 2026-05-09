@@ -2,11 +2,13 @@
 
 #include "gameplay_messages.hpp"
 #include "network/net_ids.hpp"
+#include "network/net_world_snapshot.hpp"
 #include "world_ops.hpp"
 
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <variant>
 
 namespace splonks::network {
@@ -77,6 +79,113 @@ bool IsOneShotTransientCoordinatorEvent(const NetEvent& event) {
     return event.header.coordinator_order == 0 &&
            (event.type == NetEventType::EntityStatePatched ||
             event.type == NetEventType::FluidCellPatched);
+}
+
+std::optional<std::uint64_t> FirstRetainedDurableCoordinatorOrder(
+    const NetSessionState& session
+) {
+    std::optional<std::uint64_t> first_order;
+    for (const NetEvent& event : session.ordered_events) {
+        const std::uint64_t order = event.header.coordinator_order;
+        if (order == 0) {
+            continue;
+        }
+        if (!first_order.has_value() || order < *first_order) {
+            first_order = order;
+        }
+    }
+    return first_order;
+}
+
+bool RemoteNeedsSameStageResync(
+    const NetRemoteEndpoint& remote,
+    const std::optional<std::uint64_t>& first_retained_order
+) {
+    if (!first_retained_order.has_value()) {
+        return false;
+    }
+    const std::uint64_t next_remote_order = remote.highest_acked_coordinator_order + 1;
+    return next_remote_order < *first_retained_order;
+}
+
+StageSyncPacket MakeSameStageForceResyncPacket(
+    const State& state,
+    std::uint64_t snapshot_start_order
+) {
+    StageSyncPacket packet;
+    packet.stage_instance_id = state.net_session.stage_instance_id;
+    packet.stage_seed = state.net_session.stage_seed;
+    packet.snapshot_start_coordinator_order = snapshot_start_order;
+    packet.force_resync = 1;
+    WriteFixedString(state.net_session.quest_id, packet.quest_id);
+    WriteFixedString(state.net_session.quest_stage_id, packet.quest_stage_id);
+    return packet;
+}
+
+void SendSameStageForceResync(
+    State& state,
+    NetTransportRuntime& transport,
+    const NetRemoteEndpoint& remote
+) {
+    if (remote.pending_resync_start_order == 0) {
+        return;
+    }
+    SendEncodedPacket(
+        transport,
+        remote.endpoint,
+        EncodeStageSync(MakeSameStageForceResyncPacket(
+            state,
+            remote.pending_resync_start_order
+        ))
+    );
+}
+
+void EnsureResyncForRemotesBehindRetainedHistory(
+    State& state,
+    NetTransportRuntime& transport
+) {
+    if (transport.remotes.empty()) {
+        return;
+    }
+
+    const std::optional<std::uint64_t> first_retained_order =
+        FirstRetainedDurableCoordinatorOrder(state.net_session);
+    bool needs_snapshot = false;
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (RemoteNeedsSameStageResync(remote, first_retained_order)) {
+            needs_snapshot = true;
+            break;
+        }
+    }
+    if (!needs_snapshot) {
+        return;
+    }
+
+    const std::uint64_t snapshot_start_order = state.net_session.next_coordinator_order;
+    EnqueueWorldSnapshotEvents(state);
+
+    for (NetRemoteEndpoint& remote : transport.remotes) {
+        if (!RemoteNeedsSameStageResync(remote, first_retained_order)) {
+            continue;
+        }
+        remote.pending_resync_start_order = snapshot_start_order;
+        remote.highest_acked_coordinator_order =
+            snapshot_start_order > 0 ? snapshot_start_order - 1 : 0;
+        SendSameStageForceResync(state, transport, remote);
+    }
+}
+
+void SendPendingSameStageResyncs(State& state, NetTransportRuntime& transport) {
+    for (NetRemoteEndpoint& remote : transport.remotes) {
+        if (remote.pending_resync_start_order == 0) {
+            continue;
+        }
+        if (remote.highest_acked_coordinator_order >= remote.pending_resync_start_order) {
+            remote.pending_resync_start_order = 0;
+            continue;
+        }
+        SendSameStageForceResync(state, transport, remote);
+    }
 }
 
 void PruneSentTransientCoordinatorEvents(NetSessionState& session) {
@@ -284,6 +393,9 @@ void SendActionRequestAck(
 }
 
 void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport) {
+    EnsureResyncForRemotesBehindRetainedHistory(state, transport);
+    SendPendingSameStageResyncs(state, transport);
+
     if (state.net_session.ordered_events.empty()) {
         return;
     }
@@ -291,7 +403,8 @@ void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport)
         std::vector<NetEvent> unacked_events;
         unacked_events.reserve(state.net_session.ordered_events.size());
         for (const NetEvent& event : state.net_session.ordered_events) {
-            if ((event.header.coordinator_order == 0 && IsReplicatedEntityStateEvent(event)) ||
+            if ((event.header.coordinator_order == 0 &&
+                 (IsReplicatedEntityStateEvent(event) || IsReplicatedFluidCellEvent(event))) ||
                 event.header.coordinator_order > remote.highest_acked_coordinator_order) {
                 unacked_events.push_back(event);
             }
@@ -300,6 +413,7 @@ void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport)
             continue;
         }
         SendTileEvents(transport, remote.endpoint, unacked_events);
+        SendFluidCellEvents(transport, remote.endpoint, unacked_events);
         SendEntitySpawnedEvents(transport, remote.endpoint, unacked_events);
         SendEntityDamageEvents(transport, remote.endpoint, unacked_events);
         SendEntityStateEvents(transport, remote.endpoint, unacked_events);
@@ -424,7 +538,12 @@ void HandleFluidCellEventsAsPeer(State& state, const FluidCellEventsPacket& pack
         if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
             continue;
         }
-        state.net_session.EnqueueTransientEvent(MakeFluidCellEvent(entry));
+        NetEvent event = MakeFluidCellEvent(entry);
+        if (event.header.coordinator_order == 0) {
+            state.net_session.EnqueueTransientEvent(event);
+        } else {
+            state.net_session.EnqueueOrderedEvent(event);
+        }
     }
 }
 

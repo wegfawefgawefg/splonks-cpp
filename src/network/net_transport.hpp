@@ -2,6 +2,7 @@
 
 #include "effects/effect_id.hpp"
 #include "network/net_ids.hpp"
+#include "network/net_limits.hpp"
 #include "frame_data_id.hpp"
 
 #include <array>
@@ -22,7 +23,7 @@ struct NetEndpoint {
 
 struct UdpPacket {
     NetEndpoint endpoint;
-    std::array<std::uint8_t, 512> bytes{};
+    std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
 };
 
@@ -53,6 +54,7 @@ struct NetRemoteEndpoint {
     NetEndpoint endpoint;
     std::uint64_t last_heard_frame = 0;
     std::uint64_t highest_acked_coordinator_order = 0;
+    std::uint64_t pending_resync_start_order = 0;
 };
 
 struct NetRemotePlayerTarget {
@@ -63,16 +65,44 @@ struct NetRemotePlayerTarget {
     float pos_y = 0.0F;
     float vel_x = 0.0F;
     float vel_y = 0.0F;
+    float acc_x = 0.0F;
+    float acc_y = 0.0F;
+    float size_x = 0.0F;
+    float size_y = 0.0F;
+    float rotation = 0.0F;
     std::uint32_t health = 0;
     std::uint32_t coyote_time = 0;
     std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
+    NetEntityId thrown_by_id = kInvalidNetEntityId;
+    std::uint32_t movement_flags = 0;
+    std::uint16_t projectile_contact_damage_amount = 0;
+    std::uint16_t jump_hold_gravity_frames_remaining = 0;
+    std::uint16_t jump_delay_frame_count = 0;
+    std::uint16_t climb_detach_cooldown = 0;
+    std::uint16_t hang_count = 0;
+    std::uint16_t holding_timer = 0;
+    std::uint16_t bomb_throw_delay_countdown = 0;
+    std::uint16_t rope_throw_delay_countdown = 0;
+    std::uint16_t attack_delay_countdown = 0;
+    std::uint16_t equip_delay_countdown = 0;
+    std::uint16_t thrown_immunity_timer = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
+    std::uint16_t animation_frame = 0;
     std::uint8_t facing = 0;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
     std::uint8_t has_physics = 1;
     std::uint8_t can_collide = 1;
+    std::uint8_t can_apply_projectile_contact = 1;
+    std::uint8_t projectile_contact_damage_type = 0;
+    std::uint8_t hang_side = 0;
+    std::uint8_t animate = 1;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     std::uint32_t sequence = 0;
     std::uint64_t interpolation_start_frame = 0;
     std::uint64_t last_received_frame = 0;
@@ -132,11 +162,16 @@ struct NetReplicatedEntityStateSignature {
     std::uint8_t has_physics = 0;
     std::uint8_t can_collide = 0;
     std::uint8_t can_apply_projectile_contact = 0;
+    std::uint8_t damage_vulnerability = 0;
     std::uint8_t facing = 0;
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
+    std::uint8_t holding = 0;
+    std::uint8_t render_enabled = 1;
     std::uint8_t attachment_mode = 0;
     std::uint8_t draw_layer = 0;
+    std::uint32_t money = 0;
+    std::int32_t stage_exit_id = -1;
     std::uint8_t buyable_active = 0;
     std::uint8_t animate = 0;
     std::uint8_t animation_loop = 1;
@@ -172,6 +207,7 @@ struct NetTransportRuntime {
     std::vector<NetRemotePlayerTarget> remote_player_targets;
     std::vector<NetReplicatedEntityStateCache> replicated_entity_state_cache;
     std::vector<NetReplicatedFluidCellCache> replicated_fluid_cell_cache;
+    std::vector<PlayerId> preferred_player_ids;
     NetEndpoint coordinator_endpoint;
     bool pending_stage_sync = false;
     StageInstanceId pending_stage_instance_id = kInvalidStageInstanceId;

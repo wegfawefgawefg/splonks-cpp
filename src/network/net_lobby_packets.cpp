@@ -221,6 +221,7 @@ EntityDamageEventEntry MakeEntityDamageEventEntry(const NetEvent& event) {
         .vel_y = payload != nullptr ? payload->vel.y : 0.0F,
         .acc_x = payload != nullptr ? payload->acc.x : 0.0F,
         .acc_y = payload != nullptr ? payload->acc.y : 0.0F,
+        .fall_timer = payload != nullptr ? payload->fall_timer : 0U,
         .stun_timer = payload != nullptr ? payload->stun_timer : 0U,
         .projectile_contact_timer = payload != nullptr ? payload->projectile_contact_timer : 0U,
         .damage_type = payload != nullptr
@@ -288,12 +289,19 @@ EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event) {
         .can_collide = payload != nullptr ? payload->can_collide : static_cast<std::uint8_t>(1),
         .can_apply_projectile_contact =
             payload != nullptr ? payload->can_apply_projectile_contact : static_cast<std::uint8_t>(1),
+        .damage_vulnerability =
+            payload != nullptr ? payload->damage_vulnerability : static_cast<std::uint8_t>(0),
         .facing = payload != nullptr ? payload->facing : static_cast<std::uint8_t>(0),
         .ai_state = payload != nullptr ? payload->ai_state : static_cast<std::uint8_t>(0),
         .wanted = payload != nullptr ? payload->wanted : static_cast<std::uint8_t>(0),
+        .holding = payload != nullptr ? payload->holding : static_cast<std::uint8_t>(0),
+        .render_enabled =
+            payload != nullptr ? payload->render_enabled : static_cast<std::uint8_t>(1),
         .attachment_mode = payload != nullptr ? payload->attachment_mode : static_cast<std::uint8_t>(0),
         .draw_layer = payload != nullptr ? payload->draw_layer : static_cast<std::uint8_t>(0),
         .movement_flags = payload != nullptr ? payload->movement_flags : 0U,
+        .money = payload != nullptr ? payload->money : 0U,
+        .stage_exit_id = payload != nullptr ? payload->stage_exit_id : -1,
         .runtime_flags = payload != nullptr ? payload->runtime_flags : 0U,
         .buyable_active = payload != nullptr ? payload->buyable_active : static_cast<std::uint8_t>(0),
         .buyable_display_quantity = payload != nullptr ? payload->buyable_display_quantity : 0U,
@@ -386,9 +394,11 @@ PlayerStateEventEntry MakePlayerStateEventEntry(const NetEvent& event) {
         .source_local_frame = event.header.source_local_frame,
         .coordinator_order = event.header.coordinator_order,
         .player_entity_id = payload != nullptr ? payload->player_entity_id : kInvalidNetEntityId,
+        .player_id = payload != nullptr ? payload->player_id : kInvalidPlayerId,
         .health = payload != nullptr ? payload->health : 0U,
         .money = payload != nullptr ? payload->money : 0U,
         .wanted = payload != nullptr ? payload->wanted : static_cast<std::uint8_t>(0),
+        .connected = payload != nullptr ? payload->connected : static_cast<std::uint8_t>(1),
         .effect_count = payload != nullptr ? payload->effect_count : static_cast<std::uint8_t>(0),
     };
     if (payload == nullptr) {
@@ -429,6 +439,35 @@ RunStateEventEntry MakeRunStateEventEntry(const NetEvent& event) {
         .quest_id = payload != nullptr
             ? static_cast<std::uint16_t>(payload->quest_id)
             : static_cast<std::uint16_t>(QuestId::None),
+        .stage_type = payload != nullptr
+            ? static_cast<std::uint16_t>(payload->stage_type)
+            : static_cast<std::uint16_t>(0),
+        .frame = payload != nullptr ? payload->frame : 0U,
+        .stage_frame = payload != nullptr ? payload->stage_frame : 0U,
+        .depth = payload != nullptr ? payload->depth : 0U,
+        .points = payload != nullptr ? payload->points : 0U,
+        .deaths = payload != nullptr ? payload->deaths : 0U,
+        .quest_level_number = payload != nullptr ? payload->quest_level_number : 0,
+        .generation_seed = payload != nullptr ? payload->generation_seed : 0U,
+        .tile_change_generation = payload != nullptr ? payload->tile_change_generation : 0U,
+        .stage_gravity = payload != nullptr ? payload->stage_gravity : 0.0F,
+        .border_left_tile = payload != nullptr
+            ? static_cast<std::uint16_t>(payload->border_left_tile)
+            : static_cast<std::uint16_t>(0),
+        .border_right_tile = payload != nullptr
+            ? static_cast<std::uint16_t>(payload->border_right_tile)
+            : static_cast<std::uint16_t>(0),
+        .border_top_tile = payload != nullptr
+            ? static_cast<std::uint16_t>(payload->border_top_tile)
+            : static_cast<std::uint16_t>(0),
+        .border_bottom_tile = payload != nullptr
+            ? static_cast<std::uint16_t>(payload->border_bottom_tile)
+            : static_cast<std::uint16_t>(0),
+        .void_death_y = payload != nullptr ? payload->void_death_y : 0,
+        .wrap_core_origin_x = payload != nullptr ? payload->wrap_core_origin_x : 0U,
+        .wrap_core_origin_y = payload != nullptr ? payload->wrap_core_origin_y : 0U,
+        .wrap_core_size_x = payload != nullptr ? payload->wrap_core_size_x : 0U,
+        .wrap_core_size_y = payload != nullptr ? payload->wrap_core_size_y : 0U,
         .classic_made_black_market =
             payload != nullptr ? payload->classic_made_black_market : static_cast<std::uint8_t>(0),
         .classic_made_udjat_eye =
@@ -443,8 +482,27 @@ RunStateEventEntry MakeRunStateEventEntry(const NetEvent& event) {
             payload != nullptr ? payload->classic_has_sceptre : static_cast<std::uint8_t>(0),
         .classic_has_book_of_dead =
             payload != nullptr ? payload->classic_has_book_of_dead : static_cast<std::uint8_t>(0),
+        .has_generation_seed =
+            payload != nullptr ? payload->has_generation_seed : static_cast<std::uint8_t>(0),
+        .border_wrap_x =
+            payload != nullptr ? payload->border_wrap_x : static_cast<std::uint8_t>(0),
+        .border_wrap_y =
+            payload != nullptr ? payload->border_wrap_y : static_cast<std::uint8_t>(0),
+        .has_void_death_y =
+            payload != nullptr ? payload->has_void_death_y : static_cast<std::uint8_t>(0),
+        .camera_clamp_enabled =
+            payload != nullptr ? payload->camera_clamp_enabled : static_cast<std::uint8_t>(1),
+        .wrap_transform_active =
+            payload != nullptr ? payload->wrap_transform_active : static_cast<std::uint8_t>(0),
+        .game_over = payload != nullptr ? payload->game_over : static_cast<std::uint8_t>(0),
+        .win = payload != nullptr ? payload->win : static_cast<std::uint8_t>(0),
+        .has_snapshot_fingerprint =
+            payload != nullptr ? payload->has_snapshot_fingerprint : static_cast<std::uint8_t>(0),
+        .wrap_padding_tiles =
+            payload != nullptr ? payload->wrap_padding_tiles : static_cast<std::uint16_t>(0),
         .sac_altar_favor = payload != nullptr ? payload->sac_altar_favor : 0,
         .sac_altar_reward_tier = payload != nullptr ? payload->sac_altar_reward_tier : 0U,
+        .snapshot_fingerprint = payload != nullptr ? payload->snapshot_fingerprint : 0U,
     };
 }
 
@@ -658,6 +716,7 @@ NetEvent MakeEntityDamageEvent(const EntityDamageEventEntry& entry) {
         .pos = Vec2::New(entry.pos_x, entry.pos_y),
         .vel = Vec2::New(entry.vel_x, entry.vel_y),
         .acc = Vec2::New(entry.acc_x, entry.acc_y),
+        .fall_timer = entry.fall_timer,
         .stun_timer = entry.stun_timer,
         .projectile_contact_timer = entry.projectile_contact_timer,
         .condition = entry.condition,
@@ -718,12 +777,17 @@ NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry) {
         .has_physics = entry.has_physics,
         .can_collide = entry.can_collide,
         .can_apply_projectile_contact = entry.can_apply_projectile_contact,
+        .damage_vulnerability = entry.damage_vulnerability,
         .facing = entry.facing,
         .ai_state = entry.ai_state,
         .wanted = entry.wanted,
+        .holding = entry.holding,
+        .render_enabled = entry.render_enabled,
         .attachment_mode = entry.attachment_mode,
         .draw_layer = entry.draw_layer,
         .movement_flags = entry.movement_flags,
+        .money = entry.money,
+        .stage_exit_id = entry.stage_exit_id,
         .runtime_flags = entry.runtime_flags,
         .buyable_active = entry.buyable_active,
         .buyable_display_quantity = entry.buyable_display_quantity,
@@ -833,9 +897,11 @@ NetEvent MakePlayerStateEvent(const PlayerStateEventEntry& entry) {
     };
     PlayerStatePatchedEvent payload{
         .player_entity_id = entry.player_entity_id,
+        .player_id = entry.player_id,
         .health = entry.health,
         .money = entry.money,
         .wanted = entry.wanted,
+        .connected = entry.connected,
         .effect_count = entry.effect_count,
     };
     for (std::size_t i = 0; i < payload.tool_slots.size() && i < entry.tool_slots.size(); ++i) {
@@ -876,6 +942,34 @@ NetEvent MakeRunStateEvent(const RunStateEventEntry& entry) {
     event.type = NetEventType::RunStatePatched;
     event.payload = RunStatePatchedEvent{
         .quest_id = static_cast<QuestId>(entry.quest_id),
+        .frame = entry.frame,
+        .stage_frame = entry.stage_frame,
+        .depth = entry.depth,
+        .points = entry.points,
+        .deaths = entry.deaths,
+        .stage_type = entry.stage_type,
+        .quest_level_number = entry.quest_level_number,
+        .generation_seed = entry.generation_seed,
+        .tile_change_generation = entry.tile_change_generation,
+        .stage_gravity = entry.stage_gravity,
+        .border_left_tile = static_cast<Tile>(entry.border_left_tile),
+        .border_right_tile = static_cast<Tile>(entry.border_right_tile),
+        .border_top_tile = static_cast<Tile>(entry.border_top_tile),
+        .border_bottom_tile = static_cast<Tile>(entry.border_bottom_tile),
+        .void_death_y = entry.void_death_y,
+        .has_generation_seed = entry.has_generation_seed,
+        .border_wrap_x = entry.border_wrap_x,
+        .border_wrap_y = entry.border_wrap_y,
+        .has_void_death_y = entry.has_void_death_y,
+        .camera_clamp_enabled = entry.camera_clamp_enabled,
+        .wrap_transform_active = entry.wrap_transform_active,
+        .game_over = entry.game_over,
+        .win = entry.win,
+        .wrap_padding_tiles = entry.wrap_padding_tiles,
+        .wrap_core_origin_x = entry.wrap_core_origin_x,
+        .wrap_core_origin_y = entry.wrap_core_origin_y,
+        .wrap_core_size_x = entry.wrap_core_size_x,
+        .wrap_core_size_y = entry.wrap_core_size_y,
         .classic_made_black_market = entry.classic_made_black_market,
         .classic_made_udjat_eye = entry.classic_made_udjat_eye,
         .classic_has_udjat_eye = entry.classic_has_udjat_eye,
@@ -885,6 +979,8 @@ NetEvent MakeRunStateEvent(const RunStateEventEntry& entry) {
         .classic_has_book_of_dead = entry.classic_has_book_of_dead,
         .sac_altar_favor = entry.sac_altar_favor,
         .sac_altar_reward_tier = entry.sac_altar_reward_tier,
+        .has_snapshot_fingerprint = entry.has_snapshot_fingerprint,
+        .snapshot_fingerprint = entry.snapshot_fingerprint,
     };
     return event;
 }

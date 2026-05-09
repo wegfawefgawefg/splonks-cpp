@@ -224,6 +224,35 @@ shared-world effects are coordinator-owned.
 This rule avoids the worst double-authoring case: both the attacker's machine and
 the target's machine deciding they are the source of truth for the same hit.
 
+## Prediction Policy
+
+Prediction is allowed only where a wrong guess can be repaired without forking
+gameplay:
+
+- Local player movement predicts immediately on the owning client.
+- Local movement presentation predicts immediately: walk/run, hang/climb/fall
+  pose, emote pose, facing, and player animation timing.
+- Remote players are replicas. They interpolate or snap from coordinator state;
+  they do not run canonical local gameplay.
+- Safe local item presentation may predict: bat windup, cape open/closed pose,
+  jetpack flame, weapon use pose, use sound, recoil pose, and camera shake.
+- Canonical hitboxes, damage, stun, death, pickups, money, inventory, shop/dice
+  results, stage transitions, respawns, and exits are not predicted.
+- Canonical tile mutations are not predicted. The coordinator applies break,
+  place, and tile-change results.
+- Canonical spawned entities are not predicted. Bombs, ropes, arrows, webs,
+  thrown pots, loot, and enemies are coordinator-spawned with stable net ids. A
+  client may show a cosmetic-only ghost if it never participates in gameplay and
+  is deleted when the coordinator result arrives or times out.
+- Held, attached, and carried links snap to coordinator state.
+- Death, respawn, and stage transitions snap to coordinator state.
+- Fluids are coordinator/world-repair state. Local render smoothing is
+  presentation only.
+
+This is the Terraria-style split we want: clients keep controls responsive, but
+world-changing consequences come from coordinator-owned content execution and
+broad repair/sync lanes.
+
 ## Terraria / Barony Alignment
 
 The target architecture is closer to Terraria and Barony than to deterministic

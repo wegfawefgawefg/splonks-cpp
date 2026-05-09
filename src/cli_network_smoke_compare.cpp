@@ -42,6 +42,13 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                << "x" << right.stage.GetTileHeight();
         return output.str();
     }
+    if (left.stage.tile_change_generation != right.stage.tile_change_generation) {
+        std::ostringstream output;
+        output << "stage tile_change_generation differs: left="
+               << left.stage.tile_change_generation
+               << " right=" << right.stage.tile_change_generation;
+        return output.str();
+    }
 
     for (unsigned int y = 0; y < left.stage.GetTileHeight(); ++y) {
         for (unsigned int x = 0; x < left.stage.GetTileWidth(); ++x) {

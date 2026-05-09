@@ -109,12 +109,17 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
         .can_collide = static_cast<std::uint8_t>(entity.can_collide ? 1 : 0),
         .can_apply_projectile_contact =
             static_cast<std::uint8_t>(entity.can_apply_projectile_contact ? 1 : 0),
+        .damage_vulnerability = static_cast<std::uint8_t>(entity.damage_vulnerability),
         .facing = static_cast<std::uint8_t>(entity.facing == LeftOrRight::Right ? 1 : 0),
         .ai_state = static_cast<std::uint8_t>(entity.ai_state),
         .wanted = static_cast<std::uint8_t>(entity.wanted ? 1 : 0),
+        .holding = static_cast<std::uint8_t>(entity.holding ? 1 : 0),
+        .render_enabled = static_cast<std::uint8_t>(entity.render_enabled ? 1 : 0),
         .attachment_mode = static_cast<std::uint8_t>(entity.attachment_mode),
         .draw_layer = static_cast<std::uint8_t>(entity.draw_layer),
         .movement_flags = entity.movement_flags,
+        .money = entity.money,
+        .stage_exit_id = entity.stage_exit_id,
         .runtime_flags = CaptureReplicatedRuntimeFlags(entity),
         .buyable_active = static_cast<std::uint8_t>(entity.buyable.active ? 1 : 0),
         .buyable_display_quantity = entity.buyable.display_quantity,
@@ -184,11 +189,16 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEve
         .has_physics = payload.has_physics,
         .can_collide = payload.can_collide,
         .can_apply_projectile_contact = payload.can_apply_projectile_contact,
+        .damage_vulnerability = payload.damage_vulnerability,
         .facing = payload.facing,
         .ai_state = payload.ai_state,
         .wanted = payload.wanted,
+        .holding = payload.holding,
+        .render_enabled = payload.render_enabled,
         .attachment_mode = payload.attachment_mode,
         .draw_layer = payload.draw_layer,
+        .money = payload.money,
+        .stage_exit_id = payload.stage_exit_id,
         .buyable_active = payload.buyable_active,
         .animate = payload.animate,
         .animation_loop = payload.animation_loop,
@@ -262,11 +272,16 @@ bool StateSignaturesEqual(
            a.has_physics == b.has_physics &&
            a.can_collide == b.can_collide &&
            a.can_apply_projectile_contact == b.can_apply_projectile_contact &&
+           a.damage_vulnerability == b.damage_vulnerability &&
            a.facing == b.facing &&
            a.ai_state == b.ai_state &&
            a.wanted == b.wanted &&
+           a.holding == b.holding &&
+           a.render_enabled == b.render_enabled &&
            a.attachment_mode == b.attachment_mode &&
            a.draw_layer == b.draw_layer &&
+           a.money == b.money &&
+           a.stage_exit_id == b.stage_exit_id &&
            a.buyable_active == b.buyable_active &&
            a.animate == b.animate &&
            a.animation_loop == b.animation_loop &&

@@ -9,9 +9,11 @@
 #include "network/net_event.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
+#include "state_fingerprint.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 
 namespace splonks::network {
 
@@ -225,6 +227,7 @@ void ReplicateEntityDamaged(State& state, const GameplayEntityDamaged& message) 
         .pos = message.pos,
         .vel = message.vel,
         .acc = message.acc,
+        .fall_timer = message.fall_timer,
         .stun_timer = message.stun_timer,
         .projectile_contact_timer = message.projectile_contact_timer,
         .condition = message.condition,
@@ -288,12 +291,17 @@ void ReplicateEntityStatePatched(
         .has_physics = message.has_physics,
         .can_collide = message.can_collide,
         .can_apply_projectile_contact = message.can_apply_projectile_contact,
+        .damage_vulnerability = message.damage_vulnerability,
         .facing = message.facing,
         .ai_state = message.ai_state,
         .wanted = message.wanted,
+        .holding = message.holding,
+        .render_enabled = message.render_enabled,
         .attachment_mode = message.attachment_mode,
         .draw_layer = message.draw_layer,
         .movement_flags = message.movement_flags,
+        .money = message.money,
+        .stage_exit_id = message.stage_exit_id,
         .runtime_flags = message.runtime_flags,
         .buyable_active = message.buyable_active,
         .buyable_display_quantity = message.buyable_display_quantity,
@@ -324,15 +332,18 @@ void ReplicatePlayerStatePatched(
     if (player == nullptr || !player->active) {
         return;
     }
-    if (state.players.FindByEntityVid(player->vid) == nullptr) {
+    const PlayerSlot* const player_slot = state.players.FindByEntityVid(player->vid);
+    if (player_slot == nullptr) {
         return;
     }
 
     PlayerStatePatchedEvent payload{
         .player_entity_id = GetOrAssignReplicatedEntityId(state, player->vid),
+        .player_id = player_slot->player_id,
         .health = player->health,
         .money = player->money,
         .wanted = static_cast<std::uint8_t>(player->wanted ? 1 : 0),
+        .connected = static_cast<std::uint8_t>(player_slot->connected ? 1 : 0),
     };
 
     if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player->vid)) {
@@ -369,16 +380,57 @@ void ReplicatePlayerStatePatched(
     state.net_session.EnqueueNetEvent(event);
 }
 
-void ReplicateRunStatePatched(State& state) {
+void ReplicateRunStatePatched(State& state, bool include_snapshot_fingerprint) {
     if (state.net_session.role != NetRole::Coordinator) {
         return;
     }
+
+    const std::uint64_t snapshot_fingerprint = include_snapshot_fingerprint
+        ? ComputeNetworkStateFingerprint(state).value
+        : 0U;
 
     NetEvent event;
     event.header = state.net_session.MakeLocalEventHeader(state.frame);
     event.type = NetEventType::RunStatePatched;
     event.payload = RunStatePatchedEvent{
         .quest_id = state.quest_state.quest_id,
+        .frame = state.frame,
+        .stage_frame = state.stage_frame,
+        .depth = state.depth,
+        .points = state.points,
+        .deaths = state.deaths,
+        .stage_type = static_cast<std::uint32_t>(state.stage.stage_type),
+        .quest_level_number = state.stage.quest_level_number,
+        .generation_seed = state.stage.generation_seed.value_or(0U),
+        .tile_change_generation = state.stage.tile_change_generation,
+        .stage_gravity = state.stage.gravity,
+        .border_left_tile = state.stage.border.left.tile,
+        .border_right_tile = state.stage.border.right.tile,
+        .border_top_tile = state.stage.border.top.tile,
+        .border_bottom_tile = state.stage.border.bottom.tile,
+        .void_death_y = state.stage.border.void_death_y.value_or(0),
+        .has_generation_seed =
+            static_cast<std::uint8_t>(state.stage.generation_seed.has_value() ? 1 : 0),
+        .border_wrap_x = static_cast<std::uint8_t>(state.stage.border.wrap_x ? 1 : 0),
+        .border_wrap_y = static_cast<std::uint8_t>(state.stage.border.wrap_y ? 1 : 0),
+        .has_void_death_y =
+            static_cast<std::uint8_t>(state.stage.border.void_death_y.has_value() ? 1 : 0),
+        .camera_clamp_enabled =
+            static_cast<std::uint8_t>(state.stage.camera_clamp_enabled ? 1 : 0),
+        .wrap_transform_active =
+            static_cast<std::uint8_t>(state.stage.wrap_transform_active ? 1 : 0),
+        .game_over = static_cast<std::uint8_t>(state.game_over ? 1 : 0),
+        .win = static_cast<std::uint8_t>(state.win ? 1 : 0),
+        .wrap_padding_tiles = static_cast<std::uint16_t>(
+            std::min<unsigned int>(
+                state.stage.wrap_padding_tiles,
+                std::numeric_limits<std::uint16_t>::max()
+            )
+        ),
+        .wrap_core_origin_x = state.stage.wrap_core_origin_tiles.x,
+        .wrap_core_origin_y = state.stage.wrap_core_origin_tiles.y,
+        .wrap_core_size_x = state.stage.wrap_core_size_tiles.x,
+        .wrap_core_size_y = state.stage.wrap_core_size_tiles.y,
         .classic_made_black_market =
             static_cast<std::uint8_t>(state.quest_state.classic.made_black_market ? 1 : 0),
         .classic_made_udjat_eye =
@@ -395,6 +447,9 @@ void ReplicateRunStatePatched(State& state) {
             static_cast<std::uint8_t>(state.quest_state.classic.has_book_of_dead ? 1 : 0),
         .sac_altar_favor = state.sac_altar_favor,
         .sac_altar_reward_tier = state.sac_altar_reward_tier,
+        .has_snapshot_fingerprint =
+            static_cast<std::uint8_t>(include_snapshot_fingerprint ? 1 : 0),
+        .snapshot_fingerprint = snapshot_fingerprint,
     };
     state.net_session.EnqueueNetEvent(event);
 }

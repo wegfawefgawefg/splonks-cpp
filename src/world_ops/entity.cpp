@@ -208,12 +208,17 @@ void PatchEntityState(State& state, const Entity& source, const Entity& entity) 
             .can_collide = static_cast<std::uint8_t>(entity.can_collide ? 1 : 0),
             .can_apply_projectile_contact =
                 static_cast<std::uint8_t>(entity.can_apply_projectile_contact ? 1 : 0),
+            .damage_vulnerability = static_cast<std::uint8_t>(entity.damage_vulnerability),
             .facing = static_cast<std::uint8_t>(entity.facing == LeftOrRight::Right ? 1 : 0),
             .ai_state = static_cast<std::uint8_t>(entity.ai_state),
             .wanted = static_cast<std::uint8_t>(entity.wanted ? 1 : 0),
+            .holding = static_cast<std::uint8_t>(entity.holding ? 1 : 0),
+            .render_enabled = static_cast<std::uint8_t>(entity.render_enabled ? 1 : 0),
             .attachment_mode = static_cast<std::uint8_t>(entity.attachment_mode),
             .draw_layer = static_cast<std::uint8_t>(entity.draw_layer),
             .movement_flags = entity.movement_flags,
+            .money = entity.money,
+            .stage_exit_id = entity.stage_exit_id,
             .runtime_flags = CaptureReplicatedRuntimeFlags(entity),
             .buyable_active = static_cast<std::uint8_t>(entity.buyable.active ? 1 : 0),
             .buyable_display_quantity = entity.buyable.display_quantity,
@@ -240,8 +245,8 @@ void PatchPlayerState(State& state, const Entity& player) {
     );
 }
 
-void PatchRunState(State& state) {
-    network::ReplicateRunStatePatched(state);
+void PatchRunState(State& state, bool include_snapshot_fingerprint) {
+    network::ReplicateRunStatePatched(state, include_snapshot_fingerprint);
 }
 
 void MarkEntityHeld(
@@ -307,6 +312,7 @@ void CommitEntityDamaged(
             .pos = entity.pos,
             .vel = entity.vel,
             .acc = entity.acc,
+            .fall_timer = entity.fall_timer,
             .stun_timer = entity.stun_timer,
             .projectile_contact_timer = entity.projectile_contact_timer,
             .condition = static_cast<std::uint8_t>(entity.condition),

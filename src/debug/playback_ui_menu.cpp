@@ -2,11 +2,14 @@
 
 #include "audio_acoustics.hpp"
 #include "imgui_layer.hpp"
+#include "network/net_lobby.hpp"
+#include "network/net_progression.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 #include "stage_rotation.hpp"
 #include "stage_wrap.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 
@@ -94,6 +97,11 @@ void LoadClassicQuestStage(
         seed
     );
     ResetStageDebugState(state, graphics);
+    if (state.net_session.role != network::NetRole::Offline) {
+        std::string status;
+        (void)network::ReviveNetworkPlayersAtEntrance(state, graphics, &status);
+    }
+    network::NotifyStageLoaded(state);
 }
 
 bool DrawTileCombo(const char* label, Tile& tile) {
@@ -158,6 +166,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Overlay", &debug.entity_annotations_visible);
     ImGui::Checkbox("Shake Brush", &debug.shake_brush_window_visible);
     ImGui::Checkbox("Audio Brush", &debug.audio_brush_window_visible);
+    ImGui::Checkbox("Tile Brush", &debug.tile_brush_window_visible);
     ImGui::Checkbox("Fluid Brush", &debug.fluid_brush_window_visible);
     ImGui::Checkbox("Audio Settings", &debug.audio_settings_window_visible);
     ImGui::Checkbox("UI Settings", &debug.ui_settings_window_visible);
@@ -175,6 +184,7 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::TextUnformatted("Overlay toggles live in the Overlay window.");
     ImGui::TextUnformatted("Shake brush controls live in the Shake Brush window.");
     ImGui::TextUnformatted("Audio brush controls live in the Audio Brush window.");
+    ImGui::TextUnformatted("Tile brush controls live in the Tile Brush window.");
     ImGui::TextUnformatted("Fluid brush controls live in the Fluid Brush window.");
     ImGui::TextUnformatted("Persisted acoustics tuning lives in the Audio Settings window.");
     ImGui::Separator();
@@ -594,8 +604,12 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         return;
     }
 
-    if (debug.playback_active) {
+    const bool peer_mutation_disabled = IsPeerDebugWorldMutationDisabled(state);
+    if (debug.playback_active || peer_mutation_disabled) {
         ImGui::BeginDisabled();
+    }
+    if (peer_mutation_disabled) {
+        ImGui::TextDisabled("Border edits disabled on multiplayer peers until admin commands are coordinator-routed.");
     }
 
     bool border_changed = false;
@@ -640,9 +654,11 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
 
         if (border_changed) {
             CopyBorderConfigToStage(border_test, state.stage);
+            world_ops::PatchRunState(state);
         }
         if (wrap_settings_changed) {
             ApplyBorderTestWrapConfig(state, graphics);
+            world_ops::PatchRunState(state);
         }
     } else {
         border_changed |= DrawTileCombo("Left Tile", state.stage.border.left.tile);
@@ -691,6 +707,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
                 static_cast<unsigned int>(wrap_padding_tiles),
                 camera_clamp_enabled
             );
+            world_ops::PatchRunState(state);
         }
     }
 
@@ -722,7 +739,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         InvalidateStageAcoustics(state);
     }
 
-    if (debug.playback_active) {
+    if (debug.playback_active || peer_mutation_disabled) {
         ImGui::EndDisabled();
     }
 

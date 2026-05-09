@@ -9,8 +9,15 @@
 #include "world_ops.hpp"
 
 #include <optional>
+#include <vector>
 
 namespace splonks {
+
+struct PacketDeliveryPlan {
+    bool reverse_order = false;
+    bool duplicate_each_packet = false;
+    bool drop_action_ack = false;
+};
 
 void InitNetworkSmokeRuntimeTables(Graphics& graphics);
 
@@ -48,13 +55,16 @@ bool RunPeerActionThroughCoordinator(
     const char* label
 );
 
+std::vector<network::UdpPacket> TakeCapturedPackets(network::NetTransportRuntime& transport);
+
 bool DeliverPeerPacketsToCoordinator(
     State& peer,
     State& coordinator,
     network::NetTransportRuntime& peer_transport,
     network::NetTransportRuntime& coordinator_transport,
     const network::NetEndpoint& peer_endpoint,
-    const char* label
+    const char* label,
+    const PacketDeliveryPlan& delivery_plan = PacketDeliveryPlan{}
 );
 
 bool DeliverCoordinatorPacketsToPeer(
@@ -66,7 +76,14 @@ bool DeliverCoordinatorPacketsToPeer(
     Graphics& graphics,
     Audio& audio,
     const char* label,
-    bool compare_after_delivery = true
+    bool compare_after_delivery = true,
+    const PacketDeliveryPlan& delivery_plan = PacketDeliveryPlan{}
+);
+
+bool DropCoordinatorPacketsToPeer(
+    State& coordinator,
+    network::NetTransportRuntime& coordinator_transport,
+    const char* label
 );
 
 bool RunPeerActionThroughPacketCoordinator(
@@ -78,7 +95,8 @@ bool RunPeerActionThroughPacketCoordinator(
     const GameplayActionRequested& peer_action,
     Graphics& graphics,
     Audio& audio,
-    const char* label
+    const char* label,
+    const PacketDeliveryPlan& coordinator_delivery_plan = PacketDeliveryPlan{}
 );
 
 } // namespace splonks

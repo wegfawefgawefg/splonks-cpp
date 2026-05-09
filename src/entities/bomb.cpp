@@ -113,7 +113,7 @@ extern const EntityArchetype kBombArchetype{
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,
     .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::CrushingAndSpikes,
+    .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
     .on_death = OnDeathAsBomb,
     .on_use = OnUseAsBomb,
     .step_logic = StepEntityLogicAsBomb,

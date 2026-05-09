@@ -13,5 +13,6 @@ struct CanonicalStateFingerprint {
 };
 
 CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state);
+CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state);
 
 } // namespace splonks

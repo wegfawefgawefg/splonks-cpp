@@ -18,7 +18,7 @@ parity checklist, the parity checklist wins.
   - Desired commands: spawn entity, patch entity state, set stage/quest/debug stage, paint fluids, brush sounds/presentation, and other test-only world mutations.
   - Shape should be coordinator-routed and permission-gated later: any client may request a debug command, the coordinator validates/applies it, then normal generic spawn/state/tile/fluid/stage result replication carries the actual mutation.
   - Do not let debug UI directly mutate shared world state in peer mode unless it is explicitly local-only presentation.
-  - Guardrail in place: multiplayer peers cannot directly debug-spawn entities, swap/edit entities, edit entity tools/effects, reroll/load stages, paint fluids, or edit fluid/player mechanics tuning. This prevents test-only desync while the real admin command lane is still missing.
+  - Guardrail in place: multiplayer peers cannot directly debug-spawn entities, swap/edit entities, edit entity tools/effects, reroll/load stages, paint fluids/tiles, create sound brush sources, or edit fluid/player/audio mechanics tuning. This prevents test-only desync while the real admin command lane is still missing.
 
 - [x] Fix network stage transition authority.
   - Peer exit requests should ask the coordinator and then wait for stage sync.
@@ -276,11 +276,12 @@ Goal: prove every durable mutation has one of these classifications before we ch
   - Entity state packets now send one state event per packet to stay under the 512-byte packet budget.
 
 - [ ] Add a debug/admin command lane.
-  - Debug spawn, entity editor patches, stage selection, fluid brush, sound brush, and future live inspection tools should be coordinator-routed when multiplayer is active.
+  - Debug spawn, entity editor patches, stage selection, fluid brush, tile brush, sound brush, and future live inspection tools should be coordinator-routed when multiplayer is active.
   - This can stay permission-gated/test-only, but the path should use the same generic spawn/state/tile/fluid/stage results as gameplay.
   - Guardrail in place: peer-side shared-world debug mutation is disabled instead of being allowed to fork state.
   - Current scope decision: host/admin-only is enough for now. Client-requested admin commands are optional later.
   - Host debug entity spawn now routes through `world_ops::SpawnEntity`, so admin-spawned entities use the normal generic spawn replication lane.
+  - Peer-side sound brush and audio tuning are blocked as host-admin tooling.
 
 - [x] Audit mechanics settings and live tuning sliders.
   - Player tuning, fluid settings, water effect values, lighting settings, and other debug sliders can change simulation behavior.

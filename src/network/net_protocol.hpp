@@ -3,6 +3,7 @@
 #include "effects/effect_id.hpp"
 #include "entity/core_types.hpp"
 #include "network/net_ids.hpp"
+#include "network/net_limits.hpp"
 #include "frame_data_id.hpp"
 #include "tile.hpp"
 #include "tools/tool_archetype.hpp"
@@ -18,21 +19,20 @@ namespace splonks::network {
 
 constexpr std::uint32_t kNetProtocolMagic = 0x534C504B; // SLPK
 constexpr std::uint16_t kNetProtocolVersion = 1;
-constexpr std::size_t kNetPacketMaxBytes = 512;
 constexpr std::size_t kNetNameBytes = 32;
 constexpr std::size_t kNetQuestIdBytes = 32;
 constexpr std::size_t kNetQuestStageIdBytes = 64;
 constexpr std::size_t kNetPlayersPerProcess = 16;
-constexpr std::size_t kNetPlayerSnapshotsPerPacket = 8;
+constexpr std::size_t kNetPlayerSnapshotsPerPacket = 4;
 constexpr std::size_t kNetTileEventsPerPacket = 8;
 constexpr std::size_t kNetFluidCellEventsPerPacket = 4;
 constexpr std::size_t kNetEntitySpawnedEventsPerPacket = 1;
-constexpr std::size_t kNetEntityDamageEventsPerPacket = 4;
+constexpr std::size_t kNetEntityDamageEventsPerPacket = 3;
 constexpr std::size_t kNetEntityStateEventsPerPacket = 1;
 constexpr std::size_t kNetEntityCarryEventsPerPacket = 5;
 constexpr std::size_t kNetEntityLifecycleEventsPerPacket = 8;
 constexpr std::size_t kNetPlayerStateEventsPerPacket = 1;
-constexpr std::size_t kNetRunStateEventsPerPacket = 4;
+constexpr std::size_t kNetRunStateEventsPerPacket = 3;
 constexpr std::size_t kNetPlayerStateToolSlotCount = 2;
 constexpr std::size_t kNetPlayerStateEffectCount = 12;
 constexpr std::size_t kNetEntityEffectCount = 12;
@@ -70,6 +70,8 @@ struct NetPacketHeader {
 
 struct JoinRequestPacket {
     std::uint32_t local_player_count = 1;
+    std::uint32_t preferred_player_count = 0;
+    std::array<PlayerId, kNetPlayersPerProcess> preferred_player_ids{};
     std::array<char, kNetNameBytes> display_name{};
 };
 
@@ -83,6 +85,7 @@ struct JoinAcceptPacket {
     float host_spawn_x = 0.0F;
     float host_spawn_y = 0.0F;
     std::uint32_t stage_seed = 1;
+    std::uint64_t snapshot_start_coordinator_order = 1;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
     std::array<char, kNetNameBytes> coordinator_name{};
@@ -94,16 +97,44 @@ struct PlayerSnapshotEntry {
     float pos_y = 0.0F;
     float vel_x = 0.0F;
     float vel_y = 0.0F;
+    float acc_x = 0.0F;
+    float acc_y = 0.0F;
+    float size_x = 0.0F;
+    float size_y = 0.0F;
+    float rotation = 0.0F;
     std::uint32_t health = 0;
     std::uint32_t coyote_time = 0;
     std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
+    NetEntityId thrown_by_id = kInvalidNetEntityId;
+    std::uint32_t movement_flags = 0;
+    std::uint16_t projectile_contact_damage_amount = 0;
+    std::uint16_t jump_hold_gravity_frames_remaining = 0;
+    std::uint16_t jump_delay_frame_count = 0;
+    std::uint16_t climb_detach_cooldown = 0;
+    std::uint16_t hang_count = 0;
+    std::uint16_t holding_timer = 0;
+    std::uint16_t bomb_throw_delay_countdown = 0;
+    std::uint16_t rope_throw_delay_countdown = 0;
+    std::uint16_t attack_delay_countdown = 0;
+    std::uint16_t equip_delay_countdown = 0;
+    std::uint16_t thrown_immunity_timer = 0;
+    FrameDataId animation_id = kInvalidFrameDataId;
+    float animation_time = 0.0F;
+    float animation_speed = 1.0F;
+    std::uint16_t animation_frame = 0;
     std::uint8_t facing = 0;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
     std::uint8_t has_physics = 1;
     std::uint8_t can_collide = 1;
+    std::uint8_t can_apply_projectile_contact = 1;
+    std::uint8_t projectile_contact_damage_type = 0;
+    std::uint8_t hang_side = 0;
+    std::uint8_t animate = 1;
+    std::uint8_t animation_loop = 1;
+    std::uint8_t animation_finished = 0;
     std::uint16_t input_flags = 0;
 };
 
@@ -122,8 +153,11 @@ struct LeaveNoticePacket {
 struct StageSyncPacket {
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint32_t stage_seed = 1;
+    std::uint64_t snapshot_start_coordinator_order = 0;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
+    std::uint8_t force_resync = 0;
+    std::array<std::uint8_t, 7> reserved{};
 };
 
 struct DurableEventAckPacket {
@@ -238,6 +272,7 @@ struct EntityDamageEventEntry {
     float vel_y = 0.0F;
     float acc_x = 0.0F;
     float acc_y = 0.0F;
+    std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
     std::uint16_t damage_type = 0;
@@ -304,12 +339,17 @@ struct EntityStateEventEntry {
     std::uint8_t has_physics = 1;
     std::uint8_t can_collide = 1;
     std::uint8_t can_apply_projectile_contact = 1;
+    std::uint8_t damage_vulnerability = 0;
     std::uint8_t facing = 0;
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
+    std::uint8_t holding = 0;
+    std::uint8_t render_enabled = 1;
     std::uint8_t attachment_mode = 0;
     std::uint8_t draw_layer = 0;
     std::uint32_t movement_flags = 0;
+    std::uint32_t money = 0;
+    std::int32_t stage_exit_id = -1;
     std::uint32_t runtime_flags = 0;
     std::uint8_t effect_count = 0;
     std::array<EntityEffectEntry, kNetEntityEffectCount> effects{};
@@ -392,10 +432,13 @@ struct PlayerStateEventEntry {
     std::uint64_t source_local_frame = 0;
     std::uint64_t coordinator_order = 0;
     NetEntityId player_entity_id = kInvalidNetEntityId;
+    PlayerId player_id = kInvalidPlayerId;
     std::uint32_t health = 0;
     std::uint32_t money = 0;
     std::uint8_t wanted = 0;
+    std::uint8_t connected = 1;
     std::uint8_t effect_count = 0;
+    std::uint8_t reserved = 0;
     std::array<PlayerStateToolSlotEntry, kNetPlayerStateToolSlotCount> tool_slots{};
     std::array<PlayerStateEffectEntry, kNetPlayerStateEffectCount> effects{};
 };
@@ -412,6 +455,25 @@ struct RunStateEventEntry {
     std::uint64_t source_local_frame = 0;
     std::uint64_t coordinator_order = 0;
     std::uint16_t quest_id = 0;
+    std::uint16_t stage_type = 0;
+    std::uint32_t frame = 0;
+    std::uint32_t stage_frame = 0;
+    std::uint32_t depth = 0;
+    std::uint32_t points = 0;
+    std::uint32_t deaths = 0;
+    std::int32_t quest_level_number = 0;
+    std::uint32_t generation_seed = 0;
+    std::uint32_t tile_change_generation = 0;
+    float stage_gravity = 0.0F;
+    std::uint16_t border_left_tile = 0;
+    std::uint16_t border_right_tile = 0;
+    std::uint16_t border_top_tile = 0;
+    std::uint16_t border_bottom_tile = 0;
+    std::int32_t void_death_y = 0;
+    std::uint32_t wrap_core_origin_x = 0;
+    std::uint32_t wrap_core_origin_y = 0;
+    std::uint32_t wrap_core_size_x = 0;
+    std::uint32_t wrap_core_size_y = 0;
     std::uint8_t classic_made_black_market = 0;
     std::uint8_t classic_made_udjat_eye = 0;
     std::uint8_t classic_has_udjat_eye = 0;
@@ -419,9 +481,19 @@ struct RunStateEventEntry {
     std::uint8_t classic_has_hedjet = 0;
     std::uint8_t classic_has_sceptre = 0;
     std::uint8_t classic_has_book_of_dead = 0;
-    std::uint8_t reserved = 0;
+    std::uint8_t has_generation_seed = 0;
+    std::uint8_t border_wrap_x = 0;
+    std::uint8_t border_wrap_y = 0;
+    std::uint8_t has_void_death_y = 0;
+    std::uint8_t camera_clamp_enabled = 1;
+    std::uint8_t wrap_transform_active = 0;
+    std::uint8_t game_over = 0;
+    std::uint8_t win = 0;
+    std::uint8_t has_snapshot_fingerprint = 0;
+    std::uint16_t wrap_padding_tiles = 0;
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
+    std::uint64_t snapshot_fingerprint = 0;
 };
 
 struct RunStateEventsPacket {

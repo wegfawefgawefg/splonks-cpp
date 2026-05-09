@@ -4,6 +4,7 @@
 #include "network/net_fuzzer.hpp"
 #include "vid.hpp"
 
+#include <array>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -18,6 +19,7 @@ struct NetPeerState {
     std::uint16_t endpoint_port = 0;
     float estimated_ping_ms = 0.0F;
     float jitter_ms = 0.0F;
+    bool connected = false;
 };
 
 struct NetEntityLink {
@@ -47,6 +49,51 @@ struct NetEventLogEntry {
     NetEventType type = NetEventType::None;
 };
 
+enum class NetReconnectSpawnMode : std::uint8_t {
+    FreshAtEntrance,
+    FreshAtHost,
+    RetainedAtEntrance,
+    RetainedAtLastPosition,
+    RetainedAtHost,
+};
+
+struct NetRetainedAttachedEntityState {
+    bool valid = false;
+    EntityType entity_type = EntityType::None;
+    Vec2 pos = Vec2::New(0.0F, 0.0F);
+    Vec2 vel = Vec2::New(0.0F, 0.0F);
+    Vec2 acc = Vec2::New(0.0F, 0.0F);
+    Vec2 size = Vec2::New(0.0F, 0.0F);
+    float rotation = 0.0F;
+    float counter_a = 0.0F;
+    float counter_b = 0.0F;
+    float counter_c = 0.0F;
+    float counter_d = 0.0F;
+    std::uint32_t health = 0;
+    std::uint32_t money = 0;
+    std::uint8_t facing = 0;
+    std::uint8_t condition = 0;
+    std::uint8_t effect_count = 0;
+    std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount> effects{};
+};
+
+struct NetRetainedPlayerState {
+    PlayerId player_id = kInvalidPlayerId;
+    std::string display_name;
+    std::string quest_id;
+    std::string quest_stage_id;
+    EntityType entity_type = EntityType::Player;
+    Vec2 last_pos = Vec2::New(0.0F, 0.0F);
+    std::uint32_t health = 0;
+    std::uint32_t money = 0;
+    std::uint64_t disconnected_frame = 0;
+    std::uint8_t effect_count = 0;
+    NetRetainedAttachedEntityState held_item;
+    NetRetainedAttachedEntityState back_item;
+    std::array<PlayerStatePatchedToolSlot, kPlayerStatePatchedToolSlotCount> tool_slots{};
+    std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount> effects{};
+};
+
 struct NetSessionState {
     NetRole role = NetRole::Offline;
     PlayerId local_player_id = 1;
@@ -70,7 +117,13 @@ struct NetSessionState {
     std::vector<NetEventId> applied_event_ids;
     std::vector<std::uint64_t> applied_coordinator_orders;
     std::vector<NetEventLogEntry> event_log;
+    std::vector<NetRetainedPlayerState> retained_players;
     std::string event_log_file_path;
+    NetReconnectSpawnMode reconnect_spawn_mode = NetReconnectSpawnMode::RetainedAtLastPosition;
+    std::uint64_t retained_player_lifetime_frames = 108000;
+    std::uint64_t last_snapshot_expected_fingerprint = 0;
+    std::uint64_t last_snapshot_actual_fingerprint = 0;
+    bool last_snapshot_fingerprint_valid = false;
 
     NetFuzzerConfig fuzzer_config;
     NetFuzzerStats fuzzer_stats;

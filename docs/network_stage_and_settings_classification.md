@@ -58,7 +58,10 @@ If presentation should be visible remotely, emit a generic `PresentationCommand`
 
 ## Mechanics And Dev Tuning
 
-Player tuning, fluid tuning, water-effect tuning, lighting tuning, and similar debug sliders are dev tools for establishing good defaults. They are not expected to be live multiplayer features.
+Player tuning, fluid tuning, water-effect tuning, audio tuning, sound brush,
+lighting tuning, and similar debug sliders are dev tools for establishing good
+defaults or testing local presentation. They are not expected to be live
+multiplayer features.
 
 Classification for now:
 
@@ -66,6 +69,8 @@ Classification for now:
 - Peers should not mutate these in multiplayer.
 - Tests should treat tuned constants/config as pre-stage setup, not runtime user actions.
 - If a future game mode needs live tuning, add a host/admin settings command lane and apply it through coordinator-owned config patches.
+- Pure graphics/UI/camera/performance/post-fx display controls may remain local
+  because they do not change canonical gameplay state.
 
 This avoids syncing every debug knob while still keeping multiplayer deterministic for shipped settings.
 
@@ -80,7 +85,7 @@ Useful host/admin commands:
 - patch entity state
 - set money/player state/effects/tools
 - edit foreground/backwall/fluid cells
-- trigger presentation for testing
+- trigger presentation for testing, including sound brush sources
 
 Rules:
 

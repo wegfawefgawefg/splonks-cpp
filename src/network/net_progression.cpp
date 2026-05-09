@@ -133,6 +133,7 @@ void ClearPendingStageSync(NetTransportRuntime& transport) {
 void ResetRemoteStageAckState(NetTransportRuntime& transport) {
     for (NetRemoteEndpoint& remote : transport.remotes) {
         remote.highest_acked_coordinator_order = 0;
+        remote.pending_resync_start_order = 0;
     }
 }
 
@@ -216,14 +217,47 @@ void ApplyStageSync(
     NetTransportRuntime& transport,
     const StageSyncPacket& packet
 ) {
-    if (packet.stage_instance_id == kInvalidStageInstanceId ||
-        packet.stage_instance_id == state.net_session.stage_instance_id) {
+    if (packet.stage_instance_id == kInvalidStageInstanceId) {
         return;
     }
 
     const std::string quest_id = ReadFixedString(packet.quest_id);
     const std::string quest_stage_id = ReadFixedString(packet.quest_stage_id);
     if (quest_id.empty() || quest_stage_id.empty()) {
+        return;
+    }
+
+    if (packet.force_resync != 0 &&
+        packet.stage_instance_id == state.net_session.stage_instance_id) {
+        state.net_session.ordered_events.clear();
+        state.net_session.pending_outbound_events.clear();
+        state.net_session.applied_event_ids.clear();
+        state.net_session.applied_coordinator_orders.clear();
+        state.net_session.highest_applied_coordinator_order =
+            packet.snapshot_start_coordinator_order > 0
+                ? packet.snapshot_start_coordinator_order - 1
+                : 0;
+        state.net_session.next_expected_coordinator_order =
+            std::max<std::uint64_t>(packet.snapshot_start_coordinator_order, 1);
+        transport.remote_player_targets.clear();
+        transport.replicated_entity_state_cache.clear();
+        transport.replicated_fluid_cell_cache.clear();
+        state.stage.SyncTileInstanceMetadataGrid();
+        for (std::size_t y = 0; y < state.stage.fluid_tiles.size(); ++y) {
+            for (std::size_t x = 0; x < state.stage.fluid_tiles[y].size(); ++x) {
+                state.stage.fluid_tiles[y][x] = Tile::Air;
+                state.stage.fluid_amount[y][x] = 0.0F;
+                state.stage.fluid_display_amount[y][x] = 0.0F;
+                state.stage.fluid_velocity[y][x] = Vec2::New(0.0F, 0.0F);
+                state.stage.fluid_gravity[y][x] = Vec2::New(0.0F, 0.0F);
+                state.stage.fluid_gravity_strength[y][x] = 0.0F;
+                state.stage.fluid_temp_gravity[y][x] = Vec2::New(0.0F, 0.0F);
+            }
+        }
+        return;
+    }
+
+    if (packet.stage_instance_id == state.net_session.stage_instance_id) {
         return;
     }
 

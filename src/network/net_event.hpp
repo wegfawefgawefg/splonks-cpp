@@ -146,6 +146,7 @@ struct EntityDamagedEvent {
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     Vec2 acc = Vec2::New(0.0F, 0.0F);
+    std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
     std::uint8_t condition = 0;
@@ -194,12 +195,17 @@ struct EntityStatePatchedEvent {
     std::uint8_t has_physics = 1;
     std::uint8_t can_collide = 1;
     std::uint8_t can_apply_projectile_contact = 1;
+    std::uint8_t damage_vulnerability = 0;
     std::uint8_t facing = 0;
     std::uint8_t ai_state = 0;
     std::uint8_t wanted = 0;
+    std::uint8_t holding = 0;
+    std::uint8_t render_enabled = 1;
     std::uint8_t attachment_mode = 0;
     std::uint8_t draw_layer = 0;
     std::uint32_t movement_flags = 0;
+    std::uint32_t money = 0;
+    std::int32_t stage_exit_id = -1;
     std::uint32_t runtime_flags = 0;
     std::uint8_t effect_count = 0;
     std::array<EntityReplicatedEffect, kEntityReplicatedEffectCount> effects{};
@@ -270,9 +276,11 @@ struct PlayerStatePatchedEffect {
 
 struct PlayerStatePatchedEvent {
     NetEntityId player_entity_id = kInvalidNetEntityId;
+    PlayerId player_id = kInvalidPlayerId;
     std::uint32_t health = 0;
     std::uint32_t money = 0;
     std::uint8_t wanted = 0;
+    std::uint8_t connected = 1;
     std::uint8_t effect_count = 0;
     std::array<PlayerStatePatchedToolSlot, kPlayerStatePatchedToolSlotCount> tool_slots{};
     std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount> effects{};
@@ -280,6 +288,34 @@ struct PlayerStatePatchedEvent {
 
 struct RunStatePatchedEvent {
     QuestId quest_id = QuestId::None;
+    std::uint32_t frame = 0;
+    std::uint32_t stage_frame = 0;
+    std::uint32_t depth = 0;
+    std::uint32_t points = 0;
+    std::uint32_t deaths = 0;
+    std::uint32_t stage_type = 0;
+    std::int32_t quest_level_number = 0;
+    std::uint32_t generation_seed = 0;
+    std::uint32_t tile_change_generation = 0;
+    float stage_gravity = 0.3F;
+    Tile border_left_tile = Tile::Air;
+    Tile border_right_tile = Tile::Air;
+    Tile border_top_tile = Tile::Air;
+    Tile border_bottom_tile = Tile::Air;
+    std::int32_t void_death_y = 0;
+    std::uint8_t has_generation_seed = 0;
+    std::uint8_t border_wrap_x = 0;
+    std::uint8_t border_wrap_y = 0;
+    std::uint8_t has_void_death_y = 0;
+    std::uint8_t camera_clamp_enabled = 1;
+    std::uint8_t wrap_transform_active = 0;
+    std::uint8_t game_over = 0;
+    std::uint8_t win = 0;
+    std::uint16_t wrap_padding_tiles = 0;
+    std::uint32_t wrap_core_origin_x = 0;
+    std::uint32_t wrap_core_origin_y = 0;
+    std::uint32_t wrap_core_size_x = 0;
+    std::uint32_t wrap_core_size_y = 0;
     std::uint8_t classic_made_black_market = 0;
     std::uint8_t classic_made_udjat_eye = 0;
     std::uint8_t classic_has_udjat_eye = 0;
@@ -289,6 +325,8 @@ struct RunStatePatchedEvent {
     std::uint8_t classic_has_book_of_dead = 0;
     std::int32_t sac_altar_favor = 0;
     std::uint32_t sac_altar_reward_tier = 0;
+    std::uint8_t has_snapshot_fingerprint = 0;
+    std::uint64_t snapshot_fingerprint = 0;
 };
 
 struct StageLoadedEvent {

@@ -1,10 +1,13 @@
 #include "state_fingerprint.hpp"
 
 #include "entity.hpp"
+#include "network/net_session.hpp"
 #include "state.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <sstream>
+#include <vector>
 
 namespace splonks {
 
@@ -68,7 +71,7 @@ struct FingerprintWriter {
     }
 };
 
-void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage) {
+void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool include_cache_generation) {
     writer.AddString(stage.quest_id);
     writer.AddString(stage.quest_stage_id);
     writer.AddString(stage.route_label);
@@ -79,7 +82,9 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage) {
     }
     writer.AddPod(static_cast<int>(stage.stage_type));
     writer.AddFloat(stage.gravity);
-    writer.AddPod(stage.tile_change_generation);
+    if (include_cache_generation) {
+        writer.AddPod(stage.tile_change_generation);
+    }
 
     const UVec2 dims = stage.GetStageDims();
     writer.AddPod(dims.x);
@@ -153,7 +158,6 @@ void AddEntityFingerprint(FingerprintWriter& writer, const Entity& entity) {
         return;
     }
 
-    writer.AddBool(entity.marked_for_destruction);
     writer.AddBool(entity.has_physics);
     writer.AddBool(entity.can_collide);
     writer.AddBool(entity.grounded);
@@ -172,6 +176,7 @@ void AddEntityFingerprint(FingerprintWriter& writer, const Entity& entity) {
     writer.AddPod(static_cast<std::uint8_t>(entity.draw_layer));
     writer.AddPod(static_cast<std::uint8_t>(entity.condition));
     writer.AddPod(static_cast<std::uint8_t>(entity.ai_state));
+    writer.AddPod(static_cast<std::uint8_t>(entity.damage_vulnerability));
     writer.AddPod(entity.movement_flags);
     writer.AddPod(entity.health);
     writer.AddOptionalVid(entity.back_vid);
@@ -182,10 +187,6 @@ void AddEntityFingerprint(FingerprintWriter& writer, const Entity& entity) {
     writer.AddOptionalVid(entity.entity_c);
     writer.AddOptionalVid(entity.entity_d);
     writer.AddPod(entity.stage_exit_id);
-    writer.AddBool(entity.stage_spawn_index.has_value());
-    if (entity.stage_spawn_index.has_value()) {
-        writer.AddPod(*entity.stage_spawn_index);
-    }
     writer.AddPod(entity.money);
     writer.AddFloat(entity.counter_a);
     writer.AddFloat(entity.counter_b);
@@ -232,6 +233,132 @@ void AddToolInventoryFingerprint(FingerprintWriter& writer, const EntityToolInve
     }
 }
 
+network::NetEntityId NetEntityIdForVid(const State& state, VID vid) {
+    return state.net_session.FindNetEntityId(vid).value_or(network::kInvalidNetEntityId);
+}
+
+void AddNetworkVid(FingerprintWriter& writer, const State& state, const VID& vid) {
+    writer.AddPod(NetEntityIdForVid(state, vid));
+}
+
+void AddNetworkOptionalVid(
+    FingerprintWriter& writer,
+    const State& state,
+    const std::optional<VID>& vid
+) {
+    writer.AddBool(vid.has_value());
+    if (vid.has_value()) {
+        AddNetworkVid(writer, state, *vid);
+    }
+}
+
+void AddNetworkEntityFingerprint(FingerprintWriter& writer, const State& state, const Entity& entity) {
+    writer.AddPod(NetEntityIdForVid(state, entity.vid));
+    writer.AddBool(entity.active);
+    writer.AddPod(static_cast<std::uint16_t>(entity.type_));
+    if (!entity.active) {
+        return;
+    }
+
+    writer.AddBool(entity.has_physics);
+    writer.AddBool(entity.can_collide);
+    writer.AddBool(entity.grounded);
+    writer.AddBool(entity.holding);
+    writer.AddBool(entity.wanted);
+    writer.AddBool(entity.render_enabled);
+    writer.AddVec2(entity.pos);
+    writer.AddVec2(entity.vel);
+    writer.AddVec2(entity.acc);
+    writer.AddVec2(entity.size);
+    writer.AddFloat(entity.rotation);
+    writer.AddPod(entity.coyote_time);
+    writer.AddPod(entity.stun_timer);
+    writer.AddPod(entity.fall_timer);
+    writer.AddPod(static_cast<std::uint8_t>(entity.facing));
+    writer.AddPod(static_cast<std::uint8_t>(entity.draw_layer));
+    writer.AddPod(static_cast<std::uint8_t>(entity.condition));
+    writer.AddPod(static_cast<std::uint8_t>(entity.ai_state));
+    writer.AddPod(static_cast<std::uint8_t>(entity.damage_vulnerability));
+    writer.AddPod(entity.movement_flags);
+    writer.AddPod(entity.health);
+    AddNetworkOptionalVid(writer, state, entity.back_vid);
+    AddNetworkOptionalVid(writer, state, entity.holding_vid);
+    AddNetworkOptionalVid(writer, state, entity.held_by_vid);
+    AddNetworkOptionalVid(writer, state, entity.entity_a);
+    AddNetworkOptionalVid(writer, state, entity.entity_b);
+    AddNetworkOptionalVid(writer, state, entity.entity_c);
+    AddNetworkOptionalVid(writer, state, entity.entity_d);
+    writer.AddPod(entity.stage_exit_id);
+    writer.AddPod(entity.money);
+    writer.AddFloat(entity.counter_a);
+    writer.AddFloat(entity.counter_b);
+    writer.AddFloat(entity.counter_c);
+    writer.AddFloat(entity.counter_d);
+    writer.AddIVec2(entity.point_a);
+    writer.AddIVec2(entity.point_b);
+    writer.AddIVec2(entity.point_c);
+    writer.AddIVec2(entity.point_d);
+    writer.AddPod(entity.frame_data_animator.animation_id);
+    writer.AddPod(entity.frame_data_animator.current_frame);
+    writer.AddFloat(entity.frame_data_animator.current_time);
+    writer.AddFloat(entity.frame_data_animator.speed);
+    writer.AddBool(entity.frame_data_animator.animate);
+    writer.AddBool(entity.frame_data_animator.loop);
+    writer.AddBool(entity.frame_data_animator.finished);
+    AddEffectFingerprint(writer, entity.effects);
+}
+
+void AddNetworkPlayerRegistryFingerprint(FingerprintWriter& writer, const State& state) {
+    std::vector<const PlayerSlot*> slots;
+    slots.reserve(state.players.slots.size());
+    for (const PlayerSlot& slot : state.players.slots) {
+        slots.push_back(&slot);
+    }
+    std::sort(slots.begin(), slots.end(), [](const PlayerSlot* lhs, const PlayerSlot* rhs) {
+        return lhs->player_id < rhs->player_id;
+    });
+
+    writer.AddPod(slots.size());
+    for (const PlayerSlot* const slot : slots) {
+        writer.AddPod(slot->player_id);
+        writer.AddBool(slot->connected);
+        writer.AddBool(slot->entity_vid.has_value());
+        if (slot->entity_vid.has_value()) {
+            AddNetworkVid(writer, state, *slot->entity_vid);
+        }
+    }
+}
+
+void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& state) {
+    std::vector<const EntityToolState*> tool_states;
+    tool_states.reserve(state.entity_tools.tool_states.size());
+    for (const EntityToolState& tool_state : state.entity_tools.tool_states) {
+        if (NetEntityIdForVid(state, tool_state.owner_vid) == network::kInvalidNetEntityId) {
+            continue;
+        }
+        tool_states.push_back(&tool_state);
+    }
+    std::sort(
+        tool_states.begin(),
+        tool_states.end(),
+        [&state](const EntityToolState* lhs, const EntityToolState* rhs) {
+            return NetEntityIdForVid(state, lhs->owner_vid) <
+                   NetEntityIdForVid(state, rhs->owner_vid);
+        }
+    );
+
+    writer.AddPod(tool_states.size());
+    for (const EntityToolState* const tool_state : tool_states) {
+        AddNetworkVid(writer, state, tool_state->owner_vid);
+        for (const ToolSlot& slot : tool_state->slots) {
+            writer.AddPod(static_cast<std::uint16_t>(slot.kind));
+            writer.AddPod(slot.count);
+            writer.AddPod(slot.cooldown);
+            writer.AddBool(slot.active);
+        }
+    }
+}
+
 } // namespace
 
 CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
@@ -240,6 +367,12 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
     writer.AddPod(state.frame);
     writer.AddPod(state.stage_frame);
     writer.AddPod(state.depth);
+    writer.AddPod(state.points);
+    writer.AddPod(state.deaths);
+    writer.AddPod(state.sac_altar_favor);
+    writer.AddPod(state.sac_altar_reward_tier);
+    writer.AddBool(state.game_over);
+    writer.AddBool(state.win);
     writer.AddPod(static_cast<std::uint8_t>(state.quest_state.quest_id));
     writer.AddBool(state.quest_state.classic.made_black_market);
     writer.AddBool(state.quest_state.classic.made_udjat_eye);
@@ -248,7 +381,7 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
     writer.AddBool(state.quest_state.classic.has_hedjet);
     writer.AddBool(state.quest_state.classic.has_sceptre);
     writer.AddBool(state.quest_state.classic.has_book_of_dead);
-    AddStageFingerprint(writer, state.stage);
+    AddStageFingerprint(writer, state.stage, true);
     AddPlayerRegistryFingerprint(writer, state.players);
     AddToolInventoryFingerprint(writer, state.entity_tools);
 
@@ -269,6 +402,66 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
             << " frame=" << state.frame
             << " stage_frame=" << state.stage_frame
             << " entities=" << active_entities
+            << " tiles=" << state.stage.GetTileWidth() << "x" << state.stage.GetTileHeight();
+    return CanonicalStateFingerprint{
+        .value = writer.value,
+        .summary = summary.str(),
+    };
+}
+
+CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
+    FingerprintWriter writer;
+    writer.AddPod(state.frame);
+    writer.AddPod(state.stage_frame);
+    writer.AddPod(state.depth);
+    writer.AddPod(state.points);
+    writer.AddPod(state.deaths);
+    writer.AddPod(state.sac_altar_favor);
+    writer.AddPod(state.sac_altar_reward_tier);
+    writer.AddBool(state.game_over);
+    writer.AddBool(state.win);
+    writer.AddPod(static_cast<std::uint8_t>(state.quest_state.quest_id));
+    writer.AddBool(state.quest_state.classic.made_black_market);
+    writer.AddBool(state.quest_state.classic.made_udjat_eye);
+    writer.AddBool(state.quest_state.classic.has_udjat_eye);
+    writer.AddBool(state.quest_state.classic.made_moai);
+    writer.AddBool(state.quest_state.classic.has_hedjet);
+    writer.AddBool(state.quest_state.classic.has_sceptre);
+    writer.AddBool(state.quest_state.classic.has_book_of_dead);
+    AddStageFingerprint(writer, state.stage, false);
+    AddNetworkPlayerRegistryFingerprint(writer, state);
+    AddNetworkToolInventoryFingerprint(writer, state);
+
+    std::vector<const Entity*> active_entities;
+    active_entities.reserve(state.entity_manager.entities.size());
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (entity.active) {
+            active_entities.push_back(&entity);
+        }
+    }
+    std::sort(
+        active_entities.begin(),
+        active_entities.end(),
+        [&state](const Entity* lhs, const Entity* rhs) {
+            const network::NetEntityId lhs_id = NetEntityIdForVid(state, lhs->vid);
+            const network::NetEntityId rhs_id = NetEntityIdForVid(state, rhs->vid);
+            if (lhs_id != rhs_id) {
+                return lhs_id < rhs_id;
+            }
+            return lhs->vid.id < rhs->vid.id;
+        }
+    );
+
+    writer.AddPod(active_entities.size());
+    for (const Entity* const entity : active_entities) {
+        AddNetworkEntityFingerprint(writer, state, *entity);
+    }
+
+    std::ostringstream summary;
+    summary << "stage=" << state.stage.quest_stage_id
+            << " frame=" << state.frame
+            << " stage_frame=" << state.stage_frame
+            << " active_entities=" << active_entities.size()
             << " tiles=" << state.stage.GetTileWidth() << "x" << state.stage.GetTileHeight();
     return CanonicalStateFingerprint{
         .value = writer.value,

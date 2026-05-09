@@ -112,7 +112,29 @@ void AddAllPersistentEffectsFromDebug(Entity& entity) {
     }
 }
 
-void DrawEntityEffectsEditor(Entity& entity) {
+bool IsPlayerEntity(const State& state, const Entity& entity) {
+    return state.players.FindByEntityVid(entity.vid) != nullptr;
+}
+
+void ReplicateDebugEntityEdit(
+    State& state,
+    const Entity& entity,
+    bool entity_state_changed,
+    bool player_state_changed
+) {
+    if (state.net_session.role == network::NetRole::Peer) {
+        return;
+    }
+    if (entity_state_changed) {
+        world_ops::PatchEntityState(state, entity, entity);
+    }
+    if ((entity_state_changed || player_state_changed) && IsPlayerEntity(state, entity)) {
+        world_ops::PatchPlayerState(state, entity);
+    }
+}
+
+bool DrawEntityEffectsEditor(Entity& entity) {
+    bool changed = false;
     EntityEffects* const effects = entity.effects.get();
     if (effects == nullptr || effects->count == 0) {
         ImGui::TextDisabled("No active effects.");
@@ -128,14 +150,24 @@ void DrawEntityEffectsEditor(Entity& entity) {
             int count = effect.count;
             if (ImGui::InputInt("Count##effect_count", &count)) {
                 effect.count = count;
+                changed = true;
             }
-            ImGui::DragFloat("Value##effect_value", &effect.value, 0.05F, -1000.0F, 1000.0F, "%.2f");
+            changed |= ImGui::DragFloat(
+                "Value##effect_value",
+                &effect.value,
+                0.05F,
+                -1000.0F,
+                1000.0F,
+                "%.2f"
+            );
             int frames_remaining = static_cast<int>(effect.frames_remaining);
             if (ImGui::InputInt("Frames##effect_frames", &frames_remaining)) {
                 effect.frames_remaining = static_cast<std::uint32_t>(std::max(0, frames_remaining));
+                changed = true;
             }
             if (ImGui::Button("Remove##effect_remove")) {
                 RemoveEffect(entity, effect.id);
+                changed = true;
                 ImGui::PopID();
                 ImGui::PopID();
                 break;
@@ -168,14 +200,17 @@ void DrawEntityEffectsEditor(Entity& entity) {
     }
     if (ImGui::Button("Add Selected Effect##entity_effect_add_button")) {
         AddEffectFromDebug(entity, selected_effect);
+        changed = true;
     }
     ImGui::SameLine();
     if (ImGui::Button("Add All Persistent##entity_effect_add_all_persistent")) {
         AddAllPersistentEffectsFromDebug(entity);
+        changed = true;
     }
     if (selected_effect == EffectId::NoGravityUntilContact) {
         ImGui::TextDisabled("Expires on grounded or blocking contact.");
     }
+    return changed;
 }
 
 std::vector<EntityType> BuildSortedSpawnTypes() {
@@ -706,6 +741,8 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("Condition: %s", ConditionToString(entity.condition));
     ImGui::Text("AI: %s", AiStateToString(entity.ai_state));
     const bool peer_mutation_disabled = IsPeerDebugWorldMutationDisabled(state);
+    bool entity_state_changed = false;
+    bool player_state_changed = false;
     if (peer_mutation_disabled) {
         ImGui::BeginDisabled();
     }
@@ -716,11 +753,15 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         } else {
             DisableStone(entity);
         }
+        entity_state_changed = true;
     }
-    ImGui::Checkbox("Wanted", &entity.wanted);
-    ImGui::Checkbox("Crusher/Pusher", &entity.crusher_pusher);
-    ImGui::Checkbox("Pushable", &entity.pushable);
-    ImGui::DragFloat("Push Acc", &entity.push_acc, 0.01F, 0.0F, 5.0F, "%.2f");
+    if (ImGui::Checkbox("Wanted", &entity.wanted)) {
+        entity_state_changed = true;
+        player_state_changed = true;
+    }
+    entity_state_changed |= ImGui::Checkbox("Crusher/Pusher", &entity.crusher_pusher);
+    entity_state_changed |= ImGui::Checkbox("Pushable", &entity.pushable);
+    entity_state_changed |= ImGui::DragFloat("Push Acc", &entity.push_acc, 0.01F, 0.0F, 5.0F, "%.2f");
     if (peer_mutation_disabled) {
         ImGui::EndDisabled();
         ImGui::TextDisabled("Entity edits are disabled on multiplayer peers until admin commands are coordinator-routed.");
@@ -737,11 +778,23 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     ImGui::Text("Fall timer: %u", entity.fall_timer);
     ImGui::Text("Health: %u", entity.health);
     ImGui::Text("Money: %u", entity.money);
+    if (!peer_mutation_disabled) {
+        int money = static_cast<int>(entity.money);
+        ImGui::SetNextItemWidth(120.0F);
+        if (ImGui::InputInt("Edit Money", &money)) {
+            entity.money = static_cast<std::uint32_t>(std::max(0, money));
+            entity_state_changed = true;
+            player_state_changed = true;
+        }
+    }
     ImGui::SeparatorText("Effects");
     if (peer_mutation_disabled) {
         ImGui::BeginDisabled();
     }
-    DrawEntityEffectsEditor(entity);
+    if (DrawEntityEffectsEditor(entity)) {
+        entity_state_changed = true;
+        player_state_changed = true;
+    }
     if (peer_mutation_disabled) {
         ImGui::EndDisabled();
     }
@@ -757,6 +810,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         ImGui::SameLine();
         if (ImGui::Button("Upgrade Bombs To Sticky")) {
             state.entity_tools.UpgradeBombsToSticky(entity.vid);
+            player_state_changed = true;
         }
         for (std::size_t slot_index = 0; slot_index < kToolSlotCount; ++slot_index) {
             ToolSlot preview_slot{};
@@ -776,6 +830,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
                 owned_slot = *slot;
                 owned_slot.active = active;
                 slot = &owned_slot;
+                player_state_changed = true;
             }
 
             int kind_index = static_cast<int>(slot->kind);
@@ -790,6 +845,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
                         owned_slot.kind = tool_kind;
                         slot = &owned_slot;
                         kind_index = static_cast<int>(tool_index);
+                        player_state_changed = true;
                     }
                     if (selected) {
                         ImGui::SetItemDefaultFocus();
@@ -806,16 +862,19 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
                 owned_slot = *slot;
                 owned_slot.count = static_cast<std::uint16_t>(std::clamp(count, 0, 65535));
                 slot = &owned_slot;
+                player_state_changed = true;
             }
             ImGui::SetNextItemWidth(120.0F);
             if (ImGui::InputInt("Cooldown", &cooldown)) {
                 ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
                 owned_slot = *slot;
                 owned_slot.cooldown = static_cast<std::uint16_t>(std::clamp(cooldown, 0, 65535));
+                player_state_changed = true;
             }
             ImGui::PopID();
         }
     }
+    ReplicateDebugEntityEdit(state, entity, entity_state_changed, player_state_changed);
     ImGui::Text("Climbing: %s", entity.IsClimbing() ? "true" : "false");
     ImGui::Text("Holding: %s", entity.holding ? "true" : "false");
 

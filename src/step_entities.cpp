@@ -286,7 +286,8 @@ bool ShouldRunFullPlayerSlotStep(const State& state, const PlayerSlot& slot) {
         return true;
     }
     return state.net_session.role == network::NetRole::Coordinator &&
-           slot.connection_kind == PlayerConnectionKind::Remote;
+           slot.connection_kind == PlayerConnectionKind::Remote &&
+           slot.connected;
 }
 
 void StepPredictedThrownRemotePlayer(

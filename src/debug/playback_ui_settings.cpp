@@ -19,6 +19,10 @@ bool IsPeerMechanicsTuningDisabled(const State& state) {
     return state.net_session.role == network::NetRole::Peer;
 }
 
+bool IsPeerAdminControlDisabled(const State& state) {
+    return state.net_session.role == network::NetRole::Peer;
+}
+
 const char* CameraModeToString(CameraMode mode) {
     switch (mode) {
     case CameraMode::Follow:
@@ -49,6 +53,25 @@ void DrawTimingRow(const char* label, double smoothed_ms, double raw_ms, double 
     ImGui::Text("peak %.3f ms (%.1f%%)", peak_ms, peak_percent);
     ImGui::SameLine(560.0F);
     ImGui::Text("avg %.1f%%", smoothed_percent);
+}
+
+bool DrawTileCombo(const char* label, Tile& tile) {
+    bool changed = false;
+    if (ImGui::BeginCombo(label, TileToString(tile))) {
+        for (std::size_t i = 0; i < kTileCount; ++i) {
+            const Tile candidate = static_cast<Tile>(i);
+            const bool selected = candidate == tile;
+            if (ImGui::Selectable(TileToString(candidate), selected)) {
+                tile = candidate;
+                changed = true;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
 }
 
 } // namespace
@@ -154,6 +177,14 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Audio& audio, Grap
     }
 
     DebugAudioBrushState& brush = state.debug_audio_brush;
+    const bool peer_admin_disabled = IsPeerAdminControlDisabled(state);
+    if (peer_admin_disabled) {
+        brush.enabled = false;
+        brush.source_active = false;
+        ImGui::BeginDisabled();
+        ImGui::TextDisabled("Disabled on multiplayer peers. Sound brush is host-admin debug tooling.");
+    }
+
     ImGui::Checkbox("Enable Audio Brush", &brush.enabled);
     ImGui::Checkbox("Show Openness Rays", &brush.show_openness_rays);
     ImGui::SameLine();
@@ -217,8 +248,48 @@ void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Audio& audio, Grap
     ImGui::TextUnformatted("Hold left mouse in the world view to place or drag the loop source.");
     ImGui::TextUnformatted("Hold right mouse in the world view to clear it.");
 
+    if (peer_admin_disabled) {
+        ImGui::EndDisabled();
+    }
+
     ImGui::End();
     SyncDebugUiSettings(debug, state);
+}
+
+void DrawTileBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (!debug.tile_brush_window_visible) {
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.9F);
+    ImGui::SetNextWindowPos(ImVec2(620.0F, 520.0F), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Debug: Tile Brush", &debug.tile_brush_window_visible)) {
+        ImGui::End();
+        return;
+    }
+
+    const bool peer_mutation_disabled = state.net_session.role == network::NetRole::Peer;
+    if (peer_mutation_disabled) {
+        debug.tile_brush_enabled = false;
+        ImGui::BeginDisabled();
+        ImGui::TextDisabled("Disabled on multiplayer peers until client admin commands are routed.");
+    }
+
+    ImGui::Checkbox("Enable Tile Brush", &debug.tile_brush_enabled);
+    (void)DrawTileCombo("Paint Tile", debug.tile_brush_tile);
+    ImGui::SliderInt("Rotation", &debug.tile_brush_rotation, 0, 3);
+    ImGui::SliderInt("Brush Radius (tiles)", &debug.tile_brush_radius_tiles, 0, 16);
+    const Vec2 mouse_world = graphics.ScreenToWc(state.immediate_playing_inputs.mouse_pos);
+    const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
+    ImGui::Text("Mouse WC: (%.1f, %.1f)", mouse_world.x, mouse_world.y);
+    ImGui::Text("Mouse Tile: (%d, %d)", mouse_tile.x, mouse_tile.y);
+    ImGui::TextUnformatted("Hold left mouse to paint foreground tiles. Hold right mouse to erase to Air.");
+
+    if (peer_mutation_disabled) {
+        ImGui::EndDisabled();
+    }
+
+    ImGui::End();
 }
 
 void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics) {
@@ -439,6 +510,12 @@ void DrawAudioSettingsWindow(DebugPlayback& debug, State& state) {
     }
 
     bool save_settings = false;
+    const bool peer_admin_disabled = IsPeerAdminControlDisabled(state);
+    if (peer_admin_disabled) {
+        ImGui::BeginDisabled();
+        ImGui::TextDisabled("Audio tuning is host-admin debug tooling in multiplayer.");
+    }
+
     save_settings |= ImGui::SliderFloat(
         "Pan Half-Width (px)",
         &state.settings.audio.pan_half_width_px,
@@ -539,7 +616,11 @@ void DrawAudioSettingsWindow(DebugPlayback& debug, State& state) {
     ImGui::TextUnformatted("These settings are persisted and affect all positional audio.");
     ImGui::TextUnformatted("Higher half-width = gentler pan. Lower = more aggressive pan.");
 
-    if (save_settings) {
+    if (peer_admin_disabled) {
+        ImGui::EndDisabled();
+    }
+
+    if (save_settings && !peer_admin_disabled) {
         SaveSettings(state.settings);
     }
 

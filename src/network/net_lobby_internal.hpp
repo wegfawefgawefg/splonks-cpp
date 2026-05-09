@@ -147,6 +147,25 @@ void HandleActionRequestEventsAsCoordinator(
 );
 void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& packet);
 
+void HandleJoinRequestAsCoordinator(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const UdpPacket& udp_packet,
+    const JoinRequestPacket& request
+);
+void HandleJoinAcceptAsPeer(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const JoinAcceptPacket& accept
+);
+void HandleLeaveNoticeAsCoordinator(
+    State& state,
+    NetTransportRuntime& transport,
+    const LeaveNoticePacket& leave
+);
+
 void EnsureSpawnedPlayer(
     State& state,
     PlayerId player_id,

@@ -82,6 +82,7 @@ struct DebugPlayback {
     bool entity_annotations_visible = false;
     bool shake_brush_window_visible = false;
     bool audio_brush_window_visible = false;
+    bool tile_brush_window_visible = false;
     bool fluid_brush_window_visible = false;
     bool audio_settings_window_visible = false;
     bool ui_settings_window_visible = false;
@@ -135,6 +136,10 @@ struct DebugPlayback {
     int network_join_port = 42424;
     std::array<char, 64> network_join_host{};
     std::string network_status;
+    bool tile_brush_enabled = false;
+    Tile tile_brush_tile = Tile::CaveDirt;
+    int tile_brush_radius_tiles = 0;
+    int tile_brush_rotation = 0;
 
     static DebugPlayback New();
 };

@@ -1,11 +1,14 @@
 #pragma once
 
+#include "math_types.hpp"
 #include "stage.hpp"
+#include "vid.hpp"
 
 #include <optional>
 #include <cstdint>
 #include <array>
 #include <string_view>
+#include <vector>
 
 namespace splonks {
 
@@ -71,5 +74,7 @@ void QueueRespawnTransition(State& state);
 bool IsStageExitAllowed(const State& state, StageExitId exit_id);
 void QueueStageExitTransition(State& state, StageExitId exit_id);
 void ApplyPendingStageTransition(State& state);
+std::optional<Vec2> FindStageEntranceSpawnPos(const State& state);
+std::vector<VID> ResetStageEntrancePresentation(State& state);
 
 } // namespace splonks

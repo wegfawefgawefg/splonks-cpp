@@ -35,7 +35,7 @@ Entity* SpawnConfiguredEntity(
 bool DeactivateEntity(State& state, VID entity_vid);
 void PatchEntityState(State& state, const Entity& source, const Entity& entity);
 void PatchPlayerState(State& state, const Entity& player);
-void PatchRunState(State& state);
+void PatchRunState(State& state, bool include_snapshot_fingerprint = false);
 void MarkEntityHeld(
     State& state,
     const Entity& holder,

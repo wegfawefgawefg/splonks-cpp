@@ -186,10 +186,23 @@ std::vector<NetEvent> BuildReplicatedFluidCellPatchEvents(
     return events;
 }
 
+bool HasPendingDurableFluidSnapshot(const NetSessionState& session) {
+    for (const NetEvent& event : session.ordered_events) {
+        if (event.type == NetEventType::FluidCellPatched &&
+            event.header.coordinator_order != 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
 
 void SendReplicatedFluidCellPatchesToAllRemotes(State& state, NetTransportRuntime& transport) {
     if (state.net_session.role != NetRole::Coordinator || transport.remotes.empty()) {
+        return;
+    }
+    if (HasPendingDurableFluidSnapshot(state.net_session)) {
         return;
     }
     const std::vector<NetEvent> events = BuildReplicatedFluidCellPatchEvents(state, transport);

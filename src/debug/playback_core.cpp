@@ -8,6 +8,7 @@
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "tile_archetype.hpp"
+#include "world_ops.hpp"
 
 #include <imgui.h>
 
@@ -104,6 +105,10 @@ bool IsShakeBrushActive(const State& state) {
 
 bool IsFluidBrushActive(const State& state) {
     return state.debug_fluid_brush.enabled;
+}
+
+bool IsTileBrushActive(const DebugPlayback& debug) {
+    return debug.tile_brush_enabled;
 }
 
 Vec2 StageCenterWorld(const Stage& stage) {
@@ -251,7 +256,9 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                     continue;
                 }
                 if (brush.replace_solid_tiles && !CanFluidBrushOccupyTile(current_tile)) {
-                    state.stage.SetTile(wrapped, Tile::Air);
+                    if (!world_ops::SetForegroundTile(state, wrapped, Tile::Air)) {
+                        continue;
+                    }
                 }
                 state.stage.SetFluidTile(wrapped, Tile::WaterSwim);
                 PushChangedTile(changed_tiles, wrapped);
@@ -261,7 +268,7 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                     static_cast<unsigned int>(wrapped.y)
                 );
                 if (GetTileArchetype(current_tile).simulated_fluid) {
-                    state.stage.SetTile(wrapped, Tile::Air);
+                    (void)world_ops::SetForegroundTile(state, wrapped, Tile::Air);
                     PushChangedTile(changed_tiles, wrapped);
                 }
                 if (GetTileArchetype(fluid_tile).simulated_fluid) {
@@ -275,6 +282,43 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
     if (!changed_tiles.empty()) {
         UpdateStageLightingForTileChanges(state, changed_tiles);
         UpdateStageAcousticsForTileChanges(state, changed_tiles);
+    }
+}
+
+void ApplyTileBrush(DebugPlayback& debug, State& state, Graphics& graphics) {
+    if (state.mode != Mode::Playing || !IsTileBrushActive(debug) || ImGuiWantsMouse()) {
+        return;
+    }
+    if (state.net_session.role == network::NetRole::Peer) {
+        return;
+    }
+
+    float mouse_x = 0.0F;
+    float mouse_y = 0.0F;
+    const SDL_MouseButtonFlags mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
+    const bool paint_tile = (mouse_buttons & SDL_BUTTON_LMASK) != 0;
+    const bool erase_tile = (mouse_buttons & SDL_BUTTON_RMASK) != 0;
+    if (!paint_tile && !erase_tile) {
+        return;
+    }
+
+    const IVec2 mouse_tile = graphics.ScreenToTileCoords(state.immediate_playing_inputs.mouse_pos);
+    const int radius_tiles = std::max(0, debug.tile_brush_radius_tiles);
+    const Tile tile = paint_tile ? debug.tile_brush_tile : Tile::Air;
+    const TileRotation rotation = paint_tile
+        ? NormalizeTileRotation(debug.tile_brush_rotation)
+        : kTileRotation0;
+
+    for (int y = mouse_tile.y - radius_tiles; y <= mouse_tile.y + radius_tiles; ++y) {
+        for (int x = mouse_tile.x - radius_tiles; x <= mouse_tile.x + radius_tiles; ++x) {
+            const float dx = static_cast<float>(x - mouse_tile.x);
+            const float dy = static_cast<float>(y - mouse_tile.y);
+            const float distance = std::sqrt((dx * dx) + (dy * dy));
+            if (distance > static_cast<float>(radius_tiles)) {
+                continue;
+            }
+            (void)world_ops::SetForegroundTile(state, IVec2::New(x, y), tile, rotation);
+        }
     }
 }
 
@@ -301,6 +345,7 @@ void AdvanceLiveSimulation(
     }
 
     ApplyShakeBrush(state, graphics);
+    ApplyTileBrush(debug, state, graphics);
     ApplyFluidBrush(state, graphics);
 
     if (debug.pause_live_simulation) {
@@ -365,6 +410,7 @@ void DrawDebugPlaybackControls(
     debug_playback_internal::DrawDebugOverlayWindow(debug, state, graphics);
     debug_playback_internal::DrawShakeBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawAudioBrushWindow(debug, state, audio, graphics);
+    debug_playback_internal::DrawTileBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawFluidBrushWindow(debug, state, graphics);
     debug_playback_internal::DrawAudioSettingsWindow(debug, state);
     debug_playback_internal::DrawUiSettingsWindow(debug, state);
@@ -481,6 +527,12 @@ void UpdateDebugAudioBrush(
     const Graphics& graphics
 ) {
     audio.SetListenerWorldPos(GetAudioListenerWorldPos(state));
+    if (state.net_session.role == network::NetRole::Peer) {
+        state.debug_audio_brush.enabled = false;
+        state.debug_audio_brush.source_active = false;
+        StopDebugAudioBrushLoop(debug, audio);
+        return;
+    }
     UpdateDebugAudioBrushInput(state, graphics);
 
     if (debug.playback_active ||
