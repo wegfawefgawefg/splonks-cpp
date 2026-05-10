@@ -129,7 +129,7 @@ void PruneOutOfBoundsFluidCacheEntries(const Stage& stage, NetTransportRuntime& 
     );
 }
 
-FluidCellPatchedEvent MakeFluidCellPayload(const Stage& stage, const IVec2& tile_pos) {
+FluidCellPatchedMessage MakeFluidCellPayload(const Stage& stage, const IVec2& tile_pos) {
     const std::size_t y = static_cast<std::size_t>(tile_pos.y);
     const std::size_t x = static_cast<std::size_t>(tile_pos.x);
     Tile tile = stage.fluid_tiles[y][x];
@@ -142,7 +142,7 @@ FluidCellPatchedEvent MakeFluidCellPayload(const Stage& stage, const IVec2& tile
         velocity = Vec2::New(0.0F, 0.0F);
         temp_gravity = Vec2::New(0.0F, 0.0F);
     }
-    return FluidCellPatchedEvent{
+    return FluidCellPatchedMessage{
         .tile_pos = tile_pos,
         .tile = tile,
         .amount = amount,
@@ -153,14 +153,14 @@ FluidCellPatchedEvent MakeFluidCellPayload(const Stage& stage, const IVec2& tile
     };
 }
 
-std::vector<NetEvent> BuildReplicatedFluidCellPatchEvents(
+std::vector<NetMessage> BuildReplicatedFluidCellPatchMessages(
     State& state,
     NetTransportRuntime& transport
 ) {
-    std::vector<NetEvent> events;
+    std::vector<NetMessage> messages;
     Stage& stage = state.stage;
     if (stage.tiles.empty()) {
-        return events;
+        return messages;
     }
 
     stage.SyncTileInstanceMetadataGrid();
@@ -174,22 +174,22 @@ std::vector<NetEvent> BuildReplicatedFluidCellPatchEvents(
                 continue;
             }
 
-            NetEvent event;
-            event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
-            event.type = NetEventType::FluidCellPatched;
-            event.payload = MakeFluidCellPayload(stage, IVec2::New(x, y));
-            events.push_back(event);
+            NetMessage message;
+            message.header = state.net_session.MakeLocalTransientMessageHeader(state.frame);
+            message.type = NetMessageType::FluidCellPatched;
+            message.payload = MakeFluidCellPayload(stage, IVec2::New(x, y));
+            messages.push_back(message);
         }
     }
 
     PruneOutOfBoundsFluidCacheEntries(stage, transport);
-    return events;
+    return messages;
 }
 
 bool HasPendingDurableFluidSnapshot(const NetSessionState& session) {
-    for (const NetEvent& event : session.ordered_events) {
-        if (event.type == NetEventType::FluidCellPatched &&
-            event.header.coordinator_order != 0) {
+    for (const NetMessage& message : session.ordered_messages) {
+        if (message.type == NetMessageType::FluidCellPatched &&
+            message.header.coordinator_order != 0) {
             return true;
         }
     }
@@ -205,12 +205,12 @@ void SendReplicatedFluidCellPatchesToAllRemotes(State& state, NetTransportRuntim
     if (HasPendingDurableFluidSnapshot(state.net_session)) {
         return;
     }
-    const std::vector<NetEvent> events = BuildReplicatedFluidCellPatchEvents(state, transport);
-    if (events.empty()) {
+    const std::vector<NetMessage> messages = BuildReplicatedFluidCellPatchMessages(state, transport);
+    if (messages.empty()) {
         return;
     }
     for (const NetRemoteEndpoint& remote : transport.remotes) {
-        SendFluidCellEvents(transport, remote.endpoint, events);
+        SendFluidCellMessages(transport, remote.endpoint, messages);
     }
 }
 

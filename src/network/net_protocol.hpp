@@ -25,41 +25,41 @@ constexpr std::size_t kNetQuestIdBytes = 32;
 constexpr std::size_t kNetQuestStageIdBytes = 64;
 constexpr std::size_t kNetPlayersPerProcess = 16;
 constexpr std::size_t kNetPlayerSnapshotsPerPacket = 4;
-constexpr std::size_t kNetTileEventsPerPacket = 8;
-constexpr std::size_t kNetFluidCellEventsPerPacket = 4;
-constexpr std::size_t kNetEntitySpawnedEventsPerPacket = 1;
-constexpr std::size_t kNetEntityDamageEventsPerPacket = 3;
-constexpr std::size_t kNetEntityStateEventsPerPacket = 1;
-constexpr std::size_t kNetEntityCarryEventsPerPacket = 5;
-constexpr std::size_t kNetEntityLifecycleEventsPerPacket = 8;
-constexpr std::size_t kNetPlayerStateEventsPerPacket = 1;
-constexpr std::size_t kNetRunStateEventsPerPacket = 3;
+constexpr std::size_t kNetTileMessagesPerPacket = 8;
+constexpr std::size_t kNetFluidCellMessagesPerPacket = 4;
+constexpr std::size_t kNetEntitySpawnedMessagesPerPacket = 1;
+constexpr std::size_t kNetEntityDamageMessagesPerPacket = 3;
+constexpr std::size_t kNetEntityStateMessagesPerPacket = 1;
+constexpr std::size_t kNetEntityCarryMessagesPerPacket = 5;
+constexpr std::size_t kNetEntityLifecycleMessagesPerPacket = 8;
+constexpr std::size_t kNetPlayerStateMessagesPerPacket = 1;
+constexpr std::size_t kNetRunStateMessagesPerPacket = 3;
 constexpr std::size_t kNetPlayerStateToolSlotCount = 2;
 constexpr std::size_t kNetPlayerStateEffectCount = 12;
 constexpr std::size_t kNetEntityEffectCount = 12;
-constexpr std::size_t kNetPresentationCommandEventsPerPacket = 4;
-constexpr std::size_t kNetActionRequestEventsPerPacket = 4;
-constexpr std::size_t kNetActionRequestAckEventIdsPerPacket = 16;
+constexpr std::size_t kNetPresentationCommandMessagesPerPacket = 4;
+constexpr std::size_t kNetActionRequestMessagesPerPacket = 4;
+constexpr std::size_t kNetActionRequestAckMessageIdsPerPacket = 16;
 
 enum class NetPacketType : std::uint16_t {
     JoinRequest = 1,
     JoinAccept = 2,
     PlayerSnapshots = 3,
-    TileEvents = 4,
-    EntitySpawnedEvents = 5,
-    EntityDamageEvents = 6,
-    EntityStateEvents = 7,
-    EntityCarryEvents = 8,
+    TileMessages = 4,
+    EntitySpawnedMessages = 5,
+    EntityDamageMessages = 6,
+    EntityStateMessages = 7,
+    EntityCarryMessages = 8,
     LeaveNotice = 9,
     StageSync = 10,
-    PresentationCommandEvents = 11,
-    DurableEventAck = 12,
-    ActionRequestEvents = 13,
-    EntityLifecycleEvents = 14,
-    PlayerStateEvents = 15,
-    RunStateEvents = 16,
+    PresentationCommandMessages = 11,
+    DurableMessageAck = 12,
+    ActionRequestMessages = 13,
+    EntityLifecycleMessages = 14,
+    PlayerStateMessages = 15,
+    RunStateMessages = 16,
     ActionRequestAck = 17,
-    FluidCellEvents = 18,
+    FluidCellMessages = 18,
 };
 
 struct NetPacketHeader {
@@ -161,19 +161,19 @@ struct StageSyncPacket {
     std::array<std::uint8_t, 7> reserved{};
 };
 
-struct DurableEventAckPacket {
+struct DurableMessageAckPacket {
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     PlayerId player_id = kInvalidPlayerId;
     std::uint64_t highest_applied_coordinator_order = 0;
 };
 
-struct TileEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct TileMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
     std::uint64_t coordinator_order = 0;
-    std::uint16_t event_type = 0;
+    std::uint16_t message_type = 0;
     std::uint16_t tile = 0;
     std::uint8_t rotation = 0;
     std::uint8_t layer = 0;
@@ -182,13 +182,13 @@ struct TileEventEntry {
     std::int32_t tile_y = 0;
 };
 
-struct TileEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<TileEventEntry, kNetTileEventsPerPacket> events{};
+struct TileMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<TileMessageEntry, kNetTileMessagesPerPacket> messages{};
 };
 
-struct FluidCellEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct FluidCellMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -207,9 +207,9 @@ struct FluidCellEventEntry {
     float gravity_strength = 0.0F;
 };
 
-struct FluidCellEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<FluidCellEventEntry, kNetFluidCellEventsPerPacket> events{};
+struct FluidCellMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<FluidCellMessageEntry, kNetFluidCellMessagesPerPacket> messages{};
 };
 
 struct EntityEffectEntry {
@@ -220,8 +220,8 @@ struct EntityEffectEntry {
     std::uint32_t frames_remaining = 0;
 };
 
-struct EntitySpawnedEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct EntitySpawnedMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -252,13 +252,13 @@ struct EntitySpawnedEventEntry {
     float animation_speed = 1.0F;
 };
 
-struct EntitySpawnedEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<EntitySpawnedEventEntry, kNetEntitySpawnedEventsPerPacket> events{};
+struct EntitySpawnedMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<EntitySpawnedMessageEntry, kNetEntitySpawnedMessagesPerPacket> messages{};
 };
 
-struct EntityDamageEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct EntityDamageMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -286,13 +286,13 @@ struct EntityDamageEventEntry {
     float animation_speed = 1.0F;
 };
 
-struct EntityDamageEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<EntityDamageEventEntry, kNetEntityDamageEventsPerPacket> events{};
+struct EntityDamageMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<EntityDamageMessageEntry, kNetEntityDamageMessagesPerPacket> messages{};
 };
 
-struct EntityStateEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct EntityStateMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -367,18 +367,18 @@ struct EntityStateEventEntry {
     float animation_speed = 1.0F;
 };
 
-struct EntityStateEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<EntityStateEventEntry, kNetEntityStateEventsPerPacket> events{};
+struct EntityStateMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<EntityStateMessageEntry, kNetEntityStateMessagesPerPacket> messages{};
 };
 
-struct EntityCarryEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct EntityCarryMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
     std::uint64_t coordinator_order = 0;
-    std::uint16_t event_type = 0;
+    std::uint16_t message_type = 0;
     std::uint16_t attachment_mode = 0;
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId holder_id = kInvalidNetEntityId;
@@ -389,25 +389,25 @@ struct EntityCarryEventEntry {
     float vel_y = 0.0F;
 };
 
-struct EntityCarryEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<EntityCarryEventEntry, kNetEntityCarryEventsPerPacket> events{};
+struct EntityCarryMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<EntityCarryMessageEntry, kNetEntityCarryMessagesPerPacket> messages{};
 };
 
-struct EntityLifecycleEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct EntityLifecycleMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
     std::uint64_t coordinator_order = 0;
-    std::uint16_t event_type = 0;
+    std::uint16_t message_type = 0;
     std::uint16_t reserved = 0;
     NetEntityId entity_id = kInvalidNetEntityId;
 };
 
-struct EntityLifecycleEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<EntityLifecycleEventEntry, kNetEntityLifecycleEventsPerPacket> events{};
+struct EntityLifecycleMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<EntityLifecycleMessageEntry, kNetEntityLifecycleMessagesPerPacket> messages{};
 };
 
 struct PlayerStateToolSlotEntry {
@@ -426,8 +426,8 @@ struct PlayerStateEffectEntry {
     std::uint32_t frames_remaining = 0;
 };
 
-struct PlayerStateEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct PlayerStateMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -444,13 +444,13 @@ struct PlayerStateEventEntry {
     std::array<PlayerStateEffectEntry, kNetPlayerStateEffectCount> effects{};
 };
 
-struct PlayerStateEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<PlayerStateEventEntry, kNetPlayerStateEventsPerPacket> events{};
+struct PlayerStateMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<PlayerStateMessageEntry, kNetPlayerStateMessagesPerPacket> messages{};
 };
 
-struct RunStateEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct RunStateMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -497,13 +497,13 @@ struct RunStateEventEntry {
     std::uint64_t snapshot_fingerprint = 0;
 };
 
-struct RunStateEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<RunStateEventEntry, kNetRunStateEventsPerPacket> events{};
+struct RunStateMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<RunStateMessageEntry, kNetRunStateMessagesPerPacket> messages{};
 };
 
-struct PresentationCommandEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct PresentationCommandMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -526,13 +526,13 @@ struct PresentationCommandEventEntry {
     float shake_radius_tiles = 0.0F;
 };
 
-struct PresentationCommandEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<PresentationCommandEventEntry, kNetPresentationCommandEventsPerPacket> events{};
+struct PresentationCommandMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<PresentationCommandMessageEntry, kNetPresentationCommandMessagesPerPacket> messages{};
 };
 
-struct ActionRequestEventEntry {
-    NetEventId event_id = kInvalidNetEventId;
+struct ActionRequestMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -558,15 +558,15 @@ struct ActionRequestEventEntry {
     std::uint16_t use_edge = 0;
 };
 
-struct ActionRequestEventsPacket {
-    std::vector<ActionRequestEventEntry> events{};
+struct ActionRequestMessagesPacket {
+    std::vector<ActionRequestMessageEntry> messages{};
 };
 
 struct ActionRequestAckPacket {
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     PlayerId coordinator_player_id = kInvalidPlayerId;
     std::uint32_t ack_count = 0;
-    std::array<NetEventId, kNetActionRequestAckEventIdsPerPacket> event_ids{};
+    std::array<NetMessageId, kNetActionRequestAckMessageIdsPerPacket> message_ids{};
 };
 
 struct EncodedNetPacket {
@@ -577,39 +577,39 @@ struct EncodedNetPacket {
 EncodedNetPacket EncodeJoinRequest(const JoinRequestPacket& packet);
 EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet);
 EncodedNetPacket EncodePlayerSnapshots(const PlayerSnapshotsPacket& packet);
-EncodedNetPacket EncodeTileEvents(const TileEventsPacket& packet);
-EncodedNetPacket EncodeFluidCellEvents(const FluidCellEventsPacket& packet);
-EncodedNetPacket EncodeEntitySpawnedEvents(const EntitySpawnedEventsPacket& packet);
-EncodedNetPacket EncodeEntityDamageEvents(const EntityDamageEventsPacket& packet);
-EncodedNetPacket EncodeEntityStateEvents(const EntityStateEventsPacket& packet);
-EncodedNetPacket EncodeEntityCarryEvents(const EntityCarryEventsPacket& packet);
-EncodedNetPacket EncodeEntityLifecycleEvents(const EntityLifecycleEventsPacket& packet);
-EncodedNetPacket EncodePlayerStateEvents(const PlayerStateEventsPacket& packet);
-EncodedNetPacket EncodeRunStateEvents(const RunStateEventsPacket& packet);
-EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEventsPacket& packet);
-EncodedNetPacket EncodeActionRequestEvents(const ActionRequestEventsPacket& packet);
+EncodedNetPacket EncodeTileMessages(const TileMessagesPacket& packet);
+EncodedNetPacket EncodeFluidCellMessages(const FluidCellMessagesPacket& packet);
+EncodedNetPacket EncodeEntitySpawnedMessages(const EntitySpawnedMessagesPacket& packet);
+EncodedNetPacket EncodeEntityDamageMessages(const EntityDamageMessagesPacket& packet);
+EncodedNetPacket EncodeEntityStateMessages(const EntityStateMessagesPacket& packet);
+EncodedNetPacket EncodeEntityCarryMessages(const EntityCarryMessagesPacket& packet);
+EncodedNetPacket EncodeEntityLifecycleMessages(const EntityLifecycleMessagesPacket& packet);
+EncodedNetPacket EncodePlayerStateMessages(const PlayerStateMessagesPacket& packet);
+EncodedNetPacket EncodeRunStateMessages(const RunStateMessagesPacket& packet);
+EncodedNetPacket EncodePresentationCommandMessages(const PresentationCommandMessagesPacket& packet);
+EncodedNetPacket EncodeActionRequestMessages(const ActionRequestMessagesPacket& packet);
 EncodedNetPacket EncodeActionRequestAck(const ActionRequestAckPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet);
-EncodedNetPacket EncodeDurableEventAck(const DurableEventAckPacket& packet);
+EncodedNetPacket EncodeDurableMessageAck(const DurableMessageAckPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PlayerSnapshotsPacket> TryDecodePlayerSnapshots(const std::uint8_t* bytes, std::size_t size);
-std::optional<TileEventsPacket> TryDecodeTileEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<FluidCellEventsPacket> TryDecodeFluidCellEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<EntitySpawnedEventsPacket> TryDecodeEntitySpawnedEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<EntityDamageEventsPacket> TryDecodeEntityDamageEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<EntityStateEventsPacket> TryDecodeEntityStateEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<EntityCarryEventsPacket> TryDecodeEntityCarryEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<EntityLifecycleEventsPacket> TryDecodeEntityLifecycleEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<PlayerStateEventsPacket> TryDecodePlayerStateEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<RunStateEventsPacket> TryDecodeRunStateEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<PresentationCommandEventsPacket> TryDecodePresentationCommandEvents(const std::uint8_t* bytes, std::size_t size);
-std::optional<ActionRequestEventsPacket> TryDecodeActionRequestEvents(const std::uint8_t* bytes, std::size_t size);
+std::optional<TileMessagesPacket> TryDecodeTileMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<FluidCellMessagesPacket> TryDecodeFluidCellMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<EntitySpawnedMessagesPacket> TryDecodeEntitySpawnedMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<EntityDamageMessagesPacket> TryDecodeEntityDamageMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<EntityStateMessagesPacket> TryDecodeEntityStateMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<EntityCarryMessagesPacket> TryDecodeEntityCarryMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<EntityLifecycleMessagesPacket> TryDecodeEntityLifecycleMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<PlayerStateMessagesPacket> TryDecodePlayerStateMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<RunStateMessagesPacket> TryDecodeRunStateMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<PresentationCommandMessagesPacket> TryDecodePresentationCommandMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<ActionRequestMessagesPacket> TryDecodeActionRequestMessages(const std::uint8_t* bytes, std::size_t size);
 std::optional<ActionRequestAckPacket> TryDecodeActionRequestAck(const std::uint8_t* bytes, std::size_t size);
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std::size_t size);
-std::optional<DurableEventAckPacket> TryDecodeDurableEventAck(const std::uint8_t* bytes, std::size_t size);
+std::optional<DurableMessageAckPacket> TryDecodeDurableMessageAck(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

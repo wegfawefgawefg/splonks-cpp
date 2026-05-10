@@ -34,4 +34,5 @@ CMakeUserPresets.json
 
 debug_recording.*
 logs/network_events_*.log
+logs/network_messages_*.log
 .codex

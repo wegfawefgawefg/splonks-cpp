@@ -11,7 +11,7 @@
 #include "stage_fluids.hpp"
 #include "stage_lighting.hpp"
 #include "stage_rotation.hpp"
-#include "network/net_event_apply.hpp"
+#include "network/net_message_apply.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_progression.hpp"
 #include "player_queries.hpp"
@@ -235,8 +235,8 @@ bool ShouldEnterGameOver(const State& state, std::optional<VID> primary_player_v
     return player == nullptr || !player->active || player->condition == EntityCondition::Dead;
 }
 
-void DrainAndApplyLocalNetworkEvents(State& state, Audio& audio, Graphics& graphics) {
-    (void)network::ApplyOrderedEvents(state.net_session, state, &audio, &graphics);
+void DrainAndApplyLocalNetworkMessages(State& state, Audio& audio, Graphics& graphics) {
+    (void)network::ApplyOrderedMessages(state.net_session, state, &audio, &graphics);
 }
 
 void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, float dt) {
@@ -419,7 +419,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepEntities(state, audio, graphics, dt);
     world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
-    DrainAndApplyLocalNetworkEvents(state, audio, graphics);
+    DrainAndApplyLocalNetworkMessages(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
@@ -536,7 +536,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepEntities(state, audio, graphics, dt);
     world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
-    DrainAndApplyLocalNetworkEvents(state, audio, graphics);
+    DrainAndApplyLocalNetworkMessages(state, audio, graphics);
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {

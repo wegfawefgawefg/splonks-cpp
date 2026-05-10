@@ -1,37 +1,22 @@
-#include "network/net_event_apply.hpp"
+#include "network/net_message_apply_internal.hpp"
 
 #include "audio_emitters.hpp"
-#include "network/net_event_apply_internal.hpp"
-#include "network/net_event.hpp"
 #include "network/net_session.hpp"
 #include "entity.hpp"
 #include "entity/archetype.hpp"
 #include "entity/display_states.hpp"
 #include "entity/replicated_runtime_flags.hpp"
-#include "entity_tool_inventory.hpp"
 #include "effects.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
 #include "on_damage_effects.hpp"
-#include "presentation_commands.hpp"
-#include "stage_break.hpp"
-#include "stage_lighting.hpp"
-#include "stage_acoustics.hpp"
 #include "state.hpp"
-#include "state_fingerprint.hpp"
-#include "tile_archetype.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
-#include <limits>
 #include <optional>
-#include <string>
-#include <vector>
 
 namespace splonks::network {
-
-namespace {
 
 constexpr std::uint32_t kForcedPlayerDropHarmCooldownFrames = 12;
 
@@ -42,7 +27,7 @@ std::uint32_t AddSignedClamped(std::uint32_t value, std::int32_t delta) {
     return static_cast<std::uint32_t>(clamped);
 }
 
-std::optional<VID> FindEntityVidForEvent(
+std::optional<VID> FindEntityVidForMessage(
     NetSessionState& session,
     State& state,
     NetEntityId entity_id
@@ -60,11 +45,11 @@ void ApplyEntityLinkSlot(
     NetSessionState& session,
     State& state,
     Entity& entity,
-    const EntityStatePatchedEvent& payload
+    const EntityStatePatchedMessage& payload
 ) {
     if (payload.entity_a_id != kInvalidNetEntityId) {
         const std::optional<VID> linked_vid =
-            FindEntityVidForEvent(session, state, payload.entity_a_id);
+            FindEntityVidForMessage(session, state, payload.entity_a_id);
         if (linked_vid.has_value()) {
             entity.entity_a = *linked_vid;
             entity.point_a = payload.point_a;
@@ -88,7 +73,7 @@ void ApplyOptionalEntityLinkSlot(
         slot.reset();
         return;
     }
-    if (const std::optional<VID> resolved = FindEntityVidForEvent(session, state, entity_id)) {
+    if (const std::optional<VID> resolved = FindEntityVidForMessage(session, state, entity_id)) {
         slot = *resolved;
     }
 }
@@ -97,7 +82,7 @@ void ApplyEntityScratchLinks(
     NetSessionState& session,
     State& state,
     Entity& entity,
-    const EntityStatePatchedEvent& payload
+    const EntityStatePatchedMessage& payload
 ) {
     ApplyOptionalEntityLinkSlot(session, state, entity.entity_b, payload.entity_b_id);
     ApplyOptionalEntityLinkSlot(session, state, entity.entity_c, payload.entity_c_id);
@@ -134,7 +119,7 @@ bool ApplyConditionPresentation(Entity& entity, EntityCondition condition) {
     return true;
 }
 
-void ApplyDamagePresentation(Entity& entity, const EntityDamagedEvent& payload) {
+void ApplyDamagePresentation(Entity& entity, const EntityDamagedMessage& payload) {
     const EntityCondition effective_condition =
         payload.remaining_health == 0
             ? EntityCondition::Dead
@@ -156,7 +141,7 @@ void ApplyDamagePresentation(Entity& entity, const EntityDamagedEvent& payload) 
     animator.animate = payload.animate != 0;
 }
 
-void ApplyStatePatchPresentation(Entity& entity, const EntityStatePatchedEvent& payload) {
+void ApplyStatePatchPresentation(Entity& entity, const EntityStatePatchedMessage& payload) {
     if (payload.animation_id == kInvalidFrameDataId) {
         return;
     }
@@ -173,7 +158,7 @@ void ApplyStatePatchPresentation(Entity& entity, const EntityStatePatchedEvent& 
     animator.finished = payload.animation_finished != 0;
 }
 
-void ApplySpawnPresentation(Entity& entity, const EntitySpawnedEvent& payload) {
+void ApplySpawnPresentation(Entity& entity, const EntitySpawnedMessage& payload) {
     if (payload.animation_id == kInvalidFrameDataId) {
         return;
     }
@@ -212,10 +197,10 @@ void ApplyReplicatedEffects(Entity& entity, const Payload& payload) {
     }
 }
 
-void ApplyEntitySpawnedEvent(
+void ApplyEntitySpawnedMessage(
     NetSessionState& session,
     State& state,
-    const EntitySpawnedEvent& payload,
+    const EntitySpawnedMessage& payload,
     Graphics* graphics
 ) {
     if (payload.entity_id == kInvalidNetEntityId || payload.entity_type == EntityType::None) {
@@ -248,7 +233,7 @@ void ApplyEntitySpawnedEvent(
     std::optional<VID> holder_to_sync;
     if (payload.held_by_id != kInvalidNetEntityId) {
         if (const std::optional<VID> holder_vid =
-                FindEntityVidForEvent(session, state, payload.held_by_id)) {
+                FindEntityVidForMessage(session, state, payload.held_by_id)) {
             Entity* const holder = state.entity_manager.GetEntityMut(*holder_vid);
             if (holder != nullptr && holder->active) {
                 holder->holding_vid = entity->vid;
@@ -274,13 +259,13 @@ void ApplyEntitySpawnedEvent(
     }
 }
 
-void ApplyEntityDeactivatedEvent(
+void ApplyEntityDeactivatedMessage(
     NetSessionState& session,
     State& state,
     Graphics* graphics,
-    const EntityIdEvent& payload
+    const EntityIdMessage& payload
 ) {
-    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
+    const std::optional<VID> vid = FindEntityVidForMessage(session, state, payload.entity_id);
     if (!vid.has_value()) {
         return;
     }
@@ -290,7 +275,7 @@ void ApplyEntityDeactivatedEvent(
     }
 }
 
-std::optional<VID> FindEntityVidForEvent(
+std::optional<VID> FindEntityVidForMessage(
     NetSessionState& session,
     State& state,
     NetEntityId entity_id
@@ -315,15 +300,15 @@ std::optional<VID> FindEntityVidForEvent(
     return std::nullopt;
 }
 
-void ApplyEntityDamagedEvent(
+void ApplyEntityDamagedMessage(
     NetSessionState& session,
     State& state,
     Audio* audio,
     PlayerId source_player_id,
-    const EntityDamagedEvent& payload
+    const EntityDamagedMessage& payload
 ) {
     (void)source_player_id;
-    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
+    const std::optional<VID> vid = FindEntityVidForMessage(session, state, payload.entity_id);
     if (!vid.has_value()) {
         return;
     }
@@ -335,7 +320,7 @@ void ApplyEntityDamagedEvent(
     std::optional<VID> source_vid;
     const Entity* source_entity = nullptr;
     if (payload.source_entity_id != kInvalidNetEntityId) {
-        source_vid = FindEntityVidForEvent(session, state, payload.source_entity_id);
+        source_vid = FindEntityVidForMessage(session, state, payload.source_entity_id);
         if (source_vid.has_value()) {
             source_entity = state.entity_manager.GetEntity(*source_vid);
         }
@@ -387,12 +372,12 @@ void ApplyEntityDamagedEvent(
     }
 }
 
-void ApplyEntityStatePatchedEvent(
+void ApplyEntityStatePatchedMessage(
     NetSessionState& session,
     State& state,
     Graphics* graphics,
     PlayerId source_player_id,
-    const EntityStatePatchedEvent& payload
+    const EntityStatePatchedMessage& payload
 ) {
     const bool from_coordinator = source_player_id == session.coordinator_player_id;
     const bool has_explicit_source = payload.source_entity_id != kInvalidNetEntityId;
@@ -414,7 +399,7 @@ void ApplyEntityStatePatchedEvent(
         }
     }
 
-    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
+    const std::optional<VID> vid = FindEntityVidForMessage(session, state, payload.entity_id);
     if (!vid.has_value()) {
         return;
     }
@@ -521,56 +506,14 @@ bool IsVidInHolderChain(VID needle, const Entity& entity, const State& state) {
     return false;
 }
 
-bool IsImmediateLocalNetResult(NetEventType type) {
-    switch (type) {
-    case NetEventType::EntitySpawned:
-    case NetEventType::EntityDeactivated:
-    case NetEventType::TileBroken:
-    case NetEventType::TileChanged:
-    case NetEventType::FluidCellPatched:
-    case NetEventType::PlayerStatePatched:
-    case NetEventType::PresentationCommand:
-        return true;
-    default:
-        return false;
-    }
-}
-
-bool IsTransientStateRepairEvent(const NetEvent& event) {
-    if (event.type == NetEventType::FluidCellPatched) {
-        return true;
-    }
-    if (event.type != NetEventType::EntityStatePatched) {
-        return false;
-    }
-    const auto* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
-    return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
-}
-
-bool ShouldSkipImmediateLocalApply(const NetSessionState& session, const NetEvent& event) {
-    if (event.header.source_player_id != session.local_player_id ||
-        !IsImmediateLocalNetResult(event.type)) {
-        return false;
-    }
-    if (event.type == NetEventType::EntityStatePatched) {
-        const auto* payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
-        return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
-    }
-    return true;
-}
-
-void NoteAppliedCoordinatorOrder(NetSessionState& session, const NetEvent& event) {
-    session.MarkCoordinatorOrderApplied(event);
-}
-
-void ApplyEntityHeldEvent(
+void ApplyEntityHeldMessage(
     NetSessionState& session,
     State& state,
     Graphics* graphics,
-    const EntityHeldEvent& payload
+    const EntityHeldMessage& payload
 ) {
-    const std::optional<VID> holder_vid = FindEntityVidForEvent(session, state, payload.holder_id);
-    const std::optional<VID> held_vid = FindEntityVidForEvent(session, state, payload.held_id);
+    const std::optional<VID> holder_vid = FindEntityVidForMessage(session, state, payload.holder_id);
+    const std::optional<VID> held_vid = FindEntityVidForMessage(session, state, payload.held_id);
     if (!holder_vid.has_value() || !held_vid.has_value() || *holder_vid == *held_vid) {
         return;
     }
@@ -621,13 +564,13 @@ void ApplyEntityHeldEvent(
     }
 }
 
-void ApplyEntityDroppedEvent(
+void ApplyEntityDroppedMessage(
     NetSessionState& session,
     State& state,
     Graphics* graphics,
-    const EntityDroppedEvent& payload
+    const EntityDroppedMessage& payload
 ) {
-    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
+    const std::optional<VID> vid = FindEntityVidForMessage(session, state, payload.entity_id);
     if (!vid.has_value()) {
         return;
     }
@@ -638,7 +581,7 @@ void ApplyEntityDroppedEvent(
 
     const std::optional<VID> dropped_by_vid =
         payload.dropped_by_id != kInvalidNetEntityId
-            ? FindEntityVidForEvent(session, state, payload.dropped_by_id)
+            ? FindEntityVidForMessage(session, state, payload.dropped_by_id)
             : std::nullopt;
     entities::common::ReleaseEntityFromHolder(*entity, state);
     if (dropped_by_vid.has_value()) {
@@ -676,13 +619,13 @@ void ApplyEntityDroppedEvent(
     }
 }
 
-void ApplyEntityThrownEvent(
+void ApplyEntityThrownMessage(
     NetSessionState& session,
     State& state,
     Graphics* graphics,
-    const EntityThrownEvent& payload
+    const EntityThrownMessage& payload
 ) {
-    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.entity_id);
+    const std::optional<VID> vid = FindEntityVidForMessage(session, state, payload.entity_id);
     if (!vid.has_value()) {
         return;
     }
@@ -696,7 +639,7 @@ void ApplyEntityThrownEvent(
 
     std::optional<VID> thrower_vid;
     if (payload.thrower_id != kInvalidNetEntityId) {
-        thrower_vid = FindEntityVidForEvent(session, state, payload.thrower_id);
+        thrower_vid = FindEntityVidForMessage(session, state, payload.thrower_id);
     }
 
     entities::common::ReleaseEntityFromHolder(*entity, state);
@@ -719,328 +662,6 @@ void ApplyEntityThrownEvent(
     if (graphics != nullptr) {
         state.UpdateSidForEntity(entity->vid.id, *graphics);
     }
-}
-
-void ApplyPresentationCommandEvent(
-    NetSessionState& session,
-    State& state,
-    Graphics* graphics,
-    const PresentationCommandEvent& payload
-) {
-    if (graphics == nullptr) {
-        return;
-    }
-
-    PresentationCommand command{
-        .kind = static_cast<PresentationCommandKind>(payload.kind),
-        .effect_id = static_cast<ScriptedPresentationEffectId>(payload.effect_id),
-        .audio_asset_id = payload.audio_asset_id,
-        .source_vid = payload.source_entity_id != kInvalidNetEntityId
-            ? FindEntityVidForEvent(session, state, payload.source_entity_id)
-            : std::nullopt,
-        .target_vid = payload.target_entity_id != kInvalidNetEntityId
-            ? FindEntityVidForEvent(session, state, payload.target_entity_id)
-            : std::nullopt,
-        .source_pos = payload.source_pos,
-        .target_pos = payload.target_pos,
-        .direction = IVec2::New(payload.direction_x, payload.direction_y),
-        .entity_shake_amount = payload.entity_shake_amount,
-        .foreground_shake_amount = payload.foreground_shake_amount,
-        .background_shake_amount = payload.background_shake_amount,
-        .area_entity_shake_amount = payload.area_entity_shake_amount,
-        .shake_radius_tiles = payload.shake_radius_tiles,
-    };
-    PlayPresentationCommand(state, *graphics, command);
-}
-
-void ApplyPlayerStatePatchedEvent(
-    NetSessionState& session,
-    State& state,
-    const PlayerStatePatchedEvent& payload
-) {
-    const std::optional<VID> vid = FindEntityVidForEvent(session, state, payload.player_entity_id);
-    if (!vid.has_value()) {
-        return;
-    }
-    Entity* const player = state.entity_manager.GetEntityMut(*vid);
-    if (player == nullptr || !player->active) {
-        return;
-    }
-    PlayerSlot* player_slot = state.players.FindByEntityVid(player->vid);
-    if (player_slot == nullptr && payload.player_id != kInvalidPlayerId) {
-        const bool local_player = payload.player_id == state.net_session.local_player_id;
-        if (local_player) {
-            player_slot = &state.players.EnsureLocalPlayer(payload.player_id, "Player", true);
-        } else {
-            player_slot = &state.players.EnsureRemotePlayer(
-                payload.player_id,
-                "Player " + std::to_string(payload.player_id)
-            );
-        }
-        player_slot->entity_vid = player->vid;
-    }
-    if (player_slot == nullptr) {
-        return;
-    }
-    if (player_slot->connection_kind == PlayerConnectionKind::Remote) {
-        player_slot->connected = payload.connected != 0;
-    }
-
-    player->health = payload.health;
-    player->money = payload.money;
-    player->wanted = payload.wanted != 0;
-
-    for (std::size_t i = 0; i < payload.tool_slots.size(); ++i) {
-        ToolSlot& slot = state.entity_tools.EnsureToolSlot(player->vid, i);
-        const PlayerStatePatchedToolSlot& patch = payload.tool_slots[i];
-        slot.kind = patch.kind;
-        slot.count = patch.count;
-        slot.cooldown = patch.cooldown;
-        slot.active = patch.active != 0;
-    }
-
-    player->effects.reset();
-    const std::size_t effect_count =
-        std::min<std::size_t>(payload.effect_count, payload.effects.size());
-    if (effect_count > 0) {
-        EntityEffects& effects = player->effects.emplace();
-        effects.count = static_cast<std::uint8_t>(effect_count);
-        for (std::size_t i = 0; i < effect_count; ++i) {
-            const PlayerStatePatchedEffect& patch = payload.effects[i];
-            effects.effects[i] = EffectInstance{
-                .id = patch.id,
-                .count = patch.count,
-                .value = patch.value,
-                .frames_remaining = patch.frames_remaining,
-            };
-        }
-    }
-}
-
-} // namespace
-
-std::size_t ApplyOrderedEvents(
-    NetSessionState& session,
-    State& state,
-    Audio* audio,
-    Graphics* graphics
-) {
-    std::size_t applied_count = 0;
-    std::vector<NetEventId> transient_applied_event_ids;
-    std::optional<std::uint64_t> pending_snapshot_fingerprint;
-    std::stable_sort(
-        session.ordered_events.begin(),
-        session.ordered_events.end(),
-        [](const NetEvent& a, const NetEvent& b) {
-            if (a.header.coordinator_order == b.header.coordinator_order) {
-                return a.header.event_id < b.header.event_id;
-            }
-            if (a.header.coordinator_order == 0) {
-                return false;
-            }
-            if (b.header.coordinator_order == 0) {
-                return true;
-            }
-            return a.header.coordinator_order < b.header.coordinator_order;
-        }
-    );
-    for (const NetEvent& event : session.ordered_events) {
-        if (session.HasAppliedEvent(event.header.event_id)) {
-            continue;
-        }
-        if (session.role == NetRole::Peer &&
-            event.header.coordinator_order > session.next_expected_coordinator_order) {
-            continue;
-        }
-        if (ShouldSkipImmediateLocalApply(session, event)) {
-            if (session.MarkEventApplied(event.header.event_id)) {
-                NoteAppliedCoordinatorOrder(session, event);
-                session.AddEventLog(NetEventLogPhase::SkippedLocalApply, event);
-                ++applied_count;
-                if (IsTransientStateRepairEvent(event)) {
-                    transient_applied_event_ids.push_back(event.header.event_id);
-                }
-            }
-            continue;
-        }
-
-        switch (event.type) {
-        case NetEventType::EntitySpawned:
-            if (const auto* payload = std::get_if<EntitySpawnedEvent>(&event.payload)) {
-                ApplyEntitySpawnedEvent(session, state, *payload, graphics);
-            }
-            break;
-        case NetEventType::EntityDamaged:
-            if (const auto* payload = std::get_if<EntityDamagedEvent>(&event.payload)) {
-                ApplyEntityDamagedEvent(session, state, audio, event.header.source_player_id, *payload);
-            }
-            break;
-        case NetEventType::EntityDeactivated:
-            if (const auto* payload = std::get_if<EntityIdEvent>(&event.payload)) {
-                ApplyEntityDeactivatedEvent(session, state, graphics, *payload);
-            }
-            break;
-        case NetEventType::EntityStatePatched:
-            if (const auto* payload = std::get_if<EntityStatePatchedEvent>(&event.payload)) {
-                ApplyEntityStatePatchedEvent(
-                    session,
-                    state,
-                    graphics,
-                    event.header.source_player_id,
-                    *payload
-                );
-            }
-            break;
-        case NetEventType::EntityHeld:
-            if (const auto* payload = std::get_if<EntityHeldEvent>(&event.payload)) {
-                ApplyEntityHeldEvent(session, state, graphics, *payload);
-            }
-            break;
-        case NetEventType::EntityDropped:
-            if (const auto* payload = std::get_if<EntityDroppedEvent>(&event.payload)) {
-                ApplyEntityDroppedEvent(session, state, graphics, *payload);
-            }
-            break;
-        case NetEventType::EntityThrown:
-            if (const auto* payload = std::get_if<EntityThrownEvent>(&event.payload)) {
-                ApplyEntityThrownEvent(session, state, graphics, *payload);
-            }
-            break;
-        case NetEventType::PlayerStatePatched:
-            if (const auto* payload = std::get_if<PlayerStatePatchedEvent>(&event.payload)) {
-                ApplyPlayerStatePatchedEvent(session, state, *payload);
-            }
-            break;
-        case NetEventType::RunStatePatched:
-            if (const auto* payload = std::get_if<RunStatePatchedEvent>(&event.payload)) {
-                state.quest_state.quest_id = payload->quest_id;
-                state.frame = payload->frame;
-                state.stage_frame = payload->stage_frame;
-                state.depth = payload->depth;
-                state.points = payload->points;
-                state.deaths = payload->deaths;
-                state.stage.stage_type = static_cast<StageType>(payload->stage_type);
-                state.stage.quest_level_number = payload->quest_level_number;
-                state.stage.generation_seed = payload->has_generation_seed != 0
-                    ? std::optional<std::uint32_t>(payload->generation_seed)
-                    : std::nullopt;
-                state.stage.tile_change_generation = payload->tile_change_generation;
-                state.stage.gravity = payload->stage_gravity;
-                state.stage.border.left.tile = payload->border_left_tile;
-                state.stage.border.right.tile = payload->border_right_tile;
-                state.stage.border.top.tile = payload->border_top_tile;
-                state.stage.border.bottom.tile = payload->border_bottom_tile;
-                state.stage.border.wrap_x = payload->border_wrap_x != 0;
-                state.stage.border.wrap_y = payload->border_wrap_y != 0;
-                state.stage.border.void_death_y = payload->has_void_death_y != 0
-                    ? std::optional<int>(payload->void_death_y)
-                    : std::nullopt;
-                state.stage.camera_clamp_enabled = payload->camera_clamp_enabled != 0;
-                state.stage.wrap_transform_active = payload->wrap_transform_active != 0;
-                state.game_over = payload->game_over != 0;
-                state.win = payload->win != 0;
-                state.stage.wrap_padding_tiles = payload->wrap_padding_tiles;
-                state.stage.wrap_core_origin_tiles = UVec2::New(
-                    payload->wrap_core_origin_x,
-                    payload->wrap_core_origin_y
-                );
-                state.stage.wrap_core_size_tiles = UVec2::New(
-                    payload->wrap_core_size_x,
-                    payload->wrap_core_size_y
-                );
-                state.quest_state.classic.made_black_market =
-                    payload->classic_made_black_market != 0;
-                state.quest_state.classic.made_udjat_eye =
-                    payload->classic_made_udjat_eye != 0;
-                state.quest_state.classic.has_udjat_eye =
-                    payload->classic_has_udjat_eye != 0;
-                state.quest_state.classic.made_moai =
-                    payload->classic_made_moai != 0;
-                state.quest_state.classic.has_hedjet =
-                    payload->classic_has_hedjet != 0;
-                state.quest_state.classic.has_sceptre =
-                    payload->classic_has_sceptre != 0;
-                state.quest_state.classic.has_book_of_dead =
-                    payload->classic_has_book_of_dead != 0;
-                state.sac_altar_favor = payload->sac_altar_favor;
-                state.sac_altar_reward_tier = payload->sac_altar_reward_tier;
-                if (payload->has_snapshot_fingerprint != 0) {
-                    pending_snapshot_fingerprint = payload->snapshot_fingerprint;
-                }
-            }
-            break;
-        case NetEventType::TileBroken:
-            if (const auto* payload = std::get_if<TileBrokenEvent>(&event.payload)) {
-                ApplyTileBrokenEvent(state, audio, *payload);
-            }
-            break;
-        case NetEventType::PresentationCommand:
-            if (const auto* payload = std::get_if<PresentationCommandEvent>(&event.payload)) {
-                ApplyPresentationCommandEvent(session, state, graphics, *payload);
-            }
-            break;
-        case NetEventType::TileChanged:
-            if (const auto* payload = std::get_if<TileChangedEvent>(&event.payload)) {
-                ApplyTileChangedEvent(state, *payload);
-            }
-            break;
-        case NetEventType::FluidCellPatched:
-            if (const auto* payload = std::get_if<FluidCellPatchedEvent>(&event.payload)) {
-                ApplyFluidCellPatchedEvent(state, *payload);
-            }
-            break;
-        default:
-            break;
-        }
-
-        if (session.MarkEventApplied(event.header.event_id)) {
-            NoteAppliedCoordinatorOrder(session, event);
-            session.AddEventLog(NetEventLogPhase::Applied, event);
-            ++applied_count;
-            if (IsTransientStateRepairEvent(event)) {
-                transient_applied_event_ids.push_back(event.header.event_id);
-            }
-        }
-    }
-    if (!transient_applied_event_ids.empty()) {
-        session.ordered_events.erase(
-            std::remove_if(
-                session.ordered_events.begin(),
-                session.ordered_events.end(),
-                [&](const NetEvent& event) {
-                    return IsTransientStateRepairEvent(event) &&
-                           std::find(
-                               transient_applied_event_ids.begin(),
-                               transient_applied_event_ids.end(),
-                               event.header.event_id
-                           ) != transient_applied_event_ids.end();
-                }
-            ),
-            session.ordered_events.end()
-        );
-        session.applied_event_ids.erase(
-            std::remove_if(
-                session.applied_event_ids.begin(),
-                session.applied_event_ids.end(),
-                [&](NetEventId event_id) {
-                    return std::find(
-                               transient_applied_event_ids.begin(),
-                               transient_applied_event_ids.end(),
-                               event_id
-                           ) != transient_applied_event_ids.end();
-                }
-            ),
-            session.applied_event_ids.end()
-        );
-    }
-    if (pending_snapshot_fingerprint.has_value()) {
-        const std::uint64_t actual_fingerprint = ComputeNetworkStateFingerprint(state).value;
-        state.net_session.last_snapshot_expected_fingerprint = *pending_snapshot_fingerprint;
-        state.net_session.last_snapshot_actual_fingerprint = actual_fingerprint;
-        state.net_session.last_snapshot_fingerprint_valid =
-            actual_fingerprint == *pending_snapshot_fingerprint;
-    }
-    return applied_count;
 }
 
 } // namespace splonks::network

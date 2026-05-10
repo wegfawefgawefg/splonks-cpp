@@ -12,7 +12,7 @@ namespace network {
 
 struct NetSessionState;
 
-std::size_t ApplyOrderedEvents(
+std::size_t ApplyOrderedMessages(
     NetSessionState& session,
     State& state,
     Audio* audio = nullptr,

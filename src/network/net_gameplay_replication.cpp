@@ -6,7 +6,7 @@
 #include "entity_tool_inventory.hpp"
 #include "gameplay_authority.hpp"
 #include "network/net_entity_links.hpp"
-#include "network/net_event.hpp"
+#include "network/net_message.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
@@ -19,7 +19,7 @@ namespace splonks::network {
 
 namespace {
 
-bool ShouldReplicateInteractionSourceEvent(const State& state, VID source_vid) {
+bool ShouldReplicateInteractionSourceMessage(const State& state, VID source_vid) {
     return state.net_session.role != NetRole::Offline &&
            HasLocalGameplayAuthorityForInteractionSource(state, source_vid);
 }
@@ -92,10 +92,10 @@ void ReplicateEntitySpawned(State& state, const GameplayEntitySpawned& message) 
         held_by_id = GetOrAssignReplicatedEntityId(state, *message.held_by_vid);
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::EntitySpawned;
-    EntitySpawnedEvent payload{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::EntitySpawned;
+    EntitySpawnedMessage payload{
         .entity_id = net_id,
         .entity_type = message.entity_type,
         .held_by_id = held_by_id,
@@ -117,8 +117,8 @@ void ReplicateEntitySpawned(State& state, const GameplayEntitySpawned& message) 
         .animation_speed = message.animation_speed,
     };
     CopyEntityEffectsToPayload(state.entity_manager.GetEntity(message.entity_vid), payload);
-    event.payload = payload;
-    state.net_session.EnqueueNetEvent(event);
+    net_message.payload = payload;
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateEntityDeactivated(
@@ -135,13 +135,13 @@ void ReplicateEntityDeactivated(
         return;
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::EntityDeactivated;
-    event.payload = EntityIdEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::EntityDeactivated;
+    net_message.payload = EntityIdMessage{
         .entity_id = *entity_id,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateEntityHeld(State& state, const GameplayEntityHeld& message) {
@@ -151,15 +151,15 @@ void ReplicateEntityHeld(State& state, const GameplayEntityHeld& message) {
 
     const NetEntityId held_id = GetOrAssignReplicatedEntityId(state, message.held_vid);
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::EntityHeld;
-    event.payload = EntityHeldEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::EntityHeld;
+    net_message.payload = EntityHeldMessage{
         .holder_id = GetOrAssignReplicatedEntityId(state, message.holder_vid),
         .held_id = held_id,
         .attachment_mode = message.attachment_mode,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateEntityDropped(State& state, const GameplayEntityDropped& message) {
@@ -167,10 +167,10 @@ void ReplicateEntityDropped(State& state, const GameplayEntityDropped& message) 
         return;
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::EntityDropped;
-    event.payload = EntityDroppedEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::EntityDropped;
+    net_message.payload = EntityDroppedMessage{
         .entity_id = GetOrAssignReplicatedEntityId(state, message.entity_vid),
         .dropped_by_id = message.dropped_by_vid.has_value()
             ? GetOrAssignReplicatedEntityId(state, *message.dropped_by_vid)
@@ -178,7 +178,7 @@ void ReplicateEntityDropped(State& state, const GameplayEntityDropped& message) 
         .pos = message.pos,
         .vel = message.vel,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateEntityThrown(State& state, const GameplayEntityThrown& message) {
@@ -191,16 +191,16 @@ void ReplicateEntityThrown(State& state, const GameplayEntityThrown& message) {
         state.net_session.SetEntityOwner(entity_id, std::nullopt);
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::EntityThrown;
-    event.payload = EntityThrownEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::EntityThrown;
+    net_message.payload = EntityThrownMessage{
         .entity_id = entity_id,
         .pos = message.pos,
         .vel = message.vel,
         .thrower_id = GetOrAssignReplicatedEntityId(state, message.thrower_vid),
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateEntityDamaged(State& state, const GameplayEntityDamaged& message) {
@@ -214,10 +214,10 @@ void ReplicateEntityDamaged(State& state, const GameplayEntityDamaged& message) 
 
     const NetEntityId entity_id = GetOrAssignReplicatedEntityId(state, message.entity_vid);
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::EntityDamaged;
-    event.payload = EntityDamagedEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::EntityDamaged;
+    net_message.payload = EntityDamagedMessage{
         .entity_id = entity_id,
         .source_entity_id = message.source_vid.has_value()
             ? GetOrAssignReplicatedEntityId(state, *message.source_vid)
@@ -239,7 +239,7 @@ void ReplicateEntityDamaged(State& state, const GameplayEntityDamaged& message) 
         .animation_speed = message.animation_speed,
         .damage_type = message.damage_type,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateEntityStatePatched(
@@ -252,10 +252,10 @@ void ReplicateEntityStatePatched(
 
     const NetEntityId entity_id = GetOrAssignReplicatedEntityId(state, message.entity_vid);
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
-    event.type = NetEventType::EntityStatePatched;
-    EntityStatePatchedEvent payload{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalTransientMessageHeader(state.frame);
+    net_message.type = NetMessageType::EntityStatePatched;
+    EntityStatePatchedMessage payload{
         .entity_id = entity_id,
         .source_entity_id = GetOrAssignReplicatedEntityId(state, message.source_vid),
         .entity_a_id = GetReplicatedEntityLinkId(state, message.entity_a_vid),
@@ -316,8 +316,8 @@ void ReplicateEntityStatePatched(
         .animation_speed = message.animation_speed,
     };
     CopyEntityEffectsToPayload(state.entity_manager.GetEntity(message.entity_vid), payload);
-    event.payload = payload;
-    state.net_session.EnqueueNetEvent(event);
+    net_message.payload = payload;
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicatePlayerStatePatched(
@@ -337,7 +337,7 @@ void ReplicatePlayerStatePatched(
         return;
     }
 
-    PlayerStatePatchedEvent payload{
+    PlayerStatePatchedMessage payload{
         .player_entity_id = GetOrAssignReplicatedEntityId(state, player->vid),
         .player_id = player_slot->player_id,
         .health = player->health,
@@ -373,11 +373,11 @@ void ReplicatePlayerStatePatched(
         }
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::PlayerStatePatched;
-    event.payload = payload;
-    state.net_session.EnqueueNetEvent(event);
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::PlayerStatePatched;
+    net_message.payload = payload;
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateRunStatePatched(State& state, bool include_snapshot_fingerprint) {
@@ -389,10 +389,10 @@ void ReplicateRunStatePatched(State& state, bool include_snapshot_fingerprint) {
         ? ComputeNetworkStateFingerprint(state).value
         : 0U;
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::RunStatePatched;
-    event.payload = RunStatePatchedEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::RunStatePatched;
+    net_message.payload = RunStatePatchedMessage{
         .quest_id = state.quest_state.quest_id,
         .frame = state.frame,
         .stage_frame = state.stage_frame,
@@ -451,7 +451,7 @@ void ReplicateRunStatePatched(State& state, bool include_snapshot_fingerprint) {
             static_cast<std::uint8_t>(include_snapshot_fingerprint ? 1 : 0),
         .snapshot_fingerprint = snapshot_fingerprint,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateTileBroken(State& state, const GameplayTileBroken& message) {
@@ -459,14 +459,14 @@ void ReplicateTileBroken(State& state, const GameplayTileBroken& message) {
         return;
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::TileBroken;
-    event.payload = TileBrokenEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::TileBroken;
+    net_message.payload = TileBrokenMessage{
         .tile_pos = message.tile_pos,
         .source_entity_id = kInvalidNetEntityId,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicateTileChanged(State& state, const GameplayTileChanged& message) {
@@ -474,10 +474,10 @@ void ReplicateTileChanged(State& state, const GameplayTileChanged& message) {
         return;
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::TileChanged;
-    event.payload = TileChangedEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::TileChanged;
+    net_message.payload = TileChangedMessage{
         .tile_pos = message.tile_pos,
         .tile = message.tile,
         .rotation = message.rotation,
@@ -485,24 +485,24 @@ void ReplicateTileChanged(State& state, const GameplayTileChanged& message) {
             ? NetTileLayer::Backwall
             : NetTileLayer::Foreground,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
-void ReplicateActionRequest(State& state, const GameplayActionRequested& message) {
+void ReplicateActionRequest(State& state, const GameplayActionRequested& request) {
     if (state.net_session.role != NetRole::Peer) {
         return;
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
-    event.type = NetEventType::ActionRequest;
-    event.payload = std::visit(
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalTransientMessageHeader(state.frame);
+    net_message.type = NetMessageType::ActionRequest;
+    net_message.payload = std::visit(
         GameplayActionVisitor{
             [](const std::monostate&) {
-                return ActionRequestEvent{};
+                return ActionRequestMessage{};
             },
             [&](const UseToolAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::UseTool,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .velocity = payload.velocity,
@@ -510,21 +510,21 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
                 };
             },
             [&](const PickupEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::PickupEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
                 };
             },
             [&](const DropEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::DropEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
                 };
             },
             [&](const ThrowEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::ThrowEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
@@ -532,7 +532,7 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
                 };
             },
             [&](const UseHeldEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::UseHeldEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
@@ -541,7 +541,7 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
                 };
             },
             [&](const UseBackEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::UseBackEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
@@ -550,35 +550,35 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
                 };
             },
             [&](const PutHeldEntityOnBackAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::PutHeldEntityOnBack,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
                 };
             },
             [&](const TakeOffBackEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::TakeOffBackEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
                 };
             },
             [&](const InteractEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::InteractEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
                 };
             },
             [&](const CollectEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::CollectEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
                 };
             },
             [&](const PushEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::PushEntity,
                     .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
@@ -586,14 +586,14 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
                 };
             },
             [&](const BreakTileAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::BreakTile,
                     .source_entity_id = GetReplicatedEntityLinkId(state, payload.source_vid),
                     .tile_pos = payload.tile_pos,
                 };
             },
             [&](const DamageEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::DamageEntity,
                     .source_entity_id = GetReplicatedEntityLinkId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
@@ -602,7 +602,7 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
                 };
             },
             [&](const HitEntityAction& payload) {
-                return ActionRequestEvent{
+                return ActionRequestMessage{
                     .kind = NetActionKind::HitEntity,
                     .source_entity_id = GetReplicatedEntityLinkId(state, payload.source_vid),
                     .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
@@ -619,9 +619,9 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
                 };
             },
         },
-        message.payload
+        request.payload
     );
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 void ReplicatePresentationCommand(State& state, const PresentationCommand& command) {
@@ -630,14 +630,14 @@ void ReplicatePresentationCommand(State& state, const PresentationCommand& comma
     }
     if (state.net_session.role == NetRole::Peer &&
         command.source_vid.has_value() &&
-        !ShouldReplicateInteractionSourceEvent(state, *command.source_vid)) {
+        !ShouldReplicateInteractionSourceMessage(state, *command.source_vid)) {
         return;
     }
 
-    NetEvent event;
-    event.header = state.net_session.MakeLocalEventHeader(state.frame);
-    event.type = NetEventType::PresentationCommand;
-    event.payload = PresentationCommandEvent{
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::PresentationCommand;
+    net_message.payload = PresentationCommandMessage{
         .kind = static_cast<std::uint16_t>(command.kind),
         .effect_id = static_cast<std::uint16_t>(command.effect_id),
         .audio_asset_id = command.audio_asset_id,
@@ -657,7 +657,7 @@ void ReplicatePresentationCommand(State& state, const PresentationCommand& comma
         .area_entity_shake_amount = command.area_entity_shake_amount,
         .shake_radius_tiles = command.shake_radius_tiles,
     };
-    state.net_session.EnqueueNetEvent(event);
+    state.net_session.EnqueueNetMessage(net_message);
 }
 
 } // namespace splonks::network

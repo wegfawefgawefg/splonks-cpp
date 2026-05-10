@@ -58,7 +58,7 @@ coordinator-authoritative shared world state.
   state. The coordinator may validate/correct against solid world state, stage
   transitions, and death/respawn state.
 - The coordinator owns shared world outcomes: stable entity ids, stage
-  transitions, enemy/world-prop defaults, durable event ordering, and repair
+  transitions, enemy/world-prop defaults, durable message ordering, and repair
   snapshots.
 - Local actions may present immediately on the acting machine, but durable
   shared results must pass through coordinator ordering before they are treated
@@ -66,7 +66,7 @@ coordinator-authoritative shared world state.
 - Local actions must not create canonical shared-world outcomes on peers. A peer
   may show local-only prediction or cosmetics, but the coordinator creates the
   real entity/tile/inventory result.
-- Peers apply durable events idempotently. If an event arrives late but still
+- Peers apply durable messages idempotently. If an message arrives late but still
   applies cleanly, apply it. If it conflicts, resolve through coordinator order
   and later repair snapshots.
 - Cheating and modified clients are treated as a social/lobby compatibility
@@ -115,7 +115,7 @@ These are the multiplayer architecture rules to enforce going forward:
 
 ## Architecture Boundary
 
-Do not convert the whole game to local event-driven gameplay. Normal offline
+Do not convert the whole game to local message-driven gameplay. Normal offline
 gameplay should remain direct: entity code mutates entity/tile state immediately
 so controls stay simple and responsive.
 
@@ -136,11 +136,11 @@ Current seam: canonical `world_ops` helpers own durable mutation boundaries:
   the coordinator run the content callback that mutates shared state.
 
 This gives a responsive co-op model during migration without forcing every
-behavior through an abstract event bus. If a gameplay fact is not durable or not
+behavior through an abstract message bus. If a gameplay fact is not durable or not
 useful for remote readability, it should stay local.
 
 Durable mutations should stay behind the canonical `world_ops` API instead of
-relying on broad internal event capture. These functions should not use an
+relying on broad internal message capture. These functions should not use an
 `Authoritative` suffix in code; authority is a property of where the function is
 called and what the session role is, not part of every symbol name.
 `world_ops` is a module, not one fat file: keep entity lifecycle/state, tile
@@ -188,7 +188,7 @@ These helpers own both sides of a durable mutation:
 
 This target is closer to Terraria's direct message/category style and avoids
 turning the game's internal architecture into a listener graph. There is no
-internal `GameplayEvent` union/queue. `src/gameplay_messages.hpp` only defines
+internal `GameplayMessage` union/queue. `src/gameplay_messages.hpp` only defines
 plain action/result payload structs that `world_ops` and network serialization
 share.
 
@@ -199,7 +199,7 @@ Strict migration rules:
   narrower `world_ops` request helper.
 - Raw entity/tile/player/run/fluid mutation plus a separate replication emit is
   transitional and should be removed category by category.
-- Stage generation, debug-stage construction, replay loading, and net-event
+- Stage generation, debug-stage construction, replay loading, and net-message
   apply may still use raw storage writes because they are not normal live
   gameplay mutation paths.
 - When a durable category has a `world_ops` helper, direct call sites in content
@@ -207,17 +207,17 @@ Strict migration rules:
 
 ### No Generic Listener Bus Requirement
 
-Do not add a generic listener/event-bus system. Direct calls are acceptable when
+Do not add a generic listener/message-bus system. Direct calls are acceptable when
 they cross a clear ownership boundary:
 
 - `world_ops` may directly call network replication/progression while it remains
   small and explicit.
 - A listener/dispatcher is only justified if many independent systems need the
   same gameplay facts and direct `world_ops` calls become insufficient.
-- The important boundary is not "everything listens to events." The important
+- The important boundary is not "everything listens to messages." The important
   boundary is "peers request shared mutations; coordinator applies shared
   mutations."
-- Prefer explicit `world_ops` helper calls over adding more internal event
+- Prefer explicit `world_ops` helper calls over adding more internal message
   fanout.
 
 ## Interaction Authority Rule
@@ -237,7 +237,7 @@ shared-world effects are coordinator-owned.
   held state, damage state, and final velocity.
 - Remote-owned projectiles/melee replicas should not independently author damage
   to our local player. Their owner sends the interaction result to the
-  coordinator; peers apply the coordinator-ordered event.
+  coordinator; peers apply the coordinator-ordered message.
 - Generic remote damage without a named source should not take over local
   player bodies, because stale enemy overlap can otherwise produce bogus hits.
 
@@ -305,13 +305,13 @@ archetype id, tool slot, tile coordinate, interaction kind, and compact content
 payloads. Coordinator-side content callbacks interpret those ids and produce
 generic results.
 
-### Message IDs Versus Internal Events
+### Message IDs Versus Internal Messages
 
 Terraria/tModLoader is message-id based at the network protocol boundary. That
 means packets are explicit categories such as player controls, NPC sync,
 projectile sync, item sync, tile manipulation, tile square repair, world data,
 and mod packets. It does not mean Terraria internally routes all gameplay
-through a pure event bus.
+through a pure message bus.
 
 For Splonks, keep these concerns separate:
 
@@ -319,13 +319,13 @@ For Splonks, keep these concerns separate:
 - `world_ops` is our current seam for applying or requesting durable facts from
   normal content code.
 - Singleplayer/offline content does not need to be rewritten into a pure
-  listener/event-bus architecture.
+  listener/message-bus architecture.
 - Peers should send generic action requests to the coordinator instead of
   authoring durable state locally.
 - The coordinator should run normal content callbacks and then publish broad
   result messages.
 
-We intentionally removed the internal gameplay-event queue. The practical
+We intentionally removed the internal gameplay-message queue. The practical
 ownership rule is now simpler: content stays direct/offline-friendly by calling
 `world_ops`, and `world_ops` is the only live gameplay seam that may enqueue
 network results without putting packet code inside entities.
@@ -467,7 +467,7 @@ enum class NetActionKind : std::uint16_t {
 };
 
 struct NetActionRequest {
-    NetEventHeader header;
+    NetMessageHeader header;
     NetActionKind kind;
     NetEntityId source_entity_id;
     NetEntityId target_entity_id;
@@ -498,7 +498,7 @@ Important rules:
 - Peer mode sends `Request*` and may only do local-only prediction/cosmetics.
 - `Apply*` is the only path that performs canonical non-player entity spawns,
   tile changes, loot rolls, inventory changes, and shared damage.
-- Result events are generic and idempotent. They identify content by entity
+- Result messages are generic and idempotent. They identify content by entity
   type/archetype/tool/effect ids, not by hardcoded item packet families.
 
 ## Mutation Prescan
@@ -523,7 +523,7 @@ peer:
 
 Do not create one packet per content item from this list. Add generic request
 categories only when a new durable mutation family is needed, then let the
-coordinator run the existing content code and emit generic result events.
+coordinator run the existing content code and emit generic result messages.
 
 Hard rule: peers must not author canonical money, inventory, tool, effect,
 entity, tile, or run-state deltas. Peers send input/action requests only. The
@@ -586,7 +586,7 @@ Add checks before broad multiplayer work continues:
 - In peer mode, loot-drop callbacks must not roll canonical drops.
 - In peer mode, damage/death/deactivation of coordinator-owned non-player
   entities must be request-only.
-- Debug logs should include the authority owner, net id, event id, coordinator
+- Debug logs should include the authority owner, net id, message id, coordinator
   order, and whether the action was request, apply, prediction, or repair.
 
 Known failure cases that these guards must catch:
@@ -604,23 +604,23 @@ Implemented:
 - Remote player snapshots with interpolation, including animation state.
 - Remote player replicas are display-driven only; they do not run local gameplay
   physics/control.
-- Coordinator-ordered tile events for tile breaks, tile changes, and rope tile
+- Coordinator-ordered tile messages for tile breaks, tile changes, and rope tile
   placement.
-- Tool-spawned entity events for things like grenades/ropes/arrows that need to
+- Tool-spawned entity messages for things like grenades/ropes/arrows that need to
   exist on other peers.
-- Entity damage/death events that replicate final health/condition and route
+- Entity damage/death messages that replicate final health/condition and route
   remote deaths through the normal death callback path.
-- Damage events also carry impact state for pos/vel/acc/stun, so player hits can
+- Damage messages also carry impact state for pos/vel/acc/stun, so player hits can
   knock back and stun across peers instead of only changing health.
-- Generic entity state patch events for moved replicated props such as pushblocks.
+- Generic entity state patch messages for moved replicated props such as pushblocks.
 - Player bodies use player-derived network entity ids instead of deterministic
   stage ids.
-- Entity held/thrown/drop event packets exist for carry ownership, including
+- Entity held/thrown/drop message packets exist for carry ownership, including
   player-carry chains.
-- Durable events now have basic ack/retry boundaries:
-  - Peer-authored durable events stay in a local retry queue until the
+- Durable messages now have basic ack/retry boundaries:
+  - Peer-authored durable messages stay in a local retry queue until the
     coordinator echoes them.
-  - Coordinator-ordered durable events are resent per remote until that remote
+  - Coordinator-ordered durable messages are resent per remote until that remote
     acks the highest contiguous applied coordinator order.
   - Transient player/entity state patches remain lossy and outside durable
     history.
@@ -634,7 +634,7 @@ Not yet implemented:
   old ordered history has been pruned.
 - Tool slot/count replication.
 - Back-slot replication.
-- Durable item pickup/buy events.
+- Durable item pickup/buy messages.
 
 Near-term priority:
 
@@ -758,7 +758,7 @@ archetype interprets it. This keeps the network table stable without hardcoding
 
 - Owner: controlling client.
 - Local simulation: immediate.
-- Network: send periodic player-state events/snapshots.
+- Network: send periodic player-state messages/snapshots.
 - Remote peers display the latest received player state with interpolation.
 - Coordinator can validate/correct movement against solid world state and hard
   session facts such as death, respawn, and stage transition.
@@ -769,10 +769,10 @@ archetype interprets it. This keeps the network table stable without hardcoding
 
 - Predictor: holder's client while held.
 - Canonical owner: coordinator for conflict resolution and repair.
-- Pickup is a durable event: `PickupEntity(player, item)`.
+- Pickup is a durable message: `PickupEntity(player, item)`.
 - The picker applies pickup immediately and sends the action/result to the
   coordinator.
-- Conflicting pickups resolve by coordinator event order. Losing peers repair or
+- Conflicting pickups resolve by coordinator message order. Losing peers repair or
   ignore their local pickup if needed.
 - Throw/drop/use should be confirmed through stable action/result categories,
   not item-specific packet families.
@@ -791,7 +791,7 @@ archetype interprets it. This keeps the network table stable without hardcoding
   - `KillEntity`
   - `SpawnEntity`
 - Remote peers may render the projectile path approximately. Durable results
-  come from coordinator-ordered events and repair snapshots.
+  come from coordinator-ordered messages and repair snapshots.
 
 ### Enemies / World Props
 
@@ -800,9 +800,9 @@ archetype interprets it. This keeps the network table stable without hardcoding
   responsiveness.
 - Any client may request or report a durable interaction result: hit, stun, kill,
   pickup, sacrifice, telefrag, push, or break.
-- Conflicting events resolve by ordered event application and idempotent checks.
+- Conflicting messages resolve by ordered message application and idempotent checks.
 - Remote peers accept coordinator-ordered outcomes and may be repaired by later
-  snapshots. They do not replay exact physics to prove every event.
+  snapshots. They do not replay exact physics to prove every message.
 
 ### Stage Tiles / Fluids / Lighting
 
@@ -815,11 +815,11 @@ archetype interprets it. This keeps the network table stable without hardcoding
 - Fluids, lighting, particles, and audio are locally simulated from current
   durable state. They do not need exact cross-peer parity.
 
-## Event Design
+## Message Design
 
-Every durable gameplay result should be an idempotent event:
+Every durable gameplay result should be an idempotent message:
 
-- `event_id`
+- `message_id`
 - `source_player_id`
 - `source_entity_vid` or network entity id
 - `stage_frame` or network tick
@@ -840,12 +840,12 @@ Examples:
 - change favor
 - stage transition
 
-Events must be safe to receive twice and safe to receive out of order within a
+Messages must be safe to receive twice and safe to receive out of order within a
 small window. This matters more than exact deterministic simulation.
 
-## Required Durable Events
+## Required Durable Messages
 
-Start small, but design the envelope so adding more event types is mechanical.
+Start small, but design the envelope so adding more message types is mechanical.
 
 Core session:
 
@@ -880,17 +880,17 @@ Inventory/economy/quest:
 - `RunStatePatched` for small run-level state such as favor and reward tiers
 - `PresentationCommand`
 
-Avoid adding action-specific net events for content such as bombs, ropes,
+Avoid adding action-specific net messages for content such as bombs, ropes,
 projectiles, crates, chests, shops, or sacrifices. The coordinator should run
 the normal content callback and emit generic entity, tile, player-state, and
 run-state results.
 
-Local-only events should not be networked: particles, short-lived audio, camera
+Local-only messages should not be networked: particles, short-lived audio, camera
 shake, debug annotations, and cosmetic lighting flicker. If a cosmetic effect is
 important for remote readability, send the durable cause and let peers spawn the
 effect locally.
 
-Content-specific cosmetic events should not get their own packet families. Use
+Content-specific cosmetic messages should not get their own packet families. Use
 generic presentation commands for readable one-shots such as sounds, entity
 shake, area shake, and named scripted presentation effects.
 
@@ -901,7 +901,7 @@ Local `VID` values are not enough across machines. Use stable player/session ids
 - `NetEntityId`: stable for replicated entities during a stage.
 - `PlayerId`: stable gameplay player identity. This is not network-owned; local
   multiplayer and remote multiplayer both use it.
-- `NetEventId`: monotonic per event source.
+- `NetMessageId`: monotonic per message source.
 - `StageInstanceId`: identifies a generated stage instance and seed.
 
 Each peer maps `NetEntityId -> local VID`. The coordinator assigns canonical ids
@@ -916,7 +916,7 @@ Minimal first pass:
 
 ```cpp
 using NetEntityId = std::uint64_t;
-using NetEventId = std::uint64_t;
+using NetMessageId = std::uint64_t;
 using StageInstanceId = std::uint64_t;
 
 enum class NetRole {
@@ -937,8 +937,8 @@ struct NetEntityLink {
     VID local_vid;
 };
 
-struct NetEventHeader {
-    NetEventId event_id;
+struct NetMessageHeader {
+    NetMessageId message_id;
     PlayerId source_player_id;
     StageInstanceId stage_instance_id;
     std::uint64_t source_local_frame;
@@ -959,7 +959,7 @@ struct PlayerSlot {
 Store networking state outside pure entity behavior. Entities should not know
 about sockets or peers. Entity-owned logic should eventually call canonical
 `world_ops` helpers for durable mutation. Entity-owned logic should not emit a
-local gameplay event and wait for a listener; it should either mutate purely
+local gameplay message and wait for a listener; it should either mutate purely
 local presentation state or call the appropriate `world_ops` helper/request.
 
 ## Required Code Boundaries
@@ -967,14 +967,14 @@ local presentation state or call the appropriate `world_ops` helper/request.
 Networking should live in its own module, for example:
 
 - `src/network/net_ids.hpp`
-- `src/network/net_event.hpp`
+- `src/network/net_message.hpp`
 - `src/network/net_session.hpp`
 - `src/network/net_transport.hpp`
 - `src/network/net_fuzzer.hpp`
 - `src/network/net_replication.hpp`
 - `src/network/net_debug_ui.hpp`
 
-Gameplay systems should expose durable-event hooks without importing transport:
+Gameplay systems should expose durable-message hooks without importing transport:
 
 - entity spawn/deactivate
 - damage/death/stun
@@ -1004,33 +1004,33 @@ Packet classes:
 If we choose a library later, evaluate Steam Networking Sockets, ENet, GameNetworkingSockets,
 or a minimal custom UDP layer. Do not bind gameplay architecture to the transport.
 
-### Durable Event Reliability
+### Durable Message Reliability
 
 Current implementation:
 
-- `NetEvent` durable payloads are coordinator-ordered and idempotent once
+- `NetMessage` durable payloads are coordinator-ordered and idempotent once
   received.
-- Peer local durable events retry until the coordinator echoes them back.
-- Coordinator-ordered durable events retry per remote until that remote acks
+- Peer local durable messages retry until the coordinator echoes them back.
+- Coordinator-ordered durable messages retry per remote until that remote acks
   the highest contiguous `coordinator_order` it has applied.
 - The coordinator prunes ordered durable history only after every connected
   remote has acked it.
 - The coordinator periodically sends lossy repair state patches for linked,
-  non-player entities. These are intentionally not durable ordered events; the
+  non-player entities. These are intentionally not durable ordered messages; the
   newest repair wins.
 - Transient player snapshots and entity state patches intentionally remain
   unreliable and should never be retried; newer snapshots replace older ones.
 
 Remaining durable reliability requirements:
 
-- Resend unacked durable events on an interval with a cap/backoff so packet loss
+- Resend unacked durable messages on an interval with a cap/backoff so packet loss
   cannot create unbounded traffic.
 - If a peer falls too far behind the retained durable history, send a repair
   snapshot or force a stage reload instead of replaying an unbounded log.
 - Optionally add sparse gap acks later if we need to skip over permanently
-  missing events without forcing repair.
+  missing messages without forcing repair.
 
-Durable event classes that must use ack/retry:
+Durable message classes that must use ack/retry:
 
 - Tile breaks/changes, including deployed rope tiles.
 - Tool-spawned entities such as grenades, arrows, ropes, bombs.
@@ -1046,7 +1046,7 @@ Prefer correction hierarchy:
 
 1. Do nothing if divergence is below a visual threshold.
 2. Smooth remote entities toward received owner snapshots.
-3. Soft-correct local optimistic world overlays when ordered durable events differ.
+3. Soft-correct local optimistic world overlays when ordered durable messages differ.
 4. Hard-correct local player only for impossible state, death, transition, or
    unrecoverable stage mismatch.
 
@@ -1059,12 +1059,12 @@ The local player should never wait for:
 - placing bombs/ropes
 - teleporter preview and activation
 
-Ordered durable events may later correct consequences.
+Ordered durable messages may later correct consequences.
 
-## Remote Movement Before Durable World Events
+## Remote Movement Before Durable World Messages
 
 Basic remote movement comes before replicated tile/entity mutations. Durable
-events prove shared-world correctness, but they are hard to evaluate if remote
+messages prove shared-world correctness, but they are hard to evaluate if remote
 players still look like packet-snapped puppets.
 
 Remote player movement path:
@@ -1094,8 +1094,8 @@ the shared world and every process saw it" without item ownership complexity:
 5. Coordinator emits generic `TileBroken` and any spawned loot/entity results.
 6. Peers apply coordinator results idempotently. Already-air/already-broken
    tile is a no-op.
-7. Debug event log shows requested, received, applied, duplicate, and no-op
-   action/result events.
+7. Debug message log shows requested, received, applied, duplicate, and no-op
+   action/result messages.
 
 Then do `EntityDamaged` plus deactivation/state results, then
 pickup/drop/throw ownership.
@@ -1108,7 +1108,7 @@ conflicts must be boring and deterministic.
 Default priority:
 
 1. lower `coordinator_order`
-2. lower `event_id` from the same source
+2. lower `message_id` from the same source
 3. lower `source_player_id` as final tie-break
 
 Examples:
@@ -1116,16 +1116,16 @@ Examples:
 - Two players pick up the same item: first ordered `EntityHeld` wins. The loser
   drops/clears their local optimistic hold.
 - Two players kill the same enemy: first ordered `EntityDamaged`/`EntityDeactivated`
-  result wins. Later damage/deactivation events against inactive/dead entities
+  result wins. Later damage/deactivation messages against inactive/dead entities
   become no-ops.
 - Two bombs break the same tile: first `TileBroken` changes it. Later duplicate
   breaks are no-ops but can still spawn local cosmetics if desired.
-- One player buys an item while another steals it: event order decides whether
+- One player buys an item while another steals it: message order decides whether
   the buy's generic player/entity state patches or theft/disturbance patches
   apply first.
 
 This needs idempotent apply functions. Most bugs in this model will come from
-events that assume the old state still exists.
+messages that assume the old state still exists.
 
 ## Desync Policy
 
@@ -1152,12 +1152,12 @@ This is useful as a stepping stone, but it should not define the remote model.
 
 ## Implementation Phases
 
-1. Define networking ids and event envelope.
-   - Add `PlayerId`, `NetEntityId`, `NetEventId`, `StageInstanceId`.
+1. Define networking ids and message envelope.
+   - Add `PlayerId`, `NetEntityId`, `NetMessageId`, `StageInstanceId`.
    - Add local mapping between `NetEntityId` and `VID`.
    - Add coordinator-order field, even before real networking exists.
 2. Add a narrow transitional durable-fact seam.
-   - Gameplay events are acceptable as a migration aid, but they are not the
+   - Gameplay messages are acceptable as a migration aid, but they are not the
      target internal architecture.
    - Do not build a broad in-process listener bus.
 3. Convert key durable systems to canonical `world_ops` helpers.
@@ -1170,16 +1170,16 @@ This is useful as a stepping stone, but it should not define the remote model.
 4. Support multiple player ids locally.
    - Spawn multiple player entities in one `State`.
    - Route input by `PlayerId`.
-   - This gives local multiplayer and exercises event ownership.
+   - This gives local multiplayer and exercises message ownership.
 5. Add loopback coordinator/peer mode in one process.
    - Same code path as network mode, but transport is an in-memory queue.
    - Add network fuzzer here, before UDP.
-6. Replicate remote player snapshots/events over loopback.
+6. Replicate remote player snapshots/messages over loopback.
    - Local player remains instant.
-   - Remote players are just event/snapshot driven.
-7. Add reliable event stream transport.
+   - Remote players are just message/snapshot driven.
+7. Add reliable message stream transport.
    - UDP-based transport eventually, but loopback first.
-   - Reliable ordered stream for durable events.
+   - Reliable ordered stream for durable messages.
    - Unreliable stream for frequent player/entity snapshots.
 8. Add repair snapshots.
    - Serialize durable stage/entity/tool/quest state.
@@ -1194,8 +1194,8 @@ This is useful as a stepping stone, but it should not define the remote model.
 
 ## Implementation Status
 
-- [x] Added foundational network ids/event/session types.
-  - Files: `src/network/net_ids.hpp`, `src/network/net_event.hpp`,
+- [x] Added foundational network ids/message/session types.
+  - Files: `src/network/net_ids.hpp`, `src/network/net_message.hpp`,
     `src/network/net_session.hpp`, `src/network/net_session.cpp`.
   - `State` now owns `network::NetSessionState net_session`, initialized in
     offline mode.
@@ -1216,15 +1216,15 @@ This is useful as a stepping stone, but it should not define the remote model.
   - Tool usage is disabled by default and can be toggled per bot.
 - [x] Added network fuzzer config/stat shell and latency presets.
   - Files: `src/network/net_fuzzer.hpp`, `src/network/net_fuzzer.cpp`.
-- [x] Added net event queues and first apply path.
-  - Files: `src/network/net_event_apply.hpp`,
-    `src/network/net_event_apply.cpp`, `src/debug/playback_ui_network.cpp`.
-  - The `Debug: Network` window can manually apply queued ordered events.
+- [x] Added net message queues and first apply path.
+  - Files: `src/network/net_message_apply.hpp`,
+    `src/network/net_message_apply.cpp`, `src/debug/playback_ui_network.cpp`.
+  - The `Debug: Network` window can manually apply queued ordered messages.
   - The old manual local-to-ordered drain path was removed. Peers keep pending
-    outbound action/presentation events; the coordinator owns ordered result
-    events.
-- [x] Add in-process durable event apply point in the gameplay step.
-  - The playing tick applies coordinator-ordered events once per frame.
+    outbound action/presentation messages; the coordinator owns ordered result
+    messages.
+- [x] Add in-process durable message apply point in the gameplay step.
+  - The playing tick applies coordinator-ordered messages once per frame.
 - [x] Added first real UDP host/join transport.
   - Files: `src/network/net_transport.hpp`,
     `src/network/net_transport.cpp`, `src/network/net_protocol.hpp`,
@@ -1243,7 +1243,7 @@ This is useful as a stepping stone, but it should not define the remote model.
   - Unreliable player snapshots now flow peer -> host -> other peers, and host
     local player snapshots flow host -> peers.
   - This slice proves N-process UDP session setup, seed-synced quest-stage
-    loading, and remote player motion snapshots. Reliable durable-event
+    loading, and remote player motion snapshots. Reliable durable-message
     transport, object/tool ownership, local multi-input routing, and repair
     snapshots are still separate follow-up work.
 - [x] Added remote player interpolation targets for UDP snapshots.
@@ -1259,8 +1259,8 @@ This is useful as a stepping stone, but it should not define the remote model.
   - Peer-side stage tile breaking emits generic `ActionRequest{BreakTile}`
     instead of mutating canonical tiles or rolling loot locally.
   - Coordinator-side stage tile breaking emits generic `TileBroken` result
-    events after normal gameplay break logic runs.
-  - Peers apply ordered `TileBroken` results without re-emitting network events
+    messages after normal gameplay break logic runs.
+  - Peers apply ordered `TileBroken` results without re-emitting network messages
     or duplicating drop spawns.
   - Peer `BreakTile` requests retry until a matching `TileBroken` result is
     received for that tile.
@@ -1272,7 +1272,7 @@ This is useful as a stepping stone, but it should not define the remote model.
     on-damage/on-death callbacks and death-consumed effects still run in the
     content-owned damage path.
   - Current limitation: damage requests do not yet carry a full authoritative
-    knockback/impulse spec. Existing ordered damage events can carry final
+    knockback/impulse spec. Existing ordered damage messages can carry final
     pos/vel once the coordinator applies them, but source-specific hit impulse
     should be folded into the next `HitEntity`/damage request shape rather than
     patched per weapon.
@@ -1291,19 +1291,19 @@ This is useful as a stepping stone, but it should not define the remote model.
     as joiner, and passes debug-control ports.
   - `scripts/splonksctl` queries live state through the localhost-only
     debug-control server.
-- [ ] Convert first gameplay systems to emit/apply durable events.
+- [ ] Convert first gameplay systems to emit/apply durable messages.
 - [x] Add reliable-ish coordinator-ordered `TileBroken` as the first durable UDP
   world mutation.
 - [x] Add multiple local player ids/entities.
-- [x] Add ordered entity carry events.
+- [x] Add ordered entity carry messages.
   - `EntityHeld`, `EntityDropped`, and `EntityThrown` have packet encoding,
     coordinator relay, and apply paths.
   - Player-carry chains use the normal entity carry references; attachment sync
     runs multiple passes so `player0 -> player1 -> player2` resolves
     deterministically.
-- [x] Add ack/retry reliable delivery boundaries for durable events.
-  - Peer local durable events retry until coordinator echo/ack.
-  - Coordinator ordered durable events retry per peer until ack.
+- [x] Add ack/retry reliable delivery boundaries for durable messages.
+  - Peer local durable messages retry until coordinator echo/ack.
+  - Coordinator ordered durable messages retry per peer until ack.
   - Transient player/entity snapshots stay lossy and are never retried.
 - [ ] Add loopback coordinator/peer transport and route it through the fuzzer.
 
@@ -1317,8 +1317,8 @@ Do not start with every system. The first slice should prove the model:
 - Remote player snapshots interpolate.
 - One shared rock can be picked up, thrown, and resolved if both players race
   for it.
-- One tile can be broken by mattock/bomb as a durable event.
-- One enemy can be killed by either player as a durable event.
+- One tile can be broken by mattock/bomb as a durable message.
+- One enemy can be killed by either player as a durable message.
 - Stage repair snapshot can fix an intentionally injected mismatch.
 
 If this slice feels bad under `150 ms / 25 ms jitter / 1% loss`, the model needs
@@ -1328,7 +1328,7 @@ adjustment before adding shops, sacrifices, fluids, or full quest progression.
 
 - Network graph: ping, jitter, packet loss, input age, snapshot age.
 - Per-entity network owner/coordinator overlay.
-- Event log filtered by player/entity/event id.
+- Message log filtered by player/entity/message id.
 - Prediction overlay view for local-only tile/entity changes.
 - Desync checksum panels for durable state only.
 - Artificial lag/loss/jitter controls in debug UI.
@@ -1428,7 +1428,7 @@ Debug output:
 
 - per-channel send/receive packet counts
 - dropped/late/duplicated/reordered packet counts
-- event ack age
+- message ack age
 - snapshot age
 - local prediction age
 - predicted-vs-coordinator body deltas, including snap threshold state, timers,
@@ -1445,7 +1445,7 @@ Useful presets:
 - Bad Wi-Fi: `90 ms`, `60 ms jitter`, `3% loss`, burst loss enabled
 
 This tool should sit below gameplay replication so every channel goes through it.
-If only rendering or high-level events are fuzzed, the test will lie.
+If only rendering or high-level messages are fuzzed, the test will lie.
 
 ## Open Questions
 
@@ -1462,7 +1462,7 @@ Build toward canonical `world_ops` mutation plus broad Terraria-style network
 lanes. The coordinator owns durable shared outcomes; clients keep local player
 control responsive and may present local prediction, but canonical tile, entity,
 fluid, inventory, run, and stage state comes from coordinator results or repair
-snapshots. Gameplay events are transitional glue, not the final internal
+snapshots. Gameplay messages are transitional glue, not the final internal
 architecture.
-The old internal gameplay-event queue has since been removed; do not reintroduce
+The old internal gameplay-message queue has since been removed; do not reintroduce
 it as transitional glue.

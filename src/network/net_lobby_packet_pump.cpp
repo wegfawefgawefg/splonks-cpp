@@ -44,9 +44,9 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
-        if (const std::optional<DurableEventAckPacket> ack =
-                TryDecodeDurableEventAck(packet->bytes.data(), packet->size)) {
-            HandleDurableEventAckAsCoordinator(state, transport, packet->endpoint, *ack);
+        if (const std::optional<DurableMessageAckPacket> ack =
+                TryDecodeDurableMessageAck(packet->bytes.data(), packet->size)) {
+            HandleDurableMessageAckAsCoordinator(state, transport, packet->endpoint, *ack);
             continue;
         }
 
@@ -57,15 +57,15 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
-        if (const std::optional<ActionRequestEventsPacket> action_requests =
-                TryDecodeActionRequestEvents(packet->bytes.data(), packet->size)) {
-            HandleActionRequestEventsAsCoordinator(state, transport, packet->endpoint, *action_requests);
+        if (const std::optional<ActionRequestMessagesPacket> action_requests =
+                TryDecodeActionRequestMessages(packet->bytes.data(), packet->size)) {
+            HandleActionRequestMessagesAsCoordinator(state, transport, packet->endpoint, *action_requests);
             continue;
         }
 
-        if (const std::optional<PresentationCommandEventsPacket> presentation_events =
-                TryDecodePresentationCommandEvents(packet->bytes.data(), packet->size)) {
-            HandlePresentationCommandEventsAsCoordinator(state, *presentation_events);
+        if (const std::optional<PresentationCommandMessagesPacket> presentation_messages =
+                TryDecodePresentationCommandMessages(packet->bytes.data(), packet->size)) {
+            HandlePresentationCommandMessagesAsCoordinator(state, *presentation_messages);
             continue;
         }
     }
@@ -115,63 +115,63 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
-        if (const std::optional<TileEventsPacket> tile_events =
-                TryDecodeTileEvents(packet->bytes.data(), packet->size)) {
-            HandleTileEventsAsPeer(state, *tile_events);
+        if (const std::optional<TileMessagesPacket> tile_messages =
+                TryDecodeTileMessages(packet->bytes.data(), packet->size)) {
+            HandleTileMessagesAsPeer(state, *tile_messages);
             continue;
         }
 
-        if (const std::optional<FluidCellEventsPacket> fluid_events =
-                TryDecodeFluidCellEvents(packet->bytes.data(), packet->size)) {
-            HandleFluidCellEventsAsPeer(state, *fluid_events);
+        if (const std::optional<FluidCellMessagesPacket> fluid_messages =
+                TryDecodeFluidCellMessages(packet->bytes.data(), packet->size)) {
+            HandleFluidCellMessagesAsPeer(state, *fluid_messages);
             continue;
         }
 
-        if (const std::optional<EntitySpawnedEventsPacket> entity_events =
-                TryDecodeEntitySpawnedEvents(packet->bytes.data(), packet->size)) {
-            HandleEntitySpawnedEventsAsPeer(state, *entity_events);
+        if (const std::optional<EntitySpawnedMessagesPacket> entity_messages =
+                TryDecodeEntitySpawnedMessages(packet->bytes.data(), packet->size)) {
+            HandleEntitySpawnedMessagesAsPeer(state, *entity_messages);
             continue;
         }
 
-        if (const std::optional<EntityDamageEventsPacket> entity_events =
-                TryDecodeEntityDamageEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityDamageEventsAsPeer(state, *entity_events);
+        if (const std::optional<EntityDamageMessagesPacket> entity_messages =
+                TryDecodeEntityDamageMessages(packet->bytes.data(), packet->size)) {
+            HandleEntityDamageMessagesAsPeer(state, *entity_messages);
             continue;
         }
 
-        if (const std::optional<EntityStateEventsPacket> entity_events =
-                TryDecodeEntityStateEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityStateEventsAsPeer(state, *entity_events);
+        if (const std::optional<EntityStateMessagesPacket> entity_messages =
+                TryDecodeEntityStateMessages(packet->bytes.data(), packet->size)) {
+            HandleEntityStateMessagesAsPeer(state, *entity_messages);
             continue;
         }
 
-        if (const std::optional<EntityCarryEventsPacket> entity_events =
-                TryDecodeEntityCarryEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityCarryEventsAsPeer(state, *entity_events);
+        if (const std::optional<EntityCarryMessagesPacket> entity_messages =
+                TryDecodeEntityCarryMessages(packet->bytes.data(), packet->size)) {
+            HandleEntityCarryMessagesAsPeer(state, *entity_messages);
             continue;
         }
 
-        if (const std::optional<EntityLifecycleEventsPacket> entity_events =
-                TryDecodeEntityLifecycleEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityLifecycleEventsAsPeer(state, *entity_events);
+        if (const std::optional<EntityLifecycleMessagesPacket> entity_messages =
+                TryDecodeEntityLifecycleMessages(packet->bytes.data(), packet->size)) {
+            HandleEntityLifecycleMessagesAsPeer(state, *entity_messages);
             continue;
         }
 
-        if (const std::optional<PlayerStateEventsPacket> player_state_events =
-                TryDecodePlayerStateEvents(packet->bytes.data(), packet->size)) {
-            HandlePlayerStateEventsAsPeer(state, *player_state_events);
+        if (const std::optional<PlayerStateMessagesPacket> player_state_messages =
+                TryDecodePlayerStateMessages(packet->bytes.data(), packet->size)) {
+            HandlePlayerStateMessagesAsPeer(state, *player_state_messages);
             continue;
         }
 
-        if (const std::optional<RunStateEventsPacket> run_state_events =
-                TryDecodeRunStateEvents(packet->bytes.data(), packet->size)) {
-            HandleRunStateEventsAsPeer(state, *run_state_events);
+        if (const std::optional<RunStateMessagesPacket> run_state_messages =
+                TryDecodeRunStateMessages(packet->bytes.data(), packet->size)) {
+            HandleRunStateMessagesAsPeer(state, *run_state_messages);
             continue;
         }
 
-        if (const std::optional<PresentationCommandEventsPacket> presentation_events =
-                TryDecodePresentationCommandEvents(packet->bytes.data(), packet->size)) {
-            HandlePresentationCommandEventsAsPeer(state, *presentation_events);
+        if (const std::optional<PresentationCommandMessagesPacket> presentation_messages =
+                TryDecodePresentationCommandMessages(packet->bytes.data(), packet->size)) {
+            HandlePresentationCommandMessagesAsPeer(state, *presentation_messages);
             continue;
         }
 

@@ -6,8 +6,8 @@ tModLoader-style broad message system: coordinator-owned shared world, local
 player responsiveness, broad protocol lanes, concrete world resync, and repeatable
 tests.
 
-This document supersedes vague "materially closer" language. A networking change
-is not done because one playtest got better. It is done when the relevant gate in
+This document supersedes vague partial-progress language. A networking change is
+not done because one playtest got better. It is done when the relevant gate in
 this checklist is implemented, tested, and no longer has known exceptions.
 
 Related docs:
@@ -17,7 +17,7 @@ Related docs:
 - `docs/current_multiplayer_cleanup_checklist.md`: short-term cleanup notes for
   the current large commit.
 - `docs/networking_protocol_cleanup_checklist.md`: focused cleanup list for
-  protocol file splits, event-to-message naming, typed action requests, and
+  protocol file splits, message-to-message naming, typed action requests, and
   compact action wire payloads.
 - `docs/network_stage_and_settings_classification.md`: durable/shared/local
   state classification.
@@ -35,7 +35,7 @@ Examples from recent work:
 - Player position repair improved, but fall/stun/body timers were not in the
   player snapshot lane, so local fall damage could still diverge.
 - Generic action requests improved tools and shops, but late join/rejoin still
-  needs a concrete current-world snapshot, not only stage seed plus event history.
+  needs a concrete current-world snapshot, not only stage seed plus message history.
 
 Going forward, we should not say "Terraria-style enough" until all gates below
 are checked.
@@ -124,7 +124,7 @@ request ids, request dedupe, accepted and rejected action acks, coordinator
 order, ordered result idempotence for reversed/duplicated delivery, dropped
 coordinator delivery resend, lost peer request retry, lost explicit action ack,
 same-id reconnect, fresh reconnect, dropped initial stage sync, and multi-peer
-durable history retention where one peer acking is not enough to prune an event.
+durable history retention where one peer acking is not enough to prune an message.
 A force-resync fallback exists and is tested by corrupting a peer after normal
 history has been acked and requiring a fresh world snapshot stream to repair it.
 Peers that miss an order older than the coordinator's retained history are not
@@ -156,7 +156,7 @@ hope that history replay is enough.
   absent by definition.
 - [x] Include every player slot: connected/disconnected, local/remote identity,
   entity link, health, money, tools, effects, held/back links, wanted state,
-  condition, body state, and respawn/death state. Snapshot player-state events
+  condition, body state, and respawn/death state. Snapshot player-state messages
   cover active player bodies. Disconnected retained-player data is
   coordinator-side reconnect state, not a live world body; packet smoke now
   proves all reconnect policies: fresh at entrance, fresh at host, retained at
@@ -174,7 +174,7 @@ hope that history replay is enough.
   item-specific network packets.
 - [x] Chunk large snapshots so they fit transport packet limits.
 - [x] Add checksum/fingerprint after snapshot apply. Packet smoke verifies the
-  final run-state event in a world snapshot carries a network-stable fingerprint
+  final run-state message in a world snapshot carries a network-stable fingerprint
   and peers record whether their applied snapshot matches it.
 - [x] Add host command to force-resync peers.
 - [x] Add fake-transport tests for rejoin after world mutation.
@@ -205,7 +205,7 @@ Stagegen annotations are debug-only and are regenerated when the peer loads the
 quest stage from the same quest id/stage id/seed. Stage tile triggers are also
 regenerated from stagegen data; tile mutation snapshots then apply current broken
 or changed tiles over that deterministic base. Linked inactive entities are
-represented by deactivation events in the snapshot stream; unlinked inactive
+represented by deactivation messages in the snapshot stream; unlinked inactive
 entities are absent by definition. Snapshot data is already packetized through
 the broad lanes rather than packed into one oversized packet.
 
@@ -363,7 +363,7 @@ schemas. The one content-ish lobby leak was entrance lookup/reset during
 network respawn/rejoin; that now lives behind stage progression helpers instead
 of direct `Tile::Entrance` / `EntityType::Entrance` checks in the network lobby.
 Smoke tests may still use concrete content as fixtures. `EntityStatePatch` is
-intentionally one event per packet and currently requires a 576-byte packet cap,
+intentionally one message per packet and currently requires a 576-byte packet cap,
 still below normal UDP MTU.
 
 ## Gate 5: Mutation Classification

@@ -71,8 +71,8 @@ void CopyEntityEffectsToPayload(const Entity& entity, Payload& payload) {
     }
 }
 
-EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entity) {
-    EntityStatePatchedEvent payload{
+EntityStatePatchedMessage MakeEntityStatePayload(State& state, const Entity& entity) {
+    EntityStatePatchedMessage payload{
         .entity_id = GetOrAssignReplicatedEntityId(state, entity.vid),
         .source_entity_id = kInvalidNetEntityId,
         .entity_a_id = GetReplicatedEntityLinkId(state, entity.entity_a),
@@ -138,7 +138,7 @@ EntityStatePatchedEvent MakeEntityStatePayload(State& state, const Entity& entit
     return payload;
 }
 
-NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedEvent& payload) {
+NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedMessage& payload) {
     NetReplicatedEntityStateSignature signature{
         .entity_id = payload.entity_id,
         .entity_a_id = payload.entity_a_id,
@@ -322,28 +322,28 @@ void PruneMissingStateCacheEntries(State& state, NetTransportRuntime& transport)
     );
 }
 
-std::vector<NetEvent> BuildReplicatedEntityStatePatchEvents(
+std::vector<NetMessage> BuildReplicatedEntityStatePatchMessages(
     State& state,
     NetTransportRuntime& transport
 ) {
-    std::vector<NetEvent> events;
+    std::vector<NetMessage> messages;
     for (const Entity& entity : state.entity_manager.entities) {
         if (!ShouldConsiderEntityStatePatch(state, entity)) {
             continue;
         }
-        EntityStatePatchedEvent payload = MakeEntityStatePayload(state, entity);
+        EntityStatePatchedMessage payload = MakeEntityStatePayload(state, entity);
         const bool changed = UpdateStateCacheIfChanged(transport, MakeStateSignature(payload));
         if (!changed && !HasMotionWorthReplicating(state, entity)) {
             continue;
         }
-        NetEvent event;
-        event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
-        event.type = NetEventType::EntityStatePatched;
-        event.payload = payload;
-        events.push_back(event);
+        NetMessage message;
+        message.header = state.net_session.MakeLocalTransientMessageHeader(state.frame);
+        message.type = NetMessageType::EntityStatePatched;
+        message.payload = payload;
+        messages.push_back(message);
     }
     PruneMissingStateCacheEntries(state, transport);
-    return events;
+    return messages;
 }
 
 bool ShouldIncludeCoordinatorRepairEntityState(const State& state, const Entity& entity) {
@@ -359,45 +359,45 @@ bool ShouldIncludeCoordinatorRepairEntityState(const State& state, const Entity&
     return state.net_session.FindNetEntityId(entity.vid).has_value();
 }
 
-std::vector<NetEvent> BuildCoordinatorEntityRepairEvents(State& state) {
-    std::vector<NetEvent> events;
+std::vector<NetMessage> BuildCoordinatorEntityRepairMessages(State& state) {
+    std::vector<NetMessage> messages;
     if (state.net_session.role != NetRole::Coordinator ||
         (state.frame % kCoordinatorRepairSnapshotIntervalFrames) != 0) {
-        return events;
+        return messages;
     }
 
     for (const Entity& entity : state.entity_manager.entities) {
         if (!ShouldIncludeCoordinatorRepairEntityState(state, entity)) {
             continue;
         }
-        NetEvent event;
-        event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
-        event.type = NetEventType::EntityStatePatched;
-        event.payload = MakeEntityStatePayload(state, entity);
-        events.push_back(event);
+        NetMessage message;
+        message.header = state.net_session.MakeLocalTransientMessageHeader(state.frame);
+        message.type = NetMessageType::EntityStatePatched;
+        message.payload = MakeEntityStatePayload(state, entity);
+        messages.push_back(message);
     }
-    return events;
+    return messages;
 }
 
 } // namespace
 
 void SendReplicatedEntityStatePatchesToAllRemotes(State& state, NetTransportRuntime& transport) {
-    const std::vector<NetEvent> events = BuildReplicatedEntityStatePatchEvents(state, transport);
-    if (events.empty()) {
+    const std::vector<NetMessage> messages = BuildReplicatedEntityStatePatchMessages(state, transport);
+    if (messages.empty()) {
         return;
     }
     for (const NetRemoteEndpoint& remote : transport.remotes) {
-        SendEntityStateEvents(transport, remote.endpoint, events);
+        SendEntityStateMessages(transport, remote.endpoint, messages);
     }
 }
 
 void SendCoordinatorEntityRepairPatchesToAllRemotes(State& state, NetTransportRuntime& transport) {
-    const std::vector<NetEvent> events = BuildCoordinatorEntityRepairEvents(state);
-    if (events.empty()) {
+    const std::vector<NetMessage> messages = BuildCoordinatorEntityRepairMessages(state);
+    if (messages.empty()) {
         return;
     }
     for (const NetRemoteEndpoint& remote : transport.remotes) {
-        SendEntityStateEvents(transport, remote.endpoint, events);
+        SendEntityStateMessages(transport, remote.endpoint, messages);
     }
 }
 

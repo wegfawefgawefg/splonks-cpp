@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "entity.hpp"
-#include "network/net_event.hpp"
+#include "network/net_message.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "state.hpp"
 #include "utils.hpp"
@@ -28,7 +28,7 @@ std::optional<std::size_t> FindFirstUsableToolSlot(const State& state, VID owner
 void ConfigureProtocolSmokeCoordinator(State& state);
 void ConfigureProtocolSmokePeer(State& state);
 
-bool ApplyCoordinatorEventsToPeer(
+bool ApplyCoordinatorMessagesToPeer(
     State& coordinator,
     State& peer,
     const char* label,

@@ -46,7 +46,7 @@ bool CheckNetworkActionRequestSmoke() {
 
         const IVec2 break_tile_pos = IVec2::New(3, 3);
         (void)world_ops::SetForegroundTile(coordinator, break_tile_pos, Tile::CaveDirt);
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup break tile",
@@ -85,7 +85,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_gold_vid = gold->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup collect",
@@ -129,7 +129,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_chest_vid = chest->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup interact chest",
@@ -173,7 +173,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_rock_vid = rock->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup pickup",
@@ -231,7 +231,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_cape_vid = cape->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup cape",
@@ -300,7 +300,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_drop_item_vid = drop_item->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup drop",
@@ -357,7 +357,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_block_vid = block->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup push",
@@ -408,7 +408,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_damage_target_vid = damage_target->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup damage",
@@ -454,7 +454,7 @@ bool CheckNetworkActionRequestSmoke() {
             return false;
         }
         const VID coordinator_hit_target_vid = hit_target->vid;
-        if (!ApplyCoordinatorEventsToPeer(
+        if (!ApplyCoordinatorMessagesToPeer(
                 coordinator,
                 peer,
                 "action setup hit",

@@ -6,32 +6,32 @@ namespace splonks::network {
 
 namespace {
 
-IVec2 GetTileEventPos(const NetEvent& event) {
-    if (const TileBrokenEvent* const payload = std::get_if<TileBrokenEvent>(&event.payload)) {
+IVec2 GetTileMessagePos(const NetMessage& message) {
+    if (const TileBrokenMessage* const payload = std::get_if<TileBrokenMessage>(&message.payload)) {
         return payload->tile_pos;
     }
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
+    if (const TileChangedMessage* const payload = std::get_if<TileChangedMessage>(&message.payload)) {
         return payload->tile_pos;
     }
     return IVec2::New(0, 0);
 }
 
-Tile GetTileEventTile(const NetEvent& event) {
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
+Tile GetTileMessageTile(const NetMessage& message) {
+    if (const TileChangedMessage* const payload = std::get_if<TileChangedMessage>(&message.payload)) {
         return payload->tile;
     }
     return Tile::Air;
 }
 
-TileRotation GetTileEventRotation(const NetEvent& event) {
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
+TileRotation GetTileMessageRotation(const NetMessage& message) {
+    if (const TileChangedMessage* const payload = std::get_if<TileChangedMessage>(&message.payload)) {
         return payload->rotation;
     }
     return kTileRotation0;
 }
 
-NetTileLayer GetTileEventLayer(const NetEvent& event) {
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
+NetTileLayer GetTileMessageLayer(const NetMessage& message) {
+    if (const TileChangedMessage* const payload = std::get_if<TileChangedMessage>(&message.payload)) {
         return payload->layer;
     }
     return NetTileLayer::Foreground;
@@ -39,43 +39,43 @@ NetTileLayer GetTileEventLayer(const NetEvent& event) {
 
 } // namespace
 
-bool IsReplicatedTileEvent(const NetEvent& event) {
-    return (event.type == NetEventType::TileBroken &&
-               std::holds_alternative<TileBrokenEvent>(event.payload)) ||
-           (event.type == NetEventType::TileChanged &&
-               std::holds_alternative<TileChangedEvent>(event.payload));
+bool IsReplicatedTileMessage(const NetMessage& message) {
+    return (message.type == NetMessageType::TileBroken &&
+               std::holds_alternative<TileBrokenMessage>(message.payload)) ||
+           (message.type == NetMessageType::TileChanged &&
+               std::holds_alternative<TileChangedMessage>(message.payload));
 }
 
-bool IsReplicatedFluidCellEvent(const NetEvent& event) {
-    return event.type == NetEventType::FluidCellPatched &&
-           std::holds_alternative<FluidCellPatchedEvent>(event.payload);
+bool IsReplicatedFluidCellMessage(const NetMessage& message) {
+    return message.type == NetMessageType::FluidCellPatched &&
+           std::holds_alternative<FluidCellPatchedMessage>(message.payload);
 }
 
-TileEventEntry MakeTileEventEntry(const NetEvent& event) {
-    const IVec2 tile_pos = GetTileEventPos(event);
-    return TileEventEntry{
-        .event_id = event.header.event_id,
-        .source_player_id = event.header.source_player_id,
-        .stage_instance_id = event.header.stage_instance_id,
-        .source_local_frame = event.header.source_local_frame,
-        .coordinator_order = event.header.coordinator_order,
-        .event_type = static_cast<std::uint16_t>(event.type),
-        .tile = static_cast<std::uint16_t>(GetTileEventTile(event)),
-        .rotation = GetTileEventRotation(event),
-        .layer = static_cast<std::uint8_t>(GetTileEventLayer(event)),
+TileMessageEntry MakeTileMessageEntry(const NetMessage& message) {
+    const IVec2 tile_pos = GetTileMessagePos(message);
+    return TileMessageEntry{
+        .message_id = message.header.message_id,
+        .source_player_id = message.header.source_player_id,
+        .stage_instance_id = message.header.stage_instance_id,
+        .source_local_frame = message.header.source_local_frame,
+        .coordinator_order = message.header.coordinator_order,
+        .message_type = static_cast<std::uint16_t>(message.type),
+        .tile = static_cast<std::uint16_t>(GetTileMessageTile(message)),
+        .rotation = GetTileMessageRotation(message),
+        .layer = static_cast<std::uint8_t>(GetTileMessageLayer(message)),
         .tile_x = static_cast<std::int32_t>(tile_pos.x),
         .tile_y = static_cast<std::int32_t>(tile_pos.y),
     };
 }
 
-FluidCellEventEntry MakeFluidCellEventEntry(const NetEvent& event) {
-    const FluidCellPatchedEvent* const payload = std::get_if<FluidCellPatchedEvent>(&event.payload);
-    return FluidCellEventEntry{
-        .event_id = event.header.event_id,
-        .source_player_id = event.header.source_player_id,
-        .stage_instance_id = event.header.stage_instance_id,
-        .source_local_frame = event.header.source_local_frame,
-        .coordinator_order = event.header.coordinator_order,
+FluidCellMessageEntry MakeFluidCellMessageEntry(const NetMessage& message) {
+    const FluidCellPatchedMessage* const payload = std::get_if<FluidCellPatchedMessage>(&message.payload);
+    return FluidCellMessageEntry{
+        .message_id = message.header.message_id,
+        .source_player_id = message.header.source_player_id,
+        .stage_instance_id = message.header.stage_instance_id,
+        .source_local_frame = message.header.source_local_frame,
+        .coordinator_order = message.header.coordinator_order,
         .tile = payload != nullptr
             ? static_cast<std::uint16_t>(payload->tile)
             : static_cast<std::uint16_t>(0),
@@ -92,26 +92,26 @@ FluidCellEventEntry MakeFluidCellEventEntry(const NetEvent& event) {
     };
 }
 
-NetEvent MakeTileEvent(const TileEventEntry& entry) {
-    NetEvent event;
-    event.header = NetEventHeader{
-        .event_id = entry.event_id,
+NetMessage MakeTileMessage(const TileMessageEntry& entry) {
+    NetMessage message;
+    message.header = NetMessageHeader{
+        .message_id = entry.message_id,
         .source_player_id = entry.source_player_id,
         .stage_instance_id = entry.stage_instance_id,
         .source_local_frame = entry.source_local_frame,
         .coordinator_order = entry.coordinator_order,
     };
-    event.type = static_cast<NetEventType>(entry.event_type);
+    message.type = static_cast<NetMessageType>(entry.message_type);
     const IVec2 tile_pos = IVec2::New(entry.tile_x, entry.tile_y);
-    switch (event.type) {
-    case NetEventType::TileBroken:
-        event.payload = TileBrokenEvent{
+    switch (message.type) {
+    case NetMessageType::TileBroken:
+        message.payload = TileBrokenMessage{
             .tile_pos = tile_pos,
             .source_entity_id = kInvalidNetEntityId,
         };
         break;
-    case NetEventType::TileChanged:
-        event.payload = TileChangedEvent{
+    case NetMessageType::TileChanged:
+        message.payload = TileChangedMessage{
             .tile_pos = tile_pos,
             .tile = static_cast<Tile>(entry.tile),
             .rotation = NormalizeTileRotation(entry.rotation),
@@ -119,24 +119,24 @@ NetEvent MakeTileEvent(const TileEventEntry& entry) {
         };
         break;
     default:
-        event.type = NetEventType::None;
-        event.payload = std::monostate{};
+        message.type = NetMessageType::None;
+        message.payload = std::monostate{};
         break;
     }
-    return event;
+    return message;
 }
 
-NetEvent MakeFluidCellEvent(const FluidCellEventEntry& entry) {
-    NetEvent event;
-    event.header = NetEventHeader{
-        .event_id = entry.event_id,
+NetMessage MakeFluidCellMessage(const FluidCellMessageEntry& entry) {
+    NetMessage message;
+    message.header = NetMessageHeader{
+        .message_id = entry.message_id,
         .source_player_id = entry.source_player_id,
         .stage_instance_id = entry.stage_instance_id,
         .source_local_frame = entry.source_local_frame,
         .coordinator_order = entry.coordinator_order,
     };
-    event.type = NetEventType::FluidCellPatched;
-    event.payload = FluidCellPatchedEvent{
+    message.type = NetMessageType::FluidCellPatched;
+    message.payload = FluidCellPatchedMessage{
         .tile_pos = IVec2::New(entry.tile_x, entry.tile_y),
         .tile = static_cast<Tile>(entry.tile),
         .amount = entry.amount,
@@ -145,7 +145,7 @@ NetEvent MakeFluidCellEvent(const FluidCellEventEntry& entry) {
         .temp_gravity = Vec2::New(entry.temp_gravity_x, entry.temp_gravity_y),
         .gravity_strength = entry.gravity_strength,
     };
-    return event;
+    return message;
 }
 
 } // namespace splonks::network

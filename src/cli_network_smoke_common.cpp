@@ -5,8 +5,8 @@
 #include "entity/archetype.hpp"
 #include "entity_tool_inventory.hpp"
 #include "graphics.hpp"
-#include "network/net_event.hpp"
-#include "network/net_event_apply.hpp"
+#include "network/net_message.hpp"
+#include "network/net_message_apply.hpp"
 #include "network/net_ids.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "network/net_progression.hpp"
@@ -28,7 +28,7 @@ namespace splonks {
 constexpr const char* kAnnotationsYamlPath = "assets/graphics/annotations.yaml";
 
 std::optional<GameplayActionRequested> MakeGameplayActionRequestForSmoke(
-    const network::ActionRequestEvent& payload,
+    const network::ActionRequestMessage& payload,
     std::optional<VID> source_vid,
     std::optional<VID> target_vid
 ) {
@@ -203,22 +203,22 @@ void ConfigureProtocolSmokePeer(State& state) {
     state.net_session.next_expected_coordinator_order = 1;
 }
 
-bool ApplyCoordinatorEventsToPeer(
+bool ApplyCoordinatorMessagesToPeer(
     State& coordinator,
     State& peer,
     const char* label,
     Audio* audio,
     Graphics* graphics
 ) {
-    peer.net_session.ordered_events = coordinator.net_session.ordered_events;
-    const std::size_t applied = network::ApplyOrderedEvents(peer.net_session, peer, audio, graphics);
-    if (applied == 0 && !coordinator.net_session.ordered_events.empty()) {
+    peer.net_session.ordered_messages = coordinator.net_session.ordered_messages;
+    const std::size_t applied = network::ApplyOrderedMessages(peer.net_session, peer, audio, graphics);
+    if (applied == 0 && !coordinator.net_session.ordered_messages.empty()) {
         std::cerr << "network protocol smoke failed at " << label
-                  << ": peer applied 0 of " << coordinator.net_session.ordered_events.size()
-                  << " queued coordinator events\n";
+                  << ": peer applied 0 of " << coordinator.net_session.ordered_messages.size()
+                  << " queued coordinator messages\n";
         return false;
     }
-    coordinator.net_session.ordered_events.clear();
+    coordinator.net_session.ordered_messages.clear();
     return true;
 }
 
@@ -270,16 +270,16 @@ bool TransferPeerActionRequestsToCoordinator(
     const char* label
 ) {
     bool transferred_any = false;
-    for (const network::NetEvent& event : peer.net_session.pending_outbound_events) {
-        if (event.type != network::NetEventType::ActionRequest) {
+    for (const network::NetMessage& message : peer.net_session.pending_outbound_messages) {
+        if (message.type != network::NetMessageType::ActionRequest) {
             std::cerr << "network action smoke failed at " << label
-                      << ": peer emitted unexpected event type "
-                      << static_cast<int>(event.type) << '\n';
+                      << ": peer emitted unexpected message type "
+                      << static_cast<int>(message.type) << '\n';
             return false;
         }
 
-        const network::ActionRequestEvent* const payload =
-            std::get_if<network::ActionRequestEvent>(&event.payload);
+        const network::ActionRequestMessage* const payload =
+            std::get_if<network::ActionRequestMessage>(&message.payload);
         if (payload == nullptr || payload->kind == network::NetActionKind::None) {
             std::cerr << "network action smoke failed at " << label
                       << ": peer emitted malformed action request\n";
@@ -318,7 +318,7 @@ bool TransferPeerActionRequestsToCoordinator(
         transferred_any = true;
     }
 
-    peer.net_session.pending_outbound_events.clear();
+    peer.net_session.pending_outbound_messages.clear();
     if (!transferred_any) {
         std::cerr << "network action smoke failed at " << label
                   << ": peer emitted no action request\n";
@@ -340,7 +340,7 @@ bool RunPeerActionThroughCoordinator(
         return false;
     }
     world_ops::ProcessPendingGameplayActions(coordinator, graphics, audio);
-    return ApplyCoordinatorEventsToPeer(coordinator, peer, label, &audio, &graphics) &&
+    return ApplyCoordinatorMessagesToPeer(coordinator, peer, label, &audio, &graphics) &&
            CompareProtocolSmokeStates(coordinator, peer, label);
 }
 
@@ -378,7 +378,7 @@ bool DeliverPeerPacketsToCoordinator(
     const char* label,
     const PacketDeliveryPlan& delivery_plan
 ) {
-    network::SendPendingPeerEventsToCoordinator(peer, peer_transport);
+    network::SendPendingPeerMessagesToCoordinator(peer, peer_transport);
     const std::vector<network::UdpPacket> packets =
         ApplyPacketDeliveryPlan(TakeCapturedPackets(peer_transport), delivery_plan);
     if (packets.empty()) {
@@ -389,9 +389,9 @@ bool DeliverPeerPacketsToCoordinator(
 
     bool handled_any = false;
     for (const network::UdpPacket& packet : packets) {
-        if (const std::optional<network::ActionRequestEventsPacket> action_requests =
-                network::TryDecodeActionRequestEvents(packet.bytes.data(), packet.size)) {
-            network::HandleActionRequestEventsAsCoordinator(
+        if (const std::optional<network::ActionRequestMessagesPacket> action_requests =
+                network::TryDecodeActionRequestMessages(packet.bytes.data(), packet.size)) {
+            network::HandleActionRequestMessagesAsCoordinator(
                 coordinator,
                 coordinator_transport,
                 peer_endpoint,
@@ -400,9 +400,9 @@ bool DeliverPeerPacketsToCoordinator(
             handled_any = true;
             continue;
         }
-        if (const std::optional<network::PresentationCommandEventsPacket> presentation_commands =
-                network::TryDecodePresentationCommandEvents(packet.bytes.data(), packet.size)) {
-            network::HandlePresentationCommandEventsAsCoordinator(coordinator, *presentation_commands);
+        if (const std::optional<network::PresentationCommandMessagesPacket> presentation_commands =
+                network::TryDecodePresentationCommandMessages(packet.bytes.data(), packet.size)) {
+            network::HandlePresentationCommandMessagesAsCoordinator(coordinator, *presentation_commands);
             handled_any = true;
             continue;
         }
@@ -432,13 +432,13 @@ bool DeliverCoordinatorPacketsToPeer(
     network::SendReplicatedEntityStatePatchesToAllRemotes(coordinator, coordinator_transport);
     network::SendReplicatedFluidCellPatchesToAllRemotes(coordinator, coordinator_transport);
     network::SendCoordinatorEntityRepairPatchesToAllRemotes(coordinator, coordinator_transport);
-    network::SendOrderedEventsToAllRemotes(coordinator, coordinator_transport);
+    network::SendOrderedMessagesToAllRemotes(coordinator, coordinator_transport);
     const std::vector<network::UdpPacket> packets =
         ApplyPacketDeliveryPlan(TakeCapturedPackets(coordinator_transport), delivery_plan);
-    if (packets.empty() && !coordinator.net_session.ordered_events.empty()) {
+    if (packets.empty() && !coordinator.net_session.ordered_messages.empty()) {
         std::cerr << "network packet smoke failed at " << label
                   << ": coordinator captured no result packets for "
-                  << coordinator.net_session.ordered_events.size() << " ordered events\n";
+                  << coordinator.net_session.ordered_messages.size() << " ordered messages\n";
         return false;
     }
 
@@ -448,54 +448,54 @@ bool DeliverCoordinatorPacketsToPeer(
             network::ApplyStageSync(peer, graphics, peer_transport, *stage_sync);
             continue;
         }
-        if (const std::optional<network::TileEventsPacket> tile_events =
-                network::TryDecodeTileEvents(packet.bytes.data(), packet.size)) {
-            network::HandleTileEventsAsPeer(peer, *tile_events);
+        if (const std::optional<network::TileMessagesPacket> tile_messages =
+                network::TryDecodeTileMessages(packet.bytes.data(), packet.size)) {
+            network::HandleTileMessagesAsPeer(peer, *tile_messages);
             continue;
         }
-        if (const std::optional<network::FluidCellEventsPacket> fluid_events =
-                network::TryDecodeFluidCellEvents(packet.bytes.data(), packet.size)) {
-            network::HandleFluidCellEventsAsPeer(peer, *fluid_events);
+        if (const std::optional<network::FluidCellMessagesPacket> fluid_messages =
+                network::TryDecodeFluidCellMessages(packet.bytes.data(), packet.size)) {
+            network::HandleFluidCellMessagesAsPeer(peer, *fluid_messages);
             continue;
         }
-        if (const std::optional<network::EntitySpawnedEventsPacket> spawn_events =
-                network::TryDecodeEntitySpawnedEvents(packet.bytes.data(), packet.size)) {
-            network::HandleEntitySpawnedEventsAsPeer(peer, *spawn_events);
+        if (const std::optional<network::EntitySpawnedMessagesPacket> spawn_messages =
+                network::TryDecodeEntitySpawnedMessages(packet.bytes.data(), packet.size)) {
+            network::HandleEntitySpawnedMessagesAsPeer(peer, *spawn_messages);
             continue;
         }
-        if (const std::optional<network::EntityDamageEventsPacket> damage_events =
-                network::TryDecodeEntityDamageEvents(packet.bytes.data(), packet.size)) {
-            network::HandleEntityDamageEventsAsPeer(peer, *damage_events);
+        if (const std::optional<network::EntityDamageMessagesPacket> damage_messages =
+                network::TryDecodeEntityDamageMessages(packet.bytes.data(), packet.size)) {
+            network::HandleEntityDamageMessagesAsPeer(peer, *damage_messages);
             continue;
         }
-        if (const std::optional<network::EntityStateEventsPacket> state_events =
-                network::TryDecodeEntityStateEvents(packet.bytes.data(), packet.size)) {
-            network::HandleEntityStateEventsAsPeer(peer, *state_events);
+        if (const std::optional<network::EntityStateMessagesPacket> state_messages =
+                network::TryDecodeEntityStateMessages(packet.bytes.data(), packet.size)) {
+            network::HandleEntityStateMessagesAsPeer(peer, *state_messages);
             continue;
         }
-        if (const std::optional<network::EntityCarryEventsPacket> carry_events =
-                network::TryDecodeEntityCarryEvents(packet.bytes.data(), packet.size)) {
-            network::HandleEntityCarryEventsAsPeer(peer, *carry_events);
+        if (const std::optional<network::EntityCarryMessagesPacket> carry_messages =
+                network::TryDecodeEntityCarryMessages(packet.bytes.data(), packet.size)) {
+            network::HandleEntityCarryMessagesAsPeer(peer, *carry_messages);
             continue;
         }
-        if (const std::optional<network::EntityLifecycleEventsPacket> lifecycle_events =
-                network::TryDecodeEntityLifecycleEvents(packet.bytes.data(), packet.size)) {
-            network::HandleEntityLifecycleEventsAsPeer(peer, *lifecycle_events);
+        if (const std::optional<network::EntityLifecycleMessagesPacket> lifecycle_messages =
+                network::TryDecodeEntityLifecycleMessages(packet.bytes.data(), packet.size)) {
+            network::HandleEntityLifecycleMessagesAsPeer(peer, *lifecycle_messages);
             continue;
         }
-        if (const std::optional<network::PlayerStateEventsPacket> player_events =
-                network::TryDecodePlayerStateEvents(packet.bytes.data(), packet.size)) {
-            network::HandlePlayerStateEventsAsPeer(peer, *player_events);
+        if (const std::optional<network::PlayerStateMessagesPacket> player_messages =
+                network::TryDecodePlayerStateMessages(packet.bytes.data(), packet.size)) {
+            network::HandlePlayerStateMessagesAsPeer(peer, *player_messages);
             continue;
         }
-        if (const std::optional<network::RunStateEventsPacket> run_events =
-                network::TryDecodeRunStateEvents(packet.bytes.data(), packet.size)) {
-            network::HandleRunStateEventsAsPeer(peer, *run_events);
+        if (const std::optional<network::RunStateMessagesPacket> run_messages =
+                network::TryDecodeRunStateMessages(packet.bytes.data(), packet.size)) {
+            network::HandleRunStateMessagesAsPeer(peer, *run_messages);
             continue;
         }
-        if (const std::optional<network::PresentationCommandEventsPacket> presentation_events =
-                network::TryDecodePresentationCommandEvents(packet.bytes.data(), packet.size)) {
-            network::HandlePresentationCommandEventsAsPeer(peer, *presentation_events);
+        if (const std::optional<network::PresentationCommandMessagesPacket> presentation_messages =
+                network::TryDecodePresentationCommandMessages(packet.bytes.data(), packet.size)) {
+            network::HandlePresentationCommandMessagesAsPeer(peer, *presentation_messages);
             continue;
         }
         if (const std::optional<network::ActionRequestAckPacket> action_ack =
@@ -513,12 +513,12 @@ bool DeliverCoordinatorPacketsToPeer(
         return false;
     }
 
-    (void)network::ApplyOrderedEvents(peer.net_session, peer, &audio, &graphics);
-    network::SendDurableEventAckToCoordinator(peer, peer_transport);
+    (void)network::ApplyOrderedMessages(peer.net_session, peer, &audio, &graphics);
+    network::SendDurableMessageAckToCoordinator(peer, peer_transport);
     for (const network::UdpPacket& packet : TakeCapturedPackets(peer_transport)) {
-        if (const std::optional<network::DurableEventAckPacket> ack =
-                network::TryDecodeDurableEventAck(packet.bytes.data(), packet.size)) {
-            network::HandleDurableEventAckAsCoordinator(
+        if (const std::optional<network::DurableMessageAckPacket> ack =
+                network::TryDecodeDurableMessageAck(packet.bytes.data(), packet.size)) {
+            network::HandleDurableMessageAckAsCoordinator(
                 coordinator,
                 coordinator_transport,
                 peer_endpoint,
@@ -526,9 +526,9 @@ bool DeliverCoordinatorPacketsToPeer(
             );
             continue;
         }
-        if (const std::optional<network::ActionRequestEventsPacket> action_requests =
-                network::TryDecodeActionRequestEvents(packet.bytes.data(), packet.size)) {
-            network::HandleActionRequestEventsAsCoordinator(
+        if (const std::optional<network::ActionRequestMessagesPacket> action_requests =
+                network::TryDecodeActionRequestMessages(packet.bytes.data(), packet.size)) {
+            network::HandleActionRequestMessagesAsCoordinator(
                 coordinator,
                 coordinator_transport,
                 peer_endpoint,
@@ -554,7 +554,7 @@ bool DropCoordinatorPacketsToPeer(
     network::SendReplicatedEntityStatePatchesToAllRemotes(coordinator, coordinator_transport);
     network::SendReplicatedFluidCellPatchesToAllRemotes(coordinator, coordinator_transport);
     network::SendCoordinatorEntityRepairPatchesToAllRemotes(coordinator, coordinator_transport);
-    network::SendOrderedEventsToAllRemotes(coordinator, coordinator_transport);
+    network::SendOrderedMessagesToAllRemotes(coordinator, coordinator_transport);
     const std::vector<network::UdpPacket> packets = TakeCapturedPackets(coordinator_transport);
     if (packets.empty()) {
         std::cerr << "network packet smoke failed at " << label

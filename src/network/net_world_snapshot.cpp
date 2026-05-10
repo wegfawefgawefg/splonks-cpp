@@ -3,7 +3,7 @@
 #include "entity.hpp"
 #include "gameplay_messages.hpp"
 #include "network/net_entity_links.hpp"
-#include "network/net_event.hpp"
+#include "network/net_message.hpp"
 #include "network/net_gameplay_replication.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
@@ -97,10 +97,10 @@ void EnqueueFluidSnapshot(State& state) {
                 continue;
             }
 
-            NetEvent event;
-            event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
-            event.type = NetEventType::FluidCellPatched;
-            event.payload = FluidCellPatchedEvent{
+            NetMessage message;
+            message.header = state.net_session.MakeLocalTransientMessageHeader(state.frame);
+            message.type = NetMessageType::FluidCellPatched;
+            message.payload = FluidCellPatchedMessage{
                 .tile_pos = IVec2::New(x, y),
                 .tile = tile,
                 .amount = amount,
@@ -109,7 +109,7 @@ void EnqueueFluidSnapshot(State& state) {
                 .temp_gravity = temp_gravity,
                 .gravity_strength = gravity_strength,
             };
-            state.net_session.EnqueueOrderedEvent(event);
+            state.net_session.EnqueueOrderedMessage(message);
         }
     }
 }
@@ -189,7 +189,7 @@ void EnqueueEntitySnapshot(State& state) {
 
 } // namespace
 
-void EnqueueWorldSnapshotEvents(State& state) {
+void EnqueueWorldSnapshotMessages(State& state) {
     if (state.net_session.role != NetRole::Coordinator) {
         return;
     }

@@ -11,9 +11,9 @@ namespace splonks {
 namespace {
 
 bool CheckCompactActionRequestPacketSmoke() {
-    network::ActionRequestEventsPacket packet;
-    packet.events.push_back(network::ActionRequestEventEntry{
-        .event_id = 1,
+    network::ActionRequestMessagesPacket packet;
+    packet.messages.push_back(network::ActionRequestMessageEntry{
+        .message_id = 1,
         .source_player_id = 2,
         .stage_instance_id = 3,
         .source_local_frame = 4,
@@ -23,8 +23,8 @@ bool CheckCompactActionRequestPacketSmoke() {
         .velocity_y = -4.0F,
         .tool_slot = 1,
     });
-    packet.events.push_back(network::ActionRequestEventEntry{
-        .event_id = 2,
+    packet.messages.push_back(network::ActionRequestMessageEntry{
+        .message_id = 2,
         .source_player_id = 2,
         .stage_instance_id = 3,
         .source_local_frame = 5,
@@ -43,11 +43,11 @@ bool CheckCompactActionRequestPacketSmoke() {
         .projectile_contact_duration = 20,
     });
 
-    const network::EncodedNetPacket encoded = network::EncodeActionRequestEvents(packet);
+    const network::EncodedNetPacket encoded = network::EncodeActionRequestMessages(packet);
     const std::size_t old_fixed_size =
         sizeof(network::NetPacketHeader) +
         sizeof(std::uint32_t) +
-        packet.events.size() * sizeof(network::ActionRequestEventEntry);
+        packet.messages.size() * sizeof(network::ActionRequestMessageEntry);
     if (encoded.size == 0 || encoded.size >= old_fixed_size) {
         std::cerr << "network protocol smoke failed: compact action packet size "
                   << encoded.size << " did not improve on fixed size "
@@ -55,9 +55,9 @@ bool CheckCompactActionRequestPacketSmoke() {
         return false;
     }
 
-    const std::optional<network::ActionRequestEventsPacket> decoded =
-        network::TryDecodeActionRequestEvents(encoded.bytes.data(), encoded.size);
-    if (!decoded.has_value() || decoded->events.size() != packet.events.size()) {
+    const std::optional<network::ActionRequestMessagesPacket> decoded =
+        network::TryDecodeActionRequestMessages(encoded.bytes.data(), encoded.size);
+    if (!decoded.has_value() || decoded->messages.size() != packet.messages.size()) {
         std::cerr << "network protocol smoke failed: compact action packet did not round trip\n";
         return false;
     }
@@ -103,7 +103,7 @@ bool CheckNetworkProtocolApplySmoke() {
             std::cerr << "network protocol smoke failed: coordinator did not set tile\n";
             return false;
         }
-        if (!ApplyCoordinatorEventsToPeer(coordinator, peer, "tile changed") ||
+        if (!ApplyCoordinatorMessagesToPeer(coordinator, peer, "tile changed") ||
             !CompareProtocolSmokeStates(coordinator, peer, "protocol tile changed")) {
             return false;
         }
@@ -112,7 +112,7 @@ bool CheckNetworkProtocolApplySmoke() {
             std::cerr << "network protocol smoke failed: coordinator did not place rope tile\n";
             return false;
         }
-        if (!ApplyCoordinatorEventsToPeer(coordinator, peer, "rope tile changed") ||
+        if (!ApplyCoordinatorMessagesToPeer(coordinator, peer, "rope tile changed") ||
             !CompareProtocolSmokeStates(coordinator, peer, "protocol rope tile changed")) {
             return false;
         }
@@ -130,7 +130,7 @@ bool CheckNetworkProtocolApplySmoke() {
             std::cerr << "network protocol smoke failed: coordinator did not spawn rock\n";
             return false;
         }
-        if (!ApplyCoordinatorEventsToPeer(coordinator, peer, "entity spawned") ||
+        if (!ApplyCoordinatorMessagesToPeer(coordinator, peer, "entity spawned") ||
             !CompareProtocolSmokeStates(coordinator, peer, "protocol entity spawned")) {
             return false;
         }
@@ -142,7 +142,7 @@ bool CheckNetworkProtocolApplySmoke() {
         rock->render_enabled = false;
         rock->damage_vulnerability = DamageVulnerability::ExplosionOnly;
         world_ops::PatchEntityState(coordinator, *rock, *rock);
-        if (!ApplyCoordinatorEventsToPeer(coordinator, peer, "entity state patched") ||
+        if (!ApplyCoordinatorMessagesToPeer(coordinator, peer, "entity state patched") ||
             !CompareProtocolSmokeStates(coordinator, peer, "protocol entity state patched")) {
             return false;
         }
@@ -151,7 +151,7 @@ bool CheckNetworkProtocolApplySmoke() {
             std::cerr << "network protocol smoke failed: coordinator did not deactivate rock\n";
             return false;
         }
-        if (!ApplyCoordinatorEventsToPeer(coordinator, peer, "entity deactivated") ||
+        if (!ApplyCoordinatorMessagesToPeer(coordinator, peer, "entity deactivated") ||
             !CompareProtocolSmokeStates(coordinator, peer, "protocol entity deactivated")) {
             return false;
         }

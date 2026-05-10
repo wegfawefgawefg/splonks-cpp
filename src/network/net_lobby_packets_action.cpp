@@ -6,7 +6,7 @@ namespace splonks::network {
 
 namespace {
 
-std::uint16_t BuildActionRequestFlags(const ActionRequestEvent& payload) {
+std::uint16_t BuildActionRequestFlags(const ActionRequestMessage& payload) {
     std::uint16_t flags = 0;
     if (payload.clear_velocity) {
         flags |= kActionRequestFlagClearVelocity;
@@ -22,18 +22,18 @@ std::uint16_t BuildActionRequestFlags(const ActionRequestEvent& payload) {
 
 } // namespace
 
-bool IsReplicatedActionRequestEvent(const NetEvent& event) {
-    return event.type == NetEventType::ActionRequest &&
-           std::holds_alternative<ActionRequestEvent>(event.payload);
+bool IsReplicatedActionRequestMessage(const NetMessage& message) {
+    return message.type == NetMessageType::ActionRequest &&
+           std::holds_alternative<ActionRequestMessage>(message.payload);
 }
 
-ActionRequestEventEntry MakeActionRequestEventEntry(const NetEvent& event) {
-    const ActionRequestEvent* const payload = std::get_if<ActionRequestEvent>(&event.payload);
-    return ActionRequestEventEntry{
-        .event_id = event.header.event_id,
-        .source_player_id = event.header.source_player_id,
-        .stage_instance_id = event.header.stage_instance_id,
-        .source_local_frame = event.header.source_local_frame,
+ActionRequestMessageEntry MakeActionRequestMessageEntry(const NetMessage& message) {
+    const ActionRequestMessage* const payload = std::get_if<ActionRequestMessage>(&message.payload);
+    return ActionRequestMessageEntry{
+        .message_id = message.header.message_id,
+        .source_player_id = message.header.source_player_id,
+        .stage_instance_id = message.header.stage_instance_id,
+        .source_local_frame = message.header.source_local_frame,
         .action_kind = payload != nullptr
             ? static_cast<std::uint16_t>(payload->kind)
             : static_cast<std::uint16_t>(NetActionKind::None),
@@ -67,17 +67,17 @@ ActionRequestEventEntry MakeActionRequestEventEntry(const NetEvent& event) {
     };
 }
 
-NetEvent MakeActionRequestEvent(const ActionRequestEventEntry& entry) {
-    NetEvent event;
-    event.header = NetEventHeader{
-        .event_id = entry.event_id,
+NetMessage MakeActionRequestMessage(const ActionRequestMessageEntry& entry) {
+    NetMessage message;
+    message.header = NetMessageHeader{
+        .message_id = entry.message_id,
         .source_player_id = entry.source_player_id,
         .stage_instance_id = entry.stage_instance_id,
         .source_local_frame = entry.source_local_frame,
         .coordinator_order = 0,
     };
-    event.type = NetEventType::ActionRequest;
-    event.payload = ActionRequestEvent{
+    message.type = NetMessageType::ActionRequest;
+    message.payload = ActionRequestMessage{
         .kind = static_cast<NetActionKind>(entry.action_kind),
         .source_entity_id = entry.source_entity_id,
         .target_entity_id = entry.target_entity_id,
@@ -97,7 +97,7 @@ NetEvent MakeActionRequestEvent(const ActionRequestEventEntry& entry) {
         .tool_slot = entry.tool_slot,
         .use_edge = static_cast<NetUseEdge>(entry.use_edge),
     };
-    return event;
+    return message;
 }
 
 } // namespace splonks::network

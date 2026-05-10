@@ -134,7 +134,7 @@ bool StepIdleFrameAndCompare(
     bool compare_after_delivery = true
 ) {
     StepSingleTick(peer, audio, graphics);
-    if (!peer.net_session.pending_outbound_events.empty() &&
+    if (!peer.net_session.pending_outbound_messages.empty() &&
         !DeliverPeerPacketsToCoordinator(
             peer,
             coordinator,
@@ -2792,7 +2792,7 @@ bool StepStageTransitionFramesAndCompare(
     bool dropped_coordinator_delivery = false;
     for (int i = 0; i < transition_frames; ++i) {
         StepSingleTick(peer, audio, graphics);
-        if (!peer.net_session.pending_outbound_events.empty() &&
+        if (!peer.net_session.pending_outbound_messages.empty() &&
             !DeliverPeerPacketsToCoordinator(
                 peer,
                 coordinator,

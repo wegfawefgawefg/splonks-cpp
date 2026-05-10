@@ -6,10 +6,37 @@
 #include "player_id.hpp"
 #include "state.hpp"
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
 namespace splonks::network {
+
+Vec2 GetPrimaryPlayerSpawnPos(const State& state);
+Vec2 GetRemoteSpawnPos(const State& state);
+Vec2 GetEntranceOrRemoteSpawnPos(const State& state);
+const NetRetainedPlayerState* FindRetainedPlayerState(const State& state, PlayerId player_id);
+void RemoveRetainedPlayerState(State& state, PlayerId player_id);
+void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Entity& player);
+void CleanupExpiredRetainedPlayerStates(State& state);
+void DeactivateRetainedAttachedEntity(
+    State& state,
+    const NetRetainedAttachedEntityState& retained,
+    std::optional<VID> attached_vid
+);
+bool IsRetainedReconnectMode(NetReconnectSpawnMode mode);
+Vec2 ResolveReconnectSpawnPos(
+    const State& state,
+    const NetRetainedPlayerState* retained,
+    std::size_t player_index
+);
+void ApplyRetainedPlayerState(
+    State& state,
+    PlayerId player_id,
+    const NetRetainedPlayerState& retained,
+    const Vec2& spawn_pos,
+    const Graphics& graphics
+);
 
 void SendEncodedPacket(
     NetTransportRuntime& transport,
@@ -17,143 +44,150 @@ void SendEncodedPacket(
     const EncodedNetPacket& encoded
 );
 
-bool IsReplicatedEntityStateEvent(const NetEvent& event);
-bool IsReplicatedTileEvent(const NetEvent& event);
-bool IsReplicatedFluidCellEvent(const NetEvent& event);
-bool IsReplicatedEntitySpawnedEvent(const NetEvent& event);
-bool IsReplicatedEntityDamageEvent(const NetEvent& event);
-bool IsReplicatedActionRequestEvent(const NetEvent& event);
-bool IsReplicatedEntityCarryEvent(const NetEvent& event);
-bool IsReplicatedEntityLifecycleEvent(const NetEvent& event);
-bool IsReplicatedPlayerStateEvent(const NetEvent& event);
-bool IsReplicatedRunStateEvent(const NetEvent& event);
-bool IsReplicatedPresentationCommandEvent(const NetEvent& event);
+bool IsReplicatedEntityStateMessage(const NetMessage& message);
+bool IsReplicatedTileMessage(const NetMessage& message);
+bool IsReplicatedFluidCellMessage(const NetMessage& message);
+bool IsReplicatedEntitySpawnedMessage(const NetMessage& message);
+bool IsReplicatedEntityDamageMessage(const NetMessage& message);
+bool IsReplicatedActionRequestMessage(const NetMessage& message);
+bool IsReplicatedEntityCarryMessage(const NetMessage& message);
+bool IsReplicatedEntityLifecycleMessage(const NetMessage& message);
+bool IsReplicatedPlayerStateMessage(const NetMessage& message);
+bool IsReplicatedRunStateMessage(const NetMessage& message);
+bool IsReplicatedPresentationCommandMessage(const NetMessage& message);
 
-TileEventEntry MakeTileEventEntry(const NetEvent& event);
-FluidCellEventEntry MakeFluidCellEventEntry(const NetEvent& event);
-EntitySpawnedEventEntry MakeEntitySpawnedEventEntry(const NetEvent& event);
-EntityDamageEventEntry MakeEntityDamageEventEntry(const NetEvent& event);
-EntityStateEventEntry MakeEntityStateEventEntry(const NetEvent& event);
-EntityCarryEventEntry MakeEntityCarryEventEntry(const NetEvent& event);
-EntityLifecycleEventEntry MakeEntityLifecycleEventEntry(const NetEvent& event);
-PlayerStateEventEntry MakePlayerStateEventEntry(const NetEvent& event);
-RunStateEventEntry MakeRunStateEventEntry(const NetEvent& event);
-PresentationCommandEventEntry MakePresentationCommandEventEntry(const NetEvent& event);
-ActionRequestEventEntry MakeActionRequestEventEntry(const NetEvent& event);
+TileMessageEntry MakeTileMessageEntry(const NetMessage& message);
+FluidCellMessageEntry MakeFluidCellMessageEntry(const NetMessage& message);
+EntitySpawnedMessageEntry MakeEntitySpawnedMessageEntry(const NetMessage& message);
+EntityDamageMessageEntry MakeEntityDamageMessageEntry(const NetMessage& message);
+EntityStateMessageEntry MakeEntityStateMessageEntry(const NetMessage& message);
+EntityCarryMessageEntry MakeEntityCarryMessageEntry(const NetMessage& message);
+EntityLifecycleMessageEntry MakeEntityLifecycleMessageEntry(const NetMessage& message);
+PlayerStateMessageEntry MakePlayerStateMessageEntry(const NetMessage& message);
+RunStateMessageEntry MakeRunStateMessageEntry(const NetMessage& message);
+PresentationCommandMessageEntry MakePresentationCommandMessageEntry(const NetMessage& message);
+ActionRequestMessageEntry MakeActionRequestMessageEntry(const NetMessage& message);
 
-NetEvent MakeTileEvent(const TileEventEntry& entry);
-NetEvent MakeFluidCellEvent(const FluidCellEventEntry& entry);
-NetEvent MakeEntitySpawnedEvent(const EntitySpawnedEventEntry& entry);
-NetEvent MakeEntityDamageEvent(const EntityDamageEventEntry& entry);
-NetEvent MakeEntityStateEvent(const EntityStateEventEntry& entry);
-NetEvent MakeEntityCarryEvent(const EntityCarryEventEntry& entry);
-NetEvent MakeEntityLifecycleEvent(const EntityLifecycleEventEntry& entry);
-NetEvent MakePlayerStateEvent(const PlayerStateEventEntry& entry);
-NetEvent MakeRunStateEvent(const RunStateEventEntry& entry);
-NetEvent MakePresentationCommandEvent(const PresentationCommandEventEntry& entry);
-NetEvent MakeActionRequestEvent(const ActionRequestEventEntry& entry);
+NetMessage MakeTileMessage(const TileMessageEntry& entry);
+NetMessage MakeFluidCellMessage(const FluidCellMessageEntry& entry);
+NetMessage MakeEntitySpawnedMessage(const EntitySpawnedMessageEntry& entry);
+NetMessage MakeEntityDamageMessage(const EntityDamageMessageEntry& entry);
+NetMessage MakeEntityStateMessage(const EntityStateMessageEntry& entry);
+NetMessage MakeEntityCarryMessage(const EntityCarryMessageEntry& entry);
+NetMessage MakeEntityLifecycleMessage(const EntityLifecycleMessageEntry& entry);
+NetMessage MakePlayerStateMessage(const PlayerStateMessageEntry& entry);
+NetMessage MakeRunStateMessage(const RunStateMessageEntry& entry);
+NetMessage MakePresentationCommandMessage(const PresentationCommandMessageEntry& entry);
+NetMessage MakeActionRequestMessage(const ActionRequestMessageEntry& entry);
 
-void SendTileEvents(
+void SendTileMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendFluidCellEvents(
+void SendFluidCellMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendEntitySpawnedEvents(
+void SendEntitySpawnedMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendEntityDamageEvents(
+void SendEntityDamageMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendEntityStateEvents(
+void SendEntityStateMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendEntityCarryEvents(
+void SendEntityCarryMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendEntityLifecycleEvents(
+void SendEntityLifecycleMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendPlayerStateEvents(
+void SendPlayerStateMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendRunStateEvents(
+void SendRunStateMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendPresentationCommandEvents(
+void SendPresentationCommandMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
-void SendActionRequestEvents(
+void SendActionRequestMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEvent>& events
+    const std::vector<NetMessage>& messages
 );
 void SendActionRequestAck(
     State& state,
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEventId>& event_ids
+    const std::vector<NetMessageId>& message_ids
 );
 
 void SendJoinRequest(State& state);
+void SendLeaveNotice(State& state);
+bool EnsureHostSyncedStage(State& state, std::string* status_out);
 void MarkRemoteEndpointHeard(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
     std::uint64_t frame
 );
+void RemoveRemotePlayers(
+    State& state,
+    NetTransportRuntime& transport,
+    const std::vector<PlayerId>& player_ids
+);
 void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport);
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
 void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
 
-void SendPendingPeerEventsToCoordinator(State& state, NetTransportRuntime& transport);
-void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport);
-void PruneAckedOrderedEvents(State& state, const NetTransportRuntime& transport);
-void SendDurableEventAckToCoordinator(State& state, NetTransportRuntime& transport);
-void HandleDurableEventAckAsCoordinator(
+void SendPendingPeerMessagesToCoordinator(State& state, NetTransportRuntime& transport);
+void SendOrderedMessagesToAllRemotes(State& state, NetTransportRuntime& transport);
+void PruneAckedOrderedMessages(State& state, const NetTransportRuntime& transport);
+void SendDurableMessageAckToCoordinator(State& state, NetTransportRuntime& transport);
+void HandleDurableMessageAckAsCoordinator(
     State& state,
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const DurableEventAckPacket& ack
+    const DurableMessageAckPacket& ack
 );
-void HandleTileEventsAsPeer(State& state, const TileEventsPacket& packet);
-void HandleFluidCellEventsAsPeer(State& state, const FluidCellEventsPacket& packet);
-void HandleEntitySpawnedEventsAsPeer(State& state, const EntitySpawnedEventsPacket& packet);
-void HandleEntityDamageEventsAsPeer(State& state, const EntityDamageEventsPacket& packet);
-void HandleEntityStateEventsAsPeer(State& state, const EntityStateEventsPacket& packet);
-void HandleEntityCarryEventsAsPeer(State& state, const EntityCarryEventsPacket& packet);
-void HandleEntityLifecycleEventsAsPeer(State& state, const EntityLifecycleEventsPacket& packet);
-void HandlePlayerStateEventsAsPeer(State& state, const PlayerStateEventsPacket& packet);
-void HandleRunStateEventsAsPeer(State& state, const RunStateEventsPacket& packet);
-void HandlePresentationCommandEventsAsCoordinator(
+void HandleTileMessagesAsPeer(State& state, const TileMessagesPacket& packet);
+void HandleFluidCellMessagesAsPeer(State& state, const FluidCellMessagesPacket& packet);
+void HandleEntitySpawnedMessagesAsPeer(State& state, const EntitySpawnedMessagesPacket& packet);
+void HandleEntityDamageMessagesAsPeer(State& state, const EntityDamageMessagesPacket& packet);
+void HandleEntityStateMessagesAsPeer(State& state, const EntityStateMessagesPacket& packet);
+void HandleEntityCarryMessagesAsPeer(State& state, const EntityCarryMessagesPacket& packet);
+void HandleEntityLifecycleMessagesAsPeer(State& state, const EntityLifecycleMessagesPacket& packet);
+void HandlePlayerStateMessagesAsPeer(State& state, const PlayerStateMessagesPacket& packet);
+void HandleRunStateMessagesAsPeer(State& state, const RunStateMessagesPacket& packet);
+void HandlePresentationCommandMessagesAsCoordinator(
     State& state,
-    const PresentationCommandEventsPacket& packet
+    const PresentationCommandMessagesPacket& packet
 );
-void HandlePresentationCommandEventsAsPeer(State& state, const PresentationCommandEventsPacket& packet);
-void HandleActionRequestEventsAsCoordinator(
+void HandlePresentationCommandMessagesAsPeer(State& state, const PresentationCommandMessagesPacket& packet);
+void HandleActionRequestMessagesAsCoordinator(
     State& state,
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const ActionRequestEventsPacket& packet
+    const ActionRequestMessagesPacket& packet
 );
 void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& packet);
 

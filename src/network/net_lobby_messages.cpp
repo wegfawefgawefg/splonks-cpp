@@ -15,35 +15,35 @@ namespace splonks::network {
 
 namespace {
 
-void RemovePendingOutboundEvent(NetSessionState& session, NetEventId event_id) {
-    session.pending_outbound_events.erase(
+void RemovePendingOutboundMessage(NetSessionState& session, NetMessageId message_id) {
+    session.pending_outbound_messages.erase(
         std::remove_if(
-            session.pending_outbound_events.begin(),
-            session.pending_outbound_events.end(),
-            [event_id](const NetEvent& event) { return event.header.event_id == event_id; }
+            session.pending_outbound_messages.begin(),
+            session.pending_outbound_messages.end(),
+            [message_id](const NetMessage& message) { return message.header.message_id == message_id; }
         ),
-        session.pending_outbound_events.end()
+        session.pending_outbound_messages.end()
     );
 }
 
 void RemovePendingBreakTileRequestsForTile(NetSessionState& session, const IVec2& tile_pos) {
-    session.pending_outbound_events.erase(
+    session.pending_outbound_messages.erase(
         std::remove_if(
-            session.pending_outbound_events.begin(),
-            session.pending_outbound_events.end(),
-            [&](const NetEvent& event) {
-                if (event.type != NetEventType::ActionRequest) {
+            session.pending_outbound_messages.begin(),
+            session.pending_outbound_messages.end(),
+            [&](const NetMessage& message) {
+                if (message.type != NetMessageType::ActionRequest) {
                     return false;
                 }
-                const ActionRequestEvent* const payload =
-                    std::get_if<ActionRequestEvent>(&event.payload);
+                const ActionRequestMessage* const payload =
+                    std::get_if<ActionRequestMessage>(&message.payload);
                 return payload != nullptr &&
                        payload->kind == NetActionKind::BreakTile &&
                        payload->tile_pos.x == tile_pos.x &&
                        payload->tile_pos.y == tile_pos.y;
             }
         ),
-        session.pending_outbound_events.end()
+        session.pending_outbound_messages.end()
     );
 }
 
@@ -52,16 +52,16 @@ void RemovePendingEntityActionRequestsForResult(
     NetEntityId source_entity_id,
     NetEntityId target_entity_id
 ) {
-    session.pending_outbound_events.erase(
+    session.pending_outbound_messages.erase(
         std::remove_if(
-            session.pending_outbound_events.begin(),
-            session.pending_outbound_events.end(),
-            [&](const NetEvent& event) {
-                if (event.type != NetEventType::ActionRequest) {
+            session.pending_outbound_messages.begin(),
+            session.pending_outbound_messages.end(),
+            [&](const NetMessage& message) {
+                if (message.type != NetMessageType::ActionRequest) {
                     return false;
                 }
-                const ActionRequestEvent* const payload =
-                    std::get_if<ActionRequestEvent>(&event.payload);
+                const ActionRequestMessage* const payload =
+                    std::get_if<ActionRequestMessage>(&message.payload);
                 if (payload == nullptr ||
                     (payload->kind != NetActionKind::DamageEntity &&
                      payload->kind != NetActionKind::HitEntity)) {
@@ -71,22 +71,22 @@ void RemovePendingEntityActionRequestsForResult(
                        payload->target_entity_id == target_entity_id;
             }
         ),
-        session.pending_outbound_events.end()
+        session.pending_outbound_messages.end()
     );
 }
 
-bool IsOneShotTransientCoordinatorEvent(const NetEvent& event) {
-    return event.header.coordinator_order == 0 &&
-           (event.type == NetEventType::EntityStatePatched ||
-            event.type == NetEventType::FluidCellPatched);
+bool IsOneShotTransientCoordinatorMessage(const NetMessage& message) {
+    return message.header.coordinator_order == 0 &&
+           (message.type == NetMessageType::EntityStatePatched ||
+            message.type == NetMessageType::FluidCellPatched);
 }
 
 std::optional<std::uint64_t> FirstRetainedDurableCoordinatorOrder(
     const NetSessionState& session
 ) {
     std::optional<std::uint64_t> first_order;
-    for (const NetEvent& event : session.ordered_events) {
-        const std::uint64_t order = event.header.coordinator_order;
+    for (const NetMessage& message : session.ordered_messages) {
+        const std::uint64_t order = message.header.coordinator_order;
         if (order == 0) {
             continue;
         }
@@ -162,7 +162,7 @@ void EnsureResyncForRemotesBehindRetainedHistory(
     }
 
     const std::uint64_t snapshot_start_order = state.net_session.next_coordinator_order;
-    EnqueueWorldSnapshotEvents(state);
+    EnqueueWorldSnapshotMessages(state);
 
     for (NetRemoteEndpoint& remote : transport.remotes) {
         if (!RemoteNeedsSameStageResync(remote, first_retained_order)) {
@@ -188,43 +188,43 @@ void SendPendingSameStageResyncs(State& state, NetTransportRuntime& transport) {
     }
 }
 
-void PruneSentTransientCoordinatorEvents(NetSessionState& session) {
-    session.ordered_events.erase(
+void PruneSentTransientCoordinatorMessages(NetSessionState& session) {
+    session.ordered_messages.erase(
         std::remove_if(
-            session.ordered_events.begin(),
-            session.ordered_events.end(),
-            [](const NetEvent& event) { return IsOneShotTransientCoordinatorEvent(event); }
+            session.ordered_messages.begin(),
+            session.ordered_messages.end(),
+            [](const NetMessage& message) { return IsOneShotTransientCoordinatorMessage(message); }
         ),
-        session.ordered_events.end()
+        session.ordered_messages.end()
     );
 }
 
-bool HasQueuedOrAppliedEvent(const NetSessionState& session, NetEventId event_id) {
-    if (session.HasAppliedEvent(event_id)) {
+bool HasQueuedOrAppliedMessage(const NetSessionState& session, NetMessageId message_id) {
+    if (session.HasAppliedMessage(message_id)) {
         return true;
     }
-    for (const NetEvent& event : session.pending_outbound_events) {
-        if (event.header.event_id == event_id) {
+    for (const NetMessage& message : session.pending_outbound_messages) {
+        if (message.header.message_id == message_id) {
             return true;
         }
     }
-    for (const NetEvent& event : session.ordered_events) {
-        if (event.header.event_id == event_id) {
+    for (const NetMessage& message : session.ordered_messages) {
+        if (message.header.message_id == message_id) {
             return true;
         }
     }
     return false;
 }
 
-void NoteCoordinatorOrderApplied(NetSessionState& session, const NetEvent& event) {
-    session.MarkCoordinatorOrderApplied(event);
+void NoteCoordinatorOrderApplied(NetSessionState& session, const NetMessage& message) {
+    session.MarkCoordinatorOrderApplied(message);
 }
 
-void MarkOutboundEchoEventApplied(NetSessionState& session, const NetEvent& event) {
-    RemovePendingOutboundEvent(session, event.header.event_id);
-    if (session.MarkEventApplied(event.header.event_id)) {
-        NoteCoordinatorOrderApplied(session, event);
-        session.AddEventLog(NetEventLogPhase::SkippedLocalApply, event);
+void MarkOutboundEchoMessageApplied(NetSessionState& session, const NetMessage& message) {
+    RemovePendingOutboundMessage(session, message.header.message_id);
+    if (session.MarkMessageApplied(message.header.message_id)) {
+        NoteCoordinatorOrderApplied(session, message);
+        session.AddMessageLog(NetMessageLogPhase::SkippedLocalApply, message);
     }
 }
 
@@ -235,32 +235,32 @@ NetEntityId CanonicalizeIncomingEntityId(const NetSessionState& session, NetEnti
     return session.ResolveEntityIdAlias(entity_id);
 }
 
-void CanonicalizeIncomingEventEntityIds(NetSessionState& session, NetEvent& event) {
-    if (EntitySpawnedEvent* const payload = std::get_if<EntitySpawnedEvent>(&event.payload)) {
+void CanonicalizeIncomingMessageEntityIds(NetSessionState& session, NetMessage& message) {
+    if (EntitySpawnedMessage* const payload = std::get_if<EntitySpawnedMessage>(&message.payload)) {
         payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
         payload->held_by_id = CanonicalizeIncomingEntityId(session, payload->held_by_id);
         return;
     }
-    if (EntityHeldEvent* const payload = std::get_if<EntityHeldEvent>(&event.payload)) {
+    if (EntityHeldMessage* const payload = std::get_if<EntityHeldMessage>(&message.payload)) {
         payload->holder_id = CanonicalizeIncomingEntityId(session, payload->holder_id);
         payload->held_id = CanonicalizeIncomingEntityId(session, payload->held_id);
         return;
     }
-    if (EntityDroppedEvent* const payload = std::get_if<EntityDroppedEvent>(&event.payload)) {
+    if (EntityDroppedMessage* const payload = std::get_if<EntityDroppedMessage>(&message.payload)) {
         payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
         return;
     }
-    if (EntityThrownEvent* const payload = std::get_if<EntityThrownEvent>(&event.payload)) {
+    if (EntityThrownMessage* const payload = std::get_if<EntityThrownMessage>(&message.payload)) {
         payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
         payload->thrower_id = CanonicalizeIncomingEntityId(session, payload->thrower_id);
         return;
     }
-    if (EntityDamagedEvent* const payload = std::get_if<EntityDamagedEvent>(&event.payload)) {
+    if (EntityDamagedMessage* const payload = std::get_if<EntityDamagedMessage>(&message.payload)) {
         payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
         payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
         return;
     }
-    if (EntityStatePatchedEvent* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload)) {
+    if (EntityStatePatchedMessage* const payload = std::get_if<EntityStatePatchedMessage>(&message.payload)) {
         payload->entity_id = CanonicalizeIncomingEntityId(session, payload->entity_id);
         payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
         payload->entity_a_id = CanonicalizeIncomingEntityId(session, payload->entity_a_id);
@@ -270,16 +270,16 @@ void CanonicalizeIncomingEventEntityIds(NetSessionState& session, NetEvent& even
         payload->buyable_shop_owner_id = CanonicalizeIncomingEntityId(session, payload->buyable_shop_owner_id);
         return;
     }
-    if (PlayerStatePatchedEvent* const payload = std::get_if<PlayerStatePatchedEvent>(&event.payload)) {
+    if (PlayerStatePatchedMessage* const payload = std::get_if<PlayerStatePatchedMessage>(&message.payload)) {
         payload->player_entity_id = CanonicalizeIncomingEntityId(session, payload->player_entity_id);
         return;
     }
-    if (PresentationCommandEvent* const payload = std::get_if<PresentationCommandEvent>(&event.payload)) {
+    if (PresentationCommandMessage* const payload = std::get_if<PresentationCommandMessage>(&message.payload)) {
         payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
         payload->target_entity_id = CanonicalizeIncomingEntityId(session, payload->target_entity_id);
         return;
     }
-    if (ActionRequestEvent* const payload = std::get_if<ActionRequestEvent>(&event.payload)) {
+    if (ActionRequestMessage* const payload = std::get_if<ActionRequestMessage>(&message.payload)) {
         payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
         payload->target_entity_id = CanonicalizeIncomingEntityId(session, payload->target_entity_id);
     }
@@ -301,7 +301,7 @@ bool EndpointOwnsPlayer(
 }
 
 std::optional<GameplayActionRequested> MakeGameplayActionRequest(
-    const ActionRequestEvent& payload,
+    const ActionRequestMessage& payload,
     std::optional<VID> source_vid,
     std::optional<VID> target_vid
 ) {
@@ -422,29 +422,29 @@ std::optional<GameplayActionRequested> MakeGameplayActionRequest(
     return std::nullopt;
 }
 
-bool IsTransientEntityStatePatch(const NetEvent& event) {
-    if (event.type != NetEventType::EntityStatePatched) {
+bool IsTransientEntityStatePatch(const NetMessage& message) {
+    if (message.type != NetMessageType::EntityStatePatched) {
         return false;
     }
-    const auto* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
+    const auto* const payload = std::get_if<EntityStatePatchedMessage>(&message.payload);
     return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
 }
 
 } // namespace
 
-void SendPendingPeerEventsToCoordinator(State& state, NetTransportRuntime& transport) {
-    if (state.net_session.pending_outbound_events.empty()) {
+void SendPendingPeerMessagesToCoordinator(State& state, NetTransportRuntime& transport) {
+    if (state.net_session.pending_outbound_messages.empty()) {
         return;
     }
-    SendActionRequestEvents(
+    SendActionRequestMessages(
         transport,
         transport.coordinator_endpoint,
-        state.net_session.pending_outbound_events
+        state.net_session.pending_outbound_messages
     );
-    SendPresentationCommandEvents(
+    SendPresentationCommandMessages(
         transport,
         transport.coordinator_endpoint,
-        state.net_session.pending_outbound_events
+        state.net_session.pending_outbound_messages
     );
 }
 
@@ -452,68 +452,68 @@ void SendActionRequestAck(
     State& state,
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const std::vector<NetEventId>& event_ids
+    const std::vector<NetMessageId>& message_ids
 ) {
-    if (event_ids.empty()) {
+    if (message_ids.empty()) {
         return;
     }
 
     ActionRequestAckPacket packet;
     packet.stage_instance_id = state.net_session.stage_instance_id;
     packet.coordinator_player_id = state.net_session.local_player_id;
-    for (NetEventId event_id : event_ids) {
-        if (event_id == kInvalidNetEventId) {
+    for (NetMessageId message_id : message_ids) {
+        if (message_id == kInvalidNetMessageId) {
             continue;
         }
-        if (packet.ack_count == packet.event_ids.size()) {
+        if (packet.ack_count == packet.message_ids.size()) {
             SendEncodedPacket(transport, endpoint, EncodeActionRequestAck(packet));
             packet = ActionRequestAckPacket{};
             packet.stage_instance_id = state.net_session.stage_instance_id;
             packet.coordinator_player_id = state.net_session.local_player_id;
         }
-        packet.event_ids[packet.ack_count++] = event_id;
+        packet.message_ids[packet.ack_count++] = message_id;
     }
     if (packet.ack_count > 0) {
         SendEncodedPacket(transport, endpoint, EncodeActionRequestAck(packet));
     }
 }
 
-void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport) {
+void SendOrderedMessagesToAllRemotes(State& state, NetTransportRuntime& transport) {
     EnsureResyncForRemotesBehindRetainedHistory(state, transport);
     SendPendingSameStageResyncs(state, transport);
 
-    if (state.net_session.ordered_events.empty()) {
+    if (state.net_session.ordered_messages.empty()) {
         return;
     }
     for (const NetRemoteEndpoint& remote : transport.remotes) {
-        std::vector<NetEvent> unacked_events;
-        unacked_events.reserve(state.net_session.ordered_events.size());
-        for (const NetEvent& event : state.net_session.ordered_events) {
-            if ((event.header.coordinator_order == 0 &&
-                 (IsReplicatedEntityStateEvent(event) || IsReplicatedFluidCellEvent(event))) ||
-                event.header.coordinator_order > remote.highest_acked_coordinator_order) {
-                unacked_events.push_back(event);
+        std::vector<NetMessage> unacked_messages;
+        unacked_messages.reserve(state.net_session.ordered_messages.size());
+        for (const NetMessage& message : state.net_session.ordered_messages) {
+            if ((message.header.coordinator_order == 0 &&
+                 (IsReplicatedEntityStateMessage(message) || IsReplicatedFluidCellMessage(message))) ||
+                message.header.coordinator_order > remote.highest_acked_coordinator_order) {
+                unacked_messages.push_back(message);
             }
         }
-        if (unacked_events.empty()) {
+        if (unacked_messages.empty()) {
             continue;
         }
-        SendTileEvents(transport, remote.endpoint, unacked_events);
-        SendFluidCellEvents(transport, remote.endpoint, unacked_events);
-        SendEntitySpawnedEvents(transport, remote.endpoint, unacked_events);
-        SendEntityDamageEvents(transport, remote.endpoint, unacked_events);
-        SendEntityStateEvents(transport, remote.endpoint, unacked_events);
-        SendEntityCarryEvents(transport, remote.endpoint, unacked_events);
-        SendEntityLifecycleEvents(transport, remote.endpoint, unacked_events);
-        SendPlayerStateEvents(transport, remote.endpoint, unacked_events);
-        SendRunStateEvents(transport, remote.endpoint, unacked_events);
-        SendPresentationCommandEvents(transport, remote.endpoint, unacked_events);
+        SendTileMessages(transport, remote.endpoint, unacked_messages);
+        SendFluidCellMessages(transport, remote.endpoint, unacked_messages);
+        SendEntitySpawnedMessages(transport, remote.endpoint, unacked_messages);
+        SendEntityDamageMessages(transport, remote.endpoint, unacked_messages);
+        SendEntityStateMessages(transport, remote.endpoint, unacked_messages);
+        SendEntityCarryMessages(transport, remote.endpoint, unacked_messages);
+        SendEntityLifecycleMessages(transport, remote.endpoint, unacked_messages);
+        SendPlayerStateMessages(transport, remote.endpoint, unacked_messages);
+        SendRunStateMessages(transport, remote.endpoint, unacked_messages);
+        SendPresentationCommandMessages(transport, remote.endpoint, unacked_messages);
     }
-    PruneSentTransientCoordinatorEvents(state.net_session);
+    PruneSentTransientCoordinatorMessages(state.net_session);
 }
 
-void PruneAckedOrderedEvents(State& state, const NetTransportRuntime& transport) {
-    if (state.net_session.ordered_events.empty() || transport.remotes.empty()) {
+void PruneAckedOrderedMessages(State& state, const NetTransportRuntime& transport) {
+    if (state.net_session.ordered_messages.empty() || transport.remotes.empty()) {
         return;
     }
 
@@ -529,40 +529,40 @@ void PruneAckedOrderedEvents(State& state, const NetTransportRuntime& transport)
         return;
     }
 
-    state.net_session.ordered_events.erase(
+    state.net_session.ordered_messages.erase(
         std::remove_if(
-            state.net_session.ordered_events.begin(),
-            state.net_session.ordered_events.end(),
-            [lowest_remote_ack](const NetEvent& event) {
-                return event.header.coordinator_order != 0 &&
-                       event.header.coordinator_order <= lowest_remote_ack;
+            state.net_session.ordered_messages.begin(),
+            state.net_session.ordered_messages.end(),
+            [lowest_remote_ack](const NetMessage& message) {
+                return message.header.coordinator_order != 0 &&
+                       message.header.coordinator_order <= lowest_remote_ack;
             }
         ),
-        state.net_session.ordered_events.end()
+        state.net_session.ordered_messages.end()
     );
 }
 
-void SendDurableEventAckToCoordinator(State& state, NetTransportRuntime& transport) {
+void SendDurableMessageAckToCoordinator(State& state, NetTransportRuntime& transport) {
     if (state.net_session.highest_applied_coordinator_order == 0) {
         return;
     }
 
-    DurableEventAckPacket ack;
+    DurableMessageAckPacket ack;
     ack.stage_instance_id = state.net_session.stage_instance_id;
     ack.player_id = state.net_session.local_player_id;
     ack.highest_applied_coordinator_order = state.net_session.highest_applied_coordinator_order;
     SendEncodedPacket(
         transport,
         transport.coordinator_endpoint,
-        EncodeDurableEventAck(ack)
+        EncodeDurableMessageAck(ack)
     );
 }
 
-void HandleDurableEventAckAsCoordinator(
+void HandleDurableMessageAckAsCoordinator(
     State& state,
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const DurableEventAckPacket& ack
+    const DurableMessageAckPacket& ack
 ) {
     if (ack.stage_instance_id != state.net_session.stage_instance_id ||
         ack.player_id == kInvalidPlayerId) {
@@ -580,81 +580,81 @@ void HandleDurableEventAckAsCoordinator(
             remote.highest_acked_coordinator_order,
             ack.highest_applied_coordinator_order
         );
-        PruneAckedOrderedEvents(state, transport);
+        PruneAckedOrderedMessages(state, transport);
         return;
     }
 }
 
-void HandleTileEventsAsPeer(State& state, const TileEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const TileEventEntry& entry = packet.events[i];
+void HandleTileMessagesAsPeer(State& state, const TileMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const TileMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (static_cast<NetEventType>(entry.event_type) == NetEventType::TileBroken) {
+        if (static_cast<NetMessageType>(entry.message_type) == NetMessageType::TileBroken) {
             RemovePendingBreakTileRequestsForTile(
                 state.net_session,
                 IVec2::New(entry.tile_x, entry.tile_y)
             );
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        NetEvent event = MakeTileEvent(entry);
-        if (event.type != NetEventType::None) {
-            state.net_session.EnqueueOrderedEvent(event);
+        NetMessage message = MakeTileMessage(entry);
+        if (message.type != NetMessageType::None) {
+            state.net_session.EnqueueOrderedMessage(message);
         }
     }
 }
 
-void HandleFluidCellEventsAsPeer(State& state, const FluidCellEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const FluidCellEventEntry& entry = packet.events[i];
+void HandleFluidCellMessagesAsPeer(State& state, const FluidCellMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const FluidCellMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        NetEvent event = MakeFluidCellEvent(entry);
-        if (event.header.coordinator_order == 0) {
-            state.net_session.EnqueueTransientEvent(event);
+        NetMessage message = MakeFluidCellMessage(entry);
+        if (message.header.coordinator_order == 0) {
+            state.net_session.EnqueueTransientMessage(message);
         } else {
-            state.net_session.EnqueueOrderedEvent(event);
+            state.net_session.EnqueueOrderedMessage(message);
         }
     }
 }
 
-void HandleEntitySpawnedEventsAsPeer(State& state, const EntitySpawnedEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const EntitySpawnedEventEntry& entry = packet.events[i];
+void HandleEntitySpawnedMessagesAsPeer(State& state, const EntitySpawnedMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const EntitySpawnedMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        state.net_session.EnqueueOrderedEvent(MakeEntitySpawnedEvent(entry));
+        state.net_session.EnqueueOrderedMessage(MakeEntitySpawnedMessage(entry));
     }
 }
 
-void HandleEntityDamageEventsAsPeer(State& state, const EntityDamageEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const EntityDamageEventEntry& entry = packet.events[i];
+void HandleEntityDamageMessagesAsPeer(State& state, const EntityDamageMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const EntityDamageMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
@@ -665,18 +665,18 @@ void HandleEntityDamageEventsAsPeer(State& state, const EntityDamageEventsPacket
             entry.source_entity_id,
             entry.entity_id
         );
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        state.net_session.EnqueueOrderedEvent(MakeEntityDamageEvent(entry));
+        state.net_session.EnqueueOrderedMessage(MakeEntityDamageMessage(entry));
     }
 }
 
-void HandleEntityStateEventsAsPeer(State& state, const EntityStateEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const EntityStateEventEntry& entry = packet.events[i];
+void HandleEntityStateMessagesAsPeer(State& state, const EntityStateMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const EntityStateMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
@@ -687,146 +687,146 @@ void HandleEntityStateEventsAsPeer(State& state, const EntityStateEventsPacket& 
             entry.source_entity_id,
             entry.entity_id
         );
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        NetEvent event = MakeEntityStateEvent(entry);
-        if (IsTransientEntityStatePatch(event)) {
-            state.net_session.EnqueueTransientEvent(event);
+        NetMessage message = MakeEntityStateMessage(entry);
+        if (IsTransientEntityStatePatch(message)) {
+            state.net_session.EnqueueTransientMessage(message);
         } else {
-            state.net_session.EnqueueOrderedEvent(event);
+            state.net_session.EnqueueOrderedMessage(message);
         }
     }
 }
 
-void HandleEntityCarryEventsAsPeer(State& state, const EntityCarryEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const EntityCarryEventEntry& entry = packet.events[i];
+void HandleEntityCarryMessagesAsPeer(State& state, const EntityCarryMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const EntityCarryMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        NetEvent event = MakeEntityCarryEvent(entry);
-        if (event.type != NetEventType::None) {
-            state.net_session.EnqueueOrderedEvent(event);
+        NetMessage message = MakeEntityCarryMessage(entry);
+        if (message.type != NetMessageType::None) {
+            state.net_session.EnqueueOrderedMessage(message);
         }
     }
 }
 
-void HandleEntityLifecycleEventsAsPeer(State& state, const EntityLifecycleEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const EntityLifecycleEventEntry& entry = packet.events[i];
+void HandleEntityLifecycleMessagesAsPeer(State& state, const EntityLifecycleMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const EntityLifecycleMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        NetEvent event = MakeEntityLifecycleEvent(entry);
-        if (event.type != NetEventType::None) {
-            state.net_session.EnqueueOrderedEvent(event);
+        NetMessage message = MakeEntityLifecycleMessage(entry);
+        if (message.type != NetMessageType::None) {
+            state.net_session.EnqueueOrderedMessage(message);
         }
     }
 }
 
-void HandlePlayerStateEventsAsPeer(State& state, const PlayerStateEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const PlayerStateEventEntry& entry = packet.events[i];
+void HandlePlayerStateMessagesAsPeer(State& state, const PlayerStateMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const PlayerStateMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        state.net_session.EnqueueOrderedEvent(MakePlayerStateEvent(entry));
+        state.net_session.EnqueueOrderedMessage(MakePlayerStateMessage(entry));
     }
 }
 
-void HandleRunStateEventsAsPeer(State& state, const RunStateEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const RunStateEventEntry& entry = packet.events[i];
+void HandleRunStateMessagesAsPeer(State& state, const RunStateMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const RunStateMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        state.net_session.EnqueueOrderedEvent(MakeRunStateEvent(entry));
+        state.net_session.EnqueueOrderedMessage(MakeRunStateMessage(entry));
     }
 }
 
-void HandlePresentationCommandEventsAsCoordinator(State& state, const PresentationCommandEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        NetEvent event = MakePresentationCommandEvent(packet.events[i]);
-        if (event.header.stage_instance_id != state.net_session.stage_instance_id ||
-            event.header.event_id == kInvalidNetEventId ||
-            HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
+void HandlePresentationCommandMessagesAsCoordinator(State& state, const PresentationCommandMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        NetMessage message = MakePresentationCommandMessage(packet.messages[i]);
+        if (message.header.stage_instance_id != state.net_session.stage_instance_id ||
+            message.header.message_id == kInvalidNetMessageId ||
+            HasQueuedOrAppliedMessage(state.net_session, message.header.message_id)) {
             continue;
         }
-        CanonicalizeIncomingEventEntityIds(state.net_session, event);
-        event.header.coordinator_order = state.net_session.next_coordinator_order++;
-        state.net_session.EnqueueOrderedEvent(event);
+        CanonicalizeIncomingMessageEntityIds(state.net_session, message);
+        message.header.coordinator_order = state.net_session.next_coordinator_order++;
+        state.net_session.EnqueueOrderedMessage(message);
     }
 }
 
-void HandlePresentationCommandEventsAsPeer(State& state, const PresentationCommandEventsPacket& packet) {
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        const PresentationCommandEventEntry& entry = packet.events[i];
+void HandlePresentationCommandMessagesAsPeer(State& state, const PresentationCommandMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const PresentationCommandMessageEntry& entry = packet.messages[i];
         if (entry.stage_instance_id != state.net_session.stage_instance_id ||
-            entry.event_id == kInvalidNetEventId) {
+            entry.message_id == kInvalidNetMessageId) {
             continue;
         }
         if (entry.source_player_id == state.net_session.local_player_id) {
-            MarkOutboundEchoEventApplied(state.net_session, MakePresentationCommandEvent(entry));
+            MarkOutboundEchoMessageApplied(state.net_session, MakePresentationCommandMessage(entry));
             continue;
         }
-        if (HasQueuedOrAppliedEvent(state.net_session, entry.event_id)) {
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
-        state.net_session.EnqueueOrderedEvent(MakePresentationCommandEvent(entry));
+        state.net_session.EnqueueOrderedMessage(MakePresentationCommandMessage(entry));
     }
 }
 
-void HandleActionRequestEventsAsCoordinator(
+void HandleActionRequestMessagesAsCoordinator(
     State& state,
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
-    const ActionRequestEventsPacket& packet
+    const ActionRequestMessagesPacket& packet
 ) {
-    std::vector<NetEventId> ack_event_ids;
-    ack_event_ids.reserve(packet.events.size());
-    for (const ActionRequestEventEntry& entry : packet.events) {
-        NetEvent event = MakeActionRequestEvent(entry);
-        if (event.header.stage_instance_id != state.net_session.stage_instance_id ||
-            event.header.event_id == kInvalidNetEventId ||
-            event.type != NetEventType::ActionRequest) {
+    std::vector<NetMessageId> ack_message_ids;
+    ack_message_ids.reserve(packet.messages.size());
+    for (const ActionRequestMessageEntry& entry : packet.messages) {
+        NetMessage message = MakeActionRequestMessage(entry);
+        if (message.header.stage_instance_id != state.net_session.stage_instance_id ||
+            message.header.message_id == kInvalidNetMessageId ||
+            message.type != NetMessageType::ActionRequest) {
             continue;
         }
-        ack_event_ids.push_back(event.header.event_id);
-        if (HasQueuedOrAppliedEvent(state.net_session, event.header.event_id)) {
+        ack_message_ids.push_back(message.header.message_id);
+        if (HasQueuedOrAppliedMessage(state.net_session, message.header.message_id)) {
             continue;
         }
 
-        CanonicalizeIncomingEventEntityIds(state.net_session, event);
-        const ActionRequestEvent* const payload = std::get_if<ActionRequestEvent>(&event.payload);
+        CanonicalizeIncomingMessageEntityIds(state.net_session, message);
+        const ActionRequestMessage* const payload = std::get_if<ActionRequestMessage>(&message.payload);
         if (payload == nullptr || payload->kind == NetActionKind::None) {
             continue;
         }
@@ -839,11 +839,11 @@ void HandleActionRequestEventsAsCoordinator(
             continue;
         }
         world_ops::QueuePendingGameplayAction(state, *action);
-        if (state.net_session.MarkEventApplied(event.header.event_id)) {
-            state.net_session.AddEventLog(NetEventLogPhase::Applied, event);
+        if (state.net_session.MarkMessageApplied(message.header.message_id)) {
+            state.net_session.AddMessageLog(NetMessageLogPhase::Applied, message);
         }
     }
-    SendActionRequestAck(state, transport, endpoint, ack_event_ids);
+    SendActionRequestAck(state, transport, endpoint, ack_message_ids);
 }
 
 void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& packet) {
@@ -853,7 +853,7 @@ void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& pa
     }
 
     for (std::uint32_t i = 0; i < packet.ack_count; ++i) {
-        RemovePendingOutboundEvent(state.net_session, packet.event_ids[i]);
+        RemovePendingOutboundMessage(state.net_session, packet.message_ids[i]);
     }
 }
 

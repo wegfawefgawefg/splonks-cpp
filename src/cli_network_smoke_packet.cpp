@@ -416,7 +416,7 @@ bool RunLateJoinSnapshotPacketSmoke(Graphics& graphics, Audio& audio) {
     }
     coordinator_transport.captured_packets.clear();
 
-    coordinator.net_session.ordered_events.clear();
+    coordinator.net_session.ordered_messages.clear();
     network::JoinRequestPacket request;
     request.local_player_count = 1;
     network::WriteFixedString("Late", request.display_name);
@@ -458,20 +458,20 @@ bool RunLateJoinSnapshotPacketSmoke(Graphics& graphics, Audio& audio) {
         std::cerr << "network packet smoke failed: late join emitted no JoinAccept\n";
         return false;
     }
-    std::size_t snapshot_tile_event_count = 0;
-    for (const network::NetEvent& event : coordinator.net_session.ordered_events) {
-        if (event.type == network::NetEventType::TileChanged) {
-            ++snapshot_tile_event_count;
+    std::size_t snapshot_tile_message_count = 0;
+    for (const network::NetMessage& message : coordinator.net_session.ordered_messages) {
+        if (message.type == network::NetMessageType::TileChanged) {
+            ++snapshot_tile_message_count;
         }
     }
-    if (snapshot_tile_event_count == 0) {
-        std::cerr << "network packet smoke failed: late join queued no tile snapshot events\n";
+    if (snapshot_tile_message_count == 0) {
+        std::cerr << "network packet smoke failed: late join queued no tile snapshot messages\n";
         return false;
     }
     std::uint64_t first_snapshot_order = 0;
-    for (const network::NetEvent& event : coordinator.net_session.ordered_events) {
-        if (event.header.coordinator_order != 0) {
-            first_snapshot_order = event.header.coordinator_order;
+    for (const network::NetMessage& message : coordinator.net_session.ordered_messages) {
+        if (message.header.coordinator_order != 0) {
+            first_snapshot_order = message.header.coordinator_order;
             break;
         }
     }
@@ -510,7 +510,7 @@ bool RunLateJoinSnapshotPacketSmoke(Graphics& graphics, Audio& audio) {
                   << " backwall=" << static_cast<int>(late_backwall)
                   << " accepted_snapshot_start_order=" << accepted_snapshot_start_order
                   << " first_snapshot_order=" << first_snapshot_order
-                  << " peer_queued=" << late_peer.net_session.ordered_events.size()
+                  << " peer_queued=" << late_peer.net_session.ordered_messages.size()
                   << " next_expected=" << late_peer.net_session.next_expected_coordinator_order
                   << " highest_applied=" << late_peer.net_session.highest_applied_coordinator_order
                   << '\n';
@@ -533,15 +533,15 @@ bool RunLateJoinSnapshotPacketSmoke(Graphics& graphics, Audio& audio) {
         const std::optional<network::NetEntityId> snapshot_gold_id =
             coordinator.net_session.FindNetEntityId(snapshot_gold_vid);
         std::uint64_t first_queued_order = 0;
-        network::NetEventType first_queued_type = network::NetEventType::None;
+        network::NetMessageType first_queued_type = network::NetMessageType::None;
         bool has_next_expected_order = false;
-        for (const network::NetEvent& event : late_peer.net_session.ordered_events) {
-            if (event.header.coordinator_order != 0) {
+        for (const network::NetMessage& message : late_peer.net_session.ordered_messages) {
+            if (message.header.coordinator_order != 0) {
                 if (first_queued_order == 0) {
-                    first_queued_order = event.header.coordinator_order;
-                    first_queued_type = event.type;
+                    first_queued_order = message.header.coordinator_order;
+                    first_queued_type = message.type;
                 }
-                if (event.header.coordinator_order ==
+                if (message.header.coordinator_order ==
                     late_peer.net_session.next_expected_coordinator_order) {
                     has_next_expected_order = true;
                 }
@@ -550,7 +550,7 @@ bool RunLateJoinSnapshotPacketSmoke(Graphics& graphics, Audio& audio) {
         std::cerr << "network packet smoke failed: late join missing snapshot entity link"
                   << " net_id=" << snapshot_gold_id.value_or(network::kInvalidNetEntityId)
                   << " peer_links=" << late_peer.net_session.entity_links.size()
-                  << " peer_queued=" << late_peer.net_session.ordered_events.size()
+                  << " peer_queued=" << late_peer.net_session.ordered_messages.size()
                   << " next_expected=" << late_peer.net_session.next_expected_coordinator_order
                   << " highest_applied=" << late_peer.net_session.highest_applied_coordinator_order
                   << " first_queued_order=" << first_queued_order
@@ -736,7 +736,7 @@ bool RunReconnectPlayerIdPacketSmoke(Graphics& graphics) {
         return false;
     }
 
-    coordinator.net_session.ordered_events.clear();
+    coordinator.net_session.ordered_messages.clear();
     network::JoinRequestPacket reconnect_request;
     reconnect_request.local_player_count = 1;
     reconnect_request.preferred_player_count = 1;
@@ -909,7 +909,7 @@ bool RunReconnectAfterWorldMutationPacketSmoke(Graphics& graphics, Audio& audio)
         return false;
     }
 
-    coordinator.net_session.ordered_events.clear();
+    coordinator.net_session.ordered_messages.clear();
     network::JoinRequestPacket reconnect_request;
     reconnect_request.local_player_count = 1;
     reconnect_request.preferred_player_count = 1;
@@ -1085,7 +1085,7 @@ bool RunFreshReconnectPlayerIdPacketSmoke(Graphics& graphics) {
         return false;
     }
 
-    coordinator.net_session.ordered_events.clear();
+    coordinator.net_session.ordered_messages.clear();
     network::JoinRequestPacket fresh_request;
     fresh_request.local_player_count = 1;
     network::WriteFixedString("Fresh", fresh_request.display_name);
@@ -1260,7 +1260,7 @@ bool RunReconnectSpawnModesPacketSmoke(Graphics& graphics) {
             return false;
         }
 
-        coordinator.net_session.ordered_events.clear();
+        coordinator.net_session.ordered_messages.clear();
         network::JoinRequestPacket reconnect_request;
         reconnect_request.local_player_count = 1;
         reconnect_request.preferred_player_count = 1;
@@ -1530,33 +1530,33 @@ bool RunMultiPeerDurableHistoryRetentionPacketSmoke(Graphics& graphics) {
         return false;
     }
 
-    coordinator.net_session.ordered_events.clear();
+    coordinator.net_session.ordered_messages.clear();
     const IVec2 tile_pos = IVec2::New(6, 6);
     coordinator.stage.SetTile(tile_pos, Tile::CaveDirt);
     if (!world_ops::SetForegroundTile(coordinator, tile_pos, Tile::CaveBlock)) {
         std::cerr << "network packet smoke failed: multi-peer retention could not mutate tile\n";
         return false;
     }
-    if (coordinator.net_session.ordered_events.size() != 1 ||
-        coordinator.net_session.ordered_events[0].header.coordinator_order == 0) {
-        std::cerr << "network packet smoke failed: multi-peer retention queued no ordered event\n";
+    if (coordinator.net_session.ordered_messages.size() != 1 ||
+        coordinator.net_session.ordered_messages[0].header.coordinator_order == 0) {
+        std::cerr << "network packet smoke failed: multi-peer retention queued no ordered message\n";
         return false;
     }
-    const std::uint64_t event_order =
-        coordinator.net_session.ordered_events[0].header.coordinator_order;
+    const std::uint64_t message_order =
+        coordinator.net_session.ordered_messages[0].header.coordinator_order;
 
-    coordinator_transport.remotes[0].highest_acked_coordinator_order = event_order;
+    coordinator_transport.remotes[0].highest_acked_coordinator_order = message_order;
     coordinator_transport.remotes[1].highest_acked_coordinator_order = 0;
-    network::PruneAckedOrderedEvents(coordinator, coordinator_transport);
-    if (coordinator.net_session.ordered_events.empty()) {
+    network::PruneAckedOrderedMessages(coordinator, coordinator_transport);
+    if (coordinator.net_session.ordered_messages.empty()) {
         std::cerr << "network packet smoke failed: multi-peer retention pruned before all peers acked\n";
         return false;
     }
 
-    coordinator_transport.remotes[1].highest_acked_coordinator_order = event_order;
-    network::PruneAckedOrderedEvents(coordinator, coordinator_transport);
-    if (!coordinator.net_session.ordered_events.empty()) {
-        std::cerr << "network packet smoke failed: multi-peer retention kept fully acked event\n";
+    coordinator_transport.remotes[1].highest_acked_coordinator_order = message_order;
+    network::PruneAckedOrderedMessages(coordinator, coordinator_transport);
+    if (!coordinator.net_session.ordered_messages.empty()) {
+        std::cerr << "network packet smoke failed: multi-peer retention kept fully acked message\n";
         return false;
     }
 
@@ -1676,9 +1676,9 @@ bool CheckNetworkPacketSmoke() {
             std::cerr << "network packet smoke failed: coordinator could not create snapshot gold\n";
             return false;
         }
-        coordinator.net_session.ordered_events.clear();
+        coordinator.net_session.ordered_messages.clear();
         peer.net_session.next_expected_coordinator_order = coordinator.net_session.next_coordinator_order;
-        network::EnqueueWorldSnapshotEvents(coordinator);
+        network::EnqueueWorldSnapshotMessages(coordinator);
         if (!DeliverCoordinatorPacketsToPeer(
                 coordinator,
                 peer,
@@ -1742,7 +1742,7 @@ bool CheckNetworkPacketSmoke() {
         if (!coordinator_transport.remotes.empty()) {
             const std::uint64_t stale_next_order =
                 std::max<std::uint64_t>(peer.net_session.next_expected_coordinator_order, 1);
-            coordinator.net_session.ordered_events.clear();
+            coordinator.net_session.ordered_messages.clear();
             coordinator.net_session.next_coordinator_order = stale_next_order + 64;
             peer.net_session.highest_applied_coordinator_order = stale_next_order - 1;
             peer.net_session.next_expected_coordinator_order = stale_next_order;
@@ -1882,12 +1882,12 @@ bool CheckNetworkPacketSmoke() {
                 .tile_pos = lost_request_break_tile_pos,
             }
         );
-        network::SendPendingPeerEventsToCoordinator(peer, peer_transport);
+        network::SendPendingPeerMessagesToCoordinator(peer, peer_transport);
         if (TakeCapturedPackets(peer_transport).empty()) {
             std::cerr << "network packet smoke failed: lost peer request emitted no packet to drop\n";
             return false;
         }
-        if (peer.net_session.pending_outbound_events.empty()) {
+        if (peer.net_session.pending_outbound_messages.empty()) {
             std::cerr << "network packet smoke failed: lost peer request was removed before ack\n";
             return false;
         }
@@ -1973,19 +1973,19 @@ bool CheckNetworkPacketSmoke() {
             )) {
             return false;
         }
-        if (!peer.net_session.pending_outbound_events.empty()) {
+        if (!peer.net_session.pending_outbound_messages.empty()) {
             std::cerr << "network packet smoke failed: coordinator result did not implicitly ack "
                          "request after explicit action ack was dropped\n";
             return false;
         }
 
-        network::NetEvent rejected_request;
-        rejected_request.header = peer.net_session.MakeLocalTransientEventHeader(peer.frame);
-        rejected_request.type = network::NetEventType::ActionRequest;
-        rejected_request.payload = network::ActionRequestEvent{
+        network::NetMessage rejected_request;
+        rejected_request.header = peer.net_session.MakeLocalTransientMessageHeader(peer.frame);
+        rejected_request.type = network::NetMessageType::ActionRequest;
+        rejected_request.payload = network::ActionRequestMessage{
             .kind = network::NetActionKind::None,
         };
-        peer.net_session.EnqueueNetEvent(rejected_request);
+        peer.net_session.EnqueueNetMessage(rejected_request);
         if (!DeliverPeerPacketsToCoordinator(
                 peer,
                 coordinator,
@@ -2020,7 +2020,7 @@ bool CheckNetworkPacketSmoke() {
             )) {
             return false;
         }
-        if (!peer.net_session.pending_outbound_events.empty()) {
+        if (!peer.net_session.pending_outbound_messages.empty()) {
             std::cerr << "network packet smoke failed: rejected action ack did not clear peer request\n";
             return false;
         }

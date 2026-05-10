@@ -1,26 +1,26 @@
 #include "network/net_protocol.hpp"
 
-#include "network/net_event.hpp"
+#include "network/net_message.hpp"
 
 #include <cstring>
 
 namespace splonks::network {
 
-static_assert(sizeof(EntityDamageEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(FluidCellEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntitySpawnedEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntityStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntityCarryEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntityLifecycleEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(PlayerStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(RunStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(PresentationCommandEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(EntityDamageMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(FluidCellMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(EntitySpawnedMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(EntityStateMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(EntityCarryMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(EntityLifecycleMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(PlayerStateMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(RunStateMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(PresentationCommandMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(ActionRequestAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PlayerSnapshotsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(DurableEventAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(DurableMessageAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -86,74 +86,74 @@ EncodedNetPacket EncodePlayerSnapshots(const PlayerSnapshotsPacket& packet) {
     return EncodePayload(NetPacketType::PlayerSnapshots, packet);
 }
 
-EncodedNetPacket EncodeTileEvents(const TileEventsPacket& packet) {
-    return EncodePayload(NetPacketType::TileEvents, packet);
+EncodedNetPacket EncodeTileMessages(const TileMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::TileMessages, packet);
 }
 
-EncodedNetPacket EncodeFluidCellEvents(const FluidCellEventsPacket& packet) {
-    return EncodePayload(NetPacketType::FluidCellEvents, packet);
+EncodedNetPacket EncodeFluidCellMessages(const FluidCellMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::FluidCellMessages, packet);
 }
 
-EncodedNetPacket EncodeEntitySpawnedEvents(const EntitySpawnedEventsPacket& packet) {
-    return EncodePayload(NetPacketType::EntitySpawnedEvents, packet);
+EncodedNetPacket EncodeEntitySpawnedMessages(const EntitySpawnedMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::EntitySpawnedMessages, packet);
 }
 
-EncodedNetPacket EncodeEntityDamageEvents(const EntityDamageEventsPacket& packet) {
-    return EncodePayload(NetPacketType::EntityDamageEvents, packet);
+EncodedNetPacket EncodeEntityDamageMessages(const EntityDamageMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::EntityDamageMessages, packet);
 }
 
-EncodedNetPacket EncodeEntityStateEvents(const EntityStateEventsPacket& packet) {
-    return EncodePayload(NetPacketType::EntityStateEvents, packet);
+EncodedNetPacket EncodeEntityStateMessages(const EntityStateMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::EntityStateMessages, packet);
 }
 
-EncodedNetPacket EncodeEntityCarryEvents(const EntityCarryEventsPacket& packet) {
-    return EncodePayload(NetPacketType::EntityCarryEvents, packet);
+EncodedNetPacket EncodeEntityCarryMessages(const EntityCarryMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::EntityCarryMessages, packet);
 }
 
-EncodedNetPacket EncodeEntityLifecycleEvents(const EntityLifecycleEventsPacket& packet) {
-    return EncodePayload(NetPacketType::EntityLifecycleEvents, packet);
+EncodedNetPacket EncodeEntityLifecycleMessages(const EntityLifecycleMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::EntityLifecycleMessages, packet);
 }
 
-EncodedNetPacket EncodePlayerStateEvents(const PlayerStateEventsPacket& packet) {
-    return EncodePayload(NetPacketType::PlayerStateEvents, packet);
+EncodedNetPacket EncodePlayerStateMessages(const PlayerStateMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::PlayerStateMessages, packet);
 }
 
-EncodedNetPacket EncodeRunStateEvents(const RunStateEventsPacket& packet) {
-    return EncodePayload(NetPacketType::RunStateEvents, packet);
+EncodedNetPacket EncodeRunStateMessages(const RunStateMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::RunStateMessages, packet);
 }
 
-EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEventsPacket& packet) {
-    return EncodePayload(NetPacketType::PresentationCommandEvents, packet);
+EncodedNetPacket EncodePresentationCommandMessages(const PresentationCommandMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::PresentationCommandMessages, packet);
 }
 
-EncodedNetPacket EncodeActionRequestEvents(const ActionRequestEventsPacket& packet) {
+EncodedNetPacket EncodeActionRequestMessages(const ActionRequestMessagesPacket& packet) {
     EncodedNetPacket encoded;
     NetPacketHeader header;
-    header.type = NetPacketType::ActionRequestEvents;
+    header.type = NetPacketType::ActionRequestMessages;
     (void)Append(encoded, header);
     const std::size_t payload_start = encoded.size;
 
-    const std::uint32_t event_count = static_cast<std::uint32_t>(packet.events.size());
-    if (!Append(encoded, event_count)) {
+    const std::uint32_t message_count = static_cast<std::uint32_t>(packet.messages.size());
+    if (!Append(encoded, message_count)) {
         return EncodedNetPacket{};
     }
 
-    for (const ActionRequestEventEntry& event : packet.events) {
-        if (!Append(encoded, event.event_id) ||
-            !Append(encoded, event.source_player_id) ||
-            !Append(encoded, event.stage_instance_id) ||
-            !Append(encoded, event.source_local_frame) ||
-            !Append(encoded, event.action_kind)) {
+    for (const ActionRequestMessageEntry& message : packet.messages) {
+        if (!Append(encoded, message.message_id) ||
+            !Append(encoded, message.source_player_id) ||
+            !Append(encoded, message.stage_instance_id) ||
+            !Append(encoded, message.source_local_frame) ||
+            !Append(encoded, message.action_kind)) {
             return EncodedNetPacket{};
         }
 
-        const NetActionKind action_kind = static_cast<NetActionKind>(event.action_kind);
+        const NetActionKind action_kind = static_cast<NetActionKind>(message.action_kind);
         switch (action_kind) {
         case NetActionKind::UseTool:
-            if (!Append(encoded, event.source_entity_id) ||
-                !Append(encoded, event.velocity_x) ||
-                !Append(encoded, event.velocity_y) ||
-                !Append(encoded, event.tool_slot)) {
+            if (!Append(encoded, message.source_entity_id) ||
+                !Append(encoded, message.velocity_x) ||
+                !Append(encoded, message.velocity_y) ||
+                !Append(encoded, message.tool_slot)) {
                 return EncodedNetPacket{};
             }
             break;
@@ -163,57 +163,57 @@ EncodedNetPacket EncodeActionRequestEvents(const ActionRequestEventsPacket& pack
         case NetActionKind::TakeOffBackEntity:
         case NetActionKind::InteractEntity:
         case NetActionKind::CollectEntity:
-            if (!Append(encoded, event.source_entity_id) ||
-                !Append(encoded, event.target_entity_id)) {
+            if (!Append(encoded, message.source_entity_id) ||
+                !Append(encoded, message.target_entity_id)) {
                 return EncodedNetPacket{};
             }
             break;
         case NetActionKind::ThrowEntity:
         case NetActionKind::PushEntity:
-            if (!Append(encoded, event.source_entity_id) ||
-                !Append(encoded, event.target_entity_id) ||
-                !Append(encoded, event.velocity_x) ||
-                !Append(encoded, event.velocity_y)) {
+            if (!Append(encoded, message.source_entity_id) ||
+                !Append(encoded, message.target_entity_id) ||
+                !Append(encoded, message.velocity_x) ||
+                !Append(encoded, message.velocity_y)) {
                 return EncodedNetPacket{};
             }
             break;
         case NetActionKind::UseHeldEntity:
         case NetActionKind::UseBackEntity:
-            if (!Append(encoded, event.source_entity_id) ||
-                !Append(encoded, event.target_entity_id) ||
-                !Append(encoded, event.direction_x) ||
-                !Append(encoded, event.direction_y) ||
-                !Append(encoded, event.use_edge)) {
+            if (!Append(encoded, message.source_entity_id) ||
+                !Append(encoded, message.target_entity_id) ||
+                !Append(encoded, message.direction_x) ||
+                !Append(encoded, message.direction_y) ||
+                !Append(encoded, message.use_edge)) {
                 return EncodedNetPacket{};
             }
             break;
         case NetActionKind::BreakTile:
-            if (!Append(encoded, event.source_entity_id) ||
-                !Append(encoded, event.tile_x) ||
-                !Append(encoded, event.tile_y)) {
+            if (!Append(encoded, message.source_entity_id) ||
+                !Append(encoded, message.tile_x) ||
+                !Append(encoded, message.tile_y)) {
                 return EncodedNetPacket{};
             }
             break;
         case NetActionKind::DamageEntity:
-            if (!Append(encoded, event.source_entity_id) ||
-                !Append(encoded, event.target_entity_id) ||
-                !Append(encoded, event.damage_type) ||
-                !Append(encoded, event.amount)) {
+            if (!Append(encoded, message.source_entity_id) ||
+                !Append(encoded, message.target_entity_id) ||
+                !Append(encoded, message.damage_type) ||
+                !Append(encoded, message.amount)) {
                 return EncodedNetPacket{};
             }
             break;
         case NetActionKind::HitEntity:
-            if (!Append(encoded, event.source_entity_id) ||
-                !Append(encoded, event.target_entity_id) ||
-                !Append(encoded, event.velocity_x) ||
-                !Append(encoded, event.velocity_y) ||
-                !Append(encoded, event.damage_type) ||
-                !Append(encoded, event.projectile_contact_damage_type) ||
-                !Append(encoded, event.amount) ||
-                !Append(encoded, event.projectile_contact_damage_amount) ||
-                !Append(encoded, event.thrown_immunity_timer) ||
-                !Append(encoded, event.projectile_contact_duration) ||
-                !Append(encoded, event.flags)) {
+            if (!Append(encoded, message.source_entity_id) ||
+                !Append(encoded, message.target_entity_id) ||
+                !Append(encoded, message.velocity_x) ||
+                !Append(encoded, message.velocity_y) ||
+                !Append(encoded, message.damage_type) ||
+                !Append(encoded, message.projectile_contact_damage_type) ||
+                !Append(encoded, message.amount) ||
+                !Append(encoded, message.projectile_contact_damage_amount) ||
+                !Append(encoded, message.thrown_immunity_timer) ||
+                !Append(encoded, message.projectile_contact_duration) ||
+                !Append(encoded, message.flags)) {
                 return EncodedNetPacket{};
             }
             break;
@@ -239,8 +239,8 @@ EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet) {
     return EncodePayload(NetPacketType::StageSync, packet);
 }
 
-EncodedNetPacket EncodeDurableEventAck(const DurableEventAckPacket& packet) {
-    return EncodePayload(NetPacketType::DurableEventAck, packet);
+EncodedNetPacket EncodeDurableMessageAck(const DurableMessageAckPacket& packet) {
+    return EncodePayload(NetPacketType::DurableMessageAck, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -283,200 +283,200 @@ std::optional<PlayerSnapshotsPacket> TryDecodePlayerSnapshots(const std::uint8_t
     return packet;
 }
 
-std::optional<TileEventsPacket> TryDecodeTileEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<TileMessagesPacket> TryDecodeTileMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::TileEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::TileMessages, offset)) {
         return std::nullopt;
     }
-    TileEventsPacket packet;
+    TileMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<FluidCellEventsPacket> TryDecodeFluidCellEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<FluidCellMessagesPacket> TryDecodeFluidCellMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::FluidCellEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::FluidCellMessages, offset)) {
         return std::nullopt;
     }
-    FluidCellEventsPacket packet;
+    FluidCellMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<EntitySpawnedEventsPacket> TryDecodeEntitySpawnedEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<EntitySpawnedMessagesPacket> TryDecodeEntitySpawnedMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntitySpawnedEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::EntitySpawnedMessages, offset)) {
         return std::nullopt;
     }
-    EntitySpawnedEventsPacket packet;
+    EntitySpawnedMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<EntityDamageEventsPacket> TryDecodeEntityDamageEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<EntityDamageMessagesPacket> TryDecodeEntityDamageMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityDamageEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::EntityDamageMessages, offset)) {
         return std::nullopt;
     }
-    EntityDamageEventsPacket packet;
+    EntityDamageMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<EntityStateEventsPacket> TryDecodeEntityStateEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<EntityStateMessagesPacket> TryDecodeEntityStateMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityStateEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::EntityStateMessages, offset)) {
         return std::nullopt;
     }
-    EntityStateEventsPacket packet;
+    EntityStateMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<EntityCarryEventsPacket> TryDecodeEntityCarryEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<EntityCarryMessagesPacket> TryDecodeEntityCarryMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityCarryEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::EntityCarryMessages, offset)) {
         return std::nullopt;
     }
-    EntityCarryEventsPacket packet;
+    EntityCarryMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<EntityLifecycleEventsPacket> TryDecodeEntityLifecycleEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<EntityLifecycleMessagesPacket> TryDecodeEntityLifecycleMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityLifecycleEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::EntityLifecycleMessages, offset)) {
         return std::nullopt;
     }
-    EntityLifecycleEventsPacket packet;
+    EntityLifecycleMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<PlayerStateEventsPacket> TryDecodePlayerStateEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<PlayerStateMessagesPacket> TryDecodePlayerStateMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::PlayerStateEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::PlayerStateMessages, offset)) {
         return std::nullopt;
     }
-    PlayerStateEventsPacket packet;
+    PlayerStateMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
-    for (std::uint32_t i = 0; i < packet.event_count; ++i) {
-        packet.events[i].effect_count = std::min<std::uint8_t>(
-            packet.events[i].effect_count,
-            static_cast<std::uint8_t>(packet.events[i].effects.size())
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        packet.messages[i].effect_count = std::min<std::uint8_t>(
+            packet.messages[i].effect_count,
+            static_cast<std::uint8_t>(packet.messages[i].effects.size())
         );
     }
     return packet;
 }
 
-std::optional<RunStateEventsPacket> TryDecodeRunStateEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<RunStateMessagesPacket> TryDecodeRunStateMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::RunStateEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::RunStateMessages, offset)) {
         return std::nullopt;
     }
-    RunStateEventsPacket packet;
+    RunStateMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<PresentationCommandEventsPacket> TryDecodePresentationCommandEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<PresentationCommandMessagesPacket> TryDecodePresentationCommandMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::PresentationCommandEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::PresentationCommandMessages, offset)) {
         return std::nullopt;
     }
-    PresentationCommandEventsPacket packet;
+    PresentationCommandMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
     );
     return packet;
 }
 
-std::optional<ActionRequestEventsPacket> TryDecodeActionRequestEvents(const std::uint8_t* bytes, std::size_t size) {
+std::optional<ActionRequestMessagesPacket> TryDecodeActionRequestMessages(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::ActionRequestEvents, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::ActionRequestMessages, offset)) {
         return std::nullopt;
     }
-    ActionRequestEventsPacket packet;
-    std::uint32_t event_count = 0;
-    if (!Read(bytes, size, offset, event_count)) {
+    ActionRequestMessagesPacket packet;
+    std::uint32_t message_count = 0;
+    if (!Read(bytes, size, offset, message_count)) {
         return std::nullopt;
     }
-    packet.events.reserve(std::min<std::uint32_t>(event_count, kNetActionRequestEventsPerPacket));
-    for (std::uint32_t i = 0; i < event_count; ++i) {
-        ActionRequestEventEntry event;
-        if (!Read(bytes, size, offset, event.event_id) ||
-            !Read(bytes, size, offset, event.source_player_id) ||
-            !Read(bytes, size, offset, event.stage_instance_id) ||
-            !Read(bytes, size, offset, event.source_local_frame) ||
-            !Read(bytes, size, offset, event.action_kind)) {
+    packet.messages.reserve(std::min<std::uint32_t>(message_count, kNetActionRequestMessagesPerPacket));
+    for (std::uint32_t i = 0; i < message_count; ++i) {
+        ActionRequestMessageEntry message;
+        if (!Read(bytes, size, offset, message.message_id) ||
+            !Read(bytes, size, offset, message.source_player_id) ||
+            !Read(bytes, size, offset, message.stage_instance_id) ||
+            !Read(bytes, size, offset, message.source_local_frame) ||
+            !Read(bytes, size, offset, message.action_kind)) {
             return std::nullopt;
         }
 
-        const NetActionKind action_kind = static_cast<NetActionKind>(event.action_kind);
+        const NetActionKind action_kind = static_cast<NetActionKind>(message.action_kind);
         switch (action_kind) {
         case NetActionKind::UseTool:
-            if (!Read(bytes, size, offset, event.source_entity_id) ||
-                !Read(bytes, size, offset, event.velocity_x) ||
-                !Read(bytes, size, offset, event.velocity_y) ||
-                !Read(bytes, size, offset, event.tool_slot)) {
+            if (!Read(bytes, size, offset, message.source_entity_id) ||
+                !Read(bytes, size, offset, message.velocity_x) ||
+                !Read(bytes, size, offset, message.velocity_y) ||
+                !Read(bytes, size, offset, message.tool_slot)) {
                 return std::nullopt;
             }
             break;
@@ -486,64 +486,64 @@ std::optional<ActionRequestEventsPacket> TryDecodeActionRequestEvents(const std:
         case NetActionKind::TakeOffBackEntity:
         case NetActionKind::InteractEntity:
         case NetActionKind::CollectEntity:
-            if (!Read(bytes, size, offset, event.source_entity_id) ||
-                !Read(bytes, size, offset, event.target_entity_id)) {
+            if (!Read(bytes, size, offset, message.source_entity_id) ||
+                !Read(bytes, size, offset, message.target_entity_id)) {
                 return std::nullopt;
             }
             break;
         case NetActionKind::ThrowEntity:
         case NetActionKind::PushEntity:
-            if (!Read(bytes, size, offset, event.source_entity_id) ||
-                !Read(bytes, size, offset, event.target_entity_id) ||
-                !Read(bytes, size, offset, event.velocity_x) ||
-                !Read(bytes, size, offset, event.velocity_y)) {
+            if (!Read(bytes, size, offset, message.source_entity_id) ||
+                !Read(bytes, size, offset, message.target_entity_id) ||
+                !Read(bytes, size, offset, message.velocity_x) ||
+                !Read(bytes, size, offset, message.velocity_y)) {
                 return std::nullopt;
             }
             break;
         case NetActionKind::UseHeldEntity:
         case NetActionKind::UseBackEntity:
-            if (!Read(bytes, size, offset, event.source_entity_id) ||
-                !Read(bytes, size, offset, event.target_entity_id) ||
-                !Read(bytes, size, offset, event.direction_x) ||
-                !Read(bytes, size, offset, event.direction_y) ||
-                !Read(bytes, size, offset, event.use_edge)) {
+            if (!Read(bytes, size, offset, message.source_entity_id) ||
+                !Read(bytes, size, offset, message.target_entity_id) ||
+                !Read(bytes, size, offset, message.direction_x) ||
+                !Read(bytes, size, offset, message.direction_y) ||
+                !Read(bytes, size, offset, message.use_edge)) {
                 return std::nullopt;
             }
             break;
         case NetActionKind::BreakTile:
-            if (!Read(bytes, size, offset, event.source_entity_id) ||
-                !Read(bytes, size, offset, event.tile_x) ||
-                !Read(bytes, size, offset, event.tile_y)) {
+            if (!Read(bytes, size, offset, message.source_entity_id) ||
+                !Read(bytes, size, offset, message.tile_x) ||
+                !Read(bytes, size, offset, message.tile_y)) {
                 return std::nullopt;
             }
             break;
         case NetActionKind::DamageEntity:
-            if (!Read(bytes, size, offset, event.source_entity_id) ||
-                !Read(bytes, size, offset, event.target_entity_id) ||
-                !Read(bytes, size, offset, event.damage_type) ||
-                !Read(bytes, size, offset, event.amount)) {
+            if (!Read(bytes, size, offset, message.source_entity_id) ||
+                !Read(bytes, size, offset, message.target_entity_id) ||
+                !Read(bytes, size, offset, message.damage_type) ||
+                !Read(bytes, size, offset, message.amount)) {
                 return std::nullopt;
             }
             break;
         case NetActionKind::HitEntity:
-            if (!Read(bytes, size, offset, event.source_entity_id) ||
-                !Read(bytes, size, offset, event.target_entity_id) ||
-                !Read(bytes, size, offset, event.velocity_x) ||
-                !Read(bytes, size, offset, event.velocity_y) ||
-                !Read(bytes, size, offset, event.damage_type) ||
-                !Read(bytes, size, offset, event.projectile_contact_damage_type) ||
-                !Read(bytes, size, offset, event.amount) ||
-                !Read(bytes, size, offset, event.projectile_contact_damage_amount) ||
-                !Read(bytes, size, offset, event.thrown_immunity_timer) ||
-                !Read(bytes, size, offset, event.projectile_contact_duration) ||
-                !Read(bytes, size, offset, event.flags)) {
+            if (!Read(bytes, size, offset, message.source_entity_id) ||
+                !Read(bytes, size, offset, message.target_entity_id) ||
+                !Read(bytes, size, offset, message.velocity_x) ||
+                !Read(bytes, size, offset, message.velocity_y) ||
+                !Read(bytes, size, offset, message.damage_type) ||
+                !Read(bytes, size, offset, message.projectile_contact_damage_type) ||
+                !Read(bytes, size, offset, message.amount) ||
+                !Read(bytes, size, offset, message.projectile_contact_damage_amount) ||
+                !Read(bytes, size, offset, message.thrown_immunity_timer) ||
+                !Read(bytes, size, offset, message.projectile_contact_duration) ||
+                !Read(bytes, size, offset, message.flags)) {
                 return std::nullopt;
             }
             break;
         case NetActionKind::None:
             break;
         }
-        packet.events.push_back(event);
+        packet.messages.push_back(message);
     }
     if (offset != size) {
         return std::nullopt;
@@ -562,7 +562,7 @@ std::optional<ActionRequestAckPacket> TryDecodeActionRequestAck(const std::uint8
     }
     packet.ack_count = std::min<std::uint32_t>(
         packet.ack_count,
-        static_cast<std::uint32_t>(packet.event_ids.size())
+        static_cast<std::uint32_t>(packet.message_ids.size())
     );
     return packet;
 }
@@ -595,12 +595,12 @@ std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std
     return packet;
 }
 
-std::optional<DurableEventAckPacket> TryDecodeDurableEventAck(const std::uint8_t* bytes, std::size_t size) {
+std::optional<DurableMessageAckPacket> TryDecodeDurableMessageAck(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::DurableEventAck, offset)) {
+    if (!ReadHeader(bytes, size, NetPacketType::DurableMessageAck, offset)) {
         return std::nullopt;
     }
-    DurableEventAckPacket packet;
+    DurableMessageAckPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

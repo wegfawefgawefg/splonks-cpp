@@ -6,7 +6,7 @@ struct State;
 
 namespace network {
 
-void EnqueueWorldSnapshotEvents(State& state);
+void EnqueueWorldSnapshotMessages(State& state);
 
 } // namespace network
 } // namespace splonks

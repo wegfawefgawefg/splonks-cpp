@@ -1,6 +1,6 @@
 #pragma once
 
-#include "network/net_event.hpp"
+#include "network/net_message.hpp"
 #include "network/net_fuzzer.hpp"
 #include "vid.hpp"
 
@@ -33,20 +33,20 @@ struct NetEntityIdAlias {
     NetEntityId to_id = kInvalidNetEntityId;
 };
 
-enum class NetEventLogPhase : std::uint8_t {
+enum class NetMessageLogPhase : std::uint8_t {
     EnqueuedOutbound,
     EnqueuedOrdered,
     Applied,
     SkippedLocalApply,
 };
 
-struct NetEventLogEntry {
-    NetEventLogPhase phase = NetEventLogPhase::EnqueuedOutbound;
-    NetEventId event_id = kInvalidNetEventId;
+struct NetMessageLogEntry {
+    NetMessageLogPhase phase = NetMessageLogPhase::EnqueuedOutbound;
+    NetMessageId message_id = kInvalidNetMessageId;
     std::uint64_t coordinator_order = 0;
     std::uint64_t source_local_frame = 0;
     PlayerId source_player_id = kInvalidPlayerId;
-    NetEventType type = NetEventType::None;
+    NetMessageType type = NetMessageType::None;
 };
 
 enum class NetReconnectSpawnMode : std::uint8_t {
@@ -99,7 +99,7 @@ struct NetSessionState {
     PlayerId local_player_id = 1;
     PlayerId coordinator_player_id = 1;
     StageInstanceId stage_instance_id = 1;
-    NetEventId next_local_event_id = 1;
+    NetMessageId next_local_message_id = 1;
     NetEntityId next_local_entity_id = 1;
     PlayerId next_player_id = 2;
     std::uint64_t next_coordinator_order = 1;
@@ -112,13 +112,13 @@ struct NetSessionState {
     std::vector<NetPeerState> peers;
     std::vector<NetEntityLink> entity_links;
     std::vector<NetEntityIdAlias> entity_id_aliases;
-    std::vector<NetEvent> pending_outbound_events;
-    std::vector<NetEvent> ordered_events;
-    std::vector<NetEventId> applied_event_ids;
+    std::vector<NetMessage> pending_outbound_messages;
+    std::vector<NetMessage> ordered_messages;
+    std::vector<NetMessageId> applied_message_ids;
     std::vector<std::uint64_t> applied_coordinator_orders;
-    std::vector<NetEventLogEntry> event_log;
+    std::vector<NetMessageLogEntry> message_log;
     std::vector<NetRetainedPlayerState> retained_players;
-    std::string event_log_file_path;
+    std::string message_log_file_path;
     NetReconnectSpawnMode reconnect_spawn_mode = NetReconnectSpawnMode::RetainedAtLastPosition;
     std::uint64_t retained_player_lifetime_frames = 108000;
     std::uint64_t last_snapshot_expected_fingerprint = 0;
@@ -130,18 +130,18 @@ struct NetSessionState {
 
     static NetSessionState NewOffline();
 
-    NetEventHeader MakeLocalEventHeader(std::uint64_t source_local_frame);
-    NetEventHeader MakeLocalTransientEventHeader(std::uint64_t source_local_frame);
+    NetMessageHeader MakeLocalMessageHeader(std::uint64_t source_local_frame);
+    NetMessageHeader MakeLocalTransientMessageHeader(std::uint64_t source_local_frame);
     NetEntityId AllocateLocalEntityId();
 
-    void EnqueueNetEvent(NetEvent event);
-    void EnqueueOrderedEvent(NetEvent event);
-    void EnqueueTransientEvent(NetEvent event);
-    std::size_t MarkAllOrderedEventsApplied();
-    bool MarkEventApplied(NetEventId event_id);
-    bool HasAppliedEvent(NetEventId event_id) const;
-    void MarkCoordinatorOrderApplied(const NetEvent& event);
-    void AddEventLog(NetEventLogPhase phase, const NetEvent& event);
+    void EnqueueNetMessage(NetMessage message);
+    void EnqueueOrderedMessage(NetMessage message);
+    void EnqueueTransientMessage(NetMessage message);
+    std::size_t MarkAllOrderedMessagesApplied();
+    bool MarkMessageApplied(NetMessageId message_id);
+    bool HasAppliedMessage(NetMessageId message_id) const;
+    void MarkCoordinatorOrderApplied(const NetMessage& message);
+    void AddMessageLog(NetMessageLogPhase phase, const NetMessage& message);
 
     void ClearStageEntityLinks();
     void LinkEntity(NetEntityId net_id, VID local_vid);

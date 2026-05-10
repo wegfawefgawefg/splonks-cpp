@@ -8,7 +8,7 @@ namespace splonks::network {
 
 namespace {
 
-constexpr std::size_t kMaxEventLogEntries = 256;
+constexpr std::size_t kMaxMessageLogEntries = 256;
 constexpr std::size_t kMaxAppliedCoordinatorOrders = 1024;
 
 const char* NetRoleName(NetRole role) {
@@ -23,51 +23,51 @@ const char* NetRoleName(NetRole role) {
     return "unknown";
 }
 
-const char* NetEventLogPhaseName(NetEventLogPhase phase) {
+const char* NetMessageLogPhaseName(NetMessageLogPhase phase) {
     switch (phase) {
-    case NetEventLogPhase::EnqueuedOutbound:
+    case NetMessageLogPhase::EnqueuedOutbound:
         return "outbound";
-    case NetEventLogPhase::EnqueuedOrdered:
+    case NetMessageLogPhase::EnqueuedOrdered:
         return "ordered";
-    case NetEventLogPhase::Applied:
+    case NetMessageLogPhase::Applied:
         return "applied";
-    case NetEventLogPhase::SkippedLocalApply:
+    case NetMessageLogPhase::SkippedLocalApply:
         return "skip-local";
     }
     return "unknown";
 }
 
-const char* NetEventTypeName(NetEventType type) {
+const char* NetMessageTypeName(NetMessageType type) {
     switch (type) {
-    case NetEventType::EntitySpawned:
+    case NetMessageType::EntitySpawned:
         return "EntitySpawned";
-    case NetEventType::EntityDeactivated:
+    case NetMessageType::EntityDeactivated:
         return "EntityDeactivated";
-    case NetEventType::EntityStatePatched:
+    case NetMessageType::EntityStatePatched:
         return "EntityStatePatched";
-    case NetEventType::EntityHeld:
+    case NetMessageType::EntityHeld:
         return "EntityHeld";
-    case NetEventType::EntityDropped:
+    case NetMessageType::EntityDropped:
         return "EntityDropped";
-    case NetEventType::EntityThrown:
+    case NetMessageType::EntityThrown:
         return "EntityThrown";
-    case NetEventType::EntityDamaged:
+    case NetMessageType::EntityDamaged:
         return "EntityDamaged";
-    case NetEventType::TileChanged:
+    case NetMessageType::TileChanged:
         return "TileChanged";
-    case NetEventType::FluidCellPatched:
+    case NetMessageType::FluidCellPatched:
         return "FluidCellPatched";
-    case NetEventType::TileBroken:
+    case NetMessageType::TileBroken:
         return "TileBroken";
-    case NetEventType::PlayerStatePatched:
+    case NetMessageType::PlayerStatePatched:
         return "PlayerStatePatched";
-    case NetEventType::RunStatePatched:
+    case NetMessageType::RunStatePatched:
         return "RunStatePatched";
-    case NetEventType::PresentationCommand:
+    case NetMessageType::PresentationCommand:
         return "PresentationCommand";
-    case NetEventType::StageLoaded:
+    case NetMessageType::StageLoaded:
         return "StageLoaded";
-    case NetEventType::ActionRequest:
+    case NetMessageType::ActionRequest:
         return "ActionRequest";
     default:
         return "Other";
@@ -110,14 +110,14 @@ const char* NetActionKindName(NetActionKind kind) {
     return "Other";
 }
 
-bool IsTransientStatePatch(const NetEvent& event) {
-    if (event.type == NetEventType::FluidCellPatched) {
+bool IsTransientStatePatch(const NetMessage& message) {
+    if (message.type == NetMessageType::FluidCellPatched) {
         return true;
     }
-    if (event.type != NetEventType::EntityStatePatched) {
+    if (message.type != NetMessageType::EntityStatePatched) {
         return false;
     }
-    const auto* const payload = std::get_if<EntityStatePatchedEvent>(&event.payload);
+    const auto* const payload = std::get_if<EntityStatePatchedMessage>(&message.payload);
     return payload == nullptr || payload->source_entity_id == kInvalidNetEntityId;
 }
 
@@ -129,7 +129,7 @@ NetSessionState NetSessionState::NewOffline() {
     state.local_player_id = 1;
     state.coordinator_player_id = 1;
     state.stage_instance_id = 1;
-    state.next_local_event_id = 1;
+    state.next_local_message_id = 1;
     state.next_local_entity_id = 1;
     state.next_player_id = 2;
     state.next_coordinator_order = 1;
@@ -141,18 +141,18 @@ NetSessionState NetSessionState::NewOffline() {
     return state;
 }
 
-NetEventHeader NetSessionState::MakeLocalEventHeader(std::uint64_t source_local_frame) {
-    NetEventHeader header = MakeLocalTransientEventHeader(source_local_frame);
+NetMessageHeader NetSessionState::MakeLocalMessageHeader(std::uint64_t source_local_frame) {
+    NetMessageHeader header = MakeLocalTransientMessageHeader(source_local_frame);
     if (role == NetRole::Coordinator || role == NetRole::Offline) {
         header.coordinator_order = next_coordinator_order++;
     }
     return header;
 }
 
-NetEventHeader NetSessionState::MakeLocalTransientEventHeader(std::uint64_t source_local_frame) {
-    NetEventHeader header;
+NetMessageHeader NetSessionState::MakeLocalTransientMessageHeader(std::uint64_t source_local_frame) {
+    NetMessageHeader header;
     const std::uint64_t player_component = static_cast<std::uint64_t>(local_player_id) << 48U;
-    header.event_id = player_component | next_local_event_id++;
+    header.message_id = player_component | next_local_message_id++;
     header.source_player_id = local_player_id;
     header.stage_instance_id = stage_instance_id;
     header.source_local_frame = source_local_frame;
@@ -164,67 +164,67 @@ NetEntityId NetSessionState::AllocateLocalEntityId() {
     return player_component | next_local_entity_id++;
 }
 
-void NetSessionState::EnqueueNetEvent(NetEvent event) {
-    if (event.header.event_id == kInvalidNetEventId) {
-        event.header = MakeLocalEventHeader(0);
+void NetSessionState::EnqueueNetMessage(NetMessage message) {
+    if (message.header.message_id == kInvalidNetMessageId) {
+        message.header = MakeLocalMessageHeader(0);
     }
     if (role == NetRole::Coordinator || role == NetRole::Offline) {
-        EnqueueOrderedEvent(event);
+        EnqueueOrderedMessage(message);
         return;
     }
-    AddEventLog(NetEventLogPhase::EnqueuedOutbound, event);
-    pending_outbound_events.push_back(event);
+    AddMessageLog(NetMessageLogPhase::EnqueuedOutbound, message);
+    pending_outbound_messages.push_back(message);
 }
 
-void NetSessionState::EnqueueOrderedEvent(NetEvent event) {
-    if (event.header.event_id == kInvalidNetEventId) {
-        event.header = MakeLocalEventHeader(0);
+void NetSessionState::EnqueueOrderedMessage(NetMessage message) {
+    if (message.header.message_id == kInvalidNetMessageId) {
+        message.header = MakeLocalMessageHeader(0);
     }
-    if (IsTransientStatePatch(event)) {
-        EnqueueTransientEvent(event);
+    if (IsTransientStatePatch(message)) {
+        EnqueueTransientMessage(message);
         return;
     }
-    if (event.header.coordinator_order == 0) {
-        event.header.coordinator_order = next_coordinator_order++;
+    if (message.header.coordinator_order == 0) {
+        message.header.coordinator_order = next_coordinator_order++;
     }
-    AddEventLog(NetEventLogPhase::EnqueuedOrdered, event);
-    ordered_events.push_back(event);
+    AddMessageLog(NetMessageLogPhase::EnqueuedOrdered, message);
+    ordered_messages.push_back(message);
 }
 
-void NetSessionState::EnqueueTransientEvent(NetEvent event) {
-    if (event.header.event_id == kInvalidNetEventId) {
-        event.header = MakeLocalTransientEventHeader(0);
+void NetSessionState::EnqueueTransientMessage(NetMessage message) {
+    if (message.header.message_id == kInvalidNetMessageId) {
+        message.header = MakeLocalTransientMessageHeader(0);
     }
-    event.header.coordinator_order = 0;
-    AddEventLog(NetEventLogPhase::EnqueuedOrdered, event);
-    ordered_events.push_back(event);
+    message.header.coordinator_order = 0;
+    AddMessageLog(NetMessageLogPhase::EnqueuedOrdered, message);
+    ordered_messages.push_back(message);
 }
 
-std::size_t NetSessionState::MarkAllOrderedEventsApplied() {
+std::size_t NetSessionState::MarkAllOrderedMessagesApplied() {
     std::size_t count = 0;
-    for (const NetEvent& event : ordered_events) {
-        if (MarkEventApplied(event.header.event_id)) {
+    for (const NetMessage& message : ordered_messages) {
+        if (MarkMessageApplied(message.header.message_id)) {
             ++count;
         }
     }
     return count;
 }
 
-bool NetSessionState::MarkEventApplied(NetEventId event_id) {
-    if (event_id == kInvalidNetEventId || HasAppliedEvent(event_id)) {
+bool NetSessionState::MarkMessageApplied(NetMessageId message_id) {
+    if (message_id == kInvalidNetMessageId || HasAppliedMessage(message_id)) {
         return false;
     }
-    applied_event_ids.push_back(event_id);
+    applied_message_ids.push_back(message_id);
     return true;
 }
 
-bool NetSessionState::HasAppliedEvent(NetEventId event_id) const {
-    return std::find(applied_event_ids.begin(), applied_event_ids.end(), event_id) !=
-           applied_event_ids.end();
+bool NetSessionState::HasAppliedMessage(NetMessageId message_id) const {
+    return std::find(applied_message_ids.begin(), applied_message_ids.end(), message_id) !=
+           applied_message_ids.end();
 }
 
-void NetSessionState::MarkCoordinatorOrderApplied(const NetEvent& event) {
-    const std::uint64_t order = event.header.coordinator_order;
+void NetSessionState::MarkCoordinatorOrderApplied(const NetMessage& message) {
+    const std::uint64_t order = message.header.coordinator_order;
     if (order == 0) {
         return;
     }
@@ -261,48 +261,48 @@ void NetSessionState::MarkCoordinatorOrderApplied(const NetEvent& event) {
     }
 }
 
-void NetSessionState::AddEventLog(NetEventLogPhase phase, const NetEvent& event) {
-    if (event_log.size() >= kMaxEventLogEntries) {
-        event_log.erase(event_log.begin());
+void NetSessionState::AddMessageLog(NetMessageLogPhase phase, const NetMessage& message) {
+    if (message_log.size() >= kMaxMessageLogEntries) {
+        message_log.erase(message_log.begin());
     }
-    const NetEventLogEntry entry{
+    const NetMessageLogEntry entry{
         .phase = phase,
-        .event_id = event.header.event_id,
-        .coordinator_order = event.header.coordinator_order,
-        .source_local_frame = event.header.source_local_frame,
-        .source_player_id = event.header.source_player_id,
-        .type = event.type,
+        .message_id = message.header.message_id,
+        .coordinator_order = message.header.coordinator_order,
+        .source_local_frame = message.header.source_local_frame,
+        .source_player_id = message.header.source_player_id,
+        .type = message.type,
     };
-    event_log.push_back(entry);
+    message_log.push_back(entry);
 
     const std::filesystem::path log_dir = "logs";
     std::error_code ec;
     std::filesystem::create_directories(log_dir, ec);
     const std::filesystem::path log_path =
-        log_dir / ("network_events_" + std::string(NetRoleName(role)) +
+        log_dir / ("network_messages_" + std::string(NetRoleName(role)) +
                    "_p" + std::to_string(local_player_id) + ".log");
-    if (event_log_file_path != log_path.string()) {
-        event_log_file_path = log_path.string();
+    if (message_log_file_path != log_path.string()) {
+        message_log_file_path = log_path.string();
         std::ofstream reset_file(log_path, std::ios::trunc);
-        reset_file << "# splonks network event log role=" << NetRoleName(role)
+        reset_file << "# splonks network message log role=" << NetRoleName(role)
                    << " local_player=" << local_player_id
                    << " stage_instance=" << stage_instance_id << '\n';
     }
 
     std::ofstream output(log_path, std::ios::app);
-    output << "phase=" << NetEventLogPhaseName(entry.phase)
-           << " event=" << entry.event_id
+    output << "phase=" << NetMessageLogPhaseName(entry.phase)
+           << " message=" << entry.message_id
            << " order=" << entry.coordinator_order
            << " src_player=" << entry.source_player_id
            << " src_frame=" << entry.source_local_frame
            << " local_player=" << local_player_id
-           << " stage=" << event.header.stage_instance_id
-           << " type=" << NetEventTypeName(entry.type)
+           << " stage=" << message.header.stage_instance_id
+           << " type=" << NetMessageTypeName(entry.type)
            << " type_id=" << static_cast<unsigned int>(entry.type);
-    if (const auto* const state_patch = std::get_if<EntityStatePatchedEvent>(&event.payload)) {
+    if (const auto* const state_patch = std::get_if<EntityStatePatchedMessage>(&message.payload)) {
         output << " entity=" << state_patch->entity_id
                << " source_entity=" << state_patch->source_entity_id;
-    } else if (const auto* const action = std::get_if<ActionRequestEvent>(&event.payload)) {
+    } else if (const auto* const action = std::get_if<ActionRequestMessage>(&message.payload)) {
         output << " action=" << NetActionKindName(action->kind)
                << " action_id=" << static_cast<unsigned int>(action->kind)
                << " source_entity=" << action->source_entity_id
@@ -317,11 +317,11 @@ void NetSessionState::AddEventLog(NetEventLogPhase phase, const NetEvent& event)
 void NetSessionState::ClearStageEntityLinks() {
     entity_links.clear();
     entity_id_aliases.clear();
-    applied_event_ids.clear();
+    applied_message_ids.clear();
     applied_coordinator_orders.clear();
-    ordered_events.clear();
-    pending_outbound_events.clear();
-    event_log.clear();
+    ordered_messages.clear();
+    pending_outbound_messages.clear();
+    message_log.clear();
     next_coordinator_order = 1;
     next_expected_coordinator_order = 1;
     highest_applied_coordinator_order = 0;

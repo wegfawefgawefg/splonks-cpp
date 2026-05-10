@@ -27,7 +27,7 @@ enum class NetTileLayer : std::uint8_t {
     Backwall,
 };
 
-enum class NetEventType : std::uint16_t {
+enum class NetMessageType : std::uint16_t {
     None,
 
     PeerJoined,
@@ -85,8 +85,8 @@ constexpr std::uint16_t kActionRequestFlagClearVelocity = 1U << 0U;
 constexpr std::uint16_t kActionRequestFlagClearAcceleration = 1U << 1U;
 constexpr std::uint16_t kActionRequestFlagKnockbackOnNoDamage = 1U << 2U;
 
-struct NetEventHeader {
-    NetEventId event_id = kInvalidNetEventId;
+struct NetMessageHeader {
+    NetMessageId message_id = kInvalidNetMessageId;
     PlayerId source_player_id = kInvalidPlayerId;
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint64_t source_local_frame = 0;
@@ -100,7 +100,7 @@ struct EntityReplicatedEffect {
     std::uint32_t frames_remaining = 0;
 };
 
-struct EntitySpawnedEvent {
+struct EntitySpawnedMessage {
     NetEntityId entity_id = kInvalidNetEntityId;
     EntityType entity_type = EntityType::None;
     NetEntityId held_by_id = kInvalidNetEntityId;
@@ -124,31 +124,31 @@ struct EntitySpawnedEvent {
     float animation_speed = 1.0F;
 };
 
-struct EntityIdEvent {
+struct EntityIdMessage {
     NetEntityId entity_id = kInvalidNetEntityId;
 };
 
-struct EntityHeldEvent {
+struct EntityHeldMessage {
     NetEntityId holder_id = kInvalidNetEntityId;
     NetEntityId held_id = kInvalidNetEntityId;
     AttachmentMode attachment_mode = AttachmentMode::Held;
 };
 
-struct EntityDroppedEvent {
+struct EntityDroppedMessage {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId dropped_by_id = kInvalidNetEntityId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
 };
 
-struct EntityThrownEvent {
+struct EntityThrownMessage {
     NetEntityId entity_id = kInvalidNetEntityId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     Vec2 vel = Vec2::New(0.0F, 0.0F);
     NetEntityId thrower_id = kInvalidNetEntityId;
 };
 
-struct EntityDamagedEvent {
+struct EntityDamagedMessage {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId source_entity_id = kInvalidNetEntityId;
     std::uint32_t amount = 0;
@@ -169,7 +169,7 @@ struct EntityDamagedEvent {
     DamageType damage_type = DamageType::Attack;
 };
 
-struct EntityStatePatchedEvent {
+struct EntityStatePatchedMessage {
     NetEntityId entity_id = kInvalidNetEntityId;
     NetEntityId source_entity_id = kInvalidNetEntityId;
     NetEntityId entity_a_id = kInvalidNetEntityId;
@@ -232,19 +232,19 @@ struct EntityStatePatchedEvent {
     float animation_speed = 1.0F;
 };
 
-struct TileChangedEvent {
+struct TileChangedMessage {
     IVec2 tile_pos = IVec2::New(0, 0);
     Tile tile = Tile::Air;
     TileRotation rotation = kTileRotation0;
     NetTileLayer layer = NetTileLayer::Foreground;
 };
 
-struct TileBrokenEvent {
+struct TileBrokenMessage {
     IVec2 tile_pos = IVec2::New(0, 0);
     NetEntityId source_entity_id = kInvalidNetEntityId;
 };
 
-struct FluidCellPatchedEvent {
+struct FluidCellPatchedMessage {
     IVec2 tile_pos = IVec2::New(0, 0);
     Tile tile = Tile::Air;
     float amount = 0.0F;
@@ -254,7 +254,7 @@ struct FluidCellPatchedEvent {
     float gravity_strength = 0.0F;
 };
 
-struct PresentationCommandEvent {
+struct PresentationCommandMessage {
     std::uint16_t kind = 0;
     std::uint16_t effect_id = 0;
     std::uint32_t audio_asset_id = 0;
@@ -285,7 +285,7 @@ struct PlayerStatePatchedEffect {
     std::uint32_t frames_remaining = 0;
 };
 
-struct PlayerStatePatchedEvent {
+struct PlayerStatePatchedMessage {
     NetEntityId player_entity_id = kInvalidNetEntityId;
     PlayerId player_id = kInvalidPlayerId;
     std::uint32_t health = 0;
@@ -297,7 +297,7 @@ struct PlayerStatePatchedEvent {
     std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount> effects{};
 };
 
-struct RunStatePatchedEvent {
+struct RunStatePatchedMessage {
     QuestId quest_id = QuestId::None;
     std::uint32_t frame = 0;
     std::uint32_t stage_frame = 0;
@@ -340,12 +340,12 @@ struct RunStatePatchedEvent {
     std::uint64_t snapshot_fingerprint = 0;
 };
 
-struct StageLoadedEvent {
+struct StageLoadedMessage {
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint32_t seed = 0;
 };
 
-struct ActionRequestEvent {
+struct ActionRequestMessage {
     NetActionKind kind = NetActionKind::None;
     NetEntityId source_entity_id = kInvalidNetEntityId;
     NetEntityId target_entity_id = kInvalidNetEntityId;
@@ -366,26 +366,26 @@ struct ActionRequestEvent {
     NetUseEdge use_edge = NetUseEdge::None;
 };
 
-struct NetEvent {
-    NetEventHeader header{};
-    NetEventType type = NetEventType::None;
+struct NetMessage {
+    NetMessageHeader header{};
+    NetMessageType type = NetMessageType::None;
     std::variant<
         std::monostate,
-        EntitySpawnedEvent,
-        EntityIdEvent,
-        EntityHeldEvent,
-        EntityDroppedEvent,
-        EntityThrownEvent,
-        EntityDamagedEvent,
-        EntityStatePatchedEvent,
-        TileChangedEvent,
-        TileBrokenEvent,
-        FluidCellPatchedEvent,
-        PresentationCommandEvent,
-        PlayerStatePatchedEvent,
-        RunStatePatchedEvent,
-        StageLoadedEvent,
-        ActionRequestEvent
+        EntitySpawnedMessage,
+        EntityIdMessage,
+        EntityHeldMessage,
+        EntityDroppedMessage,
+        EntityThrownMessage,
+        EntityDamagedMessage,
+        EntityStatePatchedMessage,
+        TileChangedMessage,
+        TileBrokenMessage,
+        FluidCellPatchedMessage,
+        PresentationCommandMessage,
+        PlayerStatePatchedMessage,
+        RunStatePatchedMessage,
+        StageLoadedMessage,
+        ActionRequestMessage
     > payload{};
 };
 

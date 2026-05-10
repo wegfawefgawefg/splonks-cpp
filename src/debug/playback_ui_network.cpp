@@ -1,6 +1,6 @@
 #include "debug/playback_internal.hpp"
 
-#include "network/net_event_apply.hpp"
+#include "network/net_message_apply.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_session.hpp"
 #include "stage_spawning.hpp"
@@ -29,67 +29,67 @@ const char* NetRoleName(network::NetRole role) {
     return "Unknown";
 }
 
-const char* NetEventTypeName(network::NetEventType type) {
+const char* NetMessageTypeName(network::NetMessageType type) {
     switch (type) {
-    case network::NetEventType::None:
+    case network::NetMessageType::None:
         return "None";
-    case network::NetEventType::PeerJoined:
+    case network::NetMessageType::PeerJoined:
         return "PeerJoined";
-    case network::NetEventType::PeerLeft:
+    case network::NetMessageType::PeerLeft:
         return "PeerLeft";
-    case network::NetEventType::PlayerSpawned:
+    case network::NetMessageType::PlayerSpawned:
         return "PlayerSpawned";
-    case network::NetEventType::PlayerDespawned:
+    case network::NetMessageType::PlayerDespawned:
         return "PlayerDespawned";
-    case network::NetEventType::StageLoaded:
+    case network::NetMessageType::StageLoaded:
         return "StageLoaded";
-    case network::NetEventType::StageTransitionStarted:
+    case network::NetMessageType::StageTransitionStarted:
         return "StageTransitionStarted";
-    case network::NetEventType::StageTransitionCommitted:
+    case network::NetMessageType::StageTransitionCommitted:
         return "StageTransitionCommitted";
-    case network::NetEventType::RepairSnapshot:
+    case network::NetMessageType::RepairSnapshot:
         return "RepairSnapshot";
-    case network::NetEventType::ActionRequest:
+    case network::NetMessageType::ActionRequest:
         return "ActionRequest";
-    case network::NetEventType::EntitySpawned:
+    case network::NetMessageType::EntitySpawned:
         return "EntitySpawned";
-    case network::NetEventType::EntityDeactivated:
+    case network::NetMessageType::EntityDeactivated:
         return "EntityDeactivated";
-    case network::NetEventType::EntityStatePatched:
+    case network::NetMessageType::EntityStatePatched:
         return "EntityStatePatched";
-    case network::NetEventType::EntityHeld:
+    case network::NetMessageType::EntityHeld:
         return "EntityHeld";
-    case network::NetEventType::EntityDropped:
+    case network::NetMessageType::EntityDropped:
         return "EntityDropped";
-    case network::NetEventType::EntityThrown:
+    case network::NetMessageType::EntityThrown:
         return "EntityThrown";
-    case network::NetEventType::EntityDamaged:
+    case network::NetMessageType::EntityDamaged:
         return "EntityDamaged";
-    case network::NetEventType::TileChanged:
+    case network::NetMessageType::TileChanged:
         return "TileChanged";
-    case network::NetEventType::FluidCellPatched:
+    case network::NetMessageType::FluidCellPatched:
         return "FluidCellPatched";
-    case network::NetEventType::TileBroken:
+    case network::NetMessageType::TileBroken:
         return "TileBroken";
-    case network::NetEventType::PlayerStatePatched:
+    case network::NetMessageType::PlayerStatePatched:
         return "PlayerStatePatched";
-    case network::NetEventType::RunStatePatched:
+    case network::NetMessageType::RunStatePatched:
         return "RunStatePatched";
-    case network::NetEventType::PresentationCommand:
+    case network::NetMessageType::PresentationCommand:
         return "PresentationCommand";
     }
     return "Unknown";
 }
 
-const char* NetEventLogPhaseName(network::NetEventLogPhase phase) {
+const char* NetMessageLogPhaseName(network::NetMessageLogPhase phase) {
     switch (phase) {
-    case network::NetEventLogPhase::EnqueuedOutbound:
+    case network::NetMessageLogPhase::EnqueuedOutbound:
         return "outbound";
-    case network::NetEventLogPhase::EnqueuedOrdered:
+    case network::NetMessageLogPhase::EnqueuedOrdered:
         return "ordered";
-    case network::NetEventLogPhase::Applied:
+    case network::NetMessageLogPhase::Applied:
         return "applied";
-    case network::NetEventLogPhase::SkippedLocalApply:
+    case network::NetMessageLogPhase::SkippedLocalApply:
         return "skip-local";
     }
     return "unknown";
@@ -184,50 +184,50 @@ void DrawFuzzerControls(network::NetFuzzerConfig& config) {
     ImGui::SliderFloat("Clock drift %", &config.clock_drift_percent, -5.0F, 5.0F, "%.3f");
 }
 
-void DrawRecentOrderedEvents(const network::NetSessionState& session) {
-    if (!ImGui::CollapsingHeader("Ordered Events")) {
+void DrawRecentOrderedMessages(const network::NetSessionState& session) {
+    if (!ImGui::CollapsingHeader("Ordered Messages")) {
         return;
     }
 
     constexpr std::size_t kMaxRows = 12;
-    const std::size_t total = session.ordered_events.size();
+    const std::size_t total = session.ordered_messages.size();
     const std::size_t begin = total > kMaxRows ? total - kMaxRows : 0;
     for (std::size_t i = begin; i < total; ++i) {
-        const network::NetEvent& event = session.ordered_events[i];
+        const network::NetMessage& message = session.ordered_messages[i];
         ImGui::Text(
             "#%llu order=%llu player=%u type=%s applied=%s",
-            static_cast<unsigned long long>(event.header.event_id),
-            static_cast<unsigned long long>(event.header.coordinator_order),
-            event.header.source_player_id,
-            NetEventTypeName(event.type),
-            session.HasAppliedEvent(event.header.event_id) ? "yes" : "no"
+            static_cast<unsigned long long>(message.header.message_id),
+            static_cast<unsigned long long>(message.header.coordinator_order),
+            message.header.source_player_id,
+            NetMessageTypeName(message.type),
+            session.HasAppliedMessage(message.header.message_id) ? "yes" : "no"
         );
     }
 }
 
-void DrawEventLog(network::NetSessionState& session) {
-    if (!ImGui::CollapsingHeader("Event Log")) {
+void DrawMessageLog(network::NetSessionState& session) {
+    if (!ImGui::CollapsingHeader("Message Log")) {
         return;
     }
-    ImGui::Text("Entries: %zu", session.event_log.size());
+    ImGui::Text("Entries: %zu", session.message_log.size());
     ImGui::SameLine();
-    if (ImGui::Button("Clear Event Log")) {
-        session.event_log.clear();
+    if (ImGui::Button("Clear Message Log")) {
+        session.message_log.clear();
     }
 
     constexpr std::size_t kMaxRows = 64;
-    const std::size_t total = session.event_log.size();
+    const std::size_t total = session.message_log.size();
     const std::size_t begin = total > kMaxRows ? total - kMaxRows : 0;
     for (std::size_t i = begin; i < total; ++i) {
-        const network::NetEventLogEntry& entry = session.event_log[i];
+        const network::NetMessageLogEntry& entry = session.message_log[i];
         ImGui::Text(
             "%s #%llu order=%llu player=%u frame=%llu type=%s",
-            NetEventLogPhaseName(entry.phase),
-            static_cast<unsigned long long>(entry.event_id),
+            NetMessageLogPhaseName(entry.phase),
+            static_cast<unsigned long long>(entry.message_id),
             static_cast<unsigned long long>(entry.coordinator_order),
             entry.source_player_id,
             static_cast<unsigned long long>(entry.source_local_frame),
-            NetEventTypeName(entry.type)
+            NetMessageTypeName(entry.type)
         );
     }
 }
@@ -600,13 +600,13 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
         session.quest_stage_id.c_str(),
         session.stage_seed
     );
-    ImGui::Text("Next local event: %llu", static_cast<unsigned long long>(session.next_local_event_id));
+    ImGui::Text("Next local message: %llu", static_cast<unsigned long long>(session.next_local_message_id));
     ImGui::Text("Next coordinator order: %llu", static_cast<unsigned long long>(session.next_coordinator_order));
     ImGui::Separator();
 
-    ImGui::Text("Pending outbound events: %zu", session.pending_outbound_events.size());
-    ImGui::Text("Ordered events: %zu", session.ordered_events.size());
-    ImGui::Text("Applied events: %zu", session.applied_event_ids.size());
+    ImGui::Text("Pending outbound messages: %zu", session.pending_outbound_messages.size());
+    ImGui::Text("Ordered messages: %zu", session.ordered_messages.size());
+    ImGui::Text("Applied messages: %zu", session.applied_message_ids.size());
     ImGui::Text("Entity links: %zu", session.entity_links.size());
     ImGui::Separator();
 
@@ -625,17 +625,17 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     DrawDebugLocalPlayers(state, debug, graphics);
     ImGui::Separator();
 
-    ImGui::TextUnformatted("Net Event Harness");
-    if (ImGui::Button("Apply Ordered Events")) {
-        const std::size_t count = network::ApplyOrderedEvents(session, state);
-        debug.network_status = "Applied " + std::to_string(count) + " ordered events.";
+    ImGui::TextUnformatted("Net Message Harness");
+    if (ImGui::Button("Apply Ordered Messages")) {
+        const std::size_t count = network::ApplyOrderedMessages(session, state);
+        debug.network_status = "Applied " + std::to_string(count) + " ordered messages.";
     }
     ImGui::SameLine();
     if (ImGui::Button("Clear Queues")) {
-        session.pending_outbound_events.clear();
-        session.ordered_events.clear();
-        session.applied_event_ids.clear();
-        debug.network_status = "Cleared network event queues.";
+        session.pending_outbound_messages.clear();
+        session.ordered_messages.clear();
+        session.applied_message_ids.clear();
+        debug.network_status = "Cleared network message queues.";
     }
     if (!debug.network_status.empty()) {
         ImGui::TextWrapped("%s", debug.network_status.c_str());
@@ -661,8 +661,8 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Text("Duplicated: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_duplicated));
     ImGui::Text("Reordered: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_reordered));
 
-    DrawRecentOrderedEvents(session);
-    DrawEventLog(session);
+    DrawRecentOrderedMessages(session);
+    DrawMessageLog(session);
     ImGui::End();
 }
 

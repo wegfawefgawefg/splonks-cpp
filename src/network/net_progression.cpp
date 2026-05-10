@@ -150,9 +150,9 @@ void ApplyStageSyncNow(
     state.net_session.quest_stage_id = quest_stage_id;
     state.net_session.stage_seed = stage_seed;
     state.net_session.ClearStageEntityLinks();
-    state.net_session.ordered_events.clear();
-    state.net_session.pending_outbound_events.clear();
-    state.net_session.applied_event_ids.clear();
+    state.net_session.ordered_messages.clear();
+    state.net_session.pending_outbound_messages.clear();
+    state.net_session.applied_message_ids.clear();
     transport.remote_player_targets.clear();
     transport.replicated_entity_state_cache.clear();
     transport.replicated_fluid_cell_cache.clear();
@@ -194,9 +194,9 @@ void ApplyStageSync(
 
     if (packet.force_resync != 0 &&
         packet.stage_instance_id == state.net_session.stage_instance_id) {
-        state.net_session.ordered_events.clear();
-        state.net_session.pending_outbound_events.clear();
-        state.net_session.applied_event_ids.clear();
+        state.net_session.ordered_messages.clear();
+        state.net_session.pending_outbound_messages.clear();
+        state.net_session.applied_message_ids.clear();
         state.net_session.applied_coordinator_orders.clear();
         state.net_session.highest_applied_coordinator_order =
             packet.snapshot_start_coordinator_order > 0
@@ -282,9 +282,9 @@ void NotifyStageLoaded(State& state) {
     state.net_session.stage_seed = state.stage.generation_seed.value_or(MakeHostStageSeed(state));
     state.net_session.stage_instance_id += 1;
     state.net_session.ClearStageEntityLinks();
-    state.net_session.ordered_events.clear();
-    state.net_session.pending_outbound_events.clear();
-    state.net_session.applied_event_ids.clear();
+    state.net_session.ordered_messages.clear();
+    state.net_session.pending_outbound_messages.clear();
+    state.net_session.applied_message_ids.clear();
     RegisterStageEntityLinks(state);
     if (state.net_transport) {
         ClearPendingStageSync(*state.net_transport);

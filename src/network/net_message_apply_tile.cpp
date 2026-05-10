@@ -1,4 +1,4 @@
-#include "network/net_event_apply_internal.hpp"
+#include "network/net_message_apply_internal.hpp"
 
 #include "audio_emitters.hpp"
 #include "stage_acoustics.hpp"
@@ -22,7 +22,7 @@ bool IsSimulatedFluidTile(Tile tile) {
 
 } // namespace
 
-void ApplyTileBrokenEvent(State& state, Audio* audio, const TileBrokenEvent& payload) {
+void ApplyTileBrokenMessage(State& state, Audio* audio, const TileBrokenMessage& payload) {
     if (audio != nullptr) {
         BreakStageTilesAtCoords(
             {payload.tile_pos},
@@ -48,7 +48,7 @@ void ApplyTileBrokenEvent(State& state, Audio* audio, const TileBrokenEvent& pay
     UpdateStageAcousticsForTileChanges(state, changed_tiles);
 }
 
-void ApplyTileChangedEvent(State& state, const TileChangedEvent& payload) {
+void ApplyTileChangedMessage(State& state, const TileChangedMessage& payload) {
     const IVec2 wrapped_pos = state.stage.WrapTileCoord(payload.tile_pos);
     if (!state.stage.IsTileCoordInside(wrapped_pos.x, wrapped_pos.y)) {
         return;
@@ -85,7 +85,7 @@ void ApplyTileChangedEvent(State& state, const TileChangedEvent& payload) {
     UpdateStageAcousticsForTileChanges(state, changed_tiles);
 }
 
-void ApplyFluidCellPatchedEvent(State& state, const FluidCellPatchedEvent& payload) {
+void ApplyFluidCellPatchedMessage(State& state, const FluidCellPatchedMessage& payload) {
     const IVec2 wrapped_pos = state.stage.WrapTileCoord(payload.tile_pos);
     if (!state.stage.IsTileCoordInside(wrapped_pos.x, wrapped_pos.y)) {
         return;
