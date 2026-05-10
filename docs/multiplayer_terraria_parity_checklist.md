@@ -421,45 +421,85 @@ Known playtest symptoms to classify under this gate, not patch ad hoc:
   regresses in live play, treat it as a bug in the broad held-use/action lane,
   not as a mattock-specific packet.
 
-## Gate 6: Prediction And Reconciliation Polish
+## Gate 6: Terraria-Like Prediction And Reconciliation Polish
 
-Goal: corrections are visible but not game-breaking, and local player control is
-never blocked.
+Goal: local owner movement feels offline, while shared durable consequences still
+come from the coordinator.
+
+Terraria-like means normal player movement is owner-trusted enough for feel. The
+coordinator still owns shared world facts: damage, death, stun, pickups, money,
+items, entities, tiles, fluids, exits, respawns, and stage transitions. The peer
+must not be yanked backward by stale coordinator body snapshots during ordinary
+jump/run/climb/hang movement.
+
+### Checklist
 
 - [x] Define which local actions may be predicted visually.
 - [x] Define which local actions may not be predicted because wrong prediction is
   too destructive.
-- [ ] Local player movement predicts immediately.
-- [x] Local held/back item use can show presentation immediately where safe.
+- [x] Add debug overlay showing predicted vs coordinator-corrected player body.
+- [ ] Split player snapshot application into owner-local and remote-replica
+  policies.
+- [ ] Owner-local policy ignores stale normal-movement position/velocity repairs
+  while the local player is in normal control.
+- [ ] Owner-local policy still applies semantic coordinator corrections
+  immediately: health, death, stun, no-physics/no-collision, respawn, stage
+  transition, teleport, held/carry/attachment link changes, and large impossible
+  position divergence.
+- [ ] Owner-local policy preserves local fall/coyote/jump/climb/hang feel timers
+  during normal movement, but accepts coordinator timers when semantic state
+  changes.
+- [ ] Owner-local policy smooths only small non-semantic residual corrections
+  over a short window.
+- [ ] Owner-local policy snaps large errors and all semantic corrections.
+- [ ] Remote-replica policy continues interpolating other players from
+  coordinator state and never authors canonical gameplay.
 - [ ] Canonical spawned entities from peer actions come from coordinator.
 - [ ] Peer-predicted local artifacts either reconcile to coordinator net ids or
   are cosmetic-only and deleted.
-- [ ] Small body corrections are smoothed.
-- [ ] Large body corrections snap.
 - [ ] Attachment/held/carry corrections snap links immediately.
 - [ ] Death/respawn/stage-transition corrections snap immediately.
-- [x] Add debug overlay showing predicted vs coordinator-corrected player body.
+- [ ] Add smoke coverage for owner-local jump correction: peer jump must not be
+  pulled downward/backward by an older coordinator snapshot.
+- [ ] Add smoke coverage for owner-local hang/climb correction: peer ledge/rope/
+  ladder movement must not be destroyed by normal stale snapshots, but invalid
+  large divergence still snaps.
+- [ ] Add smoke coverage for semantic correction while moving: coordinator damage
+  or stun must override local prediction immediately.
 
-Prediction policy:
+### Step Plan
+
+1. Keep the current coordinator-authoritative durable world model.
+2. In `StepRemotePlayerInterpolation`, branch explicitly between owner-local
+   prediction repair and remote-player interpolation.
+3. For remote players, keep the current interpolation/snap path.
+4. For the owning local player on a peer, classify each incoming player target as
+   normal movement repair or semantic repair.
+5. For normal movement repair, do not directly overwrite position/velocity if the
+   snapshot is close enough to local prediction. Record the target for debug and
+   optionally smooth a tiny residual.
+6. For semantic repair, snap immediately and copy coordinator body fields.
+7. Use conservative semantic triggers first: health change, condition change,
+   physics/collision flag change, held/attached/carry state, stage transition,
+   respawn/death, teleport, or distance above the snap threshold.
+8. Only after jump/hang feel is stable, consider cosmetic local ghosts for tools
+   like bombs/ropes/arrows. Do not predict canonical entity ids yet.
+
+### Policy Details
 
 - Predict local player movement immediately. The owning client should feel like
-  offline play; coordinator snapshots repair position, velocity, condition, and
-  animation when they differ.
+  offline play during ordinary run, jump, fall, climb, hang, and swim movement.
 - Keep local-only movement counters that affect feel, such as normal-state fall
   timer accumulation, locally predicted until a canonical health/condition/body
-  lifecycle correction arrives. Stale periodic snapshots must not change fall
-  damage thresholds on the owning client.
-- Fall damage is still a durable damage mutation. Peers may accumulate a local
+  lifecycle correction arrives.
+- Fall damage remains a durable damage mutation. Peers may accumulate a local
   fall timer for movement/equipment feel, but only offline/coordinator gameplay
   applies fall damage; peers wait for coordinator damage/repair.
 - Predict movement-derived local player presentation immediately: walk/run,
-  hang/climb/fall poses, emotes, and facing. Coordinator player snapshots repair
-  stale remote-facing presentation.
-- Interpolate remote players from coordinator state. Do not let remote player
-  replicas author canonical gameplay.
-- Allow safe local item presentation: bat windup, cape open/closed pose,
-  jetpack flame, weapon use pose, local sound, recoil pose, and camera shake.
-  These may be discarded or repaired without changing durable state.
+  hang/climb/fall poses, emotes, and facing.
+- Allow safe local item presentation: bat windup, cape open/closed pose, jetpack
+  flame, weapon use pose, local sound, recoil pose, and camera shake. These may
+  be discarded or repaired without changing durable state.
 - Continuous attachment presentation is archetype opt-in through
   `predict_attachment_use_presentation`. Peers still send authoritative
   held/back use requests, but opted-in attachments may keep their local
@@ -469,24 +509,23 @@ Prediction policy:
   inventory counts, shop/dice results, stage transitions, respawns, or exits.
 - Do not predict canonical tile mutations. Tile break/place/change comes from
   coordinator result or repair lanes.
-- `Debug: Network` now shows each player target beside the local body: position
-  and velocity deltas, snap severity, fall/coyote/stun timers, grounded,
-  condition, health, and animation frame. The control-server `net` command emits
-  the same body/delta diagnostics for live process inspection.
-- Do not predict canonical spawned entities. Bombs, ropes, arrows, webs, thrown
-  pots, loot, and enemies are coordinator-assigned net ids. Local cosmetic ghosts
-  are allowed only if they are clearly non-canonical and deleted on confirmation
-  or timeout.
+- Do not predict canonical spawned entities yet. Bombs, ropes, arrows, webs,
+  thrown pots, loot, and enemies are coordinator-assigned net ids. Local cosmetic
+  ghosts are allowed only if they are clearly non-canonical and deleted on
+  confirmation or timeout.
 - Snap held/attached/carry link corrections immediately. Smoothing link state
   creates more visible bugs than it hides.
 - Snap death, respawn, and stage-transition corrections immediately.
 - Keep fluids coordinator/world-repair driven. Render smoothing is local
   presentation; fluid amount/cell changes are canonical world state.
+- `Debug: Network` shows each player target beside the local body: position and
+  velocity deltas, snap severity, fall/coyote/stun timers, grounded, condition,
+  health, and animation frame. The control-server `net` command emits the same
+  body/delta diagnostics for live process inspection.
 
-Current status: policy is defined, but implementation is still immature. Recent
-player repair work fixed permanent position/fall-timer divergence in some cases,
-but movement prediction, safe item presentation, and smoothing/snap thresholds
-still need deliberate tests.
+Current status: durable convergence is stable enough to start this gate. The
+next implementation target is owner-local movement repair, starting with jump
+stutter and hang/climb feel.
 
 ## Gate 7: Debug/Admin Lane
 
