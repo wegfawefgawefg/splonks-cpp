@@ -115,6 +115,16 @@ void SendActionRequestAck(
     const std::vector<NetEventId>& event_ids
 );
 
+void SendJoinRequest(State& state);
+void MarkRemoteEndpointHeard(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    std::uint64_t frame
+);
+void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport);
+void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
+void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
+
 void SendPendingPeerEventsToCoordinator(State& state, NetTransportRuntime& transport);
 void SendOrderedEventsToAllRemotes(State& state, NetTransportRuntime& transport);
 void PruneAckedOrderedEvents(State& state, const NetTransportRuntime& transport);

@@ -6,36 +6,6 @@
 
 namespace splonks::network {
 
-constexpr std::uint16_t kActionRequestFlagClearVelocity = 1U << 0U;
-constexpr std::uint16_t kActionRequestFlagClearAcceleration = 1U << 1U;
-constexpr std::uint16_t kActionRequestFlagKnockbackOnNoDamage = 1U << 2U;
-
-std::uint16_t BuildActionRequestFlags(const ActionRequestEvent& payload) {
-    std::uint16_t flags = 0;
-    if (payload.clear_velocity) {
-        flags |= kActionRequestFlagClearVelocity;
-    }
-    if (payload.clear_acceleration) {
-        flags |= kActionRequestFlagClearAcceleration;
-    }
-    if (payload.knockback_on_no_damage) {
-        flags |= kActionRequestFlagKnockbackOnNoDamage;
-    }
-    return flags;
-}
-
-bool IsReplicatedTileEvent(const NetEvent& event) {
-    return (event.type == NetEventType::TileBroken &&
-               std::holds_alternative<TileBrokenEvent>(event.payload)) ||
-           (event.type == NetEventType::TileChanged &&
-               std::holds_alternative<TileChangedEvent>(event.payload));
-}
-
-bool IsReplicatedFluidCellEvent(const NetEvent& event) {
-    return event.type == NetEventType::FluidCellPatched &&
-           std::holds_alternative<FluidCellPatchedEvent>(event.payload);
-}
-
 bool IsReplicatedEntitySpawnedEvent(const NetEvent& event) {
     return event.type == NetEventType::EntitySpawned &&
            std::holds_alternative<EntitySpawnedEvent>(event.payload);
@@ -44,11 +14,6 @@ bool IsReplicatedEntitySpawnedEvent(const NetEvent& event) {
 bool IsReplicatedEntityDamageEvent(const NetEvent& event) {
     return event.type == NetEventType::EntityDamaged &&
            std::holds_alternative<EntityDamagedEvent>(event.payload);
-}
-
-bool IsReplicatedActionRequestEvent(const NetEvent& event) {
-    return event.type == NetEventType::ActionRequest &&
-           std::holds_alternative<ActionRequestEvent>(event.payload);
 }
 
 bool IsReplicatedEntityCarryEvent(const NetEvent& event) {
@@ -78,78 +43,6 @@ bool IsReplicatedRunStateEvent(const NetEvent& event) {
 bool IsReplicatedPresentationCommandEvent(const NetEvent& event) {
     return event.type == NetEventType::PresentationCommand &&
            std::holds_alternative<PresentationCommandEvent>(event.payload);
-}
-
-IVec2 GetTileEventPos(const NetEvent& event) {
-    if (const TileBrokenEvent* const payload = std::get_if<TileBrokenEvent>(&event.payload)) {
-        return payload->tile_pos;
-    }
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
-        return payload->tile_pos;
-    }
-    return IVec2::New(0, 0);
-}
-
-Tile GetTileEventTile(const NetEvent& event) {
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
-        return payload->tile;
-    }
-    return Tile::Air;
-}
-
-TileRotation GetTileEventRotation(const NetEvent& event) {
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
-        return payload->rotation;
-    }
-    return kTileRotation0;
-}
-
-NetTileLayer GetTileEventLayer(const NetEvent& event) {
-    if (const TileChangedEvent* const payload = std::get_if<TileChangedEvent>(&event.payload)) {
-        return payload->layer;
-    }
-    return NetTileLayer::Foreground;
-}
-
-TileEventEntry MakeTileEventEntry(const NetEvent& event) {
-    const IVec2 tile_pos = GetTileEventPos(event);
-    return TileEventEntry{
-        .event_id = event.header.event_id,
-        .source_player_id = event.header.source_player_id,
-        .stage_instance_id = event.header.stage_instance_id,
-        .source_local_frame = event.header.source_local_frame,
-        .coordinator_order = event.header.coordinator_order,
-        .event_type = static_cast<std::uint16_t>(event.type),
-        .tile = static_cast<std::uint16_t>(GetTileEventTile(event)),
-        .rotation = GetTileEventRotation(event),
-        .layer = static_cast<std::uint8_t>(GetTileEventLayer(event)),
-        .tile_x = static_cast<std::int32_t>(tile_pos.x),
-        .tile_y = static_cast<std::int32_t>(tile_pos.y),
-    };
-}
-
-FluidCellEventEntry MakeFluidCellEventEntry(const NetEvent& event) {
-    const FluidCellPatchedEvent* const payload = std::get_if<FluidCellPatchedEvent>(&event.payload);
-    return FluidCellEventEntry{
-        .event_id = event.header.event_id,
-        .source_player_id = event.header.source_player_id,
-        .stage_instance_id = event.header.stage_instance_id,
-        .source_local_frame = event.header.source_local_frame,
-        .coordinator_order = event.header.coordinator_order,
-        .tile = payload != nullptr
-            ? static_cast<std::uint16_t>(payload->tile)
-            : static_cast<std::uint16_t>(0),
-        .tile_x = payload != nullptr ? payload->tile_pos.x : 0,
-        .tile_y = payload != nullptr ? payload->tile_pos.y : 0,
-        .amount = payload != nullptr ? payload->amount : 0.0F,
-        .velocity_x = payload != nullptr ? payload->velocity.x : 0.0F,
-        .velocity_y = payload != nullptr ? payload->velocity.y : 0.0F,
-        .gravity_x = payload != nullptr ? payload->gravity.x : 0.0F,
-        .gravity_y = payload != nullptr ? payload->gravity.y : 0.0F,
-        .temp_gravity_x = payload != nullptr ? payload->temp_gravity.x : 0.0F,
-        .temp_gravity_y = payload != nullptr ? payload->temp_gravity.y : 0.0F,
-        .gravity_strength = payload != nullptr ? payload->gravity_strength : 0.0F,
-    };
 }
 
 EntitySpawnedEventEntry MakeEntitySpawnedEventEntry(const NetEvent& event) {
@@ -525,48 +418,11 @@ PresentationCommandEventEntry MakePresentationCommandEventEntry(const NetEvent& 
         .target_y = payload != nullptr ? payload->target_pos.y : 0.0F,
         .direction_x = payload != nullptr ? payload->direction_x : 1,
         .direction_y = payload != nullptr ? payload->direction_y : 0,
-        .param_a = payload != nullptr ? payload->param_a : 0.0F,
-        .param_b = payload != nullptr ? payload->param_b : 0.0F,
-        .param_c = payload != nullptr ? payload->param_c : 0.0F,
-        .param_d = payload != nullptr ? payload->param_d : 0.0F,
-    };
-}
-
-ActionRequestEventEntry MakeActionRequestEventEntry(const NetEvent& event) {
-    const ActionRequestEvent* const payload = std::get_if<ActionRequestEvent>(&event.payload);
-    return ActionRequestEventEntry{
-        .event_id = event.header.event_id,
-        .source_player_id = event.header.source_player_id,
-        .stage_instance_id = event.header.stage_instance_id,
-        .source_local_frame = event.header.source_local_frame,
-        .action_kind = payload != nullptr
-            ? static_cast<std::uint16_t>(payload->kind)
-            : static_cast<std::uint16_t>(NetActionKind::None),
-        .damage_type = payload != nullptr
-            ? static_cast<std::uint16_t>(payload->damage_type)
-            : static_cast<std::uint16_t>(DamageType::Attack),
-        .projectile_contact_damage_type = payload != nullptr
-            ? static_cast<std::uint16_t>(payload->projectile_contact_damage_type)
-            : static_cast<std::uint16_t>(DamageType::Attack),
-        .flags = payload != nullptr ? BuildActionRequestFlags(*payload) : static_cast<std::uint16_t>(0),
-        .source_entity_id = payload != nullptr ? payload->source_entity_id : kInvalidNetEntityId,
-        .target_entity_id = payload != nullptr ? payload->target_entity_id : kInvalidNetEntityId,
-        .tile_x = payload != nullptr ? payload->tile_pos.x : 0,
-        .tile_y = payload != nullptr ? payload->tile_pos.y : 0,
-        .direction_x = payload != nullptr ? payload->direction.x : 0,
-        .direction_y = payload != nullptr ? payload->direction.y : 0,
-        .world_x = payload != nullptr ? payload->world_pos.x : 0.0F,
-        .world_y = payload != nullptr ? payload->world_pos.y : 0.0F,
-        .velocity_x = payload != nullptr ? payload->velocity.x : 0.0F,
-        .velocity_y = payload != nullptr ? payload->velocity.y : 0.0F,
-        .amount = payload != nullptr ? payload->amount : 0U,
-        .projectile_contact_damage_amount =
-            payload != nullptr ? payload->projectile_contact_damage_amount : 0U,
-        .thrown_immunity_timer = payload != nullptr ? payload->thrown_immunity_timer : 0U,
-        .projectile_contact_duration =
-            payload != nullptr ? payload->projectile_contact_duration : 0U,
-        .param_a = payload != nullptr ? payload->param_a : 0U,
-        .param_b = payload != nullptr ? payload->param_b : 0U,
+        .entity_shake_amount = payload != nullptr ? payload->entity_shake_amount : 0.0F,
+        .foreground_shake_amount = payload != nullptr ? payload->foreground_shake_amount : 0.0F,
+        .background_shake_amount = payload != nullptr ? payload->background_shake_amount : 0.0F,
+        .area_entity_shake_amount = payload != nullptr ? payload->area_entity_shake_amount : 0.0F,
+        .shake_radius_tiles = payload != nullptr ? payload->shake_radius_tiles : 0.0F,
     };
 }
 
@@ -593,62 +449,6 @@ void SendEncodedPacket(
 bool IsReplicatedEntityStateEvent(const NetEvent& event) {
     return event.type == NetEventType::EntityStatePatched &&
            std::holds_alternative<EntityStatePatchedEvent>(event.payload);
-}
-
-NetEvent MakeTileEvent(const TileEventEntry& entry) {
-    NetEvent event;
-    event.header = NetEventHeader{
-        .event_id = entry.event_id,
-        .source_player_id = entry.source_player_id,
-        .stage_instance_id = entry.stage_instance_id,
-        .source_local_frame = entry.source_local_frame,
-        .coordinator_order = entry.coordinator_order,
-    };
-    event.type = static_cast<NetEventType>(entry.event_type);
-    const IVec2 tile_pos = IVec2::New(entry.tile_x, entry.tile_y);
-    switch (event.type) {
-    case NetEventType::TileBroken:
-        event.payload = TileBrokenEvent{
-            .tile_pos = tile_pos,
-            .source_entity_id = kInvalidNetEntityId,
-        };
-        break;
-    case NetEventType::TileChanged:
-        event.payload = TileChangedEvent{
-            .tile_pos = tile_pos,
-            .tile = static_cast<Tile>(entry.tile),
-            .rotation = NormalizeTileRotation(entry.rotation),
-            .layer = static_cast<NetTileLayer>(entry.layer),
-        };
-        break;
-    default:
-        event.type = NetEventType::None;
-        event.payload = std::monostate{};
-        break;
-    }
-    return event;
-}
-
-NetEvent MakeFluidCellEvent(const FluidCellEventEntry& entry) {
-    NetEvent event;
-    event.header = NetEventHeader{
-        .event_id = entry.event_id,
-        .source_player_id = entry.source_player_id,
-        .stage_instance_id = entry.stage_instance_id,
-        .source_local_frame = entry.source_local_frame,
-        .coordinator_order = entry.coordinator_order,
-    };
-    event.type = NetEventType::FluidCellPatched;
-    event.payload = FluidCellPatchedEvent{
-        .tile_pos = IVec2::New(entry.tile_x, entry.tile_y),
-        .tile = static_cast<Tile>(entry.tile),
-        .amount = entry.amount,
-        .velocity = Vec2::New(entry.velocity_x, entry.velocity_y),
-        .gravity = Vec2::New(entry.gravity_x, entry.gravity_y),
-        .temp_gravity = Vec2::New(entry.temp_gravity_x, entry.temp_gravity_y),
-        .gravity_strength = entry.gravity_strength,
-    };
-    return event;
 }
 
 NetEvent MakeEntitySpawnedEvent(const EntitySpawnedEventEntry& entry) {
@@ -1005,43 +805,11 @@ NetEvent MakePresentationCommandEvent(const PresentationCommandEventEntry& entry
         .target_pos = Vec2::New(entry.target_x, entry.target_y),
         .direction_x = entry.direction_x,
         .direction_y = entry.direction_y,
-        .param_a = entry.param_a,
-        .param_b = entry.param_b,
-        .param_c = entry.param_c,
-        .param_d = entry.param_d,
-    };
-    return event;
-}
-
-NetEvent MakeActionRequestEvent(const ActionRequestEventEntry& entry) {
-    NetEvent event;
-    event.header = NetEventHeader{
-        .event_id = entry.event_id,
-        .source_player_id = entry.source_player_id,
-        .stage_instance_id = entry.stage_instance_id,
-        .source_local_frame = entry.source_local_frame,
-        .coordinator_order = 0,
-    };
-    event.type = NetEventType::ActionRequest;
-    event.payload = ActionRequestEvent{
-        .kind = static_cast<NetActionKind>(entry.action_kind),
-        .source_entity_id = entry.source_entity_id,
-        .target_entity_id = entry.target_entity_id,
-        .tile_pos = IVec2::New(entry.tile_x, entry.tile_y),
-        .direction = IVec2::New(entry.direction_x, entry.direction_y),
-        .world_pos = Vec2::New(entry.world_x, entry.world_y),
-        .velocity = Vec2::New(entry.velocity_x, entry.velocity_y),
-        .damage_type = static_cast<DamageType>(entry.damage_type),
-        .projectile_contact_damage_type = static_cast<DamageType>(entry.projectile_contact_damage_type),
-        .amount = entry.amount,
-        .projectile_contact_damage_amount = entry.projectile_contact_damage_amount,
-        .thrown_immunity_timer = entry.thrown_immunity_timer,
-        .projectile_contact_duration = entry.projectile_contact_duration,
-        .clear_velocity = (entry.flags & kActionRequestFlagClearVelocity) != 0,
-        .clear_acceleration = (entry.flags & kActionRequestFlagClearAcceleration) != 0,
-        .knockback_on_no_damage = (entry.flags & kActionRequestFlagKnockbackOnNoDamage) != 0,
-        .param_a = entry.param_a,
-        .param_b = entry.param_b,
+        .entity_shake_amount = entry.entity_shake_amount,
+        .foreground_shake_amount = entry.foreground_shake_amount,
+        .background_shake_amount = entry.background_shake_amount,
+        .area_entity_shake_amount = entry.area_entity_shake_amount,
+        .shake_radius_tiles = entry.shake_radius_tiles,
     };
     return event;
 }

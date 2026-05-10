@@ -167,11 +167,9 @@ void TryPushBlocks(
                     if (source_auth && !target_auth) {
                         world_ops::RequestGameplayAction(
                             state,
-                            GameplayActionRequested{
-                                .kind = GameplayActionKind::PushEntity,
+                            PushEntityAction{
                                 .source_vid = entity.vid,
                                 .target_vid = block_entity->vid,
-                                .direction = IVec2::New(block_x_acc_delta > 0.0F ? 1 : -1, 0),
                                 .velocity = Vec2::New(block_x_acc_delta, 0.0F),
                             }
                         );

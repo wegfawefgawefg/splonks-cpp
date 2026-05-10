@@ -39,10 +39,6 @@ Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     });
 }
 
-void SpawnAndReplicateEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
-    (void)SpawnEntityAtTopLeft(type_, pos, state);
-}
-
 void StepControlledPot(Entity& pot, const controls::ControlIntent& control) {
     if (pot.attack_delay_countdown > 0) {
         pot.attack_delay_countdown -= 1;
@@ -187,19 +183,19 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
     }
 
     if (RandInclusive(1, 3) == 1) {
-        SpawnAndReplicateEntityAtTopLeft(EntityType::GoldChunk, spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::GoldChunk, spawn_pos, state);
     } else if (RandInclusive(1, 6) == 1) {
-        SpawnAndReplicateEntityAtTopLeft(EntityType::GoldNugget, spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::GoldNugget, spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnAndReplicateEntityAtTopLeft(EntityType::EmeraldBig, spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::EmeraldBig, spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnAndReplicateEntityAtTopLeft(EntityType::SapphireBig, spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::SapphireBig, spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnAndReplicateEntityAtTopLeft(EntityType::RubyBig, spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::RubyBig, spawn_pos, state);
     } else if (RandInclusive(1, 6) == 1) {
-        SpawnAndReplicateEntityAtTopLeft(EntityType::Spider, spider_spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::Spider, spider_spawn_pos, state);
     } else if (RandInclusive(1, 12) == 1) {
-        SpawnAndReplicateEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
+        SpawnEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
     }
 }
 
@@ -228,11 +224,9 @@ bool TryApplyPotImpact(
             HasLocalGameplayAuthorityForInteractionSource(state, *context.mover_vid)) {
             world_ops::RequestGameplayAction(
                 state,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DamageEntity,
+                DamageEntityAction{
                     .source_vid = context.mover_vid,
                     .target_vid = pot.vid,
-                    .world_pos = pot.GetCenter(),
                     .damage_type = DamageType::Attack,
                     .amount = 1,
                 }

@@ -75,6 +75,16 @@ enum class NetActionKind : std::uint16_t {
     HitEntity,
 };
 
+enum class NetUseEdge : std::uint8_t {
+    None,
+    Press,
+    Release,
+};
+
+constexpr std::uint16_t kActionRequestFlagClearVelocity = 1U << 0U;
+constexpr std::uint16_t kActionRequestFlagClearAcceleration = 1U << 1U;
+constexpr std::uint16_t kActionRequestFlagKnockbackOnNoDamage = 1U << 2U;
+
 struct NetEventHeader {
     NetEventId event_id = kInvalidNetEventId;
     PlayerId source_player_id = kInvalidPlayerId;
@@ -254,10 +264,11 @@ struct PresentationCommandEvent {
     Vec2 target_pos = Vec2::New(0.0F, 0.0F);
     std::int32_t direction_x = 1;
     std::int32_t direction_y = 0;
-    float param_a = 0.0F;
-    float param_b = 0.0F;
-    float param_c = 0.0F;
-    float param_d = 0.0F;
+    float entity_shake_amount = 0.0F;
+    float foreground_shake_amount = 0.0F;
+    float background_shake_amount = 0.0F;
+    float area_entity_shake_amount = 0.0F;
+    float shake_radius_tiles = 0.0F;
 };
 
 struct PlayerStatePatchedToolSlot {
@@ -351,8 +362,8 @@ struct ActionRequestEvent {
     bool clear_velocity = true;
     bool clear_acceleration = true;
     bool knockback_on_no_damage = false;
-    std::uint32_t param_a = 0;
-    std::uint32_t param_b = 0;
+    std::uint32_t tool_slot = 0;
+    NetUseEdge use_edge = NetUseEdge::None;
 };
 
 struct NetEvent {

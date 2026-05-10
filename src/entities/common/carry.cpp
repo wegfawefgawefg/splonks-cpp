@@ -157,15 +157,35 @@ void EmitCarryActionRequest(
     std::optional<VID> target_vid,
     Vec2 velocity = Vec2::New(0.0F, 0.0F)
 ) {
-    world_ops::RequestGameplayAction(
-        state,
-        GameplayActionRequested{
-            .kind = kind,
-            .source_vid = source_vid,
-            .target_vid = target_vid,
-            .velocity = velocity,
-        }
-    );
+    if (!target_vid.has_value()) {
+        return;
+    }
+    switch (kind) {
+    case GameplayActionKind::PickupEntity:
+        world_ops::RequestGameplayAction(state, PickupEntityAction{source_vid, *target_vid});
+        break;
+    case GameplayActionKind::DropEntity:
+        world_ops::RequestGameplayAction(state, DropEntityAction{source_vid, *target_vid});
+        break;
+    case GameplayActionKind::ThrowEntity:
+        world_ops::RequestGameplayAction(
+            state,
+            ThrowEntityAction{
+                .source_vid = source_vid,
+                .target_vid = *target_vid,
+                .velocity = velocity,
+            }
+        );
+        break;
+    case GameplayActionKind::PutHeldEntityOnBack:
+        world_ops::RequestGameplayAction(state, PutHeldEntityOnBackAction{source_vid, *target_vid});
+        break;
+    case GameplayActionKind::TakeOffBackEntity:
+        world_ops::RequestGameplayAction(state, TakeOffBackEntityAction{source_vid, *target_vid});
+        break;
+    default:
+        break;
+    }
 }
 
 void EmitAttachmentUseActionRequest(
@@ -173,7 +193,7 @@ void EmitAttachmentUseActionRequest(
     GameplayActionKind kind,
     VID holder_vid,
     VID item_vid,
-    bool pressed,
+    GameplayUseEdge use_edge,
     const controls::ControlIntent& control
 ) {
     const int direction_x =
@@ -184,16 +204,27 @@ void EmitAttachmentUseActionRequest(
         control.up && !control.down ? -1 :
         control.down && !control.up ? 1 :
         0;
-    world_ops::RequestGameplayAction(
-        state,
-        GameplayActionRequested{
-            .kind = kind,
-            .source_vid = holder_vid,
-            .target_vid = item_vid,
-            .direction = IVec2::New(direction_x, direction_y),
-            .param_a = pressed ? 1U : 0U,
-        }
-    );
+    if (kind == GameplayActionKind::UseHeldEntity) {
+        world_ops::RequestGameplayAction(
+            state,
+            UseHeldEntityAction{
+                .source_vid = holder_vid,
+                .target_vid = item_vid,
+                .direction = IVec2::New(direction_x, direction_y),
+                .use_edge = use_edge,
+            }
+        );
+    } else if (kind == GameplayActionKind::UseBackEntity) {
+        world_ops::RequestGameplayAction(
+            state,
+            UseBackEntityAction{
+                .source_vid = holder_vid,
+                .target_vid = item_vid,
+                .direction = IVec2::New(direction_x, direction_y),
+                .use_edge = use_edge,
+            }
+        );
+    }
 }
 
 void SyncHeldAttachmentForHolder(
@@ -947,7 +978,7 @@ void UpdateCarryAndBackItems(
                             GameplayActionKind::UseHeldEntity,
                             entity.vid,
                             holding->vid,
-                            control.use_held,
+                            control.use_pressed ? GameplayUseEdge::Press : GameplayUseEdge::Release,
                             control
                         );
                     }
@@ -973,7 +1004,7 @@ void UpdateCarryAndBackItems(
                             GameplayActionKind::UseBackEntity,
                             entity.vid,
                             back_item->vid,
-                            control.use_back,
+                            control.use_back_pressed ? GameplayUseEdge::Press : GameplayUseEdge::Release,
                             control
                         );
                     }

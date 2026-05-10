@@ -135,10 +135,10 @@ void DoExplosion(
     world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::ShakeArea,
         .source_pos = center,
-        .param_a = kExplosionShakeForegroundAmount,
-        .param_b = kExplosionShakeBackgroundAmount,
-        .param_c = kExplosionShakeEntityAmount,
-        .param_d = kExplosionShakeRadiusTiles,
+        .foreground_shake_amount = kExplosionShakeForegroundAmount,
+        .background_shake_amount = kExplosionShakeBackgroundAmount,
+        .area_entity_shake_amount = kExplosionShakeEntityAmount,
+        .shake_radius_tiles = kExplosionShakeRadiusTiles,
     });
     AddTransientLight(state, center, 2.4F, Color3::New(1.0F, 0.48F, 0.12F), 9, 14);
 

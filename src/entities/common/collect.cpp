@@ -45,8 +45,7 @@ bool TryRequestCollectPickupFromContact(
 
     world_ops::RequestGameplayAction(
         state,
-        GameplayActionRequested{
-            .kind = GameplayActionKind::CollectEntity,
+        CollectEntityAction{
             .source_vid = collector.vid,
             .target_vid = pickup.vid,
         }

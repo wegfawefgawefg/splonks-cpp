@@ -1422,8 +1422,7 @@ bool PickupSpawnedEntityForFrameSmoke(
         coordinator,
         peer,
         pair,
-        GameplayActionRequested{
-            .kind = GameplayActionKind::PickupEntity,
+        PickupEntityAction{
             .source_vid = peer_source_vid,
             .target_vid = peer_item_vid,
         },
@@ -1537,12 +1536,11 @@ bool RunHeldUseScenario(
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::UseHeldEntity,
+            UseHeldEntityAction{
                 .source_vid = peer_source_vid,
                 .target_vid = *peer_item_vid,
                 .direction = IVec2::New(1, 0),
-                .param_a = 1,
+                .use_edge = GameplayUseEdge::Press,
             },
             graphics,
             audio,
@@ -1608,12 +1606,11 @@ bool RunHeldUseScenario(
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::UseHeldEntity,
+                UseHeldEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_item_vid,
                     .direction = IVec2::New(1, 0),
-                    .param_a = 0,
+                    .use_edge = GameplayUseEdge::Release,
                 },
                 graphics,
                 audio,
@@ -1643,8 +1640,7 @@ bool RunHeldUseScenario(
         coordinator,
         peer,
         pair,
-        GameplayActionRequested{
-            .kind = GameplayActionKind::DropEntity,
+        DropEntityAction{
             .source_vid = peer_source_vid,
             .target_vid = *peer_item_vid,
         },
@@ -1673,8 +1669,7 @@ bool RunBackUseScenario(
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::TakeOffBackEntity,
+                TakeOffBackEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = peer_existing_back_vid,
                 },
@@ -1686,8 +1681,7 @@ bool RunBackUseScenario(
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DropEntity,
+                DropEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = peer_existing_back_vid,
                 },
@@ -1724,8 +1718,7 @@ bool RunBackUseScenario(
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::PutHeldEntityOnBack,
+            PutHeldEntityOnBackAction{
                 .source_vid = peer_source_vid,
                 .target_vid = *peer_item_vid,
             },
@@ -1757,11 +1750,10 @@ bool RunBackUseScenario(
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::UseBackEntity,
+            UseBackEntityAction{
                 .source_vid = peer_source_vid,
                 .target_vid = *peer_item_vid,
-                .param_a = 1,
+                .use_edge = GameplayUseEdge::Press,
             },
             graphics,
             audio,
@@ -1781,11 +1773,10 @@ bool RunBackUseScenario(
                coordinator,
                peer,
                pair,
-               GameplayActionRequested{
-                   .kind = GameplayActionKind::UseBackEntity,
+               UseBackEntityAction{
                    .source_vid = peer_source_vid,
                    .target_vid = *peer_item_vid,
-                   .param_a = 0,
+                   .use_edge = GameplayUseEdge::Release,
                },
                graphics,
                audio,
@@ -1795,8 +1786,7 @@ bool RunBackUseScenario(
                coordinator,
                peer,
                pair,
-               GameplayActionRequested{
-                   .kind = GameplayActionKind::TakeOffBackEntity,
+               TakeOffBackEntityAction{
                    .source_vid = peer_source_vid,
                    .target_vid = *peer_item_vid,
                },
@@ -1808,8 +1798,7 @@ bool RunBackUseScenario(
                coordinator,
                peer,
                pair,
-               GameplayActionRequested{
-                   .kind = GameplayActionKind::DropEntity,
+               DropEntityAction{
                    .source_vid = peer_source_vid,
                    .target_vid = *peer_item_vid,
                },
@@ -1875,8 +1864,7 @@ bool RunShopBuyScenario(
         coordinator,
         peer,
         pair,
-        GameplayActionRequested{
-            .kind = GameplayActionKind::InteractEntity,
+        InteractEntityAction{
             .source_vid = peer_source_vid,
             .target_vid = *peer_item_vid,
         },
@@ -2036,8 +2024,7 @@ bool RunChanceShopRollScenario(
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::InteractEntity,
+            InteractEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = *peer_table_vid,
             },
@@ -2164,11 +2151,10 @@ bool RunBombExplosionScenario(
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::UseTool,
+            UseToolAction{
                 .source_vid = peer_source_vid,
                 .velocity = Vec2::New(0.0F, -2.0F),
-                .param_a = 0,
+                .tool_slot = 0,
             },
             graphics,
             audio,
@@ -3214,8 +3200,7 @@ bool RunStageTransitionWithDeadHostScenario(Graphics& graphics, Audio& audio) {
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::InteractEntity,
+            InteractEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_exit->vid,
             },
@@ -3258,8 +3243,7 @@ bool RunStageTransitionWhileCarryingPlayerScenario(Graphics& graphics, Audio& au
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::PickupEntity,
+            PickupEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_host_vid,
             },
@@ -3284,8 +3268,7 @@ bool RunStageTransitionWhileCarryingPlayerScenario(Graphics& graphics, Audio& au
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::InteractEntity,
+            InteractEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_exit->vid,
             },
@@ -3337,8 +3320,7 @@ bool RunStageTransitionDroppedInitialSyncScenario(Graphics& graphics, Audio& aud
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::InteractEntity,
+            InteractEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_exit->vid,
             },
@@ -3412,8 +3394,7 @@ bool RunDamageWhileCarryingPlayerScenario(Graphics& graphics, Audio& audio) {
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::PickupEntity,
+            PickupEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_host_vid,
             },
@@ -3429,8 +3410,7 @@ bool RunDamageWhileCarryingPlayerScenario(Graphics& graphics, Audio& audio) {
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::DamageEntity,
+            DamageEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_player_vid,
                 .damage_type = DamageType::Fall,
@@ -3495,8 +3475,7 @@ bool RunDeathWhileHeldPlayerScenario(Graphics& graphics, Audio& audio) {
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::PickupEntity,
+            PickupEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_host_vid,
             },
@@ -3512,8 +3491,7 @@ bool RunDeathWhileHeldPlayerScenario(Graphics& graphics, Audio& audio) {
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::DamageEntity,
+            DamageEntityAction{
                 .source_vid = std::nullopt,
                 .target_vid = peer_host_vid,
                 .damage_type = DamageType::Fall,
@@ -3608,8 +3586,7 @@ bool RunFallDamageLatencyRepairScenario(Graphics& graphics, Audio& audio) {
 
     world_ops::QueuePendingGameplayAction(
         peer,
-        GameplayActionRequested{
-            .kind = GameplayActionKind::DamageEntity,
+        DamageEntityAction{
             .source_vid = std::nullopt,
             .target_vid = peer_player_vid,
             .damage_type = DamageType::Fall,
@@ -3810,8 +3787,7 @@ bool RunCarryThrowLatencyRepairScenario(Graphics& graphics, Audio& audio) {
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::PickupEntity,
+            PickupEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_host_vid,
             },
@@ -3841,8 +3817,7 @@ bool RunCarryThrowLatencyRepairScenario(Graphics& graphics, Audio& audio) {
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::ThrowEntity,
+            ThrowEntityAction{
                 .source_vid = peer_player_vid,
                 .target_vid = peer_host_vid,
                 .velocity = throw_velocity,
@@ -3963,8 +3938,7 @@ bool RunHeldRespawnScenario(
             coordinator,
             peer,
             pair,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::PickupEntity,
+            PickupEntityAction{
                 .source_vid = *peer_holder_vid,
                 .target_vid = peer_source_vid,
             },
@@ -4141,11 +4115,10 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::UseTool,
+                UseToolAction{
                     .source_vid = peer_source_vid,
                     .velocity = Vec2::New(4.0F, -4.0F),
-                    .param_a = static_cast<std::uint32_t>(*peer_tool_slot),
+                    .tool_slot = static_cast<std::uint32_t>(*peer_tool_slot),
                 },
                 graphics,
                 audio,
@@ -4172,8 +4145,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::BreakTile,
+                BreakTileAction{
                     .source_vid = peer_source_vid,
                     .tile_pos = break_tile_pos,
                 },
@@ -4199,8 +4171,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::CollectEntity,
+                CollectEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_gold_vid,
                 },
@@ -4226,8 +4197,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PickupEntity,
+                PickupEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_rock_vid,
                 },
@@ -4239,8 +4209,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::ThrowEntity,
+                ThrowEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_rock_vid,
                     .velocity = Vec2::New(2.0F, -3.0F),
@@ -4267,8 +4236,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PickupEntity,
+                PickupEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_drop_vid,
                 },
@@ -4280,8 +4248,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DropEntity,
+                DropEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_drop_vid,
                 },
@@ -4440,8 +4407,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PushEntity,
+                PushEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_block_vid,
                     .velocity = Vec2::New(0.5F, 0.0F),
@@ -4481,8 +4447,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::InteractEntity,
+                InteractEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_chest_vid,
                 },
@@ -4523,8 +4488,7 @@ bool CheckNetworkFrameSmoke() {
                 coordinator,
                 peer,
                 pair,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::InteractEntity,
+                InteractEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = peer_exit->vid,
                 },

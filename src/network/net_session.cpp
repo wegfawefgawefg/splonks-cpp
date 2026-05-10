@@ -307,8 +307,8 @@ void NetSessionState::AddEventLog(NetEventLogPhase phase, const NetEvent& event)
                << " action_id=" << static_cast<unsigned int>(action->kind)
                << " source_entity=" << action->source_entity_id
                << " target_entity=" << action->target_entity_id
-               << " param_a=" << action->param_a
-               << " param_b=" << action->param_b
+               << " tool_slot=" << action->tool_slot
+               << " use_edge=" << static_cast<unsigned int>(action->use_edge)
                << " dir=(" << action->direction.x << "," << action->direction.y << ")";
     }
     output << '\n';

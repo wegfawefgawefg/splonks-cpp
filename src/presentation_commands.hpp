@@ -36,10 +36,11 @@ struct PresentationCommand {
     Vec2 source_pos = Vec2::New(0.0F, 0.0F);
     Vec2 target_pos = Vec2::New(0.0F, 0.0F);
     IVec2 direction = IVec2::New(1, 0);
-    float param_a = 0.0F;
-    float param_b = 0.0F;
-    float param_c = 0.0F;
-    float param_d = 0.0F;
+    float entity_shake_amount = 0.0F;
+    float foreground_shake_amount = 0.0F;
+    float background_shake_amount = 0.0F;
+    float area_entity_shake_amount = 0.0F;
+    float shake_radius_tiles = 0.0F;
 };
 
 void PlayPresentationCommand(State& state, Graphics& graphics, const PresentationCommand& command);

@@ -157,7 +157,7 @@ void PlayPresentationCommand(State& state, Graphics& graphics, const Presentatio
         if (command.source_vid.has_value()) {
             if (Entity* const entity = state.entity_manager.GetEntityMut(*command.source_vid)) {
                 if (entity->active) {
-                    AddEntityShake(*entity, command.param_a);
+                    AddEntityShake(*entity, command.entity_shake_amount);
                 }
             }
         }
@@ -166,10 +166,10 @@ void PlayPresentationCommand(State& state, Graphics& graphics, const Presentatio
         AddShake(
             state,
             command.source_pos,
-            command.param_a,
-            command.param_b,
-            command.param_c,
-            command.param_d,
+            command.foreground_shake_amount,
+            command.background_shake_amount,
+            command.area_entity_shake_amount,
+            command.shake_radius_tiles,
             command.source_vid
         );
         break;

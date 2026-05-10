@@ -159,18 +159,25 @@ world_ops::PatchRunState(state, run_patch, source);
 world_ops::PatchFluidCell(state, cell_coord, fluid_patch, source);
 ```
 
-## Future Protocol Cleanup
+## Action Request Payloads
 
-`GameplayActionRequested` currently carries generic `param_a` / `param_b` fields.
-That is acceptable during migration, but it is easy to overload accidentally:
-`UseTool` uses `param_a` as a tool slot, while held/back item use uses `param_a`
-as a use-edge/down bit.
+Action requests use broad message categories, but their payload fields must be
+named for the action shape. Do not add anonymous integer or float payload slots
+to gameplay action requests.
 
-Future cleanup target: replace generic action params with typed payloads or small
-explicit enums. In particular, held/back entity use should carry a named
-`UseEdge` value (`Press`, `Release`, and possibly `Held` if needed) instead of
-encoding that edge as `param_a != 0`. This keeps new items and future modded
-content from depending on undocumented payload conventions.
+Current action-request payload shape:
+
+- `UseTool` carries `tool_slot` plus throw velocity.
+- `UseHeldEntity` and `UseBackEntity` carry `use_edge` (`Press` or `Release`)
+  plus aim direction.
+- Tile/entity/damage requests use their named tile, target, damage, amount,
+  velocity, and flag fields.
+
+Presentation commands are separate from durable gameplay actions, but they still
+use named payload fields. Do not add generic visual slots there either. Current
+presentation payloads carry explicit fields such as `entity_shake_amount`,
+`foreground_shake_amount`, `background_shake_amount`,
+`area_entity_shake_amount`, and `shake_radius_tiles`.
 
 These helpers own both sides of a durable mutation:
 

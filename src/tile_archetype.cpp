@@ -22,20 +22,16 @@ Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) 
     });
 }
 
-void SpawnAndReplicateEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    (void)SpawnEntityAtCenter(type_, center, state);
-}
-
 void OnBreakAsBigGoldMaterial(const IVec2& tile_pos, State& state, Audio& audio) {
     (void)audio;
     const Vec2 center = Vec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
-    SpawnAndReplicateEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
-    SpawnAndReplicateEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
-    SpawnAndReplicateEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
-    SpawnAndReplicateEntityAtCenter(EntityType::GoldNugget, center, state);
+    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(-4.0F, -1.0F), state);
+    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(0.0F, 1.0F), state);
+    SpawnEntityAtCenter(EntityType::GoldChunk, center + Vec2::New(4.0F, -1.0F), state);
+    SpawnEntityAtCenter(EntityType::GoldNugget, center, state);
 }
 
 TileArchetype MakeSolidTileArchetype(

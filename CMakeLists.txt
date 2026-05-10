@@ -290,13 +290,17 @@ add_executable(splonks-cpp
     src/network/net_fuzzer.cpp
     src/network/net_entity_links.cpp
     src/network/net_event_apply.cpp
+    src/network/net_event_apply_tile.cpp
     src/network/net_gameplay_replication.cpp
     src/network/net_lobby.cpp
     src/network/net_lobby_entity_state.cpp
     src/network/net_lobby_event_senders.cpp
     src/network/net_lobby_events.cpp
     src/network/net_lobby_fluid_state.cpp
+    src/network/net_lobby_packet_pump.cpp
     src/network/net_lobby_packets.cpp
+    src/network/net_lobby_packets_action.cpp
+    src/network/net_lobby_packets_tile.cpp
     src/network/net_lobby_snapshots.cpp
     src/network/net_world_snapshot.cpp
     src/network/net_progression.cpp

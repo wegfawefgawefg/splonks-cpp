@@ -8,8 +8,70 @@
 
 namespace splonks {
 
+namespace {
+
+bool CheckCompactActionRequestPacketSmoke() {
+    network::ActionRequestEventsPacket packet;
+    packet.events.push_back(network::ActionRequestEventEntry{
+        .event_id = 1,
+        .source_player_id = 2,
+        .stage_instance_id = 3,
+        .source_local_frame = 4,
+        .action_kind = static_cast<std::uint16_t>(network::NetActionKind::UseTool),
+        .source_entity_id = 11,
+        .velocity_x = 4.0F,
+        .velocity_y = -4.0F,
+        .tool_slot = 1,
+    });
+    packet.events.push_back(network::ActionRequestEventEntry{
+        .event_id = 2,
+        .source_player_id = 2,
+        .stage_instance_id = 3,
+        .source_local_frame = 5,
+        .action_kind = static_cast<std::uint16_t>(network::NetActionKind::HitEntity),
+        .damage_type = static_cast<std::uint16_t>(DamageType::Attack),
+        .projectile_contact_damage_type = static_cast<std::uint16_t>(DamageType::Attack),
+        .flags = network::kActionRequestFlagClearVelocity |
+                 network::kActionRequestFlagClearAcceleration,
+        .source_entity_id = 11,
+        .target_entity_id = 12,
+        .velocity_x = 1.0F,
+        .velocity_y = -1.0F,
+        .amount = 1,
+        .projectile_contact_damage_amount = 1,
+        .thrown_immunity_timer = 12,
+        .projectile_contact_duration = 20,
+    });
+
+    const network::EncodedNetPacket encoded = network::EncodeActionRequestEvents(packet);
+    const std::size_t old_fixed_size =
+        sizeof(network::NetPacketHeader) +
+        sizeof(std::uint32_t) +
+        packet.events.size() * sizeof(network::ActionRequestEventEntry);
+    if (encoded.size == 0 || encoded.size >= old_fixed_size) {
+        std::cerr << "network protocol smoke failed: compact action packet size "
+                  << encoded.size << " did not improve on fixed size "
+                  << old_fixed_size << '\n';
+        return false;
+    }
+
+    const std::optional<network::ActionRequestEventsPacket> decoded =
+        network::TryDecodeActionRequestEvents(encoded.bytes.data(), encoded.size);
+    if (!decoded.has_value() || decoded->events.size() != packet.events.size()) {
+        std::cerr << "network protocol smoke failed: compact action packet did not round trip\n";
+        return false;
+    }
+    return true;
+}
+
+} // namespace
+
 bool CheckNetworkProtocolApplySmoke() {
     try {
+        if (!CheckCompactActionRequestPacketSmoke()) {
+            return false;
+        }
+
         Graphics graphics;
         InitNetworkSmokeRuntimeTables(graphics);
 

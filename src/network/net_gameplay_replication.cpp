@@ -496,30 +496,131 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& message
     NetEvent event;
     event.header = state.net_session.MakeLocalTransientEventHeader(state.frame);
     event.type = NetEventType::ActionRequest;
-    event.payload = ActionRequestEvent{
-        .kind = static_cast<NetActionKind>(message.kind),
-        .source_entity_id = message.source_vid.has_value()
-            ? GetOrAssignReplicatedEntityId(state, *message.source_vid)
-            : kInvalidNetEntityId,
-        .target_entity_id = message.target_vid.has_value()
-            ? GetOrAssignReplicatedEntityId(state, *message.target_vid)
-            : kInvalidNetEntityId,
-        .tile_pos = message.tile_pos,
-        .direction = message.direction,
-        .world_pos = message.world_pos,
-        .velocity = message.velocity,
-        .damage_type = message.damage_type,
-        .projectile_contact_damage_type = message.projectile_contact_damage_type,
-        .amount = message.amount,
-        .projectile_contact_damage_amount = message.projectile_contact_damage_amount,
-        .thrown_immunity_timer = message.thrown_immunity_timer,
-        .projectile_contact_duration = message.projectile_contact_duration,
-        .clear_velocity = message.clear_velocity,
-        .clear_acceleration = message.clear_acceleration,
-        .knockback_on_no_damage = message.knockback_on_no_damage,
-        .param_a = message.param_a,
-        .param_b = message.param_b,
-    };
+    event.payload = std::visit(
+        GameplayActionVisitor{
+            [](const std::monostate&) {
+                return ActionRequestEvent{};
+            },
+            [&](const UseToolAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::UseTool,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .velocity = payload.velocity,
+                    .tool_slot = payload.tool_slot,
+                };
+            },
+            [&](const PickupEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::PickupEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                };
+            },
+            [&](const DropEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::DropEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                };
+            },
+            [&](const ThrowEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::ThrowEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                    .velocity = payload.velocity,
+                };
+            },
+            [&](const UseHeldEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::UseHeldEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                    .direction = payload.direction,
+                    .use_edge = static_cast<NetUseEdge>(payload.use_edge),
+                };
+            },
+            [&](const UseBackEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::UseBackEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                    .direction = payload.direction,
+                    .use_edge = static_cast<NetUseEdge>(payload.use_edge),
+                };
+            },
+            [&](const PutHeldEntityOnBackAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::PutHeldEntityOnBack,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                };
+            },
+            [&](const TakeOffBackEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::TakeOffBackEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                };
+            },
+            [&](const InteractEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::InteractEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                };
+            },
+            [&](const CollectEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::CollectEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                };
+            },
+            [&](const PushEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::PushEntity,
+                    .source_entity_id = GetOrAssignReplicatedEntityId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                    .velocity = payload.velocity,
+                };
+            },
+            [&](const BreakTileAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::BreakTile,
+                    .source_entity_id = GetReplicatedEntityLinkId(state, payload.source_vid),
+                    .tile_pos = payload.tile_pos,
+                };
+            },
+            [&](const DamageEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::DamageEntity,
+                    .source_entity_id = GetReplicatedEntityLinkId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                    .damage_type = payload.damage_type,
+                    .amount = payload.amount,
+                };
+            },
+            [&](const HitEntityAction& payload) {
+                return ActionRequestEvent{
+                    .kind = NetActionKind::HitEntity,
+                    .source_entity_id = GetReplicatedEntityLinkId(state, payload.source_vid),
+                    .target_entity_id = GetOrAssignReplicatedEntityId(state, payload.target_vid),
+                    .velocity = payload.velocity,
+                    .damage_type = payload.damage_type,
+                    .projectile_contact_damage_type = payload.projectile_contact_damage_type,
+                    .amount = payload.amount,
+                    .projectile_contact_damage_amount = payload.projectile_contact_damage_amount,
+                    .thrown_immunity_timer = payload.thrown_immunity_timer,
+                    .projectile_contact_duration = payload.projectile_contact_duration,
+                    .clear_velocity = payload.clear_velocity,
+                    .clear_acceleration = payload.clear_acceleration,
+                    .knockback_on_no_damage = payload.knockback_on_no_damage,
+                };
+            },
+        },
+        message.payload
+    );
     state.net_session.EnqueueNetEvent(event);
 }
 
@@ -550,10 +651,11 @@ void ReplicatePresentationCommand(State& state, const PresentationCommand& comma
         .target_pos = command.target_pos,
         .direction_x = command.direction.x,
         .direction_y = command.direction.y,
-        .param_a = command.param_a,
-        .param_b = command.param_b,
-        .param_c = command.param_c,
-        .param_d = command.param_d,
+        .entity_shake_amount = command.entity_shake_amount,
+        .foreground_shake_amount = command.foreground_shake_amount,
+        .background_shake_amount = command.background_shake_amount,
+        .area_entity_shake_amount = command.area_entity_shake_amount,
+        .shake_radius_tiles = command.shake_radius_tiles,
     };
     state.net_session.EnqueueNetEvent(event);
 }

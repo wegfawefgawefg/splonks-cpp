@@ -82,11 +82,9 @@ DamageResult RequestCoordinatorDamage(
 ) {
     world_ops::RequestGameplayAction(
         state,
-        GameplayActionRequested{
-            .kind = GameplayActionKind::DamageEntity,
+        DamageEntityAction{
             .source_vid = source_vid,
             .target_vid = target.vid,
-            .world_pos = target.GetCenter(),
             .damage_type = damage_type,
             .amount = amount,
         }
@@ -103,11 +101,9 @@ DamageResult RequestCoordinatorHit(
 ) {
     world_ops::RequestGameplayAction(
         state,
-        GameplayActionRequested{
-            .kind = GameplayActionKind::HitEntity,
+        HitEntityAction{
             .source_vid = options.source_vid,
             .target_vid = target.vid,
-            .world_pos = target.GetCenter(),
             .velocity = options.knockback.velocity,
             .damage_type = damage_type,
             .projectile_contact_damage_type = options.knockback.projectile_contact_damage_type,
@@ -260,11 +256,9 @@ DamageResult TryDamageEntity(
             HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid)) {
             world_ops::RequestGameplayAction(
                 state,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DamageEntity,
+                DamageEntityAction{
                     .source_vid = options.source_vid,
                     .target_vid = entity.vid,
-                    .world_pos = entity.GetCenter(),
                     .damage_type = damage_type,
                     .amount = amount,
                 }
@@ -390,11 +384,9 @@ DamageResult TryHitEntity(
             HasLocalGameplayAuthorityForInteractionSource(state, *options.source_vid)) {
             world_ops::RequestGameplayAction(
                 state,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::HitEntity,
+                HitEntityAction{
                     .source_vid = options.source_vid,
                     .target_vid = entity.vid,
-                    .world_pos = entity.GetCenter(),
                     .velocity = options.knockback.velocity,
                     .damage_type = damage_type,
                     .projectile_contact_damage_type = options.knockback.projectile_contact_damage_type,

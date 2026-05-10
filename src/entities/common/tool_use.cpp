@@ -61,13 +61,12 @@ bool TryUseToolSlot(
             build_throw_velocity == nullptr ? BuildDefaultToolThrowVelocity : build_throw_velocity;
         world_ops::RequestGameplayAction(
             state,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::UseTool,
+            UseToolAction{
                 .source_vid = entity.vid,
                 .velocity = throw_velocity_override.value_or(
                     velocity_builder(control) * entity.throw_velocity_scale
                 ),
-                .param_a = static_cast<std::uint32_t>(tool_slot_index),
+                .tool_slot = static_cast<std::uint32_t>(tool_slot_index),
             }
         );
         return true;

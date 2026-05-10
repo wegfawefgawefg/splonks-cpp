@@ -28,7 +28,6 @@ namespace {
 
 constexpr PlayerId kFirstRemotePlayerId = 2;
 constexpr std::uint32_t kMaxPlayersPerEndpoint = 16;
-constexpr std::uint32_t kJoinRetryFrames = 30;
 constexpr std::uint64_t kRemoteEndpointTimeoutFrames = 180;
 NetTransportRuntime& EnsureTransport(State& state) {
     if (!state.net_transport) {
@@ -63,22 +62,6 @@ std::uint32_t MakeHostStageSeed(const State& state) {
 
 bool StageCanBeNetworkSynced(const State& state) {
     return !state.stage.quest_id.empty() && !state.stage.quest_stage_id.empty();
-}
-
-bool LoadNetworkQuestStage(
-    State& state,
-    const std::string& quest_id,
-    const std::string& quest_stage_id,
-    std::uint32_t seed,
-    bool preserve_player_state
-) {
-    return LoadQuestStage(
-        state,
-        quest_id,
-        quest_stage_id,
-        preserve_player_state,
-        seed
-    );
 }
 
 NetRetainedPlayerState* FindRetainedPlayerState(State& state, PlayerId player_id) {
@@ -409,7 +392,7 @@ bool EnsureHostSyncedStage(State& state, std::string* status_out) {
     const std::string quest_stage_id = state.stage.quest_stage_id;
     const std::uint32_t seed = state.stage.generation_seed.value_or(MakeHostStageSeed(state));
     if (!state.stage.generation_seed.has_value()) {
-        if (!LoadNetworkQuestStage(state, quest_id, quest_stage_id, seed, false)) {
+        if (!LoadQuestStage(state, quest_id, quest_stage_id, false, seed)) {
             if (status_out != nullptr) {
                 *status_out = "Host failed: could not reload current quest stage with sync seed.";
             }
@@ -443,6 +426,8 @@ void RegisterRemoteEndpoint(
     });
 }
 
+} // namespace
+
 void MarkRemoteEndpointHeard(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
@@ -455,6 +440,8 @@ void MarkRemoteEndpointHeard(
         }
     }
 }
+
+namespace {
 
 void RemoveRemotePlayers(
     State& state,
@@ -586,6 +573,8 @@ void RemoveRemoteEndpoint(
     );
 }
 
+} // namespace
+
 void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport) {
     std::vector<NetEndpoint> timed_out;
     for (const NetRemoteEndpoint& remote : transport.remotes) {
@@ -598,6 +587,8 @@ void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport
         RemoveRemoteEndpoint(state, transport, endpoint);
     }
 }
+
+namespace {
 
 std::uint32_t CountLocalPlayers(const PlayerRegistry& players) {
     std::uint32_t count = 0;
@@ -677,6 +668,8 @@ void ClearLocalPlayersForJoin(State& state) {
     state.controlled_entity_vid.reset();
 }
 
+} // namespace
+
 void SendJoinRequest(State& state) {
     if (!state.net_transport || !state.net_transport->socket.IsOpen()) {
         return;
@@ -697,6 +690,8 @@ void SendJoinRequest(State& state) {
     const EncodedNetPacket encoded = EncodeJoinRequest(request);
     SendEncodedPacket(*state.net_transport, state.net_transport->coordinator_endpoint, encoded);
 }
+
+namespace {
 
 LeaveNoticePacket MakeLocalLeaveNotice(const State& state) {
     LeaveNoticePacket notice;
@@ -736,18 +731,9 @@ void SendLeaveNotice(State& state) {
     }
 }
 
-std::vector<PlayerId> GetLeavePlayerIds(const LeaveNoticePacket& notice) {
-    std::vector<PlayerId> player_ids;
-    player_ids.reserve(notice.player_count);
-    for (std::uint32_t i = 0; i < notice.player_count; ++i) {
-        if (notice.player_ids[i] != kInvalidPlayerId) {
-            player_ids.push_back(notice.player_ids[i]);
-        }
-    }
-    return player_ids;
-}
+} // namespace
 
-void HandleJoinRequest(
+void HandleJoinRequestAsCoordinator(
     State& state,
     const Graphics& graphics,
     NetTransportRuntime& transport,
@@ -858,7 +844,7 @@ void HandleJoinRequest(
     EnqueueWorldSnapshotEvents(state);
 }
 
-void HandleJoinAccept(
+void HandleJoinAcceptAsPeer(
     State& state,
     const Graphics& graphics,
     NetTransportRuntime& transport,
@@ -895,12 +881,12 @@ void HandleJoinAccept(
     transport.replicated_fluid_cell_cache.clear();
     state.net_session.ClearStageEntityLinks();
 
-    if (!LoadNetworkQuestStage(
+    if (!LoadQuestStage(
             state,
             state.net_session.quest_id,
             state.net_session.quest_stage_id,
-            state.net_session.stage_seed,
-            false
+            false,
+            state.net_session.stage_seed
         )) {
         transport.last_error = "Join accepted, but synced quest stage load failed.";
         return;
@@ -963,198 +949,19 @@ void HandleJoinAccept(
     RegisterStageEntityLinks(state);
 }
 
-void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
-    for (int i = 0; i < 64; ++i) {
-        std::string error;
-        const std::optional<UdpPacket> packet = transport.socket.Receive(&error);
-        if (!error.empty()) {
-            transport.last_error = error;
-        }
-        if (!packet.has_value()) {
-            CleanupTimedOutRemoteEndpoints(state, transport);
-            return;
-        }
-
-        MarkRemoteEndpointHeard(transport, packet->endpoint, state.frame);
-
-        if (const std::optional<JoinRequestPacket> request =
-                TryDecodeJoinRequest(packet->bytes.data(), packet->size)) {
-            HandleJoinRequest(state, graphics, transport, *packet, *request);
-            continue;
-        }
-
-        if (const std::optional<LeaveNoticePacket> leave =
-                TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {
-            RemoveRemotePlayers(state, transport, GetLeavePlayerIds(*leave));
-            continue;
-        }
-
-        if (const std::optional<DurableEventAckPacket> ack =
-                TryDecodeDurableEventAck(packet->bytes.data(), packet->size)) {
-            HandleDurableEventAckAsCoordinator(state, transport, packet->endpoint, *ack);
-            continue;
-        }
-
-        if (const std::optional<PlayerSnapshotsPacket> snapshots =
-                TryDecodePlayerSnapshots(packet->bytes.data(), packet->size)) {
-            ApplyPlayerSnapshots(state, graphics, transport, *snapshots);
-            RelaySnapshotsToOtherRemotes(transport, packet->endpoint, *snapshots);
-            continue;
-        }
-
-        if (const std::optional<ActionRequestEventsPacket> action_requests =
-                TryDecodeActionRequestEvents(packet->bytes.data(), packet->size)) {
-            HandleActionRequestEventsAsCoordinator(state, transport, packet->endpoint, *action_requests);
-            continue;
-        }
-
-        if (const std::optional<PresentationCommandEventsPacket> presentation_events =
-                TryDecodePresentationCommandEvents(packet->bytes.data(), packet->size)) {
-            HandlePresentationCommandEventsAsCoordinator(state, *presentation_events);
-            continue;
-        }
-    }
-}
-
-void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
-    if (transport.join_request_pending) {
-        if (transport.join_request_retry_frames == 0) {
-            SendJoinRequest(state);
-            transport.join_request_retry_frames = kJoinRetryFrames;
-        } else {
-            transport.join_request_retry_frames -= 1;
-        }
-    }
-
-    for (int i = 0; i < 64; ++i) {
-        std::string error;
-        const std::optional<UdpPacket> packet = transport.socket.Receive(&error);
-        if (!error.empty()) {
-            transport.last_error = error;
-        }
-        if (!packet.has_value()) {
-            return;
-        }
-
-        if (const std::optional<LeaveNoticePacket> leave =
-                TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {
-            RemoveRemotePlayers(state, transport, GetLeavePlayerIds(*leave));
-            continue;
-        }
-
-        if (const std::optional<JoinAcceptPacket> accept =
-                TryDecodeJoinAccept(packet->bytes.data(), packet->size)) {
-            HandleJoinAccept(state, graphics, transport, *accept);
-            continue;
-        }
-
-        if (const std::optional<StageSyncPacket> stage_sync =
-                TryDecodeStageSync(packet->bytes.data(), packet->size)) {
-            ApplyStageSync(state, graphics, transport, *stage_sync);
-            continue;
-        }
-
-        if (const std::optional<PlayerSnapshotsPacket> snapshots =
-                TryDecodePlayerSnapshots(packet->bytes.data(), packet->size)) {
-            ApplyPlayerSnapshots(state, graphics, transport, *snapshots);
-            continue;
-        }
-
-        if (const std::optional<TileEventsPacket> tile_events =
-                TryDecodeTileEvents(packet->bytes.data(), packet->size)) {
-            HandleTileEventsAsPeer(state, *tile_events);
-            continue;
-        }
-
-        if (const std::optional<FluidCellEventsPacket> fluid_events =
-                TryDecodeFluidCellEvents(packet->bytes.data(), packet->size)) {
-            HandleFluidCellEventsAsPeer(state, *fluid_events);
-            continue;
-        }
-
-        if (const std::optional<EntitySpawnedEventsPacket> entity_events =
-                TryDecodeEntitySpawnedEvents(packet->bytes.data(), packet->size)) {
-            HandleEntitySpawnedEventsAsPeer(state, *entity_events);
-            continue;
-        }
-
-        if (const std::optional<EntityDamageEventsPacket> entity_events =
-                TryDecodeEntityDamageEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityDamageEventsAsPeer(state, *entity_events);
-            continue;
-        }
-
-        if (const std::optional<EntityStateEventsPacket> entity_events =
-                TryDecodeEntityStateEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityStateEventsAsPeer(state, *entity_events);
-            continue;
-        }
-
-        if (const std::optional<EntityCarryEventsPacket> entity_events =
-                TryDecodeEntityCarryEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityCarryEventsAsPeer(state, *entity_events);
-            continue;
-        }
-
-        if (const std::optional<EntityLifecycleEventsPacket> entity_events =
-                TryDecodeEntityLifecycleEvents(packet->bytes.data(), packet->size)) {
-            HandleEntityLifecycleEventsAsPeer(state, *entity_events);
-            continue;
-        }
-
-        if (const std::optional<PlayerStateEventsPacket> player_state_events =
-                TryDecodePlayerStateEvents(packet->bytes.data(), packet->size)) {
-            HandlePlayerStateEventsAsPeer(state, *player_state_events);
-            continue;
-        }
-
-        if (const std::optional<RunStateEventsPacket> run_state_events =
-                TryDecodeRunStateEvents(packet->bytes.data(), packet->size)) {
-            HandleRunStateEventsAsPeer(state, *run_state_events);
-            continue;
-        }
-
-        if (const std::optional<PresentationCommandEventsPacket> presentation_events =
-                TryDecodePresentationCommandEvents(packet->bytes.data(), packet->size)) {
-            HandlePresentationCommandEventsAsPeer(state, *presentation_events);
-            continue;
-        }
-
-        if (const std::optional<ActionRequestAckPacket> action_ack =
-                TryDecodeActionRequestAck(packet->bytes.data(), packet->size)) {
-            HandleActionRequestAckAsPeer(state, *action_ack);
-            continue;
-        }
-    }
-}
-
-} // namespace
-
-void HandleJoinRequestAsCoordinator(
-    State& state,
-    const Graphics& graphics,
-    NetTransportRuntime& transport,
-    const UdpPacket& udp_packet,
-    const JoinRequestPacket& request
-) {
-    HandleJoinRequest(state, graphics, transport, udp_packet, request);
-}
-
-void HandleJoinAcceptAsPeer(
-    State& state,
-    const Graphics& graphics,
-    NetTransportRuntime& transport,
-    const JoinAcceptPacket& accept
-) {
-    HandleJoinAccept(state, graphics, transport, accept);
-}
-
 void HandleLeaveNoticeAsCoordinator(
     State& state,
     NetTransportRuntime& transport,
     const LeaveNoticePacket& leave
 ) {
-    RemoveRemotePlayers(state, transport, GetLeavePlayerIds(leave));
+    std::vector<PlayerId> player_ids;
+    player_ids.reserve(leave.player_count);
+    for (std::uint32_t i = 0; i < leave.player_count; ++i) {
+        if (leave.player_ids[i] != kInvalidPlayerId) {
+            player_ids.push_back(leave.player_ids[i]);
+        }
+    }
+    RemoveRemotePlayers(state, transport, player_ids);
 }
 
 bool StartHostSession(State& state, std::uint16_t port, std::string* status_out) {
@@ -1496,12 +1303,12 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
         state.net_transport->replicated_entity_state_cache.clear();
         state.net_transport->replicated_fluid_cell_cache.clear();
     }
-    const bool loaded = LoadNetworkQuestStage(
+    const bool loaded = LoadQuestStage(
         state,
         state.net_session.quest_id,
         state.net_session.quest_stage_id,
-        state.net_session.stage_seed,
-        false
+        false,
+        state.net_session.stage_seed
     );
     if (!loaded) {
         if (status_out != nullptr) {

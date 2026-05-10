@@ -21,17 +21,16 @@ namespace {
 
 void ApplyAttachmentUseAction(
     State& state,
-    const GameplayActionRequested& request,
+    VID source_vid,
+    VID target_vid,
+    IVec2 direction,
+    GameplayUseEdge use_edge,
     AttachmentMode source,
     Graphics& graphics,
     Audio& audio
 ) {
-    if (!request.source_vid.has_value() || !request.target_vid.has_value()) {
-        return;
-    }
-
-    Entity* const holder = state.entity_manager.GetEntityMut(*request.source_vid);
-    Entity* const item = state.entity_manager.GetEntityMut(*request.target_vid);
+    Entity* const holder = state.entity_manager.GetEntityMut(source_vid);
+    Entity* const item = state.entity_manager.GetEntityMut(target_vid);
     if (holder == nullptr || item == nullptr || !holder->active || !item->active) {
         return;
     }
@@ -46,29 +45,32 @@ void ApplyAttachmentUseAction(
 
     if (PlayerSlot* const slot = state.players.FindByEntityVid(holder->vid);
         slot != nullptr && slot->connection_kind == PlayerConnectionKind::Remote) {
-        slot->inputs.left.down = request.direction.x < 0;
-        slot->inputs.right.down = request.direction.x > 0;
-        slot->inputs.up.down = request.direction.y < 0;
-        slot->inputs.down.down = request.direction.y > 0;
+        const bool use_down = use_edge == GameplayUseEdge::Press;
+        slot->inputs.left.down = direction.x < 0;
+        slot->inputs.right.down = direction.x > 0;
+        slot->inputs.up.down = direction.y < 0;
+        slot->inputs.down.down = direction.y > 0;
         if (source == AttachmentMode::Held) {
-            slot->inputs.attack.down = request.param_a != 0;
+            slot->inputs.attack.down = use_down;
         } else {
-            slot->inputs.use_button.down = request.param_a != 0;
+            slot->inputs.use_button.down = use_down;
         }
         slot->immediate_inputs = slot->inputs;
     }
-    if (request.direction.x < 0) {
+    if (direction.x < 0) {
         holder->facing = LeftOrRight::Left;
         item->facing = LeftOrRight::Left;
-    } else if (request.direction.x > 0) {
+    } else if (direction.x > 0) {
         holder->facing = LeftOrRight::Right;
         item->facing = LeftOrRight::Right;
     }
 
-    if (request.param_a != 0) {
+    if (use_edge == GameplayUseEdge::Press) {
         PressUseEntity(*item, holder->vid, source);
-    } else {
+    } else if (use_edge == GameplayUseEdge::Release) {
         ReleaseUseEntity(*item, holder->vid, source);
+    } else {
+        return;
     }
     if (item->on_use != nullptr) {
         item->on_use(item->vid.id, state, graphics, audio);
@@ -99,16 +101,12 @@ bool AreEntitiesOverlappingForInteract(
 
 bool TryApplyInteractEntityAction(
     State& state,
-    const GameplayActionRequested& request,
+    const InteractEntityAction& action,
     Graphics& graphics,
     Audio& audio
 ) {
-    if (!request.source_vid.has_value() || !request.target_vid.has_value()) {
-        return false;
-    }
-
-    Entity* const source = state.entity_manager.GetEntityMut(*request.source_vid);
-    Entity* const target = state.entity_manager.GetEntityMut(*request.target_vid);
+    Entity* const source = state.entity_manager.GetEntityMut(action.source_vid);
+    Entity* const target = state.entity_manager.GetEntityMut(action.target_vid);
     if (source == nullptr || target == nullptr ||
         !source->active || !target->active ||
         source->condition == EntityCondition::Dead) {
@@ -132,16 +130,12 @@ bool TryApplyInteractEntityAction(
 
 bool TryApplyCollectEntityAction(
     State& state,
-    const GameplayActionRequested& request,
+    const CollectEntityAction& action,
     Graphics& graphics,
     Audio& audio
 ) {
-    if (!request.source_vid.has_value() || !request.target_vid.has_value()) {
-        return false;
-    }
-
-    Entity* const source = state.entity_manager.GetEntityMut(*request.source_vid);
-    Entity* const target = state.entity_manager.GetEntityMut(*request.target_vid);
+    Entity* const source = state.entity_manager.GetEntityMut(action.source_vid);
+    Entity* const target = state.entity_manager.GetEntityMut(action.target_vid);
     if (source == nullptr || target == nullptr ||
         !source->active || !target->active ||
         source->condition == EntityCondition::Dead ||
@@ -173,6 +167,150 @@ bool TryApplyCollectEntityAction(
     return was_active && !target->active;
 }
 
+void ApplyGameplayAction(State& state, const GameplayActionRequested& action, Graphics& graphics, Audio& audio) {
+    std::visit(
+        GameplayActionVisitor{
+            [](const std::monostate&) {},
+            [&](const UseToolAction& payload) {
+                (void)entities::common::TryUseToolSlot(
+                    payload.source_vid.id,
+                    state,
+                    graphics,
+                    audio,
+                    payload.tool_slot,
+                    true,
+                    nullptr,
+                    payload.velocity
+                );
+            },
+            [&](const PickupEntityAction& payload) {
+                (void)entities::common::TryPickupEntityByVid(
+                    payload.source_vid,
+                    payload.target_vid,
+                    state,
+                    graphics
+                );
+            },
+            [&](const DropEntityAction& payload) {
+                (void)entities::common::TryDropEntityByVid(
+                    payload.source_vid,
+                    payload.target_vid,
+                    state,
+                    graphics
+                );
+            },
+            [&](const ThrowEntityAction& payload) {
+                (void)entities::common::TryThrowEntityByVid(
+                    payload.source_vid,
+                    payload.target_vid,
+                    payload.velocity,
+                    state,
+                    graphics,
+                    audio
+                );
+            },
+            [&](const UseHeldEntityAction& payload) {
+                ApplyAttachmentUseAction(
+                    state,
+                    payload.source_vid,
+                    payload.target_vid,
+                    payload.direction,
+                    payload.use_edge,
+                    AttachmentMode::Held,
+                    graphics,
+                    audio
+                );
+            },
+            [&](const UseBackEntityAction& payload) {
+                ApplyAttachmentUseAction(
+                    state,
+                    payload.source_vid,
+                    payload.target_vid,
+                    payload.direction,
+                    payload.use_edge,
+                    AttachmentMode::Back,
+                    graphics,
+                    audio
+                );
+            },
+            [&](const PutHeldEntityOnBackAction& payload) {
+                (void)entities::common::TryPutHeldEntityOnBackByVid(
+                    payload.source_vid,
+                    payload.target_vid,
+                    state,
+                    graphics
+                );
+            },
+            [&](const TakeOffBackEntityAction& payload) {
+                (void)entities::common::TryTakeOffBackEntityByVid(
+                    payload.source_vid,
+                    payload.target_vid,
+                    state,
+                    graphics
+                );
+            },
+            [&](const InteractEntityAction& payload) {
+                (void)TryApplyInteractEntityAction(state, payload, graphics, audio);
+            },
+            [&](const CollectEntityAction& payload) {
+                (void)TryApplyCollectEntityAction(state, payload, graphics, audio);
+            },
+            [&](const PushEntityAction& payload) {
+                (void)entities::common::TryApplyPushEntityAction(
+                    payload.source_vid,
+                    payload.target_vid,
+                    payload.velocity.x,
+                    state,
+                    graphics
+                );
+            },
+            [&](const BreakTileAction& payload) {
+                BreakStageTilesAtCoords({payload.tile_pos}, state, audio);
+            },
+            [&](const DamageEntityAction& payload) {
+                (void)entities::common::TryDamageEntity(
+                    payload.target_vid.id,
+                    state,
+                    audio,
+                    payload.damage_type,
+                    payload.amount,
+                    entities::common::DamageOptions{
+                        .source_vid = payload.source_vid,
+                        .allow_remote_player_target = true,
+                    }
+                );
+            },
+            [&](const HitEntityAction& payload) {
+                (void)entities::common::TryHitEntity(
+                    payload.target_vid.id,
+                    state,
+                    audio,
+                    payload.damage_type,
+                    payload.amount,
+                    entities::common::HitOptions{
+                        .source_vid = payload.source_vid,
+                        .knockback = entities::common::KnockbackSpec{
+                            .velocity = payload.velocity,
+                            .clear_velocity = payload.clear_velocity,
+                            .clear_acceleration = payload.clear_acceleration,
+                            .thrown_by = payload.source_vid,
+                            .thrown_immunity_timer = payload.thrown_immunity_timer,
+                            .projectile_contact_damage_type =
+                                payload.projectile_contact_damage_type,
+                            .projectile_contact_damage_amount =
+                                payload.projectile_contact_damage_amount,
+                            .projectile_contact_duration = payload.projectile_contact_duration,
+                        },
+                        .allow_remote_player_target = true,
+                        .knockback_on_no_damage = payload.knockback_on_no_damage,
+                    }
+                );
+            },
+        },
+        action.payload
+    );
+}
+
 } // namespace
 
 void RequestGameplayAction(State& state, const GameplayActionRequested& action) {
@@ -194,8 +332,7 @@ bool TryRequestOrApplyInteractEntity(
     Graphics& graphics,
     Audio& audio
 ) {
-    GameplayActionRequested request{
-        .kind = GameplayActionKind::InteractEntity,
+    GameplayActionRequested request = InteractEntityAction{
         .source_vid = source_vid,
         .target_vid = target_vid,
     };
@@ -203,7 +340,15 @@ bool TryRequestOrApplyInteractEntity(
         RequestGameplayAction(state, request);
         return true;
     }
-    return TryApplyInteractEntityAction(state, request, graphics, audio);
+    return TryApplyInteractEntityAction(
+        state,
+        InteractEntityAction{
+            .source_vid = source_vid,
+            .target_vid = target_vid,
+        },
+        graphics,
+        audio
+    );
 }
 
 void ProcessPendingGameplayActions(State& state, Graphics& graphics, Audio& audio) {
@@ -216,145 +361,7 @@ void ProcessPendingGameplayActions(State& state, Graphics& graphics, Audio& audi
             continue;
         }
 
-        switch (action.kind) {
-        case GameplayActionKind::UseTool:
-            if (action.source_vid.has_value()) {
-                (void)entities::common::TryUseToolSlot(
-                    action.source_vid->id,
-                    state,
-                    graphics,
-                    audio,
-                    action.param_a,
-                    true,
-                    nullptr,
-                    action.velocity
-                );
-            }
-            break;
-        case GameplayActionKind::PickupEntity:
-            if (action.source_vid.has_value() && action.target_vid.has_value()) {
-                (void)entities::common::TryPickupEntityByVid(
-                    *action.source_vid,
-                    *action.target_vid,
-                    state,
-                    graphics
-                );
-            }
-            break;
-        case GameplayActionKind::DropEntity:
-            if (action.source_vid.has_value() && action.target_vid.has_value()) {
-                (void)entities::common::TryDropEntityByVid(
-                    *action.source_vid,
-                    *action.target_vid,
-                    state,
-                    graphics
-                );
-            }
-            break;
-        case GameplayActionKind::ThrowEntity:
-            if (action.source_vid.has_value() && action.target_vid.has_value()) {
-                (void)entities::common::TryThrowEntityByVid(
-                    *action.source_vid,
-                    *action.target_vid,
-                    action.velocity,
-                    state,
-                    graphics,
-                    audio
-                );
-            }
-            break;
-        case GameplayActionKind::UseHeldEntity:
-            ApplyAttachmentUseAction(state, action, AttachmentMode::Held, graphics, audio);
-            break;
-        case GameplayActionKind::UseBackEntity:
-            ApplyAttachmentUseAction(state, action, AttachmentMode::Back, graphics, audio);
-            break;
-        case GameplayActionKind::PutHeldEntityOnBack:
-            if (action.source_vid.has_value() && action.target_vid.has_value()) {
-                (void)entities::common::TryPutHeldEntityOnBackByVid(
-                    *action.source_vid,
-                    *action.target_vid,
-                    state,
-                    graphics
-                );
-            }
-            break;
-        case GameplayActionKind::TakeOffBackEntity:
-            if (action.source_vid.has_value() && action.target_vid.has_value()) {
-                (void)entities::common::TryTakeOffBackEntityByVid(
-                    *action.source_vid,
-                    *action.target_vid,
-                    state,
-                    graphics
-                );
-            }
-            break;
-        case GameplayActionKind::InteractEntity:
-            (void)TryApplyInteractEntityAction(state, action, graphics, audio);
-            break;
-        case GameplayActionKind::CollectEntity:
-            (void)TryApplyCollectEntityAction(state, action, graphics, audio);
-            break;
-        case GameplayActionKind::PushEntity:
-            if (action.source_vid.has_value() && action.target_vid.has_value()) {
-                (void)entities::common::TryApplyPushEntityAction(
-                    *action.source_vid,
-                    *action.target_vid,
-                    action.velocity.x,
-                    state,
-                    graphics
-                );
-            }
-            break;
-        case GameplayActionKind::BreakTile:
-            BreakStageTilesAtCoords({action.tile_pos}, state, audio);
-            break;
-        case GameplayActionKind::DamageEntity:
-            if (action.target_vid.has_value()) {
-                (void)entities::common::TryDamageEntity(
-                    action.target_vid->id,
-                    state,
-                    audio,
-                    action.damage_type,
-                    action.amount,
-                    entities::common::DamageOptions{
-                        .source_vid = action.source_vid,
-                        .allow_remote_player_target = true,
-                    }
-                );
-            }
-            break;
-        case GameplayActionKind::HitEntity:
-            if (action.target_vid.has_value()) {
-                (void)entities::common::TryHitEntity(
-                    action.target_vid->id,
-                    state,
-                    audio,
-                    action.damage_type,
-                    action.amount,
-                    entities::common::HitOptions{
-                        .source_vid = action.source_vid,
-                        .knockback = entities::common::KnockbackSpec{
-                            .velocity = action.velocity,
-                            .clear_velocity = action.clear_velocity,
-                            .clear_acceleration = action.clear_acceleration,
-                            .thrown_by = action.source_vid,
-                            .thrown_immunity_timer = action.thrown_immunity_timer,
-                            .projectile_contact_damage_type =
-                                action.projectile_contact_damage_type,
-                            .projectile_contact_damage_amount =
-                                action.projectile_contact_damage_amount,
-                            .projectile_contact_duration = action.projectile_contact_duration,
-                        },
-                        .allow_remote_player_target = true,
-                        .knockback_on_no_damage = action.knockback_on_no_damage,
-                    }
-                );
-            }
-            break;
-        case GameplayActionKind::None:
-            break;
-        }
+        ApplyGameplayAction(state, action, graphics, audio);
     }
 }
 

@@ -9,6 +9,7 @@
 
 #include <optional>
 #include <cstdint>
+#include <variant>
 
 namespace splonks {
 
@@ -35,13 +36,89 @@ enum class GameplayActionKind : std::uint16_t {
     HitEntity,
 };
 
-struct GameplayActionRequested {
-    GameplayActionKind kind = GameplayActionKind::None;
-    std::optional<VID> source_vid = std::nullopt;
-    std::optional<VID> target_vid = std::nullopt;
-    IVec2 tile_pos = IVec2::New(0, 0);
+enum class GameplayUseEdge : std::uint8_t {
+    None,
+    Press,
+    Release,
+};
+
+struct UseToolAction {
+    VID source_vid{};
+    Vec2 velocity = Vec2::New(0.0F, 0.0F);
+    std::uint32_t tool_slot = 0;
+};
+
+struct PickupEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+};
+
+struct DropEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+};
+
+struct ThrowEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+    Vec2 velocity = Vec2::New(0.0F, 0.0F);
+};
+
+struct UseHeldEntityAction {
+    VID source_vid{};
+    VID target_vid{};
     IVec2 direction = IVec2::New(0, 0);
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
+    GameplayUseEdge use_edge = GameplayUseEdge::None;
+};
+
+struct UseBackEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+    IVec2 direction = IVec2::New(0, 0);
+    GameplayUseEdge use_edge = GameplayUseEdge::None;
+};
+
+struct PutHeldEntityOnBackAction {
+    VID source_vid{};
+    VID target_vid{};
+};
+
+struct TakeOffBackEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+};
+
+struct InteractEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+};
+
+struct CollectEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+};
+
+struct PushEntityAction {
+    VID source_vid{};
+    VID target_vid{};
+    Vec2 velocity = Vec2::New(0.0F, 0.0F);
+};
+
+struct BreakTileAction {
+    std::optional<VID> source_vid = std::nullopt;
+    IVec2 tile_pos = IVec2::New(0, 0);
+};
+
+struct DamageEntityAction {
+    std::optional<VID> source_vid = std::nullopt;
+    VID target_vid{};
+    DamageType damage_type = DamageType::Attack;
+    unsigned int amount = 0;
+};
+
+struct HitEntityAction {
+    std::optional<VID> source_vid = std::nullopt;
+    VID target_vid{};
     Vec2 velocity = Vec2::New(0.0F, 0.0F);
     DamageType damage_type = DamageType::Attack;
     DamageType projectile_contact_damage_type = DamageType::Attack;
@@ -52,9 +129,111 @@ struct GameplayActionRequested {
     bool clear_velocity = true;
     bool clear_acceleration = true;
     bool knockback_on_no_damage = false;
-    std::uint32_t param_a = 0;
-    std::uint32_t param_b = 0;
 };
+
+using GameplayActionPayload = std::variant<
+    std::monostate,
+    UseToolAction,
+    PickupEntityAction,
+    DropEntityAction,
+    ThrowEntityAction,
+    UseHeldEntityAction,
+    UseBackEntityAction,
+    PutHeldEntityOnBackAction,
+    TakeOffBackEntityAction,
+    InteractEntityAction,
+    CollectEntityAction,
+    PushEntityAction,
+    BreakTileAction,
+    DamageEntityAction,
+    HitEntityAction
+>;
+
+struct GameplayActionRequested {
+    GameplayActionPayload payload{};
+
+    GameplayActionRequested() = default;
+
+    template <typename Action>
+    GameplayActionRequested(Action action) : payload(action) {}
+};
+
+template <typename... Lambdas>
+struct GameplayActionVisitor : Lambdas... {
+    using Lambdas::operator()...;
+};
+
+template <typename... Lambdas>
+GameplayActionVisitor(Lambdas...) -> GameplayActionVisitor<Lambdas...>;
+
+inline GameplayActionKind GetGameplayActionKind(const GameplayActionRequested& request) {
+    return std::visit(
+        GameplayActionVisitor{
+            [](const std::monostate&) { return GameplayActionKind::None; },
+            [](const UseToolAction&) { return GameplayActionKind::UseTool; },
+            [](const PickupEntityAction&) { return GameplayActionKind::PickupEntity; },
+            [](const DropEntityAction&) { return GameplayActionKind::DropEntity; },
+            [](const ThrowEntityAction&) { return GameplayActionKind::ThrowEntity; },
+            [](const UseHeldEntityAction&) { return GameplayActionKind::UseHeldEntity; },
+            [](const UseBackEntityAction&) { return GameplayActionKind::UseBackEntity; },
+            [](const PutHeldEntityOnBackAction&) { return GameplayActionKind::PutHeldEntityOnBack; },
+            [](const TakeOffBackEntityAction&) { return GameplayActionKind::TakeOffBackEntity; },
+            [](const InteractEntityAction&) { return GameplayActionKind::InteractEntity; },
+            [](const CollectEntityAction&) { return GameplayActionKind::CollectEntity; },
+            [](const PushEntityAction&) { return GameplayActionKind::PushEntity; },
+            [](const BreakTileAction&) { return GameplayActionKind::BreakTile; },
+            [](const DamageEntityAction&) { return GameplayActionKind::DamageEntity; },
+            [](const HitEntityAction&) { return GameplayActionKind::HitEntity; },
+        },
+        request.payload
+    );
+}
+
+inline std::optional<VID> GetGameplayActionSourceVid(const GameplayActionRequested& request) {
+    return std::visit(
+        GameplayActionVisitor{
+            [](const std::monostate&) -> std::optional<VID> { return std::nullopt; },
+            [](const UseToolAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const PickupEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const DropEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const ThrowEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const UseHeldEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const UseBackEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const PutHeldEntityOnBackAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const TakeOffBackEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const InteractEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const CollectEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const PushEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const BreakTileAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const DamageEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+            [](const HitEntityAction& action) -> std::optional<VID> { return action.source_vid; },
+        },
+        request.payload
+    );
+}
+
+inline std::optional<VID> GetGameplayActionTargetVid(const GameplayActionRequested& request) {
+    return std::visit(
+        GameplayActionVisitor{
+            [](const std::monostate&) -> std::optional<VID> { return std::nullopt; },
+            [](const UseToolAction&) -> std::optional<VID> { return std::nullopt; },
+            [](const PickupEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const DropEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const ThrowEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const UseHeldEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const UseBackEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const PutHeldEntityOnBackAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const TakeOffBackEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const InteractEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const CollectEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const PushEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const BreakTileAction&) -> std::optional<VID> { return std::nullopt; },
+            [](const DamageEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+            [](const HitEntityAction& action) -> std::optional<VID> { return action.target_vid; },
+        },
+        request.payload
+    );
+}
 
 struct GameplayEntitySpawned {
     VID entity_vid{};

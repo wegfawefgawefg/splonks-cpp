@@ -1798,8 +1798,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::BreakTile,
+                BreakTileAction{
                     .source_vid = peer_source_vid,
                     .tile_pos = break_tile_pos,
                 },
@@ -1826,8 +1825,7 @@ bool CheckNetworkPacketSmoke() {
         }
         world_ops::RequestGameplayAction(
             peer,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::BreakTile,
+            BreakTileAction{
                 .source_vid = peer_source_vid,
                 .tile_pos = duplicate_break_tile_pos,
             }
@@ -1879,8 +1877,7 @@ bool CheckNetworkPacketSmoke() {
         }
         world_ops::RequestGameplayAction(
             peer,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::BreakTile,
+            BreakTileAction{
                 .source_vid = peer_source_vid,
                 .tile_pos = lost_request_break_tile_pos,
             }
@@ -1940,8 +1937,7 @@ bool CheckNetworkPacketSmoke() {
         }
         world_ops::RequestGameplayAction(
             peer,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::BreakTile,
+            BreakTileAction{
                 .source_vid = peer_source_vid,
                 .tile_pos = lost_ack_break_tile_pos,
             }
@@ -1983,13 +1979,13 @@ bool CheckNetworkPacketSmoke() {
             return false;
         }
 
-        world_ops::RequestGameplayAction(
-            peer,
-            GameplayActionRequested{
-                .kind = GameplayActionKind::PickupEntity,
-                .source_vid = peer_source_vid,
-            }
-        );
+        network::NetEvent rejected_request;
+        rejected_request.header = peer.net_session.MakeLocalTransientEventHeader(peer.frame);
+        rejected_request.type = network::NetEventType::ActionRequest;
+        rejected_request.payload = network::ActionRequestEvent{
+            .kind = network::NetActionKind::None,
+        };
+        peer.net_session.EnqueueNetEvent(rejected_request);
         if (!DeliverPeerPacketsToCoordinator(
                 peer,
                 coordinator,
@@ -2001,10 +1997,10 @@ bool CheckNetworkPacketSmoke() {
             )) {
             return false;
         }
-        if (coordinator.pending_gameplay_actions.size() != 1) {
+        if (!coordinator.pending_gameplay_actions.empty()) {
             std::cerr << "network packet smoke failed: rejected duplicate request queued "
                       << coordinator.pending_gameplay_actions.size()
-                      << " coordinator actions instead of 1\n";
+                      << " coordinator actions instead of 0\n";
             return false;
         }
         world_ops::ProcessPendingGameplayActions(coordinator, graphics, audio);
@@ -2067,8 +2063,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::CollectEntity,
+                CollectEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_gold_vid,
                 },
@@ -2117,8 +2112,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::InteractEntity,
+                InteractEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_chest_vid,
                 },
@@ -2167,8 +2161,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PickupEntity,
+                PickupEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_rock_vid,
                 },
@@ -2184,8 +2177,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::ThrowEntity,
+                ThrowEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_rock_vid,
                     .velocity = Vec2::New(2.0F, -3.0F),
@@ -2235,8 +2227,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PickupEntity,
+                PickupEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_cape_vid,
                 },
@@ -2252,8 +2243,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PutHeldEntityOnBack,
+                PutHeldEntityOnBackAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_cape_vid,
                 },
@@ -2269,8 +2259,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::TakeOffBackEntity,
+                TakeOffBackEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_cape_vid,
                 },
@@ -2318,8 +2307,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PickupEntity,
+                PickupEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_drop_item_vid,
                 },
@@ -2335,8 +2323,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DropEntity,
+                DropEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_drop_item_vid,
                 },
@@ -2391,8 +2378,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::PushEntity,
+                PushEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_block_vid,
                     .velocity = Vec2::New(0.5F, 0.0F),
@@ -2442,8 +2428,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DamageEntity,
+                DamageEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_damage_target_vid,
                     .damage_type = DamageType::Attack,
@@ -2494,8 +2479,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DamageEntity,
+                DamageEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_box_vid,
                     .damage_type = DamageType::Attack,
@@ -2551,8 +2535,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::DamageEntity,
+                DamageEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_pot_vid,
                     .damage_type = DamageType::Attack,
@@ -2608,8 +2591,7 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::HitEntity,
+                HitEntityAction{
                     .source_vid = peer_source_vid,
                     .target_vid = *peer_hit_target_vid,
                     .velocity = Vec2::New(1.5F, -1.0F),
@@ -2642,11 +2624,10 @@ bool CheckNetworkPacketSmoke() {
                 coordinator_transport,
                 peer_transport,
                 peer_endpoint,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::UseTool,
+                UseToolAction{
                     .source_vid = peer_source_vid,
                     .velocity = Vec2::New(4.0F, -4.0F),
-                    .param_a = static_cast<std::uint32_t>(*peer_tool_slot),
+                    .tool_slot = static_cast<std::uint32_t>(*peer_tool_slot),
                 },
                 graphics,
                 audio,

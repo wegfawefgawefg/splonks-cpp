@@ -224,13 +224,13 @@ void SendActionRequestEvents(
         if (!IsReplicatedActionRequestEvent(event)) {
             continue;
         }
-        if (packet.event_count >= packet.events.size()) {
+        if (packet.events.size() >= kNetActionRequestEventsPerPacket) {
             SendEncodedPacket(transport, endpoint, EncodeActionRequestEvents(packet));
             packet = ActionRequestEventsPacket{};
         }
-        packet.events[packet.event_count++] = MakeActionRequestEventEntry(event);
+        packet.events.push_back(MakeActionRequestEventEntry(event));
     }
-    if (packet.event_count > 0) {
+    if (!packet.events.empty()) {
         SendEncodedPacket(transport, endpoint, EncodeActionRequestEvents(packet));
     }
 }

@@ -25,10 +25,6 @@ Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) 
     });
 }
 
-void SpawnAndReplicateEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    (void)SpawnEntityAtCenter(type_, center, state);
-}
-
 void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const IVec2& tile_pos, State& state) {
     const Vec2 center = Vec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
@@ -51,7 +47,7 @@ void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const
             continue;
         }
         for (int i = 0; i < drop.count; ++i) {
-            SpawnAndReplicateEntityAtCenter(
+            SpawnEntityAtCenter(
                 drop.type_,
                 center + kDropOffsets[offset_index % kDropOffsets.size()],
                 state
@@ -120,13 +116,8 @@ void BreakStageTilesAtCoordsInternal(
         if (request_coordinator_apply) {
             world_ops::RequestGameplayAction(
                 state,
-                GameplayActionRequested{
-                    .kind = GameplayActionKind::BreakTile,
+                BreakTileAction{
                     .tile_pos = tile_pos,
-                    .world_pos = Vec2::New(
-                        static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
-                        static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
-                    ),
                 }
             );
             continue;

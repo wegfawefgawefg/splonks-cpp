@@ -1,5 +1,7 @@
 #include "network/net_protocol.hpp"
 
+#include "network/net_event.hpp"
+
 #include <cstring>
 
 namespace splonks::network {
@@ -13,7 +15,6 @@ static_assert(sizeof(EntityLifecycleEventsPacket) <= kNetPacketMaxBytes - sizeof
 static_assert(sizeof(PlayerStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(RunStateEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PresentationCommandEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(ActionRequestEventsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(ActionRequestAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PlayerSnapshotsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
@@ -126,7 +127,104 @@ EncodedNetPacket EncodePresentationCommandEvents(const PresentationCommandEvents
 }
 
 EncodedNetPacket EncodeActionRequestEvents(const ActionRequestEventsPacket& packet) {
-    return EncodePayload(NetPacketType::ActionRequestEvents, packet);
+    EncodedNetPacket encoded;
+    NetPacketHeader header;
+    header.type = NetPacketType::ActionRequestEvents;
+    (void)Append(encoded, header);
+    const std::size_t payload_start = encoded.size;
+
+    const std::uint32_t event_count = static_cast<std::uint32_t>(packet.events.size());
+    if (!Append(encoded, event_count)) {
+        return EncodedNetPacket{};
+    }
+
+    for (const ActionRequestEventEntry& event : packet.events) {
+        if (!Append(encoded, event.event_id) ||
+            !Append(encoded, event.source_player_id) ||
+            !Append(encoded, event.stage_instance_id) ||
+            !Append(encoded, event.source_local_frame) ||
+            !Append(encoded, event.action_kind)) {
+            return EncodedNetPacket{};
+        }
+
+        const NetActionKind action_kind = static_cast<NetActionKind>(event.action_kind);
+        switch (action_kind) {
+        case NetActionKind::UseTool:
+            if (!Append(encoded, event.source_entity_id) ||
+                !Append(encoded, event.velocity_x) ||
+                !Append(encoded, event.velocity_y) ||
+                !Append(encoded, event.tool_slot)) {
+                return EncodedNetPacket{};
+            }
+            break;
+        case NetActionKind::PickupEntity:
+        case NetActionKind::DropEntity:
+        case NetActionKind::PutHeldEntityOnBack:
+        case NetActionKind::TakeOffBackEntity:
+        case NetActionKind::InteractEntity:
+        case NetActionKind::CollectEntity:
+            if (!Append(encoded, event.source_entity_id) ||
+                !Append(encoded, event.target_entity_id)) {
+                return EncodedNetPacket{};
+            }
+            break;
+        case NetActionKind::ThrowEntity:
+        case NetActionKind::PushEntity:
+            if (!Append(encoded, event.source_entity_id) ||
+                !Append(encoded, event.target_entity_id) ||
+                !Append(encoded, event.velocity_x) ||
+                !Append(encoded, event.velocity_y)) {
+                return EncodedNetPacket{};
+            }
+            break;
+        case NetActionKind::UseHeldEntity:
+        case NetActionKind::UseBackEntity:
+            if (!Append(encoded, event.source_entity_id) ||
+                !Append(encoded, event.target_entity_id) ||
+                !Append(encoded, event.direction_x) ||
+                !Append(encoded, event.direction_y) ||
+                !Append(encoded, event.use_edge)) {
+                return EncodedNetPacket{};
+            }
+            break;
+        case NetActionKind::BreakTile:
+            if (!Append(encoded, event.source_entity_id) ||
+                !Append(encoded, event.tile_x) ||
+                !Append(encoded, event.tile_y)) {
+                return EncodedNetPacket{};
+            }
+            break;
+        case NetActionKind::DamageEntity:
+            if (!Append(encoded, event.source_entity_id) ||
+                !Append(encoded, event.target_entity_id) ||
+                !Append(encoded, event.damage_type) ||
+                !Append(encoded, event.amount)) {
+                return EncodedNetPacket{};
+            }
+            break;
+        case NetActionKind::HitEntity:
+            if (!Append(encoded, event.source_entity_id) ||
+                !Append(encoded, event.target_entity_id) ||
+                !Append(encoded, event.velocity_x) ||
+                !Append(encoded, event.velocity_y) ||
+                !Append(encoded, event.damage_type) ||
+                !Append(encoded, event.projectile_contact_damage_type) ||
+                !Append(encoded, event.amount) ||
+                !Append(encoded, event.projectile_contact_damage_amount) ||
+                !Append(encoded, event.thrown_immunity_timer) ||
+                !Append(encoded, event.projectile_contact_duration) ||
+                !Append(encoded, event.flags)) {
+                return EncodedNetPacket{};
+            }
+            break;
+        case NetActionKind::None:
+            break;
+        }
+    }
+
+    header.payload_bytes = static_cast<std::uint16_t>(encoded.size - payload_start);
+    std::memcpy(encoded.bytes.data(), &header, sizeof(header));
+    return encoded;
 }
 
 EncodedNetPacket EncodeActionRequestAck(const ActionRequestAckPacket& packet) {
@@ -357,13 +455,99 @@ std::optional<ActionRequestEventsPacket> TryDecodeActionRequestEvents(const std:
         return std::nullopt;
     }
     ActionRequestEventsPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
+    std::uint32_t event_count = 0;
+    if (!Read(bytes, size, offset, event_count)) {
         return std::nullopt;
     }
-    packet.event_count = std::min<std::uint32_t>(
-        packet.event_count,
-        static_cast<std::uint32_t>(packet.events.size())
-    );
+    packet.events.reserve(std::min<std::uint32_t>(event_count, kNetActionRequestEventsPerPacket));
+    for (std::uint32_t i = 0; i < event_count; ++i) {
+        ActionRequestEventEntry event;
+        if (!Read(bytes, size, offset, event.event_id) ||
+            !Read(bytes, size, offset, event.source_player_id) ||
+            !Read(bytes, size, offset, event.stage_instance_id) ||
+            !Read(bytes, size, offset, event.source_local_frame) ||
+            !Read(bytes, size, offset, event.action_kind)) {
+            return std::nullopt;
+        }
+
+        const NetActionKind action_kind = static_cast<NetActionKind>(event.action_kind);
+        switch (action_kind) {
+        case NetActionKind::UseTool:
+            if (!Read(bytes, size, offset, event.source_entity_id) ||
+                !Read(bytes, size, offset, event.velocity_x) ||
+                !Read(bytes, size, offset, event.velocity_y) ||
+                !Read(bytes, size, offset, event.tool_slot)) {
+                return std::nullopt;
+            }
+            break;
+        case NetActionKind::PickupEntity:
+        case NetActionKind::DropEntity:
+        case NetActionKind::PutHeldEntityOnBack:
+        case NetActionKind::TakeOffBackEntity:
+        case NetActionKind::InteractEntity:
+        case NetActionKind::CollectEntity:
+            if (!Read(bytes, size, offset, event.source_entity_id) ||
+                !Read(bytes, size, offset, event.target_entity_id)) {
+                return std::nullopt;
+            }
+            break;
+        case NetActionKind::ThrowEntity:
+        case NetActionKind::PushEntity:
+            if (!Read(bytes, size, offset, event.source_entity_id) ||
+                !Read(bytes, size, offset, event.target_entity_id) ||
+                !Read(bytes, size, offset, event.velocity_x) ||
+                !Read(bytes, size, offset, event.velocity_y)) {
+                return std::nullopt;
+            }
+            break;
+        case NetActionKind::UseHeldEntity:
+        case NetActionKind::UseBackEntity:
+            if (!Read(bytes, size, offset, event.source_entity_id) ||
+                !Read(bytes, size, offset, event.target_entity_id) ||
+                !Read(bytes, size, offset, event.direction_x) ||
+                !Read(bytes, size, offset, event.direction_y) ||
+                !Read(bytes, size, offset, event.use_edge)) {
+                return std::nullopt;
+            }
+            break;
+        case NetActionKind::BreakTile:
+            if (!Read(bytes, size, offset, event.source_entity_id) ||
+                !Read(bytes, size, offset, event.tile_x) ||
+                !Read(bytes, size, offset, event.tile_y)) {
+                return std::nullopt;
+            }
+            break;
+        case NetActionKind::DamageEntity:
+            if (!Read(bytes, size, offset, event.source_entity_id) ||
+                !Read(bytes, size, offset, event.target_entity_id) ||
+                !Read(bytes, size, offset, event.damage_type) ||
+                !Read(bytes, size, offset, event.amount)) {
+                return std::nullopt;
+            }
+            break;
+        case NetActionKind::HitEntity:
+            if (!Read(bytes, size, offset, event.source_entity_id) ||
+                !Read(bytes, size, offset, event.target_entity_id) ||
+                !Read(bytes, size, offset, event.velocity_x) ||
+                !Read(bytes, size, offset, event.velocity_y) ||
+                !Read(bytes, size, offset, event.damage_type) ||
+                !Read(bytes, size, offset, event.projectile_contact_damage_type) ||
+                !Read(bytes, size, offset, event.amount) ||
+                !Read(bytes, size, offset, event.projectile_contact_damage_amount) ||
+                !Read(bytes, size, offset, event.thrown_immunity_timer) ||
+                !Read(bytes, size, offset, event.projectile_contact_duration) ||
+                !Read(bytes, size, offset, event.flags)) {
+                return std::nullopt;
+            }
+            break;
+        case NetActionKind::None:
+            break;
+        }
+        packet.events.push_back(event);
+    }
+    if (offset != size) {
+        return std::nullopt;
+    }
     return packet;
 }
 

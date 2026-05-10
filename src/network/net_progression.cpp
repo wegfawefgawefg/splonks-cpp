@@ -3,6 +3,7 @@
 #include "graphics.hpp"
 #include "network/net_entity_links.hpp"
 #include "network/net_lobby.hpp"
+#include "network/net_lobby_internal.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_progression.hpp"
 #include "state.hpp"
@@ -20,42 +21,6 @@ std::uint32_t MakeHostStageSeed(const State& state) {
 
 std::uint32_t MakeNetworkTransitionSeed(const State& state) {
     return (state.frame + 1U) ^ (state.stage_frame << 7U) ^ 0x6D2B79F5U;
-}
-
-bool LoadNetworkQuestStage(
-    State& state,
-    const std::string& quest_id,
-    const std::string& quest_stage_id,
-    std::uint32_t seed,
-    bool preserve_player_state
-) {
-    return LoadQuestStage(
-        state,
-        quest_id,
-        quest_stage_id,
-        preserve_player_state,
-        seed
-    );
-}
-
-void SendEncodedPacket(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const EncodedNetPacket& encoded
-) {
-    if (transport.capture_outgoing_packets) {
-        UdpPacket packet;
-        packet.endpoint = endpoint;
-        packet.size = std::min(encoded.size, packet.bytes.size());
-        std::copy_n(encoded.bytes.begin(), packet.size, packet.bytes.begin());
-        transport.captured_packets.push_back(packet);
-        return;
-    }
-
-    std::string error;
-    if (!transport.socket.Send(endpoint, encoded.bytes.data(), encoded.size, &error)) {
-        transport.last_error = error;
-    }
 }
 
 StageSyncPacket MakeStageSyncPacket(const State& state) {
@@ -192,7 +157,7 @@ void ApplyStageSyncNow(
     transport.replicated_entity_state_cache.clear();
     transport.replicated_fluid_cell_cache.clear();
 
-    if (!LoadNetworkQuestStage(state, quest_id, quest_stage_id, stage_seed, true)) {
+    if (!LoadQuestStage(state, quest_id, quest_stage_id, true, stage_seed)) {
         transport.last_error = "Stage sync failed: could not load " + quest_stage_id + ".";
         return;
     }

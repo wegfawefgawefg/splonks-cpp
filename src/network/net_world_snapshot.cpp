@@ -200,8 +200,4 @@ void EnqueueWorldSnapshotEvents(State& state) {
     world_ops::PatchRunState(state, true);
 }
 
-void ForceWorldSnapshotResync(State& state) {
-    EnqueueWorldSnapshotEvents(state);
-}
-
 } // namespace splonks::network

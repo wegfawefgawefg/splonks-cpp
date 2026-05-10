@@ -14,6 +14,7 @@
 #include <cstring>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace splonks::network {
 
@@ -518,10 +519,11 @@ struct PresentationCommandEventEntry {
     float target_y = 0.0F;
     std::int32_t direction_x = 1;
     std::int32_t direction_y = 0;
-    float param_a = 0.0F;
-    float param_b = 0.0F;
-    float param_c = 0.0F;
-    float param_d = 0.0F;
+    float entity_shake_amount = 0.0F;
+    float foreground_shake_amount = 0.0F;
+    float background_shake_amount = 0.0F;
+    float area_entity_shake_amount = 0.0F;
+    float shake_radius_tiles = 0.0F;
 };
 
 struct PresentationCommandEventsPacket {
@@ -552,13 +554,12 @@ struct ActionRequestEventEntry {
     std::uint32_t projectile_contact_damage_amount = 0;
     std::uint32_t thrown_immunity_timer = 0;
     std::uint32_t projectile_contact_duration = 0;
-    std::uint32_t param_a = 0;
-    std::uint32_t param_b = 0;
+    std::uint32_t tool_slot = 0;
+    std::uint16_t use_edge = 0;
 };
 
 struct ActionRequestEventsPacket {
-    std::uint32_t event_count = 0;
-    std::array<ActionRequestEventEntry, kNetActionRequestEventsPerPacket> events{};
+    std::vector<ActionRequestEventEntry> events{};
 };
 
 struct ActionRequestAckPacket {

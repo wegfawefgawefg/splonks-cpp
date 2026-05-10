@@ -500,22 +500,22 @@ void EmitTeleportPhasePresentation(
         .kind = PresentationCommandKind::ShakeEntity,
         .source_vid = holder.vid,
         .source_pos = world_center,
-        .param_a = 0.5F,
+        .entity_shake_amount = 0.5F,
     });
     world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::ShakeEntity,
         .source_vid = teleporter.vid,
         .source_pos = world_center,
-        .param_a = 0.5F,
+        .entity_shake_amount = 0.5F,
     });
     world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::ShakeArea,
         .source_vid = holder.vid,
         .source_pos = world_center,
-        .param_a = 8.0F,
-        .param_b = 8.0F,
-        .param_c = 1.0F,
-        .param_d = 1.5F,
+        .foreground_shake_amount = 8.0F,
+        .background_shake_amount = 8.0F,
+        .area_entity_shake_amount = 1.0F,
+        .shake_radius_tiles = 1.5F,
     });
     world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::SpawnScriptedEffect,

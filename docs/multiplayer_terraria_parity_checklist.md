@@ -16,6 +16,9 @@ Related docs:
   lane details.
 - `docs/current_multiplayer_cleanup_checklist.md`: short-term cleanup notes for
   the current large commit.
+- `docs/networking_protocol_cleanup_checklist.md`: focused cleanup list for
+  protocol file splits, event-to-message naming, typed action requests, and
+  compact action wire payloads.
 - `docs/network_stage_and_settings_classification.md`: durable/shared/local
   state classification.
 - `docs/water_fluid_simulation.md`: fluid model and Terraria liquid references.

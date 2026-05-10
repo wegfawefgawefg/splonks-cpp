@@ -27,6 +27,128 @@ namespace splonks {
 
 constexpr const char* kAnnotationsYamlPath = "assets/graphics/annotations.yaml";
 
+std::optional<GameplayActionRequested> MakeGameplayActionRequestForSmoke(
+    const network::ActionRequestEvent& payload,
+    std::optional<VID> source_vid,
+    std::optional<VID> target_vid
+) {
+    switch (payload.kind) {
+    case network::NetActionKind::UseTool:
+        if (!source_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{UseToolAction{
+            .source_vid = *source_vid,
+            .velocity = payload.velocity,
+            .tool_slot = payload.tool_slot,
+        }};
+    case network::NetActionKind::PickupEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{PickupEntityAction{*source_vid, *target_vid}};
+    case network::NetActionKind::DropEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{DropEntityAction{*source_vid, *target_vid}};
+    case network::NetActionKind::ThrowEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{ThrowEntityAction{
+            .source_vid = *source_vid,
+            .target_vid = *target_vid,
+            .velocity = payload.velocity,
+        }};
+    case network::NetActionKind::UseHeldEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{UseHeldEntityAction{
+            .source_vid = *source_vid,
+            .target_vid = *target_vid,
+            .direction = payload.direction,
+            .use_edge = static_cast<GameplayUseEdge>(payload.use_edge),
+        }};
+    case network::NetActionKind::UseBackEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{UseBackEntityAction{
+            .source_vid = *source_vid,
+            .target_vid = *target_vid,
+            .direction = payload.direction,
+            .use_edge = static_cast<GameplayUseEdge>(payload.use_edge),
+        }};
+    case network::NetActionKind::PutHeldEntityOnBack:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{PutHeldEntityOnBackAction{*source_vid, *target_vid}};
+    case network::NetActionKind::TakeOffBackEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{TakeOffBackEntityAction{*source_vid, *target_vid}};
+    case network::NetActionKind::InteractEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{InteractEntityAction{*source_vid, *target_vid}};
+    case network::NetActionKind::CollectEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{CollectEntityAction{*source_vid, *target_vid}};
+    case network::NetActionKind::PushEntity:
+        if (!source_vid.has_value() || !target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{PushEntityAction{
+            .source_vid = *source_vid,
+            .target_vid = *target_vid,
+            .velocity = payload.velocity,
+        }};
+    case network::NetActionKind::BreakTile:
+        return GameplayActionRequested{BreakTileAction{
+            .source_vid = source_vid,
+            .tile_pos = payload.tile_pos,
+        }};
+    case network::NetActionKind::DamageEntity:
+        if (!target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{DamageEntityAction{
+            .source_vid = source_vid,
+            .target_vid = *target_vid,
+            .damage_type = payload.damage_type,
+            .amount = payload.amount,
+        }};
+    case network::NetActionKind::HitEntity:
+        if (!target_vid.has_value()) {
+            return std::nullopt;
+        }
+        return GameplayActionRequested{HitEntityAction{
+            .source_vid = source_vid,
+            .target_vid = *target_vid,
+            .velocity = payload.velocity,
+            .damage_type = payload.damage_type,
+            .projectile_contact_damage_type = payload.projectile_contact_damage_type,
+            .amount = payload.amount,
+            .projectile_contact_damage_amount = payload.projectile_contact_damage_amount,
+            .thrown_immunity_timer = payload.thrown_immunity_timer,
+            .projectile_contact_duration = payload.projectile_contact_duration,
+            .clear_velocity = payload.clear_velocity,
+            .clear_acceleration = payload.clear_acceleration,
+            .knockback_on_no_damage = payload.knockback_on_no_damage,
+        }};
+    case network::NetActionKind::None:
+        return std::nullopt;
+    }
+    return std::nullopt;
+}
+
 void InitNetworkSmokeRuntimeTables(Graphics& graphics) {
     const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
     graphics.frame_data_db = FrameDataDb::FromRaw(raw_file);
@@ -185,28 +307,14 @@ bool TransferPeerActionRequestsToCoordinator(
             return false;
         }
 
-        world_ops::QueuePendingGameplayAction(
-            coordinator,
-            GameplayActionRequested{
-                .kind = static_cast<GameplayActionKind>(payload->kind),
-                .source_vid = source_vid,
-                .target_vid = target_vid,
-                .tile_pos = payload->tile_pos,
-                .direction = payload->direction,
-                .world_pos = payload->world_pos,
-                .velocity = payload->velocity,
-                .damage_type = payload->damage_type,
-                .projectile_contact_damage_type = payload->projectile_contact_damage_type,
-                .amount = payload->amount,
-                .projectile_contact_damage_amount = payload->projectile_contact_damage_amount,
-                .thrown_immunity_timer = payload->thrown_immunity_timer,
-                .projectile_contact_duration = payload->projectile_contact_duration,
-                .clear_velocity = payload->clear_velocity,
-                .clear_acceleration = payload->clear_acceleration,
-                .param_a = payload->param_a,
-                .param_b = payload->param_b,
-            }
-        );
+        const std::optional<GameplayActionRequested> action =
+            MakeGameplayActionRequestForSmoke(*payload, source_vid, target_vid);
+        if (!action.has_value()) {
+            std::cerr << "network action smoke failed at " << label
+                      << ": peer emitted unresolvable action request\n";
+            return false;
+        }
+        world_ops::QueuePendingGameplayAction(coordinator, *action);
         transferred_any = true;
     }
 
