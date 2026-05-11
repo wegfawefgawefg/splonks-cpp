@@ -308,6 +308,7 @@ void ProcessInputGameOver(
     if (state.menu_inputs.confirm.down) {
         if (state.net_session.role != network::NetRole::Offline &&
             HasAnyConnectedLivingPlayer(state)) {
+            state.game_over = false;
             state.scene_frame = 0;
             state.SetMode(Mode::Playing);
             return;

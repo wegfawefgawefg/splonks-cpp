@@ -471,6 +471,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         state.frame_pause += kGameOverHitstopFrames;
         AddShake(state, game_over_pos, 2.2F, 3.0F, ShakeMask::All);
         (void)PlayWorldSoundEmitter(state, game_over_pos, audio_asset_ids::GameOver);
+        state.game_over = true;
         state.SetMode(Mode::GameOver);
     }
 

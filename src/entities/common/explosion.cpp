@@ -118,6 +118,12 @@ void DoExplosion(
         effect.alpha_acc = 0.0F;
         state.particles.Add(std::move(effect));
     }
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
+        .kind = PresentationCommandKind::SpawnScriptedEffect,
+        .effect_id = ScriptedPresentationEffectId::ExplosionBurst,
+        .source_pos = center,
+        .effect_scale = size,
+    });
     (void)PlayWorldSoundEmitter(state, center, audio_asset_ids::BombExplosion);
     world_ops::QueuePresentationCommand(state, PresentationCommand{
         .kind = PresentationCommandKind::PlaySoundAt,
@@ -140,7 +146,16 @@ void DoExplosion(
         .area_entity_shake_amount = kExplosionShakeEntityAmount,
         .shake_radius_tiles = kExplosionShakeRadiusTiles,
     });
-    AddTransientLight(state, center, 2.4F, Color3::New(1.0F, 0.48F, 0.12F), 9, 14);
+    const Color3 explosion_light_color = Color3::New(1.0F, 0.48F, 0.12F);
+    AddTransientLight(state, center, 2.4F, explosion_light_color, 9, 14);
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
+        .kind = PresentationCommandKind::AddTransientLight,
+        .source_pos = center,
+        .light_strength = 2.4F,
+        .light_color = explosion_light_color,
+        .light_radius = 9,
+        .light_lifetime_frames = 14,
+    });
 
     const std::vector<IVec2> explosion_tiles = BuildExplosionFootprintTiles(state.stage, center);
     BreakStageTilesAtCoords(explosion_tiles, state, audio);

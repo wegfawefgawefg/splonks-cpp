@@ -27,6 +27,7 @@ constexpr std::size_t kNetPlayersPerProcess = 16;
 constexpr std::size_t kNetPlayerSnapshotsPerPacket = 4;
 constexpr std::size_t kNetTileMessagesPerPacket = 8;
 constexpr std::size_t kNetFluidCellMessagesPerPacket = 4;
+constexpr std::size_t kNetStageLightMessagesPerPacket = 4;
 constexpr std::size_t kNetEntitySpawnedMessagesPerPacket = 1;
 constexpr std::size_t kNetEntityDamageMessagesPerPacket = 3;
 constexpr std::size_t kNetEntityStateMessagesPerPacket = 1;
@@ -37,7 +38,7 @@ constexpr std::size_t kNetRunStateMessagesPerPacket = 3;
 constexpr std::size_t kNetPlayerStateToolSlotCount = 2;
 constexpr std::size_t kNetPlayerStateEffectCount = 12;
 constexpr std::size_t kNetEntityEffectCount = 12;
-constexpr std::size_t kNetPresentationCommandMessagesPerPacket = 4;
+constexpr std::size_t kNetPresentationCommandMessagesPerPacket = 3;
 constexpr std::size_t kNetActionRequestMessagesPerPacket = 4;
 constexpr std::size_t kNetActionRequestAckMessageIdsPerPacket = 16;
 
@@ -60,6 +61,7 @@ enum class NetPacketType : std::uint16_t {
     RunStateMessages = 16,
     ActionRequestAck = 17,
     FluidCellMessages = 18,
+    StageLightMessages = 19,
 };
 
 struct NetPacketHeader {
@@ -212,6 +214,25 @@ struct FluidCellMessagesPacket {
     std::array<FluidCellMessageEntry, kNetFluidCellMessagesPerPacket> messages{};
 };
 
+struct StageLightMessageEntry {
+    NetMessageId message_id = kInvalidNetMessageId;
+    PlayerId source_player_id = kInvalidPlayerId;
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint64_t source_local_frame = 0;
+    std::uint64_t coordinator_order = 0;
+    std::uint16_t message_type = 0;
+    std::uint16_t reserved = 0;
+    std::uint64_t light_id = 0;
+    std::int32_t tile_x = 0;
+    std::int32_t tile_y = 0;
+    std::int32_t radius = 0;
+};
+
+struct StageLightMessagesPacket {
+    std::uint32_t message_count = 0;
+    std::array<StageLightMessageEntry, kNetStageLightMessagesPerPacket> messages{};
+};
+
 struct EntityEffectEntry {
     std::uint16_t id = 0;
     std::uint16_t reserved = 0;
@@ -239,6 +260,11 @@ struct EntitySpawnedMessageEntry {
     float size_y = 0.0F;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float light_strength = 0.0F;
+    float light_color_r = 1.0F;
+    float light_color_g = 1.0F;
+    float light_color_b = 1.0F;
+    std::int32_t light_radius = 0;
     std::uint32_t movement_flags = 0;
     std::uint8_t effect_count = 0;
     std::array<EntityEffectEntry, kNetEntityEffectCount> effects{};
@@ -333,6 +359,11 @@ struct EntityStateMessageEntry {
     std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
+    float light_strength = 0.0F;
+    float light_color_r = 1.0F;
+    float light_color_g = 1.0F;
+    float light_color_b = 1.0F;
+    std::int32_t light_radius = 0;
     float rotation = 0.0F;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
@@ -519,11 +550,17 @@ struct PresentationCommandMessageEntry {
     float target_y = 0.0F;
     std::int32_t direction_x = 1;
     std::int32_t direction_y = 0;
+    std::uint32_t effect_count = 0;
+    float effect_scale = 1.0F;
     float entity_shake_amount = 0.0F;
     float foreground_shake_amount = 0.0F;
     float background_shake_amount = 0.0F;
     float area_entity_shake_amount = 0.0F;
     float shake_radius_tiles = 0.0F;
+    float light_strength = 0.0F;
+    Color3 light_color = Color3::White();
+    std::int32_t light_radius = 0;
+    std::uint32_t light_lifetime_frames = 0;
 };
 
 struct PresentationCommandMessagesPacket {
@@ -579,6 +616,7 @@ EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet);
 EncodedNetPacket EncodePlayerSnapshots(const PlayerSnapshotsPacket& packet);
 EncodedNetPacket EncodeTileMessages(const TileMessagesPacket& packet);
 EncodedNetPacket EncodeFluidCellMessages(const FluidCellMessagesPacket& packet);
+EncodedNetPacket EncodeStageLightMessages(const StageLightMessagesPacket& packet);
 EncodedNetPacket EncodeEntitySpawnedMessages(const EntitySpawnedMessagesPacket& packet);
 EncodedNetPacket EncodeEntityDamageMessages(const EntityDamageMessagesPacket& packet);
 EncodedNetPacket EncodeEntityStateMessages(const EntityStateMessagesPacket& packet);
@@ -597,6 +635,7 @@ std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, s
 std::optional<PlayerSnapshotsPacket> TryDecodePlayerSnapshots(const std::uint8_t* bytes, std::size_t size);
 std::optional<TileMessagesPacket> TryDecodeTileMessages(const std::uint8_t* bytes, std::size_t size);
 std::optional<FluidCellMessagesPacket> TryDecodeFluidCellMessages(const std::uint8_t* bytes, std::size_t size);
+std::optional<StageLightMessagesPacket> TryDecodeStageLightMessages(const std::uint8_t* bytes, std::size_t size);
 std::optional<EntitySpawnedMessagesPacket> TryDecodeEntitySpawnedMessages(const std::uint8_t* bytes, std::size_t size);
 std::optional<EntityDamageMessagesPacket> TryDecodeEntityDamageMessages(const std::uint8_t* bytes, std::size_t size);
 std::optional<EntityStateMessagesPacket> TryDecodeEntityStateMessages(const std::uint8_t* bytes, std::size_t size);

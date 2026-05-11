@@ -114,6 +114,19 @@ void EnqueueFluidSnapshot(State& state) {
     }
 }
 
+void EnqueueStageLightSnapshot(State& state) {
+    for (const StageLight& light : state.stage.lights) {
+        ReplicateStageLightAdded(
+            state,
+            GameplayStageLightAdded{
+                .light_vid = light.vid,
+                .tile_pos = light.tile_pos,
+                .radius = light.radius,
+            }
+        );
+    }
+}
+
 void EnqueueSpawnSnapshotForEntity(State& state, const Entity& entity) {
     if (!entity.active || entity.type_ == EntityType::None) {
         return;
@@ -132,6 +145,9 @@ void EnqueueSpawnSnapshotForEntity(State& state, const Entity& entity) {
             .size = entity.size,
             .counter_a = entity.counter_a,
             .counter_b = entity.counter_b,
+            .light_strength = entity.light_strength,
+            .light_color = entity.light_color,
+            .light_radius = entity.light_radius,
             .movement_flags = entity.movement_flags,
             .use_pressed = entity.use_state.pressed,
             .animate = static_cast<std::uint8_t>(entity.frame_data_animator.animate ? 1 : 0),
@@ -196,6 +212,7 @@ void EnqueueWorldSnapshotMessages(State& state) {
 
     EnqueueTileSnapshot(state);
     EnqueueFluidSnapshot(state);
+    EnqueueStageLightSnapshot(state);
     EnqueueEntitySnapshot(state);
     world_ops::PatchRunState(state, true);
 }

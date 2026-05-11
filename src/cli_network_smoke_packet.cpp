@@ -1713,6 +1713,9 @@ bool CheckNetworkPacketSmoke() {
         peer.sac_altar_favor += 11;
         peer.sac_altar_reward_tier += 1;
         peer.game_over = !coordinator.game_over;
+        if (!coordinator.game_over) {
+            peer.SetMode(Mode::GameOver);
+        }
         peer.win = !coordinator.win;
         peer.stage.gravity = 9.0F;
         peer.stage.generation_seed = 777U;
@@ -1767,6 +1770,11 @@ bool CheckNetworkPacketSmoke() {
             return false;
         }
         if (!CheckSnapshotFingerprint(coordinator, peer, "force world snapshot resync after retained gap")) {
+            return false;
+        }
+        if (!coordinator.game_over && peer.mode == Mode::GameOver) {
+            std::cerr << "network packet smoke failed: world snapshot cleared game_over"
+                      << " but peer remained in GameOver mode\n";
             return false;
         }
 

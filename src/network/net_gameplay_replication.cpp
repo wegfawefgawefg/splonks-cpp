@@ -106,6 +106,9 @@ void ReplicateEntitySpawned(State& state, const GameplayEntitySpawned& message) 
         .owner = NetEntityOwner::Coordinator(),
         .counter_a = message.counter_a,
         .counter_b = message.counter_b,
+        .light_strength = message.light_strength,
+        .light_color = message.light_color,
+        .light_radius = message.light_radius,
         .movement_flags = message.movement_flags,
         .use_pressed = message.use_pressed,
         .animate = message.animate,
@@ -284,6 +287,9 @@ void ReplicateEntityStatePatched(
         .fall_timer = message.fall_timer,
         .stun_timer = message.stun_timer,
         .projectile_contact_timer = message.projectile_contact_timer,
+        .light_strength = message.light_strength,
+        .light_color = message.light_color,
+        .light_radius = message.light_radius,
         .rotation = message.rotation,
         .condition = message.condition,
         .grounded = message.grounded,
@@ -624,6 +630,36 @@ void ReplicateActionRequest(State& state, const GameplayActionRequested& request
     state.net_session.EnqueueNetMessage(net_message);
 }
 
+void ReplicateStageLightAdded(State& state, const GameplayStageLightAdded& message) {
+    if (state.net_session.role != NetRole::Coordinator) {
+        return;
+    }
+
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::StageLightAdded;
+    net_message.payload = StageLightAddedMessage{
+        .light_id = static_cast<std::uint64_t>(message.light_vid.id),
+        .tile_pos = message.tile_pos,
+        .radius = static_cast<std::int32_t>(message.radius),
+    };
+    state.net_session.EnqueueNetMessage(net_message);
+}
+
+void ReplicateStageLightRemoved(State& state, const GameplayStageLightRemoved& message) {
+    if (state.net_session.role != NetRole::Coordinator) {
+        return;
+    }
+
+    NetMessage net_message;
+    net_message.header = state.net_session.MakeLocalMessageHeader(state.frame);
+    net_message.type = NetMessageType::StageLightRemoved;
+    net_message.payload = StageLightRemovedMessage{
+        .light_id = static_cast<std::uint64_t>(message.light_vid.id),
+    };
+    state.net_session.EnqueueNetMessage(net_message);
+}
+
 void ReplicatePresentationCommand(State& state, const PresentationCommand& command) {
     if (state.net_session.role == NetRole::Offline) {
         return;
@@ -651,11 +687,17 @@ void ReplicatePresentationCommand(State& state, const PresentationCommand& comma
         .target_pos = command.target_pos,
         .direction_x = command.direction.x,
         .direction_y = command.direction.y,
+        .effect_count = command.effect_count,
+        .effect_scale = command.effect_scale,
         .entity_shake_amount = command.entity_shake_amount,
         .foreground_shake_amount = command.foreground_shake_amount,
         .background_shake_amount = command.background_shake_amount,
         .area_entity_shake_amount = command.area_entity_shake_amount,
         .shake_radius_tiles = command.shake_radius_tiles,
+        .light_strength = command.light_strength,
+        .light_color = command.light_color,
+        .light_radius = static_cast<std::int32_t>(command.light_radius),
+        .light_lifetime_frames = command.light_lifetime_frames,
     };
     state.net_session.EnqueueNetMessage(net_message);
 }

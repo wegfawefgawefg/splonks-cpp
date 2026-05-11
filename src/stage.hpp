@@ -204,7 +204,7 @@ struct Stage {
     unsigned int wrap_padding_tiles = 0;
     UVec2 wrap_core_origin_tiles = UVec2::New(0, 0);
     UVec2 wrap_core_size_tiles = UVec2::New(0, 0);
-    std::uint32_t next_light_vid = 0;
+    std::size_t next_light_vid = 0;
     std::uint32_t tile_change_generation = 0;
 
     static const UVec2 kShape;
@@ -259,6 +259,7 @@ struct Stage {
     void SetEmbeddedTreasure(const IVec2& pos, const EmbeddedTreasure& embedded_treasure);
     EmbeddedTreasure TakeEmbeddedTreasure(const IVec2& pos);
     VID AddLight(const IVec2& tile_pos, int radius);
+    VID AddLightWithVid(VID vid, const IVec2& tile_pos, int radius);
     bool RemoveLight(VID vid);
     const StageLight* GetLight(VID vid) const;
     void SetTilesInRectWc(const AABB& area, Tile tile_type);

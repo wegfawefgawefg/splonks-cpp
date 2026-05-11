@@ -46,6 +46,27 @@ void SendFluidCellMessages(
     }
 }
 
+void SendStageLightMessages(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetMessage>& messages
+) {
+    StageLightMessagesPacket packet;
+    for (const NetMessage& message : messages) {
+        if (!IsReplicatedStageLightMessage(message)) {
+            continue;
+        }
+        if (packet.message_count >= packet.messages.size()) {
+            SendEncodedPacket(transport, endpoint, EncodeStageLightMessages(packet));
+            packet = StageLightMessagesPacket{};
+        }
+        packet.messages[packet.message_count++] = MakeStageLightMessageEntry(message);
+    }
+    if (packet.message_count > 0) {
+        SendEncodedPacket(transport, endpoint, EncodeStageLightMessages(packet));
+    }
+}
+
 void SendEntitySpawnedMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,

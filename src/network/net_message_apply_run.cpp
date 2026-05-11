@@ -38,6 +38,14 @@ void ApplyRunStatePatchedMessage(
     state.stage.wrap_transform_active = payload.wrap_transform_active != 0;
     state.game_over = payload.game_over != 0;
     state.win = payload.win != 0;
+    if (!state.game_over && state.mode == Mode::GameOver) {
+        state.scene_frame = 0;
+        state.gameplay_camera_anchor_world_pos.reset();
+        state.SetMode(Mode::Playing);
+    } else if (state.game_over && state.mode == Mode::Playing) {
+        state.scene_frame = 0;
+        state.SetMode(Mode::GameOver);
+    }
     state.stage.wrap_padding_tiles = payload.wrap_padding_tiles;
     state.stage.wrap_core_origin_tiles = UVec2::New(
         payload.wrap_core_origin_x,

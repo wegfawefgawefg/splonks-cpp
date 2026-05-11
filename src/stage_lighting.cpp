@@ -1,5 +1,6 @@
 #include "stage_lighting.hpp"
 
+#include "network/net_gameplay_replication.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
@@ -549,13 +550,27 @@ Color3 ApplyBackwallLightingSettings(const State& state, Color3 light_color, boo
 VID AddStageLight(State& state, const IVec2& tile_pos, int radius) {
     const VID vid = state.stage.AddLight(tile_pos, radius);
     InvalidateStageLighting(state);
+    network::ReplicateStageLightAdded(state, GameplayStageLightAdded{
+        .light_vid = vid,
+        .tile_pos = tile_pos,
+        .radius = radius,
+    });
     return vid;
+}
+
+VID AddStageLightWithVid(State& state, VID vid, const IVec2& tile_pos, int radius) {
+    const VID added_vid = state.stage.AddLightWithVid(vid, tile_pos, radius);
+    InvalidateStageLighting(state);
+    return added_vid;
 }
 
 bool RemoveStageLight(State& state, VID vid) {
     const bool removed = state.stage.RemoveLight(vid);
     if (removed) {
         InvalidateStageLighting(state);
+        network::ReplicateStageLightRemoved(state, GameplayStageLightRemoved{
+            .light_vid = vid,
+        });
     }
     return removed;
 }

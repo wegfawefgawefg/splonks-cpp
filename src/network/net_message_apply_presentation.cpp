@@ -31,11 +31,17 @@ void ApplyPresentationCommandMessage(
         .source_pos = payload.source_pos,
         .target_pos = payload.target_pos,
         .direction = IVec2::New(payload.direction_x, payload.direction_y),
+        .effect_count = payload.effect_count,
+        .effect_scale = payload.effect_scale,
         .entity_shake_amount = payload.entity_shake_amount,
         .foreground_shake_amount = payload.foreground_shake_amount,
         .background_shake_amount = payload.background_shake_amount,
         .area_entity_shake_amount = payload.area_entity_shake_amount,
         .shake_radius_tiles = payload.shake_radius_tiles,
+        .light_strength = payload.light_strength,
+        .light_color = payload.light_color,
+        .light_radius = static_cast<int>(payload.light_radius),
+        .light_lifetime_frames = payload.light_lifetime_frames,
     };
     PlayPresentationCommand(state, *graphics, command);
 }

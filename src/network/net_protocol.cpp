@@ -8,6 +8,7 @@ namespace splonks::network {
 
 static_assert(sizeof(EntityDamageMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(FluidCellMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(StageLightMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntitySpawnedMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityStateMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(EntityCarryMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
@@ -92,6 +93,10 @@ EncodedNetPacket EncodeTileMessages(const TileMessagesPacket& packet) {
 
 EncodedNetPacket EncodeFluidCellMessages(const FluidCellMessagesPacket& packet) {
     return EncodePayload(NetPacketType::FluidCellMessages, packet);
+}
+
+EncodedNetPacket EncodeStageLightMessages(const StageLightMessagesPacket& packet) {
+    return EncodePayload(NetPacketType::StageLightMessages, packet);
 }
 
 EncodedNetPacket EncodeEntitySpawnedMessages(const EntitySpawnedMessagesPacket& packet) {
@@ -305,6 +310,22 @@ std::optional<FluidCellMessagesPacket> TryDecodeFluidCellMessages(const std::uin
         return std::nullopt;
     }
     FluidCellMessagesPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.message_count = std::min<std::uint32_t>(
+        packet.message_count,
+        static_cast<std::uint32_t>(packet.messages.size())
+    );
+    return packet;
+}
+
+std::optional<StageLightMessagesPacket> TryDecodeStageLightMessages(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::StageLightMessages, offset)) {
+        return std::nullopt;
+    }
+    StageLightMessagesPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

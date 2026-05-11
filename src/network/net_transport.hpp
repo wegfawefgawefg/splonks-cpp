@@ -132,6 +132,11 @@ struct NetReplicatedEntityStateSignature {
     float counter_d = 0.0F;
     float threshold_a = 0.0F;
     float threshold_b = 0.0F;
+    float light_strength = 0.0F;
+    float light_color_r = 1.0F;
+    float light_color_g = 1.0F;
+    float light_color_b = 1.0F;
+    std::int32_t light_radius = 0;
     float rotation = 0.0F;
     float animation_speed = 1.0F;
     std::uint32_t health = 0;

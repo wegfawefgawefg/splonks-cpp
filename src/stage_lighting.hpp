@@ -62,6 +62,7 @@ struct StageLighting {
 
 struct State;
 VID AddStageLight(State& state, const IVec2& tile_pos, int radius);
+VID AddStageLightWithVid(State& state, VID vid, const IVec2& tile_pos, int radius);
 bool RemoveStageLight(State& state, VID vid);
 void InvalidateStageLighting(State& state);
 void RebuildStageLighting(State& state);

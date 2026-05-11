@@ -294,6 +294,7 @@ add_executable(splonks-cpp
     src/network/net_message_apply_player.cpp
     src/network/net_message_apply_presentation.cpp
     src/network/net_message_apply_run.cpp
+    src/network/net_message_apply_stage_light.cpp
     src/network/net_message_apply_tile.cpp
     src/network/net_gameplay_replication.cpp
     src/network/net_lobby.cpp
@@ -309,6 +310,7 @@ add_executable(splonks-cpp
     src/network/net_lobby_packets_entity.cpp
     src/network/net_lobby_packets_player_run.cpp
     src/network/net_lobby_packets_presentation.cpp
+    src/network/net_lobby_packets_stage_light.cpp
     src/network/net_lobby_packets_tile.cpp
     src/network/net_lobby_player_lifecycle.cpp
     src/network/net_lobby_retained_player.cpp

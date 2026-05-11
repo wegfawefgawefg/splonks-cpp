@@ -500,6 +500,7 @@ void SendOrderedMessagesToAllRemotes(State& state, NetTransportRuntime& transpor
         }
         SendTileMessages(transport, remote.endpoint, unacked_messages);
         SendFluidCellMessages(transport, remote.endpoint, unacked_messages);
+        SendStageLightMessages(transport, remote.endpoint, unacked_messages);
         SendEntitySpawnedMessages(transport, remote.endpoint, unacked_messages);
         SendEntityDamageMessages(transport, remote.endpoint, unacked_messages);
         SendEntityStateMessages(transport, remote.endpoint, unacked_messages);
@@ -628,6 +629,26 @@ void HandleFluidCellMessagesAsPeer(State& state, const FluidCellMessagesPacket& 
         if (message.header.coordinator_order == 0) {
             state.net_session.EnqueueTransientMessage(message);
         } else {
+            state.net_session.EnqueueOrderedMessage(message);
+        }
+    }
+}
+
+void HandleStageLightMessagesAsPeer(State& state, const StageLightMessagesPacket& packet) {
+    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
+        const StageLightMessageEntry& entry = packet.messages[i];
+        if (entry.stage_instance_id != state.net_session.stage_instance_id ||
+            entry.message_id == kInvalidNetMessageId) {
+            continue;
+        }
+        if (entry.source_player_id != state.net_session.coordinator_player_id) {
+            continue;
+        }
+        if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
+            continue;
+        }
+        NetMessage message = MakeStageLightMessage(entry);
+        if (message.type != NetMessageType::None) {
             state.net_session.EnqueueOrderedMessage(message);
         }
     }

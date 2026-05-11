@@ -227,6 +227,9 @@ void ApplyEntitySpawnedMessage(
     entity->size = payload.size;
     entity->counter_a = payload.counter_a;
     entity->counter_b = payload.counter_b;
+    entity->light_strength = payload.light_strength;
+    entity->light_color = payload.light_color;
+    entity->light_radius = payload.light_radius;
     entity->movement_flags = payload.movement_flags;
     ApplyReplicatedEffects(*entity, payload);
     ApplySpawnPresentation(*entity, payload);
@@ -448,6 +451,9 @@ void ApplyEntityStatePatchedMessage(
     entity->damage_vulnerability =
         static_cast<DamageVulnerability>(payload.damage_vulnerability);
     entity->projectile_contact_timer = payload.projectile_contact_timer;
+    entity->light_strength = payload.light_strength;
+    entity->light_color = payload.light_color;
+    entity->light_radius = payload.light_radius;
     entity->rotation = payload.rotation;
     entity->facing = payload.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
     entity->ai_state = static_cast<EntityAiState>(payload.ai_state);

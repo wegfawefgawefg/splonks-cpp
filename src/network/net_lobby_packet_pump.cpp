@@ -127,6 +127,12 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
+        if (const std::optional<StageLightMessagesPacket> stage_light_messages =
+                TryDecodeStageLightMessages(packet->bytes.data(), packet->size)) {
+            HandleStageLightMessagesAsPeer(state, *stage_light_messages);
+            continue;
+        }
+
         if (const std::optional<EntitySpawnedMessagesPacket> entity_messages =
                 TryDecodeEntitySpawnedMessages(packet->bytes.data(), packet->size)) {
             HandleEntitySpawnedMessagesAsPeer(state, *entity_messages);

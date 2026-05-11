@@ -7,9 +7,11 @@
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "hitscan.hpp"
+#include "presentation_commands.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
 #include "utils.hpp"
+#include "world_ops.hpp"
 
 
 #include <memory>
@@ -45,6 +47,12 @@ void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
         effect.alpha_acc = -0.003F;
         state.particles.Add(std::move(effect));
     }
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
+        .kind = PresentationCommandKind::SpawnScriptedEffect,
+        .effect_id = ScriptedPresentationEffectId::PistolMuzzleSmoke,
+        .source_pos = pos,
+        .direction = IVec2::New(direction, 0),
+    });
 }
 
 void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
@@ -87,6 +95,12 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
         smoke.alpha_acc = -0.003F;
         state.particles.Add(std::move(smoke));
     }
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
+        .kind = PresentationCommandKind::SpawnScriptedEffect,
+        .effect_id = ScriptedPresentationEffectId::PistolImpact,
+        .source_pos = pos,
+        .direction = IVec2::New(direction, 0),
+    });
 }
 
 Vec2 GetFallbackMuzzlePos(const Entity& pistol) {
@@ -107,7 +121,16 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
                                                                         : pistol.use_state.user_vid;
 
     (void)PlayWorldSoundEmitter(state, muzzle_pos, audio_asset_ids::PistolShoot);
-    AddTransientLight(state, muzzle_pos, 1.4F, Color3::New(1.0F, 0.72F, 0.34F), 5, 4);
+    const Color3 muzzle_light_color = Color3::New(1.0F, 0.72F, 0.34F);
+    AddTransientLight(state, muzzle_pos, 1.4F, muzzle_light_color, 5, 4);
+    world_ops::QueuePresentationCommand(state, PresentationCommand{
+        .kind = PresentationCommandKind::AddTransientLight,
+        .source_pos = muzzle_pos,
+        .light_strength = 1.4F,
+        .light_color = muzzle_light_color,
+        .light_radius = 5,
+        .light_lifetime_frames = 4,
+    });
     SpawnPistolMuzzleSmoke(state, muzzle_pos, direction);
 
     const HitscanHit hit = TraceHitscan(

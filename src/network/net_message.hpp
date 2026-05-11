@@ -51,6 +51,8 @@ enum class NetMessageType : std::uint16_t {
     TileChanged,
     TileBroken,
     FluidCellPatched,
+    StageLightAdded,
+    StageLightRemoved,
 
     PlayerStatePatched,
     RunStatePatched,
@@ -111,6 +113,9 @@ struct EntitySpawnedMessage {
     NetEntityOwner owner = NetEntityOwner::Coordinator();
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float light_strength = 0.0F;
+    Color3 light_color = Color3::White();
+    std::int32_t light_radius = 0;
     std::uint32_t movement_flags = 0;
     std::uint8_t effect_count = 0;
     std::array<EntityReplicatedEffect, kEntityReplicatedEffectCount> effects{};
@@ -198,6 +203,9 @@ struct EntityStatePatchedMessage {
     std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
+    float light_strength = 0.0F;
+    Color3 light_color = Color3::White();
+    std::int32_t light_radius = 0;
     float rotation = 0.0F;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
@@ -254,6 +262,16 @@ struct FluidCellPatchedMessage {
     float gravity_strength = 0.0F;
 };
 
+struct StageLightAddedMessage {
+    std::uint64_t light_id = 0;
+    IVec2 tile_pos = IVec2::New(0, 0);
+    std::int32_t radius = 0;
+};
+
+struct StageLightRemovedMessage {
+    std::uint64_t light_id = 0;
+};
+
 struct PresentationCommandMessage {
     std::uint16_t kind = 0;
     std::uint16_t effect_id = 0;
@@ -264,11 +282,17 @@ struct PresentationCommandMessage {
     Vec2 target_pos = Vec2::New(0.0F, 0.0F);
     std::int32_t direction_x = 1;
     std::int32_t direction_y = 0;
+    std::uint32_t effect_count = 0;
+    float effect_scale = 1.0F;
     float entity_shake_amount = 0.0F;
     float foreground_shake_amount = 0.0F;
     float background_shake_amount = 0.0F;
     float area_entity_shake_amount = 0.0F;
     float shake_radius_tiles = 0.0F;
+    float light_strength = 0.0F;
+    Color3 light_color = Color3::White();
+    std::int32_t light_radius = 0;
+    std::uint32_t light_lifetime_frames = 0;
 };
 
 struct PlayerStatePatchedToolSlot {
@@ -381,6 +405,8 @@ struct NetMessage {
         TileChangedMessage,
         TileBrokenMessage,
         FluidCellPatchedMessage,
+        StageLightAddedMessage,
+        StageLightRemovedMessage,
         PresentationCommandMessage,
         PlayerStatePatchedMessage,
         RunStatePatchedMessage,

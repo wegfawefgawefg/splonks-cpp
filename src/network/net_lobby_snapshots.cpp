@@ -27,6 +27,8 @@ constexpr std::uint16_t kPlayerSnapshotInputAttack = 1U << 12U;
 constexpr std::uint16_t kPlayerSnapshotInputBuy = 1U << 13U;
 constexpr std::uint16_t kPlayerSnapshotInputEmoteUp = 1U << 14U;
 constexpr std::uint16_t kPlayerSnapshotInputEmoteDown = 1U << 15U;
+constexpr float kLocalPredictionResidualSmoothDistancePx = 4.0F;
+constexpr float kLocalPredictionResidualSmoothStrength = 0.10F;
 
 std::uint8_t EncodeHangSide(const std::optional<LeftOrRight>& hang_side) {
     if (!hang_side.has_value()) {
@@ -373,10 +375,15 @@ void CopySnapshotToTarget(NetRemotePlayerTarget& target, const PlayerSnapshotEnt
     target.hang_side = snapshot.hang_side;
 }
 
-bool ShouldApplyCanonicalTimersToLocalPrediction(
+bool ShouldApplyCanonicalBodyToLocalPrediction(
     const Entity& entity,
-    const NetRemotePlayerTarget& target
+    const NetRemotePlayerTarget& target,
+    float target_distance_sq,
+    float snap_distance_sq
 ) {
+    if (target_distance_sq > snap_distance_sq) {
+        return true;
+    }
     if (target.condition != static_cast<std::uint8_t>(EntityCondition::Normal) ||
         entity.condition != EntityCondition::Normal) {
         return true;
@@ -388,7 +395,44 @@ bool ShouldApplyCanonicalTimersToLocalPrediction(
         entity.can_collide != (target.can_collide != 0)) {
         return true;
     }
+    if (entity.can_apply_projectile_contact !=
+        (target.can_apply_projectile_contact != 0)) {
+        return true;
+    }
+    if (entity.held_by_vid.has_value() ||
+        entity.attachment_mode != AttachmentMode::None) {
+        return true;
+    }
+    if (entity.thrown_by.has_value() ||
+        target.thrown_by_id != kInvalidNetEntityId) {
+        return true;
+    }
     return false;
+}
+
+bool HasActiveLocalMovementInput(const PlayerSlot& slot) {
+    return slot.inputs.left.down ||
+        slot.inputs.right.down ||
+        slot.inputs.up.down ||
+        slot.inputs.down.down ||
+        slot.inputs.jump.down ||
+        slot.inputs.run.down;
+}
+
+bool ShouldSmoothLocalPredictionResidual(
+    const Entity& entity,
+    const PlayerSlot& slot,
+    float target_distance_sq
+) {
+    constexpr float kResidualSmoothDistanceSq =
+        kLocalPredictionResidualSmoothDistancePx *
+        kLocalPredictionResidualSmoothDistancePx;
+    return target_distance_sq > 0.0001F &&
+        target_distance_sq <= kResidualSmoothDistanceSq &&
+        entity.condition == EntityCondition::Normal &&
+        entity.grounded &&
+        entity.movement_flags == 0 &&
+        !HasActiveLocalMovementInput(slot);
 }
 
 NetRemotePlayerTarget& EnsureRemotePlayerTarget(
@@ -610,13 +654,33 @@ void StepRemotePlayerInterpolation(
             continue;
         }
 
+        const Vec2 final_target_pos = Vec2::New(target.pos_x, target.pos_y);
+        const Vec2 final_delta = final_target_pos - entity->pos;
+        const float final_distance_sq =
+            final_delta.x * final_delta.x + final_delta.y * final_delta.y;
+        const bool apply_local_prediction_repair =
+            local_prediction_repair &&
+            ShouldApplyCanonicalBodyToLocalPrediction(
+                *entity,
+                target,
+                final_distance_sq,
+                snap_distance_sq
+            );
+        if (local_prediction_repair && !apply_local_prediction_repair) {
+            // Owner-local movement is predicted immediately on the peer. A
+            // normal coordinator snapshot is a convergence target for debug,
+            // not permission to replay an older position/velocity over the
+            // local run/jump/hang state.
+            if (ShouldSmoothLocalPredictionResidual(*entity, *slot, final_distance_sq)) {
+                entity->pos += final_delta * kLocalPredictionResidualSmoothStrength;
+                state.UpdateSidForEntity(entity->vid.id, graphics);
+            }
+            continue;
+        }
+
         const bool attachment_driven =
             entity->held_by_vid.has_value() || entity->attachment_mode != AttachmentMode::None;
-        const Vec2 final_target_pos = Vec2::New(target.pos_x, target.pos_y);
         if (!attachment_driven) {
-            const Vec2 final_delta = final_target_pos - entity->pos;
-            const float final_distance_sq =
-                final_delta.x * final_delta.x + final_delta.y * final_delta.y;
             Vec2 display_target_pos = final_target_pos;
             if (final_distance_sq <= snap_distance_sq && delay_frames > 0.0F) {
                 const float age_frames = static_cast<float>(state.frame - target.interpolation_start_frame);
@@ -626,7 +690,7 @@ void StepRemotePlayerInterpolation(
             }
 
             const Vec2 delta = display_target_pos - entity->pos;
-            if (final_distance_sq > snap_distance_sq) {
+            if (final_distance_sq > snap_distance_sq || local_prediction_repair) {
                 entity->pos = final_target_pos;
             } else {
                 entity->pos += delta * strength;
@@ -638,12 +702,7 @@ void StepRemotePlayerInterpolation(
         entity->rotation = target.rotation;
         entity->health = target.health;
         entity->coyote_time = target.coyote_time;
-        const bool apply_canonical_timers =
-            !local_prediction_repair ||
-            ShouldApplyCanonicalTimersToLocalPrediction(*entity, target);
-        if (apply_canonical_timers) {
-            entity->fall_timer = target.fall_timer;
-        }
+        entity->fall_timer = target.fall_timer;
         entity->stun_timer = target.stun_timer;
         entity->projectile_contact_timer = target.projectile_contact_timer;
         entity->thrown_by = target.thrown_by_id != kInvalidNetEntityId

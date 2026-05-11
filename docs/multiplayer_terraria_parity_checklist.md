@@ -438,33 +438,33 @@ jump/run/climb/hang movement.
 - [x] Define which local actions may not be predicted because wrong prediction is
   too destructive.
 - [x] Add debug overlay showing predicted vs coordinator-corrected player body.
-- [ ] Split player snapshot application into owner-local and remote-replica
+- [x] Split player snapshot application into owner-local and remote-replica
   policies.
-- [ ] Owner-local policy ignores stale normal-movement position/velocity repairs
+- [x] Owner-local policy ignores stale normal-movement position/velocity repairs
   while the local player is in normal control.
-- [ ] Owner-local policy still applies semantic coordinator corrections
+- [x] Owner-local policy still applies semantic coordinator corrections
   immediately: health, death, stun, no-physics/no-collision, respawn, stage
   transition, teleport, held/carry/attachment link changes, and large impossible
   position divergence.
-- [ ] Owner-local policy preserves local fall/coyote/jump/climb/hang feel timers
+- [x] Owner-local policy preserves local fall/coyote/jump/climb/hang feel timers
   during normal movement, but accepts coordinator timers when semantic state
   changes.
-- [ ] Owner-local policy smooths only small non-semantic residual corrections
+- [x] Owner-local policy smooths only small non-semantic residual corrections
   over a short window.
-- [ ] Owner-local policy snaps large errors and all semantic corrections.
-- [ ] Remote-replica policy continues interpolating other players from
+- [x] Owner-local policy snaps large errors and all semantic corrections.
+- [x] Remote-replica policy continues interpolating other players from
   coordinator state and never authors canonical gameplay.
 - [ ] Canonical spawned entities from peer actions come from coordinator.
 - [ ] Peer-predicted local artifacts either reconcile to coordinator net ids or
   are cosmetic-only and deleted.
 - [ ] Attachment/held/carry corrections snap links immediately.
 - [ ] Death/respawn/stage-transition corrections snap immediately.
-- [ ] Add smoke coverage for owner-local jump correction: peer jump must not be
+- [x] Add smoke coverage for owner-local jump correction: peer jump must not be
   pulled downward/backward by an older coordinator snapshot.
-- [ ] Add smoke coverage for owner-local hang/climb correction: peer ledge/rope/
+- [x] Add smoke coverage for owner-local hang/climb correction: peer ledge/rope/
   ladder movement must not be destroyed by normal stale snapshots, but invalid
   large divergence still snaps.
-- [ ] Add smoke coverage for semantic correction while moving: coordinator damage
+- [x] Add smoke coverage for semantic correction while moving: coordinator damage
   or stun must override local prediction immediately.
 
 ### Step Plan
@@ -523,9 +523,11 @@ jump/run/climb/hang movement.
   health, and animation frame. The control-server `net` command emits the same
   body/delta diagnostics for live process inspection.
 
-Current status: durable convergence is stable enough to start this gate. The
-next implementation target is owner-local movement repair, starting with jump
-stutter and hang/climb feel.
+Current status: owner-local normal movement snapshots no longer replay over the
+local player. Coordinator health/condition/physics/link/large-distance repairs
+still snap, and frame smoke covers stale jump/fall state, stale hang state,
+large divergence, tiny idle residual smoothing, semantic damage/stun, and
+remote-replica interpolation.
 
 ## Gate 7: Debug/Admin Lane
 
@@ -606,6 +608,8 @@ Required additions:
   respawn state.
 - [x] Respawn while held severs carry links and converges body state.
 - [x] Stage transition while one player is dead.
+- [x] Run-state patch clears peer `GameOver` mode after coordinator respawn/
+  restart.
 - [x] Stage transition converges when the first coordinator stage-sync delivery
   is dropped.
 - [x] Stage transition while carrying another player.

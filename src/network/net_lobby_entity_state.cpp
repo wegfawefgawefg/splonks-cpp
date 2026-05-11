@@ -101,6 +101,9 @@ EntityStatePatchedMessage MakeEntityStatePayload(State& state, const Entity& ent
         .fall_timer = entity.fall_timer,
         .stun_timer = entity.stun_timer,
         .projectile_contact_timer = entity.projectile_contact_timer,
+        .light_strength = entity.light_strength,
+        .light_color = entity.light_color,
+        .light_radius = entity.light_radius,
         .rotation = entity.rotation,
         .condition = static_cast<std::uint8_t>(entity.condition),
         .grounded = static_cast<std::uint8_t>(entity.grounded ? 1 : 0),
@@ -163,6 +166,11 @@ NetReplicatedEntityStateSignature MakeStateSignature(const EntityStatePatchedMes
         .counter_d = payload.counter_d,
         .threshold_a = payload.threshold_a,
         .threshold_b = payload.threshold_b,
+        .light_strength = payload.light_strength,
+        .light_color_r = payload.light_color.r,
+        .light_color_g = payload.light_color.g,
+        .light_color_b = payload.light_color.b,
+        .light_radius = payload.light_radius,
         .rotation = payload.rotation,
         .animation_speed = payload.animation_speed,
         .health = payload.health,
@@ -242,6 +250,11 @@ bool StateSignaturesEqual(
            a.counter_d == b.counter_d &&
            a.threshold_a == b.threshold_a &&
            a.threshold_b == b.threshold_b &&
+           a.light_strength == b.light_strength &&
+           a.light_color_r == b.light_color_r &&
+           a.light_color_g == b.light_color_g &&
+           a.light_color_b == b.light_color_b &&
+           a.light_radius == b.light_radius &&
            a.rotation == b.rotation &&
            a.animation_speed == b.animation_speed &&
            a.health == b.health &&

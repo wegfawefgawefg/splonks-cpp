@@ -268,6 +268,11 @@ void ApplyGameplayAction(State& state, const GameplayActionRequested& action, Gr
                 BreakStageTilesAtCoords({payload.tile_pos}, state, audio);
             },
             [&](const DamageEntityAction& payload) {
+                const Entity* const target = state.entity_manager.GetEntity(payload.target_vid);
+                if (payload.damage_type == DamageType::Fall &&
+                    (target == nullptr || target->condition != EntityCondition::Normal)) {
+                    return;
+                }
                 (void)entities::common::TryDamageEntity(
                     payload.target_vid.id,
                     state,

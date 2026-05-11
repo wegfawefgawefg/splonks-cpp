@@ -245,6 +245,9 @@ struct GameplayEntitySpawned {
     Vec2 size = Vec2::New(0.0F, 0.0F);
     float counter_a = 0.0F;
     float counter_b = 0.0F;
+    float light_strength = 0.0F;
+    Color3 light_color = Color3::White();
+    std::int32_t light_radius = 0;
     std::uint32_t movement_flags = 0;
     bool use_pressed = false;
     std::uint8_t animate = 0;
@@ -330,6 +333,9 @@ struct GameplayEntityStatePatched {
     std::uint32_t fall_timer = 0;
     std::uint32_t stun_timer = 0;
     std::uint32_t projectile_contact_timer = 0;
+    float light_strength = 0.0F;
+    Color3 light_color = Color3::White();
+    std::int32_t light_radius = 0;
     float rotation = 0.0F;
     std::uint8_t condition = 0;
     std::uint8_t grounded = 0;
@@ -378,6 +384,16 @@ struct GameplayTileChanged {
 
 struct GameplayTileBroken {
     IVec2 tile_pos = IVec2::New(0, 0);
+};
+
+struct GameplayStageLightAdded {
+    VID light_vid{};
+    IVec2 tile_pos = IVec2::New(0, 0);
+    int radius = 0;
+};
+
+struct GameplayStageLightRemoved {
+    VID light_vid{};
 };
 
 } // namespace splonks

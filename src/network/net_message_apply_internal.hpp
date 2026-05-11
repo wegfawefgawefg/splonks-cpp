@@ -86,6 +86,8 @@ void ApplyPresentationCommandMessage(
 void ApplyTileBrokenMessage(State& state, Audio* audio, const TileBrokenMessage& payload);
 void ApplyTileChangedMessage(State& state, const TileChangedMessage& payload);
 void ApplyFluidCellPatchedMessage(State& state, const FluidCellPatchedMessage& payload);
+void ApplyStageLightAddedMessage(State& state, const StageLightAddedMessage& payload);
+void ApplyStageLightRemovedMessage(State& state, const StageLightRemovedMessage& payload);
 
 } // namespace network
 } // namespace splonks

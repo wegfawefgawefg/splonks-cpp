@@ -131,6 +131,17 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool inc
             }
         }
     }
+
+    std::vector<StageLight> lights = stage.lights;
+    std::sort(lights.begin(), lights.end(), [](const StageLight& lhs, const StageLight& rhs) {
+        return lhs.vid.id < rhs.vid.id;
+    });
+    writer.AddPod(lights.size());
+    for (const StageLight& light : lights) {
+        writer.AddVid(light.vid);
+        writer.AddIVec2(light.tile_pos);
+        writer.AddPod(light.radius);
+    }
 }
 
 void AddEffectFingerprint(FingerprintWriter& writer, const BoxedEntityEffects& effects_box) {
@@ -192,6 +203,11 @@ void AddEntityFingerprint(FingerprintWriter& writer, const Entity& entity) {
     writer.AddFloat(entity.counter_b);
     writer.AddFloat(entity.counter_c);
     writer.AddFloat(entity.counter_d);
+    writer.AddFloat(entity.light_strength);
+    writer.AddFloat(entity.light_color.r);
+    writer.AddFloat(entity.light_color.g);
+    writer.AddFloat(entity.light_color.b);
+    writer.AddPod(entity.light_radius);
     writer.AddIVec2(entity.point_a);
     writer.AddIVec2(entity.point_b);
     writer.AddIVec2(entity.point_c);
@@ -294,6 +310,11 @@ void AddNetworkEntityFingerprint(FingerprintWriter& writer, const State& state, 
     writer.AddFloat(entity.counter_b);
     writer.AddFloat(entity.counter_c);
     writer.AddFloat(entity.counter_d);
+    writer.AddFloat(entity.light_strength);
+    writer.AddFloat(entity.light_color.r);
+    writer.AddFloat(entity.light_color.g);
+    writer.AddFloat(entity.light_color.b);
+    writer.AddPod(entity.light_radius);
     writer.AddIVec2(entity.point_a);
     writer.AddIVec2(entity.point_b);
     writer.AddIVec2(entity.point_c);

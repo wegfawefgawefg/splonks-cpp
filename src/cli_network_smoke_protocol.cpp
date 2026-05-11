@@ -141,6 +141,9 @@ bool CheckNetworkProtocolApplySmoke() {
         rock->holding = true;
         rock->render_enabled = false;
         rock->damage_vulnerability = DamageVulnerability::ExplosionOnly;
+        rock->light_strength = 1.25F;
+        rock->light_color = Color3::New(1.0F, 0.2F, 0.1F);
+        rock->light_radius = 6;
         world_ops::PatchEntityState(coordinator, *rock, *rock);
         if (!ApplyCoordinatorMessagesToPeer(coordinator, peer, "entity state patched") ||
             !CompareProtocolSmokeStates(coordinator, peer, "protocol entity state patched")) {

@@ -2,16 +2,16 @@
 
 #include "audio.hpp"
 #include "frame_data_id.hpp"
-#include "stage_lighting.hpp"
+#include "math_types.hpp"
 #include "state.hpp"
 
 namespace splonks::entities::store_light {
 
 namespace {
 
-IVec2 GetStoreLightTilePos(const Entity& entity, const State& state) {
-    return state.stage.GetTileCoordAtWc(ToIVec2(entity.pos));
-}
+constexpr float kStoreLightStrength = 1.70F;
+constexpr Color3 kStoreLightColor = Color3::White();
+constexpr int kStoreLightRadius = kStoreLightRadiusTiles;
 
 bool IsStoreLightBroken(const Entity& entity) {
     return entity.has_physics;
@@ -20,7 +20,10 @@ bool IsStoreLightBroken(const Entity& entity) {
 } // namespace
 
 void AttachStoreLight(Entity& entity, State& state, int radius) {
-    entity.entity_a = AddStageLight(state, GetStoreLightTilePos(entity, state), radius);
+    (void)state;
+    entity.light_strength = kStoreLightStrength;
+    entity.light_color = kStoreLightColor;
+    entity.light_radius = radius;
 }
 
 EntityDamageEffectResult OnDamageAsStoreLight(
@@ -44,16 +47,13 @@ EntityDamageEffectResult OnDamageAsStoreLight(
         return EntityDamageEffectResult::None;
     }
 
-    if (light.entity_a.has_value()) {
-        (void)RemoveStageLight(state, *light.entity_a);
-        light.entity_a.reset();
-    }
-
     SetAnimation(light, frame_data_ids::StoreLightBroken);
     light.has_physics = true;
     light.can_collide = true;
     light.damage_vulnerability = DamageVulnerability::Immune;
     light.collide_sound = audio_asset_ids::LightBreak;
+    light.light_strength = 0.0F;
+    light.light_radius = 0;
     (void)PlayEntityCenterSoundEmitter(state, light, audio_asset_ids::LightBreak);
     return EntityDamageEffectResult::Consumed;
 }
@@ -70,6 +70,9 @@ extern const EntityArchetype kStoreLightArchetype{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .can_be_stunned = false,
+    .light_strength = kStoreLightStrength,
+    .light_color = kStoreLightColor,
+    .light_radius = kStoreLightRadius,
     .draw_layer = DrawLayer::Middle,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

@@ -31,11 +31,17 @@ PresentationCommandMessageEntry MakePresentationCommandMessageEntry(const NetMes
         .target_y = payload != nullptr ? payload->target_pos.y : 0.0F,
         .direction_x = payload != nullptr ? payload->direction_x : 1,
         .direction_y = payload != nullptr ? payload->direction_y : 0,
+        .effect_count = payload != nullptr ? payload->effect_count : 0,
+        .effect_scale = payload != nullptr ? payload->effect_scale : 1.0F,
         .entity_shake_amount = payload != nullptr ? payload->entity_shake_amount : 0.0F,
         .foreground_shake_amount = payload != nullptr ? payload->foreground_shake_amount : 0.0F,
         .background_shake_amount = payload != nullptr ? payload->background_shake_amount : 0.0F,
         .area_entity_shake_amount = payload != nullptr ? payload->area_entity_shake_amount : 0.0F,
         .shake_radius_tiles = payload != nullptr ? payload->shake_radius_tiles : 0.0F,
+        .light_strength = payload != nullptr ? payload->light_strength : 0.0F,
+        .light_color = payload != nullptr ? payload->light_color : Color3::White(),
+        .light_radius = payload != nullptr ? payload->light_radius : 0,
+        .light_lifetime_frames = payload != nullptr ? payload->light_lifetime_frames : 0,
     };
 }
 
@@ -59,11 +65,17 @@ NetMessage MakePresentationCommandMessage(const PresentationCommandMessageEntry&
         .target_pos = Vec2::New(entry.target_x, entry.target_y),
         .direction_x = entry.direction_x,
         .direction_y = entry.direction_y,
+        .effect_count = entry.effect_count,
+        .effect_scale = entry.effect_scale,
         .entity_shake_amount = entry.entity_shake_amount,
         .foreground_shake_amount = entry.foreground_shake_amount,
         .background_shake_amount = entry.background_shake_amount,
         .area_entity_shake_amount = entry.area_entity_shake_amount,
         .shake_radius_tiles = entry.shake_radius_tiles,
+        .light_strength = entry.light_strength,
+        .light_color = entry.light_color,
+        .light_radius = entry.light_radius,
+        .light_lifetime_frames = entry.light_lifetime_frames,
     };
     return message;
 }

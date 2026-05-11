@@ -948,22 +948,29 @@ bool RunPlayerCorrectionPolicySmoke(Graphics& graphics) {
     PacketSmokePair pair = MakePacketSmokePair();
     AttachPacketSmokeTransports(coordinator, peer, pair);
 
-    VID coordinator_player_vid;
+    VID coordinator_host_vid;
+    VID coordinator_peer_vid;
+    VID peer_host_vid;
     VID peer_player_vid;
-    if (!ConfigureMovementSmokePlayer(
+    if (!ConfigureDualPlayerFrameSmoke(
             coordinator,
             peer,
             graphics,
-            coordinator_player_vid,
+            coordinator_host_vid,
+            coordinator_peer_vid,
+            peer_host_vid,
             peer_player_vid
         )) {
         std::cerr << "network frame smoke failed: could not configure correction policy player\n";
         return false;
     }
 
-    Entity* const coordinator_player = coordinator.entity_manager.GetEntityMut(coordinator_player_vid);
+    Entity* const coordinator_host = coordinator.entity_manager.GetEntityMut(coordinator_host_vid);
+    Entity* const coordinator_peer = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    Entity* peer_host = peer.entity_manager.GetEntityMut(peer_host_vid);
     Entity* peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
-    if (coordinator_player == nullptr || peer_player == nullptr) {
+    if (coordinator_host == nullptr || coordinator_peer == nullptr ||
+        peer_host == nullptr || peer_player == nullptr) {
         std::cerr << "network frame smoke failed: missing correction policy player\n";
         return false;
     }
@@ -973,27 +980,103 @@ bool RunPlayerCorrectionPolicySmoke(Graphics& graphics) {
     peer_transport.remote_interpolation_strength = 0.5F;
     peer_transport.remote_snap_distance = 16.0F;
 
-    coordinator_player->pos = Vec2::New(64.0F, 114.0F);
-    peer_player->pos = coordinator_player->pos + Vec2::New(8.0F, 0.0F);
+    coordinator_host->pos = Vec2::New(64.0F, 114.0F);
+    peer_host->pos = coordinator_host->pos + Vec2::New(8.0F, 0.0F);
     if (!DeliverCoordinatorSnapshotsToPeer(
             coordinator,
             peer,
             pair,
             graphics,
-            "frame correction policy smooth snapshot"
+            "frame correction policy remote smooth snapshot"
         )) {
         return false;
     }
     network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
-    const Entity* const smoothed_player = peer.entity_manager.GetEntity(peer_player_vid);
-    if (smoothed_player == nullptr) {
-        std::cerr << "network frame smoke failed: missing smoothed correction player\n";
+    const Entity* const smoothed_remote = peer.entity_manager.GetEntity(peer_host_vid);
+    if (smoothed_remote == nullptr) {
+        std::cerr << "network frame smoke failed: missing smoothed correction remote\n";
         return false;
     }
-    const float smooth_distance = std::fabs(smoothed_player->pos.x - coordinator_player->pos.x);
+    const float smooth_distance = std::fabs(smoothed_remote->pos.x - coordinator_host->pos.x);
     if (!(smooth_distance > 0.01F && smooth_distance < 8.0F)) {
-        std::cerr << "network frame smoke failed at frame correction policy smooth:"
+        std::cerr << "network frame smoke failed at frame correction policy remote smooth:"
                   << " expected partial repair, distance=" << smooth_distance << '\n';
+        return false;
+    }
+
+    coordinator_peer->pos = Vec2::New(64.0F, 114.0F);
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing stale correction player\n";
+        return false;
+    }
+    peer_player->pos = coordinator_peer->pos + Vec2::New(8.0F, 0.0F);
+    peer_player->vel = Vec2::New(1.5F, -3.0F);
+    peer_player->fall_timer = 17;
+    peer_player->condition = EntityCondition::Normal;
+    peer_player->health = 400;
+    coordinator_peer->condition = EntityCondition::Normal;
+    coordinator_peer->health = 400;
+    coordinator_peer->fall_timer = 4;
+    if (!DeliverCoordinatorSnapshotsToPeer(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            "frame correction policy local stale snapshot"
+        )) {
+        return false;
+    }
+    network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
+    const Entity* ignored_player = peer.entity_manager.GetEntity(peer_player_vid);
+    if (ignored_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing stale correction player\n";
+        return false;
+    }
+    const float ignored_distance = std::fabs(ignored_player->pos.x - coordinator_peer->pos.x);
+    if (std::fabs(ignored_distance - 8.0F) > 0.01F ||
+        ignored_player->vel != Vec2::New(1.5F, -3.0F) ||
+        ignored_player->fall_timer != 17) {
+        std::cerr << "network frame smoke failed at frame correction policy local stale:"
+                  << " expected local prediction to survive, distance=" << ignored_distance
+                  << " vel=" << ignored_player->vel.x << "," << ignored_player->vel.y
+                  << " fall=" << ignored_player->fall_timer << '\n';
+        return false;
+    }
+
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing residual correction player\n";
+        return false;
+    }
+    peer_player->pos = coordinator_peer->pos + Vec2::New(2.0F, 0.0F);
+    peer_player->vel = Vec2::New(0.75F, 0.0F);
+    peer_player->grounded = true;
+    peer_player->movement_flags = 0;
+    peer_player->fall_timer = 19;
+    if (!DeliverCoordinatorSnapshotsToPeer(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            "frame correction policy local residual snapshot"
+        )) {
+        return false;
+    }
+    network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
+    const Entity* const residual_player = peer.entity_manager.GetEntity(peer_player_vid);
+    if (residual_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing residual correction player\n";
+        return false;
+    }
+    const float residual_distance = std::fabs(residual_player->pos.x - coordinator_peer->pos.x);
+    if (!(residual_distance > 0.01F && residual_distance < 2.0F) ||
+        residual_player->vel != Vec2::New(0.75F, 0.0F) ||
+        residual_player->fall_timer != 19) {
+        std::cerr << "network frame smoke failed at frame correction policy local residual:"
+                  << " expected tiny idle drift smoothing, distance=" << residual_distance
+                  << " vel=" << residual_player->vel.x << "," << residual_player->vel.y
+                  << " fall=" << residual_player->fall_timer << '\n';
         return false;
     }
 
@@ -1002,23 +1085,23 @@ bool RunPlayerCorrectionPolicySmoke(Graphics& graphics) {
         std::cerr << "network frame smoke failed: missing snap correction player\n";
         return false;
     }
-    peer_player->pos = coordinator_player->pos + Vec2::New(80.0F, 0.0F);
+    peer_player->pos = coordinator_peer->pos + Vec2::New(80.0F, 0.0F);
     if (!DeliverCoordinatorSnapshotsToPeer(
             coordinator,
             peer,
             pair,
             graphics,
-            "frame correction policy snap snapshot"
+            "frame correction policy local snap snapshot"
         )) {
         return false;
     }
     network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
-    const Entity* const snapped_player = peer.entity_manager.GetEntity(peer_player_vid);
+    const Entity* snapped_player = peer.entity_manager.GetEntity(peer_player_vid);
     if (snapped_player == nullptr) {
         std::cerr << "network frame smoke failed: missing snapped correction player\n";
         return false;
     }
-    const Vec2 snap_delta = snapped_player->pos - coordinator_player->pos;
+    const Vec2 snap_delta = snapped_player->pos - coordinator_peer->pos;
     const float snap_distance = std::sqrt(snap_delta.x * snap_delta.x + snap_delta.y * snap_delta.y);
     if (snap_distance > 0.01F) {
         std::cerr << "network frame smoke failed at frame correction policy snap:"
@@ -1026,8 +1109,45 @@ bool RunPlayerCorrectionPolicySmoke(Graphics& graphics) {
         return false;
     }
 
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing semantic correction player\n";
+        return false;
+    }
+    coordinator_peer->pos = Vec2::New(96.0F, 114.0F);
+    coordinator_peer->health = 399;
+    coordinator_peer->condition = EntityCondition::Stunned;
+    coordinator_peer->stun_timer = 30;
+    peer_player->pos = coordinator_peer->pos + Vec2::New(6.0F, 0.0F);
+    peer_player->health = 400;
+    peer_player->condition = EntityCondition::Normal;
+    peer_player->stun_timer = 0;
+    if (!DeliverCoordinatorSnapshotsToPeer(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            "frame correction policy semantic snapshot"
+        )) {
+        return false;
+    }
+    network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
+    const Entity* const semantic_player = peer.entity_manager.GetEntity(peer_player_vid);
+    if (semantic_player == nullptr ||
+        semantic_player->health != coordinator_peer->health ||
+        semantic_player->condition != coordinator_peer->condition ||
+        semantic_player->stun_timer != coordinator_peer->stun_timer ||
+        std::fabs(semantic_player->pos.x - coordinator_peer->pos.x) > 0.01F ||
+        std::fabs(semantic_player->pos.y - coordinator_peer->pos.y) > 0.01F) {
+        std::cerr << "network frame smoke failed at frame correction policy semantic:"
+                  << " expected coordinator damage/stun snap\n";
+        return false;
+    }
+
     std::cout << "network frame smoke player correction policy ok:"
               << " smooth_distance=" << smooth_distance
+              << " ignored_distance=" << ignored_distance
+              << " residual_distance=" << residual_distance
               << " snap_distance=" << snap_distance << '\n';
     return true;
 }
@@ -1049,22 +1169,27 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
     PacketSmokePair pair = MakePacketSmokePair();
     AttachPacketSmokeTransports(coordinator, peer, pair);
 
-    VID coordinator_player_vid;
+    VID coordinator_host_vid;
+    VID coordinator_peer_vid;
+    VID peer_host_vid;
     VID peer_player_vid;
-    if (!ConfigureMovementSmokePlayer(
+    if (!ConfigureDualPlayerFrameSmoke(
             coordinator,
             peer,
             graphics,
-            coordinator_player_vid,
+            coordinator_host_vid,
+            coordinator_peer_vid,
+            peer_host_vid,
             peer_player_vid
         )) {
         std::cerr << "network frame smoke failed: could not configure movement state player\n";
         return false;
     }
 
-    Entity* coordinator_player = coordinator.entity_manager.GetEntityMut(coordinator_player_vid);
+    Entity* coordinator_player = coordinator.entity_manager.GetEntityMut(coordinator_host_vid);
+    Entity* peer_remote_player = peer.entity_manager.GetEntityMut(peer_host_vid);
     Entity* peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
-    if (coordinator_player == nullptr || peer_player == nullptr) {
+    if (coordinator_player == nullptr || peer_remote_player == nullptr || peer_player == nullptr) {
         std::cerr << "network frame smoke failed: missing movement state player\n";
         return false;
     }
@@ -1080,8 +1205,8 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
     coordinator_player->fall_timer = 0;
     coordinator_player->stun_timer = 0;
     coordinator_player->pos = Vec2::New(64.0F, 96.0F);
-    peer_player->movement_flags = 0;
-    peer_player->grounded = true;
+    peer_remote_player->movement_flags = 0;
+    peer_remote_player->grounded = true;
     if (!DeliverCoordinatorSnapshotsToPeer(
             coordinator,
             peer,
@@ -1092,14 +1217,17 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
         return false;
     }
     network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
-    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
-    if (peer_player == nullptr || !HasMovementFlag(*peer_player, EntityMovementFlag::Climbing) ||
-        peer_player->grounded || peer_player->fall_timer != 0 || peer_player->stun_timer != 0) {
+    peer_remote_player = peer.entity_manager.GetEntityMut(peer_host_vid);
+    if (peer_remote_player == nullptr ||
+        !HasMovementFlag(*peer_remote_player, EntityMovementFlag::Climbing) ||
+        peer_remote_player->grounded ||
+        peer_remote_player->fall_timer != 0 ||
+        peer_remote_player->stun_timer != 0) {
         std::cerr << "network frame smoke failed at frame movement state climbing repair\n";
         return false;
     }
 
-    coordinator_player = coordinator.entity_manager.GetEntityMut(coordinator_player_vid);
+    coordinator_player = coordinator.entity_manager.GetEntityMut(coordinator_host_vid);
     if (coordinator_player == nullptr) {
         std::cerr << "network frame smoke failed: missing coordinator hanging player\n";
         return false;
@@ -1109,9 +1237,9 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
     coordinator_player->hang_count = 6;
     coordinator_player->hang_side = LeftOrRight::Left;
     coordinator_player->pos = Vec2::New(80.0F, 96.0F);
-    peer_player->movement_flags = 0;
-    peer_player->hang_count = 0;
-    peer_player->hang_side.reset();
+    peer_remote_player->movement_flags = 0;
+    peer_remote_player->hang_count = 0;
+    peer_remote_player->hang_side.reset();
     if (!DeliverCoordinatorSnapshotsToPeer(
             coordinator,
             peer,
@@ -1122,23 +1250,59 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
         return false;
     }
     network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
-    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
-    if (peer_player == nullptr || !HasMovementFlag(*peer_player, EntityMovementFlag::Hanging) ||
-        peer_player->hang_count != coordinator_player->hang_count ||
-        peer_player->hang_side != coordinator_player->hang_side) {
+    peer_remote_player = peer.entity_manager.GetEntityMut(peer_host_vid);
+    if (peer_remote_player == nullptr ||
+        !HasMovementFlag(*peer_remote_player, EntityMovementFlag::Hanging) ||
+        peer_remote_player->hang_count != coordinator_player->hang_count ||
+        peer_remote_player->hang_side != coordinator_player->hang_side) {
         std::cerr << "network frame smoke failed at frame movement state hanging repair\n";
         return false;
     }
 
-    coordinator_player = coordinator.entity_manager.GetEntityMut(coordinator_player_vid);
+    Entity* coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
     peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
-    if (coordinator_player == nullptr || peer_player == nullptr) {
+    if (coordinator_peer_player == nullptr || peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing local movement state player\n";
+        return false;
+    }
+    coordinator_peer_player->movement_flags = 0;
+    coordinator_peer_player->grounded = true;
+    coordinator_peer_player->pos = Vec2::New(88.0F, 96.0F);
+    peer_player->movement_flags = 0;
+    SetMovementFlag(*peer_player, EntityMovementFlag::Hanging, true);
+    peer_player->hang_count = 6;
+    peer_player->hang_side = LeftOrRight::Right;
+    peer_player->grounded = false;
+    peer_player->pos = Vec2::New(92.0F, 96.0F);
+    if (!DeliverCoordinatorSnapshotsToPeer(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            "frame movement state local stale hanging snapshot"
+        )) {
+        return false;
+    }
+    network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (peer_player == nullptr ||
+        !HasMovementFlag(*peer_player, EntityMovementFlag::Hanging) ||
+        peer_player->hang_count != 6 ||
+        peer_player->hang_side != LeftOrRight::Right ||
+        peer_player->grounded) {
+        std::cerr << "network frame smoke failed at frame movement state local stale hanging preservation\n";
+        return false;
+    }
+
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (coordinator_peer_player == nullptr || peer_player == nullptr) {
         std::cerr << "network frame smoke failed: missing water state player\n";
         return false;
     }
-    (void)AddEffect(*coordinator_player, EffectId::InWater);
+    (void)AddEffect(*coordinator_peer_player, EffectId::InWater);
     RemoveEffect(*peer_player, EffectId::InWater);
-    world_ops::PatchPlayerState(coordinator, *coordinator_player);
+    world_ops::PatchPlayerState(coordinator, *coordinator_peer_player);
     if (!DeliverCoordinatorPacketsToPeer(
             coordinator,
             peer,
@@ -3672,6 +3836,144 @@ bool RunFallDamageLatencyRepairScenario(Graphics& graphics, Audio& audio) {
     return true;
 }
 
+bool RunPeerPredictedFallDamageLandingScenario(Graphics& graphics, Audio& audio) {
+    State coordinator = State::New();
+    State peer = State::New();
+    PacketSmokePair pair;
+    VID coordinator_host_vid;
+    VID coordinator_peer_vid;
+    VID peer_host_vid;
+    VID peer_player_vid;
+    if (!BuildDualPlayerFrameFixture(
+            coordinator,
+            peer,
+            pair,
+            coordinator_host_vid,
+            coordinator_peer_vid,
+            peer_host_vid,
+            peer_player_vid,
+            graphics
+        )) {
+        return false;
+    }
+    (void)coordinator_host_vid;
+    (void)peer_host_vid;
+
+    for (State* const state : {&coordinator, &peer}) {
+        for (int y = 0; y <= 12; ++y) {
+            for (int x = 3; x <= 6; ++x) {
+                state->stage.SetTile(IVec2::New(x, y), y == 12 ? Tile::CaveBlock : Tile::Air);
+            }
+        }
+    }
+
+    const Vec2 fall_start = Vec2::New(64.0F, 48.0F);
+    const std::array<std::pair<State*, VID>, 2> fall_players{{
+        {&coordinator, coordinator_peer_vid},
+        {&peer, peer_player_vid},
+    }};
+    for (const std::pair<State*, VID>& target : fall_players) {
+        Entity* const player = target.first->entity_manager.GetEntityMut(target.second);
+        if (player == nullptr) {
+            return false;
+        }
+        player->pos = fall_start;
+        player->vel = Vec2::New(0.0F, 0.0F);
+        player->acc = Vec2::New(0.0F, 0.0F);
+        player->grounded = false;
+        player->fall_timer = 0;
+        player->health = 400;
+        player->condition = EntityCondition::Normal;
+        target.first->UpdateSidForEntity(player->vid.id, graphics);
+    }
+
+    bool saw_damage = false;
+    for (int frame = 0; frame < 180 && !saw_damage; ++frame) {
+        StepSingleTick(peer, audio, graphics);
+        if (!DeliverPeerSnapshotsToCoordinator(
+                peer,
+                coordinator,
+                pair,
+                graphics,
+                "frame predicted fall damage peer snapshots"
+            )) {
+            return false;
+        }
+        if (!peer.net_session.pending_outbound_messages.empty() &&
+            !DeliverPeerPacketsToCoordinator(
+                peer,
+                coordinator,
+                PeerSmokeTransport(peer),
+                CoordinatorSmokeTransport(coordinator),
+                pair.peer_endpoint,
+                "frame predicted fall damage request"
+            )) {
+            return false;
+        }
+
+        StepSingleTick(coordinator, audio, graphics);
+        if (!DeliverCoordinatorPacketsToPeer(
+                coordinator,
+                peer,
+                CoordinatorSmokeTransport(coordinator),
+                PeerSmokeTransport(peer),
+                pair.peer_endpoint,
+                graphics,
+                audio,
+                "frame predicted fall damage result",
+                false
+            )) {
+            return false;
+        }
+        if (!DeliverCoordinatorSnapshotsToPeer(
+                coordinator,
+                peer,
+                pair,
+                graphics,
+                "frame predicted fall damage repair"
+            )) {
+            return false;
+        }
+        network::StepRemotePlayerInterpolation(peer, PeerSmokeTransport(peer), graphics);
+
+        const Entity* const coordinator_player =
+            coordinator.entity_manager.GetEntity(coordinator_peer_vid);
+        const Entity* const peer_player = peer.entity_manager.GetEntity(peer_player_vid);
+        saw_damage =
+            coordinator_player != nullptr &&
+            peer_player != nullptr &&
+            coordinator_player->health < 400 &&
+            peer_player->health == coordinator_player->health &&
+            coordinator_player->condition == EntityCondition::Stunned &&
+            peer_player->condition == EntityCondition::Stunned;
+    }
+
+    if (!saw_damage) {
+        const Entity* const coordinator_player =
+            coordinator.entity_manager.GetEntity(coordinator_peer_vid);
+        const Entity* const peer_player = peer.entity_manager.GetEntity(peer_player_vid);
+        std::cerr << "network frame smoke failed at predicted fall damage landing:"
+                  << " coordinator health="
+                  << (coordinator_player != nullptr ? coordinator_player->health : 999999U)
+                  << " peer health="
+                  << (peer_player != nullptr ? peer_player->health : 999999U)
+                  << " coordinator fall="
+                  << (coordinator_player != nullptr ? coordinator_player->fall_timer : 999999U)
+                  << " peer fall="
+                  << (peer_player != nullptr ? peer_player->fall_timer : 999999U)
+                  << " coordinator condition="
+                  << (coordinator_player != nullptr
+                          ? static_cast<int>(coordinator_player->condition)
+                          : -1)
+                  << " peer condition="
+                  << (peer_player != nullptr ? static_cast<int>(peer_player->condition) : -1)
+                  << '\n';
+        return false;
+    }
+
+    return true;
+}
+
 bool RunPeerActionWithDelayedCoordinatorRepair(
     State& coordinator,
     State& peer,
@@ -4006,6 +4308,9 @@ bool CheckNetworkFrameSmoke() {
             return false;
         }
         if (!RunFallDamageLatencyRepairScenario(graphics, audio)) {
+            return false;
+        }
+        if (!RunPeerPredictedFallDamageLandingScenario(graphics, audio)) {
             return false;
         }
         if (!RunCarryThrowLatencyRepairScenario(graphics, audio)) {

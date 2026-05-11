@@ -47,6 +47,7 @@ void SendEncodedPacket(
 bool IsReplicatedEntityStateMessage(const NetMessage& message);
 bool IsReplicatedTileMessage(const NetMessage& message);
 bool IsReplicatedFluidCellMessage(const NetMessage& message);
+bool IsReplicatedStageLightMessage(const NetMessage& message);
 bool IsReplicatedEntitySpawnedMessage(const NetMessage& message);
 bool IsReplicatedEntityDamageMessage(const NetMessage& message);
 bool IsReplicatedActionRequestMessage(const NetMessage& message);
@@ -58,6 +59,7 @@ bool IsReplicatedPresentationCommandMessage(const NetMessage& message);
 
 TileMessageEntry MakeTileMessageEntry(const NetMessage& message);
 FluidCellMessageEntry MakeFluidCellMessageEntry(const NetMessage& message);
+StageLightMessageEntry MakeStageLightMessageEntry(const NetMessage& message);
 EntitySpawnedMessageEntry MakeEntitySpawnedMessageEntry(const NetMessage& message);
 EntityDamageMessageEntry MakeEntityDamageMessageEntry(const NetMessage& message);
 EntityStateMessageEntry MakeEntityStateMessageEntry(const NetMessage& message);
@@ -70,6 +72,7 @@ ActionRequestMessageEntry MakeActionRequestMessageEntry(const NetMessage& messag
 
 NetMessage MakeTileMessage(const TileMessageEntry& entry);
 NetMessage MakeFluidCellMessage(const FluidCellMessageEntry& entry);
+NetMessage MakeStageLightMessage(const StageLightMessageEntry& entry);
 NetMessage MakeEntitySpawnedMessage(const EntitySpawnedMessageEntry& entry);
 NetMessage MakeEntityDamageMessage(const EntityDamageMessageEntry& entry);
 NetMessage MakeEntityStateMessage(const EntityStateMessageEntry& entry);
@@ -86,6 +89,11 @@ void SendTileMessages(
     const std::vector<NetMessage>& messages
 );
 void SendFluidCellMessages(
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const std::vector<NetMessage>& messages
+);
+void SendStageLightMessages(
     NetTransportRuntime& transport,
     const NetEndpoint& endpoint,
     const std::vector<NetMessage>& messages
@@ -171,6 +179,7 @@ void HandleDurableMessageAckAsCoordinator(
 );
 void HandleTileMessagesAsPeer(State& state, const TileMessagesPacket& packet);
 void HandleFluidCellMessagesAsPeer(State& state, const FluidCellMessagesPacket& packet);
+void HandleStageLightMessagesAsPeer(State& state, const StageLightMessagesPacket& packet);
 void HandleEntitySpawnedMessagesAsPeer(State& state, const EntitySpawnedMessagesPacket& packet);
 void HandleEntityDamageMessagesAsPeer(State& state, const EntityDamageMessagesPacket& packet);
 void HandleEntityStateMessagesAsPeer(State& state, const EntityStateMessagesPacket& packet);

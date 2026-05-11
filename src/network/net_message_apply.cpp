@@ -22,6 +22,8 @@ bool IsImmediateLocalNetResult(NetMessageType type) {
     case NetMessageType::TileBroken:
     case NetMessageType::TileChanged:
     case NetMessageType::FluidCellPatched:
+    case NetMessageType::StageLightAdded:
+    case NetMessageType::StageLightRemoved:
     case NetMessageType::PlayerStatePatched:
     case NetMessageType::PresentationCommand:
         return true;
@@ -174,6 +176,16 @@ std::size_t ApplyOrderedMessages(
         case NetMessageType::FluidCellPatched:
             if (const auto* payload = std::get_if<FluidCellPatchedMessage>(&message.payload)) {
                 ApplyFluidCellPatchedMessage(state, *payload);
+            }
+            break;
+        case NetMessageType::StageLightAdded:
+            if (const auto* payload = std::get_if<StageLightAddedMessage>(&message.payload)) {
+                ApplyStageLightAddedMessage(state, *payload);
+            }
+            break;
+        case NetMessageType::StageLightRemoved:
+            if (const auto* payload = std::get_if<StageLightRemovedMessage>(&message.payload)) {
+                ApplyStageLightRemovedMessage(state, *payload);
             }
             break;
         default:

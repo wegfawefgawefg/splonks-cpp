@@ -69,6 +69,10 @@ const char* NetMessageTypeName(network::NetMessageType type) {
         return "TileChanged";
     case network::NetMessageType::FluidCellPatched:
         return "FluidCellPatched";
+    case network::NetMessageType::StageLightAdded:
+        return "StageLightAdded";
+    case network::NetMessageType::StageLightRemoved:
+        return "StageLightRemoved";
     case network::NetMessageType::TileBroken:
         return "TileBroken";
     case network::NetMessageType::PlayerStatePatched:

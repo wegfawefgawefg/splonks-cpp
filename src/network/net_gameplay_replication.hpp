@@ -20,6 +20,8 @@ void ReplicatePlayerStatePatched(State& state, const GameplayPlayerStatePatched&
 void ReplicateRunStatePatched(State& state, bool include_snapshot_fingerprint = false);
 void ReplicateTileChanged(State& state, const GameplayTileChanged& changed);
 void ReplicateTileBroken(State& state, const GameplayTileBroken& broken);
+void ReplicateStageLightAdded(State& state, const GameplayStageLightAdded& added);
+void ReplicateStageLightRemoved(State& state, const GameplayStageLightRemoved& removed);
 void ReplicatePresentationCommand(State& state, const PresentationCommand& command);
 
 } // namespace network

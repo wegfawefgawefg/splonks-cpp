@@ -121,6 +121,11 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.counter_b != b.counter_b ||
             a.counter_c != b.counter_c ||
             a.counter_d != b.counter_d ||
+            a.light_strength != b.light_strength ||
+            a.light_color.r != b.light_color.r ||
+            a.light_color.g != b.light_color.g ||
+            a.light_color.b != b.light_color.b ||
+            a.light_radius != b.light_radius ||
             a.point_a != b.point_a ||
             a.point_b != b.point_b ||
             a.point_c != b.point_c ||
@@ -185,6 +190,12 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "," << a.counter_c << "," << a.counter_d
                    << "/" << b.counter_a << "," << b.counter_b
                    << "," << b.counter_c << "," << b.counter_d
+                   << " light " << a.light_strength << "@"
+                   << a.light_color.r << "," << a.light_color.g
+                   << "," << a.light_color.b << "," << a.light_radius
+                   << "/" << b.light_strength << "@"
+                   << b.light_color.r << "," << b.light_color.g
+                   << "," << b.light_color.b << "," << b.light_radius
                    << " points " << a.point_a.x << "," << a.point_a.y
                    << ";" << a.point_b.x << "," << a.point_b.y
                    << ";" << a.point_c.x << "," << a.point_c.y
