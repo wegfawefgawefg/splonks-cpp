@@ -437,18 +437,29 @@ presentation-only files on local RNG unless the result affects gameplay state.
 Goal: stop the codebase from being hybrid. Gameplay should no longer ask whether
 it is coordinator/peer before doing ordinary gameplay.
 
-- [ ] Remove peer action request/apply branches from content paths.
-- [ ] Remove `HasLocalAuthority...` checks from entity/gameplay logic unless they
-  are replaced by lockstep input ownership.
+- [x] Remove peer action request/apply branches from content paths.
+- [x] Remove `HasLocalAuthority...` checks from active entity/gameplay logic
+  unless they are replaced by lockstep input ownership.
 - [ ] Remove `allow_remote_player_target` style damage exceptions created for
   coordinator-authority networking.
-- [ ] Remove entity/tile/run/fluid/presentation replication emits from normal
+- [x] Remove entity/tile/run/fluid/stage-light/presentation replication emits from normal
   gameplay.
-- [ ] Delete or quarantine old `world_ops` networking seams. Keep only gameplay
+- [x] Delete or quarantine old `world_ops` networking seams. Keep only gameplay
   helper pieces that remain useful without networking.
+- [x] Rename remaining live local helper names that still say `Request` but no longer
+  cross the network.
 - [ ] Delete old network smoke tests that only validate mutation-message lanes.
 - [ ] Keep transport/fuzzer code only if it is useful for input packets.
+- [ ] Remove entity/archetype/debug baggage added only for the old
+  coordinator-authoritative model: replica stepping, local prediction flags,
+  replicated runtime flag helpers, and mutation-message-only state fields.
 - [ ] Keep state fingerprint/replay code if it supports determinism.
+
+Implementation note: `world_ops::{SpawnEntity,DeactivateEntity,SetForegroundTile,
+CommitTileBroken,PatchEntityState,PatchPlayerState,PatchRunState,QueuePresentationCommand}`,
+stage lighting, stage fluids, and carry/damage/tool/tile-break content paths are
+currently local deterministic helpers. They intentionally do not enqueue network
+mutation messages.
 
 Exit gate: ordinary gameplay code has no coordinator/peer mutation branches, and
 the project builds with the old replication model disabled or removed.
@@ -476,6 +487,11 @@ frames with matching hashes while exchanging only input and control packets.
 Goal: boot two game windows and play with delay-based lockstep.
 
 - [ ] Reuse or replace the current UDP transport for input packets.
+- [ ] Reuse the existing impairment/profile controls where possible:
+  same-house/same-city/same-state/Texas-to-California/California-to-Florida/
+  Texas-to-Japan latency, jitter, loss, duplicate, and reorder settings should
+  feed the lockstep input transport/fuzzer instead of the retired authoritative
+  mutation transport.
 - [ ] Add lobby start barrier: stage seed, player list, stage id, start frame,
   input delay.
 - [ ] Disable active-stage late join initially; peers join before start or wait
@@ -528,3 +544,14 @@ frame stepping.
 - Do not optimize rollback before deterministic replay is proven.
 - Do not delete the working authoritative branch until the lockstep branch can
   run a real two-player stage without desync.
+
+## Solo Work / Commit Policy
+
+- Subdivide large checkboxes into smaller checklist items when a phase is too
+  broad to validate in one sitting.
+- Commit after each completed checkbox or meaningful chunk of a checkbox.
+- Keep commits focused around one recoverable milestone: cleanup, protocol
+  shape, scheduler, test harness, rollback buffer, etc.
+- Run the relevant build/smoke checks before each commit when practical.
+- If a chunk leaves a known gap, record it in this plan before committing so the
+  next session can resume without reconstructing context.

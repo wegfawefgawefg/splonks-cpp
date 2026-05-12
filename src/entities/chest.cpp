@@ -45,10 +45,6 @@ common::ContactResolution OnEntityContactAsUdjatEye(
         !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
         return common::ContactResolution{};
     }
-    if (common::TryRequestCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
-        return common::ContactResolution{};
-    }
-
     Entity& collector = state.entity_manager.entities[other_entity_idx];
     const Entity& pickup = state.entity_manager.entities[entity_idx];
     if (!TryCollectInventoryPickup(state, collector, pickup)) {
@@ -468,7 +464,7 @@ void StepEntityLogicAsChest(
             continue;
         }
 
-        (void)world_ops::TryRequestOrApplyInteractEntity(
+        (void)world_ops::TryApplyInteractEntity(
             player->vid,
             state.entity_manager.entities[entity_idx].vid,
             state,
@@ -528,7 +524,7 @@ void StepEntityLogicAsKeyChest(
             continue;
         }
 
-        (void)world_ops::TryRequestOrApplyInteractEntity(
+        (void)world_ops::TryApplyInteractEntity(
             key->vid,
             chest.vid,
             state,

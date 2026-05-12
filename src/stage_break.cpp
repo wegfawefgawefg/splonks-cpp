@@ -1,14 +1,12 @@
 #include "stage_break.hpp"
 
 #include "entity/archetype.hpp"
-#include "gameplay_messages.hpp"
 #include "on_damage_effects.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_tile_triggers.hpp"
 #include "tile.hpp"
 #include "tile_archetype.hpp"
-#include "network/net_session.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -96,11 +94,11 @@ void BreakStageTilesAtCoordsInternal(
     bool suppress_drop_spawns,
     bool allow_peer_canonical_apply
 ) {
+    (void)allow_peer_canonical_apply;
+
     std::optional<AudioAssetId> break_sound = std::nullopt;
     bool broke_any_tiles = false;
     std::vector<IVec2> changed_tiles;
-    const bool request_coordinator_apply =
-        state.net_session.role == network::NetRole::Peer && !allow_peer_canonical_apply;
 
     for (const IVec2& tile_pos_raw : tile_positions) {
         const IVec2 tile_pos = state.stage.WrapTileCoord(tile_pos_raw);
@@ -110,16 +108,6 @@ void BreakStageTilesAtCoordsInternal(
 
         const Tile tile = state.stage.GetTile(static_cast<unsigned int>(tile_pos.x), static_cast<unsigned int>(tile_pos.y));
         if (tile == Tile::Air) {
-            continue;
-        }
-
-        if (request_coordinator_apply) {
-            world_ops::RequestGameplayAction(
-                state,
-                BreakTileAction{
-                    .tile_pos = tile_pos,
-                }
-            );
             continue;
         }
 

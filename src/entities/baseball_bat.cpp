@@ -4,7 +4,6 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_authority.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "presentation_commands.hpp"
 #include "state.hpp"
@@ -149,11 +148,7 @@ bool TryApplyBatContactToEntity(
         return false;
     }
 
-    const bool source_has_local_authority =
-        HasLocalGameplayAuthorityForInteractionSource(state, bat_entity.vid);
-    if (!source_has_local_authority) {
-        return false;
-    }
+    constexpr bool source_has_local_authority = true;
 
     const LeftOrRight bat_facing = bat_entity.facing;
     const std::optional<VID> held_by_vid = bat_entity.held_by_vid;

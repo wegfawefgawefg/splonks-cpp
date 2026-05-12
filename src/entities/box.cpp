@@ -4,8 +4,6 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_authority.hpp"
-#include "gameplay_messages.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "world_ops.hpp"
@@ -165,9 +163,6 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     (void)audio;
 
     const Entity& box = state.entity_manager.entities[entity_idx];
-    if (!HasLocalGameplayAuthorityForEntity(state, box.vid)) {
-        return;
-    }
 
     const Vec2 spawn_pos = box.pos;
     SpawnBreakawayContainerShards(box.GetCenter(), state);
@@ -235,23 +230,6 @@ bool TryApplyBoxImpact(
         return false;
     }
     if (std::abs(context.impact_velocity) <= kBoxBreakawayImpactSpeed) {
-        return false;
-    }
-
-    if (!HasLocalGameplayAuthorityForEntity(state, box.vid)) {
-        if (context.mover_vid.has_value() &&
-            HasLocalGameplayAuthorityForInteractionSource(state, *context.mover_vid)) {
-            world_ops::RequestGameplayAction(
-                state,
-                DamageEntityAction{
-                    .source_vid = context.mover_vid,
-                    .target_vid = box.vid,
-                    .damage_type = DamageType::Attack,
-                    .amount = 1,
-                }
-            );
-            return true;
-        }
         return false;
     }
 

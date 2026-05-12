@@ -5,8 +5,6 @@
 #include "entity.hpp"
 #include "entity/archetype.hpp"
 #include "graphics.hpp"
-#include "network/net_gameplay_replication.hpp"
-#include "network/net_session.hpp"
 #include "stage_break.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -315,11 +313,7 @@ void ApplyGameplayAction(State& state, const GameplayActionRequested& action, Gr
 
 } // namespace
 
-void RequestGameplayAction(State& state, const GameplayActionRequested& action) {
-    if (state.net_session.role == network::NetRole::Peer) {
-        network::ReplicateActionRequest(state, action);
-        return;
-    }
+void QueueGameplayAction(State& state, const GameplayActionRequested& action) {
     state.pending_gameplay_actions.push_back(action);
 }
 
@@ -327,21 +321,13 @@ void QueuePendingGameplayAction(State& state, const GameplayActionRequested& act
     state.pending_gameplay_actions.push_back(action);
 }
 
-bool TryRequestOrApplyInteractEntity(
+bool TryApplyInteractEntity(
     VID source_vid,
     VID target_vid,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
-    GameplayActionRequested request = InteractEntityAction{
-        .source_vid = source_vid,
-        .target_vid = target_vid,
-    };
-    if (state.net_session.role == network::NetRole::Peer) {
-        RequestGameplayAction(state, request);
-        return true;
-    }
     return TryApplyInteractEntityAction(
         state,
         InteractEntityAction{
@@ -358,11 +344,6 @@ void ProcessPendingGameplayActions(State& state, Graphics& graphics, Audio& audi
     state.pending_gameplay_actions.clear();
 
     for (const GameplayActionRequested& action : actions) {
-        if (state.net_session.role == network::NetRole::Peer) {
-            network::ReplicateActionRequest(state, action);
-            continue;
-        }
-
         ApplyGameplayAction(state, action, graphics, audio);
     }
 }

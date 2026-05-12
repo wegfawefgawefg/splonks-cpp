@@ -4,8 +4,6 @@
 #include "entity/archetype.hpp"
 #include "entity/archetype_restore.hpp"
 #include "controls.hpp"
-#include "gameplay_messages.hpp"
-#include "gameplay_authority.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -126,113 +124,6 @@ bool CanPickUpCandidate(const Entity& picker, const Entity& candidate, const Sta
         candidate.condition == EntityCondition::Dead ||
         candidate.condition == EntityCondition::Stunned;
     return !candidate.can_only_be_picked_up_if_dead_or_stunned || dead_or_stunned;
-}
-
-bool ShouldRequestCarryAction(const State& state, const Entity& entity) {
-    return state.net_session.role == network::NetRole::Peer &&
-           HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
-}
-
-void ApplyPredictedAttachmentUse(
-    Entity& item,
-    State& state,
-    Graphics& graphics,
-    Audio& audio,
-    VID holder_vid,
-    AttachmentMode attachment_mode,
-    bool use_down
-) {
-    const EntityArchetype& archetype = GetEntityArchetype(item.type_);
-    if (!archetype.predict_local_attachment_use &&
-        !archetype.predict_attachment_use_presentation) {
-        return;
-    }
-
-    if (use_down) {
-        UseEntity(item, holder_vid, attachment_mode);
-    } else {
-        StopUsingEntity(item);
-    }
-    if (archetype.predict_local_attachment_use && item.on_use != nullptr) {
-        item.on_use(item.vid.id, state, graphics, audio);
-    }
-}
-
-void EmitCarryActionRequest(
-    State& state,
-    GameplayActionKind kind,
-    VID source_vid,
-    std::optional<VID> target_vid,
-    Vec2 velocity = Vec2::New(0.0F, 0.0F)
-) {
-    if (!target_vid.has_value()) {
-        return;
-    }
-    switch (kind) {
-    case GameplayActionKind::PickupEntity:
-        world_ops::RequestGameplayAction(state, PickupEntityAction{source_vid, *target_vid});
-        break;
-    case GameplayActionKind::DropEntity:
-        world_ops::RequestGameplayAction(state, DropEntityAction{source_vid, *target_vid});
-        break;
-    case GameplayActionKind::ThrowEntity:
-        world_ops::RequestGameplayAction(
-            state,
-            ThrowEntityAction{
-                .source_vid = source_vid,
-                .target_vid = *target_vid,
-                .velocity = velocity,
-            }
-        );
-        break;
-    case GameplayActionKind::PutHeldEntityOnBack:
-        world_ops::RequestGameplayAction(state, PutHeldEntityOnBackAction{source_vid, *target_vid});
-        break;
-    case GameplayActionKind::TakeOffBackEntity:
-        world_ops::RequestGameplayAction(state, TakeOffBackEntityAction{source_vid, *target_vid});
-        break;
-    default:
-        break;
-    }
-}
-
-void EmitAttachmentUseActionRequest(
-    State& state,
-    GameplayActionKind kind,
-    VID holder_vid,
-    VID item_vid,
-    GameplayUseEdge use_edge,
-    const controls::ControlIntent& control
-) {
-    const int direction_x =
-        control.left && !control.right ? -1 :
-        control.right && !control.left ? 1 :
-        0;
-    const int direction_y =
-        control.up && !control.down ? -1 :
-        control.down && !control.up ? 1 :
-        0;
-    if (kind == GameplayActionKind::UseHeldEntity) {
-        world_ops::RequestGameplayAction(
-            state,
-            UseHeldEntityAction{
-                .source_vid = holder_vid,
-                .target_vid = item_vid,
-                .direction = IVec2::New(direction_x, direction_y),
-                .use_edge = use_edge,
-            }
-        );
-    } else if (kind == GameplayActionKind::UseBackEntity) {
-        world_ops::RequestGameplayAction(
-            state,
-            UseBackEntityAction{
-                .source_vid = holder_vid,
-                .target_vid = item_vid,
-                .direction = IVec2::New(direction_x, direction_y),
-                .use_edge = use_edge,
-            }
-        );
-    }
 }
 
 void SyncHeldAttachmentForHolder(
@@ -784,16 +675,14 @@ void UpdateCarryAndBackItems(
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
             if (control.pick_up_drop_pressed) {
-                if (entity.holding_vid.has_value()) {
-                    if (entity.holding_timer == 0) {
-                        thrown_vid = entity.holding_vid;
-                        entity.holding_timer = kDefaultHoldingTimer;
-                        if (!ShouldRequestCarryAction(state, entity)) {
+                    if (entity.holding_vid.has_value()) {
+                        if (entity.holding_timer == 0) {
+                            thrown_vid = entity.holding_vid;
+                            entity.holding_timer = kDefaultHoldingTimer;
                             entity.holding_vid.reset();
                             entity.holding = false;
                         }
-                    }
-                } else {
+                    } else {
                     if (!entity.IsHanging() && !entity.IsClimbing() && entity.holding_timer == 0) {
                         entity.holding_timer = kDefaultHoldingTimer;
                         const AABB aabb = GetContactAabbForEntity(entity, graphics);
@@ -825,21 +714,12 @@ void UpdateCarryAndBackItems(
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
             if (trying_to_pick_this_up_vid.has_value()) {
-                if (ShouldRequestCarryAction(state, entity)) {
-                    EmitCarryActionRequest(
-                        state,
-                        GameplayActionKind::PickupEntity,
-                        entity.vid,
-                        trying_to_pick_this_up_vid
-                    );
-                } else {
-                    (void)TryPickupEntityByVid(
-                        entity.vid,
-                        *trying_to_pick_this_up_vid,
-                        state,
-                        graphics
-                    );
-                }
+                (void)TryPickupEntityByVid(
+                    entity.vid,
+                    *trying_to_pick_this_up_vid,
+                    state,
+                    graphics
+                );
             }
         }
 
@@ -887,24 +767,14 @@ void UpdateCarryAndBackItems(
                     }
 
                     const Vec2 scaled_throw_vel = throw_vel * entity.throw_velocity_scale;
-                    if (ShouldRequestCarryAction(state, entity)) {
-                        EmitCarryActionRequest(
-                            state,
-                            GameplayActionKind::ThrowEntity,
-                            entity.vid,
-                            thrown->vid,
-                            scaled_throw_vel
-                        );
-                    } else {
-                        (void)TryThrowEntityByVid(
-                            entity.vid,
-                            thrown->vid,
-                            scaled_throw_vel,
-                            state,
-                            graphics,
-                            audio
-                        );
-                    }
+                    (void)TryThrowEntityByVid(
+                        entity.vid,
+                        thrown->vid,
+                        scaled_throw_vel,
+                        state,
+                        graphics,
+                        audio
+                    );
                 }
             }
         }
@@ -944,31 +814,14 @@ void UpdateCarryAndBackItems(
         const VID entity_vid = state.entity_manager.entities[entity_idx].vid;
 
         if (take_off_back_vid.has_value()) {
-            const Entity& entity = state.entity_manager.entities[entity_idx];
-            if (ShouldRequestCarryAction(state, entity)) {
-                EmitCarryActionRequest(
-                    state,
-                    GameplayActionKind::TakeOffBackEntity,
-                    entity.vid,
-                    take_off_back_vid
-                );
-            } else {
-                (void)TryTakeOffBackEntityByVid(entity_vid, *take_off_back_vid, state, graphics);
-            }
+            (void)TryTakeOffBackEntityByVid(entity_vid, *take_off_back_vid, state, graphics);
         }
 
         {
             Entity& entity = state.entity_manager.entities[entity_idx];
             if (put_held_on_back) {
                 const std::optional<VID> held_vid = entity.holding_vid;
-                if (held_vid.has_value() && ShouldRequestCarryAction(state, entity)) {
-                    EmitCarryActionRequest(
-                        state,
-                        GameplayActionKind::PutHeldEntityOnBack,
-                        entity.vid,
-                        held_vid
-                    );
-                } else if (held_vid.has_value()) {
+                if (held_vid.has_value()) {
                     (void)TryPutHeldEntityOnBackByVid(entity.vid, *held_vid, state, graphics);
                 }
             }
@@ -979,27 +832,7 @@ void UpdateCarryAndBackItems(
         const Entity& entity = state.entity_manager.entities[entity_idx];
         if (entity.holding_vid.has_value()) {
             if (Entity* const holding = state.entity_manager.GetEntityMut(*entity.holding_vid)) {
-                if (ShouldRequestCarryAction(state, entity)) {
-                    if (control.use_pressed || control.use_released) {
-                        EmitAttachmentUseActionRequest(
-                            state,
-                            GameplayActionKind::UseHeldEntity,
-                            entity.vid,
-                            holding->vid,
-                            control.use_pressed ? GameplayUseEdge::Press : GameplayUseEdge::Release,
-                            control
-                        );
-                    }
-                    ApplyPredictedAttachmentUse(
-                        *holding,
-                        state,
-                        graphics,
-                        audio,
-                        entity.vid,
-                        AttachmentMode::Held,
-                        control.use_held
-                    );
-                } else if (control.use_held) {
+                if (control.use_held) {
                     UseEntity(*holding, entity.vid, AttachmentMode::Held);
                 } else {
                     StopUsingEntity(*holding);
@@ -1008,27 +841,7 @@ void UpdateCarryAndBackItems(
         }
         if (entity.back_vid.has_value()) {
             if (Entity* const back_item = state.entity_manager.GetEntityMut(*entity.back_vid)) {
-                if (ShouldRequestCarryAction(state, entity)) {
-                    if (control.use_back_pressed || control.use_back_released) {
-                        EmitAttachmentUseActionRequest(
-                            state,
-                            GameplayActionKind::UseBackEntity,
-                            entity.vid,
-                            back_item->vid,
-                            control.use_back_pressed ? GameplayUseEdge::Press : GameplayUseEdge::Release,
-                            control
-                        );
-                    }
-                    ApplyPredictedAttachmentUse(
-                        *back_item,
-                        state,
-                        graphics,
-                        audio,
-                        entity.vid,
-                        AttachmentMode::Back,
-                        control.use_back
-                    );
-                } else if (control.use_back) {
+                if (control.use_back) {
                     UseEntity(*back_item, entity.vid, AttachmentMode::Back);
                 } else {
                     StopUsingEntity(*back_item);

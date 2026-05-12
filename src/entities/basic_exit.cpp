@@ -179,7 +179,7 @@ void StepEntityLogicAsBasicExit(
             continue;
         }
 
-        (void)world_ops::TryRequestOrApplyInteractEntity(player->vid, exit_entity.vid, state, graphics, audio);
+        (void)world_ops::TryApplyInteractEntity(player->vid, exit_entity.vid, state, graphics, audio);
         return;
     }
 }

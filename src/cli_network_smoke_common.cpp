@@ -335,7 +335,7 @@ bool RunPeerActionThroughCoordinator(
     Audio& audio,
     const char* label
 ) {
-    world_ops::RequestGameplayAction(peer, peer_action);
+    world_ops::QueueGameplayAction(peer, peer_action);
     if (!TransferPeerActionRequestsToCoordinator(peer, coordinator, label)) {
         return false;
     }
@@ -576,7 +576,7 @@ bool RunPeerActionThroughPacketCoordinator(
     const char* label,
     const PacketDeliveryPlan& coordinator_delivery_plan
 ) {
-    world_ops::RequestGameplayAction(peer, peer_action);
+    world_ops::QueueGameplayAction(peer, peer_action);
     if (!DeliverPeerPacketsToCoordinator(
             peer,
             coordinator,

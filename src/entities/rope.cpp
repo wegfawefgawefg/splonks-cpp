@@ -4,7 +4,6 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_authority.hpp"
 #include "graphics.hpp"
 #include "stage.hpp"
 #include "state.hpp"
@@ -105,9 +104,6 @@ void StepEntityLogicAsRope(
     }
     constexpr unsigned int kRopeLength = 6;
     if (rope_popped) {
-        if (!HasLocalGameplayAuthorityForEntity(state, rope.vid)) {
-            return;
-        }
         rope.health = 0;
         // loop down up to 6 tiles, convert all air into rope tiles, but stop if interupped
         // get rope tile position,

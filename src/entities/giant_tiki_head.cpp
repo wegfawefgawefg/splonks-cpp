@@ -4,7 +4,6 @@
 #include "audio.hpp"
 #include "entity/archetype.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_authority.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -73,9 +72,6 @@ const Entity* FindClosestPlayerToHead(const Entity& head, const State& state) {
 
 std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio) {
     (void)audio;
-    if (!HasLocalGameplayAuthorityForEntity(state, head.vid)) {
-        return std::nullopt;
-    }
 
     Entity* const boulder = world_ops::SpawnEntity(state, EntityType::Boulder, [&](Entity& spawned_boulder) {
         spawned_boulder.SetCenter(head.GetCenter());

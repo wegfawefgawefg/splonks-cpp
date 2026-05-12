@@ -1,8 +1,6 @@
 #include "world_ops.hpp"
 
 #include "entity.hpp"
-#include "network/net_gameplay_replication.hpp"
-#include "network/net_session.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
@@ -18,9 +16,7 @@ bool SetForegroundTile(
     TileRotation rotation,
     bool allow_peer_canonical_apply
 ) {
-    if (state.net_session.role == network::NetRole::Peer && !allow_peer_canonical_apply) {
-        return false;
-    }
+    (void)allow_peer_canonical_apply;
 
     const IVec2 tile_pos = state.stage.WrapTileCoord(tile_pos_raw);
     if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
@@ -47,15 +43,6 @@ bool SetForegroundTile(
     UpdateStageLightingForTileChanges(state, changed_tiles);
     UpdateStageAcousticsForTileChanges(state, changed_tiles);
 
-    network::ReplicateTileChanged(
-        state,
-        GameplayTileChanged{
-            .tile_pos = tile_pos,
-            .tile = tile,
-            .rotation = normalized_rotation,
-            .layer = GameplayTileLayer::Foreground,
-        }
-    );
     return true;
 }
 
@@ -70,12 +57,8 @@ bool PlaceRopeTile(
 }
 
 void CommitTileBroken(State& state, const IVec2& tile_pos) {
-    network::ReplicateTileBroken(
-        state,
-        GameplayTileBroken{
-            .tile_pos = tile_pos,
-        }
-    );
+    (void)state;
+    (void)tile_pos;
 }
 
 } // namespace splonks::world_ops

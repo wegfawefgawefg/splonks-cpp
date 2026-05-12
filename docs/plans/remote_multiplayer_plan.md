@@ -44,8 +44,9 @@ load the same content and use deterministic gameplay logic.
 
 1. Route player controls through `PlayerId -> PlayerInputFrame` tables.
 2. Prove same-process deterministic replay from recorded inputs.
-3. Add networked delay-based input lockstep.
-4. Delete coordinator-authoritative mutation replication paths from gameplay.
+3. Finish deleting/quarantining leftover coordinator-authoritative mutation
+   replication paths, including fluids and obsolete packet smokes.
+4. Add networked delay-based input lockstep.
 5. Add rollback after deterministic lockstep is proven.
 
 See `docs/plans/input_lockstep_rollback_plan.md` for the detailed checklist.

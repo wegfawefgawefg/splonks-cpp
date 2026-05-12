@@ -5,7 +5,6 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_authority.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -185,9 +184,6 @@ void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
     (void)audio;
     Entity& trap = state.entity_manager.entities[entity_idx];
     if (HasFired(trap)) {
-        return;
-    }
-    if (!HasLocalGameplayAuthorityForEntity(state, trap.vid)) {
         return;
     }
 
@@ -419,9 +415,6 @@ entities::common::ContactResolution OnEntityContactAsArrow(
     if (!CanArrowHitEntity(arrow, other_entity)) {
         return {};
     }
-    if (!HasLocalGameplayAuthorityForEntity(state, arrow.vid)) {
-        return {};
-    }
 
     const Vec2 impact_velocity = arrow.vel;
     if (arrow.collide_sound.has_value()) {
@@ -520,9 +513,6 @@ void OnDeathAsArrowTrap(std::size_t entity_idx, State& state, Audio& audio) {
 
     const Entity& trap = state.entity_manager.entities[entity_idx];
     if (HasFired(trap)) {
-        return;
-    }
-    if (!HasLocalGameplayAuthorityForEntity(state, trap.vid)) {
         return;
     }
     (void)SpawnLooseArrow(state, trap.GetCenter());

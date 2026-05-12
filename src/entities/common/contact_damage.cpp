@@ -1,7 +1,6 @@
 #include "entities/common/common.hpp"
 
 #include "effects.hpp"
-#include "gameplay_authority.hpp"
 #include "tile_contact_data.hpp"
 #include "tile_archetype.hpp"
 #include "world_query.hpp"
@@ -392,11 +391,7 @@ bool TryApplyProjectileContactToEntity(
         return false;
     }
 
-    const bool source_has_local_authority =
-        HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
-    if (!source_has_local_authority) {
-        return false;
-    }
+    constexpr bool source_has_local_authority = true;
 
     const KnockbackSpec knockback = BuildProjectileContactKnockback(entity, other_entity, state.stage);
     const DamageResult damage_result =

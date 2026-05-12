@@ -435,7 +435,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         const std::optional<std::size_t> buyable_idx =
             FindOverlappingBuyableEntityIdx(state, graphics, primary_player_vid->id);
         if (buyable_idx.has_value()) {
-            (void)world_ops::TryRequestOrApplyInteractEntity(
+            (void)world_ops::TryApplyInteractEntity(
                 *primary_player_vid,
                 state.entity_manager.entities[*buyable_idx].vid,
                 state,

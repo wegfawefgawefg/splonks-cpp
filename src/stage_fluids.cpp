@@ -290,9 +290,6 @@ void StepStageFluids(State& state) {
         UpdateStageLightingForTileChanges(state, normalized_tiles);
         UpdateStageAcousticsForTileChanges(state, normalized_tiles);
     }
-    if (state.net_session.role == network::NetRole::Peer) {
-        return;
-    }
     const FluidSettings& fluid = state.settings.fluid;
     if (!fluid.simulation_enabled) {
         return;

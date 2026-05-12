@@ -1831,7 +1831,7 @@ bool CheckNetworkPacketSmoke() {
             )) {
             return false;
         }
-        world_ops::RequestGameplayAction(
+        world_ops::QueueGameplayAction(
             peer,
             BreakTileAction{
                 .source_vid = peer_source_vid,
@@ -1883,7 +1883,7 @@ bool CheckNetworkPacketSmoke() {
             )) {
             return false;
         }
-        world_ops::RequestGameplayAction(
+        world_ops::QueueGameplayAction(
             peer,
             BreakTileAction{
                 .source_vid = peer_source_vid,
@@ -1943,7 +1943,7 @@ bool CheckNetworkPacketSmoke() {
             )) {
             return false;
         }
-        world_ops::RequestGameplayAction(
+        world_ops::QueueGameplayAction(
             peer,
             BreakTileAction{
                 .source_vid = peer_source_vid,

@@ -1,7 +1,5 @@
 #include "entities/common/common.hpp"
 
-#include "gameplay_authority.hpp"
-#include "gameplay_messages.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -160,25 +158,8 @@ void TryPushBlocks(
                     block_x_acc_delta = -block_entity->push_acc;
                 }
                 if (block_x_acc_delta != 0.0F) {
-                    const bool source_auth =
-                        HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
-                    const bool target_auth =
-                        HasLocalGameplayAuthorityForEntity(state, block_entity->vid);
-                    if (source_auth && !target_auth) {
-                        world_ops::RequestGameplayAction(
-                            state,
-                            PushEntityAction{
-                                .source_vid = entity.vid,
-                                .target_vid = block_entity->vid,
-                                .velocity = Vec2::New(block_x_acc_delta, 0.0F),
-                            }
-                        );
-                    } else {
-                        block_entity->acc.x += block_x_acc_delta;
-                        if (source_auth) {
-                            world_ops::PatchEntityState(state, entity, *block_entity);
-                        }
-                    }
+                    block_entity->acc.x += block_x_acc_delta;
+                    world_ops::PatchEntityState(state, entity, *block_entity);
                 }
                 break;
             }

@@ -56,9 +56,9 @@ void CommitEntityDamaged(
     std::optional<VID> source_vid = std::nullopt
 );
 void QueuePresentationCommand(State& state, const PresentationCommand& command);
-void RequestGameplayAction(State& state, const GameplayActionRequested& action);
+void QueueGameplayAction(State& state, const GameplayActionRequested& action);
 void QueuePendingGameplayAction(State& state, const GameplayActionRequested& action);
-bool TryRequestOrApplyInteractEntity(
+bool TryApplyInteractEntity(
     VID source_vid,
     VID target_vid,
     State& state,

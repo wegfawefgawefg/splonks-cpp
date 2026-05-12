@@ -4,8 +4,6 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_authority.hpp"
-#include "gameplay_messages.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "world_ops.hpp"
@@ -158,9 +156,6 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
     (void)audio;
 
     const Entity& pot = state.entity_manager.entities[entity_idx];
-    if (!HasLocalGameplayAuthorityForEntity(state, pot.vid)) {
-        return;
-    }
 
     const Vec2 spawn_pos = pot.pos;
     SpawnBreakawayContainerShards(pot.GetCenter(), state);
@@ -207,23 +202,6 @@ bool TryApplyPotImpact(
         return false;
     }
     if (std::abs(context.impact_velocity) <= kPotBreakawayImpactSpeed) {
-        return false;
-    }
-
-    if (!HasLocalGameplayAuthorityForEntity(state, pot.vid)) {
-        if (context.mover_vid.has_value() &&
-            HasLocalGameplayAuthorityForInteractionSource(state, *context.mover_vid)) {
-            world_ops::RequestGameplayAction(
-                state,
-                DamageEntityAction{
-                    .source_vid = context.mover_vid,
-                    .target_vid = pot.vid,
-                    .damage_type = DamageType::Attack,
-                    .amount = 1,
-                }
-            );
-            return true;
-        }
         return false;
     }
 

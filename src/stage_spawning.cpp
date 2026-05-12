@@ -136,7 +136,7 @@ void InitCommonStageState(State& state) {
 
 StageCarryover CaptureStageCarryover(const State& state) {
     StageCarryover carryover;
-    const bool preserve_attached_items = state.net_session.role != network::NetRole::Peer;
+    constexpr bool preserve_attached_items = true;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected ||
             !slot.entity_vid.has_value()) {

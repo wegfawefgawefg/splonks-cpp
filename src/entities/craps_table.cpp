@@ -7,7 +7,6 @@
 #include "entity/archetype.hpp"
 #include "frame_data_animator.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_authority.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
 #include "utils.hpp"
@@ -220,7 +219,7 @@ void StepEntityLogicAsCrapsTable(
 
     Entity* const dice = GetLinkedEntity(state, table.entity_b);
     Entity* const prize = GetLinkedEntity(state, table.entity_c);
-    const bool has_authority = HasLocalGameplayAuthorityForEntity(state, table.vid);
+    constexpr bool has_authority = true;
     if (has_authority) {
         if (dice != nullptr && dice->active) {
             PrepareCrapsDice(*dice);
@@ -285,7 +284,7 @@ void StepEntityLogicAsCrapsTable(
         if (GetTableState(table) == TableState::Idle) {
             AddCrapsPrompt(table, state, "bet", kCrapsBetAmount);
             if (slot.inputs.equip_button.pressed) {
-                (void)world_ops::TryRequestOrApplyInteractEntity(
+                (void)world_ops::TryApplyInteractEntity(
                     player->vid,
                     table.vid,
                     state,
