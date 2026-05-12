@@ -3,6 +3,7 @@
 #include "entity/archetype.hpp"
 #include "network/net_transport.hpp"
 #include "state.hpp"
+#include "state_fingerprint.hpp"
 #include "tile.hpp"
 
 #include <algorithm>
@@ -577,6 +578,22 @@ std::string HandleNetCommand(const State& state) {
     return out.str();
 }
 
+std::string HandleFingerprintCommand(const State& state) {
+    const CanonicalStateFingerprint canonical = ComputeCanonicalStateFingerprint(state);
+    const CanonicalStateFingerprint gameplay = ComputeGameplayDeterminismFingerprint(state);
+    const CanonicalStateFingerprint network = ComputeNetworkStateFingerprint(state);
+    std::ostringstream out;
+    out << "{\"ok\":true,\"cmd\":\"fingerprint\""
+        << ",\"canonical\":{\"hash\":" << canonical.value
+        << ",\"summary\":" << JsonString(canonical.summary) << "}"
+        << ",\"gameplay\":{\"hash\":" << gameplay.value
+        << ",\"summary\":" << JsonString(gameplay.summary) << "}"
+        << ",\"network\":{\"hash\":" << network.value
+        << ",\"summary\":" << JsonString(network.summary) << "}"
+        << "}\n";
+    return out.str();
+}
+
 std::string HandleTilesCommand(const State& state, const std::vector<std::string>& parts) {
     if (parts.size() < 5) {
         return MakeError("tiles command requires x y w h");
@@ -627,7 +644,7 @@ std::string HandleCommand(const State& state, std::string_view command) {
         return "{\"ok\":true,\"cmd\":\"ping\",\"pong\":true}\n";
     }
     if (op == "help") {
-        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"entities [limit]\",\"entities near [radius] [limit]\",\"entity <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"perf\"]}\n";
+        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"entities [limit]\",\"entities near [radius] [limit]\",\"entity <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"fingerprint\",\"perf\"]}\n";
     }
     if (op == "status") {
         return HandleStatusCommand(state);
@@ -646,6 +663,9 @@ std::string HandleCommand(const State& state, std::string_view command) {
     }
     if (op == "net") {
         return HandleNetCommand(state);
+    }
+    if (op == "fingerprint") {
+        return HandleFingerprintCommand(state);
     }
     if (op == "perf") {
         return HandlePerfCommand(state);

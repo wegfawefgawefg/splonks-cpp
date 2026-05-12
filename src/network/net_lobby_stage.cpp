@@ -37,7 +37,13 @@ bool EnsureHostSyncedStage(State& state, std::string* status_out) {
     const std::string quest_id = state.stage.quest_id;
     const std::string quest_stage_id = state.stage.quest_stage_id;
     const std::uint32_t seed = state.stage.generation_seed.value_or(MakeHostStageSeed(state));
-    if (!state.stage.generation_seed.has_value()) {
+
+    if (state.net_session.input_lockstep_enabled) {
+        state.players = PlayerRegistry::New();
+        state.entity_manager = EntityManager::New();
+    }
+
+    if (state.net_session.input_lockstep_enabled || !state.stage.generation_seed.has_value()) {
         if (!LoadQuestStage(state, quest_id, quest_stage_id, false, seed)) {
             if (status_out != nullptr) {
                 *status_out = "Host failed: could not reload current quest stage with sync seed.";

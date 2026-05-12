@@ -286,6 +286,12 @@ void HandleJoinAcceptAsPeer(
     NetTransportRuntime& transport,
     const JoinAcceptPacket& accept
 ) {
+    if (!transport.join_request_pending &&
+        state.net_session.role == NetRole::Peer &&
+        state.net_session.stage_instance_id == accept.stage_instance_id) {
+        return;
+    }
+
     const std::uint32_t assigned_count = std::clamp(
         accept.assigned_player_count,
         1U,
@@ -315,6 +321,9 @@ void HandleJoinAcceptAsPeer(
     }
 
     state.players = PlayerRegistry::New();
+    if (state.net_session.input_lockstep_enabled) {
+        state.entity_manager = EntityManager::New();
+    }
     state.controlled_entity_vid.reset();
     transport.remote_player_targets.clear();
     transport.remote_entity_render_targets.clear();
