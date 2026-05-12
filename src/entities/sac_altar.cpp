@@ -210,7 +210,8 @@ EntityType PickAccessoryReward(std::optional<VID> reward_target_vid, State& stat
     }
 
     if (!available_rewards.empty()) {
-        const int reward_index = rng::RandomIntExclusive(0, static_cast<int>(available_rewards.size()));
+        const int reward_index =
+            state.drng.RandomIntExclusive(0, static_cast<int>(available_rewards.size()));
         return available_rewards[static_cast<std::size_t>(reward_index)];
     }
 
@@ -463,7 +464,7 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
         const EntityType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
         Entity* const reward = world_ops::SpawnEntity(state, reward_type, [&](Entity& spawned_reward) {
             spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -3.0F));
-            spawned_reward.vel = Vec2::New(rng::RandomFloat(-0.55F, 0.55F), -1.7F);
+            spawned_reward.vel = Vec2::New(state.drng.RandomFloat(-0.55F, 0.55F), -1.7F);
             spawned_reward.acc = Vec2::New(0.0F, 0.0F);
         });
         if (reward == nullptr) {

@@ -254,13 +254,14 @@ void AddMattockDebugAnnotations(
     });
 }
 
-bool ShouldBreakMattockAfterSuccessfulDig(Entity& mattock) {
+bool ShouldBreakMattockAfterSuccessfulDig(Entity& mattock, State& state) {
     if (mattock.counter_b > 0.0F) {
         mattock.counter_b -= 1.0F;
         return false;
     }
 
-    return rng::RandomIntInclusive(1, 100) <= kMattockBreakChancePercentAfterGuaranteedDigs;
+    return state.drng.RandomIntInclusive(1, 100) <=
+           kMattockBreakChancePercentAfterGuaranteedDigs;
 }
 
 bool CanMattockHitEntity(const Entity& mattock, const Entity* holder, const Entity& other_entity) {
@@ -405,7 +406,7 @@ void TryApplyMattockStrike(std::size_t entity_idx, State& state, const Graphics&
         (void)PlayWorldSoundEmitter(state, tile_outcome.sound_pos, audio_asset_ids::UnbreakableHit);
         return;
     }
-    if (tile_outcome.result == StrikeResult::Dug && ShouldBreakMattockAfterSuccessfulDig(mattock)) {
+    if (tile_outcome.result == StrikeResult::Dug && ShouldBreakMattockAfterSuccessfulDig(mattock, state)) {
         mattock.marked_for_destruction = true;
     }
 }

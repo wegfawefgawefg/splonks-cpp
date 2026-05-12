@@ -11,7 +11,6 @@
 #include "world_ops.hpp"
 
 #include <cmath>
-#include <random>
 
 namespace splonks::entities::pot {
 
@@ -23,14 +22,6 @@ constexpr float kControlledJumpVel = 3.0F;
 constexpr float kControlledSlideVel = 3.0F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 constexpr float kPotBreakawayImpactSpeed = 1.0F;
-
-int RandInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
 
 Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     return world_ops::SpawnEntity(state, type_, [pos](Entity& entity) {
@@ -182,19 +173,19 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
         snake_spawn_pos = pot.pos + Vec2::New(-16.0F, -8.0F);
     }
 
-    if (RandInclusive(1, 3) == 1) {
+    if (state.drng.RandomIntInclusive(1, 3) == 1) {
         SpawnEntityAtTopLeft(EntityType::GoldChunk, spawn_pos, state);
-    } else if (RandInclusive(1, 6) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 6) == 1) {
         SpawnEntityAtTopLeft(EntityType::GoldNugget, spawn_pos, state);
-    } else if (RandInclusive(1, 12) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
         SpawnEntityAtTopLeft(EntityType::EmeraldBig, spawn_pos, state);
-    } else if (RandInclusive(1, 12) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
         SpawnEntityAtTopLeft(EntityType::SapphireBig, spawn_pos, state);
-    } else if (RandInclusive(1, 12) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
         SpawnEntityAtTopLeft(EntityType::RubyBig, spawn_pos, state);
-    } else if (RandInclusive(1, 6) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 6) == 1) {
         SpawnEntityAtTopLeft(EntityType::Spider, spider_spawn_pos, state);
-    } else if (RandInclusive(1, 12) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
         SpawnEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
     }
 }

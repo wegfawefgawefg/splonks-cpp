@@ -493,6 +493,10 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckStateEqualitySmoke() ? 0 : 1);
     }
 
+    if (command == "--check-deterministic-replay-smoke") {
+        std::exit(CheckDeterministicReplaySmoke() ? 0 : 1);
+    }
+
     if (command == "--check-network-protocol-smoke") {
         std::exit(CheckNetworkProtocolApplySmoke() ? 0 : 1);
     }

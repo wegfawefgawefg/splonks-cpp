@@ -40,10 +40,10 @@ std::optional<Vec2> GetNearestPlayerDelta(const Entity& entity, const State& sta
 }
 
 void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
-    const int gem_count = rng::RandomIntInclusive(1, 3);
+    const int gem_count = state.drng.RandomIntInclusive(1, 3);
     for (int i = 0; i < gem_count; ++i) {
         EntityType gem_type = EntityType::EmeraldBig;
-        switch (rng::RandomIntInclusive(1, 3)) {
+        switch (state.drng.RandomIntInclusive(1, 3)) {
         case 1:
             gem_type = EntityType::EmeraldBig;
             break;
@@ -58,7 +58,7 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
         if (world_ops::SpawnEntity(state, gem_type, [&](Entity& gem) {
                 gem.SetCenter(center);
                 gem.vel = Vec2::New(
-                    rng::RandomFloat(-2.0F, 2.0F),
+                    state.drng.RandomFloat(-2.0F, 2.0F),
                     -2.0F
                 );
             }) == nullptr) {
@@ -97,7 +97,7 @@ void FaceTowardNearestPlayer(Entity& entity, const State& state) {
     }
 }
 
-void StepPassiveSpider(Entity& entity) {
+void StepPassiveSpider(Entity& entity, State& state) {
     if (entity.condition != EntityCondition::Normal) {
         return;
     }
@@ -115,13 +115,13 @@ void StepPassiveSpider(Entity& entity) {
         return;
     }
 
-    if (rng::RandomIntInclusive(0, 1) == 0) {
+    if (state.drng.RandomIntInclusive(0, 1) == 0) {
         entity.facing = entity.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
     }
 
-    entity.vel.y = -static_cast<float>(rng::RandomIntInclusive(2, 4));
+    entity.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(2, 4));
     entity.vel.x = entity.facing == LeftOrRight::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX;
-    entity.counter_a = static_cast<float>(rng::RandomIntInclusive(
+    entity.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
         kPassiveSpiderCooldownMinFrames,
         kPassiveSpiderCooldownMaxFrames
     ));
@@ -129,7 +129,7 @@ void StepPassiveSpider(Entity& entity) {
 
 void TryHopTowardPlayer(
     Entity& entity,
-    const State& state,
+    State& state,
     int aggro_distance,
     float hop_speed_x,
     int hop_speed_y_min,
@@ -137,7 +137,7 @@ void TryHopTowardPlayer(
 ) {
     const std::optional<Vec2> player_delta = GetNearestPlayerDelta(entity, state);
     if (!player_delta.has_value() || Length(*player_delta) > static_cast<float>(aggro_distance)) {
-        entity.counter_a = static_cast<float>(rng::RandomIntInclusive(
+        entity.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
             kAggroSpiderCooldownMinFrames,
             kAggroSpiderCooldownMaxFrames
         ));
@@ -145,9 +145,9 @@ void TryHopTowardPlayer(
     }
 
     FaceTowardNearestPlayer(entity, state);
-    entity.vel.y = -static_cast<float>(rng::RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
+    entity.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
     entity.vel.x = entity.facing == LeftOrRight::Left ? -hop_speed_x : hop_speed_x;
-    entity.counter_a = static_cast<float>(rng::RandomIntInclusive(
+    entity.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
         kAggroSpiderCooldownMinFrames,
         kAggroSpiderCooldownMaxFrames
     ));
@@ -155,7 +155,7 @@ void TryHopTowardPlayer(
 
 void StepAggroSpider(
     Entity& entity,
-    const State& state,
+    State& state,
     int aggro_distance,
     float hop_speed_x,
     int hop_speed_y_min,
@@ -199,7 +199,7 @@ void StepEntityLogicAsSpider(
     (void)dt;
 
     Entity& spider = state.entity_manager.entities[entity_idx];
-    StepPassiveSpider(spider);
+    StepPassiveSpider(spider, state);
 }
 
 void StepEntityLogicAsRageSpider(

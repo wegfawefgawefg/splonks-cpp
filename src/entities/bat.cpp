@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <limits>
-#include <random>
 #include <vector>
 
 namespace splonks::entities::bat {
@@ -20,10 +19,7 @@ namespace splonks::entities::bat {
 namespace {
 
 bool RandomBool() {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_int_distribution<int> distribution(0, 1);
-    return distribution(generator) == 0;
+    return rng::RandomIntInclusive(0, 1) == 0;
 }
 
 IAABB GetAreaAbove(const Entity& bat) {

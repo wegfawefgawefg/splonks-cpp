@@ -70,9 +70,11 @@ bool IsOpenWithAnimation(const Entity& entity, FrameDataId animation_id) {
     return entity.frame_data_animator.animation_id == animation_id;
 }
 
-void LaunchChestLoot(Entity& entity, std::optional<VID> opener_vid = std::nullopt) {
+void LaunchChestLoot(State& state, Entity& entity, std::optional<VID> opener_vid = std::nullopt) {
     entity.vel = Vec2::New(
-        static_cast<float>(rng::RandomIntInclusive(0, 3) - rng::RandomIntInclusive(0, 3)),
+        static_cast<float>(
+            state.drng.RandomIntInclusive(0, 3) -
+            state.drng.RandomIntInclusive(0, 3)),
         kChestLootLaunchY
     );
     entity.thrown_by = opener_vid;
@@ -80,8 +82,8 @@ void LaunchChestLoot(Entity& entity, std::optional<VID> opener_vid = std::nullop
         opener_vid.has_value() ? common::kThrownByImmunityDuration : 0;
 }
 
-EntityType RandomChestGemType() {
-    switch (rng::RandomIntInclusive(1, 3)) {
+EntityType RandomChestGemType(State& state) {
+    switch (state.drng.RandomIntInclusive(1, 3)) {
     case 1:
         return EntityType::EmeraldBig;
     case 2:
@@ -126,7 +128,9 @@ void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
     (void)world_ops::SpawnEntity(state, EntityType::Bomb, [&](Entity& bomb) {
         bomb.SetCenter(spawn_center);
         bomb.vel = Vec2::New(
-            static_cast<float>(rng::RandomIntInclusive(0, 3) - rng::RandomIntInclusive(0, 3)),
+            static_cast<float>(
+                state.drng.RandomIntInclusive(0, 3) -
+                state.drng.RandomIntInclusive(0, 3)),
             kChestLootLaunchY
         );
         bomb.acc = Vec2::New(0.0F, 0.0F);
@@ -140,27 +144,28 @@ void SpawnChestTreasure(
     State& state,
     std::optional<VID> opener_vid = std::nullopt
 ) {
-    const int gem_count = rng::RandomIntInclusive(kChestTreasureDropMin, kChestTreasureDropMax);
+    const int gem_count =
+        state.drng.RandomIntInclusive(kChestTreasureDropMin, kChestTreasureDropMax);
     for (int i = 0; i < gem_count; ++i) {
-        if (world_ops::SpawnEntity(state, RandomChestGemType(), [&](Entity& gem) {
+        if (world_ops::SpawnEntity(state, RandomChestGemType(state), [&](Entity& gem) {
                 gem.SetCenter(spawn_center);
                 gem.vel = Vec2::New(0.0F, 0.0F);
                 gem.acc = Vec2::New(0.0F, 0.0F);
-                LaunchChestLoot(gem, opener_vid);
+                LaunchChestLoot(state, gem, opener_vid);
             }) == nullptr) {
             return;
         }
     }
 
-    if (rng::RandomIntInclusive(1, kChestBonusGemOdds) != 1) {
+    if (state.drng.RandomIntInclusive(1, kChestBonusGemOdds) != 1) {
         return;
     }
 
-    (void)world_ops::SpawnEntity(state, RandomChestGemType(), [&](Entity& gem) {
+    (void)world_ops::SpawnEntity(state, RandomChestGemType(state), [&](Entity& gem) {
         gem.SetCenter(spawn_center);
         gem.vel = Vec2::New(0.0F, 0.0F);
         gem.acc = Vec2::New(0.0F, 0.0F);
-        LaunchChestLoot(gem, opener_vid);
+        LaunchChestLoot(state, gem, opener_vid);
     });
 }
 
@@ -285,7 +290,7 @@ bool TryOpenTreasureChestAt(
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
 
-    if (rng::RandomIntInclusive(1, kChestTrapOdds) == 1) {
+    if (state.drng.RandomIntInclusive(1, kChestTrapOdds) == 1) {
         SpawnChestTrapBomb(emit_pos, state);
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Throw);
         return true;
@@ -373,6 +378,7 @@ bool TryOpenKeyChestWithKey(
         udjat_eye.vel = Vec2::New(0.0F, 0.0F);
         udjat_eye.acc = Vec2::New(0.0F, 0.0F);
         LaunchChestLoot(
+            state,
             udjat_eye,
             holder != nullptr ? std::optional<VID>(holder->vid)
                               : FindNearestPlayerVid(state, chest.GetCenter(), false));

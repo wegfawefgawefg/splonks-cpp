@@ -23,6 +23,8 @@ struct PlayerSlot {
     bool connected = false;
     bool primary_local = false;
     std::string display_name;
+    PlayerInputFrame input_frame = PlayerInputFrame::New();
+    PlayerInputFrame previous_input_frame = PlayerInputFrame::New();
     PlayingInputs inputs = PlayingInputs::New();
     PlayingInputs immediate_inputs = PlayingInputs::New();
 };
@@ -49,6 +51,14 @@ struct PlayerRegistry {
     void ClearEntityRef(VID entity_vid);
     std::optional<PlayerId> FindPlayerIdForEntity(VID entity_vid) const;
     const PlayingInputs* FindInputsForEntity(VID entity_vid) const;
+    const PlayingInputs* FindInputsForPlayer(PlayerId player_id) const;
+    void SetInputFrameForPlayer(PlayerId player_id, const PlayerInputFrame& input_frame);
+    void SetInputFrameAndInputsForPlayer(
+        PlayerId player_id,
+        const PlayerInputFrame& input_frame,
+        const PlayingInputs& inputs,
+        const PlayingInputs& immediate_inputs
+    );
     void SetInputsForPlayer(PlayerId player_id, const PlayingInputs& inputs, const PlayingInputs& immediate_inputs);
     void SetPrimaryLocalInputs(const PlayingInputs& inputs, const PlayingInputs& immediate_inputs);
 };

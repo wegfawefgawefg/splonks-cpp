@@ -35,9 +35,14 @@ constexpr float kCobraSpitLifetimeFrames = 120.0F;
 constexpr float kCobraSpitTrailIntervalFrames = 2.0F;
 constexpr unsigned int kCobraVenomDamage = 1;
 
-void StartIdle(Entity& cobra, int min_frames = kCobraIdleMinFrames, int max_frames = kCobraIdleMaxFrames) {
+void StartIdle(
+    Entity& cobra,
+    State& state,
+    int min_frames = kCobraIdleMinFrames,
+    int max_frames = kCobraIdleMaxFrames
+) {
     cobra.ai_state = EntityAiState::Idle;
-    cobra.counter_a = static_cast<float>(rng::RandomIntInclusive(min_frames, max_frames));
+    cobra.counter_a = static_cast<float>(state.drng.RandomIntInclusive(min_frames, max_frames));
     common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
     TrySetAnimation(cobra, EntityDisplayState::Neutral);
 }
@@ -227,7 +232,7 @@ void StepEntityLogicAsCobra(
 
     Entity& cobra = state.entity_manager.entities[entity_idx];
     if (cobra.last_condition == EntityCondition::Stunned && cobra.condition == EntityCondition::Normal) {
-        StartIdle(cobra);
+        StartIdle(cobra, state);
     }
     if (cobra.condition != EntityCondition::Normal) {
         return;
@@ -245,11 +250,11 @@ void StepEntityLogicAsCobra(
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
         TrySetAnimation(cobra, EntityDisplayState::Walk);
         FireCobraSpit(entity_idx, state, graphics);
-        cobra.counter_b = static_cast<float>(rng::RandomIntInclusive(
+        cobra.counter_b = static_cast<float>(state.drng.RandomIntInclusive(
             kCobraSpitCooldownMinFrames,
             kCobraSpitCooldownMaxFrames
         ));
-        StartIdle(cobra, 12, 20);
+        StartIdle(cobra, state, 12, 20);
         return;
     }
 
@@ -261,7 +266,8 @@ void StepEntityLogicAsCobra(
             return;
         }
 
-        cobra.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+        cobra.facing =
+            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
         StartWalking(cobra, state);
         return;
     }
@@ -273,8 +279,8 @@ void StepEntityLogicAsCobra(
         direction = -direction;
     }
 
-    if (rng::RandomIntInclusive(1, kCobraIdleChance) == 1) {
-        StartIdle(cobra);
+    if (state.drng.RandomIntInclusive(1, kCobraIdleChance) == 1) {
+        StartIdle(cobra, state);
         return;
     }
 

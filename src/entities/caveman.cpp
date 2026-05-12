@@ -41,9 +41,10 @@ void FaceTowards(Entity& caveman, const Vec2& target_pos, const Stage& stage) {
     }
 }
 
-void StartIdle(Entity& caveman) {
+void StartIdle(Entity& caveman, State& state) {
     caveman.ai_state = EntityAiState::Idle;
-    caveman.counter_a = static_cast<float>(rng::RandomIntInclusive(kCavemanIdleMinFrames, kCavemanIdleMaxFrames));
+    caveman.counter_a = static_cast<float>(
+        state.drng.RandomIntInclusive(kCavemanIdleMinFrames, kCavemanIdleMaxFrames));
     common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
     TrySetAnimation(caveman, EntityDisplayState::Neutral);
 }
@@ -149,7 +150,7 @@ void StepEntityLogicAsCaveman(
     Entity& caveman = state.entity_manager.entities[entity_idx];
     if (caveman.last_condition == EntityCondition::Stunned &&
         caveman.condition == EntityCondition::Normal) {
-        StartIdle(caveman);
+        StartIdle(caveman, state);
     }
     if (caveman.condition != EntityCondition::Normal) {
         return;
@@ -196,7 +197,8 @@ void StepEntityLogicAsCaveman(
             return;
         }
 
-        caveman.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+        caveman.facing =
+            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
         StartWalking(caveman, state);
         return;
     }
@@ -208,8 +210,8 @@ void StepEntityLogicAsCaveman(
         direction = -direction;
     }
 
-    if (rng::RandomIntInclusive(1, kCavemanIdleChance) == 1) {
-        StartIdle(caveman);
+    if (state.drng.RandomIntInclusive(1, kCavemanIdleChance) == 1) {
+        StartIdle(caveman, state);
         return;
     }
 

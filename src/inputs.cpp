@@ -113,40 +113,6 @@ ButtonState BuildButtonState(bool down, bool previous_down) {
     };
 }
 
-PlayingInputs BuildPlayingInputs(
-    const PlayingInputSnapshot& current,
-    const PlayingInputSnapshot& previous
-) {
-    PlayingInputs inputs = PlayingInputs::New();
-    inputs.left = BuildButtonState(current.left, previous.left);
-    inputs.right = BuildButtonState(current.right, previous.right);
-    inputs.up = BuildButtonState(current.up, previous.up);
-    inputs.down = BuildButtonState(current.down, previous.down);
-    inputs.jump = BuildButtonState(current.jump, previous.jump);
-    inputs.run = BuildButtonState(current.run, previous.run);
-    inputs.use_button = BuildButtonState(current.use_button, previous.use_button);
-    inputs.equip_button = BuildButtonState(current.equip_button, previous.equip_button);
-    inputs.pick_up_drop = BuildButtonState(current.pick_up_drop, previous.pick_up_drop);
-    inputs.stop = BuildButtonState(current.stop, previous.stop);
-    inputs.bomb = BuildButtonState(current.bomb, previous.bomb);
-    inputs.rope = BuildButtonState(current.rope, previous.rope);
-    inputs.attack = BuildButtonState(current.attack, previous.attack);
-    inputs.buy_button = BuildButtonState(current.buy_button, previous.buy_button);
-    inputs.emote_up = BuildButtonState(current.emote_up, previous.emote_up);
-    inputs.emote_down = BuildButtonState(current.emote_down, previous.emote_down);
-    inputs.quit = BuildButtonState(current.quit, previous.quit);
-    inputs.toggle_collision_boxes = BuildButtonState(
-        current.toggle_collision_boxes,
-        previous.toggle_collision_boxes
-    );
-    inputs.regenerate_level = BuildButtonState(
-        current.regenerate_level,
-        previous.regenerate_level
-    );
-    inputs.mouse_pos = current.mouse_pos;
-    return inputs;
-}
-
 void SetMenuInputSnapshot(State& state) {
     const bool* keys = SDL_GetKeyboardState(nullptr);
     MenuInputSnapshot new_inputs = MenuInputSnapshot::New();
@@ -374,6 +340,125 @@ PlayingInputSnapshot PlayingInputSnapshot::New() {
     return inputs;
 }
 
+PlayerInputFrame PlayerInputFrame::New() {
+    PlayerInputFrame input_frame;
+    input_frame.mouse_pos = UVec2::New(0, 0);
+    return input_frame;
+}
+
+PlayerInputFrame ToPlayerInputFrame(const PlayingInputSnapshot& snapshot) {
+    PlayerInputFrame frame = PlayerInputFrame::New();
+    frame.left = snapshot.left;
+    frame.right = snapshot.right;
+    frame.up = snapshot.up;
+    frame.down = snapshot.down;
+    frame.jump = snapshot.jump;
+    frame.run = snapshot.run;
+    frame.use_button = snapshot.use_button;
+    frame.equip_button = snapshot.equip_button;
+    frame.pick_up_drop = snapshot.pick_up_drop;
+    frame.stop = snapshot.stop;
+    frame.bomb = snapshot.bomb;
+    frame.rope = snapshot.rope;
+    frame.attack = snapshot.attack;
+    frame.buy_button = snapshot.buy_button;
+    frame.emote_up = snapshot.emote_up;
+    frame.emote_down = snapshot.emote_down;
+    frame.quit = snapshot.quit;
+    frame.toggle_collision_boxes = snapshot.toggle_collision_boxes;
+    frame.regenerate_level = snapshot.regenerate_level;
+    frame.mouse_pos = snapshot.mouse_pos;
+    return frame;
+}
+
+PlayerInputFrame ToPlayerInputFrame(const PlayingInputs& inputs) {
+    PlayerInputFrame frame = PlayerInputFrame::New();
+    frame.left = inputs.left.down;
+    frame.right = inputs.right.down;
+    frame.up = inputs.up.down;
+    frame.down = inputs.down.down;
+    frame.jump = inputs.jump.down;
+    frame.run = inputs.run.down;
+    frame.use_button = inputs.use_button.down;
+    frame.equip_button = inputs.equip_button.down;
+    frame.pick_up_drop = inputs.pick_up_drop.down;
+    frame.stop = inputs.stop.down;
+    frame.bomb = inputs.bomb.down;
+    frame.rope = inputs.rope.down;
+    frame.attack = inputs.attack.down;
+    frame.buy_button = inputs.buy_button.down;
+    frame.emote_up = inputs.emote_up.down;
+    frame.emote_down = inputs.emote_down.down;
+    frame.quit = inputs.quit.down;
+    frame.toggle_collision_boxes = inputs.toggle_collision_boxes.down;
+    frame.regenerate_level = inputs.regenerate_level.down;
+    frame.mouse_pos = inputs.mouse_pos;
+    return frame;
+}
+
+PlayingInputSnapshot ToPlayingInputSnapshot(const PlayerInputFrame& frame) {
+    PlayingInputSnapshot snapshot = PlayingInputSnapshot::New();
+    snapshot.left = frame.left;
+    snapshot.right = frame.right;
+    snapshot.up = frame.up;
+    snapshot.down = frame.down;
+    snapshot.jump = frame.jump;
+    snapshot.run = frame.run;
+    snapshot.use_button = frame.use_button;
+    snapshot.equip_button = frame.equip_button;
+    snapshot.pick_up_drop = frame.pick_up_drop;
+    snapshot.stop = frame.stop;
+    snapshot.bomb = frame.bomb;
+    snapshot.rope = frame.rope;
+    snapshot.attack = frame.attack;
+    snapshot.buy_button = frame.buy_button;
+    snapshot.emote_up = frame.emote_up;
+    snapshot.emote_down = frame.emote_down;
+    snapshot.quit = frame.quit;
+    snapshot.toggle_collision_boxes = frame.toggle_collision_boxes;
+    snapshot.regenerate_level = frame.regenerate_level;
+    snapshot.mouse_pos = frame.mouse_pos;
+    return snapshot;
+}
+
+PlayingInputs BuildPlayingInputs(
+    const PlayingInputSnapshot& current,
+    const PlayingInputSnapshot& previous
+) {
+    PlayingInputs inputs = PlayingInputs::New();
+    inputs.left = BuildButtonState(current.left, previous.left);
+    inputs.right = BuildButtonState(current.right, previous.right);
+    inputs.up = BuildButtonState(current.up, previous.up);
+    inputs.down = BuildButtonState(current.down, previous.down);
+    inputs.jump = BuildButtonState(current.jump, previous.jump);
+    inputs.run = BuildButtonState(current.run, previous.run);
+    inputs.use_button = BuildButtonState(current.use_button, previous.use_button);
+    inputs.equip_button = BuildButtonState(current.equip_button, previous.equip_button);
+    inputs.pick_up_drop = BuildButtonState(current.pick_up_drop, previous.pick_up_drop);
+    inputs.stop = BuildButtonState(current.stop, previous.stop);
+    inputs.bomb = BuildButtonState(current.bomb, previous.bomb);
+    inputs.rope = BuildButtonState(current.rope, previous.rope);
+    inputs.attack = BuildButtonState(current.attack, previous.attack);
+    inputs.buy_button = BuildButtonState(current.buy_button, previous.buy_button);
+    inputs.emote_up = BuildButtonState(current.emote_up, previous.emote_up);
+    inputs.emote_down = BuildButtonState(current.emote_down, previous.emote_down);
+    inputs.quit = BuildButtonState(current.quit, previous.quit);
+    inputs.toggle_collision_boxes = BuildButtonState(
+        current.toggle_collision_boxes,
+        previous.toggle_collision_boxes
+    );
+    inputs.regenerate_level = BuildButtonState(
+        current.regenerate_level,
+        previous.regenerate_level
+    );
+    inputs.mouse_pos = current.mouse_pos;
+    return inputs;
+}
+
+PlayingInputs BuildPlayingInputs(const PlayerInputFrame& current, const PlayerInputFrame& previous) {
+    return BuildPlayingInputs(ToPlayingInputSnapshot(current), ToPlayingInputSnapshot(previous));
+}
+
 MenuInputDebounceTimers MenuInputDebounceTimers::New() {
     return MenuInputDebounceTimers{};
 }
@@ -487,7 +572,14 @@ void LatchPlayingInputsForTick(State& state) {
     const PlayingInputSnapshot current = state.playing_input_snapshot;
     state.playing_inputs = BuildPlayingInputs(current, state.previous_playing_input_snapshot);
     state.previous_playing_input_snapshot = current;
-    state.players.SetPrimaryLocalInputs(state.playing_inputs, state.immediate_playing_inputs);
+    if (const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal()) {
+        state.players.SetInputFrameAndInputsForPlayer(
+            primary_slot->player_id,
+            ToPlayerInputFrame(current),
+            state.playing_inputs,
+            state.immediate_playing_inputs
+        );
+    }
 }
 
 } // namespace splonks

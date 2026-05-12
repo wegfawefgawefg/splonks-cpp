@@ -172,8 +172,8 @@ void DropLooseSkull(const Vec2& center, State& state) {
     (void)world_ops::SpawnEntity(state, EntityType::Skull, [&](Entity& skull) {
         skull.SetCenter(center);
         skull.vel = Vec2::New(
-            rng::RandomFloat(-1.0F, 1.0F),
-            rng::RandomFloat(-1.8F, -0.8F)
+            state.drng.RandomFloat(-1.0F, 1.0F),
+            state.drng.RandomFloat(-1.8F, -0.8F)
         );
         skull.acc = Vec2::New(0.0F, 0.0F);
     });

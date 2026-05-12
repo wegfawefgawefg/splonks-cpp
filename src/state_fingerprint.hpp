@@ -15,6 +15,7 @@ struct CanonicalStateFingerprint {
 };
 
 CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state);
+CanonicalStateFingerprint ComputeGameplayDeterminismFingerprint(const State& state);
 CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state);
 CanonicalStateFingerprint ComputeNetworkStateFingerprintIgnoringPlayerMotion(
     const State& state,

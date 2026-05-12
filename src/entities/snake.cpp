@@ -20,9 +20,10 @@ constexpr int kSnakeIdleMinFrames = 20;
 constexpr int kSnakeIdleMaxFrames = 50;
 constexpr int kSnakeIdleChance = 100;
 
-void StartIdle(Entity& snake) {
+void StartIdle(Entity& snake, State& state) {
     snake.ai_state = EntityAiState::Idle;
-    snake.counter_a = static_cast<float>(rng::RandomIntInclusive(kSnakeIdleMinFrames, kSnakeIdleMaxFrames));
+    snake.counter_a = static_cast<float>(
+        state.drng.RandomIntInclusive(kSnakeIdleMinFrames, kSnakeIdleMaxFrames));
     common::DecelerateHorizontallyToStop(snake, kSnakeWalkAcceleration);
     TrySetAnimation(snake, EntityDisplayState::Neutral);
 }
@@ -63,7 +64,8 @@ void StepEntityLogicAsSnake(
             return;
         }
 
-        snake.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+        snake.facing =
+            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
         StartWalking(snake, state);
         return;
     }
@@ -75,8 +77,8 @@ void StepEntityLogicAsSnake(
         direction = -direction;
     }
 
-    if (rng::RandomIntInclusive(1, kSnakeIdleChance) == 1) {
-        StartIdle(snake);
+    if (state.drng.RandomIntInclusive(1, kSnakeIdleChance) == 1) {
+        StartIdle(snake, state);
         return;
     }
 

@@ -11,7 +11,6 @@
 #include "world_ops.hpp"
 
 #include <cmath>
-#include <random>
 
 namespace splonks::entities::box {
 
@@ -24,14 +23,6 @@ constexpr float kControlledSlideVel = 3.75F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 constexpr float kBoxBreakawayImpactSpeed = 2.0F;
 
-int RandInclusive(int minimum, int maximum) {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_int_distribution<int> distribution(minimum, maximum);
-    return distribution(generator);
-}
-
-
 Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     return world_ops::SpawnEntity(state, type_, [pos](Entity& entity) {
         entity.pos = pos;
@@ -39,8 +30,10 @@ Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
     });
 }
 
-EntityType RandomTeleporterVariant() {
-    return RandInclusive(1, 2) == 1 ? EntityType::Teleporter : EntityType::TeleporterBackpack;
+EntityType RandomTeleporterVariant(State& state) {
+    return state.drng.RandomIntInclusive(1, 2) == 1
+               ? EntityType::Teleporter
+               : EntityType::TeleporterBackpack;
 }
 
 void StepControlledBox(Entity& box, const controls::ControlIntent& control) {
@@ -182,43 +175,43 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     // Matches ClassicHD's actual open-crate roll order, with unimplemented Shotgun
     // intentionally substituted by Pistol for now. HD/2 use the same common
     // tail shape: 1/2 RopePile, otherwise guaranteed BombBag.
-    if (RandInclusive(1, 500) == 1) {
+    if (state.drng.RandomIntInclusive(1, 500) == 1) {
         SpawnEntityAtTopLeft(EntityType::JetPack, spawn_pos, state);
-    } else if (RandInclusive(1, 200) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 200) == 1) {
         SpawnEntityAtTopLeft(EntityType::Cape, spawn_pos, state);
-    } else if (RandInclusive(1, 100) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 100) == 1) {
         SpawnEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
-    } else if (RandInclusive(1, 100) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 100) == 1) {
         SpawnEntityAtTopLeft(EntityType::Mattock, spawn_pos, state);
-    } else if (RandInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(RandomTeleporterVariant(), spawn_pos, state);
-    } else if (RandInclusive(1, 90) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 100) == 1) {
+        SpawnEntityAtTopLeft(RandomTeleporterVariant(state), spawn_pos, state);
+    } else if (state.drng.RandomIntInclusive(1, 90) == 1) {
         SpawnEntityAtTopLeft(EntityType::Gloves, spawn_pos, state);
-    } else if (RandInclusive(1, 90) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 90) == 1) {
         SpawnEntityAtTopLeft(EntityType::Spectacles, spawn_pos, state);
-    } else if (RandInclusive(1, 80) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 80) == 1) {
         SpawnEntityAtTopLeft(EntityType::WebCannon, spawn_pos, state);
-    } else if (RandInclusive(1, 80) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 80) == 1) {
         SpawnEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
-    } else if (RandInclusive(1, 80) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 80) == 1) {
         SpawnEntityAtTopLeft(EntityType::Mitt, spawn_pos, state);
-    } else if (RandInclusive(1, 60) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
         SpawnEntityAtTopLeft(EntityType::Paste, spawn_pos, state);
-    } else if (RandInclusive(1, 60) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
         SpawnEntityAtTopLeft(EntityType::SpringShoes, spawn_pos, state);
-    } else if (RandInclusive(1, 60) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
         SpawnEntityAtTopLeft(EntityType::SpikeShoes, spawn_pos, state);
-    } else if (RandInclusive(1, 60) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
         SpawnEntityAtTopLeft(EntityType::Machete, spawn_pos, state);
-    } else if (RandInclusive(1, 40) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 40) == 1) {
         SpawnEntityAtTopLeft(EntityType::BombBox, spawn_pos, state);
-    } else if (RandInclusive(1, 40) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 40) == 1) {
         SpawnEntityAtTopLeft(EntityType::Bow, spawn_pos, state);
-    } else if (RandInclusive(1, 20) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 20) == 1) {
         SpawnEntityAtTopLeft(EntityType::Compass, spawn_pos, state);
-    } else if (RandInclusive(1, 10) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 10) == 1) {
         SpawnEntityAtTopLeft(EntityType::Parachute, spawn_pos, state);
-    } else if (RandInclusive(1, 2) == 1) {
+    } else if (state.drng.RandomIntInclusive(1, 2) == 1) {
         SpawnEntityAtTopLeft(EntityType::RopePile, spawn_pos, state);
     } else {
         SpawnEntityAtTopLeft(EntityType::BombBag, spawn_pos, state);

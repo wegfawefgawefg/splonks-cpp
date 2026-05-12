@@ -17,8 +17,9 @@ namespace {
 constexpr float kRollingState = 1.0F;
 constexpr float kSettleSpeed = 0.2F;
 
-int RollDicePairTotal() {
-    return rng::RandomIntInclusive(1, 6) + rng::RandomIntInclusive(1, 6);
+int RollDicePairTotal(State& state) {
+    return state.drng.RandomIntInclusive(1, 6) +
+           state.drng.RandomIntInclusive(1, 6);
 }
 
 void StepEntityLogicAsDice(
@@ -42,7 +43,7 @@ void StepEntityLogicAsDice(
 
     if (!dice.grounded || std::abs(dice.vel.x) > kSettleSpeed ||
         std::abs(dice.vel.y) > kSettleSpeed) {
-        dice.counter_a = static_cast<float>(RollDicePairTotal());
+        dice.counter_a = static_cast<float>(RollDicePairTotal(state));
         dice.rotation = std::fmod(dice.rotation + 24.0F + std::abs(dice.vel.x) * 8.0F, 360.0F);
         return;
     }

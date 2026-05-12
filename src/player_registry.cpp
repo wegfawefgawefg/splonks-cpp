@@ -166,12 +166,47 @@ const PlayingInputs* PlayerRegistry::FindInputsForEntity(VID entity_vid) const {
     return nullptr;
 }
 
+const PlayingInputs* PlayerRegistry::FindInputsForPlayer(PlayerId player_id) const {
+    if (const PlayerSlot* const slot = Find(player_id)) {
+        return &slot->inputs;
+    }
+    return nullptr;
+}
+
+void PlayerRegistry::SetInputFrameForPlayer(
+    PlayerId player_id,
+    const PlayerInputFrame& input_frame
+) {
+    if (PlayerSlot* const slot = Find(player_id)) {
+        slot->previous_input_frame = slot->input_frame;
+        slot->input_frame = input_frame;
+        slot->inputs = BuildPlayingInputs(slot->input_frame, slot->previous_input_frame);
+        slot->immediate_inputs = slot->inputs;
+    }
+}
+
+void PlayerRegistry::SetInputFrameAndInputsForPlayer(
+    PlayerId player_id,
+    const PlayerInputFrame& input_frame,
+    const PlayingInputs& inputs,
+    const PlayingInputs& immediate_inputs
+) {
+    if (PlayerSlot* const slot = Find(player_id)) {
+        slot->previous_input_frame = slot->input_frame;
+        slot->input_frame = input_frame;
+        slot->inputs = inputs;
+        slot->immediate_inputs = immediate_inputs;
+    }
+}
+
 void PlayerRegistry::SetInputsForPlayer(
     PlayerId player_id,
     const PlayingInputs& inputs,
     const PlayingInputs& immediate_inputs
 ) {
     if (PlayerSlot* const slot = Find(player_id)) {
+        slot->previous_input_frame = slot->input_frame;
+        slot->input_frame = ToPlayerInputFrame(inputs);
         slot->inputs = inputs;
         slot->immediate_inputs = immediate_inputs;
     }
@@ -182,6 +217,8 @@ void PlayerRegistry::SetPrimaryLocalInputs(
     const PlayingInputs& immediate_inputs
 ) {
     if (PlayerSlot* const slot = FindPrimaryLocal()) {
+        slot->previous_input_frame = slot->input_frame;
+        slot->input_frame = ToPlayerInputFrame(inputs);
         slot->inputs = inputs;
         slot->immediate_inputs = immediate_inputs;
     }

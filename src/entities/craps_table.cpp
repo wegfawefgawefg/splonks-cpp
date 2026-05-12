@@ -55,8 +55,9 @@ bool IsShopDisturbed(const Entity& table, const State& state) {
     return shop != nullptr && shop->active && shop->ai_state == EntityAiState::Disturbed;
 }
 
-int RollDicePairTotal() {
-    return rng::RandomIntInclusive(1, 6) + rng::RandomIntInclusive(1, 6);
+int RollDicePairTotal(State& state) {
+    return state.drng.RandomIntInclusive(1, 6) +
+           state.drng.RandomIntInclusive(1, 6);
 }
 
 void LockPrize(Entity& prize) {
@@ -103,18 +104,18 @@ void PrepareCrapsDice(Entity& dice) {
     dice.attachment_mode = AttachmentMode::None;
 }
 
-void LaunchDice(Entity& table, Entity& dice) {
+void LaunchDice(Entity& table, Entity& dice, State& state) {
     PrepareCrapsDice(dice);
     dice.has_physics = true;
     dice.can_collide = true;
     dice.grounded = false;
-    dice.counter_a = static_cast<float>(RollDicePairTotal());
+    dice.counter_a = static_cast<float>(RollDicePairTotal(state));
     dice.counter_b = kDiceRollState;
-    dice.rotation = static_cast<float>(rng::RandomIntInclusive(0, 359));
+    dice.rotation = static_cast<float>(state.drng.RandomIntInclusive(0, 359));
 
     const Vec2 table_center = table.GetCenter();
     dice.SetCenter(table_center + Vec2::New(0.0F, -10.0F));
-    dice.vel = Vec2::New(static_cast<float>(rng::RandomIntInclusive(-2, 2)), -5.0F);
+    dice.vel = Vec2::New(static_cast<float>(state.drng.RandomIntInclusive(-2, 2)), -5.0F);
     dice.acc = Vec2::New(0.0F, 0.0F);
 }
 
@@ -192,7 +193,7 @@ bool TryStartCrapsRoll(
         return false;
     }
 
-    LaunchDice(table, *dice);
+    LaunchDice(table, *dice, state);
     SetTableState(table, TableState::Rolling);
     world_ops::PatchEntityState(state, table, table);
     world_ops::PatchEntityState(state, *dice, *dice);

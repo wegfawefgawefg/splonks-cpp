@@ -4,25 +4,19 @@
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 #include "stage_spawning.hpp"
+#include "utils.hpp"
 
-#include <random>
 #include <stdexcept>
 
 namespace splonks {
 
 namespace {
 unsigned int RandomPercent() {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_int_distribution<unsigned int> distribution(0, 99);
-    return distribution(generator);
+    return static_cast<unsigned int>(rng::RandomIntInclusive(0, 99));
 }
 
 int RandomMoneyType() {
-    static std::random_device device;
-    static std::mt19937 generator(device());
-    std::uniform_int_distribution<int> distribution(0, 1);
-    return distribution(generator);
+    return rng::RandomIntInclusive(0, 1);
 }
 
 void PlacePlayerAtEntrance(State& state) {

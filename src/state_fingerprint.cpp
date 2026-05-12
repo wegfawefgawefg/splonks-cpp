@@ -222,6 +222,30 @@ void AddEntityFingerprint(FingerprintWriter& writer, const Entity& entity) {
     AddEffectFingerprint(writer, entity.effects);
 }
 
+void AddPlayerInputFrameFingerprint(FingerprintWriter& writer, const PlayerInputFrame& input_frame) {
+    writer.AddBool(input_frame.left);
+    writer.AddBool(input_frame.right);
+    writer.AddBool(input_frame.up);
+    writer.AddBool(input_frame.down);
+    writer.AddBool(input_frame.jump);
+    writer.AddBool(input_frame.run);
+    writer.AddBool(input_frame.use_button);
+    writer.AddBool(input_frame.equip_button);
+    writer.AddBool(input_frame.pick_up_drop);
+    writer.AddBool(input_frame.stop);
+    writer.AddBool(input_frame.bomb);
+    writer.AddBool(input_frame.rope);
+    writer.AddBool(input_frame.attack);
+    writer.AddBool(input_frame.buy_button);
+    writer.AddBool(input_frame.emote_up);
+    writer.AddBool(input_frame.emote_down);
+    writer.AddBool(input_frame.quit);
+    writer.AddBool(input_frame.toggle_collision_boxes);
+    writer.AddBool(input_frame.regenerate_level);
+    writer.AddPod(input_frame.mouse_pos.x);
+    writer.AddPod(input_frame.mouse_pos.y);
+}
+
 void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistry& players) {
     writer.AddPod(players.slots.size());
     for (const PlayerSlot& slot : players.slots) {
@@ -233,6 +257,8 @@ void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistr
         writer.AddPod(static_cast<std::uint8_t>(slot.connection_kind));
         writer.AddBool(slot.connected);
         writer.AddBool(slot.primary_local);
+        AddPlayerInputFrameFingerprint(writer, slot.input_frame);
+        AddPlayerInputFrameFingerprint(writer, slot.previous_input_frame);
     }
 }
 
@@ -416,11 +442,17 @@ void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& 
 
 } // namespace
 
-CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
+CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(
+    const State& state,
+    bool include_drng
+) {
     FingerprintWriter writer;
     writer.AddPod(static_cast<std::uint8_t>(state.mode));
     writer.AddPod(state.frame);
     writer.AddPod(state.stage_frame);
+    if (include_drng) {
+        writer.AddPod(state.drng.state);
+    }
     writer.AddPod(state.depth);
     writer.AddPod(state.points);
     writer.AddPod(state.deaths);
@@ -462,6 +494,14 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
         .value = writer.value,
         .summary = summary.str(),
     };
+}
+
+CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
+    return ComputeCanonicalStateFingerprintWithOptions(state, false);
+}
+
+CanonicalStateFingerprint ComputeGameplayDeterminismFingerprint(const State& state) {
+    return ComputeCanonicalStateFingerprintWithOptions(state, true);
 }
 
 CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(

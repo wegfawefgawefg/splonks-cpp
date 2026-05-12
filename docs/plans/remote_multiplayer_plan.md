@@ -14,7 +14,12 @@ Remote multiplayer should be built around deterministic simulation from shared
 inputs:
 
 - Every player has a stable `PlayerId`.
+- A network peer/process may own multiple local `PlayerId`s. The architecture
+  must support shapes like two players on one client and three players on
+  another, not just one player per connection.
 - Every frame has a complete input record for every active player.
+- Input packets batch all local `PlayerId -> PlayerInputFrame` records owned by
+  that process for the frame.
 - Gameplay code reads player inputs from a frame input table.
 - All peers start from the same stage seed/state and step the same deterministic
   gameplay code.
@@ -44,4 +49,3 @@ load the same content and use deterministic gameplay logic.
 5. Add rollback after deterministic lockstep is proven.
 
 See `docs/plans/input_lockstep_rollback_plan.md` for the detailed checklist.
-

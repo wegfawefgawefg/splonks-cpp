@@ -86,6 +86,18 @@ Required mod rules:
   or critical simulation should move toward fixed-point/integer choices over
   time.
 
+Floating-point determinism note:
+
+- Same-machine/same-build replay is expected to be stable enough for the first
+  lockstep tests.
+- Cross-machine lockstep can diverge from different math library behavior,
+  fused-multiply-add choices, compiler flags, CPU floating-point modes, or
+  platform-specific `sin`/`cos`/`sqrt`/`atan2` results.
+- Do not enable `fast-math` for deterministic builds.
+- If cross-platform drift becomes visible, migrate critical physics/collision
+  values toward fixed-point or explicit quantization rather than patching netcode
+  around drift.
+
 Mods that violate determinism can still be allowed in single-player, but they
 would not be multiplayer-safe.
 
@@ -157,8 +169,13 @@ Networking should own these systems:
 
 - Session/lobby membership.
 - Player slot assignment.
+  - A network peer/process is not the same thing as a player. One process may
+    own zero, one, or many local `PlayerId`s. Example supported shapes: two
+    players on one machine and three players on another in the same session.
 - Per-frame local input capture.
-- Input packets for every local player on a peer.
+- Input packets for every local player owned by a peer/process.
+  - Packets should carry a compact `PlayerId -> PlayerInputFrame` batch for the
+    frame, not assume one player per connection.
 - Remote input buffering.
 - Frame scheduling / lockstep barrier.
 - Deterministic seed and stage identity.
@@ -194,10 +211,13 @@ produce the same gameplay hash every frame.
 
 Required work:
 
-- [ ] Define a deterministic gameplay hash that excludes local-only render/audio
+- [x] Define a deterministic gameplay hash that excludes local-only render/audio
   data but includes every gameplay-affecting entity, tile, fluid, player, RNG,
   stage, and progression field.
-- [ ] Make all gameplay RNG use explicit deterministic streams stored in `State`.
+- [ ] Make all deterministic RNG use explicit deterministic streams stored in `State`.
+  Started with `State::drng` and snake AI. Remaining call sites must be
+  classified and either converted to state-owned deterministic RNG or explicitly kept
+  presentation/stagegen-only.
 - [ ] Audit places that read wall-clock time, frame time, random device, pointer
   address, unordered iteration, or local debug flags during gameplay.
 - [ ] Ensure entity iteration order is stable.
@@ -260,22 +280,17 @@ Presentation must not poison deterministic gameplay.
 This is the working checklist. Do these in order. Do not skip ahead to rollback
 or keep patching the old coordinator-replication model.
 
-### Phase 0: Baseline And Safety
+### Phase 0: Active Plan Alignment
 
 - [x] Create branch `net-lockstep-experiment`.
 - [x] Archive old coordinator-authoritative docs under
   `docs/legacy_authoritative_networking/`.
-- [ ] Make sure the current authoritative branch/commit is preserved for
-  comparison and emergency reference.
-- [ ] Add a short `docs/current_multiplayer_cleanup_checklist.md` replacement or
-  delete references to the old file from active docs.
-- [ ] Run and record baseline status before ripping code:
-  `cmake --build build --target splonks-cpp -j 8`.
-- [ ] Run and record current smoke status. Existing network smokes may be deleted
-  later, but the initial failure/success state should be known.
+- [x] Remove active-doc references to old coordinator-authoritative cleanup and
+  parity checklists.
 
-Exit gate: active docs point only to lockstep/rollback, the current branch builds,
-and the old architecture is preserved in git history.
+Exit gate: active docs point only to lockstep/rollback. Old coordinator docs may
+reference each other inside `docs/legacy_authoritative_networking/`, but they are
+not active implementation targets.
 
 ### Phase 1: Make Player Input A First-Class Frame Table
 
@@ -284,16 +299,32 @@ Goal: gameplay reads deterministic per-player input from state, not from
 
 - [ ] Define `PlayerId` / local player slot structs independent of old
   coordinator/peer ownership.
-- [ ] Define `PlayerInputFrame` as the compact deterministic input record.
-- [ ] Add `State` storage for current frame inputs keyed by `PlayerId`.
-- [ ] Keep edge/down/released derivation deterministic from previous input frame.
-- [ ] Route offline primary player through the table.
-- [ ] Route local multiplayer/debug bots through the table.
-- [ ] Update player control lookup to get inputs by controlled entity/player id.
-- [ ] Replace `state.player_vid` assumptions with player-slot or primary-player
+  - Current state: stable `PlayerId` and `PlayerSlot` already exist, but slots
+    still carry old `Local`/`Remote` connection classification. That can stay
+    until the old coordinator transport is removed.
+  - Required invariant: `PlayerId` ownership is many-to-one with network
+    processes. A single peer can own multiple local players, and every phase of
+    lockstep must treat those as separate player input streams batched by the
+    owning process.
+- [x] Define `PlayerInputFrame` as the compact deterministic input record.
+- [x] Add `State` storage for current frame inputs keyed by `PlayerId`.
+  - Implemented on `State::players.slots`: each slot carries
+    `input_frame`, `previous_input_frame`, and derived `PlayingInputs`.
+- [x] Keep edge/down/released derivation deterministic from previous input
+  frame.
+- [x] Route offline primary player through the table.
+- [x] Route local multiplayer/debug bots through the table.
+- [x] Update player control lookup to get inputs by controlled entity/player id.
+- [x] Replace `state.player_vid` assumptions with player-slot or primary-player
   helpers where needed.
-- [ ] Keep camera/audio listener semantics working for one local player.
-- [ ] Keep existing gameplay behavior unchanged in offline play.
+  - No `state.player_vid` member remains; `controlled_entity_vid` remains as a
+    camera/audio/debug selected entity, not as player identity.
+- [x] Keep camera/audio listener semantics working for one local player.
+- [x] Keep existing gameplay behavior unchanged in offline play.
+  - Validation so far: `cmake --build build --target splonks-cpp -j 8`,
+    `build/splonks-cpp --check-state-fingerprint-smoke`, and
+    `build/splonks-cpp --check-state-equality-smoke` pass. Manual feel test is
+    still useful after more lockstep cleanup.
 
 Exit gate: single-player/offline build works, local player controls feel the
 same, and no networking code is needed to step multiple local player inputs.
@@ -303,21 +334,30 @@ same, and no networking code is needed to step multiple local player inputs.
 Goal: prove same initial state plus same inputs gives same gameplay state before
 we touch real networking.
 
-- [ ] Define `ComputeGameplayDeterminismHash(State&)`.
-- [ ] Include gameplay-affecting state: stage identity, tiles, rotations,
+- [x] Define `ComputeGameplayDeterminismFingerprint(State&)`.
+  Deterministic replay uses this stricter hash, including the deterministic RNG
+  cursor. Canonical/network equality fingerprints intentionally ignore the RNG
+  cursor because old result-application smoke tests compare resulting world
+  state, not replayed draw history.
+- [x] Include gameplay-affecting state: stage identity, tiles, rotations,
   fluids, entities, player slots, tools, effects, RNG streams, progression, and
   stage frame.
-- [ ] Exclude local-only presentation/debug state: camera, audio emitters,
+- [x] Exclude local-only presentation/debug state: camera, audio emitters,
   particles if purely visual, debug UI, net transport queues.
-- [ ] Add scripted input sequences for one player.
-- [ ] Add scripted input sequences for multiple local players.
-- [ ] Add a CLI smoke that runs a stage for 1,000+ frames, records inputs/hashes,
+- [x] Add scripted input sequences for one player.
+- [x] Add scripted input sequences for multiple local players.
+- [x] Add a CLI smoke that runs a stage for 1,000+ frames, records inputs/hashes,
   resets to the same seed, replays inputs, and verifies every hash.
-- [ ] Add diagnostics that print first divergent frame and a small state summary.
+- [x] Add an initial CLI smoke that replays a 180-frame movement/jump script
+  with first-difference diagnostics.
+- [x] Extend the CLI smoke with a 240-frame two-local-player replay script.
+- [x] Add diagnostics that print first divergent frame and a small state summary.
 
 Exit gate: deterministic same-process replay passes for at least movement,
 jump/climb/hang, tool use, pickup/throw, tile break, explosion, fluid, shop, and
-stage transition scenarios.
+stage transition scenarios. Current broad replay covers movement, pickup/drop,
+attack, bomb, rope, spawned entities, spikes, ladder, containers, and enemies.
+Still add explicit fluid, shop, and stage-transition scripted scenarios.
 
 ### Phase 3: Determinism Audit And Cleanup
 
@@ -326,6 +366,11 @@ Goal: remove or isolate obvious nondeterminism before network lockstep hides it.
 - [ ] Audit gameplay use of wall-clock time, render frame timing, SDL state, mouse
   state, OS state, pointer addresses, unordered iteration, and random device.
 - [ ] Route gameplay randomness through deterministic RNG stored in `State`.
+  `State::drng` is the deterministic RNG stream used by simulation. It must be
+  state-owned, not `base_seed + frame`, because a
+  frame may perform multiple random draws and skipped/double draws must show up
+  as hash divergence. It is now fingerprinted by deterministic replay and seeded
+  from the stage seed.
 - [ ] Ensure entity allocation and iteration order are deterministic under the
   same inputs.
 - [ ] Ensure fluid updates are deterministic under the same inputs.
@@ -337,6 +382,55 @@ Goal: remove or isolate obvious nondeterminism before network lockstep hides it.
 
 Exit gate: deterministic replay stays green after enabling broad gameplay
 coverage.
+
+#### DRNG Conversion Checklist
+
+Convert gameplay-affecting files to `State::drng`. Leave stagegen on the
+stage seed path until stagegen itself is moved to explicit streams. Leave
+presentation-only files on local RNG unless the result affects gameplay state.
+
+- [x] `src/entities/snake.cpp`
+- [x] `src/entities/caveman.cpp`
+- [x] `src/entities/monkey.cpp`
+- [x] `src/entities/spider.cpp`
+- [x] `src/entities/pot.cpp`
+- [x] `src/entities/box.cpp`
+- [x] `src/entities/dice.cpp`
+- [x] `src/entities/mattock.cpp` gameplay break chance; dig particles remain
+  presentation RNG.
+- [x] `src/entities/sac_altar.cpp` gameplay reward choice/velocity; sacrifice
+  particles remain presentation RNG.
+- [x] `src/entities/baseball_bat.cpp` kill sound variation remains
+  presentation RNG.
+- [x] `src/entities/bat.cpp` wake sound variation remains presentation RNG.
+- [x] `src/entities/block.cpp` particles remain presentation RNG.
+- [x] `src/entities/boulder.cpp` particles remain presentation RNG.
+- [x] `src/entities/chest.cpp` gameplay loot/trap rolls; sparkles remain
+  presentation RNG.
+- [x] `src/entities/cobra.cpp` gameplay AI/spit cooldown; venom particles remain
+  presentation RNG.
+- [x] `src/entities/craps_table.cpp`
+- [x] `src/entities/door.cpp` particles remain presentation RNG.
+- [x] `src/entities/mantrap.cpp`
+- [x] `src/entities/moving_platform.cpp` particles remain presentation RNG.
+- [x] `src/entities/skeleton.cpp` loose skull velocity; break/death particles
+  remain presentation RNG.
+- [x] `src/on_damage_effects.cpp` particles remain presentation RNG.
+- [x] `src/step.cpp` debug local-player bot RNG is local debug input
+  generation; exclude bots from lockstep determinism unless their scripted input
+  is explicitly recorded.
+- [x] `src/entities/common/explosion.cpp`, `src/effects/treasure_pickup.cpp`,
+  `src/entities/jetpack.cpp`, `src/entities/pistol.cpp`,
+  `src/entities/web_cannon.cpp`, and `src/presentation_commands.cpp` use RNG for
+  particles/transient presentation only.
+- [x] `src/render/tiles_and_entities.cpp` and `src/sprite.cpp` use RNG for
+  render shake/random-frame presentation only.
+- [x] Debug-stage RNG remains debug-only and is outside lockstep sessions unless
+  the resulting stage is snapshotted or generated from explicit seed streams.
+- [ ] Stagegen/helper RNG in `src/stage.cpp`, `src/room.cpp`, `src/tile.cpp`,
+  and `src/stage_gen/**` remains on the explicit stage-seed path for now; move
+  it to named stagegen DRNG streams when stagegen determinism becomes the active
+  task.
 
 ### Phase 4: Strip Coordinator Mutation Replication From Gameplay
 

@@ -142,6 +142,7 @@ State State::New() {
     state.running = true;
     state.frame = 0;
     state.stage_frame = 0;
+    state.drng = DeterministicRng::New(1);
     state.menu_return_to = Mode::Title;
     state.game_over = false;
     state.pause = false;

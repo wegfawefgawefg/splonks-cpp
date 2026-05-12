@@ -23,9 +23,10 @@ constexpr int kMantrapIdleChance = 100;
 constexpr float kMantrapEatFrames = 54.0F;
 constexpr unsigned int kMantrapEatDamage = 9999;
 
-void StartIdle(Entity& mantrap) {
+void StartIdle(Entity& mantrap, State& state) {
     mantrap.ai_state = EntityAiState::Idle;
-    mantrap.counter_a = static_cast<float>(rng::RandomIntInclusive(kMantrapIdleMinFrames, kMantrapIdleMaxFrames));
+    mantrap.counter_a = static_cast<float>(
+        state.drng.RandomIntInclusive(kMantrapIdleMinFrames, kMantrapIdleMaxFrames));
     common::DecelerateHorizontallyToStop(mantrap, kMantrapWalkAcceleration);
     TrySetAnimation(mantrap, EntityDisplayState::Neutral);
 }
@@ -116,7 +117,7 @@ void StepEntityLogicAsMantrap(
     Entity& mantrap = state.entity_manager.entities[entity_idx];
     if (mantrap.last_condition == EntityCondition::Stunned &&
         mantrap.condition == EntityCondition::Normal) {
-        StartIdle(mantrap);
+        StartIdle(mantrap, state);
     }
     if (mantrap.condition != EntityCondition::Normal) {
         return;
@@ -141,7 +142,8 @@ void StepEntityLogicAsMantrap(
             return;
         }
 
-        mantrap.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+        mantrap.facing =
+            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
         StartWalking(mantrap, state);
         return;
     }
@@ -153,8 +155,8 @@ void StepEntityLogicAsMantrap(
         direction = -direction;
     }
 
-    if (rng::RandomIntInclusive(1, kMantrapIdleChance) == 1) {
-        StartIdle(mantrap);
+    if (state.drng.RandomIntInclusive(1, kMantrapIdleChance) == 1) {
+        StartIdle(mantrap, state);
         return;
     }
 

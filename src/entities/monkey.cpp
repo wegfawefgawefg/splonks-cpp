@@ -134,14 +134,13 @@ std::optional<Vec2> FindClimbableTargetCenter(const State& state, const Entity& 
     return best_center;
 }
 
-bool ShouldClimbUp(const Entity& monkey, const State& state, const std::optional<Vec2>& player_delta) {
+bool ShouldClimbUp(Entity& monkey, State& state, const std::optional<Vec2>& player_delta) {
     (void)monkey;
-    (void)state;
     if (player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance &&
         std::abs(player_delta->y) > 16.0F) {
         return player_delta->y < 0.0F;
     }
-    return rng::RandomIntInclusive(1, 100) <= kMonkeyClimbUpBiasPercent;
+    return state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbUpBiasPercent;
 }
 
 std::optional<Vec2> GetNearestPlayerDelta(const Entity& monkey, const State& state) {
@@ -152,8 +151,8 @@ std::optional<Vec2> GetNearestPlayerDelta(const Entity& monkey, const State& sta
     return GetNearestWorldDelta(state.stage, monkey.GetCenter(), player->GetCenter());
 }
 
-AudioAssetId RandomMonkeyNoise(int min_index, int max_index) {
-    switch (rng::RandomIntInclusive(min_index, max_index)) {
+AudioAssetId RandomMonkeyNoise(State& state, int min_index, int max_index) {
+    switch (state.drng.RandomIntInclusive(min_index, max_index)) {
     case 1:
         return audio_asset_ids::MonkeyNoise1;
     case 2:
@@ -220,7 +219,7 @@ bool TryStealRandomToolAndCast(
     }
 
     const std::size_t selected_slot_index = stealable_slot_indices[static_cast<std::size_t>(
-        rng::RandomIntInclusive(0, static_cast<int>(stealable_slot_count - 1))
+        state.drng.RandomIntInclusive(0, static_cast<int>(stealable_slot_count - 1))
     )];
     const ToolKind stolen_kind = tool_state->slots[selected_slot_index].kind;
 
@@ -250,10 +249,10 @@ bool TryStealRandomToolAndCast(
     return true;
 }
 
-void BounceAwayFromPlayer(Entity& monkey, const Entity& player, const State& state) {
+void BounceAwayFromPlayer(Entity& monkey, const Entity& player, State& state) {
     const Vec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), player.GetCenter());
     monkey.draw_layer = DrawLayer::Foreground;
-    monkey.vel.y = -static_cast<float>(rng::RandomIntInclusive(2, 4));
+    monkey.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(2, 4));
     if (delta.x > 0.0F) {
         monkey.facing = LeftOrRight::Left;
         monkey.vel.x = -kMonkeyLeapSpeed;
@@ -267,49 +266,52 @@ void BounceAwayFromPlayer(Entity& monkey, const Entity& player, const State& sta
     TrySetAnimation(monkey, EntityDisplayState::Falling);
 }
 
-void EnterIdle(Entity& monkey) {
+void EnterIdle(Entity& monkey, State& state) {
     SetMonkeyState(monkey, MonkeyState::Idle);
     monkey.draw_layer = DrawLayer::Foreground;
-    monkey.counter_a = static_cast<float>(rng::RandomIntInclusive(kMonkeyIdleMinFrames, kMonkeyIdleMaxFrames));
+    monkey.counter_a = static_cast<float>(
+        state.drng.RandomIntInclusive(kMonkeyIdleMinFrames, kMonkeyIdleMaxFrames));
     monkey.point_a.x = 0;
     monkey.vel.x = 0.0F;
     TrySetAnimation(monkey, EntityDisplayState::Neutral);
 }
 
-void EnterCharge(Entity& monkey) {
+void EnterCharge(Entity& monkey, State& state) {
     SetMonkeyState(monkey, MonkeyState::Charge);
-    monkey.counter_a = static_cast<float>(rng::RandomIntInclusive(kMonkeyChargeMinFrames, kMonkeyChargeMaxFrames));
+    monkey.counter_a = static_cast<float>(
+        state.drng.RandomIntInclusive(kMonkeyChargeMinFrames, kMonkeyChargeMaxFrames));
     monkey.vel.x = 0.0F;
     TrySetAnimation(monkey, EntityDisplayState::Walk);
 }
 
-void EnterHang(Entity& monkey, int forced_launch_direction = 0) {
+void EnterHang(Entity& monkey, State& state, int forced_launch_direction = 0) {
     SetMonkeyState(monkey, MonkeyState::Hang);
     monkey.vel = Vec2::New(0.0F, 0.0F);
     monkey.acc = Vec2::New(0.0F, 0.0F);
     monkey.point_a.x = std::clamp(forced_launch_direction, -1, 1);
-    monkey.counter_a = static_cast<float>(rng::RandomIntInclusive(10, 40));
+    monkey.counter_a = static_cast<float>(state.drng.RandomIntInclusive(10, 40));
     TrySetAnimation(monkey, EntityDisplayState::Hanging);
 }
 
-void EnterClimb(Entity& monkey, bool moving_up) {
+void EnterClimb(Entity& monkey, State& state, bool moving_up) {
     SetMonkeyState(monkey, MonkeyState::Climb);
     monkey.vel = Vec2::New(0.0F, 0.0F);
     monkey.acc = Vec2::New(0.0F, 0.0F);
     monkey.point_a.x = moving_up ? 0 : 1;
-    monkey.counter_a = static_cast<float>(rng::RandomIntInclusive(kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames));
+    monkey.counter_a = static_cast<float>(
+        state.drng.RandomIntInclusive(kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames));
     TrySetAnimation(monkey, EntityDisplayState::Climbing);
 }
 
-void SnapToClimbableAndEnterClimb(Entity& monkey, const Vec2& climb_center, bool moving_up) {
+void SnapToClimbableAndEnterClimb(Entity& monkey, State& state, const Vec2& climb_center, bool moving_up) {
     monkey.SetCenter(Vec2::New(climb_center.x, monkey.GetCenter().y));
-    EnterClimb(monkey, moving_up);
+    EnterClimb(monkey, state, moving_up);
 }
 
-bool TryGroundClimbOrApproach(Entity& monkey, const State& state, const std::optional<Vec2>& player_delta) {
+bool TryGroundClimbOrApproach(Entity& monkey, State& state, const std::optional<Vec2>& player_delta) {
     const std::optional<Vec2> climb_center = FindNearbyClimbableCenter(state, monkey);
     if (climb_center.has_value()) {
-        SnapToClimbableAndEnterClimb(monkey, *climb_center, ShouldClimbUp(monkey, state, player_delta));
+        SnapToClimbableAndEnterClimb(monkey, state, *climb_center, ShouldClimbUp(monkey, state, player_delta));
         return true;
     }
 
@@ -320,7 +322,7 @@ bool TryGroundClimbOrApproach(Entity& monkey, const State& state, const std::opt
 
     const Vec2 delta = GetNearestWorldDelta(state.stage, monkey.GetCenter(), *climb_target);
     if (std::abs(delta.x) < 3.0F) {
-        SnapToClimbableAndEnterClimb(monkey, *climb_target, ShouldClimbUp(monkey, state, player_delta));
+        SnapToClimbableAndEnterClimb(monkey, state, *climb_target, ShouldClimbUp(monkey, state, player_delta));
         return true;
     }
 
@@ -328,7 +330,8 @@ bool TryGroundClimbOrApproach(Entity& monkey, const State& state, const std::opt
     monkey.facing = direction < 0.0F ? LeftOrRight::Left : LeftOrRight::Right;
     monkey.draw_layer = DrawLayer::Foreground;
     monkey.vel.x = direction * kMonkeyGroundLeapSpeed;
-    monkey.vel.y = -static_cast<float>(rng::RandomIntInclusive(delta.y < -8.0F ? 6 : 5, 7));
+    monkey.vel.y =
+        -static_cast<float>(state.drng.RandomIntInclusive(delta.y < -8.0F ? 6 : 5, 7));
     monkey.point_a.x = 0;
     SetMonkeyState(monkey, MonkeyState::Recover);
     TrySetAnimation(monkey, EntityDisplayState::Falling);
@@ -352,17 +355,19 @@ void LaunchAtPlayerOrForward(Entity& monkey, const std::optional<Vec2>& player_d
     }
     monkey.point_a.x = 0;
     const bool needs_height = monkey.grounded || forced_launch_direction != 0;
-    monkey.vel.y = -static_cast<float>(rng::RandomIntInclusive(needs_height ? 5 : 4, needs_height ? 7 : 5));
+    monkey.vel.y = -static_cast<float>(
+        state.drng.RandomIntInclusive(needs_height ? 5 : 4, needs_height ? 7 : 5));
     SetMonkeyState(monkey, MonkeyState::Recover);
     TrySetAnimation(monkey, EntityDisplayState::Falling);
-    (void)PlayEntityCenterSoundEmitter(state, monkey, RandomMonkeyNoise(3, 5));
+    (void)PlayEntityCenterSoundEmitter(state, monkey, RandomMonkeyNoise(state, 3, 5));
 }
 
 void LaunchOffClimbable(Entity& monkey, const std::optional<Vec2>& player_delta, State& state) {
     if (player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance) {
         LaunchAtPlayerOrForward(monkey, player_delta, state);
     } else {
-        monkey.facing = rng::RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+        monkey.facing =
+            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
         LaunchAtPlayerOrForward(monkey, std::nullopt, state);
     }
     monkey.counter_c = static_cast<float>(kMonkeyClimbDismountCooldownFrames);
@@ -373,7 +378,8 @@ void HopAlongClimbable(Entity& monkey, const std::optional<Vec2>& player_delta, 
     monkey.point_a.x = moving_up ? 0 : 1;
     monkey.vel = Vec2::New(0.0F, moving_up ? -kMonkeyClimbSpeed : kMonkeyClimbSpeed);
     monkey.acc = Vec2::New(0.0F, 0.0F);
-    monkey.counter_a = static_cast<float>(rng::RandomIntInclusive(kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames));
+    monkey.counter_a = static_cast<float>(
+        state.drng.RandomIntInclusive(kMonkeyClimbMinFrames, kMonkeyClimbMaxFrames));
 }
 
 void TripPlayer(Entity& player, State& state) {
@@ -387,18 +393,19 @@ void TripPlayer(Entity& player, State& state) {
 }
 
 void RobPlayer(std::size_t monkey_idx, Entity& monkey, Entity& player, State& state, Graphics& graphics, Audio& audio) {
-    if (rng::RandomIntInclusive(1, 4) == 1) {
+    if (state.drng.RandomIntInclusive(1, 4) == 1) {
         TripPlayer(player, state);
         (void)PlayEntityCenterSoundEmitter(state, player, audio_asset_ids::Thud);
-    } else if (player.money >= kMonkeyRobMoneyAmount && rng::RandomIntInclusive(1, 10) <= 8) {
+    } else if (player.money >= kMonkeyRobMoneyAmount &&
+               state.drng.RandomIntInclusive(1, 10) <= 8) {
         player.money -= kMonkeyRobMoneyAmount;
         world_ops::PatchPlayerState(state, player);
         if (world_ops::SpawnEntity(state, EntityType::GoldNugget, [&](Entity& gold) {
                 gold.SetCenter(monkey.GetCenter());
                 state.UpdateSidForEntity(gold.vid.id, graphics);
                 gold.vel = Vec2::New(
-                    static_cast<float>(rng::RandomIntInclusive(-2, 2)),
-                    -static_cast<float>(rng::RandomIntInclusive(3, 4))
+                    static_cast<float>(state.drng.RandomIntInclusive(-2, 2)),
+                    -static_cast<float>(state.drng.RandomIntInclusive(3, 4))
                 );
                 gold.acc = Vec2::New(0.0F, 0.0F);
             }) != nullptr) {
@@ -409,7 +416,7 @@ void RobPlayer(std::size_t monkey_idx, Entity& monkey, Entity& player, State& st
     }
 
     BounceAwayFromPlayer(monkey, player, state);
-    (void)PlayEntityCenterSoundEmitter(state, monkey, RandomMonkeyNoise(1, 4));
+    (void)PlayEntityCenterSoundEmitter(state, monkey, RandomMonkeyNoise(state, 1, 4));
 }
 
 void AttachToPlayer(Entity& monkey, Entity& player, State& state) {
@@ -417,7 +424,7 @@ void AttachToPlayer(Entity& monkey, Entity& player, State& state) {
     monkey.point_a = IVec2::New(1, 0);
     monkey.vel = Vec2::New(0.0F, 0.0F);
     monkey.acc = Vec2::New(0.0F, 0.0F);
-    monkey.counter_a = static_cast<float>(rng::RandomIntInclusive(40, 80));
+    monkey.counter_a = static_cast<float>(state.drng.RandomIntInclusive(40, 80));
     monkey.counter_b = static_cast<float>(kMonkeyGrabCooldownFrames);
     SetMonkeyState(monkey, MonkeyState::Grab);
     monkey.draw_layer = DrawLayer::Background;
@@ -460,7 +467,7 @@ void StepEntityLogicAsMonkey(
     Entity& monkey = state.entity_manager.entities[entity_idx];
     if (monkey.last_condition == EntityCondition::Stunned &&
         monkey.condition == EntityCondition::Normal) {
-        EnterIdle(monkey);
+        EnterIdle(monkey, state);
     }
     if (monkey.condition != EntityCondition::Normal) {
         monkey.draw_layer = DrawLayer::Foreground;
@@ -486,14 +493,14 @@ void StepEntityLogicAsMonkey(
         if (monkey.counter_a > 0.0F) {
             monkey.counter_a -= 1.0F;
         } else if (monkey.grounded &&
-                   rng::RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
+                   state.drng.RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
                    TryGroundClimbOrApproach(monkey, state, player_delta)) {
         } else {
-            EnterCharge(monkey);
+            EnterCharge(monkey, state);
         }
         if (GetMonkeyState(monkey) == MonkeyState::Idle &&
             player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance) {
-            EnterCharge(monkey);
+            EnterCharge(monkey, state);
         }
         break;
     case MonkeyState::Charge:
@@ -501,7 +508,7 @@ void StepEntityLogicAsMonkey(
         if (monkey.counter_a > 0.0F) {
             monkey.counter_a -= 1.0F;
         } else if (monkey.grounded &&
-                   rng::RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
+                   state.drng.RandomIntInclusive(1, 100) <= kMonkeyGroundClimbChancePercent &&
                    TryGroundClimbOrApproach(monkey, state, player_delta)) {
         } else {
             LaunchAtPlayerOrForward(monkey, player_delta, state);
@@ -509,22 +516,22 @@ void StepEntityLogicAsMonkey(
         break;
     case MonkeyState::Recover:
         if (monkey.grounded) {
-            EnterIdle(monkey);
+            EnterIdle(monkey, state);
         } else if (monkey.counter_c <= 0.0F && IsClimbableAt(state, monkey.GetCenter())) {
-            EnterHang(monkey);
+            EnterHang(monkey, state);
         } else if (monkey.collided_last_frame) {
             const bool wall_left = common::HasWallAheadForGroundWalker(monkey, state, graphics, -1);
             const bool wall_right = common::HasWallAheadForGroundWalker(monkey, state, graphics, 1);
             if (wall_left || wall_right) {
                 monkey.facing = wall_right ? LeftOrRight::Left : LeftOrRight::Right;
                 const int launch_direction = wall_right ? -1 : 1;
-                EnterHang(monkey, launch_direction);
+                EnterHang(monkey, state, launch_direction);
             }
         }
         break;
     case MonkeyState::Bounce:
         if (monkey.grounded) {
-            EnterCharge(monkey);
+            EnterCharge(monkey, state);
         } else {
             SetMonkeyState(monkey, MonkeyState::Recover);
         }
@@ -535,15 +542,15 @@ void StepEntityLogicAsMonkey(
         if (monkey.counter_a > 0.0F) {
             monkey.counter_a -= 1.0F;
         } else if (monkey.point_a.x == 0 &&
-                   rng::RandomIntInclusive(1, 100) <= kMonkeyClimbChanceFromHangPercent) {
+                   state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbChanceFromHangPercent) {
             const std::optional<Vec2> climb_center = FindNearbyClimbableCenter(state, monkey);
             if (climb_center.has_value()) {
-                SnapToClimbableAndEnterClimb(monkey, *climb_center, ShouldClimbUp(monkey, state, player_delta));
+                SnapToClimbableAndEnterClimb(monkey, state, *climb_center, ShouldClimbUp(monkey, state, player_delta));
             } else {
-                EnterCharge(monkey);
+                EnterCharge(monkey, state);
             }
         } else {
-            EnterCharge(monkey);
+            EnterCharge(monkey, state);
         }
         break;
     case MonkeyState::Climb: {
@@ -553,7 +560,7 @@ void StepEntityLogicAsMonkey(
         const Vec2 probe = monkey.GetCenter() + Vec2::New(0.0F, moving_up ? -8.0F : 14.0F);
         if (monkey.counter_a > 0.0F) {
             monkey.counter_a -= 1.0F;
-        } else if (rng::RandomIntInclusive(1, 100) <= kMonkeyClimbSideDismountPercent) {
+        } else if (state.drng.RandomIntInclusive(1, 100) <= kMonkeyClimbSideDismountPercent) {
             LaunchOffClimbable(monkey, player_delta, state);
             break;
         } else {
@@ -562,14 +569,14 @@ void StepEntityLogicAsMonkey(
 
         if (!IsClimbableAt(state, probe)) {
             monkey.point_a.x = moving_up ? 1 : 0;
-            EnterHang(monkey);
+            EnterHang(monkey, state);
         }
 
         if (player_delta.has_value() && Length(*player_delta) < kMonkeySightDistance &&
             player_delta->y > 0.0F) {
             SetMonkeyState(monkey, MonkeyState::Bounce);
             monkey.counter_c = static_cast<float>(kMonkeyVineCooldownFrames);
-            monkey.vel.y = -static_cast<float>(rng::RandomIntInclusive(2, 4));
+            monkey.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(2, 4));
             if (player_delta->x < 0.0F) {
                 monkey.facing = LeftOrRight::Left;
                 monkey.vel.x = -kMonkeyLeapSpeed;
@@ -677,7 +684,7 @@ common::ContactResolution OnEntityContactAsMonkey(
         ThrowSpawnedEntity(other, monkey);
         monkey.threshold_a = static_cast<float>(kMonkeyThrowCooldownFrames);
         SetMonkeyState(monkey, MonkeyState::Idle);
-        monkey.counter_a = static_cast<float>(rng::RandomIntInclusive(20, 60));
+        monkey.counter_a = static_cast<float>(state.drng.RandomIntInclusive(20, 60));
     }
 
     return {};

@@ -89,6 +89,31 @@ struct PlayingInputSnapshot {
     static PlayingInputSnapshot New();
 };
 
+struct PlayerInputFrame {
+    bool left = false;
+    bool right = false;
+    bool up = false;
+    bool down = false;
+    bool jump = false;
+    bool run = false;
+    bool use_button = false;
+    bool equip_button = false;
+    bool pick_up_drop = false;
+    bool stop = false;
+    bool bomb = false;
+    bool rope = false;
+    bool attack = false;
+    bool buy_button = false;
+    bool emote_up = false;
+    bool emote_down = false;
+    bool quit = false;
+    bool toggle_collision_boxes = false;
+    bool regenerate_level = false;
+    UVec2 mouse_pos;
+
+    static PlayerInputFrame New();
+};
+
 struct MenuInputDebounceTimers {
     float left = 0.0F;
     float right = 0.0F;
@@ -114,5 +139,13 @@ void ProcessInput(
 );
 void LatchPlayingInputsForTick(State& state);
 void LatchMenuInputsForFrame(State& state, float dt);
+PlayerInputFrame ToPlayerInputFrame(const PlayingInputSnapshot& snapshot);
+PlayerInputFrame ToPlayerInputFrame(const PlayingInputs& inputs);
+PlayingInputSnapshot ToPlayingInputSnapshot(const PlayerInputFrame& frame);
+PlayingInputs BuildPlayingInputs(
+    const PlayingInputSnapshot& current,
+    const PlayingInputSnapshot& previous
+);
+PlayingInputs BuildPlayingInputs(const PlayerInputFrame& current, const PlayerInputFrame& previous);
 
 } // namespace splonks

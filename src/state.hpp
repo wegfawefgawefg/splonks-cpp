@@ -27,6 +27,7 @@
 #include "stage_rotation.hpp"
 #include "quest.hpp"
 #include "stage_lighting.hpp"
+#include "utils.hpp"
 
 #include <cstdint>
 #include <array>
@@ -285,6 +286,7 @@ struct State {
     std::uint32_t scene_frame = 0;
     std::uint32_t frame = 0;
     std::uint32_t stage_frame = 0;
+    DeterministicRng drng;
 
     // Session and progression state.
     Mode menu_return_to = Mode::Title;
