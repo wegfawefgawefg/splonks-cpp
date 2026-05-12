@@ -200,6 +200,10 @@ claiming lockstep is usable.
    - No content branches for coordinator/peer/predicted/remote mutation.
    - No no-op wrappers kept solely for old network compatibility.
    - Quarantine old tests/tools if they are not useful for lockstep.
+   - Active `StepPlaying` / `StepGameOver` no longer drain the old
+     coordinator-authoritative `GameplayActionRequested` mutation queue. That
+     queue remains only as legacy networking/test debt until the retired message
+     protocol is removed.
 4. Reuse the old network impairment profiles for lockstep input transport.
    - Same-house, same-city, same-state, Texas-to-California,
      California-to-Florida, and Texas-to-Japan profiles should apply to input

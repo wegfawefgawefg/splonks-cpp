@@ -422,7 +422,6 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
-    world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
     if (!network::IsInputLockstepSession(state)) {
         DrainAndApplyLocalNetworkMessages(state, audio, graphics);
@@ -559,7 +558,6 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
-    world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
     if (!network::IsInputLockstepSession(state)) {
         DrainAndApplyLocalNetworkMessages(state, audio, graphics);
