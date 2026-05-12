@@ -267,7 +267,6 @@ DamageResult TryHitEntity(
         amount,
         DamageOptions{
             .source_vid = options.source_vid,
-            .allow_remote_player_target = options.allow_remote_player_target,
             .defer_replication = true,
         }
     );

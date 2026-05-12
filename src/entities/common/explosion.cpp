@@ -185,7 +185,6 @@ void DoExplosion(
                     10,
                     DamageOptions{
                         .source_vid = this_vid,
-                        .allow_remote_player_target = true,
                     }
                 );
                 continue;
@@ -211,7 +210,6 @@ void DoExplosion(
                         .projectile_contact_damage_amount = 1,
                         .projectile_contact_duration = kProjectileContactDuration,
                     },
-                    .allow_remote_player_target = true,
                 }
             );
         }

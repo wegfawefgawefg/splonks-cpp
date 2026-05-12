@@ -148,8 +148,6 @@ bool TryApplyBatContactToEntity(
         return false;
     }
 
-    constexpr bool source_has_local_authority = true;
-
     const LeftOrRight bat_facing = bat_entity.facing;
     const std::optional<VID> held_by_vid = bat_entity.held_by_vid;
     const SwingStage swing_stage = GetSwingStage(bat_entity);
@@ -194,7 +192,6 @@ bool TryApplyBatContactToEntity(
                     .projectile_contact_damage_amount = 1,
                     .projectile_contact_duration = common::kProjectileContactDuration,
                 },
-                .allow_remote_player_target = source_has_local_authority,
             }
         );
         switch (damage_result) {
@@ -224,7 +221,6 @@ bool TryApplyBatContactToEntity(
             (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::BaseballBatMetalDink1);
             break;
         }
-        case common::DamageResult::Requested:
         case common::DamageResult::Hurt:
             (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::Thud);
             break;

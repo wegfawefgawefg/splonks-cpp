@@ -71,15 +71,13 @@ bool SetForegroundTile(
     State& state,
     const IVec2& tile_pos,
     Tile tile,
-    TileRotation rotation = kTileRotation0,
-    bool allow_peer_canonical_apply = false
+    TileRotation rotation = kTileRotation0
 );
 
 bool PlaceRopeTile(
     State& state,
     const Entity& source_entity,
-    const IVec2& tile_pos,
-    bool allow_peer_canonical_apply = false
+    const IVec2& tile_pos
 );
 void CommitTileBroken(State& state, const IVec2& tile_pos);
 

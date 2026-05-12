@@ -219,15 +219,12 @@ void StepEntityLogicAsCrapsTable(
 
     Entity* const dice = GetLinkedEntity(state, table.entity_b);
     Entity* const prize = GetLinkedEntity(state, table.entity_c);
-    constexpr bool has_authority = true;
-    if (has_authority) {
-        if (dice != nullptr && dice->active) {
-            PrepareCrapsDice(*dice);
-        }
-        if (prize != nullptr && prize->active && table.counter_d == 0.0F) {
-            LockPrize(*prize);
-            table.counter_d = 1.0F;
-        }
+    if (dice != nullptr && dice->active) {
+        PrepareCrapsDice(*dice);
+    }
+    if (prize != nullptr && prize->active && table.counter_d == 0.0F) {
+        LockPrize(*prize);
+        table.counter_d = 1.0F;
     }
 
     Entity* result_player = nullptr;
@@ -243,7 +240,7 @@ void StepEntityLogicAsCrapsTable(
         }
     }
 
-    if (has_authority && GetTableState(table) == TableState::Rolling) {
+    if (GetTableState(table) == TableState::Rolling) {
         if (dice != nullptr && dice->active && result_player != nullptr && result_player->active &&
             DiceHasSettled(*dice)) {
             PayCrapsResult(table, *dice, prize, *result_player, state, audio);
@@ -253,7 +250,7 @@ void StepEntityLogicAsCrapsTable(
                 world_ops::PatchEntityState(state, *prize, *prize);
             }
         }
-    } else if (has_authority && GetTableState(table) == TableState::Result) {
+    } else if (GetTableState(table) == TableState::Result) {
         table.counter_b -= 1.0F;
         if (table.counter_b <= 0.0F) {
             table.counter_b = 0.0F;

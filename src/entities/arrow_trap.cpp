@@ -438,7 +438,6 @@ entities::common::ContactResolution OnEntityContactAsArrow(
                 .projectile_contact_damage_amount = 1,
                 .projectile_contact_duration = entities::common::kProjectileContactDuration,
             },
-            .allow_remote_player_target = true,
         }
     );
     (void)damage_result;

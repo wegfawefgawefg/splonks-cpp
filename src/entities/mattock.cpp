@@ -336,7 +336,6 @@ EntityStrikeOutcome TryStrikeEntitiesWithMattock(
                             ? 0U
                             : common::kProjectileContactDuration,
                     },
-                    .allow_remote_player_target = true,
                 }
             );
         if (damage_result == common::DamageResult::None) {
@@ -345,10 +344,6 @@ EntityStrikeOutcome TryStrikeEntitiesWithMattock(
         if (is_heavy_target && damage_result == common::DamageResult::Died) {
             (void)PlayWorldSoundEmitter(state, (other_aabb.tl + other_aabb.br) * 0.5F, audio_asset_ids::PotShatter);
         }
-        if (damage_result == common::DamageResult::Requested) {
-            continue;
-        }
-
         if (Entity* const other_entity = state.entity_manager.GetEntityMut(other_entity_const->vid)) {
             result.sound_pos = other_entity->GetCenter();
         } else {

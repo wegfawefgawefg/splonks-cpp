@@ -158,7 +158,7 @@ bool TryApplyStompContactToEntity(
         .projectile_contact_damage_amount = 1,
         .projectile_contact_duration = kProjectileContactDuration,
     };
-    const DamageResult damage_result = TryHitEntity(
+    (void)TryHitEntity(
         stomped->vid.id,
         state,
         audio,
@@ -167,10 +167,9 @@ bool TryApplyStompContactToEntity(
         HitOptions{
             .source_vid = stomper.vid,
             .knockback = knockback,
-            .allow_remote_player_target = true,
         }
     );
-    if (damage_result != DamageResult::Requested && stomped->can_be_stunned) {
+    if (stomped->can_be_stunned) {
         stomped->condition = EntityCondition::Stunned;
         stomped->stun_timer = kDefaultStunTimer;
     }

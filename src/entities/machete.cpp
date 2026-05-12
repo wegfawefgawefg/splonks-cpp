@@ -193,7 +193,6 @@ void TryApplyMacheteStrike(std::size_t entity_idx, State& state, const Graphics&
                         .projectile_contact_damage_amount = kMacheteDamage,
                         .projectile_contact_duration = common::kProjectileContactDuration,
                     },
-                    .allow_remote_player_target = true,
                 }
             );
         if (damage_result == common::DamageResult::None) {
@@ -202,10 +201,6 @@ void TryApplyMacheteStrike(std::size_t entity_idx, State& state, const Graphics&
 
         if (damage_result == common::DamageResult::Died) {
             HandleHeldKillFavor(machete, victim_before_damage, state, graphics, audio);
-        }
-
-        if (damage_result == common::DamageResult::Requested) {
-            continue;
         }
 
     }

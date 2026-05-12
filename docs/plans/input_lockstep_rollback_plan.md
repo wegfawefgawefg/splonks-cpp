@@ -43,6 +43,23 @@ Operational rules while pursuing this:
 - Keep single-player behavior as the baseline. Lockstep work must not require
   gameplay/content systems to know whether they are local or networked.
 
+Current handoff constraints:
+
+- Continue from this branch. Do not reset to an older commit just to escape the
+  old networking cleanup; the player-slot/input-table refactors are part of the
+  lockstep foundation.
+- Delay-based input lockstep is the deliverable for this goal. Rollback is
+  explicitly out of scope until lockstep determinism and live stage traversal
+  are proven.
+- Treat old coordinator-authoritative leftovers as cleanup debt. Remove them
+  from active gameplay or quarantine them as legacy tests/tools; do not adapt
+  new gameplay code to those paths.
+- Completion requires live validation, not just CLI smokes: two windows connect,
+  the peer can carry the host player, and both players can transition stages
+  together.
+- Live lockstep should show no active ordered mutation backlog from the old
+  replication lanes.
+
 ## Why Reconsider
 
 The current multiplayer model has become expensive in exactly the wrong place:
@@ -475,7 +492,7 @@ it is coordinator/peer before doing ordinary gameplay.
 - [x] Remove peer action request/apply branches from content paths.
 - [x] Remove `HasLocalAuthority...` checks from active entity/gameplay logic
   unless they are replaced by lockstep input ownership.
-- [ ] Remove `allow_remote_player_target` style damage exceptions created for
+- [x] Remove `allow_remote_player_target` style damage exceptions created for
   coordinator-authority networking.
 - [x] Remove entity/tile/run/fluid/stage-light/presentation replication emits from normal
   gameplay.

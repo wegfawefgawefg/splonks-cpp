@@ -64,3 +64,36 @@ lockstep, not rollback yet:
   not kept half-wired.
 - Commit after meaningful chunks and keep the active plan updated with known
   gaps.
+
+## Next Goal Handoff
+
+When resuming this work under `/goal`, continue from the current branch instead
+of resetting to an older commit. The player-slot/input-table refactors are part
+of the new lockstep foundation and should be kept.
+
+Working rules:
+
+- Finish delay-based input lockstep first. Do not start rollback until live and
+  fake lockstep are deterministic and playable.
+- Prefer deleting or quarantining old coordinator-authoritative mutation code
+  over adapting content to another hybrid model.
+- Keep ordinary gameplay/entity code local and network-agnostic. If content code
+  needs to ask whether it is host, peer, coordinator, or authoritative, that is a
+  cleanup target.
+- Use deterministic state and `State::drng` for gameplay randomness. Presentation
+  randomness can stay local if it does not affect gameplay state.
+- Commit after each meaningful chunk: deterministic cleanup, live transport,
+  stage transition, carry/player interaction validation, old-cruft removal, or
+  test expansion.
+
+Required validation before calling the goal complete:
+
+- Build passes.
+- Existing state equality, deterministic replay, and input-lockstep smokes pass.
+- Two live windows can connect into the same stage using input lockstep.
+- The peer can carry the host player without desync.
+- Both players can transition stages together.
+- Live lockstep runs with no ordered mutation backlog from the old authoritative
+  replication lanes.
+- Remaining old networking code is either removed, hidden behind inactive legacy
+  tests, or documented as intentionally retained transport/debug scaffolding.

@@ -276,7 +276,6 @@ void ApplyGameplayAction(State& state, const GameplayActionRequested& action, Gr
                     payload.amount,
                     entities::common::DamageOptions{
                         .source_vid = payload.source_vid,
-                        .allow_remote_player_target = true,
                     }
                 );
             },
@@ -301,7 +300,6 @@ void ApplyGameplayAction(State& state, const GameplayActionRequested& action, Gr
                                 payload.projectile_contact_damage_amount,
                             .projectile_contact_duration = payload.projectile_contact_duration,
                         },
-                        .allow_remote_player_target = true,
                         .knockback_on_no_damage = payload.knockback_on_no_damage,
                     }
                 );

@@ -13,11 +13,8 @@ bool SetForegroundTile(
     State& state,
     const IVec2& tile_pos_raw,
     Tile tile,
-    TileRotation rotation,
-    bool allow_peer_canonical_apply
+    TileRotation rotation
 ) {
-    (void)allow_peer_canonical_apply;
-
     const IVec2 tile_pos = state.stage.WrapTileCoord(tile_pos_raw);
     if (!state.stage.IsTileCoordInside(tile_pos.x, tile_pos.y)) {
         return false;
@@ -49,11 +46,10 @@ bool SetForegroundTile(
 bool PlaceRopeTile(
     State& state,
     const Entity& source_entity,
-    const IVec2& tile_pos_raw,
-    bool allow_peer_canonical_apply
+    const IVec2& tile_pos_raw
 ) {
     (void)source_entity;
-    return SetForegroundTile(state, tile_pos_raw, Tile::Rope, kTileRotation0, allow_peer_canonical_apply);
+    return SetForegroundTile(state, tile_pos_raw, Tile::Rope, kTileRotation0);
 }
 
 void CommitTileBroken(State& state, const IVec2& tile_pos) {

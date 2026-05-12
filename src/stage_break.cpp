@@ -91,11 +91,8 @@ void BreakStageTilesAtCoordsInternal(
     bool suppress_tile_break_sound,
     std::optional<Vec2> sound_center,
     bool suppress_network_event,
-    bool suppress_drop_spawns,
-    bool allow_peer_canonical_apply
+    bool suppress_drop_spawns
 ) {
-    (void)allow_peer_canonical_apply;
-
     std::optional<AudioAssetId> break_sound = std::nullopt;
     bool broke_any_tiles = false;
     std::vector<IVec2> changed_tiles;
@@ -163,8 +160,7 @@ void BreakStageTilesInRectWc(
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
     bool suppress_network_event,
-    bool suppress_drop_spawns,
-    bool allow_peer_canonical_apply
+    bool suppress_drop_spawns
 ) {
     std::vector<IVec2> tile_positions;
     const std::vector<WorldTileQueryResult> tile_queries = QueryTilesInAabb(state.stage, area);
@@ -182,8 +178,7 @@ void BreakStageTilesInRectWc(
         suppress_tile_break_sound,
         (area.tl + area.br) / 2.0F,
         suppress_network_event,
-        suppress_drop_spawns,
-        allow_peer_canonical_apply
+        suppress_drop_spawns
     );
 }
 
@@ -194,8 +189,7 @@ void BreakStageTilesAtCoords(
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
     bool suppress_network_event,
-    bool suppress_drop_spawns,
-    bool allow_peer_canonical_apply
+    bool suppress_drop_spawns
 ) {
     Vec2 sound_center = Vec2::New(0.0F, 0.0F);
     if (!tile_positions.empty()) {
@@ -215,8 +209,7 @@ void BreakStageTilesAtCoords(
         suppress_tile_break_sound,
         sound_center,
         suppress_network_event,
-        suppress_drop_spawns,
-        allow_peer_canonical_apply
+        suppress_drop_spawns
     );
 }
 

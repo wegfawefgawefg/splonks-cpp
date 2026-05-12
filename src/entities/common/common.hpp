@@ -257,21 +257,18 @@ bool TryUseToolSlot(
 
 enum class DamageResult {
     None,
-    Requested,
     Hurt,
     Died,
 };
 
 struct DamageOptions {
     std::optional<VID> source_vid = std::nullopt;
-    bool allow_remote_player_target = false;
     bool defer_replication = false;
 };
 
 struct HitOptions {
     std::optional<VID> source_vid = std::nullopt;
     KnockbackSpec knockback;
-    bool allow_remote_player_target = true;
     bool knockback_on_no_damage = false;
 };
 

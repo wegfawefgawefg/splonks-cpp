@@ -161,7 +161,6 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
                     .clear_velocity = true,
                     .clear_acceleration = true,
                 },
-                .allow_remote_player_target = true,
             }
         );
     }
