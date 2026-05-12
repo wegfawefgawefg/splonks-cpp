@@ -232,9 +232,10 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
     if (const std::optional<network::NetEntityId> net_id =
             state.net_session.FindNetEntityId(entity.vid)) {
         out << ",\"net_entity_id\":" << *net_id;
-        if (const std::optional<PlayerId> owner = state.net_session.FindEntityOwner(*net_id)) {
-            out << ",\"input_owner_player_id\":" << *owner;
-            const PlayerSlot* const slot = state.players.Find(*owner);
+        if (const std::optional<PlayerId> input_owner =
+                state.net_session.FindEntityInputOwner(*net_id)) {
+            out << ",\"input_owner_player_id\":" << *input_owner;
+            const PlayerSlot* const slot = state.players.Find(*input_owner);
             out << ",\"input_owner\":" << JsonString(
                 slot != nullptr && slot->connection_kind == PlayerConnectionKind::Local
                     ? "local-input"

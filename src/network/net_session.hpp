@@ -30,7 +30,7 @@ struct NetPeerState {
 struct NetEntityLink {
     NetEntityId net_id = kInvalidNetEntityId;
     VID local_vid{};
-    std::optional<PlayerId> owner_player_id = std::nullopt;
+    std::optional<PlayerId> input_owner_player_id = std::nullopt;
 };
 
 struct NetEntityIdAlias {
@@ -139,15 +139,14 @@ struct NetSessionState {
 
     void ClearStageEntityLinks();
     void LinkEntity(NetEntityId net_id, VID local_vid);
-    void SetEntityOwner(NetEntityId net_id, std::optional<PlayerId> owner_player_id);
+    void SetEntityInputOwner(NetEntityId net_id, std::optional<PlayerId> input_owner_player_id);
     void AliasEntityId(NetEntityId from_id, NetEntityId to_id);
     NetEntityId ResolveEntityIdAlias(NetEntityId entity_id) const;
     void UnlinkEntity(NetEntityId net_id);
     std::optional<VID> FindLocalVid(NetEntityId net_id) const;
     std::optional<NetEntityId> FindNetEntityId(VID local_vid) const;
-    std::optional<PlayerId> FindEntityOwner(NetEntityId net_id) const;
-    std::optional<PlayerId> FindEntityOwner(VID local_vid) const;
-    bool HasLocalAuthorityForEntity(VID local_vid) const;
+    std::optional<PlayerId> FindEntityInputOwner(NetEntityId net_id) const;
+    std::optional<PlayerId> FindEntityInputOwner(VID local_vid) const;
 };
 
 } // namespace splonks::network

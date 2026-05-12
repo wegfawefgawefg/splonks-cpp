@@ -20,17 +20,6 @@ enum class NetRole : std::uint8_t {
     Peer,
 };
 
-struct NetEntityOwner {
-    std::optional<PlayerId> player_id = std::nullopt;
-
-    static NetEntityOwner Coordinator() { return NetEntityOwner{}; }
-    static NetEntityOwner Player(PlayerId player_id) {
-        return NetEntityOwner{.player_id = player_id};
-    }
-
-    bool IsCoordinator() const { return !player_id.has_value(); }
-};
-
 inline NetEntityId MakePlayerNetEntityId(PlayerId player_id) {
     return kPlayerNetEntityIdMask | static_cast<NetEntityId>(player_id);
 }
@@ -44,20 +33,15 @@ inline PlayerId GetPlayerIdFromNetEntityId(NetEntityId entity_id) {
     return static_cast<PlayerId>(entity_id & ~kPlayerNetEntityIdMask);
 }
 
-inline std::optional<PlayerId> GetSpawnedNetEntityOwnerPlayerId(NetEntityId entity_id) {
+inline std::optional<PlayerId> GetSpawnedNetEntityInputOwnerPlayerId(NetEntityId entity_id) {
     if (entity_id == kInvalidNetEntityId || IsPlayerNetEntityId(entity_id)) {
         return std::nullopt;
     }
-    const PlayerId owner_player_id = static_cast<PlayerId>(entity_id >> 48U);
-    if (owner_player_id == kInvalidPlayerId) {
+    const PlayerId input_owner_player_id = static_cast<PlayerId>(entity_id >> 48U);
+    if (input_owner_player_id == kInvalidPlayerId) {
         return std::nullopt;
     }
-    return owner_player_id;
-}
-
-inline bool IsSpawnedNetEntityOwnedByPlayer(NetEntityId entity_id, PlayerId player_id) {
-    const std::optional<PlayerId> owner_player_id = GetSpawnedNetEntityOwnerPlayerId(entity_id);
-    return owner_player_id.has_value() && *owner_player_id == player_id;
+    return input_owner_player_id;
 }
 
 } // namespace splonks::network

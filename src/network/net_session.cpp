@@ -45,23 +45,23 @@ void NetSessionState::LinkEntity(NetEntityId net_id, VID local_vid) {
     });
 }
 
-void NetSessionState::SetEntityOwner(
+void NetSessionState::SetEntityInputOwner(
     NetEntityId net_id,
-    std::optional<PlayerId> owner_player_id
+    std::optional<PlayerId> input_owner_player_id
 ) {
     if (net_id == kInvalidNetEntityId || IsPlayerNetEntityId(net_id)) {
         return;
     }
     for (NetEntityLink& link : entity_links) {
         if (link.net_id == net_id) {
-            link.owner_player_id = owner_player_id;
+            link.input_owner_player_id = input_owner_player_id;
             return;
         }
     }
     entity_links.push_back(NetEntityLink{
         .net_id = net_id,
         .local_vid = VID{},
-        .owner_player_id = owner_player_id,
+        .input_owner_player_id = input_owner_player_id,
     });
 }
 
@@ -131,38 +131,28 @@ std::optional<NetEntityId> NetSessionState::FindNetEntityId(VID local_vid) const
     return std::nullopt;
 }
 
-std::optional<PlayerId> NetSessionState::FindEntityOwner(NetEntityId net_id) const {
+std::optional<PlayerId> NetSessionState::FindEntityInputOwner(NetEntityId net_id) const {
     if (IsPlayerNetEntityId(net_id)) {
         return GetPlayerIdFromNetEntityId(net_id);
     }
     for (const NetEntityLink& link : entity_links) {
         if (link.net_id == net_id) {
-            return link.owner_player_id;
+            return link.input_owner_player_id;
         }
     }
-    return GetSpawnedNetEntityOwnerPlayerId(net_id);
+    return GetSpawnedNetEntityInputOwnerPlayerId(net_id);
 }
 
-std::optional<PlayerId> NetSessionState::FindEntityOwner(VID local_vid) const {
+std::optional<PlayerId> NetSessionState::FindEntityInputOwner(VID local_vid) const {
     for (const NetEntityLink& link : entity_links) {
         if (link.local_vid == local_vid) {
             if (IsPlayerNetEntityId(link.net_id)) {
                 return GetPlayerIdFromNetEntityId(link.net_id);
             }
-            return link.owner_player_id;
+            return link.input_owner_player_id;
         }
     }
     return std::nullopt;
-}
-
-bool NetSessionState::HasLocalAuthorityForEntity(VID local_vid) const {
-    if (role == NetRole::Offline || role == NetRole::Coordinator) {
-        return true;
-    }
-    if (const std::optional<PlayerId> owner_player_id = FindEntityOwner(local_vid)) {
-        return *owner_player_id == local_player_id;
-    }
-    return false;
 }
 
 } // namespace splonks::network
