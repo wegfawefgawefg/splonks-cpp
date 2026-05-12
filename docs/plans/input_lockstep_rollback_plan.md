@@ -98,6 +98,8 @@ Immediate resume checklist for the next `/goal` run:
 
 Recent validated commits on this branch:
 
+- `eaeb95c Use input ownership terminology`
+- `97a786d Remove legacy replication lanes`
 - `0c05144 Remove legacy action request lane`
 - `18b4cec Add debug input lane for lockstep validation`
 - `564a3ac Remove legacy mutation network smokes`
@@ -860,15 +862,22 @@ Goal: boot two game windows and play with delay-based lockstep.
   `DebugInputOverrideState` consumed by normal input capture. This is not a
   world mutation/admin command.
 - [ ] Keep current multiplayer pair launcher if useful.
-- [ ] Playtest same-machine two-window lockstep.
-  Basic launch/query verified host and peer advancing on the same stage/frame
-  with zero authoritative ordered-message backlog. Manual carry and stage-exit
-  validation remain TODO.
+- [x] Playtest same-machine two-window lockstep.
+  Basic launch/query verified host and peer connect with the same stage seed,
+  lockstep enabled, and matching player/link topology through
+  `scripts/run_multiplayer_pair_i3.sh` plus `scripts/splonksctl`.
+  Live client-side carry of the host player was verified by driving peer input
+  through `splonksctl input`; both host and peer reported the same carry links.
+  Stage-exit carry is covered by `--check-input-lockstep-smoke`
+  carry-transition coverage.
 - [ ] Playtest artificial latency profiles.
-- [ ] Remove old authoritative entity/network baggage once lockstep is live:
+- [x] Remove old authoritative entity/network baggage once lockstep is live:
   content should stop carrying special coordinator/peer terms, stale
   request/result paths, and per-item replication hooks that are no longer part
   of the model.
+  Current active source has no entity/world-op authority branches or old
+  message/snapshot/repair lanes; network entity-link debug vocabulary now uses
+  input ownership terminology.
 
 Exit gate: two local windows can play a real stage without desync, using input
 lockstep only.
