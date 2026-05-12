@@ -48,13 +48,6 @@ void MarkEntityDropped(
     std::optional<VID> dropped_by_vid = std::nullopt
 );
 void MarkEntityThrown(State& state, const Entity& thrower, const Entity& thrown, Vec2 throw_velocity);
-void CommitEntityDamaged(
-    State& state,
-    const Entity& entity,
-    DamageType damage_type,
-    unsigned int amount,
-    std::optional<VID> source_vid = std::nullopt
-);
 void QueuePresentationCommand(State& state, const PresentationCommand& command);
 void QueueGameplayAction(State& state, const GameplayActionRequested& action);
 void QueuePendingGameplayAction(State& state, const GameplayActionRequested& action);
@@ -79,7 +72,6 @@ bool PlaceRopeTile(
     const Entity& source_entity,
     const IVec2& tile_pos
 );
-void CommitTileBroken(State& state, const IVec2& tile_pos);
 
 } // namespace world_ops
 

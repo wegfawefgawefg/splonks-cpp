@@ -30,7 +30,6 @@ void ApplyTileBrokenMessage(State& state, Audio* audio, const TileBrokenMessage&
             *audio,
             std::nullopt,
             false,
-            true,
             true
         );
         return;

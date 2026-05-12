@@ -263,7 +263,6 @@ enum class DamageResult {
 
 struct DamageOptions {
     std::optional<VID> source_vid = std::nullopt;
-    bool defer_replication = false;
 };
 
 struct HitOptions {

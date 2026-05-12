@@ -15,7 +15,6 @@ void BreakStageTilesInRectWc(
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound = std::nullopt,
     bool suppress_tile_break_sound = false,
-    bool suppress_network_event = false,
     bool suppress_drop_spawns = false
 );
 
@@ -25,7 +24,6 @@ void BreakStageTilesAtCoords(
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound = std::nullopt,
     bool suppress_tile_break_sound = false,
-    bool suppress_network_event = false,
     bool suppress_drop_spawns = false
 );
 

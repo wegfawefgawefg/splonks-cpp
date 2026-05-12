@@ -508,7 +508,7 @@ it is coordinator/peer before doing ordinary gameplay.
 - [ ] Keep state fingerprint/replay code if it supports determinism.
 
 Implementation note: `world_ops::{SpawnEntity,DeactivateEntity,SetForegroundTile,
-CommitTileBroken,PatchEntityState,PatchPlayerState,PatchRunState,QueuePresentationCommand}`,
+PatchEntityState,PatchPlayerState,PatchRunState,QueuePresentationCommand}`,
 stage lighting, stage fluids, and carry/damage/tool/tile-break content paths are
 currently local deterministic helpers. They intentionally do not enqueue network
 mutation messages.

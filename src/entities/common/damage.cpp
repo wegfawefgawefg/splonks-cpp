@@ -158,10 +158,7 @@ DamageResult TryDamageEntity(
     Entity& entity = state.entity_manager.entities[entity_idx];
 
     const auto finish = [&](DamageResult result) {
-        if (!options.defer_replication &&
-            (result == DamageResult::Hurt || result == DamageResult::Died)) {
-            world_ops::CommitEntityDamaged(state, entity, damage_type, amount, options.source_vid);
-        }
+        (void)options;
         return result;
     };
     if (ApplyDamageEffect(entity_idx, state, audio, damage_type, amount, false) ==
@@ -267,7 +264,6 @@ DamageResult TryHitEntity(
         amount,
         DamageOptions{
             .source_vid = options.source_vid,
-            .defer_replication = true,
         }
     );
 
@@ -275,7 +271,6 @@ DamageResult TryHitEntity(
         if (entity.active) {
             ApplyKnockback(entity, options.knockback);
         }
-        world_ops::CommitEntityDamaged(state, entity, damage_type, amount, options.source_vid);
     } else if (damage_result == DamageResult::None && options.source_vid.has_value()) {
         if (options.knockback_on_no_damage && entity.active) {
             ApplyKnockback(entity, options.knockback);

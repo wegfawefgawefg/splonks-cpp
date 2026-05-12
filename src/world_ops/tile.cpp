@@ -52,9 +52,4 @@ bool PlaceRopeTile(
     return SetForegroundTile(state, tile_pos_raw, Tile::Rope, kTileRotation0);
 }
 
-void CommitTileBroken(State& state, const IVec2& tile_pos) {
-    (void)state;
-    (void)tile_pos;
-}
-
 } // namespace splonks::world_ops

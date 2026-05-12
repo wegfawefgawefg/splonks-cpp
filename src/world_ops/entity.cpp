@@ -105,18 +105,4 @@ void MarkEntityThrown(State& state, const Entity& thrower, const Entity& thrown,
     (void)throw_velocity;
 }
 
-void CommitEntityDamaged(
-    State& state,
-    const Entity& entity,
-    DamageType damage_type,
-    unsigned int amount,
-    std::optional<VID> source_vid
-) {
-    (void)state;
-    (void)entity;
-    (void)damage_type;
-    (void)amount;
-    (void)source_vid;
-}
-
 } // namespace splonks::world_ops

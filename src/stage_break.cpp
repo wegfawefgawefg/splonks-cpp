@@ -90,7 +90,6 @@ void BreakStageTilesAtCoordsInternal(
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
     std::optional<Vec2> sound_center,
-    bool suppress_network_event,
     bool suppress_drop_spawns
 ) {
     std::optional<AudioAssetId> break_sound = std::nullopt;
@@ -133,9 +132,6 @@ void BreakStageTilesAtCoordsInternal(
 
         state.stage.SetTile(tile_pos, Tile::Air);
         changed_tiles.push_back(tile_pos);
-        if (!suppress_network_event) {
-            world_ops::CommitTileBroken(state, tile_pos);
-        }
         broke_any_tiles = true;
     }
 
@@ -159,7 +155,6 @@ void BreakStageTilesInRectWc(
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
-    bool suppress_network_event,
     bool suppress_drop_spawns
 ) {
     std::vector<IVec2> tile_positions;
@@ -177,7 +172,6 @@ void BreakStageTilesInRectWc(
         override_break_sound,
         suppress_tile_break_sound,
         (area.tl + area.br) / 2.0F,
-        suppress_network_event,
         suppress_drop_spawns
     );
 }
@@ -188,7 +182,6 @@ void BreakStageTilesAtCoords(
     Audio& audio,
     std::optional<AudioAssetId> override_break_sound,
     bool suppress_tile_break_sound,
-    bool suppress_network_event,
     bool suppress_drop_spawns
 ) {
     Vec2 sound_center = Vec2::New(0.0F, 0.0F);
@@ -208,7 +201,6 @@ void BreakStageTilesAtCoords(
         override_break_sound,
         suppress_tile_break_sound,
         sound_center,
-        suppress_network_event,
         suppress_drop_spawns
     );
 }
