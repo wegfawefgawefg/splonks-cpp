@@ -1,6 +1,7 @@
 #include "stage_init.hpp"
 
 #include "entity/archetype.hpp"
+#include "player_queries.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 #include "stage_spawning.hpp"
@@ -30,9 +31,7 @@ void PlacePlayerAtEntrance(State& state) {
                              static_cast<float>(kTileSize);
             unsigned int local_player_index = 0;
             for (const PlayerSlot& slot : state.players.slots) {
-                if (!slot.connected ||
-                    slot.connection_kind != PlayerConnectionKind::Local ||
-                    !slot.entity_vid.has_value()) {
+                if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
                     continue;
                 }
                 if (Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid)) {

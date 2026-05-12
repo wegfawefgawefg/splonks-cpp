@@ -447,9 +447,7 @@ void StepEntityLogicAsChest(
 ) {
     (void)dt;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected ||
-            slot.connection_kind != PlayerConnectionKind::Local ||
-            !slot.entity_vid.has_value()) {
+        if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
             continue;
         }
 
@@ -493,9 +491,7 @@ void StepEntityLogicAsKeyChest(
     }
 
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected ||
-            slot.connection_kind != PlayerConnectionKind::Local ||
-            !slot.entity_vid.has_value()) {
+        if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
             continue;
         }
 

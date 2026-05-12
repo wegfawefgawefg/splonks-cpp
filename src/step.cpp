@@ -242,14 +242,7 @@ void DrainAndApplyLocalNetworkMessages(State& state, Audio& audio, Graphics& gra
 void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, float dt) {
     bool stepped_any_player_slot = false;
     for (const PlayerSlot& slot : state.players.slots) {
-        const bool should_step_control =
-            slot.connection_kind == PlayerConnectionKind::Local ||
-            (state.net_session.role == network::NetRole::Coordinator &&
-             slot.connection_kind == PlayerConnectionKind::Remote);
-        if (!should_step_control) {
-            continue;
-        }
-        if (!slot.entity_vid.has_value()) {
+        if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
             continue;
         }
 

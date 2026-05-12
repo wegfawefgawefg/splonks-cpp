@@ -46,6 +46,18 @@ inline bool HasAnyConnectedPlayerSlot(const State& state) {
     return false;
 }
 
+inline bool ShouldSimulatePlayerSlotGameplay(const State& state, const PlayerSlot& slot) {
+    if (!slot.connected || !slot.entity_vid.has_value()) {
+        return false;
+    }
+    if (state.net_session.input_lockstep_enabled) {
+        return true;
+    }
+    return slot.connection_kind == PlayerConnectionKind::Local ||
+           (state.net_session.role == network::NetRole::Coordinator &&
+            slot.connection_kind == PlayerConnectionKind::Remote);
+}
+
 inline bool HasAnyConnectedPlayerEntity(const State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected || !slot.entity_vid.has_value()) {

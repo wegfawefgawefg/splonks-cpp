@@ -2,6 +2,7 @@
 
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
+#include "player_queries.hpp"
 #include "stage_progression.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -133,9 +134,7 @@ void StepEntityLogicAsBasicExit(
 
     const Entity& exit_entity = state.entity_manager.entities[entity_idx];
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected ||
-            slot.connection_kind != PlayerConnectionKind::Local ||
-            !slot.entity_vid.has_value()) {
+        if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
             continue;
         }
 
