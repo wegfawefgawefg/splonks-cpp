@@ -1,9 +1,13 @@
 #pragma once
 
+#include "effects/effect_id.hpp"
+#include "entity/core_types.hpp"
+#include "math_types.hpp"
 #include "network/input_lockstep.hpp"
-#include "network/net_message.hpp"
 #include "network/net_fuzzer.hpp"
+#include "network/net_ids.hpp"
 #include "vid.hpp"
+#include "tools/tool_archetype.hpp"
 
 #include <array>
 #include <cstddef>
@@ -34,28 +38,29 @@ struct NetEntityIdAlias {
     NetEntityId to_id = kInvalidNetEntityId;
 };
 
-enum class NetMessageLogPhase : std::uint8_t {
-    EnqueuedOutbound,
-    EnqueuedOrdered,
-    Applied,
-    SkippedLocalApply,
-};
-
-struct NetMessageLogEntry {
-    NetMessageLogPhase phase = NetMessageLogPhase::EnqueuedOutbound;
-    NetMessageId message_id = kInvalidNetMessageId;
-    std::uint64_t coordinator_order = 0;
-    std::uint64_t source_local_frame = 0;
-    PlayerId source_player_id = kInvalidPlayerId;
-    NetMessageType type = NetMessageType::None;
-};
-
 enum class NetReconnectSpawnMode : std::uint8_t {
     FreshAtEntrance,
     FreshAtHost,
     RetainedAtEntrance,
     RetainedAtLastPosition,
     RetainedAtHost,
+};
+
+constexpr std::size_t kNetRetainedToolSlotCount = 2;
+constexpr std::size_t kNetRetainedEffectCount = 12;
+
+struct NetRetainedToolSlot {
+    ToolKind kind = ToolKind::ThrowPot;
+    std::uint16_t count = 0;
+    std::uint16_t cooldown = 0;
+    std::uint8_t active = 0;
+};
+
+struct NetRetainedEffect {
+    EffectId id = EffectId::None;
+    std::int32_t count = 0;
+    float value = 0.0F;
+    std::uint32_t frames_remaining = 0;
 };
 
 struct NetRetainedAttachedEntityState {
@@ -75,7 +80,7 @@ struct NetRetainedAttachedEntityState {
     std::uint8_t facing = 0;
     std::uint8_t condition = 0;
     std::uint8_t effect_count = 0;
-    std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount> effects{};
+    std::array<NetRetainedEffect, kNetRetainedEffectCount> effects{};
 };
 
 struct NetRetainedPlayerState {
@@ -91,8 +96,8 @@ struct NetRetainedPlayerState {
     std::uint8_t effect_count = 0;
     NetRetainedAttachedEntityState held_item;
     NetRetainedAttachedEntityState back_item;
-    std::array<PlayerStatePatchedToolSlot, kPlayerStatePatchedToolSlotCount> tool_slots{};
-    std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount> effects{};
+    std::array<NetRetainedToolSlot, kNetRetainedToolSlotCount> tool_slots{};
+    std::array<NetRetainedEffect, kNetRetainedEffectCount> effects{};
 };
 
 struct NetSessionState {
@@ -100,12 +105,8 @@ struct NetSessionState {
     PlayerId local_player_id = 1;
     PlayerId coordinator_player_id = 1;
     StageInstanceId stage_instance_id = 1;
-    NetMessageId next_local_message_id = 1;
     NetEntityId next_local_entity_id = 1;
     PlayerId next_player_id = 2;
-    std::uint64_t next_coordinator_order = 1;
-    std::uint64_t next_expected_coordinator_order = 1;
-    std::uint64_t highest_applied_coordinator_order = 0;
     std::string quest_id;
     std::string quest_stage_id;
     std::uint32_t stage_seed = 1;
@@ -113,13 +114,7 @@ struct NetSessionState {
     std::vector<NetPeerState> peers;
     std::vector<NetEntityLink> entity_links;
     std::vector<NetEntityIdAlias> entity_id_aliases;
-    std::vector<NetMessage> pending_outbound_messages;
-    std::vector<NetMessage> ordered_messages;
-    std::vector<NetMessageId> applied_message_ids;
-    std::vector<std::uint64_t> applied_coordinator_orders;
-    std::vector<NetMessageLogEntry> message_log;
     std::vector<NetRetainedPlayerState> retained_players;
-    std::string message_log_file_path;
     NetReconnectSpawnMode reconnect_spawn_mode = NetReconnectSpawnMode::RetainedAtLastPosition;
     std::uint64_t retained_player_lifetime_frames = 108000;
     std::uint64_t last_snapshot_expected_fingerprint = 0;
@@ -140,18 +135,7 @@ struct NetSessionState {
 
     static NetSessionState NewOffline();
 
-    NetMessageHeader MakeLocalMessageHeader(std::uint64_t source_local_frame);
-    NetMessageHeader MakeLocalTransientMessageHeader(std::uint64_t source_local_frame);
     NetEntityId AllocateLocalEntityId();
-
-    void EnqueueNetMessage(NetMessage message);
-    void EnqueueOrderedMessage(NetMessage message);
-    void EnqueueTransientMessage(NetMessage message);
-    std::size_t MarkAllOrderedMessagesApplied();
-    bool MarkMessageApplied(NetMessageId message_id);
-    bool HasAppliedMessage(NetMessageId message_id) const;
-    void MarkCoordinatorOrderApplied(const NetMessage& message);
-    void AddMessageLog(NetMessageLogPhase phase, const NetMessage& message);
 
     void ClearStageEntityLinks();
     void LinkEntity(NetEntityId net_id, VID local_vid);

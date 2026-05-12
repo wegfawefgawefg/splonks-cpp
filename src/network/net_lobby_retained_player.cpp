@@ -54,7 +54,7 @@ const NetRetainedPlayerState* FindRetainedPlayerState(const State& state, Player
 void CopyEntityEffectsToRetained(
     const Entity& entity,
     std::uint8_t& effect_count,
-    std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount>& effects_out
+    std::array<NetRetainedEffect, kNetRetainedEffectCount>& effects_out
 ) {
     effect_count = 0;
     if (const EntityEffects* const effects = entity.effects.get()) {
@@ -63,7 +63,7 @@ void CopyEntityEffectsToRetained(
         );
         for (std::size_t i = 0; i < effect_count; ++i) {
             const EffectInstance& effect = effects->effects[i];
-            effects_out[i] = PlayerStatePatchedEffect{
+            effects_out[i] = NetRetainedEffect{
                 .id = effect.id,
                 .count = effect.count,
                 .value = effect.value,
@@ -76,7 +76,7 @@ void CopyEntityEffectsToRetained(
 void RestoreRetainedEffects(
     Entity& entity,
     std::uint8_t effect_count,
-    const std::array<PlayerStatePatchedEffect, kPlayerStatePatchedEffectCount>& retained_effects
+    const std::array<NetRetainedEffect, kNetRetainedEffectCount>& retained_effects
 ) {
     entity.effects.reset();
     const std::size_t count = std::min<std::size_t>(effect_count, retained_effects.size());
@@ -87,7 +87,7 @@ void RestoreRetainedEffects(
     EntityEffects& effects = entity.effects.emplace();
     effects.count = static_cast<std::uint8_t>(count);
     for (std::size_t i = 0; i < count; ++i) {
-        const PlayerStatePatchedEffect& retained_effect = retained_effects[i];
+        const NetRetainedEffect& retained_effect = retained_effects[i];
         effects.effects[i] = EffectInstance{
             .id = retained_effect.id,
             .count = retained_effect.count,
@@ -162,7 +162,7 @@ void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Entity
     if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player.vid)) {
         for (std::size_t i = 0; i < retained.tool_slots.size() && i < tools->slots.size(); ++i) {
             const ToolSlot& tool_slot = tools->slots[i];
-            retained.tool_slots[i] = PlayerStatePatchedToolSlot{
+            retained.tool_slots[i] = NetRetainedToolSlot{
                 .kind = tool_slot.kind,
                 .count = tool_slot.count,
                 .cooldown = tool_slot.cooldown,
@@ -283,7 +283,7 @@ void ApplyRetainedPlayerState(
     player->hang_count = 0;
 
     for (std::size_t i = 0; i < retained.tool_slots.size(); ++i) {
-        const PlayerStatePatchedToolSlot& retained_tool = retained.tool_slots[i];
+        const NetRetainedToolSlot& retained_tool = retained.tool_slots[i];
         ToolSlot& tool_slot = state.entity_tools.EnsureToolSlot(player->vid, i);
         tool_slot.kind = retained_tool.kind;
         tool_slot.count = retained_tool.count;

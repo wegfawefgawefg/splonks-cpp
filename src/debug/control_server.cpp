@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <cerrno>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -167,77 +166,6 @@ void WriteOptionalVid(std::ostringstream& out, const std::optional<VID>& vid) {
         return;
     }
     out << "{\"id\":" << vid->id << ",\"version\":" << vid->version << "}";
-}
-
-float Vec2Distance(float ax, float ay, float bx, float by) {
-    const float dx = ax - bx;
-    const float dy = ay - by;
-    return std::sqrt(dx * dx + dy * dy);
-}
-
-void WriteNetTargetDiagnostics(
-    std::ostringstream& out,
-    const State& state,
-    const network::NetRemotePlayerTarget& target,
-    float snap_distance
-) {
-    const PlayerSlot* const slot = state.players.Find(target.player_id);
-    out << ",\"slot\":";
-    if (slot == nullptr) {
-        out << "null";
-    } else {
-        out << "{\"connection\":" << JsonString(ConnectionKindName(slot->connection_kind))
-            << ",\"connected\":" << (slot->connected ? "true" : "false")
-            << ",\"primary_local\":" << (slot->primary_local ? "true" : "false")
-            << ",\"entity\":";
-        WriteOptionalVid(out, slot->entity_vid);
-        out << "}";
-    }
-
-    const Entity* entity = nullptr;
-    if (slot != nullptr && slot->entity_vid.has_value()) {
-        entity = state.entity_manager.GetEntity(*slot->entity_vid);
-    }
-
-    const std::uint64_t age_frames =
-        state.frame > target.last_received_frame ? state.frame - target.last_received_frame : 0ULL;
-    out << ",\"age_frames\":" << age_frames;
-    out << ",\"target_body\":{"
-        << "\"condition\":" << JsonString(EntityConditionName(static_cast<EntityCondition>(target.condition)))
-        << ",\"grounded\":" << (target.grounded != 0 ? "true" : "false")
-        << ",\"health\":" << target.health
-        << ",\"fall_timer\":" << target.fall_timer
-        << ",\"coyote_time\":" << target.coyote_time
-        << ",\"stun_timer\":" << target.stun_timer
-        << ",\"animation_id\":" << target.animation_id
-        << ",\"animation_frame\":" << target.animation_frame
-        << "}";
-
-    out << ",\"local_body\":";
-    if (entity == nullptr) {
-        out << "null";
-        return;
-    }
-
-    const float pos_dist = Vec2Distance(entity->pos.x, entity->pos.y, target.pos_x, target.pos_y);
-    const float vel_dist = Vec2Distance(entity->vel.x, entity->vel.y, target.vel_x, target.vel_y);
-    out << "{\"condition\":" << JsonString(EntityConditionName(entity->condition))
-        << ",\"grounded\":" << (entity->grounded ? "true" : "false")
-        << ",\"health\":" << entity->health
-        << ",\"fall_timer\":" << entity->fall_timer
-        << ",\"coyote_time\":" << entity->coyote_time
-        << ",\"stun_timer\":" << entity->stun_timer
-        << ",\"animation_id\":" << entity->frame_data_animator.animation_id
-        << ",\"animation_frame\":" << entity->frame_data_animator.current_frame
-        << "}";
-    out << ",\"delta\":{\"pos\":{\"x\":" << target.pos_x - entity->pos.x
-        << ",\"y\":" << target.pos_y - entity->pos.y
-        << ",\"length\":" << pos_dist
-        << "},\"vel\":{\"x\":" << target.vel_x - entity->vel.x
-        << ",\"y\":" << target.vel_y - entity->vel.y
-        << ",\"length\":" << vel_dist
-        << "},\"over_snap_distance\":" << (pos_dist > snap_distance ? "true" : "false")
-        << "}";
 }
 
 void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& entity) {
@@ -634,11 +562,6 @@ std::string HandleNetCommand(const State& state) {
         << ",\"quest\":" << JsonString(state.net_session.quest_id)
         << ",\"stage\":" << JsonString(state.net_session.quest_stage_id)
         << ",\"seed\":" << state.net_session.stage_seed
-        << ",\"pending_outbound_messages\":" << state.net_session.pending_outbound_messages.size()
-        << ",\"ordered_messages\":" << state.net_session.ordered_messages.size()
-        << ",\"applied_messages\":" << state.net_session.applied_message_ids.size()
-        << ",\"next_expected_coordinator_order\":" << state.net_session.next_expected_coordinator_order
-        << ",\"highest_applied_coordinator_order\":" << state.net_session.highest_applied_coordinator_order
         << ",\"input_lockstep_enabled\":" << (state.net_session.input_lockstep_enabled ? "true" : "false")
         << ",\"lockstep_next_frame\":" << state.net_session.lockstep_next_frame_to_step
         << ",\"lockstep_next_local_input_frame\":" << state.net_session.lockstep_next_local_input_frame
@@ -660,30 +583,22 @@ std::string HandleNetCommand(const State& state) {
     if (state.net_transport) {
         out << "{\"socket_port\":" << state.net_transport->socket.BoundPort()
             << ",\"remotes\":" << state.net_transport->remotes.size()
-            << ",\"remote_acks\":[";
+            << ",\"remote_endpoints\":[";
         for (std::size_t i = 0; i < state.net_transport->remotes.size(); ++i) {
             const network::NetRemoteEndpoint& remote = state.net_transport->remotes[i];
             if (i > 0) {
                 out << ",";
             }
             out << "{\"endpoint\":" << JsonString(remote.endpoint.address + ":" + std::to_string(remote.endpoint.port))
-                << ",\"highest_acked_coordinator_order\":" << remote.highest_acked_coordinator_order
-                << "}";
-        }
-        out << "]"
-            << ",\"remote_targets\":[";
-        for (std::size_t i = 0; i < state.net_transport->remote_player_targets.size(); ++i) {
-            const network::NetRemotePlayerTarget& target = state.net_transport->remote_player_targets[i];
-            if (i > 0) {
-                out << ",";
+                << ",\"last_heard_frame\":" << remote.last_heard_frame
+                << ",\"players\":[";
+            for (std::size_t player_index = 0; player_index < remote.player_ids.size(); ++player_index) {
+                if (player_index > 0) {
+                    out << ",";
+                }
+                out << remote.player_ids[player_index];
             }
-            out << "{\"player_id\":" << target.player_id
-                << ",\"sequence\":" << target.sequence
-                << ",\"last_received_frame\":" << target.last_received_frame
-                << ",\"pos\":{\"x\":" << target.pos_x << ",\"y\":" << target.pos_y << "}"
-                << ",\"vel\":{\"x\":" << target.vel_x << ",\"y\":" << target.vel_y << "}";
-            WriteNetTargetDiagnostics(out, state, target, state.net_transport->remote_snap_distance);
-            out << "}";
+            out << "]}";
         }
         out << "]}";
     } else {

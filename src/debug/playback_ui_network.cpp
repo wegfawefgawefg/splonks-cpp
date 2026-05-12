@@ -1,6 +1,5 @@
 #include "debug/playback_internal.hpp"
 
-#include "network/net_message_apply.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_session.hpp"
 #include "stage_spawning.hpp"
@@ -29,74 +28,6 @@ const char* NetRoleName(network::NetRole role) {
     return "Unknown";
 }
 
-const char* NetMessageTypeName(network::NetMessageType type) {
-    switch (type) {
-    case network::NetMessageType::None:
-        return "None";
-    case network::NetMessageType::PeerJoined:
-        return "PeerJoined";
-    case network::NetMessageType::PeerLeft:
-        return "PeerLeft";
-    case network::NetMessageType::PlayerSpawned:
-        return "PlayerSpawned";
-    case network::NetMessageType::PlayerDespawned:
-        return "PlayerDespawned";
-    case network::NetMessageType::StageLoaded:
-        return "StageLoaded";
-    case network::NetMessageType::StageTransitionStarted:
-        return "StageTransitionStarted";
-    case network::NetMessageType::StageTransitionCommitted:
-        return "StageTransitionCommitted";
-    case network::NetMessageType::RepairSnapshot:
-        return "RepairSnapshot";
-    case network::NetMessageType::EntitySpawned:
-        return "EntitySpawned";
-    case network::NetMessageType::EntityDeactivated:
-        return "EntityDeactivated";
-    case network::NetMessageType::EntityStatePatched:
-        return "EntityStatePatched";
-    case network::NetMessageType::EntityHeld:
-        return "EntityHeld";
-    case network::NetMessageType::EntityDropped:
-        return "EntityDropped";
-    case network::NetMessageType::EntityThrown:
-        return "EntityThrown";
-    case network::NetMessageType::EntityDamaged:
-        return "EntityDamaged";
-    case network::NetMessageType::TileChanged:
-        return "TileChanged";
-    case network::NetMessageType::FluidCellPatched:
-        return "FluidCellPatched";
-    case network::NetMessageType::StageLightAdded:
-        return "StageLightAdded";
-    case network::NetMessageType::StageLightRemoved:
-        return "StageLightRemoved";
-    case network::NetMessageType::TileBroken:
-        return "TileBroken";
-    case network::NetMessageType::PlayerStatePatched:
-        return "PlayerStatePatched";
-    case network::NetMessageType::RunStatePatched:
-        return "RunStatePatched";
-    case network::NetMessageType::PresentationCommand:
-        return "PresentationCommand";
-    }
-    return "Unknown";
-}
-
-const char* NetMessageLogPhaseName(network::NetMessageLogPhase phase) {
-    switch (phase) {
-    case network::NetMessageLogPhase::EnqueuedOutbound:
-        return "outbound";
-    case network::NetMessageLogPhase::EnqueuedOrdered:
-        return "ordered";
-    case network::NetMessageLogPhase::Applied:
-        return "applied";
-    case network::NetMessageLogPhase::SkippedLocalApply:
-        return "skip-local";
-    }
-    return "unknown";
-}
-
 const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
     switch (mode) {
     case network::NetReconnectSpawnMode::FreshAtEntrance:
@@ -111,49 +42,6 @@ const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
         return "Retained At Host";
     }
     return "Unknown";
-}
-
-const char* PlayerConnectionKindName(PlayerConnectionKind kind) {
-    switch (kind) {
-    case PlayerConnectionKind::Local:
-        return "local";
-    case PlayerConnectionKind::Remote:
-        return "remote";
-    }
-    return "unknown";
-}
-
-const char* EntityConditionName(EntityCondition condition) {
-    switch (condition) {
-    case EntityCondition::Normal:
-        return "normal";
-    case EntityCondition::Dead:
-        return "dead";
-    case EntityCondition::Stunned:
-        return "stunned";
-    }
-    return "unknown";
-}
-
-const Entity* FindPlayerEntityForTarget(
-    const State& state,
-    const network::NetRemotePlayerTarget& target,
-    const PlayerSlot** slot_out
-) {
-    const PlayerSlot* const slot = state.players.Find(target.player_id);
-    if (slot_out != nullptr) {
-        *slot_out = slot;
-    }
-    if (slot == nullptr || !slot->entity_vid.has_value()) {
-        return nullptr;
-    }
-    return state.entity_manager.GetEntity(*slot->entity_vid);
-}
-
-float Vec2Distance(float ax, float ay, float bx, float by) {
-    const float dx = ax - bx;
-    const float dy = ay - by;
-    return std::sqrt(dx * dx + dy * dy);
 }
 
 void DrawFuzzerPresetButton(
@@ -213,54 +101,6 @@ void DrawFuzzerPanel(network::NetSessionState& session) {
     ImGui::Text("Duplicated: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_duplicated));
     ImGui::SameLine();
     ImGui::Text("Reordered: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_reordered));
-}
-
-void DrawRecentOrderedMessages(const network::NetSessionState& session) {
-    if (!ImGui::CollapsingHeader("Ordered Messages")) {
-        return;
-    }
-
-    constexpr std::size_t kMaxRows = 12;
-    const std::size_t total = session.ordered_messages.size();
-    const std::size_t begin = total > kMaxRows ? total - kMaxRows : 0;
-    for (std::size_t i = begin; i < total; ++i) {
-        const network::NetMessage& message = session.ordered_messages[i];
-        ImGui::Text(
-            "#%llu order=%llu player=%u type=%s applied=%s",
-            static_cast<unsigned long long>(message.header.message_id),
-            static_cast<unsigned long long>(message.header.coordinator_order),
-            message.header.source_player_id,
-            NetMessageTypeName(message.type),
-            session.HasAppliedMessage(message.header.message_id) ? "yes" : "no"
-        );
-    }
-}
-
-void DrawMessageLog(network::NetSessionState& session) {
-    if (!ImGui::CollapsingHeader("Message Log")) {
-        return;
-    }
-    ImGui::Text("Entries: %zu", session.message_log.size());
-    ImGui::SameLine();
-    if (ImGui::Button("Clear Message Log")) {
-        session.message_log.clear();
-    }
-
-    constexpr std::size_t kMaxRows = 64;
-    const std::size_t total = session.message_log.size();
-    const std::size_t begin = total > kMaxRows ? total - kMaxRows : 0;
-    for (std::size_t i = begin; i < total; ++i) {
-        const network::NetMessageLogEntry& entry = session.message_log[i];
-        ImGui::Text(
-            "%s #%llu order=%llu player=%u frame=%llu type=%s",
-            NetMessageLogPhaseName(entry.phase),
-            static_cast<unsigned long long>(entry.message_id),
-            static_cast<unsigned long long>(entry.coordinator_order),
-            entry.source_player_id,
-            static_cast<unsigned long long>(entry.source_local_frame),
-            NetMessageTypeName(entry.type)
-        );
-    }
 }
 
 Vec2 GetDebugBotSpawnPos(const State& state) {
@@ -477,135 +317,6 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
     }
 }
 
-void DrawMovementReplicationControls(State& state) {
-    if (!ImGui::CollapsingHeader("Movement Replication", ImGuiTreeNodeFlags_DefaultOpen)) {
-        return;
-    }
-
-    if (!state.net_transport) {
-        ImGui::TextUnformatted("Transport not initialized.");
-        return;
-    }
-
-    network::NetTransportRuntime& transport = *state.net_transport;
-    int snapshot_interval = static_cast<int>(transport.snapshot_send_interval_frames);
-    ImGui::SliderInt("Snapshot interval frames", &snapshot_interval, 1, 20);
-    transport.snapshot_send_interval_frames = static_cast<std::uint32_t>(
-        std::clamp(snapshot_interval, 1, 20)
-    );
-    ImGui::SliderFloat("Remote interp strength", &transport.remote_interpolation_strength, 0.01F, 1.0F, "%.3f");
-    int interp_delay = static_cast<int>(transport.remote_interpolation_delay_frames);
-    ImGui::SliderInt("Remote interp delay frames", &interp_delay, 0, 20);
-    transport.remote_interpolation_delay_frames = static_cast<std::uint32_t>(
-        std::clamp(interp_delay, 0, 20)
-    );
-    ImGui::SliderFloat("Remote snap distance", &transport.remote_snap_distance, 1.0F, 128.0F, "%.1f");
-    ImGui::Text("Remote targets: %zu", transport.remote_player_targets.size());
-    for (const network::NetRemotePlayerTarget& target : transport.remote_player_targets) {
-        const PlayerSlot* slot = nullptr;
-        const Entity* const entity = FindPlayerEntityForTarget(state, target, &slot);
-        const std::uint64_t age_frames =
-            state.frame > target.last_received_frame ? state.frame - target.last_received_frame : 0ULL;
-        ImGui::BulletText(
-            "player=%u %s seq=%u pos=(%.1f, %.1f) vel=(%.2f, %.2f) age=%llu",
-            target.player_id,
-            slot != nullptr ? PlayerConnectionKindName(slot->connection_kind) : "missing",
-            target.sequence,
-            target.pos_x,
-            target.pos_y,
-            target.vel_x,
-            target.vel_y,
-            static_cast<unsigned long long>(age_frames)
-        );
-        ImGui::Indent();
-        if (entity == nullptr) {
-            ImGui::TextDisabled("no local entity for player target");
-        } else {
-            const float pos_dist =
-                Vec2Distance(entity->pos.x, entity->pos.y, target.pos_x, target.pos_y);
-            const float vel_dist =
-                Vec2Distance(entity->vel.x, entity->vel.y, target.vel_x, target.vel_y);
-            const bool over_snap = pos_dist > transport.remote_snap_distance;
-            ImGui::Text(
-                "local pos=(%.2f, %.2f) target=(%.2f, %.2f) d=(%.2f, %.2f) |d|=%.2f %s",
-                entity->pos.x,
-                entity->pos.y,
-                target.pos_x,
-                target.pos_y,
-                target.pos_x - entity->pos.x,
-                target.pos_y - entity->pos.y,
-                pos_dist,
-                over_snap ? "SNAP" : "smooth"
-            );
-            ImGui::Text(
-                "local vel=(%.2f, %.2f) target=(%.2f, %.2f) d=(%.2f, %.2f) |d|=%.2f",
-                entity->vel.x,
-                entity->vel.y,
-                target.vel_x,
-                target.vel_y,
-                target.vel_x - entity->vel.x,
-                target.vel_y - entity->vel.y,
-                vel_dist
-            );
-            ImGui::Text(
-                "fall=%u/%u coyote=%u/%u stun=%u/%u grounded=%s/%s condition=%s/%s hp=%u/%u",
-                entity->fall_timer,
-                target.fall_timer,
-                entity->coyote_time,
-                target.coyote_time,
-                entity->stun_timer,
-                target.stun_timer,
-                entity->grounded ? "yes" : "no",
-                target.grounded != 0 ? "yes" : "no",
-                EntityConditionName(entity->condition),
-                EntityConditionName(static_cast<EntityCondition>(target.condition)),
-                entity->health,
-                target.health
-            );
-            ImGui::Text(
-                "anim=%u/%u frame=%u/%u held=%s by=%s",
-                entity->frame_data_animator.animation_id,
-                target.animation_id,
-                static_cast<unsigned int>(entity->frame_data_animator.current_frame),
-                target.animation_frame,
-                entity->holding_vid.has_value() ? "yes" : "no",
-                entity->held_by_vid.has_value() ? "yes" : "no"
-            );
-        }
-        ImGui::Unindent();
-    }
-}
-
-void DrawDurableReplicationStatus(const State& state) {
-    if (!ImGui::CollapsingHeader("Durable Replication", ImGuiTreeNodeFlags_DefaultOpen)) {
-        return;
-    }
-
-    const network::NetSessionState& session = state.net_session;
-    ImGui::Text(
-        "Expected/apply order: %llu / %llu",
-        static_cast<unsigned long long>(session.next_expected_coordinator_order),
-        static_cast<unsigned long long>(session.highest_applied_coordinator_order)
-    );
-    ImGui::Text("Entity id aliases: %zu", session.entity_id_aliases.size());
-    if (!state.net_transport) {
-        ImGui::TextUnformatted("Transport not initialized.");
-        return;
-    }
-
-    const network::NetTransportRuntime& transport = *state.net_transport;
-    ImGui::Text("Remote endpoints: %zu", transport.remotes.size());
-    for (const network::NetRemoteEndpoint& remote : transport.remotes) {
-        ImGui::BulletText(
-            "%s acked_order=%llu players=%zu last_heard_age=%llu",
-            network::EndpointToString(remote.endpoint).c_str(),
-            static_cast<unsigned long long>(remote.highest_acked_coordinator_order),
-            remote.player_ids.size(),
-            static_cast<unsigned long long>(state.frame - remote.last_heard_frame)
-        );
-    }
-}
-
 } // namespace
 
 void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graphics) {
@@ -636,8 +347,6 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
         session.quest_stage_id.c_str(),
         session.stage_seed
     );
-    ImGui::Text("Next local message: %llu", static_cast<unsigned long long>(session.next_local_message_id));
-    ImGui::Text("Next coordinator order: %llu", static_cast<unsigned long long>(session.next_coordinator_order));
     if (session.input_lockstep_enabled) {
         ImGui::TextUnformatted("Input lockstep: enabled");
         ImGui::Text(
@@ -652,11 +361,6 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     DrawFuzzerPanel(session);
     ImGui::Separator();
 
-    if (!session.input_lockstep_enabled) {
-        ImGui::Text("Pending outbound messages: %zu", session.pending_outbound_messages.size());
-        ImGui::Text("Ordered messages: %zu", session.ordered_messages.size());
-        ImGui::Text("Applied messages: %zu", session.applied_message_ids.size());
-    }
     ImGui::Text("Entity links: %zu", session.entity_links.size());
     ImGui::Separator();
 
@@ -666,37 +370,7 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     DrawReconnectPolicyControls(state);
     ImGui::Separator();
 
-    if (!session.input_lockstep_enabled) {
-        DrawMovementReplicationControls(state);
-        ImGui::Separator();
-
-        DrawDurableReplicationStatus(state);
-        ImGui::Separator();
-    }
-
     DrawDebugLocalPlayers(state, debug, graphics);
-    ImGui::Separator();
-
-    if (!session.input_lockstep_enabled) {
-        ImGui::TextUnformatted("Net Message Harness");
-        if (ImGui::Button("Apply Ordered Messages")) {
-            const std::size_t count = network::ApplyOrderedMessages(session, state);
-            debug.network_status = "Applied " + std::to_string(count) + " ordered messages.";
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Clear Queues")) {
-            session.pending_outbound_messages.clear();
-            session.ordered_messages.clear();
-            session.applied_message_ids.clear();
-            debug.network_status = "Cleared network message queues.";
-        }
-        if (!debug.network_status.empty()) {
-            ImGui::TextWrapped("%s", debug.network_status.c_str());
-        }
-
-        DrawRecentOrderedMessages(session);
-        DrawMessageLog(session);
-    }
     ImGui::End();
 }
 

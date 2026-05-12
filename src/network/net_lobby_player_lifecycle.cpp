@@ -3,6 +3,7 @@
 #include "entity/archetype.hpp"
 #include "entities/common/common.hpp"
 #include "graphics.hpp"
+#include "network/net_entity_links.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "stage_progression.hpp"
 #include "stage_spawning.hpp"
@@ -30,6 +31,52 @@ bool ShouldApplyNetworkLifecycleToSlot(const State& state, const PlayerSlot& slo
 }
 
 } // namespace
+
+void EnsureSpawnedPlayer(
+    State& state,
+    PlayerId player_id,
+    bool local,
+    bool primary,
+    const Vec2& pos,
+    const Graphics& graphics
+) {
+    const bool is_peer_local_player =
+        state.net_session.role == NetRole::Peer &&
+        player_id == state.net_session.local_player_id;
+    const bool effective_local = local || is_peer_local_player;
+    const bool effective_primary = primary || is_peer_local_player;
+
+    PlayerSlot& slot = effective_local
+        ? state.players.EnsureLocalPlayer(
+              player_id,
+              "Player " + std::to_string(player_id),
+              effective_primary
+          )
+        : state.players.EnsureRemotePlayer(player_id, "Remote " + std::to_string(player_id));
+
+    if (slot.entity_vid.has_value()) {
+        if (Entity* const entity = state.entity_manager.GetEntityMut(*slot.entity_vid)) {
+            if (entity->active) {
+                entity->pos = pos;
+                state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), entity->vid);
+                if (effective_local && effective_primary) {
+                    state.controlled_entity_vid = entity->vid;
+                }
+                return;
+            }
+        }
+        slot.entity_vid.reset();
+    }
+
+    const std::optional<VID> vid = SpawnPlayerForPlayerId(state, player_id, pos);
+    if (vid.has_value()) {
+        state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), *vid);
+        state.UpdateSidForEntity(vid->id, graphics);
+        if (effective_local && effective_primary) {
+            state.controlled_entity_vid = *vid;
+        }
+    }
+}
 
 bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out) {
     if (state.net_session.role == NetRole::Offline) {

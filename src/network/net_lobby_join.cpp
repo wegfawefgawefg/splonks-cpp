@@ -3,7 +3,6 @@
 #include "graphics.hpp"
 #include "network/net_entity_links.hpp"
 #include "network/net_protocol.hpp"
-#include "network/net_world_snapshot.hpp"
 #include "quest_stage_loader.hpp"
 #include "state.hpp"
 
@@ -267,7 +266,6 @@ void HandleJoinRequestAsCoordinator(
     accept.host_spawn_x = host_spawn.x;
     accept.host_spawn_y = host_spawn.y;
     accept.stage_seed = state.net_session.stage_seed;
-    accept.snapshot_start_coordinator_order = state.net_session.next_coordinator_order;
     accept.lockstep_start_frame = state.net_session.lockstep_next_frame_to_step;
     accept.lockstep_input_delay_frames = state.net_session.lockstep_input_delay_frames;
     WriteFixedString(state.net_session.quest_id, accept.quest_id);
@@ -275,9 +273,6 @@ void HandleJoinRequestAsCoordinator(
     WriteFixedString("Host", accept.coordinator_name);
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
-    if (!state.net_session.input_lockstep_enabled) {
-        EnqueueWorldSnapshotMessages(state);
-    }
 }
 
 void HandleJoinAcceptAsPeer(
@@ -325,10 +320,6 @@ void HandleJoinAcceptAsPeer(
         state.entity_manager = EntityManager::New();
     }
     state.controlled_entity_vid.reset();
-    transport.remote_player_targets.clear();
-    transport.remote_entity_render_targets.clear();
-    transport.replicated_entity_state_cache.clear();
-    transport.replicated_fluid_cell_cache.clear();
     state.net_session.ClearStageEntityLinks();
 
     if (!LoadQuestStage(
@@ -341,11 +332,6 @@ void HandleJoinAcceptAsPeer(
         transport.last_error = "Join accepted, but synced quest stage load failed.";
         return;
     }
-    state.net_session.next_expected_coordinator_order = std::max<std::uint64_t>(
-        accept.snapshot_start_coordinator_order,
-        1
-    );
-
     PlayerSlot& coordinator_slot =
         state.players.EnsureRemotePlayer(accept.coordinator_player_id, ReadFixedString(accept.coordinator_name));
     if (coordinator_slot.entity_vid.has_value()) {

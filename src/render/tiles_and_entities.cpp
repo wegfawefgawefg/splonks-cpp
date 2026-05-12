@@ -5,7 +5,6 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "graphics.hpp"
-#include "network/net_entity_interpolation.hpp"
 #include "render/particles.hpp"
 #include "render/stone_overlay.hpp"
 #include "render/tile_lighting.hpp"
@@ -1872,16 +1871,8 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 continue;
             }
 
-            const Entity* render_entity = &entity;
-            std::optional<Entity> interpolated_entity = std::nullopt;
-            if (const std::optional<Vec2> render_pos =
-                    network::GetRemoteEntityRenderPosition(state, entity)) {
-                interpolated_entity = entity;
-                interpolated_entity->pos = *render_pos;
-                render_entity = &*interpolated_entity;
-            }
             const FrameData* const frame_data =
-                entities::common::GetCurrentFrameDataForEntity(*render_entity, graphics);
+                entities::common::GetCurrentFrameDataForEntity(entity, graphics);
             if (frame_data == nullptr) {
                 continue;
             }
@@ -1897,9 +1888,9 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 static_cast<float>(frame_data->sample_rect.h)
             );
             const Vec2 sprite_scaled_size =
-                sprite_world_size * render_entity->frame_data_animator.scale;
+                sprite_world_size * entity.frame_data_animator.scale;
             const Vec2 render_position =
-                entities::common::GetSpriteTopLeftForEntity(*render_entity, *frame_data);
+                entities::common::GetSpriteTopLeftForEntity(entity, *frame_data);
 
             const SDL_FRect src{
                 static_cast<float>(frame_data->sample_rect.x),
@@ -1908,10 +1899,10 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 static_cast<float>(frame_data->sample_rect.h),
             };
             const SDL_FlipMode flip =
-                render_entity->facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+                entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             const Uint8 entity_alpha = static_cast<Uint8>(
-                std::clamp(render_entity->alpha, 0.0F, 1.0F) * 255.0F);
-            const Color3 entity_brightness = GetEntityLightingColor(state, *render_entity, graphics);
+                std::clamp(entity.alpha, 0.0F, 1.0F) * 255.0F);
+            const Color3 entity_brightness = GetEntityLightingColor(state, entity, graphics);
             SDL_SetTextureAlphaMod(sprite_texture, entity_alpha);
             SDL_SetTextureColorModFloat(
                 sprite_texture,
@@ -1919,14 +1910,14 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 entity_brightness.g,
                 entity_brightness.b
             );
-            if (render_entity->type_ == EntityType::BallAndChainBall && render_entity->entity_a.has_value()) {
-                if (const Entity* const attached = state.entity_manager.GetEntity(*render_entity->entity_a)) {
+            if (entity.type_ == EntityType::BallAndChainBall && entity.entity_a.has_value()) {
+                if (const Entity* const attached = state.entity_manager.GetEntity(*entity.entity_a)) {
                     if (attached->active) {
                         SDL_SetRenderDrawColor(renderer, 132, 132, 132, 255);
                         const Vec2 anchor_world = attached->GetCenter() +
                                                   Vec2::New(0.0F, (attached->size.y * 0.5F) - 1.0F);
                         const Vec2 ball_world =
-                            GetNearestWorldPoint(state.stage, anchor_world, render_entity->GetCenter());
+                            GetNearestWorldPoint(state.stage, anchor_world, entity.GetCenter());
                         for (const Vec2& render_offset : render_offsets) {
                             const Vec2 anchor_screen = WorldToScreen(graphics, anchor_world + render_offset);
                             const Vec2 ball_screen = WorldToScreen(graphics, ball_world + render_offset);
@@ -1943,14 +1934,14 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                     render_position + render_offset + shake_offset,
                     sprite_scaled_size
                 );
-                if (std::abs(render_entity->rotation) <= 0.01F) {
+                if (std::abs(entity.rotation) <= 0.01F) {
                     RenderWorldTextureRotated(renderer, graphics, sprite_texture, &src, dst, 0.0, nullptr, flip);
                 } else {
                     const Vec2 rotation_world =
                         entities::common::GetVisualCenterForEntity(
-                            *render_entity,
+                            entity,
                             graphics,
-                            render_entity->GetCenter()
+                            entity.GetCenter()
                         ) +
                         render_offset + shake_offset;
                     const Vec2 rotation_screen = WorldToScreen(graphics, rotation_world);
@@ -1964,13 +1955,13 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                         sprite_texture,
                         &src,
                         dst,
-                        render_entity->rotation,
+                        entity.rotation,
                         &rotation_center,
                         flip
                     );
                 }
-                if (render_entity->stone) {
-                    const AABB stone_overlay_aabb = render_entity->GetAABB();
+                if (entity.stone) {
+                    const AABB stone_overlay_aabb = entity.GetAABB();
                     RenderStoneEntityOverlay(
                         renderer,
                         state,

@@ -1,26 +1,12 @@
 #include "network/net_protocol.hpp"
 
-#include "network/net_message.hpp"
-
 #include <cstring>
 
 namespace splonks::network {
 
-static_assert(sizeof(EntityDamageMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(FluidCellMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(StageLightMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntitySpawnedMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntityStateMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntityCarryMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(EntityLifecycleMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(PlayerStateMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(RunStateMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(PresentationCommandMessagesPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(PlayerSnapshotsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(JoinAcceptPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
-static_assert(sizeof(DurableMessageAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(InputFrameRecordsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
@@ -83,64 +69,8 @@ EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet) {
     return EncodePayload(NetPacketType::JoinAccept, packet);
 }
 
-EncodedNetPacket EncodePlayerSnapshots(const PlayerSnapshotsPacket& packet) {
-    return EncodePayload(NetPacketType::PlayerSnapshots, packet);
-}
-
-EncodedNetPacket EncodeTileMessages(const TileMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::TileMessages, packet);
-}
-
-EncodedNetPacket EncodeFluidCellMessages(const FluidCellMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::FluidCellMessages, packet);
-}
-
-EncodedNetPacket EncodeStageLightMessages(const StageLightMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::StageLightMessages, packet);
-}
-
-EncodedNetPacket EncodeEntitySpawnedMessages(const EntitySpawnedMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::EntitySpawnedMessages, packet);
-}
-
-EncodedNetPacket EncodeEntityDamageMessages(const EntityDamageMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::EntityDamageMessages, packet);
-}
-
-EncodedNetPacket EncodeEntityStateMessages(const EntityStateMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::EntityStateMessages, packet);
-}
-
-EncodedNetPacket EncodeEntityCarryMessages(const EntityCarryMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::EntityCarryMessages, packet);
-}
-
-EncodedNetPacket EncodeEntityLifecycleMessages(const EntityLifecycleMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::EntityLifecycleMessages, packet);
-}
-
-EncodedNetPacket EncodePlayerStateMessages(const PlayerStateMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::PlayerStateMessages, packet);
-}
-
-EncodedNetPacket EncodeRunStateMessages(const RunStateMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::RunStateMessages, packet);
-}
-
-EncodedNetPacket EncodePresentationCommandMessages(const PresentationCommandMessagesPacket& packet) {
-    return EncodePayload(NetPacketType::PresentationCommandMessages, packet);
-}
-
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet) {
     return EncodePayload(NetPacketType::LeaveNotice, packet);
-}
-
-EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet) {
-    return EncodePayload(NetPacketType::StageSync, packet);
-}
-
-EncodedNetPacket EncodeDurableMessageAck(const DurableMessageAckPacket& packet) {
-    return EncodePayload(NetPacketType::DurableMessageAck, packet);
 }
 
 EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet) {
@@ -156,6 +86,15 @@ std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes,
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
+    packet.local_player_count = std::clamp<std::uint32_t>(
+        packet.local_player_count,
+        1U,
+        static_cast<std::uint32_t>(packet.preferred_player_ids.size())
+    );
+    packet.preferred_player_count = std::min<std::uint32_t>(
+        packet.preferred_player_count,
+        static_cast<std::uint32_t>(packet.preferred_player_ids.size())
+    );
     return packet;
 }
 
@@ -168,203 +107,10 @@ std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, s
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
-    return packet;
-}
-
-std::optional<PlayerSnapshotsPacket> TryDecodePlayerSnapshots(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::PlayerSnapshots, offset)) {
-        return std::nullopt;
-    }
-    PlayerSnapshotsPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.snapshot_count = std::min<std::uint32_t>(
-        packet.snapshot_count,
-        static_cast<std::uint32_t>(packet.snapshots.size())
-    );
-    return packet;
-}
-
-std::optional<TileMessagesPacket> TryDecodeTileMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::TileMessages, offset)) {
-        return std::nullopt;
-    }
-    TileMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<FluidCellMessagesPacket> TryDecodeFluidCellMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::FluidCellMessages, offset)) {
-        return std::nullopt;
-    }
-    FluidCellMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<StageLightMessagesPacket> TryDecodeStageLightMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::StageLightMessages, offset)) {
-        return std::nullopt;
-    }
-    StageLightMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<EntitySpawnedMessagesPacket> TryDecodeEntitySpawnedMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntitySpawnedMessages, offset)) {
-        return std::nullopt;
-    }
-    EntitySpawnedMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<EntityDamageMessagesPacket> TryDecodeEntityDamageMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityDamageMessages, offset)) {
-        return std::nullopt;
-    }
-    EntityDamageMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<EntityStateMessagesPacket> TryDecodeEntityStateMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityStateMessages, offset)) {
-        return std::nullopt;
-    }
-    EntityStateMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<EntityCarryMessagesPacket> TryDecodeEntityCarryMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityCarryMessages, offset)) {
-        return std::nullopt;
-    }
-    EntityCarryMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<EntityLifecycleMessagesPacket> TryDecodeEntityLifecycleMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::EntityLifecycleMessages, offset)) {
-        return std::nullopt;
-    }
-    EntityLifecycleMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<PlayerStateMessagesPacket> TryDecodePlayerStateMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::PlayerStateMessages, offset)) {
-        return std::nullopt;
-    }
-    PlayerStateMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    for (std::uint32_t i = 0; i < packet.message_count; ++i) {
-        packet.messages[i].effect_count = std::min<std::uint8_t>(
-            packet.messages[i].effect_count,
-            static_cast<std::uint8_t>(packet.messages[i].effects.size())
-        );
-    }
-    return packet;
-}
-
-std::optional<RunStateMessagesPacket> TryDecodeRunStateMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::RunStateMessages, offset)) {
-        return std::nullopt;
-    }
-    RunStateMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
-    );
-    return packet;
-}
-
-std::optional<PresentationCommandMessagesPacket> TryDecodePresentationCommandMessages(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::PresentationCommandMessages, offset)) {
-        return std::nullopt;
-    }
-    PresentationCommandMessagesPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    packet.message_count = std::min<std::uint32_t>(
-        packet.message_count,
-        static_cast<std::uint32_t>(packet.messages.size())
+    packet.assigned_player_count = std::clamp<std::uint32_t>(
+        packet.assigned_player_count,
+        1U,
+        static_cast<std::uint32_t>(packet.assigned_player_ids.size())
     );
     return packet;
 }
@@ -382,30 +128,6 @@ std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes,
         packet.player_count,
         static_cast<std::uint32_t>(packet.player_ids.size())
     );
-    return packet;
-}
-
-std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::StageSync, offset)) {
-        return std::nullopt;
-    }
-    StageSyncPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
-    return packet;
-}
-
-std::optional<DurableMessageAckPacket> TryDecodeDurableMessageAck(const std::uint8_t* bytes, std::size_t size) {
-    std::size_t offset = 0;
-    if (!ReadHeader(bytes, size, NetPacketType::DurableMessageAck, offset)) {
-        return std::nullopt;
-    }
-    DurableMessageAckPacket packet;
-    if (!Read(bytes, size, offset, packet)) {
-        return std::nullopt;
-    }
     return packet;
 }
 

@@ -64,8 +64,41 @@ Current handoff constraints:
 
 Last known branch: `net-lockstep-experiment`.
 
+Active working tree handoff:
+
+- Last committed checkpoint is `0c05144 Remove legacy action request lane`.
+- Current uncommitted files are `src/step.cpp` and
+  `src/network/net_lobby_packet_pump.cpp`.
+- The uncommitted patch removes the old ordered-message apply drain from
+  `StepPlaying` and `StepGameOver`.
+- The uncommitted patch also narrows the live packet pump so host/peer packet
+  handling accepts join/leave/input-frame traffic and no longer decodes the
+  old tile/fluid/entity/player/run/presentation mutation lanes.
+- This patch is not yet validated or committed. Resume by finishing the legacy
+  cleanup around those removed paths, then build and run the core smokes before
+  committing.
+
+Immediate resume checklist for the next `/goal` run:
+
+1. Finish removing old coordinator-authoritative packet/apply code that became
+   unreachable after the packet-pump narrowing.
+2. Remove or quarantine old world-snapshot/message-apply files instead of
+   adapting them to lockstep.
+3. Clean declarations in `src/network/net_lobby_internal.hpp`,
+   `src/network/net_protocol.*`, and `src/network/net_session.*` only as
+   references disappear. `src/network/net_message.*` should remain deleted.
+4. Preserve the input lockstep path: join, leave, input frame records, relay,
+   player-slot input tables, deterministic stepping, stage transition.
+5. Validate with:
+   `cmake --build build --target splonks-cpp -j 8`,
+   `./build/splonks-cpp --check-state-equality-smoke`,
+   `./build/splonks-cpp --check-deterministic-replay-smoke`, and
+   `./build/splonks-cpp --check-input-lockstep-smoke`.
+6. Commit after the green cleanup chunk before starting another large slice.
+
 Recent validated commits on this branch:
 
+- `0c05144 Remove legacy action request lane`
 - `18b4cec Add debug input lane for lockstep validation`
 - `564a3ac Remove legacy mutation network smokes`
 - `1082eda Remove stale authority damage seams`
@@ -205,9 +238,9 @@ Current cleanup status:
   - removed `NetMessageType::ActionRequest`, `NetActionKind`,
     `ActionRequestMessage`, and `ActionRequestMessages` / `ActionRequestAck`
     protocol structs.
-- Non-action legacy replication payload structs were moved into
-  `src/network/net_replication_payloads.hpp` so old snapshot/repair code can
-  compile while it remains quarantined for later deletion.
+- Non-action legacy replication payload structs and the old
+  `src/network/net_replication_payloads.hpp` quarantine were later deleted
+  with the old snapshot/repair code.
 - Local interaction behavior previously stored in `world_ops/action.cpp` was
   retained as local-only gameplay in `src/world_ops/entity.cpp`.
 - Validation for the action-lane deletion:

@@ -8,11 +8,9 @@
 namespace splonks::network {
 
 using NetEntityId = std::uint64_t;
-using NetMessageId = std::uint64_t;
 using StageInstanceId = std::uint64_t;
 
 constexpr NetEntityId kInvalidNetEntityId = 0;
-constexpr NetMessageId kInvalidNetMessageId = 0;
 constexpr StageInstanceId kInvalidStageInstanceId = 0;
 constexpr NetEntityId kPlayerNetEntityIdMask = 0xFFFF000000000000ULL;
 

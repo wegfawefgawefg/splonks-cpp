@@ -92,16 +92,6 @@ void RemoveRemotePlayers(
                 state.net_session.peers.end()
             );
         }
-        transport.remote_player_targets.erase(
-            std::remove_if(
-                transport.remote_player_targets.begin(),
-                transport.remote_player_targets.end(),
-                [player_id](const NetRemotePlayerTarget& target) {
-                    return target.player_id == player_id;
-                }
-            ),
-            transport.remote_player_targets.end()
-        );
     }
 
     for (NetRemoteEndpoint& remote : transport.remotes) {

@@ -11,7 +11,6 @@
 #include "stage_fluids.hpp"
 #include "stage_lighting.hpp"
 #include "stage_rotation.hpp"
-#include "network/net_message_apply.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_progression.hpp"
 #include "player_queries.hpp"
@@ -241,10 +240,6 @@ bool ShouldEnterGameOver(const State& state, std::optional<VID> primary_player_v
     return player == nullptr || !player->active || player->condition == EntityCondition::Dead;
 }
 
-void DrainAndApplyLocalNetworkMessages(State& state, Audio& audio, Graphics& graphics) {
-    (void)network::ApplyOrderedMessages(state.net_session, state, &audio, &graphics);
-}
-
 void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, float dt) {
     bool stepped_any_player_slot = false;
     for (const PlayerSlot& slot : state.players.slots) {
@@ -423,9 +418,6 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
     network::StepNetworkLobby(state, graphics);
-    if (!network::IsInputLockstepSession(state)) {
-        DrainAndApplyLocalNetworkMessages(state, audio, graphics);
-    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
@@ -454,14 +446,6 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
 
     const bool lost = ShouldEnterGameOver(state, primary_player_vid);
     if (state.pending_stage_transition.has_value()) {
-        if (!network::IsInputLockstepSession(state) &&
-            state.net_session.role == network::NetRole::Coordinator &&
-            state.net_transport) {
-            (void)network::SendPendingStageTransitionSyncToAllRemotes(
-                state,
-                *state.net_transport
-            );
-        }
         StopAllSoundEmitters(state, audio);
         state.SetMode(Mode::StageTransition);
         state.frame = 0;
@@ -512,16 +496,6 @@ void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
     if (state.net_session.role == network::NetRole::Offline) {
         return;
     }
-    if (state.net_session.role == network::NetRole::Peer) {
-        if (state.scene_frame < kNetworkStageTransitionFrames) {
-            return;
-        }
-        if (network::ApplyPendingPeerStageSync(state, graphics)) {
-            state.scene_frame = 0;
-            state.SetMode(Mode::Playing);
-        }
-        return;
-    }
     if (!state.pending_stage_transition.has_value()) {
         state.SetMode(Mode::Win);
         return;
@@ -559,9 +533,6 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     state.stage.SyncTileShakeGrid();
     StepEntities(state, audio, graphics, dt);
     network::StepNetworkLobby(state, graphics);
-    if (!network::IsInputLockstepSession(state)) {
-        DrainAndApplyLocalNetworkMessages(state, audio, graphics);
-    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {

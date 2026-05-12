@@ -283,37 +283,17 @@ add_executable(splonks-cpp
     src/menu/video.cpp
     src/network/input_lockstep.cpp
     src/network/net_fuzzer.cpp
-    src/network/net_entity_interpolation.cpp
     src/network/net_entity_links.cpp
-    src/network/net_message_apply.cpp
-    src/network/net_message_apply_entity.cpp
-    src/network/net_message_apply_player.cpp
-    src/network/net_message_apply_presentation.cpp
-    src/network/net_message_apply_run.cpp
-    src/network/net_message_apply_stage_light.cpp
-    src/network/net_message_apply_tile.cpp
-    src/network/net_gameplay_replication.cpp
     src/network/net_lobby.cpp
     src/network/net_lobby_endpoint.cpp
-    src/network/net_lobby_entity_state.cpp
     src/network/net_lobby_input_lockstep.cpp
     src/network/net_lobby_join.cpp
-    src/network/net_lobby_message_senders.cpp
-    src/network/net_lobby_messages.cpp
-    src/network/net_lobby_fluid_state.cpp
     src/network/net_lobby_packet_pump.cpp
     src/network/net_lobby_packets.cpp
-    src/network/net_lobby_packets_entity.cpp
-    src/network/net_lobby_packets_player_run.cpp
-    src/network/net_lobby_packets_presentation.cpp
-    src/network/net_lobby_packets_stage_light.cpp
-    src/network/net_lobby_packets_tile.cpp
     src/network/net_lobby_player_lifecycle.cpp
     src/network/net_lobby_retained_player.cpp
     src/network/net_lobby_session.cpp
-    src/network/net_lobby_snapshots.cpp
     src/network/net_lobby_stage.cpp
-    src/network/net_world_snapshot.cpp
     src/network/net_progression.cpp
     src/network/net_protocol.cpp
     src/network/net_session.cpp
