@@ -38,7 +38,6 @@ enum class NetMessageType : std::uint16_t {
     StageTransitionStarted,
     StageTransitionCommitted,
     RepairSnapshot,
-    ActionRequest,
 
     EntitySpawned,
     EntityDeactivated,
@@ -58,34 +57,6 @@ enum class NetMessageType : std::uint16_t {
     RunStatePatched,
     PresentationCommand,
 };
-
-enum class NetActionKind : std::uint16_t {
-    None,
-    UseTool,
-    PickupEntity,
-    DropEntity,
-    ThrowEntity,
-    UseHeldEntity,
-    UseBackEntity,
-    PutHeldEntityOnBack,
-    TakeOffBackEntity,
-    InteractEntity,
-    CollectEntity,
-    PushEntity,
-    BreakTile,
-    DamageEntity,
-    HitEntity,
-};
-
-enum class NetUseEdge : std::uint8_t {
-    None,
-    Press,
-    Release,
-};
-
-constexpr std::uint16_t kActionRequestFlagClearVelocity = 1U << 0U;
-constexpr std::uint16_t kActionRequestFlagClearAcceleration = 1U << 1U;
-constexpr std::uint16_t kActionRequestFlagKnockbackOnNoDamage = 1U << 2U;
 
 struct NetMessageHeader {
     NetMessageId message_id = kInvalidNetMessageId;
@@ -369,27 +340,6 @@ struct StageLoadedMessage {
     std::uint32_t seed = 0;
 };
 
-struct ActionRequestMessage {
-    NetActionKind kind = NetActionKind::None;
-    NetEntityId source_entity_id = kInvalidNetEntityId;
-    NetEntityId target_entity_id = kInvalidNetEntityId;
-    IVec2 tile_pos = IVec2::New(0, 0);
-    IVec2 direction = IVec2::New(0, 0);
-    Vec2 world_pos = Vec2::New(0.0F, 0.0F);
-    Vec2 velocity = Vec2::New(0.0F, 0.0F);
-    DamageType damage_type = DamageType::Attack;
-    DamageType projectile_contact_damage_type = DamageType::Attack;
-    unsigned int amount = 0;
-    unsigned int projectile_contact_damage_amount = 0;
-    std::uint32_t thrown_immunity_timer = 0;
-    std::uint32_t projectile_contact_duration = 0;
-    bool clear_velocity = true;
-    bool clear_acceleration = true;
-    bool knockback_on_no_damage = false;
-    std::uint32_t tool_slot = 0;
-    NetUseEdge use_edge = NetUseEdge::None;
-};
-
 struct NetMessage {
     NetMessageHeader header{};
     NetMessageType type = NetMessageType::None;
@@ -410,8 +360,7 @@ struct NetMessage {
         PresentationCommandMessage,
         PlayerStatePatchedMessage,
         RunStatePatchedMessage,
-        StageLoadedMessage,
-        ActionRequestMessage
+        StageLoadedMessage
     > payload{};
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "gameplay_messages.hpp"
+#include "network/net_replication_payloads.hpp"
+#include "presentation_commands.hpp"
 
 namespace splonks {
 
@@ -8,7 +9,6 @@ struct State;
 
 namespace network {
 
-void ReplicateActionRequest(State& state, const GameplayActionRequested& action);
 void ReplicateEntitySpawned(State& state, const GameplayEntitySpawned& spawned);
 void ReplicateEntityDeactivated(State& state, const GameplayEntityDeactivated& deactivated);
 void ReplicateEntityHeld(State& state, const GameplayEntityHeld& held);

@@ -1,9 +1,7 @@
 #include "network/net_lobby_internal.hpp"
 
-#include "gameplay_messages.hpp"
 #include "network/net_ids.hpp"
 #include "network/net_world_snapshot.hpp"
-#include "world_ops.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -21,55 +19,6 @@ void RemovePendingOutboundMessage(NetSessionState& session, NetMessageId message
             session.pending_outbound_messages.begin(),
             session.pending_outbound_messages.end(),
             [message_id](const NetMessage& message) { return message.header.message_id == message_id; }
-        ),
-        session.pending_outbound_messages.end()
-    );
-}
-
-void RemovePendingBreakTileRequestsForTile(NetSessionState& session, const IVec2& tile_pos) {
-    session.pending_outbound_messages.erase(
-        std::remove_if(
-            session.pending_outbound_messages.begin(),
-            session.pending_outbound_messages.end(),
-            [&](const NetMessage& message) {
-                if (message.type != NetMessageType::ActionRequest) {
-                    return false;
-                }
-                const ActionRequestMessage* const payload =
-                    std::get_if<ActionRequestMessage>(&message.payload);
-                return payload != nullptr &&
-                       payload->kind == NetActionKind::BreakTile &&
-                       payload->tile_pos.x == tile_pos.x &&
-                       payload->tile_pos.y == tile_pos.y;
-            }
-        ),
-        session.pending_outbound_messages.end()
-    );
-}
-
-void RemovePendingEntityActionRequestsForResult(
-    NetSessionState& session,
-    NetEntityId source_entity_id,
-    NetEntityId target_entity_id
-) {
-    session.pending_outbound_messages.erase(
-        std::remove_if(
-            session.pending_outbound_messages.begin(),
-            session.pending_outbound_messages.end(),
-            [&](const NetMessage& message) {
-                if (message.type != NetMessageType::ActionRequest) {
-                    return false;
-                }
-                const ActionRequestMessage* const payload =
-                    std::get_if<ActionRequestMessage>(&message.payload);
-                if (payload == nullptr ||
-                    (payload->kind != NetActionKind::DamageEntity &&
-                     payload->kind != NetActionKind::HitEntity)) {
-                    return false;
-                }
-                return payload->source_entity_id == source_entity_id &&
-                       payload->target_entity_id == target_entity_id;
-            }
         ),
         session.pending_outbound_messages.end()
     );
@@ -279,10 +228,6 @@ void CanonicalizeIncomingMessageEntityIds(NetSessionState& session, NetMessage& 
         payload->target_entity_id = CanonicalizeIncomingEntityId(session, payload->target_entity_id);
         return;
     }
-    if (ActionRequestMessage* const payload = std::get_if<ActionRequestMessage>(&message.payload)) {
-        payload->source_entity_id = CanonicalizeIncomingEntityId(session, payload->source_entity_id);
-        payload->target_entity_id = CanonicalizeIncomingEntityId(session, payload->target_entity_id);
-    }
 }
 
 bool EndpointOwnsPlayer(
@@ -300,222 +245,6 @@ bool EndpointOwnsPlayer(
     return false;
 }
 
-bool EndpointOwnsInteractionSource(
-    const State& state,
-    const NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    NetEntityId source_entity_id,
-    std::optional<VID> source_vid
-) {
-    if (source_entity_id == kInvalidNetEntityId || !source_vid.has_value()) {
-        return false;
-    }
-    if (const std::optional<PlayerId> owner_player_id =
-            state.net_session.FindEntityOwner(source_entity_id)) {
-        if (EndpointOwnsPlayer(transport, endpoint, *owner_player_id)) {
-            return true;
-        }
-    }
-
-    constexpr int kMaxHolderChainDepth = 16;
-    std::optional<VID> cursor = source_vid;
-    for (int depth = 0; depth < kMaxHolderChainDepth && cursor.has_value(); ++depth) {
-        if (const PlayerSlot* const slot = state.players.FindByEntityVid(*cursor)) {
-            return EndpointOwnsPlayer(transport, endpoint, slot->player_id);
-        }
-
-        const Entity* const entity = state.entity_manager.GetEntity(*cursor);
-        if (entity == nullptr || !entity->active || !entity->held_by_vid.has_value()) {
-            return false;
-        }
-        cursor = entity->held_by_vid;
-    }
-    return false;
-}
-
-bool EndpointOwnsEntityHolderChain(
-    const State& state,
-    const NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    VID entity_vid
-) {
-    const Entity* entity = state.entity_manager.GetEntity(entity_vid);
-    if (entity == nullptr || !entity->active) {
-        return false;
-    }
-
-    constexpr int kMaxHolderChainDepth = 16;
-    std::optional<VID> cursor = entity->held_by_vid;
-    for (int depth = 0; depth < kMaxHolderChainDepth && cursor.has_value(); ++depth) {
-        if (const PlayerSlot* const slot = state.players.FindByEntityVid(*cursor)) {
-            return EndpointOwnsPlayer(transport, endpoint, slot->player_id);
-        }
-
-        const Entity* const holder = state.entity_manager.GetEntity(*cursor);
-        if (holder == nullptr || !holder->active) {
-            return false;
-        }
-        cursor = holder->held_by_vid;
-    }
-    return false;
-}
-
-bool EndpointMayRequestContactAction(
-    const State& state,
-    const NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const ActionRequestMessage& payload,
-    std::optional<VID> source_vid,
-    std::optional<VID> target_vid
-) {
-    if (payload.kind != NetActionKind::DamageEntity &&
-        payload.kind != NetActionKind::HitEntity) {
-        return true;
-    }
-
-    if (payload.source_entity_id != kInvalidNetEntityId) {
-        return EndpointOwnsInteractionSource(
-            state,
-            transport,
-            endpoint,
-            payload.source_entity_id,
-            source_vid
-        );
-    }
-
-    if (!target_vid.has_value()) {
-        return false;
-    }
-    const PlayerSlot* const target_player = state.players.FindByEntityVid(*target_vid);
-    if (target_player != nullptr &&
-        EndpointOwnsPlayer(transport, endpoint, target_player->player_id)) {
-        return true;
-    }
-    return EndpointOwnsEntityHolderChain(state, transport, endpoint, *target_vid);
-}
-
-std::optional<GameplayActionRequested> MakeGameplayActionRequest(
-    const ActionRequestMessage& payload,
-    std::optional<VID> source_vid,
-    std::optional<VID> target_vid
-) {
-    switch (payload.kind) {
-    case NetActionKind::UseTool:
-        if (!source_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{UseToolAction{
-            .source_vid = *source_vid,
-            .velocity = payload.velocity,
-            .tool_slot = payload.tool_slot,
-        }};
-    case NetActionKind::PickupEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{PickupEntityAction{*source_vid, *target_vid}};
-    case NetActionKind::DropEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{DropEntityAction{*source_vid, *target_vid}};
-    case NetActionKind::ThrowEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{ThrowEntityAction{
-            .source_vid = *source_vid,
-            .target_vid = *target_vid,
-            .velocity = payload.velocity,
-        }};
-    case NetActionKind::UseHeldEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{UseHeldEntityAction{
-            .source_vid = *source_vid,
-            .target_vid = *target_vid,
-            .direction = payload.direction,
-            .use_edge = static_cast<GameplayUseEdge>(payload.use_edge),
-        }};
-    case NetActionKind::UseBackEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{UseBackEntityAction{
-            .source_vid = *source_vid,
-            .target_vid = *target_vid,
-            .direction = payload.direction,
-            .use_edge = static_cast<GameplayUseEdge>(payload.use_edge),
-        }};
-    case NetActionKind::PutHeldEntityOnBack:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{PutHeldEntityOnBackAction{*source_vid, *target_vid}};
-    case NetActionKind::TakeOffBackEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{TakeOffBackEntityAction{*source_vid, *target_vid}};
-    case NetActionKind::InteractEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{InteractEntityAction{*source_vid, *target_vid}};
-    case NetActionKind::CollectEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{CollectEntityAction{*source_vid, *target_vid}};
-    case NetActionKind::PushEntity:
-        if (!source_vid.has_value() || !target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{PushEntityAction{
-            .source_vid = *source_vid,
-            .target_vid = *target_vid,
-            .velocity = payload.velocity,
-        }};
-    case NetActionKind::BreakTile:
-        return GameplayActionRequested{BreakTileAction{
-            .source_vid = source_vid,
-            .tile_pos = payload.tile_pos,
-        }};
-    case NetActionKind::DamageEntity:
-        if (!target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{DamageEntityAction{
-            .source_vid = source_vid,
-            .target_vid = *target_vid,
-            .damage_type = payload.damage_type,
-            .amount = payload.amount,
-        }};
-    case NetActionKind::HitEntity:
-        if (!target_vid.has_value()) {
-            return std::nullopt;
-        }
-        return GameplayActionRequested{HitEntityAction{
-            .source_vid = source_vid,
-            .target_vid = *target_vid,
-            .velocity = payload.velocity,
-            .damage_type = payload.damage_type,
-            .projectile_contact_damage_type = payload.projectile_contact_damage_type,
-            .amount = payload.amount,
-            .projectile_contact_damage_amount = payload.projectile_contact_damage_amount,
-            .thrown_immunity_timer = payload.thrown_immunity_timer,
-            .projectile_contact_duration = payload.projectile_contact_duration,
-            .clear_velocity = payload.clear_velocity,
-            .clear_acceleration = payload.clear_acceleration,
-            .knockback_on_no_damage = payload.knockback_on_no_damage,
-        }};
-    case NetActionKind::None:
-        return std::nullopt;
-    }
-    return std::nullopt;
-}
-
 bool IsTransientEntityStatePatch(const NetMessage& message) {
     if (message.type != NetMessageType::EntityStatePatched) {
         return false;
@@ -530,46 +259,11 @@ void SendPendingPeerMessagesToCoordinator(State& state, NetTransportRuntime& tra
     if (state.net_session.pending_outbound_messages.empty()) {
         return;
     }
-    SendActionRequestMessages(
-        transport,
-        transport.coordinator_endpoint,
-        state.net_session.pending_outbound_messages
-    );
     SendPresentationCommandMessages(
         transport,
         transport.coordinator_endpoint,
         state.net_session.pending_outbound_messages
     );
-}
-
-void SendActionRequestAck(
-    State& state,
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetMessageId>& message_ids
-) {
-    if (message_ids.empty()) {
-        return;
-    }
-
-    ActionRequestAckPacket packet;
-    packet.stage_instance_id = state.net_session.stage_instance_id;
-    packet.coordinator_player_id = state.net_session.local_player_id;
-    for (NetMessageId message_id : message_ids) {
-        if (message_id == kInvalidNetMessageId) {
-            continue;
-        }
-        if (packet.ack_count == packet.message_ids.size()) {
-            SendEncodedPacket(transport, endpoint, EncodeActionRequestAck(packet));
-            packet = ActionRequestAckPacket{};
-            packet.stage_instance_id = state.net_session.stage_instance_id;
-            packet.coordinator_player_id = state.net_session.local_player_id;
-        }
-        packet.message_ids[packet.ack_count++] = message_id;
-    }
-    if (packet.ack_count > 0) {
-        SendEncodedPacket(transport, endpoint, EncodeActionRequestAck(packet));
-    }
 }
 
 void SendOrderedMessagesToAllRemotes(State& state, NetTransportRuntime& transport) {
@@ -690,12 +384,6 @@ void HandleTileMessagesAsPeer(State& state, const TileMessagesPacket& packet) {
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        if (static_cast<NetMessageType>(entry.message_type) == NetMessageType::TileBroken) {
-            RemovePendingBreakTileRequestsForTile(
-                state.net_session,
-                IVec2::New(entry.tile_x, entry.tile_y)
-            );
-        }
         if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
@@ -775,11 +463,6 @@ void HandleEntityDamageMessagesAsPeer(State& state, const EntityDamageMessagesPa
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        RemovePendingEntityActionRequestsForResult(
-            state.net_session,
-            entry.source_entity_id,
-            entry.entity_id
-        );
         if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
@@ -797,11 +480,6 @@ void HandleEntityStateMessagesAsPeer(State& state, const EntityStateMessagesPack
         if (entry.source_player_id != state.net_session.coordinator_player_id) {
             continue;
         }
-        RemovePendingEntityActionRequestsForResult(
-            state.net_session,
-            entry.source_entity_id,
-            entry.entity_id
-        );
         if (HasQueuedOrAppliedMessage(state.net_session, entry.message_id)) {
             continue;
         }
@@ -917,68 +595,6 @@ void HandlePresentationCommandMessagesAsPeer(State& state, const PresentationCom
             continue;
         }
         state.net_session.EnqueueOrderedMessage(MakePresentationCommandMessage(entry));
-    }
-}
-
-void HandleActionRequestMessagesAsCoordinator(
-    State& state,
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const ActionRequestMessagesPacket& packet
-) {
-    std::vector<NetMessageId> ack_message_ids;
-    ack_message_ids.reserve(packet.messages.size());
-    for (const ActionRequestMessageEntry& entry : packet.messages) {
-        NetMessage message = MakeActionRequestMessage(entry);
-        if (message.header.stage_instance_id != state.net_session.stage_instance_id ||
-            message.header.message_id == kInvalidNetMessageId ||
-            message.type != NetMessageType::ActionRequest) {
-            continue;
-        }
-        ack_message_ids.push_back(message.header.message_id);
-        if (HasQueuedOrAppliedMessage(state.net_session, message.header.message_id)) {
-            continue;
-        }
-
-        CanonicalizeIncomingMessageEntityIds(state.net_session, message);
-        const ActionRequestMessage* const payload = std::get_if<ActionRequestMessage>(&message.payload);
-        if (payload == nullptr || payload->kind == NetActionKind::None) {
-            continue;
-        }
-        const std::optional<VID> source_vid = state.net_session.FindLocalVid(payload->source_entity_id);
-        const std::optional<VID> target_vid = state.net_session.FindLocalVid(payload->target_entity_id);
-        if (!EndpointMayRequestContactAction(
-                state,
-                transport,
-                endpoint,
-                *payload,
-                source_vid,
-                target_vid
-            )) {
-            continue;
-        }
-
-        const std::optional<GameplayActionRequested> action =
-            MakeGameplayActionRequest(*payload, source_vid, target_vid);
-        if (!action.has_value()) {
-            continue;
-        }
-        world_ops::QueuePendingGameplayAction(state, *action);
-        if (state.net_session.MarkMessageApplied(message.header.message_id)) {
-            state.net_session.AddMessageLog(NetMessageLogPhase::Applied, message);
-        }
-    }
-    SendActionRequestAck(state, transport, endpoint, ack_message_ids);
-}
-
-void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& packet) {
-    if (packet.stage_instance_id != state.net_session.stage_instance_id ||
-        packet.coordinator_player_id != state.net_session.coordinator_player_id) {
-        return;
-    }
-
-    for (std::uint32_t i = 0; i < packet.ack_count; ++i) {
-        RemovePendingOutboundMessage(state.net_session, packet.message_ids[i]);
     }
 }
 

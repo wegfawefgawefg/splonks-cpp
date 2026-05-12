@@ -49,8 +49,6 @@ const char* NetMessageTypeName(network::NetMessageType type) {
         return "StageTransitionCommitted";
     case network::NetMessageType::RepairSnapshot:
         return "RepairSnapshot";
-    case network::NetMessageType::ActionRequest:
-        return "ActionRequest";
     case network::NetMessageType::EntitySpawned:
         return "EntitySpawned";
     case network::NetMessageType::EntityDeactivated:

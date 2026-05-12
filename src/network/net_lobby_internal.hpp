@@ -51,7 +51,6 @@ bool IsReplicatedFluidCellMessage(const NetMessage& message);
 bool IsReplicatedStageLightMessage(const NetMessage& message);
 bool IsReplicatedEntitySpawnedMessage(const NetMessage& message);
 bool IsReplicatedEntityDamageMessage(const NetMessage& message);
-bool IsReplicatedActionRequestMessage(const NetMessage& message);
 bool IsReplicatedEntityCarryMessage(const NetMessage& message);
 bool IsReplicatedEntityLifecycleMessage(const NetMessage& message);
 bool IsReplicatedPlayerStateMessage(const NetMessage& message);
@@ -69,7 +68,6 @@ EntityLifecycleMessageEntry MakeEntityLifecycleMessageEntry(const NetMessage& me
 PlayerStateMessageEntry MakePlayerStateMessageEntry(const NetMessage& message);
 RunStateMessageEntry MakeRunStateMessageEntry(const NetMessage& message);
 PresentationCommandMessageEntry MakePresentationCommandMessageEntry(const NetMessage& message);
-ActionRequestMessageEntry MakeActionRequestMessageEntry(const NetMessage& message);
 
 NetMessage MakeTileMessage(const TileMessageEntry& entry);
 NetMessage MakeFluidCellMessage(const FluidCellMessageEntry& entry);
@@ -82,7 +80,6 @@ NetMessage MakeEntityLifecycleMessage(const EntityLifecycleMessageEntry& entry);
 NetMessage MakePlayerStateMessage(const PlayerStateMessageEntry& entry);
 NetMessage MakeRunStateMessage(const RunStateMessageEntry& entry);
 NetMessage MakePresentationCommandMessage(const PresentationCommandMessageEntry& entry);
-NetMessage MakeActionRequestMessage(const ActionRequestMessageEntry& entry);
 
 void SendTileMessages(
     NetTransportRuntime& transport,
@@ -139,17 +136,6 @@ void SendPresentationCommandMessages(
     const NetEndpoint& endpoint,
     const std::vector<NetMessage>& messages
 );
-void SendActionRequestMessages(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetMessage>& messages
-);
-void SendActionRequestAck(
-    State& state,
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetMessageId>& message_ids
-);
 
 void SendJoinRequest(State& state);
 void SendLeaveNotice(State& state);
@@ -203,13 +189,6 @@ void HandlePresentationCommandMessagesAsCoordinator(
     const PresentationCommandMessagesPacket& packet
 );
 void HandlePresentationCommandMessagesAsPeer(State& state, const PresentationCommandMessagesPacket& packet);
-void HandleActionRequestMessagesAsCoordinator(
-    State& state,
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const ActionRequestMessagesPacket& packet
-);
-void HandleActionRequestAckAsPeer(State& state, const ActionRequestAckPacket& packet);
 
 void HandleJoinRequestAsCoordinator(
     State& state,

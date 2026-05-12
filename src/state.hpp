@@ -6,7 +6,6 @@
 #include "entity/manager.hpp"
 #include "entity_tool_inventory.hpp"
 #include "frame_data_id.hpp"
-#include "gameplay_messages.hpp"
 #include "inputs.hpp"
 #include "menu/settings.hpp"
 #include "menu/postfx.hpp"
@@ -313,7 +312,6 @@ struct State {
     bool audio_occlusion_enabled = true;
     Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
     std::optional<Vec2> gameplay_camera_anchor_world_pos;
-    std::vector<GameplayActionRequested> pending_gameplay_actions;
     std::vector<VID> interact_claimed_vids_this_frame;
     PerformanceStats performance_stats;
     PlayerRegistry players;

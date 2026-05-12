@@ -39,8 +39,6 @@ constexpr std::size_t kNetPlayerStateToolSlotCount = 2;
 constexpr std::size_t kNetPlayerStateEffectCount = 12;
 constexpr std::size_t kNetEntityEffectCount = 12;
 constexpr std::size_t kNetPresentationCommandMessagesPerPacket = 3;
-constexpr std::size_t kNetActionRequestMessagesPerPacket = 4;
-constexpr std::size_t kNetActionRequestAckMessageIdsPerPacket = 16;
 constexpr std::size_t kNetInputFrameRecordsPerPacket = 16;
 
 enum class NetPacketType : std::uint16_t {
@@ -56,11 +54,9 @@ enum class NetPacketType : std::uint16_t {
     StageSync = 10,
     PresentationCommandMessages = 11,
     DurableMessageAck = 12,
-    ActionRequestMessages = 13,
     EntityLifecycleMessages = 14,
     PlayerStateMessages = 15,
     RunStateMessages = 16,
-    ActionRequestAck = 17,
     FluidCellMessages = 18,
     StageLightMessages = 19,
     InputFrameRecords = 20,
@@ -588,44 +584,6 @@ struct PresentationCommandMessagesPacket {
     std::array<PresentationCommandMessageEntry, kNetPresentationCommandMessagesPerPacket> messages{};
 };
 
-struct ActionRequestMessageEntry {
-    NetMessageId message_id = kInvalidNetMessageId;
-    PlayerId source_player_id = kInvalidPlayerId;
-    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
-    std::uint64_t source_local_frame = 0;
-    std::uint16_t action_kind = 0;
-    std::uint16_t damage_type = 0;
-    std::uint16_t projectile_contact_damage_type = 0;
-    std::uint16_t flags = 0;
-    NetEntityId source_entity_id = kInvalidNetEntityId;
-    NetEntityId target_entity_id = kInvalidNetEntityId;
-    std::int32_t tile_x = 0;
-    std::int32_t tile_y = 0;
-    std::int32_t direction_x = 0;
-    std::int32_t direction_y = 0;
-    float world_x = 0.0F;
-    float world_y = 0.0F;
-    float velocity_x = 0.0F;
-    float velocity_y = 0.0F;
-    std::uint32_t amount = 0;
-    std::uint32_t projectile_contact_damage_amount = 0;
-    std::uint32_t thrown_immunity_timer = 0;
-    std::uint32_t projectile_contact_duration = 0;
-    std::uint32_t tool_slot = 0;
-    std::uint16_t use_edge = 0;
-};
-
-struct ActionRequestMessagesPacket {
-    std::vector<ActionRequestMessageEntry> messages{};
-};
-
-struct ActionRequestAckPacket {
-    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
-    PlayerId coordinator_player_id = kInvalidPlayerId;
-    std::uint32_t ack_count = 0;
-    std::array<NetMessageId, kNetActionRequestAckMessageIdsPerPacket> message_ids{};
-};
-
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -645,8 +603,6 @@ EncodedNetPacket EncodeEntityLifecycleMessages(const EntityLifecycleMessagesPack
 EncodedNetPacket EncodePlayerStateMessages(const PlayerStateMessagesPacket& packet);
 EncodedNetPacket EncodeRunStateMessages(const RunStateMessagesPacket& packet);
 EncodedNetPacket EncodePresentationCommandMessages(const PresentationCommandMessagesPacket& packet);
-EncodedNetPacket EncodeActionRequestMessages(const ActionRequestMessagesPacket& packet);
-EncodedNetPacket EncodeActionRequestAck(const ActionRequestAckPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet);
 EncodedNetPacket EncodeDurableMessageAck(const DurableMessageAckPacket& packet);
@@ -665,8 +621,6 @@ std::optional<EntityLifecycleMessagesPacket> TryDecodeEntityLifecycleMessages(co
 std::optional<PlayerStateMessagesPacket> TryDecodePlayerStateMessages(const std::uint8_t* bytes, std::size_t size);
 std::optional<RunStateMessagesPacket> TryDecodeRunStateMessages(const std::uint8_t* bytes, std::size_t size);
 std::optional<PresentationCommandMessagesPacket> TryDecodePresentationCommandMessages(const std::uint8_t* bytes, std::size_t size);
-std::optional<ActionRequestMessagesPacket> TryDecodeActionRequestMessages(const std::uint8_t* bytes, std::size_t size);
-std::optional<ActionRequestAckPacket> TryDecodeActionRequestAck(const std::uint8_t* bytes, std::size_t size);
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std::size_t size);
 std::optional<DurableMessageAckPacket> TryDecodeDurableMessageAck(const std::uint8_t* bytes, std::size_t size);

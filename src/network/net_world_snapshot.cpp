@@ -1,10 +1,10 @@
 #include "network/net_world_snapshot.hpp"
 
 #include "entity.hpp"
-#include "gameplay_messages.hpp"
 #include "network/net_entity_links.hpp"
 #include "network/net_message.hpp"
 #include "network/net_gameplay_replication.hpp"
+#include "network/net_replication_payloads.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
 #include "tile_archetype.hpp"

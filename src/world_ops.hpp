@@ -11,7 +11,6 @@
 namespace splonks {
 
 struct Entity;
-struct GameplayActionRequested;
 struct Audio;
 struct Graphics;
 struct State;
@@ -32,8 +31,6 @@ Entity* SpawnConfiguredEntity(
     std::optional<VID> held_by_vid = std::nullopt
 );
 bool DeactivateEntity(State& state, VID entity_vid);
-void QueueGameplayAction(State& state, const GameplayActionRequested& action);
-void QueuePendingGameplayAction(State& state, const GameplayActionRequested& action);
 bool TryApplyInteractEntity(
     VID source_vid,
     VID target_vid,
@@ -41,7 +38,6 @@ bool TryApplyInteractEntity(
     Graphics& graphics,
     Audio& audio
 );
-void ProcessPendingGameplayActions(State& state, Graphics& graphics, Audio& audio);
 
 bool SetForegroundTile(
     State& state,

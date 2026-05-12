@@ -66,6 +66,8 @@ Last known branch: `net-lockstep-experiment`.
 
 Recent validated commits on this branch:
 
+- `18b4cec Add debug input lane for lockstep validation`
+- `564a3ac Remove legacy mutation network smokes`
 - `1082eda Remove stale authority damage seams`
 - `bc8500d Remove stale tile and damage replication hooks`
 - `5d26df7 Simulate all player slots during lockstep`
@@ -164,6 +166,25 @@ Current live validation status:
   stunned. Fake/headless coverage for carry, drop, throw, and stepped stage
   transition is green.
 
+Latest validated cleanup:
+
+- `18b4cec` added a debug input lane for lockstep validation:
+  - `splonksctl input <frames> [buttons...]` injects ordinary local input.
+  - The injection is consumed by normal input capture and transmitted as
+    `PlayerInputFrame`; it does not mutate world state directly.
+  - Live validation confirmed peer input can move player 2 and both processes
+    report the same final position.
+- `564a3ac` removed old mutation-lane network CLI smokes from the active build:
+  - Deleted `src/cli_network_smoke*.{cpp,hpp}` files.
+  - Removed obsolete CLI flags:
+    `--check-network-protocol-smoke`, `--check-network-action-smoke`,
+    `--check-network-packet-smoke`, and `--check-network-frame-smoke`.
+  - Core validation passed after the deletion:
+    `cmake --build build --target splonks-cpp -j 8`,
+    `./build/splonks-cpp --check-state-equality-smoke`,
+    `./build/splonks-cpp --check-deterministic-replay-smoke`, and
+    `./build/splonks-cpp --check-input-lockstep-smoke`.
+
 Current cleanup status:
 
 - Active `StepPlaying` and `StepGameOver` no longer drain the old
@@ -171,12 +192,29 @@ Current cleanup status:
 - Live `StepNetworkLobby` is lockstep-only for open sessions. Old snapshot,
   entity patch, fluid patch, ordered message, and peer request paths remain as
   legacy code debt but are no longer part of the live lobby step.
-- Legacy code still present and should be deleted/quarantined in later cleanup:
-  `src/world_ops/action.cpp`, `State::pending_gameplay_actions`,
-  `src/gameplay_messages.hpp`, old `src/network/net_message_apply*`, old
-  `src/network/net_gameplay_replication.*`, and old packet mapper/apply files.
-  Old CLI network smokes that validated mutation-message lanes were removed
+- Old CLI network smokes that validated mutation-message lanes were removed
   from the active build and deleted.
+- The old gameplay action-request lane has been removed from active source:
+  - deleted `src/world_ops/action.cpp`
+  - deleted `src/gameplay_messages.hpp`
+  - deleted `src/network/net_lobby_packets_action.cpp`
+  - removed `State::pending_gameplay_actions`
+  - removed `world_ops::{QueueGameplayAction,QueuePendingGameplayAction,ProcessPendingGameplayActions}`
+  - removed `ReplicateActionRequest`
+  - removed action-request packet send/decode/ack handling from live lobby code
+  - removed `NetMessageType::ActionRequest`, `NetActionKind`,
+    `ActionRequestMessage`, and `ActionRequestMessages` / `ActionRequestAck`
+    protocol structs.
+- Non-action legacy replication payload structs were moved into
+  `src/network/net_replication_payloads.hpp` so old snapshot/repair code can
+  compile while it remains quarantined for later deletion.
+- Local interaction behavior previously stored in `world_ops/action.cpp` was
+  retained as local-only gameplay in `src/world_ops/entity.cpp`.
+- Validation for the action-lane deletion:
+  - `cmake --build build --target splonks-cpp -j 8`
+  - `./build/splonks-cpp --check-state-equality-smoke`
+  - `./build/splonks-cpp --check-deterministic-replay-smoke`
+  - `./build/splonks-cpp --check-input-lockstep-smoke`
 
 Current stepped-transition coverage note:
 
@@ -245,10 +283,8 @@ claiming lockstep is usable.
    - No content branches for coordinator/peer/predicted/remote mutation.
    - No no-op wrappers kept solely for old network compatibility.
    - Quarantine old tests/tools if they are not useful for lockstep.
-   - Active `StepPlaying` / `StepGameOver` no longer drain the old
-     coordinator-authoritative `GameplayActionRequested` mutation queue. That
-     queue remains only as legacy networking/test debt until the retired message
-     protocol is removed.
+   - [x] Delete the old coordinator-authoritative `GameplayActionRequested`
+     mutation queue and request/ack protocol.
    - `StepNetworkLobby` is now lockstep-only for open live sessions. The old
      snapshot/entity-patch/fluid-patch/ordered-message send path remains as
      legacy code for deletion, but it is no longer part of the live lobby step.

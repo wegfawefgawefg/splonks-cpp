@@ -303,7 +303,6 @@ add_executable(splonks-cpp
     src/network/net_lobby_fluid_state.cpp
     src/network/net_lobby_packet_pump.cpp
     src/network/net_lobby_packets.cpp
-    src/network/net_lobby_packets_action.cpp
     src/network/net_lobby_packets_entity.cpp
     src/network/net_lobby_packets_player_run.cpp
     src/network/net_lobby_packets_presentation.cpp
@@ -360,7 +359,6 @@ add_executable(splonks-cpp
     src/state_fingerprint.cpp
     src/water.cpp
     src/world_ops/entity.cpp
-    src/world_ops/action.cpp
     src/world_ops/tile.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/classic/ambient_passes.cpp

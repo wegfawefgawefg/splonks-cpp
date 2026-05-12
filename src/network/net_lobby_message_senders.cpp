@@ -235,25 +235,4 @@ void SendPresentationCommandMessages(
     }
 }
 
-void SendActionRequestMessages(
-    NetTransportRuntime& transport,
-    const NetEndpoint& endpoint,
-    const std::vector<NetMessage>& messages
-) {
-    ActionRequestMessagesPacket packet;
-    for (const NetMessage& message : messages) {
-        if (!IsReplicatedActionRequestMessage(message)) {
-            continue;
-        }
-        if (packet.messages.size() >= kNetActionRequestMessagesPerPacket) {
-            SendEncodedPacket(transport, endpoint, EncodeActionRequestMessages(packet));
-            packet = ActionRequestMessagesPacket{};
-        }
-        packet.messages.push_back(MakeActionRequestMessageEntry(message));
-    }
-    if (!packet.messages.empty()) {
-        SendEncodedPacket(transport, endpoint, EncodeActionRequestMessages(packet));
-    }
-}
-
 } // namespace splonks::network

@@ -67,12 +67,6 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
-        if (const std::optional<ActionRequestMessagesPacket> action_requests =
-                TryDecodeActionRequestMessages(packet->bytes.data(), packet->size)) {
-            HandleActionRequestMessagesAsCoordinator(state, transport, packet->endpoint, *action_requests);
-            continue;
-        }
-
         if (const std::optional<PresentationCommandMessagesPacket> presentation_messages =
                 TryDecodePresentationCommandMessages(packet->bytes.data(), packet->size)) {
             HandlePresentationCommandMessagesAsCoordinator(state, *presentation_messages);
@@ -200,11 +194,6 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
             continue;
         }
 
-        if (const std::optional<ActionRequestAckPacket> action_ack =
-                TryDecodeActionRequestAck(packet->bytes.data(), packet->size)) {
-            HandleActionRequestAckAsPeer(state, *action_ack);
-            continue;
-        }
     }
 }
 
