@@ -448,7 +448,9 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
 
     const bool lost = ShouldEnterGameOver(state, primary_player_vid);
     if (state.pending_stage_transition.has_value()) {
-        if (state.net_session.role == network::NetRole::Coordinator && state.net_transport) {
+        if (!network::IsInputLockstepActive(state) &&
+            state.net_session.role == network::NetRole::Coordinator &&
+            state.net_transport) {
             (void)network::SendPendingStageTransitionSyncToAllRemotes(
                 state,
                 *state.net_transport
@@ -485,6 +487,21 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
 void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
     (void)audio;
     network::StepNetworkLobby(state, graphics);
+
+    if (network::IsInputLockstepActive(state)) {
+        if (state.scene_frame < kNetworkStageTransitionFrames) {
+            return;
+        }
+        if (!state.pending_stage_transition.has_value()) {
+            state.SetMode(Mode::Win);
+            return;
+        }
+
+        ApplyPendingStageTransitionNow(state, graphics);
+        state.scene_frame = 0;
+        state.SetMode(Mode::Playing);
+        return;
+    }
 
     if (state.net_session.role == network::NetRole::Offline) {
         return;

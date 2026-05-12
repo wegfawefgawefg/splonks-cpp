@@ -378,6 +378,9 @@ Required work:
 - [ ] Classify particles/audio/lights as gameplay-affecting or presentation-only.
 - [ ] Make fluid stepping deterministic under the same inputs.
 - [ ] Make stage transition deterministic from agreed inputs.
+  - Lockstep-active stage transitions now apply the same pending transition
+    locally on every peer after the transition delay, instead of relying on the
+    old coordinator stage-sync path.
 - [ ] Add a headless same-process deterministic replay test.
 - [x] Add a fake-transport deterministic replay test.
   Implemented by `--check-input-lockstep-smoke`: two independent `State`s,

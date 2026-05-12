@@ -277,7 +277,7 @@ bool ApplyPendingPeerStageSync(State& state, const Graphics& graphics) {
 }
 
 void NotifyStageLoaded(State& state) {
-    if (state.net_session.role != NetRole::Coordinator || state.stage.quest_id.empty()) {
+    if (state.net_session.role == NetRole::Offline || state.stage.quest_id.empty()) {
         return;
     }
 
@@ -301,7 +301,10 @@ void NotifyStageLoaded(State& state) {
         state.net_transport->remote_entity_render_targets.clear();
         state.net_transport->replicated_entity_state_cache.clear();
         state.net_transport->replicated_fluid_cell_cache.clear();
-        SendStageSyncToAllRemotes(state, *state.net_transport);
+        if (state.net_session.role == NetRole::Coordinator &&
+            !state.net_session.input_lockstep_enabled) {
+            SendStageSyncToAllRemotes(state, *state.net_transport);
+        }
     }
 }
 
