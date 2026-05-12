@@ -269,7 +269,6 @@ add_executable(splonks-cpp
     src/entities/pistol.cpp
     src/frame_data_animator.cpp
     src/frame_data.cpp
-    src/gameplay_authority.cpp
     src/graphics.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
