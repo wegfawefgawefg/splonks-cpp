@@ -5,6 +5,8 @@
 #include "frame_data.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
+#include "network/input_lockstep.hpp"
+#include "network/net_fuzzer.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_frame_data.hpp"
 #include "stage_spawning.hpp"
@@ -16,6 +18,8 @@
 #include "world_ops.hpp"
 
 #include <array>
+#include <algorithm>
+#include <cmath>
 #include <exception>
 #include <iostream>
 #include <sstream>
@@ -374,6 +378,270 @@ void ApplyMultiLocalInputFrame(
     state.players.SetInputFrameForPlayer(2, input_frame[1]);
 }
 
+std::vector<std::array<PlayerInputFrame, 2>> BuildInputLockstepSmokeScript() {
+    std::vector<std::array<PlayerInputFrame, 2>> frames(1200);
+    const std::vector<PlayerInputFrame> broad = BuildBroadDeterministicReplayInputScript();
+    for (std::size_t i = 0; i < frames.size(); ++i) {
+        PlayerInputFrame p1 = i < broad.size() ? broad[i] : PlayerInputFrame::New();
+        PlayerInputFrame p2 = PlayerInputFrame::New();
+        p2.mouse_pos = UVec2::New(300, 190);
+
+        p2.left = (i >= 16 && i < 96) || (i >= 240 && i < 300);
+        p2.right = (i >= 112 && i < 212) || (i >= 310 && i < 350);
+        p2.run = i >= 150 && i < 220;
+        p2.jump = (i >= 40 && i < 48) || (i >= 168 && i < 176);
+        p2.pick_up_drop = (i >= 72 && i < 76) || (i >= 132 && i < 136);
+        p2.attack = i >= 190 && i < 194;
+        p2.down = i >= 300 && i < 322;
+
+        frames[i] = {p1, p2};
+    }
+    return frames;
+}
+
+struct FakeLockstepInFlightPacket {
+    network::LockstepPeerId from_peer = 0;
+    network::LockstepPeerId to_peer = 0;
+    network::LockstepInputPacket packet;
+    std::uint64_t due_tick = 0;
+    std::uint64_t insertion_order = 0;
+};
+
+struct FakeLockstepNetwork {
+    network::NetFuzzerConfig fuzzer;
+    network::NetFuzzerStats stats;
+    DeterministicRng rng = DeterministicRng::New(1U);
+    std::vector<FakeLockstepInFlightPacket> in_flight;
+    std::uint64_t next_insertion_order = 0;
+
+    static FakeLockstepNetwork New(const network::NetFuzzerConfig& config, std::uint32_t seed) {
+        FakeLockstepNetwork network;
+        network.fuzzer = config;
+        network.rng = DeterministicRng::New(seed);
+        return network;
+    }
+
+    bool RollPercent(float percent) {
+        return percent > 0.0F && rng.RandomFloat(0.0F, 100.0F) < percent;
+    }
+
+    std::uint64_t ComputeDelayTicks() {
+        if (!fuzzer.enabled) {
+            return 0;
+        }
+
+        float delay_ms = fuzzer.latency_ms;
+        if (fuzzer.jitter_ms > 0.0F) {
+            delay_ms += rng.RandomFloat(-fuzzer.jitter_ms, fuzzer.jitter_ms);
+        }
+        delay_ms = std::max(0.0F, delay_ms);
+
+        constexpr float kTickMs = 1000.0F / static_cast<float>(kFramesPerSecond);
+        std::uint64_t delay_ticks = static_cast<std::uint64_t>(std::ceil(delay_ms / kTickMs));
+        if (fuzzer.reorder_window_packets > 0) {
+            const int reorder_window = static_cast<int>(fuzzer.reorder_window_packets);
+            delay_ticks += static_cast<std::uint64_t>(rng.RandomIntInclusive(0, reorder_window));
+        }
+        return delay_ticks;
+    }
+
+    void QueueOne(
+        std::uint64_t now_tick,
+        network::LockstepPeerId from_peer,
+        network::LockstepPeerId to_peer,
+        const network::LockstepInputPacket& packet
+    ) {
+        FakeLockstepInFlightPacket in_flight_packet;
+        in_flight_packet.from_peer = from_peer;
+        in_flight_packet.to_peer = to_peer;
+        in_flight_packet.packet = packet;
+        in_flight_packet.due_tick = now_tick + ComputeDelayTicks();
+        in_flight_packet.insertion_order = next_insertion_order++;
+        in_flight.push_back(in_flight_packet);
+    }
+
+    void Send(
+        std::uint64_t now_tick,
+        network::LockstepPeerId from_peer,
+        network::LockstepPeerId to_peer,
+        const network::LockstepInputPacket& packet
+    ) {
+        stats.packets_sent += 1;
+        if (RollPercent(fuzzer.packet_loss_percent)) {
+            stats.packets_dropped += 1;
+            return;
+        }
+
+        QueueOne(now_tick, from_peer, to_peer, packet);
+        if (RollPercent(fuzzer.duplicate_percent)) {
+            stats.packets_duplicated += 1;
+            QueueOne(now_tick, from_peer, to_peer, packet);
+        }
+    }
+
+    std::vector<network::LockstepInputPacket> ReceiveForPeer(
+        std::uint64_t now_tick,
+        network::LockstepPeerId peer_id
+    ) {
+        std::vector<FakeLockstepInFlightPacket> delivered;
+        for (const FakeLockstepInFlightPacket& packet : in_flight) {
+            if (packet.to_peer == peer_id && packet.due_tick <= now_tick) {
+                delivered.push_back(packet);
+            }
+        }
+        in_flight.erase(
+            std::remove_if(
+                in_flight.begin(),
+                in_flight.end(),
+                [&](const FakeLockstepInFlightPacket& packet) {
+                    return packet.to_peer == peer_id && packet.due_tick <= now_tick;
+                }
+            ),
+            in_flight.end()
+        );
+
+        std::sort(
+            delivered.begin(),
+            delivered.end(),
+            [](const FakeLockstepInFlightPacket& lhs, const FakeLockstepInFlightPacket& rhs) {
+                if (lhs.due_tick != rhs.due_tick) {
+                    return lhs.due_tick < rhs.due_tick;
+                }
+                return lhs.insertion_order < rhs.insertion_order;
+            }
+        );
+
+        std::vector<network::LockstepInputPacket> packets;
+        packets.reserve(delivered.size());
+        for (const FakeLockstepInFlightPacket& packet : delivered) {
+            stats.packets_received += 1;
+            packets.push_back(packet.packet);
+        }
+        return packets;
+    }
+};
+
+struct FakeLockstepPeer {
+    network::LockstepPeerId peer_id = 0;
+    std::vector<PlayerId> owned_players;
+    State state = State::New();
+    network::LockstepInputBuffer input_buffer;
+    network::LockstepFrame next_frame_to_step = 0;
+    std::uint32_t next_packet_sequence = 1;
+    std::vector<std::uint64_t> frame_hashes;
+};
+
+PlayerInputFrame GetLockstepScriptInput(
+    const std::vector<std::array<PlayerInputFrame, 2>>& script,
+    PlayerId player_id,
+    network::LockstepFrame frame
+) {
+    if (frame >= script.size()) {
+        return PlayerInputFrame::New();
+    }
+    const std::size_t frame_index = static_cast<std::size_t>(frame);
+    if (player_id == 1) {
+        return script[frame_index][0];
+    }
+    if (player_id == 2) {
+        return script[frame_index][1];
+    }
+    return PlayerInputFrame::New();
+}
+
+network::LockstepInputPacket BuildLockstepInputPacket(
+    FakeLockstepPeer& peer,
+    const std::vector<std::array<PlayerInputFrame, 2>>& script,
+    network::LockstepFrame latest_frame
+) {
+    network::LockstepInputPacket packet;
+    packet.session_id = 0x51A7E001U;
+    packet.stage_instance_id = 1U;
+    packet.sender_peer_id = peer.peer_id;
+    packet.sequence = peer.next_packet_sequence++;
+
+    for (network::LockstepFrame frame = 0; frame <= latest_frame; ++frame) {
+        for (PlayerId player_id : peer.owned_players) {
+            network::LockstepInputRecord record;
+            record.player_id = player_id;
+            record.frame = frame;
+            record.sequence = packet.sequence;
+            record.input = GetLockstepScriptInput(script, player_id, frame);
+            peer.input_buffer.Store(record);
+            packet.records.push_back(record);
+        }
+    }
+    return packet;
+}
+
+bool PrepareLockstepSmokeState(State& state, Graphics& graphics, const char*& failed_step) {
+    constexpr std::uint32_t seed = 12345;
+    if (!LoadQuestStage(state, "classic", "classic_mines_1", false, seed)) {
+        failed_step = "load stage";
+        return false;
+    }
+    if (!PrepareBroadDeterministicReplayScenario(state, failed_step)) {
+        return false;
+    }
+    if (!AddSecondLocalPlayerForDeterministicReplay(state, graphics)) {
+        failed_step = "spawn second player";
+        return false;
+    }
+    return true;
+}
+
+void ApplyLockstepInputsToState(
+    State& state,
+    const std::vector<PlayerId>& player_ids,
+    const std::vector<PlayerInputFrame>& input_frames
+) {
+    const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();
+    const PlayerId primary_player_id =
+        primary_slot != nullptr ? primary_slot->player_id : kInvalidPlayerId;
+
+    for (std::size_t i = 0; i < player_ids.size(); ++i) {
+        if (player_ids[i] == primary_player_id) {
+            ApplyPrimaryInputFrame(state, input_frames[i]);
+        } else {
+            state.players.SetInputFrameForPlayer(player_ids[i], input_frames[i]);
+        }
+    }
+}
+
+bool StepReadyLockstepFrames(
+    FakeLockstepPeer& peer,
+    const std::vector<PlayerId>& required_players,
+    Audio& audio,
+    Graphics& graphics,
+    network::LockstepFrame total_frames,
+    std::string& error
+) {
+    std::vector<PlayerInputFrame> frame_inputs;
+    while (peer.next_frame_to_step < total_frames &&
+           peer.input_buffer.BuildFrameInputs(
+               required_players,
+               peer.next_frame_to_step,
+               frame_inputs
+           )) {
+        ApplyLockstepInputsToState(peer.state, required_players, frame_inputs);
+        StepSingleTick(peer.state, audio, graphics);
+        const CanonicalStateFingerprint fingerprint =
+            ComputeGameplayDeterminismFingerprint(peer.state);
+        peer.frame_hashes.push_back(fingerprint.value);
+        peer.next_frame_to_step += 1;
+
+        if (peer.next_frame_to_step > 4) {
+            peer.input_buffer.ClearBefore(peer.next_frame_to_step - 4);
+        }
+    }
+
+    if (peer.next_frame_to_step > peer.frame_hashes.size()) {
+        error = "lockstep peer advanced without recording hash";
+        return false;
+    }
+    return true;
+}
+
 } // namespace
 
 bool CheckStateFingerprintSmoke() {
@@ -636,6 +904,166 @@ bool CheckDeterministicReplaySmoke() {
         return true;
     } catch (const std::exception& e) {
         std::cerr << "deterministic replay smoke failed: " << e.what() << '\n';
+        return false;
+    }
+}
+
+bool CheckInputLockstepSmoke() {
+    try {
+        Graphics graphics;
+        InitCliSmokeRuntimeTables(graphics);
+        Audio peer0_audio;
+        Audio peer1_audio;
+
+        const std::vector<std::array<PlayerInputFrame, 2>> script =
+            BuildInputLockstepSmokeScript();
+        const std::vector<PlayerId> required_players = {1, 2};
+
+        const auto run_case = [&](
+            const char* label,
+            const network::NetFuzzerConfig& fuzzer,
+            std::uint32_t fuzzer_seed
+        ) -> bool {
+            const network::LockstepFrame total_frames =
+                static_cast<network::LockstepFrame>(script.size());
+            constexpr network::LockstepFrame kInputDelayFrames = 8;
+            constexpr std::uint64_t kMaxWallTicks = 6000;
+
+            FakeLockstepPeer peer0;
+            peer0.peer_id = 0;
+            peer0.owned_players = {1};
+            FakeLockstepPeer peer1;
+            peer1.peer_id = 1;
+            peer1.owned_players = {2};
+
+            const char* failed_step = nullptr;
+            if (!PrepareLockstepSmokeState(peer0.state, graphics, failed_step) ||
+                !PrepareLockstepSmokeState(peer1.state, graphics, failed_step)) {
+                std::cerr << "input lockstep smoke " << label
+                          << " failed during setup: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+
+            if (!CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep initial")) {
+                std::cerr << "  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
+            FakeLockstepNetwork network = FakeLockstepNetwork::New(fuzzer, fuzzer_seed);
+            std::size_t compared_hashes = 0;
+            std::string step_error;
+
+            for (std::uint64_t wall_tick = 0; wall_tick < kMaxWallTicks; ++wall_tick) {
+                const network::LockstepFrame latest_input_frame =
+                    std::min<network::LockstepFrame>(
+                        static_cast<network::LockstepFrame>(wall_tick) + kInputDelayFrames,
+                        total_frames - 1
+                    );
+
+                const network::LockstepInputPacket p0_packet =
+                    BuildLockstepInputPacket(peer0, script, latest_input_frame);
+                const network::LockstepInputPacket p1_packet =
+                    BuildLockstepInputPacket(peer1, script, latest_input_frame);
+                network.Send(wall_tick, peer0.peer_id, peer1.peer_id, p0_packet);
+                network.Send(wall_tick, peer1.peer_id, peer0.peer_id, p1_packet);
+
+                for (const network::LockstepInputPacket& packet :
+                     network.ReceiveForPeer(wall_tick, peer0.peer_id)) {
+                    for (const network::LockstepInputRecord& record : packet.records) {
+                        peer0.input_buffer.Store(record);
+                    }
+                }
+                for (const network::LockstepInputPacket& packet :
+                     network.ReceiveForPeer(wall_tick, peer1.peer_id)) {
+                    for (const network::LockstepInputRecord& record : packet.records) {
+                        peer1.input_buffer.Store(record);
+                    }
+                }
+
+                if (!StepReadyLockstepFrames(
+                        peer0,
+                        required_players,
+                        peer0_audio,
+                        graphics,
+                        total_frames,
+                        step_error
+                    ) ||
+                    !StepReadyLockstepFrames(
+                        peer1,
+                        required_players,
+                        peer1_audio,
+                        graphics,
+                        total_frames,
+                        step_error
+                    )) {
+                    std::cerr << "input lockstep smoke " << label
+                              << " failed while stepping: " << step_error << '\n';
+                    return false;
+                }
+
+                const std::size_t comparable_hashes =
+                    std::min(peer0.frame_hashes.size(), peer1.frame_hashes.size());
+                while (compared_hashes < comparable_hashes) {
+                    if (peer0.frame_hashes[compared_hashes] !=
+                        peer1.frame_hashes[compared_hashes]) {
+                        std::cerr << "input lockstep smoke " << label
+                                  << " hash mismatch at frame " << compared_hashes
+                                  << "\n  peer0 hash=" << peer0.frame_hashes[compared_hashes]
+                                  << "\n  peer1 hash=" << peer1.frame_hashes[compared_hashes]
+                                  << "\n  first simple diff: "
+                                  << DescribeFirstStateDifference(peer0.state, peer1.state)
+                                  << '\n';
+                        return false;
+                    }
+                    compared_hashes += 1;
+                }
+
+                if (peer0.next_frame_to_step >= total_frames &&
+                    peer1.next_frame_to_step >= total_frames) {
+                    const CanonicalStateFingerprint final_fingerprint =
+                        ComputeGameplayDeterminismFingerprint(peer0.state);
+                    std::cout << "input lockstep smoke " << label
+                              << " ok: frames=" << total_frames
+                              << " wall_ticks=" << (wall_tick + 1)
+                              << " sent=" << network.stats.packets_sent
+                              << " recv=" << network.stats.packets_received
+                              << " drop=" << network.stats.packets_dropped
+                              << " dup=" << network.stats.packets_duplicated
+                              << " " << final_fingerprint.summary
+                              << " hash=" << final_fingerprint.value << '\n';
+                    return true;
+                }
+            }
+
+            std::cerr << "input lockstep smoke " << label
+                      << " timed out:"
+                      << " peer0_frame=" << peer0.next_frame_to_step
+                      << " peer1_frame=" << peer1.next_frame_to_step
+                      << " sent=" << network.stats.packets_sent
+                      << " recv=" << network.stats.packets_received
+                      << " drop=" << network.stats.packets_dropped
+                      << " dup=" << network.stats.packets_duplicated << '\n';
+            return false;
+        };
+
+        network::NetFuzzerConfig clean;
+        clean.enabled = false;
+        if (!run_case("clean", clean, 0x1001U)) {
+            return false;
+        }
+
+        network::NetFuzzerConfig impaired = network::NetFuzzerConfig::TexasToCaliforniaPreset();
+        impaired.duplicate_percent = 4.0F;
+        impaired.reorder_window_packets = 4;
+        if (!run_case("impaired", impaired, 0x1002U)) {
+            return false;
+        }
+
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "input lockstep smoke failed: " << e.what() << '\n';
         return false;
     }
 }

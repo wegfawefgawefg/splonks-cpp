@@ -50,3 +50,17 @@ load the same content and use deterministic gameplay logic.
 5. Add rollback after deterministic lockstep is proven.
 
 See `docs/plans/input_lockstep_rollback_plan.md` for the detailed checklist.
+
+## Current Branch Goal
+
+On `net-lockstep-experiment`, the immediate target is full delay-based input
+lockstep, not rollback yet:
+
+- Fake/headless lockstep first, then real two-process UDP.
+- Any process may own multiple local players.
+- Host/client can connect, carry each other, and transition stages together.
+- Gameplay/content code should become network-agnostic again.
+- Old coordinator-authoritative mutation sync should be deleted or quarantined,
+  not kept half-wired.
+- Commit after meaningful chunks and keep the active plan updated with known
+  gaps.

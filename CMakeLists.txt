@@ -287,6 +287,7 @@ add_executable(splonks-cpp
     src/menu/title.cpp
     src/menu/ui.cpp
     src/menu/video.cpp
+    src/network/input_lockstep.cpp
     src/network/net_fuzzer.cpp
     src/network/net_entity_interpolation.cpp
     src/network/net_entity_links.cpp

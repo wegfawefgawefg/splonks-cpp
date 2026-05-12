@@ -497,6 +497,10 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckDeterministicReplaySmoke() ? 0 : 1);
     }
 
+    if (command == "--check-input-lockstep-smoke") {
+        std::exit(CheckInputLockstepSmoke() ? 0 : 1);
+    }
+
     if (command == "--check-network-protocol-smoke") {
         std::exit(CheckNetworkProtocolApplySmoke() ? 0 : 1);
     }

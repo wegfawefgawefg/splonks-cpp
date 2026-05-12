@@ -11,6 +11,33 @@ plan as the next architecture experiment. The goal is to test whether a
 deterministic input-driven model removes the networking tax from gameplay
 content and gives us a cleaner long-term mod story.
 
+## Current Goal
+
+Implement authoritative input lockstep cleanly, without rollback at first.
+Rollback remains the next phase after delay-based lockstep proves deterministic.
+
+Success target for the current branch:
+
+- Boot host and client from the multiplayer pair launcher.
+- Connect them into one lockstep session.
+- Support any number of local players per process in the architecture, even if
+  the first live test uses one local player per process.
+- Let the client carry the host player.
+- Let both players transition through stages together.
+- Preserve single-player behavior.
+- Remove old coordinator-authoritative mutation cruft from active gameplay.
+- Keep entity/content code local-only in language and behavior: no item-specific
+  netcode, no authority branches, no request/result gameplay seams.
+
+Operational rules while pursuing this:
+
+- Work phase-by-phase from this checklist.
+- Prefer deleting old mutation-replication machinery over adapting it.
+- Add fake/headless lockstep tests before trusting live UDP.
+- Commit after each meaningful, validated chunk so long solo sessions remain
+  recoverable.
+- Record any known gap in this document before committing.
+
 ## Why Reconsider
 
 The current multiplayer model has become expensive in exactly the wrong place:
@@ -226,7 +253,10 @@ Required work:
 - [ ] Make fluid stepping deterministic under the same inputs.
 - [ ] Make stage transition deterministic from agreed inputs.
 - [ ] Add a headless same-process deterministic replay test.
-- [ ] Add a two-process/fake-transport deterministic replay test.
+- [x] Add a fake-transport deterministic replay test.
+  Implemented by `--check-input-lockstep-smoke`: two independent `State`s,
+  two player input streams, fake impaired packet delivery, and per-frame
+  gameplay hash comparison. Real two-process UDP remains Phase 6.
 
 ## Rollback Requirements
 
@@ -469,15 +499,30 @@ the project builds with the old replication model disabled or removed.
 Goal: run two simulated peers from the same initial state by exchanging only
 inputs.
 
-- [ ] Define input packet: session id, stage instance id, player id, frame, input
+- [x] Define input packet: session id, stage instance id, player id, frame, input
   bits/axes, and local input sequence.
-- [ ] Add per-player input buffers indexed by frame.
-- [ ] Add lockstep frame scheduler.
-- [ ] Add fixed input delay.
-- [ ] Step frame `N` only when all required player inputs for `N` are available.
-- [ ] Exchange hashes every `N` frames.
-- [ ] Stop on mismatch and dump first divergent frame.
-- [ ] Add fake-transport tests for delay, jitter, reorder, duplicate, and loss.
+- [x] Add per-player input buffers indexed by frame.
+- [x] Add lockstep frame scheduler.
+- [x] Add fixed input delay.
+- [x] Step frame `N` only when all required player inputs for `N` are available.
+- [x] Exchange hashes every `N` frames.
+  Current fake smoke compares every simulated frame, which is stricter than a
+  periodic exchange.
+- [x] Stop on mismatch and dump first divergent frame.
+- [x] Add fake-transport tests for delay, jitter, reorder, duplicate, and loss.
+
+Implementation:
+
+- `src/network/input_lockstep.hpp`
+- `src/network/input_lockstep.cpp`
+- `--check-input-lockstep-smoke`
+
+Validation:
+
+- `cmake --build build --target splonks-cpp -j 8`
+- `./build/splonks-cpp --check-state-equality-smoke`
+- `./build/splonks-cpp --check-deterministic-replay-smoke`
+- `./build/splonks-cpp --check-input-lockstep-smoke`
 
 Exit gate: two or more fake peers can run scripted gameplay for thousands of
 frames with matching hashes while exchanging only input and control packets.
