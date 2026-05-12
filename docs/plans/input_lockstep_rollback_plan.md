@@ -207,6 +207,8 @@ claiming lockstep is usable.
    - `StepNetworkLobby` is now lockstep-only for open live sessions. The old
      snapshot/entity-patch/fluid-patch/ordered-message send path remains as
      legacy code for deletion, but it is no longer part of the live lobby step.
+   - Debug control entity JSON now reports `input_owner` instead of old
+     `net_owner: local-authority/remote-authority` terminology.
 4. Reuse the old network impairment profiles for lockstep input transport.
    - Same-house, same-city, same-state, Texas-to-California,
      California-to-Florida, and Texas-to-Japan profiles should apply to input

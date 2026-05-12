@@ -305,19 +305,21 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
             state.net_session.FindNetEntityId(entity.vid)) {
         out << ",\"net_entity_id\":" << *net_id;
         if (const std::optional<PlayerId> owner = state.net_session.FindEntityOwner(*net_id)) {
-            out << ",\"net_owner_player_id\":" << *owner;
+            out << ",\"input_owner_player_id\":" << *owner;
+            const PlayerSlot* const slot = state.players.Find(*owner);
+            out << ",\"input_owner\":" << JsonString(
+                slot != nullptr && slot->connection_kind == PlayerConnectionKind::Local
+                    ? "local-input"
+                    : "remote-input"
+            );
         } else {
-            out << ",\"net_owner_player_id\":null";
+            out << ",\"input_owner_player_id\":null"
+                << ",\"input_owner\":\"shared\"";
         }
-        out << ",\"net_owner\":" << JsonString(
-            state.net_session.HasLocalAuthorityForEntity(entity.vid)
-                ? "local-authority"
-                : "remote-authority"
-        );
     } else {
         out << ",\"net_entity_id\":null"
-            << ",\"net_owner_player_id\":null"
-            << ",\"net_owner\":null";
+            << ",\"input_owner_player_id\":null"
+            << ",\"input_owner\":null";
     }
     out << "}";
 }
