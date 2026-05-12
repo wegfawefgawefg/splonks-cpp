@@ -1,5 +1,15 @@
 # Multiplayer Terraria-Style Parity Checklist
 
+Status: historical checklist for the coordinator-authoritative replication
+model. The active experiment is now
+`docs/plans/input_lockstep_rollback_plan.md`.
+
+This document remains useful for understanding what was attempted and why it was
+expensive, but it is no longer the primary finish line while branch
+`net-lockstep-experiment` evaluates deterministic input lockstep and rollback.
+Do not add new coordinator-authoritative mutation lanes just to satisfy this
+checklist during the experiment.
+
 Purpose: define the concrete finish line for Splonks remote multiplayer. This is
 the authoritative checklist for making networking behave like a Terraria /
 tModLoader-style broad message system: coordinator-owned shared world, local

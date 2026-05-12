@@ -1,5 +1,13 @@
 # Network Locomotion Affordances
 
+Status: historical coordinator-authoritative locomotion/prediction plan. The
+active experiment is now `docs/plans/input_lockstep_rollback_plan.md`.
+
+Under input lockstep/rollback, most of these coordinator plausibility checks
+should disappear from gameplay. Movement correctness should come from all peers
+simulating the same inputs. Rollback may still need prediction policy, but that
+policy belongs in the rollback/input layer rather than in entity movement code.
+
 Purpose: define where the owning player is allowed to be more authoritative than the coordinator's exact delayed simulation. This is not durable world authority. It is bounded local locomotion authority for responsiveness.
 
 The core problem: edge-sensitive movement states such as hanging, climbing, coyote jumps, and swimming can be correct on the owning client but missed by the coordinator because the coordinator sees input and position a few frames late. If the coordinator blindly rejects those transitions, the player snaps out of valid local movement and the game feels broken.
