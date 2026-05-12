@@ -1,5 +1,7 @@
 #pragma once
 
+#include "player_id.hpp"
+
 #include <cstdint>
 #include <string>
 
@@ -14,5 +16,9 @@ struct CanonicalStateFingerprint {
 
 CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state);
 CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state);
+CanonicalStateFingerprint ComputeNetworkStateFingerprintIgnoringPlayerMotion(
+    const State& state,
+    PlayerId player_id
+);
 
 } // namespace splonks

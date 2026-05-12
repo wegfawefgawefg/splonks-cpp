@@ -377,13 +377,8 @@ void CopySnapshotToTarget(NetRemotePlayerTarget& target, const PlayerSnapshotEnt
 
 bool ShouldApplyCanonicalBodyToLocalPrediction(
     const Entity& entity,
-    const NetRemotePlayerTarget& target,
-    float target_distance_sq,
-    float snap_distance_sq
+    const NetRemotePlayerTarget& target
 ) {
-    if (target_distance_sq > snap_distance_sq) {
-        return true;
-    }
     if (target.condition != static_cast<std::uint8_t>(EntityCondition::Normal) ||
         entity.condition != EntityCondition::Normal) {
         return true;
@@ -728,9 +723,7 @@ void StepRemotePlayerInterpolation(
             local_prediction_repair &&
             ShouldApplyCanonicalBodyToLocalPrediction(
                 *entity,
-                target,
-                final_distance_sq,
-                snap_distance_sq
+                target
             );
         if (local_prediction_repair && !apply_local_prediction_repair) {
             // Owner-local movement is predicted immediately on the peer. A

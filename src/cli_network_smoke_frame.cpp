@@ -2,6 +2,7 @@
 
 #include "cli_network_smoke_internal.hpp"
 #include "buying.hpp"
+#include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "network/net_lobby.hpp"
@@ -160,6 +161,48 @@ bool StepIdleFrameAndCompare(
     );
 }
 
+bool StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
+    State& coordinator,
+    State& peer,
+    PacketSmokePair& pair,
+    const GameplayActionRequested& peer_action,
+    Graphics& graphics,
+    Audio& audio,
+    const char* label
+) {
+    return StepPeerActionThroughCoordinatorFrame(
+               coordinator,
+               peer,
+               pair,
+               peer_action,
+               graphics,
+               audio,
+               label,
+               false
+           ) &&
+           CompareProtocolSmokeStatesAllowingLocalPlayerMotion(coordinator, peer, label);
+}
+
+bool StepIdleFrameAndCompareAllowingLocalPlayerMotion(
+    State& coordinator,
+    State& peer,
+    PacketSmokePair& pair,
+    Graphics& graphics,
+    Audio& audio,
+    const char* label
+) {
+    return StepIdleFrameAndCompare(
+               coordinator,
+               peer,
+               pair,
+               graphics,
+               audio,
+               label,
+               false
+           ) &&
+           CompareProtocolSmokeStatesAllowingLocalPlayerMotion(coordinator, peer, label);
+}
+
 void SetPeerHeldUseInput(State& peer, bool attack_down, IVec2 direction) {
     PlayingInputSnapshot input = PlayingInputSnapshot::New();
     input.attack = attack_down;
@@ -202,7 +245,8 @@ bool StepPeerInputThroughCoordinatorFrame(
             pair.peer_endpoint,
             graphics,
             audio,
-            label
+            label,
+            false
         )) {
         return false;
     }
@@ -210,7 +254,7 @@ bool StepPeerInputThroughCoordinatorFrame(
         return false;
     }
     network::StepRemotePlayerInterpolation(peer, PeerSmokeTransport(peer), graphics);
-    return true;
+    return CompareProtocolSmokeStatesAllowingLocalPlayerMotion(coordinator, peer, label);
 }
 
 bool LinkAndCompareInitialStates(State& coordinator, State& peer) {
@@ -1082,30 +1126,38 @@ bool RunPlayerCorrectionPolicySmoke(Graphics& graphics) {
 
     peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
     if (peer_player == nullptr) {
-        std::cerr << "network frame smoke failed: missing snap correction player\n";
+        std::cerr << "network frame smoke failed: missing large stale correction player\n";
         return false;
     }
     peer_player->pos = coordinator_peer->pos + Vec2::New(80.0F, 0.0F);
+    peer_player->vel = Vec2::New(1.5F, 0.0F);
+    peer_player->fall_timer = 23;
     if (!DeliverCoordinatorSnapshotsToPeer(
             coordinator,
             peer,
             pair,
             graphics,
-            "frame correction policy local snap snapshot"
+            "frame correction policy local large stale snapshot"
         )) {
         return false;
     }
     network::StepRemotePlayerInterpolation(peer, peer_transport, graphics);
-    const Entity* snapped_player = peer.entity_manager.GetEntity(peer_player_vid);
-    if (snapped_player == nullptr) {
-        std::cerr << "network frame smoke failed: missing snapped correction player\n";
+    const Entity* large_stale_player = peer.entity_manager.GetEntity(peer_player_vid);
+    if (large_stale_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing large stale correction player\n";
         return false;
     }
-    const Vec2 snap_delta = snapped_player->pos - coordinator_peer->pos;
-    const float snap_distance = std::sqrt(snap_delta.x * snap_delta.x + snap_delta.y * snap_delta.y);
-    if (snap_distance > 0.01F) {
-        std::cerr << "network frame smoke failed at frame correction policy snap:"
-                  << " expected hard snap, distance=" << snap_distance << '\n';
+    const Vec2 large_stale_delta = large_stale_player->pos - coordinator_peer->pos;
+    const float large_stale_distance =
+        std::sqrt(large_stale_delta.x * large_stale_delta.x + large_stale_delta.y * large_stale_delta.y);
+    if (std::fabs(large_stale_distance - 80.0F) > 0.01F ||
+        large_stale_player->vel != Vec2::New(1.5F, 0.0F) ||
+        large_stale_player->fall_timer != 23) {
+        std::cerr << "network frame smoke failed at frame correction policy large stale:"
+                  << " expected local prediction to survive large delayed position echo,"
+                  << " distance=" << large_stale_distance
+                  << " vel=" << large_stale_player->vel.x << "," << large_stale_player->vel.y
+                  << " fall=" << large_stale_player->fall_timer << '\n';
         return false;
     }
 
@@ -1148,7 +1200,7 @@ bool RunPlayerCorrectionPolicySmoke(Graphics& graphics) {
               << " smooth_distance=" << smooth_distance
               << " ignored_distance=" << ignored_distance
               << " residual_distance=" << residual_distance
-              << " snap_distance=" << snap_distance << '\n';
+              << " large_stale_distance=" << large_stale_distance << '\n';
     return true;
 }
 
@@ -1895,7 +1947,7 @@ bool RunHeldUseScenario(
         coordinator_item->use_state.user_vid = *coordinator_source_vid;
     }
 
-    if (!StepPeerActionThroughCoordinatorFrame(
+    if (!StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
             coordinator,
             peer,
             pair,
@@ -1916,8 +1968,15 @@ bool RunHeldUseScenario(
              *peer_item_vid,
              *expected_animation_after_press,
              label
-         )) ||
-        !StepIdleFrameAndCompare(coordinator, peer, pair, graphics, audio, label)) {
+        )) ||
+        !StepIdleFrameAndCompareAllowingLocalPlayerMotion(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            audio,
+            label
+        )) {
         return false;
     }
 
@@ -1965,7 +2024,7 @@ bool RunHeldUseScenario(
             coordinator_item->entity_a = *coordinator_source_vid;
             counter_b_before_release = coordinator_item->counter_b;
         }
-        if (!StepPeerActionThroughCoordinatorFrame(
+        if (!StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
                 coordinator,
                 peer,
                 pair,
@@ -1979,7 +2038,14 @@ bool RunHeldUseScenario(
                 audio,
                 label
             ) ||
-            !StepIdleFrameAndCompare(coordinator, peer, pair, graphics, audio, label)) {
+            !StepIdleFrameAndCompareAllowingLocalPlayerMotion(
+                coordinator,
+                peer,
+                pair,
+                graphics,
+                audio,
+                label
+            )) {
             return false;
         }
         if (expected_counter_b_decrease_after_release) {
@@ -1999,7 +2065,7 @@ bool RunHeldUseScenario(
             }
         }
     }
-    return StepPeerActionThroughCoordinatorFrame(
+    return StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
         coordinator,
         peer,
         pair,
@@ -2028,7 +2094,7 @@ bool RunBackUseScenario(
     if (const Entity* const source = peer.entity_manager.GetEntity(peer_source_vid);
         source != nullptr && source->back_vid.has_value()) {
         const VID peer_existing_back_vid = *source->back_vid;
-        if (!StepPeerActionThroughCoordinatorFrame(
+        if (!StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
                 coordinator,
                 peer,
                 pair,
@@ -2040,7 +2106,7 @@ bool RunBackUseScenario(
                 audio,
                 label
             ) ||
-            !StepPeerActionThroughCoordinatorFrame(
+            !StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
                 coordinator,
                 peer,
                 pair,
@@ -2064,20 +2130,24 @@ bool RunBackUseScenario(
         audio,
         item_type,
         peer_source_pos + Vec2::New(8.0F, 0.0F),
-        label
+        label,
+        false
     );
     if (!peer_item_vid.has_value() ||
-        !PickupSpawnedEntityForFrameSmoke(
+        !CompareProtocolSmokeStatesAllowingLocalPlayerMotion(coordinator, peer, label) ||
+        !StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
             coordinator,
             peer,
             pair,
-            peer_source_vid,
-            *peer_item_vid,
+            PickupEntityAction{
+                .source_vid = peer_source_vid,
+                .target_vid = *peer_item_vid,
+            },
             graphics,
             audio,
             label
         ) ||
-        !StepPeerActionThroughCoordinatorFrame(
+        !StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
             coordinator,
             peer,
             pair,
@@ -2087,8 +2157,7 @@ bool RunBackUseScenario(
             },
             graphics,
             audio,
-            label,
-            false
+            label
         )) {
         return false;
     }
@@ -2109,7 +2178,7 @@ bool RunBackUseScenario(
         peer.particles.Clear();
     }
     const std::size_t peer_sprite_particle_count = peer.particles.sprite_particles.size();
-    if (!StepPeerActionThroughCoordinatorFrame(
+    if (!StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
             coordinator,
             peer,
             pair,
@@ -2122,7 +2191,14 @@ bool RunBackUseScenario(
             audio,
             label
         ) ||
-        !StepIdleFrameAndCompare(coordinator, peer, pair, graphics, audio, label)) {
+        !StepIdleFrameAndCompareAllowingLocalPlayerMotion(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            audio,
+            label
+        )) {
         return false;
     }
 
@@ -2132,7 +2208,7 @@ bool RunBackUseScenario(
         return false;
     }
 
-    return StepPeerActionThroughCoordinatorFrame(
+    return StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
                coordinator,
                peer,
                pair,
@@ -2145,7 +2221,7 @@ bool RunBackUseScenario(
                audio,
                label
            ) &&
-           StepPeerActionThroughCoordinatorFrame(
+           StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
                coordinator,
                peer,
                pair,
@@ -2157,7 +2233,7 @@ bool RunBackUseScenario(
                audio,
                label
            ) &&
-           StepPeerActionThroughCoordinatorFrame(
+           StepPeerActionThroughCoordinatorFrameAllowingLocalPlayerMotion(
                coordinator,
                peer,
                pair,
@@ -3405,7 +3481,7 @@ bool RunMattockDigScenario(Graphics& graphics, Audio& audio) {
         if (dug_on_coordinator && dug_on_peer) {
             return true;
         }
-        if (!StepIdleFrameAndCompare(
+        if (!StepIdleFrameAndCompareAllowingLocalPlayerMotion(
                 coordinator,
                 peer,
                 pair,
@@ -3647,6 +3723,171 @@ bool RunStageTransitionWhileCarryingPlayerScenario(Graphics& graphics, Audio& au
     }
     return AssertNetworkPlayersActiveNormal(coordinator, "frame carry transition coordinator") &&
            AssertNetworkPlayersActiveNormal(peer, "frame carry transition peer");
+}
+
+bool AssertPlayerHoldingEntityType(
+    const State& coordinator,
+    const State& peer,
+    PlayerId player_id,
+    EntityType expected_type,
+    const char* label
+) {
+    const PlayerSlot* const coordinator_slot = coordinator.players.Find(player_id);
+    const PlayerSlot* const peer_slot = peer.players.Find(player_id);
+    const Entity* const coordinator_player =
+        coordinator_slot != nullptr && coordinator_slot->entity_vid.has_value()
+            ? coordinator.entity_manager.GetEntity(*coordinator_slot->entity_vid)
+            : nullptr;
+    const Entity* const peer_player =
+        peer_slot != nullptr && peer_slot->entity_vid.has_value()
+            ? peer.entity_manager.GetEntity(*peer_slot->entity_vid)
+            : nullptr;
+    if (coordinator_player == nullptr ||
+        peer_player == nullptr ||
+        !coordinator_player->holding_vid.has_value() ||
+        !peer_player->holding_vid.has_value()) {
+        std::cerr << "network frame smoke failed at " << label
+                  << ": player " << player_id << " is not holding an item on both sides\n";
+        return false;
+    }
+
+    const Entity* const coordinator_item =
+        coordinator.entity_manager.GetEntity(*coordinator_player->holding_vid);
+    const Entity* const peer_item =
+        peer.entity_manager.GetEntity(*peer_player->holding_vid);
+    if (coordinator_item == nullptr ||
+        peer_item == nullptr ||
+        !coordinator_item->active ||
+        !peer_item->active ||
+        coordinator_item->type_ != expected_type ||
+        peer_item->type_ != expected_type ||
+        coordinator_item->buyable.active ||
+        peer_item->buyable.active ||
+        coordinator_item->stage_spawn_index.has_value() ||
+        peer_item->stage_spawn_index.has_value()) {
+        std::cerr << "network frame smoke failed at " << label
+                  << ": carried item state did not survive as a clean runtime item\n";
+        return false;
+    }
+
+    const std::optional<network::NetEntityId> coordinator_item_id =
+        coordinator.net_session.FindNetEntityId(coordinator_item->vid);
+    const std::optional<network::NetEntityId> peer_item_id =
+        peer.net_session.FindNetEntityId(peer_item->vid);
+    if (!coordinator_item_id.has_value() ||
+        !peer_item_id.has_value() ||
+        *coordinator_item_id != *peer_item_id) {
+        std::cerr << "network frame smoke failed at " << label
+                  << ": carried item network identity diverged\n";
+        return false;
+    }
+
+    return true;
+}
+
+bool RunStageTransitionWhileCarryingItemScenario(Graphics& graphics, Audio& audio) {
+    State coordinator = State::New();
+    State peer = State::New();
+    PacketSmokePair pair;
+    VID coordinator_host_vid;
+    VID coordinator_peer_vid;
+    VID peer_host_vid;
+    VID peer_player_vid;
+    if (!BuildDualPlayerFrameFixture(
+            coordinator,
+            peer,
+            pair,
+            coordinator_host_vid,
+            coordinator_peer_vid,
+            peer_host_vid,
+            peer_player_vid,
+            graphics
+        )) {
+        return false;
+    }
+
+    const Entity* const peer_player = peer.entity_manager.GetEntity(peer_player_vid);
+    if (peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing peer player for held item transition\n";
+        return false;
+    }
+    const std::optional<VID> peer_rock_vid = SpawnCoordinatorEntityAndResolvePeer(
+        coordinator,
+        peer,
+        pair,
+        graphics,
+        audio,
+        EntityType::Rock,
+        peer_player->pos + Vec2::New(8.0F, 0.0F),
+        "frame spawn carried rock before transition",
+        false
+    );
+    if (!peer_rock_vid.has_value()) {
+        return false;
+    }
+    if (!StepPeerActionThroughCoordinatorFrame(
+            coordinator,
+            peer,
+            pair,
+            PickupEntityAction{
+                .source_vid = peer_player_vid,
+                .target_vid = *peer_rock_vid,
+            },
+            graphics,
+            audio,
+            "frame pickup rock before transition",
+            false
+        )) {
+        return false;
+    }
+
+    const Entity* const peer_exit = FindFirstEntityOfType(peer, EntityType::BasicExit);
+    if (peer_exit == nullptr) {
+        std::cerr << "network frame smoke failed: missing peer exit for held item transition\n";
+        return false;
+    }
+    if (!MovePeerAndCoordinatorEntityTo(coordinator, peer, peer_player_vid, peer_exit->pos)) {
+        std::cerr << "network frame smoke failed: could not move peer to exit for held item transition\n";
+        return false;
+    }
+    if (!StepPeerActionThroughCoordinatorFrame(
+            coordinator,
+            peer,
+            pair,
+            InteractEntityAction{
+                .source_vid = peer_player_vid,
+                .target_vid = peer_exit->vid,
+            },
+            graphics,
+            audio,
+            "frame carrying item exit interact",
+            false
+        )) {
+        return false;
+    }
+    if (!StepStageTransitionFramesAndCompare(coordinator, peer, pair, graphics, audio)) {
+        return false;
+    }
+    for (int i = 0; i < 8; ++i) {
+        if (!StepIdleFrameAndCompare(
+                coordinator,
+                peer,
+                pair,
+                graphics,
+                audio,
+                "frame carrying item post-transition settle",
+                false
+            )) {
+            return false;
+        }
+    }
+    return AssertPlayerHoldingEntityType(
+        coordinator,
+        peer,
+        2,
+        EntityType::Rock,
+        "frame carry item transition"
+    );
 }
 
 bool RunStageTransitionDroppedInitialSyncScenario(Graphics& graphics, Audio& audio) {
@@ -4412,6 +4653,137 @@ bool RunCarryThrowLatencyRepairScenario(Graphics& graphics, Audio& audio) {
     return true;
 }
 
+bool RunCrusherCrushesPeerPlayerScenario(Graphics& graphics, Audio& audio) {
+    State coordinator = State::New();
+    State peer = State::New();
+    PacketSmokePair pair;
+    VID coordinator_host_vid;
+    VID coordinator_peer_vid;
+    VID peer_host_vid;
+    VID peer_player_vid;
+    if (!BuildDualPlayerFrameFixture(
+            coordinator,
+            peer,
+            pair,
+            coordinator_host_vid,
+            coordinator_peer_vid,
+            peer_host_vid,
+            peer_player_vid,
+            graphics
+        )) {
+        return false;
+    }
+
+    const float stage_right = static_cast<float>(coordinator.stage.GetWidth());
+    const Vec2 player_pos = Vec2::New(stage_right - 8.0F, 80.0F);
+    if (!MovePeerAndCoordinatorEntityTo(coordinator, peer, peer_player_vid, player_pos)) {
+        std::cerr << "network frame smoke failed: could not position peer player for crusher\n";
+        return false;
+    }
+    const std::optional<VID> peer_crusher_vid = SpawnCoordinatorEntityAndResolvePeer(
+        coordinator,
+        peer,
+        pair,
+        graphics,
+        audio,
+        EntityType::TrapBlock,
+        Vec2::New(player_pos.x - 16.0F, player_pos.y),
+        "frame crusher peer setup crusher",
+        false
+    );
+    if (!peer_crusher_vid.has_value()) {
+        return false;
+    }
+    const std::optional<VID> coordinator_crusher_vid =
+        ResolveCoordinatorVidForPeerVid(coordinator, peer, *peer_crusher_vid);
+    if (!coordinator_crusher_vid.has_value()) {
+        std::cerr << "network frame smoke failed: could not resolve coordinator crusher\n";
+        return false;
+    }
+
+    Entity* const coordinator_crusher =
+        coordinator.entity_manager.GetEntityMut(*coordinator_crusher_vid);
+    if (coordinator_crusher == nullptr) {
+        std::cerr << "network frame smoke failed: missing coordinator crusher\n";
+        return false;
+    }
+    coordinator_crusher->vel = Vec2::New(1.0F, 0.0F);
+    const bool crusher_contact_applied = entities::common::TryApplyCrusherPusherContact(
+        coordinator_crusher->vid.id,
+        coordinator_peer_vid.id,
+        entities::common::ContactContext{
+            .phase = entities::common::ContactPhase::SweptEntered,
+            .has_impact = true,
+            .impact_axis = entities::common::BlockingImpactAxis::Horizontal,
+            .direction = 1,
+            .mover_vid = coordinator_crusher->vid,
+        },
+        coordinator,
+        graphics,
+        audio
+    );
+    if (!crusher_contact_applied) {
+        std::cerr << "network frame smoke failed: crusher contact was not applied\n";
+        return false;
+    }
+
+    if (!DeliverCoordinatorPacketsToPeer(
+            coordinator,
+            peer,
+            CoordinatorSmokeTransport(coordinator),
+            PeerSmokeTransport(peer),
+            pair.peer_endpoint,
+            graphics,
+            audio,
+            "frame crusher peer death",
+            false
+        ) ||
+        !DeliverCoordinatorSnapshotsToPeer(
+            coordinator,
+            peer,
+            pair,
+            graphics,
+            "frame crusher peer death"
+        )) {
+        return false;
+    }
+
+    const Entity* const coordinator_player =
+        coordinator.entity_manager.GetEntity(coordinator_peer_vid);
+    const Entity* const peer_player = peer.entity_manager.GetEntity(peer_player_vid);
+    if (coordinator_player == nullptr ||
+        peer_player == nullptr ||
+        coordinator_player->condition != EntityCondition::Dead ||
+        peer_player->condition != EntityCondition::Dead ||
+        coordinator_player->health != 0 ||
+        peer_player->health != 0) {
+        std::cerr << "network frame smoke failed: crusher did not kill peer player on both sides"
+                  << " coordinator_health="
+                  << (coordinator_player != nullptr ? coordinator_player->health : 999999U)
+                  << " coordinator_condition="
+                  << (coordinator_player != nullptr
+                          ? static_cast<int>(coordinator_player->condition)
+                          : -1)
+                  << " coordinator_pos="
+                  << (coordinator_player != nullptr ? coordinator_player->pos.x : -9999.0F)
+                  << ","
+                  << (coordinator_player != nullptr ? coordinator_player->pos.y : -9999.0F)
+                  << " peer_health="
+                  << (peer_player != nullptr ? peer_player->health : 999999U)
+                  << " peer_condition="
+                  << (peer_player != nullptr ? static_cast<int>(peer_player->condition) : -1)
+                  << " peer_pos="
+                  << (peer_player != nullptr ? peer_player->pos.x : -9999.0F)
+                  << ","
+                  << (peer_player != nullptr ? peer_player->pos.y : -9999.0F)
+                  << '\n';
+        return false;
+    }
+
+    std::cout << "network frame smoke crusher crushes peer player ok\n";
+    return true;
+}
+
 bool RunHeldRespawnScenario(
     State& coordinator,
     State& peer,
@@ -4497,6 +4869,9 @@ bool CheckNetworkFrameSmoke() {
         if (!RunStageTransitionWhileCarryingPlayerScenario(graphics, audio)) {
             return false;
         }
+        if (!RunStageTransitionWhileCarryingItemScenario(graphics, audio)) {
+            return false;
+        }
         if (!RunStageTransitionDroppedInitialSyncScenario(graphics, audio)) {
             return false;
         }
@@ -4513,6 +4888,9 @@ bool CheckNetworkFrameSmoke() {
             return false;
         }
         if (!RunCarryThrowLatencyRepairScenario(graphics, audio)) {
+            return false;
+        }
+        if (!RunCrusherCrushesPeerPlayerScenario(graphics, audio)) {
             return false;
         }
         if (!RunBombChainReactionScenario(graphics, audio)) {

@@ -807,6 +807,7 @@ extern const EntityArchetype kWebCannonArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .preserve_held_aim = true,
+    .predict_local_attachment_use = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

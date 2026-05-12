@@ -230,6 +230,7 @@ extern const EntityArchetype kCapeArchetype{
     .can_be_stomped = false,
     .can_go_on_back = true,
     .can_be_stunned = false,
+    .predict_local_attachment_use = true,
     .predict_attachment_use_presentation = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,

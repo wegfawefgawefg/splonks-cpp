@@ -45,6 +45,12 @@ bool IsRemotePlayerEntity(const State& state, const Entity& entity) {
            player_slot->connection_kind == PlayerConnectionKind::Remote;
 }
 
+bool IsLocalPlayerEntity(const State& state, const Entity& entity) {
+    const PlayerSlot* const player_slot = state.players.FindByEntityVid(entity.vid);
+    return player_slot != nullptr &&
+           player_slot->connection_kind == PlayerConnectionKind::Local;
+}
+
 bool ShouldPeerRequestDamageInsteadOfApplying(
     const State& state,
     const Entity& target,
@@ -73,6 +79,66 @@ bool ShouldPeerRequestHitInsteadOfApplying(
     return HasLocalGameplayAuthorityForEntity(state, target.vid);
 }
 
+bool ShouldPredictPeerContactClaim(
+    const State& state,
+    const Entity& target,
+    std::optional<VID> source_vid
+) {
+    if (state.net_session.role != network::NetRole::Peer) {
+        return false;
+    }
+    if (IsLocalPlayerEntity(state, target)) {
+        return true;
+    }
+    if (source_vid.has_value() &&
+        HasLocalGameplayAuthorityForInteractionSource(state, *source_vid) &&
+        !IsRemotePlayerEntity(state, target)) {
+        return true;
+    }
+    return false;
+}
+
+void ApplyPredictedPeerContactResponse(
+    std::size_t entity_idx,
+    State& state,
+    DamageType damage_type,
+    const std::optional<KnockbackSpec>& knockback
+) {
+    if (entity_idx >= state.entity_manager.entities.size()) {
+        return;
+    }
+
+    Entity& entity = state.entity_manager.entities[entity_idx];
+    if (!entity.active || entity.condition == EntityCondition::Dead ||
+        !CanEntityTakeDamageType(entity, damage_type)) {
+        return;
+    }
+
+    if ((damage_type == DamageType::Fall ||
+         damage_type == DamageType::Explosion ||
+         damage_type == DamageType::Attack ||
+         damage_type == DamageType::HeavyAttack ||
+         damage_type == DamageType::IgnitingAttack ||
+         damage_type == DamageType::JumpOn) &&
+        entity.can_be_stunned &&
+        entity.condition != EntityCondition::Stunned) {
+        EnterStunnedState(entity, state);
+    }
+
+    if (knockback.has_value() && entity.active) {
+        ApplyKnockback(entity, *knockback);
+    }
+
+    if (!entity.stone) {
+        if (entity.damage_animation.has_value()) {
+            SpawnDamageEffectAnimationBurst(*entity.damage_animation, entity.GetCenter(), state);
+        }
+        if (entity.damage_sound.has_value()) {
+            (void)PlayEntityCenterSoundEmitter(state, entity, *entity.damage_sound);
+        }
+    }
+}
+
 DamageResult RequestCoordinatorDamage(
     State& state,
     const Entity& target,
@@ -89,6 +155,14 @@ DamageResult RequestCoordinatorDamage(
             .amount = amount,
         }
     );
+    if (ShouldPredictPeerContactClaim(state, target, source_vid)) {
+        ApplyPredictedPeerContactResponse(
+            target.vid.id,
+            state,
+            damage_type,
+            std::nullopt
+        );
+    }
     return DamageResult::Requested;
 }
 
@@ -117,6 +191,14 @@ DamageResult RequestCoordinatorHit(
             .knockback_on_no_damage = options.knockback_on_no_damage,
         }
     );
+    if (ShouldPredictPeerContactClaim(state, target, options.source_vid)) {
+        ApplyPredictedPeerContactResponse(
+            target.vid.id,
+            state,
+            damage_type,
+            std::optional<KnockbackSpec>(options.knockback)
+        );
+    }
     return DamageResult::Requested;
 }
 

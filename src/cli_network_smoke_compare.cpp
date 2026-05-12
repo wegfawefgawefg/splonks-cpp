@@ -248,4 +248,33 @@ bool CompareProtocolSmokeStates(const State& coordinator, const State& peer, con
     return false;
 }
 
+bool CompareProtocolSmokeStatesAllowingLocalPlayerMotion(
+    const State& coordinator,
+    const State& peer,
+    const char* label
+) {
+    const PlayerId local_player_id = peer.net_session.local_player_id;
+    const CanonicalStateFingerprint coordinator_fingerprint =
+        ComputeNetworkStateFingerprintIgnoringPlayerMotion(coordinator, local_player_id);
+    const CanonicalStateFingerprint peer_fingerprint =
+        ComputeNetworkStateFingerprintIgnoringPlayerMotion(peer, local_player_id);
+    if (coordinator_fingerprint.value == peer_fingerprint.value) {
+        std::cout << "state equality smoke " << label
+                  << " ok with local player motion prediction: "
+                  << coordinator_fingerprint.summary
+                  << " hash=" << coordinator_fingerprint.value << '\n';
+        return true;
+    }
+
+    std::cerr << "state equality smoke failed at " << label
+              << " with local player motion prediction\n"
+              << "  left  " << coordinator_fingerprint.summary << " hash="
+              << coordinator_fingerprint.value << "\n"
+              << "  right " << peer_fingerprint.summary << " hash="
+              << peer_fingerprint.value << "\n"
+              << "  first simple diff: "
+              << DescribeFirstStateDifference(coordinator, peer) << '\n';
+    return false;
+}
+
 } // namespace splonks

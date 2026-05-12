@@ -76,6 +76,8 @@ void RestoreEntitySlot(EntityManager& entity_manager, const Entity& entity) {
 
 void PrepareEntityForStageEntry(Entity& entity) {
     entity.marked_for_destruction = false;
+    entity.buyable = Buyable{};
+    entity.stage_spawn_index.reset();
     entity.holding = false;
     entity.holding_vid.reset();
     entity.back_vid.reset();
@@ -134,6 +136,7 @@ void InitCommonStageState(State& state) {
 
 StageCarryover CaptureStageCarryover(const State& state) {
     StageCarryover carryover;
+    const bool preserve_attached_items = state.net_session.role != network::NetRole::Peer;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected ||
             !slot.entity_vid.has_value()) {
@@ -152,7 +155,7 @@ StageCarryover CaptureStageCarryover(const State& state) {
         player_carryover.player->holding_vid.reset();
         player_carryover.player->back_vid.reset();
 
-        if (player->holding_vid.has_value()) {
+        if (preserve_attached_items && player->holding_vid.has_value()) {
             if (const Entity* const held_item = state.entity_manager.GetEntity(*player->holding_vid)) {
                 if (held_item->active &&
                     !state.players.FindPlayerIdForEntity(held_item->vid).has_value()) {
@@ -163,7 +166,7 @@ StageCarryover CaptureStageCarryover(const State& state) {
             }
         }
 
-        if (player->back_vid.has_value()) {
+        if (preserve_attached_items && player->back_vid.has_value()) {
             if (const Entity* const back_item = state.entity_manager.GetEntity(*player->back_vid)) {
                 if (back_item->active &&
                     !state.players.FindPlayerIdForEntity(back_item->vid).has_value()) {

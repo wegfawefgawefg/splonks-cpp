@@ -49,6 +49,7 @@ struct EntityArchetype {
     Color3 light_color = Color3::White();
     int light_radius = 0;
     bool preserve_held_aim = false;
+    bool predict_local_attachment_use = false;
     bool predict_attachment_use_presentation = false;
     bool step_as_replica = false;
     DrawLayer draw_layer = DrawLayer::Middle;

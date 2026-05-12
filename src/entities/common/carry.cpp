@@ -133,13 +133,18 @@ bool ShouldRequestCarryAction(const State& state, const Entity& entity) {
            HasLocalGameplayAuthorityForInteractionSource(state, entity.vid);
 }
 
-void ApplyPredictedAttachmentUsePresentation(
+void ApplyPredictedAttachmentUse(
     Entity& item,
+    State& state,
+    Graphics& graphics,
+    Audio& audio,
     VID holder_vid,
     AttachmentMode attachment_mode,
     bool use_down
 ) {
-    if (!GetEntityArchetype(item.type_).predict_attachment_use_presentation) {
+    const EntityArchetype& archetype = GetEntityArchetype(item.type_);
+    if (!archetype.predict_local_attachment_use &&
+        !archetype.predict_attachment_use_presentation) {
         return;
     }
 
@@ -147,6 +152,9 @@ void ApplyPredictedAttachmentUsePresentation(
         UseEntity(item, holder_vid, attachment_mode);
     } else {
         StopUsingEntity(item);
+    }
+    if (archetype.predict_local_attachment_use && item.on_use != nullptr) {
+        item.on_use(item.vid.id, state, graphics, audio);
     }
 }
 
@@ -756,7 +764,7 @@ void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state) {
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
     State& state,
-    const Graphics& graphics,
+    Graphics& graphics,
     Audio& audio
 ) {
     (void)audio;
@@ -982,8 +990,11 @@ void UpdateCarryAndBackItems(
                             control
                         );
                     }
-                    ApplyPredictedAttachmentUsePresentation(
+                    ApplyPredictedAttachmentUse(
                         *holding,
+                        state,
+                        graphics,
+                        audio,
                         entity.vid,
                         AttachmentMode::Held,
                         control.use_held
@@ -1008,8 +1019,11 @@ void UpdateCarryAndBackItems(
                             control
                         );
                     }
-                    ApplyPredictedAttachmentUsePresentation(
+                    ApplyPredictedAttachmentUse(
                         *back_item,
+                        state,
+                        graphics,
+                        audio,
                         entity.vid,
                         AttachmentMode::Back,
                         control.use_back

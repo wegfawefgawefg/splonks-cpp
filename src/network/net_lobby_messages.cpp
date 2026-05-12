@@ -300,6 +300,100 @@ bool EndpointOwnsPlayer(
     return false;
 }
 
+bool EndpointOwnsInteractionSource(
+    const State& state,
+    const NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    NetEntityId source_entity_id,
+    std::optional<VID> source_vid
+) {
+    if (source_entity_id == kInvalidNetEntityId || !source_vid.has_value()) {
+        return false;
+    }
+    if (const std::optional<PlayerId> owner_player_id =
+            state.net_session.FindEntityOwner(source_entity_id)) {
+        if (EndpointOwnsPlayer(transport, endpoint, *owner_player_id)) {
+            return true;
+        }
+    }
+
+    constexpr int kMaxHolderChainDepth = 16;
+    std::optional<VID> cursor = source_vid;
+    for (int depth = 0; depth < kMaxHolderChainDepth && cursor.has_value(); ++depth) {
+        if (const PlayerSlot* const slot = state.players.FindByEntityVid(*cursor)) {
+            return EndpointOwnsPlayer(transport, endpoint, slot->player_id);
+        }
+
+        const Entity* const entity = state.entity_manager.GetEntity(*cursor);
+        if (entity == nullptr || !entity->active || !entity->held_by_vid.has_value()) {
+            return false;
+        }
+        cursor = entity->held_by_vid;
+    }
+    return false;
+}
+
+bool EndpointOwnsEntityHolderChain(
+    const State& state,
+    const NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    VID entity_vid
+) {
+    const Entity* entity = state.entity_manager.GetEntity(entity_vid);
+    if (entity == nullptr || !entity->active) {
+        return false;
+    }
+
+    constexpr int kMaxHolderChainDepth = 16;
+    std::optional<VID> cursor = entity->held_by_vid;
+    for (int depth = 0; depth < kMaxHolderChainDepth && cursor.has_value(); ++depth) {
+        if (const PlayerSlot* const slot = state.players.FindByEntityVid(*cursor)) {
+            return EndpointOwnsPlayer(transport, endpoint, slot->player_id);
+        }
+
+        const Entity* const holder = state.entity_manager.GetEntity(*cursor);
+        if (holder == nullptr || !holder->active) {
+            return false;
+        }
+        cursor = holder->held_by_vid;
+    }
+    return false;
+}
+
+bool EndpointMayRequestContactAction(
+    const State& state,
+    const NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const ActionRequestMessage& payload,
+    std::optional<VID> source_vid,
+    std::optional<VID> target_vid
+) {
+    if (payload.kind != NetActionKind::DamageEntity &&
+        payload.kind != NetActionKind::HitEntity) {
+        return true;
+    }
+
+    if (payload.source_entity_id != kInvalidNetEntityId) {
+        return EndpointOwnsInteractionSource(
+            state,
+            transport,
+            endpoint,
+            payload.source_entity_id,
+            source_vid
+        );
+    }
+
+    if (!target_vid.has_value()) {
+        return false;
+    }
+    const PlayerSlot* const target_player = state.players.FindByEntityVid(*target_vid);
+    if (target_player != nullptr &&
+        EndpointOwnsPlayer(transport, endpoint, target_player->player_id)) {
+        return true;
+    }
+    return EndpointOwnsEntityHolderChain(state, transport, endpoint, *target_vid);
+}
+
 std::optional<GameplayActionRequested> MakeGameplayActionRequest(
     const ActionRequestMessage& payload,
     std::optional<VID> source_vid,
@@ -853,6 +947,16 @@ void HandleActionRequestMessagesAsCoordinator(
         }
         const std::optional<VID> source_vid = state.net_session.FindLocalVid(payload->source_entity_id);
         const std::optional<VID> target_vid = state.net_session.FindLocalVid(payload->target_entity_id);
+        if (!EndpointMayRequestContactAction(
+                state,
+                transport,
+                endpoint,
+                *payload,
+                source_vid,
+                target_vid
+            )) {
+            continue;
+        }
 
         const std::optional<GameplayActionRequested> action =
             MakeGameplayActionRequest(*payload, source_vid, target_vid);

@@ -268,8 +268,42 @@ void AddNetworkOptionalVid(
     }
 }
 
-void AddNetworkEntityFingerprint(FingerprintWriter& writer, const State& state, const Entity& entity) {
-    writer.AddPod(NetEntityIdForVid(state, entity.vid));
+bool IsMotionIgnoredForPlayer(
+    const State& state,
+    const Entity& entity,
+    PlayerId player_id
+) {
+    const network::NetEntityId ignored_player_entity_id = network::MakePlayerNetEntityId(player_id);
+    if (NetEntityIdForVid(state, entity.vid) == ignored_player_entity_id) {
+        return true;
+    }
+
+    std::optional<VID> holder_vid = entity.held_by_vid;
+    for (int depth = 0; holder_vid.has_value() && depth < 8; ++depth) {
+        if (NetEntityIdForVid(state, *holder_vid) == ignored_player_entity_id) {
+            return true;
+        }
+        const Entity* const holder = state.entity_manager.GetEntity(*holder_vid);
+        if (holder == nullptr) {
+            return false;
+        }
+        holder_vid = holder->held_by_vid;
+    }
+    return false;
+}
+
+void AddNetworkEntityFingerprint(
+    FingerprintWriter& writer,
+    const State& state,
+    const Entity& entity,
+    std::optional<PlayerId> ignored_motion_player_id = std::nullopt
+) {
+    const network::NetEntityId entity_id = NetEntityIdForVid(state, entity.vid);
+    const bool ignore_motion =
+        ignored_motion_player_id.has_value() &&
+        IsMotionIgnoredForPlayer(state, entity, *ignored_motion_player_id);
+
+    writer.AddPod(entity_id);
     writer.AddBool(entity.active);
     writer.AddPod(static_cast<std::uint16_t>(entity.type_));
     if (!entity.active) {
@@ -278,24 +312,24 @@ void AddNetworkEntityFingerprint(FingerprintWriter& writer, const State& state, 
 
     writer.AddBool(entity.has_physics);
     writer.AddBool(entity.can_collide);
-    writer.AddBool(entity.grounded);
+    writer.AddBool(ignore_motion ? false : entity.grounded);
     writer.AddBool(entity.holding);
     writer.AddBool(entity.wanted);
     writer.AddBool(entity.render_enabled);
-    writer.AddVec2(entity.pos);
-    writer.AddVec2(entity.vel);
-    writer.AddVec2(entity.acc);
-    writer.AddVec2(entity.size);
-    writer.AddFloat(entity.rotation);
-    writer.AddPod(entity.coyote_time);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.pos);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.vel);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.acc);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.size);
+    writer.AddFloat(ignore_motion ? 0.0F : entity.rotation);
+    writer.AddPod(ignore_motion ? 0U : entity.coyote_time);
     writer.AddPod(entity.stun_timer);
-    writer.AddPod(entity.fall_timer);
-    writer.AddPod(static_cast<std::uint8_t>(entity.facing));
+    writer.AddPod(ignore_motion ? 0U : entity.fall_timer);
+    writer.AddPod(static_cast<std::uint8_t>(ignore_motion ? LeftOrRight::Left : entity.facing));
     writer.AddPod(static_cast<std::uint8_t>(entity.draw_layer));
     writer.AddPod(static_cast<std::uint8_t>(entity.condition));
     writer.AddPod(static_cast<std::uint8_t>(entity.ai_state));
     writer.AddPod(static_cast<std::uint8_t>(entity.damage_vulnerability));
-    writer.AddPod(entity.movement_flags);
+    writer.AddPod(ignore_motion ? 0U : entity.movement_flags);
     writer.AddPod(entity.health);
     AddNetworkOptionalVid(writer, state, entity.back_vid);
     AddNetworkOptionalVid(writer, state, entity.holding_vid);
@@ -319,13 +353,13 @@ void AddNetworkEntityFingerprint(FingerprintWriter& writer, const State& state, 
     writer.AddIVec2(entity.point_b);
     writer.AddIVec2(entity.point_c);
     writer.AddIVec2(entity.point_d);
-    writer.AddPod(entity.frame_data_animator.animation_id);
-    writer.AddPod(entity.frame_data_animator.current_frame);
-    writer.AddFloat(entity.frame_data_animator.current_time);
-    writer.AddFloat(entity.frame_data_animator.speed);
-    writer.AddBool(entity.frame_data_animator.animate);
-    writer.AddBool(entity.frame_data_animator.loop);
-    writer.AddBool(entity.frame_data_animator.finished);
+    writer.AddPod(ignore_motion ? 0 : entity.frame_data_animator.animation_id);
+    writer.AddPod(ignore_motion ? 0 : entity.frame_data_animator.current_frame);
+    writer.AddFloat(ignore_motion ? 0.0F : entity.frame_data_animator.current_time);
+    writer.AddFloat(ignore_motion ? 0.0F : entity.frame_data_animator.speed);
+    writer.AddBool(ignore_motion ? false : entity.frame_data_animator.animate);
+    writer.AddBool(ignore_motion ? false : entity.frame_data_animator.loop);
+    writer.AddBool(ignore_motion ? false : entity.frame_data_animator.finished);
     AddEffectFingerprint(writer, entity.effects);
 }
 
@@ -430,7 +464,10 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state) {
     };
 }
 
-CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
+CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(
+    const State& state,
+    std::optional<PlayerId> ignored_motion_player_id
+) {
     FingerprintWriter writer;
     writer.AddPod(state.frame);
     writer.AddPod(state.stage_frame);
@@ -475,7 +512,7 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
 
     writer.AddPod(active_entities.size());
     for (const Entity* const entity : active_entities) {
-        AddNetworkEntityFingerprint(writer, state, *entity);
+        AddNetworkEntityFingerprint(writer, state, *entity, ignored_motion_player_id);
     }
 
     std::ostringstream summary;
@@ -488,6 +525,17 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
         .value = writer.value,
         .summary = summary.str(),
     };
+}
+
+CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
+    return ComputeNetworkStateFingerprintWithOptions(state, std::nullopt);
+}
+
+CanonicalStateFingerprint ComputeNetworkStateFingerprintIgnoringPlayerMotion(
+    const State& state,
+    PlayerId player_id
+) {
+    return ComputeNetworkStateFingerprintWithOptions(state, player_id);
 }
 
 } // namespace splonks

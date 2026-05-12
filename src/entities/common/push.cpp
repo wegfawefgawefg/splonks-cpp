@@ -270,7 +270,17 @@ bool TryApplyCrusherPusherContact(
         return true;
     }
 
-    TryDamageEntity(other_entity_idx, state, audio, DamageType::Crush, 1);
+    TryDamageEntity(
+        other_entity_idx,
+        state,
+        audio,
+        DamageType::Crush,
+        1,
+        DamageOptions{
+            .source_vid = crusher.vid,
+            .allow_remote_player_target = true,
+        }
+    );
     return true;
 }
 

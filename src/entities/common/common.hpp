@@ -194,7 +194,7 @@ bool TryTakeOffBackEntityByVid(
 void UpdateCarryAndBackItems(
     std::size_t entity_idx,
     State& state,
-    const Graphics& graphics,
+    Graphics& graphics,
     Audio& audio
 );
 void SyncEntityAttachments(

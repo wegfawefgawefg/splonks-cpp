@@ -55,6 +55,7 @@ extern const EntityArchetype kJetPackArchetype{
     .vanish_on_death = true,
     .can_go_on_back = true,
     .can_be_stunned = false,
+    .predict_local_attachment_use = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

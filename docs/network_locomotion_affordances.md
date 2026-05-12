@@ -10,7 +10,8 @@ The core problem: edge-sensitive movement states such as hanging, climbing, coyo
 - A free player is locally body-authoritative: the owning client may claim responsive body state for its own player.
 - The coordinator validates claimed locomotion/body state with generous plausibility checks, then broadcasts the accepted body state.
 - Peers render accepted coordinator state for remote players and do not independently decide remote hang/climb/jump states.
-- Invalid claims are corrected by coordinator repair. Valid claims should be accepted even if exact coordinator replay missed the same ledge or coyote window.
+- Invalid claims are corrected by explicit coordinator repair. A delayed ordinary coordinator position echo is not by itself a repair command for the owning peer, because high-latency echoes otherwise fight local prediction and create host-position/local-position warping.
+- Valid claims should be accepted even if exact coordinator replay missed the same ledge or coyote window.
 
 This follows the same broad multiplayer goal as our Terraria/tModLoader-style networking: gameplay facts converge through coordinator-owned lanes, but local movement should not wait for a round trip or exact delayed replay.
 
@@ -146,6 +147,54 @@ Rules:
 - [ ] Coordinator fall timer must use accepted client locomotion states such as hang, climb, and fluid contact so stale remote replay does not create bogus fall damage.
 - [ ] If accepted hang/climb/swim states reset or pause fall timer, the coordinator's body history must reflect that before damage calculation.
 
+## Contact Damage And Local Hit Claims
+
+Contact outcomes need the same latency policy as locomotion. If a peer must wait
+150ms before seeing its own bat/knife/rock hit or its own body take spike/snake
+damage, the game feels broken. If the peer directly mutates durable world state,
+the run forks. The boundary is therefore: peers may predict and claim plausible
+contact outcomes, while the coordinator still commits the durable result.
+
+Authority split:
+
+- A peer may claim damage against its own local player body. This covers spikes,
+  fall, arrows, explosions, enemy contact, and other cases where lying mostly
+  hurts the claimant.
+- A peer may claim hits caused by a locally controlled interaction source: the
+  local player, a held item, a thrown item still attributable to that player, a
+  fired projectile, or a tool artifact.
+- A peer should not freely claim contested player-vs-player harm. The
+  coordinator should validate those with both players' latest accepted body
+  snapshots.
+- The coordinator owns durable outcomes: health, death, loot spawns, tile
+  destruction, shop anger, money, ownership, and stage progression.
+- The peer may immediately predict local presentation/body feel: damage flashes,
+  stun pose, knockback, hit particles, and similar temporary visual response.
+  Coordinator messages later repair or confirm the durable state.
+
+Plausibility checks for coordinator-accepted contact claims:
+
+- [ ] Source entity is owned by, held by, or causally attributed to the sending
+  player.
+- [ ] Target exists, is active, and is not already immune/dead in a way that
+  makes the claim impossible.
+- [ ] Source and target AABBs overlap, swept-overlapped recently, or are within a
+  latency-aware tolerance of the claimed attack/projectile shape.
+- [ ] Weapon/tool/use state is compatible with the claim: attack frame active,
+  projectile contact timer active, thrown source still dangerous, or contact
+  damage alignment valid.
+- [ ] Damage type is compatible with target vulnerability.
+- [ ] Interaction cooldowns make repeated claims legal.
+- [ ] For local-player self-damage claims, accept generously unless the target is
+  impossible to reach from its latest accepted body state.
+- [ ] For player-vs-player claims, use stricter validation against both players'
+  latest accepted body snapshots.
+
+Implementation rule: do not add item-specific networking for each weapon. Use
+the existing typed `DamageEntityAction` / `HitEntityAction` request lane, add
+shared validation and prediction policy there, and let ordinary entity patches
+carry the durable result back to every peer.
+
 ## Implementation Checklist
 
 - [x] Extend the existing player snapshot/input lane to carry bounded hang/climb/jump claims.
@@ -154,9 +203,35 @@ Rules:
 - [x] Apply valid hang/climb/jump claims to coordinator body state before fall-damage/contact resolution.
 - [x] Apply valid ordinary free body claims to coordinator body state before fall-damage/contact resolution.
 - [x] Broadcast accepted hang/climb/jump state through existing player body snapshots.
-- [ ] Reject invalid claims with normal body repair, not special-case item logic.
+- [x] Do not hard-snap the owning peer to ordinary delayed coordinator free-movement snapshots.
+- [ ] Reject invalid claims with explicit body repair, not ordinary delayed position echo and not special-case item logic.
 - [ ] Add debug overlay for local predicted state versus coordinator accepted state.
 - [ ] Add fake-transport tests for ordinary free movement over a one-block ledge, one-frame ledge grab, delayed climb attach, coyote jump under latency, carried-player body rejection, swim impulse under latency, thrown-player horizontal velocity preservation, and fall damage after accepted hang/climb/swim.
+- [ ] Add peer-side predicted contact presentation/body response for local-player
+  damage and local-source hits.
+- [ ] Add coordinator-side plausibility validation for peer
+  `DamageEntityAction` / `HitEntityAction` claims.
+- [ ] Add packet/frame tests for peer local-source bat/knife/projectile hit,
+  peer self-damage, rejected impossible hit, repeated-contact cooldown, and
+  player-vs-player stricter validation.
+
+## Attachment Item Use
+
+Held/back item use must not route stale full holder patches back into the
+owning peer as movement repairs. `UseHeldEntity` / `UseBackEntity` patches the
+item state, not the holder/player body. The holder/player body stays on the
+player snapshot/locomotion lane, where local prediction rules already apply.
+
+Items that directly modify the holder's body opt into local attachment-use
+prediction through their archetype. Examples:
+
+- Jetpack applies local upward acceleration immediately.
+- Cape applies local fall-speed limiting immediately.
+- Web cannon applies local recoil immediately.
+
+Durable consequences remain coordinator-owned. Peer-side canonical entity
+spawns are still blocked by `world_ops::SpawnEntity`, and durable damage/tile/
+economy changes still go through coordinator requests.
 
 Current code status:
 

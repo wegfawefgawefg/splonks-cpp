@@ -37,6 +37,11 @@ bool ApplyCoordinatorMessagesToPeer(
 );
 
 bool CompareProtocolSmokeStates(const State& coordinator, const State& peer, const char* label);
+bool CompareProtocolSmokeStatesAllowingLocalPlayerMotion(
+    const State& coordinator,
+    const State& peer,
+    const char* label
+);
 
 void LinkMatchingEntitiesForActionSmoke(State& coordinator, State& peer);
 

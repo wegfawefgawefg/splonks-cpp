@@ -4,6 +4,7 @@
 #include "network/net_entity_links.hpp"
 #include "network/net_lobby.hpp"
 #include "network/net_lobby_internal.hpp"
+#include "network/net_world_snapshot.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_progression.hpp"
 #include "state.hpp"
@@ -288,6 +289,7 @@ void NotifyStageLoaded(State& state) {
     state.net_session.pending_outbound_messages.clear();
     state.net_session.applied_message_ids.clear();
     RegisterStageEntityLinks(state);
+    EnqueueWorldSnapshotMessages(state);
     if (state.net_transport) {
         ClearPendingStageSync(*state.net_transport);
         ResetRemoteStageAckState(*state.net_transport);

@@ -75,9 +75,6 @@ void ApplyAttachmentUseAction(
     if (item->on_use != nullptr) {
         item->on_use(item->vid.id, state, graphics, audio);
     }
-    if (holder->active) {
-        PatchEntityState(state, *holder, *holder);
-    }
     if (item->active) {
         PatchEntityState(state, *item, *item);
     }
