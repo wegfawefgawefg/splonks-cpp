@@ -18,7 +18,9 @@
 #include "world_ops.hpp"
 
 #include <algorithm>
+#include <array>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace splonks {
@@ -32,8 +34,57 @@ constexpr float kPlayerLampLightStrength = 1.45F;
 constexpr int kPlayerLampLightRadius = 13;
 constexpr std::uint32_t kNetworkStageTransitionFrames = 60;
 
-std::uint32_t MakeNetworkTransitionSeed(const State& state) {
-    return (state.frame + 1U) ^ (state.stage_frame << 7U) ^ 0x6D2B79F5U;
+template <std::size_t N>
+std::string_view FixedStringView(const std::array<char, N>& value) {
+    const char* const begin = value.data();
+    const char* const end = std::find(begin, begin + value.size(), '\0');
+    return std::string_view(begin, static_cast<std::size_t>(end - begin));
+}
+
+std::uint32_t MixTransitionSeed(std::uint32_t seed, std::uint32_t value) {
+    seed ^= value + 0x9E3779B9U + (seed << 6U) + (seed >> 2U);
+    return seed;
+}
+
+std::uint32_t MixTransitionSeed(std::uint32_t seed, std::string_view value) {
+    for (const char c : value) {
+        seed = MixTransitionSeed(seed, static_cast<std::uint8_t>(c));
+    }
+    return seed;
+}
+
+std::uint32_t MakeNetworkTransitionSeed(const State& state, const StageTransitionTarget& target) {
+    std::uint32_t seed = state.stage.generation_seed.value_or(0x51A7E5D3U);
+    seed = MixTransitionSeed(seed, state.depth);
+    seed = MixTransitionSeed(seed, static_cast<std::uint8_t>(target.destination.kind));
+    seed = MixTransitionSeed(seed, static_cast<std::uint8_t>(target.destination.stage_type));
+    seed = MixTransitionSeed(seed, static_cast<std::uint8_t>(target.destination.debug_level));
+    seed = MixTransitionSeed(seed, target.destination.debug_variant);
+    seed = MixTransitionSeed(seed, FixedStringView(target.destination.quest_id));
+    seed = MixTransitionSeed(seed, FixedStringView(target.destination.quest_stage_id));
+    return seed == 0 ? 1U : seed;
+}
+
+void ApplyNetworkRespawnPolicyAfterStageLoad(State& state, Graphics& graphics) {
+    if (state.net_session.role == network::NetRole::Offline) {
+        return;
+    }
+
+    std::string status;
+    switch (state.multiplayer_respawn_mode) {
+    case MultiplayerRespawnMode::GenerousNextLevel:
+        (void)network::ReviveNetworkPlayersAtEntrance(state, graphics, &status);
+        break;
+    case MultiplayerRespawnMode::NoRespawn:
+        state.game_over = false;
+        state.gameplay_camera_anchor_world_pos.reset();
+        break;
+    case MultiplayerRespawnMode::RespawnAtEntrance:
+        (void)network::RespawnDeadNetworkPlayersAtEntrance(state, graphics, &status);
+        state.game_over = false;
+        state.gameplay_camera_anchor_world_pos.reset();
+        break;
+    }
 }
 
 void ApplyPendingStageTransitionNow(State& state, Graphics& graphics) {
@@ -41,17 +92,15 @@ void ApplyPendingStageTransitionNow(State& state, Graphics& graphics) {
         state.pending_stage_transition.has_value() &&
         state.pending_stage_transition->destination.kind == StageLoadTargetKind::QuestStage &&
         !state.pending_stage_transition->seed.has_value()) {
-        state.pending_stage_transition->seed = MakeNetworkTransitionSeed(state);
+        state.pending_stage_transition->seed =
+            MakeNetworkTransitionSeed(state, *state.pending_stage_transition);
     }
 
     ApplyPendingStageTransition(state);
     graphics.ResetTileVariations();
     InvalidateStageLighting(state);
     InvalidateStageAcoustics(state);
-    if (state.net_session.role != network::NetRole::Offline) {
-        std::string status;
-        (void)network::ReviveNetworkPlayersAtEntrance(state, graphics, &status);
-    }
+    ApplyNetworkRespawnPolicyAfterStageLoad(state, graphics);
     network::NotifyStageLoaded(state);
 }
 
@@ -336,7 +385,7 @@ void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
 }
 
 void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
-    if (state.mode == Mode::Playing &&
+    if ((state.mode == Mode::Playing || state.mode == Mode::StageTransition) &&
         network::IsInputLockstepActive(state) &&
         !network::PrepareInputLockstepFrame(state, graphics)) {
         return;
@@ -443,6 +492,12 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
         }
     }
     state.particles.Step(graphics.frame_data_db, dt);
+
+    if (state.net_session.role != network::NetRole::Offline &&
+        state.multiplayer_respawn_mode == MultiplayerRespawnMode::RespawnAtEntrance) {
+        std::string status;
+        (void)network::RespawnDeadNetworkPlayersAtEntrance(state, graphics, &status);
+    }
 
     const bool lost = ShouldEnterGameOver(state, primary_player_vid);
     if (state.pending_stage_transition.has_value()) {

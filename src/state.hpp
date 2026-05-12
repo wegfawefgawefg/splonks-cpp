@@ -52,6 +52,12 @@ enum class Mode {
     Win,
 };
 
+enum class MultiplayerRespawnMode : std::uint8_t {
+    GenerousNextLevel,
+    NoRespawn,
+    RespawnAtEntrance,
+};
+
 constexpr std::uint32_t kStageSettleFrames = 100;
 
 enum class ShakeMask : std::uint8_t {
@@ -302,6 +308,7 @@ struct State {
     bool win = false;
     StageLoadTarget respawn_target = StageLoadTarget::ForQuestStage("classic", "classic_mines_1");
     std::optional<StageTransitionTarget> pending_stage_transition;
+    MultiplayerRespawnMode multiplayer_respawn_mode = MultiplayerRespawnMode::GenerousNextLevel;
     std::uint32_t points = 0;
     std::uint32_t deaths = 0;
     std::uint32_t depth = 0;

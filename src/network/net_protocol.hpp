@@ -53,6 +53,7 @@ struct JoinAcceptPacket {
     std::uint32_t stage_seed = 1;
     std::uint64_t lockstep_start_frame = 0;
     std::uint32_t lockstep_input_delay_frames = 8;
+    std::uint8_t multiplayer_respawn_mode = 0;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
     std::array<char, kNetNameBytes> coordinator_name{};

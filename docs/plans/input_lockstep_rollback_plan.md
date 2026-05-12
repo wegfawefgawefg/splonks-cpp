@@ -310,6 +310,12 @@ claiming lockstep is usable.
      players, or process-local player divergence.
    - [x] Add explicit fake/headless drop/throw coverage for player-carry if
      live testing exposes gaps.
+   - [x] Add explicit multiplayer respawn policies:
+     `GenerousNextLevel`, `NoRespawn`, and `RespawnAtEntrance`.
+   - [x] Cover respawn policies in fake/headless lockstep smoke: easy respawns
+     a dead player at the entrance, generous revives dead players on next-stage
+     transition, and no-respawn leaves dead players as spectators while living
+     players advance.
 2. Keep the multi-local-player architecture intact.
    - A process may own multiple local `PlayerId`s.
    - Lockstep input packets batch independent player input streams.
@@ -557,6 +563,11 @@ Required work:
   - Lockstep-active stage transitions now apply the same pending transition
     locally on every peer after the transition delay, instead of relying on the
     old coordinator stage-sync path.
+  - Network transition seeds are derived from the current stage seed and target
+    stage identity, not local wall-frame timing.
+  - Stage-transition frames are lockstep-gated while a transport is active, so
+    one peer cannot count down and load the next stage while another peer is
+    stalled waiting on input.
 - [ ] Add a headless same-process deterministic replay test.
 - [x] Add a fake-transport deterministic replay test.
   Implemented by `--check-input-lockstep-smoke`: two independent `State`s,

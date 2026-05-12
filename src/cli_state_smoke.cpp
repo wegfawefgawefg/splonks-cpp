@@ -8,6 +8,7 @@
 #include "inputs.hpp"
 #include "network/input_lockstep.hpp"
 #include "network/net_fuzzer.hpp"
+#include "network/net_lobby.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_frame_data.hpp"
 #include "stage_spawning.hpp"
@@ -959,6 +960,76 @@ bool PrepareLockstepSmokeState(
     return true;
 }
 
+bool KillSmokePlayer(State& state, PlayerId player_id, const char*& failed_step) {
+    const PlayerSlot* const slot = state.players.Find(player_id);
+    if (slot == nullptr || !slot->entity_vid.has_value()) {
+        failed_step = "find smoke player to kill";
+        return false;
+    }
+    Entity* const player = state.entity_manager.GetEntityMut(*slot->entity_vid);
+    if (player == nullptr || !player->active) {
+        failed_step = "resolve smoke player to kill";
+        return false;
+    }
+    player->condition = EntityCondition::Dead;
+    player->health = 0;
+    return true;
+}
+
+bool SmokePlayerIsAlive(const State& state, PlayerId player_id) {
+    const PlayerSlot* const slot = state.players.Find(player_id);
+    if (slot == nullptr || !slot->entity_vid.has_value()) {
+        return false;
+    }
+    const Entity* const player = state.entity_manager.GetEntity(*slot->entity_vid);
+    return player != nullptr && player->active && player->condition != EntityCondition::Dead;
+}
+
+bool SmokePlayerHasNoActiveBody(const State& state, PlayerId player_id) {
+    const PlayerSlot* const slot = state.players.Find(player_id);
+    if (slot == nullptr) {
+        return false;
+    }
+    if (!slot->entity_vid.has_value()) {
+        return true;
+    }
+    const Entity* const player = state.entity_manager.GetEntity(*slot->entity_vid);
+    return player == nullptr || !player->active || player->condition == EntityCondition::Dead;
+}
+
+void ConfigureSmokeNetworkRoles(State& peer0, State& peer1) {
+    peer0.net_session.role = network::NetRole::Coordinator;
+    peer1.net_session.role = network::NetRole::Peer;
+}
+
+bool RunSmokeStageTransition(
+    State& peer0,
+    State& peer1,
+    Audio& peer0_audio,
+    Audio& peer1_audio,
+    Graphics& peer0_graphics,
+    Graphics& peer1_graphics,
+    std::uint32_t seed
+) {
+    const StageTransitionTarget transition{
+        .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_2"),
+        .preserve_player_state = true,
+        .seed = seed,
+    };
+    QueueStageTransition(peer0, transition);
+    QueueStageTransition(peer1, transition);
+    peer0.SetMode(Mode::StageTransition);
+    peer1.SetMode(Mode::StageTransition);
+    peer0.scene_frame = 0;
+    peer1.scene_frame = 0;
+    for (std::uint32_t i = 0; i < 70; ++i) {
+        StepSingleTick(peer0, peer0_audio, peer0_graphics);
+        StepSingleTick(peer1, peer1_audio, peer1_graphics);
+    }
+    return peer0.stage.quest_stage_id == "classic_mines_2" &&
+           peer1.stage.quest_stage_id == "classic_mines_2";
+}
+
 void ApplyLockstepInputsToState(
     State& state,
     const std::vector<PlayerId>& player_ids,
@@ -1686,6 +1757,107 @@ bool CheckInputLockstepSmoke() {
         };
 
         if (!run_carry_transition_case()) {
+            return false;
+        }
+
+        const auto run_respawn_policy_case = [&]() -> bool {
+            const auto prepare_pair = [&](
+                FakeLockstepPeer& peer0,
+                FakeLockstepPeer& peer1,
+                MultiplayerRespawnMode mode
+            ) -> bool {
+                peer0 = FakeLockstepPeer{};
+                peer1 = FakeLockstepPeer{};
+                peer0.peer_id = 0;
+                peer0.owned_players = {1};
+                peer1.peer_id = 1;
+                peer1.owned_players = {2};
+
+                const char* failed_step = nullptr;
+                if (!PrepareLockstepSmokeState(peer0.state, peer0_graphics, peer0.owned_players, failed_step) ||
+                    !PrepareLockstepSmokeState(peer1.state, peer1_graphics, peer1.owned_players, failed_step)) {
+                    std::cerr << "input lockstep respawn-policy smoke failed during setup: "
+                              << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                    return false;
+                }
+                ConfigureSmokeNetworkRoles(peer0.state, peer1.state);
+                peer0.state.multiplayer_respawn_mode = mode;
+                peer1.state.multiplayer_respawn_mode = mode;
+                return true;
+            };
+
+            FakeLockstepPeer peer0;
+            FakeLockstepPeer peer1;
+            const char* failed_step = nullptr;
+
+            if (!prepare_pair(peer0, peer1, MultiplayerRespawnMode::RespawnAtEntrance) ||
+                !KillSmokePlayer(peer0.state, 1, failed_step) ||
+                !KillSmokePlayer(peer1.state, 1, failed_step)) {
+                std::cerr << "input lockstep respawn-policy smoke failed during easy setup: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+            StepSingleTick(peer0.state, peer0_audio, peer0_graphics);
+            StepSingleTick(peer1.state, peer1_audio, peer1_graphics);
+            if (!SmokePlayerIsAlive(peer0.state, 1) || !SmokePlayerIsAlive(peer1.state, 1) ||
+                !CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep easy respawn")) {
+                std::cerr << "input lockstep respawn-policy smoke failed: easy respawn did not revive player 1\n";
+                return false;
+            }
+
+            if (!prepare_pair(peer0, peer1, MultiplayerRespawnMode::GenerousNextLevel) ||
+                !KillSmokePlayer(peer0.state, 1, failed_step) ||
+                !KillSmokePlayer(peer1.state, 1, failed_step) ||
+                !RunSmokeStageTransition(
+                    peer0.state,
+                    peer1.state,
+                    peer0_audio,
+                    peer1_audio,
+                    peer0_graphics,
+                    peer1_graphics,
+                    65432U
+                )) {
+                std::cerr << "input lockstep respawn-policy smoke failed during generous transition: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+            if (!SmokePlayerIsAlive(peer0.state, 1) || !SmokePlayerIsAlive(peer1.state, 1) ||
+                !SmokePlayerIsAlive(peer0.state, 2) || !SmokePlayerIsAlive(peer1.state, 2) ||
+                !CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep generous respawn")) {
+                std::cerr << "input lockstep respawn-policy smoke failed: generous transition did not revive all players\n";
+                return false;
+            }
+
+            if (!prepare_pair(peer0, peer1, MultiplayerRespawnMode::NoRespawn) ||
+                !KillSmokePlayer(peer0.state, 1, failed_step) ||
+                !KillSmokePlayer(peer1.state, 1, failed_step) ||
+                !RunSmokeStageTransition(
+                    peer0.state,
+                    peer1.state,
+                    peer0_audio,
+                    peer1_audio,
+                    peer0_graphics,
+                    peer1_graphics,
+                    76543U
+                )) {
+                std::cerr << "input lockstep respawn-policy smoke failed during no-respawn transition: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+            if (!SmokePlayerHasNoActiveBody(peer0.state, 1) ||
+                !SmokePlayerHasNoActiveBody(peer1.state, 1) ||
+                !SmokePlayerIsAlive(peer0.state, 2) ||
+                !SmokePlayerIsAlive(peer1.state, 2) ||
+                !CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep no respawn")) {
+                std::cerr << "input lockstep respawn-policy smoke failed: no-respawn transition revived or lost the wrong player\n";
+                return false;
+            }
+
+            std::cout << "input lockstep respawn-policy smoke ok\n";
+            return true;
+        };
+
+        if (!run_respawn_policy_case()) {
             return false;
         }
 

@@ -44,6 +44,18 @@ const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
     return "Unknown";
 }
 
+const char* MultiplayerRespawnModeName(MultiplayerRespawnMode mode) {
+    switch (mode) {
+    case MultiplayerRespawnMode::GenerousNextLevel:
+        return "Generous Next Level";
+    case MultiplayerRespawnMode::NoRespawn:
+        return "No Respawn";
+    case MultiplayerRespawnMode::RespawnAtEntrance:
+        return "Respawn At Entrance";
+    }
+    return "Unknown";
+}
+
 void DrawFuzzerPresetButton(
     const char* label,
     network::NetFuzzerConfig preset,
@@ -210,6 +222,43 @@ void DrawReconnectPolicyControls(State& state) {
     }
 }
 
+void DrawRespawnPolicyControls(State& state) {
+    if (!ImGui::CollapsingHeader("Respawn Policy", ImGuiTreeNodeFlags_DefaultOpen)) {
+        return;
+    }
+
+    const bool transport_open = network::IsTransportOpen(state);
+    if (transport_open) {
+        ImGui::BeginDisabled();
+    }
+
+    if (ImGui::BeginCombo(
+            "Mode",
+            MultiplayerRespawnModeName(state.multiplayer_respawn_mode)
+        )) {
+        constexpr MultiplayerRespawnMode kModes[] = {
+            MultiplayerRespawnMode::GenerousNextLevel,
+            MultiplayerRespawnMode::NoRespawn,
+            MultiplayerRespawnMode::RespawnAtEntrance,
+        };
+        for (const MultiplayerRespawnMode mode : kModes) {
+            const bool selected = state.multiplayer_respawn_mode == mode;
+            if (ImGui::Selectable(MultiplayerRespawnModeName(mode), selected)) {
+                state.multiplayer_respawn_mode = mode;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    if (transport_open) {
+        ImGui::EndDisabled();
+        ImGui::TextWrapped("Respawn policy is lockstep state. Change it before hosting/joining.");
+    }
+}
+
 void DrawDebugLocalPlayers(State& state, DebugPlayback& debug, const Graphics& graphics) {
     if (!ImGui::CollapsingHeader("Debug Local Players", ImGuiTreeNodeFlags_DefaultOpen)) {
         return;
@@ -365,6 +414,9 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Separator();
 
     DrawHostJoinControls(state, debug, graphics);
+    ImGui::Separator();
+
+    DrawRespawnPolicyControls(state);
     ImGui::Separator();
 
     DrawReconnectPolicyControls(state);

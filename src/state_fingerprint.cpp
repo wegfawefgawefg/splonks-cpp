@@ -454,6 +454,7 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(
     writer.AddPod(state.depth);
     writer.AddPod(state.points);
     writer.AddPod(state.deaths);
+    writer.AddPod(static_cast<std::uint8_t>(state.multiplayer_respawn_mode));
     writer.AddPod(state.sac_altar_favor);
     writer.AddPod(state.sac_altar_reward_tier);
     writer.AddBool(state.game_over);
@@ -512,6 +513,7 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(
     writer.AddPod(state.depth);
     writer.AddPod(state.points);
     writer.AddPod(state.deaths);
+    writer.AddPod(static_cast<std::uint8_t>(state.multiplayer_respawn_mode));
     writer.AddPod(state.sac_altar_favor);
     writer.AddPod(state.sac_altar_reward_tier);
     writer.AddBool(state.game_over);
