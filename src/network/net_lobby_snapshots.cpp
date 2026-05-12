@@ -419,6 +419,78 @@ bool HasActiveLocalMovementInput(const PlayerSlot& slot) {
         slot.inputs.run.down;
 }
 
+std::uint32_t ClampTuningFramesForNetwork(int value) {
+    return static_cast<std::uint32_t>(std::max(0, value));
+}
+
+entities::common::JumpAndClimbTuning MakeNetworkJumpAndClimbTuning(
+    const PlayerTuningState& tuning
+) {
+    return entities::common::JumpAndClimbTuning{
+        .gravity_scale = tuning.gravity_scale,
+        .jump_impulse = tuning.jump_impulse,
+        .spring_shoes_jump_impulse_bonus = tuning.spring_shoes_jump_impulse_bonus,
+        .climb_speed = tuning.climb_speed,
+        .climb_depart_horizontal_speed = tuning.climb_depart_horizontal_speed,
+        .climb_probe_bias_pixels = tuning.climb_probe_bias_pixels,
+        .climb_probe_x_scale = tuning.climb_probe_x_scale,
+        .climb_required_probe_hits = ClampTuningFramesForNetwork(tuning.climb_required_probe_hits),
+        .coyote_time_frames = ClampTuningFramesForNetwork(tuning.coyote_frames),
+        .jump_delay_frames = ClampTuningFramesForNetwork(tuning.jump_delay_frames),
+        .jump_hold_gravity_frames = ClampTuningFramesForNetwork(tuning.jump_hold_frames),
+        .climb_detach_cooldown_frames = ClampTuningFramesForNetwork(tuning.climb_detach_cooldown),
+        .hang_drop_cooldown_frames = ClampTuningFramesForNetwork(tuning.hang_drop_cooldown),
+        .glove_hang_drop_cooldown_frames = ClampTuningFramesForNetwork(tuning.glove_hang_drop_cooldown),
+        .hang_wall_release_cooldown_frames = ClampTuningFramesForNetwork(tuning.hang_wall_release_cooldown),
+        .auto_ledge_grab = tuning.auto_ledge_grab,
+    };
+}
+
+bool SnapshotHasMovementFlag(const PlayerSnapshotEntry& snapshot, EntityMovementFlag flag) {
+    const std::uint32_t bit = 1U << static_cast<std::uint32_t>(flag);
+    return (snapshot.movement_flags & bit) != 0;
+}
+
+bool SnapshotLooksLikeJumpClaim(const PlayerSnapshotEntry& snapshot) {
+    return (snapshot.input_flags & kPlayerSnapshotInputJump) != 0 &&
+        snapshot.grounded == 0 &&
+        snapshot.vel_y < -0.5F;
+}
+
+bool TryAcceptPeerLocomotionClaim(
+    State& state,
+    const Graphics& graphics,
+    Entity& entity,
+    const PlayerSnapshotEntry& snapshot
+) {
+    if (!SnapshotHasMovementFlag(snapshot, EntityMovementFlag::Hanging) &&
+        !SnapshotHasMovementFlag(snapshot, EntityMovementFlag::Climbing) &&
+        !SnapshotLooksLikeJumpClaim(snapshot)) {
+        return false;
+    }
+    const entities::common::JumpAndClimbTuning tuning =
+        MakeNetworkJumpAndClimbTuning(state.player_tuning);
+    const bool accepted = entities::common::TryApplyPlausibleLocomotionClaim(
+        entity,
+        state,
+        tuning,
+        Vec2::New(snapshot.pos_x, snapshot.pos_y),
+        Vec2::New(snapshot.vel_x, snapshot.vel_y),
+        snapshot.movement_flags,
+        DecodeHangSide(snapshot.hang_side),
+        snapshot.coyote_time,
+        snapshot.hang_count,
+        snapshot.climb_detach_cooldown
+    );
+    if (accepted) {
+        entity.condition = static_cast<EntityCondition>(snapshot.condition);
+        entity.health = snapshot.health;
+        entity.facing = snapshot.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
+        state.UpdateSidForEntity(entity.vid.id, graphics);
+    }
+    return accepted;
+}
+
 bool ShouldSmoothLocalPredictionResidual(
     const Entity& entity,
     const PlayerSlot& slot,
@@ -612,6 +684,12 @@ void ApplyPlayerSnapshots(
         if (PlayerSlot* const slot = state.players.Find(snapshot.player_id);
             slot != nullptr && slot->connection_kind == PlayerConnectionKind::Remote) {
             ApplyInputFlags(*slot, snapshot.input_flags);
+            if (state.net_session.role == NetRole::Coordinator && slot->entity_vid.has_value()) {
+                if (Entity* const entity = state.entity_manager.GetEntityMut(*slot->entity_vid);
+                    entity != nullptr && entity->active) {
+                    (void)TryAcceptPeerLocomotionClaim(state, graphics, *entity, snapshot);
+                }
+            }
         }
         (void)EnsureRemotePlayerTarget(transport, snapshot, current_pos, packet.sequence, state.frame);
     }

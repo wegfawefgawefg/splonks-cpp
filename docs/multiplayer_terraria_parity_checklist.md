@@ -21,6 +21,8 @@ Related docs:
   compact action wire payloads.
 - `docs/network_stage_and_settings_classification.md`: durable/shared/local
   state classification.
+- `docs/network_locomotion_affordances.md`: bounded local locomotion authority
+  and plausibility checks for hang/climb/jump/swim/carry responsiveness.
 - `docs/water_fluid_simulation.md`: fluid model and Terraria liquid references.
 
 ## Why We Kept Getting "Closer" But Not Done
@@ -220,6 +222,11 @@ Known playtest symptoms to classify under this gate, not patch ad hoc:
 ## Gate 3: Player Controls, Prediction, And Repair
 
 Goal: local control feels offline, but coordinator body state eventually wins.
+
+See `docs/network_locomotion_affordances.md` for the planned bounded local
+locomotion authority layer. Exact delayed coordinator replay is too strict for
+one-frame hang/climb/coyote/swim windows; the coordinator should validate
+plausible owner claims and then broadcast accepted body state.
 
 - [x] Peer sends input/control state to coordinator.
 - [x] Coordinator simulates remote player body from replicated inputs.

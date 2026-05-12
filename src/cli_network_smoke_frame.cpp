@@ -1294,6 +1294,103 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
         return false;
     }
 
+    for (State* const state : {&coordinator, &peer}) {
+        state->stage.SetTile(IVec2::New(5, 5), Tile::Air);
+        state->stage.SetTile(IVec2::New(5, 6), Tile::Air);
+        state->stage.SetTile(IVec2::New(5, 7), Tile::Air);
+        state->stage.SetTile(IVec2::New(6, 5), Tile::Air);
+        state->stage.SetTile(IVec2::New(6, 6), Tile::CaveBlock);
+        state->stage.SetTile(IVec2::New(6, 7), Tile::Air);
+    }
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (coordinator_peer_player == nullptr || peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing local hang claim player\n";
+        return false;
+    }
+    coordinator_peer_player->pos = Vec2::New(72.0F, 96.0F);
+    coordinator_peer_player->vel = Vec2::New(0.0F, 1.0F);
+    coordinator_peer_player->movement_flags = 0;
+    coordinator_peer_player->hang_side.reset();
+    coordinator_peer_player->grounded = false;
+    coordinator_peer_player->condition = EntityCondition::Normal;
+    peer_player->pos = Vec2::New(88.0F, 96.0F);
+    peer_player->vel = Vec2::New(0.0F, 0.0F);
+    peer_player->movement_flags = 0;
+    SetMovementFlag(*peer_player, EntityMovementFlag::Hanging, true);
+    peer_player->hang_side = LeftOrRight::Right;
+    peer_player->hang_count = 0;
+    peer_player->grounded = false;
+    peer_player->condition = EntityCondition::Normal;
+    if (!DeliverPeerSnapshotsToCoordinator(
+            peer,
+            coordinator,
+            pair,
+            graphics,
+            "frame movement state peer hang claim"
+        )) {
+        return false;
+    }
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    if (coordinator_peer_player == nullptr ||
+        !HasMovementFlag(*coordinator_peer_player, EntityMovementFlag::Hanging) ||
+        coordinator_peer_player->hang_side != LeftOrRight::Right ||
+        coordinator_peer_player->grounded ||
+        std::abs(coordinator_peer_player->pos.x - 88.0F) > 0.01F) {
+        std::cerr << "network frame smoke failed at frame movement state peer hang claim acceptance\n";
+        return false;
+    }
+
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    PlayerSlot* const peer_slot_for_jump = peer.players.Find(2);
+    if (coordinator_peer_player == nullptr || peer_player == nullptr || peer_slot_for_jump == nullptr) {
+        std::cerr << "network frame smoke failed: missing local jump claim player\n";
+        return false;
+    }
+    for (State* const state : {&coordinator, &peer}) {
+        state->stage.SetTile(IVec2::New(4, 5), Tile::Air);
+        state->stage.SetTile(IVec2::New(5, 5), Tile::Air);
+        state->stage.SetTile(IVec2::New(4, 6), Tile::Air);
+        state->stage.SetTile(IVec2::New(5, 6), Tile::Air);
+        state->stage.SetTile(IVec2::New(4, 7), Tile::Air);
+        state->stage.SetTile(IVec2::New(5, 7), Tile::Air);
+    }
+    coordinator_peer_player->pos = Vec2::New(64.0F, 96.0F);
+    coordinator_peer_player->vel = Vec2::New(0.0F, 0.0F);
+    coordinator_peer_player->movement_flags = 0;
+    coordinator_peer_player->hang_side.reset();
+    coordinator_peer_player->grounded = true;
+    coordinator_peer_player->coyote_time = 3;
+    coordinator_peer_player->condition = EntityCondition::Normal;
+    peer_player->pos = Vec2::New(64.0F, 92.0F);
+    peer_player->vel = Vec2::New(0.0F, -4.5F);
+    peer_player->movement_flags = 0;
+    peer_player->hang_side.reset();
+    peer_player->grounded = false;
+    peer_player->coyote_time = 0;
+    peer_player->condition = EntityCondition::Normal;
+    peer_slot_for_jump->inputs.jump.down = true;
+    if (!DeliverPeerSnapshotsToCoordinator(
+            peer,
+            coordinator,
+            pair,
+            graphics,
+            "frame movement state peer jump claim"
+        )) {
+        return false;
+    }
+    peer_slot_for_jump->inputs.jump.down = false;
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    if (coordinator_peer_player == nullptr ||
+        coordinator_peer_player->grounded ||
+        coordinator_peer_player->vel.y > -4.49F ||
+        coordinator_peer_player->coyote_time != 0 ||
+        coordinator_peer_player->fall_timer != 0) {
+        std::cerr << "network frame smoke failed at frame movement state peer jump claim acceptance\n";
+        return false;
+    }
+
     coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
     peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
     if (coordinator_peer_player == nullptr || peer_player == nullptr) {

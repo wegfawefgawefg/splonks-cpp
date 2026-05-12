@@ -120,6 +120,18 @@ void DoExplosion(
     State& state,
     Audio& audio
 );
+bool TryApplyPlausibleLocomotionClaim(
+    Entity& entity,
+    State& state,
+    const JumpAndClimbTuning& tuning,
+    Vec2 claimed_pos,
+    Vec2 claimed_vel,
+    std::uint32_t claimed_movement_flags,
+    std::optional<LeftOrRight> claimed_hang_side,
+    std::uint32_t claimed_coyote_time,
+    std::uint32_t claimed_hang_count,
+    std::uint32_t claimed_climb_detach_cooldown
+);
 const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
 Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
 Vec2 GetVisualCenterForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
