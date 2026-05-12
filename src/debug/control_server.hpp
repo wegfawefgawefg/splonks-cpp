@@ -21,7 +21,7 @@ public:
 
     bool Start(std::uint16_t port, std::string* error_out);
     void Stop();
-    void Step(const State& state);
+    void Step(State& state);
 
     bool IsRunning() const;
     std::uint16_t Port() const;

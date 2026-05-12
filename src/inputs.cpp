@@ -171,6 +171,28 @@ void SetPlayingInputSnapshot(State& state) {
     float my = 0.0F;
     SDL_GetMouseState(&mx, &my);
     new_inputs.mouse_pos = UVec2::New(static_cast<unsigned int>(mx), static_cast<unsigned int>(my));
+    if (state.debug_input_override.active && state.debug_input_override.frames_remaining > 0) {
+        const PlayerId target_player_id = state.debug_input_override.player_id;
+        const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();
+        const bool targets_primary =
+            target_player_id == kInvalidPlayerId ||
+            (primary_slot != nullptr && primary_slot->player_id == target_player_id);
+        if (targets_primary) {
+            new_inputs = ToPlayingInputSnapshot(state.debug_input_override.input);
+        } else if (PlayerSlot* const slot = state.players.Find(target_player_id);
+                   slot != nullptr &&
+                   slot->connected &&
+                   slot->connection_kind == PlayerConnectionKind::Local) {
+            state.players.SetInputFrameForPlayer(target_player_id, state.debug_input_override.input);
+        }
+
+        state.debug_input_override.frames_remaining -= 1;
+        if (state.debug_input_override.frames_remaining <= 0) {
+            state.debug_input_override.active = false;
+            state.debug_input_override.player_id = kInvalidPlayerId;
+            state.debug_input_override.input = PlayerInputFrame::New();
+        }
+    }
     state.playing_input_snapshot = new_inputs;
 }
 

@@ -76,6 +76,11 @@ Recent validated commits on this branch:
 - `37b2e03 Remove stale replica entity cruft`
 - `62c34bb Apply stage transitions through lockstep`
 - `d6fb737 Bypass old message drain during lockstep`
+- `a9b2d55 Cover stepped lockstep stage transition`
+- `12bc110 Stop draining old action queue in gameplay`
+- `c3e1188 Make live lobby step lockstep only`
+- `00453cb Cover lockstep player drop and throw`
+- `e929791 Rename control diagnostics to input owner`
 
 Recent smoke-hardening work intentionally made the fake input-lockstep
 smoke so it resembles live topology instead of accidentally simulating both
@@ -122,16 +127,55 @@ Validation for this chunk:
 
 Next immediate steps:
 
-- Live-test the two-window lockstep path after the stepped carry-transition
-  smoke coverage remains green.
+- Live-test the two-window lockstep path beyond boot/connect.
 - Verify the peer can carry the host player and both players can transition
   stages together without old ordered mutation backlog.
+- If live carry/stage-transition validation needs automation, add a clean
+  debug input/script lane. Do not add one-off state mutation commands just to
+  force a scenario.
 - Run and keep green:
   - `cmake --build build --target splonks-cpp -j 8`
   - `./build/splonks-cpp --check-state-equality-smoke`
   - `./build/splonks-cpp --check-deterministic-replay-smoke`
   - `./build/splonks-cpp --check-input-lockstep-smoke`
 - Commit that validated coverage chunk before moving to live two-window testing.
+
+Current live validation status:
+
+- `scripts/run_multiplayer_pair_i3.sh` builds and launches two windows.
+- Host and peer connect with `input_lockstep_enabled: true`.
+- Host role is `coordinator`; peer role is `peer`.
+- Both start on `classic_mines_1` with matching stage seed.
+- The debug control server can inject ordinary local input with
+  `scripts/splonksctl --port <port> input <frames> [buttons...]`. This feeds
+  the same `PlayerInputFrame` path that lockstep transmits; it does not mutate
+  entities, tiles, or stage state directly.
+- Live injected peer movement was validated: `input 90 left run` on the peer
+  moved player 2 from the spawn cluster to `x=6,y=82`, and both host and peer
+  reported the same final player position.
+- `ordered_messages`, `pending_outbound_messages`, and `applied_messages` are
+  zero in the live net debug query, confirming the old durable mutation backlog
+  is inactive in the basic boot/connect case.
+- Debug control JSON now reports `input_owner` instead of stale
+  `net_owner` authority language.
+- Not yet proven live: peer carrying host player and both players transitioning
+  stages together. Direct live pickup input against a normal host player did
+  not carry because normal carry rules require player targets to be dead or
+  stunned. Fake/headless coverage for carry, drop, throw, and stepped stage
+  transition is green.
+
+Current cleanup status:
+
+- Active `StepPlaying` and `StepGameOver` no longer drain the old
+  `GameplayActionRequested` mutation queue.
+- Live `StepNetworkLobby` is lockstep-only for open sessions. Old snapshot,
+  entity patch, fluid patch, ordered message, and peer request paths remain as
+  legacy code debt but are no longer part of the live lobby step.
+- Legacy code still present and should be deleted/quarantined in later cleanup:
+  `src/world_ops/action.cpp`, `State::pending_gameplay_actions`,
+  `src/gameplay_messages.hpp`, old `src/network/net_message_apply*`, old
+  `src/network/net_gameplay_replication.*`, old packet mapper/apply files, and
+  old CLI network smokes that validate mutation-message lanes.
 
 Current stepped-transition coverage note:
 
@@ -741,6 +785,10 @@ Goal: boot two game windows and play with delay-based lockstep.
   hash, last agreed frame, packet loss/jitter profile.
   Current live debug exposes role, lockstep frame, local-input frame, and input
   delay. Buffer depth/hash/agreed-frame remain TODO.
+- [x] Add a clean debug input/script lane for live validation.
+  Implemented through `splonksctl input`, which writes a temporary
+  `DebugInputOverrideState` consumed by normal input capture. This is not a
+  world mutation/admin command.
 - [ ] Keep current multiplayer pair launcher if useful.
 - [ ] Playtest same-machine two-window lockstep.
   Basic launch/query verified host and peer advancing on the same stage/frame

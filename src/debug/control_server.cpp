@@ -356,8 +356,52 @@ int ParseIntArg(const std::vector<std::string>& parts, std::size_t index, int fa
     }
 }
 
+PlayerId ParsePlayerIdArg(const std::vector<std::string>& parts, std::size_t index, PlayerId fallback) {
+    const int parsed = ParseIntArg(parts, index, static_cast<int>(fallback));
+    return parsed < 0 ? fallback : static_cast<PlayerId>(parsed);
+}
+
 std::string MakeError(std::string_view message) {
     return "{\"ok\":false,\"error\":" + JsonString(message) + "}\n";
+}
+
+bool ApplyInputButtonToken(PlayerInputFrame& input, std::string_view token) {
+    if (token == "left") {
+        input.left = true;
+    } else if (token == "right") {
+        input.right = true;
+    } else if (token == "up") {
+        input.up = true;
+    } else if (token == "down") {
+        input.down = true;
+    } else if (token == "jump") {
+        input.jump = true;
+    } else if (token == "run") {
+        input.run = true;
+    } else if (token == "use") {
+        input.use_button = true;
+    } else if (token == "equip") {
+        input.equip_button = true;
+    } else if (token == "pickup" || token == "grab" || token == "drop") {
+        input.pick_up_drop = true;
+    } else if (token == "stop") {
+        input.stop = true;
+    } else if (token == "bomb") {
+        input.bomb = true;
+    } else if (token == "rope") {
+        input.rope = true;
+    } else if (token == "attack") {
+        input.attack = true;
+    } else if (token == "buy") {
+        input.buy_button = true;
+    } else if (token == "emote_up") {
+        input.emote_up = true;
+    } else if (token == "emote_down") {
+        input.emote_down = true;
+    } else {
+        return token == "none";
+    }
+    return true;
 }
 
 std::string HandleStatusCommand(const State& state) {
@@ -398,6 +442,75 @@ std::string HandlePerfCommand(const State& state) {
         << ",\"render_peak_ms\":" << perf.render_peak_ms
         << ",\"frame_total_peak_ms\":" << perf.frame_total_peak_ms
         << "}\n";
+    return out.str();
+}
+
+std::string HandleInputCommand(State& state, const std::vector<std::string>& parts) {
+    if (parts.size() >= 2 && parts[1] == "clear") {
+        state.debug_input_override = DebugInputOverrideState{};
+        return "{\"ok\":true,\"cmd\":\"input\",\"cleared\":true}\n";
+    }
+    if (parts.size() >= 2 && parts[1] == "status") {
+        std::ostringstream out;
+        out << "{\"ok\":true,\"cmd\":\"input\""
+            << ",\"active\":" << (state.debug_input_override.active ? "true" : "false")
+            << ",\"player_id\":";
+        if (state.debug_input_override.player_id == kInvalidPlayerId) {
+            out << "null";
+        } else {
+            out << state.debug_input_override.player_id;
+        }
+        out << ",\"frames_remaining\":" << state.debug_input_override.frames_remaining
+            << "}\n";
+        return out.str();
+    }
+
+    PlayerId player_id = kInvalidPlayerId;
+    std::size_t frames_index = 1;
+    if (parts.size() >= 4 && parts[1] == "player") {
+        player_id = ParsePlayerIdArg(parts, 2, kInvalidPlayerId);
+        frames_index = 3;
+    }
+    if (parts.size() <= frames_index) {
+        return MakeError("input command requires frames and optional buttons");
+    }
+
+    const int frames = ParseIntArg(parts, frames_index, 0);
+    if (frames <= 0) {
+        return MakeError("input frames must be positive");
+    }
+    if (player_id != kInvalidPlayerId) {
+        const PlayerSlot* const slot = state.players.Find(player_id);
+        if (slot == nullptr || !slot->connected ||
+            slot->connection_kind != PlayerConnectionKind::Local) {
+            return MakeError("input target must be a connected local player");
+        }
+    } else if (state.players.FindPrimaryLocal() == nullptr) {
+        return MakeError("no primary local player is available");
+    }
+
+    PlayerInputFrame input = PlayerInputFrame::New();
+    for (std::size_t i = frames_index + 1; i < parts.size(); ++i) {
+        if (!ApplyInputButtonToken(input, parts[i])) {
+            return MakeError("unknown input button token");
+        }
+    }
+
+    state.debug_input_override.active = true;
+    state.debug_input_override.player_id = player_id;
+    state.debug_input_override.frames_remaining = frames;
+    state.debug_input_override.input = input;
+
+    std::ostringstream out;
+    out << "{\"ok\":true,\"cmd\":\"input\""
+        << ",\"frames\":" << frames
+        << ",\"player_id\":";
+    if (player_id == kInvalidPlayerId) {
+        out << "null";
+    } else {
+        out << player_id;
+    }
+    out << "}\n";
     return out.str();
 }
 
@@ -636,7 +749,7 @@ std::string HandleTilesCommand(const State& state, const std::vector<std::string
     return out.str();
 }
 
-std::string HandleCommand(const State& state, std::string_view command) {
+std::string HandleCommand(State& state, std::string_view command) {
     const std::vector<std::string> parts = SplitCommand(command);
     if (parts.empty()) {
         return MakeError("empty command");
@@ -646,7 +759,7 @@ std::string HandleCommand(const State& state, std::string_view command) {
         return "{\"ok\":true,\"cmd\":\"ping\",\"pong\":true}\n";
     }
     if (op == "help") {
-        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"entities [limit]\",\"entities near [radius] [limit]\",\"entity <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"fingerprint\",\"perf\"]}\n";
+        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"entities [limit]\",\"entities near [radius] [limit]\",\"entity <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
     }
     if (op == "status") {
         return HandleStatusCommand(state);
@@ -671,6 +784,9 @@ std::string HandleCommand(const State& state, std::string_view command) {
     }
     if (op == "perf") {
         return HandlePerfCommand(state);
+    }
+    if (op == "input") {
+        return HandleInputCommand(state, parts);
     }
     return MakeError("unknown command");
 }
@@ -740,7 +856,7 @@ void DebugControlServer::Stop() {
     port_ = 0;
 }
 
-void DebugControlServer::Step(const State& state) {
+void DebugControlServer::Step(State& state) {
 #ifdef _WIN32
     (void)state;
 #else

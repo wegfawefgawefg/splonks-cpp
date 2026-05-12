@@ -206,6 +206,13 @@ struct DebugLocalPlayerBot {
     PlayingInputs previous_inputs = PlayingInputs::New();
 };
 
+struct DebugInputOverrideState {
+    bool active = false;
+    PlayerId player_id = kInvalidPlayerId;
+    int frames_remaining = 0;
+    PlayerInputFrame input = PlayerInputFrame::New();
+};
+
 struct StageRotationState {
     bool active = false;
     int elapsed_frames = 0;
@@ -275,6 +282,7 @@ struct State {
     DebugAudioBrushState debug_audio_brush;
     DebugFluidBrushState debug_fluid_brush;
     std::vector<DebugLocalPlayerBot> debug_local_player_bots;
+    DebugInputOverrideState debug_input_override;
     PlayerId next_debug_local_player_id = 2;
     StageRotationState stage_rotation;
     PlayerTuningState player_tuning;
