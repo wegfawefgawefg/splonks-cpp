@@ -98,6 +98,7 @@ Immediate resume checklist for the next `/goal` run:
 
 Recent validated commits on this branch:
 
+- `5fd8c5e Remove stale gameplay authority stub`
 - `eaeb95c Use input ownership terminology`
 - `97a786d Remove legacy replication lanes`
 - `0c05144 Remove legacy action request lane`
