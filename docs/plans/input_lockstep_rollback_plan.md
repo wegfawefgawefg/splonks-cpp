@@ -189,7 +189,7 @@ claiming lockstep is usable.
      lockstep coverage.
    - [x] Stage transition must not create orphan players, duplicate held
      players, or process-local player divergence.
-   - [ ] Add explicit fake/headless drop/throw coverage for player-carry if
+   - [x] Add explicit fake/headless drop/throw coverage for player-carry if
      live testing exposes gaps.
 2. Keep the multi-local-player architecture intact.
    - A process may own multiple local `PlayerId`s.

@@ -1486,6 +1486,69 @@ bool CheckInputLockstepSmoke() {
                 return false;
             }
 
+            if (!entities::common::TryDropEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !entities::common::TryDropEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+                std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not drop host-owned player\n";
+                return false;
+            }
+            if (!ValidateNoPlayerCarryLinks(peer0.state, "carry-transition after drop", std::cerr) ||
+                !ValidateNoPlayerCarryLinks(peer1.state, "carry-transition after drop", std::cerr) ||
+                !CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep carry drop")) {
+                std::cerr << "  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
+            if (!entities::common::TryPickupEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !entities::common::TryPickupEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+                std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not re-pickup host-owned player\n";
+                return false;
+            }
+            const Vec2 throw_velocity = Vec2::New(2.0F, -2.0F);
+            if (!entities::common::TryThrowEntityByVid(
+                    *peer0_p2,
+                    *peer0_p1,
+                    throw_velocity,
+                    peer0.state,
+                    peer0_graphics,
+                    peer0_audio
+                ) ||
+                !entities::common::TryThrowEntityByVid(
+                    *peer1_p2,
+                    *peer1_p1,
+                    throw_velocity,
+                    peer1.state,
+                    peer1_graphics,
+                    peer1_audio
+                )) {
+                std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not throw host-owned player\n";
+                return false;
+            }
+            if (!ValidateNoPlayerCarryLinks(peer0.state, "carry-transition after throw", std::cerr) ||
+                !ValidateNoPlayerCarryLinks(peer1.state, "carry-transition after throw", std::cerr) ||
+                !CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep carry throw")) {
+                std::cerr << "  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
+            if (!PlaceCarryTransitionSmokePlayers(peer0.state, peer0_graphics, failed_step) ||
+                !PlaceCarryTransitionSmokePlayers(peer1.state, peer1_graphics, failed_step) ||
+                !entities::common::TryPickupEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !entities::common::TryPickupEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+                std::cerr << "input lockstep carry-transition smoke failed: could not reset carry setup after drop/throw coverage\n";
+                return false;
+            }
+            if (!CompareCanonicalFingerprints(
+                    peer0.state,
+                    peer1.state,
+                    "input lockstep carry reset after throw"
+                )) {
+                std::cerr << "  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
             FakeLockstepNetwork network = FakeLockstepNetwork::New(network::NetFuzzerConfig{}, 0x2001U);
             std::size_t compared_hashes = 0;
             std::string step_error;
