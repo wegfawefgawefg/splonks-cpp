@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <vector>
 
 namespace splonks::entities::common {
@@ -19,6 +20,8 @@ constexpr int kGroundedDownSideAttachRequiredProbeHits = 2;
 constexpr float kSpringShoeMovementSoundVolume = 0.15F;
 constexpr float kLocomotionClaimMaxDistancePx = 32.0F;
 constexpr float kLocomotionClaimUpwardVelocityGrace = -0.5F;
+constexpr float kLocomotionClaimMaxHorizontalVelocityPx = 12.0F;
+constexpr float kLocomotionClaimMaxVerticalVelocityPx = 16.0F;
 
 struct ClimbAnchor {
     IVec2 tile_pos = IVec2::New(0, 0);
@@ -575,6 +578,20 @@ bool IsClaimCloseEnough(const Entity& entity, Vec2 claimed_pos) {
     return distance_sq <= kLocomotionClaimMaxDistancePx * kLocomotionClaimMaxDistancePx;
 }
 
+bool IsCoordinatorExternallyControllingLocomotion(const Entity& entity) {
+    return entity.condition != EntityCondition::Normal ||
+        entity.held_by_vid.has_value() ||
+        entity.attachment_mode != AttachmentMode::None ||
+        entity.thrown_by.has_value() ||
+        entity.marked_for_destruction ||
+        !entity.active;
+}
+
+bool IsClaimVelocityPlausible(const Entity& candidate) {
+    return std::abs(candidate.vel.x) <= kLocomotionClaimMaxHorizontalVelocityPx &&
+        std::abs(candidate.vel.y) <= kLocomotionClaimMaxVerticalVelocityPx;
+}
+
 bool IsCandidateAabbFreeOfSolidTiles(const Entity& candidate, const State& state) {
     const AABB aabb = candidate.GetAABB();
     for (const WorldTileQueryResult& tile_query :
@@ -586,12 +603,42 @@ bool IsCandidateAabbFreeOfSolidTiles(const Entity& candidate, const State& state
     return true;
 }
 
+bool CandidateHasGroundSupport(Entity candidate, const Stage& stage) {
+    candidate.grounded = false;
+    candidate.SetGrounded(stage);
+    return candidate.grounded;
+}
+
+bool IsPlausibleFreeBodyCandidate(
+    const Entity& current_entity,
+    const Entity& candidate,
+    const State& state,
+    bool claimed_grounded
+) {
+    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+        return false;
+    }
+    if (!IsClaimVelocityPlausible(candidate)) {
+        return false;
+    }
+    if (!IsCandidateAabbFreeOfSolidTiles(candidate, state)) {
+        return false;
+    }
+    if (claimed_grounded && !CandidateHasGroundSupport(candidate, state.stage)) {
+        return false;
+    }
+    return true;
+}
+
 bool IsPlausibleHangCandidate(
     const Entity& current_entity,
     Entity& candidate,
     State& state,
     std::optional<LeftOrRight> claimed_hang_side
 ) {
+    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+        return false;
+    }
     if (!claimed_hang_side.has_value()) {
         return false;
     }
@@ -636,10 +683,14 @@ bool IsPlausibleHangCandidate(
 }
 
 bool IsPlausibleClimbCandidate(
+    const Entity& current_entity,
     Entity& candidate,
     State& state,
     const JumpAndClimbTuning& tuning
 ) {
+    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+        return false;
+    }
     if (candidate.condition != EntityCondition::Normal) {
         return false;
     }
@@ -655,6 +706,9 @@ bool IsPlausibleJumpCandidate(
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
+    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+        return false;
+    }
     if (candidate.condition != EntityCondition::Normal) {
         return false;
     }
@@ -875,9 +929,12 @@ bool TryApplyPlausibleLocomotionClaim(
     const JumpAndClimbTuning& tuning,
     Vec2 claimed_pos,
     Vec2 claimed_vel,
+    Vec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
+    bool claimed_grounded,
     std::optional<LeftOrRight> claimed_hang_side,
     std::uint32_t claimed_coyote_time,
+    std::uint32_t claimed_fall_timer,
     std::uint32_t claimed_hang_count,
     std::uint32_t claimed_climb_detach_cooldown
 ) {
@@ -888,11 +945,12 @@ bool TryApplyPlausibleLocomotionClaim(
     Entity candidate = entity;
     candidate.pos = claimed_pos;
     candidate.vel = claimed_vel;
-    candidate.acc = Vec2::New(0.0F, 0.0F);
-    candidate.grounded = false;
+    candidate.acc = claimed_acc;
+    candidate.grounded = claimed_grounded;
     candidate.movement_flags = claimed_movement_flags;
     candidate.hang_side = claimed_hang_side;
     candidate.coyote_time = claimed_coyote_time;
+    candidate.fall_timer = claimed_fall_timer;
     candidate.hang_count = claimed_hang_count;
     candidate.climb_detach_cooldown = claimed_climb_detach_cooldown;
 
@@ -903,9 +961,6 @@ bool TryApplyPlausibleLocomotionClaim(
         MovementFlagsHave(claimed_movement_flags, EntityMovementFlag::Climbing);
     const bool claimed_jump =
         !claimed_hanging && !claimed_climbing && !candidate.grounded && claimed_vel.y < -0.5F;
-    if (!claimed_hanging && !claimed_climbing && !claimed_jump) {
-        return false;
-    }
 
     if (claimed_hanging && IsPlausibleHangCandidate(entity, candidate, state, claimed_hang_side)) {
         entity.pos = claimed_pos;
@@ -925,10 +980,10 @@ bool TryApplyPlausibleLocomotionClaim(
         return true;
     }
 
-    if (claimed_climbing && IsPlausibleClimbCandidate(candidate, state, tuning)) {
+    if (claimed_climbing && IsPlausibleClimbCandidate(entity, candidate, state, tuning)) {
         entity.pos = claimed_pos;
         entity.vel = claimed_vel;
-        entity.acc = Vec2::New(0.0F, 0.0F);
+        entity.acc = claimed_acc;
         entity.grounded = false;
         entity.hang_side.reset();
         SetMovementFlag(entity, EntityMovementFlag::Climbing, true);
@@ -943,13 +998,31 @@ bool TryApplyPlausibleLocomotionClaim(
     if (claimed_jump && IsPlausibleJumpCandidate(entity, candidate, state, tuning)) {
         entity.pos = claimed_pos;
         entity.vel = claimed_vel;
-        entity.acc = Vec2::New(0.0F, 0.0F);
+        entity.acc = claimed_acc;
         entity.grounded = false;
         entity.hang_side.reset();
         SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
         SetMovementFlag(entity, EntityMovementFlag::Hanging, false);
         entity.coyote_time = 0;
         entity.fall_timer = 0;
+        entity.jump_hold_gravity_frames_remaining = candidate.jump_hold_gravity_frames_remaining;
+        entity.jump_delay_frame_count = candidate.jump_delay_frame_count;
+        return true;
+    }
+
+    if (!claimed_hanging &&
+        !claimed_climbing &&
+        IsPlausibleFreeBodyCandidate(entity, candidate, state, claimed_grounded)) {
+        entity.pos = claimed_pos;
+        entity.vel = claimed_vel;
+        entity.acc = claimed_acc;
+        entity.grounded = claimed_grounded;
+        entity.movement_flags = claimed_movement_flags;
+        entity.hang_side = claimed_hang_side;
+        entity.coyote_time = claimed_coyote_time;
+        entity.fall_timer = claimed_fall_timer;
+        entity.hang_count = claimed_hang_count;
+        entity.climb_detach_cooldown = claimed_climb_detach_cooldown;
         entity.jump_hold_gravity_frames_remaining = candidate.jump_hold_gravity_frames_remaining;
         entity.jump_delay_frame_count = candidate.jump_delay_frame_count;
         return true;

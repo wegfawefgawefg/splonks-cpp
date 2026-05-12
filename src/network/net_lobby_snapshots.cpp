@@ -446,26 +446,13 @@ entities::common::JumpAndClimbTuning MakeNetworkJumpAndClimbTuning(
     };
 }
 
-bool SnapshotHasMovementFlag(const PlayerSnapshotEntry& snapshot, EntityMovementFlag flag) {
-    const std::uint32_t bit = 1U << static_cast<std::uint32_t>(flag);
-    return (snapshot.movement_flags & bit) != 0;
-}
-
-bool SnapshotLooksLikeJumpClaim(const PlayerSnapshotEntry& snapshot) {
-    return (snapshot.input_flags & kPlayerSnapshotInputJump) != 0 &&
-        snapshot.grounded == 0 &&
-        snapshot.vel_y < -0.5F;
-}
-
 bool TryAcceptPeerLocomotionClaim(
     State& state,
     const Graphics& graphics,
     Entity& entity,
     const PlayerSnapshotEntry& snapshot
 ) {
-    if (!SnapshotHasMovementFlag(snapshot, EntityMovementFlag::Hanging) &&
-        !SnapshotHasMovementFlag(snapshot, EntityMovementFlag::Climbing) &&
-        !SnapshotLooksLikeJumpClaim(snapshot)) {
+    if (snapshot.condition != static_cast<std::uint8_t>(EntityCondition::Normal)) {
         return false;
     }
     const entities::common::JumpAndClimbTuning tuning =
@@ -476,15 +463,16 @@ bool TryAcceptPeerLocomotionClaim(
         tuning,
         Vec2::New(snapshot.pos_x, snapshot.pos_y),
         Vec2::New(snapshot.vel_x, snapshot.vel_y),
+        Vec2::New(snapshot.acc_x, snapshot.acc_y),
         snapshot.movement_flags,
+        snapshot.grounded != 0,
         DecodeHangSide(snapshot.hang_side),
         snapshot.coyote_time,
+        snapshot.fall_timer,
         snapshot.hang_count,
         snapshot.climb_detach_cooldown
     );
     if (accepted) {
-        entity.condition = static_cast<EntityCondition>(snapshot.condition);
-        entity.health = snapshot.health;
         entity.facing = snapshot.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
         state.UpdateSidForEntity(entity.vid.id, graphics);
     }

@@ -1394,6 +1394,108 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
     coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
     peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
     if (coordinator_peer_player == nullptr || peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing free body claim player\n";
+        return false;
+    }
+    for (State* const state : {&coordinator, &peer}) {
+        state->stage.SetTile(IVec2::New(3, 5), Tile::Air);
+        state->stage.SetTile(IVec2::New(3, 6), Tile::Air);
+        state->stage.SetTile(IVec2::New(4, 5), Tile::Air);
+        state->stage.SetTile(IVec2::New(4, 6), Tile::CaveBlock);
+        state->stage.SetTile(IVec2::New(4, 7), Tile::Air);
+    }
+    coordinator_peer_player->pos = Vec2::New(48.0F, 82.0F);
+    coordinator_peer_player->vel = Vec2::New(0.0F, 0.0F);
+    coordinator_peer_player->acc = Vec2::New(0.0F, 0.0F);
+    coordinator_peer_player->movement_flags = 0;
+    coordinator_peer_player->hang_side.reset();
+    coordinator_peer_player->grounded = true;
+    coordinator_peer_player->coyote_time = 3;
+    coordinator_peer_player->fall_timer = 2;
+    coordinator_peer_player->condition = EntityCondition::Normal;
+    coordinator_peer_player->held_by_vid.reset();
+    coordinator_peer_player->attachment_mode = AttachmentMode::None;
+    coordinator_peer_player->thrown_by.reset();
+    peer_player->pos = Vec2::New(64.0F, 82.0F);
+    peer_player->vel = Vec2::New(1.0F, 0.0F);
+    peer_player->acc = Vec2::New(0.0F, 0.0F);
+    peer_player->movement_flags = 0;
+    SetMovementFlag(*peer_player, EntityMovementFlag::Running, true);
+    peer_player->hang_side.reset();
+    peer_player->grounded = true;
+    peer_player->coyote_time = 6;
+    peer_player->fall_timer = 0;
+    peer_player->condition = EntityCondition::Normal;
+    if (!DeliverPeerSnapshotsToCoordinator(
+            peer,
+            coordinator,
+            pair,
+            graphics,
+            "frame movement state peer free body claim"
+        )) {
+        return false;
+    }
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    if (coordinator_peer_player == nullptr ||
+        !coordinator_peer_player->grounded ||
+        std::abs(coordinator_peer_player->pos.x - 64.0F) > 0.01F ||
+        coordinator_peer_player->fall_timer != 0 ||
+        !HasMovementFlag(*coordinator_peer_player, EntityMovementFlag::Running)) {
+        std::cerr << "network frame smoke failed at frame movement state free body claim acceptance"
+                  << " pos=("
+                  << (coordinator_peer_player == nullptr ? -1.0F : coordinator_peer_player->pos.x)
+                  << ","
+                  << (coordinator_peer_player == nullptr ? -1.0F : coordinator_peer_player->pos.y)
+                  << ") grounded="
+                  << (coordinator_peer_player != nullptr && coordinator_peer_player->grounded)
+                  << " fall="
+                  << (coordinator_peer_player == nullptr ? 999U : coordinator_peer_player->fall_timer)
+                  << " running="
+                  << (coordinator_peer_player != nullptr &&
+                      HasMovementFlag(*coordinator_peer_player, EntityMovementFlag::Running))
+                  << "\n";
+        return false;
+    }
+
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (coordinator_peer_player == nullptr || peer_player == nullptr) {
+        std::cerr << "network frame smoke failed: missing carried body rejection player\n";
+        return false;
+    }
+    coordinator_peer_player->pos = Vec2::New(64.0F, 82.0F);
+    coordinator_peer_player->vel = Vec2::New(0.0F, 0.0F);
+    coordinator_peer_player->grounded = true;
+    coordinator_peer_player->condition = EntityCondition::Normal;
+    coordinator_peer_player->held_by_vid = coordinator_host_vid;
+    coordinator_peer_player->attachment_mode = AttachmentMode::Held;
+    peer_player->pos = Vec2::New(80.0F, 82.0F);
+    peer_player->vel = Vec2::New(1.0F, 0.0F);
+    peer_player->grounded = true;
+    peer_player->condition = EntityCondition::Normal;
+    if (!DeliverPeerSnapshotsToCoordinator(
+            peer,
+            coordinator,
+            pair,
+            graphics,
+            "frame movement state carried peer body rejection"
+        )) {
+        return false;
+    }
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    if (coordinator_peer_player == nullptr ||
+        std::abs(coordinator_peer_player->pos.x - 64.0F) > 0.01F ||
+        !coordinator_peer_player->held_by_vid.has_value() ||
+        coordinator_peer_player->attachment_mode != AttachmentMode::Held) {
+        std::cerr << "network frame smoke failed at frame movement state carried body rejection\n";
+        return false;
+    }
+    coordinator_peer_player->held_by_vid.reset();
+    coordinator_peer_player->attachment_mode = AttachmentMode::None;
+
+    coordinator_peer_player = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid);
+    peer_player = peer.entity_manager.GetEntityMut(peer_player_vid);
+    if (coordinator_peer_player == nullptr || peer_player == nullptr) {
         std::cerr << "network frame smoke failed: missing water state player\n";
         return false;
     }

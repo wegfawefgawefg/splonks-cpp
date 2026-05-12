@@ -126,9 +126,12 @@ bool TryApplyPlausibleLocomotionClaim(
     const JumpAndClimbTuning& tuning,
     Vec2 claimed_pos,
     Vec2 claimed_vel,
+    Vec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
+    bool claimed_grounded,
     std::optional<LeftOrRight> claimed_hang_side,
     std::uint32_t claimed_coyote_time,
+    std::uint32_t claimed_fall_timer,
     std::uint32_t claimed_hang_count,
     std::uint32_t claimed_climb_detach_cooldown
 );

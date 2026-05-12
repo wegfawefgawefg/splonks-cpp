@@ -7,12 +7,22 @@ The core problem: edge-sensitive movement states such as hanging, climbing, coyo
 ## Ownership Boundary
 
 - The coordinator owns durable/shared outcomes: tile changes, entity spawns, damage, pickup/economy, shop aggro, exits, stage progression, and canonical snapshots.
-- The owning client may claim responsive locomotion transitions for its own player body.
-- The coordinator validates claimed locomotion transitions with generous plausibility checks, then broadcasts the accepted body state.
+- A free player is locally body-authoritative: the owning client may claim responsive body state for its own player.
+- The coordinator validates claimed locomotion/body state with generous plausibility checks, then broadcasts the accepted body state.
 - Peers render accepted coordinator state for remote players and do not independently decide remote hang/climb/jump states.
 - Invalid claims are corrected by coordinator repair. Valid claims should be accepted even if exact coordinator replay missed the same ledge or coyote window.
 
 This follows the same broad multiplayer goal as our Terraria/tModLoader-style networking: gameplay facts converge through coordinator-owned lanes, but local movement should not wait for a round trip or exact delayed replay.
+
+## Authority Modes
+
+Use these modes conceptually. They do not need to be a copied enum on every entity unless the code needs one later.
+
+- `FreeLocalOwned`: ordinary walking, running, jumping, falling, hanging, climbing, and swimming. The owning client sends body claims; the coordinator validates and accepts/rejects.
+- `CoordinatorExternal`: carried, held, attached, thrown by another entity, stunned, dead, crushed, teleported, stage-transition locked, or under scripted motion. The coordinator owns body state; owner input is still accepted as requests, but not as position authority.
+- `CoordinatorInterrupt`: a short external-control window after damage, explosion impulse, projectile contact, forced drop, or throw. The coordinator owns initial body impulse/state; the owner regains free body authority once the interrupt resolves.
+
+Rule: `FreeLocalOwned` is the only mode that may apply ordinary player body claims. A held/stunned/dead/thrown player must not be able to overwrite coordinator body state through the high-frequency player snapshot lane.
 
 ## Common Plausibility Checks
 
@@ -25,9 +35,25 @@ Apply these before accepting any player-owned locomotion claim:
 - [ ] Claimed velocity is within player movement limits plus allowed impulse margin.
 - [ ] Claimed condition is compatible with current body state unless it is a known interrupt or recovery path.
 - [ ] The final claimed AABB does not overlap solid tiles.
-- [ ] Reject if dead, hard-stunned, deactivated, or coordinator-carried unless the transition explicitly allows it.
+- [x] Reject if dead, hard-stunned, deactivated, or coordinator-carried unless the transition explicitly allows it.
+- [x] Reject if the coordinator has the player held, attached, thrown, stunned, dead, or under stage transition.
 
 The distance tolerance should be latency-aware, not exact-pixel. Initial target: roughly `1-2 tiles` for edge-sensitive attach claims, tighter for ordinary free movement.
+
+## Ordinary Free Body Claim
+
+Claim payload should include position, velocity, acceleration, grounded flag, movement flags, facing, coyote/fall timers, hang/climb timers, and sequence/frame.
+
+Plausibility:
+
+- [ ] The coordinator currently sees the player as `FreeLocalOwned`.
+- [ ] Claimed AABB does not overlap solid coordinator tiles.
+- [ ] Claimed position is near the current coordinator body within latency tolerance.
+- [ ] Claimed velocity is within generous player movement/impulse bounds.
+- [ ] If claimed grounded, the coordinator sees valid floor support or stage-bottom support at the claimed position.
+- [ ] If claimed not grounded, the claim may still be accepted as ordinary falling/jumping as long as it is not teleporting or passing through solid tiles.
+
+Reason: this is the Terraria-like fix for one-block ledges and micro-tap jumps. The coordinator should not re-decide whether a remote player barely made the platform from delayed inputs; it should accept a plausible final body state.
 
 ## Hang / Ledge Grab
 
@@ -124,18 +150,21 @@ Rules:
 
 - [x] Extend the existing player snapshot/input lane to carry bounded hang/climb/jump claims.
 - [ ] Track last accepted locomotion claim sequence per player.
-- [ ] Add coordinator validators for hang, glove/corner hang, climb attach, jump/coyote jump, swim impulse, and carried jump-out/release.
+- [ ] Add coordinator validators for ordinary free body, hang, glove/corner hang, climb attach, jump/coyote jump, swim impulse, and carried jump-out/release.
 - [x] Apply valid hang/climb/jump claims to coordinator body state before fall-damage/contact resolution.
+- [x] Apply valid ordinary free body claims to coordinator body state before fall-damage/contact resolution.
 - [x] Broadcast accepted hang/climb/jump state through existing player body snapshots.
 - [ ] Reject invalid claims with normal body repair, not special-case item logic.
 - [ ] Add debug overlay for local predicted state versus coordinator accepted state.
-- [ ] Add fake-transport tests for one-frame ledge grab, delayed climb attach, coyote jump under latency, swim impulse under latency, thrown-player horizontal velocity preservation, and fall damage after accepted hang/climb/swim.
+- [ ] Add fake-transport tests for ordinary free movement over a one-block ledge, one-frame ledge grab, delayed climb attach, coyote jump under latency, carried-player body rejection, swim impulse under latency, thrown-player horizontal velocity preservation, and fall damage after accepted hang/climb/swim.
 
 Current code status:
 
 - Peer-owned `PlayerSnapshotsPacket` messages are still the transport for player inputs.
-- If a peer snapshot claims `Hanging`, `Climbing`, or a fresh upward jump, the coordinator validates the claim through shared entity movement geometry before accepting the body state.
+- If a peer snapshot claims ordinary free movement, `Hanging`, `Climbing`, or a fresh upward jump, the coordinator validates the claim through shared entity movement geometry before accepting the body state.
 - Accepted hang/climb/jump claims reset coordinator fall timer for that body, preventing stale replay from creating bogus fall damage after a valid local attach or jump.
+- Ordinary free body claims use the same shared validator instead of one-off interpolation exceptions.
+- Carried, attached, thrown, stunned, dead, and destroyed bodies reject owner-local body claims; coordinator state wins for those external-control cases.
 - This is intentionally not durable world authority; tile/entity/economy facts still go through coordinator-owned message lanes.
 
 ## Non-Goals
