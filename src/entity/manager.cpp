@@ -33,6 +33,9 @@ std::optional<VID> EntityManager::NewEntity() {
 }
 
 void EntityManager::SetInactive(std::size_t entity_id) {
+    if (entity_id >= entities.size() || !entities[entity_id].active) {
+        return;
+    }
     entities[entity_id].active = false;
     available_ids.insert(available_ids.begin(), entity_id);
 }

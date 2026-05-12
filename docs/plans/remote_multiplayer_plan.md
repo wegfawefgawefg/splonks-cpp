@@ -71,6 +71,10 @@ When resuming this work under `/goal`, continue from the current branch instead
 of resetting to an older commit. The player-slot/input-table refactors are part
 of the new lockstep foundation and should be kept.
 
+For exact current worktree state, failing smoke output, recent commits, and the
+next command sequence, see `Current Worktree Handoff` in
+`docs/plans/input_lockstep_rollback_plan.md`.
+
 Working rules:
 
 - Finish delay-based input lockstep first. Do not start rollback until live and

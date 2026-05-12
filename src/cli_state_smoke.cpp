@@ -103,11 +103,39 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
         const Entity& a = left.entity_manager.entities[i];
         const Entity& b = right.entity_manager.entities[i];
         if (a.active != b.active ||
-            a.type_ != b.type_) {
+            a.type_ != b.type_ ||
+            a.vid != b.vid) {
             std::ostringstream output;
             output << "entity " << i << " identity differs:"
+                   << " frame " << left.frame << "/" << right.frame
+                   << " stage_frame " << left.stage_frame << "/" << right.stage_frame
+                   << " mode " << static_cast<int>(left.mode) << "/" << static_cast<int>(right.mode)
                    << " active " << a.active << "/" << b.active
-                   << " type " << static_cast<int>(a.type_) << "/" << static_cast<int>(b.type_);
+                   << " type " << static_cast<int>(a.type_) << "/" << static_cast<int>(b.type_)
+                   << " vid " << a.vid.id << ":" << a.vid.version
+                   << "/" << b.vid.id << ":" << b.vid.version;
+            std::size_t version_diff_count = 0;
+            std::ostringstream version_examples;
+            for (std::size_t j = 0; j < left.entity_manager.entities.size(); ++j) {
+                const Entity& left_entity = left.entity_manager.entities[j];
+                const Entity& right_entity = right.entity_manager.entities[j];
+                if (left_entity.vid.version != right_entity.vid.version) {
+                    if (version_diff_count < 8) {
+                        version_examples << " [" << j
+                                         << " t" << static_cast<int>(left_entity.type_)
+                                         << "/" << static_cast<int>(right_entity.type_)
+                                         << " v" << left_entity.vid.version
+                                         << "/" << right_entity.vid.version
+                                         << " a" << left_entity.active
+                                         << "/" << right_entity.active << "]";
+                    }
+                    version_diff_count += 1;
+                }
+            }
+            output << " version_diffs=" << version_diff_count
+                   << " available_ids " << left.entity_manager.available_ids.size()
+                   << "/" << right.entity_manager.available_ids.size()
+                   << version_examples.str();
             return output.str();
         }
         if (!a.active) {
@@ -116,11 +144,51 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
         if (a.pos != b.pos ||
             a.vel != b.vel ||
             a.acc != b.acc ||
+            a.grounded != b.grounded ||
+            a.holding != b.holding ||
+            a.wanted != b.wanted ||
+            a.render_enabled != b.render_enabled ||
+            a.size != b.size ||
+            a.rotation != b.rotation ||
+            a.coyote_time != b.coyote_time ||
+            a.stun_timer != b.stun_timer ||
+            a.fall_timer != b.fall_timer ||
+            a.facing != b.facing ||
+            a.draw_layer != b.draw_layer ||
+            a.condition != b.condition ||
+            a.ai_state != b.ai_state ||
+            a.damage_vulnerability != b.damage_vulnerability ||
+            a.movement_flags != b.movement_flags ||
             a.health != b.health ||
+            a.back_vid != b.back_vid ||
+            a.holding_vid != b.holding_vid ||
+            a.held_by_vid != b.held_by_vid ||
+            a.entity_a != b.entity_a ||
+            a.entity_b != b.entity_b ||
+            a.entity_c != b.entity_c ||
+            a.entity_d != b.entity_d ||
+            a.stage_exit_id != b.stage_exit_id ||
+            a.money != b.money ||
+            a.counter_a != b.counter_a ||
+            a.counter_b != b.counter_b ||
+            a.counter_c != b.counter_c ||
+            a.counter_d != b.counter_d ||
+            a.light_strength != b.light_strength ||
+            a.light_color.r != b.light_color.r ||
+            a.light_color.g != b.light_color.g ||
+            a.light_color.b != b.light_color.b ||
+            a.light_radius != b.light_radius ||
+            a.point_a != b.point_a ||
+            a.point_b != b.point_b ||
+            a.point_c != b.point_c ||
+            a.point_d != b.point_d ||
             a.frame_data_animator.animation_id != b.frame_data_animator.animation_id ||
             a.frame_data_animator.current_frame != b.frame_data_animator.current_frame ||
             a.frame_data_animator.current_time != b.frame_data_animator.current_time ||
-            a.frame_data_animator.speed != b.frame_data_animator.speed) {
+            a.frame_data_animator.speed != b.frame_data_animator.speed ||
+            a.frame_data_animator.animate != b.frame_data_animator.animate ||
+            a.frame_data_animator.loop != b.frame_data_animator.loop ||
+            a.frame_data_animator.finished != b.frame_data_animator.finished) {
             std::ostringstream output;
             output << "entity " << i << " differs:"
                    << " active " << a.active << "/" << b.active
@@ -131,10 +199,28 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << " vel " << a.vel.x << "," << a.vel.y
                    << "/" << b.vel.x << "," << b.vel.y
                    << " health " << a.health << "/" << b.health
+                   << " condition " << static_cast<int>(a.condition)
+                   << "/" << static_cast<int>(b.condition)
+                   << " counters " << a.counter_a << "," << a.counter_b
+                   << "," << a.counter_c << "," << a.counter_d
+                   << "/" << b.counter_a << "," << b.counter_b
+                   << "," << b.counter_c << "," << b.counter_d
                    << " anim " << a.frame_data_animator.animation_id
                    << "/" << b.frame_data_animator.animation_id;
             return output.str();
         }
+    }
+
+    if (left.drng.state != right.drng.state) {
+        std::ostringstream output;
+        output << "drng differs: left=" << left.drng.state << " right=" << right.drng.state;
+        return output.str();
+    }
+    if (left.stage.tile_change_generation != right.stage.tile_change_generation) {
+        std::ostringstream output;
+        output << "tile_change_generation differs: left=" << left.stage.tile_change_generation
+               << " right=" << right.stage.tile_change_generation;
+        return output.str();
     }
 
     if (left.players.slots.size() != right.players.slots.size()) {
@@ -142,6 +228,47 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
         output << "player slot count differs: left=" << left.players.slots.size()
                << " right=" << right.players.slots.size();
         return output.str();
+    }
+    for (std::size_t i = 0; i < left.players.slots.size(); ++i) {
+        const PlayerSlot& a = left.players.slots[i];
+        const PlayerSlot& b = right.players.slots[i];
+        if (a.player_id != b.player_id ||
+            a.connected != b.connected ||
+            a.entity_vid != b.entity_vid ||
+            a.input_frame.left != b.input_frame.left ||
+            a.input_frame.right != b.input_frame.right ||
+            a.input_frame.up != b.input_frame.up ||
+            a.input_frame.down != b.input_frame.down ||
+            a.input_frame.jump != b.input_frame.jump ||
+            a.input_frame.run != b.input_frame.run ||
+            a.input_frame.use_button != b.input_frame.use_button ||
+            a.input_frame.equip_button != b.input_frame.equip_button ||
+            a.input_frame.pick_up_drop != b.input_frame.pick_up_drop ||
+            a.input_frame.bomb != b.input_frame.bomb ||
+            a.input_frame.rope != b.input_frame.rope ||
+            a.input_frame.attack != b.input_frame.attack ||
+            a.previous_input_frame.left != b.previous_input_frame.left ||
+            a.previous_input_frame.right != b.previous_input_frame.right ||
+            a.previous_input_frame.up != b.previous_input_frame.up ||
+            a.previous_input_frame.down != b.previous_input_frame.down ||
+            a.previous_input_frame.jump != b.previous_input_frame.jump ||
+            a.previous_input_frame.run != b.previous_input_frame.run ||
+            a.previous_input_frame.use_button != b.previous_input_frame.use_button ||
+            a.previous_input_frame.equip_button != b.previous_input_frame.equip_button ||
+            a.previous_input_frame.pick_up_drop != b.previous_input_frame.pick_up_drop ||
+            a.previous_input_frame.bomb != b.previous_input_frame.bomb ||
+            a.previous_input_frame.rope != b.previous_input_frame.rope ||
+            a.previous_input_frame.attack != b.previous_input_frame.attack) {
+            std::ostringstream output;
+            output << "player slot " << i << " differs:"
+                   << " player_id " << a.player_id << "/" << b.player_id
+                   << " connected " << a.connected << "/" << b.connected
+                   << " entity_vid "
+                   << (a.entity_vid.has_value() ? static_cast<int>(a.entity_vid->id) : -1)
+                   << "/"
+                   << (b.entity_vid.has_value() ? static_cast<int>(b.entity_vid->id) : -1);
+            return output.str();
+        }
     }
 
     return "no simple lane difference found; fingerprint includes a field not covered by the smoke diff";
@@ -574,8 +701,33 @@ network::LockstepInputPacket BuildLockstepInputPacket(
     return packet;
 }
 
-bool PrepareLockstepSmokeState(State& state, Graphics& graphics, const char*& failed_step) {
+bool ConfigureLockstepSmokeOwnership(State& state, const std::vector<PlayerId>& owned_players) {
+    for (PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || slot.player_id == kInvalidPlayerId) {
+            continue;
+        }
+        const bool owned =
+            std::find(owned_players.begin(), owned_players.end(), slot.player_id) != owned_players.end();
+        slot.connection_kind = owned ? PlayerConnectionKind::Local : PlayerConnectionKind::Remote;
+        slot.primary_local = false;
+    }
+
+    if (!owned_players.empty()) {
+        if (PlayerSlot* const primary = state.players.Find(owned_players.front())) {
+            primary->primary_local = true;
+        }
+    }
+    return state.players.FindPrimaryLocal() != nullptr;
+}
+
+bool PrepareLockstepSmokeState(
+    State& state,
+    Graphics& graphics,
+    const std::vector<PlayerId>& owned_players,
+    const char*& failed_step
+) {
     constexpr std::uint32_t seed = 12345;
+    state.net_session.input_lockstep_enabled = true;
     if (!LoadQuestStage(state, "classic", "classic_mines_1", false, seed)) {
         failed_step = "load stage";
         return false;
@@ -585,6 +737,10 @@ bool PrepareLockstepSmokeState(State& state, Graphics& graphics, const char*& fa
     }
     if (!AddSecondLocalPlayerForDeterministicReplay(state, graphics)) {
         failed_step = "spawn second player";
+        return false;
+    }
+    if (!ConfigureLockstepSmokeOwnership(state, owned_players)) {
+        failed_step = "configure lockstep ownership";
         return false;
     }
     return true;
@@ -910,8 +1066,10 @@ bool CheckDeterministicReplaySmoke() {
 
 bool CheckInputLockstepSmoke() {
     try {
-        Graphics graphics;
-        InitCliSmokeRuntimeTables(graphics);
+        Graphics peer0_graphics;
+        Graphics peer1_graphics;
+        InitCliSmokeRuntimeTables(peer0_graphics);
+        InitCliSmokeRuntimeTables(peer1_graphics);
         Audio peer0_audio;
         Audio peer1_audio;
 
@@ -937,8 +1095,8 @@ bool CheckInputLockstepSmoke() {
             peer1.owned_players = {2};
 
             const char* failed_step = nullptr;
-            if (!PrepareLockstepSmokeState(peer0.state, graphics, failed_step) ||
-                !PrepareLockstepSmokeState(peer1.state, graphics, failed_step)) {
+            if (!PrepareLockstepSmokeState(peer0.state, peer0_graphics, peer0.owned_players, failed_step) ||
+                !PrepareLockstepSmokeState(peer1.state, peer1_graphics, peer1.owned_players, failed_step)) {
                 std::cerr << "input lockstep smoke " << label
                           << " failed during setup: "
                           << (failed_step != nullptr ? failed_step : "unknown") << '\n';
@@ -986,7 +1144,7 @@ bool CheckInputLockstepSmoke() {
                         peer0,
                         required_players,
                         peer0_audio,
-                        graphics,
+                        peer0_graphics,
                         total_frames,
                         step_error
                     ) ||
@@ -994,7 +1152,7 @@ bool CheckInputLockstepSmoke() {
                         peer1,
                         required_players,
                         peer1_audio,
-                        graphics,
+                        peer1_graphics,
                         total_frames,
                         step_error
                     )) {

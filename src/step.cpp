@@ -223,7 +223,8 @@ Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics&
 }
 
 bool ShouldEnterGameOver(const State& state, std::optional<VID> primary_player_vid) {
-    if (state.net_session.role != network::NetRole::Offline) {
+    if (state.net_session.role != network::NetRole::Offline ||
+        state.net_session.input_lockstep_enabled) {
         return HasAnyConnectedPlayerSlot(state) && !HasAnyConnectedLivingPlayer(state);
     }
 

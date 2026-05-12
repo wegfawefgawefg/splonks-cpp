@@ -254,9 +254,7 @@ void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistr
         if (slot.entity_vid.has_value()) {
             writer.AddVid(*slot.entity_vid);
         }
-        writer.AddPod(static_cast<std::uint8_t>(slot.connection_kind));
         writer.AddBool(slot.connected);
-        writer.AddBool(slot.primary_local);
         AddPlayerInputFrameFingerprint(writer, slot.input_frame);
         AddPlayerInputFrameFingerprint(writer, slot.previous_input_frame);
     }

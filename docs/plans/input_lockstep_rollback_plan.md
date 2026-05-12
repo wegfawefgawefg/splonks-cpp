@@ -60,6 +60,66 @@ Current handoff constraints:
 - Live lockstep should show no active ordered mutation backlog from the old
   replication lanes.
 
+## Current Worktree Handoff
+
+Last known branch: `net-lockstep-experiment`.
+
+Recent validated commits on this branch:
+
+- `1082eda Remove stale authority damage seams`
+- `bc8500d Remove stale tile and damage replication hooks`
+- `5d26df7 Simulate all player slots during lockstep`
+
+Recent smoke-hardening work intentionally made the fake input-lockstep
+smoke so it resembles live topology instead of accidentally simulating both
+players as primary/local on both fake peers:
+
+- `src/cli_state_smoke.cpp`
+  - Adds live-like fake peer ownership: peer 0 owns player 1 and sees player 2
+    as remote; peer 1 owns player 2 and sees player 1 as remote.
+  - Enables `state.net_session.input_lockstep_enabled` in the fake peer states.
+  - Expands first-difference diagnostics for entities, `drng`,
+    `stage.tile_change_generation`, and player input fields.
+- `src/state_fingerprint.cpp`
+  - Removes process-local player registry fields (`connection_kind` and
+    `primary_local`) from gameplay determinism fingerprinting.
+- `src/entity/manager.cpp`
+  - Hardens `EntityManager::SetInactive` against out-of-range ids and duplicate
+    deactivation.
+
+Resolved finding:
+
+The stricter topology exposed a real process-local gameplay branch:
+
+```text
+state equality smoke input lockstep initial ok: stage=classic_mines_1 frame=0 stage_frame=0 entities=54 tiles=40x32 hash=15016652501064990246
+input lockstep smoke clean hash mismatch at frame 342
+  peer0 hash=9342928562898737137
+  peer1 hash=358909475661019486
+  first simple diff: entity 29 identity differs: active 1/1 type 13/13 vid 29:2/29:1
+```
+
+The root cause was `ShouldEnterGameOver`: fake lockstep states were still
+`Offline`, so each peer used its own primary-local player as the sole loss
+condition. When peer 0's primary player died while peer 1's primary player was
+still alive, one peer entered `GameOver` and the other stayed `Playing`.
+`ShouldEnterGameOver` now treats `input_lockstep_enabled` as multiplayer and
+only enters game over once no connected player is alive.
+
+Validation for this chunk:
+
+- `cmake --build build --target splonks-cpp -j 8`
+- `./build/splonks-cpp --check-state-equality-smoke`
+- `./build/splonks-cpp --check-deterministic-replay-smoke`
+- `./build/splonks-cpp --check-input-lockstep-smoke`
+
+Next immediate steps:
+
+- Commit the smoke/topology/fix chunk once all checks pass.
+- Continue Phase 4/6 cleanup: remove or quarantine old no-op patch,
+  presentation, and entity-state replication seams, then add automated coverage
+  for peer carrying host player and both players transitioning stages.
+
 ## Why Reconsider
 
 The current multiplayer model has become expensive in exactly the wrong place:
