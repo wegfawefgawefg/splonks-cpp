@@ -2,6 +2,7 @@
 
 #include "entity.hpp"
 #include "entity/archetype.hpp"
+#include "entities/common/common.hpp"
 #include "frame_data.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
@@ -10,6 +11,7 @@
 #include "quest_stage_loader.hpp"
 #include "raw_frame_data.hpp"
 #include "stage_spawning.hpp"
+#include "stage_progression.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
 #include "step.hpp"
@@ -522,6 +524,134 @@ std::vector<std::array<PlayerInputFrame, 2>> BuildInputLockstepSmokeScript() {
         frames[i] = {p1, p2};
     }
     return frames;
+}
+
+std::vector<std::array<PlayerInputFrame, 2>> BuildInputLockstepCarryScript() {
+    std::vector<std::array<PlayerInputFrame, 2>> frames(180);
+    for (std::size_t i = 0; i < frames.size(); ++i) {
+        PlayerInputFrame p1 = PlayerInputFrame::New();
+        PlayerInputFrame p2 = PlayerInputFrame::New();
+        p1.mouse_pos = UVec2::New(220, 190);
+        p2.mouse_pos = UVec2::New(240, 190);
+
+        p2.right = i >= 8 && i < 110;
+        p2.run = i >= 36 && i < 100;
+        p2.jump = (i >= 64 && i < 70);
+        p2.left = i >= 125 && i < 150;
+
+        frames[i] = {p1, p2};
+    }
+    return frames;
+}
+
+std::optional<VID> FindPlayerVidForSmoke(State& state, PlayerId player_id) {
+    PlayerSlot* const slot = state.players.Find(player_id);
+    if (slot == nullptr || !slot->connected || !slot->entity_vid.has_value()) {
+        return std::nullopt;
+    }
+    Entity* const player = state.entity_manager.GetEntityMut(*slot->entity_vid);
+    if (player == nullptr || !player->active) {
+        return std::nullopt;
+    }
+    return player->vid;
+}
+
+bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const char*& failed_step) {
+    const std::optional<VID> p1_vid = FindPlayerVidForSmoke(state, 1);
+    const std::optional<VID> p2_vid = FindPlayerVidForSmoke(state, 2);
+    if (!p1_vid.has_value() || !p2_vid.has_value()) {
+        failed_step = "find carry smoke players";
+        return false;
+    }
+
+    Entity* const p1 = state.entity_manager.GetEntityMut(*p1_vid);
+    Entity* const p2 = state.entity_manager.GetEntityMut(*p2_vid);
+    if (p1 == nullptr || p2 == nullptr) {
+        failed_step = "resolve carry smoke players";
+        return false;
+    }
+
+    const float tile = static_cast<float>(kTileSize);
+    const float floor_y = 20.0F * tile;
+    p1->pos = Vec2::New(8.0F * tile, floor_y - p1->size.y);
+    p2->pos = Vec2::New(9.0F * tile, floor_y - p2->size.y);
+    for (Entity* const player : {p1, p2}) {
+        player->vel = Vec2::New(0.0F, 0.0F);
+        player->acc = Vec2::New(0.0F, 0.0F);
+        player->condition = EntityCondition::Normal;
+        player->stun_timer = 0;
+        player->grounded = true;
+        player->holding = false;
+        player->holding_vid.reset();
+        player->held_by_vid.reset();
+        player->attachment_mode = AttachmentMode::None;
+        player->facing = LeftOrRight::Left;
+        state.UpdateSidForEntity(player->vid.id, graphics);
+    }
+    p2->facing = LeftOrRight::Left;
+    return true;
+}
+
+bool ValidateActiveSmokePlayers(
+    const State& state,
+    const char* context,
+    std::ostream& error_stream
+) {
+    std::size_t active_player_entities = 0;
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (entity.active && entity.type_ == EntityType::Player) {
+            active_player_entities += 1;
+        }
+    }
+    if (active_player_entities != 2) {
+        error_stream << context << " failed: expected 2 active player entities, found "
+                     << active_player_entities << '\n';
+        return false;
+    }
+
+    for (PlayerId player_id : {PlayerId{1}, PlayerId{2}}) {
+        const PlayerSlot* const slot = state.players.Find(player_id);
+        if (slot == nullptr || !slot->connected || !slot->entity_vid.has_value()) {
+            error_stream << context << " failed: missing player slot " << player_id << '\n';
+            return false;
+        }
+        const Entity* const player = state.entity_manager.GetEntity(*slot->entity_vid);
+        if (player == nullptr || !player->active || player->type_ != EntityType::Player) {
+            error_stream << context << " failed: inactive player entity for slot "
+                         << player_id << '\n';
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ValidateNoPlayerCarryLinks(
+    const State& state,
+    const char* context,
+    std::ostream& error_stream
+) {
+    for (const Entity& entity : state.entity_manager.entities) {
+        if (!entity.active || entity.type_ != EntityType::Player) {
+            continue;
+        }
+        if (entity.holding_vid.has_value()) {
+            const Entity* const held = state.entity_manager.GetEntity(*entity.holding_vid);
+            if (held != nullptr && held->type_ == EntityType::Player) {
+                error_stream << context << " failed: player " << entity.vid.id
+                             << " still holds player " << held->vid.id << '\n';
+                return false;
+            }
+        }
+        if (entity.held_by_vid.has_value()) {
+            const Entity* const holder = state.entity_manager.GetEntity(*entity.held_by_vid);
+            if (holder != nullptr && holder->type_ == EntityType::Player) {
+                error_stream << context << " failed: player " << entity.vid.id
+                             << " still held by player " << holder->vid.id << '\n';
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 struct FakeLockstepInFlightPacket {
@@ -1214,6 +1344,194 @@ bool CheckInputLockstepSmoke() {
         impaired.duplicate_percent = 4.0F;
         impaired.reorder_window_packets = 4;
         if (!run_case("impaired", impaired, 0x1002U)) {
+            return false;
+        }
+
+        const auto run_carry_transition_case = [&]() -> bool {
+            const std::vector<std::array<PlayerInputFrame, 2>> carry_script =
+                BuildInputLockstepCarryScript();
+            const network::LockstepFrame total_frames =
+                static_cast<network::LockstepFrame>(carry_script.size());
+            constexpr network::LockstepFrame kInputDelayFrames = 8;
+            constexpr std::uint64_t kMaxWallTicks = 2000;
+
+            FakeLockstepPeer peer0;
+            peer0.peer_id = 0;
+            peer0.owned_players = {1};
+            FakeLockstepPeer peer1;
+            peer1.peer_id = 1;
+            peer1.owned_players = {2};
+
+            const char* failed_step = nullptr;
+            if (!PrepareLockstepSmokeState(peer0.state, peer0_graphics, peer0.owned_players, failed_step) ||
+                !PrepareLockstepSmokeState(peer1.state, peer1_graphics, peer1.owned_players, failed_step)) {
+                std::cerr << "input lockstep carry-transition smoke failed during setup: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+            if (!PlaceCarryTransitionSmokePlayers(peer0.state, peer0_graphics, failed_step) ||
+                !PlaceCarryTransitionSmokePlayers(peer1.state, peer1_graphics, failed_step)) {
+                std::cerr << "input lockstep carry-transition smoke failed during player placement: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+
+            const std::optional<VID> peer0_p1 = FindPlayerVidForSmoke(peer0.state, 1);
+            const std::optional<VID> peer0_p2 = FindPlayerVidForSmoke(peer0.state, 2);
+            const std::optional<VID> peer1_p1 = FindPlayerVidForSmoke(peer1.state, 1);
+            const std::optional<VID> peer1_p2 = FindPlayerVidForSmoke(peer1.state, 2);
+            if (!peer0_p1.has_value() || !peer0_p2.has_value() ||
+                !peer1_p1.has_value() || !peer1_p2.has_value()) {
+                std::cerr << "input lockstep carry-transition smoke failed: missing players after placement\n";
+                return false;
+            }
+
+            if (!entities::common::TryPickupEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !entities::common::TryPickupEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+                std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not carry host-owned player\n";
+                return false;
+            }
+            if (!CompareCanonicalFingerprints(
+                    peer0.state,
+                    peer1.state,
+                    "input lockstep carry setup"
+                )) {
+                std::cerr << "  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
+            FakeLockstepNetwork network = FakeLockstepNetwork::New(network::NetFuzzerConfig{}, 0x2001U);
+            std::size_t compared_hashes = 0;
+            std::string step_error;
+
+            for (std::uint64_t wall_tick = 0; wall_tick < kMaxWallTicks; ++wall_tick) {
+                const network::LockstepFrame latest_input_frame =
+                    std::min<network::LockstepFrame>(
+                        static_cast<network::LockstepFrame>(wall_tick) + kInputDelayFrames,
+                        total_frames - 1
+                    );
+
+                const network::LockstepInputPacket p0_packet =
+                    BuildLockstepInputPacket(peer0, carry_script, latest_input_frame);
+                const network::LockstepInputPacket p1_packet =
+                    BuildLockstepInputPacket(peer1, carry_script, latest_input_frame);
+                network.Send(wall_tick, peer0.peer_id, peer1.peer_id, p0_packet);
+                network.Send(wall_tick, peer1.peer_id, peer0.peer_id, p1_packet);
+
+                for (const network::LockstepInputPacket& packet :
+                     network.ReceiveForPeer(wall_tick, peer0.peer_id)) {
+                    for (const network::LockstepInputRecord& record : packet.records) {
+                        peer0.input_buffer.Store(record);
+                    }
+                }
+                for (const network::LockstepInputPacket& packet :
+                     network.ReceiveForPeer(wall_tick, peer1.peer_id)) {
+                    for (const network::LockstepInputRecord& record : packet.records) {
+                        peer1.input_buffer.Store(record);
+                    }
+                }
+
+                if (!StepReadyLockstepFrames(
+                        peer0,
+                        required_players,
+                        peer0_audio,
+                        peer0_graphics,
+                        total_frames,
+                        step_error
+                    ) ||
+                    !StepReadyLockstepFrames(
+                        peer1,
+                        required_players,
+                        peer1_audio,
+                        peer1_graphics,
+                        total_frames,
+                        step_error
+                    )) {
+                    std::cerr << "input lockstep carry-transition smoke failed while stepping: "
+                              << step_error << '\n';
+                    return false;
+                }
+
+                const std::size_t comparable_hashes =
+                    std::min(peer0.frame_hashes.size(), peer1.frame_hashes.size());
+                while (compared_hashes < comparable_hashes) {
+                    if (peer0.frame_hashes[compared_hashes] !=
+                        peer1.frame_hashes[compared_hashes]) {
+                        std::cerr << "input lockstep carry-transition smoke hash mismatch at frame "
+                                  << compared_hashes
+                                  << "\n  peer0 hash=" << peer0.frame_hashes[compared_hashes]
+                                  << "\n  peer1 hash=" << peer1.frame_hashes[compared_hashes]
+                                  << "\n  first simple diff: "
+                                  << DescribeFirstStateDifference(peer0.state, peer1.state)
+                                  << '\n';
+                        return false;
+                    }
+                    compared_hashes += 1;
+                }
+
+                if (peer0.next_frame_to_step >= total_frames &&
+                    peer1.next_frame_to_step >= total_frames) {
+                    break;
+                }
+            }
+
+            if (peer0.next_frame_to_step < total_frames ||
+                peer1.next_frame_to_step < total_frames) {
+                std::cerr << "input lockstep carry-transition smoke timed out:"
+                          << " peer0_frame=" << peer0.next_frame_to_step
+                          << " peer1_frame=" << peer1.next_frame_to_step << '\n';
+                return false;
+            }
+
+            if (!ValidateActiveSmokePlayers(peer0.state, "carry-transition pre-transition", std::cerr) ||
+                !ValidateActiveSmokePlayers(peer1.state, "carry-transition pre-transition", std::cerr)) {
+                return false;
+            }
+
+            const StageTransitionTarget transition{
+                .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_2"),
+                .preserve_player_state = true,
+                .seed = 54321U,
+            };
+            QueueStageTransition(peer0.state, transition);
+            QueueStageTransition(peer1.state, transition);
+            ApplyPendingStageTransition(peer0.state);
+            ApplyPendingStageTransition(peer1.state);
+            peer0_graphics.ResetTileVariations();
+            peer1_graphics.ResetTileVariations();
+
+            if (peer0.state.stage.quest_stage_id != "classic_mines_2" ||
+                peer1.state.stage.quest_stage_id != "classic_mines_2") {
+                std::cerr << "input lockstep carry-transition smoke failed: did not enter classic_mines_2\n";
+                return false;
+            }
+            if (!ValidateActiveSmokePlayers(peer0.state, "carry-transition post-transition", std::cerr) ||
+                !ValidateActiveSmokePlayers(peer1.state, "carry-transition post-transition", std::cerr) ||
+                !ValidateNoPlayerCarryLinks(peer0.state, "carry-transition post-transition", std::cerr) ||
+                !ValidateNoPlayerCarryLinks(peer1.state, "carry-transition post-transition", std::cerr)) {
+                return false;
+            }
+            if (!CompareCanonicalFingerprints(
+                    peer0.state,
+                    peer1.state,
+                    "input lockstep carry transition final"
+                )) {
+                std::cerr << "  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
+            const CanonicalStateFingerprint final_fingerprint =
+                ComputeGameplayDeterminismFingerprint(peer0.state);
+            std::cout << "input lockstep carry-transition smoke ok: frames="
+                      << total_frames
+                      << " " << final_fingerprint.summary
+                      << " hash=" << final_fingerprint.value << '\n';
+            return true;
+        };
+
+        if (!run_carry_transition_case()) {
             return false;
         }
 

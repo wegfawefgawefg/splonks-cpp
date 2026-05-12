@@ -132,12 +132,15 @@ This is the concrete work queue for the current `/goal` run. Do these before
 claiming lockstep is usable.
 
 1. Strengthen fake/headless lockstep coverage.
-   - Peer 0 owns player 1; peer 1 owns player 2.
-   - Peer-owned player can pick up/carry/drop/throw the host-owned player.
-   - Both players remain active and deterministic while one player is carried.
-   - Both players transition to the next stage together.
-   - Stage transition must not create orphan players, duplicate held players, or
-     process-local player divergence.
+   - [x] Peer 0 owns player 1; peer 1 owns player 2.
+   - [x] Peer-owned player can pick up/carry the host-owned player.
+   - [x] Both players remain active and deterministic while one player is carried.
+   - [x] Both players transition to the next stage together in fake/headless
+     lockstep coverage.
+   - [x] Stage transition must not create orphan players, duplicate held
+     players, or process-local player divergence.
+   - [ ] Add explicit fake/headless drop/throw coverage for player-carry if
+     live testing exposes gaps.
 2. Keep the multi-local-player architecture intact.
    - A process may own multiple local `PlayerId`s.
    - Lockstep input packets batch independent player input streams.
