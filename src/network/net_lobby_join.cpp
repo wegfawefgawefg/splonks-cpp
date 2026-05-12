@@ -100,23 +100,6 @@ std::vector<PlayerId> GetPreferredJoinPlayerIds(
     return player_ids;
 }
 
-void ClearLocalPlayersForJoin(State& state) {
-    std::vector<PlayerId> local_player_ids;
-    for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connection_kind == PlayerConnectionKind::Local) {
-            if (slot.entity_vid.has_value()) {
-                state.entity_manager.SetInactiveVid(*slot.entity_vid);
-            }
-            local_player_ids.push_back(slot.player_id);
-        }
-    }
-    for (PlayerId player_id : local_player_ids) {
-        state.players.Remove(player_id);
-    }
-    state.debug_local_player_bots.clear();
-    state.controlled_entity_vid.reset();
-}
-
 } // namespace
 
 void SendJoinRequest(State& state) {
@@ -285,12 +268,16 @@ void HandleJoinRequestAsCoordinator(
     accept.host_spawn_y = host_spawn.y;
     accept.stage_seed = state.net_session.stage_seed;
     accept.snapshot_start_coordinator_order = state.net_session.next_coordinator_order;
+    accept.lockstep_start_frame = state.net_session.lockstep_next_frame_to_step;
+    accept.lockstep_input_delay_frames = state.net_session.lockstep_input_delay_frames;
     WriteFixedString(state.net_session.quest_id, accept.quest_id);
     WriteFixedString(state.net_session.quest_stage_id, accept.quest_stage_id);
     WriteFixedString("Host", accept.coordinator_name);
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
-    EnqueueWorldSnapshotMessages(state);
+    if (!state.net_session.input_lockstep_enabled) {
+        EnqueueWorldSnapshotMessages(state);
+    }
 }
 
 void HandleJoinAcceptAsPeer(
@@ -315,7 +302,11 @@ void HandleJoinAcceptAsPeer(
     state.net_session.quest_id = ReadFixedString(accept.quest_id);
     state.net_session.quest_stage_id = ReadFixedString(accept.quest_stage_id);
     state.net_session.stage_seed = accept.stage_seed;
+    state.net_session.lockstep_input_delay_frames = accept.lockstep_input_delay_frames;
     transport.join_request_pending = false;
+    ResetInputLockstepState(state);
+    state.net_session.lockstep_next_frame_to_step = accept.lockstep_start_frame;
+    state.net_session.lockstep_next_local_input_frame = accept.lockstep_start_frame;
     transport.preferred_player_ids.clear();
     for (std::uint32_t i = 0; i < assigned_count; ++i) {
         if (accept.assigned_player_ids[i] != kInvalidPlayerId) {
@@ -346,7 +337,26 @@ void HandleJoinAcceptAsPeer(
         1
     );
 
-    ClearLocalPlayersForJoin(state);
+    PlayerSlot& coordinator_slot =
+        state.players.EnsureRemotePlayer(accept.coordinator_player_id, ReadFixedString(accept.coordinator_name));
+    if (coordinator_slot.entity_vid.has_value()) {
+        if (Entity* const coordinator = state.entity_manager.GetEntityMut(*coordinator_slot.entity_vid)) {
+            coordinator->pos = Vec2::New(accept.host_spawn_x, accept.host_spawn_y);
+            coordinator->vel = Vec2::New(0.0F, 0.0F);
+            coordinator->acc = Vec2::New(0.0F, 0.0F);
+            state.net_session.LinkEntity(MakePlayerNetEntityId(accept.coordinator_player_id), coordinator->vid);
+        }
+    } else {
+        EnsureSpawnedPlayer(
+            state,
+            accept.coordinator_player_id,
+            false,
+            false,
+            Vec2::New(accept.host_spawn_x, accept.host_spawn_y),
+            graphics
+        );
+    }
+
     EnsureSpawnedPlayer(
         state,
         accept.assigned_player_ids[0],
@@ -371,7 +381,6 @@ void HandleJoinAcceptAsPeer(
         );
     }
 
-    state.players.EnsureRemotePlayer(accept.coordinator_player_id, ReadFixedString(accept.coordinator_name));
     NetPeerState* peer_state = nullptr;
     for (NetPeerState& peer : state.net_session.peers) {
         if (peer.player_id == accept.coordinator_player_id) {
@@ -388,15 +397,10 @@ void HandleJoinAcceptAsPeer(
     peer_state->display_name = ReadFixedString(accept.coordinator_name);
     peer_state->endpoint_address = transport.coordinator_endpoint.address;
     peer_state->endpoint_port = transport.coordinator_endpoint.port;
-    EnsureSpawnedPlayer(
-        state,
-        accept.coordinator_player_id,
-        false,
-        false,
-        Vec2::New(accept.host_spawn_x, accept.host_spawn_y),
-        graphics
-    );
     RegisterStageEntityLinks(state);
+    state.frame = static_cast<std::uint32_t>(accept.lockstep_start_frame);
+    state.stage_frame = static_cast<std::uint32_t>(accept.lockstep_start_frame);
+    state.scene_frame = 0;
 }
 
 void HandleLeaveNoticeAsCoordinator(

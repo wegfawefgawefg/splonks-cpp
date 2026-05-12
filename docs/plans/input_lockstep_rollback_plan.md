@@ -36,7 +36,12 @@ Operational rules while pursuing this:
 - Add fake/headless lockstep tests before trusting live UDP.
 - Commit after each meaningful, validated chunk so long solo sessions remain
   recoverable.
+- During long unattended runs, make periodic commits after completed
+  sub-checkboxes or stable milestones instead of leaving hours of work in one
+  fragile working tree.
 - Record any known gap in this document before committing.
+- Keep single-player behavior as the baseline. Lockstep work must not require
+  gameplay/content systems to know whether they are local or networked.
 
 ## Why Reconsider
 
@@ -531,21 +536,32 @@ frames with matching hashes while exchanging only input and control packets.
 
 Goal: boot two game windows and play with delay-based lockstep.
 
-- [ ] Reuse or replace the current UDP transport for input packets.
+- [x] Reuse or replace the current UDP transport for input packets.
 - [ ] Reuse the existing impairment/profile controls where possible:
   same-house/same-city/same-state/Texas-to-California/California-to-Florida/
   Texas-to-Japan latency, jitter, loss, duplicate, and reorder settings should
   feed the lockstep input transport/fuzzer instead of the retired authoritative
   mutation transport.
-- [ ] Add lobby start barrier: stage seed, player list, stage id, start frame,
+- [ ] Remove or hide live controls that only make sense for the old
+  authoritative snapshot/event lanes once lockstep owns live networking.
+- [x] Add lobby start barrier: stage seed, player list, stage id, start frame,
   input delay.
 - [ ] Disable active-stage late join initially; peers join before start or wait
   for next stage.
 - [ ] Add debug UI: local frame, remote input buffer depth, blocked frame count,
   hash, last agreed frame, packet loss/jitter profile.
+  Current live debug exposes role, lockstep frame, local-input frame, and input
+  delay. Buffer depth/hash/agreed-frame remain TODO.
 - [ ] Keep current multiplayer pair launcher if useful.
 - [ ] Playtest same-machine two-window lockstep.
+  Basic launch/query verified host and peer advancing on the same stage/frame
+  with zero authoritative ordered-message backlog. Manual carry and stage-exit
+  validation remain TODO.
 - [ ] Playtest artificial latency profiles.
+- [ ] Remove old authoritative entity/network baggage once lockstep is live:
+  content should stop carrying special coordinator/peer terms, stale
+  request/result paths, and per-item replication hooks that are no longer part
+  of the model.
 
 Exit gate: two local windows can play a real stage without desync, using input
 lockstep only.

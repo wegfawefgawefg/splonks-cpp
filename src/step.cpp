@@ -342,6 +342,12 @@ void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
 }
 
 void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
+    if (state.mode == Mode::Playing &&
+        network::IsInputLockstepActive(state) &&
+        !network::PrepareInputLockstepFrame(state, graphics)) {
+        return;
+    }
+
     if (IsStageRotationActive(state)) {
         state.ClearDebugAnnotations();
         StepStageRotation(state, graphics);

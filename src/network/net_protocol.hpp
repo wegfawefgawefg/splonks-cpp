@@ -41,6 +41,7 @@ constexpr std::size_t kNetEntityEffectCount = 12;
 constexpr std::size_t kNetPresentationCommandMessagesPerPacket = 3;
 constexpr std::size_t kNetActionRequestMessagesPerPacket = 4;
 constexpr std::size_t kNetActionRequestAckMessageIdsPerPacket = 16;
+constexpr std::size_t kNetInputFrameRecordsPerPacket = 16;
 
 enum class NetPacketType : std::uint16_t {
     JoinRequest = 1,
@@ -62,6 +63,7 @@ enum class NetPacketType : std::uint16_t {
     ActionRequestAck = 17,
     FluidCellMessages = 18,
     StageLightMessages = 19,
+    InputFrameRecords = 20,
 };
 
 struct NetPacketHeader {
@@ -89,6 +91,8 @@ struct JoinAcceptPacket {
     float host_spawn_y = 0.0F;
     std::uint32_t stage_seed = 1;
     std::uint64_t snapshot_start_coordinator_order = 1;
+    std::uint64_t lockstep_start_frame = 0;
+    std::uint32_t lockstep_input_delay_frames = 8;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
     std::array<char, kNetNameBytes> coordinator_name{};
@@ -167,6 +171,22 @@ struct DurableMessageAckPacket {
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     PlayerId player_id = kInvalidPlayerId;
     std::uint64_t highest_applied_coordinator_order = 0;
+};
+
+struct InputFrameRecordEntry {
+    PlayerId player_id = kInvalidPlayerId;
+    std::uint64_t frame = 0;
+    std::uint32_t sequence = 0;
+    std::uint32_t input_flags = 0;
+    std::uint32_t mouse_x = 0;
+    std::uint32_t mouse_y = 0;
+};
+
+struct InputFrameRecordsPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t record_count = 0;
+    std::array<InputFrameRecordEntry, kNetInputFrameRecordsPerPacket> records{};
 };
 
 struct TileMessageEntry {
@@ -630,6 +650,7 @@ EncodedNetPacket EncodeActionRequestAck(const ActionRequestAckPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet);
 EncodedNetPacket EncodeDurableMessageAck(const DurableMessageAckPacket& packet);
+EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PlayerSnapshotsPacket> TryDecodePlayerSnapshots(const std::uint8_t* bytes, std::size_t size);
@@ -649,6 +670,7 @@ std::optional<ActionRequestAckPacket> TryDecodeActionRequestAck(const std::uint8
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<StageSyncPacket> TryDecodeStageSync(const std::uint8_t* bytes, std::size_t size);
 std::optional<DurableMessageAckPacket> TryDecodeDurableMessageAck(const std::uint8_t* bytes, std::size_t size);
+std::optional<InputFrameRecordsPacket> TryDecodeInputFrameRecords(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

@@ -163,6 +163,7 @@ void ApplyStageSyncNow(
         transport.last_error = "Stage sync failed: could not load " + quest_stage_id + ".";
         return;
     }
+    ResetInputLockstepState(state);
     std::string status;
     (void)ReviveNetworkPlayersAtEntrance(state, graphics, &status);
     RegisterStageEntityLinks(state);
@@ -284,12 +285,15 @@ void NotifyStageLoaded(State& state) {
     state.net_session.quest_stage_id = state.stage.quest_stage_id;
     state.net_session.stage_seed = state.stage.generation_seed.value_or(MakeHostStageSeed(state));
     state.net_session.stage_instance_id += 1;
+    ResetInputLockstepState(state);
     state.net_session.ClearStageEntityLinks();
     state.net_session.ordered_messages.clear();
     state.net_session.pending_outbound_messages.clear();
     state.net_session.applied_message_ids.clear();
     RegisterStageEntityLinks(state);
-    EnqueueWorldSnapshotMessages(state);
+    if (!state.net_session.input_lockstep_enabled) {
+        EnqueueWorldSnapshotMessages(state);
+    }
     if (state.net_transport) {
         ClearPendingStageSync(*state.net_transport);
         ResetRemoteStageAckState(*state.net_transport);

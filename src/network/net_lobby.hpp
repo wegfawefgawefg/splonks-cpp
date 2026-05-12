@@ -17,6 +17,8 @@ void DisconnectSession(State& state, std::string* status_out);
 bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string* status_out);
+bool IsInputLockstepActive(const State& state);
+bool PrepareInputLockstepFrame(State& state, const Graphics& graphics);
 void StepNetworkLobby(State& state, const Graphics& graphics);
 bool IsTransportOpen(const State& state);
 std::uint16_t BoundTransportPort(const State& state);

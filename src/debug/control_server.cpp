@@ -523,6 +523,10 @@ std::string HandleNetCommand(const State& state) {
         << ",\"applied_messages\":" << state.net_session.applied_message_ids.size()
         << ",\"next_expected_coordinator_order\":" << state.net_session.next_expected_coordinator_order
         << ",\"highest_applied_coordinator_order\":" << state.net_session.highest_applied_coordinator_order
+        << ",\"input_lockstep_enabled\":" << (state.net_session.input_lockstep_enabled ? "true" : "false")
+        << ",\"lockstep_next_frame\":" << state.net_session.lockstep_next_frame_to_step
+        << ",\"lockstep_next_local_input_frame\":" << state.net_session.lockstep_next_local_input_frame
+        << ",\"lockstep_input_delay_frames\":" << state.net_session.lockstep_input_delay_frames
         << ",\"entity_links\":" << state.net_session.entity_links.size()
         << ",\"peers\":[";
     for (std::size_t i = 0; i < state.net_session.peers.size(); ++i) {

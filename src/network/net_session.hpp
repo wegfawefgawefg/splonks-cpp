@@ -1,5 +1,6 @@
 #pragma once
 
+#include "network/input_lockstep.hpp"
 #include "network/net_message.hpp"
 #include "network/net_fuzzer.hpp"
 #include "vid.hpp"
@@ -127,6 +128,15 @@ struct NetSessionState {
 
     NetFuzzerConfig fuzzer_config;
     NetFuzzerStats fuzzer_stats;
+
+    bool input_lockstep_enabled = false;
+    LockstepInputBuffer lockstep_input_buffer;
+    LockstepFrame lockstep_next_frame_to_step = 0;
+    LockstepFrame lockstep_next_local_input_frame = 0;
+    std::uint32_t lockstep_input_delay_frames = 8;
+    std::uint32_t lockstep_next_input_sequence = 1;
+    std::uint64_t lockstep_last_confirmed_hash_frame = 0;
+    std::uint64_t lockstep_last_confirmed_hash = 0;
 
     static NetSessionState NewOffline();
 

@@ -15,6 +15,18 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
     transport.fuzzer_config = state.net_session.fuzzer_config;
     FlushFuzzedOutgoingPackets(transport);
 
+    if (IsInputLockstepActive(state)) {
+        if (state.net_session.role == NetRole::Coordinator) {
+            CleanupExpiredRetainedPlayerStates(state);
+            StepHostPackets(state, graphics, transport);
+        } else if (state.net_session.role == NetRole::Peer) {
+            StepPeerPackets(state, graphics, transport);
+        }
+        FlushFuzzedOutgoingPackets(transport);
+        state.net_session.fuzzer_stats = transport.fuzzer_stats;
+        return;
+    }
+
     if (state.net_session.role == NetRole::Coordinator) {
         CleanupExpiredRetainedPlayerStates(state);
         StepHostPackets(state, graphics, transport);

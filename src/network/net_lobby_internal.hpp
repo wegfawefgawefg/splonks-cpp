@@ -153,6 +153,15 @@ void SendActionRequestAck(
 
 void SendJoinRequest(State& state);
 void SendLeaveNotice(State& state);
+bool IsInputLockstepActive(const State& state);
+void ResetInputLockstepState(State& state);
+bool PrepareInputLockstepFrame(State& state, const Graphics& graphics);
+void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
+void RelayInputFrameRecordsToOtherRemotes(
+    NetTransportRuntime& transport,
+    const NetEndpoint& source_endpoint,
+    const InputFrameRecordsPacket& packet
+);
 bool EnsureHostSyncedStage(State& state, std::string* status_out);
 void MarkRemoteEndpointHeard(
     NetTransportRuntime& transport,

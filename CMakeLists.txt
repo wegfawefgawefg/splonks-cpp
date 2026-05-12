@@ -302,6 +302,7 @@ add_executable(splonks-cpp
     src/network/net_lobby.cpp
     src/network/net_lobby_endpoint.cpp
     src/network/net_lobby_entity_state.cpp
+    src/network/net_lobby_input_lockstep.cpp
     src/network/net_lobby_join.cpp
     src/network/net_lobby_message_senders.cpp
     src/network/net_lobby_messages.cpp

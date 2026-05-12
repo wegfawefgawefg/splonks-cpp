@@ -37,6 +37,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
 
     state.net_session = NetSessionState::NewOffline();
     state.net_session.role = NetRole::Coordinator;
+    state.net_session.input_lockstep_enabled = true;
     state.net_session.local_player_id = kPrimaryLocalPlayerId;
     state.net_session.coordinator_player_id = kPrimaryLocalPlayerId;
     state.net_session.next_player_id = kFirstRemotePlayerId;
@@ -47,6 +48,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     }
     state.net_session.stage_instance_id = static_cast<StageInstanceId>(state.net_session.stage_seed);
     state.players.EnsurePrimaryLocalPlayer();
+    ResetInputLockstepState(state);
     RegisterStageEntityLinks(state);
     transport.remotes.clear();
     transport.remote_player_targets.clear();
@@ -78,6 +80,7 @@ bool JoinHostSession(
 
     state.net_session = NetSessionState::NewOffline();
     state.net_session.role = NetRole::Peer;
+    state.net_session.input_lockstep_enabled = true;
     state.net_session.local_player_id = kPrimaryLocalPlayerId;
     state.net_session.coordinator_player_id = kPrimaryLocalPlayerId;
     transport.coordinator_endpoint = NetEndpoint{.address = host, .port = port};
@@ -88,6 +91,7 @@ bool JoinHostSession(
     transport.replicated_fluid_cell_cache.clear();
     transport.join_request_pending = true;
     transport.join_request_retry_frames = 0;
+    ResetInputLockstepState(state);
     SendJoinRequest(state);
     if (status_out != nullptr) {
         *status_out = "Joining " + EndpointToString(transport.coordinator_endpoint) + ".";

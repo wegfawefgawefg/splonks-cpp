@@ -640,14 +640,25 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     );
     ImGui::Text("Next local message: %llu", static_cast<unsigned long long>(session.next_local_message_id));
     ImGui::Text("Next coordinator order: %llu", static_cast<unsigned long long>(session.next_coordinator_order));
+    if (session.input_lockstep_enabled) {
+        ImGui::TextUnformatted("Input lockstep: enabled");
+        ImGui::Text(
+            "Frame: next=%llu local_inputs=%llu delay=%u",
+            static_cast<unsigned long long>(session.lockstep_next_frame_to_step),
+            static_cast<unsigned long long>(session.lockstep_next_local_input_frame),
+            session.lockstep_input_delay_frames
+        );
+    }
     ImGui::Separator();
 
     DrawFuzzerPanel(session);
     ImGui::Separator();
 
-    ImGui::Text("Pending outbound messages: %zu", session.pending_outbound_messages.size());
-    ImGui::Text("Ordered messages: %zu", session.ordered_messages.size());
-    ImGui::Text("Applied messages: %zu", session.applied_message_ids.size());
+    if (!session.input_lockstep_enabled) {
+        ImGui::Text("Pending outbound messages: %zu", session.pending_outbound_messages.size());
+        ImGui::Text("Ordered messages: %zu", session.ordered_messages.size());
+        ImGui::Text("Applied messages: %zu", session.applied_message_ids.size());
+    }
     ImGui::Text("Entity links: %zu", session.entity_links.size());
     ImGui::Separator();
 
@@ -657,33 +668,37 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     DrawReconnectPolicyControls(state);
     ImGui::Separator();
 
-    DrawMovementReplicationControls(state);
-    ImGui::Separator();
+    if (!session.input_lockstep_enabled) {
+        DrawMovementReplicationControls(state);
+        ImGui::Separator();
 
-    DrawDurableReplicationStatus(state);
-    ImGui::Separator();
+        DrawDurableReplicationStatus(state);
+        ImGui::Separator();
+    }
 
     DrawDebugLocalPlayers(state, debug, graphics);
     ImGui::Separator();
 
-    ImGui::TextUnformatted("Net Message Harness");
-    if (ImGui::Button("Apply Ordered Messages")) {
-        const std::size_t count = network::ApplyOrderedMessages(session, state);
-        debug.network_status = "Applied " + std::to_string(count) + " ordered messages.";
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Clear Queues")) {
-        session.pending_outbound_messages.clear();
-        session.ordered_messages.clear();
-        session.applied_message_ids.clear();
-        debug.network_status = "Cleared network message queues.";
-    }
-    if (!debug.network_status.empty()) {
-        ImGui::TextWrapped("%s", debug.network_status.c_str());
-    }
+    if (!session.input_lockstep_enabled) {
+        ImGui::TextUnformatted("Net Message Harness");
+        if (ImGui::Button("Apply Ordered Messages")) {
+            const std::size_t count = network::ApplyOrderedMessages(session, state);
+            debug.network_status = "Applied " + std::to_string(count) + " ordered messages.";
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Clear Queues")) {
+            session.pending_outbound_messages.clear();
+            session.ordered_messages.clear();
+            session.applied_message_ids.clear();
+            debug.network_status = "Cleared network message queues.";
+        }
+        if (!debug.network_status.empty()) {
+            ImGui::TextWrapped("%s", debug.network_status.c_str());
+        }
 
-    DrawRecentOrderedMessages(session);
-    DrawMessageLog(session);
+        DrawRecentOrderedMessages(session);
+        DrawMessageLog(session);
+    }
     ImGui::End();
 }
 

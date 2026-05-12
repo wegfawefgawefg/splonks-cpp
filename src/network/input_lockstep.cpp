@@ -4,6 +4,89 @@
 
 namespace splonks::network {
 
+namespace {
+
+constexpr std::uint32_t kInputLeft = 1U << 0U;
+constexpr std::uint32_t kInputRight = 1U << 1U;
+constexpr std::uint32_t kInputUp = 1U << 2U;
+constexpr std::uint32_t kInputDown = 1U << 3U;
+constexpr std::uint32_t kInputJump = 1U << 4U;
+constexpr std::uint32_t kInputRun = 1U << 5U;
+constexpr std::uint32_t kInputUse = 1U << 6U;
+constexpr std::uint32_t kInputEquip = 1U << 7U;
+constexpr std::uint32_t kInputPickupDrop = 1U << 8U;
+constexpr std::uint32_t kInputStop = 1U << 9U;
+constexpr std::uint32_t kInputBomb = 1U << 10U;
+constexpr std::uint32_t kInputRope = 1U << 11U;
+constexpr std::uint32_t kInputAttack = 1U << 12U;
+constexpr std::uint32_t kInputBuy = 1U << 13U;
+constexpr std::uint32_t kInputEmoteUp = 1U << 14U;
+constexpr std::uint32_t kInputEmoteDown = 1U << 15U;
+constexpr std::uint32_t kInputQuit = 1U << 16U;
+constexpr std::uint32_t kInputToggleCollisionBoxes = 1U << 17U;
+constexpr std::uint32_t kInputRegenerateLevel = 1U << 18U;
+
+void SetFlag(std::uint32_t& flags, std::uint32_t flag, bool enabled) {
+    if (enabled) {
+        flags |= flag;
+    }
+}
+
+bool HasFlag(std::uint32_t flags, std::uint32_t flag) {
+    return (flags & flag) != 0U;
+}
+
+} // namespace
+
+std::uint32_t PackPlayerInputFrame(const PlayerInputFrame& input) {
+    std::uint32_t flags = 0;
+    SetFlag(flags, kInputLeft, input.left);
+    SetFlag(flags, kInputRight, input.right);
+    SetFlag(flags, kInputUp, input.up);
+    SetFlag(flags, kInputDown, input.down);
+    SetFlag(flags, kInputJump, input.jump);
+    SetFlag(flags, kInputRun, input.run);
+    SetFlag(flags, kInputUse, input.use_button);
+    SetFlag(flags, kInputEquip, input.equip_button);
+    SetFlag(flags, kInputPickupDrop, input.pick_up_drop);
+    SetFlag(flags, kInputStop, input.stop);
+    SetFlag(flags, kInputBomb, input.bomb);
+    SetFlag(flags, kInputRope, input.rope);
+    SetFlag(flags, kInputAttack, input.attack);
+    SetFlag(flags, kInputBuy, input.buy_button);
+    SetFlag(flags, kInputEmoteUp, input.emote_up);
+    SetFlag(flags, kInputEmoteDown, input.emote_down);
+    SetFlag(flags, kInputQuit, input.quit);
+    SetFlag(flags, kInputToggleCollisionBoxes, input.toggle_collision_boxes);
+    SetFlag(flags, kInputRegenerateLevel, input.regenerate_level);
+    return flags;
+}
+
+PlayerInputFrame UnpackPlayerInputFrame(std::uint32_t flags, UVec2 mouse_pos) {
+    PlayerInputFrame input = PlayerInputFrame::New();
+    input.left = HasFlag(flags, kInputLeft);
+    input.right = HasFlag(flags, kInputRight);
+    input.up = HasFlag(flags, kInputUp);
+    input.down = HasFlag(flags, kInputDown);
+    input.jump = HasFlag(flags, kInputJump);
+    input.run = HasFlag(flags, kInputRun);
+    input.use_button = HasFlag(flags, kInputUse);
+    input.equip_button = HasFlag(flags, kInputEquip);
+    input.pick_up_drop = HasFlag(flags, kInputPickupDrop);
+    input.stop = HasFlag(flags, kInputStop);
+    input.bomb = HasFlag(flags, kInputBomb);
+    input.rope = HasFlag(flags, kInputRope);
+    input.attack = HasFlag(flags, kInputAttack);
+    input.buy_button = HasFlag(flags, kInputBuy);
+    input.emote_up = HasFlag(flags, kInputEmoteUp);
+    input.emote_down = HasFlag(flags, kInputEmoteDown);
+    input.quit = HasFlag(flags, kInputQuit);
+    input.toggle_collision_boxes = HasFlag(flags, kInputToggleCollisionBoxes);
+    input.regenerate_level = HasFlag(flags, kInputRegenerateLevel);
+    input.mouse_pos = mouse_pos;
+    return input;
+}
+
 void LockstepInputBuffer::Store(const LockstepInputRecord& record) {
     if (record.player_id == kInvalidPlayerId) {
         return;
@@ -66,6 +149,31 @@ bool LockstepInputBuffer::BuildFrameInputs(
         out_inputs.push_back(*input);
     }
     return true;
+}
+
+void LockstepInputBuffer::CollectRecords(
+    const std::vector<PlayerId>& player_ids,
+    LockstepFrame first_frame,
+    LockstepFrame last_frame,
+    std::vector<LockstepInputRecord>& out_records,
+    std::size_t max_records
+) const {
+    for (LockstepFrame frame = first_frame; frame <= last_frame; ++frame) {
+        for (PlayerId player_id : player_ids) {
+            if (out_records.size() >= max_records) {
+                return;
+            }
+            for (const LockstepInputRecord& record : records_) {
+                if (record.player_id == player_id && record.frame == frame) {
+                    out_records.push_back(record);
+                    break;
+                }
+            }
+        }
+        if (frame == last_frame) {
+            break;
+        }
+    }
 }
 
 void LockstepInputBuffer::ClearBefore(LockstepFrame frame) {

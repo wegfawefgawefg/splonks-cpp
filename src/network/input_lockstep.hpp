@@ -37,6 +37,9 @@ struct LockstepHashPacket {
     std::uint64_t gameplay_hash = 0;
 };
 
+std::uint32_t PackPlayerInputFrame(const PlayerInputFrame& input);
+PlayerInputFrame UnpackPlayerInputFrame(std::uint32_t flags, UVec2 mouse_pos);
+
 class LockstepInputBuffer {
 public:
     void Store(const LockstepInputRecord& record);
@@ -47,6 +50,13 @@ public:
         const std::vector<PlayerId>& required_players,
         LockstepFrame frame,
         std::vector<PlayerInputFrame>& out_inputs
+    ) const;
+    void CollectRecords(
+        const std::vector<PlayerId>& player_ids,
+        LockstepFrame first_frame,
+        LockstepFrame last_frame,
+        std::vector<LockstepInputRecord>& out_records,
+        std::size_t max_records
     ) const;
     void ClearBefore(LockstepFrame frame);
 

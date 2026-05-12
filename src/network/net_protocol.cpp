@@ -22,6 +22,7 @@ static_assert(sizeof(JoinRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacket
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(StageSyncPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(DurableMessageAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(InputFrameRecordsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -246,6 +247,10 @@ EncodedNetPacket EncodeStageSync(const StageSyncPacket& packet) {
 
 EncodedNetPacket EncodeDurableMessageAck(const DurableMessageAckPacket& packet) {
     return EncodePayload(NetPacketType::DurableMessageAck, packet);
+}
+
+EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet) {
+    return EncodePayload(NetPacketType::InputFrameRecords, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -625,6 +630,22 @@ std::optional<DurableMessageAckPacket> TryDecodeDurableMessageAck(const std::uin
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }
+    return packet;
+}
+
+std::optional<InputFrameRecordsPacket> TryDecodeInputFrameRecords(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::InputFrameRecords, offset)) {
+        return std::nullopt;
+    }
+    InputFrameRecordsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.record_count = std::min<std::uint32_t>(
+        packet.record_count,
+        static_cast<std::uint32_t>(packet.records.size())
+    );
     return packet;
 }
 

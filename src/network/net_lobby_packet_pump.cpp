@@ -53,8 +53,17 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
 
         if (const std::optional<PlayerSnapshotsPacket> snapshots =
                 TryDecodePlayerSnapshots(packet->bytes.data(), packet->size)) {
-            ApplyPlayerSnapshots(state, graphics, transport, *snapshots);
-            RelaySnapshotsToOtherRemotes(transport, packet->endpoint, *snapshots);
+            if (!IsInputLockstepActive(state)) {
+                ApplyPlayerSnapshots(state, graphics, transport, *snapshots);
+                RelaySnapshotsToOtherRemotes(transport, packet->endpoint, *snapshots);
+            }
+            continue;
+        }
+
+        if (const std::optional<InputFrameRecordsPacket> input_frames =
+                TryDecodeInputFrameRecords(packet->bytes.data(), packet->size)) {
+            HandleInputFrameRecords(state, *input_frames);
+            RelayInputFrameRecordsToOtherRemotes(transport, packet->endpoint, *input_frames);
             continue;
         }
 
@@ -113,7 +122,15 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
 
         if (const std::optional<PlayerSnapshotsPacket> snapshots =
                 TryDecodePlayerSnapshots(packet->bytes.data(), packet->size)) {
-            ApplyPlayerSnapshots(state, graphics, transport, *snapshots);
+            if (!IsInputLockstepActive(state)) {
+                ApplyPlayerSnapshots(state, graphics, transport, *snapshots);
+            }
+            continue;
+        }
+
+        if (const std::optional<InputFrameRecordsPacket> input_frames =
+                TryDecodeInputFrameRecords(packet->bytes.data(), packet->size)) {
+            HandleInputFrameRecords(state, *input_frames);
             continue;
         }
 
