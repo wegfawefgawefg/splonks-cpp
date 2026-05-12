@@ -419,7 +419,9 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepEntities(state, audio, graphics, dt);
     world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
-    DrainAndApplyLocalNetworkMessages(state, audio, graphics);
+    if (!network::IsInputLockstepActive(state)) {
+        DrainAndApplyLocalNetworkMessages(state, audio, graphics);
+    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {
@@ -554,7 +556,9 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepEntities(state, audio, graphics, dt);
     world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
-    DrainAndApplyLocalNetworkMessages(state, audio, graphics);
+    if (!network::IsInputLockstepActive(state)) {
+        DrainAndApplyLocalNetworkMessages(state, audio, graphics);
+    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Entity& entity : state.entity_manager.entities) {
         if (!entity.active) {

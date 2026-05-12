@@ -603,6 +603,8 @@ it is coordinator/peer before doing ordinary gameplay.
   coordinator-authority networking.
 - [x] Remove entity/tile/run/fluid/stage-light/presentation replication emits from normal
   gameplay.
+- [x] Skip old ordered mutation-message apply/drain while input lockstep is
+  active.
 - [x] Delete or quarantine old `world_ops` networking seams. Keep only gameplay
   helper pieces that remain useful without networking.
 - [x] Rename remaining live local helper names that still say `Request` but no longer
