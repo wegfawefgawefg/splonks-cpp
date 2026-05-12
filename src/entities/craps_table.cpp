@@ -334,7 +334,6 @@ extern const EntityArchetype kCrapsTableArchetype{
     .damage_vulnerability = DamageVulnerability::Immune,
     .on_interact = OnInteractAsCrapsTable,
     .step_logic = StepEntityLogicAsCrapsTable,
-    .replica_logic = StepEntityLogicAsCrapsTable,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
 };
 

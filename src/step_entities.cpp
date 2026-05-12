@@ -238,7 +238,7 @@ void TryReleaseHeldPlayerSlotFromJump(const PlayerSlot& slot, State& state) {
         return;
     }
 
-    entities::common::ReleaseEntityFromHolderAndEmitNetwork(*entity, state);
+    entities::common::ReleaseEntityFromHolderIfAttached(*entity, state);
     entity->grounded = false;
     entity->coyote_time = 2;
 }

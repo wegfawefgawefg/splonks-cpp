@@ -151,7 +151,7 @@ void DeactivateCollectedPickup(std::size_t pickup_idx, State& state, const Graph
 void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state);
 void AttachEntityAsHeld(Entity& holder, Entity& held);
 void ReleaseEntityFromHolder(Entity& entity, State& state);
-void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state);
+void ReleaseEntityFromHolderIfAttached(Entity& entity, State& state);
 std::vector<VID> SeverEntityCarryLinksForReset(Entity& entity, State& state);
 void DropHeldItemFromEntity(Entity& entity, State& state);
 bool TryPickupEntityByVid(

@@ -550,7 +550,6 @@ extern const EntityArchetype kChestArchetype{
     .on_use = OnUseAsChest,
     .on_interact = OnInteractAsChest,
     .step_logic = StepEntityLogicAsChest,
-    .replica_logic = StepEntityLogicAsChest,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Chest),
 };
@@ -575,7 +574,6 @@ extern const EntityArchetype kKeyChestArchetype{
     .can_apply_projectile_contact = true,
     .on_interact = OnInteractAsKeyChest,
     .step_logic = StepEntityLogicAsKeyChest,
-    .replica_logic = StepEntityLogicAsKeyChest,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::KeyChest),
 };

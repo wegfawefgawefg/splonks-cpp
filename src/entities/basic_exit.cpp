@@ -233,7 +233,6 @@ extern const EntityArchetype kBasicExitArchetype{
     .damage_vulnerability = DamageVulnerability::Immune,
     .on_interact = OnInteractAsBasicExit,
     .step_logic = StepEntityLogicAsBasicExit,
-    .replica_logic = StepEntityLogicAsBasicExit,
     .alignment = Alignment::Neutral,
     .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Exit),
 };

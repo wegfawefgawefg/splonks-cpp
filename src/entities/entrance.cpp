@@ -103,7 +103,6 @@ extern const EntityArchetype kEntranceArchetype{
     .projectile_contact_damage_amount = 0,
     .can_apply_projectile_contact = false,
     .step_logic = StepEntityLogicAsEntrance,
-    .replica_logic = StepEntityLogicAsEntrance,
     .alignment = Alignment::Neutral,
     .frame_data_animator = MakeEntranceAnimator(),
 };

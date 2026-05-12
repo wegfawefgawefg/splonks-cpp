@@ -86,7 +86,6 @@ extern const EntityArchetype kBaseballBatArchetype{
     .impassable = false,
     .hurt_on_contact = false,
     .can_be_stunned = false,
-    .step_as_replica = true,
     .draw_layer = DrawLayer::Foreground,
     .facing = LeftOrRight::Left,
     .condition = EntityCondition::Normal,

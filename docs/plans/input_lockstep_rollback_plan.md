@@ -609,6 +609,11 @@ it is coordinator/peer before doing ordinary gameplay.
 - [ ] Remove entity/archetype/debug baggage added only for the old
   coordinator-authoritative model: replica stepping, local prediction flags,
   replicated runtime flag helpers, and mutation-message-only state fields.
+  - Removed unused entity archetype `replica_logic` / `step_as_replica` fields
+    and their content initializers.
+  - Renamed the stale carry helper
+    `ReleaseEntityFromHolderAndEmitNetwork` to
+    `ReleaseEntityFromHolderIfAttached`.
 - [ ] Keep state fingerprint/replay code if it supports determinism.
 
 Implementation note: `world_ops::{SpawnEntity,DeactivateEntity,SetForegroundTile}`,

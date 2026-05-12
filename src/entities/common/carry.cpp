@@ -341,13 +341,11 @@ void ReleaseEntityFromHolder(Entity& entity, State& state) {
     RemoveEffect(entity, EffectId::NoGravityUntilContact);
 }
 
-void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state) {
+void ReleaseEntityFromHolderIfAttached(Entity& entity, State& state) {
     if (!HasAttachmentReference(entity, state)) {
         return;
     }
-    const std::optional<VID> dropped_by_vid = entity.held_by_vid;
     ReleaseEntityFromHolder(entity, state);
-    (void)dropped_by_vid;
 }
 
 std::vector<VID> SeverEntityCarryLinksForReset(Entity& entity, State& state) {
@@ -389,7 +387,7 @@ std::vector<VID> SeverEntityCarryLinksForReset(Entity& entity, State& state) {
     }
 
     // Repair asymmetric references too; resets may happen after one side has
-    // already been respawned or corrected by a network state patch.
+    // already been respawned or detached by another gameplay path.
     for (Entity& candidate : state.entity_manager.entities) {
         if (!candidate.active || candidate.vid == entity.vid) {
             continue;
