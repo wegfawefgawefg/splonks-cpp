@@ -69,6 +69,8 @@ Recent validated commits on this branch:
 - `1082eda Remove stale authority damage seams`
 - `bc8500d Remove stale tile and damage replication hooks`
 - `5d26df7 Simulate all player slots during lockstep`
+- `d517157 Harden lockstep smoke topology`
+- `cc34b6b Remove obsolete replication shims`
 
 Recent smoke-hardening work intentionally made the fake input-lockstep
 smoke so it resembles live topology instead of accidentally simulating both
@@ -115,10 +117,49 @@ Validation for this chunk:
 
 Next immediate steps:
 
-- Commit the smoke/topology/fix chunk once all checks pass.
-- Continue Phase 4/6 cleanup: remove or quarantine old no-op patch,
-  presentation, and entity-state replication seams, then add automated coverage
-  for peer carrying host player and both players transitioning stages.
+- Add automated coverage for peer-owned player carrying the host-owned player.
+- Add automated coverage for both players surviving a stage transition together.
+- Run and keep green:
+  - `cmake --build build --target splonks-cpp -j 8`
+  - `./build/splonks-cpp --check-state-equality-smoke`
+  - `./build/splonks-cpp --check-deterministic-replay-smoke`
+  - `./build/splonks-cpp --check-input-lockstep-smoke`
+- Commit that validated coverage chunk before moving to live two-window testing.
+
+## Current Solo-Run Checklist
+
+This is the concrete work queue for the current `/goal` run. Do these before
+claiming lockstep is usable.
+
+1. Strengthen fake/headless lockstep coverage.
+   - Peer 0 owns player 1; peer 1 owns player 2.
+   - Peer-owned player can pick up/carry/drop/throw the host-owned player.
+   - Both players remain active and deterministic while one player is carried.
+   - Both players transition to the next stage together.
+   - Stage transition must not create orphan players, duplicate held players, or
+     process-local player divergence.
+2. Keep the multi-local-player architecture intact.
+   - A process may own multiple local `PlayerId`s.
+   - Lockstep input packets batch independent player input streams.
+   - Do not reintroduce a single-primary-player assumption.
+3. Continue removing old coordinator-authoritative baggage from active gameplay.
+   - No item-specific replication hooks.
+   - No content branches for coordinator/peer/predicted/remote mutation.
+   - No no-op wrappers kept solely for old network compatibility.
+   - Quarantine old tests/tools if they are not useful for lockstep.
+4. Reuse the old network impairment profiles for lockstep input transport.
+   - Same-house, same-city, same-state, Texas-to-California,
+     California-to-Florida, and Texas-to-Japan profiles should apply to input
+     packets/fake transport.
+   - Delay, jitter, loss, duplicate, and reorder tests should exercise the
+     lockstep scheduler, not retired mutation-replication lanes.
+5. Preserve single-player behavior.
+   - Any cleanup must keep offline gameplay local-only and unchanged.
+   - Entity/content code should read like ordinary local gameplay again.
+6. Commit periodically.
+   - Commit after each validated checkbox or stable sub-checkbox.
+   - Do not leave hours of uncommitted lockstep surgery in the working tree.
+   - If a known gap remains, write it here before committing.
 
 ## Why Reconsider
 
