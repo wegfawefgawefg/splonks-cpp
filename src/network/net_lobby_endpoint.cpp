@@ -52,12 +52,7 @@ void RemoveRemotePlayers(
                                 FindRetainedPlayerState(state, player_id);
                             const std::vector<VID> changed_entities =
                                 entities::common::SeverEntityCarryLinksForReset(*entity, state);
-                            for (const VID& changed_vid : changed_entities) {
-                                if (const Entity* const changed =
-                                        state.entity_manager.GetEntity(changed_vid)) {
-                                    world_ops::PatchEntityState(state, *changed, *changed);
-                                }
-                            }
+                            (void)changed_entities;
                             if (retained != nullptr) {
                                 DeactivateRetainedAttachedEntity(state, retained->held_item, held_vid);
                                 DeactivateRetainedAttachedEntity(state, retained->back_item, back_vid);

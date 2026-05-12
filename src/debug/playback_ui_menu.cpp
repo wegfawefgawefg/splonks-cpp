@@ -654,11 +654,9 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
 
         if (border_changed) {
             CopyBorderConfigToStage(border_test, state.stage);
-            world_ops::PatchRunState(state);
         }
         if (wrap_settings_changed) {
             ApplyBorderTestWrapConfig(state, graphics);
-            world_ops::PatchRunState(state);
         }
     } else {
         border_changed |= DrawTileCombo("Left Tile", state.stage.border.left.tile);
@@ -707,7 +705,6 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
                 static_cast<unsigned int>(wrap_padding_tiles),
                 camera_clamp_enabled
             );
-            world_ops::PatchRunState(state);
         }
     }
 

@@ -166,7 +166,6 @@ void FireBow(Entity& bow, State& state) {
     bow.entity_a.reset();
     SetAnimation(bow, GetLooseAnimationId(bow));
     (void)PlayWorldSoundEmitter(state, bow.GetCenter(), audio_asset_ids::Throw);
-    world_ops::PatchEntityState(state, bow, bow);
 }
 
 } // namespace

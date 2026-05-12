@@ -2,7 +2,6 @@
 
 #include "entity/core_types.hpp"
 #include "math_types.hpp"
-#include "presentation_commands.hpp"
 #include "stage.hpp"
 #include "vid.hpp"
 
@@ -33,22 +32,6 @@ Entity* SpawnConfiguredEntity(
     std::optional<VID> held_by_vid = std::nullopt
 );
 bool DeactivateEntity(State& state, VID entity_vid);
-void PatchEntityState(State& state, const Entity& source, const Entity& entity);
-void PatchPlayerState(State& state, const Entity& player);
-void PatchRunState(State& state, bool include_snapshot_fingerprint = false);
-void MarkEntityHeld(
-    State& state,
-    const Entity& holder,
-    const Entity& held,
-    AttachmentMode attachment_mode = AttachmentMode::Held
-);
-void MarkEntityDropped(
-    State& state,
-    const Entity& entity,
-    std::optional<VID> dropped_by_vid = std::nullopt
-);
-void MarkEntityThrown(State& state, const Entity& thrower, const Entity& thrown, Vec2 throw_velocity);
-void QueuePresentationCommand(State& state, const PresentationCommand& command);
 void QueueGameplayAction(State& state, const GameplayActionRequested& action);
 void QueuePendingGameplayAction(State& state, const GameplayActionRequested& action);
 bool TryApplyInteractEntity(

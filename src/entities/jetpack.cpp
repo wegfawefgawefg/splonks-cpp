@@ -5,7 +5,6 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "particles/sprite_particle.hpp"
-#include "presentation_commands.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 
@@ -154,15 +153,6 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
     const Vec2 center = jetpack.GetCenter();
     SpawnJetpackSmoke(state, center + Vec2::New(3.0F, 3.0F));
     SpawnJetpackSmoke(state, center + Vec2::New(-3.0F, 3.0F));
-    world_ops::QueuePresentationCommand(
-        state,
-        PresentationCommand{
-            .kind = PresentationCommandKind::SpawnScriptedEffect,
-            .effect_id = ScriptedPresentationEffectId::JetpackSmoke,
-            .source_vid = jetpack.vid,
-            .source_pos = center,
-        }
-    );
 }
 
 /** jetpack goes up by default, and idles if it hits the ceiling.

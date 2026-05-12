@@ -378,7 +378,6 @@ void StickArrowToEntity(Entity& arrow, Entity& other, State& state) {
     arrow.thrown_immunity_timer = 0;
     arrow.vel = Vec2::New(0.0F, 0.0F);
     arrow.acc = Vec2::New(0.0F, 0.0F);
-    world_ops::PatchEntityState(state, arrow, arrow);
 }
 
 entities::common::ContactResolution OnEntityContactAsArrow(
@@ -475,7 +474,6 @@ entities::common::ContactResolution OnTileContactAsArrow(
     arrow.thrown_by.reset();
     arrow.has_physics = false;
     SnapArrowPositionToPixels(arrow);
-    world_ops::PatchEntityState(state, arrow, arrow);
     return entities::common::ContactResolution{.stop_sweep = true};
 }
 

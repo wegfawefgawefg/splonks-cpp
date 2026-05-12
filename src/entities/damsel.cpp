@@ -100,7 +100,6 @@ void AwardDamselRescueHealthToEntity(std::optional<VID> target_vid, State& state
     }
 
     target->health += kDamselRescueHealthGain;
-    world_ops::PatchPlayerState(state, *target);
 }
 
 void AwardDamselRescueHealth(State& state) {

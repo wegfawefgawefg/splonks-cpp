@@ -275,9 +275,6 @@ DamageResult TryHitEntity(
         if (options.knockback_on_no_damage && entity.active) {
             ApplyKnockback(entity, options.knockback);
         }
-        if (const Entity* const source = state.entity_manager.GetEntity(*options.source_vid)) {
-            world_ops::PatchEntityState(state, *source, entity);
-        }
     }
 
     return damage_result;

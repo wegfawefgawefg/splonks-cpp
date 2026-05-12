@@ -344,9 +344,7 @@ void ApplyRetainedAttachedEntityState(
     }
 
     entities::common::SyncEntityAttachments(holder.vid.id, state, graphics);
-    world_ops::MarkEntityHeld(state, holder, *attached, mode);
-    world_ops::PatchEntityState(state, holder, holder);
-    world_ops::PatchEntityState(state, holder, *attached);
+    (void)mode;
 }
 
 } // namespace splonks::network

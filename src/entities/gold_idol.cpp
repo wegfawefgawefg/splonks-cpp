@@ -104,7 +104,6 @@ void AwardMoneyToTarget(std::optional<VID> target_vid, std::uint32_t amount, Sta
         return;
     }
     target->money += amount;
-    world_ops::PatchPlayerState(state, *target);
 }
 
 void RedeemGoldIdol(

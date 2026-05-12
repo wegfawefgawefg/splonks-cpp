@@ -313,8 +313,6 @@ bool ApplyDeterministicWorldOpsSmokeMutations(State& state, const char*& failed_
         failed_step = "spawn rock";
         return false;
     }
-    world_ops::PatchEntityState(state, *rock, *rock);
-
     if (!world_ops::DeactivateEntity(state, rock->vid)) {
         failed_step = "deactivate rock";
         return false;

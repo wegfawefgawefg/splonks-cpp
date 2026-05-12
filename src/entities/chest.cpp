@@ -54,7 +54,6 @@ common::ContactResolution OnEntityContactAsUdjatEye(
     if (state.quest_state.quest_id == QuestId::Classic) {
         state.quest_state.classic.made_udjat_eye = true;
         state.quest_state.classic.has_udjat_eye = true;
-        world_ops::PatchRunState(state);
     }
 
     (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
@@ -282,7 +281,6 @@ bool TryOpenTreasureChestAt(
     }
 
     SetAnimation(chest, frame_data_ids::ChestOpen);
-    world_ops::PatchEntityState(state, chest, chest);
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
 
@@ -364,7 +362,6 @@ bool TryOpenKeyChestWithKey(
     }
 
     SetAnimation(chest, frame_data_ids::KeyChestOpen);
-    world_ops::PatchEntityState(state, chest, chest);
     const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Unlock);

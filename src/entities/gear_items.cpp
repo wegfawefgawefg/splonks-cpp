@@ -101,10 +101,7 @@ void UpdateOpenParachuteVisual(Entity& owner, State& state, const Graphics& grap
     parachute->vel = Vec2::New(0.0F, 0.0F);
     parachute->acc = Vec2::New(0.0F, 0.0F);
     state.UpdateSidForEntity(parachute->vid.id, graphics);
-    world_ops::PatchEntityState(state, *parachute, *parachute);
-    if (spawned_visual) {
-        world_ops::PatchEntityState(state, owner, owner);
-    }
+    (void)spawned_visual;
 }
 
 void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics) {

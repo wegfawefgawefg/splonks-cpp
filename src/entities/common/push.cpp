@@ -113,7 +113,6 @@ bool TryApplyPushEntityAction(
     }
 
     pushed->acc.x += push_acc_delta;
-    world_ops::PatchEntityState(state, *pusher, *pushed);
     return true;
 }
 
@@ -159,7 +158,6 @@ void TryPushBlocks(
                 }
                 if (block_x_acc_delta != 0.0F) {
                     block_entity->acc.x += block_x_acc_delta;
-                    world_ops::PatchEntityState(state, entity, *block_entity);
                 }
                 break;
             }

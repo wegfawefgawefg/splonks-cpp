@@ -374,9 +374,6 @@ bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& picku
     if (TryCollectEffectPickup(entity, pickup)) {
         collected = true;
     }
-    if (collected) {
-        world_ops::PatchPlayerState(state, entity);
-    }
     return collected;
 }
 

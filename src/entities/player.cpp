@@ -389,13 +389,7 @@ void StepEntityLogicAsPlayer(
         Entity& player = state.entity_manager.entities[entity_idx];
         const EntityCondition player_condition = player.condition;
         if (player_condition == EntityCondition::Dead) {
-            for (const VID changed_vid : common::SeverEntityCarryLinksForReset(player, state)) {
-                if (const Entity* const changed_entity = state.entity_manager.GetEntity(changed_vid)) {
-                    if (changed_entity->active) {
-                        world_ops::PatchEntityState(state, player, *changed_entity);
-                    }
-                }
-            }
+            (void)common::SeverEntityCarryLinksForReset(player, state);
             gear_items::ClearEquippedPassiveItemVisuals(player, state, graphics);
 
             return;

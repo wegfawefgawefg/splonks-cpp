@@ -60,49 +60,4 @@ bool DeactivateEntity(State& state, VID entity_vid) {
     return true;
 }
 
-void PatchEntityState(State& state, const Entity& source, const Entity& entity) {
-    (void)state;
-    (void)source;
-    (void)entity;
-}
-
-void PatchPlayerState(State& state, const Entity& player) {
-    (void)state;
-    (void)player;
-}
-
-void PatchRunState(State& state, bool include_snapshot_fingerprint) {
-    (void)state;
-    (void)include_snapshot_fingerprint;
-}
-
-void MarkEntityHeld(
-    State& state,
-    const Entity& holder,
-    const Entity& held,
-    AttachmentMode attachment_mode
-) {
-    (void)state;
-    (void)holder;
-    (void)held;
-    (void)attachment_mode;
-}
-
-void MarkEntityDropped(
-    State& state,
-    const Entity& entity,
-    std::optional<VID> dropped_by_vid
-) {
-    (void)state;
-    (void)entity;
-    (void)dropped_by_vid;
-}
-
-void MarkEntityThrown(State& state, const Entity& thrower, const Entity& thrown, Vec2 throw_velocity) {
-    (void)state;
-    (void)thrower;
-    (void)thrown;
-    (void)throw_velocity;
-}
-
 } // namespace splonks::world_ops

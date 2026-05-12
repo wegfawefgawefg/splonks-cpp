@@ -34,7 +34,6 @@ common::ContactResolution TryCollectMoneyPickup(
     Entity& collector = state.entity_manager.entities[collector_idx];
     const Entity& pickup = state.entity_manager.entities[pickup_idx];
     collector.money += amount;
-    world_ops::PatchPlayerState(state, collector);
     (void)PlayEntityCenterSoundEmitter(state, pickup, sound);
     effects::SpawnTreasurePickupSparkles(pickup, state, kGoldLightColor, sparkle_count);
     common::DeactivateCollectedPickup(pickup_idx, state, *graphics);

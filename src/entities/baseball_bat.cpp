@@ -5,7 +5,6 @@
 #include "entities/common/common.hpp"
 #include "frame_data_id.hpp"
 #include "particles/ribbon_particle.hpp"
-#include "presentation_commands.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
@@ -36,12 +35,6 @@ void SpawnBatTrailSegment(State& state, const Vec2& from, const Vec2& to) {
     ribbon.points[0] = from;
     ribbon.points[1] = wrapped_to;
     state.particles.Add(std::move(ribbon));
-    world_ops::QueuePresentationCommand(state, PresentationCommand{
-        .kind = PresentationCommandKind::SpawnScriptedEffect,
-        .effect_id = ScriptedPresentationEffectId::BaseballBatTrail,
-        .source_pos = from,
-        .target_pos = wrapped_to,
-    });
 }
 
 SwingStage GetSwingStage(const Entity& baseball_bat) {

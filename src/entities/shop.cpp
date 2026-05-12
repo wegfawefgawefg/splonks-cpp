@@ -69,7 +69,6 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
 
     const bool already_disturbed = shop.ai_state == EntityAiState::Disturbed;
     shop.ai_state = EntityAiState::Disturbed;
-    world_ops::PatchEntityState(state, shop, shop);
 
     if (!already_disturbed) {
         (void)PlayEntityCenterSoundEmitter(state, shop, audio_asset_ids::ShopkeepAnger0);
@@ -83,9 +82,7 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
             player != nullptr && player->active) {
             const bool was_wanted = player->wanted;
             player->wanted = true;
-            if (!was_wanted) {
-                world_ops::PatchPlayerState(state, *player);
-            }
+            (void)was_wanted;
         }
     }
 
@@ -93,9 +90,7 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
         if (Entity* const shopkeeper = state.entity_manager.GetEntityMut(*shop.entity_a)) {
             const bool was_wanted = shopkeeper->wanted;
             shopkeeper->wanted = true;
-            if (!was_wanted) {
-                world_ops::PatchEntityState(state, shop, *shopkeeper);
-            }
+            (void)was_wanted;
         }
     }
 
@@ -109,7 +104,6 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
             continue;
         }
         ClearOwnedBuyableIfPresent(*child, shop.vid);
-        world_ops::PatchEntityState(state, shop, *child);
     }
 
 }

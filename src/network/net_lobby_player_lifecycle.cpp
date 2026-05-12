@@ -87,15 +87,6 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         if (slot.primary_local) {
             state.controlled_entity_vid = entity->vid;
         }
-        world_ops::PatchPlayerState(state, *entity);
-    }
-
-    for (const VID changed_vid : changed_entities) {
-        if (const Entity* const changed_entity = state.entity_manager.GetEntity(changed_vid)) {
-            if (changed_entity->active) {
-                world_ops::PatchEntityState(state, *changed_entity, *changed_entity);
-            }
-        }
     }
 
     (void)ResetStageEntrancePresentation(state);
@@ -103,7 +94,6 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
     state.game_over = false;
     state.pending_stage_transition.reset();
     state.gameplay_camera_anchor_world_pos.reset();
-    world_ops::PatchRunState(state);
     if (status_out != nullptr) {
         *status_out = "Respawned local network players at entrance.";
     }
@@ -217,17 +207,8 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
         }
     }
 
-    for (const VID changed_vid : changed_entities) {
-        if (const Entity* const changed_entity = state.entity_manager.GetEntity(changed_vid)) {
-            if (changed_entity->active) {
-                world_ops::PatchEntityState(state, *changed_entity, *changed_entity);
-            }
-        }
-    }
-
     state.game_over = false;
     state.gameplay_camera_anchor_world_pos.reset();
-    world_ops::PatchRunState(state);
     if (status_out != nullptr) {
         *status_out = "Revived network players at entrance.";
     }

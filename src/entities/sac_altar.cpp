@@ -117,7 +117,6 @@ void SpawnBallAndChainPunishment(State& state, const Entity* altar_context) {
 
 void ApplySacAltarFavorDelta(State& state, std::int32_t favor_delta, const Entity* altar_context) {
     state.sac_altar_favor += favor_delta;
-    world_ops::PatchRunState(state);
     if (state.sac_altar_favor <= kBallAndChainPunishmentFavorThreshold) {
         SpawnBallAndChainPunishment(state, altar_context);
     }
@@ -472,7 +471,6 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
         }
 
         state.sac_altar_reward_tier = 1;
-        world_ops::PatchRunState(state);
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
@@ -490,7 +488,6 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
         }
 
         state.sac_altar_reward_tier = 2;
-        world_ops::PatchRunState(state);
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }
@@ -500,12 +497,10 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
             reward_target_vid.has_value()) {
             if (Entity* const reward_target = state.entity_manager.GetEntityMut(*reward_target_vid)) {
                 reward_target->health += kHealthRewardAmount;
-                world_ops::PatchPlayerState(state, *reward_target);
             }
         }
         SpawnSacrificeSmoke(state, emit_pos);
         state.sac_altar_reward_tier = 3;
-        world_ops::PatchRunState(state);
         (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Present);
         return true;
     }

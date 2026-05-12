@@ -567,11 +567,10 @@ it is coordinator/peer before doing ordinary gameplay.
   replicated runtime flag helpers, and mutation-message-only state fields.
 - [ ] Keep state fingerprint/replay code if it supports determinism.
 
-Implementation note: `world_ops::{SpawnEntity,DeactivateEntity,SetForegroundTile,
-PatchEntityState,PatchPlayerState,PatchRunState,QueuePresentationCommand}`,
+Implementation note: `world_ops::{SpawnEntity,DeactivateEntity,SetForegroundTile}`,
 stage lighting, stage fluids, and carry/damage/tool/tile-break content paths are
-currently local deterministic helpers. They intentionally do not enqueue network
-mutation messages.
+currently local deterministic helpers. Old no-op patch/presentation shims were
+removed rather than kept as compatibility wrappers.
 
 Exit gate: ordinary gameplay code has no coordinator/peer mutation branches, and
 the project builds with the old replication model disabled or removed.

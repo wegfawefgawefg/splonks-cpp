@@ -1553,7 +1553,6 @@ bool RunPlayerMovementStateRepairSmoke(Graphics& graphics, Audio& audio) {
     }
     (void)AddEffect(*coordinator_peer_player, EffectId::InWater);
     RemoveEffect(*peer_player, EffectId::InWater);
-    world_ops::PatchPlayerState(coordinator, *coordinator_peer_player);
     if (!DeliverCoordinatorPacketsToPeer(
             coordinator,
             peer,
@@ -2283,7 +2282,6 @@ bool RunShopBuyScenario(
             ResolveCoordinatorVidForPeerVid(coordinator, peer, *peer_item_vid)) {
         if (Entity* const item = coordinator.entity_manager.GetEntityMut(*coordinator_item_vid)) {
             ConfigureEntityAsBuyable(*item, 100);
-            world_ops::PatchEntityState(coordinator, *item, *item);
         }
     }
     if (!DeliverCoordinatorPacketsToPeer(
@@ -2408,11 +2406,9 @@ bool RunChanceShopRollScenario(
         table->entity_b = *coordinator_dice_vid;
         table->entity_c = *coordinator_prize_vid;
         table->size = Vec2::New(128.0F, 32.0F);
-        world_ops::PatchEntityState(coordinator, *table, *table);
     }
     if (Entity* const buyer = coordinator.entity_manager.GetEntityMut(coordinator_peer_vid)) {
         buyer->money = 4000;
-        world_ops::PatchPlayerState(coordinator, *buyer);
     }
     if (Entity* const buyer = peer.entity_manager.GetEntityMut(peer_player_vid)) {
         buyer->money = 4000;
@@ -2515,7 +2511,6 @@ bool RunChanceShopRollScenario(
         dice->grounded = true;
         dice->vel = Vec2::New(0.0F, 0.0F);
         dice->acc = Vec2::New(0.0F, 0.0F);
-        world_ops::PatchEntityState(coordinator, *dice, *dice);
     }
     if (!StepIdleFrameAndCompare(coordinator, peer, pair, graphics, audio, label, false)) {
         return false;
@@ -2673,7 +2668,6 @@ bool RunBombChainReactionScenario(Graphics& graphics, Audio& audio) {
     if (Entity* const first_bomb =
             coordinator.entity_manager.GetEntityMut(*coordinator_first_bomb_vid)) {
         first_bomb->counter_a = 1.0F;
-        world_ops::PatchEntityState(coordinator, *first_bomb, *first_bomb);
     }
     if (!DeliverCoordinatorPacketsToPeer(
             coordinator,
@@ -2772,7 +2766,6 @@ bool RunArrowPushblockAttachmentScenario(Graphics& graphics, Audio& audio) {
         arrow->projectile_contact_damage_type = DamageType::Attack;
         arrow->projectile_contact_damage_amount = 2;
         arrow->facing = LeftOrRight::Right;
-        world_ops::PatchEntityState(coordinator, *arrow, *arrow);
     }
     if (!DeliverCoordinatorPacketsToPeer(
             coordinator,
@@ -2819,7 +2812,6 @@ bool RunArrowPushblockAttachmentScenario(Graphics& graphics, Audio& audio) {
     const Vec2 peer_arrow_pos_before = peer_arrow->pos;
     if (Entity* const block = coordinator.entity_manager.GetEntityMut(*coordinator_block_vid)) {
         block->pos = block->pos + Vec2::New(16.0F, 0.0F);
-        world_ops::PatchEntityState(coordinator, *block, *block);
     }
     if (!StepIdleFrameAndCompare(
             coordinator,
@@ -3110,8 +3102,6 @@ bool RunAdminHostStageLoadAndEntitySpawnScenario(Graphics& graphics, Audio& audi
         77,
         true
     );
-    world_ops::PatchEntityState(coordinator, *coordinator_admin_player, *coordinator_admin_player);
-    world_ops::PatchPlayerState(coordinator, *coordinator_admin_player);
     if (!DeliverCoordinatorPacketsToPeer(
             coordinator,
             peer,

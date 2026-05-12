@@ -272,7 +272,6 @@ void ApplyThrowState(
         thrown.acc = throw_velocity;
     }
     state.UpdateSidForEntity(thrown.vid.id, graphics);
-    world_ops::MarkEntityThrown(state, thrower, thrown, throw_velocity);
     (void)PlayEntityCenterSoundEmitter(state, thrower, audio_asset_ids::Throw);
 }
 
@@ -340,12 +339,6 @@ void ReleaseEntityFromHolder(Entity& entity, State& state) {
     RestoreEntityDrawLayerFromArchetype(entity);
     entity.grounded = false;
     RemoveEffect(entity, EffectId::NoGravityUntilContact);
-
-    for (const VID& holder_vid : changed_holders) {
-        if (Entity* const holder = state.entity_manager.GetEntityMut(holder_vid)) {
-            world_ops::PatchEntityState(state, entity, *holder);
-        }
-    }
 }
 
 void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state) {
@@ -354,7 +347,7 @@ void ReleaseEntityFromHolderAndEmitNetwork(Entity& entity, State& state) {
     }
     const std::optional<VID> dropped_by_vid = entity.held_by_vid;
     ReleaseEntityFromHolder(entity, state);
-    world_ops::MarkEntityDropped(state, entity, dropped_by_vid);
+    (void)dropped_by_vid;
 }
 
 std::vector<VID> SeverEntityCarryLinksForReset(Entity& entity, State& state) {
@@ -439,7 +432,6 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     entity.holding_vid.reset();
     entity.holding = false;
     entity.holding_timer = kDefaultHoldingTimer;
-    world_ops::PatchEntityState(state, entity, entity);
     if (held == nullptr) {
         return;
     }
@@ -463,7 +455,7 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
             state.stage_frame,
             kForcedPlayerDropHarmCooldownFrames
         );
-        world_ops::MarkEntityDropped(state, *held, dropped_by_vid);
+        (void)dropped_by_vid;
         return;
     }
 
@@ -485,7 +477,6 @@ void DropHeldItemFromEntity(Entity& entity, State& state) {
     held->vel = Vec2::New(throw_x, -1.0F);
     held->acc = Vec2::New(0.0F, 0.0F);
     RemoveEffect(*held, EffectId::NoGravityUntilContact);
-    world_ops::MarkEntityThrown(state, entity, *held, held->vel);
 }
 
 bool TryPickupEntityByVid(
@@ -509,7 +500,6 @@ bool TryPickupEntityByVid(
     holder->holding_timer = kDefaultHoldingTimer;
     AttachEntityAsHeld(*holder, *held);
     SyncHeldAttachmentForHolder(*holder, state, graphics);
-    world_ops::MarkEntityHeld(state, *holder, *held);
     return true;
 }
 
@@ -533,7 +523,6 @@ bool TryDropEntityByVid(
     held->vel = Vec2::New(0.0F, 0.0F);
     held->acc = Vec2::New(0.0F, 0.0F);
     state.UpdateSidForEntity(held->vid.id, graphics);
-    world_ops::MarkEntityDropped(state, *held, holder->vid);
     return true;
 }
 
@@ -586,9 +575,6 @@ bool TryPutHeldEntityOnBackByVid(
     held->has_physics = false;
     held->can_collide = false;
     SyncEntityAttachments(holder->vid.id, state, graphics);
-    world_ops::MarkEntityHeld(state, *holder, *held, AttachmentMode::Back);
-    world_ops::PatchEntityState(state, *holder, *holder);
-    world_ops::PatchEntityState(state, *holder, *held);
     return true;
 }
 
@@ -624,8 +610,6 @@ bool TryTakeOffBackEntityByVid(
 
     holder->back_vid.reset();
     state.UpdateSidForEntity(back_item->vid.id, graphics);
-    world_ops::PatchEntityState(state, *holder, *holder);
-    world_ops::PatchEntityState(state, *holder, *back_item);
     return true;
 }
 

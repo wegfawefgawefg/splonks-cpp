@@ -479,60 +479,6 @@ void ApplyTeleportAreaShake(
     );
 }
 
-void EmitTeleportSoundPresentation(State& state, const Entity& holder, const Vec2& source_center) {
-    world_ops::QueuePresentationCommand(state, PresentationCommand{
-        .kind = PresentationCommandKind::PlaySoundAt,
-        .audio_asset_id = audio_asset_ids::Teleport,
-        .source_vid = holder.vid,
-        .source_pos = source_center,
-    });
-}
-
-void EmitTeleportPhasePresentation(
-    State& state,
-    const Entity& holder,
-    const Entity& teleporter,
-    const Vec2& world_center,
-    const IVec2& direction,
-    ScriptedPresentationEffectId effect_id
-) {
-    world_ops::QueuePresentationCommand(state, PresentationCommand{
-        .kind = PresentationCommandKind::ShakeEntity,
-        .source_vid = holder.vid,
-        .source_pos = world_center,
-        .entity_shake_amount = 0.5F,
-    });
-    world_ops::QueuePresentationCommand(state, PresentationCommand{
-        .kind = PresentationCommandKind::ShakeEntity,
-        .source_vid = teleporter.vid,
-        .source_pos = world_center,
-        .entity_shake_amount = 0.5F,
-    });
-    world_ops::QueuePresentationCommand(state, PresentationCommand{
-        .kind = PresentationCommandKind::ShakeArea,
-        .source_vid = holder.vid,
-        .source_pos = world_center,
-        .foreground_shake_amount = 8.0F,
-        .background_shake_amount = 8.0F,
-        .area_entity_shake_amount = 1.0F,
-        .shake_radius_tiles = 1.5F,
-    });
-    world_ops::QueuePresentationCommand(state, PresentationCommand{
-        .kind = PresentationCommandKind::SpawnScriptedEffect,
-        .effect_id = effect_id,
-        .source_vid = holder.vid,
-        .source_pos = world_center,
-        .direction = direction,
-    });
-    world_ops::QueuePresentationCommand(state, PresentationCommand{
-        .kind = PresentationCommandKind::SpawnScriptedEffect,
-        .effect_id = effect_id,
-        .source_vid = teleporter.vid,
-        .source_pos = world_center,
-        .direction = direction,
-    });
-}
-
 void AddTeleporterDebugAnnotations(
     const Entity& teleporter,
     const Entity* holder,
@@ -634,15 +580,6 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
     (void)PlayEntityCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
     const Vec2 source_center =
         entities::common::GetVisualCenterForEntity(*holder, graphics, holder->GetCenter());
-    EmitTeleportSoundPresentation(state, *holder, source_center);
-    EmitTeleportPhasePresentation(
-        state,
-        *holder,
-        teleporter,
-        source_center,
-        aim.direction,
-        ScriptedPresentationEffectId::TeleportSplit
-    );
     AddEntityShake(*holder, 0.5F);
     AddEntityShake(teleporter, 0.5F);
     ApplyTeleportAreaShake(state, source_center, 8.0F, 8.0F, 1.0F, 1.5F);
@@ -651,14 +588,6 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
 
     if (chosen == nullptr) {
         if (blocked != nullptr) {
-            EmitTeleportPhasePresentation(
-                state,
-                *holder,
-                teleporter,
-                blocked->destination_center,
-                aim.direction,
-                ScriptedPresentationEffectId::TeleportMerge
-            );
             MoveTeleportHolderToDestination(*holder, holder_idx, blocked->destination_center, state, graphics);
             AddEntityShake(*holder, 0.5F);
             AddEntityShake(teleporter, 0.5F);
@@ -674,14 +603,6 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
         return;
     }
 
-    EmitTeleportPhasePresentation(
-        state,
-        *holder,
-        teleporter,
-        chosen->destination_center,
-        aim.direction,
-        ScriptedPresentationEffectId::TeleportMerge
-    );
     ApplyTelefragToCandidate(*chosen, state, audio, graphics);
     MoveTeleportHolderToDestination(*holder, holder_idx, chosen->destination_center, state, graphics);
     AddEntityShake(*holder, 0.5F);

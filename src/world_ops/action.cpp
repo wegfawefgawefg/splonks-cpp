@@ -73,9 +73,6 @@ void ApplyAttachmentUseAction(
     if (item->on_use != nullptr) {
         item->on_use(item->vid.id, state, graphics, audio);
     }
-    if (item->active) {
-        PatchEntityState(state, *item, *item);
-    }
 }
 
 bool AreEntitiesOverlappingForInteract(

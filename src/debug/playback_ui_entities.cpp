@@ -112,27 +112,6 @@ void AddAllPersistentEffectsFromDebug(Entity& entity) {
     }
 }
 
-bool IsPlayerEntity(const State& state, const Entity& entity) {
-    return state.players.FindByEntityVid(entity.vid) != nullptr;
-}
-
-void ReplicateDebugEntityEdit(
-    State& state,
-    const Entity& entity,
-    bool entity_state_changed,
-    bool player_state_changed
-) {
-    if (state.net_session.role == network::NetRole::Peer) {
-        return;
-    }
-    if (entity_state_changed) {
-        world_ops::PatchEntityState(state, entity, entity);
-    }
-    if ((entity_state_changed || player_state_changed) && IsPlayerEntity(state, entity)) {
-        world_ops::PatchPlayerState(state, entity);
-    }
-}
-
 bool DrawEntityEffectsEditor(Entity& entity) {
     bool changed = false;
     EntityEffects* const effects = entity.effects.get();
@@ -557,9 +536,6 @@ bool SpawnDebugEntity(
             spawned->can_collide = false;
             spawned->facing = player->facing;
             spawned->SetCenter(player->GetCenter());
-            world_ops::MarkEntityHeld(state, *player, *spawned);
-            world_ops::PatchEntityState(state, *player, *player);
-            world_ops::PatchEntityState(state, *player, *spawned);
             debug.spawn_status =
                 std::string("Spawned and attached ") + GetEntityTypeName(type_) + ".";
         }
@@ -874,7 +850,8 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             ImGui::PopID();
         }
     }
-    ReplicateDebugEntityEdit(state, entity, entity_state_changed, player_state_changed);
+    (void)entity_state_changed;
+    (void)player_state_changed;
     ImGui::Text("Climbing: %s", entity.IsClimbing() ? "true" : "false");
     ImGui::Text("Holding: %s", entity.holding ? "true" : "false");
 

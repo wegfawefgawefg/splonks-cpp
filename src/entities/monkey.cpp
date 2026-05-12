@@ -244,7 +244,6 @@ bool TryStealRandomToolAndCast(
     ToolSlot& player_slot = mutable_player_tool_state->slots[selected_slot_index];
     if (player_slot.active && player_slot.kind == stolen_kind && player_slot.count > 0) {
         player_slot.count -= 1;
-        world_ops::PatchPlayerState(state, player);
     }
     return true;
 }
@@ -399,7 +398,6 @@ void RobPlayer(std::size_t monkey_idx, Entity& monkey, Entity& player, State& st
     } else if (player.money >= kMonkeyRobMoneyAmount &&
                state.drng.RandomIntInclusive(1, 10) <= 8) {
         player.money -= kMonkeyRobMoneyAmount;
-        world_ops::PatchPlayerState(state, player);
         if (world_ops::SpawnEntity(state, EntityType::GoldNugget, [&](Entity& gold) {
                 gold.SetCenter(monkey.GetCenter());
                 state.UpdateSidForEntity(gold.vid.id, graphics);

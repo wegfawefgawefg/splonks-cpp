@@ -147,7 +147,6 @@ void PayCrapsResult(
         table.counter_c = 2.0F;
     } else if (roll > 7) {
         player.money += kCrapsBetAmount * 2U;
-        world_ops::PatchPlayerState(state, player);
         (void)PlayEntityCenterSoundEmitter(state, player, audio_asset_ids::CashRegister);
         table.counter_c = 1.0F;
     } else {
@@ -194,8 +193,6 @@ bool TryStartCrapsRoll(
 
     LaunchDice(table, *dice, state);
     SetTableState(table, TableState::Rolling);
-    world_ops::PatchEntityState(state, table, table);
-    world_ops::PatchEntityState(state, *dice, *dice);
     (void)PlayEntityCenterSoundEmitter(state, table, audio_asset_ids::Throw);
     return true;
 }
@@ -244,11 +241,6 @@ void StepEntityLogicAsCrapsTable(
         if (dice != nullptr && dice->active && result_player != nullptr && result_player->active &&
             DiceHasSettled(*dice)) {
             PayCrapsResult(table, *dice, prize, *result_player, state, audio);
-            world_ops::PatchEntityState(state, table, table);
-            world_ops::PatchEntityState(state, *dice, *dice);
-            if (prize != nullptr && prize->active) {
-                world_ops::PatchEntityState(state, *prize, *prize);
-            }
         }
     } else if (GetTableState(table) == TableState::Result) {
         table.counter_b -= 1.0F;
@@ -256,7 +248,6 @@ void StepEntityLogicAsCrapsTable(
             table.counter_b = 0.0F;
             table.counter_c = 0.0F;
             SetTableState(table, TableState::Idle);
-            world_ops::PatchEntityState(state, table, table);
         }
     }
 

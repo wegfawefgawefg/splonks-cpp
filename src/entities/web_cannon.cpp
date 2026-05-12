@@ -373,7 +373,6 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
         if (holder != nullptr) {
             holder->vel.x -= aim.direction.x * 0.12F;
             holder->vel.y -= aim.direction.y * 0.12F;
-            world_ops::PatchEntityState(state, weapon, *holder);
         }
         return;
     }
@@ -397,7 +396,6 @@ void FireWebGun(std::size_t entity_idx, State& state, Graphics& graphics, Audio&
     if (holder != nullptr) {
         holder->vel.x -= aim.direction.x * 0.12F;
         holder->vel.y -= aim.direction.y * 0.12F;
-        world_ops::PatchEntityState(state, weapon, *holder);
     }
 }
 
@@ -626,7 +624,6 @@ void OnUseAsWebCannon(std::size_t entity_idx, State& state, Graphics& graphics, 
     FireWebGun(entity_idx, state, graphics, audio);
     weapon.counter_b -= 1.0F;
     weapon.counter_a = weapon.counter_b <= 0.0F ? kWebGunReloadCooldownFrames : kWebGunFireCooldownFrames;
-    world_ops::PatchEntityState(state, weapon, weapon);
 
     if (weapon.use_state.source == AttachmentMode::None) {
         StopUsingEntity(weapon);

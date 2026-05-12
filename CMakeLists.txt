@@ -367,7 +367,6 @@ add_executable(splonks-cpp
     src/water.cpp
     src/world_ops/entity.cpp
     src/world_ops/action.cpp
-    src/world_ops/presentation.cpp
     src/world_ops/tile.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/classic/ambient_passes.cpp

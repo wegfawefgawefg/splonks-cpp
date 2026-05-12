@@ -183,16 +183,6 @@ void EnqueueEntitySnapshot(State& state) {
             EnqueueSpawnSnapshotForEntity(state, *entity);
         }
     }
-    for (VID entity_vid : active_entities) {
-        const Entity* const entity = state.entity_manager.GetEntity(entity_vid);
-        if (entity == nullptr) {
-            continue;
-        }
-        world_ops::PatchEntityState(state, *entity, *entity);
-        if (state.players.FindByEntityVid(entity->vid) != nullptr) {
-            world_ops::PatchPlayerState(state, *entity);
-        }
-    }
     for (VID entity_vid : inactive_linked_entities) {
         ReplicateEntityDeactivated(
             state,
@@ -214,7 +204,6 @@ void EnqueueWorldSnapshotMessages(State& state) {
     EnqueueFluidSnapshot(state);
     EnqueueStageLightSnapshot(state);
     EnqueueEntitySnapshot(state);
-    world_ops::PatchRunState(state, true);
 }
 
 } // namespace splonks::network

@@ -106,7 +106,6 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t entity_idx, State& state, const 
     if (pistol == nullptr) {
         return false;
     }
-    world_ops::MarkEntityHeld(state, shopkeeper, *pistol);
     return true;
 }
 
