@@ -174,8 +174,9 @@ Current cleanup status:
 - Legacy code still present and should be deleted/quarantined in later cleanup:
   `src/world_ops/action.cpp`, `State::pending_gameplay_actions`,
   `src/gameplay_messages.hpp`, old `src/network/net_message_apply*`, old
-  `src/network/net_gameplay_replication.*`, old packet mapper/apply files, and
-  old CLI network smokes that validate mutation-message lanes.
+  `src/network/net_gameplay_replication.*`, and old packet mapper/apply files.
+  Old CLI network smokes that validated mutation-message lanes were removed
+  from the active build and deleted.
 
 Current stepped-transition coverage note:
 
@@ -712,7 +713,7 @@ it is coordinator/peer before doing ordinary gameplay.
   helper pieces that remain useful without networking.
 - [x] Rename remaining live local helper names that still say `Request` but no longer
   cross the network.
-- [ ] Delete old network smoke tests that only validate mutation-message lanes.
+- [x] Delete old network smoke tests that only validate mutation-message lanes.
 - [ ] Keep transport/fuzzer code only if it is useful for input packets.
 - [ ] Remove entity/archetype/debug baggage added only for the old
   coordinator-authoritative model: replica stepping, local prediction flags,

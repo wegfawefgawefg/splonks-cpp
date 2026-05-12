@@ -130,12 +130,6 @@ add_executable(splonks-cpp
     src/audio_filter.cpp
     src/audio_sound_effects.cpp
     src/cli.cpp
-    src/cli_network_smoke_action.cpp
-    src/cli_network_smoke_common.cpp
-    src/cli_network_smoke_compare.cpp
-    src/cli_network_smoke_frame.cpp
-    src/cli_network_smoke_packet.cpp
-    src/cli_network_smoke_protocol.cpp
     src/cli_state_smoke.cpp
     src/content_names.cpp
     src/buying.cpp

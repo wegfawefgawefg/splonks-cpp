@@ -1,6 +1,5 @@
 #include "cli.hpp"
 
-#include "cli_network_smoke.hpp"
 #include "cli_state_smoke.hpp"
 #include "debug/playback.hpp"
 #include "debug/debug_stage_builders.hpp"
@@ -499,22 +498,6 @@ bool RunCliCommand(int argc, char** argv) {
 
     if (command == "--check-input-lockstep-smoke") {
         std::exit(CheckInputLockstepSmoke() ? 0 : 1);
-    }
-
-    if (command == "--check-network-protocol-smoke") {
-        std::exit(CheckNetworkProtocolApplySmoke() ? 0 : 1);
-    }
-
-    if (command == "--check-network-action-smoke") {
-        std::exit(CheckNetworkActionRequestSmoke() ? 0 : 1);
-    }
-
-    if (command == "--check-network-packet-smoke") {
-        std::exit(CheckNetworkPacketSmoke() ? 0 : 1);
-    }
-
-    if (command == "--check-network-frame-smoke") {
-        std::exit(CheckNetworkFrameSmoke() ? 0 : 1);
     }
 
     if (command == "--dump-recording-text") {
