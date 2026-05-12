@@ -1,6 +1,7 @@
 #include "network/net_message_apply_internal.hpp"
 
 #include "audio_emitters.hpp"
+#include "network/net_entity_interpolation.hpp"
 #include "network/net_session.hpp"
 #include "entity.hpp"
 #include "entity/archetype.hpp"
@@ -272,6 +273,7 @@ void ApplyEntityDeactivatedMessage(
     if (!vid.has_value()) {
         return;
     }
+    ClearRemoteEntityRenderTarget(state, payload.entity_id);
     state.entity_manager.SetInactive(vid->id);
     if (graphics != nullptr) {
         state.UpdateSidForEntity(vid->id, *graphics);
@@ -424,10 +426,29 @@ void ApplyEntityStatePatchedMessage(
     ApplyOptionalEntityLinkSlot(session, state, entity->back_vid, payload.back_id);
     entity->attachment_mode = static_cast<AttachmentMode>(payload.attachment_mode);
     if (payload.active == 0) {
+        ClearRemoteEntityRenderTarget(state, payload.entity_id);
         state.entity_manager.SetInactive(entity->vid.id);
         return;
     }
     const bool attachment_driven = IsAttachmentDriven(*entity);
+    if (attachment_driven) {
+        ClearRemoteEntityRenderTarget(state, payload.entity_id);
+    }
+    const bool target_is_player = player_slot != nullptr;
+    const bool target_has_local_authority = state.net_session.HasLocalAuthorityForEntity(entity->vid);
+    const bool should_interpolate_render =
+        from_coordinator &&
+        !target_is_player &&
+        !target_has_local_authority &&
+        !attachment_driven &&
+        !preserve_local_player_motion;
+    std::optional<Vec2> previous_render_pos = std::nullopt;
+    if (should_interpolate_render) {
+        previous_render_pos = GetRemoteEntityRenderPosition(state, *entity);
+        if (!previous_render_pos.has_value()) {
+            previous_render_pos = entity->pos;
+        }
+    }
     if (!attachment_driven && !preserve_local_player_motion) {
         entity->pos = payload.pos;
         entity->vel = payload.vel;
@@ -485,6 +506,14 @@ void ApplyEntityStatePatchedMessage(
     entity->condition = static_cast<EntityCondition>(payload.condition);
     ApplyStatePatchPresentation(*entity, payload);
     state.stage.NormalizeEntityPositionForWrap(*entity);
+    if (should_interpolate_render && previous_render_pos.has_value()) {
+        SetRemoteEntityRenderTarget(
+            state,
+            payload.entity_id,
+            *previous_render_pos,
+            entity->pos
+        );
+    }
     if (graphics != nullptr) {
         if (entity->holding_vid.has_value() || entity->back_vid.has_value()) {
             entities::common::SyncEntityAttachments(entity->vid.id, state, *graphics);
@@ -563,6 +592,7 @@ void ApplyEntityHeldMessage(
         }
         entities::common::AttachEntityAsHeld(*holder, *held);
     }
+    ClearRemoteEntityRenderTarget(state, payload.held_id);
     if (graphics != nullptr) {
         entities::common::SyncEntityAttachments(holder->vid.id, state, *graphics);
         state.UpdateSidForEntity(holder->vid.id, *graphics);
@@ -589,6 +619,7 @@ void ApplyEntityDroppedMessage(
         payload.dropped_by_id != kInvalidNetEntityId
             ? FindEntityVidForMessage(session, state, payload.dropped_by_id)
             : std::nullopt;
+    ClearRemoteEntityRenderTarget(state, payload.entity_id);
     entities::common::ReleaseEntityFromHolder(*entity, state);
     if (dropped_by_vid.has_value()) {
         state.contact.AddInteractionCooldown(
@@ -649,6 +680,7 @@ void ApplyEntityThrownMessage(
     }
 
     entities::common::ReleaseEntityFromHolder(*entity, state);
+    ClearRemoteEntityRenderTarget(state, payload.entity_id);
     entity->pos = payload.pos;
     if (state.players.FindByEntityVid(entity->vid) != nullptr) {
         entity->vel = payload.vel;

@@ -154,6 +154,7 @@ void ApplyStageSyncNow(
     state.net_session.pending_outbound_messages.clear();
     state.net_session.applied_message_ids.clear();
     transport.remote_player_targets.clear();
+    transport.remote_entity_render_targets.clear();
     transport.replicated_entity_state_cache.clear();
     transport.replicated_fluid_cell_cache.clear();
 
@@ -205,6 +206,7 @@ void ApplyStageSync(
         state.net_session.next_expected_coordinator_order =
             std::max<std::uint64_t>(packet.snapshot_start_coordinator_order, 1);
         transport.remote_player_targets.clear();
+        transport.remote_entity_render_targets.clear();
         transport.replicated_entity_state_cache.clear();
         transport.replicated_fluid_cell_cache.clear();
         state.stage.SyncTileInstanceMetadataGrid();
@@ -290,6 +292,7 @@ void NotifyStageLoaded(State& state) {
         ClearPendingStageSync(*state.net_transport);
         ResetRemoteStageAckState(*state.net_transport);
         state.net_transport->remote_player_targets.clear();
+        state.net_transport->remote_entity_render_targets.clear();
         state.net_transport->replicated_entity_state_cache.clear();
         state.net_transport->replicated_fluid_cell_cache.clear();
         SendStageSyncToAllRemotes(state, *state.net_transport);

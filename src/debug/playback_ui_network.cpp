@@ -185,7 +185,36 @@ void DrawFuzzerControls(network::NetFuzzerConfig& config) {
 
     ImGui::Checkbox("Burst loss", &config.burst_loss_enabled);
     ImGui::SliderFloat("Burst loss %", &config.burst_loss_percent, 0.0F, 50.0F, "%.2f");
-    ImGui::SliderFloat("Clock drift %", &config.clock_drift_percent, -5.0F, 5.0F, "%.3f");
+}
+
+void DrawFuzzerPanel(network::NetSessionState& session) {
+    if (!ImGui::CollapsingHeader("Network Fuzzer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        return;
+    }
+
+    ImGui::TextUnformatted("Presets");
+    DrawFuzzerPresetButton("Same House", network::NetFuzzerConfig::SameHousePreset(), session);
+    ImGui::SameLine();
+    DrawFuzzerPresetButton("Same City", network::NetFuzzerConfig::SameCityPreset(), session);
+    ImGui::SameLine();
+    DrawFuzzerPresetButton("Same State", network::NetFuzzerConfig::SameStatePreset(), session);
+    DrawFuzzerPresetButton("TX To CA", network::NetFuzzerConfig::TexasToCaliforniaPreset(), session);
+    ImGui::SameLine();
+    DrawFuzzerPresetButton("CA To FL", network::NetFuzzerConfig::CaliforniaToFloridaPreset(), session);
+    ImGui::SameLine();
+    DrawFuzzerPresetButton("TX To Japan", network::NetFuzzerConfig::JapanToTexasPreset(), session);
+    DrawFuzzerPresetButton("Bad Wi-Fi", network::NetFuzzerConfig::BadWifiPreset(), session);
+    DrawFuzzerControls(session.fuzzer_config);
+
+    ImGui::TextUnformatted("Stats");
+    ImGui::Text("Sent: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_sent));
+    ImGui::SameLine();
+    ImGui::Text("Received: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_received));
+    ImGui::Text("Dropped: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_dropped));
+    ImGui::SameLine();
+    ImGui::Text("Duplicated: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_duplicated));
+    ImGui::SameLine();
+    ImGui::Text("Reordered: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_reordered));
 }
 
 void DrawRecentOrderedMessages(const network::NetSessionState& session) {
@@ -588,6 +617,11 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
 
     ImGui::SetNextWindowBgAlpha(0.9F);
     ImGui::SetNextWindowPos(ImVec2(760.0F, 120.0F), ImGuiCond_FirstUseEver);
+    const ImVec2 display_size = ImGui::GetIO().DisplaySize;
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(360.0F, 180.0F),
+        ImVec2(display_size.x, std::max(220.0F, display_size.y - 24.0F))
+    );
     if (!ImGui::Begin("Debug: Network", &debug.network_window_visible)) {
         ImGui::End();
         return;
@@ -606,6 +640,9 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     );
     ImGui::Text("Next local message: %llu", static_cast<unsigned long long>(session.next_local_message_id));
     ImGui::Text("Next coordinator order: %llu", static_cast<unsigned long long>(session.next_coordinator_order));
+    ImGui::Separator();
+
+    DrawFuzzerPanel(session);
     ImGui::Separator();
 
     ImGui::Text("Pending outbound messages: %zu", session.pending_outbound_messages.size());
@@ -644,26 +681,6 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     if (!debug.network_status.empty()) {
         ImGui::TextWrapped("%s", debug.network_status.c_str());
     }
-
-    ImGui::Separator();
-    ImGui::TextUnformatted("Fuzzer Presets");
-    DrawFuzzerPresetButton("LAN", network::NetFuzzerConfig::LanPreset(), session);
-    ImGui::SameLine();
-    DrawFuzzerPresetButton("Same Region", network::NetFuzzerConfig::SameRegionPreset(), session);
-    ImGui::SameLine();
-    DrawFuzzerPresetButton("US Cross Country", network::NetFuzzerConfig::UsCrossCountryPreset(), session);
-    DrawFuzzerPresetButton("Japan To Texas", network::NetFuzzerConfig::JapanToTexasPreset(), session);
-    ImGui::SameLine();
-    DrawFuzzerPresetButton("Bad Wi-Fi", network::NetFuzzerConfig::BadWifiPreset(), session);
-    DrawFuzzerControls(session.fuzzer_config);
-
-    ImGui::Separator();
-    ImGui::TextUnformatted("Fuzzer Stats");
-    ImGui::Text("Sent: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_sent));
-    ImGui::Text("Received: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_received));
-    ImGui::Text("Dropped: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_dropped));
-    ImGui::Text("Duplicated: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_duplicated));
-    ImGui::Text("Reordered: %llu", static_cast<unsigned long long>(session.fuzzer_stats.packets_reordered));
 
     DrawRecentOrderedMessages(session);
     DrawMessageLog(session);

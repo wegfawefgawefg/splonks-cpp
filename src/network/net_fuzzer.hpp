@@ -17,7 +17,12 @@ struct NetFuzzerConfig {
     float clock_drift_percent = 0.0F;
 
     static NetFuzzerConfig LanPreset();
+    static NetFuzzerConfig SameHousePreset();
+    static NetFuzzerConfig SameCityPreset();
+    static NetFuzzerConfig SameStatePreset();
     static NetFuzzerConfig SameRegionPreset();
+    static NetFuzzerConfig TexasToCaliforniaPreset();
+    static NetFuzzerConfig CaliforniaToFloridaPreset();
     static NetFuzzerConfig UsCrossCountryPreset();
     static NetFuzzerConfig JapanToTexasPreset();
     static NetFuzzerConfig BadWifiPreset();
@@ -32,4 +37,3 @@ struct NetFuzzerStats {
 };
 
 } // namespace splonks::network
-

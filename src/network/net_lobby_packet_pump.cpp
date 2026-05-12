@@ -29,6 +29,7 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             CleanupTimedOutRemoteEndpoints(state, transport);
             return;
         }
+        transport.fuzzer_stats.packets_received += 1U;
 
         MarkRemoteEndpointHeard(transport, packet->endpoint, state.frame);
 
@@ -90,6 +91,7 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (!packet.has_value()) {
             return;
         }
+        transport.fuzzer_stats.packets_received += 1U;
 
         if (const std::optional<LeaveNoticePacket> leave =
                 TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {

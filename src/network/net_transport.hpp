@@ -2,6 +2,7 @@
 
 #include "effects/effect_id.hpp"
 #include "network/net_ids.hpp"
+#include "network/net_fuzzer.hpp"
 #include "network/net_limits.hpp"
 #include "frame_data_id.hpp"
 
@@ -25,6 +26,12 @@ struct UdpPacket {
     NetEndpoint endpoint;
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
+};
+
+struct NetFuzzedOutgoingPacket {
+    UdpPacket packet;
+    std::uint64_t due_time_ms = 0;
+    std::uint64_t sequence = 0;
 };
 
 class UdpSocket {
@@ -106,6 +113,15 @@ struct NetRemotePlayerTarget {
     std::uint32_t sequence = 0;
     std::uint64_t interpolation_start_frame = 0;
     std::uint64_t last_received_frame = 0;
+};
+
+struct NetRemoteEntityRenderTarget {
+    NetEntityId entity_id = kInvalidNetEntityId;
+    float start_pos_x = 0.0F;
+    float start_pos_y = 0.0F;
+    float target_pos_x = 0.0F;
+    float target_pos_y = 0.0F;
+    std::uint64_t interpolation_start_frame = 0;
 };
 
 struct NetReplicatedEntityStateSignature {
@@ -210,6 +226,7 @@ struct NetTransportRuntime {
     UdpSocket socket;
     std::vector<NetRemoteEndpoint> remotes;
     std::vector<NetRemotePlayerTarget> remote_player_targets;
+    std::vector<NetRemoteEntityRenderTarget> remote_entity_render_targets;
     std::vector<NetReplicatedEntityStateCache> replicated_entity_state_cache;
     std::vector<NetReplicatedFluidCellCache> replicated_fluid_cell_cache;
     std::vector<PlayerId> preferred_player_ids;
@@ -226,6 +243,13 @@ struct NetTransportRuntime {
     float remote_interpolation_strength = 0.35F;
     std::uint32_t remote_interpolation_delay_frames = 3;
     float remote_snap_distance = 32.0F;
+    NetFuzzerConfig fuzzer_config;
+    NetFuzzerStats fuzzer_stats;
+    std::vector<NetFuzzedOutgoingPacket> fuzzed_outgoing_packets;
+    std::uint64_t next_fuzzed_packet_sequence = 1;
+    std::uint64_t fuzzer_next_bandwidth_send_time_ms = 0;
+    std::uint32_t fuzzer_rng_state = 0xA341316CU;
+    std::uint32_t fuzzer_burst_packets_remaining = 0;
     std::string last_error;
     bool capture_outgoing_packets = false;
     std::vector<UdpPacket> captured_packets;

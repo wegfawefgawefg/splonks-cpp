@@ -326,6 +326,7 @@ void HandleJoinAcceptAsPeer(
     state.players = PlayerRegistry::New();
     state.controlled_entity_vid.reset();
     transport.remote_player_targets.clear();
+    transport.remote_entity_render_targets.clear();
     transport.replicated_entity_state_cache.clear();
     transport.replicated_fluid_cell_cache.clear();
     state.net_session.ClearStageEntityLinks();

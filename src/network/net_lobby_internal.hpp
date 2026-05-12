@@ -43,6 +43,7 @@ void SendEncodedPacket(
     const NetEndpoint& endpoint,
     const EncodedNetPacket& encoded
 );
+void FlushFuzzedOutgoingPackets(NetTransportRuntime& transport);
 
 bool IsReplicatedEntityStateMessage(const NetMessage& message);
 bool IsReplicatedTileMessage(const NetMessage& message);

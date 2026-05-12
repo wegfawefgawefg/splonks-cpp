@@ -86,6 +86,7 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
     state.players = PlayerRegistry::New();
     if (state.net_transport) {
         state.net_transport->remote_player_targets.clear();
+        state.net_transport->remote_entity_render_targets.clear();
         state.net_transport->replicated_entity_state_cache.clear();
         state.net_transport->replicated_fluid_cell_cache.clear();
     }

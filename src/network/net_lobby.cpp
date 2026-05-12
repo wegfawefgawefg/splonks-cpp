@@ -11,32 +11,38 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
     if (!state.net_transport || !state.net_transport->socket.IsOpen()) {
         return;
     }
+    NetTransportRuntime& transport = *state.net_transport;
+    transport.fuzzer_config = state.net_session.fuzzer_config;
+    FlushFuzzedOutgoingPackets(transport);
+
     if (state.net_session.role == NetRole::Coordinator) {
         CleanupExpiredRetainedPlayerStates(state);
-        StepHostPackets(state, graphics, *state.net_transport);
-        const bool should_send = ShouldSendSnapshots(state, *state.net_transport);
+        StepHostPackets(state, graphics, transport);
+        const bool should_send = ShouldSendSnapshots(state, transport);
         if (should_send) {
-            SendStageSyncToAllRemotes(state, *state.net_transport);
-            SendSnapshotsToAllRemotes(state, *state.net_transport);
-            SendReplicatedEntityStatePatchesToAllRemotes(state, *state.net_transport);
-            SendReplicatedFluidCellPatchesToAllRemotes(state, *state.net_transport);
-            SendCoordinatorEntityRepairPatchesToAllRemotes(state, *state.net_transport);
-            SendOrderedMessagesToAllRemotes(state, *state.net_transport);
+            SendStageSyncToAllRemotes(state, transport);
+            SendSnapshotsToAllRemotes(state, transport);
+            SendReplicatedEntityStatePatchesToAllRemotes(state, transport);
+            SendReplicatedFluidCellPatchesToAllRemotes(state, transport);
+            SendCoordinatorEntityRepairPatchesToAllRemotes(state, transport);
+            SendOrderedMessagesToAllRemotes(state, transport);
         }
     } else if (state.net_session.role == NetRole::Peer) {
-        StepPeerPackets(state, graphics, *state.net_transport);
-        const bool should_send = ShouldSendSnapshots(state, *state.net_transport);
-        if (!state.net_transport->join_request_pending && should_send) {
+        StepPeerPackets(state, graphics, transport);
+        const bool should_send = ShouldSendSnapshots(state, transport);
+        if (!transport.join_request_pending && should_send) {
             SendSnapshotsToEndpoint(
                 state,
-                *state.net_transport,
-                state.net_transport->coordinator_endpoint
+                transport,
+                transport.coordinator_endpoint
             );
-            SendPendingPeerMessagesToCoordinator(state, *state.net_transport);
-            SendDurableMessageAckToCoordinator(state, *state.net_transport);
+            SendPendingPeerMessagesToCoordinator(state, transport);
+            SendDurableMessageAckToCoordinator(state, transport);
         }
     }
-    StepRemotePlayerInterpolation(state, *state.net_transport, graphics);
+    FlushFuzzedOutgoingPackets(transport);
+    state.net_session.fuzzer_stats = transport.fuzzer_stats;
+    StepRemotePlayerInterpolation(state, transport, graphics);
     SyncNetworkAttachmentsAfterRemoteMovement(state, graphics);
 }
 

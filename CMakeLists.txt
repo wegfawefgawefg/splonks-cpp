@@ -288,6 +288,7 @@ add_executable(splonks-cpp
     src/menu/ui.cpp
     src/menu/video.cpp
     src/network/net_fuzzer.cpp
+    src/network/net_entity_interpolation.cpp
     src/network/net_entity_links.cpp
     src/network/net_message_apply.cpp
     src/network/net_message_apply_entity.cpp

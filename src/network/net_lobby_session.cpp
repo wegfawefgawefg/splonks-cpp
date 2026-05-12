@@ -50,6 +50,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     RegisterStageEntityLinks(state);
     transport.remotes.clear();
     transport.remote_player_targets.clear();
+    transport.remote_entity_render_targets.clear();
     transport.replicated_entity_state_cache.clear();
     transport.replicated_fluid_cell_cache.clear();
     transport.preferred_player_ids.clear();
@@ -82,6 +83,7 @@ bool JoinHostSession(
     transport.coordinator_endpoint = NetEndpoint{.address = host, .port = port};
     transport.remotes.clear();
     transport.remote_player_targets.clear();
+    transport.remote_entity_render_targets.clear();
     transport.replicated_entity_state_cache.clear();
     transport.replicated_fluid_cell_cache.clear();
     transport.join_request_pending = true;
@@ -99,6 +101,7 @@ void DisconnectSession(State& state, std::string* status_out) {
         state.net_transport->socket.Close();
         state.net_transport->remotes.clear();
         state.net_transport->remote_player_targets.clear();
+        state.net_transport->remote_entity_render_targets.clear();
         state.net_transport->replicated_entity_state_cache.clear();
         state.net_transport->replicated_fluid_cell_cache.clear();
         state.net_transport->join_request_pending = false;
