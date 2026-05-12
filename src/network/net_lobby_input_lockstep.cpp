@@ -171,10 +171,14 @@ void PumpInputLockstepPackets(State& state, const Graphics& graphics, NetTranspo
 } // namespace
 
 bool IsInputLockstepActive(const State& state) {
-    return state.net_session.role != NetRole::Offline &&
-           state.net_session.input_lockstep_enabled &&
+    return IsInputLockstepSession(state) &&
            state.net_transport != nullptr &&
            state.net_transport->socket.IsOpen();
+}
+
+bool IsInputLockstepSession(const State& state) {
+    return state.net_session.role != NetRole::Offline &&
+           state.net_session.input_lockstep_enabled;
 }
 
 void ResetInputLockstepState(State& state) {

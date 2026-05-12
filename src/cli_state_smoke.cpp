@@ -66,6 +66,50 @@ bool CompareCanonicalFingerprints(
     return false;
 }
 
+bool EntityEffectsEqual(const BoxedEntityEffects& left, const BoxedEntityEffects& right) {
+    const EntityEffects* const a = left.get();
+    const EntityEffects* const b = right.get();
+    if ((a == nullptr) != (b == nullptr)) {
+        return false;
+    }
+    if (a == nullptr) {
+        return true;
+    }
+    if (a->count != b->count) {
+        return false;
+    }
+    for (std::uint8_t i = 0; i < a->count && i < a->effects.size(); ++i) {
+        const EffectInstance& effect_a = a->effects[i];
+        const EffectInstance& effect_b = b->effects[i];
+        if (effect_a.id != effect_b.id ||
+            effect_a.count != effect_b.count ||
+            effect_a.value != effect_b.value ||
+            effect_a.frames_remaining != effect_b.frames_remaining) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string DescribeEntityEffects(const BoxedEntityEffects& effects_box) {
+    const EntityEffects* const effects = effects_box.get();
+    if (effects == nullptr) {
+        return "none";
+    }
+    std::ostringstream output;
+    output << "count=" << static_cast<int>(effects->count);
+    for (std::uint8_t i = 0; i < effects->count && i < effects->effects.size(); ++i) {
+        const EffectInstance& effect = effects->effects[i];
+        output << " [" << i
+               << " id=" << static_cast<int>(effect.id)
+               << " count=" << effect.count
+               << " value=" << effect.value
+               << " frames=" << effect.frames_remaining
+               << "]";
+    }
+    return output.str();
+}
+
 std::string DescribeFirstStateDifference(const State& left, const State& right) {
     if (left.stage.GetStageDims() != right.stage.GetStageDims()) {
         std::ostringstream output;
@@ -146,6 +190,8 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
         if (a.pos != b.pos ||
             a.vel != b.vel ||
             a.acc != b.acc ||
+            a.has_physics != b.has_physics ||
+            a.can_collide != b.can_collide ||
             a.grounded != b.grounded ||
             a.holding != b.holding ||
             a.wanted != b.wanted ||
@@ -190,25 +236,64 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.frame_data_animator.speed != b.frame_data_animator.speed ||
             a.frame_data_animator.animate != b.frame_data_animator.animate ||
             a.frame_data_animator.loop != b.frame_data_animator.loop ||
-            a.frame_data_animator.finished != b.frame_data_animator.finished) {
+            a.frame_data_animator.finished != b.frame_data_animator.finished ||
+            !EntityEffectsEqual(a.effects, b.effects)) {
             std::ostringstream output;
             output << "entity " << i << " differs:"
                    << " active " << a.active << "/" << b.active
                    << " type " << static_cast<int>(a.type_) << "/" << static_cast<int>(b.type_)
                    << " vidver " << a.vid.version << "/" << b.vid.version
+                   << " physics " << a.has_physics << "/" << b.has_physics
+                   << " collide " << a.can_collide << "/" << b.can_collide
                    << " pos " << a.pos.x << "," << a.pos.y
                    << "/" << b.pos.x << "," << b.pos.y
                    << " vel " << a.vel.x << "," << a.vel.y
                    << "/" << b.vel.x << "," << b.vel.y
+                   << " acc " << a.acc.x << "," << a.acc.y
+                   << "/" << b.acc.x << "," << b.acc.y
+                   << " size " << a.size.x << "," << a.size.y
+                   << "/" << b.size.x << "," << b.size.y
+                   << " grounded " << a.grounded << "/" << b.grounded
+                   << " holding " << a.holding << "/" << b.holding
+                   << " wanted " << a.wanted << "/" << b.wanted
+                   << " render " << a.render_enabled << "/" << b.render_enabled
+                   << " rotation " << a.rotation << "/" << b.rotation
+                   << " coyote " << a.coyote_time << "/" << b.coyote_time
+                   << " stun " << a.stun_timer << "/" << b.stun_timer
+                   << " fall " << a.fall_timer << "/" << b.fall_timer
+                   << " facing " << static_cast<int>(a.facing) << "/" << static_cast<int>(b.facing)
+                   << " layer " << static_cast<int>(a.draw_layer) << "/" << static_cast<int>(b.draw_layer)
                    << " health " << a.health << "/" << b.health
                    << " condition " << static_cast<int>(a.condition)
                    << "/" << static_cast<int>(b.condition)
+                   << " ai " << static_cast<int>(a.ai_state) << "/" << static_cast<int>(b.ai_state)
+                   << " vuln " << static_cast<int>(a.damage_vulnerability)
+                   << "/" << static_cast<int>(b.damage_vulnerability)
+                   << " move_flags " << a.movement_flags << "/" << b.movement_flags
+                   << " back " << (a.back_vid.has_value() ? static_cast<int>(a.back_vid->id) : -1)
+                   << "/" << (b.back_vid.has_value() ? static_cast<int>(b.back_vid->id) : -1)
+                   << " holding_vid "
+                   << (a.holding_vid.has_value() ? static_cast<int>(a.holding_vid->id) : -1)
+                   << "/" << (b.holding_vid.has_value() ? static_cast<int>(b.holding_vid->id) : -1)
+                   << " held_by "
+                   << (a.held_by_vid.has_value() ? static_cast<int>(a.held_by_vid->id) : -1)
+                   << "/" << (b.held_by_vid.has_value() ? static_cast<int>(b.held_by_vid->id) : -1)
                    << " counters " << a.counter_a << "," << a.counter_b
                    << "," << a.counter_c << "," << a.counter_d
                    << "/" << b.counter_a << "," << b.counter_b
                    << "," << b.counter_c << "," << b.counter_d
+                   << " lights " << a.light_strength << "," << a.light_radius
+                   << "/" << b.light_strength << "," << b.light_radius
+                   << " points " << a.point_a.x << "," << a.point_a.y
+                   << "/" << b.point_a.x << "," << b.point_a.y
                    << " anim " << a.frame_data_animator.animation_id
-                   << "/" << b.frame_data_animator.animation_id;
+                   << "/" << b.frame_data_animator.animation_id
+                   << " frame " << a.frame_data_animator.current_frame
+                   << "/" << b.frame_data_animator.current_frame
+                   << " time " << a.frame_data_animator.current_time
+                   << "/" << b.frame_data_animator.current_time
+                   << " effects " << DescribeEntityEffects(a.effects)
+                   << " / " << DescribeEntityEffects(b.effects);
             return output.str();
         }
     }
@@ -1494,12 +1579,18 @@ bool CheckInputLockstepSmoke() {
                 .preserve_player_state = true,
                 .seed = 54321U,
             };
+            peer0.state.net_session.role = network::NetRole::Coordinator;
+            peer1.state.net_session.role = network::NetRole::Peer;
             QueueStageTransition(peer0.state, transition);
             QueueStageTransition(peer1.state, transition);
-            ApplyPendingStageTransition(peer0.state);
-            ApplyPendingStageTransition(peer1.state);
-            peer0_graphics.ResetTileVariations();
-            peer1_graphics.ResetTileVariations();
+            peer0.state.SetMode(Mode::StageTransition);
+            peer1.state.SetMode(Mode::StageTransition);
+            peer0.state.scene_frame = 0;
+            peer1.state.scene_frame = 0;
+            for (std::uint32_t i = 0; i < 70; ++i) {
+                StepSingleTick(peer0.state, peer0_audio, peer0_graphics);
+                StepSingleTick(peer1.state, peer1_audio, peer1_graphics);
+            }
 
             if (peer0.state.stage.quest_stage_id != "classic_mines_2" ||
                 peer1.state.stage.quest_stage_id != "classic_mines_2") {

@@ -16,6 +16,21 @@
 
 namespace splonks::network {
 
+namespace {
+
+bool ShouldApplyNetworkLifecycleToSlot(const State& state, const PlayerSlot& slot) {
+    if (!slot.connected) {
+        return false;
+    }
+    if (state.net_session.input_lockstep_enabled) {
+        return true;
+    }
+    return state.net_session.role == NetRole::Coordinator ||
+           slot.connection_kind == PlayerConnectionKind::Local;
+}
+
+} // namespace
+
 bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out) {
     if (state.net_session.role == NetRole::Offline) {
         if (status_out != nullptr) {
@@ -35,9 +50,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
     std::vector<VID> changed_entities;
     int respawn_index = 0;
     for (PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected ||
-            (state.net_session.role != NetRole::Coordinator &&
-             slot.connection_kind != PlayerConnectionKind::Local)) {
+        if (!ShouldApplyNetworkLifecycleToSlot(state, slot)) {
             continue;
         }
 
@@ -131,9 +144,7 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
     std::vector<VID> changed_entities;
     int spawn_index = 0;
     for (PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected ||
-            (state.net_session.role != NetRole::Coordinator &&
-             slot.connection_kind != PlayerConnectionKind::Local)) {
+        if (!ShouldApplyNetworkLifecycleToSlot(state, slot)) {
             continue;
         }
 

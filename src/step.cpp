@@ -190,9 +190,14 @@ void RefreshPlayableCharacterLamp(State& state) {
             continue;
         }
 
-        const bool is_controlled =
+        bool emits_lamp =
             state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
-        if (!is_controlled || entity.condition == EntityCondition::Dead) {
+        if (state.net_session.input_lockstep_enabled) {
+            const PlayerSlot* const slot = state.players.FindByEntityVid(entity.vid);
+            emits_lamp = slot != nullptr && slot->connected;
+        }
+
+        if (!emits_lamp || entity.condition == EntityCondition::Dead) {
             entity.light_strength = 0.0F;
             entity.light_radius = 0;
             entity.light_color = Color3::White();
@@ -419,7 +424,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepEntities(state, audio, graphics, dt);
     world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
-    if (!network::IsInputLockstepActive(state)) {
+    if (!network::IsInputLockstepSession(state)) {
         DrainAndApplyLocalNetworkMessages(state, audio, graphics);
     }
     UpdateAudioEmitters(state, audio, graphics);
@@ -450,7 +455,7 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
 
     const bool lost = ShouldEnterGameOver(state, primary_player_vid);
     if (state.pending_stage_transition.has_value()) {
-        if (!network::IsInputLockstepActive(state) &&
+        if (!network::IsInputLockstepSession(state) &&
             state.net_session.role == network::NetRole::Coordinator &&
             state.net_transport) {
             (void)network::SendPendingStageTransitionSyncToAllRemotes(
@@ -490,7 +495,7 @@ void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
     (void)audio;
     network::StepNetworkLobby(state, graphics);
 
-    if (network::IsInputLockstepActive(state)) {
+    if (network::IsInputLockstepSession(state)) {
         if (state.scene_frame < kNetworkStageTransitionFrames) {
             return;
         }
@@ -556,7 +561,7 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepEntities(state, audio, graphics, dt);
     world_ops::ProcessPendingGameplayActions(state, graphics, audio);
     network::StepNetworkLobby(state, graphics);
-    if (!network::IsInputLockstepActive(state)) {
+    if (!network::IsInputLockstepSession(state)) {
         DrainAndApplyLocalNetworkMessages(state, audio, graphics);
     }
     UpdateAudioEmitters(state, audio, graphics);

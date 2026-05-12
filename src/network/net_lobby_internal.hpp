@@ -153,6 +153,7 @@ void SendActionRequestAck(
 
 void SendJoinRequest(State& state);
 void SendLeaveNotice(State& state);
+bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
 void ResetInputLockstepState(State& state);
 bool PrepareInputLockstepFrame(State& state, const Graphics& graphics);

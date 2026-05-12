@@ -71,6 +71,11 @@ Recent validated commits on this branch:
 - `5d26df7 Simulate all player slots during lockstep`
 - `d517157 Harden lockstep smoke topology`
 - `cc34b6b Remove obsolete replication shims`
+- `b895730 Document current lockstep solo checklist`
+- `9add7d6 Add lockstep carry transition smoke`
+- `37b2e03 Remove stale replica entity cruft`
+- `62c34bb Apply stage transitions through lockstep`
+- `d6fb737 Bypass old message drain during lockstep`
 
 Recent smoke-hardening work intentionally made the fake input-lockstep
 smoke so it resembles live topology instead of accidentally simulating both
@@ -117,14 +122,59 @@ Validation for this chunk:
 
 Next immediate steps:
 
-- Add automated coverage for peer-owned player carrying the host-owned player.
-- Add automated coverage for both players surviving a stage transition together.
+- Live-test the two-window lockstep path after the stepped carry-transition
+  smoke coverage remains green.
+- Verify the peer can carry the host player and both players can transition
+  stages together without old ordered mutation backlog.
 - Run and keep green:
   - `cmake --build build --target splonks-cpp -j 8`
   - `./build/splonks-cpp --check-state-equality-smoke`
   - `./build/splonks-cpp --check-deterministic-replay-smoke`
   - `./build/splonks-cpp --check-input-lockstep-smoke`
 - Commit that validated coverage chunk before moving to live two-window testing.
+
+Current stepped-transition coverage note:
+
+- Files touched: `src/cli_state_smoke.cpp`, `src/network/net_lobby.hpp`,
+  `src/network/net_lobby_internal.hpp`,
+  `src/network/net_lobby_input_lockstep.cpp`, `src/step.cpp`, and
+  `src/network/net_lobby_player_lifecycle.cpp`.
+- Intent: let fake/headless lockstep tests exercise actual stage-transition
+  stepping without requiring a live UDP socket.
+- Findings fixed:
+  - Process-local player lamp state diverged after transition because each peer
+    controlled a different player. While input lockstep is enabled, every
+    connected player now emits the same player lamp deterministically.
+  - Network player lifecycle still used old coordinator-authoritative rules:
+    coordinator revived/moved all players, while peers only revived/moved local
+    players. While input lockstep is enabled, respawn/revive applies to all
+    connected slots on every process.
+- Latest validation status:
+  - Build passed.
+  - State equality smoke passed.
+  - Deterministic replay smoke passed.
+  - Input lockstep smoke passed, including `input lockstep carry transition
+    final` on `classic_mines_2`.
+
+## Unattended Run Contract
+
+When continuing this work under `/goal`, keep running until the active checklist
+is materially advanced, not merely until the first compile succeeds.
+
+Rules for long solo runs:
+
+- Make the smallest clean architectural change that advances input lockstep.
+- Prefer deleting or quarantining old coordinator-authoritative code over
+  adapting it.
+- Keep entity/content code local-only. If a gameplay file starts asking whether
+  it is host, peer, predicted, repaired, or remote, stop and redesign that seam.
+- Run the core build and smoke suite after each stable chunk.
+- Commit after each green sub-checkbox or stable cleanup milestone.
+- If a chunk cannot be made green before stopping, write the exact failing
+  command and observed failure here.
+- Do not mark the lockstep goal complete until live validation proves: host and
+  client connect, peer can carry host player, both transition stages together,
+  and no old ordered mutation backlog is active.
 
 ## Current Solo-Run Checklist
 
