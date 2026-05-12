@@ -15,47 +15,19 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
     transport.fuzzer_config = state.net_session.fuzzer_config;
     FlushFuzzedOutgoingPackets(transport);
 
-    if (IsInputLockstepActive(state)) {
-        if (state.net_session.role == NetRole::Coordinator) {
-            CleanupExpiredRetainedPlayerStates(state);
-            StepHostPackets(state, graphics, transport);
-        } else if (state.net_session.role == NetRole::Peer) {
-            StepPeerPackets(state, graphics, transport);
-        }
-        FlushFuzzedOutgoingPackets(transport);
-        state.net_session.fuzzer_stats = transport.fuzzer_stats;
+    if (!IsInputLockstepActive(state)) {
         return;
     }
 
     if (state.net_session.role == NetRole::Coordinator) {
         CleanupExpiredRetainedPlayerStates(state);
         StepHostPackets(state, graphics, transport);
-        const bool should_send = ShouldSendSnapshots(state, transport);
-        if (should_send) {
-            SendStageSyncToAllRemotes(state, transport);
-            SendSnapshotsToAllRemotes(state, transport);
-            SendReplicatedEntityStatePatchesToAllRemotes(state, transport);
-            SendReplicatedFluidCellPatchesToAllRemotes(state, transport);
-            SendCoordinatorEntityRepairPatchesToAllRemotes(state, transport);
-            SendOrderedMessagesToAllRemotes(state, transport);
-        }
     } else if (state.net_session.role == NetRole::Peer) {
         StepPeerPackets(state, graphics, transport);
-        const bool should_send = ShouldSendSnapshots(state, transport);
-        if (!transport.join_request_pending && should_send) {
-            SendSnapshotsToEndpoint(
-                state,
-                transport,
-                transport.coordinator_endpoint
-            );
-            SendPendingPeerMessagesToCoordinator(state, transport);
-            SendDurableMessageAckToCoordinator(state, transport);
-        }
     }
+
     FlushFuzzedOutgoingPackets(transport);
     state.net_session.fuzzer_stats = transport.fuzzer_stats;
-    StepRemotePlayerInterpolation(state, transport, graphics);
-    SyncNetworkAttachmentsAfterRemoteMovement(state, graphics);
 }
 
 bool IsTransportOpen(const State& state) {

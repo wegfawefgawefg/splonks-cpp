@@ -204,6 +204,9 @@ claiming lockstep is usable.
      coordinator-authoritative `GameplayActionRequested` mutation queue. That
      queue remains only as legacy networking/test debt until the retired message
      protocol is removed.
+   - `StepNetworkLobby` is now lockstep-only for open live sessions. The old
+     snapshot/entity-patch/fluid-patch/ordered-message send path remains as
+     legacy code for deletion, but it is no longer part of the live lobby step.
 4. Reuse the old network impairment profiles for lockstep input transport.
    - Same-house, same-city, same-state, Texas-to-California,
      California-to-Florida, and Texas-to-Japan profiles should apply to input
