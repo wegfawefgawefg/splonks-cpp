@@ -412,6 +412,9 @@ void DrawDebugLocalPlayers(State& state, DebugPlayback& debug, const Graphics& g
     }
 
     ImGui::Text("Player slots: %zu", state.players.slots.size());
+    ImGui::Checkbox("Randomize Primary Local Player", &state.debug_primary_player_bot_enabled);
+    ImGui::SameLine();
+    ImGui::Checkbox("Primary Bot Jump", &state.debug_primary_player_bot.allow_jump);
     ImGui::Text("Debug bots: %zu", state.debug_local_player_bots.size());
     if (ImGui::Button("Add Random Local Player")) {
         AddDebugLocalPlayerBot(state, debug, graphics);

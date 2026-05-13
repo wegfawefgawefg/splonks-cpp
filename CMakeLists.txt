@@ -138,6 +138,7 @@ add_executable(splonks-cpp
     src/debug/playback_recording_io.cpp
     src/debug/playback_text_export.cpp
     src/debug/playback_snapshot_state.cpp
+    src/debug/input_bot.cpp
     src/debug/control_server.cpp
     src/debug/playback_ui_common.cpp
     src/debug/playback_ui_ents.cpp

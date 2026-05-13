@@ -1,6 +1,7 @@
 #include "inputs.hpp"
 
 #include "audio.hpp"
+#include "debug/input_bot.hpp"
 #include "graphics.hpp"
 #include "menu/postfx.hpp"
 #include "menu/lighting.hpp"
@@ -528,9 +529,11 @@ void ProcessInput(
     switch (state.mode) {
     case Mode::Playing:
         LatchImmediatePlayingInputsForFrame(state);
+        debug::ApplyDebugPrimaryPlayerBotInput(state);
         break;
     case Mode::GameOver:
         LatchImmediatePlayingInputsForFrame(state);
+        debug::ApplyDebugPrimaryPlayerBotInput(state);
         SetMenuInputSnapshot(state);
         LatchMenuInputsForFrame(state, dt);
         break;

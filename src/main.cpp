@@ -90,6 +90,16 @@ std::uint16_t ParseDebugControlPort(int argc, char** argv) {
     return 0;
 }
 
+bool HasStartupFlag(int argc, char** argv, const std::string& flag) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i] != nullptr ? argv[i] : "";
+        if (arg == flag) {
+            return true;
+        }
+    }
+    return false;
+}
+
 [[noreturn]] void ThrowSdlError(const char* message) {
     throw std::runtime_error(std::string(message) + ": " + SDL_GetError());
 }
@@ -132,6 +142,8 @@ int main(int argc, char** argv) {
     }
     const StartupNetworkConfig startup_network = ParseStartupNetworkConfig(argc, argv);
     const std::uint16_t debug_control_port = ParseDebugControlPort(argc, argv);
+    const bool debug_random_primary_input =
+        HasStartupFlag(argc, argv, "--debug-random-primary-input");
 
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
@@ -235,6 +247,7 @@ int main(int argc, char** argv) {
         splonks::PopulateToolSpecsTable();
         splonks::State state = splonks::State::New();
         state.running = true;
+        state.debug_primary_player_bot_enabled = debug_random_primary_input;
         debug.ui_visible = state.settings.debug_ui.menu_visible;
         debug.playback_window_visible = state.settings.debug_ui.playback_visible;
         debug.level_window_visible = state.settings.debug_ui.level_visible;

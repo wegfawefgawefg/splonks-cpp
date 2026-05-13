@@ -303,6 +303,8 @@ struct State {
     DebugShakeBrushState debug_shake_brush;
     DebugAudioBrushState debug_audio_brush;
     DebugFluidBrushState debug_fluid_brush;
+    bool debug_primary_player_bot_enabled = false;
+    DebugLocalPlayerBot debug_primary_player_bot;
     std::vector<DebugLocalPlayerBot> debug_local_player_bots;
     DebugInputOverrideState debug_input_override;
     PlayerId next_debug_local_player_id = 2;

@@ -143,6 +143,9 @@ State State::New() {
     state.frame = 0;
     state.stage_frame = 0;
     state.drng = DetRng::New(1);
+    state.debug_primary_player_bot_enabled = false;
+    state.debug_primary_player_bot = DebugLocalPlayerBot{};
+    state.debug_primary_player_bot.player_id = kInvalidPlayerId;
     state.menu_return_to = Mode::Title;
     state.game_over = false;
     state.pause = false;

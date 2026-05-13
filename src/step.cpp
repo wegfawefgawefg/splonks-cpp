@@ -1,6 +1,7 @@
 #include "step.hpp"
 
 #include "audio_emitters.hpp"
+#include "debug/input_bot.hpp"
 #include "inputs.hpp"
 #include "controls.hpp"
 #include "ents/common/common.hpp"
@@ -384,58 +385,12 @@ void ApplyBuyInputsForPlayerSlots(State& state, Graphics& graphics, Audio& audio
     }
 }
 
-ButtonState MakeDebugBotButtonState(bool down, bool previous_down) {
-    return ButtonState{
-        .down = down,
-        .pressed = down && !previous_down,
-        .released = !down && previous_down,
-    };
-}
-
-PlayingInputs MakeDebugBotInputs(DebugLocalPlayerBot& bot) {
-    if (bot.retarget_frames <= 0) {
-        bot.move_dir = rng::RandomIntInclusive(-1, 1);
-        bot.retarget_frames = rng::RandomIntInclusive(24, 90);
-    } else {
-        bot.retarget_frames -= 1;
-    }
-
-    bool jump_down = false;
-    if (bot.jump_cooldown_frames > 0) {
-        bot.jump_cooldown_frames -= 1;
-    } else if (bot.allow_jump && rng::RandomIntInclusive(1, 45) == 1) {
-        jump_down = true;
-        bot.jump_cooldown_frames = rng::RandomIntInclusive(20, 70);
-    }
-
-    const bool left_down = bot.enabled && bot.move_dir < 0;
-    const bool right_down = bot.enabled && bot.move_dir > 0;
-    const bool run_down = bot.enabled && rng::RandomIntInclusive(1, 5) == 1;
-
-    PlayingInputs inputs = PlayingInputs::New();
-    inputs.left = MakeDebugBotButtonState(left_down, bot.previous_inputs.left.down);
-    inputs.right = MakeDebugBotButtonState(right_down, bot.previous_inputs.right.down);
-    inputs.jump = MakeDebugBotButtonState(bot.enabled && jump_down, bot.previous_inputs.jump.down);
-    inputs.run = MakeDebugBotButtonState(run_down, bot.previous_inputs.run.down);
-    if (bot.allow_tools) {
-        const bool attack_down = bot.enabled && rng::RandomIntInclusive(1, 180) == 1;
-        const bool bomb_down = bot.enabled && rng::RandomIntInclusive(1, 420) == 1;
-        const bool rope_down = bot.enabled && rng::RandomIntInclusive(1, 420) == 1;
-        inputs.attack = MakeDebugBotButtonState(attack_down, bot.previous_inputs.attack.down);
-        inputs.bomb = MakeDebugBotButtonState(bomb_down, bot.previous_inputs.bomb.down);
-        inputs.rope = MakeDebugBotButtonState(rope_down, bot.previous_inputs.rope.down);
-    }
-    inputs.mouse_pos = bot.previous_inputs.mouse_pos;
-    bot.previous_inputs = inputs;
-    return inputs;
-}
-
 void StepDebugLocalPlayerBots(State& state) {
     for (DebugLocalPlayerBot& bot : state.debug_local_player_bots) {
         if (!state.players.Find(bot.player_id)) {
             continue;
         }
-        PlayingInputs inputs = bot.enabled ? MakeDebugBotInputs(bot) : PlayingInputs::New();
+        PlayingInputs inputs = bot.enabled ? debug::MakeDebugBotInputs(bot) : PlayingInputs::New();
         state.players.SetInputsForPlayer(bot.player_id, inputs, inputs);
     }
 }
