@@ -28,9 +28,9 @@ join3_ctl_port="${SPLONKS_JOIN3_CTL_PORT:-41003}"
 quad_width="${SPLONKS_QUAD_WINDOW_WIDTH:-960}"
 quad_height="${SPLONKS_QUAD_WINDOW_HEIGHT:-540}"
 
-random_input_args=()
+random_join_input_args=()
 if [ "${SPLONKS_RANDOM_PRIMARY_INPUTS:-1}" != "0" ]; then
-    random_input_args+=(--debug-random-primary-input)
+    random_join_input_args+=(--debug-random-primary-input)
 fi
 
 kill_existing_quad_processes() {
@@ -45,19 +45,19 @@ run_child() {
     cd "${repo_root}"
     case "${role}" in
         host)
-            exec "${binary}" --multiplayer-host "${net_port}" --debug-control-port "${host_ctl_port}" "${random_input_args[@]}"
+            exec "${binary}" --multiplayer-host "${net_port}" --debug-control-port "${host_ctl_port}"
             ;;
         join1)
-            exec "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join1_ctl_port}" "${random_input_args[@]}"
+            exec "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join1_ctl_port}" "${random_join_input_args[@]}"
             ;;
         join2)
-            exec "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join2_ctl_port}" "${random_input_args[@]}"
+            exec "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join2_ctl_port}" "${random_join_input_args[@]}"
             ;;
         join3)
-            exec "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join3_ctl_port}" "${random_input_args[@]}"
+            exec "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join3_ctl_port}" "${random_join_input_args[@]}"
             ;;
         *)
-            exec "${binary}" "${random_input_args[@]}"
+            exec "${binary}" "${random_join_input_args[@]}"
             ;;
     esac
 }
@@ -151,13 +151,13 @@ fi
 
 if ! command -v i3-msg >/dev/null 2>&1; then
     echo "i3-msg not found; launching four Splonks instances without workspace placement." >&2
-    (cd "${repo_root}" && "${binary}" --multiplayer-host "${net_port}" --debug-control-port "${host_ctl_port}" "${random_input_args[@]}") &
+    (cd "${repo_root}" && "${binary}" --multiplayer-host "${net_port}" --debug-control-port "${host_ctl_port}") &
     sleep 0.4
-    (cd "${repo_root}" && "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join1_ctl_port}" "${random_input_args[@]}") &
+    (cd "${repo_root}" && "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join1_ctl_port}" "${random_join_input_args[@]}") &
     sleep 0.4
-    (cd "${repo_root}" && "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join2_ctl_port}" "${random_input_args[@]}") &
+    (cd "${repo_root}" && "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join2_ctl_port}" "${random_join_input_args[@]}") &
     sleep 0.4
-    (cd "${repo_root}" && "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join3_ctl_port}" "${random_input_args[@]}") &
+    (cd "${repo_root}" && "${binary}" --multiplayer-join "${net_host}" "${net_port}" --debug-control-port "${join3_ctl_port}" "${random_join_input_args[@]}") &
     wait
     exit 0
 fi

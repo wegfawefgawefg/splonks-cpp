@@ -33,8 +33,6 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.debug_shake_brush = state.debug_shake_brush;
     snapshot.debug_audio_brush = state.debug_audio_brush;
     snapshot.debug_fluid_brush = state.debug_fluid_brush;
-    snapshot.debug_primary_player_bot_enabled = state.debug_primary_player_bot_enabled;
-    snapshot.debug_primary_player_bot = state.debug_primary_player_bot;
     snapshot.debug_local_player_bots = state.debug_local_player_bots;
     snapshot.debug_input_override = state.debug_input_override;
     snapshot.next_debug_local_player_id = state.next_debug_local_player_id;
@@ -115,8 +113,6 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.debug_shake_brush = snapshot.debug_shake_brush;
     state.debug_audio_brush = snapshot.debug_audio_brush;
     state.debug_fluid_brush = snapshot.debug_fluid_brush;
-    state.debug_primary_player_bot_enabled = snapshot.debug_primary_player_bot_enabled;
-    state.debug_primary_player_bot = snapshot.debug_primary_player_bot;
     state.debug_local_player_bots = snapshot.debug_local_player_bots;
     state.debug_input_override = snapshot.debug_input_override;
     state.next_debug_local_player_id = snapshot.next_debug_local_player_id;
