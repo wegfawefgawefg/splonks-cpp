@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 #include "tile.hpp"
@@ -41,13 +41,13 @@ bool IsOneWayTopTileSupportingAabb(
 bool AabbTouchesBlockingStageBounds(const Stage& stage, const AABB& area);
 bool AabbHitsBlockingTiles(const Stage& stage, const AABB& area);
 bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area);
-bool AabbHitsImpassableEntities(
+bool AabbHitsImpassableEnts(
     const State& state,
     const Graphics& graphics,
     const AABB& area,
     std::optional<VID> exclude_vid = std::nullopt
 );
-bool AabbHitsBlockingWorldGeometryOrImpassableEntities(
+bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
     const State& state,
     const Graphics& graphics,
     const AABB& area,
@@ -55,7 +55,7 @@ bool AabbHitsBlockingWorldGeometryOrImpassableEntities(
 );
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos);
 std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, const IVec2& world_pos);
-std::vector<VID> QueryEntitiesInAabb(
+std::vector<VID> QueryEntsInAabb(
     const State& state,
     const AABB& area,
     std::optional<VID> exclude_vid = std::nullopt
@@ -65,14 +65,14 @@ enum class WorldRayHitType {
     None,
     StageBounds,
     Tile,
-    Entity,
+    Ent,
 };
 
 struct WorldRayHit {
     WorldRayHitType type = WorldRayHitType::None;
     IVec2 point = IVec2::New(0, 0);
     std::optional<IVec2> tile_pos = std::nullopt;
-    std::optional<VID> entity_vid = std::nullopt;
+    std::optional<VID> ent_vid = std::nullopt;
 };
 
 struct TileStepRaycastResult {
@@ -99,7 +99,7 @@ WorldRayHit RaycastTiles(
 );
 
 WorldRayHit RaycastHorizontal(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     int direction,
     int max_distance,
@@ -109,7 +109,7 @@ WorldRayHit RaycastHorizontal(
 );
 
 WorldRayHit RaycastVertical(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     int direction,
     int max_distance,
@@ -118,8 +118,8 @@ WorldRayHit RaycastVertical(
     std::optional<VID> owner_vid = std::nullopt
 );
 
-WorldRayHit RaycastEntities(
-    const Entity& source_entity,
+WorldRayHit RaycastEnts(
+    const Ent& source_ent,
     const Vec2& start_pos,
     const Vec2& direction,
     int max_distance,
@@ -129,7 +129,7 @@ WorldRayHit RaycastEntities(
 );
 
 WorldRayHit RaycastWorld(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     const Vec2& direction,
     int max_distance,

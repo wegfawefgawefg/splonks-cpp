@@ -1,9 +1,9 @@
-#include "entities/common/ground_walker.hpp"
+#include "ents/common/ground_walker.hpp"
 
 #include "tile.hpp"
 #include "world_query.hpp"
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 bool IsSolidTileAtWorldPos(const State& state, const IVec2& world_pos) {
     const std::optional<WorldTileQueryResult> tile_query = QueryTileAtWorldPos(state.stage, world_pos);
@@ -11,34 +11,34 @@ bool IsSolidTileAtWorldPos(const State& state, const IVec2& world_pos) {
 }
 
 bool HasWallAheadForGroundWalker(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     const Graphics& graphics,
     int direction
 ) {
-    const auto [tl, br] = entity.GetBounds();
+    const auto [tl, br] = ent.GetBounds();
     const float sample_x = direction < 0 ? tl.x - 1.0F : br.x + 1.0F;
     const AABB probe = AABB::New(
         Vec2::New(sample_x, tl.y + 1.0F),
         Vec2::New(sample_x, br.y - 1.0F)
     );
-    return AabbHitsBlockingWorldGeometryOrImpassableEntities(state, graphics, probe, entity.vid);
+    return AabbHitsBlockingWorldGeometryOrImpassableEnts(state, graphics, probe, ent.vid);
 }
 
 bool HasGroundAheadForGroundWalker(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     const Graphics& graphics,
     int direction
 ) {
-    const auto [tl, br] = entity.GetBounds();
+    const auto [tl, br] = ent.GetBounds();
     const float sample_x = direction < 0 ? tl.x - 1.0F : br.x + 1.0F;
     const float sample_y = br.y + 1.0F;
     const AABB probe = AABB::New(
         Vec2::New(sample_x, sample_y),
         Vec2::New(sample_x, sample_y)
     );
-    return AabbHitsBlockingWorldGeometryOrImpassableEntities(state, graphics, probe, entity.vid);
+    return AabbHitsBlockingWorldGeometryOrImpassableEnts(state, graphics, probe, ent.vid);
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

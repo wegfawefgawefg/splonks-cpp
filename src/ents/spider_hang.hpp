@@ -1,11 +1,11 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::spider_hang {
+namespace splonks::ents::spider_hang {
 
-extern const EntityArchetype kSpiderHangArchetype;
-extern const EntityArchetype kRageSpiderHangArchetype;
-extern const EntityArchetype kGiantSpiderHangArchetype;
+extern const EntSpec kSpiderHangSpec;
+extern const EntSpec kRageSpiderHangSpec;
+extern const EntSpec kGiantSpiderHangSpec;
 
-} // namespace splonks::entities::spider_hang
+} // namespace splonks::ents::spider_hang

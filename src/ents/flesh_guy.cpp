@@ -1,16 +1,16 @@
-#include "entities/flesh_guy.hpp"
+#include "ents/flesh_guy.hpp"
 
 #include "audio.hpp"
 #include "audio_emitters.hpp"
 #include "controls.hpp"
-#include "entities/common/common.hpp"
-#include "entities/player.hpp"
-#include "frame_data_id.hpp"
-#include "particles/particle_archetypes.hpp"
+#include "ents/common/common.hpp"
+#include "ents/player.hpp"
+#include "aframe_id.hpp"
+#include "particles/particle_specs.hpp"
 #include "particles/scripted_particle.hpp"
 #include "state.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -19,7 +19,7 @@
 #include <cmath>
 #include <optional>
 
-namespace splonks::entities::flesh_guy {
+namespace splonks::ents::flesh_guy {
 
 namespace {
 
@@ -37,7 +37,7 @@ constexpr float kWallSlideMaxFallSpeed = 1.35F;
 constexpr float kMaxHorizontalSpeed = 4.25F;
 constexpr float kMaxRiseSpeed = 5.0F;
 constexpr float kMaxFallSpeed = 6.0F;
-constexpr float kWalkAnimationVelocityEpsilon = 0.08F;
+constexpr float kWalkAnimVelocityEpsilon = 0.08F;
 constexpr float kMeatTileTopperHeight = 7.0F;
 constexpr float kMeatTileTopperYOffset = -1.0F;
 constexpr float kSideMeatTileInset = (kMeatTileTopperHeight * 0.5F) - 1.0F;
@@ -131,12 +131,12 @@ std::optional<MeatSlimeSurface> QueryCollidableTileOrBorderSurfaceAtWorldPos(
 
 bool IsClimbableTileQuery(const std::optional<WorldTileQueryResult>& tile_query) {
     return tile_query.has_value() && tile_query->tile != nullptr &&
-           GetTileArchetype(*tile_query->tile).climbable;
+           GetTileSpec(*tile_query->tile).climbable;
 }
 
-std::optional<IVec2> GetClimbTile(const Entity& entity, const State& state) {
-    const Vec2 center = entity.GetCenter();
-    const float horizontal_offset = std::min(2.5F, std::max(0.0F, (entity.size.x * 0.5F) - 1.0F));
+std::optional<IVec2> GetClimbTile(const Ent& ent, const State& state) {
+    const Vec2 center = ent.GetCenter();
+    const float horizontal_offset = std::min(2.5F, std::max(0.0F, (ent.size.x * 0.5F) - 1.0F));
     const std::array<Vec2, 3> probes = {{
         Vec2::New(center.x - horizontal_offset, center.y),
         center,
@@ -152,57 +152,57 @@ std::optional<IVec2> GetClimbTile(const Entity& entity, const State& state) {
     return std::nullopt;
 }
 
-void SnapToClimbTile(Entity& entity, const IVec2& tile_pos) {
-    Vec2 center = entity.GetCenter();
+void SnapToClimbTile(Ent& ent, const IVec2& tile_pos) {
+    Vec2 center = ent.GetCenter();
     const float target_x = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + static_cast<int>(kTileSize / 2));
     const float delta = std::clamp(target_x - center.x, -kClimbSnapSpeed, kClimbSnapSpeed);
     center.x += delta;
-    entity.SetCenter(center);
+    ent.SetCenter(center);
 }
 
-std::optional<LeftOrRight> GetWallSlideSide(
-    const Entity& entity,
+std::optional<Side> GetWallSlideSide(
+    const Ent& ent,
     const controls::ControlIntent& control,
     const State& state,
     const Graphics& graphics
 ) {
-    if (entity.grounded || entity.condition != EntityCondition::Normal) {
+    if (ent.grounded || ent.condition != EntCondition::Normal) {
         return std::nullopt;
     }
 
-    const AABB aabb = entity.GetAABB();
-    const auto side_blocked = [&](LeftOrRight side) {
-        const bool left = side == LeftOrRight::Left;
+    const AABB aabb = ent.GetAABB();
+    const auto side_blocked = [&](Side side) {
+        const bool left = side == Side::Left;
         const float probe_x = left ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
         const AABB probe = AABB::New(
             Vec2::New(probe_x, aabb.tl.y + 1.0F),
             Vec2::New(probe_x, aabb.br.y - 1.0F)
         );
-        return AabbHitsBlockingWorldGeometryOrImpassableEntities(state, graphics, probe, entity.vid);
+        return AabbHitsBlockingWorldGeometryOrImpassableEnts(state, graphics, probe, ent.vid);
     };
 
-    if (control.left && !control.right && side_blocked(LeftOrRight::Left)) {
-        return LeftOrRight::Left;
+    if (control.left && !control.right && side_blocked(Side::Left)) {
+        return Side::Left;
     }
-    if (control.right && !control.left && side_blocked(LeftOrRight::Right)) {
-        return LeftOrRight::Right;
+    if (control.right && !control.left && side_blocked(Side::Right)) {
+        return Side::Right;
     }
     return std::nullopt;
 }
 
-std::optional<MeatSlimeSurface> GetGroundSurface(const Entity& entity, const State& state) {
-    if (!entity.grounded) {
+std::optional<MeatSlimeSurface> GetGroundSurface(const Ent& ent, const State& state) {
+    if (!ent.grounded) {
         return std::nullopt;
     }
 
-    const AABB aabb = entity.GetAABB();
-    const Vec2 center_support_world = Vec2::New(entity.GetCenter().x, aabb.br.y + 1.0F);
+    const AABB aabb = ent.GetAABB();
+    const Vec2 center_support_world = Vec2::New(ent.GetCenter().x, aabb.br.y + 1.0F);
     if (const std::optional<MeatSlimeSurface> center_surface =
             QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_support_world)) {
         return center_surface;
     }
 
-    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, entity.GetFeet())) {
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetFeet())) {
         if (tile_query.tile != nullptr && IsTileCollidable(*tile_query.tile)) {
             return MeatSlimeSurface{
                 .kind = MeatSlimeSurfaceKind::Tile,
@@ -215,7 +215,7 @@ std::optional<MeatSlimeSurface> GetGroundSurface(const Entity& entity, const Sta
 }
 
 void SpawnMeatSlime(State& state, const Vec2& particle_center, float rotation = 0.0F) {
-    ScriptedParticle particle = MakeScriptedParticle(scripted_particle_archetype_ids::MeatTileTopper, particle_center);
+    ScriptedParticle particle = MakeScriptedParticle(scripted_particle_spec_ids::MeatTileTopper, particle_center);
     if (!particle.active) {
         return;
     }
@@ -249,38 +249,38 @@ Vec2 GetBottomMeatSlimeCenter(const MeatSlimeSurface& surface, const Stage& stag
     return GetBottomMeatSlimeCenter(surface.tile_pos);
 }
 
-Vec2 GetSideMeatSlimeCenter(const IVec2& tile_pos, LeftOrRight tile_side) {
+Vec2 GetSideMeatSlimeCenter(const IVec2& tile_pos, Side tile_side) {
     const float tile_left = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize));
     const float tile_top = static_cast<float>(tile_pos.y * static_cast<int>(kTileSize));
-    const float x = tile_side == LeftOrRight::Left
+    const float x = tile_side == Side::Left
                         ? tile_left + kSideMeatTileInset
                         : tile_left + static_cast<float>(kTileSize) - kSideMeatTileInset;
     return Vec2::New(x, tile_top + static_cast<float>(kTileSize / 2));
 }
 
-Vec2 GetSideMeatSlimeCenter(const MeatSlimeSurface& surface, LeftOrRight tile_side, const Stage& stage) {
+Vec2 GetSideMeatSlimeCenter(const MeatSlimeSurface& surface, Side tile_side, const Stage& stage) {
     (void)stage;
     return GetSideMeatSlimeCenter(surface.tile_pos, tile_side);
 }
 
-void MaybeSpawnTopMeatSlime(Entity& entity, State& state) {
-    const std::optional<MeatSlimeSurface> ground_surface = GetGroundSurface(entity, state);
+void MaybeSpawnTopMeatSlime(Ent& ent, State& state) {
+    const std::optional<MeatSlimeSurface> ground_surface = GetGroundSurface(ent, state);
     if (!ground_surface.has_value()) {
-        entity.point_label_a = PointLabel::None;
+        ent.point_label_a = PointLabel::None;
         return;
     }
 
-    if (entity.point_label_a == PointLabel::Target && entity.point_a == ground_surface->key) {
+    if (ent.point_label_a == PointLabel::Target && ent.point_a == ground_surface->key) {
         return;
     }
 
-    entity.point_a = ground_surface->key;
-    entity.point_label_a = PointLabel::Target;
+    ent.point_a = ground_surface->key;
+    ent.point_label_a = PointLabel::Target;
     SpawnMeatSlime(state, GetTopMeatSlimeCenter(*ground_surface, state.stage));
 }
 
-std::optional<MeatSlimeSurface> GetCeilingSurface(const Entity& entity, const State& state) {
-    const AABB aabb = entity.GetAABB();
+std::optional<MeatSlimeSurface> GetCeilingSurface(const Ent& ent, const State& state) {
+    const AABB aabb = ent.GetAABB();
     const float probe_y = aabb.tl.y - 1.0F;
     const AABB probe = AABB::New(
         Vec2::New(aabb.tl.x + 1.0F, probe_y),
@@ -296,29 +296,29 @@ std::optional<MeatSlimeSurface> GetCeilingSurface(const Entity& entity, const St
         }
     }
 
-    const Vec2 center_probe = Vec2::New(entity.GetCenter().x, probe_y);
+    const Vec2 center_probe = Vec2::New(ent.GetCenter().x, probe_y);
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 
-void MaybeSpawnBottomMeatSlime(Entity& entity, State& state) {
-    const std::optional<MeatSlimeSurface> ceiling_surface = GetCeilingSurface(entity, state);
+void MaybeSpawnBottomMeatSlime(Ent& ent, State& state) {
+    const std::optional<MeatSlimeSurface> ceiling_surface = GetCeilingSurface(ent, state);
     if (!ceiling_surface.has_value()) {
-        entity.point_label_d = PointLabel::None;
+        ent.point_label_d = PointLabel::None;
         return;
     }
 
-    if (entity.point_label_d == PointLabel::Target && entity.point_d == ceiling_surface->key) {
+    if (ent.point_label_d == PointLabel::Target && ent.point_d == ceiling_surface->key) {
         return;
     }
 
-    entity.point_d = ceiling_surface->key;
-    entity.point_label_d = PointLabel::Target;
+    ent.point_d = ceiling_surface->key;
+    ent.point_label_d = PointLabel::Target;
     SpawnMeatSlime(state, GetBottomMeatSlimeCenter(*ceiling_surface, state.stage), 180.0F);
 }
 
-std::optional<MeatSlimeSurface> GetSideSurface(const Entity& entity, const State& state, LeftOrRight side) {
-    const AABB aabb = entity.GetAABB();
-    const float probe_x = side == LeftOrRight::Left ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
+std::optional<MeatSlimeSurface> GetSideSurface(const Ent& ent, const State& state, Side side) {
+    const AABB aabb = ent.GetAABB();
+    const float probe_x = side == Side::Left ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
     const AABB probe = AABB::New(
         Vec2::New(probe_x, aabb.tl.y + 1.0F),
         Vec2::New(probe_x, aabb.br.y - 1.0F)
@@ -333,14 +333,14 @@ std::optional<MeatSlimeSurface> GetSideSurface(const Entity& entity, const State
         }
     }
 
-    const Vec2 center_probe = Vec2::New(probe_x, entity.GetCenter().y);
+    const Vec2 center_probe = Vec2::New(probe_x, ent.GetCenter().y);
     return QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, center_probe);
 }
 
-void MaybeSpawnSideMeatSlime(Entity& entity, State& state, LeftOrRight side) {
-    const std::optional<MeatSlimeSurface> side_surface = GetSideSurface(entity, state, side);
-    PointLabel& label = side == LeftOrRight::Left ? entity.point_label_b : entity.point_label_c;
-    IVec2& cached_tile = side == LeftOrRight::Left ? entity.point_b : entity.point_c;
+void MaybeSpawnSideMeatSlime(Ent& ent, State& state, Side side) {
+    const std::optional<MeatSlimeSurface> side_surface = GetSideSurface(ent, state, side);
+    PointLabel& label = side == Side::Left ? ent.point_label_b : ent.point_label_c;
+    IVec2& cached_tile = side == Side::Left ? ent.point_b : ent.point_c;
     if (!side_surface.has_value()) {
         label = PointLabel::None;
         return;
@@ -352,103 +352,103 @@ void MaybeSpawnSideMeatSlime(Entity& entity, State& state, LeftOrRight side) {
 
     cached_tile = side_surface->key;
     label = PointLabel::Target;
-    const LeftOrRight tile_side = side == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
-    const float rotation = side == LeftOrRight::Left ? 90.0F : -90.0F;
+    const Side tile_side = side == Side::Left ? Side::Right : Side::Left;
+    const float rotation = side == Side::Left ? 90.0F : -90.0F;
     SpawnMeatSlime(state, GetSideMeatSlimeCenter(*side_surface, tile_side, state.stage), rotation);
 }
 
-void MaybeSpawnTouchedMeatSlime(Entity& entity, State& state) {
-    MaybeSpawnTopMeatSlime(entity, state);
-    MaybeSpawnBottomMeatSlime(entity, state);
-    MaybeSpawnSideMeatSlime(entity, state, LeftOrRight::Left);
-    MaybeSpawnSideMeatSlime(entity, state, LeftOrRight::Right);
+void MaybeSpawnTouchedMeatSlime(Ent& ent, State& state) {
+    MaybeSpawnTopMeatSlime(ent, state);
+    MaybeSpawnBottomMeatSlime(ent, state);
+    MaybeSpawnSideMeatSlime(ent, state, Side::Left);
+    MaybeSpawnSideMeatSlime(ent, state, Side::Right);
 }
 
-void SetFleshGuyAnimation(Entity& entity, std::optional<LeftOrRight> wall_slide_side = std::nullopt) {
-    if (entity.condition == EntityCondition::Dead) {
+void SetFleshGuyAnim(Ent& ent, std::optional<Side> wall_slide_side = std::nullopt) {
+    if (ent.condition == EntCondition::Dead) {
         return;
     }
 
     if (wall_slide_side.has_value()) {
-        if (entity.frame_data_animator.animation_id != frame_data_ids::FleshGuyWalk) {
-            SetAnimation(entity, frame_data_ids::FleshGuyWalk);
-            entity.frame_data_animator.SetForcedFrame(0);
+        if (ent.aframe_animator.anim_id != aframe_ids::FleshGuyWalk) {
+            SetAnim(ent, aframe_ids::FleshGuyWalk);
+            ent.aframe_animator.SetForcedFrame(0);
         }
-        entity.facing = *wall_slide_side;
-        entity.frame_data_animator.animate = false;
-        entity.frame_data_animator.loop = false;
+        ent.facing = *wall_slide_side;
+        ent.aframe_animator.animate = false;
+        ent.aframe_animator.loop = false;
         return;
     }
 
-    if (entity.grounded && std::abs(entity.vel.x) > kWalkAnimationVelocityEpsilon) {
-        if (entity.frame_data_animator.animation_id != frame_data_ids::FleshGuyWalk) {
-            entity.frame_data_animator.PlayLoop(frame_data_ids::FleshGuyWalk);
+    if (ent.grounded && std::abs(ent.vel.x) > kWalkAnimVelocityEpsilon) {
+        if (ent.aframe_animator.anim_id != aframe_ids::FleshGuyWalk) {
+            ent.aframe_animator.PlayLoop(aframe_ids::FleshGuyWalk);
         }
-        entity.frame_data_animator.animate = true;
-        entity.frame_data_animator.loop = true;
+        ent.aframe_animator.animate = true;
+        ent.aframe_animator.loop = true;
         return;
     }
 
-    if (entity.frame_data_animator.animation_id != frame_data_ids::FleshGuy) {
-        SetAnimation(entity, frame_data_ids::FleshGuy);
-        entity.frame_data_animator.SetForcedFrame(0);
+    if (ent.aframe_animator.anim_id != aframe_ids::FleshGuy) {
+        SetAnim(ent, aframe_ids::FleshGuy);
+        ent.aframe_animator.SetForcedFrame(0);
     }
-    entity.frame_data_animator.animate = false;
-    entity.frame_data_animator.loop = false;
+    ent.aframe_animator.animate = false;
+    ent.aframe_animator.loop = false;
 }
 
 void UpdateWallSlideState(
-    Entity& entity,
-    const std::optional<LeftOrRight>& wall_slide_side
+    Ent& ent,
+    const std::optional<Side>& wall_slide_side
 ) {
     if (wall_slide_side.has_value()) {
-        entity.hang_side = wall_slide_side;
-    } else if (entity.grounded || entity.coyote_time == 0) {
-        entity.hang_side.reset();
+        ent.hang_side = wall_slide_side;
+    } else if (ent.grounded || ent.coyote_time == 0) {
+        ent.hang_side.reset();
     }
-    SetMovementFlag(entity, EntityMovementFlag::Hanging, wall_slide_side.has_value());
+    SetMovementFlag(ent, EntMovementFlag::Hanging, wall_slide_side.has_value());
 }
 
-void RefreshWallSlideCoyote(Entity& entity, LeftOrRight side) {
-    entity.coyote_time = std::max(entity.coyote_time, player::kCoyoteTimeFrames);
-    entity.hang_side = side;
+void RefreshWallSlideCoyote(Ent& ent, Side side) {
+    ent.coyote_time = std::max(ent.coyote_time, player::kCoyoteTimeFrames);
+    ent.hang_side = side;
 }
 
-std::optional<LeftOrRight> GetWallSlideCoyoteSide(const Entity& entity) {
-    if (entity.coyote_time == 0 || !entity.hang_side.has_value()) {
+std::optional<Side> GetWallSlideCoyoteSide(const Ent& ent) {
+    if (ent.coyote_time == 0 || !ent.hang_side.has_value()) {
         return std::nullopt;
     }
-    return entity.hang_side;
+    return ent.hang_side;
 }
 
-void ClearWallSlideCoyote(Entity& entity) {
-    entity.coyote_time = 0;
-    entity.hang_side.reset();
-    SetMovementFlag(entity, EntityMovementFlag::Hanging, false);
+void ClearWallSlideCoyote(Ent& ent) {
+    ent.coyote_time = 0;
+    ent.hang_side.reset();
+    SetMovementFlag(ent, EntMovementFlag::Hanging, false);
 }
 
-void StepTravelSoundFleshGuy(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.travel_sound_countdown -= entity.dist_traveled_this_frame;
+void StepTravelSoundFleshGuy(std::size_t ent_idx, State& state) {
+    Ent& ent = state.ents.ents[ent_idx];
+    ent.travel_sound_countdown -= ent.dist_traveled_this_frame;
 
-    if ((!entity.grounded && !entity.IsClimbing()) || entity.dist_traveled_this_frame <= 0.0F) {
+    if ((!ent.grounded && !ent.IsClimbing()) || ent.dist_traveled_this_frame <= 0.0F) {
         return;
     }
 
-    if (entity.travel_sound_countdown < 0.0F) {
-        entity.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
-        const AudioAssetId sound = entity.travel_sound == TravelSound::One
+    if (ent.travel_sound_countdown < 0.0F) {
+        ent.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
+        const AudioAssetId sound = ent.travel_sound == TravelSound::One
                                        ? audio_asset_ids::FleshGuyStep0
                                        : audio_asset_ids::FleshGuyStep1;
-        (void)PlayEntitySoundEmitter(state, entity, sound);
-        entity.IncTravelSound();
+        (void)PlayEntSoundEmitter(state, ent, sound);
+        ent.IncTravelSound();
     }
 }
 
 } // namespace
 
-extern const EntityArchetype kFleshGuyArchetype{
-    .type_ = EntityType::FleshGuy,
+extern const EntSpec kFleshGuySpec{
+    .type_ = EntType::FleshGuy,
     .size = Vec2::New(8.0F, 9.0F),
     .health = 400,
     .has_physics = true,
@@ -464,40 +464,40 @@ extern const EntityArchetype kFleshGuyArchetype{
     .stun_recovers_while_held = false,
     .throw_velocity_scale = 0.5F,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Right,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .facing = Side::Right,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .damage_sound = audio_asset_ids::PlayerOuch,
     .collide_sound = audio_asset_ids::FleshGuyImpact1,
     .death_sound = audio_asset_ids::FleshGuyImpact0,
     .on_death = OnDeathAsFleshGuy,
-    .control_logic = ControlEntityAsFleshGuy,
-    .step_logic = StepEntityLogicAsFleshGuy,
-    .step_physics = StepEntityPhysicsAsFleshGuy,
+    .control_logic = ControlEntAsFleshGuy,
+    .step_logic = StepEntLogicAsFleshGuy,
+    .step_physics = StepEntPhysicsAsFleshGuy,
     .alignment = Alignment::Ally,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::FleshGuy),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::FleshGuy),
 };
 
-void OnDeathAsFleshGuy(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsFleshGuy(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& flesh_guy = state.entity_manager.entities[entity_idx];
+    Ent& flesh_guy = state.ents.ents[ent_idx];
     if (const std::optional<MeatSlimeSurface> ground_surface = GetGroundSurface(flesh_guy, state)) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*ground_surface, state.stage));
     } else if (const std::optional<MeatSlimeSurface> center_surface =
                    QueryCollidableTileOrBorderSurfaceAtWorldPos(state.stage, flesh_guy.GetCenter())) {
         SpawnMeatSlime(state, GetTopMeatSlimeCenter(*center_surface, state.stage));
     }
-    (void)world_ops::DeactivateEntity(state, flesh_guy.vid);
+    (void)world_ops::DeactivateEnt(state, flesh_guy.vid);
 }
 
-void ControlEntityAsFleshGuy(
-    std::size_t entity_idx,
+void ControlEntAsFleshGuy(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -506,13 +506,13 @@ void ControlEntityAsFleshGuy(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& flesh_guy = state.entity_manager.entities[entity_idx];
-    const controls::ControlIntent control = controls::GetControlIntentForEntity(flesh_guy, state);
-    if (flesh_guy.condition != EntityCondition::Normal) {
+    Ent& flesh_guy = state.ents.ents[ent_idx];
+    const controls::ControlIntent control = controls::GetControlIntentForEnt(flesh_guy, state);
+    if (flesh_guy.condition != EntCondition::Normal) {
         return;
     }
 
@@ -527,7 +527,7 @@ void ControlEntityAsFleshGuy(
             flesh_guy.grounded ? -kGroundTargetSpeed : -kAirTargetSpeed,
             flesh_guy.grounded ? kGroundMoveAcc : kAirMoveAcc
         );
-        flesh_guy.facing = LeftOrRight::Left;
+        flesh_guy.facing = Side::Left;
     } else if (control.right && !control.left) {
         common::AccelerateHorizontallyTowardSpeed(
             flesh_guy,
@@ -535,7 +535,7 @@ void ControlEntityAsFleshGuy(
             flesh_guy.grounded ? kGroundTargetSpeed : kAirTargetSpeed,
             flesh_guy.grounded ? kGroundMoveAcc : kAirMoveAcc
         );
-        flesh_guy.facing = LeftOrRight::Right;
+        flesh_guy.facing = Side::Right;
     } else if (flesh_guy.grounded) {
         common::DecelerateHorizontallyToStop(flesh_guy, kGroundNoInputDecel);
     } else {
@@ -548,66 +548,66 @@ void ControlEntityAsFleshGuy(
     }
 }
 
-void StepEntityLogicAsFleshGuy(
-    std::size_t entity_idx,
+void StepEntLogicAsFleshGuy(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& flesh_guy = state.entity_manager.entities[entity_idx];
-    if (flesh_guy.condition == EntityCondition::Dead) {
+    Ent& flesh_guy = state.ents.ents[ent_idx];
+    if (flesh_guy.condition == EntCondition::Dead) {
         return;
     }
 
-    StepTravelSoundFleshGuy(entity_idx, state);
-    common::CleanupInactiveCarryReferences(entity_idx, state);
+    StepTravelSoundFleshGuy(ent_idx, state);
+    common::CleanupInactiveCarryReferences(ent_idx, state);
 
-    const bool loss_of_control = flesh_guy.condition == EntityCondition::Stunned;
-    const controls::ControlIntent control = controls::GetControlIntentForEntity(flesh_guy, state);
+    const bool loss_of_control = flesh_guy.condition == EntCondition::Stunned;
+    const controls::ControlIntent control = controls::GetControlIntentForEnt(flesh_guy, state);
     const bool walking =
         !loss_of_control &&
         flesh_guy.grounded &&
         (control.left != control.right) &&
-        std::abs(flesh_guy.vel.x) > kWalkAnimationVelocityEpsilon;
-    SetMovementFlag(flesh_guy, EntityMovementFlag::Walking, walking);
-    SetMovementFlag(flesh_guy, EntityMovementFlag::Running, false);
+        std::abs(flesh_guy.vel.x) > kWalkAnimVelocityEpsilon;
+    SetMovementFlag(flesh_guy, EntMovementFlag::Walking, walking);
+    SetMovementFlag(flesh_guy, EntMovementFlag::Running, false);
 
-    SetFleshGuyAnimation(flesh_guy, flesh_guy.grounded ? std::nullopt : flesh_guy.hang_side);
-    common::UpdateCarryAndBackItems(entity_idx, state, graphics, audio);
+    SetFleshGuyAnim(flesh_guy, flesh_guy.grounded ? std::nullopt : flesh_guy.hang_side);
+    common::UpdateCarryAndBackItems(ent_idx, state, graphics, audio);
 
     if (!loss_of_control) {
-        common::TryUseToolSlot(entity_idx, state, graphics, audio, 0, control.bomb_pressed);
-        common::TryUseToolSlot(entity_idx, state, graphics, audio, 1, control.rope_pressed);
-        common::TryPushBlocks(entity_idx, state, graphics);
+        common::TryUseToolSlot(ent_idx, state, graphics, audio, 0, control.bomb_pressed);
+        common::TryUseToolSlot(ent_idx, state, graphics, audio, 1, control.rope_pressed);
+        common::TryPushBlocks(ent_idx, state, graphics);
     }
 }
 
-void StepEntityPhysicsAsFleshGuy(
-    std::size_t entity_idx,
+void StepEntPhysicsAsFleshGuy(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    common::GroundedCheck(entity_idx, state, audio, true, true);
+    common::GroundedCheck(ent_idx, state, audio, true, true);
 
-    Entity& flesh_guy = state.entity_manager.entities[entity_idx];
-    const controls::ControlIntent control = controls::GetControlIntentForEntity(flesh_guy, state);
+    Ent& flesh_guy = state.ents.ents[ent_idx];
+    const controls::ControlIntent control = controls::GetControlIntentForEnt(flesh_guy, state);
     const std::optional<IVec2> climb_tile = GetClimbTile(flesh_guy, state);
-    if (flesh_guy.condition != EntityCondition::Normal || !climb_tile.has_value()) {
-        SetMovementFlag(flesh_guy, EntityMovementFlag::Climbing, false);
+    if (flesh_guy.condition != EntCondition::Normal || !climb_tile.has_value()) {
+        SetMovementFlag(flesh_guy, EntMovementFlag::Climbing, false);
     } else if (!flesh_guy.IsClimbing() && (control.up || control.down)) {
-        SetMovementFlag(flesh_guy, EntityMovementFlag::Climbing, true);
+        SetMovementFlag(flesh_guy, EntMovementFlag::Climbing, true);
         flesh_guy.grounded = false;
         flesh_guy.vel = Vec2::New(0.0F, 0.0F);
         flesh_guy.acc = Vec2::New(0.0F, 0.0F);
@@ -628,29 +628,29 @@ void StepEntityPhysicsAsFleshGuy(
             flesh_guy.vel.y = 0.0F;
         }
         if (control.jump_pressed) {
-            SetMovementFlag(flesh_guy, EntityMovementFlag::Climbing, false);
+            SetMovementFlag(flesh_guy, EntMovementFlag::Climbing, false);
             flesh_guy.vel.y = control.down ? 0.0F : -kJumpImpulse;
             flesh_guy.grounded = false;
             flesh_guy.coyote_time = 0;
             jumped_this_frame = !control.down;
-            (void)PlayEntityCenterSoundEmitter(state, flesh_guy, audio_asset_ids::FleshmanJump);
+            (void)PlayEntCenterSoundEmitter(state, flesh_guy, audio_asset_ids::FleshmanJump);
         }
     }
 
-    const std::optional<LeftOrRight> wall_slide_side = flesh_guy.IsClimbing()
+    const std::optional<Side> wall_slide_side = flesh_guy.IsClimbing()
                                                           ? std::nullopt
                                                           : GetWallSlideSide(flesh_guy, control, state, graphics);
     if (wall_slide_side.has_value()) {
         RefreshWallSlideCoyote(flesh_guy, *wall_slide_side);
     }
 
-    if (!flesh_guy.IsClimbing() && flesh_guy.condition == EntityCondition::Normal && control.jump_pressed) {
-        const std::optional<LeftOrRight> wall_jump_side = wall_slide_side.has_value()
+    if (!flesh_guy.IsClimbing() && flesh_guy.condition == EntCondition::Normal && control.jump_pressed) {
+        const std::optional<Side> wall_jump_side = wall_slide_side.has_value()
                                                             ? wall_slide_side
                                                             : GetWallSlideCoyoteSide(flesh_guy);
         if (wall_jump_side.has_value()) {
             flesh_guy.vel.y = -kJumpImpulse;
-            flesh_guy.vel.x = *wall_jump_side == LeftOrRight::Left
+            flesh_guy.vel.x = *wall_jump_side == Side::Left
                                  ? kWallJumpHorizontalSpeed
                                  : -kWallJumpHorizontalSpeed;
             flesh_guy.grounded = false;
@@ -658,14 +658,14 @@ void StepEntityPhysicsAsFleshGuy(
             ClearWallSlideCoyote(flesh_guy);
             jumped_this_frame = true;
             flesh_guy.jump_delay_frame_count = player::kJumpDelayFrames;
-            (void)PlayEntityCenterSoundEmitter(state, flesh_guy, audio_asset_ids::FleshmanJump);
+            (void)PlayEntCenterSoundEmitter(state, flesh_guy, audio_asset_ids::FleshmanJump);
         } else if ((flesh_guy.grounded && flesh_guy.jump_delay_frame_count == 0) || flesh_guy.coyote_time > 0) {
             flesh_guy.vel.y = -kJumpImpulse;
             flesh_guy.grounded = false;
             flesh_guy.coyote_time = 0;
             jumped_this_frame = true;
             flesh_guy.jump_delay_frame_count = player::kJumpDelayFrames;
-            (void)PlayEntityCenterSoundEmitter(state, flesh_guy, audio_asset_ids::FleshmanJump);
+            (void)PlayEntCenterSoundEmitter(state, flesh_guy, audio_asset_ids::FleshmanJump);
         }
     }
     flesh_guy.jumped_this_frame = jumped_this_frame;
@@ -681,21 +681,21 @@ void StepEntityPhysicsAsFleshGuy(
         flesh_guy.acc.y += state.stage.gravity * (wall_sliding ? kWallSlideGravityScale : kGravityScale);
     }
 
-    common::PrePartialEulerStep(entity_idx, state, dt);
+    common::PrePartialEulerStep(ent_idx, state, dt);
     if (wall_sliding && flesh_guy.vel.y > kWallSlideMaxFallSpeed) {
         flesh_guy.vel.y = kWallSlideMaxFallSpeed;
     }
     flesh_guy.vel.x = std::clamp(flesh_guy.vel.x, -kMaxHorizontalSpeed, kMaxHorizontalSpeed);
     flesh_guy.vel.y = std::clamp(flesh_guy.vel.y, -kMaxRiseSpeed, kMaxFallSpeed);
 
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
+    common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     if (flesh_guy.grounded) {
         UpdateWallSlideState(flesh_guy, std::nullopt);
     }
-    common::ApplyArchetypeGroundFriction(entity_idx, state);
+    common::ApplySpecGroundFriction(ent_idx, state);
     MaybeSpawnTouchedMeatSlime(flesh_guy, state);
-    SetFleshGuyAnimation(flesh_guy, (!flesh_guy.grounded && wall_sliding) ? wall_slide_side : std::nullopt);
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    SetFleshGuyAnim(flesh_guy, (!flesh_guy.grounded && wall_sliding) ? wall_slide_side : std::nullopt);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 }
 
-} // namespace splonks::entities::flesh_guy
+} // namespace splonks::ents::flesh_guy

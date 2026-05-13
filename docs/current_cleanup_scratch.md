@@ -8,7 +8,7 @@ Short-term triage list for the current large commit.
 2. [x] Stomp flag audit for enemies, props, carried/thrown items.
    - User: yes, but many weird cases will be found by playtest.
    - Fixed: generated chests/key chests spawn at the tile top-left instead of halfway embedded.
-   - Fixed: thrown chests/key chests now apply projectile contact damage like hard props.
+   - Fixed: thrown chests/key chests now apply proj contact damage like hard props.
    - Accepted: broad stomp-flag oddities will continue through normal playtest instead of blocking this pass.
 3. [~] Loot/shop/item pools audit.
    - User: yes.
@@ -19,20 +19,20 @@ Short-term triage list for the current large commit.
    - Remaining: shop/category pools are still weighted approximations unless we port ClassicHD's sequential roll logic.
 4. [ ] Manual Mines 1 playtest pass.
 5. [ ] Later Classic stage parity, starting with Jungle.
-6. [ ] Remaining unimplemented Classic entity stubs.
+6. [ ] Remaining unimplemented Classic ent stubs.
 7. [ ] Final water and lava gameplay behavior.
    - Planning note added to `docs/water_fluid_simulation.md`.
    - Current code already refreshes `EffectId::InWater` from water/fluid overlap, but `InWater` has no gameplay modifiers yet.
 8. [ ] Expand transient light coverage.
 9. [x] Profile dense live-light scenes.
-   - Added `LightingStressTest` debug preset with adjustable moving colored entity-light count.
-   - Playtest result: acceptable performance with 1024 moving light entities; render stayed around `1ms`, present around `5ms`.
+   - Added `LightingStressTest` debug preset with adjustable moving colored ent-light count.
+   - Playtest result: acceptable performance with 1024 moving light ents; render stayed around `1ms`, present around `5ms`.
 10. [ ] Remove/update temporary fluid validation defaults and decide future optimization path.
 11. [ ] Refresh passive/effect modifier plan against current implementation.
 12. [ ] Retire or update stale `splk_mines_olmec_demo_checklist.md`.
 # Stagegen Validation Follow-Up
 
-- [ ] Make `--check-classic-quest-stagegen` deterministic/debuggable.
+- [ ] Make `--check-classic-quest-stagegen` det/debuggable.
   - Observed one transient `std::bad_alloc` during randomized classic stagegen
     validation after `classic_temple_1`; immediate rerun passed.
   - The check currently does not print or pin per-stage RNG seeds, so failures

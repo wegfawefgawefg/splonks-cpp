@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::lamp {
+namespace splonks::ents::lamp {
 
-extern const EntityArchetype kLampArchetype;
-extern const EntityArchetype kLampRedArchetype;
+extern const EntSpec kLampSpec;
+extern const EntSpec kLampRedSpec;
 
-} // namespace splonks::entities::lamp
+} // namespace splonks::ents::lamp

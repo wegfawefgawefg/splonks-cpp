@@ -1,6 +1,6 @@
 #include "network/net_progression.hpp"
 
-#include "network/net_entity_links.hpp"
+#include "network/net_ent_links.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "state.hpp"
 
@@ -25,8 +25,8 @@ void NotifyStageLoaded(State& state) {
     state.net_session.stage_seed = state.stage.generation_seed.value_or(MakeHostStageSeed(state));
     state.net_session.stage_instance_id += 1;
     ResetInputLockstepState(state);
-    state.net_session.ClearStageEntityLinks();
-    RegisterStageEntityLinks(state);
+    state.net_session.ClearStageEntLinks();
+    RegisterStageEntLinks(state);
 }
 
 } // namespace splonks::network

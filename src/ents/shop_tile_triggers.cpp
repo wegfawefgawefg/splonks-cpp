@@ -1,8 +1,8 @@
-#include "entities/shop_tile_triggers.hpp"
+#include "ents/shop_tile_triggers.hpp"
 
-#include "entities/shop.hpp"
+#include "ents/shop.hpp"
 
-namespace splonks::entities::shop {
+namespace splonks::ents::shop {
 
 namespace {
 
@@ -39,4 +39,4 @@ void OnShopVandalismTileDestroyed(
     DisturbShopByVid(trigger.target_vid, state, audio);
 }
 
-} // namespace splonks::entities::shop
+} // namespace splonks::ents::shop

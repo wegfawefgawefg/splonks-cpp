@@ -1,24 +1,24 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 
-namespace splonks::entities::gear_items {
+namespace splonks::ents::gear_items {
 
-extern const EntityArchetype kCapeArchetype;
-extern const EntityArchetype kGlovesArchetype;
-extern const EntityArchetype kSpectaclesArchetype;
-extern const EntityArchetype kMittArchetype;
-extern const EntityArchetype kPasteArchetype;
-extern const EntityArchetype kSpringShoesArchetype;
-extern const EntityArchetype kSpikeShoesArchetype;
-extern const EntityArchetype kBombBoxArchetype;
-extern const EntityArchetype kBombBagArchetype;
-extern const EntityArchetype kCompassArchetype;
-extern const EntityArchetype kParachuteArchetype;
-extern const EntityArchetype kRopePileArchetype;
+extern const EntSpec kCapeSpec;
+extern const EntSpec kGlovesSpec;
+extern const EntSpec kSpectaclesSpec;
+extern const EntSpec kMittSpec;
+extern const EntSpec kPasteSpec;
+extern const EntSpec kSpringShoesSpec;
+extern const EntSpec kSpikeShoesSpec;
+extern const EntSpec kBombBoxSpec;
+extern const EntSpec kBombBagSpec;
+extern const EntSpec kCompassSpec;
+extern const EntSpec kParachuteSpec;
+extern const EntSpec kRopePileSpec;
 
-void StepEquippedPassiveItems(std::size_t entity_idx, State& state, Graphics& graphics);
-void ClearEquippedPassiveItemVisuals(Entity& entity, State& state, const Graphics& graphics);
+void StepEquippedPassiveItems(std::size_t ent_idx, State& state, Graphics& graphics);
+void ClearEquippedPassiveItemVisuals(Ent& ent, State& state, const Graphics& graphics);
 
-} // namespace splonks::entities::gear_items
+} // namespace splonks::ents::gear_items

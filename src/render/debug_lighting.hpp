@@ -15,7 +15,7 @@ void RenderLightOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 );
 

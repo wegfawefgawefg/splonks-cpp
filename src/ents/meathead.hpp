@@ -1,19 +1,19 @@
 #pragma once
 
-#include "entity.hpp"
-#include "entity/archetype.hpp"
+#include "ent.hpp"
+#include "ent/spec.hpp"
 #include "state.hpp"
 
-namespace splonks::entities::meathead {
+namespace splonks::ents::meathead {
 
-extern const EntityArchetype kMeatheadArchetype;
-void MaybePreviewMeatheadPassive(const Entity& player, State& state);
+extern const EntSpec kMeatheadSpec;
+void MaybePreviewMeatheadPassive(const Ent& player, State& state);
 void OnMeatheadEffectHook(
-    Entity& owner,
+    Ent& owner,
     EffectInstance& effect,
     State& state,
     Audio* audio,
     const EffectHookContext& hook
 );
 
-} // namespace splonks::entities::meathead
+} // namespace splonks::ents::meathead

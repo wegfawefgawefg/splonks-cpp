@@ -3,10 +3,10 @@
 #include "audio_emitters.hpp"
 #include "inputs.hpp"
 #include "controls.hpp"
-#include "entities/common/common.hpp"
-#include "entities/basic_exit.hpp"
+#include "ents/common/common.hpp"
+#include "ents/basic_exit.hpp"
 #include "buying.hpp"
-#include "step_entities.hpp"
+#include "step_ents.hpp"
 #include "stage_progression.hpp"
 #include "stage_fluids.hpp"
 #include "stage_lighting.hpp"
@@ -111,12 +111,12 @@ float GetSimulationTickInterval(const State& state) {
     return kTimestep;
 }
 
-const Entity* GetLivingPlayerForSlot(const State& state, const PlayerSlot& slot) {
-    if (!slot.connected || !slot.entity_vid.has_value()) {
+const Ent* GetLivingPlayerForSlot(const State& state, const PlayerSlot& slot) {
+    if (!slot.connected || !slot.ent_vid.has_value()) {
         return nullptr;
     }
-    const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+    const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+    if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
         return nullptr;
     }
     return player;
@@ -124,7 +124,7 @@ const Entity* GetLivingPlayerForSlot(const State& state, const PlayerSlot& slot)
 
 std::optional<VID> FindLivingPlayerVidByPlayerId(const State& state, PlayerId player_id) {
     const PlayerSlot* const slot = state.players.Find(player_id);
-    const Entity* const player = slot != nullptr ? GetLivingPlayerForSlot(state, *slot) : nullptr;
+    const Ent* const player = slot != nullptr ? GetLivingPlayerForSlot(state, *slot) : nullptr;
     return player != nullptr ? std::optional<VID>(player->vid) : std::nullopt;
 }
 
@@ -170,9 +170,9 @@ void UpdateSpectatorTarget(State& state) {
     }
 
     if (const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state)) {
-        const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid);
+        const Ent* const player = state.ents.GetEnt(*primary_player_vid);
         if (player != nullptr && player->active &&
-            player->condition != EntityCondition::Dead) {
+            player->condition != EntCondition::Dead) {
             state.spectator_target_player_id.reset();
             return;
         }
@@ -197,72 +197,72 @@ std::optional<VID> FindCameraControlledPlayerVid(const State& state) {
     }
 
     if (const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state)) {
-        const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid);
+        const Ent* const player = state.ents.GetEnt(*primary_player_vid);
         if (player != nullptr && player->active &&
-            player->condition != EntityCondition::Dead) {
+            player->condition != EntCondition::Dead) {
             return primary_player_vid;
         }
     }
     return FindFirstConnectedLivingPlayerVid(state);
 }
 
-void UpdateControlledEntity(State& state) {
-    if (!state.controlled_entity_vid.has_value()) {
-        state.controlled_entity_vid = FindCameraControlledPlayerVid(state);
+void UpdateControlledEnt(State& state) {
+    if (!state.controlled_ent_vid.has_value()) {
+        state.controlled_ent_vid = FindCameraControlledPlayerVid(state);
         return;
     }
 
-    const Entity* controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid);
+    const Ent* controlled = state.ents.GetEnt(*state.controlled_ent_vid);
     const bool invalid_controlled =
         controlled == nullptr || !controlled->active ||
-        controlled->condition == EntityCondition::Dead;
+        controlled->condition == EntCondition::Dead;
     if (!invalid_controlled) {
         return;
     }
 
     if (const std::optional<VID> camera_player_vid = FindCameraControlledPlayerVid(state)) {
-        const Entity* player = state.entity_manager.GetEntity(*camera_player_vid);
+        const Ent* player = state.ents.GetEnt(*camera_player_vid);
         if (player != nullptr && player->active &&
-            player->condition != EntityCondition::Dead) {
-            state.controlled_entity_vid = camera_player_vid;
+            player->condition != EntCondition::Dead) {
+            state.controlled_ent_vid = camera_player_vid;
             return;
         }
     }
 
-    state.controlled_entity_vid.reset();
+    state.controlled_ent_vid.reset();
 }
 
 void RefreshPlayableCharacterLamp(State& state) {
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || !IsPlayerLikeEntityType(entity.type_)) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active || !IsPlayerLikeEntType(ent.type_)) {
             continue;
         }
 
         bool emits_lamp =
-            state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid;
+            state.controlled_ent_vid.has_value() && ent.vid == *state.controlled_ent_vid;
         if (state.net_session.input_lockstep_enabled) {
-            const PlayerSlot* const slot = state.players.FindByEntityVid(entity.vid);
+            const PlayerSlot* const slot = state.players.FindByEntVid(ent.vid);
             emits_lamp = slot != nullptr && slot->connected;
         }
 
-        if (!emits_lamp || entity.condition == EntityCondition::Dead) {
-            entity.light_strength = 0.0F;
-            entity.light_radius = 0;
-            entity.light_color = Color3::White();
+        if (!emits_lamp || ent.condition == EntCondition::Dead) {
+            ent.light_strength = 0.0F;
+            ent.light_radius = 0;
+            ent.light_color = Color3::White();
             continue;
         }
 
-        entity.light_strength = kPlayerLampLightStrength *
+        ent.light_strength = kPlayerLampLightStrength *
                                 std::max(state.settings.post_process.player_lamp_strength, 0.0F);
-        entity.light_radius = kPlayerLampLightRadius;
-        entity.light_color = Color3::White();
+        ent.light_radius = kPlayerLampLightRadius;
+        ent.light_color = Color3::White();
     }
 }
 
 Vec2 GetDefaultGameplayAudioListenerWorldPos(const State& state, const Graphics& graphics) {
-    if (state.controlled_entity_vid.has_value()) {
-        if (const Entity* const controlled = state.entity_manager.GetEntity(*state.controlled_entity_vid)) {
-            return entities::common::GetVisualCenterForEntity(
+    if (state.controlled_ent_vid.has_value()) {
+        if (const Ent* const controlled = state.ents.GetEnt(*state.controlled_ent_vid)) {
+            return ents::common::GetVisualCenterForEnt(
                 *controlled,
                 graphics,
                 controlled->GetCenter()
@@ -285,8 +285,8 @@ bool ShouldEnterGameOver(const State& state, std::optional<VID> primary_player_v
         return false;
     }
 
-    const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid);
-    return player == nullptr || !player->active || player->condition == EntityCondition::Dead;
+    const Ent* const player = state.ents.GetEnt(*primary_player_vid);
+    return player == nullptr || !player->active || player->condition == EntCondition::Dead;
 }
 
 void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, float dt) {
@@ -296,12 +296,12 @@ void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, floa
             continue;
         }
 
-        Entity* const entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
-        if (entity == nullptr || !entity->active || entity->control_logic == nullptr) {
+        Ent* const ent = state.ents.GetEntMut(*slot.ent_vid);
+        if (ent == nullptr || !ent->active || ent->control_logic == nullptr) {
             continue;
         }
 
-        entity->control_logic(entity->vid.id, state, graphics, audio, dt);
+        ent->control_logic(ent->vid.id, state, graphics, audio, dt);
         stepped_any_player_slot = true;
     }
 
@@ -309,8 +309,8 @@ void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, floa
         return;
     }
 
-    if (state.controlled_entity_vid.has_value()) {
-        if (Entity* const controlled = state.entity_manager.GetEntityMut(*state.controlled_entity_vid)) {
+    if (state.controlled_ent_vid.has_value()) {
+        if (Ent* const controlled = state.ents.GetEntMut(*state.controlled_ent_vid)) {
             if (controlled->active && controlled->control_logic != nullptr) {
                 controlled->control_logic(controlled->vid.id, state, graphics, audio, dt);
             }
@@ -449,49 +449,49 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepTransientLights(state);
     LatchPlayingInputsForTick(state);
     UpdateSpectatorTarget(state);
-    UpdateControlledEntity(state);
+    UpdateControlledEnt(state);
     RefreshPlayableCharacterLamp(state);
     StepDebugLocalPlayerBots(state);
     StepPlayerSlotControls(state, graphics, audio, dt);
-    state.contact.ClearEntityContactDispatchesThisTick();
+    state.contact.ClearEntContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
-    state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
+    state.contact.StepProjBodyImpactCooldowns(state.stage_frame);
     state.ClearWorldPrompts();
     state.ClearInteractClaims();
-    state.entity_tools.Step();
+    state.ent_tools.Step();
     StepStageFluids(state);
     state.RebuildSid(graphics);
     state.gameplay_camera_anchor_world_pos = graphics.camera.target;
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
-    StepEntities(state, audio, graphics, dt);
+    StepEnts(state, audio, graphics, dt);
     network::StepNetworkLobby(state, graphics);
     UpdateAudioEmitters(state, audio, graphics);
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
-        AttenuateEntityShake(entity, kShakeAttenuationRate);
+        AttenuateEntShake(ent, kShakeAttenuationRate);
     }
     state.stage.AttenuateTileShake(kShakeAttenuationRate);
     AddBuyPromptsForPlayer(state, graphics);
     const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state);
     if (primary_player_vid.has_value() && state.playing_inputs.equip_button.pressed &&
-        !state.IsInteractClaimedForEntity(*primary_player_vid)) {
+        !state.IsInteractClaimedForEnt(*primary_player_vid)) {
         const std::optional<std::size_t> buyable_idx =
-            FindOverlappingBuyableEntityIdx(state, graphics, primary_player_vid->id);
+            FindOverlappingBuyableEntIdx(state, graphics, primary_player_vid->id);
         if (buyable_idx.has_value()) {
-            (void)world_ops::TryApplyInteractEntity(
+            (void)world_ops::TryApplyInteractEnt(
                 *primary_player_vid,
-                state.entity_manager.entities[*buyable_idx].vid,
+                state.ents.ents[*buyable_idx].vid,
                 state,
                 graphics,
                 audio
             );
         }
     }
-    state.particles.Step(graphics.frame_data_db, dt);
+    state.particles.Step(graphics.aframe_db, dt);
 
     if (state.net_session.role != network::NetRole::Offline &&
         state.multiplayer_respawn_mode == MultiplayerRespawnMode::RespawnAtEntrance) {
@@ -507,10 +507,10 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     } else if (lost) {
         Vec2 game_over_pos = state.gameplay_camera_anchor_world_pos.value_or(graphics.camera.target);
         if (primary_player_vid.has_value()) {
-            if (const Entity* const player = state.entity_manager.GetEntity(*primary_player_vid)) {
+            if (const Ent* const player = state.ents.GetEnt(*primary_player_vid)) {
                 if (player->active) {
-                    game_over_pos = entities::common::GetVisualCenterForEntity(*player, graphics, player->GetCenter());
-                    state.controlled_entity_vid = primary_player_vid;
+                    game_over_pos = ents::common::GetVisualCenterForEnt(*player, graphics, player->GetCenter());
+                    state.controlled_ent_vid = primary_player_vid;
                 }
             }
         }
@@ -571,32 +571,32 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     StepTransientLights(state);
     LatchPlayingInputsForTick(state);
     UpdateSpectatorTarget(state);
-    UpdateControlledEntity(state);
+    UpdateControlledEnt(state);
     RefreshPlayableCharacterLamp(state);
     StepDebugLocalPlayerBots(state);
     StepPlayerSlotControls(state, graphics, audio, dt);
-    state.contact.ClearEntityContactDispatchesThisTick();
+    state.contact.ClearEntContactDispatchesThisTick();
     state.contact.StepContactCooldowns(state.stage_frame);
     state.contact.StepInteractionCooldowns(state.stage_frame);
-    state.contact.StepProjectileBodyImpactCooldowns(state.stage_frame);
+    state.contact.StepProjBodyImpactCooldowns(state.stage_frame);
     state.ClearWorldPrompts();
     state.ClearInteractClaims();
-    state.entity_tools.Step();
+    state.ent_tools.Step();
     StepStageFluids(state);
     state.RebuildSid(graphics);
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
-    StepEntities(state, audio, graphics, dt);
+    StepEnts(state, audio, graphics, dt);
     network::StepNetworkLobby(state, graphics);
     UpdateAudioEmitters(state, audio, graphics);
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
-        AttenuateEntityShake(entity, kShakeAttenuationRate);
+        AttenuateEntShake(ent, kShakeAttenuationRate);
     }
     state.stage.AttenuateTileShake(kShakeAttenuationRate);
-    state.particles.Step(graphics.frame_data_db, dt);
+    state.particles.Step(graphics.aframe_db, dt);
     state.frame += 1;
     state.stage_frame += 1;
     state.scene_frame += 1;

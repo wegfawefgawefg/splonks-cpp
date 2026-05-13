@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::dice {
+namespace splonks::ents::dice {
 
-extern const EntityArchetype kDiceArchetype;
+extern const EntSpec kDiceSpec;
 
-} // namespace splonks::entities::dice
+} // namespace splonks::ents::dice

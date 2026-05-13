@@ -64,11 +64,11 @@ struct GameplaySnapshot {
     PlayerRegistry players;
     std::uint32_t frame_pause = 0;
     DebugLevelConfig debug_level;
-    EntityManager entity_manager;
+    EntPool ents;
     Stage stage;
-    std::optional<VID> controlled_entity_vid;
+    std::optional<VID> controlled_ent_vid;
     std::optional<VID> mouse_trailer_vid;
-    std::vector<EntityToolState> entity_tool_states;
+    std::vector<EntToolState> ent_tool_states;
     Vec2 play_cam_pos;
 };
 
@@ -78,8 +78,8 @@ struct DebugPlayback {
     bool playback_window_visible = true;
     bool level_window_visible = true;
     bool border_window_visible = true;
-    bool entity_inspector_visible = true;
-    bool entity_annotations_visible = false;
+    bool ent_inspector_visible = true;
+    bool ent_annotations_visible = false;
     bool shake_brush_window_visible = false;
     bool audio_brush_window_visible = false;
     bool tile_brush_window_visible = false;
@@ -103,16 +103,16 @@ struct DebugPlayback {
     std::deque<GameplaySnapshot> recorded_snapshots;
     std::optional<GameplaySnapshot> live_resume_snapshot;
     std::size_t playback_index = 0;
-    std::size_t selected_entity_id = 0;
-    EntityType spawn_entity_type = EntityType::JetPack;
+    std::size_t selected_ent_id = 0;
+    EntType spawn_ent_type = EntType::JetPack;
     std::array<char, 64> spawn_search{};
     bool spawn_center_on_selected = false;
     bool spawn_held_by_player = false;
     bool pending_spawn_at_mouse = false;
     double pending_spawn_at_mouse_until = 0.0;
     std::string spawn_status;
-    EntityType character_swap_entity_type = EntityType::Player;
-    EntityType default_spawn_entity_type = EntityType::Player;
+    EntType character_swap_ent_type = EntType::Player;
+    EntType default_spawn_ent_type = EntType::Player;
     std::array<char, 64> character_swap_search{};
     bool default_spawn_enabled = false;
     bool character_swap_fresh = true;
@@ -125,13 +125,13 @@ struct DebugPlayback {
     std::string io_status;
     VID audio_brush_loop_handle = kInvalidAudioInstanceVID;
     std::optional<AudioAssetId> audio_brush_loop_audio_asset_id;
-    bool frame_data_auto_reload = false;
+    bool aframe_auto_reload = false;
     int quest_stage_index = 0;
     bool quest_stage_preserve_player_state = false;
     bool quest_stage_use_seed = false;
     int quest_stage_seed = 1;
     std::string quest_stage_status;
-    std::string frame_data_reload_status;
+    std::string aframe_reload_status;
     int network_host_port = 42424;
     int network_join_port = 42424;
     std::array<char, 64> network_join_host{};
@@ -159,7 +159,7 @@ void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphi
 bool ConvertRecordingFileToText(
     const std::string& input_path,
     const std::string& output_path,
-    const FrameDataDb& frame_data_db,
+    const AFrameDb& aframe_db,
     std::string* status_out
 );
 void RunSimulationWithDebugControls(

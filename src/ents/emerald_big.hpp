@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::emerald_big {
+namespace splonks::ents::emerald_big {
 
-extern const EntityArchetype kEmeraldBigArchetype;
+extern const EntSpec kEmeraldBigSpec;
 
-} // namespace splonks::entities::emerald_big
+} // namespace splonks::ents::emerald_big

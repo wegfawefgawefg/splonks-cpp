@@ -1,12 +1,12 @@
 #include "tools/throw_rope.hpp"
 
 #include "audio.hpp"
-#include "entities/common/common.hpp"
-#include "entity.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "entity/manager.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "ent.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "ent/manager.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 
@@ -19,7 +19,7 @@ namespace splonks::tools::throw_rope {
 namespace {
 
 bool UseThrowRopeTool(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -28,22 +28,22 @@ bool UseThrowRopeTool(
     ToolThrowVelocityBuilder build_throw_velocity,
     std::optional<Vec2> throw_velocity_override
 ) {
-    const VID user_vid = state.entity_manager.entities[entity_idx].vid;
-    ToolSlot* const tool_slot = state.entity_tools.FindToolSlotMut(user_vid, tool_slot_index);
+    const VID user_vid = state.ents.ents[ent_idx].vid;
+    ToolSlot* const tool_slot = state.ent_tools.FindToolSlotMut(user_vid, tool_slot_index);
     if (tool_slot == nullptr) {
         return false;
     }
 
-    return entities::common::TrySpawnAndThrowEntityForToolUse(
-        entity_idx,
+    return ents::common::TrySpawnAndThrowEntForToolUse(
+        ent_idx,
         state,
         graphics,
         audio,
         *tool_slot,
         trigger_pressed,
-        kThrowRopeToolArchetype.use_cooldown_frames,
-        entities::common::kThrownByImmunityDuration * 2,
-        [](Entity& spawned_entity) { SetEntityAs(spawned_entity, EntityType::Rope); },
+        kThrowRopeToolSpec.use_cooldown_frames,
+        ents::common::kThrownByImmunityDuration * 2,
+        [](Ent& spawned_ent) { SetEntAs(spawned_ent, EntType::Rope); },
         build_throw_velocity,
         throw_velocity_override
     );
@@ -51,10 +51,10 @@ bool UseThrowRopeTool(
 
 } // namespace
 
-extern const ToolArchetype kThrowRopeToolArchetype{
+extern const ToolSpec kThrowRopeToolSpec{
     .kind = ToolKind::ThrowRope,
     .debug_name = "ThrowRope",
-    .icon_animation_id = frame_data_ids::RopeUiIcon,
+    .icon_anim_id = aframe_ids::RopeUiIcon,
     .use_cooldown_frames = 8,
     .preferred_slot_index = 1,
     .use_fn = UseThrowRopeTool,

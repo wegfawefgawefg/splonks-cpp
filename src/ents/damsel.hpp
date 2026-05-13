@@ -1,11 +1,11 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::damsel {
+namespace splonks::ents::damsel {
 
-void StepEntityLogicAsDamsel(
-    std::size_t entity_idx,
+void StepEntLogicAsDamsel(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -13,13 +13,13 @@ void StepEntityLogicAsDamsel(
 );
 
 bool BuyDamsel(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     std::size_t buyer_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 );
 
-extern const EntityArchetype kDamselArchetype;
+extern const EntSpec kDamselSpec;
 
-} // namespace splonks::entities::damsel
+} // namespace splonks::ents::damsel

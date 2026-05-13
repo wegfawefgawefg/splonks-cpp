@@ -11,12 +11,12 @@ namespace {
 
 } // namespace
 
-void SpawnDamageEffectAnimationBurst(FrameDataId animation_id, const Vec2& center, State& state) {
+void SpawnDamageEffectAnimBurst(AFrameId anim_id, const Vec2& center, State& state) {
     constexpr float kVelRange = 8.0F;
 
     for (int i = 0; i < 16; ++i) {
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(animation_id);
+        effect.aframe_animator = AFrameAnimator::New(anim_id);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = 16;
         effect.pos = center;
@@ -32,7 +32,7 @@ void SpawnDamageEffectAnimationBurst(FrameDataId animation_id, const Vec2& cente
 }
 
 void SpawnBreakawayContainerShards(const Vec2& center, State& state) {
-    SpawnDamageEffectAnimationBurst(frame_data_ids::LittleBrownShard, center, state);
+    SpawnDamageEffectAnimBurst(aframe_ids::LittleBrownShard, center, state);
 }
 
 } // namespace splonks

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::hawkman {
+namespace splonks::ents::hawkman {
 
-extern const EntityArchetype kHawkmanArchetype;
+extern const EntSpec kHawkmanSpec;
 
-} // namespace splonks::entities::hawkman
+} // namespace splonks::ents::hawkman

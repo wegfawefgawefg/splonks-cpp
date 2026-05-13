@@ -1,11 +1,11 @@
-#include "entity_tool_inventory.hpp"
+#include "ent_tool_inventory.hpp"
 
 #include <algorithm>
 
 namespace splonks {
 
-void EntityToolInventoryState::Step() {
-    for (EntityToolState& tool_state : tool_states) {
+void EntToolInventoryState::Step() {
+    for (EntToolState& tool_state : tool_states) {
         for (ToolSlot& slot : tool_state.slots) {
             if (!slot.active) {
                 continue;
@@ -17,8 +17,8 @@ void EntityToolInventoryState::Step() {
     }
 }
 
-EntityToolState* EntityToolInventoryState::FindEntityToolStateMut(const VID& owner_vid) {
-    for (EntityToolState& tool_state : tool_states) {
+EntToolState* EntToolInventoryState::FindEntToolStateMut(const VID& owner_vid) {
+    for (EntToolState& tool_state : tool_states) {
         if (tool_state.owner_vid == owner_vid) {
             return &tool_state;
         }
@@ -26,8 +26,8 @@ EntityToolState* EntityToolInventoryState::FindEntityToolStateMut(const VID& own
     return nullptr;
 }
 
-const EntityToolState* EntityToolInventoryState::FindEntityToolState(const VID& owner_vid) const {
-    for (const EntityToolState& tool_state : tool_states) {
+const EntToolState* EntToolInventoryState::FindEntToolState(const VID& owner_vid) const {
+    for (const EntToolState& tool_state : tool_states) {
         if (tool_state.owner_vid == owner_vid) {
             return &tool_state;
         }
@@ -35,33 +35,33 @@ const EntityToolState* EntityToolInventoryState::FindEntityToolState(const VID& 
     return nullptr;
 }
 
-ToolSlot* EntityToolInventoryState::FindToolSlotMut(const VID& owner_vid, std::size_t slot_index) {
-    EntityToolState* const tool_state = FindEntityToolStateMut(owner_vid);
+ToolSlot* EntToolInventoryState::FindToolSlotMut(const VID& owner_vid, std::size_t slot_index) {
+    EntToolState* const tool_state = FindEntToolStateMut(owner_vid);
     if (tool_state == nullptr || slot_index >= tool_state->slots.size()) {
         return nullptr;
     }
     return &tool_state->slots[slot_index];
 }
 
-const ToolSlot* EntityToolInventoryState::FindToolSlot(const VID& owner_vid, std::size_t slot_index) const {
-    const EntityToolState* const tool_state = FindEntityToolState(owner_vid);
+const ToolSlot* EntToolInventoryState::FindToolSlot(const VID& owner_vid, std::size_t slot_index) const {
+    const EntToolState* const tool_state = FindEntToolState(owner_vid);
     if (tool_state == nullptr || slot_index >= tool_state->slots.size()) {
         return nullptr;
     }
     return &tool_state->slots[slot_index];
 }
 
-ToolSlot& EntityToolInventoryState::EnsureToolSlot(const VID& owner_vid, std::size_t slot_index) {
-    if (EntityToolState* existing = FindEntityToolStateMut(owner_vid)) {
+ToolSlot& EntToolInventoryState::EnsureToolSlot(const VID& owner_vid, std::size_t slot_index) {
+    if (EntToolState* existing = FindEntToolStateMut(owner_vid)) {
         return existing->slots[slot_index];
     }
-    EntityToolState tool_state{};
+    EntToolState tool_state{};
     tool_state.owner_vid = owner_vid;
     tool_states.push_back(tool_state);
     return tool_states.back().slots[slot_index];
 }
 
-bool EntityToolInventoryState::AddToolCount(
+bool EntToolInventoryState::AddToolCount(
     const VID& owner_vid,
     ToolKind kind,
     std::uint32_t amount
@@ -70,9 +70,9 @@ bool EntityToolInventoryState::AddToolCount(
         return false;
     }
 
-    EntityToolState* tool_state = FindEntityToolStateMut(owner_vid);
+    EntToolState* tool_state = FindEntToolStateMut(owner_vid);
     if (tool_state == nullptr) {
-        EntityToolState new_tool_state{};
+        EntToolState new_tool_state{};
         new_tool_state.owner_vid = owner_vid;
         tool_states.push_back(new_tool_state);
         tool_state = &tool_states.back();
@@ -99,7 +99,7 @@ bool EntityToolInventoryState::AddToolCount(
     }
 
     if (slot == nullptr) {
-        const std::optional<std::size_t> preferred_slot_index = GetToolArchetype(kind).preferred_slot_index;
+        const std::optional<std::size_t> preferred_slot_index = GetToolSpec(kind).preferred_slot_index;
         if (preferred_slot_index.has_value() && *preferred_slot_index < tool_state->slots.size()) {
             ToolSlot& preferred_slot = tool_state->slots[*preferred_slot_index];
             if (!preferred_slot.active) {
@@ -134,10 +134,10 @@ bool EntityToolInventoryState::AddToolCount(
     return true;
 }
 
-bool EntityToolInventoryState::UpgradeBombsToSticky(const VID& owner_vid) {
-    EntityToolState* tool_state = FindEntityToolStateMut(owner_vid);
+bool EntToolInventoryState::UpgradeBombsToSticky(const VID& owner_vid) {
+    EntToolState* tool_state = FindEntToolStateMut(owner_vid);
     if (tool_state == nullptr) {
-        EntityToolState new_tool_state{};
+        EntToolState new_tool_state{};
         new_tool_state.owner_vid = owner_vid;
         tool_states.push_back(new_tool_state);
         tool_state = &tool_states.back();
@@ -157,7 +157,7 @@ bool EntityToolInventoryState::UpgradeBombsToSticky(const VID& owner_vid) {
     }
 
     const std::optional<std::size_t> preferred_slot_index =
-        GetToolArchetype(ToolKind::ThrowStickyBomb).preferred_slot_index;
+        GetToolSpec(ToolKind::ThrowStickyBomb).preferred_slot_index;
     if (preferred_slot_index.has_value() && *preferred_slot_index < tool_state->slots.size()) {
         ToolSlot& preferred_slot = tool_state->slots[*preferred_slot_index];
         if (!preferred_slot.active) {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::sac_altar_topper {
+namespace splonks::ents::sac_altar_topper {
 
-extern const EntityArchetype kSacAltarTopperArchetype;
+extern const EntSpec kSacAltarTopperSpec;
 
-} // namespace splonks::entities::sac_altar_topper
+} // namespace splonks::ents::sac_altar_topper

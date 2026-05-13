@@ -15,8 +15,8 @@ multiplayer gates.
 
 - [x] Removed the old internal gameplay mutation queue.
 - [x] Routed durable gameplay mutations through canonical `world_ops` seams.
-- [x] Replaced peer-authored durable mutations with generic coordinator action
-  requests and coordinator-authored result messages.
+- [x] Replaced peer-authored durable mutations with generic host action
+  requests and host-authored result messages.
 - [x] Added typed action payloads instead of a wide optional-field action bag.
 - [x] Added compact variable-length action request packets.
 - [x] Split networking protocol files by broad lane.
@@ -35,7 +35,7 @@ Track these in `docs/multiplayer_terraria_parity_checklist.md`, not by adding a
 second competing checklist here:
 
 - Debug/admin command lane for multiplayer-safe editor/admin actions.
-- Presentation coverage audit for cosmetic feedback such as sounds, particles,
+- Pres coverage audit for cosmetic feedback such as sounds, particles,
   weapon effects, explosions, and teleports.
 - Expanded headless/fake-transport scenarios for multi-peer runs, shops, water,
   bombs/explosions, and fuzzer presets.

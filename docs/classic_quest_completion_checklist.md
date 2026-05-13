@@ -9,17 +9,17 @@ Check a stage only when all applicable items are true:
 
 - [ ] Room pools exist, load without fallback, and cover every room code the stage can request.
 - [ ] Glyph mapping is complete for the source room data and never leaves accidental voids.
-- [ ] Ambient entity pass matches the intended Classic/HD enemy/item mix for that area.
+- [ ] Ambient ent pass matches the intended Classic/HD enemy/item mix for that area.
 - [ ] Special layout events and branch exits are implemented with correct odds and route rules.
 - [ ] Area hazards, fluids, traps, treasure, shops, altars, entrances, and exits behave correctly.
-- [ ] Required entities have real behavior, not only `NoSprite` unimplemented archetype stubs.
+- [ ] Required ents have real behavior, not only `NoSprite` unimplemented spec stubs.
 - [ ] Debug reroll/check command can generate the stage repeatedly without hard errors.
 - [ ] Manual playtest finds a valid entrance-to-exit route and no obvious generation blockers.
 
 ## Trigger Notes
 
 - Exact authored tile destruction should use `StageTileTrigger`. Shop wall/vault vandalism now follows this path and emits stagegen annotations on each trigger tile.
-- Entity-owned `on_area_enter`, `on_area_exit`, and `on_area_tile_changed` callbacks remain useful for moving/dynamic detectors.
+- Ent-owned `on_area_enter`, `on_area_exit`, and `on_area_tile_changed` callbacks remain useful for moving/dynamic detectors.
 - Future tile-location enter/exit triggers may be worth adding if a feature needs exact authored tile regions for pressure plates, tile-bound prompts, camera/music zones, fluid volumes, or shop threshold lines. Do not add that system until a real use case needs it.
 
 ## Main Route
@@ -46,8 +46,8 @@ Check a stage only when all applicable items are true:
   - Void/backwall gaps are not caused by missing glyph rules; any remaining visual gaps are room-template or tile-art bugs, not unmapped glyphs.
 
 - [x] `PushBlock` is implemented or intentionally replaced.
-  - Classic glyph `4` intentionally spawns our implemented `block` entity.
-  - Removed the old unimplemented `PushBlock` placeholder type/archetype.
+  - Classic glyph `4` intentionally spawns our implemented `block` ent.
+  - Removed the old unimplemented `PushBlock` placeholder type/spec.
 
 - [x] `Bones` floor clutter is implemented or intentionally replaced.
   - ClassicHD has real inert `oBones` floor clutter plus loose `oSkull`; `oFakeBones` is the separate skeleton ambush.
@@ -55,13 +55,13 @@ Check a stage only when all applicable items are true:
   - `AddMinesTreasure` already uses ClassicHD's `bonesChance = 0` baseline, which still permits normal low-frequency bones spawns.
 
 - [x] Mines ambient enemy odds are audited.
-  - Matched against `SpelunkyClassicHD/scripts/scrEntityGen/scrEntityGen.gml`.
+  - Matched against `SpelunkyClassicHD/scripts/scrEntGen/scrEntGen.gml`.
   - Ceiling checks match ClassicHD's open-below requirements and now avoid spawning ambient ceiling enemies on occupied spawn points.
   - Odds match ClassicHD: giant spider level pre-roll `1/6`, giant spider ceiling placement `1/40`, dark lamp `1/60`, dark scarab `1/40`, bat `1/60`, spider hang `1/80`, snake `1/60`, caveman `1/800`.
   - Cobra is not part of ClassicHD ambient Mines generation; our cobra remains only as an intentional HD-flavored room glyph roll on Mines `S`, not in ambient spawning.
 
 - [ ] HD Mines enemy/content additions are implemented.
-  - [ ] `Scorpion` exists as a real entity and can appear in Mines with the intended HD/Classic odds.
+  - [ ] `Scorpion` exists as a real ent and can appear in Mines with the intended HD/Classic odds.
   - [ ] `Camera` exists as a usable item/weapon and appears in appropriate loot/shop pools.
   - [ ] `Ghost` exists as the real Spelunky ghost pressure system, not the old `GhostBall`.
     - Needs timer spawn, instant-kill contact, Crystal Skull trigger, altar-curse trigger, and gem-to-diamond conversion behavior.
@@ -73,7 +73,7 @@ Check a stage only when all applicable items are true:
   - Tunnel rolls match order and odds: cobweb `1/60` or `1/10` near giant spider, gold `1/4`, gold stack `1/8`, skeleton/bones `1/(80 - level)`, gems `1/8`, `1/9`, `1/10`.
   - Normal floor rolls match: gold `1/40`, gold stack `1/50`, skeleton/bones `1/(140 - 2*level)`.
   - Classic `oCrate` is intentionally represented by our implemented `Box`; box spawn placement is size-aware so it does not break on initial physics correction.
-  - Push-block side support is represented by spawned `block` entities, matching ClassicHD's `oBlock` side-support checks.
+  - Push-block side support is represented by spawned `block` ents, matching ClassicHD's `oBlock` side-support checks.
   - Underground embedded item odds are tracked by the separate embedded treasure checkbox below.
 
 - [x] Embedded treasure odds are audited.
@@ -109,7 +109,7 @@ Check a stage only when all applicable items are true:
   - Vaults are enabled on Mines 1-2+, Jungle, Ice Caves, and Temple.
   - Vaults are intentionally disabled for Mines 1-1, Black Market, Haunted Castle, City of Gold, and Olmec's Lair.
   - Vault rooms emit an invisible disturbed `Shop` area, an owned hostile shopkeeper, and two chests.
-  - Vault walls use a dedicated glyph that rolls `1/4` into a pushable `block` entity and otherwise resolves to the stage's themed shop wall tile.
+  - Vault walls use a dedicated glyph that rolls `1/4` into a pushable `block` ent and otherwise resolves to the stage's themed shop wall tile.
 
 - [x] Idol/tiki/boulder path is audited.
   - Matched Mines idol spawn constraints against ClassicHD `scrRoomGen`: side-room only, not bottom room row, one idol room max, and `1/10` sequential roll across eligible side rooms.
@@ -118,9 +118,9 @@ Check a stage only when all applicable items are true:
   - Tiki/boulder runtime behavior exists: idol movement disturbs the tiki head, plays windup, spawns a boulder, and uses the current boulder rolling/shake/tile-break behavior.
 
 - [x] Dart/arrow trap generation and behavior is audited.
-  - `arrow_trap_conversion` turns eligible `Block` spawns into tile-sized impassable `ArrowTrap` entities with left/right facing.
-  - ClassicHD trap sensor behavior was matched: horizontal strip from the trap face toward the first solid, capped at `96 px`, minimum `32 px`, one-shot fire on a moving entity in the strip.
-  - `Arrow` is now a normal content entity with projectile damage, gravity, tile sticking, and entity contact cleanup.
+  - `arrow_trap_conversion` turns eligible `Block` spawns into tile-sized impassable `ArrowTrap` ents with left/right facing.
+  - ClassicHD trap sensor behavior was matched: horizontal strip from the trap face toward the first solid, capped at `96 px`, minimum `32 px`, one-shot fire on a moving ent in the strip.
+  - `Arrow` is now a normal content ent with proj damage, gravity, tile sticking, and ent contact cleanup.
 
 - [ ] Mines trap/hazard set is complete.
   - [x] Spikes behave correctly with fall/contact edge cases and spike shoes.
@@ -134,10 +134,10 @@ Check a stage only when all applicable items are true:
   - Empirical sample with `build/splonks-cpp --sample-classic-mines-altars 1000`: `classic_mines_1` `0/1000`, `classic_mines_2` `225/1000`, `classic_mines_3` `269/1000`, `classic_mines_4` `275/1000`.
   - The altar room is now a dedicated `altar` pool selected by the layout pass, not a normal side-room template with equal weight.
   - Generated `x` glyphs spawn linked `SacAltar` left/right halves plus a `SacAltarTopper`; authored spawn-link resolution gives generated altars the same owner/topper relationship used by the altar test room.
-  - Sacrifice runtime is content-owned by `sac_altar.cpp`: only the owner left half consumes grounded eligible victims, awards run-level favor, plays sacrifice effects/audio, triggers the topper sacrifice animation, and grants configured reward tiers.
+  - Sacrifice runtime is content-owned by `sac_altar.cpp`: only the owner left half consumes grounded eligible victims, awards run-level favor, plays sacrifice effects/audio, triggers the topper sacrifice anim, and grants configured reward tiers.
 
 - [x] Entrances/exits are audited.
-  - Classic glyph `9` matches the intended split: start rooms leave one `Entrance` tile for player placement; end rooms spawn one `BasicExit` entity and leave air under it.
+  - Classic glyph `9` matches the intended split: start rooms leave one `Entrance` tile for player placement; end rooms spawn one `BasicExit` ent and leave air under it.
   - `convert_exit_tiles` remains as a safety pass for legacy `Exit` tiles, but normal Classic room glyph resolution already emits `BasicExit` spawns directly.
   - Runtime exit behavior is owned by `BasicExit`: overlap prompt, RB interaction, route permission check, and transition queueing.
   - Route data is owned by quest/stage data; `classic_mines_1 -> 2 -> 3 -> 4 -> classic_jungle_1` is declared in `assets/quests/classic/quest.yaml`.
@@ -159,14 +159,14 @@ Check a stage only when all applicable items are true:
   - [ ] Stomp damage and stomp immunity are consistent across enemies, props, and carried/thrown items.
     - Current details: stomp requires `can_stomp`, normal condition, downward velocity, not held, and not hanging; targets require `can_be_stomped`, non-impassable, collidable, normal condition, and not hanging.
     - Base stomp damage is `1`; spike shoes raise stomp damage through the effect modifier path.
-    - Fixed in current pass: generated chest/key chest placement no longer starts half embedded, and thrown chest/key chest projectile contact now applies `1` damage.
-    - Remaining audit: verify every intended prop/item/enemy archetype has correct `can_be_stomped`/`can_stomp` flags.
+    - Fixed in current pass: generated chest/key chest placement no longer starts half embedded, and thrown chest/key chest proj contact now applies `1` damage.
+    - Remaining audit: verify every intended prop/item/enemy spec has correct `can_be_stomped`/`can_stomp` flags.
   - [x] Crush/telefrag/explosion deaths still route through normal death callbacks so favor, meathead, and effects work.
 
 - [x] Spelunky player physics are audited.
   - [x] Run acceleration, max speed, ground friction, and turnaround feel match the target Spelunky reference.
   - [x] Jump impulse, variable jump hold, gravity, max fall speed, and coyote timing are tuned.
-  - [x] Ladder/rope attach, detach, top latch, climb speed, and climb animation are correct.
+  - [x] Ladder/rope attach, detach, top latch, climb speed, and climb anim are correct.
     - Rope deployment extends from the lowest connected climbable tile when it hits an existing rope/ladder chain.
   - [x] Ledge/wall hang probes, glove wall hang, and hang release behavior are correct.
     - Auto corner grab and glove wall hang share capture logic without forcing glove wall hang every frame.
@@ -181,7 +181,7 @@ Check a stage only when all applicable items are true:
     - Splonks: gloves are a passive item routed through the shared hang path, require falling plus directional wall input, zero vertical motion while hanging, and use the same 10-frame glove drop cooldown.
   - [x] `Spectacles`: embedded treasure reveal works.
     - ClassicHD: spectacles set `hasSpectacles`, and buried treasure becomes visible when `hasSpectacles` or `hasUdjatEye` is true.
-    - Splonks: spectacles are a passive pickup, and embedded treasure overlays reveal when any active entity has `Spectacles` or `UdjatEye`.
+    - Splonks: spectacles are a passive pickup, and embedded treasure overlays reveal when any active ent has `Spectacles` or `UdjatEye`.
   - [x] `UdjatEye`: key chest pickup sets quest state and reveals embedded treasure.
     - ClassicHD: key chest creates Udjat Eye, pickup sets `hasUdjatEye`, and hidden treasure becomes visible.
     - Splonks: key chest opens into `UdjatEye`, pickup sets the passive and Classic quest `has_udjat_eye`, and embedded treasure reveal shares the same path as spectacles.
@@ -203,9 +203,9 @@ Check a stage only when all applicable items are true:
     - BombBox adds `12`; BombBag adds `3`; if sticky bombs are owned, bomb refills prioritize that slot.
   - [x] `RopePile`: adds ropes to the rope tool slot correctly, including empty-slot acquisition.
     - RopePile adds `3` through the shared tool inventory path.
-  - [x] `Mattock`: dig probes, durability, entity hits, sounds, and wrap/border behavior are correct.
+  - [x] `Mattock`: dig probes, durability, ent hits, sounds, and wrap/border behavior are correct.
   - [x] `Machete`: swing damage, thrown damage, corpse-sac interaction, and altar cash-in are correct.
-  - [x] `Pistol`: firing, projectiles, ammo/reload behavior if any, and shop/loot placement are correct.
+  - [x] `Pistol`: firing, projs, ammo/reload behavior if any, and shop/loot placement are correct.
   - [x] `Bow`: 8-way aim, aimed held rotation, arrow ammo HUD, no-gravity-until-contact shots, loose/stuck arrow reload, and shop/loot placement are correct.
   - [x] `Shotgun`: intentionally out of scope for now; Classic pools substitute implemented weapons instead.
   - [x] `WebCannon`: webball flight, web placement, web decay, and web interaction are correct.
@@ -225,7 +225,7 @@ Check a stage only when all applicable items are true:
 
 - [ ] Manual playtest passes.
   - Generate several `classic_mines_1` seeds.
-  - Confirm reachable exit, no obvious bad room seams, no broken branch/shop/idol/altar placement, and no unimplemented `NoSprite` entities appearing in normal play.
+  - Confirm reachable exit, no obvious bad room seams, no broken branch/shop/idol/altar placement, and no unimplemented `NoSprite` ents appearing in normal play.
 
 - [ ] `classic_mines_2` / `1-2` / Mines
   - Needs the same Mines parity audit.
@@ -295,7 +295,7 @@ Check a stage only when all applicable items are true:
 
 - [ ] `classic_haunted_castle` / Haunted Castle
   - Data exists.
-  - Needs undead/castle entity behavior, room pools, branch entrance/exit behavior, and ambient pass parity.
+  - Needs undead/castle ent behavior, room pools, branch entrance/exit behavior, and ambient pass parity.
 
 - [ ] `classic_city_of_gold` / City of Gold
   - Data exists.
@@ -315,9 +315,9 @@ Check a stage only when all applicable items are true:
 ## Current Known Blockers
 
 - [x] `build/splonks-cpp --check-classic-quest-stagegen` runs through all configured Classic stages.
-  - This now uses stage-specific hard pool-count checks; it still does not prove enemy odds, treasure odds, or entity behavior parity.
+  - This now uses stage-specific hard pool-count checks; it still does not prove enemy odds, treasure odds, or ent behavior parity.
 
-- [ ] Several Classic entities intentionally exist as `NoSprite` unimplemented archetype stubs.
+- [ ] Several Classic ents intentionally exist as `NoSprite` unimplemented spec stubs.
   - These keep data spawnable, but stages using them cannot be marked complete until behavior is implemented or intentionally substituted.
 
 - [ ] HD Mines blockers are explicitly tracked.
@@ -329,4 +329,4 @@ Check a stage only when all applicable items are true:
   - [ ] Spider-heavy level feeling.
 
 - [ ] Water and lava are currently tile mappings, but need final gameplay behavior.
-  - Likely needs a shop-area-style watcher entity or a lightweight fluid area system so broken containers can drain/clear correctly.
+  - Likely needs a shop-area-style watcher ent or a lightweight fluid area system so broken containers can drain/clear correctly.

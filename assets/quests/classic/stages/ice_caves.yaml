@@ -6,7 +6,7 @@ layout_size: [4, 4]
 glyphs: glyphs/ice_caves.yaml
 border_tile: ice_dirt
 backwall_tiles: [ice_air0, ice_air1, ice_air2]
-block_animation: ice_block
+block_anim: ice_block
 
 room_pools:
   start: rooms/ice_caves/start
@@ -60,5 +60,5 @@ stage_passes:
     enabled: false
     properties:
       min_level_number: 2
-  - name: ambient_ice_entities
+  - name: ambient_ice_ents
     enabled: true

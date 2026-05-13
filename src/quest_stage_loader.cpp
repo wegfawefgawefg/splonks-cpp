@@ -43,7 +43,7 @@ bool LoadClassicQuestStage(
     if (seed.has_value()) {
         rng::SetSeed(*seed);
     }
-    state.drng = DeterministicRng::New(seed.value_or(1U));
+    state.drng = DetRng::New(seed.value_or(1U));
 
     const QuestDefinition quest =
         LoadQuestDefinition(std::string(GetClassicQuestRootPath()) + "/quest.yaml");

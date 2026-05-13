@@ -1,46 +1,46 @@
 * misaligned bat
 * bat not working
-* slidy physics. 
+* slidy physics.
 * dear imgui
 * juttery camera
 * breakables breaking after hitting stuff at certain speeds?
 * jump playing twice
 * per pixel physics
 * pass through contact logic
-* hanging doesnt work, clone the spelunky hd hanging. 
-* hang gloves item. nice. 
+* hanging doesnt work, clone the spelunky hd hanging.
+* hang gloves item. nice.
 fix jumping too rapidly
 maybe copy spelunky physics better?
-player blurry bc cam not aligned on pixel. 
+player blurry bc cam not aligned on pixel.
 throw depen
 throw not hit self logic
 fix throw direction issue where it sometimes throws wrong direction
 fix objects cant currently be crushed bc thats probably not happening in the physics step
-try a moving platform entity - probably its own level. and test edge hanging on it. try 4 tiles wide, two tall. 
+try a moving platform ent - probably its own level. and test edge hanging on it. try 4 tiles wide, two tall.
 make double jetpack deliberate
 fix held object not flipping to match ur facing
-split up common.cpp in entities. 
+split up common.cpp in ents.
 * split up player code
-fix ropes adding to their length 
-stomping on enemies isnt swept. 
+fix ropes adding to their length
+stomping on enemies isnt swept.
 picking up coins isnt swept.
 did we make hanging swept?
     add adjustable max speed. for hang test.
-* pot doesnt break when only falling down? 
+* pot doesnt break when only falling down?
 can move and climb stairs while stunned...
     * jump was fixed
     climb stairs?
-bats shouldnt keep chasing you down through blocks probably. 
+bats shouldnt keep chasing you down through blocks probably.
 
 
 * adjust the ui a bit for tools
-* remove that random ctrls: wasd text lol. 
+* remove that random ctrls: wasd text lol.
 add a sld_gpu layer for doing shader pass
 item idea: hard hat, prevents getting damaged on head in some circumstances. mostly things falling on head. youll still get contact damaged and squished
 if i throw something directly at a wall, it hops up and then imediatly hits and stunns th eplayer. this doesnt seem right...
 gloves dont work on the screen right boundary. didnt try the left one but should check that too
-more thrown and breakables swept contact logic to their dispatcher. rather than in their step code. 
-rip out: 
+more thrown and breakables swept contact logic to their dispatcher. rather than in their step code.
+rip out:
     is tile transparent
     is tile light?
 
@@ -48,20 +48,20 @@ revisit bool IsTerrainLightingTile(Tile tile)  function. do we need it. all tile
 on stunned do we drop held?
 free cam mode free zoom
 keep shit on succeed level.
-factor out entitystate and entity super state.
+factor out entstate and ent super state.
 
 border fix
     toroidal space
     toroidal seemless
-        block and entity quieries need to respect toroidal space... 
+        block and ent quieries need to respect toroidal space...
 
-make set tiles respect border wrap. 
+make set tiles respect border wrap.
     thrown rope comes to mind
 
 make ourselves some real query layer
     raycasts for tiles
         option for returning the point on the thing
-    raycasts for entities
+    raycasts for ents
         option for returning the point on the thing
     get/set for tiles in area
 camera still snaps when you cross the seem. is there a way to make it seemless?
@@ -69,9 +69,9 @@ camera still snaps when you cross the seem. is there a way to make it seemless?
 explosive boxes
 
 rework parachute. its worthless random
-shops are too broad on tile ownership for sure. need a on break trigger or something that isnt stored per tile. probably in a big list on the room. 
+shops are too broad on tile ownership for sure. need a on break trigger or something that isnt stored per tile. probably in a big list on the room.
 vault shops dont spawn well. they should be smarter about embedding
-    vault shop blocks often spawn and fall imediatly  
+    vault shop blocks often spawn and fall imediatly
         shopkeeper is mad from this? should not be
     vault shopkeepers are... always mad for some reason.
 

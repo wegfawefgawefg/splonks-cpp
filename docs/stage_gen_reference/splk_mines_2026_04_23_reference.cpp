@@ -1,6 +1,6 @@
 #include "stage_gen/splk_mines.hpp"
 
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "utils.hpp"
 
 #include <array>
@@ -118,7 +118,7 @@ struct RoomTemplateSelection {
 
 struct ResolvedRoom {
     std::vector<std::vector<Tile>> tiles;
-    std::vector<StageEntitySpawn> entity_spawns;
+    std::vector<EntSpawn> ent_spawns;
     std::vector<BackgroundStamp> background_stamps;
 };
 
@@ -589,27 +589,27 @@ Tile RandomBrickOrBlockTile(Tile family_tile) {
                                               : DirtTileForFamilyTile(family_tile);
 }
 
-EntityType GetShopSignEntityType(ShopType shop_type) {
+EntType GetShopSignEntType(ShopType shop_type) {
     switch (shop_type) {
     case ShopType::General:
-        return EntityType::SignGeneral;
+        return EntType::SignGeneral;
     case ShopType::Bomb:
-        return EntityType::SignBomb;
+        return EntType::SignBomb;
     case ShopType::Weapon:
-        return EntityType::SignWeapon;
+        return EntType::SignWeapon;
     case ShopType::Rare:
-        return EntityType::SignRare;
+        return EntType::SignRare;
     case ShopType::Clothing:
-        return EntityType::SignClothing;
+        return EntType::SignClothing;
     case ShopType::Craps:
-        return EntityType::SignCraps;
+        return EntType::SignCraps;
     case ShopType::Kissing:
-        return EntityType::SignKissing;
+        return EntType::SignKissing;
     case ShopType::None:
-        return EntityType::None;
+        return EntType::None;
     }
 
-    return EntityType::None;
+    return EntType::None;
 }
 
 const char* PickRightTikiArmFrameName() {
@@ -677,7 +677,7 @@ bool IsStartRoomAt(const Stage& stage, int tile_x, int tile_y) {
 }
 
 bool HasSpawnAtWorldPos(const Stage& stage, const Vec2& pos) {
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.pos == pos) {
             return true;
         }
@@ -701,8 +701,8 @@ std::optional<Vec2> FindEntrancePos(const Stage& stage) {
 }
 
 std::optional<Vec2> FindExitPos(const Stage& stage) {
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
-        if (spawn.type_ == EntityType::BasicExit) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
+        if (spawn.type_ == EntType::BasicExit) {
             return spawn.pos;
         }
     }
@@ -721,10 +721,10 @@ void ConvertExitTilesToBasicExitSpawns(Stage& stage) {
                 static_cast<float>(y * kTileSize)
             );
             if (!HasSpawnAtWorldPos(stage, exit_pos)) {
-                stage.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::BasicExit,
+                stage.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::BasicExit,
                     .pos = exit_pos,
-                    .animation_id = frame_data_ids::Exit,
+                    .anim_id = aframe_ids::Exit,
                 });
             }
             stage.SetTile(IVec2::New(static_cast<int>(x), static_cast<int>(y)), Tile::Air);
@@ -732,8 +732,8 @@ void ConvertExitTilesToBasicExitSpawns(Stage& stage) {
     }
 }
 
-bool HasSpawnType(const Stage& stage, EntityType type_) {
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+bool HasSpawnType(const Stage& stage, EntType type_) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ == type_) {
             return true;
         }
@@ -741,9 +741,9 @@ bool HasSpawnType(const Stage& stage, EntityType type_) {
     return false;
 }
 
-float DistanceToNearestSpawnType(const Stage& stage, EntityType type_, const Vec2& pos) {
+float DistanceToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos) {
     float nearest = std::numeric_limits<float>::infinity();
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ != type_) {
             continue;
         }
@@ -752,8 +752,8 @@ float DistanceToNearestSpawnType(const Stage& stage, EntityType type_, const Vec
     return nearest;
 }
 
-bool HasSpawnType(const std::vector<StageEntitySpawn>& spawns, EntityType type_) {
-    for (const StageEntitySpawn& spawn : spawns) {
+bool HasSpawnType(const std::vector<EntSpawn>& spawns, EntType type_) {
+    for (const EntSpawn& spawn : spawns) {
         if (spawn.type_ == type_) {
             return true;
         }
@@ -761,29 +761,29 @@ bool HasSpawnType(const std::vector<StageEntitySpawn>& spawns, EntityType type_)
     return false;
 }
 
-bool HasSpawnType(const Stage& stage, const std::vector<StageEntitySpawn>& spawns, EntityType type_) {
+bool HasSpawnType(const Stage& stage, const std::vector<EntSpawn>& spawns, EntType type_) {
     return HasSpawnType(stage, type_) || HasSpawnType(spawns, type_);
 }
 
-void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
-                     LeftOrRight facing = LeftOrRight::Left) {
+void AddAmbientSpawn(Stage& stage, EntType type_, const Vec2& pos,
+                     Side facing = Side::Left) {
     if (HasSpawnAtWorldPos(stage, pos)) {
         return;
     }
-    stage.entity_spawns.push_back(StageEntitySpawn{
+    stage.ent_spawns.push_back(EntSpawn{
         .type_ = type_,
         .pos = pos,
         .facing = facing,
     });
 }
 
-bool IsTreasureSpawnType(EntityType type_) {
+bool IsTreasureSpawnType(EntType type_) {
     switch (type_) {
-    case EntityType::Gold:
-    case EntityType::GoldStack:
-    case EntityType::EmeraldBig:
-    case EntityType::SapphireBig:
-    case EntityType::RubyBig:
+    case EntType::Gold:
+    case EntType::GoldStack:
+    case EntType::EmeraldBig:
+    case EntType::SapphireBig:
+    case EntType::RubyBig:
         return true;
     default:
         return false;
@@ -849,7 +849,7 @@ void AddUdjatKeyChest(Stage& stage) {
     if (GetLevelNumber(stage.stage_type) < 2) {
         return;
     }
-    if (HasSpawnType(stage, EntityType::KeyChest) || HasSpawnType(stage, EntityType::ChestKey)) {
+    if (HasSpawnType(stage, EntType::KeyChest) || HasSpawnType(stage, EntType::ChestKey)) {
         return;
     }
 
@@ -858,15 +858,15 @@ void AddUdjatKeyChest(Stage& stage) {
         return;
     }
 
-    stage.entity_spawns.push_back(StageEntitySpawn{
-        .type_ = EntityType::KeyChest,
+    stage.ent_spawns.push_back(EntSpawn{
+        .type_ = EntType::KeyChest,
         .pos = *chest_pos,
     });
 
     std::vector<std::size_t> treasure_indices;
-    treasure_indices.reserve(stage.entity_spawns.size());
-    for (std::size_t i = 0; i < stage.entity_spawns.size(); ++i) {
-        const StageEntitySpawn& spawn = stage.entity_spawns[i];
+    treasure_indices.reserve(stage.ent_spawns.size());
+    for (std::size_t i = 0; i < stage.ent_spawns.size(); ++i) {
+        const EntSpawn& spawn = stage.ent_spawns[i];
         if (!IsTreasureSpawnType(spawn.type_)) {
             continue;
         }
@@ -878,7 +878,7 @@ void AddUdjatKeyChest(Stage& stage) {
 
     if (!treasure_indices.empty()) {
         const std::size_t pick = treasure_indices[static_cast<std::size_t>(PickIndex(treasure_indices.size()))];
-        stage.entity_spawns[pick].type_ = EntityType::ChestKey;
+        stage.ent_spawns[pick].type_ = EntType::ChestKey;
         return;
     }
 
@@ -896,8 +896,8 @@ void AddUdjatKeyChest(Stage& stage) {
                 continue;
             }
 
-            stage.entity_spawns.push_back(StageEntitySpawn{
-                .type_ = EntityType::ChestKey,
+            stage.ent_spawns.push_back(EntSpawn{
+                .type_ = EntType::ChestKey,
                 .pos = key_pos,
             });
             return;
@@ -905,104 +905,104 @@ void AddUdjatKeyChest(Stage& stage) {
     }
 }
 
-EntityType PickUndergroundItemType() {
+EntType PickUndergroundItemType() {
     switch (rng::RandomIntInclusive(0, 18)) {
     case 0:
-        return EntityType::JetPack;
+        return EntType::JetPack;
     case 1:
-        return EntityType::Cape;
+        return EntType::Cape;
     case 2:
-        return EntityType::Shotgun;
+        return EntType::Shotgun;
     case 3:
-        return EntityType::Mattock;
+        return EntType::Mattock;
     case 4:
-        return EntityType::Teleporter;
+        return EntType::Teleporter;
     case 5:
-        return EntityType::Gloves;
+        return EntType::Gloves;
     case 6:
-        return EntityType::Spectacles;
+        return EntType::Spectacles;
     case 7:
-        return EntityType::WebCannon;
+        return EntType::WebCannon;
     case 8:
-        return EntityType::Pistol;
+        return EntType::Pistol;
     case 9:
-        return EntityType::Mitt;
+        return EntType::Mitt;
     case 10:
-        return EntityType::Paste;
+        return EntType::Paste;
     case 11:
-        return EntityType::SpringShoes;
+        return EntType::SpringShoes;
     case 12:
-        return EntityType::SpikeShoes;
+        return EntType::SpikeShoes;
     case 13:
-        return EntityType::Machete;
+        return EntType::Machete;
     case 14:
-        return EntityType::BombBox;
+        return EntType::BombBox;
     case 15:
-        return EntityType::Bow;
+        return EntType::Bow;
     case 16:
-        return EntityType::Compass;
+        return EntType::Compass;
     case 17:
-        return EntityType::Parachute;
+        return EntType::Parachute;
     default:
-        return EntityType::RopePile;
+        return EntType::RopePile;
     }
 }
 
-EntityType PickHighEndShopItemType() {
+EntType PickHighEndShopItemType() {
     if (rng::RandomIntInclusive(1, 40) == 1) {
-        return EntityType::JetPack;
+        return EntType::JetPack;
     }
     if (rng::RandomIntInclusive(1, 25) == 1) {
-        return EntityType::Cape;
+        return EntType::Cape;
     }
     if (rng::RandomIntInclusive(1, 20) == 1) {
-        return EntityType::Shotgun;
+        return EntType::Shotgun;
     }
     if (rng::RandomIntInclusive(1, 10) == 1) {
-        return EntityType::Gloves;
+        return EntType::Gloves;
     }
     if (rng::RandomIntInclusive(1, 10) == 1) {
-        return EntityType::Teleporter;
+        return EntType::Teleporter;
     }
     if (rng::RandomIntInclusive(1, 8) == 1) {
-        return EntityType::Mattock;
+        return EntType::Mattock;
     }
     if (rng::RandomIntInclusive(1, 8) == 1) {
-        return EntityType::Paste;
+        return EntType::Paste;
     }
     if (rng::RandomIntInclusive(1, 8) == 1) {
-        return EntityType::SpringShoes;
+        return EntType::SpringShoes;
     }
     if (rng::RandomIntInclusive(1, 8) == 1) {
-        return EntityType::SpikeShoes;
+        return EntType::SpikeShoes;
     }
     if (rng::RandomIntInclusive(1, 8) == 1) {
-        return EntityType::Compass;
+        return EntType::Compass;
     }
     if (rng::RandomIntInclusive(1, 8) == 1) {
-        return EntityType::Pistol;
+        return EntType::Pistol;
     }
     if (rng::RandomIntInclusive(1, 8) == 1) {
-        return EntityType::Machete;
+        return EntType::Machete;
     }
-    return EntityType::BombBox;
+    return EntType::BombBox;
 }
 
-EntityType PickShopItemType(
+EntType PickShopItemType(
     ShopType shop_type,
     const Stage& stage,
-    const std::vector<StageEntitySpawn>& room_spawns
+    const std::vector<EntSpawn>& room_spawns
 ) {
     if (shop_type == ShopType::Bomb) {
         while (true) {
             if (rng::RandomIntInclusive(1, 5) == 1) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Paste)) {
-                    return EntityType::Paste;
+                if (!HasSpawnType(stage, room_spawns, EntType::Paste)) {
+                    return EntType::Paste;
                 }
             } else if (rng::RandomIntInclusive(1, 4) == 1) {
-                return EntityType::BombBox;
+                return EntType::BombBox;
             } else {
-                return EntityType::BombBag;
+                return EntType::BombBag;
             }
         }
     }
@@ -1012,31 +1012,31 @@ EntityType PickShopItemType(
         while (true) {
             const int n = rng::RandomIntInclusive(1, 4);
             if (attempts_remaining <= 0) {
-                return EntityType::BombBag;
+                return EntType::BombBag;
             }
             if (rng::RandomIntInclusive(1, 12) == 1) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::WebCannon)) {
-                    return EntityType::WebCannon;
+                if (!HasSpawnType(stage, room_spawns, EntType::WebCannon)) {
+                    return EntType::WebCannon;
                 }
             } else if (rng::RandomIntInclusive(1, 10) == 1) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Shotgun)) {
-                    return EntityType::Shotgun;
+                if (!HasSpawnType(stage, room_spawns, EntType::Shotgun)) {
+                    return EntType::Shotgun;
                 }
             } else if (rng::RandomIntInclusive(1, 6) == 1) {
-                return EntityType::BombBox;
+                return EntType::BombBox;
             } else if (n == 1) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Pistol)) {
-                    return EntityType::Pistol;
+                if (!HasSpawnType(stage, room_spawns, EntType::Pistol)) {
+                    return EntType::Pistol;
                 }
             } else if (n == 2) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Machete)) {
-                    return EntityType::Machete;
+                if (!HasSpawnType(stage, room_spawns, EntType::Machete)) {
+                    return EntType::Machete;
                 }
             } else if (n == 3) {
-                return EntityType::BombBag;
+                return EntType::BombBag;
             } else if (n == 4) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Bow)) {
-                    return EntityType::Bow;
+                if (!HasSpawnType(stage, room_spawns, EntType::Bow)) {
+                    return EntType::Bow;
                 }
             }
             attempts_remaining -= 1;
@@ -1048,31 +1048,31 @@ EntityType PickShopItemType(
         while (true) {
             const int n = rng::RandomIntInclusive(1, 6);
             if (rng::RandomIntInclusive(1, attempts_remaining) == 1) {
-                return EntityType::RopePile;
+                return EntType::RopePile;
             }
             if (n == 1) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::SpringShoes)) {
-                    return EntityType::SpringShoes;
+                if (!HasSpawnType(stage, room_spawns, EntType::SpringShoes)) {
+                    return EntType::SpringShoes;
                 }
             } else if (n == 2) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Spectacles)) {
-                    return EntityType::Spectacles;
+                if (!HasSpawnType(stage, room_spawns, EntType::Spectacles)) {
+                    return EntType::Spectacles;
                 }
             } else if (n == 3) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Gloves)) {
-                    return EntityType::Gloves;
+                if (!HasSpawnType(stage, room_spawns, EntType::Gloves)) {
+                    return EntType::Gloves;
                 }
             } else if (n == 4) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Mitt)) {
-                    return EntityType::Mitt;
+                if (!HasSpawnType(stage, room_spawns, EntType::Mitt)) {
+                    return EntType::Mitt;
                 }
             } else if (n == 5) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Cape)) {
-                    return EntityType::Cape;
+                if (!HasSpawnType(stage, room_spawns, EntType::Cape)) {
+                    return EntType::Cape;
                 }
             } else if (n == 6) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::SpikeShoes)) {
-                    return EntityType::SpikeShoes;
+                if (!HasSpawnType(stage, room_spawns, EntType::SpikeShoes)) {
+                    return EntType::SpikeShoes;
                 }
             }
             attempts_remaining -= 1;
@@ -1084,51 +1084,51 @@ EntityType PickShopItemType(
         while (true) {
             const int n = rng::RandomIntInclusive(1, 11);
             if (rng::RandomIntInclusive(1, attempts_remaining) == 1) {
-                return EntityType::BombBox;
+                return EntType::BombBox;
             }
             if (n == 1) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::SpringShoes)) {
-                    return EntityType::SpringShoes;
+                if (!HasSpawnType(stage, room_spawns, EntType::SpringShoes)) {
+                    return EntType::SpringShoes;
                 }
             } else if (n == 2) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Compass)) {
-                    return EntityType::Compass;
+                if (!HasSpawnType(stage, room_spawns, EntType::Compass)) {
+                    return EntType::Compass;
                 }
             } else if (n == 3) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Mattock)) {
-                    return EntityType::Mattock;
+                if (!HasSpawnType(stage, room_spawns, EntType::Mattock)) {
+                    return EntType::Mattock;
                 }
             } else if (n == 4) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Spectacles)) {
-                    return EntityType::Spectacles;
+                if (!HasSpawnType(stage, room_spawns, EntType::Spectacles)) {
+                    return EntType::Spectacles;
                 }
             } else if (n == 5) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::JetPack)) {
-                    return EntityType::JetPack;
+                if (!HasSpawnType(stage, room_spawns, EntType::JetPack)) {
+                    return EntType::JetPack;
                 }
             } else if (n == 6) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Gloves)) {
-                    return EntityType::Gloves;
+                if (!HasSpawnType(stage, room_spawns, EntType::Gloves)) {
+                    return EntType::Gloves;
                 }
             } else if (n == 7) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Mitt)) {
-                    return EntityType::Mitt;
+                if (!HasSpawnType(stage, room_spawns, EntType::Mitt)) {
+                    return EntType::Mitt;
                 }
             } else if (n == 8) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::WebCannon)) {
-                    return EntityType::WebCannon;
+                if (!HasSpawnType(stage, room_spawns, EntType::WebCannon)) {
+                    return EntType::WebCannon;
                 }
             } else if (n == 9) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Cape)) {
-                    return EntityType::Cape;
+                if (!HasSpawnType(stage, room_spawns, EntType::Cape)) {
+                    return EntType::Cape;
                 }
             } else if (n == 10) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::Teleporter)) {
-                    return EntityType::Teleporter;
+                if (!HasSpawnType(stage, room_spawns, EntType::Teleporter)) {
+                    return EntType::Teleporter;
                 }
             } else if (n == 11) {
-                if (!HasSpawnType(stage, room_spawns, EntityType::SpikeShoes)) {
-                    return EntityType::SpikeShoes;
+                if (!HasSpawnType(stage, room_spawns, EntType::SpikeShoes)) {
+                    return EntType::SpikeShoes;
                 }
             }
             attempts_remaining -= 1;
@@ -1138,23 +1138,23 @@ EntityType PickShopItemType(
     while (true) {
         const int n = rng::RandomIntInclusive(1, 3);
         if (rng::RandomIntInclusive(1, 20) == 1) {
-            if (!HasSpawnType(stage, room_spawns, EntityType::Mattock)) {
-                return EntityType::Mattock;
+            if (!HasSpawnType(stage, room_spawns, EntType::Mattock)) {
+                return EntType::Mattock;
             }
         } else if (rng::RandomIntInclusive(1, 10) == 1) {
-            if (!HasSpawnType(stage, room_spawns, EntityType::Gloves)) {
-                return EntityType::Gloves;
+            if (!HasSpawnType(stage, room_spawns, EntType::Gloves)) {
+                return EntType::Gloves;
             }
         } else if (rng::RandomIntInclusive(1, 10) == 1) {
-            if (!HasSpawnType(stage, room_spawns, EntityType::Compass)) {
-                return EntityType::Compass;
+            if (!HasSpawnType(stage, room_spawns, EntType::Compass)) {
+                return EntType::Compass;
             }
         } else if (n == 1) {
-            return EntityType::BombBag;
+            return EntType::BombBag;
         } else if (n == 2) {
-            return EntityType::RopePile;
+            return EntType::RopePile;
         } else {
-            return EntityType::Parachute;
+            return EntType::Parachute;
         }
     }
 }
@@ -1189,11 +1189,11 @@ void AddMinesEmbeddedTreasure(Stage& stage) {
             }
 
             if (rng::RandomIntInclusive(1, 100) == 1) {
-                stage.SetEmbeddedTreasure(tile_pos, EntityType::SapphireBig);
+                stage.SetEmbeddedTreasure(tile_pos, EntType::SapphireBig);
             } else if (rng::RandomIntInclusive(1, 120) == 1) {
-                stage.SetEmbeddedTreasure(tile_pos, EntityType::EmeraldBig);
+                stage.SetEmbeddedTreasure(tile_pos, EntType::EmeraldBig);
             } else if (rng::RandomIntInclusive(1, 140) == 1) {
-                stage.SetEmbeddedTreasure(tile_pos, EntityType::RubyBig);
+                stage.SetEmbeddedTreasure(tile_pos, EntType::RubyBig);
             } else if (rng::RandomIntInclusive(1, 1200) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, PickUndergroundItemType());
             }
@@ -1225,7 +1225,7 @@ void AddMinesTreasure(Stage& stage) {
             if (exit_pos.has_value() && Length(tile_pos - *exit_pos) < 32.0F) {
                 continue;
             }
-            if (DistanceToNearestSpawnType(stage, EntityType::GoldIdol, tile_pos) < 64.0F) {
+            if (DistanceToNearestSpawnType(stage, EntType::GoldIdol, tile_pos) < 64.0F) {
                 continue;
             }
 
@@ -1248,11 +1248,11 @@ void AddMinesTreasure(Stage& stage) {
             }
 
             if (rng::RandomIntInclusive(1, 100) == 1) {
-                AddAmbientSpawn(stage, EntityType::Rock, item_pos);
+                AddAmbientSpawn(stage, EntType::Rock, item_pos);
                 continue;
             }
             if (rng::RandomIntInclusive(1, 40) == 1) {
-                AddAmbientSpawn(stage, EntityType::Pot, stack_pos);
+                AddAmbientSpawn(stage, EntType::Pot, stack_pos);
                 continue;
             }
 
@@ -1264,45 +1264,45 @@ void AddMinesTreasure(Stage& stage) {
 
             if (ceiling_above && side_support) {
                 if (rng::RandomIntInclusive(1, 10) == 1) {
-                    AddAmbientSpawn(stage, EntityType::Box, stack_pos);
+                    AddAmbientSpawn(stage, EntType::Box, stack_pos);
                 } else if (rng::RandomIntInclusive(1, 15) == 1) {
-                    AddAmbientSpawn(stage, EntityType::Chest, stack_pos);
-                } else if (!HasSpawnType(stage, EntityType::Damsel) &&
+                    AddAmbientSpawn(stage, EntType::Chest, stack_pos);
+                } else if (!HasSpawnType(stage, EntType::Damsel) &&
                            rng::RandomIntInclusive(1, 8) == 1) {
-                    AddAmbientSpawn(stage, EntityType::Damsel, stack_pos);
+                    AddAmbientSpawn(stage, EntType::Damsel, stack_pos);
                 } else if (rng::RandomIntInclusive(1, 3) == 1) {
-                    AddAmbientSpawn(stage, EntityType::Gold, item_pos);
+                    AddAmbientSpawn(stage, EntType::Gold, item_pos);
                 } else if (rng::RandomIntInclusive(1, 6) == 1) {
-                    AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
+                    AddAmbientSpawn(stage, EntType::GoldStack, stack_pos);
                 } else if (rng::RandomIntInclusive(1, 6) == 1) {
-                    AddAmbientSpawn(stage, EntityType::EmeraldBig, item_pos);
+                    AddAmbientSpawn(stage, EntType::EmeraldBig, item_pos);
                 } else if (rng::RandomIntInclusive(1, 8) == 1) {
-                    AddAmbientSpawn(stage, EntityType::SapphireBig, item_pos);
+                    AddAmbientSpawn(stage, EntType::SapphireBig, item_pos);
                 } else if (rng::RandomIntInclusive(1, 10) == 1) {
-                    AddAmbientSpawn(stage, EntityType::RubyBig, item_pos);
+                    AddAmbientSpawn(stage, EntType::RubyBig, item_pos);
                 }
                 continue;
             }
 
             if (tunnel_support) {
                 if (rng::RandomIntInclusive(1, 4) == 1) {
-                    AddAmbientSpawn(stage, EntityType::Gold, item_pos);
+                    AddAmbientSpawn(stage, EntType::Gold, item_pos);
                 } else if (rng::RandomIntInclusive(1, 8) == 1) {
-                    AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
+                    AddAmbientSpawn(stage, EntType::GoldStack, stack_pos);
                 } else if (rng::RandomIntInclusive(1, 8) == 1) {
-                    AddAmbientSpawn(stage, EntityType::EmeraldBig, item_pos);
+                    AddAmbientSpawn(stage, EntType::EmeraldBig, item_pos);
                 } else if (rng::RandomIntInclusive(1, 9) == 1) {
-                    AddAmbientSpawn(stage, EntityType::SapphireBig, item_pos);
+                    AddAmbientSpawn(stage, EntType::SapphireBig, item_pos);
                 } else if (rng::RandomIntInclusive(1, 10) == 1) {
-                    AddAmbientSpawn(stage, EntityType::RubyBig, item_pos);
+                    AddAmbientSpawn(stage, EntType::RubyBig, item_pos);
                 }
                 continue;
             }
 
             if (rng::RandomIntInclusive(1, 40) == 1) {
-                AddAmbientSpawn(stage, EntityType::Gold, item_pos);
+                AddAmbientSpawn(stage, EntType::Gold, item_pos);
             } else if (rng::RandomIntInclusive(1, 50) == 1) {
-                AddAmbientSpawn(stage, EntityType::GoldStack, stack_pos);
+                AddAmbientSpawn(stage, EntType::GoldStack, stack_pos);
             }
         }
     }
@@ -1311,8 +1311,8 @@ void AddMinesTreasure(Stage& stage) {
 void ConvertBlocksToArrowTraps(Stage& stage) {
     const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
 
-    for (StageEntitySpawn& spawn : stage.entity_spawns) {
-        if (spawn.type_ != EntityType::Block) {
+    for (EntSpawn& spawn : stage.ent_spawns) {
+        if (spawn.type_ != EntType::Block) {
             continue;
         }
 
@@ -1340,8 +1340,8 @@ void ConvertBlocksToArrowTraps(Stage& stage) {
         const bool left_open = !IsCollidableTileAt(stage, tile_x - 1, tile_y) &&
                                !IsCollidableTileAt(stage, tile_x - 2, tile_y);
         if (solid_right && left_open) {
-            spawn.type_ = EntityType::ArrowTrap;
-            spawn.facing = LeftOrRight::Left;
+            spawn.type_ = EntType::ArrowTrap;
+            spawn.facing = Side::Left;
             continue;
         }
 
@@ -1349,13 +1349,13 @@ void ConvertBlocksToArrowTraps(Stage& stage) {
         const bool right_open = !IsCollidableTileAt(stage, tile_x + 1, tile_y) &&
                                 !IsCollidableTileAt(stage, tile_x + 2, tile_y);
         if (solid_left && right_open) {
-            spawn.type_ = EntityType::ArrowTrap;
-            spawn.facing = LeftOrRight::Right;
+            spawn.type_ = EntType::ArrowTrap;
+            spawn.facing = Side::Right;
         }
     }
 }
 
-void AddAmbientMinesEntities(Stage& stage) {
+void AddAmbientMinesEnts(Stage& stage) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
     const bool gen_giant_spider = rng::RandomIntInclusive(1, 6) == 1;
@@ -1392,14 +1392,14 @@ void AddAmbientMinesEntities(Stage& stage) {
                         !HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
                         !HasSpawnAtWorldPos(stage, ceiling_spawn_pos_2) &&
                         rng::RandomIntInclusive(1, 40) == 1) {
-                        AddAmbientSpawn(stage, EntityType::GiantSpiderHang, ceiling_spawn_pos);
+                        AddAmbientSpawn(stage, EntType::GiantSpiderHang, ceiling_spawn_pos);
                         giant_spider_spawned = true;
                     } else if (rng::RandomIntInclusive(1, 60) == 1) {
-                        AddAmbientSpawn(stage, EntityType::Bat, ceiling_spawn_pos);
+                        AddAmbientSpawn(stage, EntType::Bat, ceiling_spawn_pos);
                     } else if (rng::RandomIntInclusive(1, 80) == 1) {
-                        const EntityType spider_hang_type =
-                            rng::RandomIntInclusive(1, 4) == 1 ? EntityType::RageSpiderHang
-                                                               : EntityType::SpiderHang;
+                        const EntType spider_hang_type =
+                            rng::RandomIntInclusive(1, 4) == 1 ? EntType::RageSpiderHang
+                                                               : EntType::SpiderHang;
                         AddAmbientSpawn(stage, spider_hang_type, ceiling_spawn_pos);
                     }
                 }
@@ -1415,15 +1415,15 @@ void AddAmbientMinesEntities(Stage& stage) {
                         tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
                     const Vec2 skull_spawn_pos = tile_pos + Vec2::New(4.0F, -4.0F);
                     if (!spikes_above && rng::RandomIntInclusive(1, 220) == 1) {
-                        AddAmbientSpawn(stage, EntityType::Skeleton, skull_spawn_pos);
+                        AddAmbientSpawn(stage, EntType::Skeleton, skull_spawn_pos);
                     } else if (!spikes_above && rng::RandomIntInclusive(1, 140) == 1) {
-                        AddAmbientSpawn(stage, EntityType::Skull, skull_spawn_pos);
+                        AddAmbientSpawn(stage, EntType::Skull, skull_spawn_pos);
                     } else if (!spikes_above && rng::RandomIntInclusive(1, 180) == 1) {
-                        AddAmbientSpawn(stage, EntityType::Cobra, floor_spawn_pos);
+                        AddAmbientSpawn(stage, EntType::Cobra, floor_spawn_pos);
                     } else if (!spikes_above && rng::RandomIntInclusive(1, 60) == 1) {
-                        AddAmbientSpawn(stage, EntityType::Snake, floor_spawn_pos);
+                        AddAmbientSpawn(stage, EntType::Snake, floor_spawn_pos);
                     } else if (rng::RandomIntInclusive(1, 800) == 1) {
-                        AddAmbientSpawn(stage, EntityType::Caveman, floor_spawn_pos);
+                        AddAmbientSpawn(stage, EntType::Caveman, floor_spawn_pos);
                     }
                 }
             }
@@ -1443,7 +1443,7 @@ ResolvedRoom ResolveRoom(
     const std::string glyphs = ExpandObstacles(selection.glyphs);
 
     // Glyph markers are authored on the room's 10x8 tile grid. We anchor imported
-    // entities and background stamps from that tile grid directly into our top-left
+    // ents and background stamps from that tile grid directly into our top-left
     // world-space positions, then only add explicit whole-tile layout offsets that
     // come from the room design itself, like the right altar half living one tile to
     // the right. We do not port HD sprite-origin offsets directly here.
@@ -1475,8 +1475,8 @@ ResolvedRoom ResolveRoom(
                 break;
             case '4':
                 if (rng::RandomIntInclusive(1, 4) == 1) {
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::Block,
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::Block,
                         .pos = tile_pos,
                     });
                 }
@@ -1509,85 +1509,85 @@ ResolvedRoom ResolveRoom(
                 tile = GlassTileForFamilyTile(existing_stage.border.left.tile);
                 break;
             case 'A':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Altar,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Altar,
                     .pos = tile_pos,
-                    .animation_id = frame_data_ids::AltarLeft,
+                    .anim_id = aframe_ids::AltarLeft,
                 });
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Altar,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Altar,
                     .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
-                    .animation_id = frame_data_ids::AltarRight,
+                    .anim_id = aframe_ids::AltarRight,
                 });
                 break;
             case 'x': {
-                const std::size_t left_altar_spawn_index = room.entity_spawns.size();
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::SacAltar,
+                const std::size_t left_altar_spawn_index = room.ent_spawns.size();
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::SacAltar,
                     .pos = tile_pos,
-                    .animation_id = frame_data_ids::SacAltarLeft,
+                    .anim_id = aframe_ids::SacAltarLeft,
                 });
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::SacAltar,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::SacAltar,
                     .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
-                    .animation_id = frame_data_ids::SacAltarRight,
-                    .entity_a_spawn_index = left_altar_spawn_index,
+                    .anim_id = aframe_ids::SacAltarRight,
+                    .ent_a_spawn_index = left_altar_spawn_index,
                 });
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::SacAltarTopper,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::SacAltarTopper,
                     .pos = tile_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize)),
-                    .animation_id = frame_data_ids::SacAltarTopper,
-                    .entity_a_spawn_index = left_altar_spawn_index,
+                    .anim_id = aframe_ids::SacAltarTopper,
+                    .ent_a_spawn_index = left_altar_spawn_index,
                 });
-                room.entity_spawns[left_altar_spawn_index].entity_a_spawn_index =
-                    room.entity_spawns.size() - 1;
+                room.ent_spawns[left_altar_spawn_index].ent_a_spawn_index =
+                    room.ent_spawns.size() - 1;
                 break;
             }
             case 'a':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Chest,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Chest,
                     .pos = tile_pos,
                 });
                 break;
             case 'I':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::GoldIdol,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::GoldIdol,
                     .pos = GetShrineIdolTopLeft(tile_pos),
                 });
                 if (!pending_giant_tiki_head_spawn_indices.empty()) {
-                    room.entity_spawns[pending_giant_tiki_head_spawn_indices.front()].entity_a_spawn_index =
-                        room.entity_spawns.size() - 1;
+                    room.ent_spawns[pending_giant_tiki_head_spawn_indices.front()].ent_a_spawn_index =
+                        room.ent_spawns.size() - 1;
                     pending_giant_tiki_head_spawn_indices.erase(
                         pending_giant_tiki_head_spawn_indices.begin());
                 } else {
-                    pending_gold_idol_spawn_indices.push_back(room.entity_spawns.size() - 1);
+                    pending_gold_idol_spawn_indices.push_back(room.ent_spawns.size() - 1);
                 }
                 break;
             case 'B':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::GiantTikiHead,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::GiantTikiHead,
                     .pos = tile_pos,
                 });
                 if (!pending_gold_idol_spawn_indices.empty()) {
-                    room.entity_spawns.back().entity_a_spawn_index =
+                    room.ent_spawns.back().ent_a_spawn_index =
                         pending_gold_idol_spawn_indices.front();
                     pending_gold_idol_spawn_indices.erase(pending_gold_idol_spawn_indices.begin());
                 } else {
-                    pending_giant_tiki_head_spawn_indices.push_back(room.entity_spawns.size() - 1);
+                    pending_giant_tiki_head_spawn_indices.push_back(room.ent_spawns.size() - 1);
                 }
                 room.background_stamps.push_back(BackgroundStamp{
-                    .animation_id = HashFrameDataIdConstexpr("tiki_body"),
+                    .anim_id = HashAFrameIdConstexpr("tiki_body"),
                     .pos = tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize * 2)),
                 });
                 room.background_stamps.push_back(BackgroundStamp{
-                    .animation_id = HashFrameDataIdConstexpr(PickRightTikiArmFrameName()),
+                    .anim_id = HashAFrameIdConstexpr(PickRightTikiArmFrameName()),
                     .pos = tile_pos + Vec2::New(
                         static_cast<float>(kTileSize * 2),
                         static_cast<float>(kTileSize * 2)
                     ),
                 });
                 room.background_stamps.push_back(BackgroundStamp{
-                    .animation_id = HashFrameDataIdConstexpr(PickLeftTikiArmFrameName()),
+                    .anim_id = HashAFrameIdConstexpr(PickLeftTikiArmFrameName()),
                     .pos = tile_pos + Vec2::New(
                         -static_cast<float>(kTileSize),
                         static_cast<float>(kTileSize * 2)
@@ -1597,41 +1597,41 @@ ResolvedRoom ResolveRoom(
             case 'Q':
                 if (selection.shop_type == ShopType::Craps) {
                     room.background_stamps.push_back(BackgroundStamp{
-                        .animation_id = HashFrameDataIdConstexpr("dice_sign"),
+                        .anim_id = HashAFrameIdConstexpr("dice_sign"),
                         .pos = tile_pos,
                     });
                 }
                 break;
             case 'q':
-                room.entity_spawns.push_back(StageEntitySpawn{
+                room.ent_spawns.push_back(EntSpawn{
                     .type_ = PickHighEndShopItemType(),
                     .pos = tile_pos,
                 });
                 break;
             case 'W':
                 room.background_stamps.push_back(BackgroundStamp{
-                    .animation_id = HashFrameDataIdConstexpr("wanted_poster"),
+                    .anim_id = HashAFrameIdConstexpr("wanted_poster"),
                     .pos = tile_pos,
                     .condition = BackgroundStampCondition::Wanted,
                 });
                 break;
             case 'l':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::StoreLight,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::StoreLight,
                     .pos = tile_pos,
                 });
                 break;
             case 'K':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Shopkeeper,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Shopkeeper,
                     .pos = tile_pos,
                 });
                 break;
             case 'k':
             {
-                const EntityType sign_type = GetShopSignEntityType(selection.shop_type);
-                if (sign_type != EntityType::None) {
-                    room.entity_spawns.push_back(StageEntitySpawn{
+                const EntType sign_type = GetShopSignEntType(selection.shop_type);
+                if (sign_type != EntType::None) {
+                    room.ent_spawns.push_back(EntSpawn{
                         .type_ = sign_type,
                         .pos = tile_pos,
                     });
@@ -1639,20 +1639,20 @@ ResolvedRoom ResolveRoom(
                 break;
             }
             case 'i':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = PickShopItemType(selection.shop_type, existing_stage, room.entity_spawns),
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = PickShopItemType(selection.shop_type, existing_stage, room.ent_spawns),
                     .pos = tile_pos,
                 });
                 break;
             case 'd':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Dice,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Dice,
                     .pos = tile_pos,
                 });
                 break;
             case 'D':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Damsel,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Damsel,
                     .pos = tile_pos,
                 });
                 break;
@@ -1662,27 +1662,27 @@ ResolvedRoom ResolveRoom(
                 }
                 break;
             case 'S':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = rng::RandomIntInclusive(1, 5) == 1 ? EntityType::Cobra : EntityType::Snake,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = rng::RandomIntInclusive(1, 5) == 1 ? EntType::Cobra : EntType::Snake,
                     .pos = tile_pos,
                 });
                 break;
             case 'T':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::RubyBig,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::RubyBig,
                     .pos = tile_pos,
                 });
                 break;
             case 'M':
                 tile = DirtTileForFamilyTile(existing_stage.border.left.tile);
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Mattock,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Mattock,
                     .pos = tile_pos,
                 });
                 break;
             case '&':
-                room.entity_spawns.push_back(StageEntitySpawn{
-                    .type_ = EntityType::Cobweb,
+                room.ent_spawns.push_back(EntSpawn{
+                    .type_ = EntType::Cobweb,
                     .pos = tile_pos,
                 });
                 break;
@@ -1790,13 +1790,13 @@ Stage GenerateStage(StageType stage_type) {
                                       [static_cast<std::size_t>(tile_x)];
                 }
             }
-            const std::size_t room_spawn_base_index = stage.entity_spawns.size();
-            for (StageEntitySpawn& spawn : room.entity_spawns) {
+            const std::size_t room_spawn_base_index = stage.ent_spawns.size();
+            for (EntSpawn& spawn : room.ent_spawns) {
                 spawn.pos += room_pos_wc;
-                if (spawn.entity_a_spawn_index.has_value()) {
-                    *spawn.entity_a_spawn_index += room_spawn_base_index;
+                if (spawn.ent_a_spawn_index.has_value()) {
+                    *spawn.ent_a_spawn_index += room_spawn_base_index;
                 }
-                stage.entity_spawns.push_back(std::move(spawn));
+                stage.ent_spawns.push_back(std::move(spawn));
             }
             for (BackgroundStamp& stamp : room.background_stamps) {
                 stamp.pos += room_pos_wc;
@@ -1807,11 +1807,11 @@ Stage GenerateStage(StageType stage_type) {
 
     stage.tiles = std::move(tiles);
     stage.FillBackwall(backwall_fill_tiles);
-    stage.embedded_treasures = std::vector<std::vector<EntityType>>(
+    stage.embedded_treasures = std::vector<std::vector<EntType>>(
         stage.tiles.size(),
-        std::vector<EntityType>(
+        std::vector<EntType>(
             stage.tiles.empty() ? 0U : stage.tiles.front().size(),
-            EntityType::None
+            EntType::None
         )
     );
     stage.rooms = std::move(room_codes);
@@ -1823,7 +1823,7 @@ Stage GenerateStage(StageType stage_type) {
     AddMinesTreasure(stage);
     AddUdjatKeyChest(stage);
     ConvertBlocksToArrowTraps(stage);
-    AddAmbientMinesEntities(stage);
+    AddAmbientMinesEnts(stage);
     return stage;
 }
 

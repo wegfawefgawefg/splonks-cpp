@@ -10,39 +10,39 @@ This should improve separation between content and shared gameplay code:
 
 - common systems should not know about specific effects like mitt, spike shoes, spring shoes, or poison.
 - common systems should ask for effective values through modifier getters.
-- special behavior should live in effect archetype hook handlers.
+- special behavior should live in effect spec hook handlers.
 - effects should be applied in arbitrary order and may carry instance state, such as counters.
-- tools remain physical entities and are not folded into this system.
+- tools remain physical ents and are not folded into this system.
 
-This is not intended to be a scripting system. Mods are expected to add C++ archetypes and recompile.
+This is not intended to be a scripting system. Mods are expected to add C++ specs and recompile.
 
 ## Current Problem
 
-Current passives use `EntityPassiveItem` and `passive_item_flags`.
+Current passives use `EntPassiveItem` and `passive_item_flags`.
 
 That works for a small fixed item list, but it encourages code like:
 
 ```cpp
-if (HasPassiveItem(entity, EntityPassiveItem::SpringShoes)) {
+if (HasPassiveItem(ent, EntPassiveItem::SpringShoes)) {
     // special behavior
 }
 ```
 
-Those checks leak passive identity into player control, damage, physics, render, and UI paths. As more passives and temporary states are added, the shared systems become harder to reason about.
+Those checks leak passive ident into player control, damage, physics, render, and UI paths. As more passives and temporary states are added, the shared systems become harder to reason about.
 
 ## Core Terms
 
-`Effect`: non-physical gameplay state on an entity. Effects may be persistent, timed, or explicitly cleared by gameplay. Examples: mitt, spring shoes, meathead, parachute, burning, slow, no gravity until contact.
+`Effect`: non-physical gameplay state on an ent. Effects may be persistent, timed, or explicitly cleared by gameplay. Examples: mitt, spring shoes, meathead, parachute, burning, slow, no gravity until contact.
 
 `Modifier`: a typed numeric operation contributed by an effect. Examples: add jump impulse, override spike damage taken, add throw boost, multiply gravity.
 
 `Effect hook`: a narrow callback point that effects can react to. Examples: throw, jump, stomp, fall update, contact, nearby death, render UI.
 
-`Tool`: physical entity that can be held, equipped, or used. Tools stay separate.
+`Tool`: physical ent that can be held, equipped, or used. Tools stay separate.
 
 ## Effect Instance Storage
 
-Store effect instances on entities:
+Store effect instances on ents:
 
 ```cpp
 struct EffectInstance {
@@ -52,20 +52,20 @@ struct EffectInstance {
     std::uint32_t frames_remaining = 0;
 };
 
-struct EntityEffects {
-    EffectInstance effects[kMaxEntityEffects];
+struct EntEffects {
+    EffectInstance effects[kMaxEntEffects];
     std::uint8_t count = 0;
 };
 
-BoxedEntityEffects effects;
+BoxedEntEffects effects;
 ```
 
 The instance fields are intentionally generic.
 
-The boxed field keeps normal entities cheap: entities with no passives or temporary effects store only a pointer-sized empty box, while entities with effects allocate a fixed-slot payload. Replay copies deep-copy the box so snapshots do not alias live state.
+The boxed field keeps normal ents cheap: ents with no passives or temporary effects store only a pointer-sized empty box, while ents with effects allocate a fixed-slot payload. Replay copies deep-copy the box so snapshots do not alias live state.
 
 - `count`: stack count, remaining charges, or accumulated points.
-- `value`: charge, cooldown, intensity, progress, or archetype-specific scalar.
+- `value`: charge, cooldown, intensity, progress, or spec-specific scalar.
 - `frames_remaining`: timer for effects that expire by time.
 
 Examples:
@@ -75,15 +75,15 @@ Examples:
 - `NoGravityUntilContact`: hidden temporary effect, no count needed.
 - future poison/burning: timed status effect using `frames_remaining`.
 
-## Effect Archetypes
+## Effect Specs
 
-Each effect id resolves to an archetype:
+Each effect id resolves to an spec:
 
 ```cpp
-struct EffectArchetype {
+struct EffectSpec {
     EffectId id;
     const char* debug_name;
-    FrameDataId icon;
+    AFrameId icon;
 
     EffectUiKind ui_kind;
     const EffectExpiryPolicy* expiry;
@@ -95,7 +95,7 @@ struct EffectArchetype {
 };
 ```
 
-`EffectUiKind` controls presentation only:
+`EffectUiKind` controls pres only:
 
 ```cpp
 enum class EffectUiKind {
@@ -190,13 +190,13 @@ Gameplay code should read modifiers through getters:
 
 ```cpp
 float GetModifiedValue(
-    const Entity& entity,
+    const Ent& ent,
     ModifierTarget target,
     float base_value
 );
 ```
 
-The operation order must be deterministic. Proposed order:
+The operation order must be det. Proposed order:
 
 1. start with `base_value`
 2. apply `Add`
@@ -218,7 +218,7 @@ enum class EffectHook {
     FallUpdate,
     BlockingContact,
     TileContact,
-    EntityContact,
+    EntContact,
     DamageDealt,
     DamageTaken,
     DeathNearby,
@@ -237,7 +237,7 @@ struct EffectHookContext {
 };
 ```
 
-Each effect archetype has a hook mask. The hook runner only calls effects that opted into the hook.
+Each effect spec has a hook mask. The hook runner only calls effects that opted into the hook.
 
 ```cpp
 using EffectHookHandler = void (*)(
@@ -260,7 +260,7 @@ This keeps the API less opinionated than fields like `on_throw`, `on_jump`, `on_
 - modifiers:
   - `ThrowHorizontalBoost Add 6.0`
 - hook handler:
-  - on `Throw`, apply `NoGravityUntilContact` to the thrown entity.
+  - on `Throw`, apply `NoGravityUntilContact` to the thrown ent.
 - note:
   - the player added a `mitt_no_grab` UI asset. This can be used later for failed auto-catch feedback or a temporary "cannot catch" status if needed.
 
@@ -366,27 +366,27 @@ Be strict during migration:
 
 - Do not add new `HasPassiveItem(...)` checks.
 - Existing passive checks should be converted to either a modifier getter or a narrow effect/content hook.
-- Common physics/combat/movement code should ask for effective values, not passive identity.
-- Effect-specific behavior belongs in effect archetype handlers.
-- Tools stay physical entities.
-- Tile/area effects can later apply one-frame or persistent effects to entities, but should not be mixed into the tool system.
+- Common physics/combat/movement code should ask for effective values, not passive ident.
+- Effect-specific behavior belongs in effect spec handlers.
+- Tools stay physical ents.
+- Tile/area effects can later apply one-frame or persistent effects to ents, but should not be mixed into the tool system.
 
 Examples:
 
 ```cpp
 // Avoid:
-if (HasPassiveItem(entity, EntityPassiveItem::SpikeShoes)) {
+if (HasPassiveItem(ent, EntPassiveItem::SpikeShoes)) {
     damage = 0;
 }
 
 // Prefer:
-damage = GetModifiedValue(entity, ModifierTarget::SpikeDamageTaken, damage);
+damage = GetModifiedValue(ent, ModifierTarget::SpikeDamageTaken, damage);
 ```
 
 ```cpp
 // Avoid:
-if (HasPassiveItem(holder, EntityPassiveItem::Mitt)) {
-    SetTemporaryEffect(thrown, EntityTemporaryEffect::NoGravityUntilContact, true);
+if (HasPassiveItem(holder, EntPassiveItem::Mitt)) {
+    SetTemporaryEffect(thrown, EntTemporaryEffect::NoGravityUntilContact, true);
 }
 
 // Prefer:
@@ -395,26 +395,26 @@ ApplyEffectHook(EffectHook::Throw, holder.vid, thrown.vid);
 
 ## Migration Order
 
-1. [x] Add effect ids, effect instances, effect archetypes, modifier getters, expiry predicates, and hook plumbing.
+1. [x] Add effect ids, effect instances, effect specs, modifier getters, expiry predicates, and hook plumbing.
 2. [x] Replace passive pickup data with `pickup_effect`.
 3. [x] Migrate `SpringShoes` and `SpikeShoes`.
 4. [x] Migrate `Mitt` throw boost and throw hook behavior.
-5. [x] Migrate `NoGravityUntilContact` from interim temp flag into an effect archetype.
+5. [x] Migrate `NoGravityUntilContact` from interim temp flag into an effect spec.
 6. [x] Migrate `Spectacles` and `UdjatEye` visibility checks.
 7. [x] Migrate `Compass` UI behavior.
 8. [x] Migrate `Meathead` and `Parachute` as stateful persistent effects.
-9. [x] Remove `passive_item_flags`, `EntityPassiveItem`, and interim `EntityTemporaryEffect`.
+9. [x] Remove `passive_item_flags`, `EntPassiveItem`, and interim `EntTemporaryEffect`.
 
 ## Open Questions
 
-- Should modifier getters compute on read, or should modifiers be cached once per entity step?
+- Should modifier getters compute on read, or should modifiers be cached once per ent step?
 - Should `Override` always win last, or should there be priority for multiple overrides?
-- Should effect ids reuse the same runtime content id machinery planned for entities/tiles/audio?
+- Should effect ids reuse the same runtime content id machinery planned for ents/tiles/audio?
 - How should debug UI expose effect instance `count` and `value` without becoming effect-specific?
-- Should stack behavior be handled by effect archetype policy or by the caller applying the effect?
+- Should stack behavior be handled by effect spec policy or by the caller applying the effect?
 
 ## Implemented Decision
 
 The old passive bitset and interim temporary-effect bitset have been removed.
 
-`NoGravityUntilContact` is now a hidden effect. Mitt runs a generic throw hook, and the mitt effect hook applies that hidden effect to the thrown entity.
+`NoGravityUntilContact` is now a hidden effect. Mitt runs a generic throw hook, and the mitt effect hook applies that hidden effect to the thrown ent.

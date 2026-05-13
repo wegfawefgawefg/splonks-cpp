@@ -1,10 +1,10 @@
-#include "entities/cobra.hpp"
+#include "ents/cobra.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "entities/common/ground_walker.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "ents/common/ground_walker.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
@@ -15,7 +15,7 @@
 #include <memory>
 #include <optional>
 
-namespace splonks::entities::cobra {
+namespace splonks::ents::cobra {
 
 namespace {
 
@@ -36,51 +36,51 @@ constexpr float kCobraSpitTrailIntervalFrames = 2.0F;
 constexpr unsigned int kCobraVenomDamage = 1;
 
 void StartIdle(
-    Entity& cobra,
+    Ent& cobra,
     State& state,
     int min_frames = kCobraIdleMinFrames,
     int max_frames = kCobraIdleMaxFrames
 ) {
-    cobra.ai_state = EntityAiState::Idle;
+    cobra.ai_state = EntAiState::Idle;
     cobra.counter_a = static_cast<float>(state.drng.RandomIntInclusive(min_frames, max_frames));
     common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
-    TrySetAnimation(cobra, EntityDisplayState::Neutral);
+    TrySetAnim(cobra, EntDisplayState::Neutral);
 }
 
-void StartWalking(Entity& cobra, const State& state) {
-    cobra.ai_state = EntityAiState::Patrolling;
+void StartWalking(Ent& cobra, const State& state) {
+    cobra.ai_state = EntAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         cobra,
         state,
-        cobra.facing == LeftOrRight::Left ? -kCobraWalkSpeed : kCobraWalkSpeed,
+        cobra.facing == Side::Left ? -kCobraWalkSpeed : kCobraWalkSpeed,
         kCobraWalkAcceleration
     );
-    TrySetAnimation(cobra, EntityDisplayState::Walk);
+    TrySetAnim(cobra, EntDisplayState::Walk);
 }
 
-void FaceTowards(Entity& cobra, const Vec2& target_pos, const Stage& stage) {
+void FaceTowards(Ent& cobra, const Vec2& target_pos, const Stage& stage) {
     const Vec2 delta = GetNearestWorldDelta(stage, cobra.GetCenter(), target_pos);
     if (delta.x < 0.0F) {
-        cobra.facing = LeftOrRight::Left;
+        cobra.facing = Side::Left;
     } else if (delta.x > 0.0F) {
-        cobra.facing = LeftOrRight::Right;
+        cobra.facing = Side::Right;
     }
 }
 
-bool ShouldRunSightScan(const Entity& cobra, std::uint64_t stage_frame) {
+bool ShouldRunSightScan(const Ent& cobra, std::uint64_t stage_frame) {
     return ((stage_frame + static_cast<std::uint64_t>(cobra.vid.id)) %
             kCobraSightScanIntervalFrames) == 0;
 }
 
-bool CanSeePlayerAhead(const Entity& cobra, const State& state, const Graphics& graphics) {
-    const Vec2 spit_origin = common::GetEmitPointForEntity(cobra, graphics, cobra.GetCenter());
-    const int direction = cobra.facing == LeftOrRight::Left ? -1 : 1;
+bool CanSeePlayerAhead(const Ent& cobra, const State& state, const Graphics& graphics) {
+    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetCenter());
+    const int direction = cobra.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || !player->active || player->condition != EntCondition::Normal) {
             continue;
         }
         const Vec2 player_center = GetNearestWorldPoint(state.stage, spit_origin, player->GetCenter());
@@ -102,8 +102,8 @@ bool CanSeePlayerAhead(const Entity& cobra, const State& state, const Graphics& 
             graphics,
             cobra.vid
         );
-        if (hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() &&
-            *hit.entity_vid == player->vid) {
+        if (hit.type == WorldRayHitType::Ent && hit.ent_vid.has_value() &&
+            *hit.ent_vid == player->vid) {
             return true;
         }
     }
@@ -112,7 +112,7 @@ bool CanSeePlayerAhead(const Entity& cobra, const State& state, const Graphics& 
 
 void SpawnSpitParticle(State& state, const Vec2& pos, const Vec2& vel, float alpha, float size_jitter) {
     SpriteParticle particle{};
-    particle.frame_data_animator = FrameDataAnimator::New(frame_data_ids::CobraSpit);
+    particle.aframe_animator = AFrameAnimator::New(aframe_ids::CobraSpit);
     particle.draw_layer = DrawLayer::Foreground;
     particle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 16));
     particle.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
@@ -175,12 +175,12 @@ void SpawnSpitImpact(State& state, const Vec2& origin) {
     }
 }
 
-void FireCobraSpit(std::size_t entity_idx, State& state, Graphics& graphics) {
-    Entity& cobra = state.entity_manager.entities[entity_idx];
-    const int direction = cobra.facing == LeftOrRight::Left ? -1 : 1;
-    const Vec2 spit_origin = common::GetEmitPointForEntity(cobra, graphics, cobra.GetCenter());
+void FireCobraSpit(std::size_t ent_idx, State& state, Graphics& graphics) {
+    Ent& cobra = state.ents.ents[ent_idx];
+    const int direction = cobra.facing == Side::Left ? -1 : 1;
+    const Vec2 spit_origin = common::GetEmitPointForEnt(cobra, graphics, cobra.GetCenter());
 
-    Entity* const spit = world_ops::SpawnEntity(state, EntityType::CobraSpit, [&](Entity& spawned_spit) {
+    Ent* const spit = world_ops::SpawnEnt(state, EntType::CobraSpit, [&](Ent& spawned_spit) {
         spawned_spit.SetCenter(spit_origin);
         spawned_spit.facing = cobra.facing;
         spawned_spit.vel = Vec2::New(
@@ -190,9 +190,9 @@ void FireCobraSpit(std::size_t entity_idx, State& state, Graphics& graphics) {
         spawned_spit.acc = Vec2::New(0.0F, 0.0F);
         spawned_spit.thrown_by = cobra.vid;
         spawned_spit.thrown_immunity_timer = common::kThrownByImmunityDuration;
-        spawned_spit.projectile_contact_damage_type = DamageType::Attack;
-        spawned_spit.projectile_contact_damage_amount = kCobraVenomDamage;
-        spawned_spit.projectile_contact_timer = common::kProjectileContactDuration;
+        spawned_spit.proj_contact_damage_type = DamageType::Attack;
+        spawned_spit.proj_contact_damage_amount = kCobraVenomDamage;
+        spawned_spit.proj_contact_timer = common::kProjContactDuration;
         spawned_spit.counter_a = kCobraSpitLifetimeFrames;
         spawned_spit.counter_b = 0.0F;
     });
@@ -204,24 +204,24 @@ void FireCobraSpit(std::size_t entity_idx, State& state, Graphics& graphics) {
     SpawnSpitSpray(state, spit_origin, direction);
 }
 
-void DestroyCobraSpit(std::size_t entity_idx, State& state) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+void DestroyCobraSpit(std::size_t ent_idx, State& state) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& spit = state.entity_manager.entities[entity_idx];
+    Ent& spit = state.ents.ents[ent_idx];
     if (!spit.active) {
         return;
     }
 
     SpawnSpitImpact(state, spit.GetCenter());
-    (void)world_ops::DeactivateEntity(state, spit.vid);
+    (void)world_ops::DeactivateEnt(state, spit.vid);
 }
 
 } // namespace
 
-void StepEntityLogicAsCobra(
-    std::size_t entity_idx,
+void StepEntLogicAsCobra(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -230,11 +230,11 @@ void StepEntityLogicAsCobra(
     (void)audio;
     (void)dt;
 
-    Entity& cobra = state.entity_manager.entities[entity_idx];
-    if (cobra.last_condition == EntityCondition::Stunned && cobra.condition == EntityCondition::Normal) {
+    Ent& cobra = state.ents.ents[ent_idx];
+    if (cobra.last_condition == EntCondition::Stunned && cobra.condition == EntCondition::Normal) {
         StartIdle(cobra, state);
     }
-    if (cobra.condition != EntityCondition::Normal) {
+    if (cobra.condition != EntCondition::Normal) {
         return;
     }
 
@@ -244,12 +244,12 @@ void StepEntityLogicAsCobra(
 
     if (ShouldRunSightScan(cobra, state.stage_frame) && cobra.counter_b <= 0.0F &&
         CanSeePlayerAhead(cobra, state, graphics)) {
-        if (const Entity* const player = FindNearestPlayer(state, cobra.GetCenter())) {
+        if (const Ent* const player = FindNearestPlayer(state, cobra.GetCenter())) {
             FaceTowards(cobra, player->GetCenter(), state.stage);
         }
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
-        TrySetAnimation(cobra, EntityDisplayState::Walk);
-        FireCobraSpit(entity_idx, state, graphics);
+        TrySetAnim(cobra, EntDisplayState::Walk);
+        FireCobraSpit(ent_idx, state, graphics);
         cobra.counter_b = static_cast<float>(state.drng.RandomIntInclusive(
             kCobraSpitCooldownMinFrames,
             kCobraSpitCooldownMaxFrames
@@ -258,24 +258,24 @@ void StepEntityLogicAsCobra(
         return;
     }
 
-    if (cobra.ai_state == EntityAiState::Idle) {
+    if (cobra.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(cobra, kCobraWalkAcceleration);
-        TrySetAnimation(cobra, EntityDisplayState::Neutral);
+        TrySetAnim(cobra, EntDisplayState::Neutral);
         if (cobra.counter_a > 0.0F) {
             cobra.counter_a -= 1.0F;
             return;
         }
 
         cobra.facing =
-            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+            state.drng.RandomIntInclusive(0, 1) == 0 ? Side::Left : Side::Right;
         StartWalking(cobra, state);
         return;
     }
 
-    int direction = cobra.facing == LeftOrRight::Left ? -1 : 1;
+    int direction = cobra.facing == Side::Left ? -1 : 1;
     if (common::HasWallAheadForGroundWalker(cobra, state, graphics, direction) ||
         !common::HasGroundAheadForGroundWalker(cobra, state, graphics, direction)) {
-        cobra.facing = cobra.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        cobra.facing = cobra.facing == Side::Left ? Side::Right : Side::Left;
         direction = -direction;
     }
 
@@ -290,12 +290,12 @@ void StepEntityLogicAsCobra(
         static_cast<float>(direction) * kCobraWalkSpeed,
         kCobraWalkAcceleration
     );
-    SetMovementFlag(cobra, EntityMovementFlag::Walking, true);
-    TrySetAnimation(cobra, EntityDisplayState::Walk);
+    SetMovementFlag(cobra, EntMovementFlag::Walking, true);
+    TrySetAnim(cobra, EntDisplayState::Walk);
 }
 
-void StepEntityLogicAsCobraSpit(
-    std::size_t entity_idx,
+void StepEntLogicAsCobraSpit(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -305,12 +305,12 @@ void StepEntityLogicAsCobraSpit(
     (void)audio;
     (void)dt;
 
-    Entity& spit = state.entity_manager.entities[entity_idx];
+    Ent& spit = state.ents.ents[ent_idx];
     if (spit.counter_a > 0.0F) {
         spit.counter_a -= 1.0F;
     }
     if (spit.counter_a <= 0.0F) {
-        DestroyCobraSpit(entity_idx, state);
+        DestroyCobraSpit(ent_idx, state);
         return;
     }
 
@@ -321,29 +321,29 @@ void StepEntityLogicAsCobraSpit(
     }
 }
 
-void StepEntityPhysicsAsCobraSpit(
-    std::size_t entity_idx,
+void StepEntPhysicsAsCobraSpit(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    entities::common::StepStandardPhysics(entity_idx, state, graphics, audio, dt);
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    ents::common::StepStandardPhysics(ent_idx, state, graphics, audio, dt);
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& spit = state.entity_manager.entities[entity_idx];
+    Ent& spit = state.ents.ents[ent_idx];
     if (!spit.active) {
         return;
     }
     if (spit.collided) {
-        DestroyCobraSpit(entity_idx, state);
+        DestroyCobraSpit(ent_idx, state);
     }
 }
 
-extern const EntityArchetype kCobraArchetype{
-    .type_ = EntityType::Cobra,
+extern const EntSpec kCobraSpec{
+    .type_ = EntType::Cobra,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -354,22 +354,22 @@ extern const EntityArchetype kCobraArchetype{
     .hurt_on_contact = true,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kCobraIdleMinFrames),
     .counter_b = static_cast<float>(kCobraSpitCooldownMinFrames),
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .collide_sound = audio_asset_ids::Thud,
-    .step_logic = StepEntityLogicAsCobra,
+    .step_logic = StepEntLogicAsCobra,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Cobra),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Cobra),
 };
 
-extern const EntityArchetype kCobraSpitArchetype{
-    .type_ = EntityType::CobraSpit,
+extern const EntSpec kCobraSpitSpec{
+    .type_ = EntType::CobraSpit,
     .size = Vec2::New(4.0F, 3.0F),
     .health = 1,
     .has_physics = true,
@@ -382,15 +382,15 @@ extern const EntityArchetype kCobraSpitArchetype{
     .can_be_stomped = false,
     .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .collide_sound = audio_asset_ids::Tube,
-    .step_logic = StepEntityLogicAsCobraSpit,
-    .step_physics = StepEntityPhysicsAsCobraSpit,
+    .step_logic = StepEntLogicAsCobraSpit,
+    .step_physics = StepEntPhysicsAsCobraSpit,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CobraSpit),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::CobraSpit),
 };
 
-} // namespace splonks::entities::cobra
+} // namespace splonks::ents::cobra

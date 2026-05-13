@@ -1,15 +1,15 @@
-#include "entities/gear_items.hpp"
+#include "ents/gear_items.hpp"
 
 #include "audio_emitters.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 
 #include <algorithm>
 #include <cstdint>
 
-namespace splonks::entities::gear_items {
+namespace splonks::ents::gear_items {
 
 namespace {
 
@@ -17,40 +17,40 @@ constexpr float kParachuteMaxFallSpeed = 1.35F;
 constexpr float kParachuteVisualOffsetY = -12.0F;
 constexpr float kCapeMaxFallSpeed = 1.35F;
 
-common::ContactResolution OnEntityContactAsInventoryPickup(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsInventoryPickup(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext&,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
     if (graphics == nullptr || audio == nullptr ||
-        !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
-        return common::ContactResolution{};
+        !common::CanCollectPickupFromContact(ent_idx, other_ent_idx, state)) {
+        return common::ContactResult{};
     }
-    Entity& collector = state.entity_manager.entities[other_entity_idx];
-    const Entity& pickup = state.entity_manager.entities[entity_idx];
+    Ent& collector = state.ents.ents[other_ent_idx];
+    const Ent& pickup = state.ents.ents[ent_idx];
     if (!TryCollectInventoryPickup(state, collector, pickup)) {
-        return common::ContactResolution{};
+        return common::ContactResult{};
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
-    if (pickup.type_ == EntityType::SpringShoes) {
-        (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::SpringShoe);
+    (void)PlayEntCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
+    if (pickup.type_ == EntType::SpringShoes) {
+        (void)PlayEntCenterSoundEmitter(state, pickup, audio_asset_ids::SpringShoe);
     }
-    common::DeactivateCollectedPickup(entity_idx, state, *graphics);
-    return common::ContactResolution{};
+    common::DeactivateCollectedPickup(ent_idx, state, *graphics);
+    return common::ContactResult{};
 }
 
-Entity* GetOpenParachuteVisual(Entity& owner, State& state) {
-    if (!owner.entity_b.has_value()) {
+Ent* GetOpenParachuteVisual(Ent& owner, State& state) {
+    if (!owner.ent_b.has_value()) {
         return nullptr;
     }
-    Entity* const parachute = state.entity_manager.GetEntityMut(*owner.entity_b);
-    if (parachute == nullptr || !parachute->active || parachute->type_ != EntityType::Parachute ||
-        parachute->frame_data_animator.animation_id != frame_data_ids::OpenParachute) {
-        owner.entity_b.reset();
+    Ent* const parachute = state.ents.GetEntMut(*owner.ent_b);
+    if (parachute == nullptr || !parachute->active || parachute->type_ != EntType::Parachute ||
+        parachute->aframe_animator.anim_id != aframe_ids::OpenParachute) {
+        owner.ent_b.reset();
         return nullptr;
     }
     return parachute;
@@ -60,27 +60,27 @@ std::uint32_t GetParachuteDeployFallFrames(const State& state) {
     return static_cast<std::uint32_t>(std::max(0, state.player_tuning.fall_damage_light_frames));
 }
 
-void ClearOpenParachuteVisual(Entity& owner, State& state, const Graphics& graphics) {
-    Entity* const parachute = GetOpenParachuteVisual(owner, state);
+void ClearOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphics) {
+    Ent* const parachute = GetOpenParachuteVisual(owner, state);
     if (parachute == nullptr) {
         return;
     }
-    if (!world_ops::DeactivateEntity(state, parachute->vid)) {
+    if (!world_ops::DeactivateEnt(state, parachute->vid)) {
         return;
     }
-    owner.entity_b.reset();
-    state.UpdateSidForEntity(parachute->vid.id, graphics);
+    owner.ent_b.reset();
+    state.UpdateSidForEnt(parachute->vid.id, graphics);
 }
 
-void UpdateOpenParachuteVisual(Entity& owner, State& state, const Graphics& graphics) {
-    Entity* parachute = GetOpenParachuteVisual(owner, state);
+void UpdateOpenParachuteVisual(Ent& owner, State& state, const Graphics& graphics) {
+    Ent* parachute = GetOpenParachuteVisual(owner, state);
     bool spawned_visual = false;
     if (parachute == nullptr) {
-        parachute = world_ops::SpawnEntity(
+        parachute = world_ops::SpawnEnt(
             state,
-            EntityType::Parachute,
-            [](Entity& spawned) {
-                SetAnimation(spawned, frame_data_ids::OpenParachute);
+            EntType::Parachute,
+            [](Ent& spawned) {
+                SetAnim(spawned, aframe_ids::OpenParachute);
                 spawned.has_physics = false;
                 spawned.can_collide = false;
                 spawned.can_be_hit = false;
@@ -91,21 +91,21 @@ void UpdateOpenParachuteVisual(Entity& owner, State& state, const Graphics& grap
         if (parachute == nullptr) {
             return;
         }
-        owner.entity_b = parachute->vid;
+        owner.ent_b = parachute->vid;
         spawned_visual = true;
     }
 
     const Vec2 owner_visual_center =
-        common::GetVisualCenterForEntity(owner, graphics, owner.GetCenter());
+        common::GetVisualCenterForEnt(owner, graphics, owner.GetCenter());
     parachute->SetCenter(owner_visual_center + Vec2::New(0.0F, kParachuteVisualOffsetY));
     parachute->vel = Vec2::New(0.0F, 0.0F);
     parachute->acc = Vec2::New(0.0F, 0.0F);
-    state.UpdateSidForEntity(parachute->vid.id, graphics);
+    state.UpdateSidForEnt(parachute->vid.id, graphics);
     (void)spawned_visual;
 }
 
-void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics) {
-    if (owner.grounded || owner.condition != EntityCondition::Normal) {
+void StepEquippedParachute(Ent& owner, State& state, const Graphics& graphics) {
+    if (owner.grounded || owner.condition != EntCondition::Normal) {
         ClearOpenParachuteVisual(owner, state, graphics);
         return;
     }
@@ -124,47 +124,47 @@ void StepEquippedParachute(Entity& owner, State& state, const Graphics& graphics
     UpdateOpenParachuteVisual(owner, state, graphics);
 }
 
-FrameDataId GetCapeAnimation(const Entity& cape, const State& state) {
+AFrameId GetCapeAnim(const Ent& cape, const State& state) {
     const bool open = cape.counter_a > 0.0F;
-    if (cape.attachment_mode == AttachmentMode::Back && cape.held_by_vid.has_value()) {
-        const Entity* const holder = state.entity_manager.GetEntity(*cape.held_by_vid);
+    if (cape.attach_mode == AttachMode::Back && cape.held_by_vid.has_value()) {
+        const Ent* const holder = state.ents.GetEnt(*cape.held_by_vid);
         if (holder != nullptr) {
             if (holder->IsHanging()) {
-                return open ? frame_data_ids::CapeSideOpen : frame_data_ids::CapeSide;
+                return open ? aframe_ids::CapeSideOpen : aframe_ids::CapeSide;
             }
             if (holder->IsClimbing()) {
-                return open ? frame_data_ids::CapeBackOpen : frame_data_ids::CapeBack;
+                return open ? aframe_ids::CapeBackOpen : aframe_ids::CapeBack;
             }
         }
-        return open ? frame_data_ids::CapeOpen : frame_data_ids::Cape;
+        return open ? aframe_ids::CapeOpen : aframe_ids::Cape;
     }
 
-    if (cape.attachment_mode == AttachmentMode::Held || cape.held_by_vid.has_value()) {
-        return open ? frame_data_ids::CapeSideOpen : frame_data_ids::CapeSide;
+    if (cape.attach_mode == AttachMode::Held || cape.held_by_vid.has_value()) {
+        return open ? aframe_ids::CapeSideOpen : aframe_ids::CapeSide;
     }
-    return frame_data_ids::CapeClosed;
+    return aframe_ids::CapeClosed;
 }
 
-void OnUseAsCape(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+void OnUseAsCape(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     (void)graphics;
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& cape = state.entity_manager.entities[entity_idx];
+    Ent& cape = state.ents.ents[ent_idx];
     cape.counter_a = 0.0F;
     if (!cape.use_state.down ||
         !cape.use_state.user_vid.has_value()) {
         return;
     }
-    if (cape.use_state.source != AttachmentMode::Back &&
-        cape.use_state.source != AttachmentMode::Held) {
+    if (cape.use_state.source != AttachMode::Back &&
+        cape.use_state.source != AttachMode::Held) {
         return;
     }
 
-    Entity* const holder = state.entity_manager.GetEntityMut(*cape.use_state.user_vid);
-    if (holder == nullptr || holder->condition != EntityCondition::Normal) {
+    Ent* const holder = state.ents.GetEntMut(*cape.use_state.user_vid);
+    if (holder == nullptr || holder->condition != EntCondition::Normal) {
         return;
     }
 
@@ -175,8 +175,8 @@ void OnUseAsCape(std::size_t entity_idx, State& state, Graphics& graphics, Audio
     }
 }
 
-void StepEntityLogicAsCape(
-    std::size_t entity_idx,
+void StepEntLogicAsCape(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -185,34 +185,34 @@ void StepEntityLogicAsCape(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& cape = state.entity_manager.entities[entity_idx];
+    Ent& cape = state.ents.ents[ent_idx];
     if (!cape.use_state.down) {
         cape.counter_a = 0.0F;
     }
-    SetAnimation(cape, GetCapeAnimation(cape, state));
+    SetAnim(cape, GetCapeAnim(cape, state));
 }
 
 } // namespace
 
-void StepEquippedPassiveItems(std::size_t entity_idx, State& state, Graphics& graphics) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+void StepEquippedPassiveItems(std::size_t ent_idx, State& state, Graphics& graphics) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    StepEquippedParachute(entity, state, graphics);
+    Ent& ent = state.ents.ents[ent_idx];
+    StepEquippedParachute(ent, state, graphics);
 }
 
-void ClearEquippedPassiveItemVisuals(Entity& entity, State& state, const Graphics& graphics) {
-    ClearOpenParachuteVisual(entity, state, graphics);
+void ClearEquippedPassiveItemVisuals(Ent& ent, State& state, const Graphics& graphics) {
+    ClearOpenParachuteVisual(ent, state, graphics);
 }
 
-extern const EntityArchetype kCapeArchetype{
-    .type_ = EntityType::Cape,
+extern const EntSpec kCapeSpec{
+    .type_ = EntType::Cape,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -223,20 +223,20 @@ extern const EntityArchetype kCapeArchetype{
     .can_be_stomped = false,
     .can_go_on_back = true,
     .can_be_stunned = false,
-    .predict_local_attachment_use = true,
-    .predict_attachment_use_presentation = true,
+    .predict_local_attach_use = true,
+    .predict_attach_use_pres = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .on_use = OnUseAsCape,
-    .step_logic = StepEntityLogicAsCape,
+    .step_logic = StepEntLogicAsCape,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CapePickup),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::CapePickup),
 };
-extern const EntityArchetype kGlovesArchetype{
-    .type_ = EntityType::Gloves,
+extern const EntSpec kGlovesSpec{
+    .type_ = EntType::Gloves,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -247,17 +247,17 @@ extern const EntityArchetype kGlovesArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .pickup_effect = EffectId::Gloves,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Gloves),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Gloves),
 };
-extern const EntityArchetype kSpectaclesArchetype{
-    .type_ = EntityType::Spectacles,
+extern const EntSpec kSpectaclesSpec{
+    .type_ = EntType::Spectacles,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -268,17 +268,17 @@ extern const EntityArchetype kSpectaclesArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .pickup_effect = EffectId::Spectacles,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spectacles),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Spectacles),
 };
-extern const EntityArchetype kMittArchetype{
-    .type_ = EntityType::Mitt,
+extern const EntSpec kMittSpec{
+    .type_ = EntType::Mitt,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -289,17 +289,17 @@ extern const EntityArchetype kMittArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .pickup_effect = EffectId::Mitt,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Mitt),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Mitt),
 };
-extern const EntityArchetype kPasteArchetype{
-    .type_ = EntityType::Paste,
+extern const EntSpec kPasteSpec{
+    .type_ = EntType::Paste,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -310,16 +310,16 @@ extern const EntityArchetype kPasteArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SpiderMilk),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SpiderMilk),
 };
-extern const EntityArchetype kSpringShoesArchetype{
-    .type_ = EntityType::SpringShoes,
+extern const EntSpec kSpringShoesSpec{
+    .type_ = EntType::SpringShoes,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -330,17 +330,17 @@ extern const EntityArchetype kSpringShoesArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .pickup_effect = EffectId::SpringShoes,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SpringShoes),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SpringShoes),
 };
-extern const EntityArchetype kSpikeShoesArchetype{
-    .type_ = EntityType::SpikeShoes,
+extern const EntSpec kSpikeShoesSpec{
+    .type_ = EntType::SpikeShoes,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -351,17 +351,17 @@ extern const EntityArchetype kSpikeShoesArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .pickup_effect = EffectId::SpikeShoes,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SpikeShoes),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SpikeShoes),
 };
-extern const EntityArchetype kBombBoxArchetype{
-    .type_ = EntityType::BombBox,
+extern const EntSpec kBombBoxSpec{
+    .type_ = EntType::BombBox,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -372,16 +372,16 @@ extern const EntityArchetype kBombBoxArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::BombBox),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::BombBox),
 };
-extern const EntityArchetype kBombBagArchetype{
-    .type_ = EntityType::BombBag,
+extern const EntSpec kBombBagSpec{
+    .type_ = EntType::BombBag,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -392,16 +392,16 @@ extern const EntityArchetype kBombBagArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::BombBag),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::BombBag),
 };
-extern const EntityArchetype kCompassArchetype{
-    .type_ = EntityType::Compass,
+extern const EntSpec kCompassSpec{
+    .type_ = EntType::Compass,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -412,17 +412,17 @@ extern const EntityArchetype kCompassArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .pickup_effect = EffectId::Compass,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Compass),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Compass),
 };
-extern const EntityArchetype kParachuteArchetype{
-    .type_ = EntityType::Parachute,
+extern const EntSpec kParachuteSpec{
+    .type_ = EntType::Parachute,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -433,17 +433,17 @@ extern const EntityArchetype kParachuteArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .pickup_effect = EffectId::Parachute,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::PackedParachute),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::PackedParachute),
 };
-extern const EntityArchetype kRopePileArchetype{
-    .type_ = EntityType::RopePile,
+extern const EntSpec kRopePileSpec{
+    .type_ = EntType::RopePile,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -454,13 +454,13 @@ extern const EntityArchetype kRopePileArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .on_entity_contact = OnEntityContactAsInventoryPickup,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .on_ent_contact = OnEntContactAsInventoryPickup,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RopePile),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::RopePile),
 };
 
-} // namespace splonks::entities::gear_items
+} // namespace splonks::ents::gear_items

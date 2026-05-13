@@ -1,12 +1,12 @@
-#include "entities/machete.hpp"
+#include "ents/machete.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "entities/common/common.hpp"
-#include "entities/sac_altar.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "ents/common/common.hpp"
+#include "ents/sac_altar.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 #include "utils.hpp"
@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace splonks::entities::machete {
+namespace splonks::ents::machete {
 
 namespace {
 
@@ -26,81 +26,81 @@ constexpr unsigned int kMacheteDamage = 8;
 constexpr std::int32_t kThrownKillFavor = 1;
 constexpr std::int32_t kCorpseCutFavor = 1;
 
-bool IsSwinging(const Entity& machete) {
-    return machete.frame_data_animator.animation_id == frame_data_ids::KnifeSwing;
+bool IsSwinging(const Ent& machete) {
+    return machete.aframe_animator.anim_id == aframe_ids::KnifeSwing;
 }
 
-std::int32_t GetPendingFavor(const Entity& machete) {
+std::int32_t GetPendingFavor(const Ent& machete) {
     return std::max(0, static_cast<std::int32_t>(machete.counter_b));
 }
 
-void AddPendingFavor(Entity& machete, std::int32_t amount) {
+void AddPendingFavor(Ent& machete, std::int32_t amount) {
     machete.counter_b = static_cast<float>(GetPendingFavor(machete) + std::max(0, amount));
 }
 
-void ClearPendingFavor(Entity& machete) {
+void ClearPendingFavor(Ent& machete) {
     machete.counter_b = 0.0F;
 }
 
-Vec2 GetVictimEffectPos(const Entity& victim, const Graphics& graphics) {
-    const AABB victim_aabb = common::GetContactAabbForEntity(victim, graphics);
+Vec2 GetVictimEffectPos(const Ent& victim, const Graphics& graphics) {
+    const AABB victim_aabb = common::GetContactAabbForEnt(victim, graphics);
     return Vec2::New(
         (victim_aabb.tl.x + victim_aabb.br.x) * 0.5F,
         victim_aabb.br.y - 2.0F
     );
 }
 
-bool CanMacheteHitEntity(const Entity& machete, const Entity* holder, const Entity& other_entity) {
-    if (!other_entity.active || !other_entity.can_collide) {
+bool CanMacheteHitEnt(const Ent& machete, const Ent* holder, const Ent& other_ent) {
+    if (!other_ent.active || !other_ent.can_collide) {
         return false;
     }
-    if (other_entity.impassable || other_entity.condition == EntityCondition::Dead) {
+    if (other_ent.impassable || other_ent.condition == EntCondition::Dead) {
         return false;
     }
-    if (other_entity.vid == machete.vid) {
+    if (other_ent.vid == machete.vid) {
         return false;
     }
-    if (holder != nullptr && other_entity.vid == holder->vid) {
+    if (holder != nullptr && other_ent.vid == holder->vid) {
         return false;
     }
-    if (holder != nullptr && other_entity.held_by_vid.has_value() && *other_entity.held_by_vid == holder->vid) {
+    if (holder != nullptr && other_ent.held_by_vid.has_value() && *other_ent.held_by_vid == holder->vid) {
         return false;
     }
     return true;
 }
 
-bool CanCarveCorpse(const Entity& victim) {
-    return victim.active && victim.condition == EntityCondition::Dead &&
-           entities::sac_altar::GetSacrificeFavorValue(victim).has_value();
+bool CanCarveCorpse(const Ent& victim) {
+    return victim.active && victim.condition == EntCondition::Dead &&
+           ents::sac_altar::GetSacrificeFavorValue(victim).has_value();
 }
 
-void CarveCorpse(Entity& machete, Entity& victim, State& state, const Graphics& graphics, Audio& audio) {
+void CarveCorpse(Ent& machete, Ent& victim, State& state, const Graphics& graphics, Audio& audio) {
     const Vec2 effect_pos = GetVictimEffectPos(victim, graphics);
-    common::DropHeldItemFromEntity(victim, state);
-    common::ReleaseEntityFromHolder(victim, state);
+    common::DropHeldItemFromEnt(victim, state);
+    common::ReleaseEntFromHolder(victim, state);
     victim.marked_for_destruction = true;
-    (void)world_ops::DeactivateEntity(state, victim.vid);
-    state.UpdateSidForEntity(victim.vid.id, graphics);
+    (void)world_ops::DeactivateEnt(state, victim.vid);
+    state.UpdateSidForEnt(victim.vid.id, graphics);
     AddPendingFavor(machete, kCorpseCutFavor);
-    entities::sac_altar::SpawnSacrificeGainEffects(state, audio, effect_pos);
+    ents::sac_altar::SpawnSacrificeGainEffects(state, audio, effect_pos);
 }
 
-void HandleHeldKillFavor(Entity& machete, const Entity& victim_before_damage, State& state, const Graphics& graphics, Audio& audio) {
-    const std::optional<std::int32_t> favor = entities::sac_altar::GetLivingSacrificeFavorValue(victim_before_damage);
+void HandleHeldKillFavor(Ent& machete, const Ent& victim_before_damage, State& state, const Graphics& graphics, Audio& audio) {
+    const std::optional<std::int32_t> favor = ents::sac_altar::GetLivingSacrificeFavorValue(victim_before_damage);
     if (!favor.has_value()) {
         return;
     }
     AddPendingFavor(machete, *favor);
-    entities::sac_altar::SpawnSacrificeGainEffects(state, audio, GetVictimEffectPos(victim_before_damage, graphics));
+    ents::sac_altar::SpawnSacrificeGainEffects(state, audio, GetVictimEffectPos(victim_before_damage, graphics));
 }
 
-void HandleThrownKillFavor(Entity& machete, const Entity& victim, State& state, const Graphics& graphics, Audio& audio) {
+void HandleThrownKillFavor(Ent& machete, const Ent& victim, State& state, const Graphics& graphics, Audio& audio) {
     AddPendingFavor(machete, kThrownKillFavor);
-    entities::sac_altar::SpawnSacrificeGainEffects(state, audio, GetVictimEffectPos(victim, graphics));
+    ents::sac_altar::SpawnSacrificeGainEffects(state, audio, GetVictimEffectPos(victim, graphics));
 }
 
 bool TryDepositFavorWhileGroundedOnSacAltar(
-    Entity& machete,
+    Ent& machete,
     State& state,
     const Graphics& graphics,
     Audio& audio
@@ -110,23 +110,23 @@ bool TryDepositFavorWhileGroundedOnSacAltar(
     }
 
     const AABB feet = machete.GetFeet();
-    for (const VID& other_vid : QueryEntitiesInAabb(state, feet, machete.vid)) {
-        Entity* const other_entity = state.entity_manager.GetEntityMut(other_vid);
-        if (other_entity == nullptr || !other_entity->active || other_entity->type_ != EntityType::SacAltar) {
+    for (const VID& other_vid : QueryEntsInAabb(state, feet, machete.vid)) {
+        Ent* const other_ent = state.ents.GetEntMut(other_vid);
+        if (other_ent == nullptr || !other_ent->active || other_ent->type_ != EntType::SacAltar) {
             continue;
         }
 
         const AABB altar_aabb = GetNearestWorldAabb(
             state.stage,
             machete.GetCenter(),
-            common::GetContactAabbForEntity(*other_entity, graphics)
+            common::GetContactAabbForEnt(*other_ent, graphics)
         );
         if (!AabbsIntersect(feet, altar_aabb)) {
             continue;
         }
 
-        if (entities::sac_altar::TryDepositStoredFavor(
-                *other_entity,
+        if (ents::sac_altar::TryDepositStoredFavor(
+                *other_ent,
                 GetPendingFavor(machete),
                 state,
                 graphics,
@@ -140,43 +140,43 @@ bool TryDepositFavorWhileGroundedOnSacAltar(
     return false;
 }
 
-void TryApplyMacheteStrike(std::size_t entity_idx, State& state, const Graphics& graphics, Audio& audio) {
-    Entity& machete = state.entity_manager.entities[entity_idx];
-    Entity* holder = nullptr;
+void TryApplyMacheteStrike(std::size_t ent_idx, State& state, const Graphics& graphics, Audio& audio) {
+    Ent& machete = state.ents.ents[ent_idx];
+    Ent* holder = nullptr;
     if (machete.held_by_vid.has_value()) {
-        holder = state.entity_manager.GetEntityMut(*machete.held_by_vid);
+        holder = state.ents.GetEntMut(*machete.held_by_vid);
     }
 
-    const AABB strike_aabb = common::GetContactAabbForEntity(machete, graphics);
-    for (const VID& other_vid : QueryEntitiesInAabb(state, strike_aabb, machete.vid)) {
-        Entity* const other_entity = state.entity_manager.GetEntityMut(other_vid);
-        if (other_entity == nullptr) {
+    const AABB strike_aabb = common::GetContactAabbForEnt(machete, graphics);
+    for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, machete.vid)) {
+        Ent* const other_ent = state.ents.GetEntMut(other_vid);
+        if (other_ent == nullptr) {
             continue;
         }
 
         const AABB other_aabb = GetNearestWorldAabb(
             state.stage,
             machete.GetCenter(),
-            common::GetContactAabbForEntity(*other_entity, graphics)
+            common::GetContactAabbForEnt(*other_ent, graphics)
         );
         if (!AabbsIntersect(strike_aabb, other_aabb)) {
             continue;
         }
 
-        if (CanCarveCorpse(*other_entity)) {
-            CarveCorpse(machete, *other_entity, state, graphics, audio);
+        if (CanCarveCorpse(*other_ent)) {
+            CarveCorpse(machete, *other_ent, state, graphics, audio);
             continue;
         }
 
-        if (!CanMacheteHitEntity(machete, holder, *other_entity)) {
+        if (!CanMacheteHitEnt(machete, holder, *other_ent)) {
             continue;
         }
 
-        const Entity victim_before_damage = *other_entity;
-        const float knockback_x = machete.facing == LeftOrRight::Left ? -3.5F : 3.5F;
+        const Ent victim_before_damage = *other_ent;
+        const float knockback_x = machete.facing == Side::Left ? -3.5F : 3.5F;
         const common::DamageResult damage_result =
-            common::TryHitEntity(
-                other_entity->vid.id,
+            common::TryHitEnt(
+                other_ent->vid.id,
                 state,
                 audio,
                 DamageType::Attack,
@@ -189,9 +189,9 @@ void TryApplyMacheteStrike(std::size_t entity_idx, State& state, const Graphics&
                         .clear_acceleration = true,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
                         .thrown_immunity_timer = common::kThrownByImmunityDuration,
-                        .projectile_contact_damage_type = DamageType::Attack,
-                        .projectile_contact_damage_amount = kMacheteDamage,
-                        .projectile_contact_duration = common::kProjectileContactDuration,
+                        .proj_contact_damage_type = DamageType::Attack,
+                        .proj_contact_damage_amount = kMacheteDamage,
+                        .proj_contact_duration = common::kProjContactDuration,
                     },
                 }
             );
@@ -206,99 +206,99 @@ void TryApplyMacheteStrike(std::size_t entity_idx, State& state, const Graphics&
     }
 }
 
-common::ContactResolution OnEntityContactAsMachete(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsMachete(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
     if (graphics == nullptr || audio == nullptr || context.phase != common::ContactPhase::SweptEntered) {
-        return common::ContactResolution{};
+        return common::ContactResult{};
     }
-    if (entity_idx >= state.entity_manager.entities.size() || other_entity_idx >= state.entity_manager.entities.size()) {
-        return common::ContactResolution{};
-    }
-
-    Entity& machete = state.entity_manager.entities[entity_idx];
-    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!machete.active || machete.type_ != EntityType::Machete || !other_entity.active) {
-        return common::ContactResolution{};
+    if (ent_idx >= state.ents.ents.size() || other_ent_idx >= state.ents.ents.size()) {
+        return common::ContactResult{};
     }
 
-    if (machete.projectile_contact_timer == 0 || machete.held_by_vid.has_value()) {
-        return common::ContactResolution{};
+    Ent& machete = state.ents.ents[ent_idx];
+    Ent& other_ent = state.ents.ents[other_ent_idx];
+    if (!machete.active || machete.type_ != EntType::Machete || !other_ent.active) {
+        return common::ContactResult{};
     }
 
-    if (other_entity.type_ == EntityType::Cobweb) {
-        (void)common::TryDamageEntity(other_entity_idx, state, *audio, DamageType::Attack, kMacheteDamage);
-        return common::ContactResolution{.stop_sweep = true};
+    if (machete.proj_contact_timer == 0 || machete.held_by_vid.has_value()) {
+        return common::ContactResult{};
     }
 
-    if (CanCarveCorpse(other_entity) && other_entity.last_condition == EntityCondition::Dead) {
-        CarveCorpse(machete, other_entity, state, *graphics, *audio);
-        return common::ContactResolution{.stop_sweep = true};
+    if (other_ent.type_ == EntType::Cobweb) {
+        (void)common::TryDamageEnt(other_ent_idx, state, *audio, DamageType::Attack, kMacheteDamage);
+        return common::ContactResult{.stop_sweep = true};
     }
 
-    if (other_entity.condition == EntityCondition::Dead && other_entity.last_condition != EntityCondition::Dead &&
-        entities::sac_altar::GetSacrificeFavorValue(other_entity).has_value()) {
-        HandleThrownKillFavor(machete, other_entity, state, *graphics, *audio);
+    if (CanCarveCorpse(other_ent) && other_ent.last_condition == EntCondition::Dead) {
+        CarveCorpse(machete, other_ent, state, *graphics, *audio);
+        return common::ContactResult{.stop_sweep = true};
     }
 
-    return common::ContactResolution{};
+    if (other_ent.condition == EntCondition::Dead && other_ent.last_condition != EntCondition::Dead &&
+        ents::sac_altar::GetSacrificeFavorValue(other_ent).has_value()) {
+        HandleThrownKillFavor(machete, other_ent, state, *graphics, *audio);
+    }
+
+    return common::ContactResult{};
 }
 
 } // namespace
 
-void OnUseAsMachete(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+void OnUseAsMachete(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     (void)state;
     (void)graphics;
     (void)audio;
-    Entity& machete = state.entity_manager.entities[entity_idx];
+    Ent& machete = state.ents.ents[ent_idx];
     if (!machete.use_state.pressed || IsSwinging(machete)) {
         return;
     }
 
-    SetAnimation(machete, frame_data_ids::KnifeSwing);
-    machete.frame_data_animator.loop = false;
+    SetAnim(machete, aframe_ids::KnifeSwing);
+    machete.aframe_animator.loop = false;
     machete.counter_a = kMacheteStrikePending;
-    (void)PlayEntityCenterSoundEmitter(state, machete, audio_asset_ids::Throw);
+    (void)PlayEntCenterSoundEmitter(state, machete, audio_asset_ids::Throw);
 
-    if (machete.use_state.source == AttachmentMode::None) {
-        StopUsingEntity(machete);
+    if (machete.use_state.source == AttachMode::None) {
+        StopUsingEnt(machete);
     }
 }
 
-void StepEntityLogicAsMachete(
-    std::size_t entity_idx,
+void StepEntLogicAsMachete(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    Entity& machete = state.entity_manager.entities[entity_idx];
+    Ent& machete = state.ents.ents[ent_idx];
     TryDepositFavorWhileGroundedOnSacAltar(machete, state, graphics, audio);
     if (!IsSwinging(machete)) {
         return;
     }
 
-    if (machete.counter_a > 0.0F && machete.frame_data_animator.current_frame > 0) {
-        TryApplyMacheteStrike(entity_idx, state, graphics, audio);
+    if (machete.counter_a > 0.0F && machete.aframe_animator.current_frame > 0) {
+        TryApplyMacheteStrike(ent_idx, state, graphics, audio);
         machete.counter_a = 0.0F;
     }
 
-    if (!machete.frame_data_animator.IsFinished()) {
+    if (!machete.aframe_animator.IsFinished()) {
         return;
     }
 
-    SetAnimation(machete, frame_data_ids::Knife);
-    machete.frame_data_animator.loop = true;
+    SetAnim(machete, aframe_ids::Knife);
+    machete.aframe_animator.loop = true;
 }
 
-extern const EntityArchetype kMacheteArchetype{
-    .type_ = EntityType::Machete,
+extern const EntSpec kMacheteSpec{
+    .type_ = EntType::Machete,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -309,17 +309,17 @@ extern const EntityArchetype kMacheteArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .projectile_contact_damage_type = DamageType::Attack,
-    .projectile_contact_damage_amount = kMacheteDamage,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .proj_contact_damage_type = DamageType::Attack,
+    .proj_contact_damage_amount = kMacheteDamage,
     .on_use = OnUseAsMachete,
-    .step_logic = StepEntityLogicAsMachete,
-    .on_entity_contact = OnEntityContactAsMachete,
+    .step_logic = StepEntLogicAsMachete,
+    .on_ent_contact = OnEntContactAsMachete,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Knife),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Knife),
 };
 
-} // namespace splonks::entities::machete
+} // namespace splonks::ents::machete

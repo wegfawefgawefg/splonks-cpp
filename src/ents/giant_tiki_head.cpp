@@ -1,16 +1,16 @@
-#include "entities/giant_tiki_head.hpp"
+#include "ents/giant_tiki_head.hpp"
 
 #include "audio_emitters.hpp"
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <limits>
 
-namespace splonks::entities::giant_tiki_head {
+namespace splonks::ents::giant_tiki_head {
 
 namespace {
 
@@ -18,45 +18,45 @@ constexpr float kBoulderReleaseDelayFrames = 60.0F;
 constexpr float kTikiHeadWindupShakeIntervalFrames = 6.0F;
 constexpr float kTikiHeadWindupShakeForegroundAmount = 0.34F;
 constexpr float kTikiHeadWindupShakeBackgroundAmount = 0.24F;
-constexpr float kTikiHeadWindupShakeEntityAmount = 0.32F;
+constexpr float kTikiHeadWindupShakeEntAmount = 0.32F;
 constexpr float kTikiHeadWindupShakeRadiusTiles = 2.3F;
 constexpr float kTikiHeadReleaseShakeForegroundAmount = 0.95F;
 constexpr float kTikiHeadReleaseShakeBackgroundAmount = 0.72F;
-constexpr float kTikiHeadReleaseShakeEntityAmount = 0.90F;
+constexpr float kTikiHeadReleaseShakeEntAmount = 0.90F;
 constexpr float kTikiHeadReleaseShakeRadiusTiles = 3.0F;
 
-void AddTikiHeadWindupShake(State& state, const Entity& head) {
+void AddTikiHeadWindupShake(State& state, const Ent& head) {
     AddShake(
         state,
         head.GetCenter(),
         kTikiHeadWindupShakeForegroundAmount,
         kTikiHeadWindupShakeBackgroundAmount,
-        kTikiHeadWindupShakeEntityAmount,
+        kTikiHeadWindupShakeEntAmount,
         kTikiHeadWindupShakeRadiusTiles
     );
 }
 
-void AddTikiHeadReleaseShake(State& state, const Entity& head) {
+void AddTikiHeadReleaseShake(State& state, const Ent& head) {
     AddShake(
         state,
         head.GetCenter(),
         kTikiHeadReleaseShakeForegroundAmount,
         kTikiHeadReleaseShakeBackgroundAmount,
-        kTikiHeadReleaseShakeEntityAmount,
+        kTikiHeadReleaseShakeEntAmount,
         kTikiHeadReleaseShakeRadiusTiles
     );
 }
 
-const Entity* FindClosestPlayerToHead(const Entity& head, const State& state) {
-    const Entity* best_player = nullptr;
+const Ent* FindClosestPlayerToHead(const Ent& head, const State& state) {
+    const Ent* best_player = nullptr;
     float best_distance_sq = std::numeric_limits<float>::max();
     const Vec2 head_center = head.GetCenter();
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
             continue;
         }
 
@@ -70,18 +70,18 @@ const Entity* FindClosestPlayerToHead(const Entity& head, const State& state) {
     return best_player;
 }
 
-std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio) {
+std::optional<VID> SpawnBoulderForHead(Ent& head, State& state, Audio& audio) {
     (void)audio;
 
-    Entity* const boulder = world_ops::SpawnEntity(state, EntityType::Boulder, [&](Entity& spawned_boulder) {
+    Ent* const boulder = world_ops::SpawnEnt(state, EntType::Boulder, [&](Ent& spawned_boulder) {
         spawned_boulder.SetCenter(head.GetCenter());
 
-        const Entity* const player = FindClosestPlayerToHead(head, state);
+        const Ent* const player = FindClosestPlayerToHead(head, state);
         if (player != nullptr) {
             const Vec2 delta = GetNearestWorldDelta(state.stage, head.GetCenter(), player->GetCenter());
-            spawned_boulder.facing = delta.x < 0.0F ? LeftOrRight::Left : LeftOrRight::Right;
+            spawned_boulder.facing = delta.x < 0.0F ? Side::Left : Side::Right;
         } else {
-            spawned_boulder.facing = LeftOrRight::Right;
+            spawned_boulder.facing = Side::Right;
         }
     }, std::nullopt);
     if (boulder == nullptr) {
@@ -95,8 +95,8 @@ std::optional<VID> SpawnBoulderForHead(Entity& head, State& state, Audio& audio)
 
 } // namespace
 
-extern const EntityArchetype kGiantTikiHeadArchetype{
-    .type_ = EntityType::GiantTikiHead,
+extern const EntSpec kGiantTikiHeadSpec{
+    .type_ = EntType::GiantTikiHead,
     .size = Vec2::New(32.0F, 32.0F),
     .health = 1,
     .has_physics = false,
@@ -109,18 +109,18 @@ extern const EntityArchetype kGiantTikiHeadArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Background,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .step_logic = StepEntityLogicAsGiantTikiHead,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .step_logic = StepEntLogicAsGiantTikiHead,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GiantTikiHead),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::GiantTikiHead),
 };
 
-void StepEntityLogicAsGiantTikiHead(
-    std::size_t entity_idx,
+void StepEntLogicAsGiantTikiHead(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -128,25 +128,25 @@ void StepEntityLogicAsGiantTikiHead(
 ) {
     (void)graphics;
     (void)dt;
-    Entity& head = state.entity_manager.entities[entity_idx];
+    Ent& head = state.ents.ents[ent_idx];
 
-    if (!head.entity_a.has_value()) {
+    if (!head.ent_a.has_value()) {
         return;
     }
 
-    const Entity* const idol = state.entity_manager.GetEntity(*head.entity_a);
+    const Ent* const idol = state.ents.GetEnt(*head.ent_a);
     if (idol == nullptr || !idol->active) {
         return;
     }
 
-    if (head.ai_state == EntityAiState::Idle) {
+    if (head.ai_state == EntAiState::Idle) {
         if (ToIVec2(idol->pos) == head.point_a) {
             return;
         }
 
-        head.ai_state = EntityAiState::Disturbed;
+        head.ai_state = EntAiState::Disturbed;
         head.counter_a = kBoulderReleaseDelayFrames;
-        SetAnimation(head, HashFrameDataIdConstexpr("giant_tiki_head_hole"));
+        SetAnim(head, HashAFrameIdConstexpr("giant_tiki_head_hole"));
         (void)PlayAttachedSoundEmitter(
             state,
             head.vid,
@@ -156,7 +156,7 @@ void StepEntityLogicAsGiantTikiHead(
         return;
     }
 
-    if (head.entity_b.has_value()) {
+    if (head.ent_b.has_value()) {
         return;
     }
 
@@ -173,7 +173,7 @@ void StepEntityLogicAsGiantTikiHead(
         return;
     }
 
-    head.entity_b = SpawnBoulderForHead(head, state, audio);
+    head.ent_b = SpawnBoulderForHead(head, state, audio);
 }
 
-} // namespace splonks::entities::giant_tiki_head
+} // namespace splonks::ents::giant_tiki_head

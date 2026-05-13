@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/core_types.hpp"
+#include "ent/core_types.hpp"
 #include "quest.hpp"
 #include "stage.hpp"
 
@@ -21,11 +21,11 @@ bool IsStartRoomAt(const Stage& stage, int tile_x, int tile_y);
 bool HasSpawnAtWorldPos(const Stage& stage, const Vec2& pos);
 std::optional<Vec2> FindEntrancePos(const Stage& stage);
 std::optional<Vec2> FindExitPos(const Stage& stage);
-bool HasSpawnType(const Stage& stage, EntityType type_);
-float DistanceToNearestSpawnType(const Stage& stage, EntityType type_, const Vec2& pos);
+bool HasSpawnType(const Stage& stage, EntType type_);
+float DistanceToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos);
 bool HasExitSpawn(const Stage& stage, std::string_view exit_id);
-void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
-                     LeftOrRight facing = LeftOrRight::Left);
-bool IsTreasureSpawnType(EntityType type_);
+void AddAmbientSpawn(Stage& stage, EntType type_, const Vec2& pos,
+                     Side facing = Side::Left);
+bool IsTreasureSpawnType(EntType type_);
 
 } // namespace splonks::stage_gen::classic

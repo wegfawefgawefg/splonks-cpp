@@ -1,9 +1,9 @@
-#include "entities/boulder.hpp"
+#include "ents/boulder.hpp"
 
 #include "audio_emitters.hpp"
 #include "audio.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "stage_break.hpp"
 #include "state.hpp"
@@ -12,7 +12,7 @@
 
 #include <memory>
 
-namespace splonks::entities::boulder {
+namespace splonks::ents::boulder {
 
 namespace {
 
@@ -29,26 +29,26 @@ constexpr float kBoulderRollingShakeBackgroundAmount = 0.48F;
 constexpr float kBoulderRollingShakeRadiusTiles = 1.6F;
 constexpr float kBoulderBreakShakeForegroundAmount = 1.15F;
 constexpr float kBoulderBreakShakeBackgroundAmount = 0.90F;
-constexpr float kBoulderBreakShakeEntityAmount = 0.95F;
+constexpr float kBoulderBreakShakeEntAmount = 0.95F;
 constexpr float kBoulderBreakShakeRadiusTiles = 2.6F;
 constexpr float kBoulderWallHitShakeForegroundAmount = 1.25F;
 constexpr float kBoulderWallHitShakeBackgroundAmount = 1.00F;
-constexpr float kBoulderWallHitShakeEntityAmount = 1.05F;
+constexpr float kBoulderWallHitShakeEntAmount = 1.05F;
 constexpr float kBoulderWallHitShakeRadiusTiles = 2.8F;
 constexpr float kBoulderGroundSlamShakeForegroundAmount = 1.10F;
 constexpr float kBoulderGroundSlamShakeBackgroundAmount = 0.85F;
-constexpr float kBoulderGroundSlamShakeEntityAmount = 1.85F;
+constexpr float kBoulderGroundSlamShakeEntAmount = 1.85F;
 constexpr float kBoulderGroundSlamShakeRadiusTiles = 3.4F;
-constexpr FrameDataId kBoulderAnimationId = HashFrameDataIdConstexpr("boulder");
-constexpr FrameDataId kBoulderRollAnimationId = HashFrameDataIdConstexpr("boulder_roll");
-constexpr FrameDataId kBoulderParticleAnimationId = kBoulderAnimationId;
+constexpr AFrameId kBoulderAnimId = HashAFrameIdConstexpr("boulder");
+constexpr AFrameId kBoulderRollAnimId = HashAFrameIdConstexpr("boulder_roll");
+constexpr AFrameId kBoulderParticleAnimId = kBoulderAnimId;
 
-Vec2 GetBoulderBottomCenter(const Entity& boulder);
-Vec2 GetBoulderFrontFaceCenter(const Entity& boulder);
+Vec2 GetBoulderBottomCenter(const Ent& boulder);
+Vec2 GetBoulderFrontFaceCenter(const Ent& boulder);
 
-AABB GetLeadingBreakStrip(const Entity& boulder) {
+AABB GetLeadingBreakStrip(const Ent& boulder) {
     const AABB aabb = boulder.GetAABB();
-    if (boulder.facing == LeftOrRight::Right) {
+    if (boulder.facing == Side::Right) {
         return AABB::New(
             Vec2::New(aabb.br.x + 1.0F, aabb.tl.y),
             Vec2::New(aabb.br.x + 1.0F, aabb.br.y)
@@ -74,7 +74,7 @@ bool WouldBreakAnyTiles(const AABB& area, const State& state) {
     return false;
 }
 
-void StepRollingSound(State& state, Entity& boulder) {
+void StepRollingSound(State& state, Ent& boulder) {
     boulder.travel_sound_countdown -= boulder.dist_traveled_this_frame;
     if (boulder.travel_sound_countdown >= 0.0F) {
         return;
@@ -83,7 +83,7 @@ void StepRollingSound(State& state, Entity& boulder) {
     boulder.travel_sound_countdown = kBoulderRollSoundDistInterval;
     AudioEmitterPlayParams params;
     params.volume_scale = kBoulderRollingSoundVolumeScale;
-    params.owner_entity_vid = boulder.vid;
+    params.owner_ent_vid = boulder.vid;
     (void)PlayAttachedSoundEmitter(
         state,
         boulder.vid,
@@ -93,10 +93,10 @@ void StepRollingSound(State& state, Entity& boulder) {
     );
 }
 
-void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
+void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, Side facing) {
     for (int i = 0; i < 2; ++i) {
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 32));
         effect.pos = pos + Vec2::New(
@@ -107,7 +107,7 @@ void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = rng::RandomFloat(0.6F, 0.9F);
         effect.vel = Vec2::New(
-            facing == LeftOrRight::Right ? rng::RandomFloat(-0.8F, -0.2F)
+            facing == Side::Right ? rng::RandomFloat(-0.8F, -0.2F)
                                          : rng::RandomFloat(0.2F, 0.8F),
             rng::RandomFloat(-1.0F, -0.2F)
         );
@@ -122,11 +122,11 @@ void SpawnBoulderTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
     }
 }
 
-void SpawnBoulderTrailPebbles(State& state, const Vec2& pos, LeftOrRight facing) {
+void SpawnBoulderTrailPebbles(State& state, const Vec2& pos, Side facing) {
     const int count = rng::RandomIntExclusive(1, 3);
     for (int i = 0; i < count; ++i) {
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(kBoulderParticleAnimationId);
+        effect.aframe_animator = AFrameAnimator::New(kBoulderParticleAnimId);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 34));
         effect.pos = pos + Vec2::New(
@@ -138,7 +138,7 @@ void SpawnBoulderTrailPebbles(State& state, const Vec2& pos, LeftOrRight facing)
         effect.rot = rng::RandomFloat(0.0F, 360.0F);
         effect.alpha = 1.0F;
         effect.vel = Vec2::New(
-            facing == LeftOrRight::Right ? rng::RandomFloat(0.8F, 1.8F)
+            facing == Side::Right ? rng::RandomFloat(0.8F, 1.8F)
                                          : rng::RandomFloat(-1.8F, -0.8F),
             rng::RandomFloat(-1.8F, -0.6F)
         );
@@ -153,14 +153,14 @@ void SpawnBoulderTrailPebbles(State& state, const Vec2& pos, LeftOrRight facing)
     }
 }
 
-void UpdateBoulderAnimation(Entity& boulder) {
+void UpdateBoulderAnim(Ent& boulder) {
     const bool is_rolling =
-        boulder.ai_state == EntityAiState::Disturbed &&
+        boulder.ai_state == EntAiState::Disturbed &&
         std::abs(boulder.vel.x) > kBoulderRollingSpeedThreshold;
-    SetAnimation(boulder, is_rolling ? kBoulderRollAnimationId : kBoulderAnimationId);
+    SetAnim(boulder, is_rolling ? kBoulderRollAnimId : kBoulderAnimId);
 }
 
-void PlayBoulderImpactSoundIfReady(Entity& boulder, State& state) {
+void PlayBoulderImpactSoundIfReady(Ent& boulder, State& state) {
     if (boulder.counter_a > 0.0F) {
         return;
     }
@@ -169,33 +169,33 @@ void PlayBoulderImpactSoundIfReady(Entity& boulder, State& state) {
     (void)PlayWorldSoundEmitter(state, GetBoulderBottomCenter(boulder), audio_asset_ids::BoulderHitGround);
 }
 
-Vec2 GetBoulderTrailingBottomCorner(const Entity& boulder) {
+Vec2 GetBoulderTrailingBottomCorner(const Ent& boulder) {
     const AABB aabb = boulder.GetAABB();
-    return boulder.facing == LeftOrRight::Right
+    return boulder.facing == Side::Right
                ? Vec2::New(aabb.tl.x, aabb.br.y)
                : Vec2::New(aabb.br.x, aabb.br.y);
 }
 
-Vec2 GetBoulderLeadingBottomCorner(const Entity& boulder) {
+Vec2 GetBoulderLeadingBottomCorner(const Ent& boulder) {
     const AABB aabb = boulder.GetAABB();
-    return boulder.facing == LeftOrRight::Right
+    return boulder.facing == Side::Right
                ? Vec2::New(aabb.br.x, aabb.br.y)
                : Vec2::New(aabb.tl.x, aabb.br.y);
 }
 
-Vec2 GetBoulderBottomCenter(const Entity& boulder) {
+Vec2 GetBoulderBottomCenter(const Ent& boulder) {
     const AABB aabb = boulder.GetAABB();
     return Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.br.y);
 }
 
-Vec2 GetBoulderFrontFaceCenter(const Entity& boulder) {
+Vec2 GetBoulderFrontFaceCenter(const Ent& boulder) {
     const AABB aabb = boulder.GetAABB();
-    return boulder.facing == LeftOrRight::Right
+    return boulder.facing == Side::Right
                ? Vec2::New(aabb.br.x, (aabb.tl.y + aabb.br.y) * 0.5F)
                : Vec2::New(aabb.tl.x, (aabb.tl.y + aabb.br.y) * 0.5F);
 }
 
-void AddBoulderRollingShake(State& state, const Entity& boulder) {
+void AddBoulderRollingShake(State& state, const Ent& boulder) {
     AddShake(
         state,
         GetBoulderBottomCenter(boulder),
@@ -206,7 +206,7 @@ void AddBoulderRollingShake(State& state, const Entity& boulder) {
     );
 }
 
-void AddBoulderBreakShake(State& state, const Entity& boulder) {
+void AddBoulderBreakShake(State& state, const Ent& boulder) {
     const Vec2 center = GetBoulderFrontFaceCenter(boulder);
     AddShake(
         state,
@@ -221,13 +221,13 @@ void AddBoulderBreakShake(State& state, const Entity& boulder) {
         center,
         0.0F,
         0.0F,
-        kBoulderBreakShakeEntityAmount,
+        kBoulderBreakShakeEntAmount,
         kBoulderBreakShakeRadiusTiles,
         boulder.vid
     );
 }
 
-void AddBoulderWallHitShake(State& state, const Entity& boulder) {
+void AddBoulderWallHitShake(State& state, const Ent& boulder) {
     const Vec2 center = GetBoulderFrontFaceCenter(boulder);
     AddShake(
         state,
@@ -242,12 +242,12 @@ void AddBoulderWallHitShake(State& state, const Entity& boulder) {
         center,
         0.0F,
         0.0F,
-        kBoulderWallHitShakeEntityAmount,
+        kBoulderWallHitShakeEntAmount,
         kBoulderWallHitShakeRadiusTiles
     );
 }
 
-void AddBoulderGroundSlamShake(State& state, const Entity& boulder) {
+void AddBoulderGroundSlamShake(State& state, const Ent& boulder) {
     const Vec2 center = GetBoulderBottomCenter(boulder);
     AddShake(
         state,
@@ -262,15 +262,15 @@ void AddBoulderGroundSlamShake(State& state, const Entity& boulder) {
         center,
         0.0F,
         0.0F,
-        kBoulderGroundSlamShakeEntityAmount,
+        kBoulderGroundSlamShakeEntAmount,
         kBoulderGroundSlamShakeRadiusTiles
     );
 }
 
 } // namespace
 
-extern const EntityArchetype kBoulderArchetype{
-    .type_ = EntityType::Boulder,
+extern const EntSpec kBoulderSpec{
+    .type_ = EntType::Boulder,
     .size = Vec2::New(28.0F, 28.0F),
     .health = 1,
     .has_physics = true,
@@ -285,22 +285,22 @@ extern const EntityArchetype kBoulderArchetype{
     .can_be_stunned = false,
     .affected_by_ground_friction = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Right,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
+    .facing = Side::Right,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::ExplosionOnly,
     .on_death = OnDeathAsBoulder,
-    .step_logic = StepEntityLogicAsBoulder,
-    .step_physics = StepEntityPhysicsAsBoulder,
+    .step_logic = StepEntLogicAsBoulder,
+    .step_physics = StepEntPhysicsAsBoulder,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(kBoulderAnimationId),
+    .aframe_animator = AFrameAnimator::New(kBoulderAnimId),
 };
 
 void SpawnBoulderBreakEffects(const Vec2& center, State& state) {
     for (int i = 0; i < 20; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(28, 56));
         smoke.pos = center + Vec2::New(
@@ -326,7 +326,7 @@ void SpawnBoulderBreakEffects(const Vec2& center, State& state) {
 
     for (int i = 0; i < 16; ++i) {
         SpriteParticle shard{};
-        shard.frame_data_animator = FrameDataAnimator::New(kBoulderParticleAnimationId);
+        shard.aframe_animator = AFrameAnimator::New(kBoulderParticleAnimId);
         shard.draw_layer = DrawLayer::Foreground;
         shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(30, 60));
         shard.pos = center + Vec2::New(
@@ -352,18 +352,18 @@ void SpawnBoulderBreakEffects(const Vec2& center, State& state) {
     }
 }
 
-void OnDeathAsBoulder(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsBoulder(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
-    Entity& boulder = state.entity_manager.entities[entity_idx];
+    Ent& boulder = state.ents.ents[ent_idx];
     SpawnBoulderBreakEffects(boulder.GetCenter(), state);
-    (void)world_ops::DeactivateEntity(state, boulder.vid);
+    (void)world_ops::DeactivateEnt(state, boulder.vid);
 }
 
-void StepEntityLogicAsBoulder(
-    std::size_t entity_idx,
+void StepEntLogicAsBoulder(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -372,11 +372,11 @@ void StepEntityLogicAsBoulder(
     (void)graphics;
     (void)audio;
     (void)dt;
-    Entity& boulder = state.entity_manager.entities[entity_idx];
+    Ent& boulder = state.ents.ents[ent_idx];
     boulder.max_speed = kBoulderRollVelocity;
 
-    if (boulder.ai_state == EntityAiState::Idle && boulder.grounded) {
-        boulder.ai_state = EntityAiState::Disturbed;
+    if (boulder.ai_state == EntAiState::Idle && boulder.grounded) {
+        boulder.ai_state = EntAiState::Disturbed;
         boulder.travel_sound_countdown = 0.0F;
         boulder.point_a = ToIVec2(boulder.pos);
         boulder.counter_b = 0.0F;
@@ -384,23 +384,23 @@ void StepEntityLogicAsBoulder(
         boulder.counter_d = 0.0F;
     }
 
-    if (boulder.ai_state != EntityAiState::Disturbed) {
-        UpdateBoulderAnimation(boulder);
+    if (boulder.ai_state != EntAiState::Disturbed) {
+        UpdateBoulderAnim(boulder);
         return;
     }
 
-    boulder.vel.x = boulder.facing == LeftOrRight::Right ? kBoulderRollVelocity : -kBoulderRollVelocity;
-    UpdateBoulderAnimation(boulder);
+    boulder.vel.x = boulder.facing == Side::Right ? kBoulderRollVelocity : -kBoulderRollVelocity;
+    UpdateBoulderAnim(boulder);
 }
 
-void StepEntityPhysicsAsBoulder(
-    std::size_t entity_idx,
+void StepEntPhysicsAsBoulder(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    Entity& boulder = state.entity_manager.entities[entity_idx];
+    Ent& boulder = state.ents.ents[ent_idx];
     const bool was_grounded = boulder.grounded;
     const float pre_physics_vel_x = boulder.vel.x;
     if (boulder.counter_a > 0.0F) {
@@ -409,7 +409,7 @@ void StepEntityPhysicsAsBoulder(
             boulder.counter_a = 0.0F;
         }
     }
-    if (boulder.ai_state == EntityAiState::Disturbed) {
+    if (boulder.ai_state == EntAiState::Disturbed) {
         const AABB break_strip = GetLeadingBreakStrip(boulder);
         const bool will_break_tiles = WouldBreakAnyTiles(break_strip, state);
         if (will_break_tiles && boulder.counter_a <= 0.0F) {
@@ -426,7 +426,7 @@ void StepEntityPhysicsAsBoulder(
         }
     }
 
-    common::StepStandardPhysics(entity_idx, state, graphics, audio, dt);
+    common::StepStandardPhysics(ent_idx, state, graphics, audio, dt);
 
     const bool landed_this_frame = !was_grounded && boulder.grounded;
     if (landed_this_frame) {
@@ -434,7 +434,7 @@ void StepEntityPhysicsAsBoulder(
         AddBoulderGroundSlamShake(state, boulder);
     }
 
-    if (boulder.ai_state == EntityAiState::Disturbed) {
+    if (boulder.ai_state == EntAiState::Disturbed) {
         const bool hard_stopped_this_frame =
             std::abs(pre_physics_vel_x) > kBoulderRollingSpeedThreshold &&
             std::abs(boulder.vel.x) <= kBoulderRollingSpeedThreshold &&
@@ -477,12 +477,12 @@ void StepEntityPhysicsAsBoulder(
         }
 
         if (boulder.counter_b >= kBoulderRestFrames) {
-                boulder.ai_state = EntityAiState::Returning;
+                boulder.ai_state = EntAiState::Returning;
             boulder.vel.x = 0.0F;
         }
     }
 
-    UpdateBoulderAnimation(boulder);
+    UpdateBoulderAnim(boulder);
 }
 
-} // namespace splonks::entities::boulder
+} // namespace splonks::ents::boulder

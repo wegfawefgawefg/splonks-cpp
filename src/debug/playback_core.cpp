@@ -7,7 +7,7 @@
 #include "step.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_ops.hpp"
 
 #include <imgui.h>
@@ -100,7 +100,7 @@ bool IsShakeBrushActive(const State& state) {
     return brush.enabled &&
            ((brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F) ||
             (brush.affect_background_tiles && brush.background_tile_amount > 0.0F) ||
-            (brush.affect_entities && brush.entity_amount > 0.0F));
+            (brush.affect_ents && brush.ent_amount > 0.0F));
 }
 
 bool IsFluidBrushActive(const State& state) {
@@ -122,9 +122,9 @@ bool CanFluidBrushOccupyTile(Tile terrain_tile) {
     if (terrain_tile == Tile::Air) {
         return true;
     }
-    const TileArchetype& archetype = GetTileArchetype(terrain_tile);
-    return !archetype.simulated_fluid && archetype.transparent && !archetype.solid &&
-           !archetype.one_way_top_solid;
+    const TileSpec& spec = GetTileSpec(terrain_tile);
+    return !spec.simulated_fluid && spec.transparent && !spec.solid &&
+           !spec.one_way_top_solid;
 }
 
 void PushChangedTile(std::vector<IVec2>& changed_tiles, const IVec2& tile_coord) {
@@ -169,8 +169,8 @@ void ApplyShakeBrush(State& state, Graphics& graphics) {
             ShakeMask::BackgroundTiles
         );
     }
-    if (brush.affect_entities && brush.entity_amount > 0.0F) {
-        AddShake(state, mouse_world, brush.entity_amount, radius_tiles, ShakeMask::Entities);
+    if (brush.affect_ents && brush.ent_amount > 0.0F) {
+        AddShake(state, mouse_world, brush.ent_amount, radius_tiles, ShakeMask::Ents);
     }
 }
 
@@ -267,11 +267,11 @@ void ApplyFluidBrush(State& state, Graphics& graphics) {
                     static_cast<unsigned int>(wrapped.x),
                     static_cast<unsigned int>(wrapped.y)
                 );
-                if (GetTileArchetype(current_tile).simulated_fluid) {
+                if (GetTileSpec(current_tile).simulated_fluid) {
                     (void)world_ops::SetForegroundTile(state, wrapped, Tile::Air);
                     PushChangedTile(changed_tiles, wrapped);
                 }
-                if (GetTileArchetype(fluid_tile).simulated_fluid) {
+                if (GetTileSpec(fluid_tile).simulated_fluid) {
                     state.stage.SetFluidTile(wrapped, Tile::Air);
                     PushChangedTile(changed_tiles, wrapped);
                 }
@@ -428,7 +428,7 @@ void DrawDebugPlaybackInspector(DebugPlayback& debug, State& state, const Graphi
         return;
     }
 
-    debug_playback_internal::DrawEntityInspector(debug, state, graphics);
+    debug_playback_internal::DrawEntInspector(debug, state, graphics);
 }
 
 namespace {

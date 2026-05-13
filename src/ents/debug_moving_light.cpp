@@ -1,17 +1,17 @@
-#include "entities/debug_moving_light.hpp"
+#include "ents/debug_moving_light.hpp"
 
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 
 #include <cmath>
 
-namespace splonks::entities::debug_moving_light {
+namespace splonks::ents::debug_moving_light {
 
 namespace {
 
-void StepEntityLogicAsDebugMovingLight(
-    std::size_t entity_idx,
+void StepEntLogicAsDebugMovingLight(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -20,11 +20,11 @@ void StepEntityLogicAsDebugMovingLight(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& light = state.entity_manager.entities[entity_idx];
+    Ent& light = state.ents.ents[ent_idx];
     light.counter_a += light.counter_b;
 
     const Vec2 home = Vec2::New(static_cast<float>(light.point_a.x), static_cast<float>(light.point_a.y));
@@ -36,8 +36,8 @@ void StepEntityLogicAsDebugMovingLight(
 
 } // namespace
 
-extern const EntityArchetype kDebugMovingLightArchetype{
-    .type_ = EntityType::DebugMovingLight,
+extern const EntSpec kDebugMovingLightSpec{
+    .type_ = EntType::DebugMovingLight,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -51,13 +51,13 @@ extern const EntityArchetype kDebugMovingLightArchetype{
     .light_color = Color3::White(),
     .light_radius = 8,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .step_logic = StepEntityLogicAsDebugMovingLight,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .step_logic = StepEntLogicAsDebugMovingLight,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Lantern),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Lantern),
 };
 
-} // namespace splonks::entities::debug_moving_light
+} // namespace splonks::ents::debug_moving_light

@@ -1,11 +1,11 @@
-#include "entities/zombie.hpp"
+#include "ents/zombie.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::zombie {
+namespace splonks::ents::zombie {
 
-// TODO(classic): Zombie is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kZombieArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Zombie);
+// TODO(classic): Zombie is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kZombieSpec =
+    common::MakeUnimplementedClassicSpec(EntType::Zombie);
 
-} // namespace splonks::entities::zombie
+} // namespace splonks::ents::zombie

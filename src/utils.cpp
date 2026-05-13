@@ -7,14 +7,14 @@
 
 namespace splonks {
 
-DeterministicRng DeterministicRng::New(std::uint32_t seed) {
-    DeterministicRng rng;
+DetRng DetRng::New(std::uint32_t seed) {
+    DetRng rng;
     rng.state = (static_cast<std::uint64_t>(seed) << 32U) ^ 0xD1B54A32D192ED03ULL;
     (void)rng.NextU32();
     return rng;
 }
 
-std::uint32_t DeterministicRng::NextU32() {
+std::uint32_t DetRng::NextU32() {
     std::uint64_t value = (state += 0x9E3779B97F4A7C15ULL);
     value = (value ^ (value >> 30U)) * 0xBF58476D1CE4E5B9ULL;
     value = (value ^ (value >> 27U)) * 0x94D049BB133111EBULL;
@@ -22,18 +22,18 @@ std::uint32_t DeterministicRng::NextU32() {
     return static_cast<std::uint32_t>(value >> 32U);
 }
 
-int DeterministicRng::RandomIntInclusive(int minimum, int maximum) {
+int DetRng::RandomIntInclusive(int minimum, int maximum) {
     assert(minimum <= maximum);
     const std::uint32_t span = static_cast<std::uint32_t>(maximum - minimum + 1);
     return minimum + static_cast<int>(NextU32() % span);
 }
 
-int DeterministicRng::RandomIntExclusive(int minimum, int maximum) {
+int DetRng::RandomIntExclusive(int minimum, int maximum) {
     assert(minimum < maximum);
     return RandomIntInclusive(minimum, maximum - 1);
 }
 
-float DeterministicRng::RandomFloat(float minimum, float maximum) {
+float DetRng::RandomFloat(float minimum, float maximum) {
     const std::uint32_t mantissa = NextU32() >> 8U;
     const float unit = static_cast<float>(mantissa) * (1.0F / 16777216.0F);
     return minimum + (maximum - minimum) * std::clamp(unit, 0.0F, 1.0F);

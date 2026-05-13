@@ -1,12 +1,12 @@
-#include "entities/kali_head.hpp"
+#include "ents/kali_head.hpp"
 
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
 
-namespace splonks::entities::kali_head {
+namespace splonks::ents::kali_head {
 
-extern const EntityArchetype kKaliHeadArchetype{
-    .type_ = EntityType::KaliHead,
+extern const EntSpec kKaliHeadSpec{
+    .type_ = EntType::KaliHead,
     .size = Vec2::New(32.0F, 32.0F),
     .health = 1,
     .has_physics = false,
@@ -16,12 +16,12 @@ extern const EntityArchetype kKaliHeadArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::KaliHead),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::KaliHead),
 };
 
-} // namespace splonks::entities::kali_head
+} // namespace splonks::ents::kali_head

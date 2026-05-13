@@ -1,115 +1,115 @@
-#include "entity/manager.hpp"
+#include "ent/manager.hpp"
 
 #include <cstdio>
 
 namespace splonks {
 
-EntityManager EntityManager::New() {
-    EntityManager manager;
-    manager.entities.reserve(kMaxNumEntities);
-    manager.available_ids.reserve(kMaxNumEntities);
+EntPool EntPool::New() {
+    EntPool manager;
+    manager.ents.reserve(kMaxNumEnts);
+    manager.available_ids.reserve(kMaxNumEnts);
 
-    for (std::size_t i = 0; i < kMaxNumEntities; ++i) {
-        Entity new_entity = Entity::New();
-        new_entity.vid.id = i;
-        manager.entities.push_back(new_entity);
+    for (std::size_t i = 0; i < kMaxNumEnts; ++i) {
+        Ent new_ent = Ent::New();
+        new_ent.vid.id = i;
+        manager.ents.push_back(new_ent);
         manager.available_ids.insert(manager.available_ids.begin(), i);
     }
 
     return manager;
 }
 
-std::optional<VID> EntityManager::NewEntity() {
+std::optional<VID> EntPool::NewEnt() {
     if (!available_ids.empty()) {
         const std::size_t id = available_ids.back();
         available_ids.pop_back();
-        entities[id].active = true;
-        entities[id].vid.version += 1;
-        return entities[id].vid;
+        ents[id].active = true;
+        ents[id].vid.version += 1;
+        return ents[id].vid;
     }
 
-    std::printf("Entity budget bounce!\n");
+    std::printf("Ent budget bounce!\n");
     return std::nullopt;
 }
 
-void EntityManager::SetInactive(std::size_t entity_id) {
-    if (entity_id >= entities.size() || !entities[entity_id].active) {
+void EntPool::SetInactive(std::size_t ent_id) {
+    if (ent_id >= ents.size() || !ents[ent_id].active) {
         return;
     }
-    entities[entity_id].active = false;
-    available_ids.insert(available_ids.begin(), entity_id);
+    ents[ent_id].active = false;
+    available_ids.insert(available_ids.begin(), ent_id);
 }
 
-void EntityManager::SetInactiveVid(const VID& vid) {
-    const Entity& entity = entities[vid.id];
-    if (vid.version == entity.vid.version && entity.active) {
+void EntPool::SetInactiveVid(const VID& vid) {
+    const Ent& ent = ents[vid.id];
+    if (vid.version == ent.vid.version && ent.active) {
         SetInactive(vid.id);
     }
 }
 
-void EntityManager::SetEntityInactive(Entity& entity) {
-    entity.active = false;
-    available_ids.insert(available_ids.begin(), entity.vid.id);
+void EntPool::SetEntInactive(Ent& ent) {
+    ent.active = false;
+    available_ids.insert(available_ids.begin(), ent.vid.id);
 }
 
-VID EntityManager::GetVid(std::size_t id) const {
-    return entities[id].vid;
+VID EntPool::GetVid(std::size_t id) const {
+    return ents[id].vid;
 }
 
-const Entity& EntityManager::GetEntityById(std::size_t id) const {
-    return entities[id];
+const Ent& EntPool::GetEntById(std::size_t id) const {
+    return ents[id];
 }
 
-const Entity* EntityManager::GetEntity(const VID& vid) const {
-    const Entity& entity = entities[vid.id];
-    if (vid.version == entity.vid.version && entity.active) {
-        return &entity;
+const Ent* EntPool::GetEnt(const VID& vid) const {
+    const Ent& ent = ents[vid.id];
+    if (vid.version == ent.vid.version && ent.active) {
+        return &ent;
     }
     return nullptr;
 }
 
-Entity* EntityManager::GetEntityMut(const VID& vid) {
-    Entity& entity = entities[vid.id];
-    if (entity.active && vid.version == entity.vid.version) {
-        return &entity;
+Ent* EntPool::GetEntMut(const VID& vid) {
+    Ent& ent = ents[vid.id];
+    if (ent.active && vid.version == ent.vid.version) {
+        return &ent;
     }
     return nullptr;
 }
 
-std::vector<Entity>& EntityManager::GetEntities() {
-    return entities;
+std::vector<Ent>& EntPool::GetEnts() {
+    return ents;
 }
 
-std::size_t EntityManager::NumEntities() const {
-    return entities.size();
+std::size_t EntPool::NumEnts() const {
+    return ents.size();
 }
 
-std::uint32_t EntityManager::NumActiveEntities() const {
+std::uint32_t EntPool::NumActiveEnts() const {
     std::uint32_t count = 0;
-    for (const Entity& entity : entities) {
-        if (entity.active) {
+    for (const Ent& ent : ents) {
+        if (ent.active) {
             count += 1;
         }
     }
     return count;
 }
 
-void EntityManager::ClearAllEntities() {
+void EntPool::ClearAllEnts() {
     available_ids.clear();
-    for (std::size_t i = 0; i < kMaxNumEntities; ++i) {
+    for (std::size_t i = 0; i < kMaxNumEnts; ++i) {
         available_ids.insert(available_ids.begin(), i);
-        entities[i].active = false;
-        entities[i].type_ = EntityType::None;
+        ents[i].active = false;
+        ents[i].type_ = EntType::None;
     }
 }
 
-void EntityManager::ClearAllNonPlayerEntities() {
+void EntPool::ClearAllNonPlayerEnts() {
     available_ids.clear();
-    for (std::size_t i = 0; i < kMaxNumEntities; ++i) {
-        if (!IsPlayerLikeEntityType(entities[i].type_)) {
+    for (std::size_t i = 0; i < kMaxNumEnts; ++i) {
+        if (!IsPlayerLikeEntType(ents[i].type_)) {
             available_ids.insert(available_ids.begin(), i);
-            entities[i].active = false;
-            entities[i].type_ = EntityType::None;
+            ents[i].active = false;
+            ents[i].type_ = EntType::None;
         }
     }
 }

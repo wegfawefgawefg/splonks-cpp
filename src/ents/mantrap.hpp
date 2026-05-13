@@ -1,17 +1,17 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::mantrap {
+namespace splonks::ents::mantrap {
 
-extern const EntityArchetype kMantrapArchetype;
+extern const EntSpec kMantrapSpec;
 
-void StepEntityLogicAsMantrap(
-    std::size_t entity_idx,
+void StepEntLogicAsMantrap(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::mantrap
+} // namespace splonks::ents::mantrap

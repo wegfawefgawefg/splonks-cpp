@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 
@@ -10,17 +10,17 @@ enum class HitscanHitType {
     None,
     StageBounds,
     Tile,
-    Entity,
+    Ent,
 };
 
 struct HitscanHit {
     HitscanHitType type = HitscanHitType::None;
     IVec2 point = IVec2::New(0, 0);
-    std::optional<VID> entity_vid = std::nullopt;
+    std::optional<VID> ent_vid = std::nullopt;
 };
 
 HitscanHit TraceHitscan(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     int direction,
     int max_distance,

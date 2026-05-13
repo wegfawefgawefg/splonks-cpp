@@ -1,10 +1,10 @@
-#include "entities/skeleton.hpp"
+#include "ents/skeleton.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "entities/common/ground_walker.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "ents/common/ground_walker.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "on_damage_effects.hpp"
 #include "player_queries.hpp"
@@ -15,7 +15,7 @@
 #include <cmath>
 #include <memory>
 
-namespace splonks::entities::skeleton {
+namespace splonks::ents::skeleton {
 
 namespace {
 
@@ -30,61 +30,61 @@ constexpr float kSkeletonWalkSpeed = 1.0F;
 constexpr float kSkeletonWalkAcceleration = 0.2F;
 constexpr float kSkullBreakImpactSpeed = 2.25F;
 
-std::optional<Vec2> GetNearestPlayerDelta(const Entity& entity, const State& state) {
-    const Entity* const player = FindNearestPlayer(state, entity.GetCenter(), false);
-    if (player == nullptr || player->condition == EntityCondition::Dead) {
+std::optional<Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
+    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
+    if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const Vec2 entity_center = entity.GetCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, entity_center, player->GetCenter());
-    return player_center - entity_center;
+    const Vec2 ent_center = ent.GetCenter();
+    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
+    return player_center - ent_center;
 }
 
-void ResizeEntityPreservingBottomCenter(Entity& entity, const Vec2& new_size) {
-    const Vec2 bottom_center = entity.pos + Vec2::New(entity.size.x * 0.5F, entity.size.y);
-    entity.size = new_size;
-    entity.pos = bottom_center - Vec2::New(new_size.x * 0.5F, new_size.y);
+void ResizeEntPreservingBottomCenter(Ent& ent, const Vec2& new_size) {
+    const Vec2 bottom_center = ent.pos + Vec2::New(ent.size.x * 0.5F, ent.size.y);
+    ent.size = new_size;
+    ent.pos = bottom_center - Vec2::New(new_size.x * 0.5F, new_size.y);
 }
 
-void EnterDormantState(Entity& entity) {
-    ResizeEntityPreservingBottomCenter(entity, kSkullSize);
-    entity.ai_state = EntityAiState::Idle;
-    entity.hurt_on_contact = false;
-    entity.can_be_stomped = false;
-    entity.vel = Vec2::New(0.0F, 0.0F);
-    entity.acc = Vec2::New(0.0F, 0.0F);
-    entity.frame_data_animator.loop = true;
-    TrySetAnimation(entity, EntityDisplayState::Neutral);
+void EnterDormantState(Ent& ent) {
+    ResizeEntPreservingBottomCenter(ent, kSkullSize);
+    ent.ai_state = EntAiState::Idle;
+    ent.hurt_on_contact = false;
+    ent.can_be_stomped = false;
+    ent.vel = Vec2::New(0.0F, 0.0F);
+    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.aframe_animator.loop = true;
+    TrySetAnim(ent, EntDisplayState::Neutral);
 }
 
-void EnterGettingUpState(Entity& entity) {
-    ResizeEntityPreservingBottomCenter(entity, kSkeletonSize);
-    entity.ai_state = EntityAiState::Disturbed;
-    entity.hurt_on_contact = false;
-    entity.can_be_stomped = false;
-    common::DecelerateHorizontallyToStop(entity, kSkeletonWalkAcceleration);
-    entity.frame_data_animator.loop = false;
-    SetAnimation(entity, frame_data_ids::SkeletonGettingUp);
+void EnterGettingUpState(Ent& ent) {
+    ResizeEntPreservingBottomCenter(ent, kSkeletonSize);
+    ent.ai_state = EntAiState::Disturbed;
+    ent.hurt_on_contact = false;
+    ent.can_be_stomped = false;
+    common::DecelerateHorizontallyToStop(ent, kSkeletonWalkAcceleration);
+    ent.aframe_animator.loop = false;
+    SetAnim(ent, aframe_ids::SkeletonGettingUp);
 }
 
-void EnterWalkingState(Entity& entity, const State& state) {
-    ResizeEntityPreservingBottomCenter(entity, kSkeletonSize);
-    entity.ai_state = EntityAiState::Patrolling;
-    entity.hurt_on_contact = true;
-    entity.can_be_stomped = true;
-    entity.frame_data_animator.loop = true;
-    TrySetAnimation(entity, EntityDisplayState::Walk);
+void EnterWalkingState(Ent& ent, const State& state) {
+    ResizeEntPreservingBottomCenter(ent, kSkeletonSize);
+    ent.ai_state = EntAiState::Patrolling;
+    ent.hurt_on_contact = true;
+    ent.can_be_stomped = true;
+    ent.aframe_animator.loop = true;
+    TrySetAnim(ent, EntDisplayState::Walk);
     common::AccelerateHorizontallyTowardSpeed(
-        entity,
+        ent,
         state,
-        entity.facing == LeftOrRight::Left ? -kSkeletonWalkSpeed : kSkeletonWalkSpeed,
+        ent.facing == Side::Left ? -kSkeletonWalkSpeed : kSkeletonWalkSpeed,
         kSkeletonWalkAcceleration
     );
 }
 
-bool IsPlayerInWakeRange(const Entity& entity, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(entity, state);
+bool IsPlayerInWakeRange(const Ent& ent, const State& state) {
+    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return false;
     }
@@ -94,8 +94,8 @@ bool IsPlayerInWakeRange(const Entity& entity, const State& state) {
            player_delta->y <= kWakeVerticalBelow;
 }
 
-bool IsPlayerOutsideReturnRange(const Entity& entity, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(entity, state);
+bool IsPlayerOutsideReturnRange(const Ent& ent, const State& state) {
+    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return true;
     }
@@ -104,26 +104,26 @@ bool IsPlayerOutsideReturnRange(const Entity& entity, const State& state) {
            std::abs(player_delta->y) > kReturnVerticalDistance;
 }
 
-void FaceNearestPlayerIfAny(Entity& entity, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(entity, state);
+void FaceNearestPlayerIfAny(Ent& ent, const State& state) {
+    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return;
     }
 
     if (player_delta->x < 0.0F) {
-        entity.facing = LeftOrRight::Left;
+        ent.facing = Side::Left;
     } else if (player_delta->x > 0.0F) {
-        entity.facing = LeftOrRight::Right;
+        ent.facing = Side::Right;
     }
 }
 
-bool IsGroundedInNarrowPit(const Entity& entity, const State& state, const Graphics& graphics) {
-    if (!entity.grounded) {
+bool IsGroundedInNarrowPit(const Ent& ent, const State& state, const Graphics& graphics) {
+    if (!ent.grounded) {
         return false;
     }
 
-    return common::HasWallAheadForGroundWalker(entity, state, graphics, -1) &&
-           common::HasWallAheadForGroundWalker(entity, state, graphics, 1);
+    return common::HasWallAheadForGroundWalker(ent, state, graphics, -1) &&
+           common::HasWallAheadForGroundWalker(ent, state, graphics, 1);
 }
 
 void SpawnSkullBreakEffects(const Vec2& center, State& state) {
@@ -131,7 +131,7 @@ void SpawnSkullBreakEffects(const Vec2& center, State& state) {
 
     for (int i = 0; i < 2; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = 14;
         smoke.pos = center;
@@ -152,7 +152,7 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
 
     for (int i = 0; i < 3; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = 12;
         smoke.pos = center;
@@ -169,7 +169,7 @@ void SpawnSkeletonDeathEffects(const Vec2& center, State& state) {
 }
 
 void DropLooseSkull(const Vec2& center, State& state) {
-    (void)world_ops::SpawnEntity(state, EntityType::Skull, [&](Entity& skull) {
+    (void)world_ops::SpawnEnt(state, EntType::Skull, [&](Ent& skull) {
         skull.SetCenter(center);
         skull.vel = Vec2::New(
             state.drng.RandomFloat(-1.0F, 1.0F),
@@ -179,13 +179,13 @@ void DropLooseSkull(const Vec2& center, State& state) {
     });
 }
 
-bool BreakSkull(std::size_t entity_idx, State& state) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+bool BreakSkull(std::size_t ent_idx, State& state) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& skull = state.entity_manager.entities[entity_idx];
-    if (!skull.active || skull.type_ != EntityType::Skull || skull.condition == EntityCondition::Dead) {
+    Ent& skull = state.ents.ents[ent_idx];
+    if (!skull.active || skull.type_ != EntType::Skull || skull.condition == EntCondition::Dead) {
         return false;
     }
 
@@ -195,8 +195,8 @@ bool BreakSkull(std::size_t entity_idx, State& state) {
 
 } // namespace
 
-void StepEntityLogicAsSkeleton(
-    std::size_t entity_idx,
+void StepEntLogicAsSkeleton(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -205,15 +205,15 @@ void StepEntityLogicAsSkeleton(
     (void)audio;
     (void)dt;
 
-    Entity& skeleton = state.entity_manager.entities[entity_idx];
-    if (skeleton.condition != EntityCondition::Normal) {
+    Ent& skeleton = state.ents.ents[ent_idx];
+    if (skeleton.condition != EntCondition::Normal) {
         skeleton.hurt_on_contact = false;
         skeleton.can_be_stomped = false;
         return;
     }
 
     switch (skeleton.ai_state) {
-    case EntityAiState::Idle:
+    case EntAiState::Idle:
         skeleton.hurt_on_contact = false;
         common::DecelerateHorizontallyToStop(skeleton, kSkeletonWalkAcceleration);
         if (IsPlayerInWakeRange(skeleton, state)) {
@@ -221,20 +221,20 @@ void StepEntityLogicAsSkeleton(
             EnterGettingUpState(skeleton);
         }
         return;
-    case EntityAiState::Disturbed:
+    case EntAiState::Disturbed:
         skeleton.hurt_on_contact = false;
         common::DecelerateHorizontallyToStop(skeleton, kSkeletonWalkAcceleration);
-        if (skeleton.frame_data_animator.animation_id != frame_data_ids::SkeletonGettingUp) {
+        if (skeleton.aframe_animator.anim_id != aframe_ids::SkeletonGettingUp) {
             EnterGettingUpState(skeleton);
             return;
         }
-        if (skeleton.frame_data_animator.IsFinished()) {
+        if (skeleton.aframe_animator.IsFinished()) {
             EnterWalkingState(skeleton, state);
         }
         return;
-    case EntityAiState::Patrolling:
-    case EntityAiState::Returning:
-    case EntityAiState::Pursuing:
+    case EntAiState::Patrolling:
+    case EntAiState::Returning:
+    case EntAiState::Pursuing:
         break;
     }
 
@@ -244,9 +244,9 @@ void StepEntityLogicAsSkeleton(
         return;
     }
 
-    int direction = skeleton.facing == LeftOrRight::Left ? -1 : 1;
+    int direction = skeleton.facing == Side::Left ? -1 : 1;
     if (common::HasWallAheadForGroundWalker(skeleton, state, graphics, direction)) {
-        skeleton.facing = skeleton.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        skeleton.facing = skeleton.facing == Side::Left ? Side::Right : Side::Left;
         direction = -direction;
     }
 
@@ -257,44 +257,44 @@ void StepEntityLogicAsSkeleton(
         static_cast<float>(direction) * kSkeletonWalkSpeed,
         kSkeletonWalkAcceleration
     );
-    SetMovementFlag(skeleton, EntityMovementFlag::Walking, true);
-    TrySetAnimation(skeleton, EntityDisplayState::Walk);
+    SetMovementFlag(skeleton, EntMovementFlag::Walking, true);
+    TrySetAnim(skeleton, EntDisplayState::Walk);
 }
 
-void OnDeathAsSkull(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsSkull(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& skull = state.entity_manager.entities[entity_idx];
+    const Ent& skull = state.ents.ents[ent_idx];
     SpawnSkullBreakEffects(skull.GetCenter(), state);
 }
 
-void OnDeathAsSkeleton(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsSkeleton(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& skeleton = state.entity_manager.entities[entity_idx];
+    const Ent& skeleton = state.ents.ents[ent_idx];
     const Vec2 center = skeleton.GetCenter();
     SpawnSkeletonDeathEffects(center, state);
     DropLooseSkull(center, state);
-    (void)world_ops::DeactivateEntity(state, skeleton.vid);
+    (void)world_ops::DeactivateEnt(state, skeleton.vid);
 }
 
 bool TryApplySkullTileImpact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& skull = state.entity_manager.entities[entity_idx];
-    if (skull.type_ != EntityType::Skull || skull.condition == EntityCondition::Dead) {
+    const Ent& skull = state.ents.ents[ent_idx];
+    if (skull.type_ != EntType::Skull || skull.condition == EntCondition::Dead) {
         return false;
     }
     if (context.phase != common::ContactPhase::AttemptedBlocked || !context.has_impact) {
@@ -304,26 +304,26 @@ bool TryApplySkullTileImpact(
         return false;
     }
 
-    return BreakSkull(entity_idx, state);
+    return BreakSkull(ent_idx, state);
 }
 
-bool TryApplySkullEntityImpact(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplySkullEntImpact(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state
 ) {
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& skull = state.entity_manager.entities[entity_idx];
-    const Entity& other = state.entity_manager.entities[other_entity_idx];
-    if (skull.type_ != EntityType::Skull || skull.condition == EntityCondition::Dead || !other.active) {
+    const Ent& skull = state.ents.ents[ent_idx];
+    const Ent& other = state.ents.ents[other_ent_idx];
+    if (skull.type_ != EntType::Skull || skull.condition == EntCondition::Dead || !other.active) {
         return false;
     }
-    if (other.type_ == EntityType::Skull) {
+    if (other.type_ == EntType::Skull) {
         return false;
     }
     if (skull.thrown_by.has_value() && other.vid == *skull.thrown_by) {
@@ -331,7 +331,7 @@ bool TryApplySkullEntityImpact(
     }
 
     const bool thrown_impact =
-        context.phase == common::ContactPhase::SweptEntered && skull.projectile_contact_timer > 0;
+        context.phase == common::ContactPhase::SweptEntered && skull.proj_contact_timer > 0;
     const bool blocked_impact =
         context.phase == common::ContactPhase::AttemptedBlocked && context.has_impact &&
         std::abs(context.impact_velocity) >= kSkullBreakImpactSpeed;
@@ -339,12 +339,12 @@ bool TryApplySkullEntityImpact(
         return false;
     }
 
-    return BreakSkull(entity_idx, state);
+    return BreakSkull(ent_idx, state);
 }
 
-common::ContactResolution OnEntityContactAsSkull(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsSkull(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics* graphics,
@@ -352,28 +352,28 @@ common::ContactResolution OnEntityContactAsSkull(
 ) {
     (void)graphics;
     (void)audio;
-    if (!context.mover_vid.has_value() || *context.mover_vid != state.entity_manager.entities[entity_idx].vid) {
-        return common::ContactResolution{};
+    if (!context.mover_vid.has_value() || *context.mover_vid != state.ents.ents[ent_idx].vid) {
+        return common::ContactResult{};
     }
-    return common::ContactResolution{
+    return common::ContactResult{
         .blocks_movement = false,
-        .stop_sweep = TryApplySkullEntityImpact(entity_idx, other_entity_idx, context, state),
+        .stop_sweep = TryApplySkullEntImpact(ent_idx, other_ent_idx, context, state),
     };
 }
 
-common::ContactResolution OnTileContactAsSkull(
-    std::size_t entity_idx,
+common::ContactResult OnTileContactAsSkull(
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 ) {
-    return common::ContactResolution{
+    return common::ContactResult{
         .blocks_movement = false,
-        .stop_sweep = TryApplySkullTileImpact(entity_idx, context, state),
+        .stop_sweep = TryApplySkullTileImpact(ent_idx, context, state),
     };
 }
 
-extern const EntityArchetype kSkullArchetype{
-    .type_ = EntityType::Skull,
+extern const EntSpec kSkullSpec{
+    .type_ = EntType::Skull,
     .size = kSkullSize,
     .health = 1,
     .has_physics = true,
@@ -385,21 +385,21 @@ extern const EntityArchetype kSkullArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .collide_sound = audio_asset_ids::Thud,
     .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsSkull,
-    .on_entity_contact = OnEntityContactAsSkull,
+    .on_ent_contact = OnEntContactAsSkull,
     .on_tile_contact = OnTileContactAsSkull,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Skull),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Skull),
 };
 
-extern const EntityArchetype kSkeletonArchetype{
-    .type_ = EntityType::Skeleton,
+extern const EntSpec kSkeletonSpec{
+    .type_ = EntType::Skeleton,
     .size = kSkullSize,
     .health = 1,
     .has_physics = true,
@@ -410,17 +410,17 @@ extern const EntityArchetype kSkeletonArchetype{
     .can_be_stomped = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .collide_sound = audio_asset_ids::Thud,
     .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsSkeleton,
-    .step_logic = StepEntityLogicAsSkeleton,
+    .step_logic = StepEntLogicAsSkeleton,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Skull),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Skull),
 };
 
-} // namespace splonks::entities::skeleton
+} // namespace splonks::ents::skeleton

@@ -1,8 +1,8 @@
 #include "debug/debug_stage_builders.hpp"
 
 #include "debug/debug_stage_common.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 #include "player_queries.hpp"
 #include "stage_spawning.hpp"
 
@@ -26,76 +26,76 @@ constexpr int kWaterPiranhaTestStageHeightTiles = 16;
 std::optional<VID> SpawnBowlingCaveman(
     State& state,
     const Vec2& center,
-    EntityCondition condition,
+    EntCondition condition,
     const Vec2& vel
 ) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
     }
-    if (Entity* const caveman = state.entity_manager.GetEntityMut(*vid)) {
-        SetEntityAs(*caveman, EntityType::Caveman);
+    if (Ent* const caveman = state.ents.GetEntMut(*vid)) {
+        SetEntAs(*caveman, EntType::Caveman);
         caveman->SetCenter(center);
         caveman->condition = condition;
         caveman->vel = vel;
-        if (condition == EntityCondition::Stunned) {
+        if (condition == EntCondition::Stunned) {
             caveman->stun_timer = 600;
-            TrySetAnimation(*caveman, EntityDisplayState::Stunned);
+            TrySetAnim(*caveman, EntDisplayState::Stunned);
         }
     }
     return vid;
 }
 
 std::optional<VID> SpawnOpposingBodySmackCaveman(State& state, const Vec2& center, const Vec2& vel) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
     }
 
-    Entity* const caveman = state.entity_manager.GetEntityMut(*vid);
+    Ent* const caveman = state.ents.GetEntMut(*vid);
     if (caveman == nullptr) {
         return std::nullopt;
     }
 
-    SetEntityAs(*caveman, EntityType::Caveman);
+    SetEntAs(*caveman, EntType::Caveman);
     caveman->SetCenter(center);
-    caveman->condition = EntityCondition::Stunned;
+    caveman->condition = EntCondition::Stunned;
     caveman->vel = vel;
     caveman->stun_timer = 600;
-    caveman->projectile_contact_damage_type = DamageType::Attack;
-    caveman->projectile_contact_damage_amount = 1;
-    caveman->projectile_contact_timer = 600;
+    caveman->proj_contact_damage_type = DamageType::Attack;
+    caveman->proj_contact_damage_amount = 1;
+    caveman->proj_contact_timer = 600;
     caveman->max_speed = 12.0F;
-    TrySetAnimation(*caveman, EntityDisplayState::Stunned);
+    TrySetAnim(*caveman, EntDisplayState::Stunned);
     return vid;
 }
 
-void GiveHeldRockToEntity(State& state, VID holder_vid) {
-    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+void GiveHeldRockToEnt(State& state, VID holder_vid) {
+    Ent* const holder = state.ents.GetEntMut(holder_vid);
     if (holder == nullptr || !holder->active) {
         return;
     }
 
-    const std::optional<VID> rock_vid = state.entity_manager.NewEntity();
+    const std::optional<VID> rock_vid = state.ents.NewEnt();
     if (!rock_vid.has_value()) {
         return;
     }
 
-    Entity* const rock = state.entity_manager.GetEntityMut(*rock_vid);
+    Ent* const rock = state.ents.GetEntMut(*rock_vid);
     if (rock == nullptr) {
         return;
     }
 
-    SetEntityAs(*rock, EntityType::Rock);
+    SetEntAs(*rock, EntType::Rock);
     rock->held_by_vid = holder_vid;
-    rock->attachment_mode = AttachmentMode::Held;
+    rock->attach_mode = AttachMode::Held;
     rock->has_physics = false;
     rock->can_collide = false;
     rock->thrown_by.reset();
     rock->thrown_immunity_timer = 0;
-    rock->projectile_contact_damage_type = DamageType::Attack;
-    rock->projectile_contact_damage_amount = 1;
-    rock->projectile_contact_timer = 0;
+    rock->proj_contact_damage_type = DamageType::Attack;
+    rock->proj_contact_damage_amount = 1;
+    rock->proj_contact_timer = 0;
     rock->vel = Vec2::New(0.0F, 0.0F);
     rock->acc = Vec2::New(0.0F, 0.0F);
     rock->SetCenter(holder->GetCenter() + Vec2::New(4.0F, 1.0F));
@@ -103,25 +103,25 @@ void GiveHeldRockToEntity(State& state, VID holder_vid) {
     holder->holding = true;
 }
 
-void GiveHeldMattockToEntity(State& state, VID holder_vid) {
-    Entity* const holder = state.entity_manager.GetEntityMut(holder_vid);
+void GiveHeldMattockToEnt(State& state, VID holder_vid) {
+    Ent* const holder = state.ents.GetEntMut(holder_vid);
     if (holder == nullptr || !holder->active) {
         return;
     }
 
-    const std::optional<VID> mattock_vid = state.entity_manager.NewEntity();
+    const std::optional<VID> mattock_vid = state.ents.NewEnt();
     if (!mattock_vid.has_value()) {
         return;
     }
 
-    Entity* const mattock = state.entity_manager.GetEntityMut(*mattock_vid);
+    Ent* const mattock = state.ents.GetEntMut(*mattock_vid);
     if (mattock == nullptr) {
         return;
     }
 
-    SetEntityAs(*mattock, EntityType::Mattock);
+    SetEntAs(*mattock, EntType::Mattock);
     mattock->held_by_vid = holder_vid;
-    mattock->attachment_mode = AttachmentMode::Held;
+    mattock->attach_mode = AttachMode::Held;
     mattock->has_physics = false;
     mattock->can_collide = false;
     mattock->vel = Vec2::New(0.0F, 0.0F);
@@ -270,19 +270,19 @@ void InitBowlingTestStage(State& state) {
     (void)SpawnBowlingCaveman(
         state,
         Vec2::New(8.0F * static_cast<float>(kTileSize), caveman_center_y),
-        EntityCondition::Stunned,
+        EntCondition::Stunned,
         Vec2::New(24.0F, 0.0F)
     );
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || entity.type_ != EntityType::Caveman ||
-            entity.condition != EntityCondition::Stunned) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active || ent.type_ != EntType::Caveman ||
+            ent.condition != EntCondition::Stunned) {
             continue;
         }
-        entity.max_speed = 24.0F;
-        entity.affected_by_ground_friction = false;
-        entity.projectile_contact_damage_type = DamageType::Attack;
-        entity.projectile_contact_damage_amount = 1;
-        entity.projectile_contact_timer = 600;
+        ent.max_speed = 24.0F;
+        ent.affected_by_ground_friction = false;
+        ent.proj_contact_damage_type = DamageType::Attack;
+        ent.proj_contact_damage_amount = 1;
+        ent.proj_contact_timer = 600;
         break;
     }
 
@@ -291,11 +291,11 @@ void InitBowlingTestStage(State& state) {
         const std::optional<VID> caveman_vid = SpawnBowlingCaveman(
             state,
             Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)), caveman_center_y),
-            EntityCondition::Normal,
+            EntCondition::Normal,
             Vec2::New(0.0F, 0.0F)
         );
         if (caveman_vid.has_value()) {
-            GiveHeldRockToEntity(state, *caveman_vid);
+            GiveHeldRockToEnt(state, *caveman_vid);
         }
     }
 }
@@ -345,16 +345,16 @@ void InitMonkeyTestStage(State& state) {
 
     for (std::size_t i = 0; i < monkey_centers_tiles.size(); ++i) {
         const IVec2& tile_pos = monkey_centers_tiles[i];
-        if (const std::optional<VID> monkey_vid = SpawnStageEntityAtCenter(
+        if (const std::optional<VID> monkey_vid = SpawnStageEntAtCenter(
             state,
-            EntityType::Monkey,
+            EntType::Monkey,
             Vec2::New(
                 (static_cast<float>(tile_pos.x) + 0.5F) * static_cast<float>(kTileSize),
                 (static_cast<float>(tile_pos.y) + 0.5F) * static_cast<float>(kTileSize)
             )
         )) {
-            if (Entity* const monkey = state.entity_manager.GetEntityMut(*monkey_vid)) {
-                monkey->facing = (i % 2 == 0) ? LeftOrRight::Left : LeftOrRight::Right;
+            if (Ent* const monkey = state.ents.GetEntMut(*monkey_vid)) {
+                monkey->facing = (i % 2 == 0) ? Side::Left : Side::Right;
             }
         }
     }
@@ -372,7 +372,7 @@ void InitWaterPiranhaTestStage(State& state) {
         )
     );
     if (const std::optional<VID> player_vid = FindPrimaryLocalPlayerVid(state)) {
-        GiveHeldMattockToEntity(state, *player_vid);
+        GiveHeldMattockToEnt(state, *player_vid);
     }
 
     const std::array<Vec2, 3> piranha_centers{{
@@ -381,21 +381,21 @@ void InitWaterPiranhaTestStage(State& state) {
         Vec2::New(18.0F * static_cast<float>(kTileSize), 11.5F * static_cast<float>(kTileSize)),
     }};
     for (const Vec2& center : piranha_centers) {
-        (void)SpawnStageEntityAtCenter(state, EntityType::Piranha, center);
+        (void)SpawnStageEntAtCenter(state, EntType::Piranha, center);
     }
 
-    const std::array<std::pair<EntityType, Vec2>, 8> props{{
-        {EntityType::Box, Vec2::New(9.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntityType::Pot, Vec2::New(11.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntityType::Rock, Vec2::New(13.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntityType::Bomb, Vec2::New(15.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntityType::Caveman, Vec2::New(17.5F, 7.5F) * static_cast<float>(kTileSize)},
-        {EntityType::GoldChunk, Vec2::New(9.5F, 12.5F) * static_cast<float>(kTileSize)},
-        {EntityType::RubyBig, Vec2::New(12.5F, 12.5F) * static_cast<float>(kTileSize)},
-        {EntityType::Chest, Vec2::New(18.5F, 12.5F) * static_cast<float>(kTileSize)},
+    const std::array<std::pair<EntType, Vec2>, 8> props{{
+        {EntType::Box, Vec2::New(9.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Pot, Vec2::New(11.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Rock, Vec2::New(13.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Bomb, Vec2::New(15.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::Caveman, Vec2::New(17.5F, 7.5F) * static_cast<float>(kTileSize)},
+        {EntType::GoldChunk, Vec2::New(9.5F, 12.5F) * static_cast<float>(kTileSize)},
+        {EntType::RubyBig, Vec2::New(12.5F, 12.5F) * static_cast<float>(kTileSize)},
+        {EntType::Chest, Vec2::New(18.5F, 12.5F) * static_cast<float>(kTileSize)},
     }};
     for (const auto& [type, center] : props) {
-        (void)SpawnStageEntityAtCenter(state, type, center);
+        (void)SpawnStageEntAtCenter(state, type, center);
     }
 }
 

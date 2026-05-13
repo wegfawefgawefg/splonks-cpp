@@ -1,11 +1,11 @@
-#include "entities/sac_altar.hpp"
+#include "ents/sac_altar.hpp"
 
 #include "audio_emitters.hpp"
-#include "entities/common/common.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
@@ -21,7 +21,7 @@
 #include <memory>
 #include <optional>
 
-namespace splonks::entities::sac_altar {
+namespace splonks::ents::sac_altar {
 
 namespace {
 
@@ -35,75 +35,75 @@ constexpr std::uint32_t kHealthRewardAmount = 8;
 constexpr float kSacrificeSurfaceTopOffset = 20.0F;
 constexpr float kSacrificeSurfaceBottomOffset = 2.0F;
 constexpr float kSacrificeSmokeScaleBias = 1.0F;
-constexpr float kTopperSacAnimationHoldFrames = 60.0F;
+constexpr float kTopperSacAnimHoldFrames = 60.0F;
 constexpr float kBallAndChainSpawnOffsetY = 18.0F;
 
-bool IsOwnerAltarHalf(const Entity& altar) {
-    return altar.frame_data_animator.animation_id == frame_data_ids::SacAltarLeft;
+bool IsOwnerAltarHalf(const Ent& altar) {
+    return altar.aframe_animator.anim_id == aframe_ids::SacAltarLeft;
 }
 
-Entity* GetOwnerAltarMut(Entity& altar_piece, State& state) {
-    if (altar_piece.type_ == EntityType::SacAltar && IsOwnerAltarHalf(altar_piece)) {
+Ent* GetOwnerAltarMut(Ent& altar_piece, State& state) {
+    if (altar_piece.type_ == EntType::SacAltar && IsOwnerAltarHalf(altar_piece)) {
         return &altar_piece;
     }
-    if (!altar_piece.entity_a.has_value()) {
+    if (!altar_piece.ent_a.has_value()) {
         return nullptr;
     }
 
-    Entity* const owner = state.entity_manager.GetEntityMut(*altar_piece.entity_a);
-    if (owner == nullptr || !owner->active || owner->type_ != EntityType::SacAltar ||
+    Ent* const owner = state.ents.GetEntMut(*altar_piece.ent_a);
+    if (owner == nullptr || !owner->active || owner->type_ != EntType::SacAltar ||
         !IsOwnerAltarHalf(*owner)) {
         return nullptr;
     }
     return owner;
 }
 
-bool BelongsToOwnerAltar(const Entity& entity, const Entity& owner) {
-    if (entity.vid == owner.vid) {
+bool BelongsToOwnerAltar(const Ent& ent, const Ent& owner) {
+    if (ent.vid == owner.vid) {
         return true;
     }
-    if (entity.entity_a.has_value() && *entity.entity_a == owner.vid) {
+    if (ent.ent_a.has_value() && *ent.ent_a == owner.vid) {
         return true;
     }
-    if (owner.entity_a.has_value() && entity.vid == *owner.entity_a) {
+    if (owner.ent_a.has_value() && ent.vid == *owner.ent_a) {
         return true;
     }
     return false;
 }
 
-AABB GetSacrificeArea(const Entity& altar) {
+AABB GetSacrificeArea(const Ent& altar) {
     return AABB::New(
         altar.pos + Vec2::New(-1.0F, -kSacrificeSurfaceTopOffset),
         altar.pos + Vec2::New(31.0F, kSacrificeSurfaceBottomOffset)
     );
 }
 
-bool PlayerHasBallAndChainPunishment(const State& state, const Entity& player) {
-    if (!player.entity_d.has_value()) {
+bool PlayerHasBallAndChainPunishment(const State& state, const Ent& player) {
+    if (!player.ent_d.has_value()) {
         return false;
     }
 
-    const Entity* const ball = state.entity_manager.GetEntity(*player.entity_d);
-    return ball != nullptr && ball->active && ball->type_ == EntityType::BallAndChainBall;
+    const Ent* const ball = state.ents.GetEnt(*player.ent_d);
+    return ball != nullptr && ball->active && ball->type_ == EntType::BallAndChainBall;
 }
 
-void SpawnBallAndChainPunishment(State& state, const Entity* altar_context) {
+void SpawnBallAndChainPunishment(State& state, const Ent* altar_context) {
     const Vec2 search_pos = altar_context != nullptr ? altar_context->GetCenter() : Vec2::New(0.0F, 0.0F);
     const std::optional<VID> player_vid = altar_context != nullptr
         ? FindNearestPlayerVid(state, search_pos, true)
         : FindFirstConnectedLivingPlayerVid(state);
-    Entity* const player = player_vid.has_value() ? state.entity_manager.GetEntityMut(*player_vid) : nullptr;
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead ||
+    Ent* const player = player_vid.has_value() ? state.ents.GetEntMut(*player_vid) : nullptr;
+    if (player == nullptr || !player->active || player->condition == EntCondition::Dead ||
         PlayerHasBallAndChainPunishment(state, *player)) {
         return;
     }
 
-    Entity* const ball = world_ops::SpawnEntity(
+    Ent* const ball = world_ops::SpawnEnt(
         state,
-        EntityType::BallAndChainBall,
-        [&](Entity& spawned_ball) {
+        EntType::BallAndChainBall,
+        [&](Ent& spawned_ball) {
             spawned_ball.SetCenter(player->GetCenter() + Vec2::New(0.0F, kBallAndChainSpawnOffsetY));
-            spawned_ball.entity_a = player->vid;
+            spawned_ball.ent_a = player->vid;
             spawned_ball.vel = player->vel;
             spawned_ball.acc = Vec2::New(0.0F, 0.0F);
         }
@@ -112,31 +112,31 @@ void SpawnBallAndChainPunishment(State& state, const Entity* altar_context) {
         return;
     }
 
-    player->entity_d = ball->vid;
+    player->ent_d = ball->vid;
 }
 
-void ApplySacAltarFavorDelta(State& state, std::int32_t favor_delta, const Entity* altar_context) {
+void ApplySacAltarFavorDelta(State& state, std::int32_t favor_delta, const Ent* altar_context) {
     state.sac_altar_favor += favor_delta;
     if (state.sac_altar_favor <= kBallAndChainPunishmentFavorThreshold) {
         SpawnBallAndChainPunishment(state, altar_context);
     }
 }
 
-std::optional<std::int32_t> GetSacrificeFavorValueImpl(const Entity& victim, bool alive) {
-    if (victim.type_ == EntityType::GoldIdol) {
+std::optional<std::int32_t> GetSacrificeFavorValueImpl(const Ent& victim, bool alive) {
+    if (victim.type_ == EntType::GoldIdol) {
         return kGoldIdolSacrificeFavor;
     }
-    if (victim.type_ == EntityType::Bomb) {
+    if (victim.type_ == EntType::Bomb) {
         return std::nullopt;
     }
 
     switch (victim.type_) {
-    case EntityType::Player:
-    case EntityType::FlappyBee:
-    case EntityType::FleshGuy:
-    case EntityType::Damsel:
+    case EntType::Player:
+    case EntType::FlappyBee:
+    case EntType::FleshGuy:
+    case EntType::Damsel:
         return alive ? 8 : 4;
-    case EntityType::Shopkeeper:
+    case EntType::Shopkeeper:
         return alive ? 6 : 3;
     default:
         break;
@@ -148,30 +148,30 @@ std::optional<std::int32_t> GetSacrificeFavorValueImpl(const Entity& victim, boo
     return alive ? 2 : 1;
 }
 
-bool IsBackItemType(EntityType type_) {
+bool IsBackItemType(EntType type_) {
     switch (type_) {
-    case EntityType::Cape:
-    case EntityType::JetPack:
-    case EntityType::TeleporterBackpack:
-    case EntityType::Parachute:
+    case EntType::Cape:
+    case EntType::JetPack:
+    case EntType::TeleporterBackpack:
+    case EntType::Parachute:
         return true;
     default:
         return false;
     }
 }
 
-bool PlayerHasBackItemType(const Entity& player, State& state, EntityType type_) {
+bool PlayerHasBackItemType(const Ent& player, State& state, EntType type_) {
     if (!player.back_vid.has_value()) {
         return false;
     }
 
-    const Entity* const back_item = state.entity_manager.GetEntity(*player.back_vid);
+    const Ent* const back_item = state.ents.GetEnt(*player.back_vid);
     return back_item != nullptr && back_item->active && back_item->type_ == type_;
 }
 
-bool PlayerOwnsRewardType(const Entity& player, State& state, EntityType type_) {
-    const EntityArchetype& archetype = GetEntityArchetype(type_);
-    if (archetype.pickup_effect.has_value() && HasEffect(player, *archetype.pickup_effect)) {
+bool PlayerOwnsRewardType(const Ent& player, State& state, EntType type_) {
+    const EntSpec& spec = GetEntSpec(type_);
+    if (spec.pickup_effect.has_value() && HasEffect(player, *spec.pickup_effect)) {
         return true;
     }
     if (IsBackItemType(type_) && PlayerHasBackItemType(player, state, type_)) {
@@ -180,29 +180,29 @@ bool PlayerOwnsRewardType(const Entity& player, State& state, EntityType type_) 
     return false;
 }
 
-EntityType PickAccessoryReward(std::optional<VID> reward_target_vid, State& state) {
-    constexpr std::array<EntityType, 8> kAccessoryRewards{
-        EntityType::Gloves,
-        EntityType::Mitt,
-        EntityType::SpringShoes,
-        EntityType::SpikeShoes,
-        EntityType::Cape,
-        EntityType::Spectacles,
-        EntityType::Paste,
-        EntityType::Compass,
+EntType PickAccessoryReward(std::optional<VID> reward_target_vid, State& state) {
+    constexpr std::array<EntType, 8> kAccessoryRewards{
+        EntType::Gloves,
+        EntType::Mitt,
+        EntType::SpringShoes,
+        EntType::SpikeShoes,
+        EntType::Cape,
+        EntType::Spectacles,
+        EntType::Paste,
+        EntType::Compass,
     };
 
-    std::vector<EntityType> available_rewards;
-    const Entity* reward_target = nullptr;
+    std::vector<EntType> available_rewards;
+    const Ent* reward_target = nullptr;
     if (reward_target_vid.has_value()) {
-        reward_target = state.entity_manager.GetEntity(*reward_target_vid);
+        reward_target = state.ents.GetEnt(*reward_target_vid);
     }
 
-    for (const EntityType type_ : kAccessoryRewards) {
+    for (const EntType type_ : kAccessoryRewards) {
         if (reward_target != nullptr && PlayerOwnsRewardType(*reward_target, state, type_)) {
             continue;
         }
-        if (type_ == EntityType::Cape && reward_target != nullptr && reward_target->back_vid.has_value()) {
+        if (type_ == EntType::Cape && reward_target != nullptr && reward_target->back_vid.has_value()) {
             continue;
         }
         available_rewards.push_back(type_);
@@ -215,65 +215,65 @@ EntityType PickAccessoryReward(std::optional<VID> reward_target_vid, State& stat
     }
 
     if (reward_target == nullptr || !reward_target->back_vid.has_value()) {
-        return EntityType::JetPack;
+        return EntType::JetPack;
     }
-    return EntityType::BombBox;
+    return EntType::BombBox;
 }
 
-std::optional<VID> GetRewardTargetVid(const State& state, const Entity& altar) {
+std::optional<VID> GetRewardTargetVid(const State& state, const Ent& altar) {
     return FindNearestPlayerVid(state, altar.GetCenter(), true);
 }
 
-Vec2 GetAltarEffectPos(const Entity& altar, const State& state, const Graphics& graphics) {
-    if (altar.entity_a.has_value()) {
-        if (const Entity* const topper = state.entity_manager.GetEntity(*altar.entity_a)) {
-            return common::GetEmitPointForEntity(*topper, graphics, topper->GetCenter());
+Vec2 GetAltarEffectPos(const Ent& altar, const State& state, const Graphics& graphics) {
+    if (altar.ent_a.has_value()) {
+        if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
+            return common::GetEmitPointForEnt(*topper, graphics, topper->GetCenter());
         }
     }
 
-    return common::GetEmitPointForEntity(
+    return common::GetEmitPointForEnt(
         altar,
         graphics,
         altar.pos + Vec2::New(16.0F, -8.0F)
     );
 }
 
-Vec2 GetAltarSoundPos(const Entity& altar, const State& state, const Graphics& graphics) {
-    if (altar.entity_a.has_value()) {
-        if (const Entity* const topper = state.entity_manager.GetEntity(*altar.entity_a)) {
-            return common::GetVisualCenterForEntity(*topper, graphics, topper->GetCenter());
+Vec2 GetAltarSoundPos(const Ent& altar, const State& state, const Graphics& graphics) {
+    if (altar.ent_a.has_value()) {
+        if (const Ent* const topper = state.ents.GetEnt(*altar.ent_a)) {
+            return common::GetVisualCenterForEnt(*topper, graphics, topper->GetCenter());
         }
     }
 
-    return common::GetVisualCenterForEntity(
+    return common::GetVisualCenterForEnt(
         altar,
         graphics,
         altar.pos + Vec2::New(16.0F, -8.0F)
     );
 }
 
-void TriggerTopperSacAnimation(Entity& altar, State& state) {
-    if (!altar.entity_a.has_value()) {
+void TriggerTopperSacAnim(Ent& altar, State& state) {
+    if (!altar.ent_a.has_value()) {
         return;
     }
 
-    Entity* const topper = state.entity_manager.GetEntityMut(*altar.entity_a);
+    Ent* const topper = state.ents.GetEntMut(*altar.ent_a);
     if (topper == nullptr || !topper->active) {
         return;
     }
 
-    SetAnimation(*topper, frame_data_ids::SacAltarSac);
-    topper->frame_data_animator.SetForcedFrame(0);
-    topper->frame_data_animator.loop = false;
-    topper->frame_data_animator.animate = true;
-    topper->frame_data_animator.finished = false;
-    topper->counter_b = kTopperSacAnimationHoldFrames;
+    SetAnim(*topper, aframe_ids::SacAltarSac);
+    topper->aframe_animator.SetForcedFrame(0);
+    topper->aframe_animator.loop = false;
+    topper->aframe_animator.animate = true;
+    topper->aframe_animator.finished = false;
+    topper->counter_b = kTopperSacAnimHoldFrames;
 }
 
 void SpawnSacrificeSmoke(State& state, const Vec2& pos) {
     for (int i = 0; i < 8; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(20, 32));
         smoke.pos = pos + Vec2::New(
@@ -300,7 +300,7 @@ void SpawnSacrificeSmoke(State& state, const Vec2& pos) {
 void SpawnSacrificeBodySmoke(State& state, const Vec2& pos) {
     for (int i = 0; i < 6; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(12, 20));
         smoke.pos = pos + Vec2::New(
@@ -326,7 +326,7 @@ void SpawnSacrificeBodySmoke(State& state, const Vec2& pos) {
 
     for (int i = 0; i < 5; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(18, 28));
         smoke.pos = pos + Vec2::New(
@@ -354,7 +354,7 @@ void SpawnSacrificeBodySmoke(State& state, const Vec2& pos) {
 void SpawnSacrificeSparks(State& state, const Vec2& pos) {
     for (int i = 0; i < 6; ++i) {
         SpriteParticle spark{};
-        spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
+        spark.aframe_animator = AFrameAnimator::New(aframe_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
         spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
@@ -379,7 +379,7 @@ void SpawnSacrificeSparks(State& state, const Vec2& pos) {
 void SpawnSacrificeBlood(State& state, const Vec2& pos) {
     for (int i = 0; i < 14; ++i) {
         SpriteParticle blood{};
-        blood.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BloodBall);
+        blood.aframe_animator = AFrameAnimator::New(aframe_ids::BloodBall);
         blood.draw_layer = DrawLayer::Foreground;
         blood.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 30));
         blood.pos = pos + Vec2::New(
@@ -404,64 +404,64 @@ void SpawnSacrificeBlood(State& state, const Vec2& pos) {
     }
 }
 
-void DeactivateAltarEntity(Entity& entity, State& state) {
-    if (!entity.active) {
+void DeactivateAltarEnt(Ent& ent, State& state) {
+    if (!ent.active) {
         return;
     }
 
-    state.sid.Remove(entity.vid);
-    entity.health = 0;
-    entity.condition = EntityCondition::Dead;
-    entity.render_enabled = false;
-    entity.marked_for_destruction = false;
-    (void)world_ops::DeactivateEntity(state, entity.vid);
+    state.sid.Remove(ent.vid);
+    ent.health = 0;
+    ent.condition = EntCondition::Dead;
+    ent.render_enabled = false;
+    ent.marked_for_destruction = false;
+    (void)world_ops::DeactivateEnt(state, ent.vid);
 }
 
-void SpawnAltarBreakEffects(const Entity& entity, State& state) {
-    const Vec2 center = entity.GetCenter();
+void SpawnAltarBreakEffects(const Ent& ent, State& state) {
+    const Vec2 center = ent.GetCenter();
     SpawnSacrificeSmoke(state, center);
     SpawnSacrificeBodySmoke(state, center);
     SpawnSacrificeSparks(state, center);
 }
 
-void DeactivateLinkedAltarPieces(Entity& owner, State& state) {
+void DeactivateLinkedAltarPieces(Ent& owner, State& state) {
     std::array<VID, 3> piece_vids{owner.vid, owner.vid, owner.vid};
     std::size_t num_piece_vids = 1;
 
-    if (owner.entity_a.has_value()) {
-        piece_vids[num_piece_vids] = *owner.entity_a;
+    if (owner.ent_a.has_value()) {
+        piece_vids[num_piece_vids] = *owner.ent_a;
         num_piece_vids += 1;
     }
 
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || !BelongsToOwnerAltar(entity, owner) || entity.vid == owner.vid) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active || !BelongsToOwnerAltar(ent, owner) || ent.vid == owner.vid) {
             continue;
         }
         bool already_added = false;
         for (std::size_t i = 0; i < num_piece_vids; ++i) {
-            if (piece_vids[i] == entity.vid) {
+            if (piece_vids[i] == ent.vid) {
                 already_added = true;
                 break;
             }
         }
         if (!already_added && num_piece_vids < piece_vids.size()) {
-            piece_vids[num_piece_vids] = entity.vid;
+            piece_vids[num_piece_vids] = ent.vid;
             num_piece_vids += 1;
         }
     }
 
     for (std::size_t i = 0; i < num_piece_vids; ++i) {
-        Entity& piece = state.entity_manager.entities[piece_vids[i].id];
-        DeactivateAltarEntity(piece, state);
+        Ent& piece = state.ents.ents[piece_vids[i].id];
+        DeactivateAltarEnt(piece, state);
     }
 }
 
-bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) {
+bool GrantSacAltarReward(Ent& altar, State& state, const Graphics& graphics) {
     const Vec2 emit_pos = GetAltarEffectPos(altar, state, graphics);
 
     if (state.sac_altar_reward_tier == 0 && state.sac_altar_favor >= kAccessoryRewardFavor) {
-        const EntityType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
-        Entity* const reward = world_ops::SpawnEntity(state, reward_type, [&](Entity& spawned_reward) {
+        const EntType reward_type = PickAccessoryReward(GetRewardTargetVid(state, altar), state);
+        Ent* const reward = world_ops::SpawnEnt(state, reward_type, [&](Ent& spawned_reward) {
             spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -3.0F));
             spawned_reward.vel = Vec2::New(state.drng.RandomFloat(-0.55F, 0.55F), -1.7F);
             spawned_reward.acc = Vec2::New(0.0F, 0.0F);
@@ -476,9 +476,9 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
     }
 
     if (state.sac_altar_reward_tier == 1 && state.sac_altar_favor >= kSecondRewardFavor) {
-        Entity* const reward = world_ops::SpawnEntity(state, EntityType::Meathead, [&](Entity& spawned_reward) {
+        Ent* const reward = world_ops::SpawnEnt(state, EntType::Meathead, [&](Ent& spawned_reward) {
             spawned_reward.SetCenter(emit_pos + Vec2::New(0.0F, -2.0F));
-            spawned_reward.entity_a = altar.vid;
+            spawned_reward.ent_a = altar.vid;
             spawned_reward.draw_layer = DrawLayer::Middle;
             spawned_reward.vel = Vec2::New(0.0F, 0.0F);
             spawned_reward.acc = Vec2::New(0.0F, 0.0F);
@@ -495,7 +495,7 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
     if (state.sac_altar_reward_tier == 2 && state.sac_altar_favor >= kHealthRewardFavor) {
         if (const std::optional<VID> reward_target_vid = GetRewardTargetVid(state, altar);
             reward_target_vid.has_value()) {
-            if (Entity* const reward_target = state.entity_manager.GetEntityMut(*reward_target_vid)) {
+            if (Ent* const reward_target = state.ents.GetEntMut(*reward_target_vid)) {
                 reward_target->health += kHealthRewardAmount;
             }
         }
@@ -509,8 +509,8 @@ bool GrantSacAltarReward(Entity& altar, State& state, const Graphics& graphics) 
 }
 
 void SacrificeVictim(
-    Entity& altar,
-    Entity& victim,
+    Ent& altar,
+    Ent& victim,
     State& state,
     const Graphics& graphics
 ) {
@@ -519,7 +519,7 @@ void SacrificeVictim(
         return;
     }
 
-    const AABB victim_aabb = common::GetContactAabbForEntity(victim, graphics);
+    const AABB victim_aabb = common::GetContactAabbForEnt(victim, graphics);
     const Vec2 victim_effect_pos = Vec2::New(
         (victim_aabb.tl.x + victim_aabb.br.x) * 0.5F,
         victim_aabb.br.y - 2.0F
@@ -527,19 +527,19 @@ void SacrificeVictim(
     const Vec2 altar_emit = GetAltarEffectPos(altar, state, graphics);
     const Vec2 altar_sound = GetAltarSoundPos(altar, state, graphics);
 
-    common::DropHeldItemFromEntity(victim, state);
-    common::ReleaseEntityFromHolder(victim, state);
+    common::DropHeldItemFromEnt(victim, state);
+    common::ReleaseEntFromHolder(victim, state);
     victim.marked_for_destruction = true;
-    (void)world_ops::DeactivateEntity(state, victim.vid);
-    state.UpdateSidForEntity(victim.vid.id, graphics);
+    (void)world_ops::DeactivateEnt(state, victim.vid);
+    state.UpdateSidForEnt(victim.vid.id, graphics);
 
     ApplySacAltarFavorDelta(state, *favor, &altar);
-    TriggerTopperSacAnimation(altar, state);
+    TriggerTopperSacAnim(altar, state);
     SpawnSacrificeSmoke(state, altar_emit);
     SpawnSacrificeBodySmoke(state, victim_effect_pos);
     SpawnSacrificeSparks(state, victim_effect_pos);
     SpawnSacrificeBlood(state, victim_effect_pos);
-    SpawnDamageEffectAnimationBurst(frame_data_ids::BloodBall, victim_effect_pos, state);
+    SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, victim_effect_pos, state);
     (void)PlayWorldSoundEmitter(state, altar_sound, audio_asset_ids::Sacrifice);
 
     while (GrantSacAltarReward(altar, state, graphics)) {
@@ -548,14 +548,14 @@ void SacrificeVictim(
 
 } // namespace
 
-std::optional<std::int32_t> GetSacrificeFavorValue(const Entity& victim) {
-    if (victim.condition != EntityCondition::Stunned && victim.condition != EntityCondition::Dead) {
+std::optional<std::int32_t> GetSacrificeFavorValue(const Ent& victim) {
+    if (victim.condition != EntCondition::Stunned && victim.condition != EntCondition::Dead) {
         return std::nullopt;
     }
-    return GetSacrificeFavorValueImpl(victim, victim.condition == EntityCondition::Stunned);
+    return GetSacrificeFavorValueImpl(victim, victim.condition == EntCondition::Stunned);
 }
 
-std::optional<std::int32_t> GetLivingSacrificeFavorValue(const Entity& victim) {
+std::optional<std::int32_t> GetLivingSacrificeFavorValue(const Ent& victim) {
     return GetSacrificeFavorValueImpl(victim, true);
 }
 
@@ -564,12 +564,12 @@ void SpawnSacrificeGainEffects(State& state, Audio& audio, const Vec2& pos) {
     SpawnSacrificeBodySmoke(state, pos);
     SpawnSacrificeSparks(state, pos);
     SpawnSacrificeBlood(state, pos);
-    SpawnDamageEffectAnimationBurst(frame_data_ids::BloodBall, pos, state);
+    SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, pos, state);
     (void)PlayWorldSoundEmitter(state, pos, audio_asset_ids::Sacrifice);
 }
 
 bool TryDepositStoredFavor(
-    Entity& altar_piece,
+    Ent& altar_piece,
     std::int32_t favor,
     State& state,
     const Graphics& graphics,
@@ -580,7 +580,7 @@ bool TryDepositStoredFavor(
         return false;
     }
 
-    Entity* const owner = GetOwnerAltarMut(altar_piece, state);
+    Ent* const owner = GetOwnerAltarMut(altar_piece, state);
     if (owner == nullptr || !owner->active) {
         return false;
     }
@@ -588,7 +588,7 @@ bool TryDepositStoredFavor(
     const Vec2 altar_emit = GetAltarEffectPos(*owner, state, graphics);
     const Vec2 altar_sound = GetAltarSoundPos(*owner, state, graphics);
     ApplySacAltarFavorDelta(state, favor, owner);
-    TriggerTopperSacAnimation(*owner, state);
+    TriggerTopperSacAnim(*owner, state);
     SpawnSacrificeSmoke(state, altar_emit);
     (void)PlayWorldSoundEmitter(state, altar_sound, audio_asset_ids::Sacrifice);
     while (GrantSacAltarReward(*owner, state, graphics)) {
@@ -596,19 +596,19 @@ bool TryDepositStoredFavor(
     return true;
 }
 
-void OnDeathAsSacAltarPiece(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsSacAltarPiece(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& altar_piece = state.entity_manager.entities[entity_idx];
+    Ent& altar_piece = state.ents.ents[ent_idx];
     if (!altar_piece.active) {
         return;
     }
 
-    Entity* const owner = GetOwnerAltarMut(altar_piece, state);
+    Ent* const owner = GetOwnerAltarMut(altar_piece, state);
     if (owner == nullptr) {
         return;
     }
@@ -618,11 +618,11 @@ void OnDeathAsSacAltarPiece(std::size_t entity_idx, State& state, Audio& audio) 
 
     ApplySacAltarFavorDelta(state, -kAltarBreakFavorPenalty, owner);
     const Vec2 owner_center = owner->GetCenter();
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || !BelongsToOwnerAltar(entity, *owner)) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active || !BelongsToOwnerAltar(ent, *owner)) {
             continue;
         }
-        SpawnAltarBreakEffects(entity, state);
+        SpawnAltarBreakEffects(ent, state);
     }
     (void)PlayWorldSoundEmitter(state, owner_center, audio_asset_ids::PotShatter);
     AddShake(state, owner_center, 1.4F, 1.8F, ShakeMask::All, owner->vid);
@@ -631,8 +631,8 @@ void OnDeathAsSacAltarPiece(std::size_t entity_idx, State& state, Audio& audio) 
 
 namespace {
 
-void StepEntityLogicAsSacAltar(
-    std::size_t entity_idx,
+void StepEntLogicAsSacAltar(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -641,24 +641,24 @@ void StepEntityLogicAsSacAltar(
     (void)audio;
     (void)dt;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& altar = state.entity_manager.entities[entity_idx];
+    Ent& altar = state.ents.ents[ent_idx];
     if (!altar.active || !IsOwnerAltarHalf(altar)) {
         return;
     }
 
     const AABB sacrifice_area = GetSacrificeArea(altar);
-    const std::vector<VID> candidates = QueryEntitiesInAabb(state, sacrifice_area, altar.vid);
+    const std::vector<VID> candidates = QueryEntsInAabb(state, sacrifice_area, altar.vid);
     for (const VID& candidate_vid : candidates) {
-        Entity* const victim = state.entity_manager.GetEntityMut(candidate_vid);
+        Ent* const victim = state.ents.GetEntMut(candidate_vid);
         if (victim == nullptr || !victim->active) {
             continue;
         }
-        if (victim->type_ == EntityType::SacAltar || victim->type_ == EntityType::SacAltarTopper ||
-            victim->type_ == EntityType::Altar) {
+        if (victim->type_ == EntType::SacAltar || victim->type_ == EntType::SacAltarTopper ||
+            victim->type_ == EntType::Altar) {
             continue;
         }
         if (victim->held_by_vid.has_value()) {
@@ -671,7 +671,7 @@ void StepEntityLogicAsSacAltar(
             continue;
         }
 
-        const AABB victim_aabb = common::GetContactAabbForEntity(*victim, graphics);
+        const AABB victim_aabb = common::GetContactAabbForEnt(*victim, graphics);
         if (victim_aabb.br.y < sacrifice_area.tl.y || victim_aabb.br.y > sacrifice_area.br.y) {
             continue;
         }
@@ -685,8 +685,8 @@ void StepEntityLogicAsSacAltar(
 
 } // namespace
 
-extern const EntityArchetype kSacAltarArchetype{
-    .type_ = EntityType::SacAltar,
+extern const EntSpec kSacAltarSpec{
+    .type_ = EntType::SacAltar,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -697,14 +697,14 @@ extern const EntityArchetype kSacAltarArchetype{
     .vanish_on_death = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::CrushingSpikesAndExplosion,
     .on_death = OnDeathAsSacAltarPiece,
-    .step_logic = StepEntityLogicAsSacAltar,
+    .step_logic = StepEntLogicAsSacAltar,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SacAltarLeft),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SacAltarLeft),
 };
 
-} // namespace splonks::entities::sac_altar
+} // namespace splonks::ents::sac_altar

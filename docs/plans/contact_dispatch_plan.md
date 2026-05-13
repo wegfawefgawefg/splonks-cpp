@@ -8,7 +8,7 @@ explicit contact model that:
 - gathers all relevant contacts for an attempted pixel move
 - lets contact resolvers decide whether movement is blocked
 - lets contact resolvers stop the rest of the sweep when needed
-- keeps pair cooldowns for repeated entity contact effects
+- keeps pair cooldowns for repeated ent contact effects
 - does not let cooldown disable base physical blocking
 
 ## Core Semantics
@@ -19,8 +19,8 @@ Use one small shared result type:
   - this attempted pixel move may not be entered
   - this does not automatically mean the whole remaining sweep must end
 - `stop_sweep`
-  - stop all further movement processing for this entity in the current
-    `MoveEntityPixelStep(...)` call
+  - stop all further movement processing for this ent in the current
+    `MoveEntPixelStep(...)` call
 
 These are intentionally separate.
 
@@ -42,24 +42,24 @@ For an attempted pixel move, gather a full blocking contact set:
 
 - stage bounds contact
 - all touched tile contacts
-- all touched entity contacts
+- all touched ent contacts
 
 This must not collapse to either/or.
 
 It is valid for a single attempted pixel move to touch:
 
 - stage bounds and tiles
-- tiles and entities
-- multiple entities
+- tiles and ents
+- multiple ents
 
 ## Resolution Rules
 
-### Swept Entity-to-Entity Contact
+### Swept Ent-to-Ent Contact
 
 This runs after a successful pixel move, like the existing bat contact path.
 
-- gathers the actual touched entity contacts for the current swept pose
-- dispatches one entity/entity contact event per touched pair for that pose
+- gathers the actual touched ent contacts for the current swept pose
+- dispatches one ent/ent contact event per touched pair for that pose
 - invokes both participants from that same contact event
 - aggregates the final result after all touched contacts have run
 - uses sided cooldowns for repeated effect application
@@ -76,10 +76,10 @@ It must not:
 
 This runs for the attempted next pixel before entering it.
 
-- bounds/tile/entity contacts are all visible to the resolver
+- bounds/tile/ent contacts are all visible to the resolver
 - base blocking comes from contact properties, not from cooldown
 - cooldown only suppresses repeated effect behavior
-- impassable entities remain solid even if repeated effect logic is suppressed
+- impassable ents remain solid even if repeated effect logic is suppressed
 
 ### Blocking Impact Resolution
 
@@ -95,24 +95,24 @@ This is the right place for:
 
 - breakables shattering on impact
 - bounce/thud logic
-- future tile/entity impact effects
+- future tile/ent impact effects
 
 It must dispatch across the whole touched blocking set:
 
 - stage bounds contact
 - every touched tile contact
-- every touched entity contact
+- every touched ent contact
 
 Handler families stay grouped by contact kind:
 
-- one `entity↔entity` dispatcher family
-- one `entity↔tile` dispatcher family
+- one `ent↔ent` dispatcher family
+- one `ent↔tile` dispatcher family
 
 It must not collapse to a single primary blocking contact for effect dispatch.
 
 ## Current Migration Targets
 
-1. Move bat onto a generic swept entity/entity dispatcher.
+1. Move bat onto a generic swept ent/ent dispatcher.
 2. Move breakaway container impact breakage onto the blocking-impact path.
 3. Replace the current single-blocker query with a full contact set.
 
@@ -120,7 +120,7 @@ It must not collapse to a single primary blocking contact for effect dispatch.
 
 Cooldown must not change solidity.
 
-If an impassable entity is touched:
+If an impassable ent is touched:
 
 - it still blocks movement
 - even if repeated contact effects are suppressed by cooldown
@@ -129,12 +129,12 @@ If an impassable entity is touched:
 
 Keep the layout boring and split by responsibility:
 
-- `common_entity_contact.cpp`
-  - entity/entity contact dispatch
+- `common_ent_contact.cpp`
+  - ent/ent contact dispatch
 - `common_blocking_contact.cpp`
   - attempted blocking contact gathering and resolution
 - `common_tile_contact.cpp`
-  - entity/tile contact dispatch
+  - ent/tile contact dispatch
 - `common_physics.cpp`
   - mover only
 
@@ -142,10 +142,10 @@ This keeps physics readable and keeps the contact model easy to trace in a
 debugger.
 
 Type-specific behavior should be selected by type match/dispatch inside the
-contact-type handlers, not by piling entity-specific `if` checks directly into
+contact-type handlers, not by piling ent-specific `if` checks directly into
 the generic contact loops.
 
-For entity/entity contact, this means:
+For ent/ent contact, this means:
 
 - gather one contact event for the pair
 - invoke participant A's handler for that event

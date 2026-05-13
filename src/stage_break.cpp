@@ -1,12 +1,12 @@
 #include "stage_break.hpp"
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 #include "on_damage_effects.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_tile_triggers.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
@@ -16,10 +16,10 @@ namespace splonks {
 
 namespace {
 
-Entity* SpawnEntityAtCenter(EntityType type_, const Vec2& center, State& state) {
-    return world_ops::SpawnEntity(state, type_, [center](Entity& entity) {
-        entity.SetCenter(center);
-        entity.vel = Vec2::New(0.0F, 0.0F);
+Ent* SpawnEntAtCenter(EntType type_, const Vec2& center, State& state) {
+    return world_ops::SpawnEnt(state, type_, [center](Ent& ent) {
+        ent.SetCenter(center);
+        ent.vel = Vec2::New(0.0F, 0.0F);
     });
 }
 
@@ -41,11 +41,11 @@ void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const
 
     std::size_t offset_index = 0;
     for (const EmbeddedTreasureDrop& drop : embedded_treasure.drops) {
-        if (drop.type_ == EntityType::None || drop.count <= 0) {
+        if (drop.type_ == EntType::None || drop.count <= 0) {
             continue;
         }
         for (int i = 0; i < drop.count; ++i) {
-            SpawnEntityAtCenter(
+            SpawnEntAtCenter(
                 drop.type_,
                 center + kDropOffsets[offset_index % kDropOffsets.size()],
                 state
@@ -55,31 +55,31 @@ void SpawnEmbeddedTreasureDrops(const EmbeddedTreasure& embedded_treasure, const
     }
 }
 
-void SpawnTileBreakAnimation(FrameDataId animation_id, const IVec2& tile_pos, State& state) {
+void SpawnTileBreakAnim(AFrameId anim_id, const IVec2& tile_pos, State& state) {
     const Vec2 center = Vec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
-    SpawnDamageEffectAnimationBurst(animation_id, center, state);
+    SpawnDamageEffectAnimBurst(anim_id, center, state);
 }
 
-void NotifyAreaEntitiesTileChanged(const IVec2& tile_pos, State& state, Audio& audio) {
+void NotifyAreaEntsTileChanged(const IVec2& tile_pos, State& state, Audio& audio) {
     const Vec2 tile_center = Vec2::New(
         static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8),
         static_cast<float>(tile_pos.y * static_cast<int>(kTileSize) + 8)
     );
     const AABB tile_point_aabb = AABB::New(tile_center, tile_center);
 
-    for (const VID& vid : QueryEntitiesInAabb(state, tile_point_aabb)) {
-        const Entity* const entity = state.entity_manager.GetEntity(vid);
-        if (entity == nullptr || !entity->active || entity->on_area_tile_changed == nullptr) {
+    for (const VID& vid : QueryEntsInAabb(state, tile_point_aabb)) {
+        const Ent* const ent = state.ents.GetEnt(vid);
+        if (ent == nullptr || !ent->active || ent->on_area_tile_changed == nullptr) {
             continue;
         }
-        if (!WorldAabbContainsPoint(state.stage, entity->GetAABB(), tile_center)) {
+        if (!WorldAabbContainsPoint(state.stage, ent->GetAABB(), tile_center)) {
             continue;
         }
 
-        entity->on_area_tile_changed(vid.id, tile_pos, state, audio);
+        ent->on_area_tile_changed(vid.id, tile_pos, state, audio);
     }
 }
 
@@ -107,18 +107,18 @@ void BreakStageTilesAtCoordsInternal(
             continue;
         }
 
-        const TileArchetype& tile_archetype = GetTileArchetype(tile);
-        if (!suppress_tile_break_sound && !break_sound.has_value() && tile_archetype.break_sound.has_value()) {
-            break_sound = tile_archetype.break_sound;
+        const TileSpec& tile_spec = GetTileSpec(tile);
+        if (!suppress_tile_break_sound && !break_sound.has_value() && tile_spec.break_sound.has_value()) {
+            break_sound = tile_spec.break_sound;
         }
-        if (tile_archetype.break_animation.has_value()) {
-            SpawnTileBreakAnimation(*tile_archetype.break_animation, tile_pos, state);
+        if (tile_spec.break_anim.has_value()) {
+            SpawnTileBreakAnim(*tile_spec.break_anim, tile_pos, state);
         }
-        if (!suppress_drop_spawns && tile_archetype.on_break != nullptr) {
-            tile_archetype.on_break(tile_pos, state, audio);
+        if (!suppress_drop_spawns && tile_spec.on_break != nullptr) {
+            tile_spec.on_break(tile_pos, state, audio);
         }
         RunStageTileDestroyedTriggers(tile_pos, state, audio);
-        NotifyAreaEntitiesTileChanged(tile_pos, state, audio);
+        NotifyAreaEntsTileChanged(tile_pos, state, audio);
 
         const EmbeddedTreasure embedded_treasure = state.stage.TakeEmbeddedTreasure(tile_pos);
         if (!embedded_treasure.IsEmpty()) {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::spider {
+namespace splonks::ents::spider {
 
-extern const EntityArchetype kSpiderArchetype;
-extern const EntityArchetype kRageSpiderArchetype;
-extern const EntityArchetype kGiantSpiderArchetype;
+extern const EntSpec kSpiderSpec;
+extern const EntSpec kRageSpiderSpec;
+extern const EntSpec kGiantSpiderSpec;
 
-void OnDeathAsGiantSpider(std::size_t entity_idx, State& state, Audio& audio);
+void OnDeathAsGiantSpider(std::size_t ent_idx, State& state, Audio& audio);
 
-} // namespace splonks::entities::spider
+} // namespace splonks::ents::spider

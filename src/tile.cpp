@@ -1,7 +1,7 @@
 #include "tile.hpp"
 
 #include "stage.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "utils.hpp"
 
 namespace splonks {
@@ -12,7 +12,7 @@ Tile RandomTile() {
 }
 
 const char* TileToString(Tile tile) {
-    return GetTileArchetype(tile).debug_name;
+    return GetTileSpec(tile).debug_name;
 }
 
 TileRotation NormalizeTileRotation(int rotation) {
@@ -28,13 +28,13 @@ TileRotation RotateTileRotation(TileRotation rotation, int quarter_turns) {
 }
 
 bool IsTileClimbableWithRotation(Tile tile, TileRotation rotation) {
-    const TileArchetype& archetype = GetTileArchetype(tile);
-    if (!archetype.climbable) {
+    const TileSpec& spec = GetTileSpec(tile);
+    if (!spec.climbable) {
         return false;
     }
     const std::uint8_t rotation_bit =
         static_cast<std::uint8_t>(1U << NormalizeTileRotation(rotation));
-    return (archetype.climbable_rotation_mask & rotation_bit) != 0;
+    return (spec.climbable_rotation_mask & rotation_bit) != 0;
 }
 
 bool CollidableTileInList(const std::vector<const Tile*>& tiles) {
@@ -48,7 +48,7 @@ bool CollidableTileInList(const std::vector<const Tile*>& tiles) {
 
 bool ClimbableTileInList(const std::vector<const Tile*>& tiles) {
     for (const Tile* tile : tiles) {
-        if (GetTileArchetype(*tile).climbable) {
+        if (GetTileSpec(*tile).climbable) {
             return true;
         }
     }
@@ -57,7 +57,7 @@ bool ClimbableTileInList(const std::vector<const Tile*>& tiles) {
 
 bool HangableTileInList(const std::vector<const Tile*>& tiles) {
     for (const Tile* tile : tiles) {
-        if (GetTileArchetype(*tile).hangable) {
+        if (GetTileSpec(*tile).hangable) {
             return true;
         }
     }

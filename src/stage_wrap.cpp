@@ -1,6 +1,6 @@
 #include "stage_wrap.hpp"
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "graphics.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
@@ -22,17 +22,17 @@ Vec2 GetCoreSizeWc(const Stage& stage) {
     return ToVec2(stage.wrap_core_size_tiles * kTileSize);
 }
 
-void ShiftActiveEntities(State& state, const Vec2& delta) {
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+void ShiftActiveEnts(State& state, const Vec2& delta) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
-        entity.pos += delta;
+        ent.pos += delta;
     }
 }
 
 void ShiftStageSpawnsAndStamps(Stage& stage, const Vec2& delta) {
-    for (StageEntitySpawn& spawn : stage.entity_spawns) {
+    for (EntSpawn& spawn : stage.ent_spawns) {
         spawn.pos += delta;
     }
     for (BackgroundStamp& stamp : stage.background_stamps) {
@@ -70,18 +70,18 @@ void WrapPosIntoCore(const Stage& stage, Vec2& pos) {
     }
 }
 
-void CropEntitiesAndShiftBack(State& state, const Vec2& delta_wc) {
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+void CropEntsAndShiftBack(State& state, const Vec2& delta_wc) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
-        WrapPosIntoCore(state.stage, entity.pos);
-        entity.pos = entity.pos - delta_wc;
+        WrapPosIntoCore(state.stage, ent.pos);
+        ent.pos = ent.pos - delta_wc;
     }
 }
 
 void CropStageSpawnsAndStampsAndShiftBack(Stage& stage, const Vec2& delta_wc) {
-    for (StageEntitySpawn& spawn : stage.entity_spawns) {
+    for (EntSpawn& spawn : stage.ent_spawns) {
         WrapPosIntoCore(stage, spawn.pos);
         spawn.pos = spawn.pos - delta_wc;
     }
@@ -285,7 +285,7 @@ void ExpandStageForWrap(
     stage.wrap_core_size_tiles = old_tile_dims;
 
     const Vec2 delta_wc = ToVec2(ToIVec2(padding_tile_dims * kTileSize));
-    ShiftActiveEntities(state, delta_wc);
+    ShiftActiveEnts(state, delta_wc);
     ShiftStageSpawnsAndStamps(stage, delta_wc);
     graphics.play_cam.pos += delta_wc;
 }
@@ -390,7 +390,7 @@ void CollapseWrappedStage(State& state, Graphics& graphics) {
     }
 
     const Vec2 delta_wc = ToVec2(ToIVec2(core_origin * kTileSize));
-    CropEntitiesAndShiftBack(state, delta_wc);
+    CropEntsAndShiftBack(state, delta_wc);
     CropStageSpawnsAndStampsAndShiftBack(stage, delta_wc);
     graphics.play_cam.pos = graphics.play_cam.pos - delta_wc;
 

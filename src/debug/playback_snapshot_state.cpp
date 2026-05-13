@@ -55,11 +55,11 @@ GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphi
     snapshot.players = state.players;
     snapshot.frame_pause = state.frame_pause;
     snapshot.debug_level = state.debug_level;
-    snapshot.entity_manager = state.entity_manager;
+    snapshot.ents = state.ents;
     snapshot.stage = state.stage;
-    snapshot.controlled_entity_vid = state.controlled_entity_vid;
+    snapshot.controlled_ent_vid = state.controlled_ent_vid;
     snapshot.mouse_trailer_vid = state.mouse_trailer_vid;
-    snapshot.entity_tool_states = state.entity_tools.tool_states;
+    snapshot.ent_tool_states = state.ent_tools.tool_states;
     snapshot.play_cam_pos = graphics.play_cam.pos;
     return snapshot;
 }
@@ -115,13 +115,13 @@ void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Gra
     state.players = snapshot.players;
     state.frame_pause = snapshot.frame_pause;
     state.debug_level = snapshot.debug_level;
-    state.entity_manager = snapshot.entity_manager;
+    state.ents = snapshot.ents;
     state.particles.Clear();
     state.stage = snapshot.stage;
     state.stage_acoustics = StageAcoustics::New();
-    state.controlled_entity_vid = snapshot.controlled_entity_vid;
+    state.controlled_ent_vid = snapshot.controlled_ent_vid;
     state.mouse_trailer_vid = snapshot.mouse_trailer_vid;
-    state.entity_tools.tool_states = snapshot.entity_tool_states;
+    state.ent_tools.tool_states = snapshot.ent_tool_states;
     state.RebuildSid(graphics);
     graphics.play_cam.pos = snapshot.play_cam_pos;
     InvalidateStageLighting(state);

@@ -12,7 +12,7 @@ namespace splonks::stage_gen::classic {
 
 struct ResolvedRoom {
     std::vector<std::vector<Tile>> tiles;
-    std::vector<StageEntitySpawn> entity_spawns;
+    std::vector<EntSpawn> ent_spawns;
     std::vector<StageTileTrigger> tile_triggers;
     std::vector<BackgroundStamp> background_stamps;
     std::string source_path;

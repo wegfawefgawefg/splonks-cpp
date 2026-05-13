@@ -1,12 +1,12 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 #include <cmath>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
@@ -26,41 +26,41 @@ constexpr float kTileTouchSoundMinImpactVelocity = 1.5F;
 constexpr float kTileTouchSoundMinPriorTravelDistance = 0.0F;
 constexpr float kTileTouchSoundVolumeScale = 0.10F;
 
-ContactResolution TryDispatchEntityTileContactByArchetype(
-    std::size_t entity_idx,
+ContactResult TryDispatchEntTileContactBySpec(
+    std::size_t ent_idx,
     const ContactContext& context,
     State& state
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
-        return ContactResolution{};
+    if (ent_idx >= state.ents.ents.size()) {
+        return ContactResult{};
     }
 
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
-    if (archetype.on_tile_contact == nullptr) {
-        return ContactResolution{};
+    const Ent& ent = state.ents.ents[ent_idx];
+    const EntSpec& spec = GetEntSpec(ent.type_);
+    if (spec.on_tile_contact == nullptr) {
+        return ContactResult{};
     }
-    return archetype.on_tile_contact(entity_idx, context, state);
+    return spec.on_tile_contact(ent_idx, context, state);
 }
 
 void PlayBlockingCollisionSounds(
-    Entity& entity,
+    Ent& ent,
     State& state,
-    const std::optional<AudioAssetId>& entity_sound,
+    const std::optional<AudioAssetId>& ent_sound,
     const std::optional<AudioAssetId>& tile_sound,
     bool& played_collision_sound
 ) {
     bool played_any_sound = false;
 
-    if (entity_sound.has_value()) {
-        (void)PlayEntityCenterSoundEmitter(state, entity, *entity_sound);
+    if (ent_sound.has_value()) {
+        (void)PlayEntCenterSoundEmitter(state, ent, *ent_sound);
         played_any_sound = true;
     }
 
-    if (tile_sound.has_value() && (!entity_sound.has_value() || *tile_sound != *entity_sound)) {
+    if (tile_sound.has_value() && (!ent_sound.has_value() || *tile_sound != *ent_sound)) {
         AudioEmitterPlayParams params;
         params.volume_scale = kTileTouchSoundVolumeScale;
-        (void)PlayEntityCenterSoundEmitter(state, entity, *tile_sound, params);
+        (void)PlayEntCenterSoundEmitter(state, ent, *tile_sound, params);
         played_any_sound = true;
     }
 
@@ -68,16 +68,16 @@ void PlayBlockingCollisionSounds(
         return;
     }
 
-    entity.contact_sound_cooldown = kTileTouchSoundCooldownFrames;
+    ent.contact_sound_cooldown = kTileTouchSoundCooldownFrames;
     played_collision_sound = true;
 }
 
-bool HadRecentMovementForCollisionSound(const Entity& entity) {
-    return entity.dist_traveled_this_frame > kTileTouchSoundMinPriorTravelDistance;
+bool HadRecentMovementForCollisionSound(const Ent& ent) {
+    return ent.dist_traveled_this_frame > kTileTouchSoundMinPriorTravelDistance;
 }
 
 void MaybePlayTileCollisionSounds(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const TileContact& tile_contact,
     const ContactContext& context,
     State& state,
@@ -94,26 +94,26 @@ void MaybePlayTileCollisionSounds(
         return;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!HadRecentMovementForCollisionSound(entity)) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (!HadRecentMovementForCollisionSound(ent)) {
         return;
     }
-    if (entity.contact_sound_cooldown > 0) {
+    if (ent.contact_sound_cooldown > 0) {
         return;
     }
 
-    const TileArchetype& tile_archetype = GetTileArchetype(*tile_contact.tile);
+    const TileSpec& tile_spec = GetTileSpec(*tile_contact.tile);
     PlayBlockingCollisionSounds(
-        entity,
+        ent,
         state,
-        entity.collide_sound,
-        tile_archetype.collide_sound,
+        ent.collide_sound,
+        tile_spec.collide_sound,
         played_collision_sound
     );
 }
 
 void MaybePlayStageBoundsCollisionSounds(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const ContactContext& context,
     const BlockingContactSet& contacts,
     State& state,
@@ -133,11 +133,11 @@ void MaybePlayStageBoundsCollisionSounds(
         return;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!HadRecentMovementForCollisionSound(entity)) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (!HadRecentMovementForCollisionSound(ent)) {
         return;
     }
-    if (entity.contact_sound_cooldown > 0) {
+    if (ent.contact_sound_cooldown > 0) {
         return;
     }
 
@@ -151,26 +151,26 @@ void MaybePlayStageBoundsCollisionSounds(
         return;
     }
 
-    const TileArchetype& border_archetype = GetTileArchetype(border_tile);
+    const TileSpec& border_spec = GetTileSpec(border_tile);
     PlayBlockingCollisionSounds(
-        entity,
+        ent,
         state,
-        entity.collide_sound,
-        border_archetype.collide_sound,
+        ent.collide_sound,
+        border_spec.collide_sound,
         played_collision_sound
     );
 }
 
 } // namespace
 
-ContactResolution TryDispatchEntityTileContacts(
-    std::size_t entity_idx,
+ContactResult TryDispatchEntTileContacts(
+    std::size_t ent_idx,
     const BlockingContactSet& contacts,
     const ContactContext& context,
     State& state,
     Audio* audio
 ) {
-    ContactResolution aggregate{};
+    ContactResult aggregate{};
 
     if (contacts.touches_stage_bounds) {
         aggregate.blocks_movement = true;
@@ -188,25 +188,25 @@ ContactResolution TryDispatchEntityTileContacts(
         }
 
         MaybePlayTileCollisionSounds(
-            entity_idx, tile_contact, context, state, audio, played_collision_sound);
+            ent_idx, tile_contact, context, state, audio, played_collision_sound);
 
-        const ContactResolution entity_tile_resolution =
-            TryDispatchEntityTileContactByArchetype(entity_idx, context, state);
-        aggregate.blocks_movement |= entity_tile_resolution.blocks_movement;
-        aggregate.stop_sweep |= entity_tile_resolution.stop_sweep;
+        const ContactResult ent_tile_resolution =
+            TryDispatchEntTileContactBySpec(ent_idx, context, state);
+        aggregate.blocks_movement |= ent_tile_resolution.blocks_movement;
+        aggregate.stop_sweep |= ent_tile_resolution.stop_sweep;
     }
 
     MaybePlayStageBoundsCollisionSounds(
-        entity_idx, context, contacts, state, audio, played_collision_sound);
+        ent_idx, context, contacts, state, audio, played_collision_sound);
 
     if (contacts.touches_stage_bounds || touched_blocking_tile) {
-        const ContactResolution entity_tile_resolution =
-            TryDispatchEntityTileContactByArchetype(entity_idx, context, state);
-        aggregate.blocks_movement |= entity_tile_resolution.blocks_movement;
-        aggregate.stop_sweep |= entity_tile_resolution.stop_sweep;
+        const ContactResult ent_tile_resolution =
+            TryDispatchEntTileContactBySpec(ent_idx, context, state);
+        aggregate.blocks_movement |= ent_tile_resolution.blocks_movement;
+        aggregate.stop_sweep |= ent_tile_resolution.stop_sweep;
     }
 
     return aggregate;
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

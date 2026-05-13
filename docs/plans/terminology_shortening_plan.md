@@ -5,7 +5,7 @@ Goal: reduce high-frequency long identifiers across code and docs without changi
 ## Decided Mappings
 
 1. `Archetype` -> `Spec`
-   - Examples: `EntityArchetype` -> `EntitySpec`, `GetEntityArchetype` -> `GetEntitySpec`, `TileArchetype` -> `TileSpec`.
+   - Examples: `EntityArchetype` -> `EntSpec`, `GetEntityArchetype` -> `GetEntSpec`, `TileArchetype` -> `TileSpec`.
 
 2. `Entity` -> `Ent`
    - Use broadly only if we commit to the convention project-wide.
@@ -13,7 +13,7 @@ Goal: reduce high-frequency long identifiers across code and docs without changi
 
 3. `FrameData` -> `AFrame`
    - Means authored frame data, not simulation frame.
-   - Examples: `FrameDataAnimator` -> `AFrameAnimator` or a later refined name, `frame_data_ids` -> `aframe_ids`.
+   - Examples: `FrameDataAnimator` -> `AFrameAnimator`, `frame_data_ids` -> `aframe_ids`.
 
 4. `Animation` -> `Anim`
    - Examples: `animation_id` -> `anim_id`, `TrySetAnimation` -> `TrySetAnim`.
@@ -54,7 +54,7 @@ Goal: reduce high-frequency long identifiers across code and docs without changi
    - Examples: `LeftOrRight::Left` -> `Side::Left`.
 
 16. `PlayerInputFrame` -> `InputFrame`
-   - Input can drive any controlled entity/player slot.
+   - Input can drive any controlled ent/player slot.
 
 17. `EntityManager` -> `EntPool`
    - Field should become `state.ents`.
@@ -67,7 +67,7 @@ Goal: reduce high-frequency long identifiers across code and docs without changi
 - Prefer compile-verified mechanical renames over partial hand edits.
 - Run at least:
   - `cmake --build build --target splonks-cpp -j 8`
-  - `./build/splonks-cpp --check-deterministic-replay-smoke`
+  - `./build/splonks-cpp --check-det-replay-smoke`
   - `./build/splonks-cpp --check-input-lockstep-smoke`
   - `./build/splonks-cpp --check-state-equality-smoke`
 - Avoid mixing these renames with rollback/network behavior changes.

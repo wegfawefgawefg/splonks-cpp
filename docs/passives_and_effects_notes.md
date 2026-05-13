@@ -4,28 +4,28 @@
 
 Persistent passives and temporary gameplay states now use the same fixed-slot effect system.
 
-Entities store:
+Ents store:
 
 ```cpp
-BoxedEntityEffects effects;
+BoxedEntEffects effects;
 ```
 
-`BoxedEntityEffects` is empty for normal entities. It allocates one fixed-slot `EntityEffects` payload only when an entity actually has effects, and deep-copies that payload for replay snapshots.
+`BoxedEntEffects` is empty for normal ents. It allocates one fixed-slot `EntEffects` payload only when an ent actually has effects, and deep-copies that payload for replay snapshots.
 
 `EffectInstance` is intentionally generic:
 
-- `id`: resolves to a C++ effect archetype.
-- `count`: stack count, charges, or archetype-specific accumulated points.
-- `value`: archetype-specific scalar.
+- `id`: resolves to a C++ effect spec.
+- `count`: stack count, charges, or spec-specific accumulated points.
+- `value`: spec-specific scalar.
 - `frames_remaining`: timer for future timed effects.
 
-Pickup entities point at an effect with `pickup_effect`. Collecting the pickup adds that effect to the collector.
+Pickup ents point at an effect with `pickup_effect`. Collecting the pickup adds that effect to the collector.
 
-## Effect Archetypes
+## Effect Specs
 
-Effect behavior is registered in C++ archetypes.
+Effect behavior is registered in C++ specs.
 
-Each archetype can provide:
+Each spec can provide:
 
 - a debug name
 - a HUD icon
@@ -37,10 +37,10 @@ Each archetype can provide:
 Common systems should not branch on concrete passive names. They should ask for an effective value:
 
 ```cpp
-GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F);
+GetModifiedEffectValue(ent, EffectModifierTarget::GravityScale, 1.0F);
 ```
 
-Special behavior belongs in the effect hook handler. Example: mitt reacts to a throw hook and applies `NoGravityUntilContact` to the thrown entity.
+Special behavior belongs in the effect hook handler. Example: mitt reacts to a throw hook and applies `NoGravityUntilContact` to the thrown ent.
 
 ## Implemented Effects
 
@@ -57,7 +57,7 @@ Special behavior belongs in the effect hook handler. Example: mitt reacts to a t
 
 ## Remaining Cleanup
 
-Some old passive behavior still uses direct effect identity checks because there is not yet a useful generic modifier target for it.
+Some old passive behavior still uses direct effect ident checks because there is not yet a useful generic modifier target for it.
 
 Examples:
 
@@ -76,7 +76,7 @@ More hook types can be added as real use cases appear. Avoid adding opinionated 
 
 Effects and tools remain separate:
 
-- effects are non-physical state on an entity
-- tools are physical entities that can be held, equipped, bought, dropped, or thrown
+- effects are non-physical state on an ent
+- tools are physical ents that can be held, equipped, bought, dropped, or thrown
 
-This keeps the system C++-native and easy to debug while still allowing future C++ content/mod archetypes.
+This keeps the system C++-native and easy to debug while still allowing future C++ content/mod specs.

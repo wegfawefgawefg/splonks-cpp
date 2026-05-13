@@ -1,23 +1,23 @@
 #include "cli_state_smoke.hpp"
 
-#include "entity.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data.hpp"
+#include "ent.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
 #include "network/input_lockstep.hpp"
 #include "network/net_fuzzer.hpp"
 #include "network/net_lobby.hpp"
 #include "quest_stage_loader.hpp"
-#include "raw_frame_data.hpp"
+#include "raw_aframe.hpp"
 #include "stage_spawning.hpp"
 #include "stage_progression.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
 #include "step.hpp"
 #include "tile_source_data.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 #include "world_ops.hpp"
 
 #include <array>
@@ -36,13 +36,13 @@ namespace {
 constexpr const char* kAnnotationsYamlPath = "assets/graphics/annotations.yaml";
 
 void InitCliSmokeRuntimeTables(Graphics& graphics) {
-    const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
-    graphics.frame_data_db = FrameDataDb::FromRaw(raw_file);
-    graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
+    const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
+    graphics.aframe_db = AFrameDb::FromRaw(raw_file);
+    graphics.tile_source_db = BuildTileSourceDb(graphics.aframe_db);
 
-    PopulateEntityArchetypesTable();
-    SyncEntityArchetypeSizesFromFrameData(graphics);
-    PopulateToolArchetypesTable();
+    PopulateEntSpecsTable();
+    SyncEntSpecSizesFromAFrame(graphics);
+    PopulateToolSpecsTable();
 }
 
 bool CompareCanonicalFingerprints(
@@ -67,9 +67,9 @@ bool CompareCanonicalFingerprints(
     return false;
 }
 
-bool EntityEffectsEqual(const BoxedEntityEffects& left, const BoxedEntityEffects& right) {
-    const EntityEffects* const a = left.get();
-    const EntityEffects* const b = right.get();
+bool EntEffectsEqual(const BoxedEntEffects& left, const BoxedEntEffects& right) {
+    const EntEffects* const a = left.get();
+    const EntEffects* const b = right.get();
     if ((a == nullptr) != (b == nullptr)) {
         return false;
     }
@@ -92,8 +92,8 @@ bool EntityEffectsEqual(const BoxedEntityEffects& left, const BoxedEntityEffects
     return true;
 }
 
-std::string DescribeEntityEffects(const BoxedEntityEffects& effects_box) {
-    const EntityEffects* const effects = effects_box.get();
+std::string DescribeEntEffects(const BoxedEntEffects& effects_box) {
+    const EntEffects* const effects = effects_box.get();
     if (effects == nullptr) {
         return "none";
     }
@@ -139,21 +139,21 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
         }
     }
 
-    if (left.entity_manager.entities.size() != right.entity_manager.entities.size()) {
+    if (left.ents.ents.size() != right.ents.ents.size()) {
         std::ostringstream output;
-        output << "entity array size differs: left=" << left.entity_manager.entities.size()
-               << " right=" << right.entity_manager.entities.size();
+        output << "ent array size differs: left=" << left.ents.ents.size()
+               << " right=" << right.ents.ents.size();
         return output.str();
     }
 
-    for (std::size_t i = 0; i < left.entity_manager.entities.size(); ++i) {
-        const Entity& a = left.entity_manager.entities[i];
-        const Entity& b = right.entity_manager.entities[i];
+    for (std::size_t i = 0; i < left.ents.ents.size(); ++i) {
+        const Ent& a = left.ents.ents[i];
+        const Ent& b = right.ents.ents[i];
         if (a.active != b.active ||
             a.type_ != b.type_ ||
             a.vid != b.vid) {
             std::ostringstream output;
-            output << "entity " << i << " identity differs:"
+            output << "ent " << i << " ident differs:"
                    << " frame " << left.frame << "/" << right.frame
                    << " stage_frame " << left.stage_frame << "/" << right.stage_frame
                    << " mode " << static_cast<int>(left.mode) << "/" << static_cast<int>(right.mode)
@@ -163,25 +163,25 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "/" << b.vid.id << ":" << b.vid.version;
             std::size_t version_diff_count = 0;
             std::ostringstream version_examples;
-            for (std::size_t j = 0; j < left.entity_manager.entities.size(); ++j) {
-                const Entity& left_entity = left.entity_manager.entities[j];
-                const Entity& right_entity = right.entity_manager.entities[j];
-                if (left_entity.vid.version != right_entity.vid.version) {
+            for (std::size_t j = 0; j < left.ents.ents.size(); ++j) {
+                const Ent& left_ent = left.ents.ents[j];
+                const Ent& right_ent = right.ents.ents[j];
+                if (left_ent.vid.version != right_ent.vid.version) {
                     if (version_diff_count < 8) {
                         version_examples << " [" << j
-                                         << " t" << static_cast<int>(left_entity.type_)
-                                         << "/" << static_cast<int>(right_entity.type_)
-                                         << " v" << left_entity.vid.version
-                                         << "/" << right_entity.vid.version
-                                         << " a" << left_entity.active
-                                         << "/" << right_entity.active << "]";
+                                         << " t" << static_cast<int>(left_ent.type_)
+                                         << "/" << static_cast<int>(right_ent.type_)
+                                         << " v" << left_ent.vid.version
+                                         << "/" << right_ent.vid.version
+                                         << " a" << left_ent.active
+                                         << "/" << right_ent.active << "]";
                     }
                     version_diff_count += 1;
                 }
             }
             output << " version_diffs=" << version_diff_count
-                   << " available_ids " << left.entity_manager.available_ids.size()
-                   << "/" << right.entity_manager.available_ids.size()
+                   << " available_ids " << left.ents.available_ids.size()
+                   << "/" << right.ents.available_ids.size()
                    << version_examples.str();
             return output.str();
         }
@@ -206,16 +206,16 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.draw_layer != b.draw_layer ||
             a.condition != b.condition ||
             a.ai_state != b.ai_state ||
-            a.damage_vulnerability != b.damage_vulnerability ||
+            a.damage_vuln != b.damage_vuln ||
             a.movement_flags != b.movement_flags ||
             a.health != b.health ||
             a.back_vid != b.back_vid ||
             a.holding_vid != b.holding_vid ||
             a.held_by_vid != b.held_by_vid ||
-            a.entity_a != b.entity_a ||
-            a.entity_b != b.entity_b ||
-            a.entity_c != b.entity_c ||
-            a.entity_d != b.entity_d ||
+            a.ent_a != b.ent_a ||
+            a.ent_b != b.ent_b ||
+            a.ent_c != b.ent_c ||
+            a.ent_d != b.ent_d ||
             a.stage_exit_id != b.stage_exit_id ||
             a.money != b.money ||
             a.counter_a != b.counter_a ||
@@ -231,16 +231,16 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             a.point_b != b.point_b ||
             a.point_c != b.point_c ||
             a.point_d != b.point_d ||
-            a.frame_data_animator.animation_id != b.frame_data_animator.animation_id ||
-            a.frame_data_animator.current_frame != b.frame_data_animator.current_frame ||
-            a.frame_data_animator.current_time != b.frame_data_animator.current_time ||
-            a.frame_data_animator.speed != b.frame_data_animator.speed ||
-            a.frame_data_animator.animate != b.frame_data_animator.animate ||
-            a.frame_data_animator.loop != b.frame_data_animator.loop ||
-            a.frame_data_animator.finished != b.frame_data_animator.finished ||
-            !EntityEffectsEqual(a.effects, b.effects)) {
+            a.aframe_animator.anim_id != b.aframe_animator.anim_id ||
+            a.aframe_animator.current_frame != b.aframe_animator.current_frame ||
+            a.aframe_animator.current_time != b.aframe_animator.current_time ||
+            a.aframe_animator.speed != b.aframe_animator.speed ||
+            a.aframe_animator.animate != b.aframe_animator.animate ||
+            a.aframe_animator.loop != b.aframe_animator.loop ||
+            a.aframe_animator.finished != b.aframe_animator.finished ||
+            !EntEffectsEqual(a.effects, b.effects)) {
             std::ostringstream output;
-            output << "entity " << i << " differs:"
+            output << "ent " << i << " differs:"
                    << " active " << a.active << "/" << b.active
                    << " type " << static_cast<int>(a.type_) << "/" << static_cast<int>(b.type_)
                    << " vidver " << a.vid.version << "/" << b.vid.version
@@ -268,8 +268,8 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << " condition " << static_cast<int>(a.condition)
                    << "/" << static_cast<int>(b.condition)
                    << " ai " << static_cast<int>(a.ai_state) << "/" << static_cast<int>(b.ai_state)
-                   << " vuln " << static_cast<int>(a.damage_vulnerability)
-                   << "/" << static_cast<int>(b.damage_vulnerability)
+                   << " vuln " << static_cast<int>(a.damage_vuln)
+                   << "/" << static_cast<int>(b.damage_vuln)
                    << " move_flags " << a.movement_flags << "/" << b.movement_flags
                    << " back " << (a.back_vid.has_value() ? static_cast<int>(a.back_vid->id) : -1)
                    << "/" << (b.back_vid.has_value() ? static_cast<int>(b.back_vid->id) : -1)
@@ -287,14 +287,14 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
                    << "/" << b.light_strength << "," << b.light_radius
                    << " points " << a.point_a.x << "," << a.point_a.y
                    << "/" << b.point_a.x << "," << b.point_a.y
-                   << " anim " << a.frame_data_animator.animation_id
-                   << "/" << b.frame_data_animator.animation_id
-                   << " frame " << a.frame_data_animator.current_frame
-                   << "/" << b.frame_data_animator.current_frame
-                   << " time " << a.frame_data_animator.current_time
-                   << "/" << b.frame_data_animator.current_time
-                   << " effects " << DescribeEntityEffects(a.effects)
-                   << " / " << DescribeEntityEffects(b.effects);
+                   << " anim " << a.aframe_animator.anim_id
+                   << "/" << b.aframe_animator.anim_id
+                   << " frame " << a.aframe_animator.current_frame
+                   << "/" << b.aframe_animator.current_frame
+                   << " time " << a.aframe_animator.current_time
+                   << "/" << b.aframe_animator.current_time
+                   << " effects " << DescribeEntEffects(a.effects)
+                   << " / " << DescribeEntEffects(b.effects);
             return output.str();
         }
     }
@@ -322,7 +322,7 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
         const PlayerSlot& b = right.players.slots[i];
         if (a.player_id != b.player_id ||
             a.connected != b.connected ||
-            a.entity_vid != b.entity_vid ||
+            a.ent_vid != b.ent_vid ||
             a.input_frame.left != b.input_frame.left ||
             a.input_frame.right != b.input_frame.right ||
             a.input_frame.up != b.input_frame.up ||
@@ -351,10 +351,10 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
             output << "player slot " << i << " differs:"
                    << " player_id " << a.player_id << "/" << b.player_id
                    << " connected " << a.connected << "/" << b.connected
-                   << " entity_vid "
-                   << (a.entity_vid.has_value() ? static_cast<int>(a.entity_vid->id) : -1)
+                   << " ent_vid "
+                   << (a.ent_vid.has_value() ? static_cast<int>(a.ent_vid->id) : -1)
                    << "/"
-                   << (b.entity_vid.has_value() ? static_cast<int>(b.entity_vid->id) : -1);
+                   << (b.ent_vid.has_value() ? static_cast<int>(b.ent_vid->id) : -1);
             return output.str();
         }
     }
@@ -362,19 +362,19 @@ std::string DescribeFirstStateDifference(const State& left, const State& right) 
     return "no simple lane difference found; fingerprint includes a field not covered by the smoke diff";
 }
 
-const Entity* FindFirstActiveEntity(const State& state) {
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (entity.active) {
-            return &entity;
+const Ent* FindFirstActiveEnt(const State& state) {
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active) {
+            return &ent;
         }
     }
     return nullptr;
 }
 
-bool ApplyDeterministicWorldOpsSmokeMutations(State& state, const char*& failed_step) {
-    const Entity* source = FindFirstActiveEntity(state);
+bool ApplyDetWorldOpsSmokeMutations(State& state, const char*& failed_step) {
+    const Ent* source = FindFirstActiveEnt(state);
     if (source == nullptr) {
-        failed_step = "find source entity";
+        failed_step = "find source ent";
         return false;
     }
 
@@ -388,20 +388,20 @@ bool ApplyDeterministicWorldOpsSmokeMutations(State& state, const char*& failed_
         return false;
     }
 
-    Entity* rock = world_ops::SpawnEntity(
+    Ent* rock = world_ops::SpawnEnt(
         state,
-        EntityType::Rock,
-        [](Entity& entity) {
-            entity.pos = Vec2::New(96.0F, 64.0F);
-            entity.vel = Vec2::New(1.0F, -2.0F);
-            entity.acc = Vec2::New(0.0F, 0.0F);
+        EntType::Rock,
+        [](Ent& ent) {
+            ent.pos = Vec2::New(96.0F, 64.0F);
+            ent.vel = Vec2::New(1.0F, -2.0F);
+            ent.acc = Vec2::New(0.0F, 0.0F);
         }
     );
     if (rock == nullptr) {
         failed_step = "spawn rock";
         return false;
     }
-    if (!world_ops::DeactivateEntity(state, rock->vid)) {
+    if (!world_ops::DeactivateEnt(state, rock->vid)) {
         failed_step = "deactivate rock";
         return false;
     }
@@ -409,10 +409,10 @@ bool ApplyDeterministicWorldOpsSmokeMutations(State& state, const char*& failed_
     return true;
 }
 
-std::vector<PlayerInputFrame> BuildDeterministicReplayInputScript() {
-    std::vector<PlayerInputFrame> frames(180, PlayerInputFrame::New());
+std::vector<InputFrame> BuildDetReplayInputScript() {
+    std::vector<InputFrame> frames(180, InputFrame::New());
     for (std::size_t i = 0; i < frames.size(); ++i) {
-        PlayerInputFrame& frame = frames[i];
+        InputFrame& frame = frames[i];
         frame.mouse_pos = UVec2::New(320, 180);
 
         if (i < 45) {
@@ -434,11 +434,11 @@ std::vector<PlayerInputFrame> BuildDeterministicReplayInputScript() {
     return frames;
 }
 
-std::vector<std::array<PlayerInputFrame, 2>> BuildDeterministicMultiLocalReplayInputScript() {
-    std::vector<std::array<PlayerInputFrame, 2>> frames(240);
+std::vector<std::array<InputFrame, 2>> BuildDetMultiLocalReplayInputScript() {
+    std::vector<std::array<InputFrame, 2>> frames(240);
     for (std::size_t i = 0; i < frames.size(); ++i) {
-        PlayerInputFrame p1 = PlayerInputFrame::New();
-        PlayerInputFrame p2 = PlayerInputFrame::New();
+        InputFrame p1 = InputFrame::New();
+        InputFrame p2 = InputFrame::New();
         p1.mouse_pos = UVec2::New(320, 180);
         p2.mouse_pos = UVec2::New(320, 180);
 
@@ -458,10 +458,10 @@ std::vector<std::array<PlayerInputFrame, 2>> BuildDeterministicMultiLocalReplayI
     return frames;
 }
 
-std::vector<PlayerInputFrame> BuildBroadDeterministicReplayInputScript() {
-    std::vector<PlayerInputFrame> frames(1000, PlayerInputFrame::New());
+std::vector<InputFrame> BuildBroadDetReplayInputScript() {
+    std::vector<InputFrame> frames(1000, InputFrame::New());
     for (std::size_t i = 0; i < frames.size(); ++i) {
-        PlayerInputFrame& frame = frames[i];
+        InputFrame& frame = frames[i];
         frame.mouse_pos = UVec2::New(340, 210);
         frame.right = (i >= 12 && i < 180) || (i >= 300 && i < 460) || (i >= 620 && i < 780);
         frame.left = (i >= 210 && i < 285) || (i >= 500 && i < 580);
@@ -477,16 +477,16 @@ std::vector<PlayerInputFrame> BuildBroadDeterministicReplayInputScript() {
     return frames;
 }
 
-void ApplyPrimaryInputFrame(State& state, const PlayerInputFrame& input_frame) {
+void ApplyPrimaryInputFrame(State& state, const InputFrame& input_frame) {
     state.playing_input_snapshot = ToPlayingInputSnapshot(input_frame);
 }
 
-Entity* FindPrimaryPlayerMut(State& state) {
+Ent* FindPrimaryPlayerMut(State& state) {
     PlayerSlot* const primary = state.players.FindPrimaryLocal();
-    if (primary == nullptr || !primary->entity_vid.has_value()) {
+    if (primary == nullptr || !primary->ent_vid.has_value()) {
         return nullptr;
     }
-    return state.entity_manager.GetEntityMut(*primary->entity_vid);
+    return state.ents.GetEntMut(*primary->ent_vid);
 }
 
 bool SetScenarioForegroundTile(State& state, const IVec2& tile_pos, Tile tile) {
@@ -507,8 +507,8 @@ bool SetScenarioForegroundTile(State& state, const IVec2& tile_pos, Tile tile) {
     return world_ops::SetForegroundTile(state, wrapped_tile_pos, tile);
 }
 
-bool PrepareBroadDeterministicReplayScenario(State& state, const char*& failed_step) {
-    Entity* const player = FindPrimaryPlayerMut(state);
+bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
+    Ent* const player = FindPrimaryPlayerMut(state);
     if (player == nullptr) {
         failed_step = "find primary player";
         return false;
@@ -538,39 +538,39 @@ bool PrepareBroadDeterministicReplayScenario(State& state, const char*& failed_s
     player->vel = Vec2::New(0.0F, 0.0F);
     player->acc = Vec2::New(0.0F, 0.0F);
     player->grounded = false;
-    player->condition = EntityCondition::Normal;
+    player->condition = EntCondition::Normal;
     player->stun_timer = 0;
-    FillToolSlot(state.entity_tools.EnsureToolSlot(player->vid, 0), ToolKind::ThrowBomb, 3, true);
-    FillToolSlot(state.entity_tools.EnsureToolSlot(player->vid, 1), ToolKind::ThrowRope, 3, true);
+    FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 0), ToolKind::ThrowBomb, 3, true);
+    FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 1), ToolKind::ThrowRope, 3, true);
 
-    const auto spawn = [&](EntityType type, Vec2 pos) -> bool {
-        Entity* const entity = world_ops::SpawnEntity(state, type, [&](Entity& spawned) {
+    const auto spawn = [&](EntType type, Vec2 pos) -> bool {
+        Ent* const ent = world_ops::SpawnEnt(state, type, [&](Ent& spawned) {
             spawned.pos = pos;
             spawned.vel = Vec2::New(0.0F, 0.0F);
             spawned.acc = Vec2::New(0.0F, 0.0F);
         });
-        return entity != nullptr;
+        return ent != nullptr;
     };
-    if (!spawn(EntityType::Rock, Vec2::New(5.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - 8.0F)) ||
-        !spawn(EntityType::Pot, Vec2::New(9.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
-        !spawn(EntityType::Box, Vec2::New(11.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
-        !spawn(EntityType::Snake, Vec2::New(16.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize)))) {
-        failed_step = "spawn broad scenario entities";
+    if (!spawn(EntType::Rock, Vec2::New(5.0F * static_cast<float>(kTileSize), 20.0F * static_cast<float>(kTileSize) - 8.0F)) ||
+        !spawn(EntType::Pot, Vec2::New(9.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
+        !spawn(EntType::Box, Vec2::New(11.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize))) ||
+        !spawn(EntType::Snake, Vec2::New(16.0F * static_cast<float>(kTileSize), 19.0F * static_cast<float>(kTileSize)))) {
+        failed_step = "spawn broad scenario ents";
         return false;
     }
 
     return true;
 }
 
-bool AddSecondLocalPlayerForDeterministicReplay(State& state, Graphics& graphics) {
+bool AddSecondLocalPlayerForDetReplay(State& state, Graphics& graphics) {
     constexpr PlayerId kSecondPlayerId = 2;
     (void)state.players.EnsureLocalPlayer(kSecondPlayerId, "Player 2", false);
 
     Vec2 spawn_pos = Vec2::New(32.0F, 32.0F);
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
-        primary != nullptr && primary->entity_vid.has_value()) {
-        if (const Entity* const primary_entity = state.entity_manager.GetEntity(*primary->entity_vid)) {
-            spawn_pos = primary_entity->pos + Vec2::New(16.0F, 0.0F);
+        primary != nullptr && primary->ent_vid.has_value()) {
+        if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
+            spawn_pos = primary_ent->pos + Vec2::New(16.0F, 0.0F);
         }
     }
 
@@ -579,24 +579,24 @@ bool AddSecondLocalPlayerForDeterministicReplay(State& state, Graphics& graphics
     if (!second_player_vid.has_value()) {
         return false;
     }
-    state.UpdateSidForEntity(second_player_vid->id, graphics);
+    state.UpdateSidForEnt(second_player_vid->id, graphics);
     return true;
 }
 
 void ApplyMultiLocalInputFrame(
     State& state,
-    const std::array<PlayerInputFrame, 2>& input_frame
+    const std::array<InputFrame, 2>& input_frame
 ) {
     ApplyPrimaryInputFrame(state, input_frame[0]);
     state.players.SetInputFrameForPlayer(2, input_frame[1]);
 }
 
-std::vector<std::array<PlayerInputFrame, 2>> BuildInputLockstepSmokeScript() {
-    std::vector<std::array<PlayerInputFrame, 2>> frames(1200);
-    const std::vector<PlayerInputFrame> broad = BuildBroadDeterministicReplayInputScript();
+std::vector<std::array<InputFrame, 2>> BuildInputLockstepSmokeScript() {
+    std::vector<std::array<InputFrame, 2>> frames(1200);
+    const std::vector<InputFrame> broad = BuildBroadDetReplayInputScript();
     for (std::size_t i = 0; i < frames.size(); ++i) {
-        PlayerInputFrame p1 = i < broad.size() ? broad[i] : PlayerInputFrame::New();
-        PlayerInputFrame p2 = PlayerInputFrame::New();
+        InputFrame p1 = i < broad.size() ? broad[i] : InputFrame::New();
+        InputFrame p2 = InputFrame::New();
         p2.mouse_pos = UVec2::New(300, 190);
 
         p2.left = (i >= 16 && i < 96) || (i >= 240 && i < 300);
@@ -612,11 +612,11 @@ std::vector<std::array<PlayerInputFrame, 2>> BuildInputLockstepSmokeScript() {
     return frames;
 }
 
-std::vector<std::array<PlayerInputFrame, 2>> BuildInputLockstepCarryScript() {
-    std::vector<std::array<PlayerInputFrame, 2>> frames(180);
+std::vector<std::array<InputFrame, 2>> BuildInputLockstepCarryScript() {
+    std::vector<std::array<InputFrame, 2>> frames(180);
     for (std::size_t i = 0; i < frames.size(); ++i) {
-        PlayerInputFrame p1 = PlayerInputFrame::New();
-        PlayerInputFrame p2 = PlayerInputFrame::New();
+        InputFrame p1 = InputFrame::New();
+        InputFrame p2 = InputFrame::New();
         p1.mouse_pos = UVec2::New(220, 190);
         p2.mouse_pos = UVec2::New(240, 190);
 
@@ -632,10 +632,10 @@ std::vector<std::array<PlayerInputFrame, 2>> BuildInputLockstepCarryScript() {
 
 std::optional<VID> FindPlayerVidForSmoke(State& state, PlayerId player_id) {
     PlayerSlot* const slot = state.players.Find(player_id);
-    if (slot == nullptr || !slot->connected || !slot->entity_vid.has_value()) {
+    if (slot == nullptr || !slot->connected || !slot->ent_vid.has_value()) {
         return std::nullopt;
     }
-    Entity* const player = state.entity_manager.GetEntityMut(*slot->entity_vid);
+    Ent* const player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr || !player->active) {
         return std::nullopt;
     }
@@ -650,8 +650,8 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
         return false;
     }
 
-    Entity* const p1 = state.entity_manager.GetEntityMut(*p1_vid);
-    Entity* const p2 = state.entity_manager.GetEntityMut(*p2_vid);
+    Ent* const p1 = state.ents.GetEntMut(*p1_vid);
+    Ent* const p2 = state.ents.GetEntMut(*p2_vid);
     if (p1 == nullptr || p2 == nullptr) {
         failed_step = "resolve carry smoke players";
         return false;
@@ -661,20 +661,20 @@ bool PlaceCarryTransitionSmokePlayers(State& state, Graphics& graphics, const ch
     const float floor_y = 20.0F * tile;
     p1->pos = Vec2::New(8.0F * tile, floor_y - p1->size.y);
     p2->pos = Vec2::New(9.0F * tile, floor_y - p2->size.y);
-    for (Entity* const player : {p1, p2}) {
+    for (Ent* const player : {p1, p2}) {
         player->vel = Vec2::New(0.0F, 0.0F);
         player->acc = Vec2::New(0.0F, 0.0F);
-        player->condition = EntityCondition::Normal;
+        player->condition = EntCondition::Normal;
         player->stun_timer = 0;
         player->grounded = true;
         player->holding = false;
         player->holding_vid.reset();
         player->held_by_vid.reset();
-        player->attachment_mode = AttachmentMode::None;
-        player->facing = LeftOrRight::Left;
-        state.UpdateSidForEntity(player->vid.id, graphics);
+        player->attach_mode = AttachMode::None;
+        player->facing = Side::Left;
+        state.UpdateSidForEnt(player->vid.id, graphics);
     }
-    p2->facing = LeftOrRight::Left;
+    p2->facing = Side::Left;
     return true;
 }
 
@@ -683,27 +683,27 @@ bool ValidateActiveSmokePlayers(
     const char* context,
     std::ostream& error_stream
 ) {
-    std::size_t active_player_entities = 0;
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (entity.active && entity.type_ == EntityType::Player) {
-            active_player_entities += 1;
+    std::size_t active_player_ents = 0;
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active && ent.type_ == EntType::Player) {
+            active_player_ents += 1;
         }
     }
-    if (active_player_entities != 2) {
-        error_stream << context << " failed: expected 2 active player entities, found "
-                     << active_player_entities << '\n';
+    if (active_player_ents != 2) {
+        error_stream << context << " failed: expected 2 active player ents, found "
+                     << active_player_ents << '\n';
         return false;
     }
 
     for (PlayerId player_id : {PlayerId{1}, PlayerId{2}}) {
         const PlayerSlot* const slot = state.players.Find(player_id);
-        if (slot == nullptr || !slot->connected || !slot->entity_vid.has_value()) {
+        if (slot == nullptr || !slot->connected || !slot->ent_vid.has_value()) {
             error_stream << context << " failed: missing player slot " << player_id << '\n';
             return false;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot->entity_vid);
-        if (player == nullptr || !player->active || player->type_ != EntityType::Player) {
-            error_stream << context << " failed: inactive player entity for slot "
+        const Ent* const player = state.ents.GetEnt(*slot->ent_vid);
+        if (player == nullptr || !player->active || player->type_ != EntType::Player) {
+            error_stream << context << " failed: inactive player ent for slot "
                          << player_id << '\n';
             return false;
         }
@@ -716,22 +716,22 @@ bool ValidateNoPlayerCarryLinks(
     const char* context,
     std::ostream& error_stream
 ) {
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || entity.type_ != EntityType::Player) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active || ent.type_ != EntType::Player) {
             continue;
         }
-        if (entity.holding_vid.has_value()) {
-            const Entity* const held = state.entity_manager.GetEntity(*entity.holding_vid);
-            if (held != nullptr && held->type_ == EntityType::Player) {
-                error_stream << context << " failed: player " << entity.vid.id
+        if (ent.holding_vid.has_value()) {
+            const Ent* const held = state.ents.GetEnt(*ent.holding_vid);
+            if (held != nullptr && held->type_ == EntType::Player) {
+                error_stream << context << " failed: player " << ent.vid.id
                              << " still holds player " << held->vid.id << '\n';
                 return false;
             }
         }
-        if (entity.held_by_vid.has_value()) {
-            const Entity* const holder = state.entity_manager.GetEntity(*entity.held_by_vid);
-            if (holder != nullptr && holder->type_ == EntityType::Player) {
-                error_stream << context << " failed: player " << entity.vid.id
+        if (ent.held_by_vid.has_value()) {
+            const Ent* const holder = state.ents.GetEnt(*ent.held_by_vid);
+            if (holder != nullptr && holder->type_ == EntType::Player) {
+                error_stream << context << " failed: player " << ent.vid.id
                              << " still held by player " << holder->vid.id << '\n';
                 return false;
             }
@@ -751,14 +751,14 @@ struct FakeLockstepInFlightPacket {
 struct FakeLockstepNetwork {
     network::NetFuzzerConfig fuzzer;
     network::NetFuzzerStats stats;
-    DeterministicRng rng = DeterministicRng::New(1U);
+    DetRng rng = DetRng::New(1U);
     std::vector<FakeLockstepInFlightPacket> in_flight;
     std::uint64_t next_insertion_order = 0;
 
     static FakeLockstepNetwork New(const network::NetFuzzerConfig& config, std::uint32_t seed) {
         FakeLockstepNetwork network;
         network.fuzzer = config;
-        network.rng = DeterministicRng::New(seed);
+        network.rng = DetRng::New(seed);
         return network;
     }
 
@@ -872,13 +872,13 @@ struct FakeLockstepPeer {
     std::vector<std::uint64_t> frame_hashes;
 };
 
-PlayerInputFrame GetLockstepScriptInput(
-    const std::vector<std::array<PlayerInputFrame, 2>>& script,
+InputFrame GetLockstepScriptInput(
+    const std::vector<std::array<InputFrame, 2>>& script,
     PlayerId player_id,
     network::LockstepFrame frame
 ) {
     if (frame >= script.size()) {
-        return PlayerInputFrame::New();
+        return InputFrame::New();
     }
     const std::size_t frame_index = static_cast<std::size_t>(frame);
     if (player_id == 1) {
@@ -887,12 +887,12 @@ PlayerInputFrame GetLockstepScriptInput(
     if (player_id == 2) {
         return script[frame_index][1];
     }
-    return PlayerInputFrame::New();
+    return InputFrame::New();
 }
 
 network::LockstepInputPacket BuildLockstepInputPacket(
     FakeLockstepPeer& peer,
-    const std::vector<std::array<PlayerInputFrame, 2>>& script,
+    const std::vector<std::array<InputFrame, 2>>& script,
     network::LockstepFrame latest_frame
 ) {
     network::LockstepInputPacket packet;
@@ -946,10 +946,10 @@ bool PrepareLockstepSmokeState(
         failed_step = "load stage";
         return false;
     }
-    if (!PrepareBroadDeterministicReplayScenario(state, failed_step)) {
+    if (!PrepareBroadDetReplayScenario(state, failed_step)) {
         return false;
     }
-    if (!AddSecondLocalPlayerForDeterministicReplay(state, graphics)) {
+    if (!AddSecondLocalPlayerForDetReplay(state, graphics)) {
         failed_step = "spawn second player";
         return false;
     }
@@ -962,27 +962,27 @@ bool PrepareLockstepSmokeState(
 
 bool KillSmokePlayer(State& state, PlayerId player_id, const char*& failed_step) {
     const PlayerSlot* const slot = state.players.Find(player_id);
-    if (slot == nullptr || !slot->entity_vid.has_value()) {
+    if (slot == nullptr || !slot->ent_vid.has_value()) {
         failed_step = "find smoke player to kill";
         return false;
     }
-    Entity* const player = state.entity_manager.GetEntityMut(*slot->entity_vid);
+    Ent* const player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr || !player->active) {
         failed_step = "resolve smoke player to kill";
         return false;
     }
-    player->condition = EntityCondition::Dead;
+    player->condition = EntCondition::Dead;
     player->health = 0;
     return true;
 }
 
 bool SmokePlayerIsAlive(const State& state, PlayerId player_id) {
     const PlayerSlot* const slot = state.players.Find(player_id);
-    if (slot == nullptr || !slot->entity_vid.has_value()) {
+    if (slot == nullptr || !slot->ent_vid.has_value()) {
         return false;
     }
-    const Entity* const player = state.entity_manager.GetEntity(*slot->entity_vid);
-    return player != nullptr && player->active && player->condition != EntityCondition::Dead;
+    const Ent* const player = state.ents.GetEnt(*slot->ent_vid);
+    return player != nullptr && player->active && player->condition != EntCondition::Dead;
 }
 
 bool SmokePlayerHasNoActiveBody(const State& state, PlayerId player_id) {
@@ -990,15 +990,15 @@ bool SmokePlayerHasNoActiveBody(const State& state, PlayerId player_id) {
     if (slot == nullptr) {
         return false;
     }
-    if (!slot->entity_vid.has_value()) {
+    if (!slot->ent_vid.has_value()) {
         return true;
     }
-    const Entity* const player = state.entity_manager.GetEntity(*slot->entity_vid);
-    return player == nullptr || !player->active || player->condition == EntityCondition::Dead;
+    const Ent* const player = state.ents.GetEnt(*slot->ent_vid);
+    return player == nullptr || !player->active || player->condition == EntCondition::Dead;
 }
 
 void ConfigureSmokeNetworkRoles(State& peer0, State& peer1) {
-    peer0.net_session.role = network::NetRole::Coordinator;
+    peer0.net_session.role = network::NetRole::Host;
     peer1.net_session.role = network::NetRole::Peer;
 }
 
@@ -1033,7 +1033,7 @@ bool RunSmokeStageTransition(
 void ApplyLockstepInputsToState(
     State& state,
     const std::vector<PlayerId>& player_ids,
-    const std::vector<PlayerInputFrame>& input_frames
+    const std::vector<InputFrame>& input_frames
 ) {
     const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();
     const PlayerId primary_player_id =
@@ -1056,7 +1056,7 @@ bool StepReadyLockstepFrames(
     network::LockstepFrame total_frames,
     std::string& error
 ) {
-    std::vector<PlayerInputFrame> frame_inputs;
+    std::vector<InputFrame> frame_inputs;
     while (peer.next_frame_to_step < total_frames &&
            peer.input_buffer.BuildFrameInputs(
                required_players,
@@ -1108,11 +1108,11 @@ bool CheckStateFingerprintSmoke() {
         }
 
         const IVec2 rope_tile_pos = IVec2::New(2, 2);
-        const Entity* source = state.entity_manager.entities.empty()
+        const Ent* source = state.ents.ents.empty()
             ? nullptr
-            : &state.entity_manager.entities.front();
+            : &state.ents.ents.front();
         if (source == nullptr) {
-            std::cerr << "state fingerprint smoke failed: no source entity\n";
+            std::cerr << "state fingerprint smoke failed: no source ent\n";
             return false;
         }
 
@@ -1160,12 +1160,12 @@ bool CheckStateEqualitySmoke() {
         }
 
         const char* failed_step = nullptr;
-        if (!ApplyDeterministicWorldOpsSmokeMutations(left, failed_step)) {
+        if (!ApplyDetWorldOpsSmokeMutations(left, failed_step)) {
             std::cerr << "state equality smoke failed on left mutation: "
                       << (failed_step != nullptr ? failed_step : "unknown") << '\n';
             return false;
         }
-        if (!ApplyDeterministicWorldOpsSmokeMutations(right, failed_step)) {
+        if (!ApplyDetWorldOpsSmokeMutations(right, failed_step)) {
             std::cerr << "state equality smoke failed on right mutation: "
                       << (failed_step != nullptr ? failed_step : "unknown") << '\n';
             return false;
@@ -1183,7 +1183,7 @@ bool CheckStateEqualitySmoke() {
     }
 }
 
-bool CheckDeterministicReplaySmoke() {
+bool CheckDetReplaySmoke() {
     try {
         Graphics graphics;
         InitCliSmokeRuntimeTables(graphics);
@@ -1194,17 +1194,17 @@ bool CheckDeterministicReplaySmoke() {
         State replayed = State::New();
         if (!LoadQuestStage(recorded, "classic", "classic_mines_1", false, seed) ||
             !LoadQuestStage(replayed, "classic", "classic_mines_1", false, seed)) {
-            std::cerr << "deterministic replay smoke failed: could not load test stages\n";
+            std::cerr << "det replay smoke failed: could not load test stages\n";
             return false;
         }
 
-        if (!CompareCanonicalFingerprints(recorded, replayed, "deterministic replay initial")) {
+        if (!CompareCanonicalFingerprints(recorded, replayed, "det replay initial")) {
             std::cerr << "  first simple diff: "
                       << DescribeFirstStateDifference(recorded, replayed) << '\n';
             return false;
         }
 
-        const std::vector<PlayerInputFrame> inputs = BuildDeterministicReplayInputScript();
+        const std::vector<InputFrame> inputs = BuildDetReplayInputScript();
         for (std::size_t frame_index = 0; frame_index < inputs.size(); ++frame_index) {
             ApplyPrimaryInputFrame(recorded, inputs[frame_index]);
             ApplyPrimaryInputFrame(replayed, inputs[frame_index]);
@@ -1216,7 +1216,7 @@ bool CheckDeterministicReplaySmoke() {
             const CanonicalStateFingerprint replayed_fingerprint =
                 ComputeGameplayDeterminismFingerprint(replayed);
             if (recorded_fingerprint.value != replayed_fingerprint.value) {
-                std::cerr << "deterministic replay smoke failed at frame "
+                std::cerr << "det replay smoke failed at frame "
                           << frame_index << "\n"
                           << "  recorded " << recorded_fingerprint.summary
                           << " hash=" << recorded_fingerprint.value << "\n"
@@ -1230,7 +1230,7 @@ bool CheckDeterministicReplaySmoke() {
 
         const CanonicalStateFingerprint final_fingerprint =
             ComputeGameplayDeterminismFingerprint(recorded);
-        std::cout << "deterministic replay smoke ok: frames=" << inputs.size()
+        std::cout << "det replay smoke ok: frames=" << inputs.size()
                   << " " << final_fingerprint.summary
                   << " hash=" << final_fingerprint.value << '\n';
 
@@ -1238,26 +1238,26 @@ bool CheckDeterministicReplaySmoke() {
         State multi_replayed = State::New();
         if (!LoadQuestStage(multi_recorded, "classic", "classic_mines_1", false, seed) ||
             !LoadQuestStage(multi_replayed, "classic", "classic_mines_1", false, seed)) {
-            std::cerr << "deterministic multi-local replay smoke failed: could not load test stages\n";
+            std::cerr << "det multi-local replay smoke failed: could not load test stages\n";
             return false;
         }
-        if (!AddSecondLocalPlayerForDeterministicReplay(multi_recorded, graphics) ||
-            !AddSecondLocalPlayerForDeterministicReplay(multi_replayed, graphics)) {
-            std::cerr << "deterministic multi-local replay smoke failed: could not spawn second player\n";
+        if (!AddSecondLocalPlayerForDetReplay(multi_recorded, graphics) ||
+            !AddSecondLocalPlayerForDetReplay(multi_replayed, graphics)) {
+            std::cerr << "det multi-local replay smoke failed: could not spawn second player\n";
             return false;
         }
         if (!CompareCanonicalFingerprints(
                 multi_recorded,
                 multi_replayed,
-                "deterministic multi-local replay initial"
+                "det multi-local replay initial"
             )) {
             std::cerr << "  first simple diff: "
                       << DescribeFirstStateDifference(multi_recorded, multi_replayed) << '\n';
             return false;
         }
 
-        const std::vector<std::array<PlayerInputFrame, 2>> multi_inputs =
-            BuildDeterministicMultiLocalReplayInputScript();
+        const std::vector<std::array<InputFrame, 2>> multi_inputs =
+            BuildDetMultiLocalReplayInputScript();
         for (std::size_t frame_index = 0; frame_index < multi_inputs.size(); ++frame_index) {
             ApplyMultiLocalInputFrame(multi_recorded, multi_inputs[frame_index]);
             ApplyMultiLocalInputFrame(multi_replayed, multi_inputs[frame_index]);
@@ -1269,7 +1269,7 @@ bool CheckDeterministicReplaySmoke() {
             const CanonicalStateFingerprint replayed_fingerprint =
                 ComputeGameplayDeterminismFingerprint(multi_replayed);
             if (recorded_fingerprint.value != replayed_fingerprint.value) {
-                std::cerr << "deterministic multi-local replay smoke failed at frame "
+                std::cerr << "det multi-local replay smoke failed at frame "
                           << frame_index << "\n"
                           << "  recorded " << recorded_fingerprint.summary
                           << " hash=" << recorded_fingerprint.value << "\n"
@@ -1283,7 +1283,7 @@ bool CheckDeterministicReplaySmoke() {
 
         const CanonicalStateFingerprint multi_final_fingerprint =
             ComputeGameplayDeterminismFingerprint(multi_recorded);
-        std::cout << "deterministic multi-local replay smoke ok: frames="
+        std::cout << "det multi-local replay smoke ok: frames="
                   << multi_inputs.size() << " " << multi_final_fingerprint.summary
                   << " hash=" << multi_final_fingerprint.value << '\n';
 
@@ -1291,28 +1291,28 @@ bool CheckDeterministicReplaySmoke() {
         State broad_replayed = State::New();
         if (!LoadQuestStage(broad_recorded, "classic", "classic_mines_1", false, seed) ||
             !LoadQuestStage(broad_replayed, "classic", "classic_mines_1", false, seed)) {
-            std::cerr << "deterministic broad replay smoke failed: could not load test stages\n";
+            std::cerr << "det broad replay smoke failed: could not load test stages\n";
             return false;
         }
         const char* failed_step = nullptr;
-        if (!PrepareBroadDeterministicReplayScenario(broad_recorded, failed_step) ||
-            !PrepareBroadDeterministicReplayScenario(broad_replayed, failed_step)) {
-            std::cerr << "deterministic broad replay smoke failed during setup: "
+        if (!PrepareBroadDetReplayScenario(broad_recorded, failed_step) ||
+            !PrepareBroadDetReplayScenario(broad_replayed, failed_step)) {
+            std::cerr << "det broad replay smoke failed during setup: "
                       << (failed_step != nullptr ? failed_step : "unknown") << '\n';
             return false;
         }
         if (!CompareCanonicalFingerprints(
                 broad_recorded,
                 broad_replayed,
-                "deterministic broad replay initial"
+                "det broad replay initial"
             )) {
             std::cerr << "  first simple diff: "
                       << DescribeFirstStateDifference(broad_recorded, broad_replayed) << '\n';
             return false;
         }
 
-        const std::vector<PlayerInputFrame> broad_inputs =
-            BuildBroadDeterministicReplayInputScript();
+        const std::vector<InputFrame> broad_inputs =
+            BuildBroadDetReplayInputScript();
         for (std::size_t frame_index = 0; frame_index < broad_inputs.size(); ++frame_index) {
             ApplyPrimaryInputFrame(broad_recorded, broad_inputs[frame_index]);
             ApplyPrimaryInputFrame(broad_replayed, broad_inputs[frame_index]);
@@ -1324,7 +1324,7 @@ bool CheckDeterministicReplaySmoke() {
             const CanonicalStateFingerprint replayed_fingerprint =
                 ComputeGameplayDeterminismFingerprint(broad_replayed);
             if (recorded_fingerprint.value != replayed_fingerprint.value) {
-                std::cerr << "deterministic broad replay smoke failed at frame "
+                std::cerr << "det broad replay smoke failed at frame "
                           << frame_index << "\n"
                           << "  recorded " << recorded_fingerprint.summary
                           << " hash=" << recorded_fingerprint.value << "\n"
@@ -1338,12 +1338,12 @@ bool CheckDeterministicReplaySmoke() {
 
         const CanonicalStateFingerprint broad_final_fingerprint =
             ComputeGameplayDeterminismFingerprint(broad_recorded);
-        std::cout << "deterministic broad replay smoke ok: frames="
+        std::cout << "det broad replay smoke ok: frames="
                   << broad_inputs.size() << " " << broad_final_fingerprint.summary
                   << " hash=" << broad_final_fingerprint.value << '\n';
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "deterministic replay smoke failed: " << e.what() << '\n';
+        std::cerr << "det replay smoke failed: " << e.what() << '\n';
         return false;
     }
 }
@@ -1357,7 +1357,7 @@ bool CheckInputLockstepSmoke() {
         Audio peer0_audio;
         Audio peer1_audio;
 
-        const std::vector<std::array<PlayerInputFrame, 2>> script =
+        const std::vector<std::array<InputFrame, 2>> script =
             BuildInputLockstepSmokeScript();
         const std::vector<PlayerId> required_players = {1, 2};
 
@@ -1504,7 +1504,7 @@ bool CheckInputLockstepSmoke() {
         }
 
         const auto run_carry_transition_case = [&]() -> bool {
-            const std::vector<std::array<PlayerInputFrame, 2>> carry_script =
+            const std::vector<std::array<InputFrame, 2>> carry_script =
                 BuildInputLockstepCarryScript();
             const network::LockstepFrame total_frames =
                 static_cast<network::LockstepFrame>(carry_script.size());
@@ -1542,8 +1542,8 @@ bool CheckInputLockstepSmoke() {
                 return false;
             }
 
-            if (!entities::common::TryPickupEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
-                !entities::common::TryPickupEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+            if (!ents::common::TryPickupEntByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !ents::common::TryPickupEntByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
                 std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not carry host-owned player\n";
                 return false;
             }
@@ -1557,8 +1557,8 @@ bool CheckInputLockstepSmoke() {
                 return false;
             }
 
-            if (!entities::common::TryDropEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
-                !entities::common::TryDropEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+            if (!ents::common::TryDropEntByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !ents::common::TryDropEntByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
                 std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not drop host-owned player\n";
                 return false;
             }
@@ -1570,13 +1570,13 @@ bool CheckInputLockstepSmoke() {
                 return false;
             }
 
-            if (!entities::common::TryPickupEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
-                !entities::common::TryPickupEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+            if (!ents::common::TryPickupEntByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !ents::common::TryPickupEntByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
                 std::cerr << "input lockstep carry-transition smoke failed: peer-owned player could not re-pickup host-owned player\n";
                 return false;
             }
             const Vec2 throw_velocity = Vec2::New(2.0F, -2.0F);
-            if (!entities::common::TryThrowEntityByVid(
+            if (!ents::common::TryThrowEntByVid(
                     *peer0_p2,
                     *peer0_p1,
                     throw_velocity,
@@ -1584,7 +1584,7 @@ bool CheckInputLockstepSmoke() {
                     peer0_graphics,
                     peer0_audio
                 ) ||
-                !entities::common::TryThrowEntityByVid(
+                !ents::common::TryThrowEntByVid(
                     *peer1_p2,
                     *peer1_p1,
                     throw_velocity,
@@ -1605,8 +1605,8 @@ bool CheckInputLockstepSmoke() {
 
             if (!PlaceCarryTransitionSmokePlayers(peer0.state, peer0_graphics, failed_step) ||
                 !PlaceCarryTransitionSmokePlayers(peer1.state, peer1_graphics, failed_step) ||
-                !entities::common::TryPickupEntityByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
-                !entities::common::TryPickupEntityByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
+                !ents::common::TryPickupEntByVid(*peer0_p2, *peer0_p1, peer0.state, peer0_graphics) ||
+                !ents::common::TryPickupEntByVid(*peer1_p2, *peer1_p1, peer1.state, peer1_graphics)) {
                 std::cerr << "input lockstep carry-transition smoke failed: could not reset carry setup after drop/throw coverage\n";
                 return false;
             }
@@ -1713,7 +1713,7 @@ bool CheckInputLockstepSmoke() {
                 .preserve_player_state = true,
                 .seed = 54321U,
             };
-            peer0.state.net_session.role = network::NetRole::Coordinator;
+            peer0.state.net_session.role = network::NetRole::Host;
             peer1.state.net_session.role = network::NetRole::Peer;
             QueueStageTransition(peer0.state, transition);
             QueueStageTransition(peer1.state, transition);

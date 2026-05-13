@@ -1,12 +1,12 @@
 #include "debug/shop_test_stage.hpp"
 
 #include "buying.hpp"
-#include "entities/shop.hpp"
-#include "entities/shop_tile_triggers.hpp"
-#include "frame_data_id.hpp"
+#include "ents/shop.hpp"
+#include "ents/shop_tile_triggers.hpp"
+#include "aframe_id.hpp"
 #include "player_queries.hpp"
 #include "stage_spawning.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 #include <array>
 #include <optional>
@@ -31,7 +31,7 @@ struct ShopTestStallSpec {
 };
 
 struct ShopTestItemSpec {
-    EntityType type_ = EntityType::None;
+    EntType type_ = EntType::None;
     int tile_x = 0;
     std::uint32_t price = 0;
 };
@@ -62,7 +62,7 @@ std::optional<Vec2> FindStoreLightTopLeftFromAnchor(
     }
 
     for (int y = start_tile_y; y >= 0; --y) {
-        if (!GetTileArchetype(stage.GetTile(
+        if (!GetTileSpec(stage.GetTile(
                 static_cast<unsigned int>(anchor_tile_x),
                 static_cast<unsigned int>(y)
             )).solid) {
@@ -118,7 +118,7 @@ void BuildShopTestStall(Stage& stage, const ShopTestStallSpec& stall) {
 }
 
 void AddShopTestVandalismTrigger(State& state, const IVec2& tile_pos, VID shop_vid) {
-    const StageTileTrigger trigger = entities::shop::MakeShopVandalismTileTrigger(tile_pos, shop_vid);
+    const StageTileTrigger trigger = ents::shop::MakeShopVandalismTileTrigger(tile_pos, shop_vid);
     state.stage.tile_triggers.push_back(trigger);
     state.stage.stagegen_annotations.push_back(StageGenAnnotation{
         .world_pos = ToVec2(tile_pos * static_cast<int>(kTileSize)) + Vec2::New(2.0F, 8.0F),
@@ -170,29 +170,29 @@ std::optional<VID> SpawnShopTestShop(
 ) {
     const AABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> shop_vid =
-        SpawnStageEntityAtTopLeft(state, EntityType::Shop, shop_area.tl);
+        SpawnStageEntAtTopLeft(state, EntType::Shop, shop_area.tl);
     if (!shop_vid.has_value()) {
         return std::nullopt;
     }
 
-    Entity* const shop = state.entity_manager.GetEntityMut(*shop_vid);
+    Ent* const shop = state.ents.GetEntMut(*shop_vid);
     if (shop == nullptr) {
         return std::nullopt;
     }
-    entities::shop::SetShopArea(*shop, shop_area);
+    ents::shop::SetShopArea(*shop, shop_area);
 
-    const std::optional<VID> shopkeeper_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> shopkeeper_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::Shopkeeper,
+        EntType::Shopkeeper,
         Vec2::New(
             static_cast<float>(shopkeeper_tile_x * static_cast<int>(kTileSize)),
             9.0F * static_cast<float>(kTileSize) - 16.0F
         )
     );
     if (shopkeeper_vid.has_value()) {
-        shop->entity_a = *shopkeeper_vid;
-        if (Entity* const shopkeeper = state.entity_manager.GetEntityMut(*shopkeeper_vid)) {
-            shopkeeper->entity_a = *shop_vid;
+        shop->ent_a = *shopkeeper_vid;
+        if (Ent* const shopkeeper = state.ents.GetEntMut(*shopkeeper_vid)) {
+            shopkeeper->ent_a = *shop_vid;
         }
     }
 
@@ -204,31 +204,31 @@ void SpawnShopTestOwnedItem(
     std::optional<VID> shop_vid,
     const ShopTestItemSpec& spec
 ) {
-    const std::optional<VID> item_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> item_vid = SpawnStageEntAtTopLeft(
         state,
         spec.type_,
         Vec2::New(
             static_cast<float>(spec.tile_x * static_cast<int>(kTileSize)),
-            10.0F * static_cast<float>(kTileSize) - GetEntityArchetype(spec.type_).size.y
+            10.0F * static_cast<float>(kTileSize) - GetEntSpec(spec.type_).size.y
         )
     );
     if (!item_vid.has_value()) {
         return;
     }
 
-    Entity* const item = state.entity_manager.GetEntityMut(*item_vid);
+    Ent* const item = state.ents.GetEntMut(*item_vid);
     if (item == nullptr) {
         return;
     }
 
-    ConfigureEntityAsBuyable(*item, spec.price);
+    ConfigureEntAsBuyable(*item, spec.price);
     item->buyable.shop_owner_vid = shop_vid;
     if (!shop_vid.has_value()) {
         return;
     }
 
-    if (Entity* const shop = state.entity_manager.GetEntityMut(*shop_vid)) {
-        entities::shop::AddShopChild(*shop, *item_vid);
+    if (Ent* const shop = state.ents.GetEntMut(*shop_vid)) {
+        ents::shop::AddShopChild(*shop, *item_vid);
     }
 }
 
@@ -237,39 +237,39 @@ void SpawnShopTestCrapsTable(
     std::optional<VID> shop_vid,
     const ShopTestStallSpec& stall
 ) {
-    const std::optional<VID> dice_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> dice_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::Dice,
+        EntType::Dice,
         Vec2::New(57.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
-                      GetEntityArchetype(EntityType::Dice).size.y)
+                      GetEntSpec(EntType::Dice).size.y)
     );
-    const std::optional<VID> prize_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> prize_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::JetPack,
+        EntType::JetPack,
         Vec2::New(62.0F * static_cast<float>(kTileSize),
                   10.0F * static_cast<float>(kTileSize) -
-                      GetEntityArchetype(EntityType::JetPack).size.y)
+                      GetEntSpec(EntType::JetPack).size.y)
     );
     const AABB shop_area = MakeShopTestArea(stall);
     const std::optional<VID> table_vid =
-        SpawnStageEntityAtTopLeft(state, EntityType::CrapsTable, shop_area.tl);
+        SpawnStageEntAtTopLeft(state, EntType::CrapsTable, shop_area.tl);
     if (!table_vid.has_value()) {
         return;
     }
 
-    Entity* const table = state.entity_manager.GetEntityMut(*table_vid);
+    Ent* const table = state.ents.GetEntMut(*table_vid);
     if (table == nullptr) {
         return;
     }
     table->size = shop_area.br - shop_area.tl + Vec2::New(1.0F, 1.0F);
-    table->entity_a = shop_vid;
-    table->entity_b = dice_vid;
-    table->entity_c = prize_vid;
+    table->ent_a = shop_vid;
+    table->ent_b = dice_vid;
+    table->ent_c = prize_vid;
 }
 
-void SpawnShopTestSign(State& state, EntityType type_, int tile_x) {
-    (void)SpawnStageEntityAtTopLeft(
+void SpawnShopTestSign(State& state, EntType type_, int tile_x) {
+    (void)SpawnStageEntAtTopLeft(
         state,
         type_,
         Vec2::New(
@@ -287,7 +287,7 @@ void SpawnShopTestStoreLight(State& state, int anchor_tile_x, int start_tile_y) 
     if (!pos.has_value()) {
         return;
     }
-    (void)SpawnStageEntityAtTopLeft(state, EntityType::StoreLight, *pos);
+    (void)SpawnStageEntAtTopLeft(state, EntType::StoreLight, *pos);
 }
 
 Stage MakeShopTestStage() {
@@ -329,13 +329,13 @@ void InitShopTestStage(State& state) {
     const float player_spawn_x = static_cast<float>(3 * static_cast<int>(kTileSize));
     const float player_spawn_y = static_cast<float>(10 * static_cast<int>(kTileSize) - 14);
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
-    if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
+    if (Ent* const player = GetPrimaryLocalPlayerMut(state)) {
         player->money = 50000;
     }
 
-    (void)SpawnStageEntityAtTopLeft(
+    (void)SpawnStageEntAtTopLeft(
         state,
-        EntityType::GoldIdol,
+        EntType::GoldIdol,
         Vec2::New(4.0F * static_cast<float>(kTileSize), 10.0F * static_cast<float>(kTileSize) - 16.0F)
     );
 
@@ -345,15 +345,15 @@ void InitShopTestStage(State& state) {
     SpawnShopTestOwnedItem(
         state,
         left_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Mattock, .tile_x = 16, .price = 8000}
+        ShopTestItemSpec{.type_ = EntType::Mattock, .tile_x = 16, .price = 8000}
     );
     SpawnShopTestOwnedItem(
         state,
         left_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::BombBag, .tile_x = 20, .price = 2500}
+        ShopTestItemSpec{.type_ = EntType::BombBag, .tile_x = 20, .price = 2500}
     );
-    SpawnShopTestSign(state, EntityType::SignGeneral, 15);
-    SpawnShopTestSign(state, EntityType::SignBomb, 19);
+    SpawnShopTestSign(state, EntType::SignGeneral, 15);
+    SpawnShopTestSign(state, EntType::SignBomb, 19);
     SpawnShopTestStoreLight(state, 14, 9);
     SpawnShopTestStoreLight(state, 20, 9);
 
@@ -363,21 +363,21 @@ void InitShopTestStage(State& state) {
     SpawnShopTestOwnedItem(
         state,
         middle_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Shotgun, .tile_x = 35, .price = 15000}
+        ShopTestItemSpec{.type_ = EntType::Shotgun, .tile_x = 35, .price = 15000}
     );
     SpawnShopTestOwnedItem(
         state,
         middle_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::JetPack, .tile_x = 39, .price = 20000}
+        ShopTestItemSpec{.type_ = EntType::JetPack, .tile_x = 39, .price = 20000}
     );
     SpawnShopTestOwnedItem(
         state,
         middle_shop_vid,
-        ShopTestItemSpec{.type_ = EntityType::Cape, .tile_x = 43, .price = 12000}
+        ShopTestItemSpec{.type_ = EntType::Cape, .tile_x = 43, .price = 12000}
     );
-    SpawnShopTestSign(state, EntityType::SignWeapon, 34);
-    SpawnShopTestSign(state, EntityType::SignRare, 38);
-    SpawnShopTestSign(state, EntityType::SignClothing, 42);
+    SpawnShopTestSign(state, EntType::SignWeapon, 34);
+    SpawnShopTestSign(state, EntType::SignRare, 38);
+    SpawnShopTestSign(state, EntType::SignClothing, 42);
     SpawnShopTestStoreLight(state, 34, 9);
     SpawnShopTestStoreLight(state, 42, 9);
 
@@ -386,13 +386,13 @@ void InitShopTestStage(State& state) {
     AddShopTestVandalismTriggers(state, ShopTestStallSpec{.left_x = 52, .right_x = 68}, right_shop_vid);
     SpawnShopTestCrapsTable(state, right_shop_vid, ShopTestStallSpec{.left_x = 52, .right_x = 68});
     state.stage.background_stamps.push_back(BackgroundStamp{
-        .animation_id = frame_data_ids::DiceSign,
+        .anim_id = aframe_ids::DiceSign,
         .pos = Vec2::New(
             58.0F * static_cast<float>(kTileSize),
             5.0F * static_cast<float>(kTileSize)
         ),
     });
-    SpawnShopTestSign(state, EntityType::SignCraps, 56);
+    SpawnShopTestSign(state, EntType::SignCraps, 56);
     SpawnShopTestStoreLight(state, 56, 9);
     SpawnShopTestStoreLight(state, 64, 9);
 }

@@ -1,6 +1,6 @@
 #include "network/net_lobby.hpp"
 
-#include "network/net_entity_links.hpp"
+#include "network/net_ent_links.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "network/net_protocol.hpp"
 #include "state.hpp"
@@ -36,10 +36,10 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     }
 
     state.net_session = NetSessionState::NewOffline();
-    state.net_session.role = NetRole::Coordinator;
+    state.net_session.role = NetRole::Host;
     state.net_session.input_lockstep_enabled = true;
     state.net_session.local_player_id = kPrimaryLocalPlayerId;
-    state.net_session.coordinator_player_id = kPrimaryLocalPlayerId;
+    state.net_session.host_player_id = kPrimaryLocalPlayerId;
     state.net_session.next_player_id = kFirstRemotePlayerId;
     if (!EnsureHostSyncedStage(state, status_out)) {
         transport.socket.Close();
@@ -49,7 +49,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     state.net_session.stage_instance_id = static_cast<StageInstanceId>(state.net_session.stage_seed);
     state.players.EnsurePrimaryLocalPlayer();
     ResetInputLockstepState(state);
-    RegisterStageEntityLinks(state);
+    RegisterStageEntLinks(state);
     transport.remotes.clear();
     transport.preferred_player_ids.clear();
     transport.join_request_pending = false;
@@ -78,15 +78,15 @@ bool JoinHostSession(
     state.net_session.role = NetRole::Peer;
     state.net_session.input_lockstep_enabled = true;
     state.net_session.local_player_id = kPrimaryLocalPlayerId;
-    state.net_session.coordinator_player_id = kPrimaryLocalPlayerId;
-    transport.coordinator_endpoint = NetEndpoint{.address = host, .port = port};
+    state.net_session.host_player_id = kPrimaryLocalPlayerId;
+    transport.host_endpoint = NetEndpoint{.address = host, .port = port};
     transport.remotes.clear();
     transport.join_request_pending = true;
     transport.join_request_retry_frames = 0;
     ResetInputLockstepState(state);
     SendJoinRequest(state);
     if (status_out != nullptr) {
-        *status_out = "Joining " + EndpointToString(transport.coordinator_endpoint) + ".";
+        *status_out = "Joining " + EndpointToString(transport.host_endpoint) + ".";
     }
     return true;
 }

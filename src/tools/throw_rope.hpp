@@ -1,9 +1,9 @@
 #pragma once
 
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 
 namespace splonks::tools::throw_rope {
 
-extern const ToolArchetype kThrowRopeToolArchetype;
+extern const ToolSpec kThrowRopeToolSpec;
 
 } // namespace splonks::tools::throw_rope

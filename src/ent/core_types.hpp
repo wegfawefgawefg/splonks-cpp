@@ -2,7 +2,7 @@
 
 #include "../draw_layer.hpp"
 #include "damage_types.hpp"
-#include "left_or_right.hpp"
+#include "side.hpp"
 #include "math_types.hpp"
 #include "vid.hpp"
 
@@ -23,7 +23,7 @@ struct HangHandBounds {
     Vec2 right_br;
 };
 
-enum class EntityType {
+enum class EntType {
     None,
     Player,
     Block,
@@ -153,15 +153,15 @@ enum class EntityType {
     DebugMovingLight,
 };
 
-constexpr std::size_t EntityTypeIndex(EntityType type_) {
+constexpr std::size_t EntTypeIndex(EntType type_) {
     return static_cast<std::size_t>(type_);
 }
 
-constexpr std::size_t kEntityTypeCount = EntityTypeIndex(EntityType::DebugMovingLight) + 1;
+constexpr std::size_t kEntTypeCount = EntTypeIndex(EntType::DebugMovingLight) + 1;
 
-constexpr bool IsPlayerLikeEntityType(EntityType type_) {
-    return type_ == EntityType::Player || type_ == EntityType::FlappyBee ||
-           type_ == EntityType::FleshGuy;
+constexpr bool IsPlayerLikeEntType(EntType type_) {
+    return type_ == EntType::Player || type_ == EntType::FlappyBee ||
+           type_ == EntType::FleshGuy;
 }
 
 constexpr float kTravelSoundDistInterval = 24.0F;
@@ -173,13 +173,13 @@ enum class TravelSound {
     Two,
 };
 
-enum class EntityCondition {
+enum class EntCondition {
     Normal,
     Dead,
     Stunned,
 };
 
-enum class EntityAiState {
+enum class EntAiState {
     Idle,
     Disturbed,
     Patrolling,
@@ -187,7 +187,7 @@ enum class EntityAiState {
     Returning,
 };
 
-enum class EntityMovementFlag : std::uint8_t {
+enum class EntMovementFlag : std::uint8_t {
     Walking,
     Running,
     Pushing,
@@ -209,7 +209,7 @@ enum class Alignment {
     Enemy,
 };
 
-enum class EntityLabel {
+enum class EntLabel {
     None,
     AttackThis,
     GetThis,
@@ -219,7 +219,7 @@ enum class EntityLabel {
     AttachedToThis,
 };
 
-enum class EntityDisplayState {
+enum class EntDisplayState {
     Neutral,
     NeutralHolding,
     Walk,
@@ -234,7 +234,7 @@ enum class EntityDisplayState {
     EmoteBald,
 };
 
-enum class AttachmentMode {
+enum class AttachMode {
     None,
     Held,
     Back,

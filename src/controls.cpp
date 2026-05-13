@@ -3,15 +3,15 @@
 
 namespace splonks::controls {
 
-ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state) {
-    const PlayingInputs* inputs = state.players.FindInputsForEntity(entity.vid);
+ControlIntent GetControlIntentForEnt(const Ent& ent, const State& state) {
+    const PlayingInputs* inputs = state.players.FindInputsForEnt(ent.vid);
     if (inputs == nullptr) {
-        if (!state.controlled_entity_vid.has_value() || entity.vid != *state.controlled_entity_vid) {
+        if (!state.controlled_ent_vid.has_value() || ent.vid != *state.controlled_ent_vid) {
             return ControlIntent{};
         }
         inputs = &state.playing_inputs;
     }
-    if (entity.condition != EntityCondition::Normal) {
+    if (ent.condition != EntCondition::Normal) {
         return ControlIntent{};
     }
 

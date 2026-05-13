@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::craps_table {
+namespace splonks::ents::craps_table {
 
-extern const EntityArchetype kCrapsTableArchetype;
+extern const EntSpec kCrapsTableSpec;
 
-} // namespace splonks::entities::craps_table
+} // namespace splonks::ents::craps_table

@@ -1,6 +1,6 @@
 # Contact Models
 
-This document describes the current entity/entity contact systems in `splonks-cpp`,
+This document describes the current ent/ent contact systems in `splonks-cpp`,
 which side owns each interaction, and which cooldown bookkeeping each path uses.
 
 It exists because the code currently mixes a few different notions of "contact":
@@ -12,21 +12,21 @@ layers.
 ### 1. Blocking / impassable resolution
 
 Files:
-- `src/entities/common/physics.cpp`
-- `src/entities/common/entity_contact.cpp`
+- `src/ents/common/physics.cpp`
+- `src/ents/common/ent_contact.cpp`
 
-This is mostly mover-owned. A sweeping or probing entity resolves against tiles and
-impassable entities. The other side does not participate in a symmetric physics solve.
+This is mostly mover-owned. A sweeping or probing ent resolves against tiles and
+impassable ents. The other side does not participate in a symmetric physics solve.
 
 Properties:
 - one-sided
 - no gameplay cooldown attached by default
 - determines whether movement is blocked / sweep stops
 
-### 2. Entity/entity contact dispatch shell
+### 2. Ent/ent contact dispatch shell
 
 File:
-- `src/entities/common/entity_contact.cpp`
+- `src/ents/common/ent_contact.cpp`
 
 For one touched pair, the dispatcher gives both participants a chance to run their
 contact logic:
@@ -37,7 +37,7 @@ This is dual-dispatch at the shell level, but most actual gameplay effects below
 still one-sided.
 
 Same-tick dedupe:
-- `entity_contact_dispatches_this_tick`
+- `ent_contact_dispatches_this_tick`
 - unordered pair
 - implemented in `src/contact_bookkeeping.cpp`
 - only prevents duplicate pair dispatch within one tick when `context.direction == 0`
@@ -45,12 +45,12 @@ Same-tick dedupe:
 ### 3. Normal hurt-on-contact body damage
 
 File:
-- `src/entities/common/contact_damage.cpp`
+- `src/ents/common/contact_damage.cpp`
 
 This is source-owned.
 
 Flow:
-- source entity with `hurt_on_contact` searches overlaps
+- source ent with `hurt_on_contact` searches overlaps
 - source tries to damage target
 - on hurt/die, source applies body-contact knockback to target
 
@@ -64,50 +64,50 @@ Current body-contact knockback:
 - vertical: `-1`
 - velocity replacement
 
-### 4. Projectile-body contact
+### 4. Proj-body contact
 
 Files:
-- `src/entities/common/contact_damage.cpp`
-- `src/entities/common/step.cpp`
+- `src/ents/common/contact_damage.cpp`
+- `src/ents/common/step.cpp`
 - `src/contact_bookkeeping.cpp`
 
 This is also source-owned.
 
 Flow:
-- source entity is considered a projectile body if `projectile_contact_timer > 0`
+- source ent is considered a proj body if `proj_contact_timer > 0`
   and speed is high enough
 - source searches overlaps
 - source tries to damage target
 - if hurt/die, or if target is stunned/dead and allowed to absorb impact without
-  taking damage, source applies projectile knockback to target
+  taking damage, source applies proj knockback to target
 
 Cooldown:
-- `projectile_body_impact_cooldowns`
+- `proj_body_impact_cooldowns`
 - ordered
 - `A -> B` and `B -> A` are separate entries
-- currently used to suppress repeated same-direction projectile body impact spam
+- currently used to suppress repeated same-direction proj body impact spam
 
-Current projectile-body knockback:
+Current proj-body knockback:
 - horizontal: inherited from source velocity
 - vertical: minimum pop-up of `-1`
 - additive
 
-Projectile lifetime:
-- managed in `src/entities/common/step.cpp::DoThrownByStep`
-- projectile state only counts down while grounded and nearly settled
+Proj lifetime:
+- managed in `src/ents/common/step.cpp::DoThrownByStep`
+- proj state only counts down while grounded and nearly settled
 - otherwise it refreshes back to full duration
 
 ### 5. Stomp
 
 File:
-- `src/entities/common/stomp.cpp`
+- `src/ents/common/stomp.cpp`
 
 This is explicitly stomper-owned.
 
 Flow:
 - player-like stomper checks downward motion and target head band
 - stomper damages stomped target
-- stomp may force stunned state and projectile-style knockback on target
+- stomp may force stunned state and proj-style knockback on target
 - stomper gets bounce upward
 
 Cooldown:
@@ -117,7 +117,7 @@ Cooldown:
 ### 6. Crusher / pusher / crush
 
 File:
-- `src/entities/common/push.cpp`
+- `src/ents/common/push.cpp`
 
 This is mover-owned.
 
@@ -131,7 +131,7 @@ Cooldown:
 ### 7. Type-specific contact handlers
 
 File:
-- `src/entities/common/entity_contact.cpp`
+- `src/ents/common/ent_contact.cpp`
 
 Examples:
 - baseball bat
@@ -140,7 +140,7 @@ Examples:
 - collection
 
 These are generally participant-owned. The dual-dispatch shell may call both sides,
-but each handler typically only acts for one entity type.
+but each handler typically only acts for one ent type.
 
 Cooldowns:
 - `contact_cooldowns`: ordered, used for type-specific raw contact throttling
@@ -161,21 +161,21 @@ Defined in `src/contact_bookkeeping.hpp`.
 - currently only `Harm`
 - used by normal body harm contact and stomp retaliation suppression
 
-### `entity_contact_dispatches_this_tick`
+### `ent_contact_dispatches_this_tick`
 - unordered
 - only same-tick pair dedupe for the dispatch shell
 - not a gameplay cooldown
 
-### `projectile_body_impact_cooldowns`
+### `proj_body_impact_cooldowns`
 - ordered
-- projectile body impact throttling only
+- proj body impact throttling only
 - does not gate blocking resolution, push, crush, or other contact systems
 
 ## Practical Summary
 
 The codebase currently uses:
 - one-sided blocking resolution
-- dual-dispatch shell for entity/entity contact
+- dual-dispatch shell for ent/ent contact
 - mostly one-sided gameplay consequences
 - several cooldown tables with different scopes
 
@@ -188,10 +188,10 @@ Those are different jobs and should stay separate.
 
 ## Good Future Cleanup Targets
 
-1. Keep `entity_contact_dispatches_this_tick` as pure dispatch dedupe only.
-2. Keep projectile-body cooldown scoped only to projectile-body impact consequences.
-3. If we ever want projectile-vs-projectile body smacks to feel physically correct,
+1. Keep `ent_contact_dispatches_this_tick` as pure dispatch dedupe only.
+2. Keep proj-body cooldown scoped only to proj-body impact consequences.
+3. If we ever want proj-vs-proj body smacks to feel physically correct,
    add a dedicated pairwise resolver instead of adding more heuristics to the current
-   one-sided projectile path.
+   one-sided proj path.
 4. Avoid adding more cooldown tables unless the scope is genuinely different from the
    three gameplay-facing ones above.

@@ -1,9 +1,9 @@
 #include "render/particles.hpp"
 
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
-#include "particles/particle_archetypes.hpp"
+#include "particles/particle_specs.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "particles/scripted_particle.hpp"
 #include "particles/segmented_sprite_particle.hpp"
@@ -68,18 +68,18 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
     return offsets;
 }
 
-const FrameData* GetAnimatedParticleFrameData(
+const AFrame* GetAnimatedParticleAFrame(
     Graphics& graphics,
-    const FrameDataAnimator& animator,
-    FrameDataId fallback_animation_id
+    const AFrameAnimator& animator,
+    AFrameId fallback_anim_id
 ) {
-    const FrameDataId animation_id =
-        animator.HasAnimation() ? animator.animation_id : fallback_animation_id;
-    const std::size_t frame_index = animator.HasAnimation() ? animator.current_frame : 0;
-    if (animation_id == kInvalidFrameDataId) {
+    const AFrameId anim_id =
+        animator.HasAnim() ? animator.anim_id : fallback_anim_id;
+    const std::size_t frame_index = animator.HasAnim() ? animator.current_frame : 0;
+    if (anim_id == kInvalidAFrameId) {
         return nullptr;
     }
-    return graphics.frame_data_db.FindFrame(animation_id, frame_index);
+    return graphics.aframe_db.FindFrame(anim_id, frame_index);
 }
 
 void RenderAnimatedParticleSprite(
@@ -93,19 +93,19 @@ void RenderAnimatedParticleSprite(
     float alpha,
     bool horizontal_flip,
     ParticleLightingMode lighting_mode,
-    const FrameDataAnimator& animator,
-    FrameDataId fallback_animation_id = kInvalidFrameDataId,
+    const AFrameAnimator& animator,
+    AFrameId fallback_anim_id = kInvalidAFrameId,
     float tint_r = 1.0F,
     float tint_g = 1.0F,
     float tint_b = 1.0F
 ) {
-    const FrameData* const frame_data =
-        GetAnimatedParticleFrameData(graphics, animator, fallback_animation_id);
-    if (frame_data == nullptr) {
+    const AFrame* const aframe =
+        GetAnimatedParticleAFrame(graphics, animator, fallback_anim_id);
+    if (aframe == nullptr) {
         return;
     }
 
-    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
+    SDL_Texture* const texture = graphics.GetAFrameTexture(aframe->image_id);
     if (texture == nullptr) {
         return;
     }
@@ -132,10 +132,10 @@ void RenderAnimatedParticleSprite(
         std::clamp(tint_b * lighting_color.b, 0.0F, 2.0F)
     );
     const SDL_FRect src{
-        static_cast<float>(frame_data->sample_rect.x),
-        static_cast<float>(frame_data->sample_rect.y),
-        static_cast<float>(frame_data->sample_rect.w),
-        static_cast<float>(frame_data->sample_rect.h),
+        static_cast<float>(aframe->sample_rect.x),
+        static_cast<float>(aframe->sample_rect.y),
+        static_cast<float>(aframe->sample_rect.w),
+        static_cast<float>(aframe->sample_rect.h),
     };
     for (const Vec2& render_offset : render_offsets) {
         const SDL_FRect dst = WorldRectToScreen(graphics, (pos - half_size) + render_offset, size);
@@ -168,8 +168,8 @@ void RenderSpriteParticlesForLayer(
             particle.alpha,
             particle.horizontal_flip,
             particle.lighting_mode,
-            particle.frame_data_animator,
-            kInvalidFrameDataId,
+            particle.aframe_animator,
+            kInvalidAFrameId,
             particle.tint_r,
             particle.tint_g,
             particle.tint_b
@@ -199,7 +199,7 @@ void RenderScriptedParticlesForLayer(
             particle.alpha,
             particle.horizontal_flip,
             particle.lighting_mode,
-            particle.frame_data_animator
+            particle.aframe_animator
         );
     }
 }
@@ -215,9 +215,9 @@ void RenderRibbonParticlesForLayer(
         if (particle.IsFinished()) {
             continue;
         }
-        const RibbonParticleArchetype* const archetype =
-            GetRibbonParticleArchetype(particle.archetype_id);
-        if (archetype == nullptr || archetype->draw_layer != layer) {
+        const RibbonParticleSpec* const spec =
+            GetRibbonParticleSpec(particle.spec_id);
+        if (spec == nullptr || spec->draw_layer != layer) {
             continue;
         }
         for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
@@ -235,13 +235,13 @@ void RenderRibbonParticlesForLayer(
                 graphics,
                 render_offsets,
                 (a + b) * 0.5F,
-                Vec2::New(length, archetype->width),
+                Vec2::New(length, spec->width),
                 rotation,
                 particle.alpha,
                 false,
-                archetype->lighting_mode,
-                particle.frame_data_animator,
-                archetype->animation_id
+                spec->lighting_mode,
+                particle.aframe_animator,
+                spec->anim_id
             );
         }
     }
@@ -258,13 +258,13 @@ void RenderSegmentedSpriteParticlesForLayer(
         if (particle.IsFinished()) {
             continue;
         }
-        const SegmentedSpriteParticleArchetype* const archetype =
-            GetSegmentedSpriteParticleArchetype(particle.archetype_id);
-        if (archetype == nullptr || archetype->draw_layer != layer) {
+        const SegmentedSpriteParticleSpec* const spec =
+            GetSegmentedSpriteParticleSpec(particle.spec_id);
+        if (spec == nullptr || spec->draw_layer != layer) {
             continue;
         }
         const float spacing =
-            archetype->spacing > 0.0F ? archetype->spacing : Max(archetype->segment_size.x, 1.0F);
+            spec->spacing > 0.0F ? spec->spacing : Max(spec->segment_size.x, 1.0F);
         for (std::size_t i = 0; i + 1 < particle.point_count; ++i) {
             const Vec2 a = particle.points[i];
             const Vec2 b = particle.points[i + 1];
@@ -283,13 +283,13 @@ void RenderSegmentedSpriteParticlesForLayer(
                     graphics,
                     render_offsets,
                     center,
-                    archetype->segment_size,
+                    spec->segment_size,
                     rotation,
                     particle.alpha,
                     particle.horizontal_flip,
-                    archetype->lighting_mode,
-                    particle.frame_data_animator,
-                    archetype->animation_id
+                    spec->lighting_mode,
+                    particle.aframe_animator,
+                    spec->anim_id
                 );
             }
         }

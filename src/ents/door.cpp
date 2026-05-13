@@ -1,11 +1,11 @@
-#include "entities/door.hpp"
+#include "ents/door.hpp"
 
 #include "audio.hpp"
 #include "audio_emitters.hpp"
-#include "entities/common/common.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "ent/spec.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -14,7 +14,7 @@
 #include <cmath>
 #include <memory>
 
-namespace splonks::entities::door {
+namespace splonks::ents::door {
 
 namespace {
 
@@ -39,49 +39,49 @@ constexpr int kSealSmokeCount = 8;
 constexpr int kSealShardCount = 5;
 constexpr float kDoorSealWaitFrames = 100.0F;
 
-bool IsRumbling(const Entity& door) {
-    return door.ai_state == EntityAiState::Pursuing;
+bool IsRumbling(const Ent& door) {
+    return door.ai_state == EntAiState::Pursuing;
 }
 
-bool IsDropping(const Entity& door) {
-    return door.ai_state == EntityAiState::Disturbed;
+bool IsDropping(const Ent& door) {
+    return door.ai_state == EntAiState::Disturbed;
 }
 
-bool IsSealed(const Entity& door) {
-    return door.ai_state == EntityAiState::Returning;
+bool IsSealed(const Ent& door) {
+    return door.ai_state == EntAiState::Returning;
 }
 
-bool HasTargetTopY(const Entity& door) {
+bool HasTargetTopY(const Ent& door) {
     return door.point_label_a == PointLabel::Target;
 }
 
-float GetTargetTopY(const Entity& door) {
+float GetTargetTopY(const Ent& door) {
     return static_cast<float>(door.point_a.y);
 }
 
-float GetMoveDirection(const Entity& door) {
+float GetMoveDirection(const Ent& door) {
     return door.threshold_a < 0.0F ? -1.0F : 1.0F;
 }
 
-Vec2 GetTopEmitPos(const Entity& door) {
+Vec2 GetTopEmitPos(const Ent& door) {
     const AABB aabb = door.GetAABB();
     return Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.tl.y);
 }
 
-Vec2 GetBottomEmitPos(const Entity& door) {
+Vec2 GetBottomEmitPos(const Ent& door) {
     const AABB aabb = door.GetAABB();
     return Vec2::New((aabb.tl.x + aabb.br.x) * 0.5F, aabb.br.y);
 }
 
-Vec2 GetTrailingEmitPos(const Entity& door) {
+Vec2 GetTrailingEmitPos(const Ent& door) {
     return GetMoveDirection(door) > 0.0F ? GetTopEmitPos(door) : GetBottomEmitPos(door);
 }
 
-Vec2 GetLeadingEmitPos(const Entity& door) {
+Vec2 GetLeadingEmitPos(const Ent& door) {
     return GetMoveDirection(door) > 0.0F ? GetBottomEmitPos(door) : GetTopEmitPos(door);
 }
 
-void SetDoorShake(Entity& door, float amount) {
+void SetDoorShake(Ent& door, float amount) {
     door.shake = std::max(door.shake, amount);
 }
 
@@ -95,7 +95,7 @@ void SpawnSmokeParticle(
     std::uint32_t max_lifetime
 ) {
     SpriteParticle smoke{};
-    smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+    smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
     smoke.draw_layer = DrawLayer::Foreground;
     smoke.counter = static_cast<std::uint32_t>(
         rng::RandomIntExclusive(static_cast<int>(min_lifetime), static_cast<int>(max_lifetime)));
@@ -117,7 +117,7 @@ void SpawnSmokeParticle(
 
 void SpawnSpinnySealShard(State& state, const Vec2& pos) {
     SpriteParticle shard{};
-    shard.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleBrownShard);
+    shard.aframe_animator = AFrameAnimator::New(aframe_ids::LittleBrownShard);
     shard.draw_layer = DrawLayer::Foreground;
     shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 34));
     shard.pos = pos + Vec2::New(rng::RandomFloat(-5.0F, 5.0F), rng::RandomFloat(-1.5F, 1.5F));
@@ -136,7 +136,7 @@ void SpawnSpinnySealShard(State& state, const Vec2& pos) {
     state.particles.Add(std::move(shard));
 }
 
-void SpawnTopSmoke(State& state, const Entity& door) {
+void SpawnTopSmoke(State& state, const Ent& door) {
     SpawnSmokeParticle(
         state,
         GetTrailingEmitPos(door),
@@ -150,7 +150,7 @@ void SpawnTopSmoke(State& state, const Entity& door) {
     );
 }
 
-void SpawnSealParticles(State& state, const Entity& door) {
+void SpawnSealParticles(State& state, const Ent& door) {
     const Vec2 bottom = GetLeadingEmitPos(door);
     for (int i = 0; i < kSealSmokeCount; ++i) {
         const float direction = i % 2 == 0 ? -1.0F : 1.0F;
@@ -173,14 +173,14 @@ void SpawnSealParticles(State& state, const Entity& door) {
     }
 }
 
-bool ShouldStartDrop(const Entity& door, const State& state) {
+bool ShouldStartDrop(const Ent& door, const State& state) {
     const Vec2 door_center = door.GetCenter();
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || !IsPlayerLikeEntityType(entity.type_) ||
-            entity.condition == EntityCondition::Dead) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
+            ent.condition == EntCondition::Dead) {
             continue;
         }
-        const Vec2 delta = GetNearestWorldDelta(state.stage, door_center, entity.GetCenter());
+        const Vec2 delta = GetNearestWorldDelta(state.stage, door_center, ent.GetCenter());
         if (delta.x >= kRightSensorMinX && delta.x <= kRightSensorMaxX &&
             delta.y >= kRightSensorMinY &&
             delta.y <= kRightSensorMaxY) {
@@ -190,10 +190,10 @@ bool ShouldStartDrop(const Entity& door, const State& state) {
     return false;
 }
 
-void MaintainDoorRumbleSound(Entity& door, State& state);
+void MaintainDoorRumbleSound(Ent& door, State& state);
 
-void StartRumble(Entity& door, State& state) {
-    door.ai_state = EntityAiState::Pursuing;
+void StartRumble(Ent& door, State& state) {
+    door.ai_state = EntAiState::Pursuing;
     door.vel = Vec2::New(0.0F, 0.0F);
     door.acc = Vec2::New(0.0F, 0.0F);
     door.counter_b = kRumbleFrames;
@@ -201,7 +201,7 @@ void StartRumble(Entity& door, State& state) {
     MaintainDoorRumbleSound(door, state);
 }
 
-void MaintainDoorRumbleSound(Entity& door, State& state) {
+void MaintainDoorRumbleSound(Ent& door, State& state) {
     (void)EnsureAttachedLoopingSoundEmitter(
         state,
         door.vid,
@@ -212,15 +212,15 @@ void MaintainDoorRumbleSound(Entity& door, State& state) {
     );
 }
 
-void StartDrop(Entity& door, State& state) {
-    door.ai_state = EntityAiState::Disturbed;
+void StartDrop(Ent& door, State& state) {
+    door.ai_state = EntAiState::Disturbed;
     door.render_enabled = true;
     door.vel = Vec2::New(0.0F, GetMoveDirection(door) * kDropStartVelocity);
     door.acc = Vec2::New(0.0F, 0.0F);
     SetDoorShake(door, kDropStartDoorShake);
     AudioEmitterPlayParams params;
     params.volume_scale = 0.85F;
-    params.owner_entity_vid = door.vid;
+    params.owner_ent_vid = door.vid;
     (void)PlayAttachedSoundEmitter(
         state,
         door.vid,
@@ -230,8 +230,8 @@ void StartDrop(Entity& door, State& state) {
     );
 }
 
-void SealDoor(Entity& door, State& state, Audio& audio) {
-    door.ai_state = EntityAiState::Returning;
+void SealDoor(Ent& door, State& state, Audio& audio) {
+    door.ai_state = EntAiState::Returning;
     door.vel = Vec2::New(0.0F, 0.0F);
     door.acc = Vec2::New(0.0F, 0.0F);
     door.counter_a = kDoorSealWaitFrames;
@@ -253,42 +253,42 @@ void SealDoor(Entity& door, State& state, Audio& audio) {
         kSealShakeRadiusTiles,
         door.vid
     );
-    (void)PlayEntityCenterSoundEmitter(state, door, audio_asset_ids::BoulderHitGround);
+    (void)PlayEntCenterSoundEmitter(state, door, audio_asset_ids::BoulderHitGround);
 }
 
-common::ContactResolution CrushEntityOnDoorContact(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult CrushEntOnDoorContact(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
     (void)graphics;
-    if (audio == nullptr || entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
+    if (audio == nullptr || ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
         return {};
     }
 
-    const Entity& door = state.entity_manager.entities[entity_idx];
+    const Ent& door = state.ents.ents[ent_idx];
     if (!IsDropping(door) || !context.mover_vid.has_value() || *context.mover_vid != door.vid ||
         context.phase != common::ContactPhase::SweptEntered) {
         return {};
     }
 
-    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!other_entity.active || !other_entity.can_collide || other_entity.impassable) {
+    Ent& other_ent = state.ents.ents[other_ent_idx];
+    if (!other_ent.active || !other_ent.can_collide || other_ent.impassable) {
         return {};
     }
 
-    (void)common::TryDamageEntity(other_entity_idx, state, *audio, DamageType::Crush, 1);
-    return common::ContactResolution{.stop_sweep = true};
+    (void)common::TryDamageEnt(other_ent_idx, state, *audio, DamageType::Crush, 1);
+    return common::ContactResult{.stop_sweep = true};
 }
 
 } // namespace
 
-void StepEntityLogicAsDoor(
-    std::size_t entity_idx,
+void StepEntLogicAsDoor(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -296,18 +296,18 @@ void StepEntityLogicAsDoor(
 ) {
     (void)graphics;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& door = state.entity_manager.entities[entity_idx];
-    SetAnimation(door, frame_data_ids::IdleTrapDoor);
+    Ent& door = state.ents.ents[ent_idx];
+    SetAnim(door, aframe_ids::IdleTrapDoor);
 
-    if (door.condition == EntityCondition::Dead) {
+    if (door.condition == EntCondition::Dead) {
         return;
     }
 
-    if (door.ai_state == EntityAiState::Idle) {
+    if (door.ai_state == EntAiState::Idle) {
         door.vel = Vec2::New(0.0F, 0.0F);
         if (ShouldStartDrop(door, state)) {
             StartRumble(door, state);
@@ -345,19 +345,19 @@ void StepEntityLogicAsDoor(
     (void)audio;
 }
 
-void StepEntityPhysicsAsDoor(
-    std::size_t entity_idx,
+void StepEntPhysicsAsDoor(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& door = state.entity_manager.entities[entity_idx];
+    Ent& door = state.ents.ents[ent_idx];
     if (!IsDropping(door)) {
         door.collided_last_frame = door.collided;
         door.collided = false;
@@ -369,18 +369,18 @@ void StepEntityPhysicsAsDoor(
     const float pre_vel_y = door.vel.y;
     const float move_direction = GetMoveDirection(door);
     door.acc.y += move_direction * kDropGravity;
-    common::PrePartialEulerStep(entity_idx, state, dt);
+    common::PrePartialEulerStep(ent_idx, state, dt);
     if (move_direction > 0.0F) {
         door.vel.y = std::clamp(door.vel.y, 0.0F, kDropMaxVelocity);
     } else {
         door.vel.y = std::clamp(door.vel.y, -kDropMaxVelocity, 0.0F);
     }
     if (HasTargetTopY(door)) {
-        common::DoEntityCollisions(entity_idx, state, graphics, audio);
+        common::DoEntCollisions(ent_idx, state, graphics, audio);
     } else {
-        common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
+        common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
     }
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 
     if (HasTargetTopY(door)) {
         const float target_top_y = GetTargetTopY(door);
@@ -400,14 +400,14 @@ void StepEntityPhysicsAsDoor(
     }
 }
 
-extern const EntityArchetype kDoorArchetype{
-    .type_ = EntityType::Door,
+extern const EntSpec kDoorSpec{
+    .type_ = EntType::Door,
     .size = Vec2::New(16.0F, 32.0F),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
     .can_be_hit = true,
-    .can_receive_projectile_contact = true,
+    .can_receive_proj_contact = true,
     .can_be_picked_up = false,
     .impassable = true,
     .hurt_on_contact = false,
@@ -416,17 +416,17 @@ extern const EntityArchetype kDoorArchetype{
     .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Middle,
     .render_enabled = false,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
-    .projectile_contact_damage_amount = 0,
-    .step_logic = StepEntityLogicAsDoor,
-    .step_physics = StepEntityPhysicsAsDoor,
-    .on_entity_contact = CrushEntityOnDoorContact,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::ExplosionOnly,
+    .proj_contact_damage_amount = 0,
+    .step_logic = StepEntLogicAsDoor,
+    .step_physics = StepEntPhysicsAsDoor,
+    .on_ent_contact = CrushEntOnDoorContact,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::IdleTrapDoor),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::IdleTrapDoor),
 };
 
-} // namespace splonks::entities::door
+} // namespace splonks::ents::door

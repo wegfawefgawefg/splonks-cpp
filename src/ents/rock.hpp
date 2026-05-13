@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,16 +10,16 @@ struct State;
 
 }
 
-namespace splonks::entities::rock {
+namespace splonks::ents::rock {
 
-extern const EntityArchetype kRockArchetype;
+extern const EntSpec kRockSpec;
 
-void StepEntityLogicAsRock(
-    std::size_t entity_idx,
+void StepEntLogicAsRock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::rock
+} // namespace splonks::ents::rock

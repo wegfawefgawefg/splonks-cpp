@@ -5,7 +5,7 @@
 #include "state.hpp"
 #include "stage_lighting.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
@@ -20,7 +20,7 @@ namespace splonks {
 namespace {
 
 bool IsForegroundSolidTile(Tile tile) {
-    return GetTileArchetype(tile).solid;
+    return GetTileSpec(tile).solid;
 }
 
 Tile GetTileForLighting(const State& state, int tile_x, int tile_y) {

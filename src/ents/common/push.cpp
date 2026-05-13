@@ -1,11 +1,11 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
@@ -29,8 +29,8 @@ std::optional<IVec2> GetPushDirectionForCrusherContact(const ContactContext& con
     return std::nullopt;
 }
 
-bool IsCrusherPushTarget(const Entity& entity) {
-    if (!entity.active || !entity.can_collide || entity.impassable) {
+bool IsCrusherPushTarget(const Ent& ent) {
+    if (!ent.active || !ent.can_collide || ent.impassable) {
         return false;
     }
     return true;
@@ -38,13 +38,13 @@ bool IsCrusherPushTarget(const Entity& entity) {
 
 bool IsAtCrusherLeadingFace(
     const Stage& stage,
-    const Entity& crusher,
-    const Entity& other_entity,
+    const Ent& crusher,
+    const Ent& other_ent,
     const IVec2& push_direction
 ) {
     const AABB crusher_aabb = crusher.GetAABB();
     const AABB other_aabb =
-        GetNearestWorldAabb(stage, crusher.GetCenter(), other_entity.GetAABB());
+        GetNearestWorldAabb(stage, crusher.GetCenter(), other_ent.GetAABB());
     const Vec2 crusher_center = crusher.GetCenter();
     const Vec2 other_center = (other_aabb.tl + other_aabb.br) / 2.0F;
 
@@ -71,7 +71,7 @@ bool IsAtCrusherLeadingFace(
 
 } // namespace
 
-bool TryApplyPushEntityAction(
+bool TryApplyPushEntAction(
     VID pusher_vid,
     VID pushed_vid,
     float push_acc_delta,
@@ -82,14 +82,14 @@ bool TryApplyPushEntityAction(
         return false;
     }
 
-    Entity* const pusher = state.entity_manager.GetEntityMut(pusher_vid);
-    Entity* const pushed = state.entity_manager.GetEntityMut(pushed_vid);
+    Ent* const pusher = state.ents.GetEntMut(pusher_vid);
+    Ent* const pushed = state.ents.GetEntMut(pushed_vid);
     if (pusher == nullptr || pushed == nullptr || !pusher->active || !pushed->active ||
-        !pushed->pushable || pusher->condition == EntityCondition::Dead || !pusher->grounded) {
+        !pushed->pushable || pusher->condition == EntCondition::Dead || !pusher->grounded) {
         return false;
     }
 
-    const AABB pusher_aabb = GetContactAabbForEntity(*pusher, graphics);
+    const AABB pusher_aabb = GetContactAabbForEnt(*pusher, graphics);
     const AABB push_zone{
         .tl = pusher_aabb.tl - Vec2::New(6.0F, 0.0F),
         .br = pusher_aabb.br + Vec2::New(6.0F, 0.0F),
@@ -98,7 +98,7 @@ bool TryApplyPushEntityAction(
     const AABB pushed_aabb = GetNearestWorldAabb(
         state.stage,
         pusher_center,
-        GetContactAabbForEntity(*pushed, graphics)
+        GetContactAabbForEnt(*pushed, graphics)
     );
     if (!AabbsIntersect(push_zone, pushed_aabb)) {
         return false;
@@ -117,97 +117,97 @@ bool TryApplyPushEntityAction(
 }
 
 void TryPushBlocks(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics
 ) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    const bool entity_grounded = entity.grounded;
-    const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
-    const VID entity_vid = entity.vid;
-    const Vec2 entity_vel = entity.vel;
+    Ent& ent = state.ents.ents[ent_idx];
+    const bool ent_grounded = ent.grounded;
+    const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const VID ent_vid = ent.vid;
+    const Vec2 ent_vel = ent.vel;
 
     bool ready_to_push = false;
-    if (entity_grounded) {
+    if (ent_grounded) {
         const AABB try_to_push_zone = {
-            .tl = entity_aabb.tl - Vec2::New(6.0F, 0.0F),
-            .br = entity_aabb.br + Vec2::New(6.0F, 0.0F),
+            .tl = ent_aabb.tl - Vec2::New(6.0F, 0.0F),
+            .br = ent_aabb.br + Vec2::New(6.0F, 0.0F),
         };
         const std::vector<VID> search_results =
-            QueryEntitiesInAabb(state, try_to_push_zone, entity_vid);
+            QueryEntsInAabb(state, try_to_push_zone, ent_vid);
         for (const VID& vid : search_results) {
-            const Entity& candidate = state.entity_manager.entities[vid.id];
+            const Ent& candidate = state.ents.ents[vid.id];
             if (!candidate.pushable) {
                 continue;
             }
-            if (Entity* const block_entity = state.entity_manager.GetEntityMut(vid)) {
+            if (Ent* const block_ent = state.ents.GetEntMut(vid)) {
                 ready_to_push = true;
-                const float push_zone_left_x = entity_aabb.tl.x - 1.0F;
-                const float push_zone_right_x = entity_aabb.br.x + 1.0F;
+                const float push_zone_left_x = ent_aabb.tl.x - 1.0F;
+                const float push_zone_right_x = ent_aabb.br.x + 1.0F;
                 const AABB nearest_block_aabb =
-                    GetNearestWorldAabb(state.stage, entity.GetCenter(), block_entity->GetAABB());
+                    GetNearestWorldAabb(state.stage, ent.GetCenter(), block_ent->GetAABB());
                 const Vec2 block_tl = nearest_block_aabb.tl;
                 const Vec2 block_br = nearest_block_aabb.br;
                 float block_x_acc_delta = 0.0F;
-                if (entity_vel.x > 0.0F && block_br.x > push_zone_left_x &&
+                if (ent_vel.x > 0.0F && block_br.x > push_zone_left_x &&
                     block_tl.x > push_zone_left_x) {
-                    block_x_acc_delta = block_entity->push_acc;
-                } else if (entity_vel.x < 0.0F && block_tl.x < push_zone_right_x &&
+                    block_x_acc_delta = block_ent->push_acc;
+                } else if (ent_vel.x < 0.0F && block_tl.x < push_zone_right_x &&
                            block_br.x < push_zone_right_x) {
-                    block_x_acc_delta = -block_entity->push_acc;
+                    block_x_acc_delta = -block_ent->push_acc;
                 }
                 if (block_x_acc_delta != 0.0F) {
-                    block_entity->acc.x += block_x_acc_delta;
+                    block_ent->acc.x += block_x_acc_delta;
                 }
                 break;
             }
         }
     }
 
-    SetMovementFlag(entity, EntityMovementFlag::Pushing, ready_to_push);
+    SetMovementFlag(ent, EntMovementFlag::Pushing, ready_to_push);
 }
 
-bool TryDisplaceEntityByOnePixel(
-    std::size_t entity_idx,
+bool TryDisplaceEntByOnePixel(
+    std::size_t ent_idx,
     const IVec2& direction,
     State& state,
     const Graphics& graphics,
     Audio* audio
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
     if (direction.x == 0 && direction.y == 0) {
         return false;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.active) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.active) {
         return false;
     }
 
-    const Vec2 candidate_pos = entity.pos + ToVec2(direction);
+    const Vec2 candidate_pos = ent.pos + ToVec2(direction);
     const AABB candidate_aabb = AABB::New(
-        candidate_pos, candidate_pos + entity.size - Vec2::New(1.0F, 1.0F));
+        candidate_pos, candidate_pos + ent.size - Vec2::New(1.0F, 1.0F));
     const BlockingContactSet contacts =
-        GatherBlockingContactsForAabb(entity_idx, candidate_aabb, state, true, true);
-    if (ResolveBlockingContactSet(entity_idx, contacts, state).blocks_movement) {
+        GatherBlockingContactsForAabb(ent_idx, candidate_aabb, state, true, true);
+    if (ResolveBlockingContactSet(ent_idx, contacts, state).blocks_movement) {
         return false;
     }
 
-    entity.pos = candidate_pos;
-    state.stage.NormalizeEntityPositionForWrap(entity);
-    state.UpdateSidForEntity(entity_idx, graphics);
+    ent.pos = candidate_pos;
+    state.stage.NormalizeEntPositionForWrap(ent);
+    state.UpdateSidForEnt(ent_idx, graphics);
     if (audio != nullptr) {
-        TryDispatchEntityEntityOverlapContacts(
-            entity_idx,
+        TryDispatchEntEntOverlapContacts(
+            ent_idx,
             state,
             graphics,
             *audio,
             ContactContext{
                 .phase = ContactPhase::SweptEntered,
                 .has_impact = false,
-                .mover_vid = entity.vid,
+                .mover_vid = ent.vid,
             }
         );
     }
@@ -215,19 +215,19 @@ bool TryDisplaceEntityByOnePixel(
 }
 
 bool TryApplyCrusherPusherContact(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const ContactContext& context,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& crusher = state.entity_manager.entities[entity_idx];
+    const Ent& crusher = state.ents.ents[ent_idx];
     if (!context.mover_vid.has_value() || crusher.vid != *context.mover_vid) {
         return false;
     }
@@ -237,20 +237,20 @@ bool TryApplyCrusherPusherContact(
         return false;
     }
 
-    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!IsCrusherPushTarget(other_entity)) {
+    Ent& other_ent = state.ents.ents[other_ent_idx];
+    if (!IsCrusherPushTarget(other_ent)) {
         return false;
     }
-    if (!IsAtCrusherLeadingFace(state.stage, crusher, other_entity, *push_direction)) {
+    if (!IsAtCrusherLeadingFace(state.stage, crusher, other_ent, *push_direction)) {
         return false;
     }
 
-    if (TryDisplaceEntityByOnePixel(other_entity_idx, *push_direction, state, graphics, &audio)) {
+    if (TryDisplaceEntByOnePixel(other_ent_idx, *push_direction, state, graphics, &audio)) {
         return true;
     }
 
-    TryDamageEntity(
-        other_entity_idx,
+    TryDamageEnt(
+        other_ent_idx,
         state,
         audio,
         DamageType::Crush,
@@ -262,4 +262,4 @@ bool TryApplyCrusherPusherContact(
     return true;
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

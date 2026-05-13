@@ -1,13 +1,13 @@
-#include "entities/dvdlogo.hpp"
+#include "ents/dvdlogo.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "player_queries.hpp"
 #include "stage_progression.hpp"
 #include "world_query.hpp"
 
-namespace splonks::entities::dvdlogo {
+namespace splonks::ents::dvdlogo {
 
 namespace {
 
@@ -16,41 +16,41 @@ AABB TranslateAabb(const AABB& aabb, const Vec2& delta) {
 }
 
 bool WouldBlockAt(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const AABB& target_aabb,
     const State& state,
     const Graphics& graphics
 ) {
-    return AabbHitsBlockingWorldGeometryOrImpassableEntities(
+    return AabbHitsBlockingWorldGeometryOrImpassableEnts(
         state,
         graphics,
         target_aabb,
-        state.entity_manager.entities[entity_idx].vid
+        state.ents.ents[ent_idx].vid
     );
 }
 
-void StepBounceAxis(std::size_t entity_idx, State& state, const Graphics& graphics, const Vec2& delta) {
+void StepBounceAxis(std::size_t ent_idx, State& state, const Graphics& graphics, const Vec2& delta) {
     if (delta.x == 0.0F && delta.y == 0.0F) {
         return;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    const AABB moved_aabb = TranslateAabb(entity.GetAABB(), delta);
-    if (WouldBlockAt(entity_idx, moved_aabb, state, graphics)) {
+    Ent& ent = state.ents.ents[ent_idx];
+    const AABB moved_aabb = TranslateAabb(ent.GetAABB(), delta);
+    if (WouldBlockAt(ent_idx, moved_aabb, state, graphics)) {
         if (delta.x != 0.0F) {
-            entity.vel.x = -entity.vel.x;
+            ent.vel.x = -ent.vel.x;
         }
         if (delta.y != 0.0F) {
-            entity.vel.y = -entity.vel.y;
+            ent.vel.y = -ent.vel.y;
         }
         return;
     }
 
-    entity.pos += delta;
+    ent.pos += delta;
 }
 
 void MaybeQueueTransitionOnPlayerContact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics
 ) {
@@ -58,33 +58,33 @@ void MaybeQueueTransitionOnPlayerContact(
         return;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.transition_target.has_value()) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.transition_target.has_value()) {
         return;
     }
 
-    const Entity* const player = FindNearestPlayer(state, entity.GetCenter(), false);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
+    if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
         return;
     }
 
-    const AABB door_aabb = common::GetContactAabbForEntity(entity, graphics);
+    const AABB door_aabb = common::GetContactAabbForEnt(ent, graphics);
     const AABB player_aabb = GetNearestWorldAabb(
         state.stage,
-        entity.GetCenter(),
-        common::GetContactAabbForEntity(*player, graphics)
+        ent.GetCenter(),
+        common::GetContactAabbForEnt(*player, graphics)
     );
     if (!AabbsIntersect(door_aabb, player_aabb)) {
         return;
     }
 
-    QueueStageTransition(state, *entity.transition_target);
+    QueueStageTransition(state, *ent.transition_target);
 }
 
 } // namespace
 
-extern const EntityArchetype kDvdLogoArchetype{
-    .type_ = EntityType::DvdLogo,
+extern const EntSpec kDvdLogoSpec{
+    .type_ = EntType::DvdLogo,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -94,17 +94,17 @@ extern const EntityArchetype kDvdLogoArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .step_logic = StepEntityLogicAsDvdLogo,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .step_logic = StepEntLogicAsDvdLogo,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Exit),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Exit),
 };
 
-void StepEntityLogicAsDvdLogo(
-    std::size_t entity_idx,
+void StepEntLogicAsDvdLogo(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -114,18 +114,18 @@ void StepEntityLogicAsDvdLogo(
     (void)dt;
 
     StepBounceAxis(
-        entity_idx,
+        ent_idx,
         state,
         graphics,
-        Vec2::New(state.entity_manager.entities[entity_idx].vel.x, 0.0F)
+        Vec2::New(state.ents.ents[ent_idx].vel.x, 0.0F)
     );
     StepBounceAxis(
-        entity_idx,
+        ent_idx,
         state,
         graphics,
-        Vec2::New(0.0F, state.entity_manager.entities[entity_idx].vel.y)
+        Vec2::New(0.0F, state.ents.ents[ent_idx].vel.y)
     );
-    MaybeQueueTransitionOnPlayerContact(entity_idx, state, graphics);
+    MaybeQueueTransitionOnPlayerContact(ent_idx, state, graphics);
 }
 
-} // namespace splonks::entities::dvdlogo
+} // namespace splonks::ents::dvdlogo

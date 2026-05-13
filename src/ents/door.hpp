@@ -1,25 +1,25 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::door {
+namespace splonks::ents::door {
 
-extern const EntityArchetype kDoorArchetype;
+extern const EntSpec kDoorSpec;
 
-void StepEntityLogicAsDoor(
-    std::size_t entity_idx,
+void StepEntLogicAsDoor(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-void StepEntityPhysicsAsDoor(
-    std::size_t entity_idx,
+void StepEntPhysicsAsDoor(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::door
+} // namespace splonks::ents::door

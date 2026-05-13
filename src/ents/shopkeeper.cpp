@@ -1,12 +1,12 @@
-#include "entities/shopkeeper.hpp"
+#include "ents/shopkeeper.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "entities/common/common.hpp"
-#include "entities/shop.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "ents/common/common.hpp"
+#include "ents/shop.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "player_queries.hpp"
@@ -16,7 +16,7 @@
 
 #include <cmath>
 
-namespace splonks::entities::shopkeeper {
+namespace splonks::ents::shopkeeper {
 
 namespace {
 
@@ -31,30 +31,30 @@ constexpr float kShopkeeperJumpCooldownFrames = 20.0F;
 constexpr float kShopkeeperShootCooldownFrames = 45.0F;
 constexpr float kShopkeeperRecoverPistolJumpHeightThreshold = 8.0F;
 
-std::optional<std::size_t> GetShopIdxForShopkeeper(const Entity& shopkeeper, const State& state) {
-    if (!shopkeeper.entity_a.has_value()) {
+std::optional<std::size_t> GetShopIdxForShopkeeper(const Ent& shopkeeper, const State& state) {
+    if (!shopkeeper.ent_a.has_value()) {
         return std::nullopt;
     }
-    if (shopkeeper.entity_a->id >= state.entity_manager.entities.size()) {
+    if (shopkeeper.ent_a->id >= state.ents.ents.size()) {
         return std::nullopt;
     }
 
-    const Entity& shop = state.entity_manager.entities[shopkeeper.entity_a->id];
-    if (!shop.active || shop.type_ != EntityType::Shop) {
+    const Ent& shop = state.ents.ents[shopkeeper.ent_a->id];
+    if (!shop.active || shop.type_ != EntType::Shop) {
         return std::nullopt;
     }
-    return shopkeeper.entity_a->id;
+    return shopkeeper.ent_a->id;
 }
 
-bool CanSeePlayerAhead(const Entity& shopkeeper, const State& state, const Graphics& graphics) {
+bool CanSeePlayerAhead(const Ent& shopkeeper, const State& state, const Graphics& graphics) {
     const Vec2 shopkeeper_center = shopkeeper.GetCenter();
-    const int direction = shopkeeper.facing == LeftOrRight::Left ? -1 : 1;
+    const int direction = shopkeeper.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
             continue;
         }
         const Vec2 player_center =
@@ -76,23 +76,23 @@ bool CanSeePlayerAhead(const Entity& shopkeeper, const State& state, const Graph
             graphics,
             shopkeeper.vid
         );
-        if (hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() &&
-            *hit.entity_vid == player->vid) {
+        if (hit.type == WorldRayHitType::Ent && hit.ent_vid.has_value() &&
+            *hit.ent_vid == player->vid) {
             return true;
         }
     }
     return false;
 }
 
-bool SpawnShopkeeperPistolIntoHands(std::size_t entity_idx, State& state, const Graphics& graphics) {
-    Entity& shopkeeper = state.entity_manager.entities[entity_idx];
-    if (shopkeeper.holding_vid.has_value() || shopkeeper.entity_b.has_value()) {
+bool SpawnShopkeeperPistolIntoHands(std::size_t ent_idx, State& state, const Graphics& graphics) {
+    Ent& shopkeeper = state.ents.ents[ent_idx];
+    if (shopkeeper.holding_vid.has_value() || shopkeeper.ent_b.has_value()) {
         return false;
     }
 
-    Entity* const pistol = world_ops::SpawnEntity(state, EntityType::Pistol, [&](Entity& spawned_pistol) {
+    Ent* const pistol = world_ops::SpawnEnt(state, EntType::Pistol, [&](Ent& spawned_pistol) {
         spawned_pistol.held_by_vid = shopkeeper.vid;
-        spawned_pistol.attachment_mode = AttachmentMode::Held;
+        spawned_pistol.attach_mode = AttachMode::Held;
         spawned_pistol.has_physics = false;
         spawned_pistol.can_collide = false;
         spawned_pistol.counter_b = 9999.0F;
@@ -100,8 +100,8 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t entity_idx, State& state, const 
         spawned_pistol.SetCenter(shopkeeper.GetCenter() + Vec2::New(4.0F, 1.0F));
         shopkeeper.holding_vid = spawned_pistol.vid;
         shopkeeper.holding = true;
-        shopkeeper.entity_b = spawned_pistol.vid;
-        state.UpdateSidForEntity(spawned_pistol.vid.id, graphics);
+        shopkeeper.ent_b = spawned_pistol.vid;
+        state.UpdateSidForEnt(spawned_pistol.vid.id, graphics);
     }, shopkeeper.vid);
     if (pistol == nullptr) {
         return false;
@@ -109,39 +109,39 @@ bool SpawnShopkeeperPistolIntoHands(std::size_t entity_idx, State& state, const 
     return true;
 }
 
-Entity* GetTrackedPistol(Entity& shopkeeper, State& state) {
-    if (!shopkeeper.entity_b.has_value()) {
+Ent* GetTrackedPistol(Ent& shopkeeper, State& state) {
+    if (!shopkeeper.ent_b.has_value()) {
         return nullptr;
     }
 
-    Entity* const pistol = state.entity_manager.GetEntityMut(*shopkeeper.entity_b);
-    if (pistol == nullptr || !pistol->active || pistol->type_ != EntityType::Pistol) {
+    Ent* const pistol = state.ents.GetEntMut(*shopkeeper.ent_b);
+    if (pistol == nullptr || !pistol->active || pistol->type_ != EntType::Pistol) {
         return nullptr;
     }
     return pistol;
 }
 
-void SyncHeldPistolToShopkeeper(Entity& shopkeeper, Entity& pistol, State& state, const Graphics& graphics) {
+void SyncHeldPistolToShopkeeper(Ent& shopkeeper, Ent& pistol, State& state, const Graphics& graphics) {
     pistol.has_physics = false;
     pistol.can_collide = false;
     pistol.held_by_vid = shopkeeper.vid;
-    pistol.attachment_mode = AttachmentMode::Held;
+    pistol.attach_mode = AttachMode::Held;
     pistol.facing = shopkeeper.facing;
     pistol.draw_layer = DrawLayer::Foreground;
-    StopUsingEntity(pistol);
+    StopUsingEnt(pistol);
 
     const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
     const Vec2 held_pos_target =
-        shopkeeper.facing == LeftOrRight::Left
+        shopkeeper.facing == Side::Left
             ? shopkeeper.GetCenter() + Vec2::New(-hold_offset.x, hold_offset.y)
             : shopkeeper.GetCenter() + hold_offset;
     pistol.SetCenter(held_pos_target);
     pistol.grounded = false;
-    state.UpdateSidForEntity(pistol.vid.id, graphics);
+    state.UpdateSidForEnt(pistol.vid.id, graphics);
 }
 
 bool IsShopkeeperBlockedMovingTowardPistol(
-    const Entity& shopkeeper,
+    const Ent& shopkeeper,
     int move_direction,
     const State& state,
     const Graphics& graphics
@@ -150,10 +150,10 @@ bool IsShopkeeperBlockedMovingTowardPistol(
         return false;
     }
 
-    AABB next_aabb = common::GetContactAabbForEntity(shopkeeper, graphics);
+    AABB next_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
     next_aabb.tl.x += static_cast<float>(move_direction);
     next_aabb.br.x += static_cast<float>(move_direction);
-    return AabbHitsBlockingWorldGeometryOrImpassableEntities(
+    return AabbHitsBlockingWorldGeometryOrImpassableEnts(
         state,
         graphics,
         next_aabb,
@@ -162,12 +162,12 @@ bool IsShopkeeperBlockedMovingTowardPistol(
 }
 
 bool TryRecoverDroppedPistol(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics
 ) {
-    Entity& shopkeeper = state.entity_manager.entities[entity_idx];
-    Entity* const pistol = GetTrackedPistol(shopkeeper, state);
+    Ent& shopkeeper = state.ents.ents[ent_idx];
+    Ent* const pistol = GetTrackedPistol(shopkeeper, state);
     if (pistol == nullptr) {
         return false;
     }
@@ -181,9 +181,9 @@ bool TryRecoverDroppedPistol(
 
     const Vec2 delta = GetNearestWorldDelta(state.stage, shopkeeper.GetCenter(), pistol->GetCenter());
     if (delta.x < 0.0F) {
-        shopkeeper.facing = LeftOrRight::Left;
+        shopkeeper.facing = Side::Left;
     } else if (delta.x > 0.0F) {
-        shopkeeper.facing = LeftOrRight::Right;
+        shopkeeper.facing = Side::Right;
     }
 
     const int move_direction = delta.x < 0.0F ? -1 : (delta.x > 0.0F ? 1 : 0);
@@ -205,11 +205,11 @@ bool TryRecoverDroppedPistol(
         shopkeeper.counter_a = kShopkeeperJumpCooldownFrames;
     }
 
-    const AABB shopkeeper_aabb = common::GetContactAabbForEntity(shopkeeper, graphics);
+    const AABB shopkeeper_aabb = common::GetContactAabbForEnt(shopkeeper, graphics);
     const AABB pistol_aabb = GetNearestWorldAabb(
         state.stage,
         shopkeeper.GetCenter(),
-        common::GetContactAabbForEntity(*pistol, graphics)
+        common::GetContactAabbForEnt(*pistol, graphics)
     );
     if (!AabbsIntersect(shopkeeper_aabb, pistol_aabb)) {
         return true;
@@ -223,8 +223,8 @@ bool TryRecoverDroppedPistol(
 
 } // namespace
 
-EntityDamageEffectResult OnDamageAsShopkeeper(
-    std::size_t entity_idx,
+EntDamageEffectResult OnDamageAsShopkeeper(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
@@ -234,27 +234,27 @@ EntityDamageEffectResult OnDamageAsShopkeeper(
     (void)damage_type;
     (void)amount;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
-        return EntityDamageEffectResult::None;
+    if (ent_idx >= state.ents.ents.size()) {
+        return EntDamageEffectResult::None;
     }
 
-    const Entity& shopkeeper = state.entity_manager.entities[entity_idx];
+    const Ent& shopkeeper = state.ents.ents[ent_idx];
     if (!shopkeeper.active) {
-        return EntityDamageEffectResult::None;
+        return EntDamageEffectResult::None;
     }
 
     if (damage_applied ||
         damage_type == DamageType::Attack ||
         damage_type == DamageType::IgnitingAttack ||
         damage_type == DamageType::HeavyAttack) {
-        entities::shop::DisturbShopByVid(shopkeeper.entity_a, state, audio);
+        ents::shop::DisturbShopByVid(shopkeeper.ent_a, state, audio);
     }
 
-    return EntityDamageEffectResult::None;
+    return EntDamageEffectResult::None;
 }
 
-void StepEntityLogicAsShopkeeper(
-    std::size_t entity_idx,
+void StepEntLogicAsShopkeeper(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -263,8 +263,8 @@ void StepEntityLogicAsShopkeeper(
     (void)audio;
     (void)dt;
 
-    Entity& shopkeeper = state.entity_manager.entities[entity_idx];
-    if (shopkeeper.condition != EntityCondition::Normal) {
+    Ent& shopkeeper = state.ents.ents[ent_idx];
+    if (shopkeeper.condition != EntCondition::Normal) {
         return;
     }
 
@@ -276,38 +276,38 @@ void StepEntityLogicAsShopkeeper(
     }
 
     if (const std::optional<std::size_t> shop_idx = GetShopIdxForShopkeeper(shopkeeper, state)) {
-        const Entity& shop = state.entity_manager.entities[*shop_idx];
-        if (shop.ai_state == EntityAiState::Disturbed) {
+        const Ent& shop = state.ents.ents[*shop_idx];
+        if (shop.ai_state == EntAiState::Disturbed) {
             shopkeeper.wanted = true;
         }
     }
 
     if (!shopkeeper.wanted) {
         common::DecelerateHorizontallyToStop(shopkeeper, kShopkeeperMoveAcceleration);
-        TrySetAnimation(shopkeeper, EntityDisplayState::Neutral);
+        TrySetAnim(shopkeeper, EntDisplayState::Neutral);
         return;
     }
 
-    if (SpawnShopkeeperPistolIntoHands(entity_idx, state, graphics)) {
-        (void)PlayEntitySoundEmitter(state, shopkeeper, audio_asset_ids::PistolUnholster);
+    if (SpawnShopkeeperPistolIntoHands(ent_idx, state, graphics)) {
+        (void)PlayEntSoundEmitter(state, shopkeeper, audio_asset_ids::PistolUnholster);
     }
-    if (TryRecoverDroppedPistol(entity_idx, state, graphics)) {
-        SetMovementFlag(shopkeeper, EntityMovementFlag::Running, true);
-        SetMovementFlag(shopkeeper, EntityMovementFlag::Walking, true);
-        TrySetAnimation(shopkeeper, EntityDisplayState::Walk);
+    if (TryRecoverDroppedPistol(ent_idx, state, graphics)) {
+        SetMovementFlag(shopkeeper, EntMovementFlag::Running, true);
+        SetMovementFlag(shopkeeper, EntMovementFlag::Walking, true);
+        TrySetAnim(shopkeeper, EntDisplayState::Walk);
         return;
     }
 
-    const Entity* const player = FindNearestPlayer(state, shopkeeper.GetCenter(), false);
-    if (player == nullptr || player->condition == EntityCondition::Dead) {
+    const Ent* const player = FindNearestPlayer(state, shopkeeper.GetCenter(), false);
+    if (player == nullptr || player->condition == EntCondition::Dead) {
         return;
     }
 
     const Vec2 delta = GetNearestWorldDelta(state.stage, shopkeeper.GetCenter(), player->GetCenter());
     if (delta.x < 0.0F) {
-        shopkeeper.facing = LeftOrRight::Left;
+        shopkeeper.facing = Side::Left;
     } else if (delta.x > 0.0F) {
-        shopkeeper.facing = LeftOrRight::Right;
+        shopkeeper.facing = Side::Right;
     }
 
     if (shopkeeper.grounded && shopkeeper.counter_a <= 0.0F) {
@@ -330,23 +330,23 @@ void StepEntityLogicAsShopkeeper(
         );
     }
 
-    SetMovementFlag(shopkeeper, EntityMovementFlag::Running, true);
-    SetMovementFlag(shopkeeper, EntityMovementFlag::Walking, true);
-    TrySetAnimation(shopkeeper, EntityDisplayState::Walk);
+    SetMovementFlag(shopkeeper, EntMovementFlag::Running, true);
+    SetMovementFlag(shopkeeper, EntMovementFlag::Walking, true);
+    TrySetAnim(shopkeeper, EntDisplayState::Walk);
 
     if (shopkeeper.holding_vid.has_value()) {
-        if (Entity* const pistol = state.entity_manager.GetEntityMut(*shopkeeper.holding_vid)) {
+        if (Ent* const pistol = state.ents.GetEntMut(*shopkeeper.holding_vid)) {
             SyncHeldPistolToShopkeeper(shopkeeper, *pistol, state, graphics);
             if (shopkeeper.counter_b <= 0.0F && CanSeePlayerAhead(shopkeeper, state, graphics)) {
-                UseEntity(*pistol, shopkeeper.vid, AttachmentMode::Held);
+                UseEnt(*pistol, shopkeeper.vid, AttachMode::Held);
                 shopkeeper.counter_b = kShopkeeperShootCooldownFrames;
             }
         }
     }
 }
 
-extern const EntityArchetype kShopkeeperArchetype{
-    .type_ = EntityType::Shopkeeper,
+extern const EntSpec kShopkeeperSpec{
+    .type_ = EntType::Shopkeeper,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 20,
     .has_physics = true,
@@ -358,15 +358,15 @@ extern const EntityArchetype kShopkeeperArchetype{
     .can_stomp = true,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .on_damage = OnDamageAsShopkeeper,
-    .step_logic = StepEntityLogicAsShopkeeper,
+    .step_logic = StepEntLogicAsShopkeeper,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Shopkeeper),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Shopkeeper),
 };
 
-} // namespace splonks::entities::shopkeeper
+} // namespace splonks::ents::shopkeeper

@@ -9,7 +9,7 @@ notes about what each feature will probably need.
 ## Core Missing Systems
 
 ### Shop
-- Needs an authored shop zone, not just shop-themed tiles and a shopkeeper entity.
+- Needs an authored shop zone, not just shop-themed tiles and a shopkeeper ent.
 - Needs unpaid item ownership, shop crime detection, and a clear shop state.
 - Should be the owner of future shopkeeper hostility, forgiveness, and debt rules.
 
@@ -27,7 +27,7 @@ notes about what each feature will probably need.
 ### Idol disturbance and boulder trap
 - Picking up the idol or otherwise disturbing it should fire a stage trigger.
 - That trigger should be able to spawn or activate the boulder and any related
-  terrain or entity changes.
+  terrain or ent changes.
 - This wants a reusable stage trigger/callback mechanism, not a one-off idol hack.
 
 ### Idol gold reward
@@ -41,15 +41,15 @@ notes about what each feature will probably need.
 - This wants a lightweight favor system, not just altar-local side effects.
 
 ### Hold onto moving things
-- Right now attachments are mostly "held item follows holder", not "rider inherits mover motion".
+- Right now attachs are mostly "held item follows holder", not "rider inherits mover motion".
 - Needed for hanging onto things that move, riding moving carriers, and more faithful
   moving-object behavior.
-- This is physics-invasive and should be treated as a real attachment/motion-transfer system.
+- This is physics-invasive and should be treated as a real attach/motion-transfer system.
 
 ### Exit should require an input
 - The exit should not auto-trigger on touch.
 - Player should need to be on the exit and press the exit/use/up input.
-- This touches exit entity/tile behavior and stage transition triggering.
+- This touches exit ent/tile behavior and stage transition triggering.
 
 ## Worldgen / Setpiece Gaps
 
@@ -77,4 +77,4 @@ Likely implementation order if we want the minimum clean path:
 3. Add shop ownership/state.
 4. Add shopkeeper AI on top of shop state.
 5. Add snake pit / mattock / more item behavior.
-6. Do moving-attachment motion transfer last, because it touches physics most deeply.
+6. Do moving-attach motion transfer last, because it touches physics most deeply.

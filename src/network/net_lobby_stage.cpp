@@ -1,7 +1,7 @@
 #include "network/net_lobby_internal.hpp"
 
 #include "graphics.hpp"
-#include "network/net_entity_links.hpp"
+#include "network/net_ent_links.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_spawning.hpp"
 #include "state.hpp"
@@ -40,7 +40,7 @@ bool EnsureHostSyncedStage(State& state, std::string* status_out) {
 
     if (state.net_session.input_lockstep_enabled) {
         state.players = PlayerRegistry::New();
-        state.entity_manager = EntityManager::New();
+        state.ents = EntPool::New();
     }
 
     if (state.net_session.input_lockstep_enabled || !state.stage.generation_seed.has_value()) {
@@ -103,10 +103,10 @@ bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string*
         }
         return false;
     }
-    RegisterStageEntityLinks(state);
+    RegisterStageEntLinks(state);
     const Vec2 spawn_base = GetPrimaryPlayerSpawnPos(state);
     state.players.slots.clear();
-    state.controlled_entity_vid.reset();
+    state.controlled_ent_vid.reset();
     for (std::size_t i = 0; i < saved_slots.size(); ++i) {
         const SavedPlayerSlot& slot = saved_slots[i];
         EnsureSpawnedPlayer(

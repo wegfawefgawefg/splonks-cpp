@@ -1,18 +1,18 @@
-#include "entities/bones.hpp"
+#include "ents/bones.hpp"
 
 #include "audio_asset_id.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "on_damage_effects.hpp"
 #include "state.hpp"
 
-namespace splonks::entities::bones {
+namespace splonks::ents::bones {
 
 namespace {
 
-FrameDataAnimator MakeBonesAnimator() {
-    FrameDataAnimator animator = FrameDataAnimator::New(frame_data_ids::Bones);
+AFrameAnimator MakeBonesAnimator() {
+    AFrameAnimator animator = AFrameAnimator::New(aframe_ids::Bones);
     animator.SetForcedFrame(0);
     animator.animate = false;
     animator.loop = false;
@@ -21,18 +21,18 @@ FrameDataAnimator MakeBonesAnimator() {
 
 } // namespace
 
-void OnDeathAsBones(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsBones(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& bones = state.entity_manager.entities[entity_idx];
+    const Ent& bones = state.ents.ents[ent_idx];
     SpawnBreakawayContainerShards(bones.GetCenter(), state);
 }
 
-extern const EntityArchetype kBonesArchetype{
-    .type_ = EntityType::Bones,
+extern const EntSpec kBonesSpec{
+    .type_ = EntType::Bones,
     .size = Vec2::New(12.0F, 6.0F),
     .health = 1,
     .has_physics = true,
@@ -44,14 +44,14 @@ extern const EntityArchetype kBonesArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::AnthingExceptJumpOn,
     .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsBones,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = MakeBonesAnimator(),
+    .aframe_animator = MakeBonesAnimator(),
 };
 
-} // namespace splonks::entities::bones
+} // namespace splonks::ents::bones

@@ -1,6 +1,6 @@
 #include "graphics.hpp"
 
-#include "raw_frame_data.hpp"
+#include "raw_aframe.hpp"
 #include "stage.hpp"
 
 #include <SDL3/SDL.h>
@@ -18,9 +18,9 @@ namespace splonks {
 
 namespace {
 
-struct LoadedFrameDataResources {
-    FrameDataDb frame_data_db;
-    std::vector<SDL_Texture*> frame_data_images;
+struct LoadedAFrameResources {
+    AFrameDb aframe_db;
+    std::vector<SDL_Texture*> aframe_images;
     TileSourceDb tile_source_db;
     TileContactDb tile_contact_db;
     std::filesystem::file_time_type write_time{};
@@ -45,7 +45,7 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const std::string& path) {
     return texture;
 }
 
-SDL_Texture* LoadFrameDataTexture(SDL_Renderer* renderer, const std::string& filename) {
+SDL_Texture* LoadAFrameTexture(SDL_Renderer* renderer, const std::string& filename) {
     const std::vector<std::string> candidate_paths = {
         "assets/graphics/sprites/" + filename,
         "assets/graphics/tiles/" + filename,
@@ -80,25 +80,25 @@ std::filesystem::file_time_type GetFileWriteTimeOrThrow(const std::string& path)
     return result;
 }
 
-LoadedFrameDataResources LoadFrameDataResources(
+LoadedAFrameResources LoadAFrameResources(
     SDL_Renderer* renderer,
     const std::string& annotations_path
 ) {
-    LoadedFrameDataResources result;
-    const RawFrameDataFile raw_frame_data_file = LoadRawFrameDataFile(annotations_path);
-    result.frame_data_db = FrameDataDb::FromRaw(raw_frame_data_file);
-    result.frame_data_images.reserve(result.frame_data_db.image_paths.size());
+    LoadedAFrameResources result;
+    const RawAFrameFile raw_aframe_file = LoadRawAFrameFile(annotations_path);
+    result.aframe_db = AFrameDb::FromRaw(raw_aframe_file);
+    result.aframe_images.reserve(result.aframe_db.image_paths.size());
 
     try {
-        for (const std::string& image_path : result.frame_data_db.image_paths) {
-            result.frame_data_images.push_back(LoadFrameDataTexture(renderer, image_path));
+        for (const std::string& image_path : result.aframe_db.image_paths) {
+            result.aframe_images.push_back(LoadAFrameTexture(renderer, image_path));
         }
     } catch (...) {
-        DestroyTextureList(result.frame_data_images);
+        DestroyTextureList(result.aframe_images);
         throw;
     }
 
-    result.tile_source_db = BuildTileSourceDb(result.frame_data_db);
+    result.tile_source_db = BuildTileSourceDb(result.aframe_db);
     result.tile_contact_db = BuildTileContactDb(result.tile_source_db);
     result.write_time = GetFileWriteTimeOrThrow(annotations_path);
     return result;
@@ -116,14 +116,14 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
         LoadTexture(renderer, "assets/graphics/images/title_layer_3.png"),
     };
 
-    const LoadedFrameDataResources frame_data_resources =
-        LoadFrameDataResources(renderer, graphics.frame_data_annotations_path);
-    graphics.frame_data_db = frame_data_resources.frame_data_db;
-    graphics.frame_data_images = frame_data_resources.frame_data_images;
-    graphics.frame_data_annotations_last_loaded_write_time = frame_data_resources.write_time;
-    graphics.frame_data_annotations_last_seen_write_time = frame_data_resources.write_time;
-    graphics.tile_source_db = frame_data_resources.tile_source_db;
-    graphics.tile_contact_db = frame_data_resources.tile_contact_db;
+    const LoadedAFrameResources aframe_resources =
+        LoadAFrameResources(renderer, graphics.aframe_annotations_path);
+    graphics.aframe_db = aframe_resources.aframe_db;
+    graphics.aframe_images = aframe_resources.aframe_images;
+    graphics.aframe_annotations_last_loaded_write_time = aframe_resources.write_time;
+    graphics.aframe_annotations_last_seen_write_time = aframe_resources.write_time;
+    graphics.tile_source_db = aframe_resources.tile_source_db;
+    graphics.tile_contact_db = aframe_resources.tile_contact_db;
     graphics.window_dims = UVec2::New(1920, 540);
     graphics.dims = UVec2::New(1920, 540);
     graphics.fullscreen = false;
@@ -144,7 +144,7 @@ Graphics Graphics::New(SDL_Renderer* renderer, const std::string& sprite_assets_
     return graphics;
 }
 
-SDL_FRect GetPresentationRect(const Graphics& graphics, int output_width, int output_height) {
+SDL_FRect GetPresRect(const Graphics& graphics, int output_width, int output_height) {
     const int scale_x = output_width / static_cast<int>(graphics.dims.x);
     const int scale_y = output_height / static_cast<int>(graphics.dims.y);
     const int scale = std::max(1, std::min(scale_x, scale_y));
@@ -192,27 +192,27 @@ SDL_Texture* Graphics::GetTexture(TextureName texture) const {
     return textures[index];
 }
 
-SDL_Texture* Graphics::GetFrameDataTexture(std::uint32_t image_id) const {
+SDL_Texture* Graphics::GetAFrameTexture(std::uint32_t image_id) const {
     const std::size_t index = static_cast<std::size_t>(image_id);
-    if (index >= frame_data_images.size()) {
+    if (index >= aframe_images.size()) {
         return nullptr;
     }
-    return frame_data_images[index];
+    return aframe_images[index];
 }
 
 Vec2 Graphics::ScreenToWc(const UVec2& screen_pos) const {
-    const SDL_FRect presentation = GetPresentationRect(
+    const SDL_FRect pres = GetPresRect(
         *this,
         static_cast<int>(window_dims.x),
         static_cast<int>(window_dims.y)
     );
 
     Vec2 screen = ToVec2(screen_pos);
-    screen = screen - Vec2::New(presentation.x, presentation.y);
+    screen = screen - Vec2::New(pres.x, pres.y);
 
-    const float presentation_scale = presentation.w / static_cast<float>(dims.x);
-    if (presentation_scale > 0.0F) {
-        screen = screen / presentation_scale;
+    const float pres_scale = pres.w / static_cast<float>(dims.x);
+    if (pres_scale > 0.0F) {
+        screen = screen / pres_scale;
     }
 
     screen = screen - camera.offset;
@@ -236,21 +236,21 @@ void Graphics::ResetTileVariations() {
     tile_variations_cache.clear();
 }
 
-bool Graphics::ReloadFrameData(SDL_Renderer* renderer, std::string* status_out) {
+bool Graphics::ReloadAFrame(SDL_Renderer* renderer, std::string* status_out) {
     try {
-        LoadedFrameDataResources frame_data_resources =
-            LoadFrameDataResources(renderer, frame_data_annotations_path);
-        std::vector<SDL_Texture*> old_images = std::move(frame_data_images);
-        frame_data_db = std::move(frame_data_resources.frame_data_db);
-        frame_data_images = std::move(frame_data_resources.frame_data_images);
-        tile_source_db = std::move(frame_data_resources.tile_source_db);
-        tile_contact_db = std::move(frame_data_resources.tile_contact_db);
-        frame_data_annotations_last_loaded_write_time = frame_data_resources.write_time;
-        frame_data_annotations_last_seen_write_time = frame_data_resources.write_time;
+        LoadedAFrameResources aframe_resources =
+            LoadAFrameResources(renderer, aframe_annotations_path);
+        std::vector<SDL_Texture*> old_images = std::move(aframe_images);
+        aframe_db = std::move(aframe_resources.aframe_db);
+        aframe_images = std::move(aframe_resources.aframe_images);
+        tile_source_db = std::move(aframe_resources.tile_source_db);
+        tile_contact_db = std::move(aframe_resources.tile_contact_db);
+        aframe_annotations_last_loaded_write_time = aframe_resources.write_time;
+        aframe_annotations_last_seen_write_time = aframe_resources.write_time;
         ResetTileVariations();
         DestroyTextureList(old_images);
         if (status_out != nullptr) {
-            *status_out = "Reloaded frame data from " + frame_data_annotations_path;
+            *status_out = "Reloaded frame data from " + aframe_annotations_path;
         }
         return true;
     } catch (const std::exception& exception) {
@@ -261,22 +261,22 @@ bool Graphics::ReloadFrameData(SDL_Renderer* renderer, std::string* status_out) 
     }
 }
 
-bool Graphics::ReloadFrameDataIfChanged(SDL_Renderer* renderer, std::string* status_out) {
+bool Graphics::ReloadAFrameIfChanged(SDL_Renderer* renderer, std::string* status_out) {
     std::error_code ec;
     const std::filesystem::file_time_type current_write_time =
-        std::filesystem::last_write_time(frame_data_annotations_path, ec);
+        std::filesystem::last_write_time(aframe_annotations_path, ec);
     if (ec) {
         if (status_out != nullptr) {
             *status_out = "Frame data watch failed: " + ec.message();
         }
         return false;
     }
-    if (current_write_time <= frame_data_annotations_last_seen_write_time) {
+    if (current_write_time <= aframe_annotations_last_seen_write_time) {
         return false;
     }
 
-    frame_data_annotations_last_seen_write_time = current_write_time;
-    return ReloadFrameData(renderer, status_out);
+    aframe_annotations_last_seen_write_time = current_write_time;
+    return ReloadAFrame(renderer, status_out);
 }
 
 void Graphics::ShutdownText() {
@@ -296,7 +296,7 @@ void Graphics::ShutdownText() {
 
 void Graphics::ShutdownTextures() {
     DestroyTextureList(textures);
-    DestroyTextureList(frame_data_images);
+    DestroyTextureList(aframe_images);
 }
 
 int GetReasonableFontScale(const UVec2& dims, TextType text_type) {

@@ -75,7 +75,7 @@ void Render(
         static_cast<float>(graphics.dims.x),
         static_cast<float>(graphics.dims.y),
     };
-    const SDL_FRect dst = GetPresentationRect(graphics, output_width, output_height);
+    const SDL_FRect dst = GetPresRect(graphics, output_width, output_height);
     SDL_GPURenderState* const post_fx_state = GetActivePostFxState(post_fx, state);
     if (post_fx_state != nullptr) {
         SDL_SetGPURenderState(renderer, post_fx_state);

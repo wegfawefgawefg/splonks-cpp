@@ -1,13 +1,13 @@
-#include "entities/rock.hpp"
+#include "ents/rock.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 
-namespace splonks::entities::rock {
+namespace splonks::ents::rock {
 
 namespace {
 
@@ -18,17 +18,17 @@ constexpr float kControlledSlideVel = 4.5F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 90;
 
 
-void StepControlledRock(Entity& rock, const controls::ControlIntent& control) {
+void StepControlledRock(Ent& rock, const controls::ControlIntent& control) {
     if (rock.attack_delay_countdown > 0) {
         rock.attack_delay_countdown -= 1;
     }
 
     if (control.left && !control.right) {
         rock.acc.x -= rock.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
-        rock.facing = LeftOrRight::Left;
+        rock.facing = Side::Left;
     } else if (control.right && !control.left) {
         rock.acc.x += rock.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
-        rock.facing = LeftOrRight::Right;
+        rock.facing = Side::Right;
     }
 
     if (control.jump_pressed && rock.grounded) {
@@ -37,15 +37,15 @@ void StepControlledRock(Entity& rock, const controls::ControlIntent& control) {
     }
 
     if (control.attack_pressed && rock.grounded && rock.attack_delay_countdown == 0) {
-        const float slide_vel = rock.facing == LeftOrRight::Left ? -kControlledSlideVel
+        const float slide_vel = rock.facing == Side::Left ? -kControlledSlideVel
                                                                  : kControlledSlideVel;
         rock.vel.x = slide_vel;
         rock.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
 }
 
-void ControlEntityAsRock(
-    std::size_t entity_idx,
+void ControlEntAsRock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -54,22 +54,22 @@ void ControlEntityAsRock(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& rock = state.entity_manager.entities[entity_idx];
-    if (rock.condition == EntityCondition::Dead) {
+    Ent& rock = state.ents.ents[ent_idx];
+    if (rock.condition == EntCondition::Dead) {
         return;
     }
 
-    StepControlledRock(rock, controls::GetControlIntentForEntity(rock, state));
+    StepControlledRock(rock, controls::GetControlIntentForEnt(rock, state));
 }
 
 } // namespace
 
-extern const EntityArchetype kRockArchetype{
-    .type_ = EntityType::Rock,
+extern const EntSpec kRockSpec{
+    .type_ = EntType::Rock,
     .size = Vec2::New(6.0F, 5.0F),
     .health = 1,
     .has_physics = true,
@@ -81,31 +81,31 @@ extern const EntityArchetype kRockArchetype{
     .can_be_stunned = false,
     .buoyancy = 0.0F,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::CrushingOnly,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::CrushingOnly,
     .collide_sound = audio_asset_ids::Thud,
-    .control_logic = ControlEntityAsRock,
-    .step_logic = StepEntityLogicAsRock,
+    .control_logic = ControlEntAsRock,
+    .step_logic = StepEntLogicAsRock,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Rock),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Rock),
 };
 
-/** Rock does nothing, but if it hits an entity it should do rock damage and try to stun probs.
- * It should be a little bit bouncier than normal entities, also,
+/** Rock does nothing, but if it hits an ent it should do rock damage and try to stun probs.
+ * It should be a little bit bouncier than normal ents, also,
  * clunky sound on bounces, smack sound on hit something?
  * (do we need some material smack sounds: flesh, metal, bang, stone)
  * if grounded and moving, roll?? so set rotation
  */
-void StepEntityLogicAsRock(
-    std::size_t entity_idx,
+void StepEntLogicAsRock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    (void)entity_idx;
+    (void)ent_idx;
     (void)state;
     (void)graphics;
     (void)audio;
@@ -114,5 +114,5 @@ void StepEntityLogicAsRock(
     // if you hit something, do rock damage and try to stun probs
 }
 
-/** generalize this to all square or rectangular entities somehow */
-} // namespace splonks::entities::rock
+/** generalize this to all square or rectangular ents somehow */
+} // namespace splonks::ents::rock

@@ -1,6 +1,6 @@
 #include "debug/control_server.hpp"
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 #include "network/net_transport.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
@@ -98,37 +98,37 @@ const char* NetRoleName(network::NetRole role) {
     switch (role) {
     case network::NetRole::Offline:
         return "offline";
-    case network::NetRole::Coordinator:
-        return "coordinator";
+    case network::NetRole::Host:
+        return "host";
     case network::NetRole::Peer:
         return "peer";
     }
     return "unknown";
 }
 
-const char* EntityConditionName(EntityCondition condition) {
+const char* EntConditionName(EntCondition condition) {
     switch (condition) {
-    case EntityCondition::Normal:
+    case EntCondition::Normal:
         return "normal";
-    case EntityCondition::Dead:
+    case EntCondition::Dead:
         return "dead";
-    case EntityCondition::Stunned:
+    case EntCondition::Stunned:
         return "stunned";
     }
     return "unknown";
 }
 
-const char* AiStateName(EntityAiState state) {
+const char* AiStateName(EntAiState state) {
     switch (state) {
-    case EntityAiState::Idle:
+    case EntAiState::Idle:
         return "idle";
-    case EntityAiState::Disturbed:
+    case EntAiState::Disturbed:
         return "disturbed";
-    case EntityAiState::Patrolling:
+    case EntAiState::Patrolling:
         return "patrolling";
-    case EntityAiState::Pursuing:
+    case EntAiState::Pursuing:
         return "pursuing";
-    case EntityAiState::Returning:
+    case EntAiState::Returning:
         return "returning";
     }
     return "unknown";
@@ -148,13 +148,13 @@ void WriteVec2(std::ostringstream& out, const Vec2& value) {
     out << "{\"x\":" << value.x << ",\"y\":" << value.y << "}";
 }
 
-const char* AttachmentModeName(AttachmentMode mode) {
+const char* AttachModeName(AttachMode mode) {
     switch (mode) {
-    case AttachmentMode::None:
+    case AttachMode::None:
         return "none";
-    case AttachmentMode::Held:
+    case AttachMode::Held:
         return "held";
-    case AttachmentMode::Back:
+    case AttachMode::Back:
         return "back";
     }
     return "unknown";
@@ -168,72 +168,72 @@ void WriteOptionalVid(std::ostringstream& out, const std::optional<VID>& vid) {
     out << "{\"id\":" << vid->id << ",\"version\":" << vid->version << "}";
 }
 
-void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& entity) {
-    out << "{\"id\":" << entity.vid.id
-        << ",\"version\":" << entity.vid.version
-        << ",\"type\":" << JsonString(GetEntityTypeName(entity.type_))
-        << ",\"active\":" << (entity.active ? "true" : "false")
-        << ",\"condition\":" << JsonString(EntityConditionName(entity.condition))
-        << ",\"ai\":" << JsonString(AiStateName(entity.ai_state))
-        << ",\"grounded\":" << (entity.grounded ? "true" : "false")
-        << ",\"health\":" << entity.health
-        << ",\"money\":" << entity.money
-        << ",\"stun_timer\":" << entity.stun_timer
-        << ",\"coyote_time\":" << entity.coyote_time
-        << ",\"fall_timer\":" << entity.fall_timer
+void WriteEntJson(std::ostringstream& out, const State& state, const Ent& ent) {
+    out << "{\"id\":" << ent.vid.id
+        << ",\"version\":" << ent.vid.version
+        << ",\"type\":" << JsonString(GetEntTypeName(ent.type_))
+        << ",\"active\":" << (ent.active ? "true" : "false")
+        << ",\"condition\":" << JsonString(EntConditionName(ent.condition))
+        << ",\"ai\":" << JsonString(AiStateName(ent.ai_state))
+        << ",\"grounded\":" << (ent.grounded ? "true" : "false")
+        << ",\"health\":" << ent.health
+        << ",\"money\":" << ent.money
+        << ",\"stun_timer\":" << ent.stun_timer
+        << ",\"coyote_time\":" << ent.coyote_time
+        << ",\"fall_timer\":" << ent.fall_timer
         << ",\"pos\":";
-    WriteVec2(out, entity.pos);
+    WriteVec2(out, ent.pos);
     out << ",\"vel\":";
-    WriteVec2(out, entity.vel);
+    WriteVec2(out, ent.vel);
     out << ",\"size\":";
-    WriteVec2(out, entity.size);
+    WriteVec2(out, ent.size);
     out << ",\"holding\":";
-    WriteOptionalVid(out, entity.holding_vid);
+    WriteOptionalVid(out, ent.holding_vid);
     out << ",\"held_by\":";
-    WriteOptionalVid(out, entity.held_by_vid);
+    WriteOptionalVid(out, ent.held_by_vid);
     out << ",\"back\":";
-    WriteOptionalVid(out, entity.back_vid);
-    out << ",\"entity_a\":";
-    WriteOptionalVid(out, entity.entity_a);
-    out << ",\"counters\":{\"a\":" << entity.counter_a
-        << ",\"b\":" << entity.counter_b
-        << ",\"c\":" << entity.counter_c
-        << ",\"d\":" << entity.counter_d
+    WriteOptionalVid(out, ent.back_vid);
+    out << ",\"ent_a\":";
+    WriteOptionalVid(out, ent.ent_a);
+    out << ",\"counters\":{\"a\":" << ent.counter_a
+        << ",\"b\":" << ent.counter_b
+        << ",\"c\":" << ent.counter_c
+        << ",\"d\":" << ent.counter_d
         << "}";
-    out << ",\"use\":{\"down\":" << (entity.use_state.down ? "true" : "false")
-        << ",\"pressed\":" << (entity.use_state.pressed ? "true" : "false")
-        << ",\"released\":" << (entity.use_state.released ? "true" : "false")
-        << ",\"frames\":" << entity.use_state.frames
-        << ",\"source\":" << JsonString(AttachmentModeName(entity.use_state.source))
+    out << ",\"use\":{\"down\":" << (ent.use_state.down ? "true" : "false")
+        << ",\"pressed\":" << (ent.use_state.pressed ? "true" : "false")
+        << ",\"released\":" << (ent.use_state.released ? "true" : "false")
+        << ",\"frames\":" << ent.use_state.frames
+        << ",\"source\":" << JsonString(AttachModeName(ent.use_state.source))
         << ",\"user\":";
-    WriteOptionalVid(out, entity.use_state.user_vid);
+    WriteOptionalVid(out, ent.use_state.user_vid);
     out << "}";
-    out << ",\"point_a\":{\"x\":" << entity.point_a.x << ",\"y\":" << entity.point_a.y << "}"
-        << ",\"has_physics\":" << (entity.has_physics ? "true" : "false")
-        << ",\"can_collide\":" << (entity.can_collide ? "true" : "false")
-        << ",\"can_apply_projectile_contact\":"
-        << (entity.can_apply_projectile_contact ? "true" : "false")
-        << ",\"projectile_contact_timer\":" << entity.projectile_contact_timer
-        << ",\"rotation\":" << entity.rotation
-        << ",\"facing\":" << JsonString(entity.facing == LeftOrRight::Right ? "right" : "left")
-        << ",\"animation\":{\"id\":" << entity.frame_data_animator.animation_id
-        << ",\"frame\":" << entity.frame_data_animator.current_frame
-        << ",\"time\":" << entity.frame_data_animator.current_time
-        << ",\"speed\":" << entity.frame_data_animator.speed
-        << ",\"animate\":" << (entity.frame_data_animator.animate ? "true" : "false")
-        << ",\"loop\":" << (entity.frame_data_animator.loop ? "true" : "false")
-        << ",\"finished\":" << (entity.frame_data_animator.finished ? "true" : "false")
+    out << ",\"point_a\":{\"x\":" << ent.point_a.x << ",\"y\":" << ent.point_a.y << "}"
+        << ",\"has_physics\":" << (ent.has_physics ? "true" : "false")
+        << ",\"can_collide\":" << (ent.can_collide ? "true" : "false")
+        << ",\"can_apply_proj_contact\":"
+        << (ent.can_apply_proj_contact ? "true" : "false")
+        << ",\"proj_contact_timer\":" << ent.proj_contact_timer
+        << ",\"rotation\":" << ent.rotation
+        << ",\"facing\":" << JsonString(ent.facing == Side::Right ? "right" : "left")
+        << ",\"anim\":{\"id\":" << ent.aframe_animator.anim_id
+        << ",\"frame\":" << ent.aframe_animator.current_frame
+        << ",\"time\":" << ent.aframe_animator.current_time
+        << ",\"speed\":" << ent.aframe_animator.speed
+        << ",\"animate\":" << (ent.aframe_animator.animate ? "true" : "false")
+        << ",\"loop\":" << (ent.aframe_animator.loop ? "true" : "false")
+        << ",\"finished\":" << (ent.aframe_animator.finished ? "true" : "false")
         << "}";
-    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity.vid)) {
+    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEnt(ent.vid)) {
         out << ",\"player_id\":" << *player_id;
     } else {
         out << ",\"player_id\":null";
     }
-    if (const std::optional<network::NetEntityId> net_id =
-            state.net_session.FindNetEntityId(entity.vid)) {
-        out << ",\"net_entity_id\":" << *net_id;
+    if (const std::optional<network::NetEntId> net_id =
+            state.net_session.FindNetEntId(ent.vid)) {
+        out << ",\"net_ent_id\":" << *net_id;
         if (const std::optional<PlayerId> input_owner =
-                state.net_session.FindEntityInputOwner(*net_id)) {
+                state.net_session.FindEntInputOwner(*net_id)) {
             out << ",\"input_owner_player_id\":" << *input_owner;
             const PlayerSlot* const slot = state.players.Find(*input_owner);
             out << ",\"input_owner\":" << JsonString(
@@ -246,7 +246,7 @@ void WriteEntityJson(std::ostringstream& out, const State& state, const Entity& 
                 << ",\"input_owner\":\"shared\"";
         }
     } else {
-        out << ",\"net_entity_id\":null"
+        out << ",\"net_ent_id\":null"
             << ",\"input_owner_player_id\":null"
             << ",\"input_owner\":null";
     }
@@ -294,7 +294,7 @@ std::string MakeError(std::string_view message) {
     return "{\"ok\":false,\"error\":" + JsonString(message) + "}\n";
 }
 
-bool ApplyInputButtonToken(PlayerInputFrame& input, std::string_view token) {
+bool ApplyInputButtonToken(InputFrame& input, std::string_view token) {
     if (token == "left") {
         input.left = true;
     } else if (token == "right") {
@@ -345,8 +345,8 @@ std::string HandleStatusCommand(const State& state) {
         << ",\"stage_seed\":" << state.net_session.stage_seed
         << ",\"stage_dims\":{\"w\":" << dims.x << ",\"h\":" << dims.y << "}"
         << ",\"players\":" << state.players.slots.size()
-        << ",\"entities\":{\"active\":" << state.entity_manager.NumActiveEntities()
-        << ",\"capacity\":" << EntityManager::kMaxNumEntities << "}"
+        << ",\"ents\":{\"active\":" << state.ents.NumActiveEnts()
+        << ",\"capacity\":" << EntPool::kMaxNumEnts << "}"
         << ",\"net\":{\"role\":" << JsonString(NetRoleName(state.net_session.role))
         << ",\"local_player_id\":" << state.net_session.local_player_id
         << ",\"peers\":" << state.net_session.peers.size() << "}"
@@ -418,7 +418,7 @@ std::string HandleInputCommand(State& state, const std::vector<std::string>& par
         return MakeError("no primary local player is available");
     }
 
-    PlayerInputFrame input = PlayerInputFrame::New();
+    InputFrame input = InputFrame::New();
     for (std::size_t i = frames_index + 1; i < parts.size(); ++i) {
         if (!ApplyInputButtonToken(input, parts[i])) {
             return MakeError("unknown input button token");
@@ -457,10 +457,10 @@ std::string HandlePlayersCommand(const State& state) {
             << ",\"connected\":" << (slot.connected ? "true" : "false")
             << ",\"primary_local\":" << (slot.primary_local ? "true" : "false")
             << ",\"display_name\":" << JsonString(slot.display_name)
-            << ",\"entity\":";
-        if (slot.entity_vid.has_value()) {
-            if (const Entity* const entity = state.entity_manager.GetEntity(*slot.entity_vid)) {
-                WriteEntityJson(out, state, *entity);
+            << ",\"ent\":";
+        if (slot.ent_vid.has_value()) {
+            if (const Ent* const ent = state.ents.GetEnt(*slot.ent_vid)) {
+                WriteEntJson(out, state, *ent);
             } else {
                 out << "null";
             }
@@ -473,35 +473,35 @@ std::string HandlePlayersCommand(const State& state) {
     return out.str();
 }
 
-std::string HandleEntityCommand(const State& state, const std::vector<std::string>& parts) {
+std::string HandleEntCommand(const State& state, const std::vector<std::string>& parts) {
     if (parts.size() < 2) {
-        return MakeError("entity command requires an entity id");
+        return MakeError("ent command requires an ent id");
     }
-    const int entity_id = ParseIntArg(parts, 1, -1);
-    if (entity_id < 0 || static_cast<std::size_t>(entity_id) >= state.entity_manager.entities.size()) {
-        return MakeError("entity id is outside the entity array");
+    const int ent_id = ParseIntArg(parts, 1, -1);
+    if (ent_id < 0 || static_cast<std::size_t>(ent_id) >= state.ents.ents.size()) {
+        return MakeError("ent id is outside the ent array");
     }
-    const Entity& entity = state.entity_manager.entities[static_cast<std::size_t>(entity_id)];
+    const Ent& ent = state.ents.ents[static_cast<std::size_t>(ent_id)];
     std::ostringstream out;
-    out << "{\"ok\":true,\"cmd\":\"entity\",\"entity\":";
-    WriteEntityJson(out, state, entity);
+    out << "{\"ok\":true,\"cmd\":\"ent\",\"ent\":";
+    WriteEntJson(out, state, ent);
     out << "}\n";
     return out.str();
 }
 
 std::optional<Vec2> GetPrimaryLocalPlayerCenter(const State& state) {
     const PlayerSlot* const player = state.players.FindPrimaryLocal();
-    if (player == nullptr || !player->entity_vid.has_value()) {
+    if (player == nullptr || !player->ent_vid.has_value()) {
         return std::nullopt;
     }
-    const Entity* const entity = state.entity_manager.GetEntity(*player->entity_vid);
-    if (entity == nullptr) {
+    const Ent* const ent = state.ents.GetEnt(*player->ent_vid);
+    if (ent == nullptr) {
         return std::nullopt;
     }
-    return entity->GetCenter();
+    return ent->GetCenter();
 }
 
-std::string HandleEntitiesCommand(const State& state, const std::vector<std::string>& parts) {
+std::string HandleEntsCommand(const State& state, const std::vector<std::string>& parts) {
     bool near_primary_player = false;
     float radius = 128.0F;
     int limit = 128;
@@ -512,27 +512,27 @@ std::string HandleEntitiesCommand(const State& state, const std::vector<std::str
     } else if (parts.size() >= 2) {
         limit = ParseIntArg(parts, 1, limit);
     }
-    limit = std::clamp(limit, 1, static_cast<int>(EntityManager::kMaxNumEntities));
+    limit = std::clamp(limit, 1, static_cast<int>(EntPool::kMaxNumEnts));
 
     std::optional<Vec2> center;
     if (near_primary_player) {
         center = GetPrimaryLocalPlayerCenter(state);
         if (!center.has_value()) {
-            return MakeError("no primary local player entity is available for near query");
+            return MakeError("no primary local player ent is available for near query");
         }
     }
 
     std::ostringstream out;
     int emitted = 0;
     int matching = 0;
-    out << "{\"ok\":true,\"cmd\":\"entities\",\"limit\":" << limit << ",\"entities\":[";
+    out << "{\"ok\":true,\"cmd\":\"ents\",\"limit\":" << limit << ",\"ents\":[";
     bool first = true;
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
         if (center.has_value()) {
-            const Vec2 delta = entity.GetCenter() - *center;
+            const Vec2 delta = ent.GetCenter() - *center;
             const float dist_sq = delta.x * delta.x + delta.y * delta.y;
             if (dist_sq > radius * radius) {
                 continue;
@@ -546,7 +546,7 @@ std::string HandleEntitiesCommand(const State& state, const std::vector<std::str
             out << ",";
         }
         first = false;
-        WriteEntityJson(out, state, entity);
+        WriteEntJson(out, state, ent);
         ++emitted;
     }
     out << "],\"matching\":" << matching << ",\"emitted\":" << emitted << "}\n";
@@ -558,7 +558,7 @@ std::string HandleNetCommand(const State& state) {
     out << "{\"ok\":true,\"cmd\":\"net\""
         << ",\"role\":" << JsonString(NetRoleName(state.net_session.role))
         << ",\"local_player_id\":" << state.net_session.local_player_id
-        << ",\"coordinator_player_id\":" << state.net_session.coordinator_player_id
+        << ",\"host_player_id\":" << state.net_session.host_player_id
         << ",\"stage_instance_id\":" << state.net_session.stage_instance_id
         << ",\"quest\":" << JsonString(state.net_session.quest_id)
         << ",\"stage\":" << JsonString(state.net_session.quest_stage_id)
@@ -567,7 +567,7 @@ std::string HandleNetCommand(const State& state) {
         << ",\"lockstep_next_frame\":" << state.net_session.lockstep_next_frame_to_step
         << ",\"lockstep_next_local_input_frame\":" << state.net_session.lockstep_next_local_input_frame
         << ",\"lockstep_input_delay_frames\":" << state.net_session.lockstep_input_delay_frames
-        << ",\"entity_links\":" << state.net_session.entity_links.size()
+        << ",\"ent_links\":" << state.net_session.ent_links.size()
         << ",\"peers\":[";
     for (std::size_t i = 0; i < state.net_session.peers.size(); ++i) {
         const network::NetPeerState& peer = state.net_session.peers[i];
@@ -675,7 +675,7 @@ std::string HandleCommand(State& state, std::string_view command) {
         return "{\"ok\":true,\"cmd\":\"ping\",\"pong\":true}\n";
     }
     if (op == "help") {
-        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"entities [limit]\",\"entities near [radius] [limit]\",\"entity <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
+        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
     }
     if (op == "status") {
         return HandleStatusCommand(state);
@@ -683,11 +683,11 @@ std::string HandleCommand(State& state, std::string_view command) {
     if (op == "players") {
         return HandlePlayersCommand(state);
     }
-    if (op == "entities") {
-        return HandleEntitiesCommand(state, parts);
+    if (op == "ents") {
+        return HandleEntsCommand(state, parts);
     }
-    if (op == "entity") {
-        return HandleEntityCommand(state, parts);
+    if (op == "ent") {
+        return HandleEntCommand(state, parts);
     }
     if (op == "tiles") {
         return HandleTilesCommand(state, parts);

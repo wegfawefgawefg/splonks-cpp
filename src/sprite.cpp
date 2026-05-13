@@ -190,12 +190,12 @@ SpriteData LoadSpriteData(const std::string& json_path) {
     sprite_data.size = UVec2::New(0, 0);
 
     for (auto it = frames.begin(); it != frames.end(); ++it) {
-        const nlohmann::json& frame_data = it.value();
-        const nlohmann::json& frame = frame_data.at("frame");
+        const nlohmann::json& aframe = it.value();
+        const nlohmann::json& frame = aframe.at("frame");
 
         const unsigned int x = frame.at("x").get<unsigned int>();
         const unsigned int y = frame.at("y").get<unsigned int>();
-        const float duration = frame_data.at("duration").get<float>();
+        const float duration = aframe.at("duration").get<float>();
 
         Frame sprite_frame;
         sprite_frame.sample_position = UVec2::New(x, y);

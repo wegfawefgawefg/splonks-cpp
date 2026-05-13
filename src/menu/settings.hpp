@@ -24,7 +24,7 @@ enum class SettingsUpOrDownOrNeither {
     Down,
 };
 
-enum class LeftOrRightOrNeither {
+enum class SideOrNeither {
     Neither,
     Left,
     Right,

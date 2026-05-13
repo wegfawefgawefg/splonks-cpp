@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/core_types.hpp"
+#include "ent/core_types.hpp"
 #include "math_types.hpp"
 #include "stage.hpp"
 #include "vid.hpp"
@@ -10,28 +10,28 @@
 
 namespace splonks {
 
-struct Entity;
+struct Ent;
 struct Audio;
 struct Graphics;
 struct State;
 
 namespace world_ops {
 
-using EntitySpawnSetup = std::function<void(Entity&)>;
+using EntSpawnSetup = std::function<void(Ent&)>;
 
-Entity* SpawnEntity(
+Ent* SpawnEnt(
     State& state,
-    EntityType type_,
-    const EntitySpawnSetup& setup = {},
+    EntType type_,
+    const EntSpawnSetup& setup = {},
     std::optional<VID> held_by_vid = std::nullopt
 );
-Entity* SpawnConfiguredEntity(
+Ent* SpawnConfiguredEnt(
     State& state,
-    const EntitySpawnSetup& setup,
+    const EntSpawnSetup& setup,
     std::optional<VID> held_by_vid = std::nullopt
 );
-bool DeactivateEntity(State& state, VID entity_vid);
-bool TryApplyInteractEntity(
+bool DeactivateEnt(State& state, VID ent_vid);
+bool TryApplyInteractEnt(
     VID source_vid,
     VID target_vid,
     State& state,
@@ -48,7 +48,7 @@ bool SetForegroundTile(
 
 bool PlaceRopeTile(
     State& state,
-    const Entity& source_entity,
+    const Ent& source_ent,
     const IVec2& tile_pos
 );
 

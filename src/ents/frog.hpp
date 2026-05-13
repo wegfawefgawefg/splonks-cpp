@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::frog {
+namespace splonks::ents::frog {
 
-extern const EntityArchetype kFrogArchetype;
-extern const EntityArchetype kFireFrogArchetype;
+extern const EntSpec kFrogSpec;
+extern const EntSpec kFireFrogSpec;
 
-} // namespace splonks::entities::frog
+} // namespace splonks::ents::frog

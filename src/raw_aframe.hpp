@@ -14,7 +14,7 @@ struct FrameRect {
     int h = 0;
 };
 
-struct RawFrameData {
+struct RawAFrame {
     std::string source_yaml_path;
     int source_line = 0;
     std::string path;
@@ -33,10 +33,10 @@ struct RawFrameData {
     bool tile = false;
 };
 
-struct RawFrameDataFile {
-    std::vector<RawFrameData> sprites;
+struct RawAFrameFile {
+    std::vector<RawAFrame> sprites;
 };
 
-RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path);
+RawAFrameFile LoadRawAFrameFile(const std::string& yaml_path);
 
 } // namespace splonks

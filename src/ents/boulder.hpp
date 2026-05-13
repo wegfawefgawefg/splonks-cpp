@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,24 +10,24 @@ struct State;
 
 }
 
-namespace splonks::entities::boulder {
+namespace splonks::ents::boulder {
 
-extern const EntityArchetype kBoulderArchetype;
+extern const EntSpec kBoulderSpec;
 void SpawnBoulderBreakEffects(const Vec2& center, State& state);
-void OnDeathAsBoulder(std::size_t entity_idx, State& state, Audio& audio);
-void StepEntityLogicAsBoulder(
-    std::size_t entity_idx,
+void OnDeathAsBoulder(std::size_t ent_idx, State& state, Audio& audio);
+void StepEntLogicAsBoulder(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityPhysicsAsBoulder(
-    std::size_t entity_idx,
+void StepEntPhysicsAsBoulder(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::boulder
+} // namespace splonks::ents::boulder

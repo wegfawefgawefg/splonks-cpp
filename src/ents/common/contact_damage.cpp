@@ -1,47 +1,47 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 
 #include "effects.hpp"
 #include "tile_contact_data.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_query.hpp"
 
 #include <vector>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
 constexpr std::uint32_t kHarmContactCooldownFrames = 8;
-constexpr std::uint32_t kProjectileBodyImpactCooldownFrames = 60;
+constexpr std::uint32_t kProjBodyImpactCooldownFrames = 60;
 constexpr std::uint32_t kTileOverlapEffectRefreshFrames = 2;
-constexpr float kProjectileContactVelocityScale = 0.35F;
+constexpr float kProjContactVelocityScale = 0.35F;
 
-bool HasContactHarmAlignment(const Entity& source, const Entity& target) {
+bool HasContactHarmAlignment(const Ent& source, const Ent& target) {
     return (source.alignment == Alignment::Ally && target.alignment == Alignment::Enemy) ||
            (source.alignment == Alignment::Enemy && target.alignment == Alignment::Ally) ||
            source.alignment == Alignment::Neutral;
 }
 
-bool CanApplyProjectileContact(const Entity& entity) {
-    return entity.can_apply_projectile_contact && entity.projectile_contact_timer > 0 &&
-           Length(entity.vel) >= 1.0F;
+bool CanApplyProjContact(const Ent& ent) {
+    return ent.can_apply_proj_contact && ent.proj_contact_timer > 0 &&
+           Length(ent.vel) >= 1.0F;
 }
 
-void ApplyTileOverlapEffects(std::size_t entity_idx, State& state) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+void ApplyTileOverlapEffects(std::size_t ent_idx, State& state) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, entity.GetAABB())) {
+    Ent& ent = state.ents.ents[ent_idx];
+    for (const WorldTileQueryResult& tile_query : QueryTilesInAabb(state.stage, ent.GetAABB())) {
         if (tile_query.tile == nullptr) {
             continue;
         }
-        const TileArchetype& tile_archetype = GetTileArchetype(*tile_query.tile);
-        if (tile_archetype.effect_while_inside.has_value()) {
+        const TileSpec& tile_spec = GetTileSpec(*tile_query.tile);
+        if (tile_spec.effect_while_inside.has_value()) {
             (void)AddEffect(
-                entity,
-                *tile_archetype.effect_while_inside,
+                ent,
+                *tile_spec.effect_while_inside,
                 0,
                 kTileOverlapEffectRefreshFrames
             );
@@ -60,11 +60,11 @@ void ApplyTileOverlapEffects(std::size_t entity_idx, State& state) {
             ) < state.settings.fluid.render_cutoff_amount) {
             continue;
         }
-        const TileArchetype& fluid_archetype = GetTileArchetype(fluid_tile);
-        if (fluid_archetype.effect_while_inside.has_value()) {
+        const TileSpec& fluid_spec = GetTileSpec(fluid_tile);
+        if (fluid_spec.effect_while_inside.has_value()) {
             (void)AddEffect(
-                entity,
-                *fluid_archetype.effect_while_inside,
+                ent,
+                *fluid_spec.effect_while_inside,
                 0,
                 kTileOverlapEffectRefreshFrames
             );
@@ -72,9 +72,9 @@ void ApplyTileOverlapEffects(std::size_t entity_idx, State& state) {
     }
 }
 
-bool CanProjectileImpactWithoutDamage(const Entity& target) {
-    return target.condition == EntityCondition::Stunned ||
-           target.condition == EntityCondition::Dead;
+bool CanProjImpactWithoutDamage(const Ent& target) {
+    return target.condition == EntCondition::Stunned ||
+           target.condition == EntCondition::Dead;
 }
 
 AABB GetTileContactCboxWorldAabb(const Stage& stage, const WorldTileQueryResult& tile_query,
@@ -126,22 +126,22 @@ bool HasAuthoredTileCbox(const TileContactData& tile_contact_data) {
     return tile_contact_data.cbox.w > 0 && tile_contact_data.cbox.h > 0;
 }
 
-bool EntityIsMovingIntoSpike(const Entity& entity, TileRotation spike_rotation) {
+bool EntIsMovingIntoSpike(const Ent& ent, TileRotation spike_rotation) {
     constexpr float kMinSpikeImpactSpeed = 0.01F;
     switch (spike_rotation) {
     case kTileRotation90:
-        return entity.vel.x < -kMinSpikeImpactSpeed;
+        return ent.vel.x < -kMinSpikeImpactSpeed;
     case kTileRotation180:
-        return entity.vel.y < -kMinSpikeImpactSpeed;
+        return ent.vel.y < -kMinSpikeImpactSpeed;
     case kTileRotation270:
-        return entity.vel.x > kMinSpikeImpactSpeed;
+        return ent.vel.x > kMinSpikeImpactSpeed;
     case kTileRotation0:
     default:
-        return entity.vel.y > kMinSpikeImpactSpeed;
+        return ent.vel.y > kMinSpikeImpactSpeed;
     }
 }
 
-KnockbackSpec BuildBodyContactKnockback(const Entity& source, const Entity& target, const Stage& stage) {
+KnockbackSpec BuildBodyContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
     const Vec2 delta = GetNearestWorldDelta(stage, source.GetCenter(), target.GetCenter());
     const float direction = delta.x < 0.0F ? -1.0F : 1.0F;
     (void)target;
@@ -152,10 +152,10 @@ KnockbackSpec BuildBodyContactKnockback(const Entity& source, const Entity& targ
     };
 }
 
-KnockbackSpec BuildProjectileContactKnockback(const Entity& source, const Entity& target, const Stage& stage) {
+KnockbackSpec BuildProjContactKnockback(const Ent& source, const Ent& target, const Stage& stage) {
     (void)target;
     (void)stage;
-    const Vec2 velocity = source.vel * kProjectileContactVelocityScale;
+    const Vec2 velocity = source.vel * kProjContactVelocityScale;
 
     return KnockbackSpec{
         .velocity = velocity,
@@ -163,31 +163,31 @@ KnockbackSpec BuildProjectileContactKnockback(const Entity& source, const Entity
         .clear_acceleration = true,
         .thrown_by = source.thrown_by,
         .thrown_immunity_timer = kThrownByImmunityDuration,
-        .projectile_contact_damage_type = DamageType::Attack,
-        .projectile_contact_damage_amount = 1,
-        .projectile_contact_duration = kProjectileContactDuration,
+        .proj_contact_damage_type = DamageType::Attack,
+        .proj_contact_damage_amount = 1,
+        .proj_contact_duration = kProjContactDuration,
     };
 }
 
 void MaybeHurtAndStunOnContact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const VID entity_vid = entity.vid;
-    const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
-    const Vec2 entity_pos = entity.pos;
-    const EntityCondition condition = entity.condition;
-    const bool hurt_on_contact = entity.hurt_on_contact;
-    const std::optional<VID> thrown_by = entity.thrown_by;
-    if (condition == EntityCondition::Normal && hurt_on_contact) {
+    const Ent& ent = state.ents.ents[ent_idx];
+    const VID ent_vid = ent.vid;
+    const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+    const Vec2 ent_pos = ent.pos;
+    const EntCondition condition = ent.condition;
+    const bool hurt_on_contact = ent.hurt_on_contact;
+    const std::optional<VID> thrown_by = ent.thrown_by;
+    if (condition == EntCondition::Normal && hurt_on_contact) {
         const std::vector<VID> search_results =
-            QueryEntitiesInAabb(state, entity_aabb, entity_vid);
+            QueryEntsInAabb(state, ent_aabb, ent_vid);
         std::vector<VID> results;
         for (const VID& vid : search_results) {
-            const Entity& e = state.entity_manager.entities[vid.id];
+            const Ent& e = state.ents.ents[vid.id];
             if (!e.impassable) {
                 results.push_back(vid);
             }
@@ -196,52 +196,52 @@ void MaybeHurtAndStunOnContact(
             if (thrown_by.has_value() && vid == *thrown_by) {
                 continue;
             }
-            if (Entity* const other_entity = state.entity_manager.GetEntityMut(vid)) {
+            if (Ent* const other_ent = state.ents.GetEntMut(vid)) {
                 const AABB other_aabb = GetNearestWorldAabb(
                     state.stage,
-                    entity.GetCenter(),
-                    GetContactAabbForEntity(*other_entity, graphics)
+                    ent.GetCenter(),
+                    GetContactAabbForEnt(*other_ent, graphics)
                 );
-                if (!AabbsIntersect(entity_aabb, other_aabb)) {
+                if (!AabbsIntersect(ent_aabb, other_aabb)) {
                     continue;
                 }
-                if (IsPlayerLikeEntityType(other_entity->type_)) {
+                if (IsPlayerLikeEntType(other_ent->type_)) {
                     const AABB player_aabb = other_aabb;
                     const AABB player_foot = {
                         .tl = Vec2::New(player_aabb.tl.x, player_aabb.br.y - 4.0F),
                         .br = player_aabb.br,
                     };
-                    if (entity_pos.x >= player_foot.tl.x && entity_pos.x <= player_foot.br.x &&
-                        entity_pos.y >= player_foot.tl.y && entity_pos.y <= player_foot.br.y) {
+                    if (ent_pos.x >= player_foot.tl.x && ent_pos.x <= player_foot.br.x &&
+                        ent_pos.y >= player_foot.tl.y && ent_pos.y <= player_foot.br.y) {
                         continue;
                     }
                 }
-                if (other_entity->can_collide) {
-                    if (HasContactHarmAlignment(entity, *other_entity)) {
+                if (other_ent->can_collide) {
+                    if (HasContactHarmAlignment(ent, *other_ent)) {
                         if (state.contact.HasInteractionCooldown(
-                                entity.vid,
-                                other_entity->vid,
+                                ent.vid,
+                                other_ent->vid,
                                 InteractionCooldownKind::Harm
                             )) {
                             continue;
                         }
-                        const DamageResult damage_result = TryHitEntity(
-                            other_entity->vid.id,
+                        const DamageResult damage_result = TryHitEnt(
+                            other_ent->vid.id,
                             state,
                             audio,
                             DamageType::Attack,
                             1,
                             HitOptions{
-                                .source_vid = entity.vid,
-                                .knockback = BuildBodyContactKnockback(entity, *other_entity, state.stage),
+                                .source_vid = ent.vid,
+                                .knockback = BuildBodyContactKnockback(ent, *other_ent, state.stage),
                             }
                         );
                         switch (damage_result) {
                         case DamageResult::Died:
                         case DamageResult::Hurt:
                             state.contact.AddInteractionCooldown(
-                                entity.vid,
-                                other_entity->vid,
+                                ent.vid,
+                                other_ent->vid,
                                 InteractionCooldownKind::Harm,
                                 state.stage_frame,
                                 kHarmContactCooldownFrames
@@ -258,38 +258,38 @@ void MaybeHurtAndStunOnContact(
 }
 
 void ApplyHurtOnContact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.hurt_on_contact) {
-        MaybeHurtAndStunOnContact(entity_idx, state, graphics, audio);
+    const Ent& ent = state.ents.ents[ent_idx];
+    if (ent.hurt_on_contact) {
+        MaybeHurtAndStunOnContact(ent_idx, state, graphics, audio);
     }
 }
 
-void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (GetModifiedEffectValue(entity, EffectModifierTarget::SpikeDamageTaken, 1.0F) <= 0.0F) {
+void DieIfFootInSpikes(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (GetModifiedEffectValue(ent, EffectModifierTarget::SpikeDamageTaken, 1.0F) <= 0.0F) {
         return;
     }
-    if (entity.IsClimbing() || entity.IsHanging()) {
+    if (ent.IsClimbing() || ent.IsHanging()) {
         return;
     }
 
     bool hit_spikes = false;
     {
-        const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
-        const IAABB iaabb = entity_aabb.AsIAABB();
-        const bool override_tile_portion_check = Length(entity.vel) > 4.0F;
+        const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
+        const IAABB iaabb = ent_aabb.AsIAABB();
+        const bool override_tile_portion_check = Length(ent.vel) > 4.0F;
         const bool in_top_portion_of_tile = (iaabb.br.y % static_cast<int>(kTileSize)) < 4;
         for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(state.stage, iaabb.tl, iaabb.br)) {
             if (tile_query.tile == nullptr || *tile_query.tile != Tile::Spikes) {
                 continue;
             }
             const TileRotation spike_rotation = GetTileRotationForQuery(state.stage, tile_query);
-            if (!EntityIsMovingIntoSpike(entity, spike_rotation)) {
+            if (!EntIsMovingIntoSpike(ent, spike_rotation)) {
                 continue;
             }
 
@@ -307,21 +307,21 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics,
                 state.stage,
                 tile_query,
                 *tile_contact_data,
-                entity.GetCenter()
+                ent.GetCenter()
             );
-            if (AabbsIntersect(entity_aabb, spike_cbox_aabb)) {
+            if (AabbsIntersect(ent_aabb, spike_cbox_aabb)) {
                 hit_spikes = true;
             }
         }
     }
     if (hit_spikes) {
         const DamageResult damage_result =
-            TryDamageEntity(entity.vid.id, state, audio, DamageType::Spikes, 1);
+            TryDamageEnt(ent.vid.id, state, audio, DamageType::Spikes, 1);
         switch (damage_result) {
         case DamageResult::Hurt:
         case DamageResult::Died:
-            entity.vel.x = 0.0F;
-            (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::AnimalCrush2);
+            ent.vel.x = 0.0F;
+            (void)PlayEntCenterSoundEmitter(state, ent, audio_asset_ids::AnimalCrush2);
             break;
         case DamageResult::None:
             break;
@@ -331,66 +331,66 @@ void DieIfFootInSpikes(std::size_t entity_idx, State& state, Graphics& graphics,
 
 } // namespace
 
-bool TryApplyProjectileContactToEntity(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplyProjContactToEnt(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!entity.active || !other_entity.active || !CanApplyProjectileContact(entity)) {
+    const Ent& ent = state.ents.ents[ent_idx];
+    const Ent& other_ent = state.ents.ents[other_ent_idx];
+    if (!ent.active || !other_ent.active || !CanApplyProjContact(ent)) {
         return false;
     }
-    if (!entity.can_collide) {
+    if (!ent.can_collide) {
         return false;
     }
-    if (entity.held_by_vid.has_value()) {
+    if (ent.held_by_vid.has_value()) {
         return false;
     }
-    if (entity.thrown_by.has_value() && other_entity.vid == *entity.thrown_by) {
+    if (ent.thrown_by.has_value() && other_ent.vid == *ent.thrown_by) {
         return false;
     }
-    if (!other_entity.can_be_hit) {
+    if (!other_ent.can_be_hit) {
         return false;
     }
-    if (!other_entity.can_receive_projectile_contact) {
+    if (!other_ent.can_receive_proj_contact) {
         return false;
     }
-    if (!other_entity.can_collide) {
+    if (!other_ent.can_collide) {
         return false;
     }
-    if (state.contact.HasProjectileBodyImpactCooldown(entity.vid, other_entity.vid)) {
+    if (state.contact.HasProjBodyImpactCooldown(ent.vid, other_ent.vid)) {
         return false;
     }
 
-    const AABB entity_aabb = GetContactAabbForEntity(entity, graphics);
+    const AABB ent_aabb = GetContactAabbForEnt(ent, graphics);
     const AABB other_aabb = GetNearestWorldAabb(
         state.stage,
-        entity.GetCenter(),
-        GetContactAabbForEntity(other_entity, graphics)
+        ent.GetCenter(),
+        GetContactAabbForEnt(other_ent, graphics)
     );
-    if (!AabbsIntersect(entity_aabb, other_aabb)) {
+    if (!AabbsIntersect(ent_aabb, other_aabb)) {
         return false;
     }
 
-    const KnockbackSpec knockback = BuildProjectileContactKnockback(entity, other_entity, state.stage);
+    const KnockbackSpec knockback = BuildProjContactKnockback(ent, other_ent, state.stage);
     const DamageResult damage_result =
-        entity.projectile_contact_damage_amount > 0
-            ? TryHitEntity(
-                  other_entity_idx,
+        ent.proj_contact_damage_amount > 0
+            ? TryHitEnt(
+                  other_ent_idx,
                   state,
                   audio,
-                  entity.projectile_contact_damage_type,
-                  entity.projectile_contact_damage_amount,
+                  ent.proj_contact_damage_type,
+                  ent.proj_contact_damage_amount,
                   HitOptions{
-                      .source_vid = entity.vid,
+                      .source_vid = ent.vid,
                       .knockback = knockback,
                       .knockback_on_no_damage = true,
                   }
@@ -400,20 +400,20 @@ bool TryApplyProjectileContactToEntity(
     case DamageResult::Hurt:
     case DamageResult::Died:
     case DamageResult::None: {
-        Entity& other_entity_mut = state.entity_manager.entities[other_entity_idx];
-        if (entity.projectile_contact_damage_amount == 0 &&
-            !other_entity_mut.held_by_vid.has_value() &&
-            other_entity_mut.attachment_mode == AttachmentMode::None) {
-            ApplyKnockback(other_entity_mut, knockback);
+        Ent& other_ent_mut = state.ents.ents[other_ent_idx];
+        if (ent.proj_contact_damage_amount == 0 &&
+            !other_ent_mut.held_by_vid.has_value() &&
+            other_ent_mut.attach_mode == AttachMode::None) {
+            ApplyKnockback(other_ent_mut, knockback);
         }
-        state.contact.AddProjectileBodyImpactCooldown(
-            entity.vid,
-            other_entity.vid,
+        state.contact.AddProjBodyImpactCooldown(
+            ent.vid,
+            other_ent.vid,
             state.stage_frame,
-            kProjectileBodyImpactCooldownFrames
+            kProjBodyImpactCooldownFrames
         );
-        if (entity.collide_sound.has_value()) {
-            (void)PlayEntityCenterSoundEmitter(state, entity, *entity.collide_sound);
+        if (ent.collide_sound.has_value()) {
+            (void)PlayEntCenterSoundEmitter(state, ent, *ent.collide_sound);
         }
         return true;
     }
@@ -423,26 +423,26 @@ bool TryApplyProjectileContactToEntity(
 }
 
 void CommonStep(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    DieIfDead(entity_idx, state, audio);
-    StepEffectTimers(state.entity_manager.entities[entity_idx]);
-    ApplyTileOverlapEffects(entity_idx, state);
-    StepStunTimer(entity_idx, state);
+    DieIfDead(ent_idx, state, audio);
+    StepEffectTimers(state.ents.ents[ent_idx]);
+    ApplyTileOverlapEffects(ent_idx, state);
+    StepStunTimer(ent_idx, state);
     {
-        Entity& entity = state.entity_manager.entities[entity_idx];
-        if (entity.hang_count > 0) {
-            entity.hang_count -= 1;
+        Ent& ent = state.ents.ents[ent_idx];
+        if (ent.hang_count > 0) {
+            ent.hang_count -= 1;
         }
     }
-    DoThrownByStep(entity_idx, state);
-    ApplyHurtOnContact(entity_idx, state, graphics, audio);
-    DieIfFootInSpikes(entity_idx, state, graphics, audio);
+    DoThrownByStep(ent_idx, state);
+    ApplyHurtOnContact(ent_idx, state, graphics, audio);
+    DieIfFootInSpikes(ent_idx, state, graphics, audio);
     (void)dt;
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

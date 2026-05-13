@@ -1,10 +1,10 @@
-#include "entities/barrier_emitter.hpp"
+#include "ents/barrier_emitter.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -12,7 +12,7 @@
 #include <optional>
 #include <vector>
 
-namespace splonks::entities::barrier_emitter {
+namespace splonks::ents::barrier_emitter {
 
 namespace {
 
@@ -20,7 +20,7 @@ constexpr int kBeamSegmentCount = 3;
 constexpr float kBeamSegmentSize = 16.0F;
 constexpr unsigned int kBeamContactDamage = 1;
 
-bool HasSolidSupportAbove(const Entity& emitter, const State& state) {
+bool HasSolidSupportAbove(const Ent& emitter, const State& state) {
     const Vec2 probe = emitter.GetCenter() + Vec2::New(0.0F, -kBeamSegmentSize);
     const std::optional<WorldTileQueryResult> tile_query =
         QueryTileAtWorldPos(state.stage, ToIVec2(probe));
@@ -28,44 +28,44 @@ bool HasSolidSupportAbove(const Entity& emitter, const State& state) {
            IsTileCollidable(*tile_query->tile);
 }
 
-std::vector<VID>& EnsureChildBeamVids(Entity& emitter) {
+std::vector<VID>& EnsureChildBeamVids(Ent& emitter) {
     if (!emitter.child_vids.has_value()) {
         emitter.child_vids.emplace();
     }
     return *emitter.child_vids;
 }
 
-Entity* SpawnBeamSegment(State& state, const Vec2& center, const Entity& emitter) {
-    return world_ops::SpawnEntity(state, EntityType::Beam, [&](Entity& beam) {
+Ent* SpawnBeamSegment(State& state, const Vec2& center, const Ent& emitter) {
+    return world_ops::SpawnEnt(state, EntType::Beam, [&](Ent& beam) {
         beam.SetCenter(center);
-        beam.entity_a = emitter.vid;
+        beam.ent_a = emitter.vid;
         beam.facing = emitter.facing;
         beam.alpha = emitter.alpha;
     });
 }
 
-void DestroyBeamChildren(Entity& emitter, State& state) {
+void DestroyBeamChildren(Ent& emitter, State& state) {
     if (!emitter.child_vids.has_value()) {
         return;
     }
 
     for (const VID& child_vid : *emitter.child_vids) {
-        (void)world_ops::DeactivateEntity(state, child_vid);
+        (void)world_ops::DeactivateEnt(state, child_vid);
     }
     emitter.child_vids->clear();
 }
 
 void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
-    Entity& emitter = state.entity_manager.entities[emitter_idx];
+    Ent& emitter = state.ents.ents[emitter_idx];
     std::vector<VID>& beam_vids = EnsureChildBeamVids(emitter);
     beam_vids.resize(kBeamSegmentCount);
 
     for (std::size_t segment_idx = 0; segment_idx < static_cast<std::size_t>(kBeamSegmentCount); ++segment_idx) {
         const Vec2 segment_center =
             emitter.GetCenter() + Vec2::New(0.0F, kBeamSegmentSize * static_cast<float>(segment_idx + 1));
-        Entity* beam = state.entity_manager.GetEntityMut(beam_vids[segment_idx]);
-        if (beam == nullptr || !beam->active || beam->type_ != EntityType::Beam ||
-            beam->entity_a != emitter.vid) {
+        Ent* beam = state.ents.GetEntMut(beam_vids[segment_idx]);
+        if (beam == nullptr || !beam->active || beam->type_ != EntType::Beam ||
+            beam->ent_a != emitter.vid) {
             beam = SpawnBeamSegment(state, segment_center, emitter);
             if (beam == nullptr) {
                 beam_vids[segment_idx] = VID{};
@@ -80,8 +80,8 @@ void EnsureBeamSegments(std::size_t emitter_idx, State& state) {
     }
 }
 
-void StepEntityLogicAsBarrierEmitter(
-    std::size_t entity_idx,
+void StepEntLogicAsBarrierEmitter(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -89,26 +89,26 @@ void StepEntityLogicAsBarrierEmitter(
 ) {
     (void)graphics;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& emitter = state.entity_manager.entities[entity_idx];
-    if (!emitter.active || emitter.condition == EntityCondition::Dead) {
+    Ent& emitter = state.ents.ents[ent_idx];
+    if (!emitter.active || emitter.condition == EntCondition::Dead) {
         return;
     }
 
     if (!HasSolidSupportAbove(emitter, state)) {
         emitter.health = 0;
-        common::DieIfDead(entity_idx, state, audio);
+        common::DieIfDead(ent_idx, state, audio);
         return;
     }
 
-    EnsureBeamSegments(entity_idx, state);
+    EnsureBeamSegments(ent_idx, state);
 }
 
-void StepEntityLogicAsBeam(
-    std::size_t entity_idx,
+void StepEntLogicAsBeam(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -117,43 +117,43 @@ void StepEntityLogicAsBeam(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& beam = state.entity_manager.entities[entity_idx];
-    if (!beam.entity_a.has_value()) {
-        (void)world_ops::DeactivateEntity(state, beam.vid);
+    Ent& beam = state.ents.ents[ent_idx];
+    if (!beam.ent_a.has_value()) {
+        (void)world_ops::DeactivateEnt(state, beam.vid);
         return;
     }
 
-    const Entity* const emitter = state.entity_manager.GetEntity(*beam.entity_a);
-    if (emitter == nullptr || !emitter->active || emitter->condition == EntityCondition::Dead) {
-        (void)world_ops::DeactivateEntity(state, beam.vid);
+    const Ent* const emitter = state.ents.GetEnt(*beam.ent_a);
+    if (emitter == nullptr || !emitter->active || emitter->condition == EntCondition::Dead) {
+        (void)world_ops::DeactivateEnt(state, beam.vid);
     }
 }
 
-void OnDeathAsBarrierEmitter(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsBarrierEmitter(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& emitter = state.entity_manager.entities[entity_idx];
+    Ent& emitter = state.ents.ents[ent_idx];
     DestroyBeamChildren(emitter, state);
     AddShake(
         state,
         emitter.GetCenter(),
         1.4F,
         2.0F,
-        ShakeMask::ForegroundTiles | ShakeMask::BackgroundTiles | ShakeMask::Entities
+        ShakeMask::ForegroundTiles | ShakeMask::BackgroundTiles | ShakeMask::Ents
     );
 }
 
 } // namespace
 
-extern const EntityArchetype kBarrierEmitterArchetype{
-    .type_ = EntityType::BarrierEmitter,
+extern const EntSpec kBarrierEmitterSpec{
+    .type_ = EntType::BarrierEmitter,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -166,19 +166,19 @@ extern const EntityArchetype kBarrierEmitterArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::AnthingExceptJumpOn,
     .death_sound = audio_asset_ids::BombExplosion,
     .on_death = OnDeathAsBarrierEmitter,
-    .step_logic = StepEntityLogicAsBarrierEmitter,
+    .step_logic = StepEntLogicAsBarrierEmitter,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::BeamEmitter),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::BeamEmitter),
 };
 
-extern const EntityArchetype kBeamArchetype{
-    .type_ = EntityType::Beam,
+extern const EntSpec kBeamSpec{
+    .type_ = EntType::Beam,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -191,15 +191,15 @@ extern const EntityArchetype kBeamArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .projectile_contact_damage_amount = kBeamContactDamage,
-    .can_apply_projectile_contact = false,
-    .step_logic = StepEntityLogicAsBeam,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .proj_contact_damage_amount = kBeamContactDamage,
+    .can_apply_proj_contact = false,
+    .step_logic = StepEntLogicAsBeam,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Beam),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Beam),
 };
 
-} // namespace splonks::entities::barrier_emitter
+} // namespace splonks::ents::barrier_emitter

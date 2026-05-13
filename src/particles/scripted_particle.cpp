@@ -6,12 +6,12 @@ namespace {
 
 void StartSequenceStep(
     ScriptedParticle& particle,
-    const ScriptedParticleArchetype& archetype,
+    const ScriptedParticleSpec& spec,
     std::uint32_t sequence_step_index
 ) {
-    if (sequence_step_index >= archetype.sequence.size()) {
-        if (archetype.hold_frames_after_sequence > 0 && particle.hold_frames_remaining == 0) {
-            particle.hold_frames_remaining = archetype.hold_frames_after_sequence;
+    if (sequence_step_index >= spec.sequence.size()) {
+        if (spec.hold_frames_after_sequence > 0 && particle.hold_frames_remaining == 0) {
+            particle.hold_frames_remaining = spec.hold_frames_after_sequence;
             return;
         }
         particle.active = false;
@@ -20,46 +20,46 @@ void StartSequenceStep(
 
     particle.sequence_step_index = sequence_step_index;
     particle.hold_frames_remaining = 0;
-    const ScriptedParticleSequenceStep& step = archetype.sequence[sequence_step_index];
+    const ScriptedParticleSequenceStep& step = spec.sequence[sequence_step_index];
     if (step.play_count <= 1) {
-        particle.frame_data_animator.Play(step.animation_id, step.playback_mode, false, 1);
+        particle.aframe_animator.Play(step.anim_id, step.playback_mode, false, 1);
         return;
     }
 
-    particle.frame_data_animator.Play(step.animation_id, step.playback_mode, false, step.play_count);
+    particle.aframe_animator.Play(step.anim_id, step.playback_mode, false, step.play_count);
 }
 
 } // namespace
 
 ScriptedParticle MakeScriptedParticle(
-    ScriptedParticleArchetypeId archetype_id,
+    ScriptedParticleSpecId spec_id,
     const Vec2& pos,
     bool horizontal_flip
 ) {
     ScriptedParticle particle;
-    const ScriptedParticleArchetype* const archetype = GetScriptedParticleArchetype(archetype_id);
-    if (archetype == nullptr || archetype->sequence.empty()) {
+    const ScriptedParticleSpec* const spec = GetScriptedParticleSpec(spec_id);
+    if (spec == nullptr || spec->sequence.empty()) {
         return particle;
     }
 
     particle.active = true;
-    particle.archetype_id = archetype_id;
-    particle.draw_layer = archetype->draw_layer;
-    particle.lighting_mode = archetype->lighting_mode;
+    particle.spec_id = spec_id;
+    particle.draw_layer = spec->draw_layer;
+    particle.lighting_mode = spec->lighting_mode;
     particle.pos = pos;
-    particle.size = archetype->size;
+    particle.size = spec->size;
     particle.horizontal_flip = horizontal_flip;
-    StartSequenceStep(particle, *archetype, 0);
+    StartSequenceStep(particle, *spec, 0);
     return particle;
 }
 
-void ScriptedParticle::Step(const FrameDataDb& frame_data_db, float dt) {
+void ScriptedParticle::Step(const AFrameDb& aframe_db, float dt) {
     if (!active) {
         return;
     }
 
-    const ScriptedParticleArchetype* const archetype = GetScriptedParticleArchetype(archetype_id);
-    if (archetype == nullptr || archetype->sequence.empty()) {
+    const ScriptedParticleSpec* const spec = GetScriptedParticleSpec(spec_id);
+    if (spec == nullptr || spec->sequence.empty()) {
         active = false;
         return;
     }
@@ -72,12 +72,12 @@ void ScriptedParticle::Step(const FrameDataDb& frame_data_db, float dt) {
         return;
     }
 
-    frame_data_animator.Step(frame_data_db, dt);
-    if (!frame_data_animator.IsFinished()) {
+    aframe_animator.Step(aframe_db, dt);
+    if (!aframe_animator.IsFinished()) {
         return;
     }
 
-    StartSequenceStep(*this, *archetype, sequence_step_index + 1);
+    StartSequenceStep(*this, *spec, sequence_step_index + 1);
 }
 
 bool ScriptedParticle::IsFinished() const {

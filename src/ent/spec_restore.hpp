@@ -1,51 +1,51 @@
 #pragma once
 
-#include "entity.hpp"
+#include "ent.hpp"
 
 namespace splonks {
 
-void RestoreEntityHasPhysicsFromArchetype(Entity& entity);
-void RestoreEntityCanCollideFromArchetype(Entity& entity);
-void RestoreEntityCanBePickedUpFromArchetype(Entity& entity);
-void RestoreEntityImpassableFromArchetype(Entity& entity);
-void RestoreEntityCanBeHungOnFromArchetype(Entity& entity);
-void RestoreEntityHurtOnContactFromArchetype(Entity& entity);
-void RestoreEntityVanishOnDeathFromArchetype(Entity& entity);
-void RestoreEntityAffectedByGroundFrictionFromArchetype(Entity& entity);
-void RestoreEntitySupportGroundFrictionFromArchetype(Entity& entity);
-void RestoreEntityPushableFromArchetype(Entity& entity);
-void RestoreEntityPushAccFromArchetype(Entity& entity);
-void RestoreEntityThrowVelocityScaleFromArchetype(Entity& entity);
-void RestoreEntityPickupEffectFromArchetype(Entity& entity);
-void RestoreEntityBuyableFromArchetype(Entity& entity);
-void RestoreEntityDamageAnimationFromArchetype(Entity& entity);
-void RestoreEntityDamageSoundFromArchetype(Entity& entity);
-void RestoreEntityCollideSoundFromArchetype(Entity& entity);
-void RestoreEntityDeathAudioAssetIdFromArchetype(Entity& entity);
-void RestoreEntityOnDeathFromArchetype(Entity& entity);
-void RestoreEntityOnDamageFromArchetype(Entity& entity);
-void RestoreEntityOnUseFromArchetype(Entity& entity);
-void RestoreEntityControlLogicFromArchetype(Entity& entity);
-void RestoreEntityStepLogicFromArchetype(Entity& entity);
-void RestoreEntityStepPhysicsFromArchetype(Entity& entity);
-void RestoreEntityCrusherPusherFromArchetype(Entity& entity);
-void RestoreEntityCanGoOnBackFromArchetype(Entity& entity);
-void RestoreEntityCanHangLedgeFromArchetype(Entity& entity);
-void RestoreEntityCanBeStunnedFromArchetype(Entity& entity);
-void RestoreEntityStunRecoversOnGroundFromArchetype(Entity& entity);
-void RestoreEntityStunRecoversWhileHeldFromArchetype(Entity& entity);
-void RestoreEntitySizeFromArchetype(Entity& entity);
-void RestoreEntityFacingFromArchetype(Entity& entity);
-void RestoreEntityDrawLayerFromArchetype(Entity& entity);
-void RestoreEntityRenderEnabledFromArchetype(Entity& entity);
-void RestoreEntityConditionFromArchetype(Entity& entity);
-void RestoreEntityAiStateFromArchetype(Entity& entity);
-void RestoreEntityHealthFromArchetype(Entity& entity);
-void RestoreEntityCounterAFromArchetype(Entity& entity);
-void RestoreEntityCounterBFromArchetype(Entity& entity);
-void RestoreEntityDamageVulnerabilityFromArchetype(Entity& entity);
-void RestoreEntityLabelAFromArchetype(Entity& entity);
-void RestoreEntityAlignmentFromArchetype(Entity& entity);
-void RestoreEntityFrameDataAnimatorFromArchetype(Entity& entity);
+void RestoreEntHasPhysicsFromSpec(Ent& ent);
+void RestoreEntCanCollideFromSpec(Ent& ent);
+void RestoreEntCanBePickedUpFromSpec(Ent& ent);
+void RestoreEntImpassableFromSpec(Ent& ent);
+void RestoreEntCanBeHungOnFromSpec(Ent& ent);
+void RestoreEntHurtOnContactFromSpec(Ent& ent);
+void RestoreEntVanishOnDeathFromSpec(Ent& ent);
+void RestoreEntAffectedByGroundFrictionFromSpec(Ent& ent);
+void RestoreEntSupportGroundFrictionFromSpec(Ent& ent);
+void RestoreEntPushableFromSpec(Ent& ent);
+void RestoreEntPushAccFromSpec(Ent& ent);
+void RestoreEntThrowVelocityScaleFromSpec(Ent& ent);
+void RestoreEntPickupEffectFromSpec(Ent& ent);
+void RestoreEntBuyableFromSpec(Ent& ent);
+void RestoreEntDamageAnimFromSpec(Ent& ent);
+void RestoreEntDamageSoundFromSpec(Ent& ent);
+void RestoreEntCollideSoundFromSpec(Ent& ent);
+void RestoreEntDeathAudioAssetIdFromSpec(Ent& ent);
+void RestoreEntOnDeathFromSpec(Ent& ent);
+void RestoreEntOnDamageFromSpec(Ent& ent);
+void RestoreEntOnUseFromSpec(Ent& ent);
+void RestoreEntControlLogicFromSpec(Ent& ent);
+void RestoreEntStepLogicFromSpec(Ent& ent);
+void RestoreEntStepPhysicsFromSpec(Ent& ent);
+void RestoreEntCrusherPusherFromSpec(Ent& ent);
+void RestoreEntCanGoOnBackFromSpec(Ent& ent);
+void RestoreEntCanHangLedgeFromSpec(Ent& ent);
+void RestoreEntCanBeStunnedFromSpec(Ent& ent);
+void RestoreEntStunRecoversOnGroundFromSpec(Ent& ent);
+void RestoreEntStunRecoversWhileHeldFromSpec(Ent& ent);
+void RestoreEntSizeFromSpec(Ent& ent);
+void RestoreEntFacingFromSpec(Ent& ent);
+void RestoreEntDrawLayerFromSpec(Ent& ent);
+void RestoreEntRenderEnabledFromSpec(Ent& ent);
+void RestoreEntConditionFromSpec(Ent& ent);
+void RestoreEntAiStateFromSpec(Ent& ent);
+void RestoreEntHealthFromSpec(Ent& ent);
+void RestoreEntCounterAFromSpec(Ent& ent);
+void RestoreEntCounterBFromSpec(Ent& ent);
+void RestoreEntDamageVulnFromSpec(Ent& ent);
+void RestoreEntLabelAFromSpec(Ent& ent);
+void RestoreEntAlignmentFromSpec(Ent& ent);
+void RestoreEntAFrameAnimatorFromSpec(Ent& ent);
 
 } // namespace splonks

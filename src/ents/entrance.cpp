@@ -1,26 +1,26 @@
-#include "entities/entrance.hpp"
+#include "ents/entrance.hpp"
 
 #include "audio.hpp"
 #include "audio_emitters.hpp"
-#include "entity.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 
-namespace splonks::entities::entrance {
+namespace splonks::ents::entrance {
 
 namespace {
 
 constexpr float kDoorRumbleVolumeScale = 0.85F;
 constexpr float kLockVolumeScale = 0.95F;
 
-FrameDataAnimator MakeEntranceAnimator() {
-    FrameDataAnimator animator = FrameDataAnimator::New(frame_data_ids::Entrance);
+AFrameAnimator MakeEntranceAnimator() {
+    AFrameAnimator animator = AFrameAnimator::New(aframe_ids::Entrance);
     animator.loop = false;
     return animator;
 }
 
-void MaintainDoorSound(Entity& entrance, State& state) {
+void MaintainDoorSound(Ent& entrance, State& state) {
     (void)EnsureAttachedLoopingSoundEmitter(
         state,
         entrance.vid,
@@ -31,7 +31,7 @@ void MaintainDoorSound(Entity& entrance, State& state) {
     );
 }
 
-void StopDoorSound(Entity& entrance, State& state, Audio& audio) {
+void StopDoorSound(Ent& entrance, State& state, Audio& audio) {
     (void)StopOwnedSoundEmitter(
         state,
         audio,
@@ -43,8 +43,8 @@ void StopDoorSound(Entity& entrance, State& state, Audio& audio) {
 
 } // namespace
 
-void StepEntityLogicAsEntrance(
-    std::size_t entity_idx,
+void StepEntLogicAsEntrance(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -52,14 +52,14 @@ void StepEntityLogicAsEntrance(
 ) {
     (void)graphics;
     (void)dt;
-    Entity& entrance = state.entity_manager.entities[entity_idx];
+    Ent& entrance = state.ents.ents[ent_idx];
 
     if (entrance.counter_a <= 0.0F) {
-        entrance.frame_data_animator.PlayOnce(frame_data_ids::Entrance);
+        entrance.aframe_animator.PlayOnce(aframe_ids::Entrance);
         entrance.counter_a = 1.0F;
     }
 
-    if (!entrance.frame_data_animator.IsFinished()) {
+    if (!entrance.aframe_animator.IsFinished()) {
         MaintainDoorSound(entrance, state);
         return;
     }
@@ -68,7 +68,7 @@ void StepEntityLogicAsEntrance(
         StopDoorSound(entrance, state, audio);
         AudioEmitterPlayParams params;
         params.volume_scale = kLockVolumeScale;
-        params.owner_entity_vid = entrance.vid;
+        params.owner_ent_vid = entrance.vid;
         (void)PlayAttachedSoundEmitter(
             state,
             entrance.vid,
@@ -80,14 +80,14 @@ void StepEntityLogicAsEntrance(
     }
 }
 
-extern const EntityArchetype kEntranceArchetype{
-    .type_ = EntityType::Entrance,
+extern const EntSpec kEntranceSpec{
+    .type_ = EntType::Entrance,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
     .can_collide = false,
     .can_be_hit = false,
-    .can_receive_projectile_contact = false,
+    .can_receive_proj_contact = false,
     .can_be_picked_up = false,
     .affected_by_cobweb = false,
     .impassable = false,
@@ -96,15 +96,15 @@ extern const EntityArchetype kEntranceArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Background,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .projectile_contact_damage_amount = 0,
-    .can_apply_projectile_contact = false,
-    .step_logic = StepEntityLogicAsEntrance,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .proj_contact_damage_amount = 0,
+    .can_apply_proj_contact = false,
+    .step_logic = StepEntLogicAsEntrance,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = MakeEntranceAnimator(),
+    .aframe_animator = MakeEntranceAnimator(),
 };
 
-} // namespace splonks::entities::entrance
+} // namespace splonks::ents::entrance

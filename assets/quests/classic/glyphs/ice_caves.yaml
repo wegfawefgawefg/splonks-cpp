@@ -74,9 +74,9 @@ glyphs:
     action: maybe_solid_dirt
   - char: "S"
     spawn_random:
-      - entity: snake
+      - ent: snake
         weight: 4
-      - entity: cobra
+      - ent: cobra
         weight: 1
   - char: "T"
     action: ice_jetpack_cache

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/core_types.hpp"
-#include "entity/callbacks.hpp"
+#include "ent/core_types.hpp"
+#include "ent/callbacks.hpp"
 #include "effects.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "stage_progression.hpp"
 #include "stage.hpp"
@@ -26,26 +26,26 @@ struct UseState {
     bool released = false;
     std::uint32_t frames = 0;
     std::optional<VID> user_vid;
-    AttachmentMode source = AttachmentMode::None;
+    AttachMode source = AttachMode::None;
 };
 
 struct Buyable {
     bool active = false;
     std::uint32_t display_quantity = 0;
-    std::optional<FrameDataId> display_icon_animation_id = std::nullopt;
+    std::optional<AFrameId> display_icon_anim_id = std::nullopt;
     std::optional<VID> shop_owner_vid = std::nullopt;
-    EntityOnTryBuy on_try_buy = nullptr;
+    EntOnTryBuy on_try_buy = nullptr;
 };
 
-struct Entity {
+struct Ent {
     bool active = false;
     bool marked_for_destruction = false;
-    EntityType type_ = EntityType::None;
+    EntType type_ = EntType::None;
     VID vid;
     bool has_physics = true;
     bool can_collide = true;
     bool can_be_hit = true;
-    bool can_receive_projectile_contact = true;
+    bool can_receive_proj_contact = true;
     bool stone = false;
     bool wanted = false;
     bool crusher_pusher = false;
@@ -81,33 +81,33 @@ struct Entity {
     Color3 light_color = Color3::White();
     int light_radius = 0;
     float dist_traveled_this_frame = 0.0F;
-    LeftOrRight facing = LeftOrRight::Left;
+    Side facing = Side::Left;
     bool vertical_flip = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     bool render_enabled = true;
-    FrameDataAnimator frame_data_animator;
+    AFrameAnimator aframe_animator;
     std::uint32_t jump_delay_frame_count = kJumpDelayFrames;
     bool jumped_this_frame = false;
     std::uint32_t climb_detach_cooldown = 0;
-    std::optional<LeftOrRight> hang_side;
+    std::optional<Side> hang_side;
     bool can_hang_ledge = false;
     bool can_hang_wall = false;
     std::uint32_t hang_count = 0;
     bool holding = false;
-    BoxedEntityEffects effects;
+    BoxedEntEffects effects;
     std::optional<EffectId> pickup_effect = std::nullopt;
     std::uint32_t money = 0;
     Buyable buyable;
     std::optional<std::size_t> stage_spawn_index;
     std::optional<VID> back_vid;
-    AttachmentMode attachment_mode = AttachmentMode::None;
+    AttachMode attach_mode = AttachMode::None;
     UseState use_state;
     float travel_sound_countdown = kTravelSoundDistInterval;
     TravelSound travel_sound = TravelSound::One;
-    EntityCondition condition = EntityCondition::Normal;
-    EntityCondition last_condition = EntityCondition::Normal;
-    EntityAiState ai_state = EntityAiState::Idle;
-    EntityAiState last_ai_state = EntityAiState::Idle;
+    EntCondition condition = EntCondition::Normal;
+    EntCondition last_condition = EntCondition::Normal;
+    EntAiState ai_state = EntAiState::Idle;
+    EntAiState last_ai_state = EntAiState::Idle;
     std::uint32_t movement_flags = 0;
     std::uint32_t health = 0;
     bool hurt_on_contact = false;
@@ -115,19 +115,19 @@ struct Entity {
     bool affected_by_ground_friction = true;
     float support_ground_friction = 0.85F;
     float push_acc = 0.0F;
-    std::optional<FrameDataId> damage_animation = std::nullopt;
+    std::optional<AFrameId> damage_anim = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
     std::optional<AudioAssetId> death_sound = std::nullopt;
-    EntityOnDeath on_death = nullptr;
-    EntityOnDamage on_damage = nullptr;
-    EntityOnUse on_use = nullptr;
-    EntityOnAreaEnter on_area_enter = nullptr;
-    EntityOnAreaExit on_area_exit = nullptr;
-    EntityOnAreaTileChanged on_area_tile_changed = nullptr;
-    EntityControlLogic control_logic = nullptr;
-    EntityStepLogic step_logic = nullptr;
-    EntityStepPhysics step_physics = nullptr;
+    EntOnDeath on_death = nullptr;
+    EntOnDamage on_damage = nullptr;
+    EntOnUse on_use = nullptr;
+    EntOnAreaEnter on_area_enter = nullptr;
+    EntOnAreaExit on_area_exit = nullptr;
+    EntOnAreaTileChanged on_area_tile_changed = nullptr;
+    EntControlLogic control_logic = nullptr;
+    EntStepLogic step_logic = nullptr;
+    EntStepPhysics step_physics = nullptr;
     std::optional<StageTransitionTarget> transition_target;
     StageExitId stage_exit_id = kInvalidStageExitId;
     float attack_weight = 0.0F;
@@ -138,14 +138,14 @@ struct Entity {
     std::uint32_t equip_delay_countdown = 0;
     std::optional<VID> thrown_by;
     std::uint32_t thrown_immunity_timer = 0;
-    DamageType projectile_contact_damage_type = DamageType::Attack;
-    unsigned int projectile_contact_damage_amount = 1;
-    bool can_apply_projectile_contact = true;
-    std::uint32_t projectile_contact_timer = 0;
+    DamageType proj_contact_damage_type = DamageType::Attack;
+    unsigned int proj_contact_damage_amount = 1;
+    bool can_apply_proj_contact = true;
+    std::uint32_t proj_contact_timer = 0;
     bool collided = false;
     bool collided_last_frame = false;
     std::uint32_t contact_sound_cooldown = 0;
-    DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
+    DamageVuln damage_vuln = DamageVuln::Vulnerable;
     bool can_be_stunned = false;
     IVec2 point_a;
     IVec2 point_b;
@@ -158,13 +158,13 @@ struct Entity {
     std::optional<VID> holding_vid;
     std::optional<VID> held_by_vid;
     std::uint32_t holding_timer = kDefaultHoldingTimer;
-    std::optional<VID> entity_a;
-    std::optional<VID> entity_b;
-    std::optional<VID> entity_c;
-    std::optional<VID> entity_d;
+    std::optional<VID> ent_a;
+    std::optional<VID> ent_b;
+    std::optional<VID> ent_c;
+    std::optional<VID> ent_d;
     std::optional<std::vector<VID>> child_vids;
     std::optional<std::vector<VID>> inside_vids;
-    EntityLabel entity_label_a = EntityLabel::None;
+    EntLabel ent_label_a = EntLabel::None;
     Alignment alignment = Alignment::Neutral;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
@@ -175,7 +175,7 @@ struct Entity {
 
     static constexpr Vec2 kHangHandSize = {1.0F, 4.0F};
 
-    static Entity New();
+    static Ent New();
     void Reset();
     std::tuple<Vec2, Vec2> GetBounds() const;
     AABB GetAABB() const;
@@ -193,27 +193,27 @@ struct Entity {
     HangHandBounds GetHangHandsBounds() const;
 };
 
-// Raw animation path.
-// Use this when entity-owned logic knows the exact authored animation id it wants.
+// Raw anim path.
+// Use this when ent-owned logic knows the exact authored anim id it wants.
 // This does not change semantic display state.
-void SetAnimation(Entity& entity, FrameDataId animation_id);
-// Semantic animation path.
+void SetAnim(Ent& ent, AFrameId anim_id);
+// Semantic anim path.
 // Use this from shared/external gameplay code that only knows a generic display state
-// like Neutral, Walk, Hanging, or Stunned rather than an exact authored animation id.
-bool TrySetAnimation(Entity& entity, EntityDisplayState display_state);
-void UseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source);
-void PressUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source);
-void ReleaseUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source);
-void StopUsingEntity(Entity& entity);
-bool HasMovementFlag(const Entity& entity, EntityMovementFlag movement_flag);
-void SetMovementFlag(Entity& entity, EntityMovementFlag movement_flag, bool enabled);
-void ClearTransientMovementFlags(Entity& entity);
-bool TryCollectEffectPickup(Entity& entity, const Entity& pickup);
-bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& pickup);
-bool CanRevealEmbeddedTreasure(const Entity& entity);
-void EnableStone(Entity& entity);
-void DisableStone(Entity& entity);
-void AddEntityShake(Entity& entity, float amount);
-void AttenuateEntityShake(Entity& entity, float amount);
+// like Neutral, Walk, Hanging, or Stunned rather than an exact authored anim id.
+bool TrySetAnim(Ent& ent, EntDisplayState display_state);
+void UseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source);
+void PressUseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source);
+void ReleaseUseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source);
+void StopUsingEnt(Ent& ent);
+bool HasMovementFlag(const Ent& ent, EntMovementFlag movement_flag);
+void SetMovementFlag(Ent& ent, EntMovementFlag movement_flag, bool enabled);
+void ClearTransientMovementFlags(Ent& ent);
+bool TryCollectEffectPickup(Ent& ent, const Ent& pickup);
+bool TryCollectInventoryPickup(State& state, Ent& ent, const Ent& pickup);
+bool CanRevealEmbeddedTreasure(const Ent& ent);
+void EnableStone(Ent& ent);
+void DisableStone(Ent& ent);
+void AddEntShake(Ent& ent, float amount);
+void AttenuateEntShake(Ent& ent, float amount);
 
 } // namespace splonks

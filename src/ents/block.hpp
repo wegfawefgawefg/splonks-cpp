@@ -1,37 +1,37 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
 struct Audio;
 struct Graphics;
 struct State;
-namespace entities::common {
+namespace ents::common {
 struct ContactContext;
 }
 
 }
 
-namespace splonks::entities::block {
+namespace splonks::ents::block {
 
-extern const EntityArchetype kBlockArchetype;
+extern const EntSpec kBlockSpec;
 
-void OnDeathAsBlock(std::size_t entity_idx, State& state, Audio& audio);
-bool TryApplyBlockContactToEntity(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+void OnDeathAsBlock(std::size_t ent_idx, State& state, Audio& audio);
+bool TryApplyBlockContactToEnt(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics& graphics,
     Audio& audio
 );
-void StepEntityLogicAsBlock(
-    std::size_t entity_idx,
+void StepEntLogicAsBlock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::block
+} // namespace splonks::ents::block

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::ceiling_trap {
+namespace splonks::ents::ceiling_trap {
 
-extern const EntityArchetype kCeilingTrapArchetype;
+extern const EntSpec kCeilingTrapSpec;
 
-} // namespace splonks::entities::ceiling_trap
+} // namespace splonks::ents::ceiling_trap

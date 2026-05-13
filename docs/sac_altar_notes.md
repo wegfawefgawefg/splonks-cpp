@@ -10,8 +10,8 @@ This note captures three things:
 
 Current code shape lives mainly in:
 
-- `src/entities/sac_altar.cpp`
-- `src/entities/sac_altar.hpp`
+- `src/ents/sac_altar.cpp`
+- `src/ents/sac_altar.hpp`
 - `src/state.hpp`
 
 ### Favor state
@@ -42,7 +42,7 @@ Current behavior is approximately:
 - dead damsel / hired hand / spelunker / black knight: `4`
 - stunned/living damsel / hired hand / spelunker / black knight: `8`
 - gold idol has a special higher value
-- bombs and several non-sacrificable entities are excluded
+- bombs and several non-sacrificable ents are excluded
 
 ### Current knife interaction
 

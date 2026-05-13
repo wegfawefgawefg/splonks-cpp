@@ -1,12 +1,12 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::chest {
+namespace splonks::ents::chest {
 
-extern const EntityArchetype kChestArchetype;
-extern const EntityArchetype kKeyChestArchetype;
-extern const EntityArchetype kChestKeyArchetype;
-extern const EntityArchetype kUdjatEyeArchetype;
+extern const EntSpec kChestSpec;
+extern const EntSpec kKeyChestSpec;
+extern const EntSpec kChestKeySpec;
+extern const EntSpec kUdjatEyeSpec;
 
-} // namespace splonks::entities::chest
+} // namespace splonks::ents::chest

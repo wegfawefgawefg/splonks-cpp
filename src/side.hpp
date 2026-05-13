@@ -2,7 +2,7 @@
 
 namespace splonks {
 
-enum class LeftOrRight {
+enum class Side {
     Left,
     Right,
 };

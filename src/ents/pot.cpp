@@ -1,16 +1,16 @@
-#include "entities/pot.hpp"
+#include "ents/pot.hpp"
 #include "on_damage_effects.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "world_ops.hpp"
 
 #include <cmath>
 
-namespace splonks::entities::pot {
+namespace splonks::ents::pot {
 
 namespace {
 
@@ -21,24 +21,24 @@ constexpr float kControlledSlideVel = 3.0F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 constexpr float kPotBreakawayImpactSpeed = 1.0F;
 
-Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
-    return world_ops::SpawnEntity(state, type_, [pos](Entity& entity) {
-        entity.pos = pos;
-        entity.vel = Vec2::New(0.0F, 0.0F);
+Ent* SpawnEntAtTopLeft(EntType type_, const Vec2& pos, State& state) {
+    return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
+        ent.pos = pos;
+        ent.vel = Vec2::New(0.0F, 0.0F);
     });
 }
 
-void StepControlledPot(Entity& pot, const controls::ControlIntent& control) {
+void StepControlledPot(Ent& pot, const controls::ControlIntent& control) {
     if (pot.attack_delay_countdown > 0) {
         pot.attack_delay_countdown -= 1;
     }
 
     if (control.left && !control.right) {
         pot.acc.x -= pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
-        pot.facing = LeftOrRight::Left;
+        pot.facing = Side::Left;
     } else if (control.right && !control.left) {
         pot.acc.x += pot.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
-        pot.facing = LeftOrRight::Right;
+        pot.facing = Side::Right;
     }
 
     if (control.jump_pressed && pot.grounded) {
@@ -47,13 +47,13 @@ void StepControlledPot(Entity& pot, const controls::ControlIntent& control) {
     }
 
     if (control.attack_pressed && pot.grounded && pot.attack_delay_countdown == 0) {
-        pot.vel.x = pot.facing == LeftOrRight::Left ? -kControlledSlideVel : kControlledSlideVel;
+        pot.vel.x = pot.facing == Side::Left ? -kControlledSlideVel : kControlledSlideVel;
         pot.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
 }
 
-void ControlEntityAsPot(
-    std::size_t entity_idx,
+void ControlEntAsPot(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -62,56 +62,56 @@ void ControlEntityAsPot(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& pot = state.entity_manager.entities[entity_idx];
-    if (pot.condition == EntityCondition::Dead) {
+    Ent& pot = state.ents.ents[ent_idx];
+    if (pot.condition == EntCondition::Dead) {
         return;
     }
 
-    StepControlledPot(pot, controls::GetControlIntentForEntity(pot, state));
+    StepControlledPot(pot, controls::GetControlIntentForEnt(pot, state));
 }
 
 } // namespace
 
-common::ContactResolution BuildPotImpactResolution(
+common::ContactResult BuildPotImpactResolution(
     bool applied
 ) {
-    return common::ContactResolution{
+    return common::ContactResult{
         .blocks_movement = false,
         .stop_sweep = applied,
     };
 }
 
-common::ContactResolution OnEntityContactAsPot(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsPot(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
-    (void)other_entity_idx;
+    (void)other_ent_idx;
     (void)graphics;
     (void)audio;
-    if (!context.mover_vid.has_value() || *context.mover_vid != state.entity_manager.entities[entity_idx].vid) {
-        return common::ContactResolution{};
+    if (!context.mover_vid.has_value() || *context.mover_vid != state.ents.ents[ent_idx].vid) {
+        return common::ContactResult{};
     }
-    return BuildPotImpactResolution(TryApplyPotImpact(entity_idx, context, state));
+    return BuildPotImpactResolution(TryApplyPotImpact(ent_idx, context, state));
 }
 
-common::ContactResolution OnTileContactAsPot(
-    std::size_t entity_idx,
+common::ContactResult OnTileContactAsPot(
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 ) {
-    return BuildPotImpactResolution(TryApplyPotImpact(entity_idx, context, state));
+    return BuildPotImpactResolution(TryApplyPotImpact(ent_idx, context, state));
 }
 
-extern const EntityArchetype kPotArchetype{
-    .type_ = EntityType::Pot,
+extern const EntSpec kPotSpec{
+    .type_ = EntType::Pot,
     .size = Vec2::New(8.0F, 7.0F),
     .health = 1,
     .has_physics = true,
@@ -124,38 +124,38 @@ extern const EntityArchetype kPotArchetype{
     .can_be_stunned = false,
     .buoyancy = 0.35F,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::AnthingExceptJumpOn,
     .death_sound = audio_asset_ids::PotShatter,
     .on_death = OnDeathAsPot,
-    .control_logic = ControlEntityAsPot,
-    .step_logic = StepEntityLogicAsPot,
-    .on_entity_contact = OnEntityContactAsPot,
+    .control_logic = ControlEntAsPot,
+    .step_logic = StepEntLogicAsPot,
+    .on_ent_contact = OnEntContactAsPot,
     .on_tile_contact = OnTileContactAsPot,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pot),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Pot),
 };
 
-void StepEntityLogicAsPot(
-    std::size_t entity_idx,
+void StepEntLogicAsPot(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    (void)entity_idx;
+    (void)ent_idx;
     (void)state;
     (void)graphics;
     (void)audio;
     (void)dt;
 }
 
-void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsPot(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
 
-    const Entity& pot = state.entity_manager.entities[entity_idx];
+    const Ent& pot = state.ents.ents[ent_idx];
 
     const Vec2 spawn_pos = pot.pos;
     SpawnBreakawayContainerShards(pot.GetCenter(), state);
@@ -169,33 +169,33 @@ void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio) {
     }
 
     if (state.drng.RandomIntInclusive(1, 3) == 1) {
-        SpawnEntityAtTopLeft(EntityType::GoldChunk, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::GoldChunk, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 6) == 1) {
-        SpawnEntityAtTopLeft(EntityType::GoldNugget, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::GoldNugget, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::EmeraldBig, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::EmeraldBig, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::SapphireBig, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::SapphireBig, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::RubyBig, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::RubyBig, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 6) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Spider, spider_spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Spider, spider_spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 12) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Snake, snake_spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Snake, snake_spawn_pos, state);
     }
 }
 
 bool TryApplyPotImpact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& pot = state.entity_manager.entities[entity_idx];
-    if (pot.type_ != EntityType::Pot || pot.condition == EntityCondition::Dead) {
+    Ent& pot = state.ents.ents[ent_idx];
+    if (pot.type_ != EntType::Pot || pot.condition == EntCondition::Dead) {
         return false;
     }
     if (context.phase != common::ContactPhase::AttemptedBlocked || !context.has_impact) {
@@ -210,4 +210,4 @@ bool TryApplyPotImpact(
     return true;
 }
 
-} // namespace splonks::entities::pot
+} // namespace splonks::ents::pot

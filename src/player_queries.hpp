@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "math_types.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -12,26 +12,26 @@ namespace splonks {
 
 inline std::optional<VID> FindPrimaryLocalPlayerVid(const State& state) {
     const PlayerSlot* const slot = state.players.FindPrimaryLocal();
-    if (slot == nullptr || !slot->connected || !slot->entity_vid.has_value()) {
+    if (slot == nullptr || !slot->connected || !slot->ent_vid.has_value()) {
         return std::nullopt;
     }
-    return slot->entity_vid;
+    return slot->ent_vid;
 }
 
-inline Entity* GetPrimaryLocalPlayerMut(State& state) {
+inline Ent* GetPrimaryLocalPlayerMut(State& state) {
     const std::optional<VID> vid = FindPrimaryLocalPlayerVid(state);
-    return vid.has_value() ? state.entity_manager.GetEntityMut(*vid) : nullptr;
+    return vid.has_value() ? state.ents.GetEntMut(*vid) : nullptr;
 }
 
-inline const Entity* GetPrimaryLocalPlayer(const State& state) {
+inline const Ent* GetPrimaryLocalPlayer(const State& state) {
     const std::optional<VID> vid = FindPrimaryLocalPlayerVid(state);
-    return vid.has_value() ? state.entity_manager.GetEntity(*vid) : nullptr;
+    return vid.has_value() ? state.ents.GetEnt(*vid) : nullptr;
 }
 
 inline std::optional<VID> FindFirstConnectedPlayerVid(const State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connected && slot.entity_vid.has_value()) {
-            return slot.entity_vid;
+        if (slot.connected && slot.ent_vid.has_value()) {
+            return slot.ent_vid;
         }
     }
     return std::nullopt;
@@ -47,23 +47,23 @@ inline bool HasAnyConnectedPlayerSlot(const State& state) {
 }
 
 inline bool ShouldSimulatePlayerSlotGameplay(const State& state, const PlayerSlot& slot) {
-    if (!slot.connected || !slot.entity_vid.has_value()) {
+    if (!slot.connected || !slot.ent_vid.has_value()) {
         return false;
     }
     if (state.net_session.input_lockstep_enabled) {
         return true;
     }
     return slot.connection_kind == PlayerConnectionKind::Local ||
-           (state.net_session.role == network::NetRole::Coordinator &&
+           (state.net_session.role == network::NetRole::Host &&
             slot.connection_kind == PlayerConnectionKind::Remote);
 }
 
-inline bool HasAnyConnectedPlayerEntity(const State& state) {
+inline bool HasAnyConnectedPlayerEnt(const State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
         if (player != nullptr && player->active) {
             return true;
         }
@@ -73,11 +73,11 @@ inline bool HasAnyConnectedPlayerEntity(const State& state) {
 
 inline std::optional<VID> FindFirstConnectedLivingPlayerVid(const State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player != nullptr && player->active && player->condition != EntityCondition::Dead) {
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player != nullptr && player->active && player->condition != EntCondition::Dead) {
             return player->vid;
         }
     }
@@ -96,14 +96,14 @@ inline std::optional<VID> FindNearestPlayerVid(
     std::optional<VID> best_vid;
     float best_dist_sq = std::numeric_limits<float>::max();
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
         if (player == nullptr || !player->active) {
             continue;
         }
-        if (require_normal_condition && player->condition != EntityCondition::Normal) {
+        if (require_normal_condition && player->condition != EntCondition::Normal) {
             continue;
         }
         const Vec2 delta = GetNearestWorldDelta(state.stage, world_pos, player->pos);
@@ -116,24 +116,24 @@ inline std::optional<VID> FindNearestPlayerVid(
     return best_vid;
 }
 
-inline const Entity* FindNearestPlayer(
+inline const Ent* FindNearestPlayer(
     const State& state,
     Vec2 world_pos,
     bool require_normal_condition = true
 ) {
     const std::optional<VID> vid =
         FindNearestPlayerVid(state, world_pos, require_normal_condition);
-    return vid.has_value() ? state.entity_manager.GetEntity(*vid) : nullptr;
+    return vid.has_value() ? state.ents.GetEnt(*vid) : nullptr;
 }
 
-inline Entity* FindNearestPlayerMut(
+inline Ent* FindNearestPlayerMut(
     State& state,
     Vec2 world_pos,
     bool require_normal_condition = true
 ) {
     const std::optional<VID> vid =
         FindNearestPlayerVid(state, world_pos, require_normal_condition);
-    return vid.has_value() ? state.entity_manager.GetEntityMut(*vid) : nullptr;
+    return vid.has_value() ? state.ents.GetEntMut(*vid) : nullptr;
 }
 
 } // namespace splonks

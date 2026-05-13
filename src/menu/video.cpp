@@ -61,10 +61,10 @@ void ProcessInputVideoSettingsMenu(
     const VideoUpOrDownOrNeither up_down = up_pressed ? VideoUpOrDownOrNeither::Up
                                                       : (down_pressed ? VideoUpOrDownOrNeither::Down
                                                                       : VideoUpOrDownOrNeither::Neither);
-    const VideoLeftOrRightOrNeither left_right =
-        left_pressed ? VideoLeftOrRightOrNeither::Left
-                     : (right_pressed ? VideoLeftOrRightOrNeither::Right
-                                      : VideoLeftOrRightOrNeither::Neither);
+    const VideoSideOrNeither left_right =
+        left_pressed ? VideoSideOrNeither::Left
+                     : (right_pressed ? VideoSideOrNeither::Right
+                                      : VideoSideOrNeither::Neither);
 
     switch (state.video_settings_menu_selection) {
     case VideoSettingsMenuOption::Resolution:
@@ -75,7 +75,7 @@ void ProcessInputVideoSettingsMenu(
                 WindowSizeAvailableToChange(state, graphics) ? VideoSettingsMenuOption::WindowSize
                                                              : VideoSettingsMenuOption::Fullscreen;
             PlayMenuSoundCursorMove(audio);
-        } else if (left_right != VideoLeftOrRightOrNeither::Neither) {
+        } else if (left_right != VideoSideOrNeither::Neither) {
             if (!state.video_settings_target_resolution_index) {
                 for (std::size_t i = 0; i < kResolutions.size(); ++i) {
                     if (kResolutions[i] == graphics.dims) {
@@ -86,7 +86,7 @@ void ProcessInputVideoSettingsMenu(
             }
             if (state.video_settings_target_resolution_index) {
                 std::size_t index = *state.video_settings_target_resolution_index;
-                if (left_right == VideoLeftOrRightOrNeither::Left) {
+                if (left_right == VideoSideOrNeither::Left) {
                     if (index > 0) {
                         state.video_settings_target_resolution_index = index - 1;
                         PlayMenuSoundCursorMove(audio);
@@ -115,7 +115,7 @@ void ProcessInputVideoSettingsMenu(
         } else if (up_down == VideoUpOrDownOrNeither::Down) {
             state.video_settings_menu_selection = VideoSettingsMenuOption::Fullscreen;
             PlayMenuSoundCursorMove(audio);
-        } else if (left_right != VideoLeftOrRightOrNeither::Neither) {
+        } else if (left_right != VideoSideOrNeither::Neither) {
             if (!state.video_settings_target_window_size_index) {
                 for (std::size_t i = 0; i < kResolutions.size(); ++i) {
                     if (kResolutions[i] == graphics.window_dims) {
@@ -126,7 +126,7 @@ void ProcessInputVideoSettingsMenu(
             }
             if (state.video_settings_target_window_size_index) {
                 std::size_t index = *state.video_settings_target_window_size_index;
-                if (left_right == VideoLeftOrRightOrNeither::Left) {
+                if (left_right == VideoSideOrNeither::Left) {
                     if (index > 0) {
                         state.video_settings_target_window_size_index = index - 1;
                         PlayMenuSoundCursorMove(audio);
@@ -161,7 +161,7 @@ void ProcessInputVideoSettingsMenu(
                 ApplyShouldBeAvailable(state) ? VideoSettingsMenuOption::Apply
                                               : VideoSettingsMenuOption::Back;
             PlayMenuSoundCursorMove(audio);
-        } else if (left_right != VideoLeftOrRightOrNeither::Neither) {
+        } else if (left_right != VideoSideOrNeither::Neither) {
             if (!state.video_settings_target_fullscreen) {
                 state.video_settings_target_fullscreen = graphics.fullscreen;
             }

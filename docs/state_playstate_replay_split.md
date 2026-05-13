@@ -6,7 +6,7 @@ to be manually considered for replay serialization, even when the field is only 
 settings, debug-window, or app-shell state.
 
 The split should not be treated as a major memory optimization. The heavy replay
-payload is still mostly the stage, entity manager, tool state, and other active
+payload is still mostly the stage, ent manager, tool state, and other active
 simulation data. The primary win is ownership clarity: replay records gameplay
 simulation state, not the whole application junk drawer.
 
@@ -53,15 +53,15 @@ struct PlayState {
     Stage stage;
     StageAcoustics stage_acoustics;
     StageLighting stage_lighting;
-    EntityManager entity_manager;
+    EntPool ents;
     ParticleSystem particles;
     AudioEmitterManager audio_emitters;
-    EntityToolInventoryState entity_tools;
+    EntToolInventoryState ent_tools;
     ContactBookkeeping contact;
     SID sid;
 
     PlayerRegistry players;
-    std::optional<VID> controlled_entity_vid;
+    std::optional<VID> controlled_ent_vid;
     std::optional<VID> mouse_trailer_vid;
     prompts and transient per-frame gameplay lists;
 };

@@ -1,13 +1,13 @@
-#include "entities/gold_idol.hpp"
+#include "ents/gold_idol.hpp"
 
 #include "audio.hpp"
-#include "entities/basic_exit.hpp"
-#include "entities/common/common.hpp"
-#include "entities/shop.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ents/basic_exit.hpp"
+#include "ents/common/common.hpp"
+#include "ents/shop.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "player_queries.hpp"
@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace splonks::entities::gold_idol {
+namespace splonks::ents::gold_idol {
 
 namespace {
 
@@ -28,9 +28,9 @@ constexpr float kRewardParticleYOffsetFactor = 0.25F;
 constexpr float kRewardParticleFloatSpeed = -0.18F;
 constexpr std::uint32_t kRewardParticleLifetimeFrames = 48;
 
-void SpawnRewardParticle(State& state, const Vec2& pos, FrameDataId animation_id, const Vec2& size) {
+void SpawnRewardParticle(State& state, const Vec2& pos, AFrameId anim_id, const Vec2& size) {
     SpriteParticle particle{};
-    particle.frame_data_animator = FrameDataAnimator::New(animation_id);
+    particle.aframe_animator = AFrameAnimator::New(anim_id);
     particle.draw_layer = DrawLayer::Foreground;
     particle.counter = kRewardParticleLifetimeFrames;
     particle.pos = pos;
@@ -48,22 +48,22 @@ void SpawnRewardParticle(State& state, const Vec2& pos, FrameDataId animation_id
     state.particles.Add(std::move(particle));
 }
 
-std::optional<VID> GetRewardTargetVid(const Entity& idol, const State& state) {
+std::optional<VID> GetRewardTargetVid(const Ent& idol, const State& state) {
     if (idol.held_by_vid.has_value()) {
-        const Entity* const holder = state.entity_manager.GetEntity(*idol.held_by_vid);
-        if (holder != nullptr && holder->active && holder->condition != EntityCondition::Dead) {
+        const Ent* const holder = state.ents.GetEnt(*idol.held_by_vid);
+        if (holder != nullptr && holder->active && holder->condition != EntCondition::Dead) {
             return holder->vid;
         }
     }
     return FindNearestPlayerVid(state, idol.GetCenter(), false);
 }
 
-Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Entity& idol) {
+Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& state, const Ent& idol) {
     if (!target_vid.has_value()) {
         return idol.GetCenter();
     }
 
-    const Entity* const target = state.entity_manager.GetEntity(*target_vid);
+    const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
         return idol.GetCenter();
     }
@@ -75,39 +75,39 @@ Vec2 GetRewardParticlePosForTarget(std::optional<VID> target_vid, const State& s
     );
 }
 
-std::optional<std::size_t> FindIntersectingShopIdx(const Entity& idol, const State& state) {
+std::optional<std::size_t> FindIntersectingShopIdx(const Ent& idol, const State& state) {
     const AABB idol_aabb = idol.GetAABB();
-    for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
-        const Entity& entity = state.entity_manager.entities[entity_idx];
-        if (!entity.active || entity.type_ != EntityType::Shop) {
+    for (std::size_t ent_idx = 0; ent_idx < state.ents.ents.size(); ++ent_idx) {
+        const Ent& ent = state.ents.ents[ent_idx];
+        if (!ent.active || ent.type_ != EntType::Shop) {
             continue;
         }
-        if (WorldAabbsIntersect(state.stage, idol_aabb, shop::GetShopArea(entity))) {
-            return entity_idx;
+        if (WorldAabbsIntersect(state.stage, idol_aabb, shop::GetShopArea(ent))) {
+            return ent_idx;
         }
     }
     return std::nullopt;
 }
 
-void SpawnGoldIdolRewardParticles(std::optional<VID> target_vid, State& state, const Entity& idol) {
+void SpawnGoldIdolRewardParticles(std::optional<VID> target_vid, State& state, const Ent& idol) {
     const Vec2 base_pos = GetRewardParticlePosForTarget(target_vid, state, idol);
-    SpawnRewardParticle(state, base_pos + Vec2::New(-4.0F, 0.0F), frame_data_ids::BigGoldStack, Vec2::New(12.0F, 12.0F));
-    SpawnRewardParticle(state, base_pos + Vec2::New(5.0F, -2.0F), frame_data_ids::GoldBars, Vec2::New(12.0F, 12.0F));
+    SpawnRewardParticle(state, base_pos + Vec2::New(-4.0F, 0.0F), aframe_ids::BigGoldStack, Vec2::New(12.0F, 12.0F));
+    SpawnRewardParticle(state, base_pos + Vec2::New(5.0F, -2.0F), aframe_ids::GoldBars, Vec2::New(12.0F, 12.0F));
 }
 
 void AwardMoneyToTarget(std::optional<VID> target_vid, std::uint32_t amount, State& state) {
     if (!target_vid.has_value() || amount == 0) {
         return;
     }
-    Entity* const target = state.entity_manager.GetEntityMut(*target_vid);
-    if (target == nullptr || !target->active || target->condition == EntityCondition::Dead) {
+    Ent* const target = state.ents.GetEntMut(*target_vid);
+    if (target == nullptr || !target->active || target->condition == EntCondition::Dead) {
         return;
     }
     target->money += amount;
 }
 
 void RedeemGoldIdol(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     std::uint32_t amount,
     AudioAssetId sound_effect,
     State& state,
@@ -115,11 +115,11 @@ void RedeemGoldIdol(
     Audio& audio
 ) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& idol = state.entity_manager.entities[entity_idx];
+    Ent& idol = state.ents.ents[ent_idx];
     if (!idol.active) {
         return;
     }
@@ -127,20 +127,20 @@ void RedeemGoldIdol(
     const std::optional<VID> reward_target_vid = GetRewardTargetVid(idol, state);
     SpawnGoldIdolRewardParticles(reward_target_vid, state, idol);
     AwardMoneyToTarget(reward_target_vid, amount, state);
-    (void)PlayEntityCenterSoundEmitter(state, idol, sound_effect);
+    (void)PlayEntCenterSoundEmitter(state, idol, sound_effect);
 
-    common::ReleaseEntityFromHolder(idol, state);
-    idol.damage_vulnerability = DamageVulnerability::Immune;
+    common::ReleaseEntFromHolder(idol, state);
+    idol.damage_vuln = DamageVuln::Immune;
     idol.can_collide = false;
     idol.has_physics = false;
-    (void)world_ops::DeactivateEntity(state, idol.vid);
-    state.UpdateSidForEntity(entity_idx, graphics);
+    (void)world_ops::DeactivateEnt(state, idol.vid);
+    state.UpdateSidForEnt(ent_idx, graphics);
 }
 
 } // namespace
 
-void StepEntityLogicAsGoldIdol(
-    std::size_t entity_idx,
+void StepEntLogicAsGoldIdol(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -149,12 +149,12 @@ void StepEntityLogicAsGoldIdol(
     (void)audio;
     (void)dt;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& idol = state.entity_manager.entities[entity_idx];
-    if (!idol.active || idol.condition == EntityCondition::Dead) {
+    const Ent& idol = state.ents.ents[ent_idx];
+    if (!idol.active || idol.condition == EntCondition::Dead) {
         return;
     }
 
@@ -163,21 +163,21 @@ void StepEntityLogicAsGoldIdol(
             (void)shop_idx;
             const std::uint32_t amount =
                 idol.counter_b > 0.0F ? static_cast<std::uint32_t>(idol.counter_b) : kGoldIdolShopValue;
-            RedeemGoldIdol(entity_idx, amount, audio_asset_ids::CashRegister, state, graphics, audio);
+            RedeemGoldIdol(ent_idx, amount, audio_asset_ids::CashRegister, state, graphics, audio);
             return;
         }
     }
 
-    if (entities::basic_exit::IsEntityTouchingBasicExit(idol, state, graphics)) {
+    if (ents::basic_exit::IsEntTouchingBasicExit(idol, state, graphics)) {
         const std::uint32_t amount =
             idol.counter_a > 0.0F ? static_cast<std::uint32_t>(idol.counter_a) : kGoldIdolExitValue;
-        RedeemGoldIdol(entity_idx, amount, audio_asset_ids::GoldStack, state, graphics, audio);
+        RedeemGoldIdol(ent_idx, amount, audio_asset_ids::GoldStack, state, graphics, audio);
         return;
     }
 }
 
-extern const EntityArchetype kGoldIdolArchetype{
-    .type_ = EntityType::GoldIdol,
+extern const EntSpec kGoldIdolSpec{
+    .type_ = EntType::GoldIdol,
     .size = Vec2::New(12.0F, 12.0F),
     .health = 1,
     .has_physics = true,
@@ -188,16 +188,16 @@ extern const EntityArchetype kGoldIdolArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kGoldIdolExitValue),
     .counter_b = static_cast<float>(kGoldIdolShopValue),
-    .damage_vulnerability = DamageVulnerability::CrushingOnly,
-    .projectile_contact_damage_amount = 0,
-    .step_logic = StepEntityLogicAsGoldIdol,
+    .damage_vuln = DamageVuln::CrushingOnly,
+    .proj_contact_damage_amount = 0,
+    .step_logic = StepEntLogicAsGoldIdol,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GoldIdol),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::GoldIdol),
 };
 
-} // namespace splonks::entities::gold_idol
+} // namespace splonks::ents::gold_idol

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
-extern const EntityArchetype kNoneArchetype;
+extern const EntSpec kNoneSpec;
 }

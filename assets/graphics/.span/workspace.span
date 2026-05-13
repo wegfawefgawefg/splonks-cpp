@@ -28,7 +28,7 @@
     }
   ],
   "activePaletteId": "sweetie-16-manual",
-  "lastOpenSheetPath": "sprites/entities.png",
+  "lastOpenSheetPath": "sprites/ents.png",
   "selectedAnnotationId": "ee746b8c-ecdf-408e-93d3-7ccde176473f",
   "sheets": [
     {
@@ -84,7 +84,7 @@
       "annotations": [
         {
           "id": "de6a813f-768b-4255-95b3-acb201cb8bc3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 0,
@@ -127,7 +127,7 @@
         },
         {
           "id": "1234f3f7-cf58-4072-97a3-8ab57cccf29b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 60,
             "y": 0,
@@ -170,7 +170,7 @@
         },
         {
           "id": "1cc678e5-9c32-4dd7-9849-c4c418fa9532",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 71,
             "y": 0,
@@ -213,7 +213,7 @@
         },
         {
           "id": "59f1b106-8caf-49bb-9417-f3d0a8370a49",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 89,
             "y": 5,
@@ -256,7 +256,7 @@
         },
         {
           "id": "5f834945-2c1f-45c4-a1f0-6a6164440ae4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 61,
             "y": 12,
@@ -299,7 +299,7 @@
         },
         {
           "id": "91bcba46-8484-4eb5-9895-8bc45fedd993",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 63,
             "y": 22,
@@ -342,7 +342,7 @@
         },
         {
           "id": "786a5a5c-b871-4018-8682-7e222fe4f45c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 63,
             "y": 38,
@@ -385,7 +385,7 @@
         },
         {
           "id": "947ead92-b8d1-4e94-a785-0c42a7628320",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 40,
@@ -428,7 +428,7 @@
         },
         {
           "id": "738611c4-4865-4863-b4b9-bd39bc27c0b5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 101,
@@ -471,7 +471,7 @@
         },
         {
           "id": "ce3d273e-9ca0-4c16-9a11-35c5f59ddf3d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 164,
@@ -514,7 +514,7 @@
         },
         {
           "id": "5d5dd255-439d-4951-a6da-42bf49acd457",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 206,
@@ -557,7 +557,7 @@
         },
         {
           "id": "28ac029a-6844-446d-a0a7-25baeb0bd581",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 269,
@@ -600,7 +600,7 @@
         },
         {
           "id": "00c17a89-9d7a-427e-adc1-dd6d385b9ad9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 74,
             "y": 24,
@@ -643,7 +643,7 @@
         },
         {
           "id": "1dac95bb-ac15-481e-955e-2f8e2d5cd15e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 85,
             "y": 21,
@@ -695,11 +695,11 @@
       }
     },
     {
-      "path": "sprites/entities.png",
+      "path": "sprites/ents.png",
       "annotations": [
         {
           "id": "e1438c1e-b778-4997-9b75-ac0454c70e95",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 192,
@@ -743,7 +743,7 @@
         },
         {
           "id": "56cc7977-b28b-47ab-951d-9dc2c44f8dc5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 192,
@@ -787,7 +787,7 @@
         },
         {
           "id": "967cafd1-c72c-489c-901a-cc6b0df21c63",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 192,
@@ -831,7 +831,7 @@
         },
         {
           "id": "85782001-50bd-4476-852f-69c705309f58",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 192,
@@ -875,7 +875,7 @@
         },
         {
           "id": "c71027a9-8f0b-4ebe-b5d4-b5e52c90e59e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 192,
@@ -932,7 +932,7 @@
         },
         {
           "id": "3108ce11-b0ee-43b9-9d66-ef2b62ab4fc7",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 290,
             "y": 41,
@@ -976,7 +976,7 @@
         },
         {
           "id": "d9d1525d-6e9c-45eb-82b1-8a31dc4135ba",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 192,
@@ -1020,7 +1020,7 @@
         },
         {
           "id": "f2c0ab04-5a0c-4049-95c8-98f030051acd",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 192,
@@ -1064,7 +1064,7 @@
         },
         {
           "id": "47776a78-25e1-4a9d-99f3-0bba174de60e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 112,
             "y": 192,
@@ -1108,7 +1108,7 @@
         },
         {
           "id": "18d30c3b-729b-4015-bbd4-0c9228958d2d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 288,
             "y": 52,
@@ -1152,7 +1152,7 @@
         },
         {
           "id": "58d9428d-800d-4c2b-9993-a29d11216497",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 288,
             "y": 70,
@@ -1196,7 +1196,7 @@
         },
         {
           "id": "4baaba40-4b9f-4a5d-8c94-dd9cda8a9cbe",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 304,
             "y": 69,
@@ -1240,7 +1240,7 @@
         },
         {
           "id": "b6e5022a-c719-4488-97fd-45c966861f53",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 320,
             "y": 72,
@@ -1284,7 +1284,7 @@
         },
         {
           "id": "e303a023-e4eb-4049-b84a-b7b3b174fa85",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 336,
             "y": 193,
@@ -1328,7 +1328,7 @@
         },
         {
           "id": "ff52f2f3-5e31-40ab-ba8a-80ac1851d73d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 192,
@@ -1372,7 +1372,7 @@
         },
         {
           "id": "3bf5a20c-157e-4bc5-b5e7-685adcf12997",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 176,
             "y": 192,
@@ -1416,7 +1416,7 @@
         },
         {
           "id": "d46d5a08-be22-46f4-a1d3-0b13dbc718a6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 192,
             "y": 192,
@@ -1460,7 +1460,7 @@
         },
         {
           "id": "36c3b03c-fa3b-49df-9bb4-64a65e6675b4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 208,
             "y": 192,
@@ -1504,7 +1504,7 @@
         },
         {
           "id": "61d8835f-929e-4d3f-9dc9-bd31632d3d3f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 66,
             "y": 76,
@@ -1548,7 +1548,7 @@
         },
         {
           "id": "e60eaed0-9877-4fe0-851f-9756877c47d6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 74,
             "y": 76,
@@ -1592,7 +1592,7 @@
         },
         {
           "id": "d761ab51-9ef8-4828-bc82-d4097da440da",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 82,
             "y": 76,
@@ -1636,7 +1636,7 @@
         },
         {
           "id": "4cbbe625-b98c-4080-af75-46ef46ffc032",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 90,
             "y": 76,
@@ -1680,7 +1680,7 @@
         },
         {
           "id": "75f7d27f-a662-4a79-a388-d5d4e2358d3c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 98,
             "y": 76,
@@ -1724,7 +1724,7 @@
         },
         {
           "id": "99acb832-0d35-4bb4-8a4a-f0ca2e75ffaa",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 106,
             "y": 76,
@@ -1768,7 +1768,7 @@
         },
         {
           "id": "1b442c94-487a-4870-bfa5-cd7d03c6d8ca",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 114,
             "y": 76,
@@ -1812,7 +1812,7 @@
         },
         {
           "id": "10e97510-79ef-45fb-babe-cb7ba50f3460",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 17,
             "y": 149,
@@ -1856,7 +1856,7 @@
         },
         {
           "id": "2f962260-db89-494d-9213-e3105ce6f32c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 3,
             "y": 404,
@@ -1900,7 +1900,7 @@
         },
         {
           "id": "50b9ad1e-0f1e-4967-b739-63451e3bc4c6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 8,
@@ -1944,7 +1944,7 @@
         },
         {
           "id": "f2bc95b9-0e4a-4590-a994-048173fcf548",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 104,
             "y": 8,
@@ -1988,7 +1988,7 @@
         },
         {
           "id": "b22478c2-e814-4319-b0ac-69f59c46b100",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 112,
             "y": 8,
@@ -2032,7 +2032,7 @@
         },
         {
           "id": "7edbc88d-b072-4c6f-be97-113935920f0a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 120,
             "y": 8,
@@ -2076,7 +2076,7 @@
         },
         {
           "id": "feb80b49-d18a-4b32-93f0-d39f0895317a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 8,
@@ -2120,7 +2120,7 @@
         },
         {
           "id": "8e874fe5-97ca-4adf-b864-63e2cbb6c136",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 136,
             "y": 8,
@@ -2164,7 +2164,7 @@
         },
         {
           "id": "078d5356-d150-4bf7-b0df-7bd6888f7967",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 8,
@@ -2208,7 +2208,7 @@
         },
         {
           "id": "719217b0-c1b6-4a83-a54a-449d480fbc03",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 152,
             "y": 8,
@@ -2252,7 +2252,7 @@
         },
         {
           "id": "5ea58c2b-946e-4dff-ad66-9c61fb99e14a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 8,
@@ -2296,7 +2296,7 @@
         },
         {
           "id": "becfd8c9-e1df-40c1-803b-98b0da553d72",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 66,
             "y": 88,
@@ -2340,7 +2340,7 @@
         },
         {
           "id": "ff5bfb3e-cdfb-44d5-839e-43b697a24277",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 74,
             "y": 88,
@@ -2384,7 +2384,7 @@
         },
         {
           "id": "2896a85f-a136-4983-a913-fbb4b801d048",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 82,
             "y": 88,
@@ -2428,7 +2428,7 @@
         },
         {
           "id": "0a5d7283-e7c9-4e28-874e-7a3467830773",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 90,
             "y": 88,
@@ -2472,7 +2472,7 @@
         },
         {
           "id": "946e7d5a-f6d9-43e2-8bf7-e9f660042013",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 163,
@@ -2516,7 +2516,7 @@
         },
         {
           "id": "eff6d572-6bab-420d-8e8b-f1a24d89dd05",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 172,
@@ -2560,7 +2560,7 @@
         },
         {
           "id": "72b84eed-32ad-4635-b44e-af2c7ece1bc4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 24,
             "y": 170,
@@ -2604,7 +2604,7 @@
         },
         {
           "id": "fa824013-abea-4235-82f7-f2767842b451",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 1,
             "y": 187,
@@ -2648,7 +2648,7 @@
         },
         {
           "id": "4a90ef8e-8f0c-4c43-9d60-8fdca878ebea",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 9,
             "y": 187,
@@ -2692,7 +2692,7 @@
         },
         {
           "id": "cd97f6ef-9057-4e3b-9e86-cfa7b7375fd5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 18,
             "y": 178,
@@ -2736,7 +2736,7 @@
         },
         {
           "id": "1a9e361d-28fd-4ea1-a6d1-31d8f51895ec",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 256,
             "y": 192,
@@ -2780,7 +2780,7 @@
         },
         {
           "id": "3b8a8894-7af3-4abc-9414-557899fe2cdb",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 288,
             "y": 192,
@@ -2824,7 +2824,7 @@
         },
         {
           "id": "57d32850-24c5-42a1-90a7-ce93583875e1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 304,
             "y": 192,
@@ -2868,7 +2868,7 @@
         },
         {
           "id": "34b016dd-239d-4aad-aba4-9ca700908db5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 3,
             "y": 118,
@@ -2912,7 +2912,7 @@
         },
         {
           "id": "93882538-e8b2-474b-b39c-c8361dd00030",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 17,
             "y": 118,
@@ -2956,7 +2956,7 @@
         },
         {
           "id": "210e9f9e-9ed6-465f-9aa1-89aa8b92783a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 33,
             "y": 118,
@@ -3000,7 +3000,7 @@
         },
         {
           "id": "e74ec3d7-7f26-417e-a434-fc579d4311d3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 27,
             "y": 409,
@@ -3044,7 +3044,7 @@
         },
         {
           "id": "15622de7-fb39-44f5-b322-f77239a73274",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 37,
             "y": 409,
@@ -3088,7 +3088,7 @@
         },
         {
           "id": "08e18137-c487-4230-abcc-76e5e879915b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 409,
@@ -3132,7 +3132,7 @@
         },
         {
           "id": "6cec52c7-7ef6-471c-a114-484fa76c5eff",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 6,
             "y": 16,
@@ -3176,7 +3176,7 @@
         },
         {
           "id": "2d9ec3d1-8d9d-4b1c-879f-97010b12a951",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 17,
@@ -3220,7 +3220,7 @@
         },
         {
           "id": "5a174424-25be-4230-94cb-2d65350643ba",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 34,
             "y": 21,
@@ -3264,7 +3264,7 @@
         },
         {
           "id": "4ab89c72-f85a-462a-a559-8903a5ea37cc",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 49,
             "y": 28,
@@ -3308,7 +3308,7 @@
         },
         {
           "id": "b878ccec-9bbc-498c-8ef4-d8c87e304ddd",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 35,
             "y": 8,
@@ -3352,7 +3352,7 @@
         },
         {
           "id": "6626adeb-534c-4fa8-83bd-05501dd69ccf",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 43,
             "y": 8,
@@ -3396,7 +3396,7 @@
         },
         {
           "id": "e8fd4b2a-30b9-4f53-b4e3-863d35791c06",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 51,
             "y": 8,
@@ -3440,7 +3440,7 @@
         },
         {
           "id": "1fe14cac-cc2e-423a-b176-d670c62a00f9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 59,
             "y": 8,
@@ -3484,7 +3484,7 @@
         },
         {
           "id": "d8fd0a28-a05e-4de0-a692-2e793d73870b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 4,
             "y": 42,
@@ -3528,7 +3528,7 @@
         },
         {
           "id": "1253dafb-b864-48d5-8580-0f43bca76f5b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 0,
@@ -3572,7 +3572,7 @@
         },
         {
           "id": "ab6fd98a-2236-4a1d-8b3d-7e882a6603b6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 0,
@@ -3616,7 +3616,7 @@
         },
         {
           "id": "8609abff-9b22-48ef-9afb-cc1f79a357a5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 96,
@@ -3660,7 +3660,7 @@
         },
         {
           "id": "3f117115-b1a1-4833-a685-0d1dc2132e88",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 96,
@@ -3704,7 +3704,7 @@
         },
         {
           "id": "35943bd7-9b0e-4009-ab36-db95492b0805",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 160,
@@ -3748,7 +3748,7 @@
         },
         {
           "id": "c14668b5-3aef-4557-b20a-8f2d28ac91ef",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 160,
@@ -3792,7 +3792,7 @@
         },
         {
           "id": "f8329565-ae27-4dd3-ac97-fcdddddbe8c8",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 114,
             "y": 163,
@@ -3836,7 +3836,7 @@
         },
         {
           "id": "c2233ab6-48fc-4e80-ac61-426cbfd2790a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 129,
             "y": 165,
@@ -3880,7 +3880,7 @@
         },
         {
           "id": "57e0fe7d-9d03-4f49-b85d-1d4a087a5773",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 305,
             "y": 90,
@@ -3924,7 +3924,7 @@
         },
         {
           "id": "4e30519a-46a3-422b-b198-ca091e30c213",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 36,
             "y": 167,
@@ -3968,7 +3968,7 @@
         },
         {
           "id": "39655528-2e37-430d-ad48-3bed8dc8ee89",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 128,
@@ -4012,7 +4012,7 @@
         },
         {
           "id": "98ae7e92-896a-497f-aa23-7f4326f3a0e7",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 128,
@@ -4056,7 +4056,7 @@
         },
         {
           "id": "1c009ee9-8824-49b7-a242-cc4b4235080b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 96,
@@ -4100,7 +4100,7 @@
         },
         {
           "id": "35f4bd3b-3f3d-42f1-97f8-a64de40b5785",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 96,
@@ -4144,7 +4144,7 @@
         },
         {
           "id": "aa288e5c-0a24-4eb4-834f-ca3f900f2ee9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 176,
             "y": 96,
@@ -4188,7 +4188,7 @@
         },
         {
           "id": "9c6d23c3-d8bd-4d13-bd38-65e01d5d0c2c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 176,
             "y": 112,
@@ -4232,7 +4232,7 @@
         },
         {
           "id": "22d1681e-5f59-4803-b9fd-5aab16d0309d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 112,
@@ -4276,7 +4276,7 @@
         },
         {
           "id": "eda2eab2-f337-4d92-b199-c40d54fcdc0c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 112,
@@ -4320,7 +4320,7 @@
         },
         {
           "id": "39bd3a6e-1055-4775-88a2-3b71a4a4eb3f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 192,
             "y": 64,
@@ -4364,7 +4364,7 @@
         },
         {
           "id": "e1e8287c-1d61-4bc3-a441-e4990dd0a851",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 192,
             "y": 32,
@@ -4408,7 +4408,7 @@
         },
         {
           "id": "35ed6e2a-1772-4f36-971c-01faf1a24aa0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 224,
@@ -4452,7 +4452,7 @@
         },
         {
           "id": "68ef7c16-78e5-4d5e-ad09-3a35b2c77f58",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 176,
@@ -4496,7 +4496,7 @@
         },
         {
           "id": "232e3cab-d87b-40c0-8cd8-47d5ea854ef3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 66,
             "y": 177,
@@ -4540,7 +4540,7 @@
         },
         {
           "id": "7d6b5264-5589-409c-9b88-eeb7fe899781",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 240,
@@ -4584,7 +4584,7 @@
         },
         {
           "id": "1e571ad5-2a11-4f72-99a0-4ce6973d4520",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 240,
@@ -4628,7 +4628,7 @@
         },
         {
           "id": "4a616388-ec64-4b24-bbe0-6d92b06417b6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 240,
@@ -4672,7 +4672,7 @@
         },
         {
           "id": "8448b11e-b113-4711-b3b3-994c73d6b05b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 240,
@@ -4716,7 +4716,7 @@
         },
         {
           "id": "c9c3fee0-13eb-44e3-8c49-06f4c69b6517",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 240,
@@ -4760,7 +4760,7 @@
         },
         {
           "id": "8a239ab5-ac31-4dc8-9258-b8e99b2ca947",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 240,
@@ -4804,7 +4804,7 @@
         },
         {
           "id": "184eb082-f768-4fe1-acba-5c14f912f887",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 240,
@@ -4848,7 +4848,7 @@
         },
         {
           "id": "20b50820-10b4-4bc4-93e4-da7280eb77d0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 112,
             "y": 240,
@@ -4892,7 +4892,7 @@
         },
         {
           "id": "6a5ba10d-aa2e-40bb-a8f0-d6a68fee782e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 240,
@@ -4936,7 +4936,7 @@
         },
         {
           "id": "bbbbc1a4-984b-4c5f-8d8a-9b0a3be96cba",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 256,
@@ -4980,7 +4980,7 @@
         },
         {
           "id": "b6c20fe4-f4f6-4dc8-a072-bb8213153cab",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 256,
@@ -5024,7 +5024,7 @@
         },
         {
           "id": "d3d463c1-fcf7-489f-9138-f3c5713b2245",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 272,
@@ -5068,7 +5068,7 @@
         },
         {
           "id": "14953bf7-ae15-4f24-a227-c2cc07328c39",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 33,
             "y": 356,
@@ -5112,7 +5112,7 @@
         },
         {
           "id": "88ece5b9-5080-4414-8918-1cdd0af91d27",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 288,
@@ -5156,7 +5156,7 @@
         },
         {
           "id": "6bb1aa9c-a59f-4815-a2ac-0e0d9d1b2b73",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 128,
@@ -5199,7 +5199,7 @@
         },
         {
           "id": "1986ec97-cd1b-4ce5-8395-bad944ba7c10",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 288,
@@ -5242,7 +5242,7 @@
         },
         {
           "id": "a2f54c2e-3ead-497e-aa5b-fd81cf01d96d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 288,
@@ -5285,7 +5285,7 @@
         },
         {
           "id": "9db34549-5ecc-4135-a4f9-b5ecd78cee49",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 288,
@@ -5328,7 +5328,7 @@
         },
         {
           "id": "a2456ad7-460c-4a59-8545-8ba41c93d3dc",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 304,
@@ -5371,7 +5371,7 @@
         },
         {
           "id": "16f4b93b-b791-4daa-a49d-5a096dedd39f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 304,
@@ -5414,7 +5414,7 @@
         },
         {
           "id": "36f29e84-453a-40d6-a029-488716870424",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 304,
@@ -5457,7 +5457,7 @@
         },
         {
           "id": "8d8bd9b6-8910-413a-8402-a2b20f3f237f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 304,
@@ -5500,7 +5500,7 @@
         },
         {
           "id": "bb7657b2-25db-4c4b-acc7-892f4541515a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 320,
@@ -5543,7 +5543,7 @@
         },
         {
           "id": "03cbafc8-e7b1-4754-8f53-9d018d7a5077",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 320,
@@ -5586,7 +5586,7 @@
         },
         {
           "id": "de6ec988-cd08-4c5b-80f0-c7d4d4cf70a0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 320,
@@ -5629,7 +5629,7 @@
         },
         {
           "id": "4902b725-c33c-4dae-87c5-250765adfe5d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 320,
@@ -5672,7 +5672,7 @@
         },
         {
           "id": "bf28070e-c2a5-4cde-8277-9d3cb8283ca3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 145,
             "y": 161,
@@ -5715,7 +5715,7 @@
         },
         {
           "id": "214ef668-b128-46d9-a758-824299695368",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 161,
             "y": 165,
@@ -5758,7 +5758,7 @@
         },
         {
           "id": "12514d50-b484-4544-a43d-612306ece981",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 177,
             "y": 161,
@@ -5801,7 +5801,7 @@
         },
         {
           "id": "9c2f7d36-768b-4609-ae09-4da25865b356",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 195,
             "y": 172,
@@ -5844,7 +5844,7 @@
         },
         {
           "id": "7b1f32ca-1abd-4345-ac32-e9db0d868737",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 213,
             "y": 172,
@@ -5887,7 +5887,7 @@
         },
         {
           "id": "97bbb967-5abd-4029-a06a-d209568abf75",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 208,
@@ -5930,7 +5930,7 @@
         },
         {
           "id": "361b69e2-64f0-4bd8-8121-3e7fde36c71e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 208,
@@ -5973,7 +5973,7 @@
         },
         {
           "id": "5645cd8d-e555-4e93-8dbd-68e9c163b136",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 208,
@@ -6016,7 +6016,7 @@
         },
         {
           "id": "dbe46971-e57a-46fa-bbae-311fd64a8850",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 208,
@@ -6059,7 +6059,7 @@
         },
         {
           "id": "87193c09-52d2-4b6a-8917-ad3264d851a3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 208,
@@ -6102,7 +6102,7 @@
         },
         {
           "id": "c4a5e0f2-8ec9-435d-98e6-5adaa25ae106",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 176,
@@ -6145,7 +6145,7 @@
         },
         {
           "id": "92dbdf04-6b25-438c-b14d-bc9daea40fbf",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 38,
             "y": 176,
@@ -6188,7 +6188,7 @@
         },
         {
           "id": "1cb3d4be-a00a-4be2-8c73-f841a9de3a6a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 181,
@@ -6231,7 +6231,7 @@
         },
         {
           "id": "bdff8a39-1a89-46a7-af70-5c221b891def",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 38,
             "y": 176,
@@ -6274,7 +6274,7 @@
         },
         {
           "id": "145aaa6e-2350-441a-884a-45bd47f7577d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 176,
@@ -6317,7 +6317,7 @@
         },
         {
           "id": "847391db-d4b7-4383-b6c3-0746c956f8d1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 224,
@@ -6360,7 +6360,7 @@
         },
         {
           "id": "0327ab1f-f525-4a6a-877a-68b30f7dac11",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 224,
@@ -6403,7 +6403,7 @@
         },
         {
           "id": "8fb9f342-59a0-4b1f-9c71-ac540c72e5df",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 224,
@@ -6446,7 +6446,7 @@
         },
         {
           "id": "daee6c6a-2345-4be7-8dbc-d5b9de9bc2b9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 224,
@@ -6489,7 +6489,7 @@
         },
         {
           "id": "67e9d8db-96ee-4711-b942-8e65205d1477",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 224,
@@ -6532,7 +6532,7 @@
         },
         {
           "id": "dc1b58ed-3caa-47a5-9902-7e4fd19fad00",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 224,
@@ -6575,7 +6575,7 @@
         },
         {
           "id": "e9f162f9-9971-4e9f-b656-f75a85aff9b1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 320,
@@ -6618,7 +6618,7 @@
         },
         {
           "id": "6666c595-49c5-4487-acbb-5bf15bd49686",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 67,
             "y": 285,
@@ -6661,7 +6661,7 @@
         },
         {
           "id": "c6a948d8-1c48-4623-b39f-127e24590560",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 73,
             "y": 285,
@@ -6704,7 +6704,7 @@
         },
         {
           "id": "76ee4fdc-e5d7-43ad-bc68-56daa290e778",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 83,
             "y": 285,
@@ -6747,7 +6747,7 @@
         },
         {
           "id": "5009e088-e4c0-4e76-8792-38d2fa9d8790",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 88,
             "y": 282,
@@ -6790,7 +6790,7 @@
         },
         {
           "id": "52c10b4d-d187-48f4-bc7f-b079c84477a8",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 46,
             "y": 168,
@@ -6833,7 +6833,7 @@
         },
         {
           "id": "7ea85a0e-e8ae-4ed2-858b-b7fe84b948d3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 57,
             "y": 168,
@@ -6876,7 +6876,7 @@
         },
         {
           "id": "e1fc30c1-c721-4de2-8f95-157725320ced",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 86,
             "y": 320,
@@ -6919,7 +6919,7 @@
         },
         {
           "id": "6b3db327-6c36-4781-843e-15e279bd8ba4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 336,
@@ -6962,7 +6962,7 @@
         },
         {
           "id": "8ab30063-7bc4-4a9d-b61e-1e8a19a382dd",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 336,
@@ -7005,7 +7005,7 @@
         },
         {
           "id": "7f2cd9ff-d64c-4b95-acc4-7f50dc18da8d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 272,
             "y": 130,
@@ -7048,7 +7048,7 @@
         },
         {
           "id": "a5fa8b42-f102-4d9d-880d-0dcf4d7ecbdf",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 353,
@@ -7091,7 +7091,7 @@
         },
         {
           "id": "08f56d28-d43f-4d75-93fd-69a5bd924b81",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 63,
             "y": 355,
@@ -7134,7 +7134,7 @@
         },
         {
           "id": "99c4fe3c-62c9-4369-b045-9cfc301e5451",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 77,
             "y": 359,
@@ -7177,7 +7177,7 @@
         },
         {
           "id": "c9c02ae0-22d0-4cc3-b2be-ae1df8a67824",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 224,
             "y": 32,
@@ -7220,7 +7220,7 @@
         },
         {
           "id": "e3ab6f43-ee83-4ede-ae1a-570638fcacf1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 416,
             "y": 130,
@@ -7263,7 +7263,7 @@
         },
         {
           "id": "93d9bc9e-01aa-400b-bd60-c0b8aa4df867",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 320,
             "y": 130,
@@ -7306,7 +7306,7 @@
         },
         {
           "id": "d4fceb97-9aa6-4943-80b8-643ea00df997",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 369,
             "y": 130,
@@ -7349,7 +7349,7 @@
         },
         {
           "id": "7ca20e1a-a895-4688-90aa-e87bd74bc875",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 144,
@@ -7392,7 +7392,7 @@
         },
         {
           "id": "bd469b03-cd42-4f63-945d-296cc1009cce",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 240,
@@ -7435,7 +7435,7 @@
         },
         {
           "id": "8fb08d67-3391-4a07-a0fd-b264351add19",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 192,
             "y": 240,
@@ -7478,7 +7478,7 @@
         },
         {
           "id": "02e16a8c-cc2c-4890-a6a0-d4483a66e62a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 224,
             "y": 240,
@@ -7521,7 +7521,7 @@
         },
         {
           "id": "4b1783f9-c8fd-4b45-ae79-8eb569b31388",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 256,
             "y": 240,
@@ -7564,7 +7564,7 @@
         },
         {
           "id": "792318ad-78d3-4637-8124-25b72e00d09a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 116,
             "y": 316,
@@ -7607,7 +7607,7 @@
         },
         {
           "id": "8f9c2264-ee63-480e-8cae-245034f033c2",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 320,
@@ -7650,7 +7650,7 @@
         },
         {
           "id": "7c2feb88-6640-4dff-8ef8-817ba598adb3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 320,
@@ -7693,7 +7693,7 @@
         },
         {
           "id": "f962fe1e-7b97-43ce-b3e0-b31fa1ae5243",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 320,
@@ -7736,7 +7736,7 @@
         },
         {
           "id": "29027a87-c5a6-4202-a3ce-b41495588f16",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 336,
@@ -7779,7 +7779,7 @@
         },
         {
           "id": "5b7ef2e4-ba9d-422b-87da-f88c3486cba5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 336,
@@ -7822,7 +7822,7 @@
         },
         {
           "id": "faee4a60-8541-4ff8-ab7a-74d1952d1afb",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 304,
@@ -7865,7 +7865,7 @@
         },
         {
           "id": "a824ffeb-2e51-4715-a5b1-f5b63d639d6f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 304,
@@ -7908,7 +7908,7 @@
         },
         {
           "id": "c67c9aa6-f203-4bcc-9ccb-c3affe1ad45a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 304,
@@ -7951,7 +7951,7 @@
         },
         {
           "id": "8e28e733-6372-411f-a26f-f4da1e0a12e1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 176,
             "y": 304,
@@ -7994,7 +7994,7 @@
         },
         {
           "id": "32804c58-db63-4cdd-933a-2288630ba0c7",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 198,
             "y": 310,
@@ -8037,7 +8037,7 @@
         },
         {
           "id": "fbdb605c-7f7b-44ab-9b72-30b89da7d7ec",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 80,
@@ -8080,7 +8080,7 @@
         },
         {
           "id": "8db684b7-7dd0-4b22-a8f5-a229ea8c89b4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 17,
             "y": 376,
@@ -8123,7 +8123,7 @@
         },
         {
           "id": "b577fcb6-ad12-4e6d-b457-33c1ed15824f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 384,
@@ -8166,7 +8166,7 @@
         },
         {
           "id": "f77b0fb1-ec37-4aed-b640-2c00ebb833dc",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 384,
@@ -8209,7 +8209,7 @@
         },
         {
           "id": "28123067-cffd-47fd-998c-3069b83ac71d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 384,
@@ -8252,7 +8252,7 @@
         },
         {
           "id": "a3263a59-1d58-475b-ad9d-df08d4d1b466",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 48,
@@ -8295,7 +8295,7 @@
         },
         {
           "id": "6f5e3d3b-4dd6-4f3a-b1c7-8c0a07bf8bbd",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 48,
@@ -8338,7 +8338,7 @@
         },
         {
           "id": "e400245e-7672-49d2-aeaf-fce152fb1254",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 48,
@@ -8381,7 +8381,7 @@
         },
         {
           "id": "ce7fd2f1-e1ab-4081-8a66-4fb8f17233e0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 176,
             "y": 48,
@@ -8424,7 +8424,7 @@
         },
         {
           "id": "e94b0bdc-0330-4c3e-97d2-c1803061c4ab",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 48,
@@ -8467,7 +8467,7 @@
         },
         {
           "id": "e3d91924-cb7f-4118-bc9d-d14e7b880f04",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 48,
@@ -8510,7 +8510,7 @@
         },
         {
           "id": "8ef2bff6-99a0-4a87-bd30-371ac10342b5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 48,
@@ -8553,7 +8553,7 @@
         },
         {
           "id": "bbc9ae68-763f-47b1-9d6f-08642dabc890",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 112,
             "y": 48,
@@ -8596,7 +8596,7 @@
         },
         {
           "id": "313569bd-2b5a-47e5-8f19-f0339c5ac58e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 288,
             "y": 75,
@@ -8639,7 +8639,7 @@
         },
         {
           "id": "4b6046bd-fa7c-4c83-a6a2-ad6c19a3519f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 272,
             "y": 80,
@@ -8682,7 +8682,7 @@
         },
         {
           "id": "5f43e27e-0598-4e93-9da0-b729498b242d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 256,
             "y": 80,
@@ -8725,7 +8725,7 @@
         },
         {
           "id": "1c917cbc-1827-4d81-9409-b4f7a5206937",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 240,
             "y": 80,
@@ -8768,7 +8768,7 @@
         },
         {
           "id": "3c3a6daa-f74a-498f-88ff-37cbfbba06fc",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 51,
             "y": 118,
@@ -8811,7 +8811,7 @@
         },
         {
           "id": "626d3822-cd80-428c-82e7-740d8edf5edf",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 65,
             "y": 118,
@@ -8854,7 +8854,7 @@
         },
         {
           "id": "42a75d5e-bb68-40dc-b2be-f7098345b629",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 81,
             "y": 118,
@@ -8897,7 +8897,7 @@
         },
         {
           "id": "d444c2dd-84e0-4fcf-a657-b667f09c131f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 99,
             "y": 119,
@@ -8940,7 +8940,7 @@
         },
         {
           "id": "b273872c-e28e-4ce5-ae28-45e6beefcd7a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 240,
             "y": 102,
@@ -8983,7 +8983,7 @@
         },
         {
           "id": "5e104466-ba59-42c2-82c8-cc062013f11f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 352,
             "y": 193,
@@ -9027,7 +9027,7 @@
         },
         {
           "id": "89e26f68-7d68-4d7e-aa40-0c586dd07c85",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 368,
             "y": 193,
@@ -9071,7 +9071,7 @@
         },
         {
           "id": "cf7115ed-824d-4752-8fb9-deada64fb1c5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 384,
             "y": 193,
@@ -9115,7 +9115,7 @@
         },
         {
           "id": "a1536b0a-445b-4d2e-ab4f-b0f99d85f98b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 400,
             "y": 193,
@@ -9159,7 +9159,7 @@
         },
         {
           "id": "946f65fc-eec9-4e10-a63b-eeeb48f9e1ee",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 416,
             "y": 193,
@@ -9203,7 +9203,7 @@
         },
         {
           "id": "d8345050-9ed6-4160-84ee-3bd284554ad2",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 112,
             "y": 256,
@@ -9246,7 +9246,7 @@
         },
         {
           "id": "f2a4a0b6-c1df-4514-82ac-839a1794c331",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 2,
             "y": 179,
@@ -9289,7 +9289,7 @@
         },
         {
           "id": "7ff72157-03e2-4e04-acd3-4ad430372f24",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 178,
@@ -9332,7 +9332,7 @@
         },
         {
           "id": "0706d57b-f9f7-4e5f-9896-dd95ac99bf04",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 98,
             "y": 179,
@@ -9375,7 +9375,7 @@
         },
         {
           "id": "36ee58c9-1c6d-41fe-be24-da64c16dce0b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 115,
             "y": 177,
@@ -9418,7 +9418,7 @@
         },
         {
           "id": "220642e0-ee5b-4578-b5af-3714909f5215",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 256,
@@ -9461,7 +9461,7 @@
         },
         {
           "id": "dbc31221-4968-46b8-81a6-346f6aa8b0de",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 256,
@@ -9504,7 +9504,7 @@
         },
         {
           "id": "5f3d5568-29eb-435e-93bc-c0b1f943973b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 256,
@@ -9547,7 +9547,7 @@
         },
         {
           "id": "94445ccf-ae5e-4cad-a7fd-bf005588e676",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 256,
@@ -9590,7 +9590,7 @@
         },
         {
           "id": "64df0236-4f1f-4f7a-a9f0-7bddb3936574",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 99,
             "y": 279,
@@ -9633,7 +9633,7 @@
         },
         {
           "id": "3135dbe8-5a3b-4227-9f5f-bae523dd75c0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 109,
             "y": 279,
@@ -9676,7 +9676,7 @@
         },
         {
           "id": "66bd0c07-9523-41e9-8a56-95d9b109cec6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 120,
             "y": 279,
@@ -9719,7 +9719,7 @@
         },
         {
           "id": "89eeb371-e0c0-4be5-bb65-b5421a8109de",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 130,
             "y": 279,
@@ -9762,7 +9762,7 @@
         },
         {
           "id": "6b7ad02a-7c10-4521-82be-0e89ca33cf59",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 286,
@@ -9805,7 +9805,7 @@
         },
         {
           "id": "8ad57a29-11f1-42c3-bfa5-53c2b66d7ae0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 160,
             "y": 286,
@@ -9848,7 +9848,7 @@
         },
         {
           "id": "bd6581d8-c7e1-4d81-bef2-ff605aca110e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 176,
             "y": 286,
@@ -9891,7 +9891,7 @@
         },
         {
           "id": "7f0df77f-b607-492e-ae2b-1e31d2ac20ea",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 113,
             "y": 330,
@@ -9934,7 +9934,7 @@
         },
         {
           "id": "bec427de-a2fc-4ab0-ad91-f85f5adc0507",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 208,
             "y": 128,
@@ -9977,7 +9977,7 @@
         },
         {
           "id": "99c45e01-aa61-4a2c-b41c-55616ca0af2b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 224,
             "y": 128,
@@ -10020,7 +10020,7 @@
         },
         {
           "id": "ec1841c9-16ee-425b-aab3-b83e013a6b06",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 177,
             "y": 148,
@@ -10063,7 +10063,7 @@
         },
         {
           "id": "fda57733-7776-40a3-a032-f036e10d3c7a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 179,
             "y": 141,
@@ -10106,7 +10106,7 @@
         },
         {
           "id": "239464ad-c33d-4781-aff7-5b5a40a5ab6e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 84,
             "y": 395,
@@ -10149,7 +10149,7 @@
         },
         {
           "id": "a55bcf13-565b-4434-8fcf-ee0b9fbcbaf5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 164,
             "y": 263,
@@ -10192,7 +10192,7 @@
         },
         {
           "id": "b1b95414-49fb-4b44-9244-4ba74bac24e1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 179,
             "y": 266,
@@ -10235,7 +10235,7 @@
         },
         {
           "id": "5c92749f-8d8b-4eb1-9c73-dbb976ca284a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 3,
             "y": 420,
@@ -10278,7 +10278,7 @@
         },
         {
           "id": "92097cb5-dda1-4bba-a116-e0b32ba21105",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 425,
@@ -10321,7 +10321,7 @@
         },
         {
           "id": "8d614795-fbe1-46c5-b207-4d87b16e0ea0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 27,
             "y": 425,
@@ -10364,7 +10364,7 @@
         },
         {
           "id": "b46752dd-3cf1-4d86-b134-e5d0bccc3ad1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 37,
             "y": 425,
@@ -10407,7 +10407,7 @@
         },
         {
           "id": "73672eaa-99f3-4a0f-9509-6b0faf705049",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 416,
@@ -10450,7 +10450,7 @@
         },
         {
           "id": "f800fd9c-c281-449f-a6e6-13b60c7afa32",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 416,
@@ -10493,7 +10493,7 @@
         },
         {
           "id": "220fae37-371a-4e59-b926-791fc4ad7416",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 97,
             "y": 418,
@@ -10536,7 +10536,7 @@
         },
         {
           "id": "f5668a74-c91a-4ec4-b931-77b5e115a64f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 416,
@@ -10579,7 +10579,7 @@
         },
         {
           "id": "f16aabaa-1883-44b4-9240-5c34cbff3413",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 112,
             "y": 452,
@@ -10622,7 +10622,7 @@
         },
         {
           "id": "704cd2fc-2679-495b-929b-efe900c2d861",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 449,
@@ -10665,7 +10665,7 @@
         },
         {
           "id": "25df44fd-be89-44a1-b324-ea5493df27fa",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 455,
@@ -10708,7 +10708,7 @@
         },
         {
           "id": "566fb77f-299e-4e9b-8bc2-390d3a143474",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 114,
             "y": 436,
@@ -10751,7 +10751,7 @@
         },
         {
           "id": "9797e829-3632-47e9-8119-23604beb7f02",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 434,
@@ -10794,7 +10794,7 @@
         },
         {
           "id": "7b1d641e-b1cb-490e-bc1a-8098b6b7a7a3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 144,
             "y": 439,
@@ -10837,7 +10837,7 @@
         },
         {
           "id": "a8e6fd64-151d-48dc-9399-3b5a327b80a6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 400,
@@ -10880,7 +10880,7 @@
         },
         {
           "id": "d9c5b8d9-c513-4d90-88ea-e8d1b409a30d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 53,
             "y": 438,
@@ -10923,7 +10923,7 @@
         },
         {
           "id": "65a461c5-0f32-4073-bb4b-167de13d1fe6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 65,
             "y": 438,
@@ -10966,7 +10966,7 @@
         },
         {
           "id": "48dd4cf0-4746-4a25-9ca9-133f327c73eb",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 77,
             "y": 438,
@@ -11009,7 +11009,7 @@
         },
         {
           "id": "22272b52-8b82-49eb-bb93-aefc24e90668",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 89,
             "y": 438,
@@ -11052,7 +11052,7 @@
         },
         {
           "id": "11bce9a1-55b9-4515-a909-470d2508a7f5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 53,
             "y": 447,
@@ -11095,7 +11095,7 @@
         },
         {
           "id": "4aca6cf9-91d4-45cb-ae7e-1c52533f4663",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 65,
             "y": 448,
@@ -11138,7 +11138,7 @@
         },
         {
           "id": "bfd9bc62-db59-4a99-87da-d1a58dcf40d6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 77,
             "y": 448,
@@ -11181,7 +11181,7 @@
         },
         {
           "id": "a0b9acbe-9d0c-4d44-8128-efb4715ddaae",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 89,
             "y": 448,
@@ -11224,7 +11224,7 @@
         },
         {
           "id": "81964264-e448-484e-8d3d-75ff7d801f89",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 36,
             "y": 441,
@@ -11267,7 +11267,7 @@
         },
         {
           "id": "49949d13-e364-402e-a41f-1247063a45b2",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 448,
@@ -11310,7 +11310,7 @@
         },
         {
           "id": "6d5140ce-f9fb-44d0-b2b9-d49819e85c09",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 448,
@@ -11353,7 +11353,7 @@
         },
         {
           "id": "ec3a3ddf-70d0-47eb-a72f-01b68a2053e2",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 448,
@@ -11396,7 +11396,7 @@
         },
         {
           "id": "c6db16f1-7de8-4686-916f-d363d9c6ee2b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 114,
             "y": 147,
@@ -11439,7 +11439,7 @@
         },
         {
           "id": "f6a79b57-4356-480e-87fb-6d567dd42e36",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 224,
             "y": 272,
@@ -11482,7 +11482,7 @@
         },
         {
           "id": "4f730129-02df-40f6-bf5b-cb199aa3178d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 240,
             "y": 272,
@@ -11525,7 +11525,7 @@
         },
         {
           "id": "79016326-e437-435b-be44-83396d8a0687",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 272,
             "y": 272,
@@ -11568,7 +11568,7 @@
         },
         {
           "id": "96fa8404-11dc-41cf-be46-4ab80271f725",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 256,
             "y": 272,
@@ -11611,7 +11611,7 @@
         },
         {
           "id": "97adda76-ff01-4479-a6ed-b236f50f0df4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 288,
             "y": 272,
@@ -11654,7 +11654,7 @@
         },
         {
           "id": "52d05cb7-25ec-40d5-b57b-e743ed194aa2",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 304,
             "y": 272,
@@ -11697,7 +11697,7 @@
         },
         {
           "id": "bba5a25f-5088-4e7a-a95e-8497469adb93",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 208,
             "y": 272,
@@ -11740,7 +11740,7 @@
         },
         {
           "id": "45964362-972e-4429-829a-30d76d8a4bfb",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 224,
             "y": 288,
@@ -11783,7 +11783,7 @@
         },
         {
           "id": "5a9b891b-bcea-4bc8-9906-3293f0b52aff",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 256,
             "y": 288,
@@ -11826,7 +11826,7 @@
         },
         {
           "id": "4dfb64a9-1ab6-4cd8-84d6-a400e3b9a45d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 240,
             "y": 288,
@@ -11869,7 +11869,7 @@
         },
         {
           "id": "017f0872-f1fe-4fd0-9b09-7e8d9ca25c7c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 96,
@@ -11912,7 +11912,7 @@
         },
         {
           "id": "ac52af05-1856-4ace-8f6b-261aa30c3496",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 96,
             "y": 96,
@@ -11955,7 +11955,7 @@
         },
         {
           "id": "df1ce994-6b0a-44ef-adcb-6ab4ed78c3d2",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 112,
             "y": 384,
@@ -11998,7 +11998,7 @@
         },
         {
           "id": "74de8f99-038c-49dc-94d6-7553279e4b26",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 385,
@@ -12041,7 +12041,7 @@
         },
         {
           "id": "6e4a7b04-e511-4821-925e-435cb5bdcfff",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 145,
             "y": 389,
@@ -12084,7 +12084,7 @@
         },
         {
           "id": "37aa4269-e3c2-49cb-9f76-711558a5d340",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 163,
             "y": 394,
@@ -12127,7 +12127,7 @@
         },
         {
           "id": "de7fb6fe-0470-485a-8b42-d2b4247566a6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 474,
@@ -12170,7 +12170,7 @@
         },
         {
           "id": "b62972f2-2a95-4973-a6bb-4478dddc5f5a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 10,
             "y": 474,
@@ -12213,7 +12213,7 @@
         },
         {
           "id": "47190461-3d5a-44ac-a051-6d5d8300fc0a",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 20,
             "y": 474,
@@ -12256,7 +12256,7 @@
         },
         {
           "id": "6ce98ced-dab0-4f57-85a6-64defbd58e78",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 30,
             "y": 474,
@@ -12299,7 +12299,7 @@
         },
         {
           "id": "94c380e5-444f-4477-9d2e-484cfc036eaa",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 118,
             "y": 228,
@@ -12342,7 +12342,7 @@
         },
         {
           "id": "ee746b8c-ecdf-408e-93d3-7ccde176473f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 192,
@@ -12385,7 +12385,7 @@
         },
         {
           "id": "5739d224-9a26-472e-9316-3824dcbb0d85",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 128,
             "y": 208,
@@ -12441,7 +12441,7 @@
       "annotations": [
         {
           "id": "b4335c0c-cd60-4f0e-af5f-9512465279a0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 0,
@@ -12485,7 +12485,7 @@
         },
         {
           "id": "d0bac5b2-662f-4d61-a6e3-57b81d65e10b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 0,
@@ -12529,7 +12529,7 @@
         },
         {
           "id": "3b2aa40b-a1b0-4fde-a902-4be3f44501fd",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 0,
@@ -12573,7 +12573,7 @@
         },
         {
           "id": "ca725718-3940-493e-b39b-68b3f8546b8e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 16,
@@ -12617,7 +12617,7 @@
         },
         {
           "id": "48527aa6-5ce8-4acb-a8bc-69cc61bf49d9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 16,
@@ -12661,7 +12661,7 @@
         },
         {
           "id": "5de090ee-1c8f-477f-ae13-ee71f0d2e4dd",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 16,
@@ -12705,7 +12705,7 @@
         },
         {
           "id": "333ec715-848a-4a0e-8c26-fdc10f6f7d25",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 33,
@@ -12749,7 +12749,7 @@
         },
         {
           "id": "32e57f26-bf16-4291-9613-6a56c86c26dc",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 48,
@@ -12793,7 +12793,7 @@
         },
         {
           "id": "64d1e548-4e6c-4210-8964-fc2a5e8c725d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 48,
@@ -12850,7 +12850,7 @@
       "annotations": [
         {
           "id": "6d5ebd5b-dc77-4ef8-bcad-1b2d87987938",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 0,
@@ -12894,7 +12894,7 @@
         },
         {
           "id": "0d318d6d-ae87-4f0c-aafc-877b0dc5aeaf",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 0,
@@ -12938,7 +12938,7 @@
         },
         {
           "id": "7928a10f-8cf9-4c69-9e01-614237414c98",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 0,
@@ -12982,7 +12982,7 @@
         },
         {
           "id": "4f23698d-4044-4201-8bdc-3abc5a0cd5b9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 16,
@@ -13026,7 +13026,7 @@
         },
         {
           "id": "44a521a6-a13f-4082-b6d1-12009477aaff",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 16,
@@ -13070,7 +13070,7 @@
         },
         {
           "id": "cf31c2bf-dc8c-47be-85c1-bf8b501bcdd0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 16,
@@ -13114,7 +13114,7 @@
         },
         {
           "id": "85711597-d958-4e30-aed9-f602a7e437dc",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 32,
@@ -13158,7 +13158,7 @@
         },
         {
           "id": "365491f0-68eb-4aa9-a508-2af753b0b5c9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 48,
@@ -13202,7 +13202,7 @@
         },
         {
           "id": "712c3213-4925-48ae-9a81-0626c97b1ce3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 64,
@@ -13246,7 +13246,7 @@
         },
         {
           "id": "c433b4a1-7221-4beb-8fe5-6e74382c542c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 80,
@@ -13290,7 +13290,7 @@
         },
         {
           "id": "610752c0-c4ac-49f6-b3c7-8e3aaf219f08",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 96,
@@ -13334,7 +13334,7 @@
         },
         {
           "id": "7148bbdc-7029-476a-8391-618aaecaab7c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 112,
@@ -13378,7 +13378,7 @@
         },
         {
           "id": "80462022-c842-4cc8-ac53-e7236a925fdb",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 144,
@@ -13422,7 +13422,7 @@
         },
         {
           "id": "dcbd173f-8ab6-4c21-95d5-dc1149039332",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 128,
@@ -13466,7 +13466,7 @@
         },
         {
           "id": "c4873d4f-b8fa-44dc-8b9a-529c0a85e346",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 128,
@@ -13510,7 +13510,7 @@
         },
         {
           "id": "9eed6b7e-1892-4b17-9363-f9be225fbb08",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 128,
@@ -13554,7 +13554,7 @@
         },
         {
           "id": "40aa2487-93cd-40e5-9770-625bfe3a5932",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 128,
@@ -13598,7 +13598,7 @@
         },
         {
           "id": "c4fce0a8-5f1f-4108-a942-fce7611a7c0e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 128,
@@ -13642,7 +13642,7 @@
         },
         {
           "id": "f1c8e285-37c5-4bf2-9575-fe4f7c6b464b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 48,
@@ -13686,7 +13686,7 @@
         },
         {
           "id": "2a68d031-ce2a-4ec1-bb9b-fec8af99e6a0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 0,
@@ -13730,7 +13730,7 @@
         },
         {
           "id": "f1f18729-319a-42c4-b824-9729cb939f54",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 0,
@@ -13774,7 +13774,7 @@
         },
         {
           "id": "3bd3764e-4d67-4d39-9c38-26c61673c1b6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 0,
@@ -13818,7 +13818,7 @@
         },
         {
           "id": "6f8375eb-3c7b-4a40-a55b-c3ceb921a274",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 160,
@@ -13862,7 +13862,7 @@
         },
         {
           "id": "d2d67d93-5be0-4fee-bff7-adcbeca06a3d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 32,
@@ -13906,7 +13906,7 @@
         },
         {
           "id": "1d27b204-0efe-4c73-9ec1-d59e9141bbd9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 192,
@@ -13949,7 +13949,7 @@
         },
         {
           "id": "aff99ad5-6401-47ca-a713-50bf98fc13fe",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 192,
@@ -13992,7 +13992,7 @@
         },
         {
           "id": "be804730-b596-4177-b6ae-841573ff1d0e",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 192,
@@ -14035,7 +14035,7 @@
         },
         {
           "id": "aaf75e15-6622-4e78-8925-0e40f53bb3b8",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 208,
@@ -14078,7 +14078,7 @@
         },
         {
           "id": "c2bc2a52-c125-469c-bc8d-5742ed83a5c4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 208,
@@ -14121,7 +14121,7 @@
         },
         {
           "id": "91ff57d2-0429-4ccc-a21d-5640ce6a6bd5",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 36,
             "y": 208,
@@ -14164,7 +14164,7 @@
         },
         {
           "id": "43b61d1c-3925-4545-b759-d39ae955c00b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 36,
             "y": 212,
@@ -14207,7 +14207,7 @@
         },
         {
           "id": "3ea52a10-29ae-4d4b-a046-11397900577f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 224,
@@ -14250,7 +14250,7 @@
         },
         {
           "id": "55c85465-640a-47f2-9c4b-b94251627f04",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 96,
@@ -14293,7 +14293,7 @@
         },
         {
           "id": "faaf03c2-6849-49dd-b97e-58a31b2830c3",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 96,
@@ -14336,7 +14336,7 @@
         },
         {
           "id": "a24a86a4-4dda-4fa4-8cb5-41306bc86932",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 48,
             "y": 96,
@@ -14379,7 +14379,7 @@
         },
         {
           "id": "cd72e72a-493e-4366-a62d-56046bbde0d0",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 64,
             "y": 96,
@@ -14422,7 +14422,7 @@
         },
         {
           "id": "d319fd8d-5e7f-4957-928e-5d71003b6341",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 95,
             "y": 104,
@@ -14465,7 +14465,7 @@
         },
         {
           "id": "dfafc10e-fdce-49d3-a83b-ef2b207e8104",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 102,
             "y": 104,
@@ -14508,7 +14508,7 @@
         },
         {
           "id": "3fea45ea-adbc-4c28-9a1d-e1ae6d8aed48",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 109,
             "y": 104,
@@ -14551,7 +14551,7 @@
         },
         {
           "id": "0031cb12-522c-4211-a246-9f050b221553",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 115,
             "y": 104,
@@ -14594,7 +14594,7 @@
         },
         {
           "id": "246e9867-9d4a-4cef-85dc-52f38597b89f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 78,
             "y": 32,
@@ -14637,7 +14637,7 @@
         },
         {
           "id": "66bee64e-e912-4c5b-9761-dd6e64143414",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 30,
@@ -14680,7 +14680,7 @@
         },
         {
           "id": "067ae524-4274-4aa8-a1ea-0a36ed3b63ab",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 80,
             "y": 48,
@@ -14736,7 +14736,7 @@
       "annotations": [
         {
           "id": "11486f82-7116-4fcf-a6ef-ee0b6af3bed9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 0,
@@ -14780,7 +14780,7 @@
         },
         {
           "id": "009f4dad-0877-4efc-9858-a6062f41a3d4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 0,
@@ -14824,7 +14824,7 @@
         },
         {
           "id": "675ea519-a3d7-4fc7-b816-3c791dc262e1",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 0,
@@ -14868,7 +14868,7 @@
         },
         {
           "id": "48fd0bec-6247-4755-a3dd-fceeb096bd4b",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 16,
@@ -14912,7 +14912,7 @@
         },
         {
           "id": "a5efb126-e4b6-4cc5-955e-52dfc6ddabb6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 16,
@@ -14956,7 +14956,7 @@
         },
         {
           "id": "52bb8656-100a-4877-a67f-5b33a595240d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 16,
@@ -15000,7 +15000,7 @@
         },
         {
           "id": "1a758faf-e972-42b5-8da3-c2386ae9de91",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 32,
@@ -15044,7 +15044,7 @@
         },
         {
           "id": "e872598c-890b-4115-8d0d-444c33f4ffb6",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 48,
@@ -15088,7 +15088,7 @@
         },
         {
           "id": "37b96f71-3050-48b2-9582-048dc8a900cd",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 48,
@@ -15145,7 +15145,7 @@
       "annotations": [
         {
           "id": "d896746e-f810-4708-8318-1c078ca5a943",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 0,
@@ -15189,7 +15189,7 @@
         },
         {
           "id": "b4ca24cb-c3a5-4707-871c-7cdb8dc9d736",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 0,
@@ -15233,7 +15233,7 @@
         },
         {
           "id": "59ba6539-9610-4ce6-9075-f0c88c39ea7d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 0,
@@ -15277,7 +15277,7 @@
         },
         {
           "id": "0c8e746a-3a87-44ce-ae27-add3eb2aa8b7",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 16,
@@ -15321,7 +15321,7 @@
         },
         {
           "id": "129c1721-96e1-4b39-8ed3-a6a07e89981f",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 16,
@@ -15365,7 +15365,7 @@
         },
         {
           "id": "f1f0537d-9a22-4e98-a276-5694a23916e4",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 16,
@@ -15409,7 +15409,7 @@
         },
         {
           "id": "efa64111-b29a-454a-a346-32cac64279a9",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 32,
@@ -15453,7 +15453,7 @@
         },
         {
           "id": "565d34d5-0b73-4334-a70c-a411da8ea008",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 48,
@@ -15497,7 +15497,7 @@
         },
         {
           "id": "c0a6d5c9-58e7-49e1-a118-ea831c983538",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 48,
@@ -15566,7 +15566,7 @@
       "annotations": [
         {
           "id": "d426d831-b641-48ea-b22b-dea30f50e92c",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 0,
@@ -15610,7 +15610,7 @@
         },
         {
           "id": "1e3d08f6-9315-4f2f-bfc6-a7628db8131d",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 0,
@@ -15654,7 +15654,7 @@
         },
         {
           "id": "23304a38-5808-4a80-ba80-ff0afe8fdf07",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 0,
@@ -15698,7 +15698,7 @@
         },
         {
           "id": "9976d08e-8403-4553-9b28-4313b550a998",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 16,
@@ -15742,7 +15742,7 @@
         },
         {
           "id": "a3941582-203a-4860-8783-ec331fd8b275",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 16,
@@ -15786,7 +15786,7 @@
         },
         {
           "id": "6a774654-19c6-4909-bee1-79c5786aa7d8",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 32,
             "y": 16,
@@ -15830,7 +15830,7 @@
         },
         {
           "id": "de1534a7-4dbf-4965-b764-d7a4984d57c2",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 32,
@@ -15874,7 +15874,7 @@
         },
         {
           "id": "3f2e0df4-6bbb-4203-aa66-6a39bc765fdf",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 0,
             "y": 48,
@@ -15918,7 +15918,7 @@
         },
         {
           "id": "987edea6-81f6-41b1-a58c-7f5b4fbbecef",
-          "entityType": "Sprite",
+          "entType": "Sprite",
           "aabb": {
             "x": 16,
             "y": 48,
@@ -15971,7 +15971,7 @@
       }
     },
     {
-      "path": "sprites/entities-new.png",
+      "path": "sprites/ents-new.png",
       "annotations": [],
       "view": {
         "gridEnabled": true,

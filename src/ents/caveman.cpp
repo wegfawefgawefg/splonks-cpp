@@ -1,11 +1,11 @@
-#include "entities/caveman.hpp"
+#include "ents/caveman.hpp"
 #include "audio.hpp"
-#include "entities/common/common.hpp"
-#include "entities/common/ground_walker.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "ents/common/ground_walker.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace splonks::entities::caveman {
+namespace splonks::ents::caveman {
 
 namespace {
 
@@ -32,63 +32,63 @@ constexpr int kCavemanIdleMinFrames = 24;
 constexpr int kCavemanIdleMaxFrames = 64;
 constexpr int kCavemanIdleChance = 120;
 
-void FaceTowards(Entity& caveman, const Vec2& target_pos, const Stage& stage) {
+void FaceTowards(Ent& caveman, const Vec2& target_pos, const Stage& stage) {
     const Vec2 delta = GetNearestWorldDelta(stage, caveman.GetCenter(), target_pos);
     if (delta.x < 0.0F) {
-        caveman.facing = LeftOrRight::Left;
+        caveman.facing = Side::Left;
     } else if (delta.x > 0.0F) {
-        caveman.facing = LeftOrRight::Right;
+        caveman.facing = Side::Right;
     }
 }
 
-void StartIdle(Entity& caveman, State& state) {
-    caveman.ai_state = EntityAiState::Idle;
+void StartIdle(Ent& caveman, State& state) {
+    caveman.ai_state = EntAiState::Idle;
     caveman.counter_a = static_cast<float>(
         state.drng.RandomIntInclusive(kCavemanIdleMinFrames, kCavemanIdleMaxFrames));
     common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
-    TrySetAnimation(caveman, EntityDisplayState::Neutral);
+    TrySetAnim(caveman, EntDisplayState::Neutral);
 }
 
-void StartWalking(Entity& caveman, const State& state) {
-    caveman.ai_state = EntityAiState::Patrolling;
+void StartWalking(Ent& caveman, const State& state) {
+    caveman.ai_state = EntAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         caveman,
         state,
-        caveman.facing == LeftOrRight::Left ? -kCavemanWalkSpeed : kCavemanWalkSpeed,
+        caveman.facing == Side::Left ? -kCavemanWalkSpeed : kCavemanWalkSpeed,
         kCavemanWalkAcceleration
     );
-    TrySetAnimation(caveman, EntityDisplayState::Walk);
+    TrySetAnim(caveman, EntDisplayState::Walk);
 }
 
-void StartAttacking(Entity& caveman, const State& state) {
-    caveman.ai_state = EntityAiState::Pursuing;
+void StartAttacking(Ent& caveman, const State& state) {
+    caveman.ai_state = EntAiState::Pursuing;
     common::AccelerateHorizontallyTowardSpeed(
         caveman,
         state,
-        caveman.facing == LeftOrRight::Left ? -kCavemanAttackSpeed : kCavemanAttackSpeed,
+        caveman.facing == Side::Left ? -kCavemanAttackSpeed : kCavemanAttackSpeed,
         kCavemanAttackAcceleration
     );
-    TrySetAnimation(caveman, EntityDisplayState::Walk);
+    TrySetAnim(caveman, EntDisplayState::Walk);
 }
 
-bool ShouldRunSightScan(const Entity& caveman, std::uint64_t stage_frame) {
+bool ShouldRunSightScan(const Ent& caveman, std::uint64_t stage_frame) {
     return ((stage_frame + static_cast<std::uint64_t>(caveman.vid.id)) %
             kCavemanSightScanIntervalFrames) == 0;
 }
 
 bool CanSeePlayerAhead(
-    const Entity& caveman,
+    const Ent& caveman,
     const State& state,
     const Graphics& graphics
 ) {
     const Vec2 caveman_center = caveman.GetCenter();
-    const int direction = caveman.facing == LeftOrRight::Left ? -1 : 1;
+    const int direction = caveman.facing == Side::Left ? -1 : 1;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player == nullptr || !player->active || player->condition != EntityCondition::Normal) {
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || !player->active || player->condition != EntCondition::Normal) {
             continue;
         }
         const Vec2 player_center =
@@ -111,15 +111,15 @@ bool CanSeePlayerAhead(
             graphics,
             caveman.vid
         );
-        if (hit.type == WorldRayHitType::Entity && hit.entity_vid.has_value() &&
-            *hit.entity_vid == player->vid) {
+        if (hit.type == WorldRayHitType::Ent && hit.ent_vid.has_value() &&
+            *hit.ent_vid == player->vid) {
             return true;
         }
     }
     return false;
 }
 
-void MaybeWallHopWhileIdle(Entity& caveman, const State& state, const Graphics& graphics) {
+void MaybeWallHopWhileIdle(Ent& caveman, const State& state, const Graphics& graphics) {
     if (!caveman.grounded) {
         return;
     }
@@ -131,14 +131,14 @@ void MaybeWallHopWhileIdle(Entity& caveman, const State& state, const Graphics& 
     }
 
     caveman.vel.y = kCavemanWallHopSpeedY;
-    caveman.vel.x = caveman.facing == LeftOrRight::Left ? -kCavemanWallHopSpeedX : kCavemanWallHopSpeedX;
+    caveman.vel.x = caveman.facing == Side::Left ? -kCavemanWallHopSpeedX : kCavemanWallHopSpeedX;
     caveman.counter_a = std::max(0.0F, caveman.counter_a - 10.0F);
 }
 
 } // namespace
 
-void StepEntityLogicAsCaveman(
-    std::size_t entity_idx,
+void StepEntLogicAsCaveman(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -147,33 +147,33 @@ void StepEntityLogicAsCaveman(
     (void)audio;
     (void)dt;
 
-    Entity& caveman = state.entity_manager.entities[entity_idx];
-    if (caveman.last_condition == EntityCondition::Stunned &&
-        caveman.condition == EntityCondition::Normal) {
+    Ent& caveman = state.ents.ents[ent_idx];
+    if (caveman.last_condition == EntCondition::Stunned &&
+        caveman.condition == EntCondition::Normal) {
         StartIdle(caveman, state);
     }
-    if (caveman.condition != EntityCondition::Normal) {
+    if (caveman.condition != EntCondition::Normal) {
         return;
     }
-    if (caveman.ai_state != EntityAiState::Pursuing &&
+    if (caveman.ai_state != EntAiState::Pursuing &&
         ShouldRunSightScan(caveman, state.stage_frame) &&
         CanSeePlayerAhead(caveman, state, graphics)) {
-        if (const Entity* const player = FindNearestPlayer(state, caveman.GetCenter())) {
+        if (const Ent* const player = FindNearestPlayer(state, caveman.GetCenter())) {
             FaceTowards(caveman, player->GetCenter(), state.stage);
         }
         if (caveman.grounded) {
             caveman.vel.y = kCavemanAlertHopSpeedY;
             caveman.grounded = false;
         }
-        (void)PlayEntitySoundEmitter(state, caveman, audio_asset_ids::CavemanNotice);
+        (void)PlayEntSoundEmitter(state, caveman, audio_asset_ids::CavemanNotice);
         StartAttacking(caveman, state);
         return;
     }
 
-    if (caveman.ai_state == EntityAiState::Pursuing) {
-        int direction = caveman.facing == LeftOrRight::Left ? -1 : 1;
+    if (caveman.ai_state == EntAiState::Pursuing) {
+        int direction = caveman.facing == Side::Left ? -1 : 1;
         if (common::HasWallAheadForGroundWalker(caveman, state, graphics, direction)) {
-            caveman.facing = caveman.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+            caveman.facing = caveman.facing == Side::Left ? Side::Right : Side::Left;
             direction = -direction;
         }
         common::AccelerateHorizontallyTowardSpeed(
@@ -182,15 +182,15 @@ void StepEntityLogicAsCaveman(
             static_cast<float>(direction) * kCavemanAttackSpeed,
             kCavemanAttackAcceleration
         );
-        SetMovementFlag(caveman, EntityMovementFlag::Running, true);
-        SetMovementFlag(caveman, EntityMovementFlag::Walking, true);
-        TrySetAnimation(caveman, EntityDisplayState::Walk);
+        SetMovementFlag(caveman, EntMovementFlag::Running, true);
+        SetMovementFlag(caveman, EntMovementFlag::Walking, true);
+        TrySetAnim(caveman, EntDisplayState::Walk);
         return;
     }
 
-    if (caveman.ai_state == EntityAiState::Idle) {
+    if (caveman.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(caveman, kCavemanWalkAcceleration);
-        TrySetAnimation(caveman, EntityDisplayState::Neutral);
+        TrySetAnim(caveman, EntDisplayState::Neutral);
         MaybeWallHopWhileIdle(caveman, state, graphics);
         if (caveman.counter_a > 0.0F) {
             caveman.counter_a -= 1.0F;
@@ -198,15 +198,15 @@ void StepEntityLogicAsCaveman(
         }
 
         caveman.facing =
-            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+            state.drng.RandomIntInclusive(0, 1) == 0 ? Side::Left : Side::Right;
         StartWalking(caveman, state);
         return;
     }
 
-    int direction = caveman.facing == LeftOrRight::Left ? -1 : 1;
+    int direction = caveman.facing == Side::Left ? -1 : 1;
     if (common::HasWallAheadForGroundWalker(caveman, state, graphics, direction) ||
         !common::HasGroundAheadForGroundWalker(caveman, state, graphics, direction)) {
-        caveman.facing = caveman.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        caveman.facing = caveman.facing == Side::Left ? Side::Right : Side::Left;
         direction = -direction;
     }
 
@@ -221,12 +221,12 @@ void StepEntityLogicAsCaveman(
         static_cast<float>(direction) * kCavemanWalkSpeed,
         kCavemanWalkAcceleration
     );
-    SetMovementFlag(caveman, EntityMovementFlag::Walking, true);
-    TrySetAnimation(caveman, EntityDisplayState::Walk);
+    SetMovementFlag(caveman, EntMovementFlag::Walking, true);
+    TrySetAnim(caveman, EntDisplayState::Walk);
 }
 
-extern const EntityArchetype kCavemanArchetype{
-    .type_ = EntityType::Caveman,
+extern const EntSpec kCavemanSpec{
+    .type_ = EntType::Caveman,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 3,
     .has_physics = true,
@@ -237,18 +237,18 @@ extern const EntityArchetype kCavemanArchetype{
     .hurt_on_contact = true,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kCavemanIdleMinFrames),
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .damage_sound = audio_asset_ids::CavemanHurt,
     .collide_sound = audio_asset_ids::Thud,
-    .step_logic = StepEntityLogicAsCaveman,
+    .step_logic = StepEntLogicAsCaveman,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Caveman),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Caveman),
 };
 
-} // namespace splonks::entities::caveman
+} // namespace splonks::ents::caveman

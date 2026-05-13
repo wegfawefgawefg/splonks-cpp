@@ -149,8 +149,8 @@ struct DebugUiSettings {
     bool menu_visible = true;
     bool playback_visible = true;
     bool level_visible = true;
-    bool entities_visible = true;
-    bool entity_annotations_visible = false;
+    bool ents_visible = true;
+    bool ent_annotations_visible = false;
     bool shake_brush_visible = false;
     bool audio_brush_visible = false;
     bool fluid_brush_visible = false;
@@ -169,14 +169,14 @@ struct DebugUiSettings {
     bool camera_settings_visible = false;
     bool performance_settings_visible = false;
     bool player_tuning_visible = false;
-    std::uint32_t entity_swap_type = 1;
+    std::uint32_t ent_swap_type = 1;
     std::uint32_t default_spawn_type = 1;
     bool default_spawn_enabled = false;
-    bool entity_swap_fresh = true;
-    bool entity_swap_keep_passives = false;
-    bool entity_swap_keep_money = false;
-    bool entity_swap_keep_health = false;
-    bool entity_swap_keep_tools = false;
+    bool ent_swap_fresh = true;
+    bool ent_swap_keep_passives = false;
+    bool ent_swap_keep_money = false;
+    bool ent_swap_keep_health = false;
+    bool ent_swap_keep_tools = false;
 
     static DebugUiSettings New();
 };

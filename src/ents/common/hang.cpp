@@ -1,8 +1,8 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 
 #include "controls.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -10,7 +10,7 @@
 #include <cmath>
 #include <vector>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
@@ -61,14 +61,14 @@ void AddClimbDebugRect(State& state, const Vec2& world_pos, DebugAnnotationColor
 }
 
 ClimbProbePoints GetClimbProbePointsAtPosition(
-    const Entity& entity,
+    const Ent& ent,
     const Vec2& pos,
     const JumpAndClimbTuning& tuning
 ) {
-    const Vec2 center = pos + (entity.size / 2.0F);
+    const Vec2 center = pos + (ent.size / 2.0F);
     const float probe_y =
-        pos.y + std::min(tuning.climb_probe_bias_pixels, std::max(0.0F, entity.size.y - 1.0F));
-    const float horizontal_offset = (entity.size.x * 0.5F) * std::max(0.0F, tuning.climb_probe_x_scale);
+        pos.y + std::min(tuning.climb_probe_bias_pixels, std::max(0.0F, ent.size.y - 1.0F));
+    const float horizontal_offset = (ent.size.x * 0.5F) * std::max(0.0F, tuning.climb_probe_x_scale);
     return ClimbProbePoints{
         .left = Vec2::New(center.x - horizontal_offset, probe_y),
         .center = Vec2::New(center.x, probe_y),
@@ -84,12 +84,12 @@ bool IsClimbableTileQuery(
 }
 
 std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
-    const Entity& entity,
+    const Ent& ent,
     const Vec2& pos,
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(entity, pos, tuning);
+    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, pos, tuning);
     const std::array<IVec2, 3> probe_points = {
         ToIVec2(probes.left),
         ToIVec2(probes.center),
@@ -99,7 +99,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     float best_score = 0.0F;
-    const Vec2 entity_center = pos + (entity.size / 2.0F);
+    const Vec2 ent_center = pos + (ent.size / 2.0F);
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -128,8 +128,8 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
             static_cast<float>(tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8),
             static_cast<float>(tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8)
         );
-        const float dx = std::abs(tile_center.x - entity_center.x);
-        const float dy = std::abs(tile_center.y - entity_center.y);
+        const float dx = std::abs(tile_center.x - ent_center.x);
+        const float dy = std::abs(tile_center.y - ent_center.y);
         const float score = dx + (dy * 0.25F);
         if (!best_tile.has_value() || hits > best_hits || (hits == best_hits && score < best_score)) {
             best_tile = tile_query->tile_pos;
@@ -146,7 +146,7 @@ std::optional<ClimbAnchor> GetClimbAnchorAtPosition(
 }
 
 std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     const JumpAndClimbTuning& tuning,
     const std::array<IVec2, 3>& probe_points
@@ -154,7 +154,7 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
     std::optional<IVec2> best_tile = std::nullopt;
     int best_hits = 0;
     float best_score = 0.0F;
-    const Vec2 entity_center = entity.GetCenter();
+    const Vec2 ent_center = ent.GetCenter();
 
     for (const IVec2& probe_point : probe_points) {
         const std::optional<WorldTileQueryResult> tile_query =
@@ -181,8 +181,8 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
             static_cast<float>(tile_query->tile_pos.x * static_cast<int>(kTileSize) + 8),
             static_cast<float>(tile_query->tile_pos.y * static_cast<int>(kTileSize) + 8)
         );
-        const float dx = std::abs(tile_center.x - entity_center.x);
-        const float dy = std::abs(tile_center.y - entity_center.y);
+        const float dx = std::abs(tile_center.x - ent_center.x);
+        const float dy = std::abs(tile_center.y - ent_center.y);
         const float score = dx + (dy * 0.25F);
         if (!best_tile.has_value() || hits > best_hits || (hits == best_hits && score < best_score)) {
             best_tile = tile_query->tile_pos;
@@ -199,20 +199,20 @@ std::optional<ClimbAnchor> GetClimbAnchorFromProbePoints(
 }
 
 std::optional<ClimbAnchor> GetClimbAnchor(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    return GetClimbAnchorAtPosition(entity, entity.pos, state, tuning);
+    return GetClimbAnchorAtPosition(ent, ent.pos, state, tuning);
 }
 
 std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
-    const Entity& entity,
+    const Ent& ent,
     State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(entity, entity.pos, tuning);
-    const AABB aabb = entity.GetAABB();
+    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ent.pos, tuning);
+    const AABB aabb = ent.GetAABB();
     const std::array<IVec2, 3> normal_probe_points = {
         ToIVec2(probes.left),
         ToIVec2(probes.center),
@@ -226,7 +226,7 @@ std::optional<ClimbAnchor> GetGroundedDownClimbAnchor(
     };
 
     std::optional<ClimbAnchor> climb_anchor =
-        GetClimbAnchorFromProbePoints(entity, state, tuning, probe_points);
+        GetClimbAnchorFromProbePoints(ent, state, tuning, probe_points);
     if (!climb_anchor.has_value() || !CanAttachDownToClimbAnchor(*climb_anchor, state)) {
         climb_anchor = std::nullopt;
     }
@@ -279,31 +279,31 @@ bool CanAttachDownToClimbAnchor(const ClimbAnchor& climb_anchor, const State& st
     return IsClimbableTileQuery(state.stage, below_query);
 }
 
-void SnapEntityToClimbTileCenterline(Entity& entity, const IVec2& tile_pos) {
-    Vec2 center = entity.GetCenter();
+void SnapEntToClimbTileCenterline(Ent& ent, const IVec2& tile_pos) {
+    Vec2 center = ent.GetCenter();
     center.x = static_cast<float>(tile_pos.x * static_cast<int>(kTileSize) + 8);
-    entity.SetCenter(center);
+    ent.SetCenter(center);
 }
 
 bool HasClimbableTileAtPosition(
-    const Entity& entity,
+    const Ent& ent,
     const Vec2& pos,
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    return GetClimbAnchorAtPosition(entity, pos, state, tuning).has_value();
+    return GetClimbAnchorAtPosition(ent, pos, state, tuning).has_value();
 }
 
 int GetAllowedClimbUpPixels(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     const JumpAndClimbTuning& tuning,
     int max_pixels
 ) {
     int allowed_pixels = 0;
     for (int step = 1; step <= max_pixels; ++step) {
-        const Vec2 next_pos = entity.pos + Vec2::New(0.0F, -static_cast<float>(step));
-        if (!HasClimbableTileAtPosition(entity, next_pos, state, tuning)) {
+        const Vec2 next_pos = ent.pos + Vec2::New(0.0F, -static_cast<float>(step));
+        if (!HasClimbableTileAtPosition(ent, next_pos, state, tuning)) {
             break;
         }
         allowed_pixels = step;
@@ -311,12 +311,12 @@ int GetAllowedClimbUpPixels(
     return allowed_pixels;
 }
 
-void AddClimbDebugAnnotations(const Entity& entity, State& state, const JumpAndClimbTuning& tuning) {
+void AddClimbDebugAnnotations(const Ent& ent, State& state, const JumpAndClimbTuning& tuning) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
 
-    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(entity, entity.pos, tuning);
+    const ClimbProbePoints probes = GetClimbProbePointsAtPosition(ent, ent.pos, tuning);
     const std::array<std::pair<const char*, Vec2>, 3> probe_points = {{
         {"climb L", probes.left},
         {"climb C", probes.center},
@@ -345,8 +345,8 @@ void AddClimbDebugAnnotations(const Entity& entity, State& state, const JumpAndC
 bool IsHangableImpassableInRect(const Vec2& tl, const Vec2& br, const State& state, VID self_vid) {
     const AABB area = AABB::New(tl, br);
     const Vec2 anchor = (tl + br) / 2.0F;
-    for (const VID& other_vid : QueryEntitiesInAabb(state, area, self_vid)) {
-        const Entity* const other = state.entity_manager.GetEntity(other_vid);
+    for (const VID& other_vid : QueryEntsInAabb(state, area, self_vid)) {
+        const Ent* const other = state.ents.GetEnt(other_vid);
         if (other == nullptr || !other->active || !other->impassable || !other->can_be_hung_on) {
             continue;
         }
@@ -362,7 +362,7 @@ bool IsBlockedForHangProbe(
     const Vec2& br,
     const State& state,
     bool check_tiles,
-    bool check_entities,
+    bool check_ents,
     bool use_hangable_tiles,
     VID self_vid
 ) {
@@ -394,47 +394,47 @@ bool IsBlockedForHangProbe(
         }
     }
 
-    if (check_entities && IsHangableImpassableInRect(tl, br, state, self_vid)) {
+    if (check_ents && IsHangableImpassableInRect(tl, br, state, self_vid)) {
         return true;
     }
 
     return false;
 }
 
-bool EntityHasHangGloves(const Entity& entity) {
-    if (entity.can_hang_wall) {
+bool EntHasHangGloves(const Ent& ent) {
+    if (ent.can_hang_wall) {
         return true;
     }
-    if (HasEffect(entity, EffectId::Gloves)) {
+    if (HasEffect(ent, EffectId::Gloves)) {
         return true;
     }
     return false;
 }
 
-bool IsTryingToHangOnSide(const Entity& entity, const State& state, bool left_side) {
+bool IsTryingToHangOnSide(const Ent& ent, const State& state, bool left_side) {
     const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(entity, state);
+        controls::GetControlIntentForEnt(ent, state);
     if (left_side) {
         return control.left && !control.right;
     }
     return control.right && !control.left;
 }
 
-void StartEntityJump(Entity& entity, const JumpAndClimbTuning& tuning) {
+void StartEntJump(Ent& ent, const JumpAndClimbTuning& tuning) {
     const float jump_impulse =
-        GetModifiedEffectValue(entity, EffectModifierTarget::JumpImpulse, tuning.jump_impulse);
-    entity.vel.y = -jump_impulse;
-    entity.jump_delay_frame_count = tuning.jump_delay_frames;
-    entity.jump_hold_gravity_frames_remaining = tuning.jump_hold_gravity_frames;
-    entity.jumped_this_frame = true;
+        GetModifiedEffectValue(ent, EffectModifierTarget::JumpImpulse, tuning.jump_impulse);
+    ent.vel.y = -jump_impulse;
+    ent.jump_delay_frame_count = tuning.jump_delay_frames;
+    ent.jump_hold_gravity_frames_remaining = tuning.jump_hold_gravity_frames;
+    ent.jumped_this_frame = true;
 }
 
-void PlayJumpSoundsForEntity(State& state, Entity& entity) {
-    (void)PlayEntityCenterSoundEmitter(state, entity, audio_asset_ids::Jump);
-    if (HasEffect(entity, EffectId::SpringShoes)) {
-        (void)PlayEntityCenterSoundEmitter(
+void PlayJumpSoundsForEnt(State& state, Ent& ent) {
+    (void)PlayEntCenterSoundEmitter(state, ent, audio_asset_ids::Jump);
+    if (HasEffect(ent, EffectId::SpringShoes)) {
+        (void)PlayEntCenterSoundEmitter(
             state,
-            entity,
+            ent,
             audio_asset_ids::SpringShoe,
             AudioEmitterPlayParams{.volume_scale = kSpringShoeMovementSoundVolume}
         );
@@ -442,42 +442,42 @@ void PlayJumpSoundsForEntity(State& state, Entity& entity) {
 }
 
 void ApplyAirGravity(
-    Entity& entity,
+    Ent& ent,
     const State& state,
     const controls::ControlIntent& control,
     const JumpAndClimbTuning& tuning
 ) {
     float gravity = state.stage.gravity * tuning.gravity_scale;
-    if (tuning.jump_hold_gravity_frames > 0 && entity.jump_hold_gravity_frames_remaining > 0 &&
-        control.jump && entity.vel.y < 0.0F) {
+    if (tuning.jump_hold_gravity_frames > 0 && ent.jump_hold_gravity_frames_remaining > 0 &&
+        control.jump && ent.vel.y < 0.0F) {
         gravity = 0.0F;
-        entity.jump_hold_gravity_frames_remaining -= 1;
+        ent.jump_hold_gravity_frames_remaining -= 1;
     } else {
-        entity.jump_hold_gravity_frames_remaining = 0;
+        ent.jump_hold_gravity_frames_remaining = 0;
     }
 
-    entity.acc.y += gravity;
+    ent.acc.y += gravity;
 }
 
-void DetachFromClimb(Entity& entity, const JumpAndClimbTuning& tuning) {
-    const bool was_climbing = entity.IsClimbing();
-    SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
+void DetachFromClimb(Ent& ent, const JumpAndClimbTuning& tuning) {
+    const bool was_climbing = ent.IsClimbing();
+    SetMovementFlag(ent, EntMovementFlag::Climbing, false);
     if (was_climbing) {
-        entity.climb_detach_cooldown = std::max(
-            entity.climb_detach_cooldown,
+        ent.climb_detach_cooldown = std::max(
+            ent.climb_detach_cooldown,
             tuning.climb_detach_cooldown_frames
         );
     }
 }
 
 bool IsSideBlockedForHang(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     bool left_side,
     bool check_tiles,
-    bool check_entities
+    bool check_ents
 ) {
-    const AABB aabb = entity.GetAABB();
+    const AABB aabb = ent.GetAABB();
     const Vec2 wall_tl = left_side ? Vec2::New(aabb.tl.x - 1.0F, aabb.tl.y)
                                    : Vec2::New(aabb.br.x, aabb.tl.y);
     const Vec2 wall_br = left_side ? Vec2::New(aabb.tl.x, aabb.br.y)
@@ -487,19 +487,19 @@ bool IsSideBlockedForHang(
         wall_br,
         state,
         check_tiles,
-        check_entities,
+        check_ents,
         true,
-        entity.vid
+        ent.vid
     );
 }
 
 bool IsHdHangProbeBlocked(
-    const Entity& entity,
+    const Ent& ent,
     State& state,
     float x,
     float y,
     bool check_tiles,
-    bool check_entities,
+    bool check_ents,
     bool use_hangable_tiles
 ) {
     return IsBlockedForHangProbe(
@@ -507,57 +507,57 @@ bool IsHdHangProbeBlocked(
         Vec2::New(x, y),
         state,
         check_tiles,
-        check_entities,
+        check_ents,
         use_hangable_tiles,
-        entity.vid
+        ent.vid
     );
 }
 
 bool CanCornerHangOnSide(
-    const Entity& entity,
+    const Ent& ent,
     State& state,
     bool left_side,
     bool check_tiles,
-    bool check_entities
+    bool check_ents
 ) {
-    const AABB aabb = entity.GetAABB();
+    const AABB aabb = ent.GetAABB();
     const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
     const float upper_probe_y_a = aabb.tl.y + 2.0F;
     const float upper_probe_y_b = aabb.tl.y + 3.0F;
-    const float center_x = aabb.tl.x + std::floor(entity.size.x / 2.0F);
+    const float center_x = aabb.tl.x + std::floor(ent.size.x / 2.0F);
     const float below_probe_y = aabb.br.y + 1.0F;
 
     const bool upper_probe_blocked =
-        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities, true) ||
-        IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities, true);
+        IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
+        IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_b, check_tiles, check_ents, true);
     const bool above_probe_blocked =
-        IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities, false);
+        IsHdHangProbeBlocked(ent, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_ents, false);
     const bool below_probe_blocked =
-        IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities, false);
+        IsHdHangProbeBlocked(ent, state, center_x, below_probe_y, check_tiles, check_ents, false);
 
     return upper_probe_blocked && !above_probe_blocked && !below_probe_blocked;
 }
 
 bool CanGloveHangBelowCorner(
-    const Entity& entity,
+    const Ent& ent,
     State& state,
     bool left_side,
     bool check_tiles,
-    bool check_entities
+    bool check_ents
 ) {
-    const AABB aabb = entity.GetAABB();
+    const AABB aabb = ent.GetAABB();
     const float side_x = left_side ? aabb.tl.x - 1.0F : aabb.br.x + 1.0F;
     const int start_y = static_cast<int>(std::floor(aabb.tl.y)) - 1;
     const int end_y = static_cast<int>(std::floor(aabb.br.y));
 
     for (int y = start_y; y <= end_y; ++y) {
         if (IsHdHangProbeBlocked(
-                entity,
+                ent,
                 state,
                 side_x,
                 static_cast<float>(y),
                 check_tiles,
-                check_entities,
+                check_ents,
                 true
             )) {
             return aabb.tl.y >= static_cast<float>(y);
@@ -567,32 +567,32 @@ bool CanGloveHangBelowCorner(
     return false;
 }
 
-bool MovementFlagsHave(std::uint32_t movement_flags, EntityMovementFlag movement_flag) {
+bool MovementFlagsHave(std::uint32_t movement_flags, EntMovementFlag movement_flag) {
     const std::uint32_t bit = 1U << static_cast<std::uint32_t>(movement_flag);
     return (movement_flags & bit) != 0;
 }
 
-bool IsClaimCloseEnough(const Entity& entity, Vec2 claimed_pos) {
-    const Vec2 delta = claimed_pos - entity.pos;
+bool IsClaimCloseEnough(const Ent& ent, Vec2 claimed_pos) {
+    const Vec2 delta = claimed_pos - ent.pos;
     const float distance_sq = delta.x * delta.x + delta.y * delta.y;
     return distance_sq <= kLocomotionClaimMaxDistancePx * kLocomotionClaimMaxDistancePx;
 }
 
-bool IsCoordinatorExternallyControllingLocomotion(const Entity& entity) {
-    return entity.condition != EntityCondition::Normal ||
-        entity.held_by_vid.has_value() ||
-        entity.attachment_mode != AttachmentMode::None ||
-        entity.thrown_by.has_value() ||
-        entity.marked_for_destruction ||
-        !entity.active;
+bool IsHostExternallyControllingLocomotion(const Ent& ent) {
+    return ent.condition != EntCondition::Normal ||
+        ent.held_by_vid.has_value() ||
+        ent.attach_mode != AttachMode::None ||
+        ent.thrown_by.has_value() ||
+        ent.marked_for_destruction ||
+        !ent.active;
 }
 
-bool IsClaimVelocityPlausible(const Entity& candidate) {
+bool IsClaimVelocityPlausible(const Ent& candidate) {
     return std::abs(candidate.vel.x) <= kLocomotionClaimMaxHorizontalVelocityPx &&
         std::abs(candidate.vel.y) <= kLocomotionClaimMaxVerticalVelocityPx;
 }
 
-bool IsCandidateAabbFreeOfSolidTiles(const Entity& candidate, const State& state) {
+bool IsCandidateAabbFreeOfSolidTiles(const Ent& candidate, const State& state) {
     const AABB aabb = candidate.GetAABB();
     for (const WorldTileQueryResult& tile_query :
          QueryTilesInWorldRect(state.stage, ToIVec2(aabb.tl), ToIVec2(aabb.br))) {
@@ -603,19 +603,19 @@ bool IsCandidateAabbFreeOfSolidTiles(const Entity& candidate, const State& state
     return true;
 }
 
-bool CandidateHasGroundSupport(Entity candidate, const Stage& stage) {
+bool CandidateHasGroundSupport(Ent candidate, const Stage& stage) {
     candidate.grounded = false;
     candidate.SetGrounded(stage);
     return candidate.grounded;
 }
 
 bool IsPlausibleFreeBodyCandidate(
-    const Entity& current_entity,
-    const Entity& candidate,
+    const Ent& current_ent,
+    const Ent& candidate,
     const State& state,
     bool claimed_grounded
 ) {
-    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+    if (IsHostExternallyControllingLocomotion(current_ent)) {
         return false;
     }
     if (!IsClaimVelocityPlausible(candidate)) {
@@ -631,27 +631,27 @@ bool IsPlausibleFreeBodyCandidate(
 }
 
 bool IsPlausibleHangCandidate(
-    const Entity& current_entity,
-    Entity& candidate,
+    const Ent& current_ent,
+    Ent& candidate,
     State& state,
-    std::optional<LeftOrRight> claimed_hang_side
+    std::optional<Side> claimed_hang_side
 ) {
-    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+    if (IsHostExternallyControllingLocomotion(current_ent)) {
         return false;
     }
     if (!claimed_hang_side.has_value()) {
         return false;
     }
-    if (!candidate.can_hang_ledge && !EntityHasHangGloves(candidate)) {
+    if (!candidate.can_hang_ledge && !EntHasHangGloves(candidate)) {
         return false;
     }
-    if (candidate.condition != EntityCondition::Normal) {
+    if (candidate.condition != EntCondition::Normal) {
         return false;
     }
     if (candidate.grounded || candidate.IsClimbing()) {
         return false;
     }
-    if (current_entity.vel.y < kLocomotionClaimUpwardVelocityGrace &&
+    if (current_ent.vel.y < kLocomotionClaimUpwardVelocityGrace &&
         candidate.vel.y < kLocomotionClaimUpwardVelocityGrace) {
         return false;
     }
@@ -659,7 +659,7 @@ bool IsPlausibleHangCandidate(
         return false;
     }
 
-    const bool left_side = *claimed_hang_side == LeftOrRight::Left;
+    const bool left_side = *claimed_hang_side == Side::Left;
     const AABB aabb = candidate.GetAABB();
     const bool top_blocked = IsBlockedForHangProbe(
         Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
@@ -678,20 +678,20 @@ bool IsPlausibleHangCandidate(
         return true;
     }
 
-    const bool has_gloves = EntityHasHangGloves(candidate);
+    const bool has_gloves = EntHasHangGloves(candidate);
     return has_gloves && CanGloveHangBelowCorner(candidate, state, left_side, true, true);
 }
 
 bool IsPlausibleClimbCandidate(
-    const Entity& current_entity,
-    Entity& candidate,
+    const Ent& current_ent,
+    Ent& candidate,
     State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+    if (IsHostExternallyControllingLocomotion(current_ent)) {
         return false;
     }
-    if (candidate.condition != EntityCondition::Normal) {
+    if (candidate.condition != EntCondition::Normal) {
         return false;
     }
     if (!IsCandidateAabbFreeOfSolidTiles(candidate, state)) {
@@ -701,24 +701,24 @@ bool IsPlausibleClimbCandidate(
 }
 
 bool IsPlausibleJumpCandidate(
-    const Entity& current_entity,
-    const Entity& candidate,
+    const Ent& current_ent,
+    const Ent& candidate,
     const State& state,
     const JumpAndClimbTuning& tuning
 ) {
-    if (IsCoordinatorExternallyControllingLocomotion(current_entity)) {
+    if (IsHostExternallyControllingLocomotion(current_ent)) {
         return false;
     }
-    if (candidate.condition != EntityCondition::Normal) {
+    if (candidate.condition != EntCondition::Normal) {
         return false;
     }
-    if (current_entity.condition != EntityCondition::Normal) {
+    if (current_ent.condition != EntCondition::Normal) {
         return false;
     }
-    if (!current_entity.grounded &&
-        current_entity.coyote_time == 0 &&
-        !current_entity.IsHanging() &&
-        !current_entity.IsClimbing()) {
+    if (!current_ent.grounded &&
+        current_ent.coyote_time == 0 &&
+        !current_ent.IsHanging() &&
+        !current_ent.IsClimbing()) {
         return false;
     }
     if (!IsCandidateAabbFreeOfSolidTiles(candidate, state)) {
@@ -727,7 +727,7 @@ bool IsPlausibleJumpCandidate(
 
     const float allowed_impulse = std::max(
         GetModifiedEffectValue(
-            current_entity,
+            current_ent,
             EffectModifierTarget::JumpImpulse,
             tuning.jump_impulse,
             &state
@@ -738,94 +738,94 @@ bool IsPlausibleJumpCandidate(
 }
 
 bool TryCaptureHdHang(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     const JumpAndClimbTuning& tuning,
     bool check_tiles,
-    bool check_entities
+    bool check_ents
 ) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.can_hang_ledge && !EntityHasHangGloves(entity)) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.can_hang_ledge && !EntHasHangGloves(ent)) {
         return false;
     }
     const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(entity, state);
-    if (control.no_hang || entity.hang_count > 0) {
+        controls::GetControlIntentForEnt(ent, state);
+    if (control.no_hang || ent.hang_count > 0) {
         return false;
     }
-    if (entity.condition != EntityCondition::Normal) {
+    if (ent.condition != EntCondition::Normal) {
         return false;
     }
-    if (entity.vel.y <= 0.0F) {
+    if (ent.vel.y <= 0.0F) {
         return false;
     }
-    if (entity.grounded || entity.IsClimbing() || entity.IsHanging()) {
+    if (ent.grounded || ent.IsClimbing() || ent.IsHanging()) {
         return false;
     }
 
-    const bool input_try_left = IsTryingToHangOnSide(entity, state, true);
-    const bool input_try_right = IsTryingToHangOnSide(entity, state, false);
+    const bool input_try_left = IsTryingToHangOnSide(ent, state, true);
+    const bool input_try_right = IsTryingToHangOnSide(ent, state, false);
     const bool try_left = tuning.auto_ledge_grab || input_try_left;
     const bool try_right = tuning.auto_ledge_grab || input_try_right;
     if (!try_left && !try_right) {
         return false;
     }
 
-    const AABB aabb = entity.GetAABB();
+    const AABB aabb = ent.GetAABB();
     const bool top_blocked = IsBlockedForHangProbe(
         Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
         Vec2::New(aabb.br.x, aabb.tl.y - 1.0F),
         state,
         check_tiles,
-        check_entities,
+        check_ents,
         false,
-        entity.vid
+        ent.vid
     );
     if (top_blocked) {
         return false;
     }
 
-    const bool has_gloves = EntityHasHangGloves(entity);
-    const float center_x = aabb.tl.x + std::floor(entity.size.x / 2.0F);
+    const bool has_gloves = EntHasHangGloves(ent);
+    const float center_x = aabb.tl.x + std::floor(ent.size.x / 2.0F);
     const float upper_probe_y_a = aabb.tl.y + 2.0F;
     const float upper_probe_y_b = aabb.tl.y + 3.0F;
     const float below_probe_y = aabb.br.y + 1.0F;
 
-    if (try_left && IsSideBlockedForHang(entity, state, true, check_tiles, check_entities)) {
+    if (try_left && IsSideBlockedForHang(ent, state, true, check_tiles, check_ents)) {
         const float side_x = aabb.tl.x - 1.0F;
         if (has_gloves) {
-            if (CanCornerHangOnSide(entity, state, true, check_tiles, check_entities)) {
-                entity.pos.y =
-                    std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-                entity.hang_side = LeftOrRight::Left;
-                SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
-                entity.facing = LeftOrRight::Left;
-                entity.vel.y = 0.0F;
-                entity.acc.y = 0.0F;
-                entity.grounded = false;
+            if (CanCornerHangOnSide(ent, state, true, check_tiles, check_ents)) {
+                ent.pos.y =
+                    std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+                ent.hang_side = Side::Left;
+                SetMovementFlag(ent, EntMovementFlag::Hanging, true);
+                ent.facing = Side::Left;
+                ent.vel.y = 0.0F;
+                ent.acc.y = 0.0F;
+                ent.grounded = false;
                 return true;
             }
             if (!input_try_left) {
                 return false;
             }
-            if (!CanGloveHangBelowCorner(entity, state, true, check_tiles, check_entities)) {
+            if (!CanGloveHangBelowCorner(ent, state, true, check_tiles, check_ents)) {
                 return false;
             }
-            entity.hang_side = LeftOrRight::Left;
-            SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
-            entity.facing = LeftOrRight::Left;
-            entity.vel.y = 0.0F;
-            entity.acc.y = 0.0F;
-            entity.grounded = false;
+            ent.hang_side = Side::Left;
+            SetMovementFlag(ent, EntMovementFlag::Hanging, true);
+            ent.facing = Side::Left;
+            ent.vel.y = 0.0F;
+            ent.acc.y = 0.0F;
+            ent.grounded = false;
             return true;
         }
         const bool upper_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities, true) ||
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities, true);
+            IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
+            IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_b, check_tiles, check_ents, true);
         const bool above_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities, false);
+            IsHdHangProbeBlocked(ent, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_ents, false);
         const bool below_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities, false);
+            IsHdHangProbeBlocked(ent, state, center_x, below_probe_y, check_tiles, check_ents, false);
         if (!upper_probe_blocked) {
             return false;
         }
@@ -833,52 +833,52 @@ bool TryCaptureHdHang(
             return false;
         }
 
-        entity.pos.y =
-            std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-        entity.hang_side = LeftOrRight::Left;
-        SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
-        entity.facing = LeftOrRight::Left;
-        entity.vel.y = 0.0F;
-        entity.acc.y = 0.0F;
-        entity.grounded = false;
+        ent.pos.y =
+            std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+        ent.hang_side = Side::Left;
+        SetMovementFlag(ent, EntMovementFlag::Hanging, true);
+        ent.facing = Side::Left;
+        ent.vel.y = 0.0F;
+        ent.acc.y = 0.0F;
+        ent.grounded = false;
         return true;
     }
 
-    if (try_right && IsSideBlockedForHang(entity, state, false, check_tiles, check_entities)) {
+    if (try_right && IsSideBlockedForHang(ent, state, false, check_tiles, check_ents)) {
         const float side_x = aabb.br.x + 1.0F;
         if (has_gloves) {
-            if (CanCornerHangOnSide(entity, state, false, check_tiles, check_entities)) {
-                entity.pos.y =
-                    std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-                entity.hang_side = LeftOrRight::Right;
-                SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
-                entity.facing = LeftOrRight::Right;
-                entity.vel.y = 0.0F;
-                entity.acc.y = 0.0F;
-                entity.grounded = false;
+            if (CanCornerHangOnSide(ent, state, false, check_tiles, check_ents)) {
+                ent.pos.y =
+                    std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+                ent.hang_side = Side::Right;
+                SetMovementFlag(ent, EntMovementFlag::Hanging, true);
+                ent.facing = Side::Right;
+                ent.vel.y = 0.0F;
+                ent.acc.y = 0.0F;
+                ent.grounded = false;
                 return true;
             }
             if (!input_try_right) {
                 return false;
             }
-            if (!CanGloveHangBelowCorner(entity, state, false, check_tiles, check_entities)) {
+            if (!CanGloveHangBelowCorner(ent, state, false, check_tiles, check_ents)) {
                 return false;
             }
-            entity.hang_side = LeftOrRight::Right;
-            SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
-            entity.facing = LeftOrRight::Right;
-            entity.vel.y = 0.0F;
-            entity.acc.y = 0.0F;
-            entity.grounded = false;
+            ent.hang_side = Side::Right;
+            SetMovementFlag(ent, EntMovementFlag::Hanging, true);
+            ent.facing = Side::Right;
+            ent.vel.y = 0.0F;
+            ent.acc.y = 0.0F;
+            ent.grounded = false;
             return true;
         }
         const bool upper_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_a, check_tiles, check_entities, true) ||
-            IsHdHangProbeBlocked(entity, state, side_x, upper_probe_y_b, check_tiles, check_entities, true);
+            IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_a, check_tiles, check_ents, true) ||
+            IsHdHangProbeBlocked(ent, state, side_x, upper_probe_y_b, check_tiles, check_ents, true);
         const bool above_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_entities, false);
+            IsHdHangProbeBlocked(ent, state, side_x, aabb.tl.y - 1.0F, check_tiles, check_ents, false);
         const bool below_probe_blocked =
-            IsHdHangProbeBlocked(entity, state, center_x, below_probe_y, check_tiles, check_entities, false);
+            IsHdHangProbeBlocked(ent, state, center_x, below_probe_y, check_tiles, check_ents, false);
         if (!upper_probe_blocked) {
             return false;
         }
@@ -886,14 +886,14 @@ bool TryCaptureHdHang(
             return false;
         }
 
-        entity.pos.y =
-            std::round(entity.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
-        entity.hang_side = LeftOrRight::Right;
-        SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
-        entity.facing = LeftOrRight::Right;
-        entity.vel.y = 0.0F;
-        entity.acc.y = 0.0F;
-        entity.grounded = false;
+        ent.pos.y =
+            std::round(ent.pos.y / static_cast<float>(kTileSize)) * static_cast<float>(kTileSize);
+        ent.hang_side = Side::Right;
+        SetMovementFlag(ent, EntMovementFlag::Hanging, true);
+        ent.facing = Side::Right;
+        ent.vel.y = 0.0F;
+        ent.acc.y = 0.0F;
+        ent.grounded = false;
         return true;
     }
 
@@ -902,29 +902,29 @@ bool TryCaptureHdHang(
 
 } // namespace
 
-bool TryApplySwimImpulse(Entity& entity, State& state, Audio& audio) {
+bool TryApplySwimImpulse(Ent& ent, State& state, Audio& audio) {
     const float swim_impulse =
-        GetModifiedEffectValue(entity, EffectModifierTarget::SwimImpulse, 0.0F, &state);
+        GetModifiedEffectValue(ent, EffectModifierTarget::SwimImpulse, 0.0F, &state);
     if (swim_impulse <= 0.0F) {
         return false;
     }
 
-    const bool play_sound = entity.vel.y > -swim_impulse * 0.5F;
-    entity.vel.y = std::min(entity.vel.y, -swim_impulse);
-    entity.grounded = false;
-    entity.coyote_time = 0;
-    entity.jump_delay_frame_count = 0;
-    entity.jump_hold_gravity_frames_remaining = 0;
-    entity.jumped_this_frame = true;
+    const bool play_sound = ent.vel.y > -swim_impulse * 0.5F;
+    ent.vel.y = std::min(ent.vel.y, -swim_impulse);
+    ent.grounded = false;
+    ent.coyote_time = 0;
+    ent.jump_delay_frame_count = 0;
+    ent.jump_hold_gravity_frames_remaining = 0;
+    ent.jumped_this_frame = true;
     if (play_sound) {
-        PlayJumpSoundsForEntity(state, entity);
+        PlayJumpSoundsForEnt(state, ent);
     }
     (void)audio;
     return true;
 }
 
 bool TryApplyPlausibleLocomotionClaim(
-    Entity& entity,
+    Ent& ent,
     State& state,
     const JumpAndClimbTuning& tuning,
     Vec2 claimed_pos,
@@ -932,17 +932,17 @@ bool TryApplyPlausibleLocomotionClaim(
     Vec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
     bool claimed_grounded,
-    std::optional<LeftOrRight> claimed_hang_side,
+    std::optional<Side> claimed_hang_side,
     std::uint32_t claimed_coyote_time,
     std::uint32_t claimed_fall_timer,
     std::uint32_t claimed_hang_count,
     std::uint32_t claimed_climb_detach_cooldown
 ) {
-    if (!IsClaimCloseEnough(entity, claimed_pos)) {
+    if (!IsClaimCloseEnough(ent, claimed_pos)) {
         return false;
     }
 
-    Entity candidate = entity;
+    Ent candidate = ent;
     candidate.pos = claimed_pos;
     candidate.vel = claimed_vel;
     candidate.acc = claimed_acc;
@@ -955,264 +955,264 @@ bool TryApplyPlausibleLocomotionClaim(
     candidate.climb_detach_cooldown = claimed_climb_detach_cooldown;
 
     const bool claimed_hanging =
-        MovementFlagsHave(claimed_movement_flags, EntityMovementFlag::Hanging) &&
+        MovementFlagsHave(claimed_movement_flags, EntMovementFlag::Hanging) &&
         claimed_hang_side.has_value();
     const bool claimed_climbing =
-        MovementFlagsHave(claimed_movement_flags, EntityMovementFlag::Climbing);
+        MovementFlagsHave(claimed_movement_flags, EntMovementFlag::Climbing);
     const bool claimed_jump =
         !claimed_hanging && !claimed_climbing && !candidate.grounded && claimed_vel.y < -0.5F;
 
-    if (claimed_hanging && IsPlausibleHangCandidate(entity, candidate, state, claimed_hang_side)) {
-        entity.pos = claimed_pos;
-        entity.vel = Vec2::New(claimed_vel.x, 0.0F);
-        entity.acc = Vec2::New(0.0F, 0.0F);
-        entity.grounded = false;
-        entity.hang_side = claimed_hang_side;
-        SetMovementFlag(entity, EntityMovementFlag::Hanging, true);
-        SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
-        entity.coyote_time = std::max(claimed_coyote_time, kHangCoyoteTimeFrames);
-        entity.fall_timer = 0;
-        entity.hang_count = claimed_hang_count;
-        entity.climb_detach_cooldown = claimed_climb_detach_cooldown;
+    if (claimed_hanging && IsPlausibleHangCandidate(ent, candidate, state, claimed_hang_side)) {
+        ent.pos = claimed_pos;
+        ent.vel = Vec2::New(claimed_vel.x, 0.0F);
+        ent.acc = Vec2::New(0.0F, 0.0F);
+        ent.grounded = false;
+        ent.hang_side = claimed_hang_side;
+        SetMovementFlag(ent, EntMovementFlag::Hanging, true);
+        SetMovementFlag(ent, EntMovementFlag::Climbing, false);
+        ent.coyote_time = std::max(claimed_coyote_time, kHangCoyoteTimeFrames);
+        ent.fall_timer = 0;
+        ent.hang_count = claimed_hang_count;
+        ent.climb_detach_cooldown = claimed_climb_detach_cooldown;
         if (claimed_hang_side.has_value()) {
-            entity.facing = *claimed_hang_side;
+            ent.facing = *claimed_hang_side;
         }
         return true;
     }
 
-    if (claimed_climbing && IsPlausibleClimbCandidate(entity, candidate, state, tuning)) {
-        entity.pos = claimed_pos;
-        entity.vel = claimed_vel;
-        entity.acc = claimed_acc;
-        entity.grounded = false;
-        entity.hang_side.reset();
-        SetMovementFlag(entity, EntityMovementFlag::Climbing, true);
-        SetMovementFlag(entity, EntityMovementFlag::Hanging, false);
-        entity.coyote_time = claimed_coyote_time;
-        entity.fall_timer = 0;
-        entity.hang_count = claimed_hang_count;
-        entity.climb_detach_cooldown = claimed_climb_detach_cooldown;
+    if (claimed_climbing && IsPlausibleClimbCandidate(ent, candidate, state, tuning)) {
+        ent.pos = claimed_pos;
+        ent.vel = claimed_vel;
+        ent.acc = claimed_acc;
+        ent.grounded = false;
+        ent.hang_side.reset();
+        SetMovementFlag(ent, EntMovementFlag::Climbing, true);
+        SetMovementFlag(ent, EntMovementFlag::Hanging, false);
+        ent.coyote_time = claimed_coyote_time;
+        ent.fall_timer = 0;
+        ent.hang_count = claimed_hang_count;
+        ent.climb_detach_cooldown = claimed_climb_detach_cooldown;
         return true;
     }
 
-    if (claimed_jump && IsPlausibleJumpCandidate(entity, candidate, state, tuning)) {
-        entity.pos = claimed_pos;
-        entity.vel = claimed_vel;
-        entity.acc = claimed_acc;
-        entity.grounded = false;
-        entity.hang_side.reset();
-        SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
-        SetMovementFlag(entity, EntityMovementFlag::Hanging, false);
-        entity.coyote_time = 0;
-        entity.fall_timer = 0;
-        entity.jump_hold_gravity_frames_remaining = candidate.jump_hold_gravity_frames_remaining;
-        entity.jump_delay_frame_count = candidate.jump_delay_frame_count;
+    if (claimed_jump && IsPlausibleJumpCandidate(ent, candidate, state, tuning)) {
+        ent.pos = claimed_pos;
+        ent.vel = claimed_vel;
+        ent.acc = claimed_acc;
+        ent.grounded = false;
+        ent.hang_side.reset();
+        SetMovementFlag(ent, EntMovementFlag::Climbing, false);
+        SetMovementFlag(ent, EntMovementFlag::Hanging, false);
+        ent.coyote_time = 0;
+        ent.fall_timer = 0;
+        ent.jump_hold_gravity_frames_remaining = candidate.jump_hold_gravity_frames_remaining;
+        ent.jump_delay_frame_count = candidate.jump_delay_frame_count;
         return true;
     }
 
     if (!claimed_hanging &&
         !claimed_climbing &&
-        IsPlausibleFreeBodyCandidate(entity, candidate, state, claimed_grounded)) {
-        entity.pos = claimed_pos;
-        entity.vel = claimed_vel;
-        entity.acc = claimed_acc;
-        entity.grounded = claimed_grounded;
-        entity.movement_flags = claimed_movement_flags;
-        entity.hang_side = claimed_hang_side;
-        entity.coyote_time = claimed_coyote_time;
-        entity.fall_timer = claimed_fall_timer;
-        entity.hang_count = claimed_hang_count;
-        entity.climb_detach_cooldown = claimed_climb_detach_cooldown;
-        entity.jump_hold_gravity_frames_remaining = candidate.jump_hold_gravity_frames_remaining;
-        entity.jump_delay_frame_count = candidate.jump_delay_frame_count;
+        IsPlausibleFreeBodyCandidate(ent, candidate, state, claimed_grounded)) {
+        ent.pos = claimed_pos;
+        ent.vel = claimed_vel;
+        ent.acc = claimed_acc;
+        ent.grounded = claimed_grounded;
+        ent.movement_flags = claimed_movement_flags;
+        ent.hang_side = claimed_hang_side;
+        ent.coyote_time = claimed_coyote_time;
+        ent.fall_timer = claimed_fall_timer;
+        ent.hang_count = claimed_hang_count;
+        ent.climb_detach_cooldown = claimed_climb_detach_cooldown;
+        ent.jump_hold_gravity_frames_remaining = candidate.jump_hold_gravity_frames_remaining;
+        ent.jump_delay_frame_count = candidate.jump_delay_frame_count;
         return true;
     }
 
     return false;
 }
 
-void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTuning& tuning) {
-    Entity& mutable_entity = state.entity_manager.entities[entity_idx];
+void HangHandsStep(std::size_t ent_idx, State& state, const JumpAndClimbTuning& tuning) {
+    Ent& mutable_ent = state.ents.ents[ent_idx];
     const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(mutable_entity, state);
+        controls::GetControlIntentForEnt(mutable_ent, state);
     if (control.no_hang) {
-        mutable_entity.hang_side.reset();
-        SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
+        mutable_ent.hang_side.reset();
+        SetMovementFlag(mutable_ent, EntMovementFlag::Hanging, false);
     }
-    if (mutable_entity.condition != EntityCondition::Normal) {
-        mutable_entity.hang_side.reset();
-        SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
+    if (mutable_ent.condition != EntCondition::Normal) {
+        mutable_ent.hang_side.reset();
+        SetMovementFlag(mutable_ent, EntMovementFlag::Hanging, false);
     }
 
-    if (mutable_entity.hang_side == LeftOrRight::Left) {
-        const bool has_gloves = EntityHasHangGloves(mutable_entity);
-        const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, true);
-        const bool still_on_side = IsSideBlockedForHang(mutable_entity, state, true, true, true);
+    if (mutable_ent.hang_side == Side::Left) {
+        const bool has_gloves = EntHasHangGloves(mutable_ent);
+        const bool still_trying = IsTryingToHangOnSide(mutable_ent, state, true);
+        const bool still_on_side = IsSideBlockedForHang(mutable_ent, state, true, true, true);
         const bool glove_corner_grab =
-            has_gloves && !still_trying && CanCornerHangOnSide(mutable_entity, state, true, true, true);
+            has_gloves && !still_trying && CanCornerHangOnSide(mutable_ent, state, true, true, true);
         if (!still_on_side || (has_gloves && !still_trying && !glove_corner_grab)) {
-            mutable_entity.hang_side.reset();
-            SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
-            mutable_entity.hang_count = tuning.hang_wall_release_cooldown_frames;
+            mutable_ent.hang_side.reset();
+            SetMovementFlag(mutable_ent, EntMovementFlag::Hanging, false);
+            mutable_ent.hang_count = tuning.hang_wall_release_cooldown_frames;
         }
-    } else if (mutable_entity.hang_side == LeftOrRight::Right) {
-        const bool has_gloves = EntityHasHangGloves(mutable_entity);
-        const bool still_trying = IsTryingToHangOnSide(mutable_entity, state, false);
-        const bool still_on_side = IsSideBlockedForHang(mutable_entity, state, false, true, true);
+    } else if (mutable_ent.hang_side == Side::Right) {
+        const bool has_gloves = EntHasHangGloves(mutable_ent);
+        const bool still_trying = IsTryingToHangOnSide(mutable_ent, state, false);
+        const bool still_on_side = IsSideBlockedForHang(mutable_ent, state, false, true, true);
         const bool glove_corner_grab =
-            has_gloves && !still_trying && CanCornerHangOnSide(mutable_entity, state, false, true, true);
+            has_gloves && !still_trying && CanCornerHangOnSide(mutable_ent, state, false, true, true);
         if (!still_on_side || (has_gloves && !still_trying && !glove_corner_grab)) {
-            mutable_entity.hang_side.reset();
-            SetMovementFlag(mutable_entity, EntityMovementFlag::Hanging, false);
-            mutable_entity.hang_count = tuning.hang_wall_release_cooldown_frames;
+            mutable_ent.hang_side.reset();
+            SetMovementFlag(mutable_ent, EntMovementFlag::Hanging, false);
+            mutable_ent.hang_count = tuning.hang_wall_release_cooldown_frames;
         }
     }
 
-    if (!mutable_entity.IsHanging()) {
-        TryCaptureHdHang(entity_idx, state, tuning, true, true);
+    if (!mutable_ent.IsHanging()) {
+        TryCaptureHdHang(ent_idx, state, tuning, true, true);
     }
 
-    if (mutable_entity.IsHanging()) {
-        mutable_entity.projectile_contact_timer = 0;
-        mutable_entity.vel.y = 0.0F;
-        mutable_entity.acc.y = 0.0F;
-        mutable_entity.grounded = false;
-        mutable_entity.coyote_time = kHangCoyoteTimeFrames;
+    if (mutable_ent.IsHanging()) {
+        mutable_ent.proj_contact_timer = 0;
+        mutable_ent.vel.y = 0.0F;
+        mutable_ent.acc.y = 0.0F;
+        mutable_ent.grounded = false;
+        mutable_ent.coyote_time = kHangCoyoteTimeFrames;
     }
 }
 
 void JumpingAndClimbingStep(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     const JumpAndClimbTuning& tuning
 ) {
     (void)audio;
-    GroundedCheck(entity_idx, state, audio, true, true, tuning.coyote_time_frames);
+    GroundedCheck(ent_idx, state, audio, true, true, tuning.coyote_time_frames);
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
+    Ent& ent = state.ents.ents[ent_idx];
     const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(entity, state);
-    const bool was_grounded = entity.grounded;
-    const bool was_climbing = entity.IsClimbing();
-    if (entity.climb_detach_cooldown > 0) {
-        entity.climb_detach_cooldown -= 1;
+        controls::GetControlIntentForEnt(ent, state);
+    const bool was_grounded = ent.grounded;
+    const bool was_climbing = ent.IsClimbing();
+    if (ent.climb_detach_cooldown > 0) {
+        ent.climb_detach_cooldown -= 1;
     }
 
-    const std::optional<ClimbAnchor> climb_anchor = GetClimbAnchor(entity, state, tuning);
+    const std::optional<ClimbAnchor> climb_anchor = GetClimbAnchor(ent, state, tuning);
     std::optional<ClimbAnchor> active_climb_anchor = climb_anchor;
-    if (control.down && entity.grounded &&
+    if (control.down && ent.grounded &&
         (!active_climb_anchor.has_value() ||
          !CanAttachDownToClimbAnchor(*active_climb_anchor, state))) {
-        active_climb_anchor = GetGroundedDownClimbAnchor(entity, state, tuning);
+        active_climb_anchor = GetGroundedDownClimbAnchor(ent, state, tuning);
     }
     const bool can_climb = active_climb_anchor.has_value();
     bool consume_jump_press = false;
-    AddClimbDebugAnnotations(entity, state, tuning);
+    AddClimbDebugAnnotations(ent, state, tuning);
 
-    if (entity.condition != EntityCondition::Normal) {
-        SetMovementFlag(entity, EntityMovementFlag::Climbing, false);
+    if (ent.condition != EntCondition::Normal) {
+        SetMovementFlag(ent, EntMovementFlag::Climbing, false);
     } else {
         const bool wants_to_attach =
             control.up ||
-            (control.down && entity.grounded && active_climb_anchor.has_value() &&
+            (control.down && ent.grounded && active_climb_anchor.has_value() &&
              CanAttachDownToClimbAnchor(*active_climb_anchor, state));
-        if (!entity.IsClimbing() && can_climb && entity.climb_detach_cooldown == 0 && wants_to_attach) {
-            SetMovementFlag(entity, EntityMovementFlag::Climbing, true);
-            entity.grounded = false;
-            entity.vel = Vec2::New(0.0F, 0.0F);
-            entity.acc = Vec2::New(0.0F, 0.0F);
+        if (!ent.IsClimbing() && can_climb && ent.climb_detach_cooldown == 0 && wants_to_attach) {
+            SetMovementFlag(ent, EntMovementFlag::Climbing, true);
+            ent.grounded = false;
+            ent.vel = Vec2::New(0.0F, 0.0F);
+            ent.acc = Vec2::New(0.0F, 0.0F);
         }
 
-        if (entity.IsClimbing()) {
+        if (ent.IsClimbing()) {
             if (!can_climb) {
-                DetachFromClimb(entity, tuning);
+                DetachFromClimb(ent, tuning);
             } else if (was_climbing && control.down && was_grounded) {
-                DetachFromClimb(entity, tuning);
-                entity.vel.y = 0.0F;
-                entity.acc.y = 0.0F;
-                entity.grounded = true;
+                DetachFromClimb(ent, tuning);
+                ent.vel.y = 0.0F;
+                ent.acc.y = 0.0F;
+                ent.grounded = true;
             } else {
-                SnapEntityToClimbTileCenterline(entity, active_climb_anchor->tile_pos);
-                entity.grounded = false;
-                entity.vel.x = 0.0F;
-                entity.acc.x = 0.0F;
+                SnapEntToClimbTileCenterline(ent, active_climb_anchor->tile_pos);
+                ent.grounded = false;
+                ent.vel.x = 0.0F;
+                ent.acc.x = 0.0F;
 
                 if (control.up && !control.down) {
                     const int max_climb_pixels = static_cast<int>(std::ceil(tuning.climb_speed));
                     const int allowed_up_pixels =
-                        GetAllowedClimbUpPixels(entity, state, tuning, max_climb_pixels);
-                    entity.vel.y = -std::min(tuning.climb_speed, static_cast<float>(allowed_up_pixels));
+                        GetAllowedClimbUpPixels(ent, state, tuning, max_climb_pixels);
+                    ent.vel.y = -std::min(tuning.climb_speed, static_cast<float>(allowed_up_pixels));
                 } else if (control.down && !control.up) {
-                    entity.vel.y = tuning.climb_speed;
+                    ent.vel.y = tuning.climb_speed;
                 } else {
-                    entity.vel.y = 0.0F;
+                    ent.vel.y = 0.0F;
                 }
 
                 if (control.jump_pressed) {
-                    DetachFromClimb(entity, tuning);
-                    entity.grounded = false;
-                    entity.vel.x = 0.0F;
-                    entity.acc.y = 0.0F;
-                    entity.coyote_time = 0;
+                    DetachFromClimb(ent, tuning);
+                    ent.grounded = false;
+                    ent.vel.x = 0.0F;
+                    ent.acc.y = 0.0F;
+                    ent.coyote_time = 0;
                     consume_jump_press = control.down;
                     if (consume_jump_press) {
-                        entity.vel.y = 0.0F;
+                        ent.vel.y = 0.0F;
                     } else {
                         if (control.left && !control.right) {
-                            entity.vel.x = -tuning.climb_depart_horizontal_speed;
+                            ent.vel.x = -tuning.climb_depart_horizontal_speed;
                         } else if (control.right && !control.left) {
-                            entity.vel.x = tuning.climb_depart_horizontal_speed;
+                            ent.vel.x = tuning.climb_depart_horizontal_speed;
                         }
-                        StartEntityJump(entity, tuning);
-                        PlayJumpSoundsForEntity(state, entity);
+                        StartEntJump(ent, tuning);
+                        PlayJumpSoundsForEnt(state, ent);
                     }
                 }
             }
         }
     }
 
-    if (entity.IsClimbing() && entity.grounded) {
-        DetachFromClimb(entity, tuning);
+    if (ent.IsClimbing() && ent.grounded) {
+        DetachFromClimb(ent, tuning);
     }
 
     if (control.jump_pressed && !consume_jump_press) {
-        if (entity.IsHanging()) {
+        if (ent.IsHanging()) {
             const bool jumping_away =
-                (entity.hang_side == LeftOrRight::Right && control.left) ||
-                (entity.hang_side == LeftOrRight::Left && control.right);
-            const bool has_gloves = EntityHasHangGloves(entity);
-            entity.hang_side.reset();
-            SetMovementFlag(entity, EntityMovementFlag::Hanging, false);
-            entity.grounded = false;
+                (ent.hang_side == Side::Right && control.left) ||
+                (ent.hang_side == Side::Left && control.right);
+            const bool has_gloves = EntHasHangGloves(ent);
+            ent.hang_side.reset();
+            SetMovementFlag(ent, EntMovementFlag::Hanging, false);
+            ent.grounded = false;
             if (control.down) {
-                entity.hang_count =
+                ent.hang_count =
                     has_gloves ? tuning.glove_hang_drop_cooldown_frames
                                : tuning.hang_drop_cooldown_frames;
             } else if (jumping_away) {
-                entity.hang_count = kHangCountMax;
+                ent.hang_count = kHangCountMax;
             } else {
-                StartEntityJump(entity, tuning);
-                PlayJumpSoundsForEntity(state, entity);
-                entity.hang_count = kHangCountMax;
+                StartEntJump(ent, tuning);
+                PlayJumpSoundsForEnt(state, ent);
+                ent.hang_count = kHangCountMax;
             }
-        } else if (TryApplySwimImpulse(entity, state, audio)) {
+        } else if (TryApplySwimImpulse(ent, state, audio)) {
             // Fluid jump handled; do not also apply the grounded/coyote jump.
-        } else if ((entity.grounded && (entity.jump_delay_frame_count == 0)) || entity.coyote_time > 0) {
-            StartEntityJump(entity, tuning);
-            entity.coyote_time = 0;
-            entity.grounded = false;
-            PlayJumpSoundsForEntity(state, entity);
+        } else if ((ent.grounded && (ent.jump_delay_frame_count == 0)) || ent.coyote_time > 0) {
+            StartEntJump(ent, tuning);
+            ent.coyote_time = 0;
+            ent.grounded = false;
+            PlayJumpSoundsForEnt(state, ent);
         }
     }
 
-    if (entity.jump_delay_frame_count > 0) {
-        entity.jump_delay_frame_count -= 1;
+    if (ent.jump_delay_frame_count > 0) {
+        ent.jump_delay_frame_count -= 1;
     }
 
-    if (!entity.IsClimbing() && !entity.grounded && !entity.IsHanging()) {
-        ApplyAirGravity(entity, state, control, tuning);
+    if (!ent.IsClimbing() && !ent.grounded && !ent.IsHanging()) {
+        ApplyAirGravity(ent, state, control, tuning);
     }
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

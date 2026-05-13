@@ -1,9 +1,9 @@
-#include "entities/block.hpp"
+#include "ents/block.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "controls.hpp"
@@ -12,7 +12,7 @@
 #include <cmath>
 #include <memory>
 
-namespace splonks::entities::block {
+namespace splonks::ents::block {
 
 namespace {
 
@@ -22,28 +22,28 @@ constexpr std::uint32_t kControlledBlockSlideCooldownFrames = 120;
 constexpr float kBlockTrailSmokeDistInterval = 14.0F;
 constexpr float kBlockPushAcc = 0.2F;
 
-void StepControlledBlock(Entity& block, const controls::ControlIntent& control) {
+void StepControlledBlock(Ent& block, const controls::ControlIntent& control) {
     if (block.attack_delay_countdown > 0) {
         block.attack_delay_countdown -= 1;
     }
 
     if (control.left && !control.right) {
         block.acc.x -= kControlledBlockMoveAcc;
-        block.facing = LeftOrRight::Left;
+        block.facing = Side::Left;
     } else if (control.right && !control.left) {
         block.acc.x += kControlledBlockMoveAcc;
-        block.facing = LeftOrRight::Right;
+        block.facing = Side::Right;
     }
 
     if (control.attack_pressed && block.grounded && block.attack_delay_countdown == 0) {
         block.vel.x =
-            block.facing == LeftOrRight::Left ? -kControlledBlockSlideVel : kControlledBlockSlideVel;
+            block.facing == Side::Left ? -kControlledBlockSlideVel : kControlledBlockSlideVel;
         block.attack_delay_countdown = kControlledBlockSlideCooldownFrames;
     }
 }
 
-void ControlEntityAsBlock(
-    std::size_t entity_idx,
+void ControlEntAsBlock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -52,22 +52,22 @@ void ControlEntityAsBlock(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& block = state.entity_manager.entities[entity_idx];
-    if (block.condition == EntityCondition::Dead) {
+    Ent& block = state.ents.ents[ent_idx];
+    if (block.condition == EntCondition::Dead) {
         return;
     }
 
-    StepControlledBlock(block, controls::GetControlIntentForEntity(block, state));
+    StepControlledBlock(block, controls::GetControlIntentForEnt(block, state));
 }
 
-void SpawnBlockDeathParticles(const Vec2& center, FrameDataId animation_id, State& state) {
+void SpawnBlockDeathParticles(const Vec2& center, AFrameId anim_id, State& state) {
     for (int i = 0; i < 12; ++i) {
         SpriteParticle shard{};
-        shard.frame_data_animator = FrameDataAnimator::New(animation_id);
+        shard.aframe_animator = AFrameAnimator::New(anim_id);
         shard.draw_layer = DrawLayer::Foreground;
         shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(20, 42));
         shard.pos = center + Vec2::New(
@@ -93,9 +93,9 @@ void SpawnBlockDeathParticles(const Vec2& center, FrameDataId animation_id, Stat
     }
 }
 
-void SpawnBlockTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
+void SpawnBlockTrailSmoke(State& state, const Vec2& pos, Side facing) {
     SpriteParticle smoke{};
-    smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+    smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
     smoke.draw_layer = DrawLayer::Foreground;
     smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(16, 28));
     smoke.pos = pos + Vec2::New(
@@ -107,7 +107,7 @@ void SpawnBlockTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
     smoke.rot = rng::RandomFloat(0.0F, 360.0F);
     smoke.alpha = rng::RandomFloat(0.55F, 0.85F);
     smoke.vel = Vec2::New(
-        facing == LeftOrRight::Right ? rng::RandomFloat(-0.9F, -0.2F)
+        facing == Side::Right ? rng::RandomFloat(-0.9F, -0.2F)
                                      : rng::RandomFloat(0.2F, 0.9F),
         rng::RandomFloat(-0.8F, -0.2F)
     );
@@ -121,17 +121,17 @@ void SpawnBlockTrailSmoke(State& state, const Vec2& pos, LeftOrRight facing) {
     state.particles.Add(std::move(smoke));
 }
 
-Vec2 GetBlockTrailingBottomCorner(const Entity& block) {
+Vec2 GetBlockTrailingBottomCorner(const Ent& block) {
     const AABB aabb = block.GetAABB();
-    return block.facing == LeftOrRight::Right
+    return block.facing == Side::Right
                ? Vec2::New(aabb.tl.x, aabb.br.y)
                : Vec2::New(aabb.br.x, aabb.br.y);
 }
 
 } // namespace
 
-extern const EntityArchetype kBlockArchetype{
-    .type_ = EntityType::Block,
+extern const EntSpec kBlockSpec{
+    .type_ = EntType::Block,
     .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
     .health = 1,
     .has_physics = true,
@@ -145,28 +145,28 @@ extern const EntityArchetype kBlockArchetype{
     .can_be_stunned = false,
     .push_acc = kBlockPushAcc,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::ExplosionOnly,
     .on_death = OnDeathAsBlock,
-    .control_logic = ControlEntityAsBlock,
-    .step_logic = StepEntityLogicAsBlock,
+    .control_logic = ControlEntAsBlock,
+    .step_logic = StepEntLogicAsBlock,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::CaveBlock),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::CaveBlock),
 };
 
-bool TryApplyBlockContactToEntity(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplyBlockContactToEnt(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
     return common::TryApplyCrusherPusherContact(
-        entity_idx,
-        other_entity_idx,
+        ent_idx,
+        other_ent_idx,
         context,
         state,
         graphics,
@@ -174,8 +174,8 @@ bool TryApplyBlockContactToEntity(
     );
 }
 
-void StepEntityLogicAsBlock(
-    std::size_t entity_idx,
+void StepEntLogicAsBlock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -185,45 +185,45 @@ void StepEntityLogicAsBlock(
     (void)audio;
     (void)dt;
     {
-        Entity& entity = state.entity_manager.entities[entity_idx];
-        SetAnimation(entity, state.stage.block_animation_id);
+        Ent& ent = state.ents.ents[ent_idx];
+        SetAnim(ent, state.stage.block_anim_id);
     }
 
     // TODO: if you hit the ground, do a clunky sound
     // TODO: if you hit something hard, do a block thunk sound
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.grounded) {
-        entity.travel_sound_countdown -= entity.dist_traveled_this_frame;
+    Ent& ent = state.ents.ents[ent_idx];
+    if (ent.grounded) {
+        ent.travel_sound_countdown -= ent.dist_traveled_this_frame;
     }
 
     // TODO: extract into grounded movement sounds
-    if (entity.grounded && entity.dist_traveled_this_frame > 0.0F && entity.travel_sound_countdown < 0.0F) {
-        entity.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
+    if (ent.grounded && ent.dist_traveled_this_frame > 0.0F && ent.travel_sound_countdown < 0.0F) {
+        ent.travel_sound_countdown = kWalkerClimberTravelSoundDistInterval;
         const AudioAssetId sound =
-            entity.travel_sound == TravelSound::One ? audio_asset_ids::BlockDrag1
+            ent.travel_sound == TravelSound::One ? audio_asset_ids::BlockDrag1
                                                     : audio_asset_ids::BlockDrag2;
-        (void)PlayEntitySoundEmitter(state, entity, sound);
-        entity.IncTravelSound();
+        (void)PlayEntSoundEmitter(state, ent, sound);
+        ent.IncTravelSound();
     }
 
-    if (entity.grounded && entity.dist_traveled_this_frame > 0.0F) {
-        entity.counter_c -= entity.dist_traveled_this_frame;
-        while (entity.counter_c <= 0.0F) {
-            entity.counter_c += kBlockTrailSmokeDistInterval;
-            SpawnBlockTrailSmoke(state, GetBlockTrailingBottomCorner(entity), entity.facing);
+    if (ent.grounded && ent.dist_traveled_this_frame > 0.0F) {
+        ent.counter_c -= ent.dist_traveled_this_frame;
+        while (ent.counter_c <= 0.0F) {
+            ent.counter_c += kBlockTrailSmokeDistInterval;
+            SpawnBlockTrailSmoke(state, GetBlockTrailingBottomCorner(ent), ent.facing);
         }
     }
 }
 
-void OnDeathAsBlock(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsBlock(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
-    Entity& block = state.entity_manager.entities[entity_idx];
-    SpawnBlockDeathParticles(block.GetCenter(), state.stage.block_animation_id, state);
+    Ent& block = state.ents.ents[ent_idx];
+    SpawnBlockDeathParticles(block.GetCenter(), state.stage.block_anim_id, state);
 }
 
-/** generalize this to all square or rectangular entities somehow */
-} // namespace splonks::entities::block
+/** generalize this to all square or rectangular ents somehow */
+} // namespace splonks::ents::block

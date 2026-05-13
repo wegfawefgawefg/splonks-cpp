@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 #include <cstddef>
 
@@ -12,7 +12,7 @@ struct State;
 
 }
 
-namespace splonks::entities::player {
+namespace splonks::ents::player {
 
 constexpr IVec2 kSize = {10, 10};
 constexpr float kMoveAcc = 0.5F;
@@ -30,29 +30,29 @@ constexpr unsigned int kPotThrowDelay = 12;
 constexpr unsigned int kAttackDelay = 24;
 constexpr unsigned int kEquipDelay = 8;
 
-extern const EntityArchetype kPlayerArchetype;
+extern const EntSpec kPlayerSpec;
 
-void ControlEntityAsPlayer(
-    std::size_t entity_idx,
+void ControlEntAsPlayer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityLogicAsPlayer(
-    std::size_t entity_idx,
+void StepEntLogicAsPlayer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityPhysicsAsPlayer(
-    std::size_t entity_idx,
+void StepEntPhysicsAsPlayer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void SyncEntitySpriteToDisplayStatePlayer(Entity& entity);
+void SyncEntSpriteToDisplayStatePlayer(Ent& ent);
 
-} // namespace splonks::entities::player
+} // namespace splonks::ents::player

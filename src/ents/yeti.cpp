@@ -1,11 +1,11 @@
-#include "entities/yeti.hpp"
+#include "ents/yeti.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::yeti {
+namespace splonks::ents::yeti {
 
-// TODO(classic): Yeti is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kYetiArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Yeti);
+// TODO(classic): Yeti is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kYetiSpec =
+    common::MakeUnimplementedClassicSpec(EntType::Yeti);
 
-} // namespace splonks::entities::yeti
+} // namespace splonks::ents::yeti

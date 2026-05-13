@@ -1,7 +1,7 @@
 #pragma once
 
 #include "draw_layer.hpp"
-#include "frame_data_animator.hpp"
+#include "aframe_animator.hpp"
 #include "math_types.hpp"
 #include "particles/lighting_mode.hpp"
 
@@ -11,7 +11,7 @@ namespace splonks {
 
 struct SpriteParticle {
     std::uint32_t counter = 0;
-    bool finish_on_animation_end = false;
+    bool finish_on_anim_end = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     Vec2 pos{};
@@ -30,9 +30,9 @@ struct SpriteParticle {
     Vec2 sacc{};
     float rotacc = 0.0F;
     float alpha_acc = 0.0F;
-    FrameDataAnimator frame_data_animator{};
+    AFrameAnimator aframe_animator{};
 
-    void Step(const FrameDataDb& frame_data_db, float dt);
+    void Step(const AFrameDb& aframe_db, float dt);
     bool IsFinished() const;
 };
 

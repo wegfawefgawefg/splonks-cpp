@@ -1,25 +1,25 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::piranha {
+namespace splonks::ents::piranha {
 
-extern const EntityArchetype kPiranhaArchetype;
+extern const EntSpec kPiranhaSpec;
 
-void StepEntityLogicAsPiranha(
-    std::size_t entity_idx,
+void StepEntLogicAsPiranha(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-void StepEntityPhysicsAsPiranha(
-    std::size_t entity_idx,
+void StepEntPhysicsAsPiranha(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::piranha
+} // namespace splonks::ents::piranha

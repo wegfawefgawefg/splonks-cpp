@@ -1,9 +1,9 @@
-#include "entity.hpp"
+#include "ent.hpp"
 
-#include "entity/display_states.hpp"
-#include "entity/display_support.hpp"
-#include "entity/archetype_restore.hpp"
-#include "frame_data_id.hpp"
+#include "ent/display_states.hpp"
+#include "ent/display_support.hpp"
+#include "ent/spec_restore.hpp"
+#include "aframe_id.hpp"
 #include "tile.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -16,7 +16,7 @@ namespace splonks {
 
 namespace {
 
-constexpr std::uint32_t MovementFlagBit(EntityMovementFlag movement_flag) {
+constexpr std::uint32_t MovementFlagBit(EntMovementFlag movement_flag) {
     return 1U << static_cast<unsigned int>(movement_flag);
 }
 
@@ -24,222 +24,222 @@ constexpr float kGroundProbeFractionalEpsilon = 0.125F;
 
 } // namespace
 
-Entity Entity::New() {
-    Entity entity;
-    entity.active = false;
-    entity.marked_for_destruction = false;
-    entity.type_ = EntityType::None;
-    entity.vid = VID{0, 0};
-    entity.has_physics = true;
-    entity.can_collide = true;
-    entity.can_be_hit = true;
-    entity.can_receive_projectile_contact = true;
-    entity.stone = false;
-    entity.crusher_pusher = false;
-    entity.pushable = false;
-    entity.can_stomp = false;
-    entity.can_be_stomped = true;
-    entity.can_collect_pickups = false;
-    entity.grounded = false;
-    entity.shake = 0.0F;
-    entity.rotation = 0.0F;
-    entity.alpha = 1.0F;
-    entity.coyote_time = 0;
-    entity.stun_timer = 0;
-    entity.stun_recovers_on_ground = true;
-    entity.stun_recovers_while_held = true;
-    entity.can_be_picked_up = true;
-    entity.affected_by_cobweb = true;
-    entity.can_only_be_picked_up_if_dead_or_stunned = false;
-    entity.impassable = false;
-    entity.can_be_hung_on = true;
-    entity.fall_timer = 0;
-    entity.pos = Vec2::New(0.0F, 0.0F);
-    entity.vel = Vec2::New(0.0F, 0.0F);
-    entity.acc = Vec2::New(0.0F, 0.0F);
-    entity.max_speed = 7.0F;
-    entity.jump_hold_gravity_frames_remaining = 0;
-    entity.throw_velocity_scale = 1.0F;
-    entity.buoyancy = 0.0F;
-    entity.size = Vec2::New(8.0F, 8.0F);
-    entity.self_light = 0.0F;
-    entity.light_strength = 0.0F;
-    entity.light_color = Color3::White();
-    entity.light_radius = 0;
-    entity.dist_traveled_this_frame = 0.0F;
-    entity.facing = LeftOrRight::Left;
-    entity.vertical_flip = false;
-    entity.draw_layer = DrawLayer::Middle;
-    entity.render_enabled = true;
-    TrySetAnimation(entity, EntityDisplayState::Neutral);
-    entity.frame_data_animator = FrameDataAnimator{};
-    entity.jump_delay_frame_count = kJumpDelayFrames;
-    entity.jumped_this_frame = false;
-    entity.climb_detach_cooldown = 0;
-    entity.hang_side.reset();
-    entity.can_hang_ledge = false;
-    entity.can_hang_wall = false;
-    entity.hang_count = 0;
-    entity.holding = false;
-    entity.effects.reset();
-    entity.pickup_effect.reset();
-    entity.money = 0;
-    entity.buyable = Buyable{};
-    entity.stage_spawn_index.reset();
-    entity.attachment_mode = AttachmentMode::None;
-    entity.use_state = UseState{};
-    entity.travel_sound_countdown = kTravelSoundDistInterval;
-    entity.travel_sound = TravelSound::One;
-    entity.condition = EntityCondition::Normal;
-    entity.last_condition = EntityCondition::Normal;
-    entity.ai_state = EntityAiState::Idle;
-    entity.last_ai_state = EntityAiState::Idle;
-    entity.movement_flags = 0;
-    entity.health = 0;
-    entity.hurt_on_contact = false;
-    entity.vanish_on_death = false;
-    entity.affected_by_ground_friction = true;
-    entity.support_ground_friction = 0.85F;
-    entity.push_acc = 0.0F;
-    entity.damage_animation.reset();
-    entity.damage_sound.reset();
-    entity.collide_sound.reset();
-    entity.death_sound.reset();
-    entity.on_death = nullptr;
-    entity.on_damage = nullptr;
-    entity.on_use = nullptr;
-    entity.on_area_enter = nullptr;
-    entity.on_area_exit = nullptr;
-    entity.on_area_tile_changed = nullptr;
-    entity.control_logic = nullptr;
-    entity.step_logic = nullptr;
-    entity.step_physics = nullptr;
-    entity.transition_target.reset();
-    entity.stage_exit_id = kInvalidStageExitId;
-    entity.damage_vulnerability = DamageVulnerability::Vulnerable;
-    entity.attack_weight = 0.0F;
-    entity.weight = 0.0F;
-    entity.bomb_throw_delay_countdown = 0;
-    entity.rope_throw_delay_countdown = 0;
-    entity.attack_delay_countdown = 0;
-    entity.equip_delay_countdown = 0;
-    entity.thrown_immunity_timer = 0;
-    entity.projectile_contact_damage_type = DamageType::Attack;
-    entity.projectile_contact_damage_amount = 1;
-    entity.can_apply_projectile_contact = true;
-    entity.projectile_contact_timer = 0;
-    entity.collided = false;
-    entity.collided_last_frame = false;
-    entity.contact_sound_cooldown = 0;
-    entity.can_be_stunned = false;
-    entity.point_a = IVec2::New(0, 0);
-    entity.point_b = IVec2::New(0, 0);
-    entity.point_c = IVec2::New(0, 0);
-    entity.point_d = IVec2::New(0, 0);
-    entity.point_label_a = PointLabel::None;
-    entity.point_label_b = PointLabel::None;
-    entity.point_label_c = PointLabel::None;
-    entity.point_label_d = PointLabel::None;
-    entity.holding_timer = kDefaultHoldingTimer;
-    entity.entity_label_a = EntityLabel::None;
-    entity.child_vids.reset();
-    entity.inside_vids.reset();
-    entity.alignment = Alignment::Neutral;
-    entity.counter_a = 0.0F;
-    entity.counter_b = 0.0F;
-    entity.counter_c = 0.0F;
-    entity.counter_d = 0.0F;
-    entity.threshold_a = 0.0F;
-    entity.threshold_b = 0.0F;
-    return entity;
+Ent Ent::New() {
+    Ent ent;
+    ent.active = false;
+    ent.marked_for_destruction = false;
+    ent.type_ = EntType::None;
+    ent.vid = VID{0, 0};
+    ent.has_physics = true;
+    ent.can_collide = true;
+    ent.can_be_hit = true;
+    ent.can_receive_proj_contact = true;
+    ent.stone = false;
+    ent.crusher_pusher = false;
+    ent.pushable = false;
+    ent.can_stomp = false;
+    ent.can_be_stomped = true;
+    ent.can_collect_pickups = false;
+    ent.grounded = false;
+    ent.shake = 0.0F;
+    ent.rotation = 0.0F;
+    ent.alpha = 1.0F;
+    ent.coyote_time = 0;
+    ent.stun_timer = 0;
+    ent.stun_recovers_on_ground = true;
+    ent.stun_recovers_while_held = true;
+    ent.can_be_picked_up = true;
+    ent.affected_by_cobweb = true;
+    ent.can_only_be_picked_up_if_dead_or_stunned = false;
+    ent.impassable = false;
+    ent.can_be_hung_on = true;
+    ent.fall_timer = 0;
+    ent.pos = Vec2::New(0.0F, 0.0F);
+    ent.vel = Vec2::New(0.0F, 0.0F);
+    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.max_speed = 7.0F;
+    ent.jump_hold_gravity_frames_remaining = 0;
+    ent.throw_velocity_scale = 1.0F;
+    ent.buoyancy = 0.0F;
+    ent.size = Vec2::New(8.0F, 8.0F);
+    ent.self_light = 0.0F;
+    ent.light_strength = 0.0F;
+    ent.light_color = Color3::White();
+    ent.light_radius = 0;
+    ent.dist_traveled_this_frame = 0.0F;
+    ent.facing = Side::Left;
+    ent.vertical_flip = false;
+    ent.draw_layer = DrawLayer::Middle;
+    ent.render_enabled = true;
+    TrySetAnim(ent, EntDisplayState::Neutral);
+    ent.aframe_animator = AFrameAnimator{};
+    ent.jump_delay_frame_count = kJumpDelayFrames;
+    ent.jumped_this_frame = false;
+    ent.climb_detach_cooldown = 0;
+    ent.hang_side.reset();
+    ent.can_hang_ledge = false;
+    ent.can_hang_wall = false;
+    ent.hang_count = 0;
+    ent.holding = false;
+    ent.effects.reset();
+    ent.pickup_effect.reset();
+    ent.money = 0;
+    ent.buyable = Buyable{};
+    ent.stage_spawn_index.reset();
+    ent.attach_mode = AttachMode::None;
+    ent.use_state = UseState{};
+    ent.travel_sound_countdown = kTravelSoundDistInterval;
+    ent.travel_sound = TravelSound::One;
+    ent.condition = EntCondition::Normal;
+    ent.last_condition = EntCondition::Normal;
+    ent.ai_state = EntAiState::Idle;
+    ent.last_ai_state = EntAiState::Idle;
+    ent.movement_flags = 0;
+    ent.health = 0;
+    ent.hurt_on_contact = false;
+    ent.vanish_on_death = false;
+    ent.affected_by_ground_friction = true;
+    ent.support_ground_friction = 0.85F;
+    ent.push_acc = 0.0F;
+    ent.damage_anim.reset();
+    ent.damage_sound.reset();
+    ent.collide_sound.reset();
+    ent.death_sound.reset();
+    ent.on_death = nullptr;
+    ent.on_damage = nullptr;
+    ent.on_use = nullptr;
+    ent.on_area_enter = nullptr;
+    ent.on_area_exit = nullptr;
+    ent.on_area_tile_changed = nullptr;
+    ent.control_logic = nullptr;
+    ent.step_logic = nullptr;
+    ent.step_physics = nullptr;
+    ent.transition_target.reset();
+    ent.stage_exit_id = kInvalidStageExitId;
+    ent.damage_vuln = DamageVuln::Vulnerable;
+    ent.attack_weight = 0.0F;
+    ent.weight = 0.0F;
+    ent.bomb_throw_delay_countdown = 0;
+    ent.rope_throw_delay_countdown = 0;
+    ent.attack_delay_countdown = 0;
+    ent.equip_delay_countdown = 0;
+    ent.thrown_immunity_timer = 0;
+    ent.proj_contact_damage_type = DamageType::Attack;
+    ent.proj_contact_damage_amount = 1;
+    ent.can_apply_proj_contact = true;
+    ent.proj_contact_timer = 0;
+    ent.collided = false;
+    ent.collided_last_frame = false;
+    ent.contact_sound_cooldown = 0;
+    ent.can_be_stunned = false;
+    ent.point_a = IVec2::New(0, 0);
+    ent.point_b = IVec2::New(0, 0);
+    ent.point_c = IVec2::New(0, 0);
+    ent.point_d = IVec2::New(0, 0);
+    ent.point_label_a = PointLabel::None;
+    ent.point_label_b = PointLabel::None;
+    ent.point_label_c = PointLabel::None;
+    ent.point_label_d = PointLabel::None;
+    ent.holding_timer = kDefaultHoldingTimer;
+    ent.ent_label_a = EntLabel::None;
+    ent.child_vids.reset();
+    ent.inside_vids.reset();
+    ent.alignment = Alignment::Neutral;
+    ent.counter_a = 0.0F;
+    ent.counter_b = 0.0F;
+    ent.counter_c = 0.0F;
+    ent.counter_d = 0.0F;
+    ent.threshold_a = 0.0F;
+    ent.threshold_b = 0.0F;
+    return ent;
 }
 
-void Entity::Reset() {
+void Ent::Reset() {
     const VID existing_vid = vid;
-    *this = Entity::New();
+    *this = Ent::New();
     vid = existing_vid;
     active = true;
 }
 
-void AddEntityShake(Entity& entity, float amount) {
-    constexpr float kMaxEntityShake = 8.0F;
-    entity.shake = std::clamp(entity.shake + amount, 0.0F, kMaxEntityShake);
+void AddEntShake(Ent& ent, float amount) {
+    constexpr float kMaxEntShake = 8.0F;
+    ent.shake = std::clamp(ent.shake + amount, 0.0F, kMaxEntShake);
 }
 
-void AttenuateEntityShake(Entity& entity, float amount) {
-    entity.shake = std::max(0.0F, entity.shake - amount);
+void AttenuateEntShake(Ent& ent, float amount) {
+    ent.shake = std::max(0.0F, ent.shake - amount);
 }
 
-void UseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source) {
-    const bool was_down = entity.use_state.down;
-    entity.use_state.down = true;
-    entity.use_state.pressed = !was_down;
-    entity.use_state.released = false;
-    entity.use_state.frames = was_down ? entity.use_state.frames + 1 : 1;
-    entity.use_state.user_vid = user_vid;
-    entity.use_state.source = source;
+void UseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source) {
+    const bool was_down = ent.use_state.down;
+    ent.use_state.down = true;
+    ent.use_state.pressed = !was_down;
+    ent.use_state.released = false;
+    ent.use_state.frames = was_down ? ent.use_state.frames + 1 : 1;
+    ent.use_state.user_vid = user_vid;
+    ent.use_state.source = source;
 }
 
-void PressUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source) {
-    UseEntity(entity, user_vid, source);
-    entity.use_state.pressed = true;
+void PressUseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source) {
+    UseEnt(ent, user_vid, source);
+    ent.use_state.pressed = true;
 }
 
-void ReleaseUseEntity(Entity& entity, std::optional<VID> user_vid, AttachmentMode source) {
-    entity.use_state.down = false;
-    entity.use_state.pressed = false;
-    entity.use_state.released = true;
-    entity.use_state.frames = 0;
-    entity.use_state.user_vid = user_vid;
-    entity.use_state.source = source;
+void ReleaseUseEnt(Ent& ent, std::optional<VID> user_vid, AttachMode source) {
+    ent.use_state.down = false;
+    ent.use_state.pressed = false;
+    ent.use_state.released = true;
+    ent.use_state.frames = 0;
+    ent.use_state.user_vid = user_vid;
+    ent.use_state.source = source;
 }
 
-void StopUsingEntity(Entity& entity) {
-    const bool was_down = entity.use_state.down;
-    entity.use_state.down = false;
-    entity.use_state.pressed = false;
-    entity.use_state.released = was_down;
-    entity.use_state.frames = 0;
-    entity.use_state.user_vid.reset();
-    entity.use_state.source = AttachmentMode::None;
+void StopUsingEnt(Ent& ent) {
+    const bool was_down = ent.use_state.down;
+    ent.use_state.down = false;
+    ent.use_state.pressed = false;
+    ent.use_state.released = was_down;
+    ent.use_state.frames = 0;
+    ent.use_state.user_vid.reset();
+    ent.use_state.source = AttachMode::None;
 }
 
-bool HasMovementFlag(const Entity& entity, EntityMovementFlag movement_flag) {
-    return (entity.movement_flags & MovementFlagBit(movement_flag)) != 0;
+bool HasMovementFlag(const Ent& ent, EntMovementFlag movement_flag) {
+    return (ent.movement_flags & MovementFlagBit(movement_flag)) != 0;
 }
 
-void SetMovementFlag(Entity& entity, EntityMovementFlag movement_flag, bool enabled) {
+void SetMovementFlag(Ent& ent, EntMovementFlag movement_flag, bool enabled) {
     if (enabled) {
-        entity.movement_flags |= MovementFlagBit(movement_flag);
+        ent.movement_flags |= MovementFlagBit(movement_flag);
         return;
     }
 
-    entity.movement_flags &= ~MovementFlagBit(movement_flag);
+    ent.movement_flags &= ~MovementFlagBit(movement_flag);
 }
 
-void ClearTransientMovementFlags(Entity& entity) {
-    SetMovementFlag(entity, EntityMovementFlag::Walking, false);
-    SetMovementFlag(entity, EntityMovementFlag::Running, false);
-    SetMovementFlag(entity, EntityMovementFlag::Pushing, false);
+void ClearTransientMovementFlags(Ent& ent) {
+    SetMovementFlag(ent, EntMovementFlag::Walking, false);
+    SetMovementFlag(ent, EntMovementFlag::Running, false);
+    SetMovementFlag(ent, EntMovementFlag::Pushing, false);
 }
 
-std::tuple<Vec2, Vec2> Entity::GetBounds() const {
+std::tuple<Vec2, Vec2> Ent::GetBounds() const {
     return {pos, pos + size - Vec2::New(1.0F, 1.0F)};
 }
 
-AABB Entity::GetAABB() const {
+AABB Ent::GetAABB() const {
     return AABB::New(pos, pos + size - Vec2::New(1.0F, 1.0F));
 }
 
-Vec2 Entity::GetCenter() const {
+Vec2 Ent::GetCenter() const {
     return pos + size / 2.0F;
 }
 
-void Entity::SetCenter(const Vec2& center) {
+void Ent::SetCenter(const Vec2& center) {
     pos = center - size / 2.0F;
 }
 
-void Entity::IncTravelSound() {
+void Ent::IncTravelSound() {
     switch (travel_sound) {
     case TravelSound::One:
         travel_sound = TravelSound::Two;
@@ -250,26 +250,26 @@ void Entity::IncTravelSound() {
     }
 }
 
-bool Entity::IsHanging() const {
+bool Ent::IsHanging() const {
     return hang_side.has_value();
 }
 
-bool Entity::IsClimbing() const {
-    return HasMovementFlag(*this, EntityMovementFlag::Climbing);
+bool Ent::IsClimbing() const {
+    return HasMovementFlag(*this, EntMovementFlag::Climbing);
 }
 
-AABB Entity::GetFeet() const {
+AABB Ent::GetFeet() const {
     const auto [tl, br] = GetBounds();
     return AABB::New(Vec2::New(tl.x, br.y), br + Vec2::New(0.0F, 1.0F));
 }
 
-AABB Entity::GetGroundProbe() const {
+AABB Ent::GetGroundProbe() const {
     AABB feet = GetFeet();
     feet.br.y += kGroundProbeFractionalEpsilon;
     return feet;
 }
 
-bool Entity::TrySnapToBlockingStageBottom(const Stage& stage) {
+bool Ent::TrySnapToBlockingStageBottom(const Stage& stage) {
     if (!stage.IsBorderSideBlocking(StageBorderSideKind::Bottom)) {
         return false;
     }
@@ -283,7 +283,7 @@ bool Entity::TrySnapToBlockingStageBottom(const Stage& stage) {
     return true;
 }
 
-void Entity::SetGrounded(const Stage& stage) {
+void Ent::SetGrounded(const Stage& stage) {
     const AABB feet = GetGroundProbe();
     if (TrySnapToBlockingStageBottom(stage)) {
         grounded |= true;
@@ -300,11 +300,11 @@ void Entity::SetGrounded(const Stage& stage) {
     }
 }
 
-std::tuple<Vec2, Vec2> Entity::GetTlAndTrCorners() const {
+std::tuple<Vec2, Vec2> Ent::GetTlAndTrCorners() const {
     return {Vec2::New(pos.x, pos.y), Vec2::New(pos.x + size.x, pos.y)};
 }
 
-HangHands Entity::GetHangHands() const {
+HangHands Ent::GetHangHands() const {
     const auto [tl, tr] = GetTlAndTrCorners();
     HangHands hang_hands;
     hang_hands.left = tl;
@@ -312,7 +312,7 @@ HangHands Entity::GetHangHands() const {
     return hang_hands;
 }
 
-HangHandBounds Entity::GetHangHandsBounds() const {
+HangHandBounds Ent::GetHangHandsBounds() const {
     const auto [tl, _br] = GetBounds();
     const Vec2 right_edge = tl + Vec2::New(size.x, 0.0F);
     HangHandBounds hang_hands;
@@ -323,76 +323,76 @@ HangHandBounds Entity::GetHangHandsBounds() const {
     return hang_hands;
 }
 
-bool TrySetAnimation(Entity& entity, EntityDisplayState display_state) {
-    const auto selection = GetFrameDataSelectionForDisplayState(EntityDisplayInput{
-        .type_ = entity.type_,
+bool TrySetAnim(Ent& ent, EntDisplayState display_state) {
+    const auto selection = GetAFrameSelectionForDisplayState(EntDisplayInput{
+        .type_ = ent.type_,
         .display_state = display_state,
     });
     if (!selection.has_value()) {
         return false;
     }
 
-    SetAnimation(entity, selection->animation_id);
-    entity.frame_data_animator.animate = selection->animate;
+    SetAnim(ent, selection->anim_id);
+    ent.aframe_animator.animate = selection->animate;
     if (selection->has_forced_frame) {
-        entity.frame_data_animator.SetForcedFrame(selection->forced_frame);
+        ent.aframe_animator.SetForcedFrame(selection->forced_frame);
     }
     return true;
 }
 
-void SetAnimation(Entity& entity, FrameDataId animation_id) {
-    entity.frame_data_animator.SetAnimation(animation_id);
+void SetAnim(Ent& ent, AFrameId anim_id) {
+    ent.aframe_animator.SetAnim(anim_id);
 }
 
-bool TryCollectEffectPickup(Entity& entity, const Entity& pickup) {
+bool TryCollectEffectPickup(Ent& ent, const Ent& pickup) {
     if (!pickup.pickup_effect.has_value()) {
         return false;
     }
 
-    (void)AddEffect(entity, *pickup.pickup_effect, GetEffectArchetype(*pickup.pickup_effect).default_count);
+    (void)AddEffect(ent, *pickup.pickup_effect, GetEffectSpec(*pickup.pickup_effect).default_count);
     return true;
 }
 
-bool TryCollectInventoryPickup(State& state, Entity& entity, const Entity& pickup) {
+bool TryCollectInventoryPickup(State& state, Ent& ent, const Ent& pickup) {
     bool collected = false;
     switch (pickup.type_) {
-    case EntityType::BombBox:
-        collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowBomb, 12);
+    case EntType::BombBox:
+        collected |= state.ent_tools.AddToolCount(ent.vid, ToolKind::ThrowBomb, 12);
         break;
-    case EntityType::BombBag:
-        collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowBomb, 3);
+    case EntType::BombBag:
+        collected |= state.ent_tools.AddToolCount(ent.vid, ToolKind::ThrowBomb, 3);
         break;
-    case EntityType::Paste:
-        collected |= state.entity_tools.UpgradeBombsToSticky(entity.vid);
+    case EntType::Paste:
+        collected |= state.ent_tools.UpgradeBombsToSticky(ent.vid);
         break;
-    case EntityType::RopePile:
-        collected |= state.entity_tools.AddToolCount(entity.vid, ToolKind::ThrowRope, 3);
+    case EntType::RopePile:
+        collected |= state.ent_tools.AddToolCount(ent.vid, ToolKind::ThrowRope, 3);
         break;
     default:
         break;
     }
-    if (TryCollectEffectPickup(entity, pickup)) {
+    if (TryCollectEffectPickup(ent, pickup)) {
         collected = true;
     }
     return collected;
 }
 
-bool CanRevealEmbeddedTreasure(const Entity& entity) {
-    return GetModifiedEffectValue(entity, EffectModifierTarget::HiddenTreasureVisibility, 0.0F) > 0.0F;
+bool CanRevealEmbeddedTreasure(const Ent& ent) {
+    return GetModifiedEffectValue(ent, EffectModifierTarget::HiddenTreasureVisibility, 0.0F) > 0.0F;
 }
 
-void EnableStone(Entity& entity) {
-    entity.stone = true;
-    entity.crusher_pusher = true;
-    entity.impassable = true;
-    entity.damage_vulnerability = DamageVulnerability::ExplosionOnly;
+void EnableStone(Ent& ent) {
+    ent.stone = true;
+    ent.crusher_pusher = true;
+    ent.impassable = true;
+    ent.damage_vuln = DamageVuln::ExplosionOnly;
 }
 
-void DisableStone(Entity& entity) {
-    entity.stone = false;
-    RestoreEntityCrusherPusherFromArchetype(entity);
-    RestoreEntityImpassableFromArchetype(entity);
-    RestoreEntityDamageVulnerabilityFromArchetype(entity);
+void DisableStone(Ent& ent) {
+    ent.stone = false;
+    RestoreEntCrusherPusherFromSpec(ent);
+    RestoreEntImpassableFromSpec(ent);
+    RestoreEntDamageVulnFromSpec(ent);
 }
 
 } // namespace splonks

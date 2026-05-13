@@ -2,12 +2,12 @@
 
 #include "buying.hpp"
 #include "effects/render.hpp"
-#include "entity.hpp"
-#include "frame_data_id.hpp"
+#include "ent.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "hud/entries.hpp"
 #include "player_queries.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 #include "state.hpp"
 #include "step.hpp"
 #include "text.hpp"
@@ -25,31 +25,31 @@ namespace splonks {
 
 namespace {
 
-FrameDataId GetToolIconAnimationId(ToolKind kind) {
-    return GetToolArchetype(kind).icon_animation_id;
+AFrameId GetToolIconAnimId(ToolKind kind) {
+    return GetToolSpec(kind).icon_anim_id;
 }
 
-FrameDataId GetToolSlotBackgroundAnimationId(std::size_t slot_index) {
+AFrameId GetToolSlotBackgroundAnimId(std::size_t slot_index) {
     switch (slot_index) {
     case 0:
-        return frame_data_ids::ToolSlot1;
+        return aframe_ids::ToolSlot1;
     case 1:
-        return frame_data_ids::ToolSlot2;
+        return aframe_ids::ToolSlot2;
     default:
-        return kInvalidFrameDataId;
+        return kInvalidAFrameId;
     }
 }
 
-FrameDataId GetEquipmentSlotBackgroundAnimationId(HudEntrySource source) {
+AFrameId GetEquipmentSlotBackgroundAnimId(HudEntrySource source) {
     switch (source) {
     case HudEntrySource::HeldItem:
-        return frame_data_ids::HandSlot;
+        return aframe_ids::HandSlot;
     case HudEntrySource::BackItem:
-        return frame_data_ids::BackSlot;
+        return aframe_ids::BackSlot;
     case HudEntrySource::Effect:
     case HudEntrySource::Temporary:
     default:
-        return kInvalidFrameDataId;
+        return kInvalidAFrameId;
     }
 }
 
@@ -74,19 +74,19 @@ void FormatHudTimer(char* out, std::size_t out_size, std::uint32_t frame_count) 
     std::snprintf(out, out_size, "%02u:%02u.%u", minutes, seconds, tenths);
 }
 
-std::size_t GetUiAnimationFrameIndex(
-    const FrameDataAnimation& animation,
-    const FrameDataDb& frame_data_db,
+std::size_t GetUiAnimFrameIndex(
+    const AFrameAnim& anim,
+    const AFrameDb& aframe_db,
     std::uint64_t tick
 ) {
-    if (animation.frame_indices.empty()) {
+    if (anim.frame_indices.empty()) {
         return 0;
     }
 
     std::uint64_t total_duration = 0;
-    for (std::size_t frame_index : animation.frame_indices) {
+    for (std::size_t frame_index : anim.frame_indices) {
         total_duration += static_cast<std::uint64_t>(
-            std::max(frame_data_db.frames[frame_index].duration, 1)
+            std::max(aframe_db.frames[frame_index].duration, 1)
         );
     }
     if (total_duration == 0) {
@@ -94,9 +94,9 @@ std::size_t GetUiAnimationFrameIndex(
     }
 
     std::uint64_t local_tick = tick % total_duration;
-    for (std::size_t ordered_index = 0; ordered_index < animation.frame_indices.size(); ++ordered_index) {
-        const FrameData& frame_data = frame_data_db.frames[animation.frame_indices[ordered_index]];
-        const std::uint64_t duration = static_cast<std::uint64_t>(std::max(frame_data.duration, 1));
+    for (std::size_t ordered_index = 0; ordered_index < anim.frame_indices.size(); ++ordered_index) {
+        const AFrame& aframe = aframe_db.frames[anim.frame_indices[ordered_index]];
+        const std::uint64_t duration = static_cast<std::uint64_t>(std::max(aframe.duration, 1));
         if (local_tick < duration) {
             return ordered_index;
         }
@@ -106,37 +106,37 @@ std::size_t GetUiAnimationFrameIndex(
     return 0;
 }
 
-void DrawFrameDataIconAtTick(
+void DrawAFrameIconAtTick(
     SDL_Renderer* renderer,
     Graphics& graphics,
-    FrameDataId animation_id,
+    AFrameId anim_id,
     const IVec2& cursor,
     const IVec2& size,
     std::uint64_t tick
 ) {
-    const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
+    const AFrameAnim* const anim = graphics.aframe_db.FindAnim(anim_id);
+    if (anim == nullptr || anim->frame_indices.empty()) {
         return;
     }
 
     const std::size_t ordered_frame_index =
-        GetUiAnimationFrameIndex(*animation, graphics.frame_data_db, tick);
-    if (ordered_frame_index >= animation->frame_indices.size()) {
+        GetUiAnimFrameIndex(*anim, graphics.aframe_db, tick);
+    if (ordered_frame_index >= anim->frame_indices.size()) {
         return;
     }
 
-    const FrameData& frame_data =
-        graphics.frame_data_db.frames[animation->frame_indices[ordered_frame_index]];
-    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data.image_id);
+    const AFrame& aframe =
+        graphics.aframe_db.frames[anim->frame_indices[ordered_frame_index]];
+    SDL_Texture* const texture = graphics.GetAFrameTexture(aframe.image_id);
     if (texture == nullptr) {
         return;
     }
 
     const SDL_FRect src{
-        static_cast<float>(frame_data.sample_rect.x),
-        static_cast<float>(frame_data.sample_rect.y),
-        static_cast<float>(frame_data.sample_rect.w),
-        static_cast<float>(frame_data.sample_rect.h),
+        static_cast<float>(aframe.sample_rect.x),
+        static_cast<float>(aframe.sample_rect.y),
+        static_cast<float>(aframe.sample_rect.w),
+        static_cast<float>(aframe.sample_rect.h),
     };
     const SDL_FRect dst{
         static_cast<float>(cursor.x),
@@ -147,15 +147,15 @@ void DrawFrameDataIconAtTick(
     SDL_RenderTexture(renderer, texture, &src, &dst);
 }
 
-void DrawFrameDataIcon(
+void DrawAFrameIcon(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,
-    FrameDataId animation_id,
+    AFrameId anim_id,
     const IVec2& cursor,
     const IVec2& size
 ) {
-    DrawFrameDataIconAtTick(renderer, graphics, animation_id, cursor, size, state.scene_frame);
+    DrawAFrameIconAtTick(renderer, graphics, anim_id, cursor, size, state.scene_frame);
 }
 
 Vec2 GetUiCountTextPosition(const IVec2& icon_cursor, const IVec2& icon_size) {
@@ -169,22 +169,22 @@ bool SameHudEntryKey(const HudEntryKey& a, const HudEntryKey& b) {
     return a.source == b.source && a.id == b.id;
 }
 
-struct HudEntryAnimationState {
+struct HudEntryAnimState {
     HudEntryKey key{};
-    FrameDataId animation_id = kInvalidFrameDataId;
+    AFrameId anim_id = kInvalidAFrameId;
     std::uint64_t started_scene_frame = 0;
     std::uint64_t last_seen_scene_frame = 0;
     float shake = 0.0F;
 };
 
-HudEntryAnimationState& GetHudEntryAnimationState(const HudEntry& entry, std::uint64_t scene_frame) {
-    static std::vector<HudEntryAnimationState> states;
+HudEntryAnimState& GetHudEntryAnimState(const HudEntry& entry, std::uint64_t scene_frame) {
+    static std::vector<HudEntryAnimState> states;
     if ((scene_frame % 120U) == 0U) {
         states.erase(
             std::remove_if(
                 states.begin(),
                 states.end(),
-                [scene_frame](const HudEntryAnimationState& state) {
+                [scene_frame](const HudEntryAnimState& state) {
                     return state.last_seen_scene_frame + 240U < scene_frame;
                 }
             ),
@@ -192,13 +192,13 @@ HudEntryAnimationState& GetHudEntryAnimationState(const HudEntry& entry, std::ui
         );
     }
 
-    for (HudEntryAnimationState& state : states) {
+    for (HudEntryAnimState& state : states) {
         if (!SameHudEntryKey(state.key, entry.key)) {
             continue;
         }
 
-        if (state.animation_id != entry.icon_animation_id) {
-            state.animation_id = entry.icon_animation_id;
+        if (state.anim_id != entry.icon_anim_id) {
+            state.anim_id = entry.icon_anim_id;
             state.started_scene_frame = scene_frame;
         }
         state.last_seen_scene_frame = scene_frame;
@@ -206,9 +206,9 @@ HudEntryAnimationState& GetHudEntryAnimationState(const HudEntry& entry, std::ui
         return state;
     }
 
-    states.push_back(HudEntryAnimationState{
+    states.push_back(HudEntryAnimState{
         .key = entry.key,
-        .animation_id = entry.icon_animation_id,
+        .anim_id = entry.icon_anim_id,
         .started_scene_frame = scene_frame,
         .last_seen_scene_frame = scene_frame,
         .shake = entry.shake,
@@ -216,7 +216,7 @@ HudEntryAnimationState& GetHudEntryAnimationState(const HudEntry& entry, std::ui
     return states.back();
 }
 
-std::uint64_t GetHudEntryAnimationTick(const HudEntryAnimationState& entry_state, std::uint64_t scene_frame) {
+std::uint64_t GetHudEntryAnimTick(const HudEntryAnimState& entry_state, std::uint64_t scene_frame) {
     return scene_frame - entry_state.started_scene_frame;
 }
 
@@ -243,7 +243,7 @@ void DrawRightAlignedUiText(
     );
 }
 
-Vec2 GetHudEntryVisualOffset(const HudEntry& entry, const HudEntryAnimationState& entry_state, std::uint64_t scene_frame) {
+Vec2 GetHudEntryVisualOffset(const HudEntry& entry, const HudEntryAnimState& entry_state, std::uint64_t scene_frame) {
     Vec2 offset = Vec2::New(0.0F, 0.0F);
     if (entry_state.shake > 0.0F) {
         const float phase = static_cast<float>((scene_frame + entry.key.id * 17U) % 31U);
@@ -319,8 +319,8 @@ void DrawHudEntryBadges(
         }
 
         const IVec2 badge_cursor = GetHudAnchorCursor(icon_cursor, icon_size, badge_size, badge.anchor);
-        if (badge.icon_animation_id != kInvalidFrameDataId) {
-            DrawFrameDataIconAtTick(renderer, graphics, badge.icon_animation_id, badge_cursor, badge_size, local_tick);
+        if (badge.icon_anim_id != kInvalidAFrameId) {
+            DrawAFrameIconAtTick(renderer, graphics, badge.icon_anim_id, badge_cursor, badge_size, local_tick);
         }
         if (badge.text.has_value()) {
             DrawText(
@@ -345,18 +345,18 @@ void DrawHudEntry(
     const IVec2& cursor,
     const IVec2& icon_size
 ) {
-    if (entry.icon_animation_id == kInvalidFrameDataId) {
+    if (entry.icon_anim_id == kInvalidAFrameId) {
         return;
     }
 
-    HudEntryAnimationState& entry_state = GetHudEntryAnimationState(entry, state.scene_frame);
+    HudEntryAnimState& entry_state = GetHudEntryAnimState(entry, state.scene_frame);
     const Vec2 offset = GetHudEntryVisualOffset(entry, entry_state, state.scene_frame);
     const IVec2 icon_cursor = IVec2::New(
         cursor.x + static_cast<int>(std::round(offset.x)),
         cursor.y + static_cast<int>(std::round(offset.y))
     );
-    const std::uint64_t local_tick = GetHudEntryAnimationTick(entry_state, state.scene_frame);
-    DrawFrameDataIconAtTick(renderer, graphics, entry.icon_animation_id, icon_cursor, icon_size, local_tick);
+    const std::uint64_t local_tick = GetHudEntryAnimTick(entry_state, state.scene_frame);
+    DrawAFrameIconAtTick(renderer, graphics, entry.icon_anim_id, icon_cursor, icon_size, local_tick);
     DrawHudEntryBadges(renderer, graphics, entry, icon_cursor, icon_size, local_tick);
 
     if (entry.count_text.has_value()) {
@@ -451,20 +451,20 @@ void DrawPromptBubble(
 } // namespace
 
 /**
- * Atlas sample row is determined by entity_type,
- * Atlas sample col is determined by entity display state, +1 if animation frame is B
+ * Atlas sample row is determined by ent_type,
+ * Atlas sample col is determined by ent display state, +1 if anim frame is B
  */
 void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& graphics) {
     unsigned int health = 0;
     unsigned int money = 0;
     const int favor = state.sac_altar_favor;
     std::optional<VID> hud_player_vid;
-    const Entity* player_entity = nullptr;
-    if (const Entity* const player = GetPrimaryLocalPlayer(state)) {
+    const Ent* player_ent = nullptr;
+    if (const Ent* const player = GetPrimaryLocalPlayer(state)) {
         health = player->health;
         money = player->money;
         hud_player_vid = player->vid;
-        player_entity = player;
+        player_ent = player;
     }
 
     const float hud_icon_scale = std::clamp(state.settings.ui.icon_scale, 0.25F, 1.50F);
@@ -500,11 +500,11 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         // HEALTH
         // draw heart
         const IVec2 icon_cursor = cursor;
-        DrawFrameDataIcon(
+        DrawAFrameIcon(
             renderer,
             state,
             graphics,
-            frame_data_ids::HeartUiIcon,
+            aframe_ids::HeartUiIcon,
             icon_cursor,
             status_icon_size
         );
@@ -530,26 +530,26 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
     if (hud_player_vid.has_value()) {
         for (std::size_t slot_index = 0; slot_index < kToolSlotCount; ++slot_index) {
             const IVec2 icon_cursor = cursor;
-            DrawFrameDataIcon(
+            DrawAFrameIcon(
                 renderer,
                 state,
                 graphics,
-                GetToolSlotBackgroundAnimationId(slot_index),
+                GetToolSlotBackgroundAnimId(slot_index),
                 icon_cursor,
                 tool_slot_size
             );
 
-            const ToolSlot* const slot = state.entity_tools.FindToolSlot(*hud_player_vid, slot_index);
+            const ToolSlot* const slot = state.ent_tools.FindToolSlot(*hud_player_vid, slot_index);
             if (slot != nullptr && slot->active) {
                 const IVec2 tool_icon_cursor = IVec2::New(
                     icon_cursor.x + (tool_slot_size.x - tool_icon_size.x) / 2,
                     icon_cursor.y + (tool_slot_size.y - tool_icon_size.y) / 2
                 );
-                DrawFrameDataIcon(
+                DrawAFrameIcon(
                     renderer,
                     state,
                     graphics,
-                    GetToolIconAnimationId(slot->kind),
+                    GetToolIconAnimId(slot->kind),
                     tool_icon_cursor,
                     tool_icon_size
                 );
@@ -572,19 +572,19 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
             cursor = cursor + (tool_cursor_advance * 3);
         }
 
-        if (player_entity != nullptr) {
-            const std::vector<HudEntry> equipment_entries = BuildEquipmentHudEntries(state, *player_entity);
+        if (player_ent != nullptr) {
+            const std::vector<HudEntry> equipment_entries = BuildEquipmentHudEntries(state, *player_ent);
             constexpr HudEntrySource kEquipmentSources[] = {
                 HudEntrySource::HeldItem,
                 HudEntrySource::BackItem,
             };
             for (HudEntrySource source : kEquipmentSources) {
                 const IVec2 slot_cursor = cursor;
-                DrawFrameDataIcon(
+                DrawAFrameIcon(
                     renderer,
                     state,
                     graphics,
-                    GetEquipmentSlotBackgroundAnimationId(source),
+                    GetEquipmentSlotBackgroundAnimId(source),
                     slot_cursor,
                     tool_slot_size
                 );
@@ -602,8 +602,8 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         }
     }
 
-    if (player_entity != nullptr) {
-        RenderEffectWorldOverlays(renderer, state, graphics, *player_entity);
+    if (player_ent != nullptr) {
+        RenderEffectWorldOverlays(renderer, state, graphics, *player_ent);
 
         IVec2 effects_cursor = IVec2::New(
             hud_margin,
@@ -614,7 +614,7 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
             std::max(1, static_cast<int>(static_cast<float>(status_icon_size.y) * 0.8F))
         );
         const int effect_gap = std::max(4, hud_gap / 2);
-        for (const HudEntry& entry : BuildEffectHudEntries(state, *player_entity)) {
+        for (const HudEntry& entry : BuildEffectHudEntries(state, *player_ent)) {
             DrawHudEntry(renderer, state, graphics, entry, effects_cursor, effect_icon_size);
             effects_cursor.x += effect_icon_size.x + effect_gap + entry.extra_right_padding;
         }
@@ -632,11 +632,11 @@ void RenderPlayingHud(SDL_Renderer* renderer, const State& state, Graphics& grap
         static_cast<int>(graphics.dims.x) - hud_margin - money_block_width,
         hud_margin
     );
-    DrawFrameDataIcon(
+    DrawAFrameIcon(
         renderer,
         state,
         graphics,
-        frame_data_ids::GoldIcon,
+        aframe_ids::GoldIcon,
         gold_icon_cursor,
         status_icon_size
     );
@@ -722,7 +722,7 @@ void RenderWorldPrompts(SDL_Renderer* renderer, const State& state, Graphics& gr
         const bool show_message = prompt.message_text[0] != '\0';
         const bool show_arrow = prompt.show_down_arrow;
         const bool show_quantity = prompt.quantity > 0;
-        const bool show_icon = prompt.icon_animation_id.has_value();
+        const bool show_icon = prompt.icon_anim_id.has_value();
         if (!show_action && !show_message && !show_arrow && !show_quantity && !show_icon) {
             continue;
         }
@@ -866,11 +866,11 @@ void RenderWorldPrompts(SDL_Renderer* renderer, const State& state, Graphics& gr
         }
         if (show_icon) {
             advance_gap_if_needed(first_segment);
-            DrawFrameDataIcon(
+            DrawAFrameIcon(
                 renderer,
                 state,
                 graphics,
-                *prompt.icon_animation_id,
+                *prompt.icon_anim_id,
                 IVec2::New(
                     static_cast<int>(cursor_x),
                     static_cast<int>(prompt_y + kPromptIconYOffset)

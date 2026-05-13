@@ -11,12 +11,12 @@ The useful split:
 - `ClassicHD` is local source, so those values are hard facts.
 - Mossmouth `Spelunky HD` source is not available here, so exact internal
   constants remain unverified.
-- `Spelunky 2` exposes useful datamined entity data through Overlunky, but its
+- `Spelunky 2` exposes useful datamined ent data through Overlunky, but its
   units are tile/world units, not pixels.
 
 ## Current Splonks
 
-Current player constants are in `src/entities/player.hpp`:
+Current player constants are in `src/ents/player.hpp`:
 
 - `kMoveAcc = 0.5`
 - `kRunAcc = 0.5`
@@ -133,8 +133,8 @@ These are validation targets, not hard internal constants.
 Source:
 
 - Overlunky API: `https://spelunky-fyi.github.io/overlunky/`
-- Overlunky entity data:
-  `https://raw.githubusercontent.com/spelunky-fyi/overlunky/main/docs/game_data/entities.json`
+- Overlunky ent data:
+  `https://raw.githubusercontent.com/spelunky-fyi/overlunky/main/docs/game_data/ents.json`
 
 For `ENT_TYPE_CHAR_ANA_SPELUNKY` and other normal player characters:
 
@@ -149,7 +149,7 @@ Spelunky 2 units:
 
 - One tile is `1.0` world unit.
 - Player chars are roughly `width = 1.25`, `height = 1.25`.
-- Floor/block entities are `width = 1.0`, `height = 1.0`.
+- Floor/block ents are `width = 1.0`, `height = 1.0`.
 
 Useful conversion to Splonks pixels:
 
@@ -212,7 +212,7 @@ fast. The 60 Hz equivalent is:
 ## Runtime Player Tuning
 
 `Debug: Player Tuning` owns the current parity pass. It exposes vertical,
-horizontal, run, and climb/hang knobs against the real `Player` entity rather
+horizontal, run, and climb/hang knobs against the real `Player` ent rather
 than a temporary alternate player type.
 
 Validation targets:
@@ -229,7 +229,7 @@ Validation targets:
 ## Open Questions
 
 - What is the true commercial Spelunky HD terminal fall speed?
-- Does Spelunky 2 use `EntityDB.max_speed` for vertical fall clamp, or only
+- Does Spelunky 2 use `EntDB.max_speed` for vertical fall clamp, or only
   horizontal locomotion?
 - What exact tile distance should Splonks use for first fall damage if we are
   targeting feel rather than literal ClassicHD timer values?

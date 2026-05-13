@@ -1,9 +1,9 @@
 #include "network/net_lobby.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
-#include "network/net_entity_links.hpp"
+#include "network/net_ent_links.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "stage_progression.hpp"
 #include "stage_spawning.hpp"
@@ -26,16 +26,16 @@ bool ShouldApplyNetworkLifecycleToSlot(const State& state, const PlayerSlot& slo
     if (state.net_session.input_lockstep_enabled) {
         return true;
     }
-    return state.net_session.role == NetRole::Coordinator ||
+    return state.net_session.role == NetRole::Host ||
            slot.connection_kind == PlayerConnectionKind::Local;
 }
 
-bool IsPlayerEntityDeadOrMissing(State& state, const PlayerSlot& slot) {
-    if (!slot.entity_vid.has_value()) {
+bool IsPlayerEntDeadOrMissing(State& state, const PlayerSlot& slot) {
+    if (!slot.ent_vid.has_value()) {
         return true;
     }
-    const Entity* const entity = state.entity_manager.GetEntity(*slot.entity_vid);
-    return entity == nullptr || !entity->active || entity->condition == EntityCondition::Dead;
+    const Ent* const ent = state.ents.GetEnt(*slot.ent_vid);
+    return ent == nullptr || !ent->active || ent->condition == EntCondition::Dead;
 }
 
 } // namespace
@@ -62,26 +62,26 @@ void EnsureSpawnedPlayer(
           )
         : state.players.EnsureRemotePlayer(player_id, "Remote " + std::to_string(player_id));
 
-    if (slot.entity_vid.has_value()) {
-        if (Entity* const entity = state.entity_manager.GetEntityMut(*slot.entity_vid)) {
-            if (entity->active) {
-                entity->pos = pos;
-                state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), entity->vid);
+    if (slot.ent_vid.has_value()) {
+        if (Ent* const ent = state.ents.GetEntMut(*slot.ent_vid)) {
+            if (ent->active) {
+                ent->pos = pos;
+                state.net_session.LinkEnt(MakePlayerNetEntId(player_id), ent->vid);
                 if (effective_local && effective_primary) {
-                    state.controlled_entity_vid = entity->vid;
+                    state.controlled_ent_vid = ent->vid;
                 }
                 return;
             }
         }
-        slot.entity_vid.reset();
+        slot.ent_vid.reset();
     }
 
     const std::optional<VID> vid = SpawnPlayerForPlayerId(state, player_id, pos);
     if (vid.has_value()) {
-        state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), *vid);
-        state.UpdateSidForEntity(vid->id, graphics);
+        state.net_session.LinkEnt(MakePlayerNetEntId(player_id), *vid);
+        state.UpdateSidForEnt(vid->id, graphics);
         if (effective_local && effective_primary) {
-            state.controlled_entity_vid = *vid;
+            state.controlled_ent_vid = *vid;
         }
     }
 }
@@ -102,7 +102,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         return false;
     }
 
-    std::vector<VID> changed_entities;
+    std::vector<VID> changed_ents;
     int respawn_index = 0;
     for (PlayerSlot& slot : state.players.slots) {
         if (!ShouldApplyNetworkLifecycleToSlot(state, slot)) {
@@ -113,11 +113,11 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             *entrance_pos + Vec2::New(static_cast<float>(respawn_index) * 8.0F, 0.0F);
         ++respawn_index;
 
-        Entity* entity = nullptr;
-        if (slot.entity_vid.has_value()) {
-            entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        Ent* ent = nullptr;
+        if (slot.ent_vid.has_value()) {
+            ent = state.ents.GetEntMut(*slot.ent_vid);
         }
-        if (entity == nullptr) {
+        if (ent == nullptr) {
             EnsureSpawnedPlayer(
                 state,
                 slot.player_id,
@@ -130,34 +130,34 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
         }
 
         for (const VID changed_vid :
-             entities::common::SeverEntityCarryLinksForReset(*entity, state)) {
-            if (std::find(changed_entities.begin(), changed_entities.end(), changed_vid) ==
-                changed_entities.end()) {
-                changed_entities.push_back(changed_vid);
+             ents::common::SeverEntCarryLinksForReset(*ent, state)) {
+            if (std::find(changed_ents.begin(), changed_ents.end(), changed_vid) ==
+                changed_ents.end()) {
+                changed_ents.push_back(changed_vid);
             }
         }
-        const EntityType respawn_type =
-            IsPlayerLikeEntityType(entity->type_) ? entity->type_ : EntityType::Player;
-        SetEntityAs(*entity, respawn_type);
-        entity->pos = spawn_pos;
-        entity->vel = Vec2::New(0.0F, 0.0F);
-        entity->acc = Vec2::New(0.0F, 0.0F);
-        entity->grounded = false;
-        entity->coyote_time = 0;
-        entity->fall_timer = 0;
-        entity->stun_timer = 0;
-        entity->render_enabled = GetEntityArchetype(entity->type_).render_enabled;
-        state.UpdateSidForEntity(entity->vid.id, graphics);
-        if (std::find(changed_entities.begin(), changed_entities.end(), entity->vid) ==
-            changed_entities.end()) {
-            changed_entities.push_back(entity->vid);
+        const EntType respawn_type =
+            IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
+        SetEntAs(*ent, respawn_type);
+        ent->pos = spawn_pos;
+        ent->vel = Vec2::New(0.0F, 0.0F);
+        ent->acc = Vec2::New(0.0F, 0.0F);
+        ent->grounded = false;
+        ent->coyote_time = 0;
+        ent->fall_timer = 0;
+        ent->stun_timer = 0;
+        ent->render_enabled = GetEntSpec(ent->type_).render_enabled;
+        state.UpdateSidForEnt(ent->vid.id, graphics);
+        if (std::find(changed_ents.begin(), changed_ents.end(), ent->vid) ==
+            changed_ents.end()) {
+            changed_ents.push_back(ent->vid);
         }
         if (slot.primary_local) {
-            state.controlled_entity_vid = entity->vid;
+            state.controlled_ent_vid = ent->vid;
         }
     }
 
-    (void)ResetStageEntrancePresentation(state);
+    (void)ResetStageEntrancePres(state);
 
     state.game_over = false;
     state.pending_stage_transition.reset();
@@ -184,7 +184,7 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
         return false;
     }
 
-    std::vector<VID> changed_entities;
+    std::vector<VID> changed_ents;
     int respawn_index = 0;
     bool respawned_any = false;
     for (PlayerSlot& slot : state.players.slots) {
@@ -196,15 +196,15 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
             *entrance_pos + Vec2::New(static_cast<float>(respawn_index) * 8.0F, 0.0F);
         ++respawn_index;
 
-        if (!IsPlayerEntityDeadOrMissing(state, slot)) {
+        if (!IsPlayerEntDeadOrMissing(state, slot)) {
             continue;
         }
 
-        Entity* entity = nullptr;
-        if (slot.entity_vid.has_value()) {
-            entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        Ent* ent = nullptr;
+        if (slot.ent_vid.has_value()) {
+            ent = state.ents.GetEntMut(*slot.ent_vid);
         }
-        if (entity == nullptr) {
+        if (ent == nullptr) {
             EnsureSpawnedPlayer(
                 state,
                 slot.player_id,
@@ -213,37 +213,37 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
                 spawn_pos,
                 graphics
             );
-            entity = slot.entity_vid.has_value()
-                ? state.entity_manager.GetEntityMut(*slot.entity_vid)
+            ent = slot.ent_vid.has_value()
+                ? state.ents.GetEntMut(*slot.ent_vid)
                 : nullptr;
         }
-        if (entity == nullptr) {
+        if (ent == nullptr) {
             continue;
         }
 
         for (const VID changed_vid :
-             entities::common::SeverEntityCarryLinksForReset(*entity, state)) {
-            if (std::find(changed_entities.begin(), changed_entities.end(), changed_vid) ==
-                changed_entities.end()) {
-                changed_entities.push_back(changed_vid);
+             ents::common::SeverEntCarryLinksForReset(*ent, state)) {
+            if (std::find(changed_ents.begin(), changed_ents.end(), changed_vid) ==
+                changed_ents.end()) {
+                changed_ents.push_back(changed_vid);
             }
         }
-        const EntityType respawn_type =
-            IsPlayerLikeEntityType(entity->type_) ? entity->type_ : EntityType::Player;
-        SetEntityAs(*entity, respawn_type);
-        entity->pos = spawn_pos;
-        entity->vel = Vec2::New(0.0F, 0.0F);
-        entity->acc = Vec2::New(0.0F, 0.0F);
-        entity->grounded = false;
-        entity->coyote_time = 0;
-        entity->fall_timer = 0;
-        entity->stun_timer = 0;
-        entity->condition = EntityCondition::Normal;
-        entity->render_enabled = GetEntityArchetype(entity->type_).render_enabled;
-        state.net_session.LinkEntity(MakePlayerNetEntityId(slot.player_id), entity->vid);
-        state.UpdateSidForEntity(entity->vid.id, graphics);
+        const EntType respawn_type =
+            IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
+        SetEntAs(*ent, respawn_type);
+        ent->pos = spawn_pos;
+        ent->vel = Vec2::New(0.0F, 0.0F);
+        ent->acc = Vec2::New(0.0F, 0.0F);
+        ent->grounded = false;
+        ent->coyote_time = 0;
+        ent->fall_timer = 0;
+        ent->stun_timer = 0;
+        ent->condition = EntCondition::Normal;
+        ent->render_enabled = GetEntSpec(ent->type_).render_enabled;
+        state.net_session.LinkEnt(MakePlayerNetEntId(slot.player_id), ent->vid);
+        state.UpdateSidForEnt(ent->vid.id, graphics);
         if (slot.primary_local) {
-            state.controlled_entity_vid = entity->vid;
+            state.controlled_ent_vid = ent->vid;
         }
         respawned_any = true;
     }
@@ -255,10 +255,10 @@ bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics,
         return false;
     }
 
-    for (const VID changed_vid : ResetStageEntrancePresentation(state)) {
-        if (std::find(changed_entities.begin(), changed_entities.end(), changed_vid) ==
-            changed_entities.end()) {
-            changed_entities.push_back(changed_vid);
+    for (const VID changed_vid : ResetStageEntrancePres(state)) {
+        if (std::find(changed_ents.begin(), changed_ents.end(), changed_vid) ==
+            changed_ents.end()) {
+            changed_ents.push_back(changed_vid);
         }
     }
 
@@ -286,19 +286,19 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
         return false;
     }
 
-    std::vector<VID> orphan_player_entities;
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (entity.active &&
-            IsPlayerLikeEntityType(entity.type_) &&
-            !state.players.FindPlayerIdForEntity(entity.vid).has_value()) {
-            orphan_player_entities.push_back(entity.vid);
+    std::vector<VID> orphan_player_ents;
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active &&
+            IsPlayerLikeEntType(ent.type_) &&
+            !state.players.FindPlayerIdForEnt(ent.vid).has_value()) {
+            orphan_player_ents.push_back(ent.vid);
         }
     }
-    for (const VID orphan_vid : orphan_player_entities) {
-        state.entity_manager.SetInactiveVid(orphan_vid);
+    for (const VID orphan_vid : orphan_player_ents) {
+        state.ents.SetInactiveVid(orphan_vid);
     }
 
-    std::vector<VID> changed_entities;
+    std::vector<VID> changed_ents;
     int spawn_index = 0;
     for (PlayerSlot& slot : state.players.slots) {
         if (!ShouldApplyNetworkLifecycleToSlot(state, slot)) {
@@ -309,26 +309,26 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
             *entrance_pos + Vec2::New(static_cast<float>(spawn_index) * 8.0F, 0.0F);
         ++spawn_index;
 
-        Entity* entity = nullptr;
-        if (slot.entity_vid.has_value()) {
-            entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        Ent* ent = nullptr;
+        if (slot.ent_vid.has_value()) {
+            ent = state.ents.GetEntMut(*slot.ent_vid);
         }
 
         const bool needs_fresh_spawn =
-            entity == nullptr || !entity->active || entity->condition == EntityCondition::Dead;
+            ent == nullptr || !ent->active || ent->condition == EntCondition::Dead;
         if (needs_fresh_spawn) {
-            if (entity != nullptr) {
+            if (ent != nullptr) {
                 for (const VID changed_vid :
-                     entities::common::SeverEntityCarryLinksForReset(*entity, state)) {
-                    if (std::find(changed_entities.begin(), changed_entities.end(), changed_vid) ==
-                        changed_entities.end()) {
-                        changed_entities.push_back(changed_vid);
+                     ents::common::SeverEntCarryLinksForReset(*ent, state)) {
+                    if (std::find(changed_ents.begin(), changed_ents.end(), changed_vid) ==
+                        changed_ents.end()) {
+                        changed_ents.push_back(changed_vid);
                     }
                 }
-                const EntityType respawn_type =
-                    IsPlayerLikeEntityType(entity->type_) ? entity->type_ : EntityType::Player;
-                SetEntityAs(*entity, respawn_type);
-                entity->pos = spawn_pos;
+                const EntType respawn_type =
+                    IsPlayerLikeEntType(ent->type_) ? ent->type_ : EntType::Player;
+                SetEntAs(*ent, respawn_type);
+                ent->pos = spawn_pos;
             } else {
                 EnsureSpawnedPlayer(
                     state,
@@ -338,40 +338,40 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
                     spawn_pos,
                     graphics
                 );
-                entity = slot.entity_vid.has_value()
-                    ? state.entity_manager.GetEntityMut(*slot.entity_vid)
+                ent = slot.ent_vid.has_value()
+                    ? state.ents.GetEntMut(*slot.ent_vid)
                     : nullptr;
             }
         }
 
-        if (entity == nullptr) {
+        if (ent == nullptr) {
             continue;
         }
 
-        entity->pos = spawn_pos;
-        entity->vel = Vec2::New(0.0F, 0.0F);
-        entity->acc = Vec2::New(0.0F, 0.0F);
-        entity->grounded = false;
-        entity->coyote_time = 0;
-        entity->fall_timer = 0;
-        entity->stun_timer = 0;
-        entity->condition = EntityCondition::Normal;
-        entity->render_enabled = GetEntityArchetype(entity->type_).render_enabled;
-        state.net_session.LinkEntity(MakePlayerNetEntityId(slot.player_id), entity->vid);
-        state.UpdateSidForEntity(entity->vid.id, graphics);
+        ent->pos = spawn_pos;
+        ent->vel = Vec2::New(0.0F, 0.0F);
+        ent->acc = Vec2::New(0.0F, 0.0F);
+        ent->grounded = false;
+        ent->coyote_time = 0;
+        ent->fall_timer = 0;
+        ent->stun_timer = 0;
+        ent->condition = EntCondition::Normal;
+        ent->render_enabled = GetEntSpec(ent->type_).render_enabled;
+        state.net_session.LinkEnt(MakePlayerNetEntId(slot.player_id), ent->vid);
+        state.UpdateSidForEnt(ent->vid.id, graphics);
         if (slot.primary_local) {
-            state.controlled_entity_vid = entity->vid;
+            state.controlled_ent_vid = ent->vid;
         }
-        if (std::find(changed_entities.begin(), changed_entities.end(), entity->vid) ==
-            changed_entities.end()) {
-            changed_entities.push_back(entity->vid);
+        if (std::find(changed_ents.begin(), changed_ents.end(), ent->vid) ==
+            changed_ents.end()) {
+            changed_ents.push_back(ent->vid);
         }
     }
 
-    for (const VID changed_vid : ResetStageEntrancePresentation(state)) {
-        if (std::find(changed_entities.begin(), changed_entities.end(), changed_vid) ==
-            changed_entities.end()) {
-            changed_entities.push_back(changed_vid);
+    for (const VID changed_vid : ResetStageEntrancePres(state)) {
+        if (std::find(changed_ents.begin(), changed_ents.end(), changed_vid) ==
+            changed_ents.end()) {
+            changed_ents.push_back(changed_vid);
         }
     }
 

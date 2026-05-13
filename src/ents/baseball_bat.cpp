@@ -1,9 +1,9 @@
-#include "entities/baseball_bat.hpp"
+#include "ents/baseball_bat.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "state.hpp"
 #include "utils.hpp"
@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-namespace splonks::entities::baseball_bat {
+namespace splonks::ents::baseball_bat {
 
 namespace {
 
@@ -29,7 +29,7 @@ void SpawnBatTrailSegment(State& state, const Vec2& from, const Vec2& to) {
 
     RibbonParticle ribbon{};
     ribbon.counter = kBatTrailLifetimeFrames;
-    ribbon.archetype_id = ribbon_particle_archetype_ids::BaseballBatTrail;
+    ribbon.spec_id = ribbon_particle_spec_ids::BaseballBatTrail;
     ribbon.alpha = 0.36F;
     ribbon.point_count = 2;
     ribbon.points[0] = from;
@@ -37,8 +37,8 @@ void SpawnBatTrailSegment(State& state, const Vec2& from, const Vec2& to) {
     state.particles.Add(std::move(ribbon));
 }
 
-SwingStage GetSwingStage(const Entity& baseball_bat) {
-    switch (baseball_bat.frame_data_animator.current_frame) {
+SwingStage GetSwingStage(const Ent& baseball_bat) {
+    switch (baseball_bat.aframe_animator.current_frame) {
     case 0:
         return SwingStage::Back;
     case 1:
@@ -50,9 +50,9 @@ SwingStage GetSwingStage(const Entity& baseball_bat) {
 
 } // namespace
 
-common::ContactResolution OnEntityContactAsBaseballBat(
-    std::size_t bat_entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsBaseballBat(
+    std::size_t bat_ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics* graphics,
@@ -60,24 +60,24 @@ common::ContactResolution OnEntityContactAsBaseballBat(
 ) {
     (void)context;
     if (graphics == nullptr || audio == nullptr) {
-        return common::ContactResolution{};
+        return common::ContactResult{};
     }
 
-    const bool applied = TryApplyBatContactToEntity(
-        bat_entity_idx,
-        other_entity_idx,
+    const bool applied = TryApplyBatContactToEnt(
+        bat_ent_idx,
+        other_ent_idx,
         state,
         *graphics,
         *audio
     );
-    return common::ContactResolution{
+    return common::ContactResult{
         .blocks_movement = false,
         .stop_sweep = applied,
     };
 }
 
-extern const EntityArchetype kBaseballBatArchetype{
-    .type_ = EntityType::BaseballBat,
+extern const EntSpec kBaseballBatSpec{
+    .type_ = EntType::BaseballBat,
     .size = Vec2::New(12.0F, 4.0F),
     .health = 1,
     .has_physics = false,
@@ -87,16 +87,16 @@ extern const EntityArchetype kBaseballBatArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .step_logic = StepBaseballBat,
-    .on_entity_contact = OnEntityContactAsBaseballBat,
-    .entity_contact_cooldown_duration = kBatContactCooldownFrames,
+    .on_ent_contact = OnEntContactAsBaseballBat,
+    .ent_contact_cooldown_duration = kBatContactCooldownFrames,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator{
-        .animation_id = frame_data_ids::BaseballBatSwing,
+    .aframe_animator = AFrameAnimator{
+        .anim_id = aframe_ids::BaseballBatSwing,
         .current_frame = 0,
         .current_time = 0.0F,
         .scale = 1.0F,
@@ -107,82 +107,82 @@ extern const EntityArchetype kBaseballBatArchetype{
     },
 };
 
-bool TryApplyBatContactToEntity(
-    std::size_t bat_entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplyBatContactToEnt(
+    std::size_t bat_ent_idx,
+    std::size_t other_ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
-    if (bat_entity_idx == other_entity_idx) {
+    if (bat_ent_idx == other_ent_idx) {
         return false;
     }
-    if (bat_entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
-        return false;
-    }
-
-    const Entity& bat_entity = state.entity_manager.entities[bat_entity_idx];
-    if (!bat_entity.active || bat_entity.type_ != EntityType::BaseballBat) {
-        return false;
-    }
-    const Entity& other_entity_const = state.entity_manager.entities[other_entity_idx];
-    if (!other_entity_const.active || other_entity_const.impassable || !other_entity_const.can_collide) {
-        return false;
-    }
-    if (bat_entity.held_by_vid.has_value() && other_entity_const.vid == *bat_entity.held_by_vid) {
+    if (bat_ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const AABB bat_aabb = common::GetContactAabbForEntity(bat_entity, graphics);
-    const AABB other_aabb = common::GetContactAabbForEntity(other_entity_const, graphics);
+    const Ent& bat_ent = state.ents.ents[bat_ent_idx];
+    if (!bat_ent.active || bat_ent.type_ != EntType::BaseballBat) {
+        return false;
+    }
+    const Ent& other_ent_const = state.ents.ents[other_ent_idx];
+    if (!other_ent_const.active || other_ent_const.impassable || !other_ent_const.can_collide) {
+        return false;
+    }
+    if (bat_ent.held_by_vid.has_value() && other_ent_const.vid == *bat_ent.held_by_vid) {
+        return false;
+    }
+
+    const AABB bat_aabb = common::GetContactAabbForEnt(bat_ent, graphics);
+    const AABB other_aabb = common::GetContactAabbForEnt(other_ent_const, graphics);
     if (!AabbsIntersect(bat_aabb, other_aabb)) {
         return false;
     }
 
-    const LeftOrRight bat_facing = bat_entity.facing;
-    const std::optional<VID> held_by_vid = bat_entity.held_by_vid;
-    const SwingStage swing_stage = GetSwingStage(bat_entity);
+    const Side bat_facing = bat_ent.facing;
+    const std::optional<VID> held_by_vid = bat_ent.held_by_vid;
+    const SwingStage swing_stage = GetSwingStage(bat_ent);
 
-    if (Entity* const other_entity = state.entity_manager.GetEntityMut(other_entity_const.vid)) {
+    if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const.vid)) {
         constexpr float kKnockBackImpulse = 10.0F;
         constexpr float kAirKnockBackLift = 4.0F;
-        const bool should_lift_target = !other_entity->grounded || other_entity->vel.y > 0.0F;
-        Vec2 knock_back_vel = other_entity->vel;
+        const bool should_lift_target = !other_ent->grounded || other_ent->vel.y > 0.0F;
+        Vec2 knock_back_vel = other_ent->vel;
         switch (swing_stage) {
         case SwingStage::Back:
-            knock_back_vel = bat_facing == LeftOrRight::Left
+            knock_back_vel = bat_facing == Side::Left
                                  ? Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F)
                                  : Vec2::New(-kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
             break;
         case SwingStage::Above:
-            knock_back_vel = bat_facing == LeftOrRight::Left
+            knock_back_vel = bat_facing == Side::Left
                                  ? Vec2::New(-kKnockBackImpulse / 2.0F, -kKnockBackImpulse)
                                  : Vec2::New(kKnockBackImpulse / 2.0F, -kKnockBackImpulse);
             break;
         case SwingStage::Swing:
-            knock_back_vel = bat_facing == LeftOrRight::Left
+            knock_back_vel = bat_facing == Side::Left
                                  ? Vec2::New(-kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F)
                                  : Vec2::New(kKnockBackImpulse, should_lift_target ? -kAirKnockBackLift : 0.0F);
             break;
         }
-        const common::DamageResult damage_result = common::TryHitEntity(
-            other_entity->vid.id,
+        const common::DamageResult damage_result = common::TryHitEnt(
+            other_ent->vid.id,
             state,
             audio,
             DamageType::Attack,
             1,
             common::HitOptions{
-                .source_vid = bat_entity.vid,
+                .source_vid = bat_ent.vid,
                 .knockback = common::KnockbackSpec{
                     .velocity = knock_back_vel,
                     .clear_velocity = true,
                     .clear_acceleration = true,
                     .thrown_by = held_by_vid,
                     .thrown_immunity_timer = common::kThrownByImmunityDuration,
-                    .projectile_contact_damage_type = DamageType::Attack,
-                    .projectile_contact_damage_amount = 1,
-                    .projectile_contact_duration = common::kProjectileContactDuration,
+                    .proj_contact_damage_type = DamageType::Attack,
+                    .proj_contact_damage_amount = 1,
+                    .proj_contact_duration = common::kProjContactDuration,
                 },
             }
         );
@@ -205,16 +205,16 @@ bool TryApplyBatContactToEntity(
                 }
             }
             if (sound_effect.has_value()) {
-                (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], *sound_effect);
+                (void)PlayEntCenterSoundEmitter(state, state.ents.ents[bat_ent_idx], *sound_effect);
             }
             break;
         }
         case common::DamageResult::None: {
-            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::BaseballBatMetalDink1);
+            (void)PlayEntCenterSoundEmitter(state, state.ents.ents[bat_ent_idx], audio_asset_ids::BaseballBatMetalDink1);
             break;
         }
         case common::DamageResult::Hurt:
-            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[bat_entity_idx], audio_asset_ids::Thud);
+            (void)PlayEntCenterSoundEmitter(state, state.ents.ents[bat_ent_idx], audio_asset_ids::Thud);
             break;
         }
         return true;
@@ -224,7 +224,7 @@ bool TryApplyBatContactToEntity(
 }
 
 void StepBaseballBat(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -233,28 +233,28 @@ void StepBaseballBat(
     (void)dt;
     // delete conditions
     //  //  held by is gone // player die or seomthing, stunned, etc
-    Entity& baseball_bat = state.entity_manager.entities[entity_idx];
+    Ent& baseball_bat = state.ents.ents[ent_idx];
     const std::optional<VID> held_by_vid = baseball_bat.held_by_vid;
     if (!held_by_vid.has_value()) {
-        (void)world_ops::DeactivateEntity(state, baseball_bat.vid);
+        (void)world_ops::DeactivateEnt(state, baseball_bat.vid);
         return;
     }
-    if (baseball_bat.frame_data_animator.IsFinished()) {
-        (void)world_ops::DeactivateEntity(state, baseball_bat.vid);
+    if (baseball_bat.aframe_animator.IsFinished()) {
+        (void)world_ops::DeactivateEnt(state, baseball_bat.vid);
         return;
     }
 
     Vec2 swinger_center = Vec2::New(0.0F, 0.0F);
-    LeftOrRight swinger_facing = LeftOrRight::Left;
+    Side swinger_facing = Side::Left;
     if (held_by_vid.has_value()) {
-        if (const Entity* const held_by = state.entity_manager.GetEntity(*held_by_vid)) {
+        if (const Ent* const held_by = state.ents.GetEnt(*held_by_vid)) {
             swinger_center = held_by->GetCenter();
             swinger_facing = held_by->facing;
         }
     }
 
     baseball_bat.facing = swinger_facing;
-    const Vec2 mounted_center = swinger_facing == LeftOrRight::Left
+    const Vec2 mounted_center = swinger_facing == Side::Left
                                     ? swinger_center +
                                           Vec2::New(
                                               -graphics.debug_baseball_bat_hold_offset.x,
@@ -263,7 +263,7 @@ void StepBaseballBat(
                                     : swinger_center + graphics.debug_baseball_bat_hold_offset;
     baseball_bat.SetCenter(mounted_center);
 
-    const Vec2 bat_emit_point = common::GetEmitPointForEntity(baseball_bat, graphics, baseball_bat.GetCenter());
+    const Vec2 bat_emit_point = common::GetEmitPointForEnt(baseball_bat, graphics, baseball_bat.GetCenter());
     if (baseball_bat.point_label_a != PointLabel::Target) {
         baseball_bat.point_label_a = PointLabel::Target;
         baseball_bat.point_a = ToIVec2(bat_emit_point);
@@ -272,9 +272,9 @@ void StepBaseballBat(
         baseball_bat.point_a = ToIVec2(GetNearestWorldPoint(state.stage, ToVec2(baseball_bat.point_a), bat_emit_point));
     }
 
-    state.UpdateSidForEntity(entity_idx, graphics);
-    common::TryDispatchEntityEntityOverlapContacts(
-        entity_idx,
+    state.UpdateSidForEnt(ent_idx, graphics);
+    common::TryDispatchEntEntOverlapContacts(
+        ent_idx,
         state,
         graphics,
         audio,
@@ -286,15 +286,15 @@ void StepBaseballBat(
     );
 }
 
-/** generalize this to all square or rectangular entities somehow */
-bool IsStuff(EntityType type_) {
+/** generalize this to all square or rectangular ents somehow */
+bool IsStuff(EntType type_) {
     switch (type_) {
-    case EntityType::Pot:
-    case EntityType::Box:
+    case EntType::Pot:
+    case EntType::Box:
         return true;
     default:
         return false;
     }
 }
 
-} // namespace splonks::entities::baseball_bat
+} // namespace splonks::ents::baseball_bat

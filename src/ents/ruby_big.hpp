@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::ruby_big {
+namespace splonks::ents::ruby_big {
 
-extern const EntityArchetype kRubyBigArchetype;
+extern const EntSpec kRubyBigSpec;
 
-} // namespace splonks::entities::ruby_big
+} // namespace splonks::ents::ruby_big

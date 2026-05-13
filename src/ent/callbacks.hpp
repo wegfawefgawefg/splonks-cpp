@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "damage_types.hpp"
-#include "entities/common/contact_types.hpp"
+#include "ents/common/contact_types.hpp"
 #include "math_types.hpp"
 
 #include <cstddef>
@@ -12,73 +12,73 @@ namespace splonks {
 struct Graphics;
 struct State;
 
-enum class EntityDamageEffectResult {
+enum class EntDamageEffectResult {
     None,
     Consumed,
 };
 
-using EntityOnDeath = void (*)(std::size_t entity_idx, State& state, Audio& audio);
-using EntityOnDamage = EntityDamageEffectResult (*) (
-    std::size_t entity_idx,
+using EntOnDeath = void (*)(std::size_t ent_idx, State& state, Audio& audio);
+using EntOnDamage = EntDamageEffectResult (*) (
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
     unsigned int amount,
     bool damage_applied
 );
-using EntityOnUse = void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
-using EntityOnInteract = bool (*) (
-    std::size_t entity_idx,
+using EntOnUse = void (*)(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio);
+using EntOnInteract = bool (*) (
+    std::size_t ent_idx,
     std::size_t interactor_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 );
-using EntityOnTryBuy = bool (*) (
-    std::size_t entity_idx,
+using EntOnTryBuy = bool (*) (
+    std::size_t ent_idx,
     std::size_t buyer_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 );
-using EntityOnAreaEnter = void (*) (
+using EntOnAreaEnter = void (*) (
     std::size_t area_idx,
     std::size_t other_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 );
-using EntityOnAreaExit = void (*) (
+using EntOnAreaExit = void (*) (
     std::size_t area_idx,
     std::size_t other_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 );
-using EntityOnAreaTileChanged = void (*) (
+using EntOnAreaTileChanged = void (*) (
     std::size_t area_idx,
     const IVec2& tile_pos,
     State& state,
     Audio& audio
 );
-using EntityControlLogic =
-    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
-using EntityStepLogic =
-    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
-using EntityStepPhysics =
-    void (*)(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
+using EntControlLogic =
+    void (*)(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio, float dt);
+using EntStepLogic =
+    void (*)(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio, float dt);
+using EntStepPhysics =
+    void (*)(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 
-using EntityOnEntityContact = entities::common::ContactResolution (*) (
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
-    const entities::common::ContactContext& context,
+using EntOnEntContact = ents::common::ContactResult (*) (
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
+    const ents::common::ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 );
-using EntityOnTileContact = entities::common::ContactResolution (*) (
-    std::size_t entity_idx,
-    const entities::common::ContactContext& context,
+using EntOnTileContact = ents::common::ContactResult (*) (
+    std::size_t ent_idx,
+    const ents::common::ContactContext& context,
     State& state
 );
 

@@ -1,9 +1,9 @@
-#include "presentation_commands.hpp"
+#include "pres_commands.hpp"
 
 #include "audio_emitters.hpp"
-#include "entity.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "particles/ribbon_particle.hpp"
 #include "particles/sprite_particle.hpp"
@@ -32,8 +32,8 @@ Vec2 GetDirectionOrtho(const Vec2& axis) {
     return Vec2::New(-axis.y, axis.x);
 }
 
-void SpawnEntityPhaseParticleAt(
-    const Entity& entity,
+void SpawnEntPhaseParticleAt(
+    const Ent& ent,
     const Graphics& graphics,
     const Vec2& visual_center,
     const Vec2& start_offset,
@@ -43,35 +43,35 @@ void SpawnEntityPhaseParticleAt(
     float tint_b,
     State& state
 ) {
-    const FrameData* const frame_data = entities::common::GetCurrentFrameDataForEntity(entity, graphics);
-    if (frame_data == nullptr) {
+    const AFrame* const aframe = ents::common::GetCurrentAFrameForEnt(ent, graphics);
+    if (aframe == nullptr) {
         return;
     }
 
     SpriteParticle particle{};
     particle.counter = 32;
-    particle.draw_layer = entity.draw_layer;
+    particle.draw_layer = ent.draw_layer;
     particle.lighting_mode = ParticleLightingMode::Emissive;
     particle.pos = visual_center + start_offset;
     particle.size = Vec2::New(
-        static_cast<float>(frame_data->sample_rect.w),
-        static_cast<float>(frame_data->sample_rect.h)
-    ) * entity.frame_data_animator.scale;
-    particle.rot = entity.rotation;
+        static_cast<float>(aframe->sample_rect.w),
+        static_cast<float>(aframe->sample_rect.h)
+    ) * ent.aframe_animator.scale;
+    particle.rot = ent.rotation;
     particle.alpha = 0.85F;
     particle.tint_r = tint_r;
     particle.tint_g = tint_g;
     particle.tint_b = tint_b;
-    particle.horizontal_flip = entity.facing == LeftOrRight::Right;
+    particle.horizontal_flip = ent.facing == Side::Right;
     particle.vel = velocity;
     particle.alpha_vel = -0.0275F;
-    particle.frame_data_animator = entity.frame_data_animator;
-    particle.frame_data_animator.animate = false;
+    particle.aframe_animator = ent.aframe_animator;
+    particle.aframe_animator.animate = false;
     state.particles.Add(std::move(particle));
 }
 
 void SpawnTeleportSplitEffectAt(
-    const Entity& entity,
+    const Ent& ent,
     const Graphics& graphics,
     const Vec2& visual_center,
     const IVec2& direction,
@@ -79,13 +79,13 @@ void SpawnTeleportSplitEffectAt(
 ) {
     const Vec2 axis = GetDirectionAxis(direction);
     const Vec2 ortho = GetDirectionOrtho(axis);
-    SpawnEntityPhaseParticleAt(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
-    SpawnEntityPhaseParticleAt(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
-    SpawnEntityPhaseParticleAt(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
+    SpawnEntPhaseParticleAt(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
+    SpawnEntPhaseParticleAt(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
+    SpawnEntPhaseParticleAt(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
 }
 
 void SpawnTeleportMergeEffectAt(
-    const Entity& entity,
+    const Ent& ent,
     const Graphics& graphics,
     const Vec2& visual_center,
     const IVec2& direction,
@@ -93,9 +93,9 @@ void SpawnTeleportMergeEffectAt(
 ) {
     const Vec2 axis = GetDirectionAxis(direction);
     const Vec2 ortho = GetDirectionOrtho(axis);
-    SpawnEntityPhaseParticleAt(entity, graphics, visual_center, axis * -3.0F, axis * 0.3F, 1.0F, 0.20F, 0.20F, state);
-    SpawnEntityPhaseParticleAt(entity, graphics, visual_center, ortho * 2.0F, ortho * -0.0875F, 0.25F, 1.0F, 0.25F, state);
-    SpawnEntityPhaseParticleAt(entity, graphics, visual_center, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
+    SpawnEntPhaseParticleAt(ent, graphics, visual_center, axis * -3.0F, axis * 0.3F, 1.0F, 0.20F, 0.20F, state);
+    SpawnEntPhaseParticleAt(ent, graphics, visual_center, ortho * 2.0F, ortho * -0.0875F, 0.25F, 1.0F, 0.25F, state);
+    SpawnEntPhaseParticleAt(ent, graphics, visual_center, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
 }
 
 void SpawnJetpackSmokeAt(State& state, const Vec2& pos) {
@@ -104,7 +104,7 @@ void SpawnJetpackSmokeAt(State& state, const Vec2& pos) {
         const float svel = rng::RandomFloat(vel * 0.1F, vel * 1.0F);
         const float sacc = rng::RandomFloat(vel * 0.01F, vel * 0.02F);
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
         effect.pos = pos;
@@ -124,9 +124,9 @@ void SpawnExplosionBurstAt(State& state, const Vec2& center, float size) {
     const float effect_size = std::max(size, 0.0F) * 0.5F * static_cast<float>(kTileSize);
     {
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::GrenadeBoom);
-        effect.frame_data_animator.loop = false;
-        effect.finish_on_animation_end = true;
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::GrenadeBoom);
+        effect.aframe_animator.loop = false;
+        effect.finish_on_anim_end = true;
         effect.draw_layer = DrawLayer::Foreground;
         effect.lighting_mode = ParticleLightingMode::Emissive;
         effect.counter = 8;
@@ -144,7 +144,7 @@ void SpawnExplosionBurstAt(State& state, const Vec2& center, float size) {
         const float sacc = rng::RandomFloat(-vel * 0.01F, -vel * 0.02F);
 
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(64, 128));
         effect.pos = center;
@@ -164,7 +164,7 @@ void SpawnPistolMuzzleSmokeAt(State& state, const Vec2& pos, int direction) {
     const int normalized_direction = direction < 0 ? -1 : 1;
     for (int i = 0; i < 5; ++i) {
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 14));
         effect.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
@@ -189,7 +189,7 @@ void SpawnPistolImpactAt(State& state, const Vec2& pos, int direction) {
     const int normalized_direction = direction < 0 ? -1 : 1;
     for (int i = 0; i < 3; ++i) {
         SpriteParticle spark{};
-        spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
+        spark.aframe_animator = AFrameAnimator::New(aframe_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
         spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
@@ -209,7 +209,7 @@ void SpawnPistolImpactAt(State& state, const Vec2& pos, int direction) {
 
     for (int i = 0; i < 2; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
         smoke.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
@@ -231,10 +231,10 @@ void SpawnTreasurePickupSparklesAt(State& state, const Vec2& center, Color3 colo
     const int particle_count = std::clamp(static_cast<int>(count), 1, 12);
     for (int i = 0; i < particle_count; ++i) {
         SpriteParticle particle{};
-        particle.frame_data_animator = FrameDataAnimator::New(
-            rng::RandomIntInclusive(0, 1) == 0 ? frame_data_ids::Sparkle : frame_data_ids::Glint
+        particle.aframe_animator = AFrameAnimator::New(
+            rng::RandomIntInclusive(0, 1) == 0 ? aframe_ids::Sparkle : aframe_ids::Glint
         );
-        particle.frame_data_animator.loop = false;
+        particle.aframe_animator.loop = false;
         particle.draw_layer = DrawLayer::Foreground;
         particle.lighting_mode = ParticleLightingMode::Emissive;
         particle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(12, 22));
@@ -271,7 +271,7 @@ void SpawnBaseballBatTrailAt(State& state, const Vec2& from, const Vec2& to) {
 
     RibbonParticle ribbon{};
     ribbon.counter = 6;
-    ribbon.archetype_id = ribbon_particle_archetype_ids::BaseballBatTrail;
+    ribbon.spec_id = ribbon_particle_spec_ids::BaseballBatTrail;
     ribbon.alpha = 0.36F;
     ribbon.point_count = 2;
     ribbon.points[0] = from;
@@ -279,92 +279,92 @@ void SpawnBaseballBatTrailAt(State& state, const Vec2& from, const Vec2& to) {
     state.particles.Add(std::move(ribbon));
 }
 
-void PlayScriptedEffect(State& state, Graphics& graphics, const PresentationCommand& command) {
-    if (command.effect_id == ScriptedPresentationEffectId::JetpackSmoke) {
+void PlayScriptedEffect(State& state, Graphics& graphics, const PresCommand& command) {
+    if (command.effect_id == ScriptedPresEffectId::JetpackSmoke) {
         SpawnJetpackSmokeAt(state, command.source_pos + Vec2::New(3.0F, 3.0F));
         SpawnJetpackSmokeAt(state, command.source_pos + Vec2::New(-3.0F, 3.0F));
         return;
     }
-    if (command.effect_id == ScriptedPresentationEffectId::ExplosionBurst) {
+    if (command.effect_id == ScriptedPresEffectId::ExplosionBurst) {
         SpawnExplosionBurstAt(state, command.source_pos, command.effect_scale);
         return;
     }
-    if (command.effect_id == ScriptedPresentationEffectId::PistolMuzzleSmoke) {
+    if (command.effect_id == ScriptedPresEffectId::PistolMuzzleSmoke) {
         SpawnPistolMuzzleSmokeAt(state, command.source_pos, command.direction.x);
         return;
     }
-    if (command.effect_id == ScriptedPresentationEffectId::PistolImpact) {
+    if (command.effect_id == ScriptedPresEffectId::PistolImpact) {
         SpawnPistolImpactAt(state, command.source_pos, command.direction.x);
         return;
     }
-    if (command.effect_id == ScriptedPresentationEffectId::TreasurePickupSparkles) {
+    if (command.effect_id == ScriptedPresEffectId::TreasurePickupSparkles) {
         SpawnTreasurePickupSparklesAt(state, command.source_pos, command.light_color, command.effect_count);
         return;
     }
-    if (command.effect_id == ScriptedPresentationEffectId::BaseballBatTrail) {
+    if (command.effect_id == ScriptedPresEffectId::BaseballBatTrail) {
         SpawnBaseballBatTrailAt(state, command.source_pos, command.target_pos);
         return;
     }
     if (!command.source_vid.has_value()) {
         return;
     }
-    const Entity* const entity = state.entity_manager.GetEntity(*command.source_vid);
-    if (entity == nullptr || !entity->active) {
+    const Ent* const ent = state.ents.GetEnt(*command.source_vid);
+    if (ent == nullptr || !ent->active) {
         return;
     }
 
     switch (command.effect_id) {
-    case ScriptedPresentationEffectId::TeleportSplit:
-        SpawnTeleportSplitEffectAt(*entity, graphics, command.source_pos, command.direction, state);
+    case ScriptedPresEffectId::TeleportSplit:
+        SpawnTeleportSplitEffectAt(*ent, graphics, command.source_pos, command.direction, state);
         break;
-    case ScriptedPresentationEffectId::TeleportMerge:
-        SpawnTeleportMergeEffectAt(*entity, graphics, command.source_pos, command.direction, state);
+    case ScriptedPresEffectId::TeleportMerge:
+        SpawnTeleportMergeEffectAt(*ent, graphics, command.source_pos, command.direction, state);
         break;
-    case ScriptedPresentationEffectId::JetpackSmoke:
-    case ScriptedPresentationEffectId::ExplosionBurst:
-    case ScriptedPresentationEffectId::PistolMuzzleSmoke:
-    case ScriptedPresentationEffectId::PistolImpact:
-    case ScriptedPresentationEffectId::TreasurePickupSparkles:
-    case ScriptedPresentationEffectId::BaseballBatTrail:
+    case ScriptedPresEffectId::JetpackSmoke:
+    case ScriptedPresEffectId::ExplosionBurst:
+    case ScriptedPresEffectId::PistolMuzzleSmoke:
+    case ScriptedPresEffectId::PistolImpact:
+    case ScriptedPresEffectId::TreasurePickupSparkles:
+    case ScriptedPresEffectId::BaseballBatTrail:
         break;
-    case ScriptedPresentationEffectId::None:
+    case ScriptedPresEffectId::None:
         break;
     }
 }
 
 } // namespace
 
-void PlayPresentationCommand(State& state, Graphics& graphics, const PresentationCommand& command) {
+void PlayPresCommand(State& state, Graphics& graphics, const PresCommand& command) {
     switch (command.kind) {
-    case PresentationCommandKind::PlaySoundAt:
+    case PresCommandKind::PlaySoundAt:
         if (command.audio_asset_id != kInvalidAudioAssetId) {
             (void)PlayWorldSoundEmitter(state, command.source_pos, command.audio_asset_id);
         }
         break;
-    case PresentationCommandKind::ShakeEntity:
+    case PresCommandKind::ShakeEnt:
         if (command.source_vid.has_value()) {
-            if (Entity* const entity = state.entity_manager.GetEntityMut(*command.source_vid)) {
-                if (entity->active) {
-                    AddEntityShake(*entity, command.entity_shake_amount);
+            if (Ent* const ent = state.ents.GetEntMut(*command.source_vid)) {
+                if (ent->active) {
+                    AddEntShake(*ent, command.ent_shake_amount);
                 }
             }
         }
         break;
-    case PresentationCommandKind::ShakeArea:
+    case PresCommandKind::ShakeArea:
         AddShake(
             state,
             command.source_pos,
             command.foreground_shake_amount,
             command.background_shake_amount,
-            command.area_entity_shake_amount,
+            command.area_ent_shake_amount,
             command.shake_radius_tiles,
             command.source_vid
         );
         break;
-    case PresentationCommandKind::SpawnScriptedEffect:
+    case PresCommandKind::SpawnScriptedEffect:
         PlayScriptedEffect(state, graphics, command);
         break;
-    case PresentationCommandKind::AddTransientLight:
+    case PresCommandKind::AddTransientLight:
         AddTransientLight(
             state,
             command.source_pos,
@@ -374,7 +374,7 @@ void PlayPresentationCommand(State& state, Graphics& graphics, const Presentatio
             command.light_lifetime_frames
         );
         break;
-    case PresentationCommandKind::None:
+    case PresCommandKind::None:
         break;
     }
 }

@@ -1,13 +1,13 @@
-#include "entities/frog.hpp"
+#include "ents/frog.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::frog {
+namespace splonks::ents::frog {
 
-// TODO(classic): Frog entities are not implemented yet. These archetypes only keep Classic Quest data spawnable.
-extern const EntityArchetype kFrogArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Frog);
-extern const EntityArchetype kFireFrogArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::FireFrog);
+// TODO(classic): Frog ents are not implemented yet. These specs only keep Classic Quest data spawnable.
+extern const EntSpec kFrogSpec =
+    common::MakeUnimplementedClassicSpec(EntType::Frog);
+extern const EntSpec kFireFrogSpec =
+    common::MakeUnimplementedClassicSpec(EntType::FireFrog);
 
-} // namespace splonks::entities::frog
+} // namespace splonks::ents::frog

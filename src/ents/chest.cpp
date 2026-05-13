@@ -1,12 +1,12 @@
-#include "entities/chest.hpp"
+#include "ents/chest.hpp"
 
 #include "audio.hpp"
 #include "audio_emitters.hpp"
 #include "controls.hpp"
-#include "entities/common/common.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "ent/spec.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
@@ -19,7 +19,7 @@
 #include <memory>
 #include <optional>
 
-namespace splonks::entities::chest {
+namespace splonks::ents::chest {
 
 namespace {
 
@@ -33,22 +33,22 @@ constexpr float kChestSparkleAlphaVel = -0.05F;
 constexpr float kChestSparkleAlphaAcc = -0.002F;
 constexpr float kChestTrapFuseFrames = 40.0F;
 
-common::ContactResolution OnEntityContactAsUdjatEye(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsUdjatEye(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext&,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
     if (graphics == nullptr || audio == nullptr ||
-        !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
-        return common::ContactResolution{};
+        !common::CanCollectPickupFromContact(ent_idx, other_ent_idx, state)) {
+        return common::ContactResult{};
     }
-    Entity& collector = state.entity_manager.entities[other_entity_idx];
-    const Entity& pickup = state.entity_manager.entities[entity_idx];
+    Ent& collector = state.ents.ents[other_ent_idx];
+    const Ent& pickup = state.ents.ents[ent_idx];
     if (!TryCollectInventoryPickup(state, collector, pickup)) {
-        return common::ContactResolution{};
+        return common::ContactResult{};
     }
 
     if (state.quest_state.quest_id == QuestId::Classic) {
@@ -56,45 +56,45 @@ common::ContactResolution OnEntityContactAsUdjatEye(
         state.quest_state.classic.has_udjat_eye = true;
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
-    common::DeactivateCollectedPickup(entity_idx, state, *graphics);
-    return common::ContactResolution{};
+    (void)PlayEntCenterSoundEmitter(state, pickup, audio_asset_ids::Equip);
+    common::DeactivateCollectedPickup(ent_idx, state, *graphics);
+    return common::ContactResult{};
 }
 
-bool IsOpenWithAnimation(const Entity& entity, FrameDataId animation_id) {
-    return entity.frame_data_animator.animation_id == animation_id;
+bool IsOpenWithAnim(const Ent& ent, AFrameId anim_id) {
+    return ent.aframe_animator.anim_id == anim_id;
 }
 
-void LaunchChestLoot(State& state, Entity& entity, std::optional<VID> opener_vid = std::nullopt) {
-    entity.vel = Vec2::New(
+void LaunchChestLoot(State& state, Ent& ent, std::optional<VID> opener_vid = std::nullopt) {
+    ent.vel = Vec2::New(
         static_cast<float>(
             state.drng.RandomIntInclusive(0, 3) -
             state.drng.RandomIntInclusive(0, 3)),
         kChestLootLaunchY
     );
-    entity.thrown_by = opener_vid;
-    entity.thrown_immunity_timer =
+    ent.thrown_by = opener_vid;
+    ent.thrown_immunity_timer =
         opener_vid.has_value() ? common::kThrownByImmunityDuration : 0;
 }
 
-EntityType RandomChestGemType(State& state) {
+EntType RandomChestGemType(State& state) {
     switch (state.drng.RandomIntInclusive(1, 3)) {
     case 1:
-        return EntityType::EmeraldBig;
+        return EntType::EmeraldBig;
     case 2:
-        return EntityType::SapphireBig;
+        return EntType::SapphireBig;
     case 3:
-        return EntityType::RubyBig;
+        return EntType::RubyBig;
     }
 
-    return EntityType::EmeraldBig;
+    return EntType::EmeraldBig;
 }
 
 void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
     const int count = rng::RandomIntInclusive(5, 7);
     for (int i = 0; i < count; ++i) {
         SpriteParticle sparkle{};
-        sparkle.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Sparkle);
+        sparkle.aframe_animator = AFrameAnimator::New(aframe_ids::Sparkle);
         sparkle.draw_layer = DrawLayer::Foreground;
         sparkle.lighting_mode = ParticleLightingMode::Emissive;
         sparkle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(16, 28));
@@ -120,7 +120,7 @@ void SpawnChestSparkles(const Vec2& emit_pos, State& state) {
 }
 
 void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
-    (void)world_ops::SpawnEntity(state, EntityType::Bomb, [&](Entity& bomb) {
+    (void)world_ops::SpawnEnt(state, EntType::Bomb, [&](Ent& bomb) {
         bomb.SetCenter(spawn_center);
         bomb.vel = Vec2::New(
             static_cast<float>(
@@ -130,7 +130,7 @@ void SpawnChestTrapBomb(const Vec2& spawn_center, State& state) {
         );
         bomb.acc = Vec2::New(0.0F, 0.0F);
         bomb.counter_a = kChestTrapFuseFrames;
-        SetAnimation(bomb, frame_data_ids::LiveGrenade);
+        SetAnim(bomb, aframe_ids::LiveGrenade);
     });
 }
 
@@ -142,7 +142,7 @@ void SpawnChestTreasure(
     const int gem_count =
         state.drng.RandomIntInclusive(kChestTreasureDropMin, kChestTreasureDropMax);
     for (int i = 0; i < gem_count; ++i) {
-        if (world_ops::SpawnEntity(state, RandomChestGemType(state), [&](Entity& gem) {
+        if (world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
                 gem.SetCenter(spawn_center);
                 gem.vel = Vec2::New(0.0F, 0.0F);
                 gem.acc = Vec2::New(0.0F, 0.0F);
@@ -156,7 +156,7 @@ void SpawnChestTreasure(
         return;
     }
 
-    (void)world_ops::SpawnEntity(state, RandomChestGemType(state), [&](Entity& gem) {
+    (void)world_ops::SpawnEnt(state, RandomChestGemType(state), [&](Ent& gem) {
         gem.SetCenter(spawn_center);
         gem.vel = Vec2::New(0.0F, 0.0F);
         gem.acc = Vec2::New(0.0F, 0.0F);
@@ -164,22 +164,22 @@ void SpawnChestTreasure(
     });
 }
 
-bool IsEntityOverlappingChest(
+bool IsEntOverlappingChest(
     std::size_t chest_idx,
-    const Entity& interactor,
+    const Ent& interactor,
     const State& state,
     const Graphics& graphics
 ) {
-    if (!interactor.active || chest_idx >= state.entity_manager.entities.size()) {
+    if (!interactor.active || chest_idx >= state.ents.ents.size()) {
         return false;
     }
-    const Entity& chest = state.entity_manager.entities[chest_idx];
-    const AABB interactor_aabb = common::GetContactAabbForEntity(interactor, graphics);
+    const Ent& chest = state.ents.ents[chest_idx];
+    const AABB interactor_aabb = common::GetContactAabbForEnt(interactor, graphics);
     const Vec2 interactor_center = (interactor_aabb.tl + interactor_aabb.br) / 2.0F;
     const AABB chest_aabb = GetNearestWorldAabb(
         state.stage,
         interactor_center,
-        common::GetContactAabbForEntity(chest, graphics)
+        common::GetContactAabbForEnt(chest, graphics)
     );
     return AabbsIntersect(
         interactor_aabb,
@@ -187,17 +187,17 @@ bool IsEntityOverlappingChest(
     );
 }
 
-void ConsumeHeldChestKey(Entity* holder, Entity& key, State& state, const Graphics& graphics) {
+void ConsumeHeldChestKey(Ent* holder, Ent& key, State& state, const Graphics& graphics) {
     if (holder != nullptr && holder->holding_vid == key.vid) {
         holder->holding_vid.reset();
         holder->holding = false;
         holder->holding_timer = kDefaultHoldingTimer;
     }
     key.held_by_vid.reset();
-    key.attachment_mode = AttachmentMode::None;
-    StopUsingEntity(key);
-    (void)world_ops::DeactivateEntity(state, key.vid);
-    state.UpdateSidForEntity(key.vid.id, graphics);
+    key.attach_mode = AttachMode::None;
+    StopUsingEnt(key);
+    (void)world_ops::DeactivateEnt(state, key.vid);
+    state.UpdateSidForEnt(key.vid.id, graphics);
 }
 
 bool CanUnlockKeyChestFromHeldKey(
@@ -205,8 +205,8 @@ bool CanUnlockKeyChestFromHeldKey(
     State& state,
     const Graphics& graphics,
     std::optional<VID> required_key_vid,
-    Entity** holder_out,
-    Entity** key_out
+    Ent** holder_out,
+    Ent** key_out
 ) {
     if (holder_out != nullptr) {
         *holder_out = nullptr;
@@ -214,28 +214,28 @@ bool CanUnlockKeyChestFromHeldKey(
     if (key_out != nullptr) {
         *key_out = nullptr;
     }
-    if (chest_idx >= state.entity_manager.entities.size()) {
+    if (chest_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& chest = state.entity_manager.entities[chest_idx];
-    const AABB chest_aabb = common::GetContactAabbForEntity(chest, graphics);
-    const std::vector<VID> touched = common::GatherTouchedEntityContactsForAabb(
+    const Ent& chest = state.ents.ents[chest_idx];
+    const AABB chest_aabb = common::GetContactAabbForEnt(chest, graphics);
+    const std::vector<VID> touched = common::GatherTouchedEntContactsForAabb(
         chest_idx,
         chest_aabb,
         graphics,
         state
     );
     for (const VID vid : touched) {
-        Entity* const key = state.entity_manager.GetEntityMut(vid);
-        if (key == nullptr || !key->active || key->type_ != EntityType::ChestKey ||
+        Ent* const key = state.ents.GetEntMut(vid);
+        if (key == nullptr || !key->active || key->type_ != EntType::ChestKey ||
             !key->held_by_vid.has_value() ||
             (required_key_vid.has_value() && key->vid != *required_key_vid)) {
             continue;
         }
 
         if (holder_out != nullptr) {
-            *holder_out = state.entity_manager.GetEntityMut(*key->held_by_vid);
+            *holder_out = state.ents.GetEntMut(*key->held_by_vid);
         }
         if (key_out != nullptr) {
             *key_out = key;
@@ -249,8 +249,8 @@ bool CanUnlockKeyChestFromHeldKey(
     std::size_t chest_idx,
     State& state,
     const Graphics& graphics,
-    Entity** holder_out,
-    Entity** key_out
+    Ent** holder_out,
+    Ent** key_out
 ) {
     return CanUnlockKeyChestFromHeldKey(
         chest_idx,
@@ -263,24 +263,24 @@ bool CanUnlockKeyChestFromHeldKey(
 }
 
 bool TryOpenTreasureChestAt(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const Vec2& emit_pos,
     State& state,
     Audio& audio,
     std::optional<VID> opener_vid = std::nullopt
 ) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& chest = state.entity_manager.entities[entity_idx];
-    if (!chest.active || chest.condition == EntityCondition::Dead ||
-        IsOpenWithAnimation(chest, frame_data_ids::ChestOpen)) {
+    Ent& chest = state.ents.ents[ent_idx];
+    if (!chest.active || chest.condition == EntCondition::Dead ||
+        IsOpenWithAnim(chest, aframe_ids::ChestOpen)) {
         return false;
     }
 
-    SetAnimation(chest, frame_data_ids::ChestOpen);
+    SetAnim(chest, aframe_ids::ChestOpen);
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
 
@@ -295,23 +295,23 @@ bool TryOpenTreasureChestAt(
 }
 
 bool TryOpenTreasureChest(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     std::optional<VID> opener_vid = std::nullopt
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& chest = state.entity_manager.entities[entity_idx];
-    const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
-    return TryOpenTreasureChestAt(entity_idx, emit_pos, state, audio, opener_vid);
+    const Ent& chest = state.ents.ents[ent_idx];
+    const Vec2 emit_pos = common::GetEmitPointForEnt(chest, graphics, chest.GetCenter());
+    return TryOpenTreasureChestAt(ent_idx, emit_pos, state, audio, opener_vid);
 }
 
-EntityDamageEffectResult OnDamageEffectAsChest(
-    std::size_t entity_idx,
+EntDamageEffectResult OnDamageEffectAsChest(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
@@ -320,53 +320,53 @@ EntityDamageEffectResult OnDamageEffectAsChest(
 ) {
     (void)amount;
     if (damage_applied) {
-        return EntityDamageEffectResult::None;
+        return EntDamageEffectResult::None;
     }
     if (damage_type != DamageType::Attack &&
         damage_type != DamageType::IgnitingAttack &&
         damage_type != DamageType::HeavyAttack) {
-        return EntityDamageEffectResult::None;
+        return EntDamageEffectResult::None;
     }
 
-    const Entity& chest = state.entity_manager.entities[entity_idx];
+    const Ent& chest = state.ents.ents[ent_idx];
     if (!TryOpenTreasureChestAt(
-            entity_idx,
+            ent_idx,
             chest.GetCenter(),
             state,
             audio,
             FindNearestPlayerVid(state, chest.GetCenter(), false))) {
-        return EntityDamageEffectResult::None;
+        return EntDamageEffectResult::None;
     }
-    return EntityDamageEffectResult::Consumed;
+    return EntDamageEffectResult::Consumed;
 }
 
 bool TryOpenKeyChestWithKey(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     VID key_vid,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity* holder = nullptr;
-    Entity* key = nullptr;
-    Entity& chest = state.entity_manager.entities[entity_idx];
-    if (!chest.active || chest.condition == EntityCondition::Dead ||
-        IsOpenWithAnimation(chest, frame_data_ids::KeyChestOpen) ||
-        !CanUnlockKeyChestFromHeldKey(entity_idx, state, graphics, key_vid, &holder, &key)) {
+    Ent* holder = nullptr;
+    Ent* key = nullptr;
+    Ent& chest = state.ents.ents[ent_idx];
+    if (!chest.active || chest.condition == EntCondition::Dead ||
+        IsOpenWithAnim(chest, aframe_ids::KeyChestOpen) ||
+        !CanUnlockKeyChestFromHeldKey(ent_idx, state, graphics, key_vid, &holder, &key)) {
         return false;
     }
 
-    SetAnimation(chest, frame_data_ids::KeyChestOpen);
-    const Vec2 emit_pos = common::GetEmitPointForEntity(chest, graphics, chest.GetCenter());
+    SetAnim(chest, aframe_ids::KeyChestOpen);
+    const Vec2 emit_pos = common::GetEmitPointForEnt(chest, graphics, chest.GetCenter());
     SpawnChestSparkles(emit_pos, state);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::Unlock);
     (void)PlayWorldSoundEmitter(state, emit_pos, audio_asset_ids::ChestOpen);
-    (void)world_ops::SpawnEntity(state, EntityType::UdjatEye, [&](Entity& udjat_eye) {
+    (void)world_ops::SpawnEnt(state, EntType::UdjatEye, [&](Ent& udjat_eye) {
         udjat_eye.SetCenter(emit_pos);
         udjat_eye.vel = Vec2::New(0.0F, 0.0F);
         udjat_eye.acc = Vec2::New(0.0F, 0.0F);
@@ -385,58 +385,58 @@ bool TryOpenKeyChestWithKey(
 } // namespace
 
 
-void OnUseAsChest(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
-    const Entity& chest = state.entity_manager.entities[entity_idx];
-    if (!chest.use_state.pressed || chest.use_state.source == AttachmentMode::Held) {
+void OnUseAsChest(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
+    const Ent& chest = state.ents.ents[ent_idx];
+    if (!chest.use_state.pressed || chest.use_state.source == AttachMode::Held) {
         return;
     }
 
-    TryOpenTreasureChest(entity_idx, state, graphics, audio, chest.use_state.user_vid);
+    TryOpenTreasureChest(ent_idx, state, graphics, audio, chest.use_state.user_vid);
 }
 
 bool OnInteractAsChest(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     std::size_t interactor_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
-    if (interactor_idx >= state.entity_manager.entities.size()) {
+    if (interactor_idx >= state.ents.ents.size()) {
         return false;
     }
-    const Entity& interactor = state.entity_manager.entities[interactor_idx];
-    if (interactor.condition == EntityCondition::Dead ||
-        !IsEntityOverlappingChest(entity_idx, interactor, state, graphics)) {
+    const Ent& interactor = state.ents.ents[interactor_idx];
+    if (interactor.condition == EntCondition::Dead ||
+        !IsEntOverlappingChest(ent_idx, interactor, state, graphics)) {
         return false;
     }
-    return TryOpenTreasureChest(entity_idx, state, graphics, audio, interactor.vid);
+    return TryOpenTreasureChest(ent_idx, state, graphics, audio, interactor.vid);
 }
 
 bool OnInteractAsKeyChest(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     std::size_t interactor_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
-    if (interactor_idx >= state.entity_manager.entities.size()) {
+    if (interactor_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& key = state.entity_manager.entities[interactor_idx];
-    if (!key.active || key.type_ != EntityType::ChestKey || !key.held_by_vid.has_value()) {
+    const Ent& key = state.ents.ents[interactor_idx];
+    if (!key.active || key.type_ != EntType::ChestKey || !key.held_by_vid.has_value()) {
         return false;
     }
-    const Entity* const holder = state.entity_manager.GetEntity(*key.held_by_vid);
-    if (holder == nullptr || !holder->active || holder->condition == EntityCondition::Dead) {
+    const Ent* const holder = state.ents.GetEnt(*key.held_by_vid);
+    if (holder == nullptr || !holder->active || holder->condition == EntCondition::Dead) {
         return false;
     }
 
-    return TryOpenKeyChestWithKey(entity_idx, key.vid, state, graphics, audio);
+    return TryOpenKeyChestWithKey(ent_idx, key.vid, state, graphics, audio);
 }
 
-void StepEntityLogicAsChest(
-    std::size_t entity_idx,
+void StepEntLogicAsChest(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -448,20 +448,20 @@ void StepEntityLogicAsChest(
             continue;
         }
 
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player == nullptr || player->condition != EntityCondition::Normal ||
-            !IsEntityOverlappingChest(entity_idx, *player, state, graphics)) {
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || player->condition != EntCondition::Normal ||
+            !IsEntOverlappingChest(ent_idx, *player, state, graphics)) {
             continue;
         }
 
-        const controls::ControlIntent control = controls::GetControlIntentForEntity(*player, state);
+        const controls::ControlIntent control = controls::GetControlIntentForEnt(*player, state);
         if (!control.use_pressed) {
             continue;
         }
 
-        (void)world_ops::TryApplyInteractEntity(
+        (void)world_ops::TryApplyInteractEnt(
             player->vid,
-            state.entity_manager.entities[entity_idx].vid,
+            state.ents.ents[ent_idx].vid,
             state,
             graphics,
             audio
@@ -470,20 +470,20 @@ void StepEntityLogicAsChest(
     }
 }
 
-void StepEntityLogicAsKeyChest(
-    std::size_t entity_idx,
+void StepEntLogicAsKeyChest(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
-    Entity& chest = state.entity_manager.entities[entity_idx];
-    if (!chest.active || chest.condition == EntityCondition::Dead ||
-        IsOpenWithAnimation(chest, frame_data_ids::KeyChestOpen)) {
+    Ent& chest = state.ents.ents[ent_idx];
+    if (!chest.active || chest.condition == EntCondition::Dead ||
+        IsOpenWithAnim(chest, aframe_ids::KeyChestOpen)) {
         return;
     }
 
@@ -492,22 +492,22 @@ void StepEntityLogicAsKeyChest(
             continue;
         }
 
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player == nullptr || player->condition == EntityCondition::Dead ||
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || player->condition == EntCondition::Dead ||
             !player->holding_vid.has_value()) {
             continue;
         }
 
-        const Entity* const key = state.entity_manager.GetEntity(*player->holding_vid);
-        if (key == nullptr || key->type_ != EntityType::ChestKey ||
+        const Ent* const key = state.ents.GetEnt(*player->holding_vid);
+        if (key == nullptr || key->type_ != EntType::ChestKey ||
             key->held_by_vid != player->vid) {
             continue;
         }
 
-        Entity* holder = nullptr;
-        Entity* held_key = nullptr;
+        Ent* holder = nullptr;
+        Ent* held_key = nullptr;
         if (!CanUnlockKeyChestFromHeldKey(
-                entity_idx,
+                ent_idx,
                 state,
                 graphics,
                 key->vid,
@@ -517,7 +517,7 @@ void StepEntityLogicAsKeyChest(
             continue;
         }
 
-        (void)world_ops::TryApplyInteractEntity(
+        (void)world_ops::TryApplyInteractEnt(
             key->vid,
             chest.vid,
             state,
@@ -528,8 +528,8 @@ void StepEntityLogicAsKeyChest(
     }
 }
 
-extern const EntityArchetype kChestArchetype{
-    .type_ = EntityType::Chest,
+extern const EntSpec kChestSpec{
+    .type_ = EntType::Chest,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -540,22 +540,22 @@ extern const EntityArchetype kChestArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Background,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .projectile_contact_damage_amount = 1,
-    .can_apply_projectile_contact = true,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .proj_contact_damage_amount = 1,
+    .can_apply_proj_contact = true,
     .on_damage = OnDamageEffectAsChest,
     .on_use = OnUseAsChest,
     .on_interact = OnInteractAsChest,
-    .step_logic = StepEntityLogicAsChest,
+    .step_logic = StepEntLogicAsChest,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Chest),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Chest),
 };
 
-extern const EntityArchetype kKeyChestArchetype{
-    .type_ = EntityType::KeyChest,
+extern const EntSpec kKeyChestSpec{
+    .type_ = EntType::KeyChest,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -566,20 +566,20 @@ extern const EntityArchetype kKeyChestArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Background,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .projectile_contact_damage_amount = 1,
-    .can_apply_projectile_contact = true,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .proj_contact_damage_amount = 1,
+    .can_apply_proj_contact = true,
     .on_interact = OnInteractAsKeyChest,
-    .step_logic = StepEntityLogicAsKeyChest,
+    .step_logic = StepEntLogicAsKeyChest,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::KeyChest),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::KeyChest),
 };
 
-extern const EntityArchetype kChestKeyArchetype{
-    .type_ = EntityType::ChestKey,
+extern const EntSpec kChestKeySpec{
+    .type_ = EntType::ChestKey,
     .size = Vec2::New(8.0F, 4.0F),
     .health = 1,
     .has_physics = true,
@@ -590,18 +590,18 @@ extern const EntityArchetype kChestKeyArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::CrushingOnly,
-    .projectile_contact_damage_amount = 1,
-    .can_apply_projectile_contact = true,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::CrushingOnly,
+    .proj_contact_damage_amount = 1,
+    .can_apply_proj_contact = true,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::ChestKey),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::ChestKey),
 };
 
-extern const EntityArchetype kUdjatEyeArchetype{
-    .type_ = EntityType::UdjatEye,
+extern const EntSpec kUdjatEyeSpec{
+    .type_ = EntType::UdjatEye,
     .size = Vec2::New(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
@@ -612,16 +612,16 @@ extern const EntityArchetype kUdjatEyeArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .projectile_contact_damage_amount = 0,
-    .can_apply_projectile_contact = false,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .proj_contact_damage_amount = 0,
+    .can_apply_proj_contact = false,
     .pickup_effect = EffectId::UdjatEye,
-    .on_entity_contact = OnEntityContactAsUdjatEye,
+    .on_ent_contact = OnEntContactAsUdjatEye,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::UdjatEye),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::UdjatEye),
 };
 
-} // namespace splonks::entities::chest
+} // namespace splonks::ents::chest

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "draw_layer.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "particles/lighting_mode.hpp"
 
@@ -13,57 +13,57 @@
 
 namespace splonks {
 
-using ScriptedParticleArchetypeId = std::uint32_t;
-using RibbonParticleArchetypeId = std::uint32_t;
-using SegmentedSpriteParticleArchetypeId = std::uint32_t;
+using ScriptedParticleSpecId = std::uint32_t;
+using RibbonParticleSpecId = std::uint32_t;
+using SegmentedSpriteParticleSpecId = std::uint32_t;
 
-constexpr ScriptedParticleArchetypeId kInvalidScriptedParticleArchetypeId = 0;
-constexpr RibbonParticleArchetypeId kInvalidRibbonParticleArchetypeId = 0;
-constexpr SegmentedSpriteParticleArchetypeId kInvalidSegmentedSpriteParticleArchetypeId = 0;
+constexpr ScriptedParticleSpecId kInvalidScriptedParticleSpecId = 0;
+constexpr RibbonParticleSpecId kInvalidRibbonParticleSpecId = 0;
+constexpr SegmentedSpriteParticleSpecId kInvalidSegmentedSpriteParticleSpecId = 0;
 
-constexpr std::uint32_t kParticleArchetypeFnvOffsetBasis32 = 2166136261U;
-constexpr std::uint32_t kParticleArchetypeFnvPrime32 = 16777619U;
+constexpr std::uint32_t kParticleSpecFnvOffsetBasis32 = 2166136261U;
+constexpr std::uint32_t kParticleSpecFnvPrime32 = 16777619U;
 
-constexpr std::uint32_t HashParticleArchetypeIdConstexpr(std::string_view text) {
-    std::uint32_t hash = kParticleArchetypeFnvOffsetBasis32;
+constexpr std::uint32_t HashParticleSpecIdConstexpr(std::string_view text) {
+    std::uint32_t hash = kParticleSpecFnvOffsetBasis32;
     for (char character : text) {
         hash ^= static_cast<std::uint32_t>(static_cast<unsigned char>(character));
-        hash *= kParticleArchetypeFnvPrime32;
+        hash *= kParticleSpecFnvPrime32;
     }
     return hash;
 }
 
-inline std::uint32_t HashParticleArchetypeId(const std::string& text) {
-    return HashParticleArchetypeIdConstexpr(text);
+inline std::uint32_t HashParticleSpecId(const std::string& text) {
+    return HashParticleSpecIdConstexpr(text);
 }
 
-namespace scripted_particle_archetype_ids {
-constexpr ScriptedParticleArchetypeId MeatheadPopup =
-    HashParticleArchetypeIdConstexpr("meathead_popup");
-constexpr ScriptedParticleArchetypeId MeatTileTopper =
-    HashParticleArchetypeIdConstexpr("meat_tile_topper");
-} // namespace scripted_particle_archetype_ids
+namespace scripted_particle_spec_ids {
+constexpr ScriptedParticleSpecId MeatheadPopup =
+    HashParticleSpecIdConstexpr("meathead_popup");
+constexpr ScriptedParticleSpecId MeatTileTopper =
+    HashParticleSpecIdConstexpr("meat_tile_topper");
+} // namespace scripted_particle_spec_ids
 
-namespace ribbon_particle_archetype_ids {
-constexpr RibbonParticleArchetypeId Default =
-    HashParticleArchetypeIdConstexpr("default_ribbon");
-constexpr RibbonParticleArchetypeId BaseballBatTrail =
-    HashParticleArchetypeIdConstexpr("baseball_bat_trail");
-} // namespace ribbon_particle_archetype_ids
+namespace ribbon_particle_spec_ids {
+constexpr RibbonParticleSpecId Default =
+    HashParticleSpecIdConstexpr("default_ribbon");
+constexpr RibbonParticleSpecId BaseballBatTrail =
+    HashParticleSpecIdConstexpr("baseball_bat_trail");
+} // namespace ribbon_particle_spec_ids
 
-namespace segmented_sprite_particle_archetype_ids {
-constexpr SegmentedSpriteParticleArchetypeId Default =
-    HashParticleArchetypeIdConstexpr("default_segmented_sprite");
-} // namespace segmented_sprite_particle_archetype_ids
+namespace segmented_sprite_particle_spec_ids {
+constexpr SegmentedSpriteParticleSpecId Default =
+    HashParticleSpecIdConstexpr("default_segmented_sprite");
+} // namespace segmented_sprite_particle_spec_ids
 
 struct ScriptedParticleSequenceStep {
-    FrameDataId animation_id = kInvalidFrameDataId;
-    AnimationPlaybackMode playback_mode = AnimationPlaybackMode::Forward;
+    AFrameId anim_id = kInvalidAFrameId;
+    AnimPlaybackMode playback_mode = AnimPlaybackMode::Forward;
     std::uint32_t play_count = 1;
 };
 
-struct ScriptedParticleArchetype {
-    ScriptedParticleArchetypeId id = kInvalidScriptedParticleArchetypeId;
+struct ScriptedParticleSpec {
+    ScriptedParticleSpecId id = kInvalidScriptedParticleSpecId;
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
@@ -72,29 +72,29 @@ struct ScriptedParticleArchetype {
     std::span<const ScriptedParticleSequenceStep> sequence;
 };
 
-struct RibbonParticleArchetype {
-    RibbonParticleArchetypeId id = kInvalidRibbonParticleArchetypeId;
+struct RibbonParticleSpec {
+    RibbonParticleSpecId id = kInvalidRibbonParticleSpecId;
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
-    FrameDataId animation_id = kInvalidFrameDataId;
+    AFrameId anim_id = kInvalidAFrameId;
     float width = 1.0F;
 };
 
-struct SegmentedSpriteParticleArchetype {
-    SegmentedSpriteParticleArchetypeId id = kInvalidSegmentedSpriteParticleArchetypeId;
+struct SegmentedSpriteParticleSpec {
+    SegmentedSpriteParticleSpecId id = kInvalidSegmentedSpriteParticleSpecId;
     std::string_view name;
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
-    FrameDataId animation_id = kInvalidFrameDataId;
+    AFrameId anim_id = kInvalidAFrameId;
     Vec2 segment_size = Vec2::New(0.0F, 0.0F);
     float spacing = 0.0F;
 };
 
-const ScriptedParticleArchetype* GetScriptedParticleArchetype(ScriptedParticleArchetypeId id);
-const RibbonParticleArchetype* GetRibbonParticleArchetype(RibbonParticleArchetypeId id);
-const SegmentedSpriteParticleArchetype* GetSegmentedSpriteParticleArchetype(
-    SegmentedSpriteParticleArchetypeId id
+const ScriptedParticleSpec* GetScriptedParticleSpec(ScriptedParticleSpecId id);
+const RibbonParticleSpec* GetRibbonParticleSpec(RibbonParticleSpecId id);
+const SegmentedSpriteParticleSpec* GetSegmentedSpriteParticleSpec(
+    SegmentedSpriteParticleSpecId id
 );
 
 } // namespace splonks

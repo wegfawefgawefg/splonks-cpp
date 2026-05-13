@@ -7,18 +7,18 @@ Main game: `/home/vega/Coding/GameDev/Splonks/splonks-cpp`
 
 Recent caveman work already landed:
 
-- Added caveman frame ids in `splonks-cpp/src/frame_data_id.hpp`:
+- Added caveman frame ids in `splonks-cpp/src/aframe_id.hpp`:
   - `Caveman`
   - `CavemanWalk`
   - `CavemanStunned`
   - `CavemanDead`
-- Added display-state mapping in `splonks-cpp/src/entity/display_states.cpp`:
+- Added display-state mapping in `splonks-cpp/src/ent/display_states.cpp`:
   - Neutral -> `caveman`
   - Walk -> `caveman_walk`
   - Stunned -> `caveman_stunned`
   - Dead -> `caveman_dead`
 - Synced `caveman_dead` into `assets/graphics/annotations.yaml` from the span workspace entry.
-- Turned `splonks-cpp/src/entities/caveman.cpp` from a pure archetype stub into a real minimal walker:
+- Turned `splonks-cpp/src/ents/caveman.cpp` from a pure spec stub into a real minimal walker:
   - idle
   - patrol
   - turns at walls
@@ -89,7 +89,7 @@ Do these next, in this order:
 4. Improve corpse behavior.
 - Moving dead caveman should look like a thrown / tumbling body if possible with existing assets.
 - Once settled, dead sprite should return to `caveman_dead`.
-- Do not add fake animations we do not have art for.
+- Do not add fake anims we do not have art for.
 
 ## Constraints / Style Notes
 
@@ -101,13 +101,13 @@ Do these next, in this order:
 
 ## Useful File References
 
-- `splonks-cpp/src/entities/caveman.cpp`
-- `splonks-cpp/src/entities/caveman.hpp`
-- `splonks-cpp/src/entities/snake.cpp`
-- `splonks-cpp/src/entities/common/ground_walker.cpp`
+- `splonks-cpp/src/ents/caveman.cpp`
+- `splonks-cpp/src/ents/caveman.hpp`
+- `splonks-cpp/src/ents/snake.cpp`
+- `splonks-cpp/src/ents/common/ground_walker.cpp`
 - `splonks-cpp/src/world_query.cpp`
-- `splonks-cpp/src/entity/display_states.cpp`
-- `splonks-cpp/src/frame_data_id.hpp`
+- `splonks-cpp/src/ent/display_states.cpp`
+- `splonks-cpp/src/aframe_id.hpp`
 - `SpelunkyClassicHD/objects/oCaveman/Create_0.gml`
 - `SpelunkyClassicHD/objects/oCaveman/Step_0.gml`
 - `SpelunkyClassicHD/objects/oEnemySight/Collision_oCharacter.gml`
@@ -116,4 +116,4 @@ Do these next, in this order:
 
 A good resume prompt would be:
 
-"Read `HYDRATION.md`, then implement the next caveman behavior slice: forward sight aggro + attack run, using the wrapped world query layer and keeping the implementation local to `entities/caveman.cpp`. Rebuild after changes."
+"Read `HYDRATION.md`, then implement the next caveman behavior slice: forward sight aggro + attack run, using the wrapped world query layer and keeping the implementation local to `ents/caveman.cpp`. Rebuild after changes."

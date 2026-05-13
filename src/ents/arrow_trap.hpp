@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -9,9 +9,9 @@ struct State;
 
 }
 
-namespace splonks::entities::arrow_trap {
+namespace splonks::ents::arrow_trap {
 
-extern const EntityArchetype kArrowTrapArchetype;
-extern const EntityArchetype kArrowArchetype;
+extern const EntSpec kArrowTrapSpec;
+extern const EntSpec kArrowSpec;
 
-} // namespace splonks::entities::arrow_trap
+} // namespace splonks::ents::arrow_trap

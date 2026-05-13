@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 
-namespace splonks::entities::bow {
+namespace splonks::ents::bow {
 
-extern const EntityArchetype kBowArchetype;
+extern const EntSpec kBowSpec;
 
-} // namespace splonks::entities::bow
+} // namespace splonks::ents::bow

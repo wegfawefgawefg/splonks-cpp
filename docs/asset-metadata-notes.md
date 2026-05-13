@@ -12,7 +12,7 @@ Right now the JSON exported alongside each sprite stores:
 - frame width and height
 - frame duration
 
-In other words, it is animation atlas metadata for Aseprite exports.
+In other words, it is anim atlas metadata for Aseprite exports.
 
 In [src/sprite.rs](/home/vega/Coding/GameDev/splonks/src/sprite.rs), the loader currently reads:
 
@@ -34,13 +34,13 @@ It does **not** currently store:
 - arbitrary interaction boxes
 - pivots / origins
 - offsets
-- named animation metadata
+- named anim metadata
 
 ## Was `png + json` A Good Idea?
 
 Yes.
 
-For a solo/small-team art pipeline, `png + json` per sprite/animation is a good authoring format:
+For a solo/small-team art pipeline, `png + json` per sprite/anim is a good authoring format:
 
 - easier iteration from Aseprite
 - less brittle than hardcoded atlas offsets
@@ -59,7 +59,7 @@ If runtime optimization ever mattered later, the game could still:
 - prepack those assets into runtime atlases
 - rewrite sample positions during a build/startup step
 
-That means the content pipeline and the runtime representation do not have to be the same thing.
+That means the content pipeline and the runtime repres do not have to be the same thing.
 
 ## About Pivots, Hurtboxes, And State-Based Boxes
 
@@ -71,7 +71,7 @@ Nothing prevents extending the JSON with custom metadata such as:
 - hurtbox
 - hitboxes
 - interaction box
-- per-animation tags
+- per-anim tags
 
 Example shape:
 
@@ -90,13 +90,13 @@ Example shape:
 }
 ```
 
-## Is It Normal For Boxes To Change With Animation Or State?
+## Is It Normal For Boxes To Change With Anim Or State?
 
 Yes. Very normal.
 
 Games often change collision or interaction boxes based on:
 
-- animation frame
+- anim frame
 - crouch / squat
 - attack phase
 - windup / active / recovery
@@ -107,7 +107,7 @@ Games often change collision or interaction boxes based on:
 Common pattern:
 
 - one stable physics/body box for world movement
-- separate hurtboxes/hitboxes that vary by animation or state
+- separate hurtboxes/hitboxes that vary by anim or state
 - optional interaction boxes for grab/use/pickup ranges
 
 That means a character or enemy can:

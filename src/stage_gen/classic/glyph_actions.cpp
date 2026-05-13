@@ -1,8 +1,8 @@
 #include "stage_gen/classic/glyph_actions.hpp"
 
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "stage_gen/classic/room_layout.hpp"
-#include "entities/shop_tile_triggers.hpp"
+#include "ents/shop_tile_triggers.hpp"
 #include "stage_gen/classic/tile_palette.hpp"
 #include "utils.hpp"
 
@@ -20,9 +20,9 @@ Vec2 GetShrineIdolTopLeft(const Vec2& tile_pos) {
     return tile_pos + Vec2::New(10.0F, 4.0F);
 }
 
-EntityType GetShopSignEntityType(ShopType shop_type, const ShopConfigDb& shop_db) {
+EntType GetShopSignEntType(ShopType shop_type, const ShopConfigDb& shop_db) {
     const ShopTypeConfig* config = shop_db.FindShopType(ShopTypeId(shop_type));
-    return config == nullptr ? EntityType::None : config->sign;
+    return config == nullptr ? EntType::None : config->sign;
 }
 
 bool IsShopRoomCode(int room_code) {
@@ -34,59 +34,59 @@ bool IsShopAreaRoomCode(int room_code) {
     return IsShopRoomCode(room_code) || room_code == static_cast<int>(RoomCode::Vault);
 }
 
-std::uint32_t GetClassicShopBasePrice(EntityType type_) {
+std::uint32_t GetClassicShopBasePrice(EntType type_) {
     switch (type_) {
-    case EntityType::Bow:
+    case EntType::Bow:
         return 1000;
-    case EntityType::WebCannon:
+    case EntType::WebCannon:
         return 2000;
-    case EntityType::Parachute:
+    case EntType::Parachute:
         return 2000;
-    case EntityType::BombBag:
+    case EntType::BombBag:
         return 2500;
-    case EntityType::RopePile:
+    case EntType::RopePile:
         return 2500;
-    case EntityType::Paste:
+    case EntType::Paste:
         return 3000;
-    case EntityType::Compass:
+    case EntType::Compass:
         return 3000;
-    case EntityType::SpikeShoes:
+    case EntType::SpikeShoes:
         return 4000;
-    case EntityType::Mitt:
+    case EntType::Mitt:
         return 4000;
-    case EntityType::Pistol:
+    case EntType::Pistol:
         return 5000;
-    case EntityType::SpringShoes:
+    case EntType::SpringShoes:
         return 5000;
-    case EntityType::Machete:
+    case EntType::Machete:
         return 7000;
-    case EntityType::Gloves:
+    case EntType::Gloves:
         return 8000;
-    case EntityType::Spectacles:
+    case EntType::Spectacles:
         return 8000;
-    case EntityType::Mattock:
+    case EntType::Mattock:
         return 8000;
-    case EntityType::Teleporter:
-    case EntityType::TeleporterBackpack:
+    case EntType::Teleporter:
+    case EntType::TeleporterBackpack:
         return 10000;
-    case EntityType::BombBox:
+    case EntType::BombBox:
         return 10000;
-    case EntityType::Dice:
+    case EntType::Dice:
         return 10000;
-    case EntityType::Cape:
+    case EntType::Cape:
         return 12000;
-    case EntityType::Damsel:
+    case EntType::Damsel:
         return 12000;
-    case EntityType::Shotgun:
+    case EntType::Shotgun:
         return 15000;
-    case EntityType::JetPack:
+    case EntType::JetPack:
         return 20000;
     default:
         return 0;
     }
 }
 
-std::uint32_t GetClassicShopPrice(EntityType type_, int level_number) {
+std::uint32_t GetClassicShopPrice(EntType type_, int level_number) {
     std::uint32_t price = GetClassicShopBasePrice(type_);
     if (price == 0) {
         return 0;
@@ -131,7 +131,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
     const std::string glyphs = ExpandObstacles(selection.glyphs);
 
     // Glyph markers are authored on the room's 10x8 tile grid. We anchor imported
-    // entities and background stamps from that tile grid directly into our top-left
+    // ents and background stamps from that tile grid directly into our top-left
     // world-space positions, then only add explicit whole-tile layout offsets that
     // come from the room design itself, like the right altar half living one tile to
     // the right. We do not port HD sprite-origin offsets directly here.
@@ -155,16 +155,16 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
         const Vec2 shop_size =
             Vec2::New(static_cast<float>(room_size.x * kTileSize),
                       static_cast<float>(room_size.y * kTileSize));
-        room.entity_spawns.push_back(StageEntitySpawn{
-            .type_ = EntityType::Shop,
+        room.ent_spawns.push_back(EntSpawn{
+            .type_ = EntType::Shop,
             .pos = Vec2::New(0.0F, 0.0F),
             .size_override = shop_size,
             .ai_state_override = room_code == static_cast<int>(RoomCode::Vault)
-                                     ? std::optional<EntityAiState>(EntityAiState::Disturbed)
+                                     ? std::optional<EntAiState>(EntAiState::Disturbed)
                                      : std::nullopt,
             .exit_id = "",
         });
-        return room.entity_spawns.size() - 1;
+        return room.ent_spawns.size() - 1;
     }();
     const std::optional<std::size_t> craps_table_spawn_index = [&]() -> std::optional<std::size_t> {
         if (!is_craps_shop || !shop_spawn_index.has_value()) {
@@ -173,14 +173,14 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
         const Vec2 shop_size =
             Vec2::New(static_cast<float>(room_size.x * kTileSize),
                       static_cast<float>(room_size.y * kTileSize));
-        room.entity_spawns.push_back(StageEntitySpawn{
-            .type_ = EntityType::CrapsTable,
+        room.ent_spawns.push_back(EntSpawn{
+            .type_ = EntType::CrapsTable,
             .pos = Vec2::New(0.0F, 0.0F),
             .size_override = shop_size,
-            .entity_a_spawn_index = *shop_spawn_index,
+            .ent_a_spawn_index = *shop_spawn_index,
             .exit_id = "",
         });
-        return room.entity_spawns.size() - 1;
+        return room.ent_spawns.size() - 1;
     }();
     std::optional<std::size_t> craps_dice_spawn_index;
     const auto mark_shop_vandalism_tile = [&](int tile_x, int tile_y) {
@@ -188,7 +188,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
             return;
         }
         room.tile_triggers.push_back(
-            entities::shop::MakeShopVandalismTileTrigger(IVec2::New(tile_x, tile_y), *shop_spawn_index)
+            ents::shop::MakeShopVandalismTileTrigger(IVec2::New(tile_x, tile_y), *shop_spawn_index)
         );
     };
 
@@ -205,11 +205,11 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                                          std::string(1, glyph));
             }
 
-            const auto spawn_entity_at = [&](EntityType entity_type, Vec2 pos) -> std::optional<std::size_t> {
-                if (entity_type != EntityType::None) {
-                    room.entity_spawns.push_back(
-                        StageEntitySpawn{.type_ = entity_type, .pos = pos, .exit_id = ""});
-                    return room.entity_spawns.size() - 1;
+            const auto spawn_ent_at = [&](EntType ent_type, Vec2 pos) -> std::optional<std::size_t> {
+                if (ent_type != EntType::None) {
+                    room.ent_spawns.push_back(
+                        EntSpawn{.type_ = ent_type, .pos = pos, .exit_id = ""});
+                    return room.ent_spawns.size() - 1;
                 }
                 return std::nullopt;
             };
@@ -217,7 +217,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                 if (!is_shop_room || !shop_spawn_index.has_value() || !spawn_index.has_value()) {
                     return;
                 }
-                StageEntitySpawn& spawn = room.entity_spawns[*spawn_index];
+                EntSpawn& spawn = room.ent_spawns[*spawn_index];
                 const std::uint32_t price = GetClassicShopPrice(spawn.type_, level_number);
                 if (price == 0) {
                     return;
@@ -226,8 +226,8 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                 spawn.buy_price = price;
                 spawn.shop_owner_spawn_index = *shop_spawn_index;
             };
-            const auto spawn_entity = [&](EntityType entity_type) -> std::optional<std::size_t> {
-                return spawn_entity_at(entity_type, tile_pos);
+            const auto spawn_ent = [&](EntType ent_type) -> std::optional<std::size_t> {
+                return spawn_ent_at(ent_type, tile_pos);
             };
             const auto roll_classic_ground_block = [&]() {
                 return rng::RandomIntInclusive(1, 10) == 1
@@ -239,20 +239,20 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     !spawn_index.has_value()) {
                     return;
                 }
-                room.entity_spawns[*craps_table_spawn_index].entity_c_spawn_index = *spawn_index;
+                room.ent_spawns[*craps_table_spawn_index].ent_c_spawn_index = *spawn_index;
             };
-            const auto spawn_shop_item = [&](EntityType entity_type) {
-                const std::optional<std::size_t> spawn_index = spawn_entity(entity_type);
+            const auto spawn_shop_item = [&](EntType ent_type) {
+                const std::optional<std::size_t> spawn_index = spawn_ent(ent_type);
                 if (is_craps_shop) {
                     link_craps_prize(spawn_index);
                     return;
                 }
                 mark_spawn_buyable(spawn_index);
             };
-            const auto spawn_entity_offset = [&](EntityType entity_type, int dx_tiles,
+            const auto spawn_ent_offset = [&](EntType ent_type, int dx_tiles,
                                                  int dy_tiles) -> std::optional<std::size_t> {
                 constexpr int kSignedTileSize = static_cast<int>(kTileSize);
-                return spawn_entity_at(entity_type,
+                return spawn_ent_at(ent_type,
                                        tile_pos + Vec2::New(static_cast<float>(dx_tiles * kSignedTileSize),
                                                             static_cast<float>(dy_tiles * kSignedTileSize)));
             };
@@ -275,33 +275,33 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
 
             tile = rule->tile.value_or(Tile::Air);
 
-            if (rule->spawn != EntityType::None) {
-                if (is_craps_shop && rule->spawn == EntityType::Dice &&
+            if (rule->spawn != EntType::None) {
+                if (is_craps_shop && rule->spawn == EntType::Dice &&
                     craps_dice_spawn_index.has_value()) {
                     room.tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = tile;
                     continue;
                 }
-                const std::optional<std::size_t> spawn_index = spawn_entity(rule->spawn);
-                if (is_craps_shop && rule->spawn == EntityType::Dice &&
+                const std::optional<std::size_t> spawn_index = spawn_ent(rule->spawn);
+                if (is_craps_shop && rule->spawn == EntType::Dice &&
                     spawn_index.has_value() && craps_table_spawn_index.has_value()) {
                     craps_dice_spawn_index = *spawn_index;
-                    room.entity_spawns[*craps_table_spawn_index].entity_b_spawn_index =
+                    room.ent_spawns[*craps_table_spawn_index].ent_b_spawn_index =
                         *spawn_index;
                 }
-                if (is_shop_area_room && rule->spawn == EntityType::Shopkeeper &&
+                if (is_shop_area_room && rule->spawn == EntType::Shopkeeper &&
                     shop_spawn_index.has_value() && spawn_index.has_value()) {
-                    room.entity_spawns[*spawn_index].entity_a_spawn_index = *shop_spawn_index;
+                    room.ent_spawns[*spawn_index].ent_a_spawn_index = *shop_spawn_index;
                 } else if (is_shop_room && !is_craps_shop &&
-                           (rule->spawn == EntityType::Dice || rule->spawn == EntityType::Damsel)) {
+                           (rule->spawn == EntType::Dice || rule->spawn == EntType::Damsel)) {
                     mark_spawn_buyable(spawn_index);
                 }
             }
-            if (rule->spawn_chance != EntityType::None &&
+            if (rule->spawn_chance != EntType::None &&
                 rng::RandomIntInclusive(1, rule->chance_denominator) == 1) {
-                spawn_entity(rule->spawn_chance);
+                spawn_ent(rule->spawn_chance);
             }
             if (!rule->spawn_random.empty()) {
-                spawn_entity(PickWeightedEntity(rule->spawn_random));
+                spawn_ent(PickWeightedEnt(rule->spawn_random));
             }
             if (!rule->patch_pool.empty()) {
                 // Obstacle patch glyphs are expanded before rule resolution.
@@ -356,16 +356,16 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                 } else if (action == "entrance_or_exit") {
                     if (is_start_room) {
                         tile = Tile::Entrance;
-                        room.entity_spawns.push_back(StageEntitySpawn{
-                            .type_ = EntityType::Entrance,
+                        room.ent_spawns.push_back(EntSpawn{
+                            .type_ = EntType::Entrance,
                             .pos = tile_pos,
                             .exit_id = "",
                         });
                     } else if (is_end_room) {
-                        room.entity_spawns.push_back(StageEntitySpawn{
-                            .type_ = EntityType::BasicExit,
+                        room.ent_spawns.push_back(EntSpawn{
+                            .type_ = EntType::BasicExit,
                             .pos = tile_pos,
-                            .animation_id = frame_data_ids::Exit,
+                            .anim_id = aframe_ids::Exit,
                             .exit_id =
                                 rule->exit_id.empty() ? std::string("default") : rule->exit_id,
                         });
@@ -378,7 +378,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     mark_shop_vandalism_tile(x, y);
                 } else if (action == "vault_wall_or_pushblock") {
                     if (rng::RandomIntInclusive(1, rule->chance_denominator) == 1) {
-                        spawn_entity(EntityType::Block);
+                        spawn_ent(EntType::Block);
                         tile = Tile::Air;
                     } else {
                         tile = ShopWallTileForFamilyTile(existing_stage.border.left.tile);
@@ -397,10 +397,10 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     tile = Tile::TempleDirt;
                     mark_shop_vandalism_tile(x, y);
                 } else if (action == "lamp_or_red") {
-                    spawn_entity(selection.shop_type == ShopType::Kissing ? EntityType::LampRed
-                                                                          : EntityType::Lamp);
+                    spawn_ent(selection.shop_type == ShopType::Kissing ? EntType::LampRed
+                                                                          : EntType::Lamp);
                 } else if (action == "shop_damsel") {
-                    spawn_shop_item(EntityType::Damsel);
+                    spawn_shop_item(EntType::Damsel);
                 } else if (action == "tree_growth") {
                     tile = Tile::Tree;
                     int trunk_y = y - 1;
@@ -419,118 +419,118 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                         --trunk_y;
                     }
                 } else if (action == "altar_pair") {
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::Altar,
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::Altar,
                         .pos = tile_pos,
-                        .animation_id = frame_data_ids::AltarLeft,
+                        .anim_id = aframe_ids::AltarLeft,
                         .exit_id = "",
                     });
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::Altar,
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::Altar,
                         .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
-                        .animation_id = frame_data_ids::AltarRight,
+                        .anim_id = aframe_ids::AltarRight,
                         .exit_id = "",
                     });
                 } else if (action == "sac_altar") {
-                    const std::size_t left_altar_spawn_index = room.entity_spawns.size();
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::SacAltar,
+                    const std::size_t left_altar_spawn_index = room.ent_spawns.size();
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::SacAltar,
                         .pos = tile_pos,
-                        .animation_id = frame_data_ids::SacAltarLeft,
+                        .anim_id = aframe_ids::SacAltarLeft,
                         .exit_id = "",
                     });
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::SacAltar,
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::SacAltar,
                         .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F),
-                        .animation_id = frame_data_ids::SacAltarRight,
-                        .entity_a_spawn_index = left_altar_spawn_index,
+                        .anim_id = aframe_ids::SacAltarRight,
+                        .ent_a_spawn_index = left_altar_spawn_index,
                         .exit_id = "",
                     });
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::SacAltarTopper,
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::SacAltarTopper,
                         .pos = tile_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize)),
-                        .animation_id = frame_data_ids::SacAltarTopper,
-                        .entity_a_spawn_index = left_altar_spawn_index,
+                        .anim_id = aframe_ids::SacAltarTopper,
+                        .ent_a_spawn_index = left_altar_spawn_index,
                         .exit_id = "",
                     });
-                    room.entity_spawns[left_altar_spawn_index].entity_a_spawn_index =
-                        room.entity_spawns.size() - 1;
+                    room.ent_spawns[left_altar_spawn_index].ent_a_spawn_index =
+                        room.ent_spawns.size() - 1;
                 } else if (action == "gold_idol") {
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::GoldIdol,
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::GoldIdol,
                         .pos = GetShrineIdolTopLeft(tile_pos),
                         .exit_id = "",
                     });
                     if (!pending_giant_tiki_head_spawn_indices.empty()) {
-                        room.entity_spawns[pending_giant_tiki_head_spawn_indices.front()]
-                            .entity_a_spawn_index = room.entity_spawns.size() - 1;
+                        room.ent_spawns[pending_giant_tiki_head_spawn_indices.front()]
+                            .ent_a_spawn_index = room.ent_spawns.size() - 1;
                         pending_giant_tiki_head_spawn_indices.erase(
                             pending_giant_tiki_head_spawn_indices.begin());
                     } else {
-                        pending_gold_idol_spawn_indices.push_back(room.entity_spawns.size() - 1);
+                        pending_gold_idol_spawn_indices.push_back(room.ent_spawns.size() - 1);
                     }
                 } else if (action == "giant_tiki_head") {
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::GiantTikiHead,
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::GiantTikiHead,
                         .pos = tile_pos,
                         .exit_id = "",
                     });
                     if (!pending_gold_idol_spawn_indices.empty()) {
-                        room.entity_spawns.back().entity_a_spawn_index =
+                        room.ent_spawns.back().ent_a_spawn_index =
                             pending_gold_idol_spawn_indices.front();
                         pending_gold_idol_spawn_indices.erase(
                             pending_gold_idol_spawn_indices.begin());
                     } else {
-                        pending_giant_tiki_head_spawn_indices.push_back(room.entity_spawns.size() -
+                        pending_giant_tiki_head_spawn_indices.push_back(room.ent_spawns.size() -
                                                                         1);
                     }
                     room.background_stamps.push_back(BackgroundStamp{
-                        .animation_id = HashFrameDataIdConstexpr("tiki_body"),
+                        .anim_id = HashAFrameIdConstexpr("tiki_body"),
                         .pos = tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize * 2)),
                     });
                     room.background_stamps.push_back(BackgroundStamp{
-                        .animation_id = HashFrameDataIdConstexpr(PickRightTikiArmFrameName()),
+                        .anim_id = HashAFrameIdConstexpr(PickRightTikiArmFrameName()),
                         .pos = tile_pos + Vec2::New(static_cast<float>(kTileSize * 2),
                                                     static_cast<float>(kTileSize * 2)),
                     });
                     room.background_stamps.push_back(BackgroundStamp{
-                        .animation_id = HashFrameDataIdConstexpr(PickLeftTikiArmFrameName()),
+                        .anim_id = HashAFrameIdConstexpr(PickLeftTikiArmFrameName()),
                         .pos = tile_pos + Vec2::New(-static_cast<float>(kTileSize),
                                                     static_cast<float>(kTileSize * 2)),
                     });
                 } else if (action == "dice_sign_if_craps") {
                     if (selection.shop_type == ShopType::Craps) {
                         room.background_stamps.push_back(BackgroundStamp{
-                            .animation_id = frame_data_ids::DiceSign,
+                            .anim_id = aframe_ids::DiceSign,
                             .pos = tile_pos,
                         });
                     }
                 } else if (action == "high_end_shop_item") {
                     spawn_shop_item(
-                        PickHighEndShopItemType(item_db, existing_stage, room.entity_spawns));
+                        PickHighEndShopItemType(item_db, existing_stage, room.ent_spawns));
                 } else if (action == "random_item") {
                     if (is_shop_room) {
                         const std::optional<std::size_t> item_spawn_index =
-                            spawn_entity(PickUndergroundItemType(item_db, existing_stage));
+                            spawn_ent(PickUndergroundItemType(item_db, existing_stage));
                         if (is_craps_shop) {
                             link_craps_prize(item_spawn_index);
                         } else {
                             mark_spawn_buyable(item_spawn_index);
                         }
                     } else {
-                        spawn_entity(PickUndergroundItemType(item_db, existing_stage));
+                        spawn_ent(PickUndergroundItemType(item_db, existing_stage));
                     }
                 } else if (action == "wanted_poster") {
                     room.background_stamps.push_back(BackgroundStamp{
-                        .animation_id = HashFrameDataIdConstexpr("wanted_poster"),
+                        .anim_id = HashAFrameIdConstexpr("wanted_poster"),
                         .pos = tile_pos,
                         .condition = BackgroundStampCondition::Wanted,
                     });
                 } else if (action == "shop_sign") {
-                    spawn_entity(GetShopSignEntityType(selection.shop_type, shop_db));
+                    spawn_ent(GetShopSignEntType(selection.shop_type, shop_db));
                 } else if (action == "shop_item_slot") {
                     spawn_shop_item(PickShopItemType(selection.shop_type, existing_stage,
-                                                     room.entity_spawns, item_db, shop_db));
+                                                     room.ent_spawns, item_db, shop_db));
                 } else if (action == "ice_dark_ice_or_alien_floor") {
                     if (rng::RandomIntInclusive(1, 2) == 1) {
                         tile = rng::RandomIntInclusive(1, 10) == 1 ? Tile::IceBlock : Tile::Dark;
@@ -538,53 +538,53 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                         tile = Tile::AlienShip;
                     }
                 } else if (action == "ice_alien_ship_top") {
-                    spawn_entity(EntityType::AlienShip);
+                    spawn_ent(EntType::AlienShip);
                 } else if (action == "ice_alien_ship_floor") {
                     tile = Tile::AlienShip;
                 } else if (action == "ice_alien_ship_front_tall") {
-                    spawn_entity(EntityType::AlienShip);
-                    spawn_entity_offset(EntityType::AlienShip, 0, 1);
-                    spawn_entity_offset(EntityType::AlienShip, 0, 2);
+                    spawn_ent(EntType::AlienShip);
+                    spawn_ent_offset(EntType::AlienShip, 0, 1);
+                    spawn_ent_offset(EntType::AlienShip, 0, 2);
                 } else if (action == "ice_alien_ship_front_single") {
-                    spawn_entity(EntityType::AlienShip);
+                    spawn_ent(EntType::AlienShip);
                 } else if (action == "ice_alien_bg_tall" || action == "ice_alien_bg_mid") {
-                    spawn_entity(EntityType::AlienShip);
+                    spawn_ent(EntType::AlienShip);
                 } else if (action == "ice_jetpack_cache") {
                     tile = Tile::Dark;
-                    spawn_entity(EntityType::JetPack);
+                    spawn_ent(EntType::JetPack);
                 } else if (action == "ice_moai_room") {
-                    spawn_entity(EntityType::Moai);
-                    spawn_entity_offset(EntityType::Moai2, 1, 0);
-                    spawn_entity_offset(EntityType::Moai3, 2, 0);
-                    spawn_entity_offset(EntityType::MoaiInside, 1, 1);
-                    spawn_entity_offset(EntityType::Door, 1, 3);
-                    spawn_entity_offset(EntityType::Crown, 1, 3);
+                    spawn_ent(EntType::Moai);
+                    spawn_ent_offset(EntType::Moai2, 1, 0);
+                    spawn_ent_offset(EntType::Moai3, 2, 0);
+                    spawn_ent_offset(EntType::MoaiInside, 1, 1);
+                    spawn_ent_offset(EntType::Door, 1, 3);
+                    spawn_ent_offset(EntType::Crown, 1, 3);
                 } else if (action == "ice_dark_invincible") {
                     tile = Tile::Dark;
                 } else if (action == "temple_damsel_and_idol") {
-                    spawn_entity(EntityType::Damsel);
-                    room.entity_spawns.push_back(StageEntitySpawn{
-                        .type_ = EntityType::GoldIdol,
+                    spawn_ent(EntType::Damsel);
+                    room.ent_spawns.push_back(EntSpawn{
+                        .type_ = EntType::GoldIdol,
                         .pos = GetShrineIdolTopLeft(tile_pos),
                         .exit_id = "",
                     });
                 } else if (action == "temple_ruby_block") {
                     tile = Tile::TempleDirt;
-                    spawn_entity(EntityType::RubyBig);
+                    spawn_ent(EntType::RubyBig);
                 } else if (action == "temple_treasure_roll") {
                     if (rng::RandomIntInclusive(1, 120) == 1) {
-                        spawn_entity(EntityType::RubyBig);
+                        spawn_ent(EntType::RubyBig);
                     } else if (rng::RandomIntInclusive(1, 80) == 1) {
-                        spawn_entity(EntityType::SapphireBig);
+                        spawn_ent(EntType::SapphireBig);
                     } else if (rng::RandomIntInclusive(1, 60) == 1) {
-                        spawn_entity(EntityType::EmeraldBig);
+                        spawn_ent(EntType::EmeraldBig);
                     } else {
-                        spawn_entity(EntityType::GoldBars);
+                        spawn_ent(EntType::GoldBars);
                     }
                 } else if (action == "temple_xoc_room") {
                     for (int l = 0; l < 6; ++l) {
                         for (int k = 0; k < 5; ++k) {
-                            spawn_entity_offset(EntityType::XocBlock, k, l);
+                            spawn_ent_offset(EntType::XocBlock, k, l);
                         }
                     }
                 } else if (action == "maybe_solid_dirt") {
@@ -593,7 +593,7 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                     }
                 } else if (action == "maybe_snake_or_solid_dirt") {
                     if (rng::RandomIntInclusive(1, 10) == 1) {
-                        spawn_entity(EntityType::Snake);
+                        spawn_ent(EntType::Snake);
                     } else if (rng::RandomIntInclusive(1, 2) == 1) {
                         tile = DirtTileForFamilyTile(existing_stage.border.left.tile);
                     }

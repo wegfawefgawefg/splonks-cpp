@@ -1,9 +1,9 @@
-#include "entities/pistol.hpp"
+#include "ents/pistol.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "hitscan.hpp"
@@ -15,7 +15,7 @@
 
 #include <memory>
 
-namespace splonks::entities::pistol {
+namespace splonks::ents::pistol {
 
 namespace {
 
@@ -26,7 +26,7 @@ constexpr unsigned int kPistolDamage = 4;
 void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 4; ++i) {
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(8, 14));
         effect.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
@@ -51,7 +51,7 @@ void SpawnPistolMuzzleSmoke(State& state, const Vec2& pos, int direction) {
 void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 3; ++i) {
         SpriteParticle spark{};
-        spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
+        spark.aframe_animator = AFrameAnimator::New(aframe_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
         spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
@@ -71,7 +71,7 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
 
     for (int i = 0; i < 2; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
         smoke.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
@@ -90,15 +90,15 @@ void SpawnPistolImpactEffect(State& state, const Vec2& pos, int direction) {
     }
 }
 
-Vec2 GetFallbackMuzzlePos(const Entity& pistol) {
-    const int direction = pistol.facing == LeftOrRight::Left ? -1 : 1;
+Vec2 GetFallbackMuzzlePos(const Ent& pistol) {
+    const int direction = pistol.facing == Side::Left ? -1 : 1;
     return pistol.GetCenter() + Vec2::New(8.0F * static_cast<float>(direction), 1.0F);
 }
 
-void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
-    const Entity& pistol = state.entity_manager.entities[entity_idx];
-    const int direction = pistol.facing == LeftOrRight::Left ? -1 : 1;
-    const Vec2 muzzle_pos = common::GetEmitPointForEntity(
+void FirePistolShot(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
+    const Ent& pistol = state.ents.ents[ent_idx];
+    const int direction = pistol.facing == Side::Left ? -1 : 1;
+    const Vec2 muzzle_pos = common::GetEmitPointForEnt(
         pistol,
         graphics,
         GetFallbackMuzzlePos(pistol)
@@ -123,12 +123,12 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
     );
     if (hit.type == HitscanHitType::Tile ||
         hit.type == HitscanHitType::StageBounds ||
-        hit.type == HitscanHitType::Entity) {
+        hit.type == HitscanHitType::Ent) {
         SpawnPistolImpactEffect(state, ToVec2(hit.point), direction);
     }
-    if (hit.type == HitscanHitType::Entity && hit.entity_vid.has_value()) {
-        common::TryHitEntity(
-            hit.entity_vid->id,
+    if (hit.type == HitscanHitType::Ent && hit.ent_vid.has_value()) {
+        common::TryHitEnt(
+            hit.ent_vid->id,
             state,
             audio,
             DamageType::IgnitingAttack,
@@ -147,31 +147,31 @@ void FirePistolShot(std::size_t entity_idx, State& state, Graphics& graphics, Au
 
 } // namespace
 
-void OnUseAsPistol(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
-    Entity& pistol = state.entity_manager.entities[entity_idx];
+void OnUseAsPistol(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
+    Ent& pistol = state.ents.ents[ent_idx];
     if (!pistol.use_state.pressed || pistol.counter_a > 0.0F) {
         return;
     }
 
     if (pistol.counter_b <= 0.0F) {
-        (void)PlayEntitySoundEmitter(state, pistol, audio_asset_ids::GunEmpty);
-        if (pistol.use_state.source == AttachmentMode::None) {
-            StopUsingEntity(pistol);
+        (void)PlayEntSoundEmitter(state, pistol, audio_asset_ids::GunEmpty);
+        if (pistol.use_state.source == AttachMode::None) {
+            StopUsingEnt(pistol);
         }
         return;
     }
 
     pistol.counter_a = kPistolFireCooldownFrames;
     pistol.counter_b -= 1.0F;
-    FirePistolShot(entity_idx, state, graphics, audio);
+    FirePistolShot(ent_idx, state, graphics, audio);
 
-    if (pistol.use_state.source == AttachmentMode::None) {
-        StopUsingEntity(pistol);
+    if (pistol.use_state.source == AttachMode::None) {
+        StopUsingEnt(pistol);
     }
 }
 
-void StepEntityLogicAsPistol(
-    std::size_t entity_idx,
+void StepEntLogicAsPistol(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -180,7 +180,7 @@ void StepEntityLogicAsPistol(
     (void)graphics;
     (void)audio;
     (void)dt;
-    Entity& pistol = state.entity_manager.entities[entity_idx];
+    Ent& pistol = state.ents.ents[ent_idx];
     if (pistol.counter_a > 0.0F) {
         pistol.counter_a -= 1.0F;
         if (pistol.counter_a < 0.0F) {
@@ -189,8 +189,8 @@ void StepEntityLogicAsPistol(
     }
 }
 
-extern const EntityArchetype kPistolArchetype{
-    .type_ = EntityType::Pistol,
+extern const EntSpec kPistolSpec{
+    .type_ = EntType::Pistol,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -201,15 +201,15 @@ extern const EntityArchetype kPistolArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
     .counter_b = kPistolAmmo,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .damage_vuln = DamageVuln::Vulnerable,
     .on_use = OnUseAsPistol,
-    .step_logic = StepEntityLogicAsPistol,
+    .step_logic = StepEntLogicAsPistol,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pistol),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Pistol),
 };
 
-} // namespace splonks::entities::pistol
+} // namespace splonks::ents::pistol

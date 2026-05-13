@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -9,15 +9,15 @@ struct State;
 
 }
 
-namespace splonks::entities::sign {
+namespace splonks::ents::sign {
 
-extern const EntityArchetype kSignArchetype;
-extern const EntityArchetype kSignGeneralArchetype;
-extern const EntityArchetype kSignBombArchetype;
-extern const EntityArchetype kSignWeaponArchetype;
-extern const EntityArchetype kSignRareArchetype;
-extern const EntityArchetype kSignClothingArchetype;
-extern const EntityArchetype kSignCrapsArchetype;
-extern const EntityArchetype kSignKissingArchetype;
+extern const EntSpec kSignSpec;
+extern const EntSpec kSignGeneralSpec;
+extern const EntSpec kSignBombSpec;
+extern const EntSpec kSignWeaponSpec;
+extern const EntSpec kSignRareSpec;
+extern const EntSpec kSignClothingSpec;
+extern const EntSpec kSignCrapsSpec;
+extern const EntSpec kSignKissingSpec;
 
-} // namespace splonks::entities::sign
+} // namespace splonks::ents::sign

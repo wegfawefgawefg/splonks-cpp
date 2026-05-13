@@ -22,7 +22,7 @@ void ValidateGlyphRule(const GlyphRule& rule, const std::string& path) {
         throw std::runtime_error(path + ": glyph rule missing char");
     }
     if (!rule.tile.has_value() && rule.action.empty() && rule.patch_pool.empty() &&
-        rule.spawn == EntityType::None && rule.spawn_chance == EntityType::None &&
+        rule.spawn == EntType::None && rule.spawn_chance == EntType::None &&
         rule.spawn_random.empty()) {
         throw std::runtime_error(path + ": glyph rule has no behavior for glyph " +
                                  std::string(1, rule.glyph));
@@ -32,12 +32,12 @@ void ValidateGlyphRule(const GlyphRule& rule, const std::string& path) {
                                  std::string(1, rule.glyph));
     }
     if (!rule.patch_pool.empty() &&
-        (rule.tile.has_value() || !rule.action.empty() || rule.spawn != EntityType::None ||
-         rule.spawn_chance != EntityType::None || !rule.spawn_random.empty())) {
+        (rule.tile.has_value() || !rule.action.empty() || rule.spawn != EntType::None ||
+         rule.spawn_chance != EntType::None || !rule.spawn_random.empty())) {
         throw std::runtime_error(path + ": patch_pool glyph cannot combine with other behavior for glyph " +
                                  std::string(1, rule.glyph));
     }
-    if (rule.spawn != EntityType::None && rule.spawn_chance != EntityType::None) {
+    if (rule.spawn != EntType::None && rule.spawn_chance != EntType::None) {
         throw std::runtime_error(path + ": glyph cannot use both spawn and spawn_chance for glyph " +
                                  std::string(1, rule.glyph));
     }
@@ -60,7 +60,7 @@ GlyphMap LoadGlyphMap(const std::string& quest_root_path, const std::string& gly
     bool has_rule = false;
     bool in_glyphs = false;
     bool in_spawn_random = false;
-    WeightedEntityEntry* current_random_entry = nullptr;
+    WeightedEntEntry* current_random_entry = nullptr;
 
     const auto finish_rule = [&]() {
         if (!has_rule) {
@@ -125,9 +125,9 @@ GlyphMap LoadGlyphMap(const std::string& quest_root_path, const std::string& gly
             } else if (key == "patch_pool") {
                 current_rule.patch_pool = value;
             } else if (key == "spawn") {
-                current_rule.spawn = ParseEntityTypeOrThrow(value, path, line_number);
+                current_rule.spawn = ParseEntTypeOrThrow(value, path, line_number);
             } else if (key == "spawn_chance") {
-                current_rule.spawn_chance = ParseEntityTypeOrThrow(value, path, line_number);
+                current_rule.spawn_chance = ParseEntTypeOrThrow(value, path, line_number);
             } else if (key == "chance_denominator") {
                 current_rule.chance_denominator = ParseInt(value, path, line_number);
             } else if (key == "exit_id") {
@@ -146,12 +146,12 @@ GlyphMap LoadGlyphMap(const std::string& quest_root_path, const std::string& gly
         }
         if (in_spawn_random && indent == 6 && trimmed.rfind("- ", 0) == 0) {
             const auto [key, value] = SplitKeyValue(trimmed.substr(2), path, line_number);
-            if (key != "entity") {
+            if (key != "ent") {
                 throw std::runtime_error(path + ":" + std::to_string(line_number) +
-                                         ": spawn_random entry must start with entity");
+                                         ": spawn_random entry must start with ent");
             }
-            current_rule.spawn_random.push_back(WeightedEntityEntry{
-                .entity_type = ParseEntityTypeOrThrow(value, path, line_number),
+            current_rule.spawn_random.push_back(WeightedEntEntry{
+                .ent_type = ParseEntTypeOrThrow(value, path, line_number),
                 .weight = 1,
             });
             current_random_entry = &current_rule.spawn_random.back();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,31 +10,31 @@ struct State;
 
 }
 
-namespace splonks::entities::flappy_bee {
+namespace splonks::ents::flappy_bee {
 
-extern const EntityArchetype kFlappyBeeArchetype;
+extern const EntSpec kFlappyBeeSpec;
 
-void OnDeathAsFlappyBee(std::size_t entity_idx, State& state, Audio& audio);
-void ControlEntityAsFlappyBee(
-    std::size_t entity_idx,
+void OnDeathAsFlappyBee(std::size_t ent_idx, State& state, Audio& audio);
+void ControlEntAsFlappyBee(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityLogicAsFlappyBee(
-    std::size_t entity_idx,
+void StepEntLogicAsFlappyBee(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityPhysicsAsFlappyBee(
-    std::size_t entity_idx,
+void StepEntPhysicsAsFlappyBee(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::flappy_bee
+} // namespace splonks::ents::flappy_bee

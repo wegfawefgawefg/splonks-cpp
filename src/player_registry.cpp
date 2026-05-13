@@ -28,18 +28,18 @@ const PlayerSlot* PlayerRegistry::Find(PlayerId player_id) const {
     return nullptr;
 }
 
-PlayerSlot* PlayerRegistry::FindByEntityVid(VID entity_vid) {
+PlayerSlot* PlayerRegistry::FindByEntVid(VID ent_vid) {
     for (PlayerSlot& slot : slots) {
-        if (slot.entity_vid.has_value() && *slot.entity_vid == entity_vid) {
+        if (slot.ent_vid.has_value() && *slot.ent_vid == ent_vid) {
             return &slot;
         }
     }
     return nullptr;
 }
 
-const PlayerSlot* PlayerRegistry::FindByEntityVid(VID entity_vid) const {
+const PlayerSlot* PlayerRegistry::FindByEntVid(VID ent_vid) const {
     for (const PlayerSlot& slot : slots) {
-        if (slot.entity_vid.has_value() && *slot.entity_vid == entity_vid) {
+        if (slot.ent_vid.has_value() && *slot.ent_vid == ent_vid) {
             return &slot;
         }
     }
@@ -132,35 +132,35 @@ void PlayerRegistry::Remove(PlayerId player_id) {
     );
 }
 
-void PlayerRegistry::AssignEntity(PlayerId player_id, VID entity_vid) {
+void PlayerRegistry::AssignEnt(PlayerId player_id, VID ent_vid) {
     if (PlayerSlot* const slot = Find(player_id)) {
-        slot->entity_vid = entity_vid;
+        slot->ent_vid = ent_vid;
     }
 }
 
-void PlayerRegistry::ClearEntityRefs() {
+void PlayerRegistry::ClearEntRefs() {
     for (PlayerSlot& slot : slots) {
-        slot.entity_vid.reset();
+        slot.ent_vid.reset();
     }
 }
 
-void PlayerRegistry::ClearEntityRef(VID entity_vid) {
+void PlayerRegistry::ClearEntRef(VID ent_vid) {
     for (PlayerSlot& slot : slots) {
-        if (slot.entity_vid.has_value() && *slot.entity_vid == entity_vid) {
-            slot.entity_vid.reset();
+        if (slot.ent_vid.has_value() && *slot.ent_vid == ent_vid) {
+            slot.ent_vid.reset();
         }
     }
 }
 
-std::optional<PlayerId> PlayerRegistry::FindPlayerIdForEntity(VID entity_vid) const {
-    if (const PlayerSlot* const slot = FindByEntityVid(entity_vid)) {
+std::optional<PlayerId> PlayerRegistry::FindPlayerIdForEnt(VID ent_vid) const {
+    if (const PlayerSlot* const slot = FindByEntVid(ent_vid)) {
         return slot->player_id;
     }
     return std::nullopt;
 }
 
-const PlayingInputs* PlayerRegistry::FindInputsForEntity(VID entity_vid) const {
-    if (const PlayerSlot* const slot = FindByEntityVid(entity_vid)) {
+const PlayingInputs* PlayerRegistry::FindInputsForEnt(VID ent_vid) const {
+    if (const PlayerSlot* const slot = FindByEntVid(ent_vid)) {
         return &slot->inputs;
     }
     return nullptr;
@@ -175,7 +175,7 @@ const PlayingInputs* PlayerRegistry::FindInputsForPlayer(PlayerId player_id) con
 
 void PlayerRegistry::SetInputFrameForPlayer(
     PlayerId player_id,
-    const PlayerInputFrame& input_frame
+    const InputFrame& input_frame
 ) {
     if (PlayerSlot* const slot = Find(player_id)) {
         slot->previous_input_frame = slot->input_frame;
@@ -187,7 +187,7 @@ void PlayerRegistry::SetInputFrameForPlayer(
 
 void PlayerRegistry::SetInputFrameAndInputsForPlayer(
     PlayerId player_id,
-    const PlayerInputFrame& input_frame,
+    const InputFrame& input_frame,
     const PlayingInputs& inputs,
     const PlayingInputs& immediate_inputs
 ) {
@@ -206,7 +206,7 @@ void PlayerRegistry::SetInputsForPlayer(
 ) {
     if (PlayerSlot* const slot = Find(player_id)) {
         slot->previous_input_frame = slot->input_frame;
-        slot->input_frame = ToPlayerInputFrame(inputs);
+        slot->input_frame = ToInputFrame(inputs);
         slot->inputs = inputs;
         slot->immediate_inputs = immediate_inputs;
     }
@@ -218,7 +218,7 @@ void PlayerRegistry::SetPrimaryLocalInputs(
 ) {
     if (PlayerSlot* const slot = FindPrimaryLocal()) {
         slot->previous_input_frame = slot->input_frame;
-        slot->input_frame = ToPlayerInputFrame(inputs);
+        slot->input_frame = ToInputFrame(inputs);
         slot->inputs = inputs;
         slot->immediate_inputs = immediate_inputs;
     }

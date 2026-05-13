@@ -1,16 +1,16 @@
-#include "entities/thwomp_trap.hpp"
+#include "ents/thwomp_trap.hpp"
 
 #include "audio.hpp"
-#include "entities/block.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ents/block.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace splonks::entities::thwomp_trap {
+namespace splonks::ents::thwomp_trap {
 
 namespace {
 
@@ -24,11 +24,11 @@ constexpr float kImpactShake = 0.45F;
 constexpr float kImpactTileShake = 0.36F;
 constexpr float kImpactShakeRadiusTiles = 1.2F;
 
-bool HasHomePosition(const Entity& thwomp) {
+bool HasHomePosition(const Ent& thwomp) {
     return thwomp.point_label_a == PointLabel::Target;
 }
 
-void StoreHomePosition(Entity& thwomp) {
+void StoreHomePosition(Ent& thwomp) {
     if (HasHomePosition(thwomp)) {
         return;
     }
@@ -36,31 +36,31 @@ void StoreHomePosition(Entity& thwomp) {
     thwomp.point_a = ToIVec2(thwomp.pos);
 }
 
-float GetHomeY(const Entity& thwomp) {
+float GetHomeY(const Ent& thwomp) {
     return static_cast<float>(thwomp.point_a.y);
 }
 
-bool IsDropping(const Entity& thwomp) {
-    return thwomp.ai_state == EntityAiState::Disturbed;
+bool IsDropping(const Ent& thwomp) {
+    return thwomp.ai_state == EntAiState::Disturbed;
 }
 
-bool IsWaiting(const Entity& thwomp) {
-    return thwomp.ai_state == EntityAiState::Pursuing;
+bool IsWaiting(const Ent& thwomp) {
+    return thwomp.ai_state == EntAiState::Pursuing;
 }
 
-bool IsReturning(const Entity& thwomp) {
-    return thwomp.ai_state == EntityAiState::Returning;
+bool IsReturning(const Ent& thwomp) {
+    return thwomp.ai_state == EntAiState::Returning;
 }
 
-bool ShouldDrop(const Entity& thwomp, const State& state) {
+bool ShouldDrop(const Ent& thwomp, const State& state) {
     const Vec2 thwomp_center = thwomp.GetCenter();
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || !IsPlayerLikeEntityType(entity.type_) ||
-            entity.condition == EntityCondition::Dead) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active || !IsPlayerLikeEntType(ent.type_) ||
+            ent.condition == EntCondition::Dead) {
             continue;
         }
 
-        const Vec2 delta = GetNearestWorldDelta(state.stage, thwomp_center, entity.GetCenter());
+        const Vec2 delta = GetNearestWorldDelta(state.stage, thwomp_center, ent.GetCenter());
         if (delta.y <= 0.0F || delta.y > kTriggerDistance ||
             std::abs(delta.x) > kTriggerHalfWidth) {
             continue;
@@ -70,18 +70,18 @@ bool ShouldDrop(const Entity& thwomp, const State& state) {
     return false;
 }
 
-void StartDrop(Entity& thwomp) {
-    thwomp.ai_state = EntityAiState::Disturbed;
+void StartDrop(Ent& thwomp) {
+    thwomp.ai_state = EntAiState::Disturbed;
     thwomp.vel = Vec2::New(0.0F, 0.0F);
     thwomp.acc = Vec2::New(0.0F, 0.0F);
 }
 
-void StartWait(Entity& thwomp, State& state) {
-    thwomp.ai_state = EntityAiState::Pursuing;
+void StartWait(Ent& thwomp, State& state) {
+    thwomp.ai_state = EntAiState::Pursuing;
     thwomp.vel = Vec2::New(0.0F, 0.0F);
     thwomp.acc = Vec2::New(0.0F, 0.0F);
     thwomp.counter_a = kWaitFrames;
-    AddEntityShake(thwomp, kImpactShake);
+    AddEntShake(thwomp, kImpactShake);
     AddShake(
         state,
         thwomp.GetCenter(),
@@ -91,17 +91,17 @@ void StartWait(Entity& thwomp, State& state) {
         kImpactShakeRadiusTiles,
         thwomp.vid
     );
-    (void)PlayEntityCenterSoundEmitter(state, thwomp, audio_asset_ids::BoulderHitGround);
+    (void)PlayEntCenterSoundEmitter(state, thwomp, audio_asset_ids::BoulderHitGround);
 }
 
-void StartReturn(Entity& thwomp) {
-    thwomp.ai_state = EntityAiState::Returning;
+void StartReturn(Ent& thwomp) {
+    thwomp.ai_state = EntAiState::Returning;
     thwomp.vel = Vec2::New(0.0F, kReturnVelocity);
     thwomp.acc = Vec2::New(0.0F, 0.0F);
 }
 
-void FinishReturn(Entity& thwomp) {
-    thwomp.ai_state = EntityAiState::Idle;
+void FinishReturn(Ent& thwomp) {
+    thwomp.ai_state = EntAiState::Idle;
     thwomp.pos.y = GetHomeY(thwomp);
     thwomp.vel = Vec2::New(0.0F, 0.0F);
     thwomp.acc = Vec2::New(0.0F, 0.0F);
@@ -111,8 +111,8 @@ void FinishReturn(Entity& thwomp) {
 
 } // namespace
 
-void StepEntityLogicAsThwompTrap(
-    std::size_t entity_idx,
+void StepEntLogicAsThwompTrap(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -121,19 +121,19 @@ void StepEntityLogicAsThwompTrap(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& thwomp = state.entity_manager.entities[entity_idx];
-    SetAnimation(thwomp, frame_data_ids::ThwompTrap);
+    Ent& thwomp = state.ents.ents[ent_idx];
+    SetAnim(thwomp, aframe_ids::ThwompTrap);
     StoreHomePosition(thwomp);
 
-    if (thwomp.condition == EntityCondition::Dead) {
+    if (thwomp.condition == EntCondition::Dead) {
         return;
     }
 
-    if (thwomp.ai_state == EntityAiState::Idle) {
+    if (thwomp.ai_state == EntAiState::Idle) {
         thwomp.vel = Vec2::New(0.0F, 0.0F);
         thwomp.acc = Vec2::New(0.0F, 0.0F);
         if (ShouldDrop(thwomp, state)) {
@@ -152,19 +152,19 @@ void StepEntityLogicAsThwompTrap(
     }
 }
 
-void StepEntityPhysicsAsThwompTrap(
-    std::size_t entity_idx,
+void StepEntPhysicsAsThwompTrap(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& thwomp = state.entity_manager.entities[entity_idx];
+    Ent& thwomp = state.ents.ents[ent_idx];
     if (!IsDropping(thwomp) && !IsReturning(thwomp)) {
         thwomp.collided_last_frame = thwomp.collided;
         thwomp.collided = false;
@@ -182,12 +182,12 @@ void StepEntityPhysicsAsThwompTrap(
         thwomp.acc = Vec2::New(0.0F, 0.0F);
     }
 
-    common::PrePartialEulerStep(entity_idx, state, dt);
+    common::PrePartialEulerStep(ent_idx, state, dt);
     if (IsDropping(thwomp)) {
         thwomp.vel.y = std::clamp(thwomp.vel.y, 0.0F, kDropMaxVelocity);
     }
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 
     if (IsDropping(thwomp)) {
         const bool hit_bottom = (!was_grounded && thwomp.grounded) ||
@@ -206,14 +206,14 @@ void StepEntityPhysicsAsThwompTrap(
     }
 }
 
-extern const EntityArchetype kThwompTrapArchetype{
-    .type_ = EntityType::ThwompTrap,
+extern const EntSpec kThwompTrapSpec{
+    .type_ = EntType::ThwompTrap,
     .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
     .can_be_hit = true,
-    .can_receive_projectile_contact = true,
+    .can_receive_proj_contact = true,
     .can_be_picked_up = false,
     .impassable = true,
     .hurt_on_contact = false,
@@ -223,15 +223,15 @@ extern const EntityArchetype kThwompTrapArchetype{
     .can_be_stunned = false,
     .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Middle,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
-    .projectile_contact_damage_amount = 0,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .damage_vuln = DamageVuln::ExplosionOnly,
+    .proj_contact_damage_amount = 0,
     .on_death = block::OnDeathAsBlock,
-    .step_logic = StepEntityLogicAsThwompTrap,
-    .step_physics = StepEntityPhysicsAsThwompTrap,
+    .step_logic = StepEntLogicAsThwompTrap,
+    .step_physics = StepEntPhysicsAsThwompTrap,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::ThwompTrap),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::ThwompTrap),
 };
 
-} // namespace splonks::entities::thwomp_trap
+} // namespace splonks::ents::thwomp_trap

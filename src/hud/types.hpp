@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 
 #include <array>
 #include <cstdint>
@@ -42,14 +42,14 @@ struct HudEntryKey {
 struct HudBadge {
     bool active = false;
     HudAnchor anchor = HudAnchor::TopRight;
-    FrameDataId icon_animation_id = kInvalidFrameDataId;
+    AFrameId icon_anim_id = kInvalidAFrameId;
     std::optional<std::string> text;
     HudEntryStyle style = HudEntryStyle::Normal;
 };
 
 struct HudEntry {
     HudEntryKey key{};
-    FrameDataId icon_animation_id = kInvalidFrameDataId;
+    AFrameId icon_anim_id = kInvalidAFrameId;
     std::optional<std::string> count_text;
     HudAnchor count_anchor = HudAnchor::BottomRight;
     std::array<HudBadge, 4> badges{};

@@ -33,7 +33,7 @@ Do not invent separate "outside space", "wrap bounds", or ghost stage storage.
 The model is:
 
 - a stage has one tile grid
-- a stage has one entity list
+- a stage has one ent list
 - a stage may wrap on X and/or Y
 
 That is all.
@@ -105,7 +105,7 @@ This should be true for:
 - rope placement and climbing
 - hanging checks
 - hitscan
-- entity broadphase queries near seams
+- ent broadphase queries near seams
 
 ## Chunk Padding
 
@@ -136,7 +136,7 @@ For the first implementation it is fine if the padded tiles are initialized as:
 
 - `Tile::Air`
 - empty embedded treasure
-- no entities
+- no ents
 - no background stamps
 
 Later we can support copying or authoring into the apron.
@@ -151,7 +151,7 @@ Given a stage and a padding amount:
 2. Allocate a new larger tile grid.
 3. Copy the old tile grid into the centered core area.
 4. Copy embedded treasure into the same shifted positions.
-5. Shift entity positions by the world-space offset.
+5. Shift ent positions by the world-space offset.
 6. Shift background stamp positions by the same offset.
 7. Shift any room/path metadata that is tile/chunk indexed.
 8. Enable the requested wrapped axes.
@@ -170,7 +170,7 @@ Given the current wrapped stage and the remembered core area:
 
 1. Crop tiles back down to the core region.
 2. Crop embedded treasure to the core region.
-3. Shift entity positions back by the inverse world-space offset.
+3. Shift ent positions back by the inverse world-space offset.
 4. Shift background stamps back as well.
 5. Shift room/path metadata back.
 6. Disable wrap on the chosen axes.
@@ -178,7 +178,7 @@ Given the current wrapped stage and the remembered core area:
 
 Important unresolved policy:
 
-- what do we do with entities that are currently outside the core crop area?
+- what do we do with ents that are currently outside the core crop area?
 
 This must be explicit.
 
@@ -186,7 +186,7 @@ Reasonable options:
 
 - wrap them back into the crop before disabling wrap
 - clamp them into the crop
-- delete entities outside the crop
+- delete ents outside the crop
 
 The best default is probably:
 
@@ -251,9 +251,9 @@ The main rule:
 
 - wrapped stages should sample canonical tiles through modulo on wrapped axes
 
-### Entity queries
+### Ent queries
 
-Entity interaction near seams cannot rely only on the current unwrapped AABB broadphase.
+Ent interaction near seams cannot rely only on the current unwrapped AABB broadphase.
 
 We need seam-aware querying for:
 
@@ -262,16 +262,16 @@ We need seam-aware querying for:
 - contact damage
 - pickup checks
 - rope interactions
-- hitscan entity scans
+- hitscan ent scans
 
 Two reasonable approaches:
 
 - duplicate query regions near seams
-- duplicate entity presentation in the SID near seams
+- duplicate ent pres in the SID near seams
 
 The simpler first pass is:
 
-- keep canonical entity positions
+- keep canonical ent positions
 - for seam-touching queries, issue mirrored query rectangles on the wrapped axis
 
 ### Rendering
@@ -282,13 +282,13 @@ For tiles this is straightforward:
 
 - wrapped tile sampling during render
 
-For entities this is the same problem as broadphase:
+For ents this is the same problem as broadphase:
 
-- entities near a seam may need one or more mirrored render passes
+- ents near a seam may need one or more mirrored render passes
 
 Example:
 
-- entity near left seam on wrapped X
+- ent near left seam on wrapped X
 - also render it shifted by `+stage_width`
 
 Likewise for the right seam:
@@ -356,7 +356,7 @@ Keep hard-border mode working.
 Add the wrap transform.
 
 - expand stage with padding
-- copy tiles / treasure / entities / stamps / room metadata into centered core
+- copy tiles / treasure / ents / stamps / room metadata into centered core
 - disable camera clamp by default
 
 No fake delayed wrap after this point.
@@ -373,9 +373,9 @@ This gets terrain and seam visibility working.
 
 ### Phase 4
 
-Make entity interactions seamless.
+Make ent interactions seamless.
 
-- seam-aware entity broadphase
+- seam-aware ent broadphase
 - seam-aware contact logic
 - seam-aware pushing / crushing / pickups / hitscan
 
@@ -391,7 +391,7 @@ Implement wrap-off inverse transform cleanly.
 
 - crop back to core
 - move everything back
-- settle edge cases for entities outside crop
+- settle edge cases for ents outside crop
 
 ## Non-Goals For First Pass
 

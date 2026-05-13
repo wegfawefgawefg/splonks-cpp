@@ -1,11 +1,11 @@
-#include "entities/alien_ship.hpp"
+#include "ents/alien_ship.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::alien_ship {
+namespace splonks::ents::alien_ship {
 
-// TODO(classic): AlienShip is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kAlienShipArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::AlienShip);
+// TODO(classic): AlienShip is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kAlienShipSpec =
+    common::MakeUnimplementedClassicSpec(EntType::AlienShip);
 
-} // namespace splonks::entities::alien_ship
+} // namespace splonks::ents::alien_ship

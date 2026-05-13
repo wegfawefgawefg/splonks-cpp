@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,26 +10,26 @@ struct State;
 
 }
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 struct ContactContext;
 }
 
-namespace splonks::entities::pot {
+namespace splonks::ents::pot {
 
-extern const EntityArchetype kPotArchetype;
+extern const EntSpec kPotSpec;
 
-void StepEntityLogicAsPot(
-    std::size_t entity_idx,
+void StepEntLogicAsPot(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void OnDeathAsPot(std::size_t entity_idx, State& state, Audio& audio);
+void OnDeathAsPot(std::size_t ent_idx, State& state, Audio& audio);
 bool TryApplyPotImpact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 );
 
-} // namespace splonks::entities::pot
+} // namespace splonks::ents::pot

@@ -1,11 +1,11 @@
-#include "entities/store_light.hpp"
+#include "ents/store_light.hpp"
 
 #include "audio.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "state.hpp"
 
-namespace splonks::entities::store_light {
+namespace splonks::ents::store_light {
 
 namespace {
 
@@ -13,21 +13,21 @@ constexpr float kStoreLightStrength = 1.70F;
 constexpr Color3 kStoreLightColor = Color3::White();
 constexpr int kStoreLightRadius = kStoreLightRadiusTiles;
 
-bool IsStoreLightBroken(const Entity& entity) {
-    return entity.has_physics;
+bool IsStoreLightBroken(const Ent& ent) {
+    return ent.has_physics;
 }
 
 } // namespace
 
-void AttachStoreLight(Entity& entity, State& state, int radius) {
+void AttachStoreLight(Ent& ent, State& state, int radius) {
     (void)state;
-    entity.light_strength = kStoreLightStrength;
-    entity.light_color = kStoreLightColor;
-    entity.light_radius = radius;
+    ent.light_strength = kStoreLightStrength;
+    ent.light_color = kStoreLightColor;
+    ent.light_radius = radius;
 }
 
-EntityDamageEffectResult OnDamageAsStoreLight(
-    std::size_t entity_idx,
+EntDamageEffectResult OnDamageAsStoreLight(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
@@ -38,28 +38,28 @@ EntityDamageEffectResult OnDamageAsStoreLight(
     (void)amount;
     (void)damage_applied;
 
-    if (damage_type == DamageType::JumpOn || entity_idx >= state.entity_manager.entities.size()) {
-        return EntityDamageEffectResult::None;
+    if (damage_type == DamageType::JumpOn || ent_idx >= state.ents.ents.size()) {
+        return EntDamageEffectResult::None;
     }
 
-    Entity& light = state.entity_manager.entities[entity_idx];
+    Ent& light = state.ents.ents[ent_idx];
     if (!light.active || IsStoreLightBroken(light)) {
-        return EntityDamageEffectResult::None;
+        return EntDamageEffectResult::None;
     }
 
-    SetAnimation(light, frame_data_ids::StoreLightBroken);
+    SetAnim(light, aframe_ids::StoreLightBroken);
     light.has_physics = true;
     light.can_collide = true;
-    light.damage_vulnerability = DamageVulnerability::Immune;
+    light.damage_vuln = DamageVuln::Immune;
     light.collide_sound = audio_asset_ids::LightBreak;
     light.light_strength = 0.0F;
     light.light_radius = 0;
-    (void)PlayEntityCenterSoundEmitter(state, light, audio_asset_ids::LightBreak);
-    return EntityDamageEffectResult::Consumed;
+    (void)PlayEntCenterSoundEmitter(state, light, audio_asset_ids::LightBreak);
+    return EntDamageEffectResult::Consumed;
 }
 
-extern const EntityArchetype kStoreLightArchetype{
-    .type_ = EntityType::StoreLight,
+extern const EntSpec kStoreLightSpec{
+    .type_ = EntType::StoreLight,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -74,15 +74,15 @@ extern const EntityArchetype kStoreLightArchetype{
     .light_color = kStoreLightColor,
     .light_radius = kStoreLightRadius,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::AnthingExceptJumpOn,
     .damage_sound = audio_asset_ids::LightBreak,
     .collide_sound = audio_asset_ids::LightBreak,
     .on_damage = OnDamageAsStoreLight,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::StoreLight),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::StoreLight),
 };
 
-} // namespace splonks::entities::store_light
+} // namespace splonks::ents::store_light

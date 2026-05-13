@@ -1,7 +1,7 @@
 #include "debug/debug_stage_builders.hpp"
 
 #include "debug/debug_stage_common.hpp"
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 #include "player_queries.hpp"
 #include "stage_spawning.hpp"
 
@@ -28,24 +28,24 @@ constexpr std::array<Color3, 8> kDebugLightColors{{
 }};
 
 void SpawnJetpackOnPlayer(State& state) {
-    Entity* const player = GetPrimaryLocalPlayerMut(state);
+    Ent* const player = GetPrimaryLocalPlayerMut(state);
     if (player == nullptr) {
         return;
     }
 
     const std::optional<VID> jetpack_vid =
-        SpawnStageEntityAtCenter(state, EntityType::JetPack, player->GetCenter());
+        SpawnStageEntAtCenter(state, EntType::JetPack, player->GetCenter());
     if (!jetpack_vid.has_value()) {
         return;
     }
 
-    Entity* const jetpack = state.entity_manager.GetEntityMut(*jetpack_vid);
+    Ent* const jetpack = state.ents.GetEntMut(*jetpack_vid);
     if (jetpack == nullptr) {
         return;
     }
     player->back_vid = *jetpack_vid;
     jetpack->held_by_vid = player->vid;
-    jetpack->attachment_mode = AttachmentMode::Back;
+    jetpack->attach_mode = AttachMode::Back;
     jetpack->has_physics = false;
     jetpack->can_collide = false;
     jetpack->draw_layer = DrawLayer::Background;
@@ -67,12 +67,12 @@ void SpawnDebugMovingLight(State& state, int index, int count) {
     const Vec2 home = Vec2::New(std::lerp(min_x, max_x, u), std::lerp(min_y, max_y, v));
 
     const std::optional<VID> light_vid =
-        SpawnStageEntityAtCenter(state, EntityType::DebugMovingLight, home);
+        SpawnStageEntAtCenter(state, EntType::DebugMovingLight, home);
     if (!light_vid.has_value()) {
         return;
     }
 
-    Entity* const light = state.entity_manager.GetEntityMut(*light_vid);
+    Ent* const light = state.ents.GetEntMut(*light_vid);
     if (light == nullptr) {
         return;
     }
@@ -143,7 +143,7 @@ void InitLightingStressTestStage(State& state) {
     const int light_count = std::clamp(
         state.debug_level.lighting_stress_test.moving_light_count,
         0,
-        static_cast<int>(EntityManager::kMaxNumEntities - 8)
+        static_cast<int>(EntPool::kMaxNumEnts - 8)
     );
     for (int i = 0; i < light_count; ++i) {
         SpawnDebugMovingLight(state, i, light_count);

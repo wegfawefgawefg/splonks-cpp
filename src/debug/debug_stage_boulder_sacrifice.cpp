@@ -1,9 +1,9 @@
 #include "debug/debug_stage_builders.hpp"
 
 #include "debug/debug_stage_common.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "stage_spawning.hpp"
 #include "utils.hpp"
 
@@ -98,87 +98,87 @@ void InitBoulderTestStage(State& state) {
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 14);
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
 
-    const std::optional<VID> altar_left_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> altar_left_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::Altar,
+        EntType::Altar,
         Vec2::New(4.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
     );
     if (altar_left_vid.has_value()) {
-        if (Entity* const altar_left = state.entity_manager.GetEntityMut(*altar_left_vid)) {
-            SetAnimation(*altar_left, frame_data_ids::AltarLeft);
+        if (Ent* const altar_left = state.ents.GetEntMut(*altar_left_vid)) {
+            SetAnim(*altar_left, aframe_ids::AltarLeft);
         }
     }
 
-    const std::optional<VID> altar_right_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> altar_right_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::Altar,
+        EntType::Altar,
         Vec2::New(5.0F * static_cast<float>(kTileSize), 6.0F * static_cast<float>(kTileSize))
     );
     if (altar_right_vid.has_value()) {
-        if (Entity* const altar_right = state.entity_manager.GetEntityMut(*altar_right_vid)) {
-            SetAnimation(*altar_right, frame_data_ids::AltarRight);
+        if (Ent* const altar_right = state.ents.GetEntMut(*altar_right_vid)) {
+            SetAnim(*altar_right, aframe_ids::AltarRight);
         }
     }
 
-    const std::optional<VID> giant_tiki_head_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> giant_tiki_head_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::GiantTikiHead,
+        EntType::GiantTikiHead,
         Vec2::New(4.0F * static_cast<float>(kTileSize), 1.0F * static_cast<float>(kTileSize))
     );
-    const std::optional<VID> idol_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> idol_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::GoldIdol,
+        EntType::GoldIdol,
         Vec2::New(4.0F * static_cast<float>(kTileSize) + 10.0F, 4.0F * static_cast<float>(kTileSize))
     );
     if (giant_tiki_head_vid.has_value() && idol_vid.has_value()) {
-        Entity* const head = state.entity_manager.GetEntityMut(*giant_tiki_head_vid);
-        const Entity* const idol = state.entity_manager.GetEntity(*idol_vid);
+        Ent* const head = state.ents.GetEntMut(*giant_tiki_head_vid);
+        const Ent* const idol = state.ents.GetEnt(*idol_vid);
         if (head != nullptr && idol != nullptr) {
-            head->entity_a = *idol_vid;
+            head->ent_a = *idol_vid;
             head->point_a = ToIVec2(idol->pos);
             head->point_label_a = PointLabel::Target;
         }
     }
 
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::Rock,
+        EntType::Rock,
         Vec2::New(12.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::GoldChunk,
+        EntType::GoldChunk,
         Vec2::New(14.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::EmeraldBig,
+        EntType::EmeraldBig,
         Vec2::New(16.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::Caveman,
+        EntType::Caveman,
         Vec2::New(18.0F * static_cast<float>(kTileSize), 7.0F * static_cast<float>(kTileSize) - 8.0F)
     );
 
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::Rock,
+        EntType::Rock,
         Vec2::New(31.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::GoldBars,
+        EntType::GoldBars,
         Vec2::New(33.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::SapphireBig,
+        EntType::SapphireBig,
         Vec2::New(35.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
-    (void)SpawnStageEntityAtCenter(
+    (void)SpawnStageEntAtCenter(
         state,
-        EntityType::Caveman,
+        EntType::Caveman,
         Vec2::New(37.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize) - 8.0F)
     );
 }
@@ -193,9 +193,9 @@ void SpawnSacAltarTestCorpsePile(State& state) {
 
     for (int row = 0; row < kCorpseRows; ++row) {
         for (int col = 0; col < kCorpseColumns; ++col) {
-            const std::optional<VID> caveman_vid = SpawnStageEntityAtCenter(
+            const std::optional<VID> caveman_vid = SpawnStageEntAtCenter(
                 state,
-                EntityType::Caveman,
+                EntType::Caveman,
                 Vec2::New(
                     base_x + static_cast<float>(col) * 9.0F + rng::RandomFloat(-1.25F, 1.25F),
                     base_y - static_cast<float>(row) * 5.5F + rng::RandomFloat(-0.75F, 0.75F)
@@ -204,15 +204,15 @@ void SpawnSacAltarTestCorpsePile(State& state) {
             if (!caveman_vid.has_value()) {
                 continue;
             }
-            Entity* const caveman = state.entity_manager.GetEntityMut(*caveman_vid);
+            Ent* const caveman = state.ents.GetEntMut(*caveman_vid);
             if (caveman == nullptr) {
                 continue;
             }
             caveman->health = 0;
-            caveman->condition = EntityCondition::Dead;
+            caveman->condition = EntCondition::Dead;
             caveman->vel = Vec2::New(0.0F, 0.0F);
             caveman->acc = Vec2::New(0.0F, 0.0F);
-            TrySetAnimation(*caveman, EntityDisplayState::Dead);
+            TrySetAnim(*caveman, EntDisplayState::Dead);
         }
     }
 }
@@ -222,9 +222,9 @@ void SpawnSacAltarTestIdols(State& state) {
         static_cast<float>((kSacAltarTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
     constexpr std::array<float, 4> kIdolXTiles{44.0F, 46.5F, 49.0F, 51.5F};
     for (const float x_tile : kIdolXTiles) {
-        (void)SpawnStageEntityAtCenter(
+        (void)SpawnStageEntAtCenter(
             state,
-            EntityType::GoldIdol,
+            EntType::GoldIdol,
             Vec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
         );
     }
@@ -235,25 +235,25 @@ void SpawnSacAltarTestLivingDamsels(State& state) {
         static_cast<float>((kSacAltarTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 8.0F;
     constexpr std::array<float, 4> kDamselXTiles{16.5F, 18.5F, 20.5F, 22.5F};
     for (const float x_tile : kDamselXTiles) {
-        const std::optional<VID> damsel_vid = SpawnStageEntityAtCenter(
+        const std::optional<VID> damsel_vid = SpawnStageEntAtCenter(
             state,
-            EntityType::Damsel,
+            EntType::Damsel,
             Vec2::New(x_tile * static_cast<float>(kTileSize), floor_center_y)
         );
         if (!damsel_vid.has_value()) {
             continue;
         }
-        Entity* const damsel = state.entity_manager.GetEntityMut(*damsel_vid);
+        Ent* const damsel = state.ents.GetEntMut(*damsel_vid);
         if (damsel == nullptr) {
             continue;
         }
-        damsel->condition = EntityCondition::Stunned;
+        damsel->condition = EntCondition::Stunned;
         damsel->stun_timer = 6000;
         damsel->stun_recovers_on_ground = false;
         damsel->stun_recovers_while_held = false;
         damsel->vel = Vec2::New(0.0F, 0.0F);
         damsel->acc = Vec2::New(0.0F, 0.0F);
-        TrySetAnimation(*damsel, EntityDisplayState::Stunned);
+        TrySetAnim(*damsel, EntDisplayState::Stunned);
     }
 }
 
@@ -262,42 +262,42 @@ void SpawnSacAltarTestAltar(State& state, int left_x_tile) {
         static_cast<float>(left_x_tile) * static_cast<float>(kTileSize),
         23.0F * static_cast<float>(kTileSize) - 16.0F
     );
-    const std::optional<VID> altar_left_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> altar_left_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::SacAltar,
+        EntType::SacAltar,
         altar_left_pos
     );
-    const std::optional<VID> altar_right_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> altar_right_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::SacAltar,
+        EntType::SacAltar,
         altar_left_pos + Vec2::New(static_cast<float>(kTileSize), 0.0F)
     );
-    const std::optional<VID> altar_topper_vid = SpawnStageEntityAtTopLeft(
+    const std::optional<VID> altar_topper_vid = SpawnStageEntAtTopLeft(
         state,
-        EntityType::SacAltarTopper,
+        EntType::SacAltarTopper,
         altar_left_pos + Vec2::New(0.0F, -static_cast<float>(kTileSize))
     );
     if (altar_left_vid.has_value()) {
-        if (Entity* const altar_left = state.entity_manager.GetEntityMut(*altar_left_vid)) {
-            SetAnimation(*altar_left, frame_data_ids::SacAltarLeft);
+        if (Ent* const altar_left = state.ents.GetEntMut(*altar_left_vid)) {
+            SetAnim(*altar_left, aframe_ids::SacAltarLeft);
             if (altar_topper_vid.has_value()) {
-                altar_left->entity_a = *altar_topper_vid;
+                altar_left->ent_a = *altar_topper_vid;
             }
         }
     }
     if (altar_right_vid.has_value()) {
-        if (Entity* const altar_right = state.entity_manager.GetEntityMut(*altar_right_vid)) {
-            SetAnimation(*altar_right, frame_data_ids::SacAltarRight);
+        if (Ent* const altar_right = state.ents.GetEntMut(*altar_right_vid)) {
+            SetAnim(*altar_right, aframe_ids::SacAltarRight);
             if (altar_left_vid.has_value()) {
-                altar_right->entity_a = *altar_left_vid;
+                altar_right->ent_a = *altar_left_vid;
             }
         }
     }
     if (altar_topper_vid.has_value()) {
-        if (Entity* const topper = state.entity_manager.GetEntityMut(*altar_topper_vid)) {
-            SetAnimation(*topper, frame_data_ids::SacAltarTopper);
+        if (Ent* const topper = state.ents.GetEntMut(*altar_topper_vid)) {
+            SetAnim(*topper, aframe_ids::SacAltarTopper);
             if (altar_left_vid.has_value()) {
-                topper->entity_a = *altar_left_vid;
+                topper->ent_a = *altar_left_vid;
             }
         }
     }

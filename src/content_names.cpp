@@ -1,7 +1,7 @@
 #include "content_names.hpp"
 
-#include "entity/archetype.hpp"
-#include "tile_archetype.hpp"
+#include "ent/spec.hpp"
+#include "tile_spec.hpp"
 
 #include <cctype>
 #include <stdexcept>
@@ -43,22 +43,22 @@ std::string DebugNameToContentName(std::string_view debug_name) {
     return content_name;
 }
 
-const std::unordered_map<std::string, EntityType>& EntityContentNameMap() {
-    static const std::unordered_map<std::string, EntityType> kMap = [] {
-        PopulateEntityArchetypesTable();
+const std::unordered_map<std::string, EntType>& EntContentNameMap() {
+    static const std::unordered_map<std::string, EntType> kMap = [] {
+        PopulateEntSpecsTable();
 
-        std::unordered_map<std::string, EntityType> map;
-        map.reserve(kEntityTypeCount);
-        for (std::size_t type_index = 0; type_index < kEntityTypeCount; ++type_index) {
-            const EntityType type = static_cast<EntityType>(type_index);
-            const std::string key = NormalizeContentKey(GetEntityTypeName(type));
+        std::unordered_map<std::string, EntType> map;
+        map.reserve(kEntTypeCount);
+        for (std::size_t type_index = 0; type_index < kEntTypeCount; ++type_index) {
+            const EntType type = static_cast<EntType>(type_index);
+            const std::string key = NormalizeContentKey(GetEntTypeName(type));
             if (key.empty()) {
                 continue;
             }
             const auto result = map.insert({key, type});
             if (!result.second) {
-                throw std::runtime_error("Duplicate entity content name: " +
-                                         std::string(GetEntityTypeName(type)));
+                throw std::runtime_error("Duplicate ent content name: " +
+                                         std::string(GetEntTypeName(type)));
             }
         }
         return map;
@@ -72,14 +72,14 @@ const std::unordered_map<std::string, Tile>& TileContentNameMap() {
         map.reserve(kTileCount);
         for (std::size_t tile_index = 0; tile_index < kTileCount; ++tile_index) {
             const Tile tile = static_cast<Tile>(tile_index);
-            const std::string key = NormalizeContentKey(GetTileArchetype(tile).debug_name);
+            const std::string key = NormalizeContentKey(GetTileSpec(tile).debug_name);
             if (key.empty()) {
                 continue;
             }
             const auto result = map.insert({key, tile});
             if (!result.second) {
                 throw std::runtime_error("Duplicate tile content name: " +
-                                         std::string(GetTileArchetype(tile).debug_name));
+                                         std::string(GetTileSpec(tile).debug_name));
             }
         }
         return map;
@@ -89,9 +89,9 @@ const std::unordered_map<std::string, Tile>& TileContentNameMap() {
 
 } // namespace
 
-std::optional<EntityType> EntityTypeFromContentName(std::string_view name) {
-    const auto found = EntityContentNameMap().find(NormalizeContentKey(name));
-    if (found == EntityContentNameMap().end()) {
+std::optional<EntType> EntTypeFromContentName(std::string_view name) {
+    const auto found = EntContentNameMap().find(NormalizeContentKey(name));
+    if (found == EntContentNameMap().end()) {
         return std::nullopt;
     }
     return found->second;
@@ -105,13 +105,13 @@ std::optional<Tile> TileFromContentName(std::string_view name) {
     return found->second;
 }
 
-std::string ContentNameFromEntityType(EntityType entity_type) {
-    PopulateEntityArchetypesTable();
-    return DebugNameToContentName(GetEntityTypeName(entity_type));
+std::string ContentNameFromEntType(EntType ent_type) {
+    PopulateEntSpecsTable();
+    return DebugNameToContentName(GetEntTypeName(ent_type));
 }
 
 std::string ContentNameFromTile(Tile tile) {
-    return DebugNameToContentName(GetTileArchetype(tile).debug_name);
+    return DebugNameToContentName(GetTileSpec(tile).debug_name);
 }
 
 } // namespace splonks

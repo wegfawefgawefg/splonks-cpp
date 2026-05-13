@@ -1,4 +1,4 @@
-#include "raw_frame_data.hpp"
+#include "raw_aframe.hpp"
 
 #include <cctype>
 #include <fstream>
@@ -131,7 +131,7 @@ std::vector<std::string> ParseTags(
 }
 
 void AssignNestedInt(
-    RawFrameData& frame_data,
+    RawAFrame& aframe,
     NestedField nested_field,
     const std::string& key,
     int value
@@ -139,58 +139,58 @@ void AssignNestedInt(
     switch (nested_field) {
     case NestedField::Aabb:
         if (key == "x") {
-            frame_data.aabb.x = value;
+            aframe.aabb.x = value;
         } else if (key == "y") {
-            frame_data.aabb.y = value;
+            aframe.aabb.y = value;
         } else if (key == "w") {
-            frame_data.aabb.w = value;
+            aframe.aabb.w = value;
         } else if (key == "h") {
-            frame_data.aabb.h = value;
+            aframe.aabb.h = value;
         }
         break;
     case NestedField::Offset:
         if (key == "x") {
-            frame_data.offset.x = value;
+            aframe.offset.x = value;
         } else if (key == "y") {
-            frame_data.offset.y = value;
+            aframe.offset.y = value;
         }
         break;
     case NestedField::Center:
         if (key == "x") {
-            frame_data.center.x = value;
+            aframe.center.x = value;
         } else if (key == "y") {
-            frame_data.center.y = value;
+            aframe.center.y = value;
         }
         break;
     case NestedField::EmitPoint:
         if (key == "x") {
-            frame_data.emit_point.x = value;
+            aframe.emit_point.x = value;
         } else if (key == "y") {
-            frame_data.emit_point.y = value;
+            aframe.emit_point.y = value;
         }
         break;
     case NestedField::Pbox:
-        frame_data.has_pbox = true;
+        aframe.has_pbox = true;
         if (key == "x") {
-            frame_data.pbox.x = value;
+            aframe.pbox.x = value;
         } else if (key == "y") {
-            frame_data.pbox.y = value;
+            aframe.pbox.y = value;
         } else if (key == "w") {
-            frame_data.pbox.w = value;
+            aframe.pbox.w = value;
         } else if (key == "h") {
-            frame_data.pbox.h = value;
+            aframe.pbox.h = value;
         }
         break;
     case NestedField::Cbox:
-        frame_data.has_cbox = true;
+        aframe.has_cbox = true;
         if (key == "x") {
-            frame_data.cbox.x = value;
+            aframe.cbox.x = value;
         } else if (key == "y") {
-            frame_data.cbox.y = value;
+            aframe.cbox.y = value;
         } else if (key == "w") {
-            frame_data.cbox.w = value;
+            aframe.cbox.w = value;
         } else if (key == "h") {
-            frame_data.cbox.h = value;
+            aframe.cbox.h = value;
         }
         break;
     case NestedField::None:
@@ -199,39 +199,39 @@ void AssignNestedInt(
 }
 
 void AssignFrameField(
-    RawFrameData& frame_data,
+    RawAFrame& aframe,
     const std::string& key,
     const std::string& value,
     const std::string& yaml_path,
     int line_number
 ) {
     if (key == "path") {
-        frame_data.path = ParseTrimmedString(value);
+        aframe.path = ParseTrimmedString(value);
     } else if (key == "name") {
-        frame_data.name = ParseTrimmedString(value);
+        aframe.name = ParseTrimmedString(value);
     } else if (key == "frame") {
-        frame_data.frame = ParseInt(value, yaml_path, line_number);
+        aframe.frame = ParseInt(value, yaml_path, line_number);
     } else if (key == "duration") {
-        frame_data.duration = ParseInt(value, yaml_path, line_number);
+        aframe.duration = ParseInt(value, yaml_path, line_number);
     } else if (key == "tags") {
-        frame_data.tags = ParseTags(value, yaml_path, line_number);
+        aframe.tags = ParseTags(value, yaml_path, line_number);
     } else if (key == "tile") {
-        frame_data.tile = ParseBool(value, yaml_path, line_number);
+        aframe.tile = ParseBool(value, yaml_path, line_number);
     }
 }
 
 } // namespace
 
-RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
+RawAFrameFile LoadRawAFrameFile(const std::string& yaml_path) {
     std::ifstream file(yaml_path);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open annotations file: " + yaml_path);
     }
 
-    RawFrameDataFile result;
-    RawFrameData current_frame_data;
+    RawAFrameFile result;
+    RawAFrame current_aframe;
     bool in_sprites = false;
-    bool have_current_frame_data = false;
+    bool have_current_aframe = false;
     NestedField nested_field = NestedField::None;
 
     std::string line;
@@ -254,24 +254,24 @@ RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
         }
 
         if (indent == 2 && trimmed.rfind("- ", 0) == 0) {
-            if (have_current_frame_data) {
-                result.sprites.push_back(current_frame_data);
+            if (have_current_aframe) {
+                result.sprites.push_back(current_aframe);
             }
-            current_frame_data = RawFrameData{};
-            current_frame_data.source_yaml_path = yaml_path;
-            current_frame_data.source_line = line_number;
-            have_current_frame_data = true;
+            current_aframe = RawAFrame{};
+            current_aframe.source_yaml_path = yaml_path;
+            current_aframe.source_line = line_number;
+            have_current_aframe = true;
             nested_field = NestedField::None;
 
             const std::string remainder = Trim(trimmed.substr(2));
             if (!remainder.empty()) {
                 const auto [key, value] = SplitKeyValue(remainder, yaml_path, line_number);
-                AssignFrameField(current_frame_data, key, value, yaml_path, line_number);
+                AssignFrameField(current_aframe, key, value, yaml_path, line_number);
             }
             continue;
         }
 
-        if (!have_current_frame_data) {
+        if (!have_current_aframe) {
             throw std::runtime_error(
                 yaml_path + ":" + std::to_string(line_number) +
                 ": frame field encountered before sprite item"
@@ -298,7 +298,7 @@ RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
                 }
             } else {
                 nested_field = NestedField::None;
-                AssignFrameField(current_frame_data, key, value, yaml_path, line_number);
+                AssignFrameField(current_aframe, key, value, yaml_path, line_number);
             }
             continue;
         }
@@ -312,7 +312,7 @@ RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
                 );
             }
             AssignNestedInt(
-                current_frame_data,
+                current_aframe,
                 nested_field,
                 key,
                 ParseInt(value, yaml_path, line_number));
@@ -320,8 +320,8 @@ RawFrameDataFile LoadRawFrameDataFile(const std::string& yaml_path) {
         }
     }
 
-    if (have_current_frame_data) {
-        result.sprites.push_back(current_frame_data);
+    if (have_current_aframe) {
+        result.sprites.push_back(current_aframe);
     }
 
     return result;

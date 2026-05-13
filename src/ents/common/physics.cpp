@@ -1,42 +1,42 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "world_query.hpp"
 
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <vector>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
-AABB GetAabbAtPosition(const Entity& entity, const Vec2& pos) {
-    return AABB::New(pos, pos + entity.size - Vec2::New(1.0F, 1.0F));
+AABB GetAabbAtPosition(const Ent& ent, const Vec2& pos) {
+    return AABB::New(pos, pos + ent.size - Vec2::New(1.0F, 1.0F));
 }
 
-void StoreDistanceTraveled(std::size_t entity_idx, State& state, const Vec2& start_pos) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    float dist_traveled = Length(entity.pos - start_pos);
+void StoreDistanceTraveled(std::size_t ent_idx, State& state, const Vec2& start_pos) {
+    Ent& ent = state.ents.ents[ent_idx];
+    float dist_traveled = Length(ent.pos - start_pos);
     if (dist_traveled < 1.0F) {
         dist_traveled = 0.0F;
     }
-    entity.dist_traveled_this_frame = dist_traveled;
+    ent.dist_traveled_this_frame = dist_traveled;
 }
 
 void ResolveBlockingOverlap(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     bool check_tiles,
-    bool check_entities
+    bool check_ents
 ) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    const AABB current_aabb = entity.GetAABB();
+    Ent& ent = state.ents.ents[ent_idx];
+    const AABB current_aabb = ent.GetAABB();
     const BlockingContactSet current_contacts =
-        GatherBlockingContactsForAabb(entity_idx, current_aabb, state, check_tiles, check_entities);
-    if (!ResolveBlockingContactSet(entity_idx, current_contacts, state).blocks_movement) {
+        GatherBlockingContactsForAabb(ent_idx, current_aabb, state, check_tiles, check_ents);
+    if (!ResolveBlockingContactSet(ent_idx, current_contacts, state).blocks_movement) {
         return;
     }
 
@@ -50,12 +50,12 @@ void ResolveBlockingOverlap(
 
     for (int distance = 1; distance <= max_push; ++distance) {
         for (const IVec2& direction : candidates) {
-            const Vec2 candidate_pos = entity.pos + ToVec2(direction * distance);
-            const AABB candidate_aabb = GetAabbAtPosition(entity, candidate_pos);
+            const Vec2 candidate_pos = ent.pos + ToVec2(direction * distance);
+            const AABB candidate_aabb = GetAabbAtPosition(ent, candidate_pos);
             const BlockingContactSet candidate_contacts = GatherBlockingContactsForAabb(
-                entity_idx, candidate_aabb, state, check_tiles, check_entities);
-            if (!ResolveBlockingContactSet(entity_idx, candidate_contacts, state).blocks_movement) {
-                entity.pos = candidate_pos;
+                ent_idx, candidate_aabb, state, check_tiles, check_ents);
+            if (!ResolveBlockingContactSet(ent_idx, candidate_contacts, state).blocks_movement) {
+                ent.pos = candidate_pos;
                 return;
             }
         }
@@ -78,7 +78,7 @@ BlockingImpactSurface GetImpactSurfaceForBlockedContacts(const BlockingContactSe
     if (contacts.touches_stage_bounds) {
         return BlockingImpactSurface::StageBounds;
     }
-    return BlockingImpactSurface::ImpassableEntity;
+    return BlockingImpactSurface::ImpassableEnt;
 }
 
 AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, const Vec2& anchor) {
@@ -92,17 +92,17 @@ AABB GetTileAabbForContact(const TileContact& tile_contact, const Stage& stage, 
 }
 
 bool TrySnapToDownwardBlockingSurface(
-    Entity& entity,
+    Ent& ent,
     const BlockingContactSet& contacts,
     const Stage& stage
 ) {
-    const AABB current_aabb = entity.GetAABB();
+    const AABB current_aabb = ent.GetAABB();
     const float next_bottom = current_aabb.br.y + 1.0F;
 
     if (contacts.touches_stage_bounds &&
         stage.IsBorderSideBlocking(StageBorderSideKind::Bottom) &&
         next_bottom > static_cast<float>(stage.GetHeight() - 1)) {
-        entity.pos.y = std::round(static_cast<float>(stage.GetHeight()) - entity.size.y);
+        ent.pos.y = std::round(static_cast<float>(stage.GetHeight()) - ent.size.y);
         return true;
     }
 
@@ -130,12 +130,12 @@ bool TrySnapToDownwardBlockingSurface(
         return false;
     }
 
-    entity.pos.y = std::round(*nearest_floor_top - entity.size.y);
+    ent.pos.y = std::round(*nearest_floor_top - ent.size.y);
     return true;
 }
 
 bool DoesOneWayTopContactBlock(
-    const Entity& entity,
+    const Ent& ent,
     const TileContact& tile_contact,
     const Stage& stage,
     const AABB& current_aabb,
@@ -149,7 +149,7 @@ bool DoesOneWayTopContactBlock(
     if (impact_axis != BlockingImpactAxis::Vertical || direction <= 0) {
         return false;
     }
-    if (entity.IsClimbing()) {
+    if (ent.IsClimbing()) {
         return false;
     }
 
@@ -164,25 +164,25 @@ bool DoesOneWayTopContactBlock(
 }
 
 BlockingContactSet GatherBlockingContactsForMovement(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const AABB& current_aabb,
     const AABB& next_aabb,
     State& state,
     bool check_tiles,
-    bool check_entities,
+    bool check_ents,
     BlockingImpactAxis impact_axis,
     int direction
 ) {
     BlockingContactSet contacts =
-        GatherBlockingContactsForAabb(entity_idx, next_aabb, state, check_tiles, check_entities);
+        GatherBlockingContactsForAabb(ent_idx, next_aabb, state, check_tiles, check_ents);
     if (!check_tiles) {
         return contacts;
     }
 
-    const Entity& entity = state.entity_manager.entities[entity_idx];
+    const Ent& ent = state.ents.ents[ent_idx];
     for (TileContact& tile_contact : contacts.tile_contacts) {
         if (DoesOneWayTopContactBlock(
-                entity, tile_contact, state.stage, current_aabb, next_aabb, impact_axis, direction)) {
+                ent, tile_contact, state.stage, current_aabb, next_aabb, impact_axis, direction)) {
             tile_contact.blocks_movement = true;
         }
     }
@@ -214,13 +214,13 @@ int FloorDiv(int value, int divisor) {
     return quotient;
 }
 
-float GetGroundFrictionMultiplier(std::size_t entity_idx, State& state) {
+float GetGroundFrictionMultiplier(std::size_t ent_idx, State& state) {
     constexpr float kDefaultGroundFriction = 0.85F;
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const auto [entity_tl, entity_br] = entity.GetBounds();
-    const int support_y = static_cast<int>(std::floor(entity_br.y + 1.0F));
-    const int min_tile_x = FloorDiv(static_cast<int>(std::floor(entity_tl.x)), static_cast<int>(kTileSize));
-    const int max_tile_x = FloorDiv(static_cast<int>(std::floor(entity_br.x)), static_cast<int>(kTileSize));
+    const Ent& ent = state.ents.ents[ent_idx];
+    const auto [ent_tl, ent_br] = ent.GetBounds();
+    const int support_y = static_cast<int>(std::floor(ent_br.y + 1.0F));
+    const int min_tile_x = FloorDiv(static_cast<int>(std::floor(ent_tl.x)), static_cast<int>(kTileSize));
+    const int max_tile_x = FloorDiv(static_cast<int>(std::floor(ent_br.x)), static_cast<int>(kTileSize));
     const int support_tile_y = FloorDiv(support_y, static_cast<int>(kTileSize));
 
     float friction = 0.0F;
@@ -231,7 +231,7 @@ float GetGroundFrictionMultiplier(std::size_t entity_idx, State& state) {
             continue;
         }
         if (IsTileOneWayTopSolid(tile) &&
-            entity_br.y >= static_cast<float>(support_tile_y * static_cast<int>(kTileSize))) {
+            ent_br.y >= static_cast<float>(support_tile_y * static_cast<int>(kTileSize))) {
             continue;
         }
         const float tile_friction = GetTileFriction(tile);
@@ -239,18 +239,18 @@ float GetGroundFrictionMultiplier(std::size_t entity_idx, State& state) {
         found_support_surface = true;
     }
 
-    const VID vid = entity.vid;
+    const VID vid = ent.vid;
     const AABB feet_aabb = {
-        .tl = Vec2::New(entity_tl.x, entity_br.y),
-        .br = entity_br + Vec2::New(0.0F, 1.0F),
+        .tl = Vec2::New(ent_tl.x, ent_br.y),
+        .br = ent_br + Vec2::New(0.0F, 1.0F),
     };
-    for (const VID& other_vid : QueryEntitiesInAabb(state, feet_aabb, vid)) {
-        const Entity* const other = state.entity_manager.GetEntity(other_vid);
+    for (const VID& other_vid : QueryEntsInAabb(state, feet_aabb, vid)) {
+        const Ent* const other = state.ents.GetEnt(other_vid);
         if (other == nullptr || !other->active || !other->impassable) {
             continue;
         }
 
-        const AABB other_aabb = GetNearestWorldAabb(state.stage, entity.GetCenter(), other->GetAABB());
+        const AABB other_aabb = GetNearestWorldAabb(state.stage, ent.GetCenter(), other->GetAABB());
         if (!AabbsIntersect(feet_aabb, other_aabb)) {
             continue;
         }
@@ -264,8 +264,8 @@ float GetGroundFrictionMultiplier(std::size_t entity_idx, State& state) {
     return found_support_surface ? friction : kDefaultGroundFriction;
 }
 
-bool DispatchPostSweepEntityOverlapContacts(
-    std::size_t entity_idx,
+bool DispatchPostSweepEntOverlapContacts(
+    std::size_t ent_idx,
     State& state,
     Graphics* graphics,
     Audio* audio,
@@ -275,8 +275,8 @@ bool DispatchPostSweepEntityOverlapContacts(
     if (graphics == nullptr || audio == nullptr) {
         return false;
     }
-    return TryDispatchEntityEntityOverlapContacts(
-        entity_idx,
+    return TryDispatchEntEntOverlapContacts(
+        ent_idx,
         state,
         *graphics,
         *audio,
@@ -285,21 +285,21 @@ bool DispatchPostSweepEntityOverlapContacts(
             .has_impact = false,
             .impact_axis = impact_axis,
             .direction = direction,
-            .mover_vid = state.entity_manager.entities[entity_idx].vid,
+            .mover_vid = state.ents.ents[ent_idx].vid,
         }
     );
 }
 
-AABB GetTopCarryStrip(const Entity& entity) {
-    const AABB aabb = entity.GetAABB();
+AABB GetTopCarryStrip(const Ent& ent) {
+    const AABB aabb = ent.GetAABB();
     return AABB{
         .tl = Vec2::New(aabb.tl.x, aabb.tl.y - 1.0F),
         .br = Vec2::New(aabb.br.x, aabb.tl.y - 1.0F),
     };
 }
 
-AABB GetTopCarryQueryArea(const Entity& entity, const IVec2& direction) {
-    const AABB carry_strip = GetTopCarryStrip(entity);
+AABB GetTopCarryQueryArea(const Ent& ent, const IVec2& direction) {
+    const AABB carry_strip = GetTopCarryStrip(ent);
     if (direction.y > 0) {
         return AABB{
             .tl = Vec2::New(carry_strip.tl.x, carry_strip.tl.y - 1.0F),
@@ -310,14 +310,14 @@ AABB GetTopCarryQueryArea(const Entity& entity, const IVec2& direction) {
 }
 
 bool IsCarryTargetOnTopOfMover(
-    const Entity& mover,
-    const Entity& target,
+    const Ent& mover,
+    const Ent& target,
     const Stage& stage
 ) {
     if (!target.active || !target.can_collide || target.impassable) {
         return false;
     }
-    if (target.held_by_vid.has_value() || target.attachment_mode != AttachmentMode::None) {
+    if (target.held_by_vid.has_value() || target.attach_mode != AttachMode::None) {
         return false;
     }
 
@@ -333,9 +333,9 @@ bool IsCarryTargetOnTopOfMover(
     return overlap_x > 0.0F;
 }
 
-AABB GetHangCarryStripForMoverSide(const Entity& mover, LeftOrRight mover_side) {
+AABB GetHangCarryStripForMoverSide(const Ent& mover, Side mover_side) {
     const AABB aabb = mover.GetAABB();
-    if (mover_side == LeftOrRight::Right) {
+    if (mover_side == Side::Right) {
         return AABB{
             .tl = Vec2::New(aabb.br.x + 1.0F, aabb.tl.y),
             .br = Vec2::New(aabb.br.x + 1.0F, aabb.br.y),
@@ -348,24 +348,24 @@ AABB GetHangCarryStripForMoverSide(const Entity& mover, LeftOrRight mover_side) 
 }
 
 bool IsHangCarryTargetOnMoverSide(
-    const Entity& mover,
-    const Entity& target,
+    const Ent& mover,
+    const Ent& target,
     const Stage& stage,
-    LeftOrRight mover_side
+    Side mover_side
 ) {
     if (!target.active || !target.can_collide || target.impassable || !target.IsHanging()) {
         return false;
     }
-    if (target.held_by_vid.has_value() || target.attachment_mode != AttachmentMode::None) {
+    if (target.held_by_vid.has_value() || target.attach_mode != AttachMode::None) {
         return false;
     }
 
-    if (mover_side == LeftOrRight::Left) {
-        if (target.hang_side != LeftOrRight::Right) {
+    if (mover_side == Side::Left) {
+        if (target.hang_side != Side::Right) {
             return false;
         }
     } else {
-        if (target.hang_side != LeftOrRight::Left) {
+        if (target.hang_side != Side::Left) {
             return false;
         }
     }
@@ -379,7 +379,7 @@ bool IsHangCarryTargetOnMoverSide(
         return false;
     }
 
-    if (mover_side == LeftOrRight::Right) {
+    if (mover_side == Side::Right) {
         return target_aabb.tl.x == mover_aabb.br.x + 1.0F;
     }
     return target_aabb.br.x == mover_aabb.tl.x - 1.0F;
@@ -387,24 +387,24 @@ bool IsHangCarryTargetOnMoverSide(
 
 void AppendHangCarryTargetsOnMoverSide(
     std::size_t mover_idx,
-    LeftOrRight mover_side,
+    Side mover_side,
     State& state,
     std::vector<VID>& hanger_vids
 ) {
-    if (mover_idx >= state.entity_manager.entities.size()) {
+    if (mover_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& mover = state.entity_manager.entities[mover_idx];
+    const Ent& mover = state.ents.ents[mover_idx];
     if (!mover.active || !mover.impassable) {
         return;
     }
 
-    for (const VID& vid : QueryEntitiesInAabb(
+    for (const VID& vid : QueryEntsInAabb(
              state,
              GetHangCarryStripForMoverSide(mover, mover_side),
              mover.vid)) {
-        const Entity* const target = state.entity_manager.GetEntity(vid);
+        const Ent* const target = state.ents.GetEnt(vid);
         if (target == nullptr) {
             continue;
         }
@@ -417,7 +417,7 @@ void AppendHangCarryTargetsOnMoverSide(
     }
 }
 
-void TryCarryEntitiesOnTopByOnePixel(
+void TryCarryEntsOnTopByOnePixel(
     std::size_t mover_idx,
     const IVec2& direction,
     State& state,
@@ -427,21 +427,21 @@ void TryCarryEntitiesOnTopByOnePixel(
     if (direction.x == 0 && direction.y <= 0) {
         return;
     }
-    if (mover_idx >= state.entity_manager.entities.size()) {
+    if (mover_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& mover = state.entity_manager.entities[mover_idx];
+    const Ent& mover = state.ents.ents[mover_idx];
     if (!mover.active || !mover.impassable) {
         return;
     }
 
     std::vector<VID> rider_vids;
-    for (const VID& vid : QueryEntitiesInAabb(
+    for (const VID& vid : QueryEntsInAabb(
              state,
              GetTopCarryQueryArea(mover, direction),
              mover.vid)) {
-        const Entity* const target = state.entity_manager.GetEntity(vid);
+        const Ent* const target = state.ents.GetEnt(vid);
         if (target == nullptr) {
             continue;
         }
@@ -455,8 +455,8 @@ void TryCarryEntitiesOnTopByOnePixel(
         rider_vids.begin(),
         rider_vids.end(),
         [&](const VID& lhs, const VID& rhs) {
-            const Entity* const left = state.entity_manager.GetEntity(lhs);
-            const Entity* const right = state.entity_manager.GetEntity(rhs);
+            const Ent* const left = state.ents.GetEnt(lhs);
+            const Ent* const right = state.ents.GetEnt(rhs);
             if (left == nullptr || right == nullptr) {
                 return false;
             }
@@ -476,90 +476,90 @@ void TryCarryEntitiesOnTopByOnePixel(
     );
 
     for (const VID& rider_vid : rider_vids) {
-        if (!TryDisplaceEntityByOnePixel(rider_vid.id, direction, state, graphics, audio)) {
+        if (!TryDisplaceEntByOnePixel(rider_vid.id, direction, state, graphics, audio)) {
             continue;
         }
-        SyncEntityAttachments(rider_vid.id, state, graphics);
+        SyncEntAttachs(rider_vid.id, state, graphics);
     }
 }
 
-void MoveEntityPixelStep(
-    std::size_t entity_idx,
+void MoveEntPixelStep(
+    std::size_t ent_idx,
     State& state,
     bool check_tiles,
-    bool check_entities,
+    bool check_ents,
     Graphics* graphics,
     Audio* audio
 ) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    const Vec2 start_pos = entity.pos;
+    Ent& ent = state.ents.ents[ent_idx];
+    const Vec2 start_pos = ent.pos;
 
-    ResolveBlockingOverlap(entity_idx, state, check_tiles, check_entities);
+    ResolveBlockingOverlap(ent_idx, state, check_tiles, check_ents);
 
-    const int move_x = GetIntegerStepDistance(entity.vel.x, state.stage_frame);
-    const int move_y = GetIntegerStepDistance(entity.vel.y, state.stage_frame);
+    const int move_x = GetIntegerStepDistance(ent.vel.x, state.stage_frame);
+    const int move_y = GetIntegerStepDistance(ent.vel.y, state.stage_frame);
 
     if (move_x > 0) {
         for (int i = 0; i < move_x; ++i) {
             std::vector<VID> hanging_carry_vids;
             AppendHangCarryTargetsOnMoverSide(
-                entity_idx,
-                LeftOrRight::Left,
+                ent_idx,
+                Side::Left,
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = entity.pos + Vec2::New(1.0F, 0.0F);
-            const AABB current_aabb = entity.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            const Vec2 next_pos = ent.pos + Vec2::New(1.0F, 0.0F);
+            const AABB current_aabb = ent.GetAABB();
+            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
-                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Horizontal, 1);
-            const ContactResolution contact_resolution =
-                ResolveBlockingContactSet(entity_idx, contacts, state);
-            if (contact_resolution.stop_sweep) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+            const ContactResult contact_result =
+                ResolveBlockingContactSet(ent_idx, contacts, state);
+            if (contact_result.stop_sweep) {
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
-            if (contact_resolution.blocks_movement) {
+            if (contact_result.blocks_movement) {
                 const ContactContext blocked_context = {
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = entity.vel.x,
+                    .impact_velocity = ent.vel.x,
                     .direction = 1,
-                    .mover_vid = entity.vid,
+                    .mover_vid = ent.vid,
                 };
-                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
-                    entity_idx,
-                    contacts.entity_vids,
+                const ContactResult ent_resolution = TryDispatchEntEntContacts(
+                    ent_idx,
+                    contacts.ent_vids,
                     blocked_context,
                     state,
                     graphics,
                     audio
                 );
-                if (entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.x = 0.0F;
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                if (ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.x = 0.0F;
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
-                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.x = 0.0F;
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                const ContactResult tile_resolution =
+                    TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
+                if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.x = 0.0F;
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                entity.vel.x = 0.0F;
-                entity.collided = true;
+                ent.vel.x = 0.0F;
+                ent.collided = true;
                 break;
             }
-            entity.pos = next_pos;
+            ent.pos = next_pos;
             if (graphics != nullptr) {
                 for (const VID& hanging_vid : hanging_carry_vids) {
-                    if (!TryDisplaceEntityByOnePixel(
+                    if (!TryDisplaceEntByOnePixel(
                             hanging_vid.id,
                             IVec2::New(1, 0),
                             state,
@@ -567,26 +567,26 @@ void MoveEntityPixelStep(
                             audio)) {
                         continue;
                     }
-                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                    SyncEntAttachs(hanging_vid.id, state, *graphics);
                 }
             }
             if (graphics != nullptr) {
-                TryCarryEntitiesOnTopByOnePixel(
-                    entity_idx,
+                TryCarryEntsOnTopByOnePixel(
+                    ent_idx,
                     IVec2::New(1, 0),
                     state,
                     *graphics,
                     audio
                 );
             }
-            if (DispatchPostSweepEntityOverlapContacts(
-                    entity_idx,
+            if (DispatchPostSweepEntOverlapContacts(
+                    ent_idx,
                     state,
                     graphics,
                     audio,
                     BlockingImpactAxis::Horizontal,
                     1)) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
         }
@@ -594,63 +594,63 @@ void MoveEntityPixelStep(
         for (int i = 0; i < -move_x; ++i) {
             std::vector<VID> hanging_carry_vids;
             AppendHangCarryTargetsOnMoverSide(
-                entity_idx,
-                LeftOrRight::Right,
+                ent_idx,
+                Side::Right,
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = entity.pos + Vec2::New(-1.0F, 0.0F);
-            const AABB current_aabb = entity.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            const Vec2 next_pos = ent.pos + Vec2::New(-1.0F, 0.0F);
+            const AABB current_aabb = ent.GetAABB();
+            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
-                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Horizontal, -1);
-            const ContactResolution contact_resolution =
-                ResolveBlockingContactSet(entity_idx, contacts, state);
-            if (contact_resolution.stop_sweep) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+            const ContactResult contact_result =
+                ResolveBlockingContactSet(ent_idx, contacts, state);
+            if (contact_result.stop_sweep) {
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
-            if (contact_resolution.blocks_movement) {
+            if (contact_result.blocks_movement) {
                 const ContactContext blocked_context = {
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Horizontal,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = entity.vel.x,
+                    .impact_velocity = ent.vel.x,
                     .direction = -1,
-                    .mover_vid = entity.vid,
+                    .mover_vid = ent.vid,
                 };
-                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
-                    entity_idx,
-                    contacts.entity_vids,
+                const ContactResult ent_resolution = TryDispatchEntEntContacts(
+                    ent_idx,
+                    contacts.ent_vids,
                     blocked_context,
                     state,
                     graphics,
                     audio
                 );
-                if (entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.x = 0.0F;
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                if (ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.x = 0.0F;
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
-                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.x = 0.0F;
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                const ContactResult tile_resolution =
+                    TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
+                if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.x = 0.0F;
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                entity.vel.x = 0.0F;
-                entity.collided = true;
+                ent.vel.x = 0.0F;
+                ent.collided = true;
                 break;
             }
-            entity.pos = next_pos;
+            ent.pos = next_pos;
             if (graphics != nullptr) {
                 for (const VID& hanging_vid : hanging_carry_vids) {
-                    if (!TryDisplaceEntityByOnePixel(
+                    if (!TryDisplaceEntByOnePixel(
                             hanging_vid.id,
                             IVec2::New(-1, 0),
                             state,
@@ -658,26 +658,26 @@ void MoveEntityPixelStep(
                             audio)) {
                         continue;
                     }
-                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                    SyncEntAttachs(hanging_vid.id, state, *graphics);
                 }
             }
             if (graphics != nullptr) {
-                TryCarryEntitiesOnTopByOnePixel(
-                    entity_idx,
+                TryCarryEntsOnTopByOnePixel(
+                    ent_idx,
                     IVec2::New(-1, 0),
                     state,
                     *graphics,
                     audio
                 );
             }
-            if (DispatchPostSweepEntityOverlapContacts(
-                    entity_idx,
+            if (DispatchPostSweepEntOverlapContacts(
+                    ent_idx,
                     state,
                     graphics,
                     audio,
                     BlockingImpactAxis::Horizontal,
                     -1)) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
         }
@@ -687,72 +687,72 @@ void MoveEntityPixelStep(
         for (int i = 0; i < move_y; ++i) {
             std::vector<VID> hanging_carry_vids;
             AppendHangCarryTargetsOnMoverSide(
-                entity_idx,
-                LeftOrRight::Left,
+                ent_idx,
+                Side::Left,
                 state,
                 hanging_carry_vids
             );
             AppendHangCarryTargetsOnMoverSide(
-                entity_idx,
-                LeftOrRight::Right,
+                ent_idx,
+                Side::Right,
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = entity.pos + Vec2::New(0.0F, 1.0F);
-            const AABB current_aabb = entity.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            const Vec2 next_pos = ent.pos + Vec2::New(0.0F, 1.0F);
+            const AABB current_aabb = ent.GetAABB();
+            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
-                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Vertical, 1);
-            const ContactResolution contact_resolution =
-                ResolveBlockingContactSet(entity_idx, contacts, state);
-            if (contact_resolution.stop_sweep) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+            const ContactResult contact_result =
+                ResolveBlockingContactSet(ent_idx, contacts, state);
+            if (contact_result.stop_sweep) {
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
-            if (contact_resolution.blocks_movement) {
+            if (contact_result.blocks_movement) {
                 const ContactContext blocked_context = {
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = entity.vel.y,
+                    .impact_velocity = ent.vel.y,
                     .direction = 1,
-                    .mover_vid = entity.vid,
+                    .mover_vid = ent.vid,
                 };
-                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
-                    entity_idx,
-                    contacts.entity_vids,
+                const ContactResult ent_resolution = TryDispatchEntEntContacts(
+                    ent_idx,
+                    contacts.ent_vids,
                     blocked_context,
                     state,
                     graphics,
                     audio
                 );
-                if (entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.y = 0.0F;
-                    (void)TrySnapToDownwardBlockingSurface(entity, contacts, state.stage);
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                if (ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.y = 0.0F;
+                    (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
-                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.y = 0.0F;
-                    (void)TrySnapToDownwardBlockingSurface(entity, contacts, state.stage);
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                const ContactResult tile_resolution =
+                    TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
+                if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.y = 0.0F;
+                    (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                (void)TrySnapToDownwardBlockingSurface(entity, contacts, state.stage);
-                entity.vel.y = 0.0F;
-                entity.collided = true;
+                (void)TrySnapToDownwardBlockingSurface(ent, contacts, state.stage);
+                ent.vel.y = 0.0F;
+                ent.collided = true;
                 break;
             }
-            entity.pos = next_pos;
+            ent.pos = next_pos;
             if (graphics != nullptr) {
                 for (const VID& hanging_vid : hanging_carry_vids) {
-                    if (!TryDisplaceEntityByOnePixel(
+                    if (!TryDisplaceEntByOnePixel(
                             hanging_vid.id,
                             IVec2::New(0, 1),
                             state,
@@ -760,26 +760,26 @@ void MoveEntityPixelStep(
                             audio)) {
                         continue;
                     }
-                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                    SyncEntAttachs(hanging_vid.id, state, *graphics);
                 }
             }
             if (graphics != nullptr) {
-                TryCarryEntitiesOnTopByOnePixel(
-                    entity_idx,
+                TryCarryEntsOnTopByOnePixel(
+                    ent_idx,
                     IVec2::New(0, 1),
                     state,
                     *graphics,
                     audio
                 );
             }
-            if (DispatchPostSweepEntityOverlapContacts(
-                    entity_idx,
+            if (DispatchPostSweepEntOverlapContacts(
+                    ent_idx,
                     state,
                     graphics,
                     audio,
                     BlockingImpactAxis::Vertical,
                     1)) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
         }
@@ -787,69 +787,69 @@ void MoveEntityPixelStep(
         for (int i = 0; i < -move_y; ++i) {
             std::vector<VID> hanging_carry_vids;
             AppendHangCarryTargetsOnMoverSide(
-                entity_idx,
-                LeftOrRight::Left,
+                ent_idx,
+                Side::Left,
                 state,
                 hanging_carry_vids
             );
             AppendHangCarryTargetsOnMoverSide(
-                entity_idx,
-                LeftOrRight::Right,
+                ent_idx,
+                Side::Right,
                 state,
                 hanging_carry_vids
             );
-            const Vec2 next_pos = entity.pos + Vec2::New(0.0F, -1.0F);
-            const AABB current_aabb = entity.GetAABB();
-            const AABB next_aabb = GetAabbAtPosition(entity, next_pos);
+            const Vec2 next_pos = ent.pos + Vec2::New(0.0F, -1.0F);
+            const AABB current_aabb = ent.GetAABB();
+            const AABB next_aabb = GetAabbAtPosition(ent, next_pos);
             const BlockingContactSet contacts = GatherBlockingContactsForMovement(
-                entity_idx, current_aabb, next_aabb, state, check_tiles, check_entities,
+                ent_idx, current_aabb, next_aabb, state, check_tiles, check_ents,
                 BlockingImpactAxis::Vertical, -1);
-            const ContactResolution contact_resolution =
-                ResolveBlockingContactSet(entity_idx, contacts, state);
-            if (contact_resolution.stop_sweep) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+            const ContactResult contact_result =
+                ResolveBlockingContactSet(ent_idx, contacts, state);
+            if (contact_result.stop_sweep) {
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
-            if (contact_resolution.blocks_movement) {
+            if (contact_result.blocks_movement) {
                 const ContactContext blocked_context = {
                     .phase = ContactPhase::AttemptedBlocked,
                     .has_impact = true,
                     .impact_axis = BlockingImpactAxis::Vertical,
                     .impact_surface = GetImpactSurfaceForBlockedContacts(contacts),
-                    .impact_velocity = entity.vel.y,
+                    .impact_velocity = ent.vel.y,
                     .direction = -1,
-                    .mover_vid = entity.vid,
+                    .mover_vid = ent.vid,
                 };
-                const ContactResolution entity_resolution = TryDispatchEntityEntityContacts(
-                    entity_idx,
-                    contacts.entity_vids,
+                const ContactResult ent_resolution = TryDispatchEntEntContacts(
+                    ent_idx,
+                    contacts.ent_vids,
                     blocked_context,
                     state,
                     graphics,
                     audio
                 );
-                if (entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.y = 0.0F;
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                if (ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.y = 0.0F;
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                const ContactResolution tile_resolution =
-                    TryDispatchEntityTileContacts(entity_idx, contacts, blocked_context, state, audio);
-                if (tile_resolution.stop_sweep || entity_resolution.stop_sweep) {
-                    entity.collided = true;
-                    entity.vel.y = 0.0F;
-                    StoreDistanceTraveled(entity_idx, state, start_pos);
+                const ContactResult tile_resolution =
+                    TryDispatchEntTileContacts(ent_idx, contacts, blocked_context, state, audio);
+                if (tile_resolution.stop_sweep || ent_resolution.stop_sweep) {
+                    ent.collided = true;
+                    ent.vel.y = 0.0F;
+                    StoreDistanceTraveled(ent_idx, state, start_pos);
                     return;
                 }
-                entity.vel.y = 0.0F;
-                entity.collided = true;
+                ent.vel.y = 0.0F;
+                ent.collided = true;
                 break;
             }
-            entity.pos = next_pos;
+            ent.pos = next_pos;
             if (graphics != nullptr) {
                 for (const VID& hanging_vid : hanging_carry_vids) {
-                    if (!TryDisplaceEntityByOnePixel(
+                    if (!TryDisplaceEntByOnePixel(
                             hanging_vid.id,
                             IVec2::New(0, -1),
                             state,
@@ -857,202 +857,202 @@ void MoveEntityPixelStep(
                             audio)) {
                         continue;
                     }
-                    SyncEntityAttachments(hanging_vid.id, state, *graphics);
+                    SyncEntAttachs(hanging_vid.id, state, *graphics);
                 }
             }
-            if (DispatchPostSweepEntityOverlapContacts(
-                    entity_idx,
+            if (DispatchPostSweepEntOverlapContacts(
+                    ent_idx,
                     state,
                     graphics,
                     audio,
                     BlockingImpactAxis::Vertical,
                     -1)) {
-                StoreDistanceTraveled(entity_idx, state, start_pos);
+                StoreDistanceTraveled(ent_idx, state, start_pos);
                 return;
             }
         }
     }
 
-    if (DispatchPostSweepEntityOverlapContacts(
-            entity_idx,
+    if (DispatchPostSweepEntOverlapContacts(
+            ent_idx,
             state,
             graphics,
             audio,
             BlockingImpactAxis::Horizontal,
             0)) {
-        StoreDistanceTraveled(entity_idx, state, start_pos);
+        StoreDistanceTraveled(ent_idx, state, start_pos);
         return;
     }
 
-    StoreDistanceTraveled(entity_idx, state, start_pos);
+    StoreDistanceTraveled(ent_idx, state, start_pos);
 }
 
-bool IsGroundedOnEntities(std::size_t entity_idx, State& state) {
-    const auto [entity_tl, entity_br] = state.entity_manager.entities[entity_idx].GetBounds();
-    const VID vid = state.entity_manager.entities[entity_idx].vid;
-    const Vec2 feet_tl = Vec2::New(entity_tl.x, entity_br.y);
-    const Vec2 feet_br = entity_br + Vec2::New(0.0F, 1.0F);
+bool IsGroundedOnEnts(std::size_t ent_idx, State& state) {
+    const auto [ent_tl, ent_br] = state.ents.ents[ent_idx].GetBounds();
+    const VID vid = state.ents.ents[ent_idx].vid;
+    const Vec2 feet_tl = Vec2::New(ent_tl.x, ent_br.y);
+    const Vec2 feet_br = ent_br + Vec2::New(0.0F, 1.0F);
     const AABB feet_aabb = {
         .tl = feet_tl,
         .br = feet_br,
     };
-    const std::vector<VID> entities_at_feet =
-        QueryEntitiesInAabb(state, feet_aabb, vid);
+    const std::vector<VID> ents_at_feet =
+        QueryEntsInAabb(state, feet_aabb, vid);
 
-    const bool impassable_entities = std::any_of(
-        entities_at_feet.begin(),
-        entities_at_feet.end(),
-        [&](const VID& test_vid) { return state.entity_manager.entities[test_vid.id].impassable; });
+    const bool impassable_ents = std::any_of(
+        ents_at_feet.begin(),
+        ents_at_feet.end(),
+        [&](const VID& test_vid) { return state.ents.ents[test_vid.id].impassable; });
 
-    return impassable_entities;
+    return impassable_ents;
 }
 
 } // namespace
 
-void EulerStep(std::size_t entity_idx, State& state, float dt) {
-    PrePartialEulerStep(entity_idx, state, dt);
-    MoveEntityPixelStep(entity_idx, state, false, false, nullptr, nullptr);
-    PostPartialEulerStep(entity_idx, state, dt);
+void EulerStep(std::size_t ent_idx, State& state, float dt) {
+    PrePartialEulerStep(ent_idx, state, dt);
+    MoveEntPixelStep(ent_idx, state, false, false, nullptr, nullptr);
+    PostPartialEulerStep(ent_idx, state, dt);
 }
 
-void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt) {
+void PrePartialEulerStep(std::size_t ent_idx, State& state, float dt) {
     (void)dt;
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.vel += entity.acc;
+    Ent& ent = state.ents.ents[ent_idx];
+    ent.vel += ent.acc;
 }
 
-void ApplyGravity(std::size_t entity_idx, State& state, float dt) {
+void ApplyGravity(std::size_t ent_idx, State& state, float dt) {
     (void)dt;
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.grounded) {
-        ApplyEffectHookToEntity(entity, state, nullptr, EffectHookContext{.type = EffectHookType::Grounded});
-        if (entity.vel.y > 0.0F) {
-            entity.vel.y = 0.0F;
+    Ent& ent = state.ents.ents[ent_idx];
+    if (ent.grounded) {
+        ApplyEffectHookToEnt(ent, state, nullptr, EffectHookContext{.type = EffectHookType::Grounded});
+        if (ent.vel.y > 0.0F) {
+            ent.vel.y = 0.0F;
         }
         return;
     }
-    if (entity.collided_last_frame) {
-        ApplyEffectHookToEntity(entity, state, nullptr, EffectHookContext{.type = EffectHookType::BlockingContact});
+    if (ent.collided_last_frame) {
+        ApplyEffectHookToEnt(ent, state, nullptr, EffectHookContext{.type = EffectHookType::BlockingContact});
     }
     const float gravity_scale =
-        GetModifiedEffectValue(entity, EffectModifierTarget::GravityScale, 1.0F, &state);
+        GetModifiedEffectValue(ent, EffectModifierTarget::GravityScale, 1.0F, &state);
     if (gravity_scale != 0.0F) {
-        entity.acc.y += state.stage.gravity * gravity_scale;
+        ent.acc.y += state.stage.gravity * gravity_scale;
     }
     const float buoyancy_strength =
-        GetModifiedEffectValue(entity, EffectModifierTarget::BuoyancyStrength, 0.0F, &state);
-    if (entity.buoyancy > 0.0F && buoyancy_strength > 0.0F) {
-        entity.acc.y -= state.stage.gravity * entity.buoyancy * buoyancy_strength;
+        GetModifiedEffectValue(ent, EffectModifierTarget::BuoyancyStrength, 0.0F, &state);
+    if (ent.buoyancy > 0.0F && buoyancy_strength > 0.0F) {
+        ent.acc.y -= state.stage.gravity * ent.buoyancy * buoyancy_strength;
     }
 }
 
-void ApplyEffectVelocityModifiers(Entity& entity, const State& state) {
+void ApplyEffectVelocityModifiers(Ent& ent, const State& state) {
     const float damping_x =
-        GetModifiedEffectValue(entity, EffectModifierTarget::VelocityDampingX, 1.0F, &state);
+        GetModifiedEffectValue(ent, EffectModifierTarget::VelocityDampingX, 1.0F, &state);
     const float damping_y =
-        GetModifiedEffectValue(entity, EffectModifierTarget::VelocityDampingY, 1.0F, &state);
-    entity.vel.x *= std::clamp(damping_x, 0.0F, 1.0F);
-    entity.vel.y *= std::clamp(damping_y, 0.0F, 1.0F);
+        GetModifiedEffectValue(ent, EffectModifierTarget::VelocityDampingY, 1.0F, &state);
+    ent.vel.x *= std::clamp(damping_x, 0.0F, 1.0F);
+    ent.vel.y *= std::clamp(damping_y, 0.0F, 1.0F);
 
     const float max_fall_speed =
-        GetModifiedEffectValue(entity, EffectModifierTarget::MaxFallSpeed, entity.max_speed, &state);
-    entity.vel.y = std::min(entity.vel.y, max_fall_speed);
+        GetModifiedEffectValue(ent, EffectModifierTarget::MaxFallSpeed, ent.max_speed, &state);
+    ent.vel.y = std::min(ent.vel.y, max_fall_speed);
 }
 
-void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt) {
+void PostPartialEulerStep(std::size_t ent_idx, State& state, float dt) {
     (void)dt;
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    ApplyEffectVelocityModifiers(entity, state);
-    entity.vel.x = std::clamp(entity.vel.x, -entity.max_speed, entity.max_speed);
-    entity.vel.y = std::clamp(entity.vel.y, -entity.max_speed, entity.max_speed);
-    entity.acc = Vec2::New(0.0F, 0.0F);
+    Ent& ent = state.ents.ents[ent_idx];
+    ApplyEffectVelocityModifiers(ent, state);
+    ent.vel.x = std::clamp(ent.vel.x, -ent.max_speed, ent.max_speed);
+    ent.vel.y = std::clamp(ent.vel.y, -ent.max_speed, ent.max_speed);
+    ent.acc = Vec2::New(0.0F, 0.0F);
 }
 
-void ApplyGroundFriction(std::size_t entity_idx, State& state) {
-    ApplyGroundFriction(entity_idx, state, 1.0F);
+void ApplyGroundFriction(std::size_t ent_idx, State& state) {
+    ApplyGroundFriction(ent_idx, state, 1.0F);
 }
 
-void ApplyGroundFriction(std::size_t entity_idx, State& state, float friction_scale) {
+void ApplyGroundFriction(std::size_t ent_idx, State& state, float friction_scale) {
     {
-        Entity& entity = state.entity_manager.entities[entity_idx];
-        entity.grounded = false;
+        Ent& ent = state.ents.ents[ent_idx];
+        ent.grounded = false;
     }
 
-    if (IsGroundedOnEntities(entity_idx, state)) {
-        state.entity_manager.entities[entity_idx].grounded |= true;
+    if (IsGroundedOnEnts(ent_idx, state)) {
+        state.ents.ents[ent_idx].grounded |= true;
     }
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.SetGrounded(state.stage);
-    if (entity.grounded) {
-        entity.vel.x *= std::clamp(
-            GetGroundFrictionMultiplier(entity_idx, state) * friction_scale,
+    Ent& ent = state.ents.ents[ent_idx];
+    ent.SetGrounded(state.stage);
+    if (ent.grounded) {
+        ent.vel.x *= std::clamp(
+            GetGroundFrictionMultiplier(ent_idx, state) * friction_scale,
             0.0F,
             1.0F
         );
     }
 }
 
-void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state) {
-    ApplyArchetypeGroundFriction(entity_idx, state, 1.0F);
+void ApplySpecGroundFriction(std::size_t ent_idx, State& state) {
+    ApplySpecGroundFriction(ent_idx, state, 1.0F);
 }
 
-void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state, float friction_scale) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.affected_by_ground_friction) {
+void ApplySpecGroundFriction(std::size_t ent_idx, State& state, float friction_scale) {
+    const Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.affected_by_ground_friction) {
         return;
     }
-    ApplyGroundFriction(entity_idx, state, friction_scale);
+    ApplyGroundFriction(ent_idx, state, friction_scale);
 }
 
 void StepStandardPhysics(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    ApplyGravity(entity_idx, state, dt);
-    PrePartialEulerStep(entity_idx, state, dt);
-    DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    ApplyArchetypeGroundFriction(entity_idx, state);
-    PostPartialEulerStep(entity_idx, state, dt);
+    ApplyGravity(ent_idx, state, dt);
+    PrePartialEulerStep(ent_idx, state, dt);
+    DoTileAndEntCollisions(ent_idx, state, graphics, audio);
+    ApplySpecGroundFriction(ent_idx, state);
+    PostPartialEulerStep(ent_idx, state, dt);
 }
 
 void GroundedCheck(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     bool check_tiles,
-    bool check_entities,
+    bool check_ents,
     std::uint32_t coyote_time_frames
 ) {
     (void)audio;
     bool grounded = false;
     if (check_tiles) {
-        grounded |= IsGroundedOnTiles(entity_idx, state);
+        grounded |= IsGroundedOnTiles(ent_idx, state);
     }
-    if (check_entities) {
-        grounded |= IsGroundedOnEntities(entity_idx, state);
+    if (check_ents) {
+        grounded |= IsGroundedOnEnts(ent_idx, state);
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
+    Ent& ent = state.ents.ents[ent_idx];
 
-    entity.grounded = grounded;
-    if (entity.grounded) {
-        if (entity.vel.y > 0.0F) {
-            entity.vel.y = 0.0F;
+    ent.grounded = grounded;
+    if (ent.grounded) {
+        if (ent.vel.y > 0.0F) {
+            ent.vel.y = 0.0F;
         }
-        entity.coyote_time = coyote_time_frames;
-    } else if (entity.coyote_time > 0) {
-        entity.coyote_time -= 1;
+        ent.coyote_time = coyote_time_frames;
+    } else if (ent.coyote_time > 0) {
+        ent.coyote_time -= 1;
     }
 }
 
-bool IsGroundedOnTiles(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
+bool IsGroundedOnTiles(std::size_t ent_idx, State& state) {
+    Ent& ent = state.ents.ents[ent_idx];
 
-    const AABB feet_aabb = entity.GetGroundProbe();
-    if (entity.TrySnapToBlockingStageBottom(state.stage)) {
+    const AABB feet_aabb = ent.GetGroundProbe();
+    if (ent.TrySnapToBlockingStageBottom(state.stage)) {
         return true;
     }
 
@@ -1062,44 +1062,44 @@ bool IsGroundedOnTiles(std::size_t entity_idx, State& state) {
              ToIVec2(feet_aabb.br))) {
         if (tile_query.tile != nullptr &&
             (IsTileCollidable(*tile_query.tile) ||
-             (!entity.IsClimbing() && IsOneWayTopTileSupportingAabb(state.stage, tile_query, feet_aabb)))) {
+             (!ent.IsClimbing() && IsOneWayTopTileSupportingAabb(state.stage, tile_query, feet_aabb)))) {
             return true;
         }
     }
     return false;
 }
 
-void DoTileAndEntityCollisions(
-    std::size_t entity_idx,
+void DoTileAndEntCollisions(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
+    Ent& ent = state.ents.ents[ent_idx];
 
-    entity.collided_last_frame = entity.collided;
-    entity.collided = false;
-    MoveEntityPixelStep(entity_idx, state, true, true, &graphics, &audio);
-    entity.collided |= entity.grounded;
+    ent.collided_last_frame = ent.collided;
+    ent.collided = false;
+    MoveEntPixelStep(ent_idx, state, true, true, &graphics, &audio);
+    ent.collided |= ent.grounded;
 }
 
-void DoTileCollisions(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.collided_last_frame = entity.collided;
-    entity.collided = false;
-    MoveEntityPixelStep(entity_idx, state, true, false, nullptr, nullptr);
+void DoTileCollisions(std::size_t ent_idx, State& state) {
+    Ent& ent = state.ents.ents[ent_idx];
+    ent.collided_last_frame = ent.collided;
+    ent.collided = false;
+    MoveEntPixelStep(ent_idx, state, true, false, nullptr, nullptr);
 }
 
-void DoEntityCollisions(
-    std::size_t entity_idx,
+void DoEntCollisions(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.collided_last_frame = entity.collided;
-    entity.collided = false;
-    MoveEntityPixelStep(entity_idx, state, false, true, &graphics, &audio);
+    Ent& ent = state.ents.ents[ent_idx];
+    ent.collided_last_frame = ent.collided;
+    ent.collided = false;
+    MoveEntPixelStep(ent_idx, state, false, true, &graphics, &audio);
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

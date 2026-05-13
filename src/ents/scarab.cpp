@@ -1,16 +1,16 @@
-#include "entities/scarab.hpp"
+#include "ents/scarab.hpp"
 #include "on_damage_effects.hpp"
 
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 
-namespace splonks::entities::scarab {
+namespace splonks::ents::scarab {
 
-extern const EntityArchetype kScarabArchetype{
-    .type_ = EntityType::Scarab,
+extern const EntSpec kScarabSpec{
+    .type_ = EntType::Scarab,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -22,13 +22,13 @@ extern const EntityArchetype kScarabArchetype{
     .can_be_stomped = false,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Scarab),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Scarab),
 };
 
-} // namespace splonks::entities::scarab
+} // namespace splonks::ents::scarab

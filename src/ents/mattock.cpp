@@ -1,18 +1,18 @@
-#include "entities/mattock.hpp"
+#include "ents/mattock.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "stage.hpp"
 #include "stage_break.hpp"
 #include "state.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
 
@@ -20,7 +20,7 @@
 #include <memory>
 #include <string>
 
-namespace splonks::entities::mattock {
+namespace splonks::ents::mattock {
 
 namespace {
 
@@ -41,7 +41,7 @@ struct StrikeOutcome {
     Vec2 sound_pos = Vec2::New(0.0F, 0.0F);
 };
 
-struct EntityStrikeOutcome {
+struct EntStrikeOutcome {
     bool hit_any = false;
     Vec2 sound_pos = Vec2::New(0.0F, 0.0F);
 };
@@ -53,8 +53,8 @@ struct MattockTileTargets {
     Vec2 secondary_probe_world = Vec2::New(0.0F, 0.0F);
 };
 
-bool IsSwinging(const Entity& mattock) {
-    return mattock.frame_data_animator.animation_id == frame_data_ids::MattockSwing;
+bool IsSwinging(const Ent& mattock) {
+    return mattock.aframe_animator.anim_id == aframe_ids::MattockSwing;
 }
 
 AABB TileAabbForTilePos(const IVec2& tile_pos) {
@@ -71,15 +71,15 @@ AABB TileAabbForTilePos(const IVec2& tile_pos) {
     );
 }
 
-Vec2 GetFallbackStrikePoint(const Entity& mattock) {
-    const float direction = mattock.facing == LeftOrRight::Left ? -1.0F : 1.0F;
+Vec2 GetFallbackStrikePoint(const Ent& mattock) {
+    const float direction = mattock.facing == Side::Left ? -1.0F : 1.0F;
     return mattock.GetCenter() + Vec2::New(10.0F * direction, 0.0F);
 }
 
 void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
     for (int i = 0; i < 3; ++i) {
         SpriteParticle spark{};
-        spark.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spark);
+        spark.aframe_animator = AFrameAnimator::New(aframe_ids::Spark);
         spark.draw_layer = DrawLayer::Foreground;
         spark.lighting_mode = ParticleLightingMode::Emissive;
         spark.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(5, 9));
@@ -99,7 +99,7 @@ void SpawnMattockImpactParticles(State& state, const Vec2& pos, int direction) {
 
     for (int i = 0; i < 2; ++i) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(10, 16));
         smoke.pos = pos + Vec2::New(rng::RandomFloat(-1.0F, 1.0F), rng::RandomFloat(-1.0F, 1.0F));
@@ -126,7 +126,7 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
 
     const std::optional<WorldTileQueryResult> tile_query = QueryTileAtTilePos(state.stage, tile_pos);
     if (tile_query.has_value() && tile_query->tile != nullptr) {
-        if (!GetTileArchetype(*tile_query->tile).solid) {
+        if (!GetTileSpec(*tile_query->tile).solid) {
             return StrikeOutcome{
                 .result = StrikeResult::Miss,
                 .sound_pos = sound_pos,
@@ -161,9 +161,9 @@ StrikeOutcome TryStrikeTileCoord(const IVec2& tile_pos, State& state, Audio& aud
     };
 }
 
-MattockTileTargets GetMattockTileTargets(const Entity& holder, const Stage& stage) {
+MattockTileTargets GetMattockTileTargets(const Ent& holder, const Stage& stage) {
     const auto [holder_tl, holder_br] = holder.GetBounds();
-    const int front_world_x = holder.facing == LeftOrRight::Left
+    const int front_world_x = holder.facing == Side::Left
                                   ? static_cast<int>(std::floor(holder_tl.x)) - 1 -
                                         kMattockForwardProbeBiasPixels
                                   : static_cast<int>(std::floor(holder_br.x)) + 1 +
@@ -187,8 +187,8 @@ MattockTileTargets GetMattockTileTargets(const Entity& holder, const Stage& stag
 }
 
 void AddMattockDebugAnnotations(
-    const Entity& mattock,
-    const Entity* holder,
+    const Ent& mattock,
+    const Ent* holder,
     State& state,
     const Graphics& graphics
 ) {
@@ -197,7 +197,7 @@ void AddMattockDebugAnnotations(
     }
 
     state.AddDebugRectAnnotation(DebugRectAnnotation{
-        .area = common::GetContactAabbForEntity(mattock, graphics),
+        .area = common::GetContactAabbForEnt(mattock, graphics),
         .color = DebugAnnotationColor{0, 255, 255, 255},
     });
     state.AddDebugLabelAnnotation(DebugLabelAnnotation{
@@ -254,7 +254,7 @@ void AddMattockDebugAnnotations(
     });
 }
 
-bool ShouldBreakMattockAfterSuccessfulDig(Entity& mattock, State& state) {
+bool ShouldBreakMattockAfterSuccessfulDig(Ent& mattock, State& state) {
     if (mattock.counter_b > 0.0F) {
         mattock.counter_b -= 1.0F;
         return false;
@@ -264,60 +264,60 @@ bool ShouldBreakMattockAfterSuccessfulDig(Entity& mattock, State& state) {
            kMattockBreakChancePercentAfterGuaranteedDigs;
 }
 
-bool CanMattockHitEntity(const Entity& mattock, const Entity* holder, const Entity& other_entity) {
-    if (!other_entity.active || !other_entity.can_collide || other_entity.condition == EntityCondition::Dead) {
+bool CanMattockHitEnt(const Ent& mattock, const Ent* holder, const Ent& other_ent) {
+    if (!other_ent.active || !other_ent.can_collide || other_ent.condition == EntCondition::Dead) {
         return false;
     }
-    if (other_entity.vid == mattock.vid) {
+    if (other_ent.vid == mattock.vid) {
         return false;
     }
-    if (holder != nullptr && other_entity.vid == holder->vid) {
+    if (holder != nullptr && other_ent.vid == holder->vid) {
         return false;
     }
-    if (holder != nullptr && other_entity.held_by_vid.has_value() && *other_entity.held_by_vid == holder->vid) {
+    if (holder != nullptr && other_ent.held_by_vid.has_value() && *other_ent.held_by_vid == holder->vid) {
         return false;
     }
     return true;
 }
 
-DamageType GetMattockDamageType(const Entity& other_entity) {
-    if (other_entity.impassable || other_entity.stone) {
+DamageType GetMattockDamageType(const Ent& other_ent) {
+    if (other_ent.impassable || other_ent.stone) {
         return DamageType::Explosion;
     }
     return DamageType::Attack;
 }
 
-EntityStrikeOutcome TryStrikeEntitiesWithMattock(
-    const Entity& mattock,
-    const Entity* holder,
+EntStrikeOutcome TryStrikeEntsWithMattock(
+    const Ent& mattock,
+    const Ent* holder,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
-    const AABB strike_aabb = common::GetContactAabbForEntity(mattock, graphics);
-    EntityStrikeOutcome result{};
+    const AABB strike_aabb = common::GetContactAabbForEnt(mattock, graphics);
+    EntStrikeOutcome result{};
 
-    for (const VID& other_vid : QueryEntitiesInAabb(state, strike_aabb, mattock.vid)) {
-        const Entity* const other_entity_const = state.entity_manager.GetEntity(other_vid);
-        if (other_entity_const == nullptr || !CanMattockHitEntity(mattock, holder, *other_entity_const)) {
+    for (const VID& other_vid : QueryEntsInAabb(state, strike_aabb, mattock.vid)) {
+        const Ent* const other_ent_const = state.ents.GetEnt(other_vid);
+        if (other_ent_const == nullptr || !CanMattockHitEnt(mattock, holder, *other_ent_const)) {
             continue;
         }
 
         const AABB other_aabb = GetNearestWorldAabb(
             state.stage,
             mattock.GetCenter(),
-            common::GetContactAabbForEntity(*other_entity_const, graphics)
+            common::GetContactAabbForEnt(*other_ent_const, graphics)
         );
         if (!AabbsIntersect(strike_aabb, other_aabb)) {
             continue;
         }
 
-        const DamageType damage_type = GetMattockDamageType(*other_entity_const);
-        const bool is_heavy_target = other_entity_const->impassable || other_entity_const->stone;
-        const float knockback_x = mattock.facing == LeftOrRight::Left ? -4.0F : 4.0F;
+        const DamageType damage_type = GetMattockDamageType(*other_ent_const);
+        const bool is_heavy_target = other_ent_const->impassable || other_ent_const->stone;
+        const float knockback_x = mattock.facing == Side::Left ? -4.0F : 4.0F;
         const common::DamageResult damage_result =
-            common::TryHitEntity(
-                other_entity_const->vid.id,
+            common::TryHitEnt(
+                other_ent_const->vid.id,
                 state,
                 audio,
                 damage_type,
@@ -326,15 +326,15 @@ EntityStrikeOutcome TryStrikeEntitiesWithMattock(
                     .source_vid = mattock.vid,
                     .knockback = common::KnockbackSpec{
                         .velocity = Vec2::New(knockback_x, -2.0F),
-                        .clear_velocity = !other_entity_const->impassable,
-                        .clear_acceleration = !other_entity_const->impassable,
+                        .clear_velocity = !other_ent_const->impassable,
+                        .clear_acceleration = !other_ent_const->impassable,
                         .thrown_by = holder != nullptr ? std::optional<VID>(holder->vid) : std::nullopt,
                         .thrown_immunity_timer = common::kThrownByImmunityDuration,
-                        .projectile_contact_damage_type = damage_type,
-                        .projectile_contact_damage_amount = 1,
-                        .projectile_contact_duration = other_entity_const->impassable
+                        .proj_contact_damage_type = damage_type,
+                        .proj_contact_damage_amount = 1,
+                        .proj_contact_duration = other_ent_const->impassable
                             ? 0U
-                            : common::kProjectileContactDuration,
+                            : common::kProjContactDuration,
                     },
                 }
             );
@@ -344,8 +344,8 @@ EntityStrikeOutcome TryStrikeEntitiesWithMattock(
         if (is_heavy_target && damage_result == common::DamageResult::Died) {
             (void)PlayWorldSoundEmitter(state, (other_aabb.tl + other_aabb.br) * 0.5F, audio_asset_ids::PotShatter);
         }
-        if (Entity* const other_entity = state.entity_manager.GetEntityMut(other_entity_const->vid)) {
-            result.sound_pos = other_entity->GetCenter();
+        if (Ent* const other_ent = state.ents.GetEntMut(other_ent_const->vid)) {
+            result.sound_pos = other_ent->GetCenter();
         } else {
             result.sound_pos = (other_aabb.tl + other_aabb.br) * 0.5F;
         }
@@ -356,8 +356,8 @@ EntityStrikeOutcome TryStrikeEntitiesWithMattock(
 }
 
 StrikeOutcome ComputeMattockStrikeOutcome(
-    const Entity& mattock,
-    const Entity* holder,
+    const Ent& mattock,
+    const Ent* holder,
     State& state,
     Audio& audio
 ) {
@@ -378,23 +378,23 @@ StrikeOutcome ComputeMattockStrikeOutcome(
     return TryStrikeTileCoord(secondary, state, audio);
 }
 
-void TryApplyMattockStrike(std::size_t entity_idx, State& state, const Graphics& graphics, Audio& audio) {
-    Entity& mattock = state.entity_manager.entities[entity_idx];
-    Entity* holder = nullptr;
+void TryApplyMattockStrike(std::size_t ent_idx, State& state, const Graphics& graphics, Audio& audio) {
+    Ent& mattock = state.ents.ents[ent_idx];
+    Ent* holder = nullptr;
     if (mattock.held_by_vid.has_value()) {
-        holder = state.entity_manager.GetEntityMut(*mattock.held_by_vid);
+        holder = state.ents.GetEntMut(*mattock.held_by_vid);
     }
 
-    const EntityStrikeOutcome entity_outcome =
-        TryStrikeEntitiesWithMattock(mattock, holder, state, graphics, audio);
+    const EntStrikeOutcome ent_outcome =
+        TryStrikeEntsWithMattock(mattock, holder, state, graphics, audio);
     const StrikeOutcome tile_outcome = ComputeMattockStrikeOutcome(mattock, holder, state, audio);
-    if (!entity_outcome.hit_any && tile_outcome.result == StrikeResult::Miss) {
+    if (!ent_outcome.hit_any && tile_outcome.result == StrikeResult::Miss) {
         return;
     }
 
-    const int direction = mattock.facing == LeftOrRight::Left ? -1 : 1;
+    const int direction = mattock.facing == Side::Left ? -1 : 1;
     const Vec2 effect_pos = tile_outcome.result != StrikeResult::Miss ? tile_outcome.sound_pos
-                                                                      : entity_outcome.sound_pos;
+                                                                      : ent_outcome.sound_pos;
     SpawnMattockImpactParticles(state, effect_pos, direction);
     (void)PlayWorldSoundEmitter(state, effect_pos, audio_asset_ids::Pickaxe);
     if (tile_outcome.result == StrikeResult::HitUnbreakable) {
@@ -408,37 +408,37 @@ void TryApplyMattockStrike(std::size_t entity_idx, State& state, const Graphics&
 
 } // namespace
 
-void OnUseAsMattock(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+void OnUseAsMattock(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     (void)state;
     (void)graphics;
     (void)audio;
-    Entity& mattock = state.entity_manager.entities[entity_idx];
+    Ent& mattock = state.ents.ents[ent_idx];
     if (!mattock.use_state.pressed || IsSwinging(mattock)) {
         return;
     }
 
-    SetAnimation(mattock, frame_data_ids::MattockSwing);
-    mattock.frame_data_animator.loop = false;
+    SetAnim(mattock, aframe_ids::MattockSwing);
+    mattock.aframe_animator.loop = false;
     mattock.counter_a = kMattockStrikePending;
 
-    if (mattock.use_state.source == AttachmentMode::None) {
-        StopUsingEntity(mattock);
+    if (mattock.use_state.source == AttachMode::None) {
+        StopUsingEnt(mattock);
     }
 }
 
-void StepEntityLogicAsMattock(
-    std::size_t entity_idx,
+void StepEntLogicAsMattock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    Entity& mattock = state.entity_manager.entities[entity_idx];
+    Ent& mattock = state.ents.ents[ent_idx];
 
-    const Entity* holder = nullptr;
+    const Ent* holder = nullptr;
     if (mattock.held_by_vid.has_value()) {
-        holder = state.entity_manager.GetEntity(*mattock.held_by_vid);
+        holder = state.ents.GetEnt(*mattock.held_by_vid);
     }
     AddMattockDebugAnnotations(mattock, holder, state, graphics);
 
@@ -446,21 +446,21 @@ void StepEntityLogicAsMattock(
         return;
     }
 
-    if (mattock.counter_a > 0.0F && mattock.frame_data_animator.current_frame > 0) {
-        TryApplyMattockStrike(entity_idx, state, graphics, audio);
+    if (mattock.counter_a > 0.0F && mattock.aframe_animator.current_frame > 0) {
+        TryApplyMattockStrike(ent_idx, state, graphics, audio);
         mattock.counter_a = 0.0F;
     }
 
-    if (!mattock.frame_data_animator.IsFinished()) {
+    if (!mattock.aframe_animator.IsFinished()) {
         return;
     }
 
-    SetAnimation(mattock, frame_data_ids::Mattock);
-    mattock.frame_data_animator.loop = true;
+    SetAnim(mattock, aframe_ids::Mattock);
+    mattock.aframe_animator.loop = true;
 }
 
-extern const EntityArchetype kMattockArchetype{
-    .type_ = EntityType::Mattock,
+extern const EntSpec kMattockSpec{
+    .type_ = EntType::Mattock,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -471,15 +471,15 @@ extern const EntityArchetype kMattockArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
     .counter_b = kMattockGuaranteedDigs,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .damage_vuln = DamageVuln::Immune,
     .on_use = OnUseAsMattock,
-    .step_logic = StepEntityLogicAsMattock,
+    .step_logic = StepEntLogicAsMattock,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Mattock),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Mattock),
 };
 
-} // namespace splonks::entities::mattock
+} // namespace splonks::ents::mattock

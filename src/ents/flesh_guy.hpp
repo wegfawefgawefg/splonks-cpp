@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,31 +10,31 @@ struct State;
 
 }
 
-namespace splonks::entities::flesh_guy {
+namespace splonks::ents::flesh_guy {
 
-extern const EntityArchetype kFleshGuyArchetype;
+extern const EntSpec kFleshGuySpec;
 
-void OnDeathAsFleshGuy(std::size_t entity_idx, State& state, Audio& audio);
-void ControlEntityAsFleshGuy(
-    std::size_t entity_idx,
+void OnDeathAsFleshGuy(std::size_t ent_idx, State& state, Audio& audio);
+void ControlEntAsFleshGuy(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityLogicAsFleshGuy(
-    std::size_t entity_idx,
+void StepEntLogicAsFleshGuy(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityPhysicsAsFleshGuy(
-    std::size_t entity_idx,
+void StepEntPhysicsAsFleshGuy(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::flesh_guy
+} // namespace splonks::ents::flesh_guy

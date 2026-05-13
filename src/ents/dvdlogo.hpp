@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,16 +10,16 @@ struct State;
 
 } // namespace splonks
 
-namespace splonks::entities::dvdlogo {
+namespace splonks::ents::dvdlogo {
 
-extern const EntityArchetype kDvdLogoArchetype;
+extern const EntSpec kDvdLogoSpec;
 
-void StepEntityLogicAsDvdLogo(
-    std::size_t entity_idx,
+void StepEntLogicAsDvdLogo(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::dvdlogo
+} // namespace splonks::ents::dvdlogo

@@ -9,14 +9,14 @@ namespace {
 
 } // namespace
 
-Direction LeftOrRight() {
+Direction Side() {
     switch (rng::RandomIntInclusive(0, 1)) {
     case 0:
         return Direction::Left;
     case 1:
         return Direction::Right;
     default:
-        throw std::runtime_error("LeftOrRight generated unreachable direction");
+        throw std::runtime_error("Side generated unreachable direction");
     }
 }
 
@@ -31,7 +31,7 @@ Direction DownOrUp() {
     }
 }
 
-Direction LeftOrRightOrDown() {
+Direction SideOrDown() {
     switch (rng::RandomIntInclusive(0, 2)) {
     case 0:
         return Direction::Left;
@@ -40,7 +40,7 @@ Direction LeftOrRightOrDown() {
     case 2:
         return Direction::Down;
     default:
-        throw std::runtime_error("LeftOrRightOrDown generated unreachable direction");
+        throw std::runtime_error("SideOrDown generated unreachable direction");
     }
 }
 

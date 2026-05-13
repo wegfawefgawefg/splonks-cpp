@@ -4,12 +4,12 @@
 
 namespace splonks {
 
-struct Entity;
+struct Ent;
 struct State;
 
 namespace effects {
 
-void SpawnTreasurePickupSparkles(const Entity& pickup, State& state, Color3 color, int count);
+void SpawnTreasurePickupSparkles(const Ent& pickup, State& state, Color3 color, int count);
 
 } // namespace effects
 

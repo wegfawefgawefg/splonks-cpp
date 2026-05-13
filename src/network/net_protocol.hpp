@@ -44,7 +44,7 @@ struct JoinRequestPacket {
 struct JoinAcceptPacket {
     std::uint32_t assigned_player_count = 1;
     std::array<PlayerId, kNetPlayersPerProcess> assigned_player_ids{};
-    PlayerId coordinator_player_id = kPrimaryLocalPlayerId;
+    PlayerId host_player_id = kPrimaryLocalPlayerId;
     StageInstanceId stage_instance_id = 1;
     float remote_spawn_x = 0.0F;
     float remote_spawn_y = 0.0F;
@@ -56,7 +56,7 @@ struct JoinAcceptPacket {
     std::uint8_t multiplayer_respawn_mode = 0;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
-    std::array<char, kNetNameBytes> coordinator_name{};
+    std::array<char, kNetNameBytes> host_name{};
 };
 
 struct LeaveNoticePacket {

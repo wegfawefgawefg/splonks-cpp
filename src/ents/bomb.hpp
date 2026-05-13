@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,32 +10,32 @@ struct State;
 
 }
 
-namespace splonks::entities::bomb {
+namespace splonks::ents::bomb {
 
-extern const EntityArchetype kBombArchetype;
+extern const EntSpec kBombSpec;
 
-void MarkBombSticky(Entity& bomb);
-void OnDeathAsBomb(std::size_t entity_idx, State& state, Audio& audio);
-void OnUseAsBomb(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
-void StepEntityLogicAsBomb(
-    std::size_t entity_idx,
+void MarkBombSticky(Ent& bomb);
+void OnDeathAsBomb(std::size_t ent_idx, State& state, Audio& audio);
+void OnUseAsBomb(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio);
+void StepEntLogicAsBomb(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-entities::common::ContactResolution OnEntityContactAsBomb(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
-    const entities::common::ContactContext& context,
+ents::common::ContactResult OnEntContactAsBomb(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
+    const ents::common::ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 );
-entities::common::ContactResolution OnTileContactAsBomb(
-    std::size_t entity_idx,
-    const entities::common::ContactContext& context,
+ents::common::ContactResult OnTileContactAsBomb(
+    std::size_t ent_idx,
+    const ents::common::ContactContext& context,
     State& state
 );
 
-} // namespace splonks::entities::bomb
+} // namespace splonks::ents::bomb

@@ -9,8 +9,8 @@ struct State;
 
 namespace network {
 
-void RegisterStageEntityLinks(State& state);
-NetEntityId GetOrAssignReplicatedEntityId(State& state, VID entity_vid);
+void RegisterStageEntLinks(State& state);
+NetEntId GetOrAssignReplicatedEntId(State& state, VID ent_vid);
 
 } // namespace network
 } // namespace splonks

@@ -1,9 +1,9 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 #include "world_query.hpp"
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
@@ -11,59 +11,59 @@ bool ShouldDeduplicatePairThisTick(const ContactContext& context) {
     return context.direction == 0;
 }
 
-bool AreDirectlyAttached(const Entity& first, const Entity& second) {
+bool AreDirectlyAttached(const Ent& first, const Ent& second) {
     return (first.held_by_vid.has_value() && *first.held_by_vid == second.vid) ||
            (second.held_by_vid.has_value() && *second.held_by_vid == first.vid);
 }
 
-ContactResolution TryDispatchEntityEntityContactForParticipant(
+ContactResult TryDispatchEntEntContactForParticipant(
     std::size_t participant_idx,
-    std::size_t other_entity_idx,
+    std::size_t other_ent_idx,
     const ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
-    if (participant_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
-        return ContactResolution{};
+    if (participant_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
+        return ContactResult{};
     }
 
-    const Entity& participant = state.entity_manager.entities[participant_idx];
-    const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!participant.active || !other_entity.active) {
-        return ContactResolution{};
+    const Ent& participant = state.ents.ents[participant_idx];
+    const Ent& other_ent = state.ents.ents[other_ent_idx];
+    if (!participant.active || !other_ent.active) {
+        return ContactResult{};
     }
-    const EntityArchetype& participant_archetype = GetEntityArchetype(participant.type_);
-    if (participant_archetype.entity_contact_cooldown_duration > 0 &&
-        state.contact.HasContactCooldown(participant.vid, other_entity.vid)) {
-        return ContactResolution{};
+    const EntSpec& participant_spec = GetEntSpec(participant.type_);
+    if (participant_spec.ent_contact_cooldown_duration > 0 &&
+        state.contact.HasContactCooldown(participant.vid, other_ent.vid)) {
+        return ContactResult{};
     }
 
     if (participant.crusher_pusher) {
         if (graphics != nullptr && audio != nullptr) {
             TryApplyCrusherPusherContact(
                 participant_idx,
-                other_entity_idx,
+                other_ent_idx,
                 context,
                 state,
                 *graphics,
                 *audio
             );
         }
-        return ContactResolution{};
+        return ContactResult{};
     }
 
-    ContactResolution resolution{};
+    ContactResult resolution{};
     if (participant.can_stomp && graphics != nullptr && audio != nullptr &&
-        TryApplyStompContactToEntity(participant_idx, other_entity_idx, state, *graphics, *audio)) {
+        TryApplyStompContactToEnt(participant_idx, other_ent_idx, state, *graphics, *audio)) {
         resolution.stop_sweep = true;
     }
 
-    if (participant_archetype.on_entity_contact != nullptr) {
-        const ContactResolution callback_resolution = participant_archetype.on_entity_contact(
+    if (participant_spec.on_ent_contact != nullptr) {
+        const ContactResult callback_resolution = participant_spec.on_ent_contact(
             participant_idx,
-            other_entity_idx,
+            other_ent_idx,
             context,
             state,
             graphics,
@@ -78,36 +78,36 @@ ContactResolution TryDispatchEntityEntityContactForParticipant(
 
 }
 
-std::vector<VID> GatherTouchedEntityContactsForAabb(
-    std::size_t entity_idx,
+std::vector<VID> GatherTouchedEntContactsForAabb(
+    std::size_t ent_idx,
     const AABB& aabb,
     const Graphics& graphics,
     State& state
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return {};
     }
 
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.active) {
+    const Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.active) {
         return {};
     }
 
     std::vector<VID> touched_vids;
-    const Vec2 anchor = entity.GetCenter();
-    for (const VID& other_vid : QueryEntitiesInAabb(state, aabb, entity.vid)) {
-        const Entity* const other_entity = state.entity_manager.GetEntity(other_vid);
-        if (other_entity == nullptr || !other_entity->active) {
+    const Vec2 anchor = ent.GetCenter();
+    for (const VID& other_vid : QueryEntsInAabb(state, aabb, ent.vid)) {
+        const Ent* const other_ent = state.ents.GetEnt(other_vid);
+        if (other_ent == nullptr || !other_ent->active) {
             continue;
         }
-        if (AreDirectlyAttached(entity, *other_entity)) {
+        if (AreDirectlyAttached(ent, *other_ent)) {
             continue;
         }
 
         const AABB other_contact_aabb = GetNearestWorldAabb(
             state.stage,
             anchor,
-            GetContactAabbForEntity(*other_entity, graphics)
+            GetContactAabbForEnt(*other_ent, graphics)
         );
         if (!AabbsIntersect(aabb, other_contact_aabb)) {
             continue;
@@ -117,131 +117,131 @@ std::vector<VID> GatherTouchedEntityContactsForAabb(
     return touched_vids;
 }
 
-ContactResolution TryDispatchEntityEntityContactPair(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+ContactResult TryDispatchEntEntContactPair(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
-    if (entity_idx == other_entity_idx) {
-        return ContactResolution{};
+    if (ent_idx == other_ent_idx) {
+        return ContactResult{};
     }
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
-        return ContactResolution{};
+    if (ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
+        return ContactResult{};
     }
 
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const Entity& other_entity = state.entity_manager.entities[other_entity_idx];
-    if (!entity.active || !other_entity.active) {
-        return ContactResolution{};
+    const Ent& ent = state.ents.ents[ent_idx];
+    const Ent& other_ent = state.ents.ents[other_ent_idx];
+    if (!ent.active || !other_ent.active) {
+        return ContactResult{};
     }
     if (ShouldDeduplicatePairThisTick(context) &&
-        state.contact.HasEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid)) {
-        return ContactResolution{};
+        state.contact.HasEntContactPairDispatchedThisTick(ent.vid, other_ent.vid)) {
+        return ContactResult{};
     }
-    state.contact.RecordEntityContactPairDispatchedThisTick(entity.vid, other_entity.vid);
+    state.contact.RecordEntContactPairDispatchedThisTick(ent.vid, other_ent.vid);
 
-    ContactResolution result{};
-    if (context.phase == ContactPhase::AttemptedBlocked && other_entity.impassable) {
+    ContactResult result{};
+    if (context.phase == ContactPhase::AttemptedBlocked && other_ent.impassable) {
         result.blocks_movement = true;
     }
 
     if (graphics != nullptr && audio != nullptr && context.phase == ContactPhase::SweptEntered) {
-        const bool entity_projectile_hit = TryApplyProjectileContactToEntity(
-            entity_idx,
-            other_entity_idx,
+        const bool ent_proj_hit = TryApplyProjContactToEnt(
+            ent_idx,
+            other_ent_idx,
             state,
             *graphics,
             *audio
         );
-        const bool other_entity_projectile_hit = TryApplyProjectileContactToEntity(
-            other_entity_idx,
-            entity_idx,
+        const bool other_ent_proj_hit = TryApplyProjContactToEnt(
+            other_ent_idx,
+            ent_idx,
             state,
             *graphics,
             *audio
         );
-        result.stop_sweep |= entity_projectile_hit || other_entity_projectile_hit;
+        result.stop_sweep |= ent_proj_hit || other_ent_proj_hit;
     }
 
-    const EntityArchetype& entity_archetype = GetEntityArchetype(entity.type_);
-    const ContactResolution entity_resolution = TryDispatchEntityEntityContactForParticipant(
-        entity_idx, other_entity_idx, context, state, graphics, audio);
-    result.blocks_movement |= entity_resolution.blocks_movement;
-    result.stop_sweep |= entity_resolution.stop_sweep;
-    if (entity_archetype.entity_contact_cooldown_duration > 0 &&
-        (entity_resolution.blocks_movement || entity_resolution.stop_sweep)) {
+    const EntSpec& ent_spec = GetEntSpec(ent.type_);
+    const ContactResult ent_resolution = TryDispatchEntEntContactForParticipant(
+        ent_idx, other_ent_idx, context, state, graphics, audio);
+    result.blocks_movement |= ent_resolution.blocks_movement;
+    result.stop_sweep |= ent_resolution.stop_sweep;
+    if (ent_spec.ent_contact_cooldown_duration > 0 &&
+        (ent_resolution.blocks_movement || ent_resolution.stop_sweep)) {
         state.contact.AddContactCooldown(
-            entity.vid,
-            other_entity.vid,
+            ent.vid,
+            other_ent.vid,
             state.stage_frame,
-            entity_archetype.entity_contact_cooldown_duration
+            ent_spec.ent_contact_cooldown_duration
         );
     }
 
-    const EntityArchetype& other_archetype = GetEntityArchetype(other_entity.type_);
-    const ContactResolution other_resolution = TryDispatchEntityEntityContactForParticipant(
-        other_entity_idx, entity_idx, context, state, graphics, audio);
+    const EntSpec& other_spec = GetEntSpec(other_ent.type_);
+    const ContactResult other_resolution = TryDispatchEntEntContactForParticipant(
+        other_ent_idx, ent_idx, context, state, graphics, audio);
     result.blocks_movement |= other_resolution.blocks_movement;
     result.stop_sweep |= other_resolution.stop_sweep;
-    if (other_archetype.entity_contact_cooldown_duration > 0 &&
+    if (other_spec.ent_contact_cooldown_duration > 0 &&
         (other_resolution.blocks_movement || other_resolution.stop_sweep)) {
         state.contact.AddContactCooldown(
-            other_entity.vid,
-            entity.vid,
+            other_ent.vid,
+            ent.vid,
             state.stage_frame,
-            other_archetype.entity_contact_cooldown_duration
+            other_spec.ent_contact_cooldown_duration
         );
     }
 
     return result;
 }
 
-ContactResolution TryDispatchEntityEntityContacts(
-    std::size_t entity_idx,
+ContactResult TryDispatchEntEntContacts(
+    std::size_t ent_idx,
     const std::vector<VID>& touched_vids,
     const ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
-    ContactResolution aggregate{};
+    ContactResult aggregate{};
     for (const VID& other_vid : touched_vids) {
-        const ContactResolution pair_resolution = TryDispatchEntityEntityContactPair(
-            entity_idx, other_vid.id, context, state, graphics, audio);
+        const ContactResult pair_resolution = TryDispatchEntEntContactPair(
+            ent_idx, other_vid.id, context, state, graphics, audio);
         aggregate.blocks_movement |= pair_resolution.blocks_movement;
         aggregate.stop_sweep |= pair_resolution.stop_sweep;
     }
     return aggregate;
 }
 
-bool TryDispatchEntityEntityOverlapContacts(
-    std::size_t entity_idx,
+bool TryDispatchEntEntOverlapContacts(
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio,
     const ContactContext& context
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.active) {
+    const Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.active) {
         return false;
     }
 
-    const std::vector<VID> touched_vids = GatherTouchedEntityContactsForAabb(
-        entity_idx,
-        GetContactAabbForEntity(entity, graphics),
+    const std::vector<VID> touched_vids = GatherTouchedEntContactsForAabb(
+        ent_idx,
+        GetContactAabbForEnt(ent, graphics),
         graphics,
         state
     );
-    return TryDispatchEntityEntityContacts(
-               entity_idx,
+    return TryDispatchEntEntContacts(
+               ent_idx,
                touched_vids,
                context,
                state,
@@ -251,4 +251,4 @@ bool TryDispatchEntityEntityOverlapContacts(
         .stop_sweep;
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

@@ -1,7 +1,7 @@
 #include "network/net_lobby_internal.hpp"
 
 #include "graphics.hpp"
-#include "network/net_entity_links.hpp"
+#include "network/net_ent_links.hpp"
 #include "network/net_protocol.hpp"
 #include "quest_stage_loader.hpp"
 #include "state.hpp"
@@ -119,7 +119,7 @@ void SendJoinRequest(State& state) {
     }
     WriteFixedString("Player", request.display_name);
     const EncodedNetPacket encoded = EncodeJoinRequest(request);
-    SendEncodedPacket(*state.net_transport, state.net_transport->coordinator_endpoint, encoded);
+    SendEncodedPacket(*state.net_transport, state.net_transport->host_endpoint, encoded);
 }
 
 namespace {
@@ -154,17 +154,17 @@ void SendLeaveNotice(State& state) {
         return;
     }
     if (state.net_session.role == NetRole::Peer) {
-        SendLeaveNoticeToEndpoint(*state.net_transport, state.net_transport->coordinator_endpoint, state);
+        SendLeaveNoticeToEndpoint(*state.net_transport, state.net_transport->host_endpoint, state);
         return;
     }
-    if (state.net_session.role == NetRole::Coordinator) {
+    if (state.net_session.role == NetRole::Host) {
         for (const NetRemoteEndpoint& remote : state.net_transport->remotes) {
             SendLeaveNoticeToEndpoint(*state.net_transport, remote.endpoint, state);
         }
     }
 }
 
-void HandleJoinRequestAsCoordinator(
+void HandleJoinRequestAsHost(
     State& state,
     const Graphics& graphics,
     NetTransportRuntime& transport,
@@ -205,10 +205,10 @@ void HandleJoinRequestAsCoordinator(
             remote_spawn = spawn_pos;
         }
         bool resumed_existing_body = false;
-        if (slot.entity_vid.has_value()) {
-            if (const Entity* const entity = state.entity_manager.GetEntity(*slot.entity_vid);
-                entity != nullptr && entity->active) {
-                state.net_session.LinkEntity(MakePlayerNetEntityId(player_id), entity->vid);
+        if (slot.ent_vid.has_value()) {
+            if (const Ent* const ent = state.ents.GetEnt(*slot.ent_vid);
+                ent != nullptr && ent->active) {
+                state.net_session.LinkEnt(MakePlayerNetEntId(player_id), ent->vid);
                 resumed_existing_body = true;
             }
         }
@@ -259,7 +259,7 @@ void HandleJoinRequestAsCoordinator(
     for (std::uint32_t i = 0; i < accept.assigned_player_count; ++i) {
         accept.assigned_player_ids[i] = player_ids[i];
     }
-    accept.coordinator_player_id = state.net_session.coordinator_player_id;
+    accept.host_player_id = state.net_session.host_player_id;
     accept.stage_instance_id = state.net_session.stage_instance_id;
     accept.remote_spawn_x = remote_spawn.x;
     accept.remote_spawn_y = remote_spawn.y;
@@ -272,7 +272,7 @@ void HandleJoinRequestAsCoordinator(
         static_cast<std::uint8_t>(state.multiplayer_respawn_mode);
     WriteFixedString(state.net_session.quest_id, accept.quest_id);
     WriteFixedString(state.net_session.quest_stage_id, accept.quest_stage_id);
-    WriteFixedString("Host", accept.coordinator_name);
+    WriteFixedString("Host", accept.host_name);
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
 }
@@ -300,7 +300,7 @@ void HandleJoinAcceptAsPeer(
 
     state.net_session.role = NetRole::Peer;
     state.net_session.local_player_id = accept.assigned_player_ids[0];
-    state.net_session.coordinator_player_id = accept.coordinator_player_id;
+    state.net_session.host_player_id = accept.host_player_id;
     state.net_session.stage_instance_id = accept.stage_instance_id;
     state.net_session.quest_id = ReadFixedString(accept.quest_id);
     state.net_session.quest_stage_id = ReadFixedString(accept.quest_stage_id);
@@ -333,10 +333,10 @@ void HandleJoinAcceptAsPeer(
 
     state.players = PlayerRegistry::New();
     if (state.net_session.input_lockstep_enabled) {
-        state.entity_manager = EntityManager::New();
+        state.ents = EntPool::New();
     }
-    state.controlled_entity_vid.reset();
-    state.net_session.ClearStageEntityLinks();
+    state.controlled_ent_vid.reset();
+    state.net_session.ClearStageEntLinks();
 
     if (!LoadQuestStage(
             state,
@@ -348,19 +348,19 @@ void HandleJoinAcceptAsPeer(
         transport.last_error = "Join accepted, but synced quest stage load failed.";
         return;
     }
-    PlayerSlot& coordinator_slot =
-        state.players.EnsureRemotePlayer(accept.coordinator_player_id, ReadFixedString(accept.coordinator_name));
-    if (coordinator_slot.entity_vid.has_value()) {
-        if (Entity* const coordinator = state.entity_manager.GetEntityMut(*coordinator_slot.entity_vid)) {
-            coordinator->pos = Vec2::New(accept.host_spawn_x, accept.host_spawn_y);
-            coordinator->vel = Vec2::New(0.0F, 0.0F);
-            coordinator->acc = Vec2::New(0.0F, 0.0F);
-            state.net_session.LinkEntity(MakePlayerNetEntityId(accept.coordinator_player_id), coordinator->vid);
+    PlayerSlot& host_slot =
+        state.players.EnsureRemotePlayer(accept.host_player_id, ReadFixedString(accept.host_name));
+    if (host_slot.ent_vid.has_value()) {
+        if (Ent* const host = state.ents.GetEntMut(*host_slot.ent_vid)) {
+            host->pos = Vec2::New(accept.host_spawn_x, accept.host_spawn_y);
+            host->vel = Vec2::New(0.0F, 0.0F);
+            host->acc = Vec2::New(0.0F, 0.0F);
+            state.net_session.LinkEnt(MakePlayerNetEntId(accept.host_player_id), host->vid);
         }
     } else {
         EnsureSpawnedPlayer(
             state,
-            accept.coordinator_player_id,
+            accept.host_player_id,
             false,
             false,
             Vec2::New(accept.host_spawn_x, accept.host_spawn_y),
@@ -394,27 +394,27 @@ void HandleJoinAcceptAsPeer(
 
     NetPeerState* peer_state = nullptr;
     for (NetPeerState& peer : state.net_session.peers) {
-        if (peer.player_id == accept.coordinator_player_id) {
+        if (peer.player_id == accept.host_player_id) {
             peer_state = &peer;
             break;
         }
     }
     if (peer_state == nullptr) {
         NetPeerState peer;
-        peer.player_id = accept.coordinator_player_id;
+        peer.player_id = accept.host_player_id;
         state.net_session.peers.push_back(peer);
         peer_state = &state.net_session.peers.back();
     }
-    peer_state->display_name = ReadFixedString(accept.coordinator_name);
-    peer_state->endpoint_address = transport.coordinator_endpoint.address;
-    peer_state->endpoint_port = transport.coordinator_endpoint.port;
-    RegisterStageEntityLinks(state);
+    peer_state->display_name = ReadFixedString(accept.host_name);
+    peer_state->endpoint_address = transport.host_endpoint.address;
+    peer_state->endpoint_port = transport.host_endpoint.port;
+    RegisterStageEntLinks(state);
     state.frame = static_cast<std::uint32_t>(accept.lockstep_start_frame);
     state.stage_frame = static_cast<std::uint32_t>(accept.lockstep_start_frame);
     state.scene_frame = 0;
 }
 
-void HandleLeaveNoticeAsCoordinator(
+void HandleLeaveNoticeAsHost(
     State& state,
     NetTransportRuntime& transport,
     const LeaveNoticePacket& leave

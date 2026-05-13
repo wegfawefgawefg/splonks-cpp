@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 
 #include <cstddef>
@@ -34,7 +34,7 @@ constexpr std::size_t kToolKindCount = ToolKindIndex(ToolKind::ThrowStickyBomb) 
 using ToolThrowVelocityBuilder = Vec2 (*)(const controls::ControlIntent&);
 
 using ToolUseFn = bool (*) (
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -44,19 +44,19 @@ using ToolUseFn = bool (*) (
     std::optional<Vec2> throw_velocity_override
 );
 
-struct ToolArchetype {
+struct ToolSpec {
     ToolKind kind = ToolKind::ThrowPot;
     const char* debug_name = "Unknown";
-    FrameDataId icon_animation_id = kInvalidFrameDataId;
+    AFrameId icon_anim_id = kInvalidAFrameId;
     std::uint16_t use_cooldown_frames = 0;
     std::optional<std::size_t> preferred_slot_index = std::nullopt;
     ToolUseFn use_fn = nullptr;
 };
 
-const ToolArchetype& GetToolArchetype(ToolKind kind);
+const ToolSpec& GetToolSpec(ToolKind kind);
 const char* GetToolKindName(ToolKind kind);
 std::optional<ToolKind> FindPreferredToolKindForSlotIndex(std::size_t slot_index);
-void PopulateToolArchetypesTable();
+void PopulateToolSpecsTable();
 void FillToolSlot(ToolSlot& slot, ToolKind kind, std::uint16_t count, bool active);
 
 } // namespace splonks

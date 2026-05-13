@@ -1,6 +1,6 @@
 #include "stage_init.hpp"
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 #include "player_queries.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
@@ -34,7 +34,7 @@ void PlacePlayerAtEntrance(State& state) {
                 if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
                     continue;
                 }
-                if (Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid)) {
+                if (Ent* const player = state.ents.GetEntMut(*slot.ent_vid)) {
                     player->pos = spawn_pos + Vec2::New(static_cast<float>(local_player_index) * 8.0F, 0.0F);
                     player->vel = Vec2::New(0.0F, 0.0F);
                     player->acc = Vec2::New(0.0F, 0.0F);
@@ -72,7 +72,7 @@ void InitStage(State& state, bool preserve_player_state) {
     } else {
         SpawnPlayer(state, Vec2::New(0.0F, 0.0F));
     }
-    SpawnAuthoredStageEntities(state);
+    SpawnAuthoredStageEnts(state);
 
     if (state.stage.quest_id.empty()) {
         // This mirrors the old Rust stage init population pass.
@@ -80,10 +80,10 @@ void InitStage(State& state, bool preserve_player_state) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
                     state.stage.GetRandomNoncollidablePositionInStage()) {
-                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                    if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
-                        SetEntityAs(*entity, EntityType::JetPack);
-                        entity->pos = ToVec2(*random_available_position);
+                if (const std::optional<VID> vid = state.ents.NewEnt()) {
+                    if (Ent* const ent = state.ents.GetEntMut(*vid)) {
+                        SetEntAs(*ent, EntType::JetPack);
+                        ent->pos = ToVec2(*random_available_position);
                     }
                 }
             }
@@ -93,11 +93,11 @@ void InitStage(State& state, bool preserve_player_state) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
                     state.stage.GetRandomNoncollidablePositionInStage()) {
-                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                    if (Entity* const money = state.entity_manager.GetEntityMut(*vid)) {
-                        const EntityType money_type =
-                            RandomMoneyType() == 0 ? EntityType::Gold : EntityType::GoldStack;
-                        SetEntityAs(*money, money_type);
+                if (const std::optional<VID> vid = state.ents.NewEnt()) {
+                    if (Ent* const money = state.ents.GetEntMut(*vid)) {
+                        const EntType money_type =
+                            RandomMoneyType() == 0 ? EntType::Gold : EntType::GoldStack;
+                        SetEntAs(*money, money_type);
                         money->pos = ToVec2(*random_available_position);
                     }
                 }
@@ -108,9 +108,9 @@ void InitStage(State& state, bool preserve_player_state) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
                     state.stage.GetRandomNoncollidablePositionInStage()) {
-                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                    if (Entity* const bat = state.entity_manager.GetEntityMut(*vid)) {
-                        SetEntityAs(*bat, EntityType::Bat);
+                if (const std::optional<VID> vid = state.ents.NewEnt()) {
+                    if (Ent* const bat = state.ents.GetEntMut(*vid)) {
+                        SetEntAs(*bat, EntType::Bat);
                         bat->pos = ToVec2(*random_available_position);
                     }
                 }
@@ -121,17 +121,17 @@ void InitStage(State& state, bool preserve_player_state) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
                     state.stage.GetRandomNoncollidablePositionInStage()) {
-                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                    if (Entity* const entity = state.entity_manager.GetEntityMut(*vid)) {
+                if (const std::optional<VID> vid = state.ents.NewEnt()) {
+                    if (Ent* const ent = state.ents.GetEntMut(*vid)) {
                         const unsigned int random_number = RandomPercent();
                         if (random_number >= 61 && random_number <= 90) {
-                            SetEntityAs(*entity, EntityType::Pot);
+                            SetEntAs(*ent, EntType::Pot);
                         } else if (random_number >= 91) {
-                            SetEntityAs(*entity, EntityType::Box);
+                            SetEntAs(*ent, EntType::Box);
                         } else {
-                            SetEntityAs(*entity, EntityType::Rock);
+                            SetEntAs(*ent, EntType::Rock);
                         }
-                        entity->pos = ToVec2(*random_available_position);
+                        ent->pos = ToVec2(*random_available_position);
                     }
                 }
             }
@@ -141,9 +141,9 @@ void InitStage(State& state, bool preserve_player_state) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
                     state.stage.GetRandomNoncollidablePositionInStage()) {
-                if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-                    if (Entity* const block = state.entity_manager.GetEntityMut(*vid)) {
-                        SetEntityAs(*block, EntityType::Block);
+                if (const std::optional<VID> vid = state.ents.NewEnt()) {
+                    if (Ent* const block = state.ents.GetEntMut(*vid)) {
+                        SetEntAs(*block, EntType::Block);
                         block->pos = ToVec2(*random_available_position);
                     }
                 }

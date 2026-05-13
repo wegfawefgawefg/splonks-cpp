@@ -1,17 +1,17 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::gold_idol {
+namespace splonks::ents::gold_idol {
 
-void StepEntityLogicAsGoldIdol(
-    std::size_t entity_idx,
+void StepEntLogicAsGoldIdol(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-extern const EntityArchetype kGoldIdolArchetype;
+extern const EntSpec kGoldIdolSpec;
 
-} // namespace splonks::entities::gold_idol
+} // namespace splonks::ents::gold_idol

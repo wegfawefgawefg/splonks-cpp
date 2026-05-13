@@ -8,7 +8,7 @@ struct Graphics;
 struct State;
 struct Vec2;
 
-void RenderStoneEntityOverlay(
+void RenderStoneEntOverlay(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,

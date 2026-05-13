@@ -1,12 +1,12 @@
-#include "entities/damsel.hpp"
+#include "ents/damsel.hpp"
 
 #include "audio.hpp"
-#include "entities/basic_exit.hpp"
+#include "ents/basic_exit.hpp"
 #include "buying.hpp"
-#include "entities/common/common.hpp"
-#include "entities/common/ground_walker.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "ents/common/ground_walker.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
@@ -18,7 +18,7 @@
 #include <cmath>
 #include <memory>
 
-namespace splonks::entities::damsel {
+namespace splonks::ents::damsel {
 
 namespace {
 
@@ -33,20 +33,20 @@ constexpr float kDamselRunAcceleration = 0.2F;
 constexpr float kDamselHeldReleaseLatch = 1.0F;
 constexpr int kDamselRescueHealthGain = 1;
 
-void RefreshCarryStunWhileHeld(Entity& damsel) {
-    if (damsel.condition == EntityCondition::Dead || !damsel.held_by_vid.has_value()) {
+void RefreshCarryStunWhileHeld(Ent& damsel) {
+    if (damsel.condition == EntCondition::Dead || !damsel.held_by_vid.has_value()) {
         return;
     }
 
-    damsel.condition = EntityCondition::Stunned;
+    damsel.condition = EntCondition::Stunned;
     damsel.stun_timer = common::kDefaultStunTimer;
-    TrySetAnimation(damsel, EntityDisplayState::Stunned);
+    TrySetAnim(damsel, EntDisplayState::Stunned);
 }
 
 void SpawnRescueKissParticle(const Vec2& pos, State& state) {
     SpriteParticle kiss{};
-    kiss.frame_data_animator = FrameDataAnimator::New(frame_data_ids::Kiss);
-    kiss.finish_on_animation_end = true;
+    kiss.aframe_animator = AFrameAnimator::New(aframe_ids::Kiss);
+    kiss.finish_on_anim_end = true;
     kiss.draw_layer = DrawLayer::Foreground;
     kiss.counter = kRescueKissLifetimeFrames;
     kiss.pos = pos;
@@ -64,12 +64,12 @@ void SpawnRescueKissParticle(const Vec2& pos, State& state) {
     state.particles.Add(std::move(kiss));
 }
 
-Vec2 GetRescueKissPosForEntity(std::optional<VID> target_vid, const State& state, const Entity& damsel) {
+Vec2 GetRescueKissPosForEnt(std::optional<VID> target_vid, const State& state, const Ent& damsel) {
     if (!target_vid.has_value()) {
         return damsel.GetCenter();
     }
 
-    const Entity* const target = state.entity_manager.GetEntity(*target_vid);
+    const Ent* const target = state.ents.GetEnt(*target_vid);
     if (target == nullptr || !target->active) {
         return damsel.GetCenter();
     }
@@ -81,21 +81,21 @@ Vec2 GetRescueKissPosForEntity(std::optional<VID> target_vid, const State& state
     );
 }
 
-Vec2 GetRescueKissPos(const State& state, const Entity& damsel) {
-    return GetRescueKissPosForEntity(
+Vec2 GetRescueKissPos(const State& state, const Ent& damsel) {
+    return GetRescueKissPosForEnt(
         FindNearestPlayerVid(state, damsel.GetCenter(), false),
         state,
         damsel
     );
 }
 
-void AwardDamselRescueHealthToEntity(std::optional<VID> target_vid, State& state) {
+void AwardDamselRescueHealthToEnt(std::optional<VID> target_vid, State& state) {
     if (!target_vid.has_value()) {
         return;
     }
 
-    Entity* const target = state.entity_manager.GetEntityMut(*target_vid);
-    if (target == nullptr || !target->active || target->condition == EntityCondition::Dead) {
+    Ent* const target = state.ents.GetEntMut(*target_vid);
+    if (target == nullptr || !target->active || target->condition == EntCondition::Dead) {
         return;
     }
 
@@ -103,15 +103,15 @@ void AwardDamselRescueHealthToEntity(std::optional<VID> target_vid, State& state
 }
 
 void AwardDamselRescueHealth(State& state) {
-    AwardDamselRescueHealthToEntity(FindFirstConnectedPlayerVid(state), state);
+    AwardDamselRescueHealthToEnt(FindFirstConnectedPlayerVid(state), state);
 }
 
-void DetachDamselFromHolder(Entity& damsel, State& state) {
+void DetachDamselFromHolder(Ent& damsel, State& state) {
     if (!damsel.held_by_vid.has_value()) {
         return;
     }
 
-    Entity* const holder = state.entity_manager.GetEntityMut(*damsel.held_by_vid);
+    Ent* const holder = state.ents.GetEntMut(*damsel.held_by_vid);
     if (holder != nullptr) {
         if (holder->holding_vid.has_value() && *holder->holding_vid == damsel.vid) {
             holder->holding_vid.reset();
@@ -124,30 +124,30 @@ void DetachDamselFromHolder(Entity& damsel, State& state) {
     }
 
     damsel.held_by_vid.reset();
-    damsel.attachment_mode = AttachmentMode::None;
-    StopUsingEntity(damsel);
+    damsel.attach_mode = AttachMode::None;
+    StopUsingEnt(damsel);
 }
 
-void StartIdle(Entity& damsel) {
-    damsel.ai_state = EntityAiState::Idle;
+void StartIdle(Ent& damsel) {
+    damsel.ai_state = EntAiState::Idle;
     common::DecelerateHorizontallyToStop(damsel, kDamselRunAcceleration);
-    TrySetAnimation(damsel, EntityDisplayState::Neutral);
+    TrySetAnim(damsel, EntDisplayState::Neutral);
 }
 
-void StartPanicRun(Entity& damsel, const State& state) {
-    damsel.ai_state = EntityAiState::Patrolling;
-    const int direction = damsel.facing == LeftOrRight::Left ? -1 : 1;
+void StartPanicRun(Ent& damsel, const State& state) {
+    damsel.ai_state = EntAiState::Patrolling;
+    const int direction = damsel.facing == Side::Left ? -1 : 1;
     common::AccelerateHorizontallyTowardSpeed(
         damsel,
         state,
         static_cast<float>(direction) * kDamselPanicRunSpeed,
         kDamselRunAcceleration
     );
-    TrySetAnimation(damsel, EntityDisplayState::Walk);
+    TrySetAnim(damsel, EntDisplayState::Walk);
 }
 
-void MaybeStartPanicRunFromCarryRelease(Entity& damsel, const State& state) {
-    if (damsel.counter_a <= 0.0F || damsel.condition != EntityCondition::Normal) {
+void MaybeStartPanicRunFromCarryRelease(Ent& damsel, const State& state) {
+    if (damsel.counter_a <= 0.0F || damsel.condition != EntCondition::Normal) {
         return;
     }
 
@@ -156,50 +156,50 @@ void MaybeStartPanicRunFromCarryRelease(Entity& damsel, const State& state) {
 }
 
 void RescueDamsel(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     std::optional<VID> rescued_by_vid,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
     (void)audio;
-    Entity& damsel = state.entity_manager.entities[entity_idx];
-    const Vec2 kiss_pos = GetRescueKissPosForEntity(rescued_by_vid, state, damsel);
+    Ent& damsel = state.ents.ents[ent_idx];
+    const Vec2 kiss_pos = GetRescueKissPosForEnt(rescued_by_vid, state, damsel);
     SpawnRescueKissParticle(kiss_pos, state);
     (void)PlayWorldSoundEmitter(state, kiss_pos, audio_asset_ids::Smooch);
-    AwardDamselRescueHealthToEntity(rescued_by_vid, state);
+    AwardDamselRescueHealthToEnt(rescued_by_vid, state);
 
     DetachDamselFromHolder(damsel, state);
-    damsel.damage_vulnerability = DamageVulnerability::Immune;
+    damsel.damage_vuln = DamageVuln::Immune;
     damsel.can_collide = false;
     damsel.has_physics = false;
-    (void)world_ops::DeactivateEntity(state, damsel.vid);
-    state.UpdateSidForEntity(entity_idx, graphics);
+    (void)world_ops::DeactivateEnt(state, damsel.vid);
+    state.UpdateSidForEnt(ent_idx, graphics);
 }
 
-void KissEntity(std::optional<VID> kissed_by_vid, State& state, const Entity& damsel, Audio& audio) {
+void KissEnt(std::optional<VID> kissed_by_vid, State& state, const Ent& damsel, Audio& audio) {
     (void)audio;
-    const Vec2 kiss_pos = GetRescueKissPosForEntity(kissed_by_vid, state, damsel);
+    const Vec2 kiss_pos = GetRescueKissPosForEnt(kissed_by_vid, state, damsel);
     SpawnRescueKissParticle(kiss_pos, state);
     (void)PlayWorldSoundEmitter(state, kiss_pos, audio_asset_ids::Smooch);
-    AwardDamselRescueHealthToEntity(kissed_by_vid, state);
+    AwardDamselRescueHealthToEnt(kissed_by_vid, state);
 }
 
-bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graphics, Audio& audio) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+bool TryRescueDamsel(std::size_t ent_idx, State& state, const Graphics& graphics, Audio& audio) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& damsel = state.entity_manager.entities[entity_idx];
-    if (!damsel.active || damsel.condition == EntityCondition::Dead) {
+    Ent& damsel = state.ents.ents[ent_idx];
+    if (!damsel.active || damsel.condition == EntCondition::Dead) {
         return false;
     }
-    if (!entities::basic_exit::IsEntityTouchingBasicExit(damsel, state, graphics)) {
+    if (!ents::basic_exit::IsEntTouchingBasicExit(damsel, state, graphics)) {
         return false;
     }
 
     RescueDamsel(
-        entity_idx,
+        ent_idx,
         FindNearestPlayerVid(state, damsel.GetCenter(), false),
         state,
         graphics,
@@ -209,14 +209,14 @@ bool TryRescueDamsel(std::size_t entity_idx, State& state, const Graphics& graph
 }
 
 
-void StepPanicRun(Entity& damsel, const State& state, const Graphics& graphics) {
+void StepPanicRun(Ent& damsel, const State& state, const Graphics& graphics) {
     if (!damsel.grounded) {
         return;
     }
 
-    int direction = damsel.facing == LeftOrRight::Left ? -1 : 1;
+    int direction = damsel.facing == Side::Left ? -1 : 1;
     if (common::HasWallAheadForGroundWalker(damsel, state, graphics, direction)) {
-        damsel.facing = damsel.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        damsel.facing = damsel.facing == Side::Left ? Side::Right : Side::Left;
         direction = -direction;
     }
 
@@ -226,28 +226,28 @@ void StepPanicRun(Entity& damsel, const State& state, const Graphics& graphics) 
         static_cast<float>(direction) * kDamselPanicRunSpeed,
         kDamselRunAcceleration
     );
-    SetMovementFlag(damsel, EntityMovementFlag::Running, true);
-    SetMovementFlag(damsel, EntityMovementFlag::Walking, true);
+    SetMovementFlag(damsel, EntMovementFlag::Running, true);
+    SetMovementFlag(damsel, EntMovementFlag::Walking, true);
 }
 
-void UpdateDamselAnimation(Entity& damsel) {
-    if (damsel.condition == EntityCondition::Dead || damsel.condition == EntityCondition::Stunned) {
+void UpdateDamselAnim(Ent& damsel) {
+    if (damsel.condition == EntCondition::Dead || damsel.condition == EntCondition::Stunned) {
         return;
     }
 
-    if (damsel.frame_data_animator.animation_id == frame_data_ids::DamselCry) {
-        if (!damsel.frame_data_animator.IsFinished()) {
+    if (damsel.aframe_animator.anim_id == aframe_ids::DamselCry) {
+        if (!damsel.aframe_animator.IsFinished()) {
             return;
         }
-        damsel.frame_data_animator.loop = true;
+        damsel.aframe_animator.loop = true;
     }
 
     const bool walking = damsel.grounded && std::abs(damsel.vel.x) >= kDamselWalkMinSpeed;
-    TrySetAnimation(damsel, walking ? EntityDisplayState::Walk : EntityDisplayState::Neutral);
+    TrySetAnim(damsel, walking ? EntDisplayState::Walk : EntDisplayState::Neutral);
 }
 
-bool ShouldPlayAmbientCry(const Entity& damsel, std::uint64_t stage_frame) {
-    const std::uint64_t interval = damsel.ai_state == EntityAiState::Patrolling
+bool ShouldPlayAmbientCry(const Ent& damsel, std::uint64_t stage_frame) {
+    const std::uint64_t interval = damsel.ai_state == EntAiState::Patrolling
                                        ? kDamselPanicCryIntervalFrames
                                        : kDamselIdleCryIntervalFrames;
     return ((stage_frame + static_cast<std::uint64_t>(damsel.vid.id)) % interval) == 0;
@@ -256,7 +256,7 @@ bool ShouldPlayAmbientCry(const Entity& damsel, std::uint64_t stage_frame) {
 } // namespace
 
 bool BuyDamsel(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     std::size_t buyer_idx,
     State& state,
     Graphics& graphics,
@@ -264,13 +264,13 @@ bool BuyDamsel(
 ) {
     (void)graphics;
 
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        buyer_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size() ||
+        buyer_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& damsel = state.entity_manager.entities[entity_idx];
-    if (!damsel.active || damsel.condition == EntityCondition::Dead) {
+    Ent& damsel = state.ents.ents[ent_idx];
+    if (!damsel.active || damsel.condition == EntCondition::Dead) {
         return false;
     }
     const std::uint32_t price = damsel.buyable.display_quantity;
@@ -278,12 +278,12 @@ bool BuyDamsel(
         return false;
     }
 
-    KissEntity(state.entity_manager.entities[buyer_idx].vid, state, damsel, audio);
+    KissEnt(state.ents.ents[buyer_idx].vid, state, damsel, audio);
     return true;
 }
 
-void StepEntityLogicAsDamsel(
-    std::size_t entity_idx,
+void StepEntLogicAsDamsel(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -291,50 +291,50 @@ void StepEntityLogicAsDamsel(
 ) {
     (void)dt;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& damsel = state.entity_manager.entities[entity_idx];
-    if (!damsel.active || damsel.condition == EntityCondition::Dead) {
+    Ent& damsel = state.ents.ents[ent_idx];
+    if (!damsel.active || damsel.condition == EntCondition::Dead) {
         return;
     }
 
-    if (TryRescueDamsel(entity_idx, state, graphics, audio)) {
+    if (TryRescueDamsel(ent_idx, state, graphics, audio)) {
         return;
     }
 
     RefreshCarryStunWhileHeld(damsel);
     if (damsel.held_by_vid.has_value()) {
         damsel.counter_a = kDamselHeldReleaseLatch;
-        damsel.ai_state = EntityAiState::Idle;
+        damsel.ai_state = EntAiState::Idle;
         return;
     }
 
-    if (damsel.last_condition == EntityCondition::Stunned &&
-        damsel.condition == EntityCondition::Normal) {
+    if (damsel.last_condition == EntCondition::Stunned &&
+        damsel.condition == EntCondition::Normal) {
         StartPanicRun(damsel, state);
     }
 
     MaybeStartPanicRunFromCarryRelease(damsel, state);
 
-    if (damsel.condition == EntityCondition::Normal &&
-        damsel.ai_state == EntityAiState::Patrolling && !damsel.held_by_vid.has_value()) {
+    if (damsel.condition == EntCondition::Normal &&
+        damsel.ai_state == EntAiState::Patrolling && !damsel.held_by_vid.has_value()) {
         StepPanicRun(damsel, state, graphics);
     }
 
-    if (damsel.condition == EntityCondition::Normal &&
+    if (damsel.condition == EntCondition::Normal &&
         ShouldPlayAmbientCry(damsel, state.stage_frame)) {
-        (void)PlayEntitySoundEmitter(state, damsel, audio_asset_ids::DamselAmbientCry);
-        SetAnimation(damsel, frame_data_ids::DamselCry);
-        damsel.frame_data_animator.loop = false;
+        (void)PlayEntSoundEmitter(state, damsel, audio_asset_ids::DamselAmbientCry);
+        SetAnim(damsel, aframe_ids::DamselCry);
+        damsel.aframe_animator.loop = false;
     }
 
-    UpdateDamselAnimation(damsel);
+    UpdateDamselAnim(damsel);
 }
 
-extern const EntityArchetype kDamselArchetype{
-    .type_ = EntityType::Damsel,
+extern const EntSpec kDamselSpec{
+    .type_ = EntType::Damsel,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 3,
     .has_physics = true,
@@ -347,17 +347,17 @@ extern const EntityArchetype kDamselArchetype{
     .stun_recovers_on_ground = true,
     .stun_recovers_while_held = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .buyable = Buyable{.on_try_buy = BuyDamsel},
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_anim = aframe_ids::BloodBall,
     .damage_sound = audio_asset_ids::DamselHurt,
-    .step_logic = StepEntityLogicAsDamsel,
+    .step_logic = StepEntLogicAsDamsel,
     .alignment = Alignment::Ally,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Damsel),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Damsel),
 };
 
-} // namespace splonks::entities::damsel
+} // namespace splonks::ents::damsel

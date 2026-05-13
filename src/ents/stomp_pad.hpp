@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,8 +10,8 @@ struct State;
 
 }
 
-namespace splonks::entities::stomp_pad {
+namespace splonks::ents::stomp_pad {
 
-extern const EntityArchetype kStompPadArchetype;
+extern const EntSpec kStompPadSpec;
 
-} // namespace splonks::entities::stomp_pad
+} // namespace splonks::ents::stomp_pad

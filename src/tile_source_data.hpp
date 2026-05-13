@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame_data.hpp"
+#include "aframe.hpp"
 #include "tile.hpp"
 
 #include <cstdint>
@@ -29,7 +29,7 @@ struct TileSourceDb {
     std::vector<TileSourceSpan> tile_spans;
 };
 
-TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db);
+TileSourceDb BuildTileSourceDb(const AFrameDb& aframe_db);
 const TileSourceData* GetTileSourceData(Graphics& graphics, Tile tile, const IVec2& tile_pos);
 const TileSourceData* GetTileSourceDataForStage(
     Graphics& graphics,

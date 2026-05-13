@@ -1,11 +1,11 @@
 #include "render/gameplay.hpp"
 
-#include "entity/manager.hpp"
-#include "entities/common/common.hpp"
+#include "ent/manager.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
 #include "player_queries.hpp"
 #include "render/camera.hpp"
-#include "render/tiles_and_entities.hpp"
+#include "render/tiles_and_ents.hpp"
 #include "state.hpp"
 #include "stage_progression.hpp"
 #include "text.hpp"
@@ -124,25 +124,25 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     Vec2 target = GetStageCameraCenter(state.stage);
     float zoom = GetDefaultFollowCameraZoom(graphics);
 
-    const Entity* camera_target_entity = nullptr;
-    if (state.controlled_entity_vid.has_value()) {
-        camera_target_entity = state.entity_manager.GetEntity(*state.controlled_entity_vid);
+    const Ent* camera_target_ent = nullptr;
+    if (state.controlled_ent_vid.has_value()) {
+        camera_target_ent = state.ents.GetEnt(*state.controlled_ent_vid);
     }
-    if ((camera_target_entity == nullptr || !camera_target_entity->active ||
-         camera_target_entity->condition == EntityCondition::Dead) &&
+    if ((camera_target_ent == nullptr || !camera_target_ent->active ||
+         camera_target_ent->condition == EntCondition::Dead) &&
         state.mode == Mode::GameOver) {
         const std::optional<VID> spectator_vid = FindFirstConnectedLivingPlayerVid(state);
-        camera_target_entity = spectator_vid.has_value()
-            ? state.entity_manager.GetEntity(*spectator_vid)
+        camera_target_ent = spectator_vid.has_value()
+            ? state.ents.GetEnt(*spectator_vid)
             : GetPrimaryLocalPlayer(state);
     }
 
     if (graphics.camera_mode == CameraMode::StageFit) {
         zoom = GetStageFitCameraZoom(state.stage, graphics);
-    } else if (camera_target_entity != nullptr && camera_target_entity->active) {
+    } else if (camera_target_ent != nullptr && camera_target_ent->active) {
         if (!graphics.debug_lock_play_camera) {
             const Vec2 controlled_visual_center =
-                entities::common::GetVisualCenterForEntity(*camera_target_entity, graphics, camera_target_entity->GetCenter());
+                ents::common::GetVisualCenterForEnt(*camera_target_ent, graphics, camera_target_ent->GetCenter());
             const Vec2 camera_follow_target =
                 RotateWorldPointForActiveWorldRotation(graphics, controlled_visual_center);
             if (graphics.world_rotation_active) {
@@ -185,8 +185,8 @@ void RenderPlaying(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     RenderStageTileWrapper(renderer, state, graphics);
     RenderStageTiles(renderer, state, graphics);
     RenderBackgroundStamps(renderer, state, graphics);
-    RenderStagePreEntityForegroundTiles(renderer, state, graphics);
-    RenderEntities(renderer, state, graphics);
+    RenderStagePreEntForegroundTiles(renderer, state, graphics);
+    RenderEnts(renderer, state, graphics);
     RenderStageFluids(renderer, state, graphics);
     RenderStageForegroundTiles(renderer, state, graphics);
     RenderStageForegroundTileWrapper(renderer, state, graphics);

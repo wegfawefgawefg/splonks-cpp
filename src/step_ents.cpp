@@ -1,11 +1,11 @@
-#include "step_entities.hpp"
+#include "step_ents.hpp"
 
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "controls.hpp"
-#include "entity.hpp"
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "entity/manager.hpp"
+#include "ent.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "ent/manager.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
@@ -17,21 +17,21 @@ namespace splonks {
 
 namespace {
 
-bool HasUseActivity(const Entity& entity) {
-    return entity.use_state.down || entity.use_state.pressed || entity.use_state.released;
+bool HasUseActivity(const Ent& ent) {
+    return ent.use_state.down || ent.use_state.pressed || ent.use_state.released;
 }
 
-bool HasAreaCallbacks(const Entity& entity) {
-    return entity.on_area_enter != nullptr || entity.on_area_exit != nullptr;
+bool HasAreaCallbacks(const Ent& ent) {
+    return ent.on_area_enter != nullptr || ent.on_area_exit != nullptr;
 }
 
 std::vector<VID> GetAreaOverlapVids(std::size_t area_idx, const State& state) {
-    const Entity& area_entity = state.entity_manager.entities[area_idx];
-    const AABB area = area_entity.GetAABB();
+    const Ent& area_ent = state.ents.ents[area_idx];
+    const AABB area = area_ent.GetAABB();
 
     std::vector<VID> overlaps;
-    for (const VID& vid : QueryEntitiesInAabb(state, area, area_entity.vid)) {
-        const Entity* const other = state.entity_manager.GetEntity(vid);
+    for (const VID& vid : QueryEntsInAabb(state, area, area_ent.vid)) {
+        const Ent* const other = state.ents.GetEnt(vid);
         if (other == nullptr || !other->active) {
             continue;
         }
@@ -47,30 +47,30 @@ bool ContainsVid(const std::vector<VID>& vids, VID vid) {
     return std::find(vids.begin(), vids.end(), vid) != vids.end();
 }
 
-void StepAreaEntityOverlaps(State& state, Graphics& graphics, Audio& audio) {
+void StepAreaEntOverlaps(State& state, Graphics& graphics, Audio& audio) {
     for (const VID& area_vid : state.area_listener_vids) {
-        const Entity* const area_entity_ptr = state.entity_manager.GetEntity(area_vid);
-        if (area_entity_ptr == nullptr) {
+        const Ent* const area_ent_ptr = state.ents.GetEnt(area_vid);
+        if (area_ent_ptr == nullptr) {
             continue;
         }
 
         const std::size_t area_idx = area_vid.id;
-        const Entity& area_entity = *area_entity_ptr;
-        if (!area_entity.active || !HasAreaCallbacks(area_entity)) {
+        const Ent& area_ent = *area_ent_ptr;
+        if (!area_ent.active || !HasAreaCallbacks(area_ent)) {
             continue;
         }
-        const std::vector<VID> previous_overlaps = area_entity.inside_vids.value_or(std::vector<VID>{});
+        const std::vector<VID> previous_overlaps = area_ent.inside_vids.value_or(std::vector<VID>{});
         const std::vector<VID> current_overlaps = GetAreaOverlapVids(area_idx, state);
 
         for (const VID& vid : previous_overlaps) {
             if (ContainsVid(current_overlaps, vid)) {
                 continue;
             }
-            Entity* const area_mut = state.entity_manager.GetEntityMut(area_entity.vid);
+            Ent* const area_mut = state.ents.GetEntMut(area_ent.vid);
             if (area_mut == nullptr || !area_mut->active || area_mut->on_area_exit == nullptr) {
                 continue;
             }
-            if (state.entity_manager.GetEntity(vid) == nullptr) {
+            if (state.ents.GetEnt(vid) == nullptr) {
                 continue;
             }
             area_mut->on_area_exit(area_idx, vid.id, state, graphics, audio);
@@ -80,17 +80,17 @@ void StepAreaEntityOverlaps(State& state, Graphics& graphics, Audio& audio) {
             if (ContainsVid(previous_overlaps, vid)) {
                 continue;
             }
-            Entity* const area_mut = state.entity_manager.GetEntityMut(area_entity.vid);
+            Ent* const area_mut = state.ents.GetEntMut(area_ent.vid);
             if (area_mut == nullptr || !area_mut->active || area_mut->on_area_enter == nullptr) {
                 continue;
             }
-            if (state.entity_manager.GetEntity(vid) == nullptr) {
+            if (state.ents.GetEnt(vid) == nullptr) {
                 continue;
             }
             area_mut->on_area_enter(area_idx, vid.id, state, graphics, audio);
         }
 
-        Entity* const area_mut = state.entity_manager.GetEntityMut(area_entity.vid);
+        Ent* const area_mut = state.ents.GetEntMut(area_ent.vid);
         if (area_mut == nullptr || !area_mut->active) {
             continue;
         }
@@ -98,184 +98,184 @@ void StepAreaEntityOverlaps(State& state, Graphics& graphics, Audio& audio) {
     }
 }
 
-void ApplyStageWrapAndVoidDeath(std::size_t entity_idx, State& state, Audio& audio) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    state.stage.NormalizeEntityPositionForWrap(entity);
+void ApplyStageWrapAndVoidDeath(std::size_t ent_idx, State& state, Audio& audio) {
+    Ent& ent = state.ents.ents[ent_idx];
+    state.stage.NormalizeEntPositionForWrap(ent);
 
     if (!state.stage.HasVoidDeathY()) {
         return;
     }
-    if (entity.health == 0 || entity.condition == EntityCondition::Dead) {
+    if (ent.health == 0 || ent.condition == EntCondition::Dead) {
         return;
     }
 
-    const auto [_tl, br] = entity.GetBounds();
+    const auto [_tl, br] = ent.GetBounds();
     if (br.y <= state.stage.GetVoidDeathY()) {
         return;
     }
 
-    entity.vel = Vec2::New(0.0F, 0.0F);
-    entity.health = 0;
-    entities::common::DieIfDead(entity_idx, state, audio);
+    ent.vel = Vec2::New(0.0F, 0.0F);
+    ent.health = 0;
+    ents::common::DieIfDead(ent_idx, state, audio);
 }
 
-void ClearUseEdgesAfterFrame(Entity& entity) {
-    entity.use_state.pressed = false;
-    if (!entity.use_state.down) {
-        entity.use_state.released = false;
-        entity.use_state.frames = 0;
-        entity.use_state.user_vid.reset();
-        entity.use_state.source = AttachmentMode::None;
+void ClearUseEdgesAfterFrame(Ent& ent) {
+    ent.use_state.pressed = false;
+    if (!ent.use_state.down) {
+        ent.use_state.released = false;
+        ent.use_state.frames = 0;
+        ent.use_state.user_vid.reset();
+        ent.use_state.source = AttachMode::None;
     }
 }
 
 } // namespace
 
-/** Step the logic of entities, followed by their physics.  */
-/*  Stepping Entities:
-        Your entity must implement the following:
-            step_logic_<entity_name>(game, map):
+/** Step the logic of ents, followed by their physics.  */
+/*  Stepping Ents:
+        Your ent must implement the following:
+            step_logic_<ent_name>(game, map):
                 - for logic
                 - state machine stuff
-                - other entity following
+                - other ent following
                 - actions
-            step_physics_<entity_name>(base_entity, game, map):
+            step_physics_<ent_name>(base_ent, game, map):
                 - for motion
-            step_animation_<entity_name>(base entity, game, map):
-                - for stepping the animation state machine basically (can have common impls too)
-        If several of your entities end up internally sharing a mutual implementation of some feature,
+            step_anim_<ent_name>(base ent, game, map):
+                - for stepping the anim state machine basically (can have common impls too)
+        If several of your ents end up internally sharing a mutual implementation of some feature,
         you dont need a match out here or in step, just use the function which allows for that feature internally.
         compiler-san will make sure you have the necessary fields if you pass yourself into say,
-            flying_entities_physics_step(*self)). because if you dont, compiler: reee
-        You may also need to check if an entity has some trait, and that can go in entity, and instead of having a table you can just
-        force every entity to implement is_burnable() for example. and the dyn table will take care of that for you.
+            flying_ents_physics_step(*self)). because if you dont, compiler: reee
+        You may also need to check if an ent has some trait, and that can go in ent, and instead of having a table you can just
+        force every ent to implement is_burnable() for example. and the dyn table will take care of that for you.
 */
 namespace {
 
-void StepOneEntity(std::size_t entity_idx, State& state, Audio& audio, Graphics& graphics, float dt) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+void StepOneEnt(std::size_t ent_idx, State& state, Audio& audio, Graphics& graphics, float dt) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    if (!state.entity_manager.entities[entity_idx].active) {
+    if (!state.ents.ents[ent_idx].active) {
         return;
     }
 
-    ClearTransientMovementFlags(state.entity_manager.entities[entity_idx]);
-    entities::common::CommonStep(entity_idx, state, graphics, audio, dt);
-    if (!state.entity_manager.entities[entity_idx].active) {
+    ClearTransientMovementFlags(state.ents.ents[ent_idx]);
+    ents::common::CommonStep(ent_idx, state, graphics, audio, dt);
+    if (!state.ents.ents[ent_idx].active) {
         return;
     }
 
-    const Entity& current_entity = state.entity_manager.entities[entity_idx];
-    if (HasUseActivity(current_entity) && current_entity.on_use != nullptr) {
-        current_entity.on_use(entity_idx, state, graphics, audio);
+    const Ent& current_ent = state.ents.ents[ent_idx];
+    if (HasUseActivity(current_ent) && current_ent.on_use != nullptr) {
+        current_ent.on_use(ent_idx, state, graphics, audio);
     }
-    if (state.entity_manager.entities[entity_idx].active && current_entity.step_logic != nullptr) {
-        current_entity.step_logic(entity_idx, state, graphics, audio, dt);
+    if (state.ents.ents[ent_idx].active && current_ent.step_logic != nullptr) {
+        current_ent.step_logic(ent_idx, state, graphics, audio, dt);
     }
-    if (!state.entity_manager.entities[entity_idx].active) {
+    if (!state.ents.ents[ent_idx].active) {
         return;
     }
 
-    entities::common::CommonPostStep(entity_idx, state, graphics, audio, dt);
-    if (!state.entity_manager.entities[entity_idx].active) {
+    ents::common::CommonPostStep(ent_idx, state, graphics, audio, dt);
+    if (!state.ents.ents[ent_idx].active) {
         return;
     }
 
-    if (state.entity_manager.entities[entity_idx].has_physics) {
-        if (current_entity.step_physics != nullptr) {
-            current_entity.step_physics(entity_idx, state, graphics, audio, dt);
+    if (state.ents.ents[ent_idx].has_physics) {
+        if (current_ent.step_physics != nullptr) {
+            current_ent.step_physics(ent_idx, state, graphics, audio, dt);
         } else {
-            entities::common::StepStandardPhysics(entity_idx, state, graphics, audio, dt);
+            ents::common::StepStandardPhysics(ent_idx, state, graphics, audio, dt);
         }
-        if (state.entity_manager.entities[entity_idx].active) {
-            ApplyStageWrapAndVoidDeath(entity_idx, state, audio);
+        if (state.ents.ents[ent_idx].active) {
+            ApplyStageWrapAndVoidDeath(ent_idx, state, audio);
         }
     }
 
-    entities::common::ApplyDeactivateConditions(entity_idx, state);
-    state.UpdateSidForEntity(entity_idx, graphics);
-    Entity& mutable_entity = state.entity_manager.entities[entity_idx];
-    ClearUseEdgesAfterFrame(mutable_entity);
-    mutable_entity.last_condition = mutable_entity.condition;
-    mutable_entity.last_ai_state = mutable_entity.ai_state;
+    ents::common::ApplyDeactivateConditions(ent_idx, state);
+    state.UpdateSidForEnt(ent_idx, graphics);
+    Ent& mutable_ent = state.ents.ents[ent_idx];
+    ClearUseEdgesAfterFrame(mutable_ent);
+    mutable_ent.last_condition = mutable_ent.condition;
+    mutable_ent.last_ai_state = mutable_ent.ai_state;
 }
 
-bool IsPlayerSlotEntity(const State& state, const Entity& entity) {
-    return state.players.FindPlayerIdForEntity(entity.vid).has_value();
+bool IsPlayerSlotEnt(const State& state, const Ent& ent) {
+    return state.players.FindPlayerIdForEnt(ent.vid).has_value();
 }
 
-bool ShouldRunFullLocalStepForNonPlayerEntity(const State& state, const Entity& entity) {
+bool ShouldRunFullLocalStepForNonPlayerEnt(const State& state, const Ent& ent) {
     (void)state;
-    (void)entity;
+    (void)ent;
     return true;
 }
 
 bool ShouldRunFullPlayerSlotStep(const State& state, const PlayerSlot& slot) {
     (void)state;
-    if (!slot.entity_vid.has_value()) {
+    if (!slot.ent_vid.has_value()) {
         return false;
     }
     return slot.connected;
 }
 
 void TryReleaseHeldPlayerSlotFromJump(const PlayerSlot& slot, State& state) {
-    if (!slot.entity_vid.has_value()) {
+    if (!slot.ent_vid.has_value()) {
         return;
     }
-    Entity* const entity = state.entity_manager.GetEntityMut(*slot.entity_vid);
-    if (entity == nullptr ||
-        !entity->active ||
-        !entity->held_by_vid.has_value() ||
-        entity->attachment_mode != AttachmentMode::Held ||
-        entity->condition != EntityCondition::Normal) {
+    Ent* const ent = state.ents.GetEntMut(*slot.ent_vid);
+    if (ent == nullptr ||
+        !ent->active ||
+        !ent->held_by_vid.has_value() ||
+        ent->attach_mode != AttachMode::Held ||
+        ent->condition != EntCondition::Normal) {
         return;
     }
 
-    const controls::ControlIntent control = controls::GetControlIntentForEntity(*entity, state);
+    const controls::ControlIntent control = controls::GetControlIntentForEnt(*ent, state);
     if (!control.jump_pressed) {
         return;
     }
 
-    entities::common::ReleaseEntityFromHolderIfAttached(*entity, state);
-    entity->grounded = false;
-    entity->coyote_time = 2;
+    ents::common::ReleaseEntFromHolderIfAttached(*ent, state);
+    ent->grounded = false;
+    ent->coyote_time = 2;
 }
 
 } // namespace
 
-void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt) {
-    // Step all player-controlled entities first so held items and attached
+void StepEnts(State& state, Audio& audio, Graphics& graphics, float dt) {
+    // Step all player-controlled ents first so held items and attached
     // visuals follow the latest player positions.
     for (const PlayerSlot& slot : state.players.slots) {
         if (ShouldRunFullPlayerSlotStep(state, slot)) {
             TryReleaseHeldPlayerSlotFromJump(slot, state);
-            StepOneEntity(slot.entity_vid->id, state, audio, graphics, dt);
+            StepOneEnt(slot.ent_vid->id, state, audio, graphics, dt);
         }
     }
 
-    for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
-        const Entity& entity = state.entity_manager.GetEntityById(entity_idx);
+    for (std::size_t ent_idx = 0; ent_idx < state.ents.ents.size(); ++ent_idx) {
+        const Ent& ent = state.ents.GetEntById(ent_idx);
 
-        if (entity.active) {
-            if (IsPlayerSlotEntity(state, entity)) {
+        if (ent.active) {
+            if (IsPlayerSlotEnt(state, ent)) {
                 continue;
             }
-            if (ShouldRunFullLocalStepForNonPlayerEntity(state, entity)) {
-                StepOneEntity(entity_idx, state, audio, graphics, dt);
+            if (ShouldRunFullLocalStepForNonPlayerEnt(state, ent)) {
+                StepOneEnt(ent_idx, state, audio, graphics, dt);
             }
         }
     }
 
-    constexpr int kAttachmentSyncPasses = 8;
-    for (int pass = 0; pass < kAttachmentSyncPasses; ++pass) {
-        for (std::size_t entity_idx = 0; entity_idx < state.entity_manager.entities.size(); ++entity_idx) {
-            entities::common::SyncEntityAttachments(entity_idx, state, graphics);
+    constexpr int kAttachSyncPasses = 8;
+    for (int pass = 0; pass < kAttachSyncPasses; ++pass) {
+        for (std::size_t ent_idx = 0; ent_idx < state.ents.ents.size(); ++ent_idx) {
+            ents::common::SyncEntAttachs(ent_idx, state, graphics);
         }
     }
 
-    StepAreaEntityOverlaps(state, graphics, audio);
+    StepAreaEntOverlaps(state, graphics, audio);
 }
 
 } // namespace splonks

@@ -1,6 +1,6 @@
 #include "network/net_lobby_internal.hpp"
 
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 
@@ -40,34 +40,34 @@ void RemoveRemotePlayers(
             continue;
         }
         if (PlayerSlot* const slot = state.players.Find(player_id)) {
-            if (state.net_session.role == NetRole::Coordinator &&
+            if (state.net_session.role == NetRole::Host &&
                 slot->connection_kind == PlayerConnectionKind::Remote) {
-                if (slot->entity_vid.has_value()) {
-                    if (Entity* const entity = state.entity_manager.GetEntityMut(*slot->entity_vid)) {
-                        if (entity->active) {
-                            const std::optional<VID> held_vid = entity->holding_vid;
-                            const std::optional<VID> back_vid = entity->back_vid;
-                            StoreRetainedPlayerState(state, *slot, *entity);
+                if (slot->ent_vid.has_value()) {
+                    if (Ent* const ent = state.ents.GetEntMut(*slot->ent_vid)) {
+                        if (ent->active) {
+                            const std::optional<VID> held_vid = ent->holding_vid;
+                            const std::optional<VID> back_vid = ent->back_vid;
+                            StoreRetainedPlayerState(state, *slot, *ent);
                             const NetRetainedPlayerState* const retained =
                                 FindRetainedPlayerState(state, player_id);
-                            const std::vector<VID> changed_entities =
-                                entities::common::SeverEntityCarryLinksForReset(*entity, state);
-                            (void)changed_entities;
+                            const std::vector<VID> changed_ents =
+                                ents::common::SeverEntCarryLinksForReset(*ent, state);
+                            (void)changed_ents;
                             if (retained != nullptr) {
-                                DeactivateRetainedAttachedEntity(state, retained->held_item, held_vid);
-                                DeactivateRetainedAttachedEntity(state, retained->back_item, back_vid);
+                                DeactivateRetainedAttachedEnt(state, retained->held_item, held_vid);
+                                DeactivateRetainedAttachedEnt(state, retained->back_item, back_vid);
                             }
-                            (void)world_ops::DeactivateEntity(state, entity->vid);
+                            (void)world_ops::DeactivateEnt(state, ent->vid);
                         }
                     }
                 }
                 state.players.Remove(player_id);
-                state.net_session.UnlinkEntity(MakePlayerNetEntityId(player_id));
-            } else if (slot->entity_vid.has_value()) {
-                state.entity_manager.SetInactiveVid(*slot->entity_vid);
+                state.net_session.UnlinkEnt(MakePlayerNetEntId(player_id));
+            } else if (slot->ent_vid.has_value()) {
+                state.ents.SetInactiveVid(*slot->ent_vid);
             }
         }
-        if (state.net_session.role == NetRole::Coordinator) {
+        if (state.net_session.role == NetRole::Host) {
             NetPeerState* peer_state = nullptr;
             for (NetPeerState& peer : state.net_session.peers) {
                 if (peer.player_id == player_id) {
@@ -82,7 +82,7 @@ void RemoveRemotePlayers(
             }
         } else {
             state.players.Remove(player_id);
-            state.net_session.UnlinkEntity(MakePlayerNetEntityId(player_id));
+            state.net_session.UnlinkEnt(MakePlayerNetEntId(player_id));
             state.net_session.peers.erase(
                 std::remove_if(
                     state.net_session.peers.begin(),

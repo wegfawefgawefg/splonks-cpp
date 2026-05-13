@@ -1,6 +1,6 @@
 # Legacy Authoritative Networking Docs
 
-These documents describe the previous coordinator-authoritative /
+These documents describe the previous host-authoritative /
 Terraria-style mutation-replication attempt.
 
 They are preserved for reference only. They are not the active multiplayer plan.
@@ -16,8 +16,8 @@ Reason for archiving:
 
 - The old model required too many gameplay/content systems to understand
   networking authority, request/apply paths, prediction, repair, and
-  presentation sync.
+  pres sync.
 - That made new content and future mods likely to need custom networking work.
-- The new experiment is deterministic input lockstep first, with rollback added
-  after deterministic replay is proven.
+- The new experiment is det input lockstep first, with rollback added
+  after det replay is proven.
 

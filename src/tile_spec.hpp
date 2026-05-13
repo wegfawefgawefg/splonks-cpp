@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "effects/effect_id.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"
 
@@ -14,7 +14,7 @@ struct State;
 
 using TileOnBreak = void (*)(const IVec2& tile_pos, State& state, Audio& audio);
 
-struct TileArchetype {
+struct TileSpec {
     Tile tile = Tile::Air;
     bool solid = false;
     bool one_way_top_solid = false;
@@ -27,13 +27,13 @@ struct TileArchetype {
     float friction = 0.85F;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
     std::optional<AudioAssetId> break_sound = std::nullopt;
-    std::optional<FrameDataId> break_animation = std::nullopt;
+    std::optional<AFrameId> break_anim = std::nullopt;
     std::optional<EffectId> effect_while_inside = std::nullopt;
     TileOnBreak on_break = nullptr;
     const char* debug_name = "Unknown";
 };
 
-const TileArchetype& GetTileArchetype(Tile tile);
+const TileSpec& GetTileSpec(Tile tile);
 float GetTileFriction(Tile tile);
 
 } // namespace splonks

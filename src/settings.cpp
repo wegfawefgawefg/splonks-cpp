@@ -184,8 +184,8 @@ DebugUiSettings DebugUiSettings::New() {
     result.menu_visible = true;
     result.playback_visible = true;
     result.level_visible = true;
-    result.entities_visible = true;
-    result.entity_annotations_visible = false;
+    result.ents_visible = true;
+    result.ent_annotations_visible = false;
     result.shake_brush_visible = false;
     result.audio_brush_visible = false;
     result.fluid_brush_visible = false;
@@ -204,14 +204,14 @@ DebugUiSettings DebugUiSettings::New() {
     result.camera_settings_visible = false;
     result.performance_settings_visible = false;
     result.player_tuning_visible = false;
-    result.entity_swap_type = 1;
+    result.ent_swap_type = 1;
     result.default_spawn_type = 1;
     result.default_spawn_enabled = false;
-    result.entity_swap_fresh = true;
-    result.entity_swap_keep_passives = false;
-    result.entity_swap_keep_money = false;
-    result.entity_swap_keep_health = false;
-    result.entity_swap_keep_tools = false;
+    result.ent_swap_fresh = true;
+    result.ent_swap_keep_passives = false;
+    result.ent_swap_keep_money = false;
+    result.ent_swap_keep_health = false;
+    result.ent_swap_keep_tools = false;
     return result;
 }
 
@@ -530,11 +530,11 @@ Settings LoadSettings() {
             settings.debug_ui.playback_visible = ParseBool(value, settings.debug_ui.playback_visible);
         } else if (key == "debug_ui.level_visible") {
             settings.debug_ui.level_visible = ParseBool(value, settings.debug_ui.level_visible);
-        } else if (key == "debug_ui.entities_visible") {
-            settings.debug_ui.entities_visible = ParseBool(value, settings.debug_ui.entities_visible);
-        } else if (key == "debug_ui.entity_annotations_visible") {
-            settings.debug_ui.entity_annotations_visible =
-                ParseBool(value, settings.debug_ui.entity_annotations_visible);
+        } else if (key == "debug_ui.ents_visible") {
+            settings.debug_ui.ents_visible = ParseBool(value, settings.debug_ui.ents_visible);
+        } else if (key == "debug_ui.ent_annotations_visible") {
+            settings.debug_ui.ent_annotations_visible =
+                ParseBool(value, settings.debug_ui.ent_annotations_visible);
         } else if (key == "debug_ui.shake_brush_visible") {
             settings.debug_ui.shake_brush_visible =
                 ParseBool(value, settings.debug_ui.shake_brush_visible);
@@ -589,30 +589,30 @@ Settings LoadSettings() {
         } else if (key == "debug_ui.player_tuning_visible") {
             settings.debug_ui.player_tuning_visible =
                 ParseBool(value, settings.debug_ui.player_tuning_visible);
-        } else if (key == "debug_ui.entity_swap_type") {
-            settings.debug_ui.entity_swap_type =
-                ParseUnsigned(value, settings.debug_ui.entity_swap_type);
+        } else if (key == "debug_ui.ent_swap_type") {
+            settings.debug_ui.ent_swap_type =
+                ParseUnsigned(value, settings.debug_ui.ent_swap_type);
         } else if (key == "debug_ui.default_spawn_type") {
             settings.debug_ui.default_spawn_type =
                 ParseUnsigned(value, settings.debug_ui.default_spawn_type);
         } else if (key == "debug_ui.default_spawn_enabled") {
             settings.debug_ui.default_spawn_enabled =
                 ParseBool(value, settings.debug_ui.default_spawn_enabled);
-        } else if (key == "debug_ui.entity_swap_fresh") {
-            settings.debug_ui.entity_swap_fresh =
-                ParseBool(value, settings.debug_ui.entity_swap_fresh);
-        } else if (key == "debug_ui.entity_swap_keep_passives") {
-            settings.debug_ui.entity_swap_keep_passives =
-                ParseBool(value, settings.debug_ui.entity_swap_keep_passives);
-        } else if (key == "debug_ui.entity_swap_keep_money") {
-            settings.debug_ui.entity_swap_keep_money =
-                ParseBool(value, settings.debug_ui.entity_swap_keep_money);
-        } else if (key == "debug_ui.entity_swap_keep_health") {
-            settings.debug_ui.entity_swap_keep_health =
-                ParseBool(value, settings.debug_ui.entity_swap_keep_health);
-        } else if (key == "debug_ui.entity_swap_keep_tools") {
-            settings.debug_ui.entity_swap_keep_tools =
-                ParseBool(value, settings.debug_ui.entity_swap_keep_tools);
+        } else if (key == "debug_ui.ent_swap_fresh") {
+            settings.debug_ui.ent_swap_fresh =
+                ParseBool(value, settings.debug_ui.ent_swap_fresh);
+        } else if (key == "debug_ui.ent_swap_keep_passives") {
+            settings.debug_ui.ent_swap_keep_passives =
+                ParseBool(value, settings.debug_ui.ent_swap_keep_passives);
+        } else if (key == "debug_ui.ent_swap_keep_money") {
+            settings.debug_ui.ent_swap_keep_money =
+                ParseBool(value, settings.debug_ui.ent_swap_keep_money);
+        } else if (key == "debug_ui.ent_swap_keep_health") {
+            settings.debug_ui.ent_swap_keep_health =
+                ParseBool(value, settings.debug_ui.ent_swap_keep_health);
+        } else if (key == "debug_ui.ent_swap_keep_tools") {
+            settings.debug_ui.ent_swap_keep_tools =
+                ParseBool(value, settings.debug_ui.ent_swap_keep_tools);
         } else if (key == "player_tuning.gravity_scale") {
             settings.player_tuning.gravity_scale =
                 ParseFloat(value, settings.player_tuning.gravity_scale);
@@ -849,9 +849,9 @@ bool SaveSettings(const Settings& settings) {
     output << "debug_ui.menu_visible=" << (settings.debug_ui.menu_visible ? 1 : 0) << "\n";
     output << "debug_ui.playback_visible=" << (settings.debug_ui.playback_visible ? 1 : 0) << "\n";
     output << "debug_ui.level_visible=" << (settings.debug_ui.level_visible ? 1 : 0) << "\n";
-    output << "debug_ui.entities_visible=" << (settings.debug_ui.entities_visible ? 1 : 0) << "\n";
-    output << "debug_ui.entity_annotations_visible="
-           << (settings.debug_ui.entity_annotations_visible ? 1 : 0) << "\n";
+    output << "debug_ui.ents_visible=" << (settings.debug_ui.ents_visible ? 1 : 0) << "\n";
+    output << "debug_ui.ent_annotations_visible="
+           << (settings.debug_ui.ent_annotations_visible ? 1 : 0) << "\n";
     output << "debug_ui.shake_brush_visible="
            << (settings.debug_ui.shake_brush_visible ? 1 : 0) << "\n";
     output << "debug_ui.audio_brush_visible="
@@ -888,20 +888,20 @@ bool SaveSettings(const Settings& settings) {
            << (settings.debug_ui.performance_settings_visible ? 1 : 0) << "\n";
     output << "debug_ui.player_tuning_visible="
            << (settings.debug_ui.player_tuning_visible ? 1 : 0) << "\n";
-    output << "debug_ui.entity_swap_type=" << settings.debug_ui.entity_swap_type << "\n";
+    output << "debug_ui.ent_swap_type=" << settings.debug_ui.ent_swap_type << "\n";
     output << "debug_ui.default_spawn_type=" << settings.debug_ui.default_spawn_type << "\n";
     output << "debug_ui.default_spawn_enabled="
            << (settings.debug_ui.default_spawn_enabled ? 1 : 0) << "\n";
-    output << "debug_ui.entity_swap_fresh="
-           << (settings.debug_ui.entity_swap_fresh ? 1 : 0) << "\n";
-    output << "debug_ui.entity_swap_keep_passives="
-           << (settings.debug_ui.entity_swap_keep_passives ? 1 : 0) << "\n";
-    output << "debug_ui.entity_swap_keep_money="
-           << (settings.debug_ui.entity_swap_keep_money ? 1 : 0) << "\n";
-    output << "debug_ui.entity_swap_keep_health="
-           << (settings.debug_ui.entity_swap_keep_health ? 1 : 0) << "\n";
-    output << "debug_ui.entity_swap_keep_tools="
-           << (settings.debug_ui.entity_swap_keep_tools ? 1 : 0) << "\n";
+    output << "debug_ui.ent_swap_fresh="
+           << (settings.debug_ui.ent_swap_fresh ? 1 : 0) << "\n";
+    output << "debug_ui.ent_swap_keep_passives="
+           << (settings.debug_ui.ent_swap_keep_passives ? 1 : 0) << "\n";
+    output << "debug_ui.ent_swap_keep_money="
+           << (settings.debug_ui.ent_swap_keep_money ? 1 : 0) << "\n";
+    output << "debug_ui.ent_swap_keep_health="
+           << (settings.debug_ui.ent_swap_keep_health ? 1 : 0) << "\n";
+    output << "debug_ui.ent_swap_keep_tools="
+           << (settings.debug_ui.ent_swap_keep_tools ? 1 : 0) << "\n";
     output << "player_tuning.gravity_scale=" << settings.player_tuning.gravity_scale << "\n";
     output << "player_tuning.max_fall_speed=" << settings.player_tuning.max_fall_speed << "\n";
     output << "player_tuning.jump_impulse=" << settings.player_tuning.jump_impulse << "\n";

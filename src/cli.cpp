@@ -4,12 +4,12 @@
 #include "debug/playback.hpp"
 #include "debug/debug_stage_builders.hpp"
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data.hpp"
+#include "ent/spec.hpp"
+#include "aframe.hpp"
 #include "graphics.hpp"
 #include "quest.hpp"
 #include "quest_stage_loader.hpp"
-#include "raw_frame_data.hpp"
+#include "raw_aframe.hpp"
 #include "stage_init.hpp"
 #include "stage_gen/classic/stagegen.hpp"
 #include "stage_gen/classic/tile_palette.hpp"
@@ -20,7 +20,7 @@
 #include "state.hpp"
 #include "tile.hpp"
 #include "tile_source_data.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 #include "utils.hpp"
 #include "world_ops.hpp"
 
@@ -43,16 +43,16 @@ namespace {
 
 constexpr const char* kAnnotationsYamlPath = "assets/graphics/annotations.yaml";
 
-void PrintFrameDataSummary() {
-    const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
-    const FrameDataDb frame_data_db = FrameDataDb::FromRaw(raw_file);
+void PrintAFrameSummary() {
+    const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
+    const AFrameDb aframe_db = AFrameDb::FromRaw(raw_file);
 
     std::cout << "raw frames: " << raw_file.sprites.size() << '\n';
-    std::cout << "animations: " << frame_data_db.animations.size() << '\n';
-    std::cout << "frames: " << frame_data_db.frames.size() << '\n';
-    for (const FrameDataAnimation& animation : frame_data_db.animations) {
-        std::cout << "  " << animation.name << " (" << animation.frame_indices.size() << " frames";
-        if (animation.tile) {
+    std::cout << "anims: " << aframe_db.anims.size() << '\n';
+    std::cout << "frames: " << aframe_db.frames.size() << '\n';
+    for (const AFrameAnim& anim : aframe_db.anims) {
+        std::cout << "  " << anim.name << " (" << anim.frame_indices.size() << " frames";
+        if (anim.tile) {
             std::cout << ", tile";
         }
         std::cout << ")\n";
@@ -60,23 +60,23 @@ void PrintFrameDataSummary() {
 }
 
 void PrintTileSourceDataSummary() {
-    const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
-    const FrameDataDb frame_data_db = FrameDataDb::FromRaw(raw_file);
-    const TileSourceDb tile_source_db = BuildTileSourceDb(frame_data_db);
+    const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
+    const AFrameDb aframe_db = AFrameDb::FromRaw(raw_file);
+    const TileSourceDb tile_source_db = BuildTileSourceDb(aframe_db);
 
-    std::cout << "tile images: " << frame_data_db.image_paths.size() << '\n';
+    std::cout << "tile images: " << aframe_db.image_paths.size() << '\n';
     std::cout << "tile sources: " << tile_source_db.sources.size() << '\n';
     std::cout << "tile spans: " << tile_source_db.tile_spans.size() << '\n';
-    for (const std::string& image_path : frame_data_db.image_paths) {
+    for (const std::string& image_path : aframe_db.image_paths) {
         std::cout << "  " << image_path << '\n';
     }
 }
 
 bool DumpRecordingAsText(const std::string& input_path, const std::string& output_path) {
-    const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
-    const FrameDataDb frame_data_db = FrameDataDb::FromRaw(raw_file);
+    const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
+    const AFrameDb aframe_db = AFrameDb::FromRaw(raw_file);
     std::string status;
-    const bool ok = ConvertRecordingFileToText(input_path, output_path, frame_data_db, &status);
+    const bool ok = ConvertRecordingFileToText(input_path, output_path, aframe_db, &status);
     std::cout << status << '\n';
     return ok;
 }
@@ -123,12 +123,12 @@ bool CheckClassicQuestStagegen() {
             const StageConfig stage_config = LoadStageConfig(GetClassicQuestRootPath(), stage_def.stage_file);
             CheckClassicGlyphCoverage(stage_config);
             const Stage stage = stage_gen::classic::GenerateStage(quest, stage_def, stage_config);
-            const auto count_spawns = [&](EntityType type_) {
+            const auto count_spawns = [&](EntType type_) {
                 return static_cast<std::size_t>(
                     std::count_if(
-                        stage.entity_spawns.begin(),
-                        stage.entity_spawns.end(),
-                        [type_](const StageEntitySpawn& spawn) {
+                        stage.ent_spawns.begin(),
+                        stage.ent_spawns.end(),
+                        [type_](const EntSpawn& spawn) {
                             return spawn.type_ == type_;
                         }
                     )
@@ -156,17 +156,17 @@ bool CheckClassicQuestStagegen() {
                 }
                 return count;
             };
-            const auto normalized_exit_id = [](const StageEntitySpawn& spawn) -> std::string_view {
+            const auto normalized_exit_id = [](const EntSpawn& spawn) -> std::string_view {
                 return spawn.exit_id.empty() ? std::string_view("default")
                                              : std::string_view(spawn.exit_id);
             };
             const auto count_basic_exit_spawns = [&](std::string_view exit_id) {
                 return static_cast<std::size_t>(
                     std::count_if(
-                        stage.entity_spawns.begin(),
-                        stage.entity_spawns.end(),
-                        [&](const StageEntitySpawn& spawn) {
-                            return spawn.type_ == EntityType::BasicExit &&
+                        stage.ent_spawns.begin(),
+                        stage.ent_spawns.end(),
+                        [&](const EntSpawn& spawn) {
+                            return spawn.type_ == EntType::BasicExit &&
                                    normalized_exit_id(spawn) == exit_id;
                         }
                     )
@@ -185,8 +185,8 @@ bool CheckClassicQuestStagegen() {
                                          " expected exactly 1 default BasicExit spawn, found " +
                                          std::to_string(default_exit_spawns));
             }
-            for (const StageEntitySpawn& spawn : stage.entity_spawns) {
-                if (spawn.type_ != EntityType::BasicExit || stage.exits.empty()) {
+            for (const EntSpawn& spawn : stage.ent_spawns) {
+                if (spawn.type_ != EntType::BasicExit || stage.exits.empty()) {
                     continue;
                 }
                 const std::string_view exit_id = normalized_exit_id(spawn);
@@ -198,14 +198,14 @@ bool CheckClassicQuestStagegen() {
             }
 
             std::cout << stage_def.id << ": "
-                      << stage.entity_spawns.size() << " spawns, "
+                      << stage.ent_spawns.size() << " spawns, "
                       << stage.stagegen_annotations.size() << " annotations, "
                       << entrance_tiles << " entrances, "
                       << default_exit_spawns << " default exits, "
                       << count_block_tiles() << " block tiles, "
-                      << count_spawns(EntityType::Block) << " block spawns, "
-                      << count_spawns(EntityType::ArrowTrap) << " arrow traps, "
-                      << count_spawns(EntityType::SacAltar) / 2 << " sac altars\n";
+                      << count_spawns(EntType::Block) << " block spawns, "
+                      << count_spawns(EntType::ArrowTrap) << " arrow traps, "
+                      << count_spawns(EntType::SacAltar) / 2 << " sac altars\n";
         }
         return true;
     } catch (const std::exception& e) {
@@ -247,10 +247,10 @@ bool SampleClassicMinesAltars(int runs) {
                 const Stage stage = stage_gen::classic::GenerateStage(quest, *stage_def, stage_config);
                 const auto sac_altar_halves = static_cast<int>(
                     std::count_if(
-                        stage.entity_spawns.begin(),
-                        stage.entity_spawns.end(),
-                        [](const StageEntitySpawn& spawn) {
-                            return spawn.type_ == EntityType::SacAltar;
+                        stage.ent_spawns.begin(),
+                        stage.ent_spawns.end(),
+                        [](const EntSpawn& spawn) {
+                            return spawn.type_ == EntType::SacAltar;
                         }
                     )
                 );
@@ -357,9 +357,9 @@ void InitBigMonkeySampleStage(State& state) {
             const float center_x = static_cast<float>(room_x * 10 + 5) * static_cast<float>(kTileSize);
             const float center_y = static_cast<float>(room_y * 8 + 4) * static_cast<float>(kTileSize);
             if (const std::optional<VID> monkey_vid =
-                    SpawnStageEntityAtCenter(state, EntityType::Monkey, Vec2::New(center_x, center_y))) {
-                if (Entity* const monkey = state.entity_manager.GetEntityMut(*monkey_vid)) {
-                    monkey->facing = ((room_x + room_y) % 2 == 0) ? LeftOrRight::Left : LeftOrRight::Right;
+                    SpawnStageEntAtCenter(state, EntType::Monkey, Vec2::New(center_x, center_y))) {
+                if (Ent* const monkey = state.ents.GetEntMut(*monkey_vid)) {
+                    monkey->facing = ((room_x + room_y) % 2 == 0) ? Side::Left : Side::Right;
                 }
             }
         }
@@ -369,13 +369,13 @@ void InitBigMonkeySampleStage(State& state) {
 bool SampleMonkeyTest(int frames, bool big_stage) {
     try {
         Graphics graphics;
-        const RawFrameDataFile raw_file = LoadRawFrameDataFile(kAnnotationsYamlPath);
-        graphics.frame_data_db = FrameDataDb::FromRaw(raw_file);
-        graphics.tile_source_db = BuildTileSourceDb(graphics.frame_data_db);
+        const RawAFrameFile raw_file = LoadRawAFrameFile(kAnnotationsYamlPath);
+        graphics.aframe_db = AFrameDb::FromRaw(raw_file);
+        graphics.tile_source_db = BuildTileSourceDb(graphics.aframe_db);
 
-        PopulateEntityArchetypesTable();
-        SyncEntityArchetypeSizesFromFrameData(graphics);
-        PopulateToolArchetypesTable();
+        PopulateEntSpecsTable();
+        SyncEntSpecSizesFromAFrame(graphics);
+        PopulateToolSpecsTable();
 
         rng::SetSeed(1);
         State state = State::New();
@@ -399,12 +399,12 @@ bool SampleMonkeyTest(int frames, bool big_stage) {
         float sum_y = 0.0F;
         std::array<int, 4> y_bins{};
         const int tile_height = std::max(1, static_cast<int>(state.stage.GetTileHeight()));
-        for (const Entity& entity : state.entity_manager.entities) {
-            if (!entity.active || entity.type_ != EntityType::Monkey) {
+        for (const Ent& ent : state.ents.ents) {
+            if (!ent.active || ent.type_ != EntType::Monkey) {
                 continue;
             }
 
-            const float center_y = entity.GetCenter().y;
+            const float center_y = ent.GetCenter().y;
             if (count == 0) {
                 min_y = center_y;
                 max_y = center_y;
@@ -456,7 +456,7 @@ bool RunCliCommand(int argc, char** argv) {
 
     const std::string command = argv[1];
     if (command == "--check-frame-data") {
-        PrintFrameDataSummary();
+        PrintAFrameSummary();
         return true;
     }
 
@@ -492,8 +492,8 @@ bool RunCliCommand(int argc, char** argv) {
         std::exit(CheckStateEqualitySmoke() ? 0 : 1);
     }
 
-    if (command == "--check-deterministic-replay-smoke") {
-        std::exit(CheckDeterministicReplaySmoke() ? 0 : 1);
+    if (command == "--check-det-replay-smoke") {
+        std::exit(CheckDetReplaySmoke() ? 0 : 1);
     }
 
     if (command == "--check-input-lockstep-smoke") {

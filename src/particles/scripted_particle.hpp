@@ -1,12 +1,12 @@
 #pragma once
 
-#include "particles/particle_archetypes.hpp"
+#include "particles/particle_specs.hpp"
 
 namespace splonks {
 
 struct ScriptedParticle {
     bool active = false;
-    ScriptedParticleArchetypeId archetype_id = kInvalidScriptedParticleArchetypeId;
+    ScriptedParticleSpecId spec_id = kInvalidScriptedParticleSpecId;
     DrawLayer draw_layer = DrawLayer::Middle;
     ParticleLightingMode lighting_mode = ParticleLightingMode::SceneLit;
     Vec2 pos{};
@@ -16,14 +16,14 @@ struct ScriptedParticle {
     bool horizontal_flip = false;
     std::uint32_t sequence_step_index = 0;
     std::uint32_t hold_frames_remaining = 0;
-    FrameDataAnimator frame_data_animator{};
+    AFrameAnimator aframe_animator{};
 
-    void Step(const FrameDataDb& frame_data_db, float dt);
+    void Step(const AFrameDb& aframe_db, float dt);
     bool IsFinished() const;
 };
 
 ScriptedParticle MakeScriptedParticle(
-    ScriptedParticleArchetypeId archetype_id,
+    ScriptedParticleSpecId spec_id,
     const Vec2& pos,
     bool horizontal_flip = false
 );

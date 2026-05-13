@@ -1,6 +1,6 @@
 #include "stage_progression.hpp"
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
@@ -185,26 +185,26 @@ std::optional<Vec2> FindStageEntranceSpawnPos(const State& state) {
         }
     }
 
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (entity.active && entity.type_ == EntityType::Entrance) {
-            return entity.pos;
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active && ent.type_ == EntType::Entrance) {
+            return ent.pos;
         }
     }
 
     return std::nullopt;
 }
 
-std::vector<VID> ResetStageEntrancePresentation(State& state) {
-    std::vector<VID> changed_entities;
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || entity.type_ != EntityType::Entrance) {
+std::vector<VID> ResetStageEntrancePres(State& state) {
+    std::vector<VID> changed_ents;
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active || ent.type_ != EntType::Entrance) {
             continue;
         }
-        entity.counter_a = 0.0F;
-        entity.counter_b = 0.0F;
-        changed_entities.push_back(entity.vid);
+        ent.counter_a = 0.0F;
+        ent.counter_b = 0.0F;
+        changed_ents.push_back(ent.vid);
     }
-    return changed_entities;
+    return changed_ents;
 }
 
 } // namespace splonks

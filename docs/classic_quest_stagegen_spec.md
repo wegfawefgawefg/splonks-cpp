@@ -4,7 +4,7 @@ This spec defines the first production stage generation architecture for the
 Classic Quest. The goal is to reproduce the Spelunky Classic route while keeping
 room templates, tables, weights, and pass knobs hotloadable.
 
-The design deliberately does not include DLL/plugin stagegen or scripted entity
+The design deliberately does not include DLL/plugin stagegen or scripted ent
 behavior. C++ owns algorithms. Data owns content and tuning.
 
 ## Goals
@@ -22,7 +22,7 @@ behavior. C++ owns algorithms. Data owns content and tuning.
 ## Non-Goals
 
 - No DLL hotloading for stagegen in the first version.
-- No custom entity behavior callbacks from data.
+- No custom ent behavior callbacks from data.
 - No generic script VM yet.
 - No attempt to express every algorithm as YAML.
 
@@ -143,7 +143,7 @@ stages:
 
 ### Exit Rules
 
-- Each generated exit entity has an `exit_id`.
+- Each generated exit ent has an `exit_id`.
 - Runtime progression uses `current_stage.exits[exit_id]`.
 - Simple main exits are produced by room glyphs.
 - Special branch exits can be placed by stage passes.
@@ -231,7 +231,7 @@ stage_passes:
   - name: arrow_trap_conversion
     enabled: true
 
-  - name: ambient_mines_entities
+  - name: ambient_mines_ents
     enabled: true
 ```
 
@@ -282,7 +282,7 @@ glyphs:
 
   "4":
     spawn_chance:
-      entity: block
+      ent: block
       chance_denominator: 4
 
   "5":
@@ -331,9 +331,9 @@ glyphs:
 
   "S":
     spawn_random:
-      - entity: snake
+      - ent: snake
         weight: 4
-      - entity: cobra
+      - ent: cobra
         weight: 1
 
   "M":
@@ -354,38 +354,38 @@ actions or glyphs should fail stage data reload loudly.
 ```yaml
 pools:
   underground_items:
-    - entity: jetpack
+    - ent: jetpack
       weight: 1
-    - entity: cape
+    - ent: cape
       weight: 1
-    - entity: shotgun
+    - ent: shotgun
       weight: 1
-    - entity: mattock
+    - ent: mattock
       weight: 2
-    - entity: teleporter
+    - ent: teleporter
       weight: 1
-    - entity: web_cannon
+    - ent: web_cannon
       weight: 1
-    - entity: bomb_box
+    - ent: bomb_box
       weight: 2
-    - entity: rope_pile
+    - ent: rope_pile
       weight: 4
 
   weapon_shop_items:
     unique: true
     fallback: bomb_bag
     entries:
-      - entity: web_cannon
+      - ent: web_cannon
         weight: 1
-      - entity: shotgun
+      - ent: shotgun
         weight: 1
-      - entity: pistol
+      - ent: pistol
         weight: 4
-      - entity: machete
+      - ent: machete
         weight: 4
-      - entity: bow
+      - ent: bow
         weight: 3
-      - entity: bomb_bag
+      - ent: bomb_bag
         weight: 4
 ```
 
@@ -510,7 +510,7 @@ const StagePassDefinition kClassicStagePasses[] = {
     {"floor_treasure", RunFloorTreasurePass},
     {"udjat_key_chest", RunUdjatKeyChestPass},
     {"arrow_trap_conversion", RunArrowTrapConversionPass},
-    {"ambient_mines_entities", RunAmbientMinesEntitiesPass},
+    {"ambient_mines_ents", RunAmbientMinesEntsPass},
 };
 ```
 
@@ -522,7 +522,7 @@ const StagePassDefinition kClassicStagePasses[] = {
 3. Build base 4x4 room path.
 4. Run layout passes.
 5. Pick room templates from final room labels/pool overrides.
-6. Resolve glyphs into tiles, entity spawns, and background stamps.
+6. Resolve glyphs into tiles, ent spawns, and background stamps.
 7. Stamp rooms into the Stage.
 8. Run stage passes over final geometry.
 9. Return Stage with persistent stagegen annotations.
@@ -532,7 +532,7 @@ This order mirrors Spelunky Classic HD's shape:
 
 - `scrLevelGen` fills room codes.
 - `scrRoomGen*` chooses and resolves room strings.
-- `scrEntityGen` runs final entity/treasure/trap sweeps.
+- `scrEntGen` runs final ent/treasure/trap sweeps.
 
 ## Stagegen Annotations
 
@@ -546,7 +546,7 @@ room (0,0): start/start_01.room.yaml
 room (2,1): main/main_04.room.yaml
 layout snake_pit: reserved column 3 rows 0-3
 layout shop: candidate rejected at (1,2), occupied by snake_pit
-stage pass ambient_mines_entities: spawned cobra at tile 14,20, roll 1/180
+stage pass ambient_mines_ents: spawned cobra at tile 14,20, roll 1/180
 stage pass arrow_trap_conversion: converted block at tile 30,11 facing left
 ```
 
@@ -577,7 +577,7 @@ Requires rebuild:
 - New C++ layout pass.
 - New C++ stage pass.
 - New glyph action behavior.
-- New entity behavior.
+- New ent behavior.
 
 ## Migration Plan
 
@@ -592,7 +592,7 @@ Requires rebuild:
 9. Add reload/reroll/annotation debug UI.
 10. Expand from Mines 1-3 to Mines 1-4.
 11. Port Jungle, Ice Caves, Temple, Olmec using SpelunkyClassicHD scripts as reference.
-12. For missing entities, add archetypes first with placeholder behavior, then refine behavior as assets arrive.
+12. For missing ents, add specs first with placeholder behavior, then refine behavior as assets arrive.
 
 ## Implementation Status
 
@@ -601,18 +601,18 @@ Current status:
 - Implemented: `assets/quests/classic/quest.yaml` route definition for Mines, Jungle, Ice Caves, Temple, Black Market, Haunted Castle, City of Gold, and Olmec's Lair, with `classic_win` as the current end target.
 - Implemented: stage config files for all listed Classic route stages under `assets/quests/classic/stages`.
 - Implemented: explicit per-stage `border_tile` and `backwall_tiles`, replacing the old implicit tileset assumption for quest-driven stages.
-- Implemented: glyph files for all listed Classic route stages under `assets/quests/classic/glyphs`; glyph ids now resolve to real tile/entity ids, though several of those ids still have placeholder behavior.
+- Implemented: glyph files for all listed Classic route stages under `assets/quests/classic/glyphs`; glyph ids now resolve to real tile/ent ids, though several of those ids still have placeholder behavior.
 - Implemented: quest loader structs for quest definitions, stage configs, typed Classic quest state, exit requirements, and stage pass properties.
 - Implemented: room template loader for `.room.yaml` pools with id, pool, weight, size, properties, and grid.
 - Implemented: Mines room templates moved into `assets/quests/classic/rooms/mines`.
 - Implemented: imported raw room strings from SpelunkyClassicHD `scrRoomGen2`, `scrRoomGen3`, `scrRoomGen4`, `scrRoomGenMarket`, and `scrRoomGen5` into theme room pools for Jungle, Ice Caves, Temple, Black Market, and Olmec's Lair.
 - Implemented: partially imported stages now point normal room-pool labels at existing theme pools instead of unintentionally falling back to built-in Mines room strings.
 - Implemented: table-backed layout pass dispatch for `snake_pit` and `shop`.
-- Implemented: table-backed stage pass dispatch for `convert_exit_tiles`, `branch_exit`, `embedded_treasure`, `floor_treasure`, `udjat_key_chest`, `arrow_trap_conversion`, and `ambient_mines_entities`.
+- Implemented: table-backed stage pass dispatch for `convert_exit_tiles`, `branch_exit`, `embedded_treasure`, `floor_treasure`, `udjat_key_chest`, `arrow_trap_conversion`, and `ambient_mines_ents`.
 - Implemented: data-driven branch exits for Black Market, Haunted Castle, and City of Gold. The shared stage YAML pass no-ops on stages that do not declare the corresponding `exit_id`.
 - Implemented: `StageGeneratorContext`-based call path for the Classic room graph generator.
 - Implemented: glyph map loading/validation and named built-in glyph actions for the current room graph generator.
-- Implemented: generated exit entities carry `exit_id`, and runtime `BasicExit` routing resolves `StageExitTarget` requirement data.
+- Implemented: generated exit ents carry `exit_id`, and runtime `BasicExit` routing resolves `StageExitTarget` requirement data.
 - Implemented: item/shop pool loading for underground items, high-end shop items, and shop slot selection.
 - Implemented: persistent stagegen annotations on `Stage`, including room source labels, layout summary, branch-exit results, and stage-pass summaries.
 - Implemented: Debug Level window can select/reroll Classic quest stages, optionally seed the quest RNG, increment the seed, and list/toggle stagegen annotations.
@@ -624,18 +624,18 @@ Current status:
 Known limitations:
 
 - Jungle, Ice Caves, Temple, Black Market, Haunted Castle, City of Gold, and Olmec's Lair still use the same generic room-graph algorithm. Their room pools and glyphs load, but theme-specific generation semantics are incomplete.
-- Several Classic tile/entity ids exist only as placeholder archetypes or conservative tile definitions. Examples include water/lava/thin ice/trap blocks/ceiling traps/tomb lord/doors/ankh/yeti/alien ship/alien boss.
+- Several Classic tile/ent ids exist only as placeholder specs or conservative tile definitions. Examples include water/lava/thin ice/trap blocks/ceiling traps/tomb lord/doors/ankh/yeti/alien ship/alien boss.
 - Haunted Castle and City of Gold currently reuse Temple pools with different explicit tile mappings.
 - Black Market and Olmec's Lair are structurally generateable, but they still need specialized layouts rather than the generic 4x4 room graph.
-- Branch exits are placed and routed, but their final Classic/HD presentation and discovery behavior are not complete.
+- Branch exits are placed and routed, but their final Classic/HD pres and discovery behavior are not complete.
 - Layout generation still owns the base room-path algorithm in C++; YAML controls pass enablement/properties, not the algorithm itself.
 - Disk recording serialization still stores the old compact stage subset; full quest/stagegen annotation persistence is not part of this pass.
 
 Next recommended implementation order:
 
-1. Replace `ambient_mines_entities` with theme-aware ambient passes or per-theme pass names.
+1. Replace `ambient_mines_ents` with theme-aware ambient passes or per-theme pass names.
 2. Implement placeholder behaviors for the highest-impact stage blockers: water/lava/thin ice, trap blocks, ceiling traps, tomb lord, doors, ankh, yetis, and Olmec.
 3. Add specialized layout generation for Black Market and Olmec's Lair.
-4. Replace Haunted Castle and City of Gold pool aliases with dedicated pools when their source rooms/entities are ported.
+4. Replace Haunted Castle and City of Gold pool aliases with dedicated pools when their source rooms/ents are ported.
 5. Add more stagegen annotation points for special-room/event decisions as those systems become data-driven.
 6. Decide whether playback recording should serialize full `Stage` quest metadata and stagegen annotations.

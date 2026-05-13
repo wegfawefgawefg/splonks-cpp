@@ -1,11 +1,11 @@
-#include "entities/hawkman.hpp"
+#include "ents/hawkman.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::hawkman {
+namespace splonks::ents::hawkman {
 
-// TODO(classic): Hawkman is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kHawkmanArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Hawkman);
+// TODO(classic): Hawkman is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kHawkmanSpec =
+    common::MakeUnimplementedClassicSpec(EntType::Hawkman);
 
-} // namespace splonks::entities::hawkman
+} // namespace splonks::ents::hawkman

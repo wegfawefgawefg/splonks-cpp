@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,26 +10,26 @@ struct State;
 
 }
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 struct ContactContext;
 }
 
-namespace splonks::entities::box {
+namespace splonks::ents::box {
 
-extern const EntityArchetype kBoxArchetype;
+extern const EntSpec kBoxSpec;
 
-void StepEntityLogicAsBox(
-    std::size_t entity_idx,
+void StepEntLogicAsBox(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio);
+void OnDeathAsBox(std::size_t ent_idx, State& state, Audio& audio);
 bool TryApplyBoxImpact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 );
 
-} // namespace splonks::entities::box
+} // namespace splonks::ents::box

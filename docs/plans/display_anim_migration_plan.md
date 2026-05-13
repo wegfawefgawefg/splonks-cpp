@@ -1,88 +1,88 @@
-# Display Animation Migration Plan
+# Display Anim Migration Plan
 
 ## Problem
 
-Right now `EntityDisplayState` is still the authoritative animation source for
-any entity that has a display-state mapping.
+Right now `EntDisplayState` is still the authoritative anim source for
+any ent that has a display-state mapping.
 
 The current path is:
 
-1. game logic sets `entity.display_state` through `TrySetDisplayState(...)`
-2. `CommonPostStep(...)` calls `StepAnimationTimer(...)`
-3. `StepAnimationTimer(...)` looks up `type_ + display_state`
-4. if a mapping exists, it overwrites `entity.frame_data_animator`
+1. game logic sets `ent.display_state` through `TrySetDisplayState(...)`
+2. `CommonPostStep(...)` calls `StepAnimTimer(...)`
+3. `StepAnimTimer(...)` looks up `type_ + display_state`
+4. if a mapping exists, it overwrites `ent.aframe_animator`
 5. only then does the animator step frames
 
 That means direct calls like:
 
 ```cpp
-entity.frame_data_animator.SetAnimation(frame_data_ids::LiveGrenade);
+ent.aframe_animator.SetAnim(aframe_ids::LiveGrenade);
 ```
 
-are not really authoritative if the entity also has a display-state mapping.
+are not really authoritative if the ent also has a display-state mapping.
 They can be stomped on the same frame or the next frame by
-`StepAnimationTimer(...)`.
+`StepAnimTimer(...)`.
 
 This makes it harder to add:
 
-- one-off action animations
-- short transitional animations
-- entity-specific animation control
-- richer authored animation behavior that does not fit a shared enum
+- one-off action anims
+- short transitional anims
+- ent-specific anim control
+- richer authored anim behavior that does not fit a shared enum
 
 ## Current Authoritative Site
 
 The important code is in:
 
-- [src/entities/common_frame.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common_frame.cpp)
+- [src/ents/common_frame.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common_frame.cpp)
 
-Today `StepAnimationTimer(...)` does this every post-step:
+Today `StepAnimTimer(...)` does this every post-step:
 
-- compute `GetFrameDataSelectionForDisplayState(...)`
-- if one exists, call `entity.frame_data_animator.SetAnimation(...)`
+- compute `GetAFrameSelectionForDisplayState(...)`
+- if one exists, call `ent.aframe_animator.SetAnim(...)`
 - set animate / forced frame flags from that selection
 - step the animator
 
-So yes: `StepAnimationTimer(...)` currently knows about display state and treats
-it as the animation authority.
+So yes: `StepAnimTimer(...)` currently knows about display state and treats
+it as the anim authority.
 
 ## Current Scope
 
 Right now the display-state mapping table in
-[src/entity_display_states.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entity_display_states.cpp)
+[src/ent_display_states.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ent_display_states.cpp)
 only covers:
 
 - `Player`
 - `Bat`
 - `BaseballBat`
 
-So the display-state migration is not a whole-codebase animation rewrite yet.
-It is mostly about cleaning up the ownership model for these few entities before
-more animation complexity gets added.
+So the display-state migration is not a whole-codebase anim rewrite yet.
+It is mostly about cleaning up the ownership model for these few ents before
+more anim complexity gets added.
 
 ## Goal
 
-Make `FrameDataId` / `FrameDataAnimator` the real render truth.
+Make `AFrameId` / `AFrameAnimator` the real render truth.
 
 Display states should become an optional helper layer for common semantic cases,
-not the mandatory owner of animation choice.
+not the mandatory owner of anim choice.
 
 Target model:
 
-- rendering reads `entity.frame_data_animator`
-- entity logic can set exact animations directly
+- rendering reads `ent.aframe_animator`
+- ent logic can set exact anims directly
 - common logic may still use display-state helpers for broad cases
-- display state no longer silently overwrites explicit animation choice
+- display state no longer silently overwrites explicit anim choice
 
 ## Desired Rules
 
 ### Rule 1
 
-`frame_data_animator.animation_id` is the actual animation being rendered.
+`aframe_animator.anim_id` is the actual anim being rendered.
 
 ### Rule 2
 
-`EntityDisplayState` is only a semantic helper for common cases like:
+`EntDisplayState` is only a semantic helper for common cases like:
 
 - player locomotion
 - bat hanging vs flying
@@ -90,7 +90,7 @@ Target model:
 
 ### Rule 3
 
-If entity logic sets an exact animation directly, that choice should persist
+If ent logic sets an exact anim directly, that choice should persist
 until logic changes it again.
 
 ### Rule 4
@@ -105,13 +105,13 @@ Do this in stages.
 
 ### Stage 1: Stop Automatic Display-State Override
 
-Change `StepAnimationTimer(...)` so it no longer remaps
-`display_state -> animation_id` every frame.
+Change `StepAnimTimer(...)` so it no longer remaps
+`display_state -> anim_id` every frame.
 
 After this stage:
 
-- `StepAnimationTimer(...)` should only step `frame_data_animator`
-- explicit `SetAnimation(...)` calls become stable
+- `StepAnimTimer(...)` should only step `aframe_animator`
+- explicit `SetAnim(...)` calls become stable
 
 This is the main ownership change.
 
@@ -120,13 +120,13 @@ This is the main ownership change.
 Add a helper with a narrow job, something like:
 
 ```cpp
-bool TrySetAnimationFromDisplayState(Entity& entity, EntityDisplayState display_state);
+bool TrySetAnimFromDisplayState(Ent& ent, EntDisplayState display_state);
 ```
 
 or:
 
 ```cpp
-bool TryApplyDisplayStateAnimation(Entity& entity);
+bool TryApplyDisplayStateAnim(Ent& ent);
 ```
 
 The important part is:
@@ -138,21 +138,21 @@ The important part is:
 
 `TrySetDisplayState(...)` can still be useful, but its job should shrink to:
 
-- validate that a display state is meaningful for that entity
+- validate that a display state is meaningful for that ent
 - store the semantic state if desired
 
-It should not imply that animation ownership has changed forever.
+It should not imply that anim ownership has changed forever.
 
 Possible shape:
 
 ```cpp
-bool TrySetDisplayState(Entity& entity, EntityDisplayState display_state);
-bool TrySetAnimationFromDisplayState(Entity& entity, EntityDisplayState display_state);
+bool TrySetDisplayState(Ent& ent, EntDisplayState display_state);
+bool TrySetAnimFromDisplayState(Ent& ent, EntDisplayState display_state);
 ```
 
 Then call sites pick the right one.
 
-### Stage 4: Convert Common Logic To Explicit Animation Calls
+### Stage 4: Convert Common Logic To Explicit Anim Calls
 
 Move common semantic cases to explicit helpers where they still make sense.
 
@@ -160,7 +160,7 @@ Examples:
 
 - player movement code can still use display-state mapping helper
 - bat AI can still use display-state mapping helper
-- bomb / rope / jetpack / tools can directly set raw animation ids
+- bomb / rope / jetpack / tools can directly set raw anim ids
 
 ### Stage 4A: Remove Baseball Bat From Display-State Mapping
 
@@ -168,23 +168,23 @@ Examples:
 
 Reasons:
 
-- it only has one authored swing animation
+- it only has one authored swing anim
 - gameplay already reads animator frame index directly for swing timing
 - the display-state layer adds no real value here
 
 Planned cleanup:
 
-1. remove `BaseballBat` from `entity_display_states.cpp`
+1. remove `BaseballBat` from `ent_display_states.cpp`
 2. stop calling `TrySetDisplayState(...)` in baseball bat logic
-3. set `frame_data_animator` directly with `SetAnimation(...)` or archetype init only
+3. set `aframe_animator` directly with `SetAnim(...)` or spec init only
 
-This is the clearest example of an entity that should be raw-animation-driven.
+This is the clearest example of an ent that should be raw-anim-driven.
 
-### Stage 5: Reassess Whether `display_state` Still Belongs On `Entity`
+### Stage 5: Reassess Whether `display_state` Still Belongs On `Ent`
 
 After the cutover, decide whether `display_state` should remain as:
 
-- a semantic runtime field for some entities
+- a semantic runtime field for some ents
 - or only a convenience concept used at call sites
 
 No need to force this immediately.
@@ -193,11 +193,11 @@ No need to force this immediately.
 
 The first safe pass should be:
 
-1. remove display-state remap from `StepAnimationTimer(...)`
-2. add explicit helper to map display state to animation
+1. remove display-state remap from `StepAnimTimer(...)`
+2. add explicit helper to map display state to anim
 3. update the player and bat logic to call that helper directly
-4. move baseball bat to direct `SetAnimation(...)`
-5. leave other raw `SetAnimation(...)` paths alone
+4. move baseball bat to direct `SetAnim(...)`
+5. leave other raw `SetAnim(...)` paths alone
 
 That gets rid of the hidden stomp without requiring a giant rewrite.
 
@@ -205,14 +205,14 @@ That gets rid of the hidden stomp without requiring a giant rewrite.
 
 ### Forced Frames / Animate Flags
 
-`GetFrameDataSelectionForDisplayState(...)` currently also returns:
+`GetAFrameSelectionForDisplayState(...)` currently also returns:
 
 - `animate`
 - `forced_frame`
 
 That means the display-state helper should still be allowed to write:
 
-- `animation_id`
+- `anim_id`
 - `animate`
 - optional forced frame
 
@@ -220,7 +220,7 @@ That is fine. It just should not happen implicitly every post-step.
 
 ### Geometry Size Changes
 
-`ApplyFrameDataGeometryToEntity(...)` currently resizes `entity.size` from the
+`ApplyAFrameGeometryToEnt(...)` currently resizes `ent.size` from the
 current frame's `pbox`.
 
 That behavior can stay, but it should follow the animator's actual current frame.
@@ -231,20 +231,20 @@ It should not depend on a hidden display-state remap step.
 If `display_state` becomes only a semantic helper, debug UI should present it as:
 
 - semantic state
-- not necessarily the currently rendered animation
+- not necessarily the currently rendered anim
 
 That distinction is healthier.
 
 ## Recommendation
 
-Keep `EntityDisplayState`, but demote it.
+Keep `EntDisplayState`, but demote it.
 
-Do not make it the global animation graph.
+Do not make it the global anim graph.
 
 Use:
 
-- raw `FrameDataId` for actual animation authority
+- raw `AFrameId` for actual anim authority
 - display-state mapping only as explicit helper logic for shared semantic cases
 
-That gives more animation freedom without losing the convenience of common
+That gives more anim freedom without losing the convenience of common
 state-driven sprite selection where it still helps.

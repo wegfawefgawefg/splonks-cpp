@@ -1,9 +1,9 @@
 #pragma once
 
 #include <array>
-#include "entity.hpp"
-#include "entity/callbacks.hpp"
-#include "frame_data_id.hpp"
+#include "ent.hpp"
+#include "ent/callbacks.hpp"
+#include "aframe_id.hpp"
 #include "hud/types.hpp"
 
 namespace splonks {
@@ -11,16 +11,16 @@ namespace splonks {
 struct Graphics;
 struct State;
 
-using EntityBuildHudEntry = void (*)(const Entity& entity, const State& state, HudEntrySource source, HudEntry& entry);
+using EntBuildHudEntry = void (*)(const Ent& ent, const State& state, HudEntrySource source, HudEntry& entry);
 
-struct EntityArchetype {
-    EntityType type_ = EntityType::None;
+struct EntSpec {
+    EntType type_ = EntType::None;
     Vec2 size = Vec2::New(8.0F, 8.0F);
     std::uint32_t health = 0;
     bool has_physics = true;
     bool can_collide = true;
     bool can_be_hit = true;
-    bool can_receive_projectile_contact = true;
+    bool can_receive_proj_contact = true;
     bool can_be_picked_up = true;
     bool affected_by_cobweb = true;
     bool can_collect_pickups = false;
@@ -49,52 +49,52 @@ struct EntityArchetype {
     Color3 light_color = Color3::White();
     int light_radius = 0;
     bool preserve_held_aim = false;
-    bool predict_local_attachment_use = false;
-    bool predict_attachment_use_presentation = false;
+    bool predict_local_attach_use = false;
+    bool predict_attach_use_pres = false;
     DrawLayer draw_layer = DrawLayer::Middle;
     bool render_enabled = true;
-    LeftOrRight facing = LeftOrRight::Left;
-    EntityCondition condition = EntityCondition::Normal;
-    EntityAiState ai_state = EntityAiState::Idle;
-    EntityDisplayState display_state = EntityDisplayState::Neutral;
+    Side facing = Side::Left;
+    EntCondition condition = EntCondition::Normal;
+    EntAiState ai_state = EntAiState::Idle;
+    EntDisplayState display_state = EntDisplayState::Neutral;
     float counter_a = 0.0F;
     float counter_b = 0.0F;
     float counter_d = 0.0F;
-    DamageVulnerability damage_vulnerability = DamageVulnerability::Vulnerable;
-    DamageType projectile_contact_damage_type = DamageType::Attack;
-    unsigned int projectile_contact_damage_amount = 1;
-    bool can_apply_projectile_contact = true;
+    DamageVuln damage_vuln = DamageVuln::Vulnerable;
+    DamageType proj_contact_damage_type = DamageType::Attack;
+    unsigned int proj_contact_damage_amount = 1;
+    bool can_apply_proj_contact = true;
     std::optional<EffectId> pickup_effect = std::nullopt;
     Buyable buyable{};
-    std::optional<FrameDataId> damage_animation = std::nullopt;
+    std::optional<AFrameId> damage_anim = std::nullopt;
     std::optional<AudioAssetId> damage_sound = std::nullopt;
     std::optional<AudioAssetId> collide_sound = std::nullopt;
     std::optional<AudioAssetId> death_sound = std::nullopt;
-    EntityOnDeath on_death = nullptr;
-    EntityOnDamage on_damage = nullptr;
-    EntityOnUse on_use = nullptr;
-    EntityOnInteract on_interact = nullptr;
-    EntityOnAreaEnter on_area_enter = nullptr;
-    EntityOnAreaExit on_area_exit = nullptr;
-    EntityOnAreaTileChanged on_area_tile_changed = nullptr;
-    EntityControlLogic control_logic = nullptr;
-    EntityStepLogic step_logic = nullptr;
-    EntityStepPhysics step_physics = nullptr;
-    EntityOnEntityContact on_entity_contact = nullptr;
-    EntityOnTileContact on_tile_contact = nullptr;
-    EntityBuildHudEntry build_hud_entry = nullptr;
-    std::uint32_t entity_contact_cooldown_duration = 0;
-    EntityLabel entity_label_a = EntityLabel::None;
+    EntOnDeath on_death = nullptr;
+    EntOnDamage on_damage = nullptr;
+    EntOnUse on_use = nullptr;
+    EntOnInteract on_interact = nullptr;
+    EntOnAreaEnter on_area_enter = nullptr;
+    EntOnAreaExit on_area_exit = nullptr;
+    EntOnAreaTileChanged on_area_tile_changed = nullptr;
+    EntControlLogic control_logic = nullptr;
+    EntStepLogic step_logic = nullptr;
+    EntStepPhysics step_physics = nullptr;
+    EntOnEntContact on_ent_contact = nullptr;
+    EntOnTileContact on_tile_contact = nullptr;
+    EntBuildHudEntry build_hud_entry = nullptr;
+    std::uint32_t ent_contact_cooldown_duration = 0;
+    EntLabel ent_label_a = EntLabel::None;
     Alignment alignment = Alignment::Neutral;
     const char* debug_name = "Unknown";
-    FrameDataAnimator frame_data_animator{};
+    AFrameAnimator aframe_animator{};
 };
 
-const EntityArchetype& GetEntityArchetype(EntityType type_);
-const char* GetEntityTypeName(EntityType type_);
-void PopulateEntityArchetypesTable();
-void SyncEntityArchetypeSizesFromFrameData(const Graphics& graphics);
-void SetEntityAs(Entity& entity, EntityType type_);
-FrameDataId GetDefaultAnimationIdForArchetype(EntityType type_);
+const EntSpec& GetEntSpec(EntType type_);
+const char* GetEntTypeName(EntType type_);
+void PopulateEntSpecsTable();
+void SyncEntSpecSizesFromAFrame(const Graphics& graphics);
+void SetEntAs(Ent& ent, EntType type_);
+AFrameId GetDefaultAnimIdForSpec(EntType type_);
 
 } // namespace splonks

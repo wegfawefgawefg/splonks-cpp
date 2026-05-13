@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame_data.hpp"
+#include "aframe.hpp"
 #include "tile.hpp"
 #include "tile_contact_data.hpp"
 #include "tile_source_data.hpp"
@@ -32,7 +32,7 @@ enum class TextureName {
 };
 
 enum class SpriteTexture {
-    Entities,
+    Ents,
 };
 
 struct PlayCam {
@@ -76,11 +76,11 @@ struct Graphics {
     Camera2D camera;
     PlayCam play_cam;
     std::vector<SDL_Texture*> textures;
-    FrameDataDb frame_data_db;
-    std::vector<SDL_Texture*> frame_data_images;
-    std::string frame_data_annotations_path = "assets/graphics/annotations.yaml";
-    std::filesystem::file_time_type frame_data_annotations_last_loaded_write_time{};
-    std::filesystem::file_time_type frame_data_annotations_last_seen_write_time{};
+    AFrameDb aframe_db;
+    std::vector<SDL_Texture*> aframe_images;
+    std::string aframe_annotations_path = "assets/graphics/annotations.yaml";
+    std::filesystem::file_time_type aframe_annotations_last_loaded_write_time{};
+    std::filesystem::file_time_type aframe_annotations_last_seen_write_time{};
     TileSourceDb tile_source_db;
     TileContactDb tile_contact_db;
     std::unordered_map<std::uint64_t, std::uint32_t> tile_variations_cache;
@@ -91,19 +91,19 @@ struct Graphics {
 
     static Graphics New(SDL_Renderer* renderer, const std::string& sprite_assets_folder);
     SDL_Texture* GetTexture(TextureName texture) const;
-    SDL_Texture* GetFrameDataTexture(std::uint32_t image_id) const;
+    SDL_Texture* GetAFrameTexture(std::uint32_t image_id) const;
     Vec2 ScreenToWc(const UVec2& screen_pos) const;
     Vec2 WcToScreen(const Vec2& world_pos) const;
     IVec2 ScreenToTileCoords(const UVec2& screen_pos) const;
     void ResetTileVariation(const IVec2& tile_pos);
     void ResetTileVariations();
-    bool ReloadFrameData(SDL_Renderer* renderer, std::string* status_out = nullptr);
-    bool ReloadFrameDataIfChanged(SDL_Renderer* renderer, std::string* status_out = nullptr);
+    bool ReloadAFrame(SDL_Renderer* renderer, std::string* status_out = nullptr);
+    bool ReloadAFrameIfChanged(SDL_Renderer* renderer, std::string* status_out = nullptr);
     void ShutdownText();
     void ShutdownTextures();
 };
 
-SDL_FRect GetPresentationRect(const Graphics& graphics, int output_width, int output_height);
+SDL_FRect GetPresRect(const Graphics& graphics, int output_width, int output_height);
 Vec2 GetStageCameraCenter(const Stage& stage);
 float GetDefaultFollowCameraZoom(const Graphics& graphics);
 float GetStageFitCameraZoom(const Stage& stage, const Graphics& graphics);

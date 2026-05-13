@@ -1,11 +1,11 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::shopkeeper {
+namespace splonks::ents::shopkeeper {
 
-EntityDamageEffectResult OnDamageAsShopkeeper(
-    std::size_t entity_idx,
+EntDamageEffectResult OnDamageAsShopkeeper(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
@@ -13,14 +13,14 @@ EntityDamageEffectResult OnDamageAsShopkeeper(
     bool damage_applied
 );
 
-void StepEntityLogicAsShopkeeper(
-    std::size_t entity_idx,
+void StepEntLogicAsShopkeeper(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-extern const EntityArchetype kShopkeeperArchetype;
+extern const EntSpec kShopkeeperSpec;
 
-} // namespace splonks::entities::shopkeeper
+} // namespace splonks::ents::shopkeeper

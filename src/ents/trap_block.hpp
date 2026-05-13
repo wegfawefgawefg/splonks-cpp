@@ -1,27 +1,27 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::trap_block {
+namespace splonks::ents::trap_block {
 
-extern const EntityArchetype kTrapBlockArchetype;
+extern const EntSpec kTrapBlockSpec;
 
-void MakeTrapBlockOneShot(Entity& block);
+void MakeTrapBlockOneShot(Ent& block);
 
-void StepEntityLogicAsTrapBlock(
-    std::size_t entity_idx,
+void StepEntLogicAsTrapBlock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-void StepEntityPhysicsAsTrapBlock(
-    std::size_t entity_idx,
+void StepEntPhysicsAsTrapBlock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::trap_block
+} // namespace splonks::ents::trap_block

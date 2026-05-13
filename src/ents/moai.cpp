@@ -1,17 +1,17 @@
-#include "entities/moai.hpp"
+#include "ents/moai.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::moai {
+namespace splonks::ents::moai {
 
-// TODO(classic): Moai entities are not implemented yet. These archetypes only keep Classic Quest data spawnable.
-extern const EntityArchetype kMoaiArchetype =
-    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::Moai);
-extern const EntityArchetype kMoai2Archetype =
-    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::Moai2);
-extern const EntityArchetype kMoai3Archetype =
-    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::Moai3);
-extern const EntityArchetype kMoaiInsideArchetype =
-    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::MoaiInside);
+// TODO(classic): Moai ents are not implemented yet. These specs only keep Classic Quest data spawnable.
+extern const EntSpec kMoaiSpec =
+    common::MakeUnimplementedClassicNonStompableSpec(EntType::Moai);
+extern const EntSpec kMoai2Spec =
+    common::MakeUnimplementedClassicNonStompableSpec(EntType::Moai2);
+extern const EntSpec kMoai3Spec =
+    common::MakeUnimplementedClassicNonStompableSpec(EntType::Moai3);
+extern const EntSpec kMoaiInsideSpec =
+    common::MakeUnimplementedClassicNonStompableSpec(EntType::MoaiInside);
 
-} // namespace splonks::entities::moai
+} // namespace splonks::ents::moai

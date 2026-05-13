@@ -32,10 +32,10 @@ Status legend:
 ## Shops
 
 - [x] Real shop engine pieces exist.
-  - `Shop` area entity
+  - `Shop` area ent
   - buyable state
   - disturbance / anger plumbing
-  - shopkeeper entity
+  - shopkeeper ent
 - [ ] Replace mines shop generation with the real shop area pipeline.
   - Generated mines shops should spawn a real `Shop` area and register buyables/children against it.
 - [ ] Make generated mines shops use the same ownership / stealing / anger logic as the demo shop path.
@@ -55,7 +55,7 @@ Status legend:
 - [ ] Scorpion
   - `Scarab` exists in code; `Scorpion` does not.
 - [ ] Large spitting snake / cobra variant
-- [ ] Spit projectile / attack behavior for the spitter
+- [ ] Spit proj / attack behavior for the spitter
 - [ ] Slow ghost
   - Replace the current placeholder-ish `GhostBall` with the real pressure mechanic, or implement a mines-demo equivalent good enough to stand in for it.
 
@@ -76,12 +76,12 @@ Status legend:
 ## Olmec / Boss
 
 - [ ] Boss stage layout
-- [ ] Olmec entity
+- [ ] Olmec ent
 - [ ] Olmec movement / stomp / crush behavior
 - [ ] Tile destruction / terrain interaction for the fight
 - [ ] Fight completion flow
 - [ ] Post-fight progression / demo completion behavior
-- [-] Boss camera / presentation pass
+- [-] Boss camera / pres pass
 
 ## Physics / Feel Pass
 
@@ -117,7 +117,7 @@ Status legend:
 - [ ] 2. Integrate real mines shops
 - [ ] 3. Add skeleton
 - [ ] 4. Add scorpion
-- [ ] 5. Add large spitting snake / cobra and spit projectile
+- [ ] 5. Add large spitting snake / cobra and spit proj
 - [ ] 6. Add slow ghost
 - [ ] 7. Route the demo progression to `Boss`
 - [ ] 8. Implement Olmec stage + boss

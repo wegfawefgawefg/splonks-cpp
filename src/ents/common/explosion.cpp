@@ -1,4 +1,4 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "particles/sprite_particle.hpp"
 
 #include "stage_break.hpp"
@@ -9,7 +9,7 @@
 #include <memory>
 #include <array>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
@@ -17,7 +17,7 @@ constexpr int kExplosionCrossRadiusTiles = 2;
 constexpr int kExplosionDiagonalRadiusTiles = 1;
 constexpr float kExplosionShakeForegroundAmount = 4.0F;
 constexpr float kExplosionShakeBackgroundAmount = 3.0F;
-constexpr float kExplosionShakeEntityAmount = 3.5F;
+constexpr float kExplosionShakeEntAmount = 3.5F;
 constexpr float kExplosionShakeRadiusTiles = 3.0F;
 
 bool IsInSpelunkyExplosionFootprint(const IVec2& tile_delta) {
@@ -64,7 +64,7 @@ std::vector<IVec2> BuildExplosionFootprintTiles(const Stage& stage, const Vec2& 
 } // namespace
 
 void DoExplosion(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     Vec2 center,
     float size,
     float push_magnitude,
@@ -74,9 +74,9 @@ void DoExplosion(
     const float effect_size = size * 0.5F * static_cast<float>(kTileSize);
     {
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::GrenadeBoom);
-        effect.frame_data_animator.loop = false;
-        effect.finish_on_animation_end = true;
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::GrenadeBoom);
+        effect.aframe_animator.loop = false;
+        effect.finish_on_anim_end = true;
         effect.draw_layer = DrawLayer::Foreground;
         effect.lighting_mode = ParticleLightingMode::Emissive;
         effect.counter = 8;
@@ -100,7 +100,7 @@ void DoExplosion(
         const float sacc = rng::RandomFloat(-vel * 0.01F, -vel * 0.02F);
 
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(64, 128));
         effect.pos = center;
@@ -123,7 +123,7 @@ void DoExplosion(
         center,
         kExplosionShakeForegroundAmount,
         kExplosionShakeBackgroundAmount,
-        kExplosionShakeEntityAmount,
+        kExplosionShakeEntAmount,
         kExplosionShakeRadiusTiles
     );
     const Color3 explosion_light_color = Color3::New(1.0F, 0.48F, 0.12F);
@@ -138,18 +138,18 @@ void DoExplosion(
         .br = center + (Vec2::New(1.0F, 1.0F) * explosion_size),
     };
 
-    const VID this_vid = state.entity_manager.GetVid(entity_idx);
-    const std::vector<VID> results = QueryEntitiesInAabb(state, area, this_vid);
+    const VID this_vid = state.ents.GetVid(ent_idx);
+    const std::vector<VID> results = QueryEntsInAabb(state, area, this_vid);
     for (const VID& vid : results) {
-        if (Entity* const entity = state.entity_manager.GetEntityMut(vid)) {
-            const Vec2 delta = GetNearestWorldDelta(state.stage, center, entity->GetCenter());
+        if (Ent* const ent = state.ents.GetEntMut(vid)) {
+            const Vec2 delta = GetNearestWorldDelta(state.stage, center, ent->GetCenter());
             const bool can_receive_push =
-                entity->active &&
-                entity->has_physics &&
-                !entity->impassable &&
+                ent->active &&
+                ent->has_physics &&
+                !ent->impassable &&
                 IsInSpelunkyExplosionFootprint(delta);
             if (!can_receive_push) {
-                (void)TryDamageEntity(
+                (void)TryDamageEnt(
                     vid.id,
                     state,
                     audio,
@@ -165,7 +165,7 @@ void DoExplosion(
             if (knockback_dir == Vec2::New(0.0F, 0.0F)) {
                 knockback_dir = Vec2::New(0.0F, -1.0F);
             }
-            (void)TryHitEntity(
+            (void)TryHitEnt(
                 vid.id,
                 state,
                 audio,
@@ -178,9 +178,9 @@ void DoExplosion(
                         .clear_velocity = true,
                         .clear_acceleration = true,
                         .thrown_by = this_vid,
-                        .projectile_contact_damage_type = DamageType::Attack,
-                        .projectile_contact_damage_amount = 1,
-                        .projectile_contact_duration = kProjectileContactDuration,
+                        .proj_contact_damage_type = DamageType::Attack,
+                        .proj_contact_damage_amount = 1,
+                        .proj_contact_duration = kProjContactDuration,
                     },
                 }
             );
@@ -188,4 +188,4 @@ void DoExplosion(
     }
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

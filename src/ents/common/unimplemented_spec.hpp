@@ -1,13 +1,13 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
-inline EntityArchetype MakeUnimplementedClassicArchetype(EntityType type_) {
-    return EntityArchetype{
+inline EntSpec MakeUnimplementedClassicSpec(EntType type_) {
+    return EntSpec{
         .type_ = type_,
         .size = Vec2::New(16.0F, 16.0F),
         .health = 3,
@@ -19,20 +19,20 @@ inline EntityArchetype MakeUnimplementedClassicArchetype(EntityType type_) {
         .hurt_on_contact = false,
         .can_be_stunned = true,
         .draw_layer = DrawLayer::Foreground,
-        .facing = LeftOrRight::Left,
-        .condition = EntityCondition::Normal,
-        .ai_state = EntityAiState::Idle,
-        .display_state = EntityDisplayState::Neutral,
-        .damage_vulnerability = DamageVulnerability::Vulnerable,
+        .facing = Side::Left,
+        .condition = EntCondition::Normal,
+        .ai_state = EntAiState::Idle,
+        .display_state = EntDisplayState::Neutral,
+        .damage_vuln = DamageVuln::Vulnerable,
         .alignment = Alignment::Neutral,
-        .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+        .aframe_animator = AFrameAnimator::New(aframe_ids::NoSprite),
     };
 }
 
-inline EntityArchetype MakeUnimplementedClassicNonStompableArchetype(EntityType type_) {
-    EntityArchetype archetype = MakeUnimplementedClassicArchetype(type_);
-    archetype.can_be_stomped = false;
-    return archetype;
+inline EntSpec MakeUnimplementedClassicNonStompableSpec(EntType type_) {
+    EntSpec spec = MakeUnimplementedClassicSpec(type_);
+    spec.can_be_stomped = false;
+    return spec;
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

@@ -12,16 +12,16 @@ namespace splonks {
 struct Graphics;
 struct State;
 
-enum class PresentationCommandKind : std::uint16_t {
+enum class PresCommandKind : std::uint16_t {
     None,
     PlaySoundAt,
-    ShakeEntity,
+    ShakeEnt,
     ShakeArea,
     SpawnScriptedEffect,
     AddTransientLight,
 };
 
-enum class ScriptedPresentationEffectId : std::uint16_t {
+enum class ScriptedPresEffectId : std::uint16_t {
     None,
     TeleportSplit,
     TeleportMerge,
@@ -33,9 +33,9 @@ enum class ScriptedPresentationEffectId : std::uint16_t {
     BaseballBatTrail,
 };
 
-struct PresentationCommand {
-    PresentationCommandKind kind = PresentationCommandKind::None;
-    ScriptedPresentationEffectId effect_id = ScriptedPresentationEffectId::None;
+struct PresCommand {
+    PresCommandKind kind = PresCommandKind::None;
+    ScriptedPresEffectId effect_id = ScriptedPresEffectId::None;
     AudioAssetId audio_asset_id = kInvalidAudioAssetId;
     std::optional<VID> source_vid = std::nullopt;
     std::optional<VID> target_vid = std::nullopt;
@@ -44,10 +44,10 @@ struct PresentationCommand {
     IVec2 direction = IVec2::New(1, 0);
     std::uint32_t effect_count = 0;
     float effect_scale = 1.0F;
-    float entity_shake_amount = 0.0F;
+    float ent_shake_amount = 0.0F;
     float foreground_shake_amount = 0.0F;
     float background_shake_amount = 0.0F;
-    float area_entity_shake_amount = 0.0F;
+    float area_ent_shake_amount = 0.0F;
     float shake_radius_tiles = 0.0F;
     float light_strength = 0.0F;
     Color3 light_color = Color3::White();
@@ -55,6 +55,6 @@ struct PresentationCommand {
     std::uint32_t light_lifetime_frames = 0;
 };
 
-void PlayPresentationCommand(State& state, Graphics& graphics, const PresentationCommand& command);
+void PlayPresCommand(State& state, Graphics& graphics, const PresCommand& command);
 
 } // namespace splonks

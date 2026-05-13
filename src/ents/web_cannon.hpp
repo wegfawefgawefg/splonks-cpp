@@ -1,13 +1,13 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 
-namespace splonks::entities::web_cannon {
+namespace splonks::ents::web_cannon {
 
-extern const EntityArchetype kWebCannonArchetype;
-extern const EntityArchetype kWebBallArchetype;
-extern const EntityArchetype kCobwebArchetype;
+extern const EntSpec kWebCannonSpec;
+extern const EntSpec kWebBallSpec;
+extern const EntSpec kCobwebSpec;
 
 
-} // namespace splonks::entities::web_cannon
+} // namespace splonks::ents::web_cannon

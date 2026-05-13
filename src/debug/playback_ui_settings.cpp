@@ -2,7 +2,7 @@
 
 #include "audio_acoustics.hpp"
 #include "audio_emitters.hpp"
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "settings.hpp"
 #include "stage_lighting.hpp"
 #include "stage_acoustics.hpp"
@@ -77,21 +77,21 @@ bool DrawTileCombo(const char* label, Tile& tile) {
 } // namespace
 
 void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics&) {
-    if (!debug.entity_annotations_visible) {
+    if (!debug.ent_annotations_visible) {
         return;
     }
 
     ImGui::SetNextWindowBgAlpha(0.9F);
     ImGui::SetNextWindowPos(ImVec2(620.0F, 12.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Debug: Overlay", &debug.entity_annotations_visible)) {
+    if (!ImGui::Begin("Debug: Overlay", &debug.ent_annotations_visible)) {
         ImGui::End();
         return;
     }
 
-    ImGui::Checkbox("Show Entity P/C Boxes", &state.debug_overlay.show_entity_collision_boxes);
-    ImGui::Checkbox("Show Entity IDs", &state.debug_overlay.show_entity_ids);
-    ImGui::Checkbox("Show Entity Types", &state.debug_overlay.show_entity_types);
-    ImGui::Checkbox("Show Entity Render Centers", &state.debug_overlay.show_entity_render_centers);
+    ImGui::Checkbox("Show Ent P/C Boxes", &state.debug_overlay.show_ent_collision_boxes);
+    ImGui::Checkbox("Show Ent IDs", &state.debug_overlay.show_ent_ids);
+    ImGui::Checkbox("Show Ent Types", &state.debug_overlay.show_ent_types);
+    ImGui::Checkbox("Show Ent Render Centers", &state.debug_overlay.show_ent_render_centers);
     ImGui::Checkbox("Show Void Death Line", &state.debug_overlay.show_void_death_line);
     ImGui::Checkbox("Show Chunk Boundaries", &state.debug_overlay.show_chunk_boundaries);
     ImGui::Checkbox("Show Chunk Coords", &state.debug_overlay.show_chunk_coords);
@@ -145,10 +145,10 @@ void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
         8.0F,
         "%.2f px"
     );
-    ImGui::Checkbox("Affect Entities", &state.debug_shake_brush.affect_entities);
+    ImGui::Checkbox("Affect Ents", &state.debug_shake_brush.affect_ents);
     ImGui::SliderFloat(
-        "Entity Amount (px)",
-        &state.debug_shake_brush.entity_amount,
+        "Ent Amount (px)",
+        &state.debug_shake_brush.ent_amount,
         0.0F,
         8.0F,
         "%.2f px"
@@ -310,7 +310,7 @@ void DrawFluidBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics
     const bool peer_tuning_disabled = IsPeerMechanicsTuningDisabled(state);
     if (peer_tuning_disabled) {
         ImGui::BeginDisabled();
-        ImGui::TextDisabled("Disabled on multiplayer peers until mechanics settings are coordinator-routed.");
+        ImGui::TextDisabled("Disabled on multiplayer peers until mechanics settings are host-routed.");
     }
     ImGui::Checkbox("Enable Fluid Brush", &brush.enabled);
     save_settings |= ImGui::Checkbox("Run Fluid Simulation", &fluid.simulation_enabled);
@@ -750,12 +750,12 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
     }
 
     const PerformanceStats& perf = state.performance_stats;
-    const std::size_t entity_size = sizeof(Entity);
-    const std::size_t entity_slots = state.entity_manager.entities.capacity();
-    const std::size_t available_id_slots = state.entity_manager.available_ids.capacity();
-    const std::size_t entity_storage_bytes = entity_size * entity_slots;
+    const std::size_t ent_size = sizeof(Ent);
+    const std::size_t ent_slots = state.ents.ents.capacity();
+    const std::size_t available_id_slots = state.ents.available_ids.capacity();
+    const std::size_t ent_storage_bytes = ent_size * ent_slots;
     const std::size_t available_id_storage_bytes = sizeof(std::size_t) * available_id_slots;
-    const std::size_t entity_manager_total_bytes = entity_storage_bytes + available_id_storage_bytes;
+    const std::size_t ents_total_bytes = ent_storage_bytes + available_id_storage_bytes;
     const std::size_t particle_count = state.particles.sprite_particles.size() +
                                        state.particles.scripted_particles.size() +
                                        state.particles.ribbon_particles.size() +
@@ -779,12 +779,12 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
         state.performance_stats.frame_total_peak_ms = state.performance_stats.frame_total_ms;
     }
 
-    ImGui::SeparatorText("Entity Memory");
-    ImGui::Text("Entity Size: %zu bytes", entity_size);
-    ImGui::Text("Entity Pool: %u / %zu active", state.entity_manager.NumActiveEntities(), entity_slots);
-    ImGui::Text("Entity Slots: %zu x %zu = %s", entity_slots, entity_size, FormatBytes(entity_storage_bytes, buffer_a, sizeof(buffer_a)));
+    ImGui::SeparatorText("Ent Memory");
+    ImGui::Text("Ent Size: %zu bytes", ent_size);
+    ImGui::Text("Ent Pool: %u / %zu active", state.ents.NumActiveEnts(), ent_slots);
+    ImGui::Text("Ent Slots: %zu x %zu = %s", ent_slots, ent_size, FormatBytes(ent_storage_bytes, buffer_a, sizeof(buffer_a)));
     ImGui::Text("Free ID Stack: %zu x %zu = %s", available_id_slots, sizeof(std::size_t), FormatBytes(available_id_storage_bytes, buffer_b, sizeof(buffer_b)));
-    ImGui::Text("Entity Manager Storage: %s", FormatBytes(entity_manager_total_bytes, buffer_c, sizeof(buffer_c)));
+    ImGui::Text("Ent Manager Storage: %s", FormatBytes(ents_total_bytes, buffer_c, sizeof(buffer_c)));
 
     ImGui::SeparatorText("Other Counts");
     ImGui::Text("Particles: %zu", particle_count);
@@ -808,7 +808,7 @@ void DrawPlayerTuningWindow(DebugPlayback& debug, State& state) {
     }
 
     if (IsPeerMechanicsTuningDisabled(state)) {
-        ImGui::TextDisabled("Player tuning disabled on multiplayer peers until mechanics settings are coordinator-routed.");
+        ImGui::TextDisabled("Player tuning disabled on multiplayer peers until mechanics settings are host-routed.");
         ImGui::End();
         SyncDebugUiSettings(debug, state);
         return;
@@ -1249,17 +1249,17 @@ void DrawGraphicsSettingsWindow(
     }
 
     ImGui::SeparatorText("Frame Data");
-    ImGui::Text("Annotations: %s", graphics.frame_data_annotations_path.c_str());
+    ImGui::Text("Annotations: %s", graphics.aframe_annotations_path.c_str());
     if (ImGui::Button("Reload Frame Data")) {
-        if (graphics.ReloadFrameData(renderer, &debug.frame_data_reload_status)) {
-            entities::common::RefreshAllEntityFrameDataGeometry(state, graphics);
+        if (graphics.ReloadAFrame(renderer, &debug.aframe_reload_status)) {
+            ents::common::RefreshAllEntAFrameGeometry(state, graphics);
             state.RebuildSid(graphics);
         }
     }
     ImGui::SameLine();
-    ImGui::Checkbox("Auto Reload", &debug.frame_data_auto_reload);
-    if (!debug.frame_data_reload_status.empty()) {
-        ImGui::TextWrapped("%s", debug.frame_data_reload_status.c_str());
+    ImGui::Checkbox("Auto Reload", &debug.aframe_auto_reload);
+    if (!debug.aframe_reload_status.empty()) {
+        ImGui::TextWrapped("%s", debug.aframe_reload_status.c_str());
     }
 
     if (changed) {

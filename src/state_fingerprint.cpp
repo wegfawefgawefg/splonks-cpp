@@ -1,6 +1,6 @@
 #include "state_fingerprint.hpp"
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
 
@@ -144,8 +144,8 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool inc
     }
 }
 
-void AddEffectFingerprint(FingerprintWriter& writer, const BoxedEntityEffects& effects_box) {
-    const EntityEffects* const effects = effects_box.get();
+void AddEffectFingerprint(FingerprintWriter& writer, const BoxedEntEffects& effects_box) {
+    const EntEffects* const effects = effects_box.get();
     writer.AddBool(effects != nullptr);
     if (effects == nullptr) {
         return;
@@ -161,68 +161,68 @@ void AddEffectFingerprint(FingerprintWriter& writer, const BoxedEntityEffects& e
     }
 }
 
-void AddEntityFingerprint(FingerprintWriter& writer, const Entity& entity) {
-    writer.AddBool(entity.active);
-    writer.AddPod(static_cast<std::uint16_t>(entity.type_));
-    writer.AddVid(entity.vid);
-    if (!entity.active) {
+void AddEntFingerprint(FingerprintWriter& writer, const Ent& ent) {
+    writer.AddBool(ent.active);
+    writer.AddPod(static_cast<std::uint16_t>(ent.type_));
+    writer.AddVid(ent.vid);
+    if (!ent.active) {
         return;
     }
 
-    writer.AddBool(entity.has_physics);
-    writer.AddBool(entity.can_collide);
-    writer.AddBool(entity.grounded);
-    writer.AddBool(entity.holding);
-    writer.AddBool(entity.wanted);
-    writer.AddBool(entity.render_enabled);
-    writer.AddVec2(entity.pos);
-    writer.AddVec2(entity.vel);
-    writer.AddVec2(entity.acc);
-    writer.AddVec2(entity.size);
-    writer.AddFloat(entity.rotation);
-    writer.AddPod(entity.coyote_time);
-    writer.AddPod(entity.stun_timer);
-    writer.AddPod(entity.fall_timer);
-    writer.AddPod(static_cast<std::uint8_t>(entity.facing));
-    writer.AddPod(static_cast<std::uint8_t>(entity.draw_layer));
-    writer.AddPod(static_cast<std::uint8_t>(entity.condition));
-    writer.AddPod(static_cast<std::uint8_t>(entity.ai_state));
-    writer.AddPod(static_cast<std::uint8_t>(entity.damage_vulnerability));
-    writer.AddPod(entity.movement_flags);
-    writer.AddPod(entity.health);
-    writer.AddOptionalVid(entity.back_vid);
-    writer.AddOptionalVid(entity.holding_vid);
-    writer.AddOptionalVid(entity.held_by_vid);
-    writer.AddOptionalVid(entity.entity_a);
-    writer.AddOptionalVid(entity.entity_b);
-    writer.AddOptionalVid(entity.entity_c);
-    writer.AddOptionalVid(entity.entity_d);
-    writer.AddPod(entity.stage_exit_id);
-    writer.AddPod(entity.money);
-    writer.AddFloat(entity.counter_a);
-    writer.AddFloat(entity.counter_b);
-    writer.AddFloat(entity.counter_c);
-    writer.AddFloat(entity.counter_d);
-    writer.AddFloat(entity.light_strength);
-    writer.AddFloat(entity.light_color.r);
-    writer.AddFloat(entity.light_color.g);
-    writer.AddFloat(entity.light_color.b);
-    writer.AddPod(entity.light_radius);
-    writer.AddIVec2(entity.point_a);
-    writer.AddIVec2(entity.point_b);
-    writer.AddIVec2(entity.point_c);
-    writer.AddIVec2(entity.point_d);
-    writer.AddPod(entity.frame_data_animator.animation_id);
-    writer.AddPod(entity.frame_data_animator.current_frame);
-    writer.AddFloat(entity.frame_data_animator.current_time);
-    writer.AddFloat(entity.frame_data_animator.speed);
-    writer.AddBool(entity.frame_data_animator.animate);
-    writer.AddBool(entity.frame_data_animator.loop);
-    writer.AddBool(entity.frame_data_animator.finished);
-    AddEffectFingerprint(writer, entity.effects);
+    writer.AddBool(ent.has_physics);
+    writer.AddBool(ent.can_collide);
+    writer.AddBool(ent.grounded);
+    writer.AddBool(ent.holding);
+    writer.AddBool(ent.wanted);
+    writer.AddBool(ent.render_enabled);
+    writer.AddVec2(ent.pos);
+    writer.AddVec2(ent.vel);
+    writer.AddVec2(ent.acc);
+    writer.AddVec2(ent.size);
+    writer.AddFloat(ent.rotation);
+    writer.AddPod(ent.coyote_time);
+    writer.AddPod(ent.stun_timer);
+    writer.AddPod(ent.fall_timer);
+    writer.AddPod(static_cast<std::uint8_t>(ent.facing));
+    writer.AddPod(static_cast<std::uint8_t>(ent.draw_layer));
+    writer.AddPod(static_cast<std::uint8_t>(ent.condition));
+    writer.AddPod(static_cast<std::uint8_t>(ent.ai_state));
+    writer.AddPod(static_cast<std::uint8_t>(ent.damage_vuln));
+    writer.AddPod(ent.movement_flags);
+    writer.AddPod(ent.health);
+    writer.AddOptionalVid(ent.back_vid);
+    writer.AddOptionalVid(ent.holding_vid);
+    writer.AddOptionalVid(ent.held_by_vid);
+    writer.AddOptionalVid(ent.ent_a);
+    writer.AddOptionalVid(ent.ent_b);
+    writer.AddOptionalVid(ent.ent_c);
+    writer.AddOptionalVid(ent.ent_d);
+    writer.AddPod(ent.stage_exit_id);
+    writer.AddPod(ent.money);
+    writer.AddFloat(ent.counter_a);
+    writer.AddFloat(ent.counter_b);
+    writer.AddFloat(ent.counter_c);
+    writer.AddFloat(ent.counter_d);
+    writer.AddFloat(ent.light_strength);
+    writer.AddFloat(ent.light_color.r);
+    writer.AddFloat(ent.light_color.g);
+    writer.AddFloat(ent.light_color.b);
+    writer.AddPod(ent.light_radius);
+    writer.AddIVec2(ent.point_a);
+    writer.AddIVec2(ent.point_b);
+    writer.AddIVec2(ent.point_c);
+    writer.AddIVec2(ent.point_d);
+    writer.AddPod(ent.aframe_animator.anim_id);
+    writer.AddPod(ent.aframe_animator.current_frame);
+    writer.AddFloat(ent.aframe_animator.current_time);
+    writer.AddFloat(ent.aframe_animator.speed);
+    writer.AddBool(ent.aframe_animator.animate);
+    writer.AddBool(ent.aframe_animator.loop);
+    writer.AddBool(ent.aframe_animator.finished);
+    AddEffectFingerprint(writer, ent.effects);
 }
 
-void AddPlayerInputFrameFingerprint(FingerprintWriter& writer, const PlayerInputFrame& input_frame) {
+void AddInputFrameFingerprint(FingerprintWriter& writer, const InputFrame& input_frame) {
     writer.AddBool(input_frame.left);
     writer.AddBool(input_frame.right);
     writer.AddBool(input_frame.up);
@@ -250,19 +250,19 @@ void AddPlayerRegistryFingerprint(FingerprintWriter& writer, const PlayerRegistr
     writer.AddPod(players.slots.size());
     for (const PlayerSlot& slot : players.slots) {
         writer.AddPod(slot.player_id);
-        writer.AddBool(slot.entity_vid.has_value());
-        if (slot.entity_vid.has_value()) {
-            writer.AddVid(*slot.entity_vid);
+        writer.AddBool(slot.ent_vid.has_value());
+        if (slot.ent_vid.has_value()) {
+            writer.AddVid(*slot.ent_vid);
         }
         writer.AddBool(slot.connected);
-        AddPlayerInputFrameFingerprint(writer, slot.input_frame);
-        AddPlayerInputFrameFingerprint(writer, slot.previous_input_frame);
+        AddInputFrameFingerprint(writer, slot.input_frame);
+        AddInputFrameFingerprint(writer, slot.previous_input_frame);
     }
 }
 
-void AddToolInventoryFingerprint(FingerprintWriter& writer, const EntityToolInventoryState& inventory) {
+void AddToolInventoryFingerprint(FingerprintWriter& writer, const EntToolInventoryState& inventory) {
     writer.AddPod(inventory.tool_states.size());
-    for (const EntityToolState& tool_state : inventory.tool_states) {
+    for (const EntToolState& tool_state : inventory.tool_states) {
         writer.AddVid(tool_state.owner_vid);
         for (const ToolSlot& slot : tool_state.slots) {
             writer.AddPod(static_cast<std::uint16_t>(slot.kind));
@@ -273,12 +273,12 @@ void AddToolInventoryFingerprint(FingerprintWriter& writer, const EntityToolInve
     }
 }
 
-network::NetEntityId NetEntityIdForVid(const State& state, VID vid) {
-    return state.net_session.FindNetEntityId(vid).value_or(network::kInvalidNetEntityId);
+network::NetEntId NetEntIdForVid(const State& state, VID vid) {
+    return state.net_session.FindNetEntId(vid).value_or(network::kInvalidNetEntId);
 }
 
 void AddNetworkVid(FingerprintWriter& writer, const State& state, const VID& vid) {
-    writer.AddPod(NetEntityIdForVid(state, vid));
+    writer.AddPod(NetEntIdForVid(state, vid));
 }
 
 void AddNetworkOptionalVid(
@@ -294,20 +294,20 @@ void AddNetworkOptionalVid(
 
 bool IsMotionIgnoredForPlayer(
     const State& state,
-    const Entity& entity,
+    const Ent& ent,
     PlayerId player_id
 ) {
-    const network::NetEntityId ignored_player_entity_id = network::MakePlayerNetEntityId(player_id);
-    if (NetEntityIdForVid(state, entity.vid) == ignored_player_entity_id) {
+    const network::NetEntId ignored_player_ent_id = network::MakePlayerNetEntId(player_id);
+    if (NetEntIdForVid(state, ent.vid) == ignored_player_ent_id) {
         return true;
     }
 
-    std::optional<VID> holder_vid = entity.held_by_vid;
+    std::optional<VID> holder_vid = ent.held_by_vid;
     for (int depth = 0; holder_vid.has_value() && depth < 8; ++depth) {
-        if (NetEntityIdForVid(state, *holder_vid) == ignored_player_entity_id) {
+        if (NetEntIdForVid(state, *holder_vid) == ignored_player_ent_id) {
             return true;
         }
-        const Entity* const holder = state.entity_manager.GetEntity(*holder_vid);
+        const Ent* const holder = state.ents.GetEnt(*holder_vid);
         if (holder == nullptr) {
             return false;
         }
@@ -316,75 +316,75 @@ bool IsMotionIgnoredForPlayer(
     return false;
 }
 
-void AddNetworkEntityFingerprint(
+void AddNetworkEntFingerprint(
     FingerprintWriter& writer,
     const State& state,
-    const Entity& entity,
+    const Ent& ent,
     std::optional<PlayerId> ignored_motion_player_id = std::nullopt
 ) {
-    const network::NetEntityId entity_id = NetEntityIdForVid(state, entity.vid);
+    const network::NetEntId ent_id = NetEntIdForVid(state, ent.vid);
     const bool ignore_motion =
         ignored_motion_player_id.has_value() &&
-        IsMotionIgnoredForPlayer(state, entity, *ignored_motion_player_id);
+        IsMotionIgnoredForPlayer(state, ent, *ignored_motion_player_id);
 
-    writer.AddPod(entity_id);
-    writer.AddBool(entity.active);
-    writer.AddPod(static_cast<std::uint16_t>(entity.type_));
-    if (!entity.active) {
+    writer.AddPod(ent_id);
+    writer.AddBool(ent.active);
+    writer.AddPod(static_cast<std::uint16_t>(ent.type_));
+    if (!ent.active) {
         return;
     }
 
-    writer.AddBool(entity.has_physics);
-    writer.AddBool(entity.can_collide);
-    writer.AddBool(ignore_motion ? false : entity.grounded);
-    writer.AddBool(entity.holding);
-    writer.AddBool(entity.wanted);
-    writer.AddBool(entity.render_enabled);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.pos);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.vel);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.acc);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : entity.size);
-    writer.AddFloat(ignore_motion ? 0.0F : entity.rotation);
-    writer.AddPod(ignore_motion ? 0U : entity.coyote_time);
-    writer.AddPod(entity.stun_timer);
-    writer.AddPod(ignore_motion ? 0U : entity.fall_timer);
-    writer.AddPod(static_cast<std::uint8_t>(ignore_motion ? LeftOrRight::Left : entity.facing));
-    writer.AddPod(static_cast<std::uint8_t>(entity.draw_layer));
-    writer.AddPod(static_cast<std::uint8_t>(entity.condition));
-    writer.AddPod(static_cast<std::uint8_t>(entity.ai_state));
-    writer.AddPod(static_cast<std::uint8_t>(entity.damage_vulnerability));
-    writer.AddPod(ignore_motion ? 0U : entity.movement_flags);
-    writer.AddPod(entity.health);
-    AddNetworkOptionalVid(writer, state, entity.back_vid);
-    AddNetworkOptionalVid(writer, state, entity.holding_vid);
-    AddNetworkOptionalVid(writer, state, entity.held_by_vid);
-    AddNetworkOptionalVid(writer, state, entity.entity_a);
-    AddNetworkOptionalVid(writer, state, entity.entity_b);
-    AddNetworkOptionalVid(writer, state, entity.entity_c);
-    AddNetworkOptionalVid(writer, state, entity.entity_d);
-    writer.AddPod(entity.stage_exit_id);
-    writer.AddPod(entity.money);
-    writer.AddFloat(entity.counter_a);
-    writer.AddFloat(entity.counter_b);
-    writer.AddFloat(entity.counter_c);
-    writer.AddFloat(entity.counter_d);
-    writer.AddFloat(entity.light_strength);
-    writer.AddFloat(entity.light_color.r);
-    writer.AddFloat(entity.light_color.g);
-    writer.AddFloat(entity.light_color.b);
-    writer.AddPod(entity.light_radius);
-    writer.AddIVec2(entity.point_a);
-    writer.AddIVec2(entity.point_b);
-    writer.AddIVec2(entity.point_c);
-    writer.AddIVec2(entity.point_d);
-    writer.AddPod(ignore_motion ? 0 : entity.frame_data_animator.animation_id);
-    writer.AddPod(ignore_motion ? 0 : entity.frame_data_animator.current_frame);
-    writer.AddFloat(ignore_motion ? 0.0F : entity.frame_data_animator.current_time);
-    writer.AddFloat(ignore_motion ? 0.0F : entity.frame_data_animator.speed);
-    writer.AddBool(ignore_motion ? false : entity.frame_data_animator.animate);
-    writer.AddBool(ignore_motion ? false : entity.frame_data_animator.loop);
-    writer.AddBool(ignore_motion ? false : entity.frame_data_animator.finished);
-    AddEffectFingerprint(writer, entity.effects);
+    writer.AddBool(ent.has_physics);
+    writer.AddBool(ent.can_collide);
+    writer.AddBool(ignore_motion ? false : ent.grounded);
+    writer.AddBool(ent.holding);
+    writer.AddBool(ent.wanted);
+    writer.AddBool(ent.render_enabled);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.pos);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.vel);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.acc);
+    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.size);
+    writer.AddFloat(ignore_motion ? 0.0F : ent.rotation);
+    writer.AddPod(ignore_motion ? 0U : ent.coyote_time);
+    writer.AddPod(ent.stun_timer);
+    writer.AddPod(ignore_motion ? 0U : ent.fall_timer);
+    writer.AddPod(static_cast<std::uint8_t>(ignore_motion ? Side::Left : ent.facing));
+    writer.AddPod(static_cast<std::uint8_t>(ent.draw_layer));
+    writer.AddPod(static_cast<std::uint8_t>(ent.condition));
+    writer.AddPod(static_cast<std::uint8_t>(ent.ai_state));
+    writer.AddPod(static_cast<std::uint8_t>(ent.damage_vuln));
+    writer.AddPod(ignore_motion ? 0U : ent.movement_flags);
+    writer.AddPod(ent.health);
+    AddNetworkOptionalVid(writer, state, ent.back_vid);
+    AddNetworkOptionalVid(writer, state, ent.holding_vid);
+    AddNetworkOptionalVid(writer, state, ent.held_by_vid);
+    AddNetworkOptionalVid(writer, state, ent.ent_a);
+    AddNetworkOptionalVid(writer, state, ent.ent_b);
+    AddNetworkOptionalVid(writer, state, ent.ent_c);
+    AddNetworkOptionalVid(writer, state, ent.ent_d);
+    writer.AddPod(ent.stage_exit_id);
+    writer.AddPod(ent.money);
+    writer.AddFloat(ent.counter_a);
+    writer.AddFloat(ent.counter_b);
+    writer.AddFloat(ent.counter_c);
+    writer.AddFloat(ent.counter_d);
+    writer.AddFloat(ent.light_strength);
+    writer.AddFloat(ent.light_color.r);
+    writer.AddFloat(ent.light_color.g);
+    writer.AddFloat(ent.light_color.b);
+    writer.AddPod(ent.light_radius);
+    writer.AddIVec2(ent.point_a);
+    writer.AddIVec2(ent.point_b);
+    writer.AddIVec2(ent.point_c);
+    writer.AddIVec2(ent.point_d);
+    writer.AddPod(ignore_motion ? 0 : ent.aframe_animator.anim_id);
+    writer.AddPod(ignore_motion ? 0 : ent.aframe_animator.current_frame);
+    writer.AddFloat(ignore_motion ? 0.0F : ent.aframe_animator.current_time);
+    writer.AddFloat(ignore_motion ? 0.0F : ent.aframe_animator.speed);
+    writer.AddBool(ignore_motion ? false : ent.aframe_animator.animate);
+    writer.AddBool(ignore_motion ? false : ent.aframe_animator.loop);
+    writer.AddBool(ignore_motion ? false : ent.aframe_animator.finished);
+    AddEffectFingerprint(writer, ent.effects);
 }
 
 void AddNetworkPlayerRegistryFingerprint(FingerprintWriter& writer, const State& state) {
@@ -401,18 +401,18 @@ void AddNetworkPlayerRegistryFingerprint(FingerprintWriter& writer, const State&
     for (const PlayerSlot* const slot : slots) {
         writer.AddPod(slot->player_id);
         writer.AddBool(slot->connected);
-        writer.AddBool(slot->entity_vid.has_value());
-        if (slot->entity_vid.has_value()) {
-            AddNetworkVid(writer, state, *slot->entity_vid);
+        writer.AddBool(slot->ent_vid.has_value());
+        if (slot->ent_vid.has_value()) {
+            AddNetworkVid(writer, state, *slot->ent_vid);
         }
     }
 }
 
 void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& state) {
-    std::vector<const EntityToolState*> tool_states;
-    tool_states.reserve(state.entity_tools.tool_states.size());
-    for (const EntityToolState& tool_state : state.entity_tools.tool_states) {
-        if (NetEntityIdForVid(state, tool_state.owner_vid) == network::kInvalidNetEntityId) {
+    std::vector<const EntToolState*> tool_states;
+    tool_states.reserve(state.ent_tools.tool_states.size());
+    for (const EntToolState& tool_state : state.ent_tools.tool_states) {
+        if (NetEntIdForVid(state, tool_state.owner_vid) == network::kInvalidNetEntId) {
             continue;
         }
         tool_states.push_back(&tool_state);
@@ -420,14 +420,14 @@ void AddNetworkToolInventoryFingerprint(FingerprintWriter& writer, const State& 
     std::sort(
         tool_states.begin(),
         tool_states.end(),
-        [&state](const EntityToolState* lhs, const EntityToolState* rhs) {
-            return NetEntityIdForVid(state, lhs->owner_vid) <
-                   NetEntityIdForVid(state, rhs->owner_vid);
+        [&state](const EntToolState* lhs, const EntToolState* rhs) {
+            return NetEntIdForVid(state, lhs->owner_vid) <
+                   NetEntIdForVid(state, rhs->owner_vid);
         }
     );
 
     writer.AddPod(tool_states.size());
-    for (const EntityToolState* const tool_state : tool_states) {
+    for (const EntToolState* const tool_state : tool_states) {
         AddNetworkVid(writer, state, tool_state->owner_vid);
         for (const ToolSlot& slot : tool_state->slots) {
             writer.AddPod(static_cast<std::uint16_t>(slot.kind));
@@ -469,17 +469,17 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(
     writer.AddBool(state.quest_state.classic.has_book_of_dead);
     AddStageFingerprint(writer, state.stage, true);
     AddPlayerRegistryFingerprint(writer, state.players);
-    AddToolInventoryFingerprint(writer, state.entity_tools);
+    AddToolInventoryFingerprint(writer, state.ent_tools);
 
-    writer.AddPod(state.entity_manager.entities.size());
-    for (const Entity& entity : state.entity_manager.entities) {
-        AddEntityFingerprint(writer, entity);
+    writer.AddPod(state.ents.ents.size());
+    for (const Ent& ent : state.ents.ents) {
+        AddEntFingerprint(writer, ent);
     }
 
-    int active_entities = 0;
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (entity.active) {
-            ++active_entities;
+    int active_ents = 0;
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active) {
+            ++active_ents;
         }
     }
 
@@ -487,7 +487,7 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(
     summary << "stage=" << state.stage.quest_stage_id
             << " frame=" << state.frame
             << " stage_frame=" << state.stage_frame
-            << " entities=" << active_entities
+            << " ents=" << active_ents
             << " tiles=" << state.stage.GetTileWidth() << "x" << state.stage.GetTileHeight();
     return CanonicalStateFingerprint{
         .value = writer.value,
@@ -530,19 +530,19 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(
     AddNetworkPlayerRegistryFingerprint(writer, state);
     AddNetworkToolInventoryFingerprint(writer, state);
 
-    std::vector<const Entity*> active_entities;
-    active_entities.reserve(state.entity_manager.entities.size());
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (entity.active) {
-            active_entities.push_back(&entity);
+    std::vector<const Ent*> active_ents;
+    active_ents.reserve(state.ents.ents.size());
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active) {
+            active_ents.push_back(&ent);
         }
     }
     std::sort(
-        active_entities.begin(),
-        active_entities.end(),
-        [&state](const Entity* lhs, const Entity* rhs) {
-            const network::NetEntityId lhs_id = NetEntityIdForVid(state, lhs->vid);
-            const network::NetEntityId rhs_id = NetEntityIdForVid(state, rhs->vid);
+        active_ents.begin(),
+        active_ents.end(),
+        [&state](const Ent* lhs, const Ent* rhs) {
+            const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
+            const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
             if (lhs_id != rhs_id) {
                 return lhs_id < rhs_id;
             }
@@ -550,16 +550,16 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(
         }
     );
 
-    writer.AddPod(active_entities.size());
-    for (const Entity* const entity : active_entities) {
-        AddNetworkEntityFingerprint(writer, state, *entity, ignored_motion_player_id);
+    writer.AddPod(active_ents.size());
+    for (const Ent* const ent : active_ents) {
+        AddNetworkEntFingerprint(writer, state, *ent, ignored_motion_player_id);
     }
 
     std::ostringstream summary;
     summary << "stage=" << state.stage.quest_stage_id
             << " frame=" << state.frame
             << " stage_frame=" << state.stage_frame
-            << " active_entities=" << active_entities.size()
+            << " active_ents=" << active_ents.size()
             << " tiles=" << state.stage.GetTileWidth() << "x" << state.stage.GetTileHeight();
     return CanonicalStateFingerprint{
         .value = writer.value,

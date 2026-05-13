@@ -67,7 +67,7 @@ That is why wrap belongs on the axis, not on each side.
 
 ### Border tile
 
-Border tiles should continue to use tile archetype properties.
+Border tiles should continue to use tile spec properties.
 
 That means the side tile can define:
 
@@ -97,7 +97,7 @@ This is the current target.
 - leaving the stage does **not** immediately sample tiles from the opposite side
 - outside the authored stage you should see border air plus the stage background
 - collision queries outside the stage should stay outside the stage
-- after the entity travels far enough past the edge, we normalize it back in on the opposite side
+- after the ent travels far enough past the edge, we normalize it back in on the opposite side
 
 This is good for space-style maps.
 
@@ -105,8 +105,8 @@ This is good for space-style maps.
 
 This is a separate future feature.
 
-- the left edge literally neighbors the right edge for rendering, collision, and entity queries
-- tiles and entities from the opposite edge are visible and interactive at the seam
+- the left edge literally neighbors the right edge for rendering, collision, and ent queries
+- tiles and ents from the opposite edge are visible and interactive at the seam
 - this requires seam-aware rendering and broad collision sampling
 
 That is much more invasive and should not reuse the same implementation path as delayed wrap.
@@ -125,7 +125,7 @@ If wrapping is enabled on an axis, movement/collision should not treat leaving t
 Suggested semantics:
 
 - negative value means disabled
-- if an entity's relevant body position goes below `void_death_y`, kill it
+- if an ent's relevant body position goes below `void_death_y`, kill it
 
 This is separate from border collision.
 It is what enables "fall out of the map and die later."
@@ -136,24 +136,24 @@ Right now outside-stage behavior is inconsistent and mostly hardcoded.
 
 ### Good / already tile-driven
 
-These places already sample `stage_border_tile` or border tile archetype data:
+These places already sample `stage_border_tile` or border tile spec data:
 
-- [src/render/tiles_and_entities.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/tiles_and_entities.cpp)
+- [src/render/tiles_and_ents.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/tiles_and_ents.cpp)
 - [src/render/tile_lighting.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/tile_lighting.cpp)
 - [src/render/terrain_lighting.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/terrain_lighting.cpp)
-- [src/entities/common/tile_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/tile_contact.cpp)
-- [src/entities/common/hang.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/hang.cpp)
+- [src/ents/common/tile_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/tile_contact.cpp)
+- [src/ents/common/hang.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/hang.cpp)
 
 ### Bad / still hardcoded as solid stage bounds
 
 These are the main places that still assume leaving the map means a hard wall or floor:
 
-- [src/entities/common/blocking_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/blocking_contact.cpp)
-- [src/entities/common/physics.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/physics.cpp)
-- [src/entity.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entity.cpp)
+- [src/ents/common/blocking_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/blocking_contact.cpp)
+- [src/ents/common/physics.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/physics.cpp)
+- [src/ent.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ent.cpp)
 - [src/stage.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage.cpp)
 - [src/hitscan.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/hitscan.cpp)
-- [src/entities/rope.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/rope.cpp)
+- [src/ents/rope.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/rope.cpp)
 
 ## Implementation Plan
 
@@ -193,7 +193,7 @@ This is the first place where left/right/top/bottom really matter.
 
 ### 4. Make grounding side-aware
 
-Current code grounds entities at the bottom of the map automatically.
+Current code grounds ents at the bottom of the map automatically.
 That is wrong for no-border or wrap maps.
 
 Bottom-of-stage grounding should only happen when:
@@ -233,22 +233,22 @@ Corner behavior can be simple:
 
 After the border struct is in place:
 
-- add X wrap in entity stepping / post-physics position normalization
+- add X wrap in ent stepping / post-physics position normalization
 - add Y wrap later if desired, but the data model should support it now
 
 This should be explicit stage behavior, not hidden in collision queries.
 
 ### 8. Add void-death pass
 
-After entity stepping, check:
+After ent stepping, check:
 
 - if `void_death_y >= 0`
-- if an entity is below that threshold
+- if an ent is below that threshold
 
 and kill/deactivate according to the intended rule.
 
 Player should die.
-Other entities can probably die too unless we later want per-entity exemptions.
+Other ents can probably die too unless we later want per-ent exemptions.
 
 ## First Debug Test Map
 
@@ -274,8 +274,8 @@ Do not do these yet:
 
 - corner-specific border tiles
 - different wrap rules per side
-- special camera wrap presentation
-- projectile-only wrap
+- special camera wrap pres
+- proj-only wrap
 - fancy void effects
 
 The first pass should just make the stage model correct and usable.

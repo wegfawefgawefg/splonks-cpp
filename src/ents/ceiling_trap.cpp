@@ -1,11 +1,11 @@
-#include "entities/ceiling_trap.hpp"
+#include "ents/ceiling_trap.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::ceiling_trap {
+namespace splonks::ents::ceiling_trap {
 
-// TODO(classic): CeilingTrap is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kCeilingTrapArchetype =
-    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::CeilingTrap);
+// TODO(classic): CeilingTrap is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kCeilingTrapSpec =
+    common::MakeUnimplementedClassicNonStompableSpec(EntType::CeilingTrap);
 
-} // namespace splonks::entities::ceiling_trap
+} // namespace splonks::ents::ceiling_trap

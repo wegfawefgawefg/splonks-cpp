@@ -1,8 +1,8 @@
 #pragma once
 
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
-#include "raw_frame_data.hpp"
+#include "raw_aframe.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -10,8 +10,8 @@
 
 namespace splonks {
 
-struct FrameData {
-    FrameDataId animation_id = kInvalidFrameDataId;
+struct AFrame {
+    AFrameId anim_id = kInvalidAFrameId;
     std::uint32_t image_id = 0;
     std::string path;
     FrameRect sample_rect;
@@ -27,25 +27,25 @@ struct FrameData {
     bool tile = false;
 };
 
-struct FrameDataAnimation {
-    FrameDataId animation_id = kInvalidFrameDataId;
+struct AFrameAnim {
+    AFrameId anim_id = kInvalidAFrameId;
     std::string name;
     bool tile = false;
     std::vector<std::size_t> frame_indices;
 };
 
-struct FrameDataDb {
+struct AFrameDb {
     std::vector<std::string> image_paths;
-    std::vector<FrameData> frames;
-    std::vector<FrameDataAnimation> animations;
-    std::unordered_map<std::string, std::size_t> animation_indices_by_name;
-    std::unordered_map<FrameDataId, std::size_t> animation_indices_by_id;
+    std::vector<AFrame> frames;
+    std::vector<AFrameAnim> anims;
+    std::unordered_map<std::string, std::size_t> anim_indices_by_name;
+    std::unordered_map<AFrameId, std::size_t> anim_indices_by_id;
 
-    static FrameDataDb FromRaw(const RawFrameDataFile& raw_file);
-    const FrameDataAnimation* FindAnimation(const std::string& name) const;
-    const FrameDataAnimation* FindAnimation(FrameDataId animation_id) const;
-    const FrameData* FindFrame(const std::string& name, std::size_t ordered_frame_index) const;
-    const FrameData* FindFrame(FrameDataId animation_id, std::size_t ordered_frame_index) const;
+    static AFrameDb FromRaw(const RawAFrameFile& raw_file);
+    const AFrameAnim* FindAnim(const std::string& name) const;
+    const AFrameAnim* FindAnim(AFrameId anim_id) const;
+    const AFrame* FindFrame(const std::string& name, std::size_t ordered_frame_index) const;
+    const AFrame* FindFrame(AFrameId anim_id, std::size_t ordered_frame_index) const;
 };
 
 } // namespace splonks

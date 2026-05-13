@@ -14,7 +14,7 @@ constexpr LockstepFrame kInputHistoryFrames = 12;
 std::vector<PlayerId> GetConnectedPlayerIds(const State& state) {
     std::vector<PlayerId> player_ids;
     for (const PlayerSlot& slot : state.players.slots) {
-        if (slot.connected && slot.player_id != kInvalidPlayerId && slot.entity_vid.has_value()) {
+        if (slot.connected && slot.player_id != kInvalidPlayerId && slot.ent_vid.has_value()) {
             player_ids.push_back(slot.player_id);
         }
     }
@@ -26,7 +26,7 @@ std::vector<PlayerId> GetLocalPlayerIds(const State& state) {
     std::vector<PlayerId> player_ids;
     for (const PlayerSlot& slot : state.players.slots) {
         if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local &&
-            slot.player_id != kInvalidPlayerId && slot.entity_vid.has_value()) {
+            slot.player_id != kInvalidPlayerId && slot.ent_vid.has_value()) {
             player_ids.push_back(slot.player_id);
         }
     }
@@ -34,9 +34,9 @@ std::vector<PlayerId> GetLocalPlayerIds(const State& state) {
     return player_ids;
 }
 
-PlayerInputFrame GetCurrentLocalInputFrame(const State& state, const PlayerSlot& slot) {
+InputFrame GetCurrentLocalInputFrame(const State& state, const PlayerSlot& slot) {
     if (slot.primary_local) {
-        return ToPlayerInputFrame(state.playing_input_snapshot);
+        return ToInputFrame(state.playing_input_snapshot);
     }
     return slot.input_frame;
 }
@@ -50,7 +50,7 @@ void QueueLocalInputsThroughTargetFrame(State& state) {
         const LockstepFrame frame = state.net_session.lockstep_next_local_input_frame;
         for (const PlayerSlot& slot : state.players.slots) {
             if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local ||
-                slot.player_id == kInvalidPlayerId || !slot.entity_vid.has_value()) {
+                slot.player_id == kInvalidPlayerId || !slot.ent_vid.has_value()) {
                 continue;
             }
             LockstepInputRecord record;
@@ -70,7 +70,7 @@ InputFrameRecordEntry MakeInputFrameRecordEntry(const LockstepInputRecord& recor
     entry.player_id = record.player_id;
     entry.frame = record.frame;
     entry.sequence = record.sequence;
-    entry.input_flags = PackPlayerInputFrame(record.input);
+    entry.input_flags = PackInputFrame(record.input);
     entry.mouse_x = record.input.mouse_pos.x;
     entry.mouse_y = record.input.mouse_pos.y;
     return entry;
@@ -81,7 +81,7 @@ LockstepInputRecord MakeLockstepInputRecord(const InputFrameRecordEntry& entry) 
     record.player_id = entry.player_id;
     record.frame = entry.frame;
     record.sequence = entry.sequence;
-    record.input = UnpackPlayerInputFrame(entry.input_flags, UVec2::New(entry.mouse_x, entry.mouse_y));
+    record.input = UnpackInputFrame(entry.input_flags, UVec2::New(entry.mouse_x, entry.mouse_y));
     return record;
 }
 
@@ -127,21 +127,21 @@ void SendInputFramePacketToEndpoint(
 }
 
 void SendLocalInputFramePacket(State& state, NetTransportRuntime& transport) {
-    if (state.net_session.role == NetRole::Coordinator) {
+    if (state.net_session.role == NetRole::Host) {
         for (const NetRemoteEndpoint& remote : transport.remotes) {
             SendInputFramePacketToEndpoint(state, transport, remote.endpoint);
         }
         return;
     }
     if (state.net_session.role == NetRole::Peer && !transport.join_request_pending) {
-        SendInputFramePacketToEndpoint(state, transport, transport.coordinator_endpoint);
+        SendInputFramePacketToEndpoint(state, transport, transport.host_endpoint);
     }
 }
 
 void ApplyLockstepInputsToState(
     State& state,
     const std::vector<PlayerId>& player_ids,
-    const std::vector<PlayerInputFrame>& input_frames
+    const std::vector<InputFrame>& input_frames
 ) {
     const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal();
     const PlayerId primary_player_id =
@@ -158,7 +158,7 @@ void ApplyLockstepInputsToState(
 
 void PumpInputLockstepPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
     FlushFuzzedOutgoingPackets(transport);
-    if (state.net_session.role == NetRole::Coordinator) {
+    if (state.net_session.role == NetRole::Host) {
         CleanupExpiredRetainedPlayerStates(state);
         StepHostPackets(state, graphics, transport);
     } else if (state.net_session.role == NetRole::Peer) {
@@ -198,7 +198,7 @@ bool PrepareInputLockstepFrame(State& state, const Graphics& graphics) {
     NetTransportRuntime& transport = *state.net_transport;
     transport.fuzzer_config = state.net_session.fuzzer_config;
     PumpInputLockstepPackets(state, graphics, transport);
-    if (state.net_session.role == NetRole::Coordinator && transport.remotes.empty()) {
+    if (state.net_session.role == NetRole::Host && transport.remotes.empty()) {
         return false;
     }
     if (state.net_session.role == NetRole::Peer && transport.join_request_pending) {
@@ -215,7 +215,7 @@ bool PrepareInputLockstepFrame(State& state, const Graphics& graphics) {
         return false;
     }
 
-    std::vector<PlayerInputFrame> frame_inputs;
+    std::vector<InputFrame> frame_inputs;
     if (!state.net_session.lockstep_input_buffer.BuildFrameInputs(
             required_players,
             state.net_session.lockstep_next_frame_to_step,

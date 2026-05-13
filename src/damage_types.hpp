@@ -14,7 +14,7 @@ enum class DamageType {
     Fall,
 };
 
-enum class DamageVulnerability {
+enum class DamageVuln {
     Immune,
     BurningOnly,
     CrushingOnly,

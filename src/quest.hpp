@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/core_types.hpp"
+#include "ent/core_types.hpp"
 #include "math_types.hpp"
 #include "stage.hpp"
 
@@ -22,27 +22,27 @@ struct StagePassConfig {
 };
 
 
-struct WeightedEntityEntry {
-    EntityType entity_type = EntityType::None;
+struct WeightedEntEntry {
+    EntType ent_type = EntType::None;
     int weight = 1;
     bool unique = false;
 };
 
-struct EntityPoolConfig {
+struct EntPoolConfig {
     std::string id;
     bool unique = false;
-    std::vector<WeightedEntityEntry> entries;
+    std::vector<WeightedEntEntry> entries;
 };
 
 struct ItemPoolDb {
-    std::unordered_map<std::string, EntityPoolConfig> pools;
+    std::unordered_map<std::string, EntPoolConfig> pools;
 
-    const EntityPoolConfig* FindPool(std::string_view id) const;
+    const EntPoolConfig* FindPool(std::string_view id) const;
 };
 
 struct ShopTypeConfig {
     std::string id;
-    EntityType sign = EntityType::None;
+    EntType sign = EntType::None;
     std::string item_pool;
     int item_slots = 0;
 };
@@ -58,11 +58,11 @@ struct GlyphRule {
     std::optional<Tile> tile;
     std::string action;
     std::string patch_pool;
-    EntityType spawn = EntityType::None;
-    EntityType spawn_chance = EntityType::None;
+    EntType spawn = EntType::None;
+    EntType spawn_chance = EntType::None;
     int chance_denominator = 1;
     std::string exit_id;
-    std::vector<WeightedEntityEntry> spawn_random;
+    std::vector<WeightedEntEntry> spawn_random;
 };
 
 struct GlyphMap {
@@ -81,7 +81,7 @@ struct StageConfig {
     std::string glyphs_path;
     Tile border_tile = Tile::Air;
     std::vector<Tile> backwall_tiles;
-    FrameDataId block_animation_id = frame_data_ids::CaveBlock;
+    AFrameId block_anim_id = aframe_ids::CaveBlock;
     std::unordered_map<std::string, std::string> room_pools;
     std::vector<StagePassConfig> layout_passes;
     std::vector<StagePassConfig> stage_passes;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,17 +10,17 @@ struct State;
 
 }
 
-namespace splonks::entities::rope {
+namespace splonks::ents::rope {
 
-extern const EntityArchetype kRopeArchetype;
+extern const EntSpec kRopeSpec;
 
-void OnUseAsRope(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
-void StepEntityLogicAsRope(
-    std::size_t entity_idx,
+void OnUseAsRope(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio);
+void StepEntLogicAsRope(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::rope
+} // namespace splonks::ents::rope

@@ -1,7 +1,7 @@
 #include "state.hpp"
 #include "world_query.hpp"
 
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "quest_stage_loader.hpp"
 #include "stage_init.hpp"
 
@@ -12,9 +12,9 @@ namespace splonks {
 
 namespace {
 
-bool HasAnyAreaListenerCallback(const Entity& entity) {
-    return entity.on_area_enter != nullptr || entity.on_area_exit != nullptr ||
-           entity.on_area_tile_changed != nullptr;
+bool HasAnyAreaListenerCallback(const Ent& ent) {
+    return ent.on_area_enter != nullptr || ent.on_area_exit != nullptr ||
+           ent.on_area_tile_changed != nullptr;
 }
 
 } // namespace
@@ -24,11 +24,11 @@ void AddShake(
     const Vec2& world_pos,
     float foreground_tile_amount,
     float background_tile_amount,
-    float entity_amount,
+    float ent_amount,
     float radius_tiles,
-    std::optional<VID> exclude_entity_vid
+    std::optional<VID> exclude_ent_vid
 ) {
-    if (foreground_tile_amount <= 0.0F && background_tile_amount <= 0.0F && entity_amount <= 0.0F) {
+    if (foreground_tile_amount <= 0.0F && background_tile_amount <= 0.0F && ent_amount <= 0.0F) {
         return;
     }
 
@@ -44,7 +44,7 @@ void AddShake(
     if (background_tile_amount > 0.0F) {
         state.stage.AddBackgroundTileShakeArea(tile_pos, background_tile_amount, radius_tiles);
     }
-    if (entity_amount <= 0.0F) {
+    if (ent_amount <= 0.0F) {
         return;
     }
 
@@ -53,27 +53,27 @@ void AddShake(
         world_pos - Vec2::New(radius_world, radius_world),
         world_pos + Vec2::New(radius_world, radius_world)
     );
-    for (const VID& vid : QueryEntitiesInAabb(state, area, exclude_entity_vid)) {
-        Entity* const entity = state.entity_manager.GetEntityMut(vid);
-        if (entity == nullptr || !entity->active) {
+    for (const VID& vid : QueryEntsInAabb(state, area, exclude_ent_vid)) {
+        Ent* const ent = state.ents.GetEntMut(vid);
+        if (ent == nullptr || !ent->active) {
             continue;
         }
 
-        const Vec2 nearest_center = GetNearestWorldPoint(state.stage, world_pos, entity->GetCenter());
+        const Vec2 nearest_center = GetNearestWorldPoint(state.stage, world_pos, ent->GetCenter());
         const Vec2 delta = nearest_center - world_pos;
         const float distance = std::sqrt((delta.x * delta.x) + (delta.y * delta.y));
         if (radius_world > 0.0F) {
             if (distance > radius_world) {
                 continue;
             }
-            AddEntityShake(*entity, entity_amount * (1.0F - (distance / radius_world)));
+            AddEntShake(*ent, ent_amount * (1.0F - (distance / radius_world)));
             continue;
         }
 
-        const AABB nearest_aabb = GetNearestWorldAabb(state.stage, world_pos, entity->GetAABB());
+        const AABB nearest_aabb = GetNearestWorldAabb(state.stage, world_pos, ent->GetAABB());
         if (world_pos.x >= nearest_aabb.tl.x && world_pos.x <= nearest_aabb.br.x &&
             world_pos.y >= nearest_aabb.tl.y && world_pos.y <= nearest_aabb.br.y) {
-            AddEntityShake(*entity, entity_amount);
+            AddEntShake(*ent, ent_amount);
         }
     }
 }
@@ -83,9 +83,9 @@ void AddShake(
     const Vec2& world_pos,
     float amount,
     float radius_tiles,
-    std::optional<VID> exclude_entity_vid
+    std::optional<VID> exclude_ent_vid
 ) {
-    AddShake(state, world_pos, amount, amount, amount, radius_tiles, exclude_entity_vid);
+    AddShake(state, world_pos, amount, amount, amount, radius_tiles, exclude_ent_vid);
 }
 
 void AddShake(
@@ -94,7 +94,7 @@ void AddShake(
     float amount,
     float radius_tiles,
     ShakeMask mask,
-    std::optional<VID> exclude_entity_vid
+    std::optional<VID> exclude_ent_vid
 ) {
     if (amount <= 0.0F || mask == ShakeMask::None) {
         return;
@@ -105,9 +105,9 @@ void AddShake(
         world_pos,
         HasShakeMask(mask, ShakeMask::ForegroundTiles) ? amount : 0.0F,
         HasShakeMask(mask, ShakeMask::BackgroundTiles) ? amount : 0.0F,
-        HasShakeMask(mask, ShakeMask::Entities) ? amount : 0.0F,
+        HasShakeMask(mask, ShakeMask::Ents) ? amount : 0.0F,
         radius_tiles,
-        exclude_entity_vid
+        exclude_ent_vid
     );
 }
 
@@ -142,7 +142,7 @@ State State::New() {
     state.running = true;
     state.frame = 0;
     state.stage_frame = 0;
-    state.drng = DeterministicRng::New(1);
+    state.drng = DetRng::New(1);
     state.menu_return_to = Mode::Title;
     state.game_over = false;
     state.pause = false;
@@ -160,7 +160,7 @@ State State::New() {
     state.players = PlayerRegistry::New();
     state.net_session = network::NetSessionState::NewOffline();
     state.net_transport.reset();
-    state.entity_manager = EntityManager::New();
+    state.ents = EntPool::New();
     state.particles = ParticleSystem{};
     state.audio_emitters = AudioEmitterManager::New();
     state.sid = SID::New();
@@ -169,11 +169,11 @@ State State::New() {
     state.pending_stage_transition.reset();
     state.stage_lighting = StageLighting::New();
     state.stage_acoustics = StageAcoustics::New();
-    state.controlled_entity_vid.reset();
+    state.controlled_ent_vid.reset();
     state.spectator_target_player_id.reset();
     state.mouse_trailer_vid.reset();
     state.contact = ContactBookkeeping{};
-    state.entity_tools = EntityToolInventoryState{};
+    state.ent_tools = EntToolInventoryState{};
     state.world_prompts.clear();
     state.debug_rect_annotations.clear();
     state.debug_label_annotations.clear();
@@ -215,56 +215,56 @@ void State::RebuildSid(const Graphics& graphics) {
     sid.Clear();
     area_listener_vids.clear();
 
-    for (std::size_t entity_id = 0; entity_id < entity_manager.entities.size(); ++entity_id) {
-        UpdateSidForEntity(entity_id, graphics);
+    for (std::size_t ent_id = 0; ent_id < ents.ents.size(); ++ent_id) {
+        UpdateSidForEnt(ent_id, graphics);
     }
 }
 
-void State::UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics) {
-    if (entity_id >= entity_manager.entities.size()) {
+void State::UpdateSidForEnt(std::size_t ent_id, const Graphics& graphics) {
+    if (ent_id >= ents.ents.size()) {
         return;
     }
 
-    const Entity& entity = entity_manager.entities[entity_id];
-    UpdateAreaListenerCacheForEntity(entity_id);
-    sid.Remove(entity.vid);
-    if (!entity.active) {
+    const Ent& ent = ents.ents[ent_id];
+    UpdateAreaListenerCacheForEnt(ent_id);
+    sid.Remove(ent.vid);
+    if (!ent.active) {
         return;
     }
 
-    const AABB broadphase_aabb = entities::common::GetEntityBroadphaseAabb(entity, graphics);
-    sid.Upsert(entity.vid, broadphase_aabb);
+    const AABB broadphase_aabb = ents::common::GetEntBroadphaseAabb(ent, graphics);
+    sid.Upsert(ent.vid, broadphase_aabb);
 }
 
 void State::RebuildAreaListenerCache() {
     area_listener_vids.clear();
-    for (std::size_t entity_id = 0; entity_id < entity_manager.entities.size(); ++entity_id) {
-        UpdateAreaListenerCacheForEntity(entity_id);
+    for (std::size_t ent_id = 0; ent_id < ents.ents.size(); ++ent_id) {
+        UpdateAreaListenerCacheForEnt(ent_id);
     }
 }
 
-void State::UpdateAreaListenerCacheForEntity(std::size_t entity_id) {
-    if (entity_id >= entity_manager.entities.size()) {
+void State::UpdateAreaListenerCacheForEnt(std::size_t ent_id) {
+    if (ent_id >= ents.ents.size()) {
         return;
     }
 
-    const Entity& entity = entity_manager.entities[entity_id];
+    const Ent& ent = ents.ents[ent_id];
     area_listener_vids.erase(
         std::remove_if(
             area_listener_vids.begin(),
             area_listener_vids.end(),
             [&](const VID& candidate) {
-                return candidate.id == entity.vid.id;
+                return candidate.id == ent.vid.id;
             }
         ),
         area_listener_vids.end()
     );
 
-    if (!entity.active || !HasAnyAreaListenerCallback(entity)) {
+    if (!ent.active || !HasAnyAreaListenerCallback(ent)) {
         return;
     }
 
-    area_listener_vids.push_back(entity.vid);
+    area_listener_vids.push_back(ent.vid);
 }
 
 void State::ClearWorldPrompts() {
@@ -292,18 +292,18 @@ void State::ClearInteractClaims() {
     interact_claimed_vids_this_frame.clear();
 }
 
-void State::ClaimInteractForEntity(VID entity_vid) {
+void State::ClaimInteractForEnt(VID ent_vid) {
     if (std::find(interact_claimed_vids_this_frame.begin(),
                   interact_claimed_vids_this_frame.end(),
-                  entity_vid) == interact_claimed_vids_this_frame.end()) {
-        interact_claimed_vids_this_frame.push_back(entity_vid);
+                  ent_vid) == interact_claimed_vids_this_frame.end()) {
+        interact_claimed_vids_this_frame.push_back(ent_vid);
     }
 }
 
-bool State::IsInteractClaimedForEntity(VID entity_vid) const {
+bool State::IsInteractClaimedForEnt(VID ent_vid) const {
     return std::find(interact_claimed_vids_this_frame.begin(),
                      interact_claimed_vids_this_frame.end(),
-                     entity_vid) != interact_claimed_vids_this_frame.end();
+                     ent_vid) != interact_claimed_vids_this_frame.end();
 }
 
 } // namespace splonks

@@ -38,7 +38,7 @@ bool HasFlag(std::uint32_t flags, std::uint32_t flag) {
 
 } // namespace
 
-std::uint32_t PackPlayerInputFrame(const PlayerInputFrame& input) {
+std::uint32_t PackInputFrame(const InputFrame& input) {
     std::uint32_t flags = 0;
     SetFlag(flags, kInputLeft, input.left);
     SetFlag(flags, kInputRight, input.right);
@@ -62,8 +62,8 @@ std::uint32_t PackPlayerInputFrame(const PlayerInputFrame& input) {
     return flags;
 }
 
-PlayerInputFrame UnpackPlayerInputFrame(std::uint32_t flags, UVec2 mouse_pos) {
-    PlayerInputFrame input = PlayerInputFrame::New();
+InputFrame UnpackInputFrame(std::uint32_t flags, UVec2 mouse_pos) {
+    InputFrame input = InputFrame::New();
     input.left = HasFlag(flags, kInputLeft);
     input.right = HasFlag(flags, kInputRight);
     input.up = HasFlag(flags, kInputUp);
@@ -108,7 +108,7 @@ bool LockstepInputBuffer::Has(PlayerId player_id, LockstepFrame frame) const {
     return Find(player_id, frame) != nullptr;
 }
 
-const PlayerInputFrame* LockstepInputBuffer::Find(
+const InputFrame* LockstepInputBuffer::Find(
     PlayerId player_id,
     LockstepFrame frame
 ) const {
@@ -136,12 +136,12 @@ bool LockstepInputBuffer::FrameReady(
 bool LockstepInputBuffer::BuildFrameInputs(
     const std::vector<PlayerId>& required_players,
     LockstepFrame frame,
-    std::vector<PlayerInputFrame>& out_inputs
+    std::vector<InputFrame>& out_inputs
 ) const {
     out_inputs.clear();
     out_inputs.reserve(required_players.size());
     for (PlayerId player_id : required_players) {
-        const PlayerInputFrame* const input = Find(player_id, frame);
+        const InputFrame* const input = Find(player_id, frame);
         if (input == nullptr) {
             out_inputs.clear();
             return false;

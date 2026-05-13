@@ -2,8 +2,8 @@
 
 #include "debug/debug_stage_common.hpp"
 #include "debug/shop_test_stage.hpp"
-#include "entity/archetype.hpp"
-#include "entities/trap_block.hpp"
+#include "ent/spec.hpp"
+#include "ents/trap_block.hpp"
 #include "stage_spawning.hpp"
 
 #include <algorithm>
@@ -179,9 +179,9 @@ void InitArrowTrapTestStage(State& state) {
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
         if (const std::optional<VID> trap_vid =
-                SpawnStageEntityAtTopLeft(state, EntityType::ArrowTrap, left_pos)) {
-            if (Entity* const trap = state.entity_manager.GetEntityMut(*trap_vid)) {
-                trap->facing = LeftOrRight::Right;
+                SpawnStageEntAtTopLeft(state, EntType::ArrowTrap, left_pos)) {
+            if (Ent* const trap = state.ents.GetEntMut(*trap_vid)) {
+                trap->facing = Side::Right;
             }
         }
 
@@ -190,9 +190,9 @@ void InitArrowTrapTestStage(State& state) {
             static_cast<float>(tile_y * static_cast<int>(kTileSize))
         );
         if (const std::optional<VID> trap_vid =
-                SpawnStageEntityAtTopLeft(state, EntityType::ArrowTrap, right_pos)) {
-            if (Entity* const trap = state.entity_manager.GetEntityMut(*trap_vid)) {
-                trap->facing = LeftOrRight::Left;
+                SpawnStageEntAtTopLeft(state, EntType::ArrowTrap, right_pos)) {
+            if (Ent* const trap = state.ents.GetEntMut(*trap_vid)) {
+                trap->facing = Side::Left;
             }
         }
     }
@@ -210,9 +210,9 @@ void InitSpikeTestStage(State& state) {
         )
     );
 
-    (void)SpawnStageEntityAtTopLeft(
+    (void)SpawnStageEntAtTopLeft(
         state,
-        EntityType::SpikeShoes,
+        EntType::SpikeShoes,
         Vec2::New(
             25.0F * static_cast<float>(kTileSize),
             static_cast<float>((kSpikeTestStageHeightTiles - 1) * static_cast<int>(kTileSize)) - 16.0F
@@ -236,18 +236,18 @@ void InitTrapDoorTestStage(State& state) {
     constexpr int floor_y = 6;
     const int closed_top_y =
         floor_y * static_cast<int>(kTileSize) -
-        static_cast<int>(GetEntityArchetype(EntityType::Door).size.y);
+        static_cast<int>(GetEntSpec(EntType::Door).size.y);
     constexpr std::array<int, 4> kDropDoorXs{{18, 42, 66, 90}};
     for (const int door_x : kDropDoorXs) {
-        if (const std::optional<VID> door_vid = SpawnStageEntityAtTopLeft(
+        if (const std::optional<VID> door_vid = SpawnStageEntAtTopLeft(
             state,
-            EntityType::Door,
+            EntType::Door,
             Vec2::New(
                 static_cast<float>(door_x * static_cast<int>(kTileSize)),
                 static_cast<float>(ceiling_start_y * static_cast<int>(kTileSize))
             )
         )) {
-            if (Entity* const door = state.entity_manager.GetEntityMut(*door_vid)) {
+            if (Ent* const door = state.ents.GetEntMut(*door_vid)) {
                 door->point_a = IVec2::New(door_x * static_cast<int>(kTileSize), closed_top_y);
                 door->point_label_a = PointLabel::Target;
             }
@@ -272,9 +272,9 @@ void InitCrusherTrapTestStage(State& state) {
         )
     );
 
-    (void)SpawnStageEntityAtTopLeft(
+    (void)SpawnStageEntAtTopLeft(
         state,
-        EntityType::ThwompTrap,
+        EntType::ThwompTrap,
         Vec2::New(
             5.0F * static_cast<float>(kTileSize),
             1.0F * static_cast<float>(kTileSize)
@@ -289,9 +289,9 @@ void InitCrusherTrapTestStage(State& state) {
         IVec2::New(8, 3),
     }};
     for (const IVec2& tile_pos : kSquisherBlocks) {
-        (void)SpawnStageEntityAtTopLeft(
+        (void)SpawnStageEntAtTopLeft(
             state,
-            EntityType::TrapBlock,
+            EntType::TrapBlock,
             Vec2::New(
                 static_cast<float>(tile_pos.x * static_cast<int>(kTileSize)),
                 static_cast<float>(tile_pos.y * static_cast<int>(kTileSize))
@@ -303,16 +303,16 @@ void InitCrusherTrapTestStage(State& state) {
         const int count = 5 - row;
         for (int column = 0; column < count; ++column) {
             const int tile_x = 19 + row + column;
-            if (const std::optional<VID> block_vid = SpawnStageEntityAtTopLeft(
+            if (const std::optional<VID> block_vid = SpawnStageEntAtTopLeft(
                 state,
-                EntityType::TrapBlock,
+                EntType::TrapBlock,
                 Vec2::New(
                     static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                     static_cast<float>((7 + row) * static_cast<int>(kTileSize))
                 )
             )) {
-                if (Entity* const block = state.entity_manager.GetEntityMut(*block_vid)) {
-                    entities::trap_block::MakeTrapBlockOneShot(*block);
+                if (Ent* const block = state.ents.GetEntMut(*block_vid)) {
+                    ents::trap_block::MakeTrapBlockOneShot(*block);
                 }
             }
         }
@@ -325,7 +325,7 @@ void InitCrusherTrapTestStage(State& state) {
     const int requested_count = std::clamp(
         state.debug_level.crusher_trap_test.stress_squisher_count,
         0,
-        static_cast<int>(EntityManager::kMaxNumEntities)
+        static_cast<int>(EntPool::kMaxNumEnts)
     );
     for (int i = 0; i < requested_count; ++i) {
         const int column = i % kStressWidth;
@@ -333,9 +333,9 @@ void InitCrusherTrapTestStage(State& state) {
         if (row >= kStressHeight) {
             break;
         }
-        const std::optional<VID> block_vid = SpawnStageEntityAtTopLeft(
+        const std::optional<VID> block_vid = SpawnStageEntAtTopLeft(
             state,
-            EntityType::TrapBlock,
+            EntType::TrapBlock,
             Vec2::New(
                 static_cast<float>((kStressStartX + column) * static_cast<int>(kTileSize)),
                 static_cast<float>((kStressStartY + row) * static_cast<int>(kTileSize))

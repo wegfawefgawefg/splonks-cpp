@@ -4,7 +4,7 @@ namespace splonks {
 
 bool CheckStateFingerprintSmoke();
 bool CheckStateEqualitySmoke();
-bool CheckDeterministicReplaySmoke();
+bool CheckDetReplaySmoke();
 bool CheckInputLockstepSmoke();
 
 } // namespace splonks

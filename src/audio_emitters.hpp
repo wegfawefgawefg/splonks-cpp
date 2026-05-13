@@ -11,7 +11,7 @@
 namespace splonks {
 
 struct Audio;
-struct Entity;
+struct Ent;
 struct Graphics;
 struct State;
 
@@ -31,10 +31,10 @@ enum class AudioEmitterPlaybackMode : std::uint8_t {
 /// Where the emitter resolves its world position from.
 enum class AudioEmitterSourceMode : std::uint8_t {
     FixedWorldPos,
-    AttachedEntity,
+    AttachedEnt,
 };
 
-/// What to do if the attached/owning entity disappears while the emitter is active.
+/// What to do if the attached/owning ent disappears while the emitter is active.
 enum class AudioEmitterTargetLossPolicy : std::uint8_t {
     StopImmediately,
     FinishCurrentPlay,
@@ -43,14 +43,14 @@ enum class AudioEmitterTargetLossPolicy : std::uint8_t {
 
 
 /// Shared play-time knobs for emitter creation helpers.
-/// owner_entity_vid is optional ownership metadata used for lookup, dedupe, and cleanup.
-/// It does not have to match the attached entity.
+/// owner_ent_vid is optional ownership metadata used for lookup, dedupe, and cleanup.
+/// It does not have to match the attached ent.
 struct AudioEmitterPlayParams {
     float volume_scale = 1.0F;
     AudioEmitterPlaybackMode playback_mode = AudioEmitterPlaybackMode::OneShot;
     AudioEmitterTargetLossPolicy target_loss_policy =
         AudioEmitterTargetLossPolicy::FinishCurrentPlay;
-    std::optional<VID> owner_entity_vid = std::nullopt;
+    std::optional<VID> owner_ent_vid = std::nullopt;
 };
 
 struct AudioEmitter {
@@ -64,8 +64,8 @@ struct AudioEmitter {
     AudioEmitterSourceMode source_mode = AudioEmitterSourceMode::FixedWorldPos;
     AudioEmitterTargetLossPolicy target_loss_policy =
         AudioEmitterTargetLossPolicy::FinishCurrentPlay;
-    std::optional<VID> owner_entity_vid = std::nullopt;
-    std::optional<VID> attached_entity_vid = std::nullopt;
+    std::optional<VID> owner_ent_vid = std::nullopt;
+    std::optional<VID> attached_ent_vid = std::nullopt;
     Vec2 world_pos = Vec2::New(0.0F, 0.0F);
     Vec2 attached_offset = Vec2::New(0.0F, 0.0F);
 };
@@ -90,7 +90,7 @@ Vec2 GetAudioListenerWorldPos(const State& state);
 void SetAudioListenerWorldPos(State& state, const Vec2& world_pos);
 std::optional<VID> FindOwnedSoundEmitter(
     const State& state,
-    VID owner_entity_vid,
+    VID owner_ent_vid,
     AudioAssetId audio_asset_id,
     AudioEmitterPlaybackMode playback_mode
 );
@@ -103,42 +103,42 @@ std::optional<VID> PlayWorldSoundEmitter(
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {}
 );
-/// Spawns an emitter that follows an entity every frame at entity center + attached_offset.
-/// Use this when the sound source should move with an entity without the caller manually
+/// Spawns an emitter that follows an ent every frame at ent center + attached_offset.
+/// Use this when the sound source should move with an ent without the caller manually
 /// updating emitter.world_pos each step.
 std::optional<VID> PlayAttachedSoundEmitter(
     State& state,
-    VID attached_entity_vid,
+    VID attached_ent_vid,
     const Vec2& attached_offset,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {}
 );
-/// Spawns a one-shot or loop emitter attached to an entity and default-owned by it.
-/// Use this for sounds that should follow a living entity while they play.
-std::optional<VID> PlayEntitySoundEmitter(
+/// Spawns a one-shot or loop emitter attached to an ent and default-owned by it.
+/// Use this for sounds that should follow a living ent while they play.
+std::optional<VID> PlayEntSoundEmitter(
     State& state,
-    const Entity& entity,
+    const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {},
     const Vec2& attached_offset = Vec2::New(0.0F, 0.0F)
 );
-/// Spawns a fixed world emitter at an entity's current center plus world_offset.
+/// Spawns a fixed world emitter at an ent's current center plus world_offset.
 /// Use this for transient impacts or pickups where the source may disappear immediately.
-std::optional<VID> PlayEntityCenterSoundEmitter(
+std::optional<VID> PlayEntCenterSoundEmitter(
     State& state,
-    const Entity& entity,
+    const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params = {},
     const Vec2& world_offset = Vec2::New(0.0F, 0.0F)
 );
-/// Finds or creates one looping attached emitter for (owner_entity_vid, audio_asset_id).
+/// Finds or creates one looping attached emitter for (owner_ent_vid, audio_asset_id).
 /// Intended for per-step maintenance of persistent loops, e.g. a rolling boulder hum.
 /// Re-calling it refreshes follow target, offset, volume, and loss policy instead of
 /// spawning duplicate loop instances.
 std::optional<VID> EnsureAttachedLoopingSoundEmitter(
     State& state,
-    VID owner_entity_vid,
-    VID attached_entity_vid,
+    VID owner_ent_vid,
+    VID attached_ent_vid,
     const Vec2& attached_offset,
     AudioAssetId audio_asset_id,
     float volume_scale = 1.0F,
@@ -151,7 +151,7 @@ bool StopSoundEmitter(State& state, Audio& audio, VID emitter_vid);
 bool StopOwnedSoundEmitter(
     State& state,
     Audio& audio,
-    VID owner_entity_vid,
+    VID owner_ent_vid,
     AudioAssetId audio_asset_id,
     AudioEmitterPlaybackMode playback_mode
 );

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "audio.hpp"
-#include "entities/common/contact_types.hpp"
-#include "entities/common/knockback.hpp"
+#include "ents/common/contact_types.hpp"
+#include "ents/common/knockback.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 
 #include <cstdint>
 #include <optional>
@@ -15,13 +15,13 @@ namespace splonks::controls {
 struct ControlIntent;
 }
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 constexpr float kMaxSpeed = 7.0F;
 constexpr std::uint32_t kDefaultCoyoteTimeFrames = 6;
 constexpr unsigned int kDefaultStunTimer = 60;
 constexpr unsigned int kThrownByImmunityDuration = 16;
-constexpr unsigned int kProjectileContactDuration = 120;
+constexpr unsigned int kProjContactDuration = 120;
 
 struct JumpAndClimbTuning {
     float gravity_scale = 1.0F;
@@ -51,69 +51,69 @@ struct TileContact {
 struct BlockingContactSet {
     bool touches_stage_bounds = false;
     std::vector<TileContact> tile_contacts;
-    std::vector<VID> entity_vids;
+    std::vector<VID> ent_vids;
 };
 
-void CommonStep(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio, float dt);
+void CommonStep(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio, float dt);
 void CommonPostStep(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void DieIfDead(std::size_t entity_idx, State& state, Audio& audio);
-void OnDeathAsExplosion(std::size_t entity_idx, State& state, Audio& audio);
-void ApplyDeactivateConditions(std::size_t entity_idx, State& state);
-void StepStunTimer(std::size_t entity_idx, State& state);
-void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio);
-void AccelerateHorizontallyTowardSpeed(Entity& entity, float target_speed, float max_acceleration);
+void DieIfDead(std::size_t ent_idx, State& state, Audio& audio);
+void OnDeathAsExplosion(std::size_t ent_idx, State& state, Audio& audio);
+void ApplyDeactivateConditions(std::size_t ent_idx, State& state);
+void StepStunTimer(std::size_t ent_idx, State& state);
+void StepTravelSoundWalkerClimber(std::size_t ent_idx, State& state, Audio& audio);
+void AccelerateHorizontallyTowardSpeed(Ent& ent, float target_speed, float max_acceleration);
 void AccelerateHorizontallyTowardSpeed(
-    Entity& entity,
+    Ent& ent,
     const State& state,
     float target_speed,
     float max_acceleration
 );
-void DecelerateHorizontallyToStop(Entity& entity, float max_acceleration, float snap_speed = 0.05F);
-void StepAnimationTimer(std::size_t entity_idx, State& state, const Graphics& graphics, float dt);
-void RefreshAllEntityFrameDataGeometry(State& state, const Graphics& graphics);
-void EulerStep(std::size_t entity_idx, State& state, float dt);
-void PrePartialEulerStep(std::size_t entity_idx, State& state, float dt);
-void ApplyGravity(std::size_t entity_idx, State& state, float dt);
-void ApplyEffectVelocityModifiers(Entity& entity, const State& state);
-void ApplyGroundFriction(std::size_t entity_idx, State& state);
-void ApplyGroundFriction(std::size_t entity_idx, State& state, float friction_scale);
-void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state);
-void ApplyArchetypeGroundFriction(std::size_t entity_idx, State& state, float friction_scale);
+void DecelerateHorizontallyToStop(Ent& ent, float max_acceleration, float snap_speed = 0.05F);
+void StepAnimTimer(std::size_t ent_idx, State& state, const Graphics& graphics, float dt);
+void RefreshAllEntAFrameGeometry(State& state, const Graphics& graphics);
+void EulerStep(std::size_t ent_idx, State& state, float dt);
+void PrePartialEulerStep(std::size_t ent_idx, State& state, float dt);
+void ApplyGravity(std::size_t ent_idx, State& state, float dt);
+void ApplyEffectVelocityModifiers(Ent& ent, const State& state);
+void ApplyGroundFriction(std::size_t ent_idx, State& state);
+void ApplyGroundFriction(std::size_t ent_idx, State& state, float friction_scale);
+void ApplySpecGroundFriction(std::size_t ent_idx, State& state);
+void ApplySpecGroundFriction(std::size_t ent_idx, State& state, float friction_scale);
 void StepStandardPhysics(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void PostPartialEulerStep(std::size_t entity_idx, State& state, float dt);
+void PostPartialEulerStep(std::size_t ent_idx, State& state, float dt);
 void GroundedCheck(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     bool check_tiles,
-    bool check_entities,
+    bool check_ents,
     std::uint32_t coyote_time_frames = kDefaultCoyoteTimeFrames
 );
-bool IsGroundedOnTiles(std::size_t entity_idx, State& state);
-void DoThrownByStep(std::size_t entity_idx, State& state);
-void HangHandsStep(std::size_t entity_idx, State& state, const JumpAndClimbTuning& tuning);
-void DoTileCollisions(std::size_t entity_idx, State& state);
-void DoEntityCollisions(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio);
-void DoTileAndEntityCollisions(
-    std::size_t entity_idx,
+bool IsGroundedOnTiles(std::size_t ent_idx, State& state);
+void DoThrownByStep(std::size_t ent_idx, State& state);
+void HangHandsStep(std::size_t ent_idx, State& state, const JumpAndClimbTuning& tuning);
+void DoTileCollisions(std::size_t ent_idx, State& state);
+void DoEntCollisions(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio);
+void DoTileAndEntCollisions(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 );
 void DoExplosion(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     Vec2 center,
     float size,
     float push_magnitude,
@@ -121,7 +121,7 @@ void DoExplosion(
     Audio& audio
 );
 bool TryApplyPlausibleLocomotionClaim(
-    Entity& entity,
+    Ent& ent,
     State& state,
     const JumpAndClimbTuning& tuning,
     Vec2 claimed_pos,
@@ -129,44 +129,44 @@ bool TryApplyPlausibleLocomotionClaim(
     Vec2 claimed_acc,
     std::uint32_t claimed_movement_flags,
     bool claimed_grounded,
-    std::optional<LeftOrRight> claimed_hang_side,
+    std::optional<Side> claimed_hang_side,
     std::uint32_t claimed_coyote_time,
     std::uint32_t claimed_fall_timer,
     std::uint32_t claimed_hang_count,
     std::uint32_t claimed_climb_detach_cooldown
 );
-const FrameData* GetCurrentFrameDataForEntity(const Entity& entity, const Graphics& graphics);
-Vec2 GetSpriteTopLeftForEntity(const Entity& entity, const FrameData& frame_data);
-Vec2 GetVisualCenterForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
-void SetVisualCenterForEntity(Entity& entity, const Graphics& graphics, const Vec2& center);
-Vec2 GetEmitPointForEntity(const Entity& entity, const Graphics& graphics, const Vec2& fallback);
-AABB GetContactAabbForEntity(const Entity& entity, const Graphics& graphics);
-AABB GetEntityBroadphaseAabb(const Entity& entity, const Graphics& graphics);
+const AFrame* GetCurrentAFrameForEnt(const Ent& ent, const Graphics& graphics);
+Vec2 GetSpriteTopLeftForEnt(const Ent& ent, const AFrame& aframe);
+Vec2 GetVisualCenterForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
+void SetVisualCenterForEnt(Ent& ent, const Graphics& graphics, const Vec2& center);
+Vec2 GetEmitPointForEnt(const Ent& ent, const Graphics& graphics, const Vec2& fallback);
+AABB GetContactAabbForEnt(const Ent& ent, const Graphics& graphics);
+AABB GetEntBroadphaseAabb(const Ent& ent, const Graphics& graphics);
 bool CanCollectPickupFromContact(
     std::size_t pickup_idx,
     std::size_t collector_idx,
     const State& state
 );
 void DeactivateCollectedPickup(std::size_t pickup_idx, State& state, const Graphics& graphics);
-void CleanupInactiveCarryReferences(std::size_t entity_idx, State& state);
-void AttachEntityAsHeld(Entity& holder, Entity& held);
-void ReleaseEntityFromHolder(Entity& entity, State& state);
-void ReleaseEntityFromHolderIfAttached(Entity& entity, State& state);
-std::vector<VID> SeverEntityCarryLinksForReset(Entity& entity, State& state);
-void DropHeldItemFromEntity(Entity& entity, State& state);
-bool TryPickupEntityByVid(
+void CleanupInactiveCarryReferences(std::size_t ent_idx, State& state);
+void AttachEntAsHeld(Ent& holder, Ent& held);
+void ReleaseEntFromHolder(Ent& ent, State& state);
+void ReleaseEntFromHolderIfAttached(Ent& ent, State& state);
+std::vector<VID> SeverEntCarryLinksForReset(Ent& ent, State& state);
+void DropHeldItemFromEnt(Ent& ent, State& state);
+bool TryPickupEntByVid(
     VID holder_vid,
     VID held_vid,
     State& state,
     const Graphics& graphics
 );
-bool TryDropEntityByVid(
+bool TryDropEntByVid(
     VID holder_vid,
     VID held_vid,
     State& state,
     const Graphics& graphics
 );
-bool TryThrowEntityByVid(
+bool TryThrowEntByVid(
     VID thrower_vid,
     VID thrown_vid,
     Vec2 throw_velocity,
@@ -174,64 +174,64 @@ bool TryThrowEntityByVid(
     const Graphics& graphics,
     Audio& audio
 );
-bool TryPutHeldEntityOnBackByVid(
+bool TryPutHeldEntOnBackByVid(
     VID holder_vid,
     VID held_vid,
     State& state,
     const Graphics& graphics
 );
-bool TryTakeOffBackEntityByVid(
+bool TryTakeOffBackEntByVid(
     VID holder_vid,
     VID back_vid,
     State& state,
     const Graphics& graphics
 );
 void UpdateCarryAndBackItems(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 );
-void SyncEntityAttachments(
-    std::size_t entity_idx,
+void SyncEntAttachs(
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics
 );
-bool TryApplyStompContactToEntity(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplyStompContactToEnt(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 );
 void TryPushBlocks(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics
 );
-bool TryApplyPushEntityAction(
+bool TryApplyPushEntAction(
     VID pusher_vid,
     VID pushed_vid,
     float push_acc_delta,
     State& state,
     const Graphics& graphics
 );
-bool TryDisplaceEntityByOnePixel(
-    std::size_t entity_idx,
+bool TryDisplaceEntByOnePixel(
+    std::size_t ent_idx,
     const IVec2& direction,
     State& state,
     const Graphics& graphics,
     Audio* audio
 );
 bool TryApplyCrusherPusherContact(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const ContactContext& context,
     State& state,
     const Graphics& graphics,
     Audio& audio
 );
-bool TrySpawnAndThrowEntityForToolUse(
+bool TrySpawnAndThrowEntForToolUse(
     std::size_t thrower_idx,
     State& state,
     Graphics& graphics,
@@ -240,12 +240,12 @@ bool TrySpawnAndThrowEntityForToolUse(
     bool trigger_pressed,
     std::uint16_t cooldown_frames,
     std::uint32_t thrown_immunity_timer,
-    void (*setup_entity)(Entity&),
+    void (*setup_ent)(Ent&),
     ToolThrowVelocityBuilder build_throw_velocity = nullptr,
     std::optional<Vec2> throw_velocity_override = std::nullopt
 );
 bool TryUseToolSlot(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -271,89 +271,89 @@ struct HitOptions {
     bool knockback_on_no_damage = false;
 };
 
-bool CanEntityTakeDamageType(const Entity& entity, DamageType damage_type);
-DamageResult TryDamageEntity(
-    std::size_t entity_idx,
+bool CanEntTakeDamageType(const Ent& ent, DamageType damage_type);
+DamageResult TryDamageEnt(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
     unsigned int amount,
     DamageOptions options = {}
 );
-DamageResult TryHitEntity(
-    std::size_t entity_idx,
+DamageResult TryHitEnt(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
     unsigned int amount,
     HitOptions options
 );
-bool TryApplyProjectileContactToEntity(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplyProjContactToEnt(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 );
 
 void JumpingAndClimbingStep(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     const JumpAndClimbTuning& tuning
 );
-bool TryApplySwimImpulse(Entity& entity, State& state, Audio& audio);
-ContactResolution TryDispatchEntityEntityContactPair(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplySwimImpulse(Ent& ent, State& state, Audio& audio);
+ContactResult TryDispatchEntEntContactPair(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 );
-ContactResolution TryDispatchEntityEntityContacts(
-    std::size_t entity_idx,
+ContactResult TryDispatchEntEntContacts(
+    std::size_t ent_idx,
     const std::vector<VID>& touched_vids,
     const ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 );
-// Use this after an entity's contact shape was moved outside DoTileAndEntityCollisions().
-// Typical use is manually positioned entities with has_physics == false, like held/swinging items.
-// Do not call this for entities that still go through the normal physics collision path, even when
-// their velocity is zero, because MoveEntityPixelStep already does a final overlap dispatch for them.
-bool TryDispatchEntityEntityOverlapContacts(
-    std::size_t entity_idx,
+// Use this after an ent's contact shape was moved outside DoTileAndEntCollisions().
+// Typical use is manually positioned ents with has_physics == false, like held/swinging items.
+// Do not call this for ents that still go through the normal physics collision path, even when
+// their velocity is zero, because MoveEntPixelStep already does a final overlap dispatch for them.
+bool TryDispatchEntEntOverlapContacts(
+    std::size_t ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio,
     const ContactContext& context
 );
-std::vector<VID> GatherTouchedEntityContactsForAabb(
-    std::size_t entity_idx,
+std::vector<VID> GatherTouchedEntContactsForAabb(
+    std::size_t ent_idx,
     const AABB& aabb,
     const Graphics& graphics,
     State& state
 );
 BlockingContactSet GatherBlockingContactsForAabb(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const AABB& aabb,
     const State& state,
     bool check_tiles,
-    bool check_entities
+    bool check_ents
 );
-ContactResolution ResolveBlockingContactSet(
-    std::size_t entity_idx,
+ContactResult ResolveBlockingContactSet(
+    std::size_t ent_idx,
     const BlockingContactSet& contacts,
     const State& state
 );
-ContactResolution TryDispatchEntityTileContacts(
-    std::size_t entity_idx,
+ContactResult TryDispatchEntTileContacts(
+    std::size_t ent_idx,
     const BlockingContactSet& contacts,
     const ContactContext& context,
     State& state,
     Audio* audio
 );
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

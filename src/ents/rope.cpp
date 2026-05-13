@@ -1,18 +1,18 @@
-#include "entities/rope.hpp"
+#include "ents/rope.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "stage.hpp"
 #include "state.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
 
-namespace splonks::entities::rope {
+namespace splonks::ents::rope {
 
 namespace {
 
@@ -37,8 +37,8 @@ IVec2 GetRopeDeployStartTile(const Stage& stage, const IVec2& hit_tile_pos) {
 
 } // namespace
 
-extern const EntityArchetype kRopeArchetype{
-    .type_ = EntityType::Rope,
+extern const EntSpec kRopeSpec{
+    .type_ = EntType::Rope,
     .size = Vec2::New(8.0F, 6.0F),
     .health = 1,
     .has_physics = true,
@@ -51,35 +51,35 @@ extern const EntityArchetype kRopeArchetype{
     .can_be_stunned = false,
     .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .on_use = OnUseAsRope,
-    .step_logic = StepEntityLogicAsRope,
+    .step_logic = StepEntLogicAsRope,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RopeBall),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::RopeBall),
 };
 
-void OnUseAsRope(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+void OnUseAsRope(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     (void)graphics;
     (void)audio;
     (void)audio;
-    Entity& rope = state.entity_manager.entities[entity_idx];
+    Ent& rope = state.ents.ents[ent_idx];
     if (rope.use_state.pressed == false || rope.counter_a > 0.0F) {
         return;
     }
 
     rope.counter_a = 16.0F;
-    SetAnimation(rope, frame_data_ids::UnfoldingRope);
+    SetAnim(rope, aframe_ids::UnfoldingRope);
 
-    if (rope.use_state.source == AttachmentMode::None) {
-        StopUsingEntity(rope);
+    if (rope.use_state.source == AttachMode::None) {
+        StopUsingEnt(rope);
     }
 }
 
-void StepEntityLogicAsRope(
-    std::size_t entity_idx,
+void StepEntLogicAsRope(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -88,10 +88,10 @@ void StepEntityLogicAsRope(
     (void)dt;
     (void)graphics;
     (void)audio;
-    Entity& rope = state.entity_manager.entities[entity_idx];
+    Ent& rope = state.ents.ents[ent_idx];
 
     // if rope is in winding up
-    // set animation and display state
+    // set anim and display state
     // start decrementing the counter
     bool rope_popped = false;
     if (rope.counter_a > 0.0F) {
@@ -137,11 +137,11 @@ void StepEntityLogicAsRope(
         }
 
         if (atleast_one_tile_converted) {
-            (void)PlayEntityCenterSoundEmitter(state, state.entity_manager.entities[entity_idx], audio_asset_ids::RopeDeploy);
+            (void)PlayEntCenterSoundEmitter(state, state.ents.ents[ent_idx], audio_asset_ids::RopeDeploy);
         }
-        (void)world_ops::DeactivateEntity(state, rope.vid);
+        (void)world_ops::DeactivateEnt(state, rope.vid);
     }
 }
 
-/** generalize this to all square or rectangular entities somehow */
-} // namespace splonks::entities::rope
+/** generalize this to all square or rectangular ents somehow */
+} // namespace splonks::ents::rope

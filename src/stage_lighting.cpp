@@ -2,7 +2,7 @@
 
 #include "state.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -86,7 +86,7 @@ float ApplyOutputLevels(float value, bool enabled, float min_value, float max_va
 }
 
 bool IsForegroundSolidTile(Tile tile) {
-    return GetTileArchetype(tile).solid;
+    return GetTileSpec(tile).solid;
 }
 
 bool StageTileExists(const State& state, int tile_x, int tile_y) {
@@ -330,17 +330,17 @@ std::vector<LiveLightSource> BuildLiveLightSources(State& state) {
         });
     }
 
-    for (const Entity& light_entity : state.entity_manager.entities) {
-        if (!light_entity.active || !light_entity.render_enabled ||
-            light_entity.condition == EntityCondition::Dead ||
-            light_entity.light_strength <= 0.0F || light_entity.light_radius <= 0) {
+    for (const Ent& light_ent : state.ents.ents) {
+        if (!light_ent.active || !light_ent.render_enabled ||
+            light_ent.condition == EntCondition::Dead ||
+            light_ent.light_strength <= 0.0F || light_ent.light_radius <= 0) {
             continue;
         }
         sources.push_back(LiveLightSource{
-            .world_pos = light_entity.GetCenter(),
-            .radius = light_entity.light_radius,
-            .source = light_entity.light_strength,
-            .color = light_entity.light_color,
+            .world_pos = light_ent.GetCenter(),
+            .radius = light_ent.light_radius,
+            .source = light_ent.light_strength,
+            .color = light_ent.light_color,
         });
     }
 

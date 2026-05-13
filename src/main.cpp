@@ -2,8 +2,8 @@
 #include "cli.hpp"
 #include "debug/control_server.hpp"
 #include "debug/playback.hpp"
-#include "entities/common/common.hpp"
-#include "entity/archetype.hpp"
+#include "ents/common/common.hpp"
+#include "ent/spec.hpp"
 #include "graphics.hpp"
 #include "imgui_layer.hpp"
 #include "inputs.hpp"
@@ -14,7 +14,7 @@
 #include "step.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 #include "text.hpp"
 
 #include <SDL3/SDL.h>
@@ -231,16 +231,16 @@ int main(int argc, char** argv) {
         }
 
         ////////////////        MAIN LOOP        ////////////////
-        splonks::PopulateEntityArchetypesTable();
-        splonks::SyncEntityArchetypeSizesFromFrameData(graphics);
-        splonks::PopulateToolArchetypesTable();
+        splonks::PopulateEntSpecsTable();
+        splonks::SyncEntSpecSizesFromAFrame(graphics);
+        splonks::PopulateToolSpecsTable();
         splonks::State state = splonks::State::New();
         state.running = true;
         debug.ui_visible = state.settings.debug_ui.menu_visible;
         debug.playback_window_visible = state.settings.debug_ui.playback_visible;
         debug.level_window_visible = state.settings.debug_ui.level_visible;
-        debug.entity_inspector_visible = state.settings.debug_ui.entities_visible;
-        debug.entity_annotations_visible = state.settings.debug_ui.entity_annotations_visible;
+        debug.ent_inspector_visible = state.settings.debug_ui.ents_visible;
+        debug.ent_annotations_visible = state.settings.debug_ui.ent_annotations_visible;
         debug.shake_brush_window_visible = state.settings.debug_ui.shake_brush_visible;
         debug.audio_brush_window_visible = state.settings.debug_ui.audio_brush_visible;
         debug.fluid_brush_window_visible = state.settings.debug_ui.fluid_brush_visible;
@@ -252,22 +252,22 @@ int main(int argc, char** argv) {
         debug.camera_settings_window_visible = state.settings.debug_ui.camera_settings_visible;
         debug.performance_settings_window_visible = state.settings.debug_ui.performance_settings_visible;
         debug.player_tuning_window_visible = state.settings.debug_ui.player_tuning_visible;
-        if (state.settings.debug_ui.entity_swap_type > 0 &&
-            state.settings.debug_ui.entity_swap_type < splonks::kEntityTypeCount) {
-            debug.character_swap_entity_type =
-                static_cast<splonks::EntityType>(state.settings.debug_ui.entity_swap_type);
+        if (state.settings.debug_ui.ent_swap_type > 0 &&
+            state.settings.debug_ui.ent_swap_type < splonks::kEntTypeCount) {
+            debug.character_swap_ent_type =
+                static_cast<splonks::EntType>(state.settings.debug_ui.ent_swap_type);
         }
         if (state.settings.debug_ui.default_spawn_type > 0 &&
-            state.settings.debug_ui.default_spawn_type < splonks::kEntityTypeCount) {
-            debug.default_spawn_entity_type =
-                static_cast<splonks::EntityType>(state.settings.debug_ui.default_spawn_type);
+            state.settings.debug_ui.default_spawn_type < splonks::kEntTypeCount) {
+            debug.default_spawn_ent_type =
+                static_cast<splonks::EntType>(state.settings.debug_ui.default_spawn_type);
         }
         debug.default_spawn_enabled = state.settings.debug_ui.default_spawn_enabled;
-        debug.character_swap_fresh = state.settings.debug_ui.entity_swap_fresh;
-        debug.character_swap_keep_passives = state.settings.debug_ui.entity_swap_keep_passives;
-        debug.character_swap_keep_money = state.settings.debug_ui.entity_swap_keep_money;
-        debug.character_swap_keep_health = state.settings.debug_ui.entity_swap_keep_health;
-        debug.character_swap_keep_tools = state.settings.debug_ui.entity_swap_keep_tools;
+        debug.character_swap_fresh = state.settings.debug_ui.ent_swap_fresh;
+        debug.character_swap_keep_passives = state.settings.debug_ui.ent_swap_keep_passives;
+        debug.character_swap_keep_money = state.settings.debug_ui.ent_swap_keep_money;
+        debug.character_swap_keep_health = state.settings.debug_ui.ent_swap_keep_health;
+        debug.character_swap_keep_tools = state.settings.debug_ui.ent_swap_keep_tools;
         splonks::RefreshRenderPostFx(post_fx, render_texture, state.settings.post_process);
         graphics.ResetTileVariations();
         splonks::InvalidateStageLighting(state);
@@ -333,10 +333,10 @@ int main(int argc, char** argv) {
                 state.rebuild_render_texture = false;
             }
 
-            if (debug.frame_data_auto_reload && renderer != nullptr) {
-                if (graphics.ReloadFrameDataIfChanged(renderer, &debug.frame_data_reload_status)) {
-                    splonks::SyncEntityArchetypeSizesFromFrameData(graphics);
-                    splonks::entities::common::RefreshAllEntityFrameDataGeometry(state, graphics);
+            if (debug.aframe_auto_reload && renderer != nullptr) {
+                if (graphics.ReloadAFrameIfChanged(renderer, &debug.aframe_reload_status)) {
+                    splonks::SyncEntSpecSizesFromAFrame(graphics);
+                    splonks::ents::common::RefreshAllEntAFrameGeometry(state, graphics);
                     state.RebuildSid(graphics);
                 }
             }

@@ -1,9 +1,9 @@
-#include "entities/trap_block.hpp"
+#include "ents/trap_block.hpp"
 
 #include "audio.hpp"
-#include "entities/block.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ents/block.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
@@ -11,7 +11,7 @@
 #include <array>
 #include <cmath>
 
-namespace splonks::entities::trap_block {
+namespace splonks::ents::trap_block {
 
 namespace {
 
@@ -45,15 +45,15 @@ int GetOpenSensorCacheMarker(const Stage& stage) {
     return static_cast<int>(stage.tile_change_generation + 1U);
 }
 
-void InvalidateOpenSensorCache(Entity& block) {
+void InvalidateOpenSensorCache(Ent& block) {
     block.point_a.x = -1;
 }
 
-bool IsOneShot(const Entity& block) {
+bool IsOneShot(const Ent& block) {
     return block.threshold_a == kOneShotMode;
 }
 
-bool HasFiredOneShot(const Entity& block) {
+bool HasFiredOneShot(const Ent& block) {
     return block.threshold_b == kHasFired;
 }
 
@@ -82,7 +82,7 @@ int GetMaxSensorDistance(const State& state, const IVec2& direction) {
     return GetSensorTiles(state, direction) * static_cast<int>(kTileSize);
 }
 
-int ComputeOpenSensorDistance(const Entity& block, const State& state, const IVec2& direction) {
+int ComputeOpenSensorDistance(const Ent& block, const State& state, const IVec2& direction) {
     const IVec2 origin_tile = state.stage.GetTileCoordAtWc(ToIVec2(block.GetCenter()));
     const TileStepRaycastResult ray =
         RaycastTileSteps(state.stage, origin_tile, direction, GetSensorTiles(state, direction));
@@ -93,7 +93,7 @@ int ComputeOpenSensorDistance(const Entity& block, const State& state, const IVe
     );
 }
 
-void RefreshOpenSensorDistances(Entity& block, const State& state) {
+void RefreshOpenSensorDistances(Ent& block, const State& state) {
     const int cache_marker = GetOpenSensorCacheMarker(state.stage);
     if (block.point_a.x == cache_marker) {
         return;
@@ -106,7 +106,7 @@ void RefreshOpenSensorDistances(Entity& block, const State& state) {
     block.point_c.x = ComputeOpenSensorDistance(block, state, kDirections[3].tile_dir);
 }
 
-int GetCachedOpenSensorDistance(Entity& block, const State& state, std::size_t direction_idx) {
+int GetCachedOpenSensorDistance(Ent& block, const State& state, std::size_t direction_idx) {
     RefreshOpenSensorDistances(block, state);
     switch (direction_idx) {
     case 0:
@@ -139,8 +139,8 @@ AABB MakeSensorAabb(const Vec2& center, const DirectionInfo& direction, int open
     );
 }
 
-bool IsSensorBlockingEntity(const Entity& entity) {
-    return entity.active && entity.can_collide && entity.impassable && entity.crusher_pusher;
+bool IsSensorBlockingEnt(const Ent& ent) {
+    return ent.active && ent.can_collide && ent.impassable && ent.crusher_pusher;
 }
 
 std::optional<float> GetBlockerDistance(
@@ -175,8 +175,8 @@ std::optional<float> GetBlockerDistance(
     return std::nullopt;
 }
 
-int GetEntityBlockedOpenSensorDistance(
-    Entity& block,
+int GetEntBlockedOpenSensorDistance(
+    Ent& block,
     const State& state,
     const Graphics& graphics,
     std::size_t direction_idx
@@ -188,15 +188,15 @@ int GetEntityBlockedOpenSensorDistance(
     const Vec2 sensor_start = center + direction.world_dir * (static_cast<float>(kTileSize) * 0.5F);
 
     float blocked_distance = static_cast<float>(open_distance);
-    for (const VID& vid : QueryEntitiesInAabb(state, tile_open_sensor, block.vid)) {
-        const Entity* const entity = state.entity_manager.GetEntity(vid);
-        if (entity == nullptr || !IsSensorBlockingEntity(*entity)) {
+    for (const VID& vid : QueryEntsInAabb(state, tile_open_sensor, block.vid)) {
+        const Ent* const ent = state.ents.GetEnt(vid);
+        if (ent == nullptr || !IsSensorBlockingEnt(*ent)) {
             continue;
         }
         const AABB blocker_aabb = GetNearestWorldAabb(
             state.stage,
             center,
-            common::GetContactAabbForEntity(*entity, graphics)
+            common::GetContactAabbForEnt(*ent, graphics)
         );
         if (!AabbsIntersect(tile_open_sensor, blocker_aabb)) {
             continue;
@@ -213,7 +213,7 @@ int GetEntityBlockedOpenSensorDistance(
 }
 
 AABB GetSensorAabb(
-    Entity& block,
+    Ent& block,
     const State& state,
     const Graphics& graphics,
     std::size_t direction_idx
@@ -221,11 +221,11 @@ AABB GetSensorAabb(
     return MakeSensorAabb(
         block.GetCenter(),
         kDirections[direction_idx],
-        GetEntityBlockedOpenSensorDistance(block, state, graphics, direction_idx)
+        GetEntBlockedOpenSensorDistance(block, state, graphics, direction_idx)
     );
 }
 
-void AddDebugAnnotations(Entity& block, State& state, const Graphics& graphics) {
+void AddDebugAnnotations(Ent& block, State& state, const Graphics& graphics) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
@@ -248,23 +248,23 @@ void AddDebugAnnotations(Entity& block, State& state, const Graphics& graphics) 
     }
 }
 
-bool SensorTouchesPlayer(Entity& block, const State& state, const Graphics& graphics, std::size_t direction_idx) {
+bool SensorTouchesPlayer(Ent& block, const State& state, const Graphics& graphics, std::size_t direction_idx) {
     const AABB sensor = GetSensorAabb(block, state, graphics, direction_idx);
     if (sensor.br.x <= sensor.tl.x || sensor.br.y <= sensor.tl.y) {
         return false;
     }
 
-    const std::vector<VID> hits = QueryEntitiesInAabb(state, sensor, block.vid);
+    const std::vector<VID> hits = QueryEntsInAabb(state, sensor, block.vid);
     for (const VID& vid : hits) {
-        const Entity* const entity = state.entity_manager.GetEntity(vid);
-        if (entity == nullptr || !entity->active || !IsPlayerLikeEntityType(entity->type_) ||
-            entity->condition == EntityCondition::Dead) {
+        const Ent* const ent = state.ents.GetEnt(vid);
+        if (ent == nullptr || !ent->active || !IsPlayerLikeEntType(ent->type_) ||
+            ent->condition == EntCondition::Dead) {
             continue;
         }
         if (!WorldAabbsIntersect(
                 state.stage,
                 sensor,
-                common::GetContactAabbForEntity(*entity, graphics)
+                common::GetContactAabbForEnt(*ent, graphics)
             )) {
             continue;
         }
@@ -274,7 +274,7 @@ bool SensorTouchesPlayer(Entity& block, const State& state, const Graphics& grap
 }
 
 std::optional<std::size_t> FindTriggerDirection(
-    Entity& block,
+    Ent& block,
     const State& state,
     const Graphics& graphics
 ) {
@@ -291,12 +291,12 @@ std::optional<std::size_t> FindTriggerDirection(
         float nearest_distance =
             static_cast<float>(GetMaxSensorDistance(state, direction.tile_dir) + 1);
         const AABB sensor = GetSensorAabb(block, state, graphics, direction_idx);
-        for (const VID& vid : QueryEntitiesInAabb(state, sensor, block.vid)) {
-            const Entity* const entity = state.entity_manager.GetEntity(vid);
-            if (entity == nullptr || !entity->active || !IsPlayerLikeEntityType(entity->type_)) {
+        for (const VID& vid : QueryEntsInAabb(state, sensor, block.vid)) {
+            const Ent* const ent = state.ents.GetEnt(vid);
+            if (ent == nullptr || !ent->active || !IsPlayerLikeEntType(ent->type_)) {
                 continue;
             }
-            const Vec2 delta = GetNearestWorldDelta(state.stage, block_center, entity->GetCenter());
+            const Vec2 delta = GetNearestWorldDelta(state.stage, block_center, ent->GetCenter());
             const float axis_distance = std::abs(
                 direction.tile_dir.x != 0 ? delta.x : delta.y
             );
@@ -312,70 +312,70 @@ std::optional<std::size_t> FindTriggerDirection(
     return best_direction;
 }
 
-void StoreMoveDirection(Entity& block, const IVec2& direction) {
+void StoreMoveDirection(Ent& block, const IVec2& direction) {
     block.point_d = direction;
     block.point_label_d = PointLabel::GoingHere;
 }
 
-IVec2 GetMoveDirection(const Entity& block) {
+IVec2 GetMoveDirection(const Ent& block) {
     if (block.point_label_d != PointLabel::GoingHere) {
         return IVec2::New(0, 0);
     }
     return block.point_d;
 }
 
-bool IsMoving(const Entity& block) {
-    return block.ai_state == EntityAiState::Disturbed;
+bool IsMoving(const Ent& block) {
+    return block.ai_state == EntAiState::Disturbed;
 }
 
-bool IsWindingUp(const Entity& block) {
-    return block.ai_state == EntityAiState::Pursuing;
+bool IsWindingUp(const Ent& block) {
+    return block.ai_state == EntAiState::Pursuing;
 }
 
-bool IsCoolingDown(const Entity& block) {
-    return block.ai_state == EntityAiState::Returning;
+bool IsCoolingDown(const Ent& block) {
+    return block.ai_state == EntAiState::Returning;
 }
 
-void ShowSleepingFrame(Entity& block) {
-    SetAnimation(block, frame_data_ids::SquisherBlock);
-    block.frame_data_animator.animate = false;
-    block.frame_data_animator.SetForcedFrame(1);
+void ShowSleepingFrame(Ent& block) {
+    SetAnim(block, aframe_ids::SquisherBlock);
+    block.aframe_animator.animate = false;
+    block.aframe_animator.SetForcedFrame(1);
 }
 
-void ShowAwakeAnimation(Entity& block) {
-    if (block.frame_data_animator.animation_id != frame_data_ids::SquisherBlock ||
-        !block.frame_data_animator.animate) {
-        block.frame_data_animator.PlayLoop(frame_data_ids::SquisherBlock);
+void ShowAwakeAnim(Ent& block) {
+    if (block.aframe_animator.anim_id != aframe_ids::SquisherBlock ||
+        !block.aframe_animator.animate) {
+        block.aframe_animator.PlayLoop(aframe_ids::SquisherBlock);
     }
 }
 
-void StartWindup(Entity& block, std::size_t direction_idx, State& state) {
+void StartWindup(Ent& block, std::size_t direction_idx, State& state) {
     const IVec2 tile_dir = kDirections[direction_idx].tile_dir;
     StoreMoveDirection(block, tile_dir);
-    block.ai_state = EntityAiState::Pursuing;
+    block.ai_state = EntAiState::Pursuing;
     block.counter_b = kWindupFrames;
     block.vel = Vec2::New(0.0F, 0.0F);
     block.acc = Vec2::New(0.0F, 0.0F);
     block.shake = std::max(block.shake, kWindupShake);
-    block.frame_data_animator.PlayLoop(frame_data_ids::SquisherBlock);
-    (void)PlayEntityCenterSoundEmitter(state, block, audio_asset_ids::BoulderLatch);
+    block.aframe_animator.PlayLoop(aframe_ids::SquisherBlock);
+    (void)PlayEntCenterSoundEmitter(state, block, audio_asset_ids::BoulderLatch);
 }
 
-void StartMove(Entity& block) {
+void StartMove(Ent& block) {
     const IVec2 tile_dir = GetMoveDirection(block);
-    block.ai_state = EntityAiState::Disturbed;
+    block.ai_state = EntAiState::Disturbed;
     block.vel = ToVec2(tile_dir) * kMoveSpeed;
     block.acc = Vec2::New(0.0F, 0.0F);
     block.shake = std::max(block.shake, kStartShake);
 }
 
-void StopMove(Entity& block, State& state) {
+void StopMove(Ent& block, State& state) {
     if (IsOneShot(block)) {
         block.threshold_b = kHasFired;
-        block.ai_state = EntityAiState::Idle;
+        block.ai_state = EntAiState::Idle;
         block.counter_a = 0.0F;
     } else {
-        block.ai_state = EntityAiState::Returning;
+        block.ai_state = EntAiState::Returning;
         block.counter_a = kAfterImpactCooldownFrames;
     }
     block.vel = Vec2::New(0.0F, 0.0F);
@@ -396,14 +396,14 @@ void StopMove(Entity& block, State& state) {
 
 } // namespace
 
-void MakeTrapBlockOneShot(Entity& block) {
+void MakeTrapBlockOneShot(Ent& block) {
     block.threshold_a = kOneShotMode;
     block.threshold_b = 0.0F;
     ShowSleepingFrame(block);
 }
 
-void StepEntityLogicAsTrapBlock(
-    std::size_t entity_idx,
+void StepEntLogicAsTrapBlock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -411,14 +411,14 @@ void StepEntityLogicAsTrapBlock(
 ) {
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& block = state.entity_manager.entities[entity_idx];
+    Ent& block = state.ents.ents[ent_idx];
     AddDebugAnnotations(block, state, graphics);
 
-    if (block.condition == EntityCondition::Dead) {
+    if (block.condition == EntCondition::Dead) {
         return;
     }
 
@@ -433,14 +433,14 @@ void StepEntityLogicAsTrapBlock(
         ShowSleepingFrame(block);
         block.counter_a -= 1.0F;
         if (block.counter_a <= 0.0F) {
-            block.ai_state = EntityAiState::Idle;
+            block.ai_state = EntAiState::Idle;
             InvalidateOpenSensorCache(block);
         }
         return;
     }
 
     if (IsWindingUp(block)) {
-        ShowAwakeAnimation(block);
+        ShowAwakeAnim(block);
         block.vel = Vec2::New(0.0F, 0.0F);
         block.acc = Vec2::New(0.0F, 0.0F);
         block.shake = std::max(block.shake, kWindupShake);
@@ -451,8 +451,8 @@ void StepEntityLogicAsTrapBlock(
         return;
     }
 
-    if (block.ai_state != EntityAiState::Idle) {
-        ShowAwakeAnimation(block);
+    if (block.ai_state != EntAiState::Idle) {
+        ShowAwakeAnim(block);
         return;
     }
 
@@ -465,19 +465,19 @@ void StepEntityLogicAsTrapBlock(
     }
 }
 
-void StepEntityPhysicsAsTrapBlock(
-    std::size_t entity_idx,
+void StepEntPhysicsAsTrapBlock(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& block = state.entity_manager.entities[entity_idx];
+    Ent& block = state.ents.ents[ent_idx];
     if (!IsMoving(block)) {
         block.collided_last_frame = block.collided;
         block.collided = false;
@@ -489,27 +489,27 @@ void StepEntityPhysicsAsTrapBlock(
     block.vel = ToVec2(move_dir) * kMoveSpeed;
     block.acc = Vec2::New(0.0F, 0.0F);
 
-    common::PrePartialEulerStep(entity_idx, state, dt);
+    common::PrePartialEulerStep(ent_idx, state, dt);
     block.vel = ToVec2(move_dir) * kMoveSpeed;
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 
     const bool stopped_x = move_dir.x != 0 && std::abs(block.vel.x) <= 0.0F;
     const bool stopped_y = move_dir.y != 0 && std::abs(block.vel.y) <= 0.0F;
     if (block.collided && (stopped_x || stopped_y)) {
         StopMove(block, state);
-        (void)PlayEntityCenterSoundEmitter(state, block, audio_asset_ids::BoulderHitGround);
+        (void)PlayEntCenterSoundEmitter(state, block, audio_asset_ids::BoulderHitGround);
     }
 }
 
-extern const EntityArchetype kTrapBlockArchetype{
-    .type_ = EntityType::TrapBlock,
+extern const EntSpec kTrapBlockSpec{
+    .type_ = EntType::TrapBlock,
     .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
     .health = 1,
     .has_physics = true,
     .can_collide = true,
     .can_be_hit = true,
-    .can_receive_projectile_contact = true,
+    .can_receive_proj_contact = true,
     .can_be_picked_up = false,
     .impassable = true,
     .hurt_on_contact = false,
@@ -519,15 +519,15 @@ extern const EntityArchetype kTrapBlockArchetype{
     .can_be_stunned = false,
     .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Middle,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
-    .projectile_contact_damage_amount = 0,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .damage_vuln = DamageVuln::ExplosionOnly,
+    .proj_contact_damage_amount = 0,
     .on_death = block::OnDeathAsBlock,
-    .step_logic = StepEntityLogicAsTrapBlock,
-    .step_physics = StepEntityPhysicsAsTrapBlock,
+    .step_logic = StepEntLogicAsTrapBlock,
+    .step_physics = StepEntPhysicsAsTrapBlock,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SquisherBlock),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SquisherBlock),
 };
 
-} // namespace splonks::entities::trap_block
+} // namespace splonks::ents::trap_block

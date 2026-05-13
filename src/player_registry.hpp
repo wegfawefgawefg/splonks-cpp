@@ -18,13 +18,13 @@ enum class PlayerConnectionKind : std::uint8_t {
 
 struct PlayerSlot {
     PlayerId player_id = kInvalidPlayerId;
-    std::optional<VID> entity_vid;
+    std::optional<VID> ent_vid;
     PlayerConnectionKind connection_kind = PlayerConnectionKind::Local;
     bool connected = false;
     bool primary_local = false;
     std::string display_name;
-    PlayerInputFrame input_frame = PlayerInputFrame::New();
-    PlayerInputFrame previous_input_frame = PlayerInputFrame::New();
+    InputFrame input_frame = InputFrame::New();
+    InputFrame previous_input_frame = InputFrame::New();
     PlayingInputs inputs = PlayingInputs::New();
     PlayingInputs immediate_inputs = PlayingInputs::New();
 };
@@ -36,8 +36,8 @@ struct PlayerRegistry {
 
     PlayerSlot* Find(PlayerId player_id);
     const PlayerSlot* Find(PlayerId player_id) const;
-    PlayerSlot* FindByEntityVid(VID entity_vid);
-    const PlayerSlot* FindByEntityVid(VID entity_vid) const;
+    PlayerSlot* FindByEntVid(VID ent_vid);
+    const PlayerSlot* FindByEntVid(VID ent_vid) const;
     PlayerSlot* FindPrimaryLocal();
     const PlayerSlot* FindPrimaryLocal() const;
 
@@ -46,16 +46,16 @@ struct PlayerRegistry {
     PlayerSlot& EnsureRemotePlayer(PlayerId player_id, const std::string& display_name);
     void Remove(PlayerId player_id);
 
-    void AssignEntity(PlayerId player_id, VID entity_vid);
-    void ClearEntityRefs();
-    void ClearEntityRef(VID entity_vid);
-    std::optional<PlayerId> FindPlayerIdForEntity(VID entity_vid) const;
-    const PlayingInputs* FindInputsForEntity(VID entity_vid) const;
+    void AssignEnt(PlayerId player_id, VID ent_vid);
+    void ClearEntRefs();
+    void ClearEntRef(VID ent_vid);
+    std::optional<PlayerId> FindPlayerIdForEnt(VID ent_vid) const;
+    const PlayingInputs* FindInputsForEnt(VID ent_vid) const;
     const PlayingInputs* FindInputsForPlayer(PlayerId player_id) const;
-    void SetInputFrameForPlayer(PlayerId player_id, const PlayerInputFrame& input_frame);
+    void SetInputFrameForPlayer(PlayerId player_id, const InputFrame& input_frame);
     void SetInputFrameAndInputsForPlayer(
         PlayerId player_id,
-        const PlayerInputFrame& input_frame,
+        const InputFrame& input_frame,
         const PlayingInputs& inputs,
         const PlayingInputs& immediate_inputs
     );

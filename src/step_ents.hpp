@@ -6,6 +6,6 @@
 
 namespace splonks {
 
-void StepEntities(State& state, Audio& audio, Graphics& graphics, float dt);
+void StepEnts(State& state, Audio& audio, Graphics& graphics, float dt);
 
 } // namespace splonks

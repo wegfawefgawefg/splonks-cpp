@@ -1,8 +1,8 @@
 #pragma once
 
 #include "audio_asset_id.hpp"
-#include "entity/core_types.hpp"
-#include "frame_data_id.hpp"
+#include "ent/core_types.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"
 #include "utils.hpp"
@@ -20,20 +20,20 @@ namespace splonks {
 constexpr float kDefaultStageGravity = 0.3F;
 
 struct Audio;
-struct Entity;
+struct Ent;
 struct State;
 
-struct StageEntitySpawn {
-    EntityType type_ = EntityType::None;
+struct EntSpawn {
+    EntType type_ = EntType::None;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     std::optional<Vec2> size_override = std::nullopt;
-    LeftOrRight facing = LeftOrRight::Left;
-    std::optional<EntityAiState> ai_state_override = std::nullopt;
-    FrameDataId animation_id = kInvalidFrameDataId;
-    std::optional<std::size_t> entity_a_spawn_index = std::nullopt;
-    std::optional<std::size_t> entity_b_spawn_index = std::nullopt;
-    std::optional<std::size_t> entity_c_spawn_index = std::nullopt;
-    std::optional<std::size_t> entity_d_spawn_index = std::nullopt;
+    Side facing = Side::Left;
+    std::optional<EntAiState> ai_state_override = std::nullopt;
+    AFrameId anim_id = kInvalidAFrameId;
+    std::optional<std::size_t> ent_a_spawn_index = std::nullopt;
+    std::optional<std::size_t> ent_b_spawn_index = std::nullopt;
+    std::optional<std::size_t> ent_c_spawn_index = std::nullopt;
+    std::optional<std::size_t> ent_d_spawn_index = std::nullopt;
     std::optional<std::size_t> shop_owner_spawn_index = std::nullopt;
     bool buyable = false;
     std::uint32_t buy_price = 0;
@@ -83,7 +83,7 @@ enum class BackgroundStampCondition {
 };
 
 struct BackgroundStamp {
-    FrameDataId animation_id = kInvalidFrameDataId;
+    AFrameId anim_id = kInvalidAFrameId;
     Vec2 pos = Vec2::New(0.0F, 0.0F);
     BackgroundStampCondition condition = BackgroundStampCondition::None;
 };
@@ -100,7 +100,7 @@ enum class EmbeddedTreasureVisibility : std::uint8_t {
 };
 
 struct EmbeddedTreasureDrop {
-    EntityType type_ = EntityType::None;
+    EntType type_ = EntType::None;
     int count = 0;
 };
 
@@ -108,13 +108,13 @@ constexpr std::size_t kMaxEmbeddedTreasureDrops = 4;
 
 struct EmbeddedTreasure {
     EmbeddedTreasureVisibility visibility = EmbeddedTreasureVisibility::Hidden;
-    FrameDataId overlay_frame = kInvalidFrameDataId;
+    AFrameId overlay_frame = kInvalidAFrameId;
     AudioAssetId break_sound = kInvalidAudioAssetId;
     std::array<EmbeddedTreasureDrop, kMaxEmbeddedTreasureDrops> drops{};
 
     bool IsEmpty() const;
     bool IsVisible() const;
-    std::optional<FrameDataId> GetOverlayFrame() const;
+    std::optional<AFrameId> GetOverlayFrame() const;
 };
 
 struct StageGenAnnotation {
@@ -190,12 +190,12 @@ struct Stage {
     std::vector<std::vector<EmbeddedTreasure>> embedded_treasures;
     std::vector<std::vector<int>> rooms;
     std::vector<IVec2> path;
-    std::vector<StageEntitySpawn> entity_spawns;
+    std::vector<EntSpawn> ent_spawns;
     std::vector<StageTileTrigger> tile_triggers;
     std::vector<BackgroundStamp> background_stamps;
     std::vector<StageGenAnnotation> stagegen_annotations;
     std::vector<StageLight> lights;
-    FrameDataId block_animation_id = frame_data_ids::CaveBlock;
+    AFrameId block_anim_id = aframe_ids::CaveBlock;
     float gravity = kDefaultStageGravity;
     StageBorder border{};
     bool camera_clamp_enabled = true;
@@ -255,7 +255,7 @@ struct Stage {
     void AttenuateBackgroundTileShake(float amount);
     void AttenuateTileShake(float amount, TileShakeLayerMask layers);
     void SetBackwallTile(const IVec2& pos, Tile tile);
-    void SetEmbeddedTreasure(const IVec2& pos, EntityType type_);
+    void SetEmbeddedTreasure(const IVec2& pos, EntType type_);
     void SetEmbeddedTreasure(const IVec2& pos, const EmbeddedTreasure& embedded_treasure);
     EmbeddedTreasure TakeEmbeddedTreasure(const IVec2& pos);
     VID AddLight(const IVec2& tile_pos, int radius);
@@ -289,7 +289,7 @@ struct Stage {
     const StageExit* GetExit(StageExitId id) const;
     IVec2 WrapTileCoord(const IVec2& tile_coord) const;
     IVec2 WrapWorldPos(const IVec2& wc) const;
-    void NormalizeEntityPositionForWrap(Entity& entity) const;
+    void NormalizeEntPositionForWrap(Ent& ent) const;
     std::pair<UVec2, UVec2> GetRegularRoomGridCorners(const UVec2& room) const;
     std::vector<const Tile*> GetTilesInRegularRoomGridCell(const UVec2& room) const;
     IVec2 GetStartingRoom() const;

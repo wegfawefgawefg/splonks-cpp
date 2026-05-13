@@ -20,8 +20,8 @@ const char* NetRoleName(network::NetRole role) {
     switch (role) {
     case network::NetRole::Offline:
         return "Offline";
-    case network::NetRole::Coordinator:
-        return "Coordinator";
+    case network::NetRole::Host:
+        return "Host";
     case network::NetRole::Peer:
         return "Peer";
     }
@@ -117,9 +117,9 @@ void DrawFuzzerPanel(network::NetSessionState& session) {
 
 Vec2 GetDebugBotSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
-        if (primary->entity_vid.has_value()) {
-            if (const Entity* const entity = state.entity_manager.GetEntity(*primary->entity_vid)) {
-                return entity->pos + Vec2::New(12.0F, -2.0F);
+        if (primary->ent_vid.has_value()) {
+            if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
+                return ent->pos + Vec2::New(12.0F, -2.0F);
             }
         }
     }
@@ -136,7 +136,7 @@ void AddDebugLocalPlayerBot(State& state, DebugPlayback& debug, const Graphics& 
 
     const std::optional<VID> bot_vid = SpawnPlayerForPlayerId(state, player_id, GetDebugBotSpawnPos(state));
     if (bot_vid.has_value()) {
-        state.UpdateSidForEntity(bot_vid->id, graphics);
+        state.UpdateSidForEnt(bot_vid->id, graphics);
     }
 
     DebugLocalPlayerBot bot;
@@ -147,8 +147,8 @@ void AddDebugLocalPlayerBot(State& state, DebugPlayback& debug, const Graphics& 
 
 void RemoveDebugLocalPlayerBot(State& state, PlayerId player_id) {
     if (PlayerSlot* const slot = state.players.Find(player_id)) {
-        if (slot->entity_vid.has_value()) {
-            state.entity_manager.SetInactiveVid(*slot->entity_vid);
+        if (slot->ent_vid.has_value()) {
+            state.ents.SetInactiveVid(*slot->ent_vid);
         }
     }
     state.players.Remove(player_id);
@@ -212,12 +212,12 @@ void DrawReconnectPolicyControls(State& state) {
         ImGui::BulletText(
             "player=%u type=%s hp=%u money=%u age=%llus held=%s back=%s",
             retained.player_id,
-            EntityTypeToString(retained.entity_type),
+            EntTypeToString(retained.ent_type),
             retained.health,
             retained.money,
             static_cast<unsigned long long>(age_frames / 60U),
-            retained.held_item.valid ? EntityTypeToString(retained.held_item.entity_type) : "none",
-            retained.back_item.valid ? EntityTypeToString(retained.back_item.entity_type) : "none"
+            retained.held_item.valid ? EntTypeToString(retained.held_item.ent_type) : "none",
+            retained.back_item.valid ? EntTypeToString(retained.back_item.ent_type) : "none"
         );
     }
 }
@@ -286,11 +286,11 @@ void DrawDebugLocalPlayers(State& state, DebugPlayback& debug, const Graphics& g
         ImGui::PushID(static_cast<int>(bot.player_id));
         const PlayerSlot* const slot = state.players.Find(bot.player_id);
         ImGui::Separator();
-        const std::string entity_label =
-            slot != nullptr && slot->entity_vid.has_value()
-                ? std::to_string(slot->entity_vid->id)
+        const std::string ent_label =
+            slot != nullptr && slot->ent_vid.has_value()
+                ? std::to_string(slot->ent_vid->id)
                 : "none";
-        ImGui::Text("Player %u entity=%s", bot.player_id, entity_label.c_str());
+        ImGui::Text("Player %u ent=%s", bot.player_id, ent_label.c_str());
         ImGui::Checkbox("Enabled", &bot.enabled);
         ImGui::SameLine();
         ImGui::Checkbox("Jump", &bot.allow_jump);
@@ -388,7 +388,7 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     network::NetSessionState& session = state.net_session;
     ImGui::Text("Role: %s", NetRoleName(session.role));
     ImGui::Text("Local player: %u", session.local_player_id);
-    ImGui::Text("Coordinator player: %u", session.coordinator_player_id);
+    ImGui::Text("Host player: %u", session.host_player_id);
     ImGui::Text("Stage instance: %llu", static_cast<unsigned long long>(session.stage_instance_id));
     ImGui::Text(
         "Synced stage: %s/%s seed=%u",
@@ -410,7 +410,7 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     DrawFuzzerPanel(session);
     ImGui::Separator();
 
-    ImGui::Text("Entity links: %zu", session.entity_links.size());
+    ImGui::Text("Ent links: %zu", session.ent_links.size());
     ImGui::Separator();
 
     DrawHostJoinControls(state, debug, graphics);

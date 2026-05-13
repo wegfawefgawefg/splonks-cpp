@@ -1,22 +1,22 @@
 #include "hud/entries.hpp"
 
 #include "effects.hpp"
-#include "entity/archetype.hpp"
-#include "entity.hpp"
+#include "ent/spec.hpp"
+#include "ent.hpp"
 #include "state.hpp"
 
 namespace splonks {
 
 namespace {
 
-void AddEffectHudEntries(std::vector<HudEntry>& entries, const Entity& player) {
-    const EntityEffects* const effects = player.effects.get();
+void AddEffectHudEntries(std::vector<HudEntry>& entries, const Ent& player) {
+    const EntEffects* const effects = player.effects.get();
     const std::uint8_t effect_count = effects != nullptr ? effects->count : 0;
     for (std::size_t i = 0; i < effect_count; ++i) {
         const EffectInstance& effect = effects->effects[i];
-        const EffectArchetype& archetype = GetEffectArchetype(effect.id);
-        if (archetype.ui_kind == EffectUiKind::Hidden ||
-            archetype.icon_animation_id == kInvalidFrameDataId) {
+        const EffectSpec& spec = GetEffectSpec(effect.id);
+        if (spec.ui_kind == EffectUiKind::Hidden ||
+            spec.icon_anim_id == kInvalidAFrameId) {
             continue;
         }
 
@@ -25,32 +25,32 @@ void AddEffectHudEntries(std::vector<HudEntry>& entries, const Entity& player) {
             .source = HudEntrySource::Effect,
             .id = static_cast<std::uint32_t>(effect.id),
         };
-        entry.icon_animation_id = archetype.icon_animation_id;
-        entry.count_text = archetype.hud_count_text != nullptr ? archetype.hud_count_text(effect)
+        entry.icon_anim_id = spec.icon_anim_id;
+        entry.count_text = spec.hud_count_text != nullptr ? spec.hud_count_text(effect)
                                                                : std::nullopt;
-        entry.count_anchor = archetype.hud_count_anchor;
+        entry.count_anchor = spec.hud_count_anchor;
         entry.extra_right_padding = entry.count_text.has_value() ? 12 : 0;
-        entry.style = archetype.ui_kind == EffectUiKind::Temporary ? HudEntryStyle::Flashing
+        entry.style = spec.ui_kind == EffectUiKind::Temporary ? HudEntryStyle::Flashing
                                                                    : HudEntryStyle::Normal;
         entries.push_back(std::move(entry));
     }
 }
 
-FrameDataId GetEntityHudIcon(const Entity& entity) {
-    return entity.frame_data_animator.animation_id;
+AFrameId GetEntHudIcon(const Ent& ent) {
+    return ent.aframe_animator.anim_id;
 }
 
-HudEntry BuildItemHudEntry(const State& state, HudEntrySource source, const Entity& item) {
+HudEntry BuildItemHudEntry(const State& state, HudEntrySource source, const Ent& item) {
     HudEntry entry{};
     entry.key = HudEntryKey{
         .source = source,
         .id = item.vid.id,
     };
-    entry.icon_animation_id = GetEntityHudIcon(item);
+    entry.icon_anim_id = GetEntHudIcon(item);
 
-    const EntityArchetype& archetype = GetEntityArchetype(item.type_);
-    if (archetype.build_hud_entry != nullptr) {
-        archetype.build_hud_entry(item, state, source, entry);
+    const EntSpec& spec = GetEntSpec(item.type_);
+    if (spec.build_hud_entry != nullptr) {
+        spec.build_hud_entry(item, state, source, entry);
     }
 
     return entry;
@@ -60,40 +60,40 @@ void AddItemHudEntry(
     std::vector<HudEntry>& entries,
     const State& state,
     HudEntrySource source,
-    const Entity* item
+    const Ent* item
 ) {
     if (item == nullptr || !item->active) {
         return;
     }
 
     HudEntry entry = BuildItemHudEntry(state, source, *item);
-    if (entry.icon_animation_id != kInvalidFrameDataId) {
+    if (entry.icon_anim_id != kInvalidAFrameId) {
         entries.push_back(std::move(entry));
     }
 }
 
-void AddHeldItemHudEntries(std::vector<HudEntry>& entries, const State& state, const Entity& player) {
-    const Entity* const held =
-        player.holding_vid.has_value() ? state.entity_manager.GetEntity(*player.holding_vid) : nullptr;
+void AddHeldItemHudEntries(std::vector<HudEntry>& entries, const State& state, const Ent& player) {
+    const Ent* const held =
+        player.holding_vid.has_value() ? state.ents.GetEnt(*player.holding_vid) : nullptr;
     AddItemHudEntry(entries, state, HudEntrySource::HeldItem, held);
 }
 
-void AddBackItemHudEntries(std::vector<HudEntry>& entries, const State& state, const Entity& player) {
-    const Entity* const back =
-        player.back_vid.has_value() ? state.entity_manager.GetEntity(*player.back_vid) : nullptr;
+void AddBackItemHudEntries(std::vector<HudEntry>& entries, const State& state, const Ent& player) {
+    const Ent* const back =
+        player.back_vid.has_value() ? state.ents.GetEnt(*player.back_vid) : nullptr;
     AddItemHudEntry(entries, state, HudEntrySource::BackItem, back);
 }
 
 } // namespace
 
-std::vector<HudEntry> BuildEffectHudEntries(const State& state, const Entity& player) {
+std::vector<HudEntry> BuildEffectHudEntries(const State& state, const Ent& player) {
     (void)state;
     std::vector<HudEntry> entries;
     AddEffectHudEntries(entries, player);
     return entries;
 }
 
-std::vector<HudEntry> BuildEquipmentHudEntries(const State& state, const Entity& player) {
+std::vector<HudEntry> BuildEquipmentHudEntries(const State& state, const Ent& player) {
     std::vector<HudEntry> entries;
     AddHeldItemHudEntries(entries, state, player);
     AddBackItemHudEntries(entries, state, player);

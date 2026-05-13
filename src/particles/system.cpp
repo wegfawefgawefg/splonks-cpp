@@ -19,9 +19,9 @@ void CompactLiveParticles(std::vector<ParticleT>& particles) {
 }
 
 template <typename ParticleT>
-void StepParticleFamily(std::vector<ParticleT>& particles, const FrameDataDb& frame_data_db, float dt) {
+void StepParticleFamily(std::vector<ParticleT>& particles, const AFrameDb& aframe_db, float dt) {
     for (ParticleT& particle : particles) {
-        particle.Step(frame_data_db, dt);
+        particle.Step(aframe_db, dt);
     }
     CompactLiveParticles(particles);
 }
@@ -61,18 +61,18 @@ void ParticleSystem::Add(ScriptedParticle&& particle) {
 }
 
 void ParticleSystem::AddScripted(
-    ScriptedParticleArchetypeId archetype_id,
+    ScriptedParticleSpecId spec_id,
     const Vec2& pos,
     bool horizontal_flip
 ) {
-    scripted_particles.push_back(MakeScriptedParticle(archetype_id, pos, horizontal_flip));
+    scripted_particles.push_back(MakeScriptedParticle(spec_id, pos, horizontal_flip));
 }
 
-void ParticleSystem::Step(const FrameDataDb& frame_data_db, float dt) {
-    StepParticleFamily(sprite_particles, frame_data_db, dt);
-    StepParticleFamily(scripted_particles, frame_data_db, dt);
-    StepParticleFamily(ribbon_particles, frame_data_db, dt);
-    StepParticleFamily(segmented_sprite_particles, frame_data_db, dt);
+void ParticleSystem::Step(const AFrameDb& aframe_db, float dt) {
+    StepParticleFamily(sprite_particles, aframe_db, dt);
+    StepParticleFamily(scripted_particles, aframe_db, dt);
+    StepParticleFamily(ribbon_particles, aframe_db, dt);
+    StepParticleFamily(segmented_sprite_particles, aframe_db, dt);
 }
 
 void ParticleSystem::Clear() {

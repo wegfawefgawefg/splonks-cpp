@@ -1,5 +1,5 @@
-#include "entities/common/common.hpp"
-#include "entity/archetype.hpp"
+#include "ents/common/common.hpp"
+#include "ent/spec.hpp"
 
 #include "tile.hpp"
 #include "world_ops.hpp"
@@ -8,112 +8,112 @@
 #include <algorithm>
 #include <cmath>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
-constexpr float kProjectileSettleSpeedThreshold = 0.5F;
+constexpr float kProjSettleSpeedThreshold = 0.5F;
 
 } // namespace
 
-void ApplyDeactivateConditions(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    const bool vanish_on_death = entity.vanish_on_death;
-    if ((vanish_on_death && entity.condition == EntityCondition::Dead) ||
-        entity.marked_for_destruction) {
-        (void)world_ops::DeactivateEntity(state, entity.vid);
+void ApplyDeactivateConditions(std::size_t ent_idx, State& state) {
+    Ent& ent = state.ents.ents[ent_idx];
+    const bool vanish_on_death = ent.vanish_on_death;
+    if ((vanish_on_death && ent.condition == EntCondition::Dead) ||
+        ent.marked_for_destruction) {
+        (void)world_ops::DeactivateEnt(state, ent.vid);
     }
 }
 
-void StepStunTimer(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (entity.contact_sound_cooldown > 0) {
-        entity.contact_sound_cooldown -= 1;
+void StepStunTimer(std::size_t ent_idx, State& state) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (ent.contact_sound_cooldown > 0) {
+        ent.contact_sound_cooldown -= 1;
     }
-    if (entity.condition == EntityCondition::Stunned) {
-        const auto recover_from_stun = [&entity, &state]() {
-            if (entity.held_by_vid.has_value()) {
-                ReleaseEntityFromHolder(entity, state);
+    if (ent.condition == EntCondition::Stunned) {
+        const auto recover_from_stun = [&ent, &state]() {
+            if (ent.held_by_vid.has_value()) {
+                ReleaseEntFromHolder(ent, state);
             }
-            const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
-            entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
-            entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
-            entity.projectile_contact_timer = 0;
-            entity.condition = EntityCondition::Normal;
-            TrySetAnimation(entity, EntityDisplayState::Neutral);
+            const EntSpec& spec = GetEntSpec(ent.type_);
+            ent.proj_contact_damage_type = spec.proj_contact_damage_type;
+            ent.proj_contact_damage_amount = spec.proj_contact_damage_amount;
+            ent.proj_contact_timer = 0;
+            ent.condition = EntCondition::Normal;
+            TrySetAnim(ent, EntDisplayState::Neutral);
         };
 
-        if (entity.stun_timer == 0) {
+        if (ent.stun_timer == 0) {
             recover_from_stun();
             return;
         }
 
-        const bool held = entity.held_by_vid.has_value();
+        const bool held = ent.held_by_vid.has_value();
         const bool can_advance_stun_timer =
-            (entity.stun_recovers_on_ground && entity.grounded) ||
-            (entity.stun_recovers_while_held && held);
+            (ent.stun_recovers_on_ground && ent.grounded) ||
+            (ent.stun_recovers_while_held && held);
         if (!can_advance_stun_timer) {
             return;
         }
 
-        entity.stun_timer -= 1;
-        if (entity.stun_timer == 0) {
+        ent.stun_timer -= 1;
+        if (ent.stun_timer == 0) {
             recover_from_stun();
         }
     }
 }
 
-void AccelerateHorizontallyTowardSpeed(Entity& entity, float target_speed, float max_acceleration) {
-    const float delta = target_speed - entity.vel.x;
-    entity.acc.x += std::clamp(delta, -max_acceleration, max_acceleration);
+void AccelerateHorizontallyTowardSpeed(Ent& ent, float target_speed, float max_acceleration) {
+    const float delta = target_speed - ent.vel.x;
+    ent.acc.x += std::clamp(delta, -max_acceleration, max_acceleration);
 }
 
 void AccelerateHorizontallyTowardSpeed(
-    Entity& entity,
+    Ent& ent,
     const State& state,
     float target_speed,
     float max_acceleration
 ) {
     const float move_speed_scale = std::max(
         0.0F,
-        GetModifiedEffectValue(entity, EffectModifierTarget::MoveSpeedScale, 1.0F, &state)
+        GetModifiedEffectValue(ent, EffectModifierTarget::MoveSpeedScale, 1.0F, &state)
     );
-    AccelerateHorizontallyTowardSpeed(entity, target_speed * move_speed_scale, max_acceleration);
+    AccelerateHorizontallyTowardSpeed(ent, target_speed * move_speed_scale, max_acceleration);
 }
 
-void DecelerateHorizontallyToStop(Entity& entity, float max_acceleration, float snap_speed) {
-    if (std::abs(entity.vel.x) <= snap_speed) {
-        entity.vel.x = 0.0F;
+void DecelerateHorizontallyToStop(Ent& ent, float max_acceleration, float snap_speed) {
+    if (std::abs(ent.vel.x) <= snap_speed) {
+        ent.vel.x = 0.0F;
         return;
     }
-    AccelerateHorizontallyTowardSpeed(entity, 0.0F, max_acceleration);
+    AccelerateHorizontallyTowardSpeed(ent, 0.0F, max_acceleration);
 }
 
-void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& audio) {
+void StepTravelSoundWalkerClimber(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
     constexpr float kWalkerStepVolumeScale = 0.70F;
     constexpr float kClimberStepVolumeScale = 0.90F;
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    entity.travel_sound_countdown -= entity.dist_traveled_this_frame;
+    Ent& ent = state.ents.ents[ent_idx];
+    ent.travel_sound_countdown -= ent.dist_traveled_this_frame;
 
-    if (!entity.grounded && !entity.IsClimbing()) {
+    if (!ent.grounded && !ent.IsClimbing()) {
         return;
     }
 
-    if (entity.travel_sound_countdown < 0.0F) {
-        entity.travel_sound_countdown = entity.IsClimbing()
+    if (ent.travel_sound_countdown < 0.0F) {
+        ent.travel_sound_countdown = ent.IsClimbing()
                                             ? kClimberTravelSoundDistInterval
                                             : kWalkerClimberTravelSoundDistInterval;
 
         AudioAssetId which_step_sound;
-        if (entity.IsClimbing()) {
-            const auto [entity_tl, entity_br] = entity.GetBounds();
+        if (ent.IsClimbing()) {
+            const auto [ent_tl, ent_br] = ent.GetBounds();
             bool its_rope = false;
             bool its_ladder = false;
             for (const WorldTileQueryResult& tile_query : QueryTilesInWorldRect(
                      state.stage,
-                     ToIVec2(entity_tl),
-                     ToIVec2(entity_br))) {
+                     ToIVec2(ent_tl),
+                     ToIVec2(ent_br))) {
                 if (tile_query.tile == nullptr) {
                     continue;
                 }
@@ -125,11 +125,11 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
                 }
             }
             if (its_rope) {
-                which_step_sound = entity.travel_sound == TravelSound::One
+                which_step_sound = ent.travel_sound == TravelSound::One
                                        ? audio_asset_ids::ClimbRope1
                                        : audio_asset_ids::ClimbRope2;
             } else if (its_ladder) {
-                which_step_sound = entity.travel_sound == TravelSound::One
+                which_step_sound = ent.travel_sound == TravelSound::One
                                        ? audio_asset_ids::ClimbMetal1
                                        : audio_asset_ids::ClimbMetal2;
             } else {
@@ -137,44 +137,44 @@ void StepTravelSoundWalkerClimber(std::size_t entity_idx, State& state, Audio& a
             }
         } else {
             which_step_sound =
-                entity.travel_sound == TravelSound::One ? audio_asset_ids::Step1 : audio_asset_ids::Step2;
+                ent.travel_sound == TravelSound::One ? audio_asset_ids::Step1 : audio_asset_ids::Step2;
         }
         AudioEmitterPlayParams params;
-        params.volume_scale = entity.IsClimbing() ? kClimberStepVolumeScale : kWalkerStepVolumeScale;
-        (void)PlayEntitySoundEmitter(state, entity, which_step_sound, params);
-        entity.IncTravelSound();
+        params.volume_scale = ent.IsClimbing() ? kClimberStepVolumeScale : kWalkerStepVolumeScale;
+        (void)PlayEntSoundEmitter(state, ent, which_step_sound, params);
+        ent.IncTravelSound();
     }
 }
 
-void DoThrownByStep(std::size_t entity_idx, State& state) {
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    const std::optional<VID> thrown_by = entity.thrown_by;
+void DoThrownByStep(std::size_t ent_idx, State& state) {
+    Ent& ent = state.ents.ents[ent_idx];
+    const std::optional<VID> thrown_by = ent.thrown_by;
     if (thrown_by) {
-        if (entity.thrown_immunity_timer > 0) {
-            entity.thrown_immunity_timer -= 1;
+        if (ent.thrown_immunity_timer > 0) {
+            ent.thrown_immunity_timer -= 1;
         }
     }
-    if (entity.thrown_immunity_timer == 0) {
-        entity.thrown_by.reset();
+    if (ent.thrown_immunity_timer == 0) {
+        ent.thrown_by.reset();
     }
 
-    if (entity.projectile_contact_timer == 0) {
+    if (ent.proj_contact_timer == 0) {
         return;
     }
 
     const bool settled_on_ground =
-        entity.grounded && std::abs(entity.vel.x) <= kProjectileSettleSpeedThreshold &&
-        std::abs(entity.vel.y) <= kProjectileSettleSpeedThreshold;
+        ent.grounded && std::abs(ent.vel.x) <= kProjSettleSpeedThreshold &&
+        std::abs(ent.vel.y) <= kProjSettleSpeedThreshold;
     if (settled_on_ground) {
-        entity.projectile_contact_timer -= 1;
-        if (entity.projectile_contact_timer == 0) {
-            const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
-            entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
-            entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
+        ent.proj_contact_timer -= 1;
+        if (ent.proj_contact_timer == 0) {
+            const EntSpec& spec = GetEntSpec(ent.type_);
+            ent.proj_contact_damage_type = spec.proj_contact_damage_type;
+            ent.proj_contact_damage_amount = spec.proj_contact_damage_amount;
         }
     } else {
-        entity.projectile_contact_timer = kProjectileContactDuration;
+        ent.proj_contact_timer = kProjContactDuration;
     }
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

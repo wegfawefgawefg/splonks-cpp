@@ -3,7 +3,7 @@
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -50,16 +50,16 @@ Vec2 ClampLength(const Vec2& value, float max_length) {
 }
 
 bool IsSimulatedFluidTile(Tile tile) {
-    return GetTileArchetype(tile).simulated_fluid;
+    return GetTileSpec(tile).simulated_fluid;
 }
 
 bool CanTerrainHoldFluid(Tile tile) {
     if (tile == Tile::Air) {
         return true;
     }
-    const TileArchetype& archetype = GetTileArchetype(tile);
-    return !archetype.simulated_fluid && archetype.transparent && !archetype.solid &&
-           !archetype.one_way_top_solid;
+    const TileSpec& spec = GetTileSpec(tile);
+    return !spec.simulated_fluid && spec.transparent && !spec.solid &&
+           !spec.one_way_top_solid;
 }
 
 std::optional<IVec2> ResolveFluidTileCoord(const Stage& stage, const IVec2& tile_coord) {

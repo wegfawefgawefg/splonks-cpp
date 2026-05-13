@@ -2,7 +2,7 @@
 
 #include "audio.hpp"
 #include "audio_emitters.hpp"
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
 #include "player_queries.hpp"
 #include "render/camera.hpp"
@@ -236,16 +236,16 @@ void ApplyStageRotation(State& state, Graphics& graphics, int quarter_turns) {
     stage.tile_change_generation += 1;
     stage.SyncTileShakeGrid();
 
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
-        entity.SetCenter(RotatePoint(entity.GetCenter(), old_dims, quarter_turns));
-        entity.pos = Vec2::New(std::round(entity.pos.x), std::round(entity.pos.y));
-        entity.vel = Vec2::New(0.0F, 0.0F);
-        entity.acc = Vec2::New(0.0F, 0.0F);
-        entity.grounded = false;
-        entity.SetGrounded(stage);
+        ent.SetCenter(RotatePoint(ent.GetCenter(), old_dims, quarter_turns));
+        ent.pos = Vec2::New(std::round(ent.pos.x), std::round(ent.pos.y));
+        ent.vel = Vec2::New(0.0F, 0.0F);
+        ent.acc = Vec2::New(0.0F, 0.0F);
+        ent.grounded = false;
+        ent.SetGrounded(stage);
     }
 
     RotateParticles(state.particles, old_dims, quarter_turns);
@@ -275,22 +275,22 @@ void SnapCameraAfterStageRotation(State& state, Graphics& graphics) {
     Vec2 target = GetStageCameraCenter(state.stage);
     float zoom = GetDefaultFollowCameraZoom(graphics);
 
-    const Entity* camera_target_entity = nullptr;
-    if (state.controlled_entity_vid.has_value()) {
-        camera_target_entity = state.entity_manager.GetEntity(*state.controlled_entity_vid);
+    const Ent* camera_target_ent = nullptr;
+    if (state.controlled_ent_vid.has_value()) {
+        camera_target_ent = state.ents.GetEnt(*state.controlled_ent_vid);
     }
-    if ((camera_target_entity == nullptr || !camera_target_entity->active) &&
+    if ((camera_target_ent == nullptr || !camera_target_ent->active) &&
         state.mode == Mode::GameOver) {
-        camera_target_entity = GetPrimaryLocalPlayer(state);
+        camera_target_ent = GetPrimaryLocalPlayer(state);
     }
 
     if (graphics.camera_mode == CameraMode::StageFit) {
         zoom = GetStageFitCameraZoom(state.stage, graphics);
-    } else if (camera_target_entity != nullptr && camera_target_entity->active) {
-        target = entities::common::GetVisualCenterForEntity(
-            *camera_target_entity,
+    } else if (camera_target_ent != nullptr && camera_target_ent->active) {
+        target = ents::common::GetVisualCenterForEnt(
+            *camera_target_ent,
             graphics,
-            camera_target_entity->GetCenter()
+            camera_target_ent->GetCenter()
         );
         graphics.play_cam.pos = ClampCameraTargetToStage(state.stage, target);
         target = graphics.play_cam.pos;

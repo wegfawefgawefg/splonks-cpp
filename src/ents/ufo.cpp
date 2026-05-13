@@ -1,11 +1,11 @@
-#include "entities/ufo.hpp"
+#include "ents/ufo.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::ufo {
+namespace splonks::ents::ufo {
 
-// TODO(classic): Ufo is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kUfoArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Ufo);
+// TODO(classic): Ufo is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kUfoSpec =
+    common::MakeUnimplementedClassicSpec(EntType::Ufo);
 
-} // namespace splonks::entities::ufo
+} // namespace splonks::ents::ufo

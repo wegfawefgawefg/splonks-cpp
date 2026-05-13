@@ -1,16 +1,16 @@
-#include "entities/snake.hpp"
+#include "ents/snake.hpp"
 #include "on_damage_effects.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "entities/common/ground_walker.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "ents/common/ground_walker.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 #include "world_query.hpp"
 
-namespace splonks::entities::snake {
+namespace splonks::ents::snake {
 
 namespace {
 
@@ -20,29 +20,29 @@ constexpr int kSnakeIdleMinFrames = 20;
 constexpr int kSnakeIdleMaxFrames = 50;
 constexpr int kSnakeIdleChance = 100;
 
-void StartIdle(Entity& snake, State& state) {
-    snake.ai_state = EntityAiState::Idle;
+void StartIdle(Ent& snake, State& state) {
+    snake.ai_state = EntAiState::Idle;
     snake.counter_a = static_cast<float>(
         state.drng.RandomIntInclusive(kSnakeIdleMinFrames, kSnakeIdleMaxFrames));
     common::DecelerateHorizontallyToStop(snake, kSnakeWalkAcceleration);
-    TrySetAnimation(snake, EntityDisplayState::Neutral);
+    TrySetAnim(snake, EntDisplayState::Neutral);
 }
 
-void StartWalking(Entity& snake, const State& state) {
-    snake.ai_state = EntityAiState::Patrolling;
+void StartWalking(Ent& snake, const State& state) {
+    snake.ai_state = EntAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         snake,
         state,
-        snake.facing == LeftOrRight::Left ? -kSnakeWalkSpeed : kSnakeWalkSpeed,
+        snake.facing == Side::Left ? -kSnakeWalkSpeed : kSnakeWalkSpeed,
         kSnakeWalkAcceleration
     );
-    TrySetAnimation(snake, EntityDisplayState::Walk);
+    TrySetAnim(snake, EntDisplayState::Walk);
 }
 
 } // namespace
 
-void StepEntityLogicAsSnake(
-    std::size_t entity_idx,
+void StepEntLogicAsSnake(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -51,29 +51,29 @@ void StepEntityLogicAsSnake(
     (void)audio;
     (void)dt;
 
-    Entity& snake = state.entity_manager.entities[entity_idx];
-    if (snake.condition != EntityCondition::Normal) {
+    Ent& snake = state.ents.ents[ent_idx];
+    if (snake.condition != EntCondition::Normal) {
         return;
     }
 
-    if (snake.ai_state == EntityAiState::Idle) {
+    if (snake.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(snake, kSnakeWalkAcceleration);
-        TrySetAnimation(snake, EntityDisplayState::Neutral);
+        TrySetAnim(snake, EntDisplayState::Neutral);
         if (snake.counter_a > 0.0F) {
             snake.counter_a -= 1.0F;
             return;
         }
 
         snake.facing =
-            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+            state.drng.RandomIntInclusive(0, 1) == 0 ? Side::Left : Side::Right;
         StartWalking(snake, state);
         return;
     }
 
-    int direction = snake.facing == LeftOrRight::Left ? -1 : 1;
+    int direction = snake.facing == Side::Left ? -1 : 1;
     if (common::HasWallAheadForGroundWalker(snake, state, graphics, direction) ||
         !common::HasGroundAheadForGroundWalker(snake, state, graphics, direction)) {
-        snake.facing = snake.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        snake.facing = snake.facing == Side::Left ? Side::Right : Side::Left;
         direction = -direction;
     }
 
@@ -88,12 +88,12 @@ void StepEntityLogicAsSnake(
         static_cast<float>(direction) * kSnakeWalkSpeed,
         kSnakeWalkAcceleration
     );
-    SetMovementFlag(snake, EntityMovementFlag::Walking, true);
-    TrySetAnimation(snake, EntityDisplayState::Walk);
+    SetMovementFlag(snake, EntMovementFlag::Walking, true);
+    TrySetAnim(snake, EntDisplayState::Walk);
 }
 
-extern const EntityArchetype kSnakeArchetype{
-    .type_ = EntityType::Snake,
+extern const EntSpec kSnakeSpec{
+    .type_ = EntType::Snake,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -104,17 +104,17 @@ extern const EntityArchetype kSnakeArchetype{
     .hurt_on_contact = true,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kSnakeIdleMinFrames),
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .collide_sound = audio_asset_ids::Thud,
-    .step_logic = StepEntityLogicAsSnake,
+    .step_logic = StepEntLogicAsSnake,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Snake),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Snake),
 };
 
-} // namespace splonks::entities::snake
+} // namespace splonks::ents::snake

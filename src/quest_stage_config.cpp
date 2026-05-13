@@ -121,8 +121,8 @@ StageConfig LoadStageConfig(
                 config.border_tile = ParseTileOrThrow(value, path, line_number);
             } else if (key == "backwall_tiles") {
                 config.backwall_tiles = ParseTileList(value, path, line_number);
-            } else if (key == "block_animation") {
-                config.block_animation_id = HashFrameDataId(value);
+            } else if (key == "block_anim") {
+                config.block_anim_id = HashAFrameId(value);
             } else {
                 throw std::runtime_error(path + ":" + std::to_string(line_number) +
                                          ": unknown stage config field: " + key);

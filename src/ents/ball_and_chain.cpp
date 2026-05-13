@@ -1,7 +1,7 @@
-#include "entities/ball_and_chain.hpp"
+#include "ents/ball_and_chain.hpp"
 
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace splonks::entities::ball_and_chain {
+namespace splonks::ents::ball_and_chain {
 
 namespace {
 
@@ -18,14 +18,14 @@ constexpr float kBallCatchupAcceleration = 0.32F;
 constexpr float kChainPullAcceleration = 0.52F;
 constexpr float kPlayerAwayVelocityDamping = 0.85F;
 
-Vec2 GetAnchorPos(const Entity& player) {
+Vec2 GetAnchorPos(const Ent& player) {
     return player.GetCenter() + Vec2::New(0.0F, (player.size.y * 0.5F) - 1.0F);
 }
 
 } // namespace
 
-extern const EntityArchetype kBallAndChainBallArchetype{
-    .type_ = EntityType::BallAndChainBall,
+extern const EntSpec kBallAndChainBallSpec{
+    .type_ = EntType::BallAndChainBall,
     .size = Vec2::New(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
@@ -36,17 +36,17 @@ extern const EntityArchetype kBallAndChainBallArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .step_logic = StepEntityLogicAsBallAndChainBall,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .step_logic = StepEntLogicAsBallAndChainBall,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RopeBall),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::RopeBall),
 };
 
-void StepEntityLogicAsBallAndChainBall(
-    std::size_t entity_idx,
+void StepEntLogicAsBallAndChainBall(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -56,31 +56,31 @@ void StepEntityLogicAsBallAndChainBall(
     (void)audio;
     (void)dt;
 
-    Entity& ball = state.entity_manager.entities[entity_idx];
-    SetAnimation(ball, frame_data_ids::RopeBall);
+    Ent& ball = state.ents.ents[ent_idx];
+    SetAnim(ball, aframe_ids::RopeBall);
 
-    if (!ball.entity_a.has_value()) {
+    if (!ball.ent_a.has_value()) {
         ball.active = false;
         return;
     }
 
-    Entity* const player = state.entity_manager.GetEntityMut(*ball.entity_a);
-    if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
-        if (Entity* const current_player = GetPrimaryLocalPlayerMut(state);
-            current_player != nullptr && current_player->entity_d.has_value() &&
-            *current_player->entity_d == ball.vid) {
-            current_player->entity_d.reset();
+    Ent* const player = state.ents.GetEntMut(*ball.ent_a);
+    if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
+        if (Ent* const current_player = GetPrimaryLocalPlayerMut(state);
+            current_player != nullptr && current_player->ent_d.has_value() &&
+            *current_player->ent_d == ball.vid) {
+            current_player->ent_d.reset();
         }
         ball.active = false;
         return;
     }
 
     const bool held_by_player = player->holding_vid.has_value() && *player->holding_vid == ball.vid;
-    const bool launched = ball.thrown_by.has_value() && ball.projectile_contact_timer > 0;
+    const bool launched = ball.thrown_by.has_value() && ball.proj_contact_timer > 0;
     if (!launched) {
         ball.thrown_by.reset();
         ball.thrown_immunity_timer = 0;
-        ball.projectile_contact_timer = 0;
+        ball.proj_contact_timer = 0;
     }
     if (held_by_player) {
         return;
@@ -109,4 +109,4 @@ void StepEntityLogicAsBallAndChainBall(
     }
 }
 
-} // namespace splonks::entities::ball_and_chain
+} // namespace splonks::ents::ball_and_chain

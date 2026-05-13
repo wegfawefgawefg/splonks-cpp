@@ -4,10 +4,10 @@
 
 namespace splonks::stage_gen::classic {
 
-void AddAmbientMinesEntities(Stage& stage);
-void AddAmbientJungleEntities(Stage& stage, bool black_market);
-void AddAmbientIceEntities(Stage& stage);
-void AddAmbientTempleEntities(Stage& stage);
-void AddAmbientOlmecEntities(Stage& stage);
+void AddAmbientMinesEnts(Stage& stage);
+void AddAmbientJungleEnts(Stage& stage, bool black_market);
+void AddAmbientIceEnts(Stage& stage);
+void AddAmbientTempleEnts(Stage& stage);
+void AddAmbientOlmecEnts(Stage& stage);
 
 } // namespace splonks::stage_gen::classic

@@ -2,11 +2,11 @@
 
 #include "audio_emitters.hpp"
 #include "effects/render.hpp"
-#include "entity.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "entities/meathead.hpp"
-#include "frame_data_id.hpp"
+#include "ent.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "ents/meathead.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 
@@ -149,7 +149,7 @@ std::optional<std::string> FormatMeatheadCountdownText(const EffectInstance& eff
 }
 
 bool IsNoGravityUntilContactExpired(
-    const Entity&,
+    const Ent&,
     const EffectInstance&,
     const State&,
     const EffectHookContext& hook
@@ -158,7 +158,7 @@ bool IsNoGravityUntilContactExpired(
 }
 
 void OnMittEffectHook(
-    Entity&,
+    Ent&,
     EffectInstance&,
     State& state,
     Audio*,
@@ -168,7 +168,7 @@ void OnMittEffectHook(
         return;
     }
 
-    Entity* const thrown = state.entity_manager.GetEntityMut(*hook.target_vid);
+    Ent* const thrown = state.ents.GetEntMut(*hook.target_vid);
     if (thrown == nullptr) {
         return;
     }
@@ -190,19 +190,19 @@ std::optional<Vec2> FindEntranceRevivePos(const State& state) {
     return std::nullopt;
 }
 
-void SnapBackItemToOwner(Entity& owner, State& state) {
+void SnapBackItemToOwner(Ent& owner, State& state) {
     if (!owner.back_vid.has_value()) {
         return;
     }
 
-    Entity* const back_item = state.entity_manager.GetEntityMut(*owner.back_vid);
+    Ent* const back_item = state.ents.GetEntMut(*owner.back_vid);
     if (back_item == nullptr || !back_item->active) {
         owner.back_vid.reset();
         return;
     }
 
     back_item->held_by_vid = owner.vid;
-    back_item->attachment_mode = AttachmentMode::Back;
+    back_item->attach_mode = AttachMode::Back;
     back_item->has_physics = false;
     back_item->can_collide = false;
     back_item->facing = owner.facing;
@@ -210,7 +210,7 @@ void SnapBackItemToOwner(Entity& owner, State& state) {
 }
 
 void OnAnkhEffectHook(
-    Entity& owner,
+    Ent& owner,
     EffectInstance&,
     State& state,
     Audio* audio,
@@ -221,29 +221,29 @@ void OnAnkhEffectHook(
         return;
     }
 
-    entities::common::DropHeldItemFromEntity(owner, state);
+    ents::common::DropHeldItemFromEnt(owner, state);
 
-    const EntityArchetype& archetype = GetEntityArchetype(owner.type_);
-    owner.health = archetype.health;
-    owner.condition = EntityCondition::Normal;
-    owner.last_condition = EntityCondition::Normal;
+    const EntSpec& spec = GetEntSpec(owner.type_);
+    owner.health = spec.health;
+    owner.condition = EntCondition::Normal;
+    owner.last_condition = EntCondition::Normal;
     owner.stun_timer = 0;
     owner.fall_timer = 0;
     owner.vel = Vec2::New(0.0F, 0.0F);
     owner.acc = Vec2::New(0.0F, 0.0F);
     owner.grounded = false;
     owner.marked_for_destruction = false;
-    owner.has_physics = archetype.has_physics;
-    owner.can_collide = archetype.can_collide;
-    owner.render_enabled = archetype.render_enabled;
-    owner.projectile_contact_timer = 0;
+    owner.has_physics = spec.has_physics;
+    owner.can_collide = spec.can_collide;
+    owner.render_enabled = spec.render_enabled;
+    owner.proj_contact_timer = 0;
     owner.thrown_by.reset();
     owner.thrown_immunity_timer = 0;
     owner.collided = false;
     owner.collided_last_frame = false;
     owner.coyote_time = 0;
     owner.jumped_this_frame = false;
-    (void)TrySetAnimation(owner, EntityDisplayState::Neutral);
+    (void)TrySetAnim(owner, EntDisplayState::Neutral);
 
     if (const std::optional<Vec2> entrance_pos = FindEntranceRevivePos(state)) {
         owner.pos = *entrance_pos;
@@ -256,103 +256,103 @@ void OnAnkhEffectHook(
     }
 }
 
-const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEffectArchetypes{{
-    EffectArchetype{
+const std::array<EffectSpec, static_cast<std::size_t>(EffectId::Count)> kEffectSpecs{{
+    EffectSpec{
         .id = EffectId::None,
         .debug_name = "None",
         .modifiers = {},
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::Gloves,
         .debug_name = "Gloves",
-        .icon_animation_id = frame_data_ids::Gloves,
+        .icon_anim_id = aframe_ids::Gloves,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = {},
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::Spectacles,
         .debug_name = "Spectacles",
-        .icon_animation_id = frame_data_ids::Spectacles,
+        .icon_anim_id = aframe_ids::Spectacles,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = MakeModifierVector(kSpectaclesModifiers),
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::Compass,
         .debug_name = "Compass",
-        .icon_animation_id = frame_data_ids::Compass,
+        .icon_anim_id = aframe_ids::Compass,
         .ui_kind = EffectUiKind::Passive,
         .render_world_overlay = RenderCompassWorldOverlay,
         .modifiers = {},
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::Mitt,
         .debug_name = "Mitt",
-        .icon_animation_id = frame_data_ids::Mitt,
+        .icon_anim_id = aframe_ids::Mitt,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = MakeModifierVector(kMittModifiers),
         .on_hook = OnMittEffectHook,
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::SpringShoes,
         .debug_name = "SpringShoes",
-        .icon_animation_id = frame_data_ids::SpringShoes,
+        .icon_anim_id = aframe_ids::SpringShoes,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = MakeModifierVector(kSpringShoesModifiers),
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::SpikeShoes,
         .debug_name = "SpikeShoes",
-        .icon_animation_id = frame_data_ids::SpikeShoes,
+        .icon_anim_id = aframe_ids::SpikeShoes,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = MakeModifierVector(kSpikeShoesModifiers),
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::UdjatEye,
         .debug_name = "UdjatEye",
-        .icon_animation_id = frame_data_ids::UdjatEye,
+        .icon_anim_id = aframe_ids::UdjatEye,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = MakeModifierVector(kUdjatEyeModifiers),
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::Ankh,
         .debug_name = "Ankh",
-        .icon_animation_id = frame_data_ids::Ankh,
+        .icon_anim_id = aframe_ids::Ankh,
         .ui_kind = EffectUiKind::Passive,
         .modifiers = {},
         .on_hook = OnAnkhEffectHook,
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::Meathead,
         .debug_name = "Meathead",
-        .icon_animation_id = frame_data_ids::Meathead,
+        .icon_anim_id = aframe_ids::Meathead,
         .ui_kind = EffectUiKind::Passive,
         .hud_count_text = FormatMeatheadCountdownText,
         .hud_count_anchor = HudAnchor::BottomRight,
         .modifiers = {},
-        .on_hook = entities::meathead::OnMeatheadEffectHook,
+        .on_hook = ents::meathead::OnMeatheadEffectHook,
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::Parachute,
         .debug_name = "Parachute",
-        .icon_animation_id = frame_data_ids::PackedParachute,
+        .icon_anim_id = aframe_ids::PackedParachute,
         .ui_kind = EffectUiKind::Passive,
         .default_count = 1,
         .hud_count_text = FormatEffectCountText,
         .hud_count_anchor = HudAnchor::BottomRight,
         .modifiers = {},
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::NoGravityUntilContact,
         .debug_name = "NoGravityUntilContact",
-        .icon_animation_id = frame_data_ids::MittNoGrav,
+        .icon_anim_id = aframe_ids::MittNoGrav,
         .ui_kind = EffectUiKind::Temporary,
         .modifiers = MakeModifierVector(kNoGravityUntilContactModifiers),
         .should_expire = IsNoGravityUntilContactExpired,
     },
-    EffectArchetype{
+    EffectSpec{
         .id = EffectId::InWater,
         .debug_name = "InWater",
-        .icon_animation_id = frame_data_ids::Water,
+        .icon_anim_id = aframe_ids::Water,
         .ui_kind = EffectUiKind::Temporary,
         .modifiers = MakeModifierVector(kInWaterModifiers),
     },
@@ -360,16 +360,16 @@ const std::array<EffectArchetype, static_cast<std::size_t>(EffectId::Count)> kEf
 
 } // namespace
 
-const EffectArchetype& GetEffectArchetype(EffectId id) {
+const EffectSpec& GetEffectSpec(EffectId id) {
     const std::size_t index = static_cast<std::size_t>(id);
-    if (index >= kEffectArchetypes.size()) {
-        return kEffectArchetypes[0];
+    if (index >= kEffectSpecs.size()) {
+        return kEffectSpecs[0];
     }
-    return kEffectArchetypes[index];
+    return kEffectSpecs[index];
 }
 
 const char* EffectIdToString(EffectId id) {
-    return GetEffectArchetype(id).debug_name;
+    return GetEffectSpec(id).debug_name;
 }
 
 } // namespace splonks

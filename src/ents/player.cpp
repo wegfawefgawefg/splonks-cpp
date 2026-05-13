@@ -1,11 +1,11 @@
-#include "entities/player.hpp"
+#include "ents/player.hpp"
 #include "audio.hpp"
-#include "entities/baseball_bat.hpp"
-#include "entities/block.hpp"
-#include "entities/common/common.hpp"
-#include "entities/gear_items.hpp"
-#include "entities/meathead.hpp"
-#include "frame_data_id.hpp"
+#include "ents/baseball_bat.hpp"
+#include "ents/block.hpp"
+#include "ents/common/common.hpp"
+#include "ents/gear_items.hpp"
+#include "ents/meathead.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "controls.hpp"
@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-namespace splonks::entities::player {
+namespace splonks::ents::player {
 
 namespace {
 
@@ -28,7 +28,7 @@ constexpr float kPunishBallHeldMaxRunSpeed = 2.5F;
 constexpr float kPunishBallDraggedMaxRunSpeed = 3.0F;
 constexpr float kPunishBallDraggedExtraGravity = 0.14F;
 constexpr float kPunishBallDraggedJumpImpulse = 3.0F;
-constexpr float kClimbAnimationVelocityEpsilon = 0.01F;
+constexpr float kClimbAnimVelocityEpsilon = 0.01F;
 constexpr std::uint32_t kClassicFallDamageMinFrames = 32;
 constexpr std::uint32_t kClassicFallDamageMediumFrames = 64;
 constexpr std::uint32_t kClassicFallDamageHeavyFrames = 96;
@@ -101,28 +101,28 @@ PlayerPhysicsTuning MakePlayerPhysicsTuning(const PlayerTuningState& tuning) {
     };
 }
 
-bool PlayerHasPunishBall(const Entity& player, const State& state) {
-    if (!player.entity_d.has_value()) {
+bool PlayerHasPunishBall(const Ent& player, const State& state) {
+    if (!player.ent_d.has_value()) {
         return false;
     }
 
-    const Entity* const ball = state.entity_manager.GetEntity(*player.entity_d);
-    return ball != nullptr && ball->active && ball->type_ == EntityType::BallAndChainBall;
+    const Ent* const ball = state.ents.GetEnt(*player.ent_d);
+    return ball != nullptr && ball->active && ball->type_ == EntType::BallAndChainBall;
 }
 
-bool PlayerIsHoldingPunishBall(const Entity& player, const State& state) {
-    return player.holding_vid.has_value() && player.entity_d.has_value() &&
-           *player.holding_vid == *player.entity_d && PlayerHasPunishBall(player, state);
+bool PlayerIsHoldingPunishBall(const Ent& player, const State& state) {
+    return player.holding_vid.has_value() && player.ent_d.has_value() &&
+           *player.holding_vid == *player.ent_d && PlayerHasPunishBall(player, state);
 }
 
-bool IsExternallyLaunchedPlayer(const Entity& player) {
-    return player.projectile_contact_timer > 0 &&
+bool IsExternallyLaunchedPlayer(const Ent& player) {
+    return player.proj_contact_timer > 0 &&
            !player.held_by_vid.has_value() &&
-           player.attachment_mode == AttachmentMode::None;
+           player.attach_mode == AttachMode::None;
 }
 
-bool CanPlayerEmote(const Entity& player, const controls::ControlIntent& control) {
-    return player.condition == EntityCondition::Normal &&
+bool CanPlayerEmote(const Ent& player, const controls::ControlIntent& control) {
+    return player.condition == EntCondition::Normal &&
            player.grounded &&
            !player.IsClimbing() &&
            !player.IsHanging() &&
@@ -131,50 +131,50 @@ bool CanPlayerEmote(const Entity& player, const controls::ControlIntent& control
            !control.jump;
 }
 
-bool TryStepPlayerEmote(Entity& player, const controls::ControlIntent& control) {
+bool TryStepPlayerEmote(Ent& player, const controls::ControlIntent& control) {
     if (!CanPlayerEmote(player, control)) {
         return false;
     }
 
     if (control.emote_up) {
-        TrySetAnimation(player, EntityDisplayState::EmoteBald);
+        TrySetAnim(player, EntDisplayState::EmoteBald);
         return true;
     }
     if (control.emote_down) {
-        TrySetAnimation(player, EntityDisplayState::EmoteDab);
+        TrySetAnim(player, EntDisplayState::EmoteDab);
         return true;
     }
 
     return false;
 }
 
-void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
-    if (player.frame_data_animator.animation_id != frame_data_ids::PlayerClimbing) {
+void UpdateClimbAnimPlayback(Ent& player, const Graphics& graphics) {
+    if (player.aframe_animator.anim_id != aframe_ids::PlayerClimbing) {
         return;
     }
 
-    FrameDataAnimator& animator = player.frame_data_animator;
+    AFrameAnimator& animator = player.aframe_animator;
     animator.loop = true;
     animator.ResetSpeed();
     animator.finished = false;
 
-    if (std::abs(player.vel.y) <= kClimbAnimationVelocityEpsilon) {
+    if (std::abs(player.vel.y) <= kClimbAnimVelocityEpsilon) {
         animator.animate = false;
         return;
     }
 
     animator.animate = true;
-    const AnimationPlaybackMode desired_mode =
-        player.vel.y < 0.0F ? AnimationPlaybackMode::Forward : AnimationPlaybackMode::Reverse;
+    const AnimPlaybackMode desired_mode =
+        player.vel.y < 0.0F ? AnimPlaybackMode::Forward : AnimPlaybackMode::Reverse;
     if (animator.playback_mode == desired_mode) {
         return;
     }
 
-    const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animator.animation_id);
-    if (animation != nullptr && animator.current_frame < animation->frame_indices.size()) {
-        const FrameData& frame_data =
-            graphics.frame_data_db.frames[animation->frame_indices[animator.current_frame]];
-        const float frame_duration = static_cast<float>(frame_data.duration);
+    const AFrameAnim* const anim = graphics.aframe_db.FindAnim(animator.anim_id);
+    if (anim != nullptr && animator.current_frame < anim->frame_indices.size()) {
+        const AFrame& aframe =
+            graphics.aframe_db.frames[anim->frame_indices[animator.current_frame]];
+        const float frame_duration = static_cast<float>(aframe.duration);
         animator.current_time = std::clamp(frame_duration - animator.current_time, 0.0F, frame_duration);
     }
 
@@ -182,7 +182,7 @@ void UpdateClimbAnimationPlayback(Entity& player, const Graphics& graphics) {
     animator.playback_dirty = false;
 }
 
-void StepPlayerFallTimer(Entity& player, const State& state) {
+void StepPlayerFallTimer(Ent& player, const State& state) {
     const float fall_timer_rate =
         GetModifiedEffectValue(player, EffectModifierTarget::FallTimerRate, 1.0F, &state);
     if (fall_timer_rate <= 0.0F) {
@@ -205,7 +205,7 @@ void StepPlayerFallTimer(Entity& player, const State& state) {
     player.fall_timer = 0;
 }
 
-float GetFallDamageTimer(const Entity& player, const State& state) {
+float GetFallDamageTimer(const Ent& player, const State& state) {
     (void)state;
     return static_cast<float>(player.fall_timer);
 }
@@ -223,11 +223,11 @@ unsigned int GetFallDamageAmount(
     return kFallDamageLightAmount;
 }
 
-void SpawnFallDamagePoofs(const Entity& player, State& state) {
+void SpawnFallDamagePoofs(const Ent& player, State& state) {
     const Vec2 base_pos = player.GetCenter() + Vec2::New(0.0F, player.size.y * 0.5F);
     for (float direction : {-1.0F, 1.0F}) {
         SpriteParticle smoke{};
-        smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+        smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
         smoke.draw_layer = DrawLayer::Foreground;
         smoke.counter = 16;
         smoke.pos = base_pos + Vec2::New(direction * 4.0F, -2.0F);
@@ -241,12 +241,12 @@ void SpawnFallDamagePoofs(const Entity& player, State& state) {
 }
 
 void ApplyClassicFallDamageOnLanding(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     const PlayerPhysicsTuning& tuning
 ) {
-    Entity& player = state.entity_manager.entities[entity_idx];
+    Ent& player = state.ents.ents[ent_idx];
     if (!player.grounded) {
         return;
     }
@@ -254,21 +254,21 @@ void ApplyClassicFallDamageOnLanding(
     const float fall_damage_timer = GetFallDamageTimer(player, state);
     const bool was_holding_player =
         player.holding_vid.has_value() &&
-        state.players.FindByEntityVid(*player.holding_vid) != nullptr;
+        state.players.FindByEntVid(*player.holding_vid) != nullptr;
     player.fall_timer = 0;
     if (fall_damage_timer <= static_cast<float>(tuning.fall_damage_min_frames) ||
-        player.condition == EntityCondition::Dead) {
+        player.condition == EntCondition::Dead) {
         return;
     }
 
     const unsigned int damage_amount = GetFallDamageAmount(tuning, fall_damage_timer);
     const common::DamageResult damage_result =
-        common::TryDamageEntity(entity_idx, state, audio, DamageType::Fall, damage_amount);
+        common::TryDamageEnt(ent_idx, state, audio, DamageType::Fall, damage_amount);
     if (damage_result == common::DamageResult::None) {
         return;
     }
 
-    Entity& mutable_player = state.entity_manager.entities[entity_idx];
+    Ent& mutable_player = state.ents.ents[ent_idx];
     if (was_holding_player) {
         mutable_player.vel.y = 0.0F;
         mutable_player.grounded = true;
@@ -277,11 +277,11 @@ void ApplyClassicFallDamageOnLanding(
         mutable_player.grounded = false;
     }
     SpawnFallDamagePoofs(mutable_player, state);
-    (void)PlayEntityCenterSoundEmitter(state, mutable_player, audio_asset_ids::Thud);
+    (void)PlayEntCenterSoundEmitter(state, mutable_player, audio_asset_ids::Thud);
 }
 
-void ControlEntityAsPlayerWithTuning(
-    std::size_t entity_idx,
+void ControlEntAsPlayerWithTuning(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -291,13 +291,13 @@ void ControlEntityAsPlayerWithTuning(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& player = state.entity_manager.entities[entity_idx];
-    const controls::ControlIntent intent = controls::GetControlIntentForEntity(player, state);
-    if (player.condition != EntityCondition::Normal) {
+    Ent& player = state.ents.ents[ent_idx];
+    const controls::ControlIntent intent = controls::GetControlIntentForEnt(player, state);
+    if (player.condition != EntCondition::Normal) {
         return;
     }
 
@@ -330,15 +330,15 @@ void ControlEntityAsPlayerWithTuning(
 
 } // namespace
 
-void ControlEntityAsPlayer(
-    std::size_t entity_idx,
+void ControlEntAsPlayer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    ControlEntityAsPlayerWithTuning(
-        entity_idx,
+    ControlEntAsPlayerWithTuning(
+        ent_idx,
         state,
         graphics,
         audio,
@@ -347,8 +347,8 @@ void ControlEntityAsPlayer(
     );
 }
 
-extern const EntityArchetype kPlayerArchetype{
-    .type_ = EntityType::Player,
+extern const EntSpec kPlayerSpec{
+    .type_ = EntType::Player,
     .size = Vec2::New(10.0F, 10.0F),
     .health = 400,
     .has_physics = true,
@@ -363,21 +363,21 @@ extern const EntityArchetype kPlayerArchetype{
     .stun_recovers_on_ground = true,
     .stun_recovers_while_held = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .damage_sound = audio_asset_ids::PlayerOuch,
-    .control_logic = ControlEntityAsPlayer,
-    .step_logic = StepEntityLogicAsPlayer,
-    .step_physics = StepEntityPhysicsAsPlayer,
+    .control_logic = ControlEntAsPlayer,
+    .step_logic = StepEntLogicAsPlayer,
+    .step_physics = StepEntPhysicsAsPlayer,
     .alignment = Alignment::Ally,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::PlayerStanding),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::PlayerStanding),
 };
 
-void StepEntityLogicAsPlayer(
-    std::size_t entity_idx,
+void StepEntLogicAsPlayer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -386,10 +386,10 @@ void StepEntityLogicAsPlayer(
     (void)dt;
     {
         // SKIP CONDITIONS
-        Entity& player = state.entity_manager.entities[entity_idx];
-        const EntityCondition player_condition = player.condition;
-        if (player_condition == EntityCondition::Dead) {
-            (void)common::SeverEntityCarryLinksForReset(player, state);
+        Ent& player = state.ents.ents[ent_idx];
+        const EntCondition player_condition = player.condition;
+        if (player_condition == EntCondition::Dead) {
+            (void)common::SeverEntCarryLinksForReset(player, state);
             gear_items::ClearEquippedPassiveItemVisuals(player, state, graphics);
 
             return;
@@ -398,29 +398,29 @@ void StepEntityLogicAsPlayer(
 
     //  REQUIRED HACK FOR JETPACK TO CATCH GROUND TOUCH ON FRAME JUMP
     {
-        Entity& player = state.entity_manager.entities[entity_idx];
+        Ent& player = state.ents.ents[ent_idx];
         player.jumped_this_frame = false;
     }
 
     // TODO: probably put a check for dead or stunned up here lol
-    common::StepTravelSoundWalkerClimber(entity_idx, state, audio);
-    common::CleanupInactiveCarryReferences(entity_idx, state);
+    common::StepTravelSoundWalkerClimber(ent_idx, state, audio);
+    common::CleanupInactiveCarryReferences(ent_idx, state);
 
     {
-        const Entity& player = state.entity_manager.entities[entity_idx];
+        const Ent& player = state.ents.ents[ent_idx];
         meathead::MaybePreviewMeatheadPassive(player, state);
     }
 
     const bool loss_of_control =
-        state.entity_manager.entities[entity_idx].condition == EntityCondition::Stunned;
+        state.ents.ents[ent_idx].condition == EntCondition::Stunned;
     const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(
-            state.entity_manager.entities[entity_idx],
+        controls::GetControlIntentForEnt(
+            state.ents.ents[ent_idx],
             state
         );
 
     {
-        Entity& player = state.entity_manager.entities[entity_idx];
+        Ent& player = state.ents.ents[ent_idx];
         const bool hanging = player.IsHanging();
         const bool climbing = player.IsClimbing();
         const bool walking =
@@ -429,48 +429,48 @@ void StepEntityLogicAsPlayer(
             player.grounded &&
             !climbing &&
             !hanging;
-        SetMovementFlag(player, EntityMovementFlag::Walking, walking);
-        SetMovementFlag(player, EntityMovementFlag::Running, walking && control.run);
-        SetMovementFlag(player, EntityMovementFlag::Climbing, climbing);
-        SetMovementFlag(player, EntityMovementFlag::Hanging, hanging);
+        SetMovementFlag(player, EntMovementFlag::Walking, walking);
+        SetMovementFlag(player, EntMovementFlag::Running, walking && control.run);
+        SetMovementFlag(player, EntMovementFlag::Climbing, climbing);
+        SetMovementFlag(player, EntMovementFlag::Hanging, hanging);
     }
 
     // SET ANIMATIONS AND DISPLAY STATES
     {
-        Entity& player = state.entity_manager.entities[entity_idx];
+        Ent& player = state.ents.ents[ent_idx];
         if (player.vel.x < 0.0F) {
-            player.facing = LeftOrRight::Left;
+            player.facing = Side::Left;
         }
         if (player.vel.x > 0.0F) {
-            player.facing = LeftOrRight::Right;
+            player.facing = Side::Right;
         }
 
         // skip all actions
         if (!loss_of_control) {
             // Hanging and climbing must win before locomotion. Otherwise walk/neutral
-            // gets assigned first and the climb animation restarts every tick.
-            if (player.hang_side == LeftOrRight::Left) {
-                TrySetAnimation(player, EntityDisplayState::Hanging);
-                player.facing = LeftOrRight::Left;
-            } else if (player.hang_side == LeftOrRight::Right) {
-                TrySetAnimation(player, EntityDisplayState::Hanging);
-                player.facing = LeftOrRight::Right;
+            // gets assigned first and the climb anim restarts every tick.
+            if (player.hang_side == Side::Left) {
+                TrySetAnim(player, EntDisplayState::Hanging);
+                player.facing = Side::Left;
+            } else if (player.hang_side == Side::Right) {
+                TrySetAnim(player, EntDisplayState::Hanging);
+                player.facing = Side::Right;
             } else if (player.IsClimbing()) {
-                if (player.frame_data_animator.animation_id != frame_data_ids::PlayerClimbing) {
-                    player.frame_data_animator.PlayLoop(frame_data_ids::PlayerClimbing);
+                if (player.aframe_animator.anim_id != aframe_ids::PlayerClimbing) {
+                    player.aframe_animator.PlayLoop(aframe_ids::PlayerClimbing);
                 }
-                player.frame_data_animator.loop = true;
-                player.frame_data_animator.finished = false;
+                player.aframe_animator.loop = true;
+                player.aframe_animator.finished = false;
             } else if (TryStepPlayerEmote(player, control)) {
-                player.frame_data_animator.ResetSpeed();
+                player.aframe_animator.ResetSpeed();
             } else {
                 const bool holding_or_pushing =
                     player.holding ||
                     player.holding_vid.has_value() ||
-                    HasMovementFlag(player, EntityMovementFlag::Pushing);
+                    HasMovementFlag(player, EntMovementFlag::Pushing);
                 const bool has_horizontal_input = control.left != control.right;
                 if (has_horizontal_input) {
-                    player.facing = control.left ? LeftOrRight::Left : LeftOrRight::Right;
+                    player.facing = control.left ? Side::Left : Side::Right;
                 }
                 const bool moving_with_input =
                     (control.left && player.vel.x < -kPlayerWalkAnimVelocityEpsilon) ||
@@ -486,51 +486,51 @@ void StepEntityLogicAsPlayer(
                     !walking_horizontally;
 
                 if (!player.grounded && player.vel.y > 0.0F) {
-                    TrySetAnimation(player, EntityDisplayState::Falling);
-                    player.frame_data_animator.ResetSpeed();
+                    TrySetAnim(player, EntDisplayState::Falling);
+                    player.aframe_animator.ResetSpeed();
                 } else if (walking_horizontally) {
-                    TrySetAnimation(
+                    TrySetAnim(
                         player,
-                        holding_or_pushing ? EntityDisplayState::WalkHolding : EntityDisplayState::Walk
+                        holding_or_pushing ? EntDisplayState::WalkHolding : EntDisplayState::Walk
                     );
-                    player.frame_data_animator.SetSpeed(
+                    player.aframe_animator.SetSpeed(
                         running_horizontally ? kPlayerRunAnimSpeed : kPlayerWalkAnimSpeed
                     );
                 } else if (pushing_into_blocker) {
-                    TrySetAnimation(player, EntityDisplayState::WalkHolding);
-                    player.frame_data_animator.SetSpeed(kPlayerBlockedPushAnimSpeed);
+                    TrySetAnim(player, EntDisplayState::WalkHolding);
+                    player.aframe_animator.SetSpeed(kPlayerBlockedPushAnimSpeed);
                 } else {
-                    TrySetAnimation(
+                    TrySetAnim(
                         player,
-                        holding_or_pushing ? EntityDisplayState::NeutralHolding : EntityDisplayState::Neutral
+                        holding_or_pushing ? EntDisplayState::NeutralHolding : EntDisplayState::Neutral
                     );
-                    player.frame_data_animator.ResetSpeed();
+                    player.aframe_animator.ResetSpeed();
                 }
             }
         }
     }
 
-    common::UpdateCarryAndBackItems(entity_idx, state, graphics, audio);
+    common::UpdateCarryAndBackItems(ent_idx, state, graphics, audio);
 
     // PLAYER TOOL SLOT 1
     if (!loss_of_control) {
-        common::TryUseToolSlot(entity_idx, state, graphics, audio, 0, control.bomb_pressed);
+        common::TryUseToolSlot(ent_idx, state, graphics, audio, 0, control.bomb_pressed);
     }
 
     // PLAYER TOOL SLOT 2
     if (!loss_of_control) {
-        common::TryUseToolSlot(entity_idx, state, graphics, audio, 1, control.rope_pressed);
+        common::TryUseToolSlot(ent_idx, state, graphics, audio, 1, control.rope_pressed);
     }
 
     // PLAYER SWING BAT SECTION
     {
-        Entity& player = state.entity_manager.entities[entity_idx];
+        Ent& player = state.ents.ents[ent_idx];
         if (player.attack_delay_countdown > 0) {
             player.attack_delay_countdown -= 1;
         }
     }
     if (!loss_of_control) {
-        const Entity& player = state.entity_manager.entities[entity_idx];
+        const Ent& player = state.ents.ents[ent_idx];
         const Vec2 player_pos = player.pos;
         const bool trying_to_attack = control.attack_pressed;
         const VID player_vid = player.vid;
@@ -539,69 +539,69 @@ void StepEntityLogicAsPlayer(
 
         bool attacked = false;
         if (trying_to_attack && attack_delay_countdown == 0 && !has_held_item) {
-            if (world_ops::SpawnEntity(
+            if (world_ops::SpawnEnt(
                     state,
-                    EntityType::BaseballBat,
-                    [&](Entity& entity) {
-                        entity.pos = player_pos;
-                        entity.held_by_vid = player_vid;
-                        entity.attachment_mode = AttachmentMode::Held;
-                        state.UpdateSidForEntity(entity.vid.id, graphics);
+                    EntType::BaseballBat,
+                    [&](Ent& ent) {
+                        ent.pos = player_pos;
+                        ent.held_by_vid = player_vid;
+                        ent.attach_mode = AttachMode::Held;
+                        state.UpdateSidForEnt(ent.vid.id, graphics);
                     },
                     player_vid
                 ) != nullptr) {
                 attacked = true;
-                if (const Entity* const sound_player = state.entity_manager.GetEntity(player_vid)) {
-                    (void)PlayEntitySoundEmitter(state, *sound_player, audio_asset_ids::BaseballBatSwing);
+                if (const Ent* const sound_player = state.ents.GetEnt(player_vid)) {
+                    (void)PlayEntSoundEmitter(state, *sound_player, audio_asset_ids::BaseballBatSwing);
                 }
             }
         }
         if (attacked) {
-            Entity& mutable_player = state.entity_manager.entities[entity_idx];
+            Ent& mutable_player = state.ents.ents[ent_idx];
             mutable_player.attack_delay_countdown = kAttackDelay;
         }
     }
 
     // PUSH BLOCKS
     if (!loss_of_control) {
-        common::TryPushBlocks(entity_idx, state, graphics);
+        common::TryPushBlocks(ent_idx, state, graphics);
     }
 
 }
 
 namespace {
 
-void StepEntityPhysicsAsPlayerWithTuning(
-    std::size_t entity_idx,
+void StepEntPhysicsAsPlayerWithTuning(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt,
     const PlayerPhysicsTuning& tuning
 ) {
-    common::HangHandsStep(entity_idx, state, tuning.jump_and_climb);
-    common::JumpingAndClimbingStep(entity_idx, state, audio, tuning.jump_and_climb);
+    common::HangHandsStep(ent_idx, state, tuning.jump_and_climb);
+    common::JumpingAndClimbingStep(ent_idx, state, audio, tuning.jump_and_climb);
 
     // custom pre partial euler step for player to apply special velocity clamping.
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    const bool externally_launched_player = IsExternallyLaunchedPlayer(entity);
-    const bool has_punish_ball = PlayerHasPunishBall(entity, state);
-    const bool holding_punish_ball = PlayerIsHoldingPunishBall(entity, state);
-    if (has_punish_ball && !holding_punish_ball && !entity.IsClimbing()) {
-        entity.acc.y += kPunishBallDraggedExtraGravity;
+    Ent& ent = state.ents.ents[ent_idx];
+    const bool externally_launched_player = IsExternallyLaunchedPlayer(ent);
+    const bool has_punish_ball = PlayerHasPunishBall(ent, state);
+    const bool holding_punish_ball = PlayerIsHoldingPunishBall(ent, state);
+    if (has_punish_ball && !holding_punish_ball && !ent.IsClimbing()) {
+        ent.acc.y += kPunishBallDraggedExtraGravity;
     }
 
-    if (entity.IsClimbing()) {
-        UpdateClimbAnimationPlayback(entity, graphics);
+    if (ent.IsClimbing()) {
+        UpdateClimbAnimPlayback(ent, graphics);
     }
 
-    entity.vel += entity.acc;
-    if (has_punish_ball && !holding_punish_ball && entity.jumped_this_frame &&
-        entity.vel.y < -kPunishBallDraggedJumpImpulse) {
-        entity.vel.y = -kPunishBallDraggedJumpImpulse;
+    ent.vel += ent.acc;
+    if (has_punish_ball && !holding_punish_ball && ent.jumped_this_frame &&
+        ent.vel.y < -kPunishBallDraggedJumpImpulse) {
+        ent.vel.y = -kPunishBallDraggedJumpImpulse;
     }
     const controls::ControlIntent control =
-        controls::GetControlIntentForEntity(entity, state);
+        controls::GetControlIntentForEnt(ent, state);
     const float max_walk_speed =
         holding_punish_ball ? kPunishBallHeldMaxWalkSpeed
                             : (has_punish_ball ? kPunishBallDraggedMaxWalkSpeed : tuning.max_walk_speed);
@@ -610,43 +610,43 @@ void StepEntityPhysicsAsPlayerWithTuning(
                             : (has_punish_ball ? kPunishBallDraggedMaxRunSpeed : tuning.max_run_speed);
     const float move_speed_scale = std::max(
         0.0F,
-        GetModifiedEffectValue(entity, EffectModifierTarget::MoveSpeedScale, 1.0F, &state)
+        GetModifiedEffectValue(ent, EffectModifierTarget::MoveSpeedScale, 1.0F, &state)
     );
     if (!externally_launched_player) {
         if (control.run) {
-            entity.vel.x = std::clamp(entity.vel.x, -max_run_speed * move_speed_scale, max_run_speed * move_speed_scale);
+            ent.vel.x = std::clamp(ent.vel.x, -max_run_speed * move_speed_scale, max_run_speed * move_speed_scale);
         } else {
-            entity.vel.x =
-                std::clamp(entity.vel.x, -max_walk_speed * move_speed_scale, max_walk_speed * move_speed_scale);
+            ent.vel.x =
+                std::clamp(ent.vel.x, -max_walk_speed * move_speed_scale, max_walk_speed * move_speed_scale);
         }
     }
     const float max_fall_speed =
-        GetModifiedEffectValue(entity, EffectModifierTarget::MaxFallSpeed, tuning.max_speed, &state);
-    entity.vel.y = std::min(entity.vel.y, max_fall_speed);
-    StepPlayerFallTimer(entity, state);
-    gear_items::StepEquippedPassiveItems(entity_idx, state, graphics);
+        GetModifiedEffectValue(ent, EffectModifierTarget::MaxFallSpeed, tuning.max_speed, &state);
+    ent.vel.y = std::min(ent.vel.y, max_fall_speed);
+    StepPlayerFallTimer(ent, state);
+    gear_items::StepEquippedPassiveItems(ent_idx, state, graphics);
 
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::ApplyArchetypeGroundFriction(entity_idx, state, tuning.ground_friction_scale);
-    if (!entity.grounded && !externally_launched_player) {
-        entity.vel.x *= tuning.air_friction;
+    common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
+    common::ApplySpecGroundFriction(ent_idx, state, tuning.ground_friction_scale);
+    if (!ent.grounded && !externally_launched_player) {
+        ent.vel.x *= tuning.air_friction;
     }
-    ApplyClassicFallDamageOnLanding(entity_idx, state, audio, tuning);
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    ApplyClassicFallDamageOnLanding(ent_idx, state, audio, tuning);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 }
 
 } // namespace
 
-/** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsPlayer(
-    std::size_t entity_idx,
+/** generalize this to all square or rectangular ents somehow */
+void StepEntPhysicsAsPlayer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    StepEntityPhysicsAsPlayerWithTuning(
-        entity_idx,
+    StepEntPhysicsAsPlayerWithTuning(
+        ent_idx,
         state,
         graphics,
         audio,
@@ -655,4 +655,4 @@ void StepEntityPhysicsAsPlayer(
     );
 }
 
-} // namespace splonks::entities::player
+} // namespace splonks::ents::player

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,15 +10,15 @@ struct State;
 
 }
 
-namespace splonks::entities::mouse_trailer {
+namespace splonks::ents::mouse_trailer {
 
-extern const EntityArchetype kMouseTrailerArchetype;
-void StepEntityPhysicsAsMouseTrailer(
-    std::size_t entity_idx,
+extern const EntSpec kMouseTrailerSpec;
+void StepEntPhysicsAsMouseTrailer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::mouse_trailer
+} // namespace splonks::ents::mouse_trailer

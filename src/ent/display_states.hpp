@@ -1,22 +1,22 @@
 #pragma once
 
-#include "entity/display_support.hpp"
-#include "frame_data_id.hpp"
+#include "ent/display_support.hpp"
+#include "aframe_id.hpp"
 
 #include <cstddef>
 #include <optional>
 
 namespace splonks {
 
-struct DisplayStateFrameDataSelection {
-    FrameDataId animation_id = kInvalidFrameDataId;
+struct DisplayStateAFrameSelection {
+    AFrameId anim_id = kInvalidAFrameId;
     bool animate = true;
     bool has_forced_frame = false;
     std::size_t forced_frame = 0;
 };
 
-std::optional<DisplayStateFrameDataSelection> GetFrameDataSelectionForDisplayState(
-    const EntityDisplayInput& entity
+std::optional<DisplayStateAFrameSelection> GetAFrameSelectionForDisplayState(
+    const EntDisplayInput& ent
 );
 
 } // namespace splonks

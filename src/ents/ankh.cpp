@@ -1,13 +1,13 @@
-#include "entities/ankh.hpp"
+#include "ents/ankh.hpp"
 
 #include "effects.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 
-namespace splonks::entities::ankh {
+namespace splonks::ents::ankh {
 
-extern const EntityArchetype kAnkhArchetype{
-    .type_ = EntityType::Ankh,
+extern const EntSpec kAnkhSpec{
+    .type_ = EntType::Ankh,
     .size = Vec2::New(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
@@ -18,15 +18,15 @@ extern const EntityArchetype kAnkhArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::CrushingOnly,
-    .projectile_contact_damage_amount = 0,
-    .can_apply_projectile_contact = false,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::CrushingOnly,
+    .proj_contact_damage_amount = 0,
+    .can_apply_proj_contact = false,
     .pickup_effect = EffectId::Ankh,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Ankh),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Ankh),
 };
 
-} // namespace splonks::entities::ankh
+} // namespace splonks::ents::ankh

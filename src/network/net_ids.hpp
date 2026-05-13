@@ -7,37 +7,37 @@
 
 namespace splonks::network {
 
-using NetEntityId = std::uint64_t;
+using NetEntId = std::uint64_t;
 using StageInstanceId = std::uint64_t;
 
-constexpr NetEntityId kInvalidNetEntityId = 0;
+constexpr NetEntId kInvalidNetEntId = 0;
 constexpr StageInstanceId kInvalidStageInstanceId = 0;
-constexpr NetEntityId kPlayerNetEntityIdMask = 0xFFFF000000000000ULL;
+constexpr NetEntId kPlayerNetEntIdMask = 0xFFFF000000000000ULL;
 
 enum class NetRole : std::uint8_t {
     Offline,
-    Coordinator,
+    Host,
     Peer,
 };
 
-inline NetEntityId MakePlayerNetEntityId(PlayerId player_id) {
-    return kPlayerNetEntityIdMask | static_cast<NetEntityId>(player_id);
+inline NetEntId MakePlayerNetEntId(PlayerId player_id) {
+    return kPlayerNetEntIdMask | static_cast<NetEntId>(player_id);
 }
 
-inline bool IsPlayerNetEntityId(NetEntityId entity_id) {
-    return entity_id != kInvalidNetEntityId &&
-           (entity_id & kPlayerNetEntityIdMask) == kPlayerNetEntityIdMask;
+inline bool IsPlayerNetEntId(NetEntId ent_id) {
+    return ent_id != kInvalidNetEntId &&
+           (ent_id & kPlayerNetEntIdMask) == kPlayerNetEntIdMask;
 }
 
-inline PlayerId GetPlayerIdFromNetEntityId(NetEntityId entity_id) {
-    return static_cast<PlayerId>(entity_id & ~kPlayerNetEntityIdMask);
+inline PlayerId GetPlayerIdFromNetEntId(NetEntId ent_id) {
+    return static_cast<PlayerId>(ent_id & ~kPlayerNetEntIdMask);
 }
 
-inline std::optional<PlayerId> GetSpawnedNetEntityInputOwnerPlayerId(NetEntityId entity_id) {
-    if (entity_id == kInvalidNetEntityId || IsPlayerNetEntityId(entity_id)) {
+inline std::optional<PlayerId> GetSpawnedNetEntInputOwnerPlayerId(NetEntId ent_id) {
+    if (ent_id == kInvalidNetEntId || IsPlayerNetEntId(ent_id)) {
         return std::nullopt;
     }
-    const PlayerId input_owner_player_id = static_cast<PlayerId>(entity_id >> 48U);
+    const PlayerId input_owner_player_id = static_cast<PlayerId>(ent_id >> 48U);
     if (input_owner_player_id == kInvalidPlayerId) {
         return std::nullopt;
     }

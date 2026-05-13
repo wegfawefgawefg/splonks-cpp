@@ -1,9 +1,9 @@
-#include "entities/sac_altar_topper.hpp"
+#include "ents/sac_altar_topper.hpp"
 
-#include "entities/sac_altar.hpp"
-#include "entities/common/common.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ents/sac_altar.hpp"
+#include "ents/common/common.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
@@ -11,7 +11,7 @@
 
 #include <memory>
 
-namespace splonks::entities::sac_altar_topper {
+namespace splonks::ents::sac_altar_topper {
 
 namespace {
 
@@ -19,7 +19,7 @@ constexpr float kIdleSmokeIntervalFrames = 24.0F;
 
 void SpawnTopperSmoke(State& state, const Vec2& pos, float scale_bias) {
     SpriteParticle smoke{};
-    smoke.frame_data_animator = FrameDataAnimator::New(frame_data_ids::LittleSmoke);
+    smoke.aframe_animator = AFrameAnimator::New(aframe_ids::LittleSmoke);
     smoke.draw_layer = DrawLayer::Foreground;
     smoke.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(18, 30));
     smoke.pos = pos + Vec2::New(rng::RandomFloat(-2.0F, 2.0F), rng::RandomFloat(-1.0F, 1.0F));
@@ -38,8 +38,8 @@ void SpawnTopperSmoke(State& state, const Vec2& pos, float scale_bias) {
     state.particles.Add(std::move(smoke));
 }
 
-void StepEntityLogicAsSacAltarTopper(
-    std::size_t entity_idx,
+void StepEntLogicAsSacAltarTopper(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -48,24 +48,24 @@ void StepEntityLogicAsSacAltarTopper(
     (void)audio;
     (void)dt;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& topper = state.entity_manager.entities[entity_idx];
+    Ent& topper = state.ents.ents[ent_idx];
     if (!topper.active) {
         return;
     }
 
-    if (topper.frame_data_animator.animation_id == frame_data_ids::SacAltarSac) {
+    if (topper.aframe_animator.anim_id == aframe_ids::SacAltarSac) {
         if (topper.counter_b > 0.0F) {
             topper.counter_b -= 1.0F;
         }
         if (topper.counter_b <= 0.0F) {
-            SetAnimation(topper, frame_data_ids::SacAltarTopper);
-            topper.frame_data_animator.loop = true;
-            topper.frame_data_animator.animate = true;
-            topper.frame_data_animator.finished = false;
+            SetAnim(topper, aframe_ids::SacAltarTopper);
+            topper.aframe_animator.loop = true;
+            topper.aframe_animator.animate = true;
+            topper.aframe_animator.finished = false;
         }
     }
 
@@ -74,15 +74,15 @@ void StepEntityLogicAsSacAltarTopper(
     }
     if (topper.counter_a <= 0.0F) {
         topper.counter_a = kIdleSmokeIntervalFrames;
-        const Vec2 emit_pos = entities::common::GetEmitPointForEntity(topper, graphics, topper.GetCenter());
+        const Vec2 emit_pos = ents::common::GetEmitPointForEnt(topper, graphics, topper.GetCenter());
         SpawnTopperSmoke(state, emit_pos, 0.0F);
     }
 }
 
 } // namespace
 
-extern const EntityArchetype kSacAltarTopperArchetype{
-    .type_ = EntityType::SacAltarTopper,
+extern const EntSpec kSacAltarTopperSpec{
+    .type_ = EntType::SacAltarTopper,
     .size = Vec2::New(28.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -92,14 +92,14 @@ extern const EntityArchetype kSacAltarTopperArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Background,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
-    .on_death = entities::sac_altar::OnDeathAsSacAltarPiece,
-    .step_logic = StepEntityLogicAsSacAltarTopper,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::CrushingSpikesAndExplosion,
+    .on_death = ents::sac_altar::OnDeathAsSacAltarPiece,
+    .step_logic = StepEntLogicAsSacAltarTopper,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SacAltarTopper),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SacAltarTopper),
 };
 
-} // namespace splonks::entities::sac_altar_topper
+} // namespace splonks::ents::sac_altar_topper

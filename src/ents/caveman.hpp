@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,16 +10,16 @@ struct State;
 
 }
 
-namespace splonks::entities::caveman {
+namespace splonks::ents::caveman {
 
-extern const EntityArchetype kCavemanArchetype;
+extern const EntSpec kCavemanSpec;
 
-void StepEntityLogicAsCaveman(
-    std::size_t entity_idx,
+void StepEntLogicAsCaveman(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::caveman
+} // namespace splonks::ents::caveman

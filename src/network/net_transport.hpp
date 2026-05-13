@@ -62,7 +62,7 @@ struct NetTransportRuntime {
     UdpSocket socket;
     std::vector<NetRemoteEndpoint> remotes;
     std::vector<PlayerId> preferred_player_ids;
-    NetEndpoint coordinator_endpoint;
+    NetEndpoint host_endpoint;
     bool join_request_pending = false;
     std::uint32_t join_request_retry_frames = 0;
     NetFuzzerConfig fuzzer_config;

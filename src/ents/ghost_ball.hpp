@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,26 +10,26 @@ struct State;
 
 }
 
-namespace splonks::entities::ghost_ball {
+namespace splonks::ents::ghost_ball {
 
 constexpr float kChaseSpeed = 1.1F;
 constexpr float kChaseMaxSpeed = 1.0F;
 
-extern const EntityArchetype kGhostBallArchetype;
+extern const EntSpec kGhostBallSpec;
 
-void StepEntityLogicAsGhostBall(
-    std::size_t entity_idx,
+void StepEntLogicAsGhostBall(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityPhysicsAsGhostBall(
-    std::size_t entity_idx,
+void StepEntPhysicsAsGhostBall(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::ghost_ball
+} // namespace splonks::ents::ghost_ball

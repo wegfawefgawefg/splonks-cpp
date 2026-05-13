@@ -1,9 +1,9 @@
 #include "effects/render.hpp"
 
 #include "effects.hpp"
-#include "entity.hpp"
-#include "frame_data.hpp"
-#include "frame_data_id.hpp"
+#include "ent.hpp"
+#include "aframe.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -17,19 +17,19 @@ namespace splonks {
 
 namespace {
 
-std::size_t GetEffectOverlayAnimationFrameIndex(
-    const FrameDataAnimation& animation,
-    const FrameDataDb& frame_data_db,
+std::size_t GetEffectOverlayAnimFrameIndex(
+    const AFrameAnim& anim,
+    const AFrameDb& aframe_db,
     std::uint64_t tick
 ) {
-    if (animation.frame_indices.empty()) {
+    if (anim.frame_indices.empty()) {
         return 0;
     }
 
     std::uint64_t total_duration = 0;
-    for (std::size_t frame_index : animation.frame_indices) {
+    for (std::size_t frame_index : anim.frame_indices) {
         total_duration += static_cast<std::uint64_t>(
-            std::max(frame_data_db.frames[frame_index].duration, 1)
+            std::max(aframe_db.frames[frame_index].duration, 1)
         );
     }
     if (total_duration == 0) {
@@ -37,9 +37,9 @@ std::size_t GetEffectOverlayAnimationFrameIndex(
     }
 
     std::uint64_t local_tick = tick % total_duration;
-    for (std::size_t ordered_index = 0; ordered_index < animation.frame_indices.size(); ++ordered_index) {
-        const FrameData& frame_data = frame_data_db.frames[animation.frame_indices[ordered_index]];
-        const std::uint64_t duration = static_cast<std::uint64_t>(std::max(frame_data.duration, 1));
+    for (std::size_t ordered_index = 0; ordered_index < anim.frame_indices.size(); ++ordered_index) {
+        const AFrame& aframe = aframe_db.frames[anim.frame_indices[ordered_index]];
+        const std::uint64_t duration = static_cast<std::uint64_t>(std::max(aframe.duration, 1));
         if (local_tick < duration) {
             return ordered_index;
         }
@@ -49,38 +49,38 @@ std::size_t GetEffectOverlayAnimationFrameIndex(
     return 0;
 }
 
-void DrawEffectOverlayFrameDataIconRotated(
+void DrawEffectOverlayAFrameIconRotated(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,
-    FrameDataId animation_id,
+    AFrameId anim_id,
     const Vec2& center,
     const IVec2& size,
     double rotation_degrees
 ) {
-    const FrameDataAnimation* const animation = graphics.frame_data_db.FindAnimation(animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
+    const AFrameAnim* const anim = graphics.aframe_db.FindAnim(anim_id);
+    if (anim == nullptr || anim->frame_indices.empty()) {
         return;
     }
 
     const std::size_t ordered_frame_index =
-        GetEffectOverlayAnimationFrameIndex(*animation, graphics.frame_data_db, state.scene_frame);
-    if (ordered_frame_index >= animation->frame_indices.size()) {
+        GetEffectOverlayAnimFrameIndex(*anim, graphics.aframe_db, state.scene_frame);
+    if (ordered_frame_index >= anim->frame_indices.size()) {
         return;
     }
 
-    const FrameData& frame_data =
-        graphics.frame_data_db.frames[animation->frame_indices[ordered_frame_index]];
-    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data.image_id);
+    const AFrame& aframe =
+        graphics.aframe_db.frames[anim->frame_indices[ordered_frame_index]];
+    SDL_Texture* const texture = graphics.GetAFrameTexture(aframe.image_id);
     if (texture == nullptr) {
         return;
     }
 
     const SDL_FRect src{
-        static_cast<float>(frame_data.sample_rect.x),
-        static_cast<float>(frame_data.sample_rect.y),
-        static_cast<float>(frame_data.sample_rect.w),
-        static_cast<float>(frame_data.sample_rect.h),
+        static_cast<float>(aframe.sample_rect.x),
+        static_cast<float>(aframe.sample_rect.y),
+        static_cast<float>(aframe.sample_rect.w),
+        static_cast<float>(aframe.sample_rect.h),
     };
     const SDL_FRect dst{
         std::round(center.x - (static_cast<float>(size.x) * 0.5F)),
@@ -107,14 +107,14 @@ std::optional<Vec2> FindDefaultExitCenter(const State& state) {
     const StageExitId default_exit_id = state.stage.FindExitId("default");
     const bool should_match_exit_id = !state.stage.exits.empty();
 
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active || entity.type_ != EntityType::BasicExit) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active || ent.type_ != EntType::BasicExit) {
             continue;
         }
-        if (should_match_exit_id && entity.stage_exit_id != default_exit_id) {
+        if (should_match_exit_id && ent.stage_exit_id != default_exit_id) {
             continue;
         }
-        return entity.GetCenter();
+        return ent.GetCenter();
     }
 
     return std::nullopt;
@@ -122,18 +122,18 @@ std::optional<Vec2> FindDefaultExitCenter(const State& state) {
 
 } // namespace
 
-void RenderEffectWorldOverlays(SDL_Renderer* renderer, const State& state, Graphics& graphics, const Entity& owner) {
+void RenderEffectWorldOverlays(SDL_Renderer* renderer, const State& state, Graphics& graphics, const Ent& owner) {
     if (!owner.effects.value) {
         return;
     }
 
     for (std::uint8_t effect_index = 0; effect_index < owner.effects->count; ++effect_index) {
         const EffectInstance& effect = owner.effects->effects[effect_index];
-        const EffectArchetype& archetype = GetEffectArchetype(effect.id);
-        if (archetype.render_world_overlay == nullptr) {
+        const EffectSpec& spec = GetEffectSpec(effect.id);
+        if (spec.render_world_overlay == nullptr) {
             continue;
         }
-        archetype.render_world_overlay(renderer, state, graphics, owner, effect);
+        spec.render_world_overlay(renderer, state, graphics, owner, effect);
     }
 }
 
@@ -141,7 +141,7 @@ void RenderCompassWorldOverlay(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,
-    const Entity&,
+    const Ent&,
     const EffectInstance&
 ) {
     const std::optional<Vec2> exit_center = FindDefaultExitCenter(state);
@@ -172,11 +172,11 @@ void RenderCompassWorldOverlay(
             Vec2::New(0.0F, bob);
         const int arrow_size =
             std::max(16, static_cast<int>(static_cast<float>(graphics.dims.y) * 0.045F));
-        DrawEffectOverlayFrameDataIconRotated(
+        DrawEffectOverlayAFrameIconRotated(
             renderer,
             state,
             graphics,
-            frame_data_ids::CompassArrow,
+            aframe_ids::CompassArrow,
             exit_marker_screen,
             IVec2::New(arrow_size, arrow_size),
             -90.0
@@ -193,11 +193,11 @@ void RenderCompassWorldOverlay(
     const double rotation_degrees =
         static_cast<double>((std::atan2(direction.y, direction.x) * kRadiansToDegrees) - 180.0F);
     const int arrow_size = std::max(16, static_cast<int>(static_cast<float>(graphics.dims.y) * 0.055F));
-    DrawEffectOverlayFrameDataIconRotated(
+    DrawEffectOverlayAFrameIconRotated(
         renderer,
         state,
         graphics,
-        frame_data_ids::CompassArrow,
+        aframe_ids::CompassArrow,
         arrow_center,
         IVec2::New(arrow_size, arrow_size),
         rotation_degrees

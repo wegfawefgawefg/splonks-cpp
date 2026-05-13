@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::ankh {
+namespace splonks::ents::ankh {
 
-extern const EntityArchetype kAnkhArchetype;
+extern const EntSpec kAnkhSpec;
 
-} // namespace splonks::entities::ankh
+} // namespace splonks::ents::ankh

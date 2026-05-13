@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::yeti {
+namespace splonks::ents::yeti {
 
-extern const EntityArchetype kYetiArchetype;
+extern const EntSpec kYetiSpec;
 
-} // namespace splonks::entities::yeti
+} // namespace splonks::ents::yeti

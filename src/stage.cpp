@@ -1,8 +1,8 @@
 #include "stage.hpp"
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "room.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -434,7 +434,7 @@ bool EmbeddedTreasureCoordExists(
 
 bool EmbeddedTreasure::IsEmpty() const {
     for (const EmbeddedTreasureDrop& drop : drops) {
-        if (drop.type_ != EntityType::None && drop.count > 0) {
+        if (drop.type_ != EntType::None && drop.count > 0) {
             return false;
         }
     }
@@ -445,8 +445,8 @@ bool EmbeddedTreasure::IsVisible() const {
     return visibility == EmbeddedTreasureVisibility::Visible;
 }
 
-std::optional<FrameDataId> EmbeddedTreasure::GetOverlayFrame() const {
-    if (overlay_frame == kInvalidFrameDataId) {
+std::optional<AFrameId> EmbeddedTreasure::GetOverlayFrame() const {
+    if (overlay_frame == kInvalidAFrameId) {
         return std::nullopt;
     }
     return overlay_frame;
@@ -549,7 +549,7 @@ Stage Stage::New(StageType stage_type) {
         static_cast<std::size_t>(kShape.y),
         std::vector<Tile>(static_cast<std::size_t>(kShape.x), Tile::Air));
     Tile border_tile = Tile::CaveDirt;
-    FrameDataId block_animation_id = frame_data_ids::CaveBlock;
+    AFrameId block_anim_id = aframe_ids::CaveBlock;
     std::string stage_title = "Debug";
     std::vector<Tile> backwall_fill_tiles{
         Tile::CaveAir0,
@@ -601,7 +601,7 @@ Stage Stage::New(StageType stage_type) {
     Stage stage;
     stage.stage_type = stage_type;
     stage.stage_title = stage_title;
-    stage.block_animation_id = block_animation_id;
+    stage.block_anim_id = block_anim_id;
     stage.tiles = std::move(tiles);
     stage.tile_rotations = MakeEmptyTileRotationGrid(stage.tiles);
     stage.fluid_tiles = MakeEmptyFluidTileGrid(stage.tiles);
@@ -863,11 +863,11 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
     if (!IsTileCoordInside(tile_pos.x, tile_pos.y)) {
         return;
     }
-    if (GetTileArchetype(tile).simulated_fluid) {
+    if (GetTileSpec(tile).simulated_fluid) {
         SetFluidTile(tile_pos, tile);
         Tile& terrain_tile = tiles[static_cast<std::size_t>(tile_pos.y)]
                                   [static_cast<std::size_t>(tile_pos.x)];
-        if (GetTileArchetype(terrain_tile).simulated_fluid) {
+        if (GetTileSpec(terrain_tile).simulated_fluid) {
             terrain_tile = Tile::Air;
             tile_rotations[static_cast<std::size_t>(tile_pos.y)]
                           [static_cast<std::size_t>(tile_pos.x)] = kTileRotation0;
@@ -881,7 +881,7 @@ void Stage::SetTile(const IVec2& pos, Tile tile) {
     tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = tile;
     tile_rotations[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
         kTileRotation0;
-    if (GetTileArchetype(tile).solid || GetTileArchetype(tile).one_way_top_solid) {
+    if (GetTileSpec(tile).solid || GetTileSpec(tile).one_way_top_solid) {
         fluid_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
             Tile::Air;
         fluid_amount[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] =
@@ -905,7 +905,7 @@ void Stage::SetFluidTile(const IVec2& pos, Tile tile) {
     float& amount = fluid_amount[static_cast<std::size_t>(tile_pos.y)]
                                 [static_cast<std::size_t>(tile_pos.x)];
     constexpr float max_fluid_amount = 1.0F;
-    const float new_amount = GetTileArchetype(tile).simulated_fluid ? max_fluid_amount : 0.0F;
+    const float new_amount = GetTileSpec(tile).simulated_fluid ? max_fluid_amount : 0.0F;
     if (stored == tile && amount == new_amount) {
         return;
     }
@@ -1006,11 +1006,11 @@ void Stage::SetBackwallTile(const IVec2& pos, Tile tile) {
     backwall_tiles[static_cast<std::size_t>(tile_pos.y)][static_cast<std::size_t>(tile_pos.x)] = tile;
 }
 
-void Stage::SetEmbeddedTreasure(const IVec2& pos, EntityType type_) {
+void Stage::SetEmbeddedTreasure(const IVec2& pos, EntType type_) {
     EmbeddedTreasure embedded_treasure;
     embedded_treasure.drops[0] = EmbeddedTreasureDrop{
         .type_ = type_,
-        .count = type_ == EntityType::None ? 0 : 1,
+        .count = type_ == EntType::None ? 0 : 1,
     };
     SetEmbeddedTreasure(pos, embedded_treasure);
 }
@@ -1366,17 +1366,17 @@ IVec2 Stage::WrapWorldPos(const IVec2& wc) const {
     return wrapped;
 }
 
-void Stage::NormalizeEntityPositionForWrap(Entity& entity) const {
+void Stage::NormalizeEntPositionForWrap(Ent& ent) const {
     if (WrapsX()) {
         const float stage_width = static_cast<float>(GetWidth());
         while (true) {
-            const auto [tl, br] = entity.GetBounds();
+            const auto [tl, br] = ent.GetBounds();
             if (br.x < 0.0F) {
-                entity.pos.x += stage_width;
+                ent.pos.x += stage_width;
                 continue;
             }
             if (tl.x >= stage_width) {
-                entity.pos.x -= stage_width;
+                ent.pos.x -= stage_width;
                 continue;
             }
             break;
@@ -1386,13 +1386,13 @@ void Stage::NormalizeEntityPositionForWrap(Entity& entity) const {
     if (WrapsY()) {
         const float stage_height = static_cast<float>(GetHeight());
         while (true) {
-            const auto [tl, br] = entity.GetBounds();
+            const auto [tl, br] = ent.GetBounds();
             if (br.y < 0.0F) {
-                entity.pos.y += stage_height;
+                ent.pos.y += stage_height;
                 continue;
             }
             if (tl.y >= stage_height) {
-                entity.pos.y -= stage_height;
+                ent.pos.y -= stage_height;
                 continue;
             }
             break;

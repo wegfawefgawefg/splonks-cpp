@@ -1,89 +1,89 @@
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 
 namespace splonks {
 
-void SetEntityAs(Entity& entity, EntityType type_) {
-    const VID existing_vid = entity.vid;
-    entity.Reset();
-    const EntityArchetype& archetype = GetEntityArchetype(type_);
-    entity.type_ = archetype.type_;
-    entity.has_physics = archetype.has_physics;
-    entity.can_collide = archetype.can_collide;
-    entity.can_be_hit = archetype.can_be_hit;
-    entity.can_receive_projectile_contact = archetype.can_receive_projectile_contact;
-    entity.can_be_picked_up = archetype.can_be_picked_up;
-    entity.affected_by_cobweb = archetype.affected_by_cobweb;
-    entity.can_collect_pickups = archetype.can_collect_pickups;
-    entity.can_only_be_picked_up_if_dead_or_stunned =
-        archetype.can_only_be_picked_up_if_dead_or_stunned;
-    entity.impassable = archetype.impassable;
-    entity.can_be_hung_on = archetype.can_be_hung_on;
-    entity.hurt_on_contact = archetype.hurt_on_contact;
-    entity.can_stomp = archetype.can_stomp;
-    entity.can_be_stomped = archetype.can_be_stomped;
-    entity.vanish_on_death = archetype.vanish_on_death;
-    entity.affected_by_ground_friction = archetype.affected_by_ground_friction;
-    entity.support_ground_friction = archetype.support_ground_friction;
-    entity.pushable = archetype.pushable;
-    entity.push_acc = archetype.push_acc;
-    entity.jump_hold_gravity_frames_remaining = 0;
-    entity.throw_velocity_scale = archetype.throw_velocity_scale;
-    entity.buoyancy = archetype.buoyancy;
-    entity.alpha = archetype.alpha;
-    entity.self_light = archetype.self_light;
-    entity.light_strength = archetype.light_strength;
-    entity.light_color = archetype.light_color;
-    entity.light_radius = archetype.light_radius;
-    entity.pickup_effect = archetype.pickup_effect;
-    entity.buyable = archetype.buyable;
-    entity.damage_animation = archetype.damage_animation;
-    entity.damage_sound = archetype.damage_sound;
-    entity.collide_sound = archetype.collide_sound;
-    entity.death_sound = archetype.death_sound;
-    entity.on_death = archetype.on_death;
-    entity.on_damage = archetype.on_damage;
-    entity.on_use = archetype.on_use;
-    entity.on_area_enter = archetype.on_area_enter;
-    entity.on_area_exit = archetype.on_area_exit;
-    entity.on_area_tile_changed = archetype.on_area_tile_changed;
-    entity.control_logic = archetype.control_logic;
-    entity.step_logic = archetype.step_logic;
-    entity.step_physics = archetype.step_physics;
-    entity.crusher_pusher = archetype.crusher_pusher;
-    entity.can_go_on_back = archetype.can_go_on_back;
-    entity.can_hang_ledge = archetype.can_hang_ledge;
-    entity.can_be_stunned = archetype.can_be_stunned;
-    entity.stun_recovers_on_ground = archetype.stun_recovers_on_ground;
-    entity.stun_recovers_while_held = archetype.stun_recovers_while_held;
-    entity.size = archetype.size;
-    entity.facing = archetype.facing;
-    entity.draw_layer = archetype.draw_layer;
-    entity.render_enabled = archetype.render_enabled;
-    TrySetAnimation(entity, archetype.display_state);
-    entity.condition = archetype.condition;
-    entity.ai_state = archetype.ai_state;
-    entity.health = archetype.health;
-    entity.counter_a = archetype.counter_a;
-    entity.counter_b = archetype.counter_b;
-    entity.counter_d = archetype.counter_d;
-    entity.damage_vulnerability = archetype.damage_vulnerability;
-    entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
-    entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
-    entity.can_apply_projectile_contact = archetype.can_apply_projectile_contact;
-    entity.entity_label_a = archetype.entity_label_a;
-    entity.alignment = archetype.alignment;
-    entity.frame_data_animator = archetype.frame_data_animator;
-    entity.vid = existing_vid;
+void SetEntAs(Ent& ent, EntType type_) {
+    const VID existing_vid = ent.vid;
+    ent.Reset();
+    const EntSpec& spec = GetEntSpec(type_);
+    ent.type_ = spec.type_;
+    ent.has_physics = spec.has_physics;
+    ent.can_collide = spec.can_collide;
+    ent.can_be_hit = spec.can_be_hit;
+    ent.can_receive_proj_contact = spec.can_receive_proj_contact;
+    ent.can_be_picked_up = spec.can_be_picked_up;
+    ent.affected_by_cobweb = spec.affected_by_cobweb;
+    ent.can_collect_pickups = spec.can_collect_pickups;
+    ent.can_only_be_picked_up_if_dead_or_stunned =
+        spec.can_only_be_picked_up_if_dead_or_stunned;
+    ent.impassable = spec.impassable;
+    ent.can_be_hung_on = spec.can_be_hung_on;
+    ent.hurt_on_contact = spec.hurt_on_contact;
+    ent.can_stomp = spec.can_stomp;
+    ent.can_be_stomped = spec.can_be_stomped;
+    ent.vanish_on_death = spec.vanish_on_death;
+    ent.affected_by_ground_friction = spec.affected_by_ground_friction;
+    ent.support_ground_friction = spec.support_ground_friction;
+    ent.pushable = spec.pushable;
+    ent.push_acc = spec.push_acc;
+    ent.jump_hold_gravity_frames_remaining = 0;
+    ent.throw_velocity_scale = spec.throw_velocity_scale;
+    ent.buoyancy = spec.buoyancy;
+    ent.alpha = spec.alpha;
+    ent.self_light = spec.self_light;
+    ent.light_strength = spec.light_strength;
+    ent.light_color = spec.light_color;
+    ent.light_radius = spec.light_radius;
+    ent.pickup_effect = spec.pickup_effect;
+    ent.buyable = spec.buyable;
+    ent.damage_anim = spec.damage_anim;
+    ent.damage_sound = spec.damage_sound;
+    ent.collide_sound = spec.collide_sound;
+    ent.death_sound = spec.death_sound;
+    ent.on_death = spec.on_death;
+    ent.on_damage = spec.on_damage;
+    ent.on_use = spec.on_use;
+    ent.on_area_enter = spec.on_area_enter;
+    ent.on_area_exit = spec.on_area_exit;
+    ent.on_area_tile_changed = spec.on_area_tile_changed;
+    ent.control_logic = spec.control_logic;
+    ent.step_logic = spec.step_logic;
+    ent.step_physics = spec.step_physics;
+    ent.crusher_pusher = spec.crusher_pusher;
+    ent.can_go_on_back = spec.can_go_on_back;
+    ent.can_hang_ledge = spec.can_hang_ledge;
+    ent.can_be_stunned = spec.can_be_stunned;
+    ent.stun_recovers_on_ground = spec.stun_recovers_on_ground;
+    ent.stun_recovers_while_held = spec.stun_recovers_while_held;
+    ent.size = spec.size;
+    ent.facing = spec.facing;
+    ent.draw_layer = spec.draw_layer;
+    ent.render_enabled = spec.render_enabled;
+    TrySetAnim(ent, spec.display_state);
+    ent.condition = spec.condition;
+    ent.ai_state = spec.ai_state;
+    ent.health = spec.health;
+    ent.counter_a = spec.counter_a;
+    ent.counter_b = spec.counter_b;
+    ent.counter_d = spec.counter_d;
+    ent.damage_vuln = spec.damage_vuln;
+    ent.proj_contact_damage_type = spec.proj_contact_damage_type;
+    ent.proj_contact_damage_amount = spec.proj_contact_damage_amount;
+    ent.can_apply_proj_contact = spec.can_apply_proj_contact;
+    ent.ent_label_a = spec.ent_label_a;
+    ent.alignment = spec.alignment;
+    ent.aframe_animator = spec.aframe_animator;
+    ent.vid = existing_vid;
 }
 
-FrameDataId GetDefaultAnimationIdForArchetype(EntityType type_) {
-    const FrameDataId animation_id = GetEntityArchetype(type_).frame_data_animator.animation_id;
-    if (animation_id == kInvalidFrameDataId) {
-        return frame_data_ids::NoSprite;
+AFrameId GetDefaultAnimIdForSpec(EntType type_) {
+    const AFrameId anim_id = GetEntSpec(type_).aframe_animator.anim_id;
+    if (anim_id == kInvalidAFrameId) {
+        return aframe_ids::NoSprite;
     }
-    return animation_id;
+    return anim_id;
 }
 
 } // namespace splonks

@@ -190,7 +190,7 @@ void SetPlayingInputSnapshot(State& state) {
         if (state.debug_input_override.frames_remaining <= 0) {
             state.debug_input_override.active = false;
             state.debug_input_override.player_id = kInvalidPlayerId;
-            state.debug_input_override.input = PlayerInputFrame::New();
+            state.debug_input_override.input = InputFrame::New();
         }
     }
     state.playing_input_snapshot = new_inputs;
@@ -362,14 +362,14 @@ PlayingInputSnapshot PlayingInputSnapshot::New() {
     return inputs;
 }
 
-PlayerInputFrame PlayerInputFrame::New() {
-    PlayerInputFrame input_frame;
+InputFrame InputFrame::New() {
+    InputFrame input_frame;
     input_frame.mouse_pos = UVec2::New(0, 0);
     return input_frame;
 }
 
-PlayerInputFrame ToPlayerInputFrame(const PlayingInputSnapshot& snapshot) {
-    PlayerInputFrame frame = PlayerInputFrame::New();
+InputFrame ToInputFrame(const PlayingInputSnapshot& snapshot) {
+    InputFrame frame = InputFrame::New();
     frame.left = snapshot.left;
     frame.right = snapshot.right;
     frame.up = snapshot.up;
@@ -393,8 +393,8 @@ PlayerInputFrame ToPlayerInputFrame(const PlayingInputSnapshot& snapshot) {
     return frame;
 }
 
-PlayerInputFrame ToPlayerInputFrame(const PlayingInputs& inputs) {
-    PlayerInputFrame frame = PlayerInputFrame::New();
+InputFrame ToInputFrame(const PlayingInputs& inputs) {
+    InputFrame frame = InputFrame::New();
     frame.left = inputs.left.down;
     frame.right = inputs.right.down;
     frame.up = inputs.up.down;
@@ -418,7 +418,7 @@ PlayerInputFrame ToPlayerInputFrame(const PlayingInputs& inputs) {
     return frame;
 }
 
-PlayingInputSnapshot ToPlayingInputSnapshot(const PlayerInputFrame& frame) {
+PlayingInputSnapshot ToPlayingInputSnapshot(const InputFrame& frame) {
     PlayingInputSnapshot snapshot = PlayingInputSnapshot::New();
     snapshot.left = frame.left;
     snapshot.right = frame.right;
@@ -477,7 +477,7 @@ PlayingInputs BuildPlayingInputs(
     return inputs;
 }
 
-PlayingInputs BuildPlayingInputs(const PlayerInputFrame& current, const PlayerInputFrame& previous) {
+PlayingInputs BuildPlayingInputs(const InputFrame& current, const InputFrame& previous) {
     return BuildPlayingInputs(ToPlayingInputSnapshot(current), ToPlayingInputSnapshot(previous));
 }
 
@@ -597,7 +597,7 @@ void LatchPlayingInputsForTick(State& state) {
     if (const PlayerSlot* const primary_slot = state.players.FindPrimaryLocal()) {
         state.players.SetInputFrameAndInputsForPlayer(
             primary_slot->player_id,
-            ToPlayerInputFrame(current),
+            ToInputFrame(current),
             state.playing_inputs,
             state.immediate_playing_inputs
         );

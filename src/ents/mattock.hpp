@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::mattock {
+namespace splonks::ents::mattock {
 
-extern const EntityArchetype kMattockArchetype;
+extern const EntSpec kMattockSpec;
 
-} // namespace splonks::entities::mattock
+} // namespace splonks::ents::mattock

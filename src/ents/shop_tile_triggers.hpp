@@ -7,7 +7,7 @@ namespace splonks {
 struct Audio;
 struct State;
 
-namespace entities::shop {
+namespace ents::shop {
 
 StageTileTrigger MakeShopVandalismTileTrigger(const IVec2& tile_pos, std::size_t target_spawn_index);
 StageTileTrigger MakeShopVandalismTileTrigger(const IVec2& tile_pos, VID target_vid);
@@ -19,6 +19,6 @@ void OnShopVandalismTileDestroyed(
     Audio& audio
 );
 
-} // namespace entities::shop
+} // namespace ents::shop
 
 } // namespace splonks

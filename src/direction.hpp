@@ -9,9 +9,9 @@ enum class Direction {
     Up,
 };
 
-Direction LeftOrRight();
+Direction Side();
 Direction DownOrUp();
-Direction LeftOrRightOrDown();
+Direction SideOrDown();
 Direction RandomDirection();
 
 } // namespace splonks

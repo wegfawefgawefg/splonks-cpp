@@ -46,7 +46,7 @@ Rendering shape:
   render cutoff and the neighbor is not solid/fluid above that same cutoff.
 - Draw optional debug flow as a single moving pixel. Stronger velocity moves
   the pixel faster rather than making the indicator longer.
-- Draw occasional render-only bubbles from the `bubble` animation inside cells
+- Draw occasional render-only bubbles from the `bubble` anim inside cells
   above the topper cutoff.
 
 Debug knobs for the vector model:
@@ -86,7 +86,7 @@ Per-cell gravity:
 - Store per-cell fill in `Stage::fluid_amount`, as a normalized float in `0..1`.
 - Store per-cell velocity in `Stage::fluid_velocity`.
 - Terrain stays in `Stage::tiles`, so a cell can be `terrain = Ladder` and `fluid = WaterSwim`.
-- Mark fluid-capable tile archetypes with `simulated_fluid`.
+- Mark fluid-capable tile specs with `simulated_fluid`.
 - Every N gameplay frames, run one full pass over the stage tile grid. The current validation default is every frame and is live-tunable through the debug fluid brush.
 - Read terrain blockage from `stage.tiles`, read/write fluid type, amount, and velocity through the fluid overlay grids.
 - Fluids move into air or transparent non-solid terrain cells, so water can occupy ladders/ropes without replacing them.
@@ -126,11 +126,11 @@ Cons:
 
 Initial rules:
 
-- The simulation is generic: it asks tile archetypes whether a tile is simulated fluid.
+- The simulation is generic: it asks tile specs whether a tile is simulated fluid.
 - `WaterTop` is drawn at render time from alpha-cell exposed-edge data.
-- Entity control changes come from tile overlap effects, not from water-specific physics checks in the engine.
-- Water-specific entities, like piranhas, may still use water query helpers in their own content logic.
-- Fluids render as a late transparent pass over terrain/entities.
+- Ent control changes come from tile overlap effects, not from water-specific physics checks in the engine.
+- Water-specific ents, like piranhas, may still use water query helpers in their own content logic.
+- Fluids render as a late transparent pass over terrain/ents.
 
 ## Multiplayer Ownership
 
@@ -138,10 +138,10 @@ Terraria stores liquid amount/type as tile data, so liquid sync can use the same
 tile/world section machinery that repairs tiles. Splonks stores fluids as an
 overlay grid parallel to terrain, so the ownership rule has to be explicit:
 
-- The coordinator owns canonical fluid simulation when fluid affects gameplay.
+- The host owns canonical fluid simulation when fluid affects gameplay.
 - Peers do not step canonical fluids locally.
-- The coordinator sends changed fluid cells and periodic repair/refresh patches.
-- Peer debug/admin fluid edits must become coordinator-routed commands before
+- The host sends changed fluid cells and periodic repair/refresh patches.
+- Peer debug/admin fluid edits must become host-routed commands before
   they are enabled again in multiplayer.
 - Heavy water stages need packet counters and profiling before increasing patch
   frequency or patch area.
@@ -159,7 +159,7 @@ Current replicated cell payload:
 
 Current state:
 
-- Terrain/fluid overlap already refreshes `TileArchetype::effect_while_inside` for entities through common entity contact.
+- Terrain/fluid overlap already refreshes `TileSpec::effect_while_inside` for ents through common ent contact.
 - `WaterSwim` and `WaterTop` both apply `EffectId::InWater`.
 - `InWater` currently has no modifiers or event behavior, so water is visible but mostly non-interactive.
 
@@ -186,17 +186,17 @@ Splonks target behavior:
    - `GravityScale`: multiplicative, base `1.0`.
    - `VelocityDampingX`: multiplicative, base `1.0`.
    - `VelocityDampingY`: multiplicative, base `1.0`.
-   - `MaxFallSpeed`: usually `Min`, base entity/controller max fall speed.
-   - `BuoyancyStrength`: usually `Max`, base `0.0`; common physics multiplies this by `Entity::buoyancy`.
+   - `MaxFallSpeed`: usually `Min`, base ent/controller max fall speed.
+   - `BuoyancyStrength`: usually `Max`, base `0.0`; common physics multiplies this by `Ent::buoyancy`.
    - `FallTimerRate`: multiplicative/override, base `1.0`; override `0` clears/suppresses fall danger.
    - `StompDamageScale`: multiplicative/override, base `1.0`; override `0` disables stomp attempts.
    - `SwimImpulse`: usually `Max`, base `0.0`; controllers/helpers may consume it when jump is pressed.
 
 3. Give `InWater` default modifiers:
-   - lower effective gravity for normal entities;
+   - lower effective gravity for normal ents;
    - damp vertical velocity strongly while falling;
-   - add upward buoyancy only for entities with non-zero `buoyancy`;
-   - optionally damp projectile/body impacts enough that thrown items stop being lethal underwater.
+   - add upward buoyancy only for ents with non-zero `buoyancy`;
+   - optionally damp proj/body impacts enough that thrown items stop being lethal underwater.
 
 4. Player control should read `HasEffect(player, EffectId::InWater)` for swim-specific input:
    - reset `fall_timer` while in water;

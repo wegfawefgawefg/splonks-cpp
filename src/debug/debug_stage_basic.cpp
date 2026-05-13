@@ -1,7 +1,7 @@
 #include "debug/debug_stage_builders.hpp"
 
 #include "debug/debug_stage_common.hpp"
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 #include "stage_spawning.hpp"
 
 #include <algorithm>
@@ -55,19 +55,19 @@ Vec2 GetMazeDoorTestPlayerSpawn(MazeDoorTestRoom room) {
 }
 
 void SpawnMazeDoorLogo(State& state, const Vec2& pos, const Vec2& vel, MazeDoorTestRoom target_room) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid) {
         return;
     }
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
+    Ent* const ent = state.ents.GetEntMut(*vid);
+    if (ent == nullptr) {
         return;
     }
 
-    SetEntityAs(*entity, EntityType::DvdLogo);
-    entity->pos = pos;
-    entity->vel = vel;
-    entity->transition_target = StageTransitionTarget{
+    SetEntAs(*ent, EntType::DvdLogo);
+    ent->pos = pos;
+    ent->vel = vel;
+    ent->transition_target = StageTransitionTarget{
         .destination = StageLoadTarget::ForDebugLevel(
             DebugLevelKind::MazeDoorTest,
             static_cast<std::uint8_t>(target_room)
@@ -231,9 +231,9 @@ void InitStompTestStage(State& state) {
     const float player_spawn_y = static_cast<float>(3 * static_cast<int>(kTileSize) - 10);
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
 
-    if (const std::optional<VID> vid = state.entity_manager.NewEntity()) {
-        if (Entity* const stomp_pad = state.entity_manager.GetEntityMut(*vid)) {
-            SetEntityAs(*stomp_pad, EntityType::StompPad);
+    if (const std::optional<VID> vid = state.ents.NewEnt()) {
+        if (Ent* const stomp_pad = state.ents.GetEntMut(*vid)) {
+            SetEntAs(*stomp_pad, EntType::StompPad);
             stomp_pad->pos = Vec2::New(
                 static_cast<float>(4 * static_cast<int>(kTileSize)),
                 static_cast<float>(4 * static_cast<int>(kTileSize) - 7)

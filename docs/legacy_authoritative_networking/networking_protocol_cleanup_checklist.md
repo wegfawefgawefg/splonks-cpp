@@ -4,7 +4,7 @@ Review date: 2026-05-10
 
 Purpose: record the networking cleanup work that removed refactor cruft and
 aligned the code with the Terraria/tModLoader-style model we chose: broad
-message lanes, coordinator-owned durable state, typed payloads, and no
+message lanes, host-owned durable state, typed payloads, and no
 item-specific netcode patches.
 
 The broader multiplayer definition of done remains
@@ -39,14 +39,14 @@ The broader multiplayer definition of done remains
 
 - [x] Split `src/network/net_lobby_packets.cpp`.
   - The root file is now only the shared packet-send helper.
-  - Tile/fluid, action, entity, player/run, and presentation mapping live in
+  - Tile/fluid, action, ent, player/run, and pres mapping live in
     focused `net_lobby_packets_*.cpp` files.
   - Packet mapping stays mechanical and does not encode content rules.
 
 - [x] Split `src/network/net_message_apply.cpp`.
   - The root file is now the ordered-message dispatcher and shared ordering
     helpers.
-  - Tile/fluid, entity, player, run/stage, and presentation apply logic live in
+  - Tile/fluid, ent, player, run/stage, and pres apply logic live in
     focused `net_message_apply_*.cpp` files.
   - Apply code calls content/world-ops seams instead of becoming an item-specific
     dispatch table.
@@ -58,15 +58,15 @@ The broader multiplayer definition of done remains
     mutation bus.
 
 - [x] Renamed stale spawn helper names in content.
-  - Helpers that now call `world_ops::SpawnEntity` no longer imply that content
+  - Helpers that now call `world_ops::SpawnEnt` no longer imply that content
     code directly owns replication.
-  - Known sites covered include `src/entities/box.cpp`, `src/entities/pot.cpp`,
+  - Known sites covered include `src/ents/box.cpp`, `src/ents/pot.cpp`,
     and `src/stage_break.cpp`.
 
 - [x] Replaced the internal wide action bag with typed actions.
   - Call sites construct specific action payloads such as `UseToolAction`,
-    `UseHeldEntityAction`, `PickupEntityAction`, `ThrowEntityAction`,
-    `BreakTileAction`, `DamageEntityAction`, and `HitEntityAction`.
+    `UseHeldEntAction`, `PickupEntAction`, `ThrowEntAction`,
+    `BreakTileAction`, `DamageEntAction`, and `HitEntAction`.
   - World-ops dispatches on typed action payloads instead of inspecting a giant
     optional-field bag.
 

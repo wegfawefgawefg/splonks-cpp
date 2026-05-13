@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,26 +10,26 @@ struct State;
 
 }
 
-namespace splonks::entities::bat {
+namespace splonks::ents::bat {
 
 constexpr float kChaseSpeed = 0.5F;
 constexpr float kChaseMaxSpeed = 1.0F;
 
-extern const EntityArchetype kBatArchetype;
+extern const EntSpec kBatSpec;
 
-void StepEntityLogicAsBat(
-    std::size_t entity_idx,
+void StepEntLogicAsBat(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
-void StepEntityPhysicsAsBat(
-    std::size_t entity_idx,
+void StepEntPhysicsAsBat(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::bat
+} // namespace splonks::ents::bat

@@ -1,16 +1,16 @@
-#include "entities/box.hpp"
+#include "ents/box.hpp"
 #include "on_damage_effects.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "controls.hpp"
 #include "world_ops.hpp"
 
 #include <cmath>
 
-namespace splonks::entities::box {
+namespace splonks::ents::box {
 
 namespace {
 
@@ -21,30 +21,30 @@ constexpr float kControlledSlideVel = 3.75F;
 constexpr std::uint32_t kControlledSlideCooldownFrames = 120;
 constexpr float kBoxBreakawayImpactSpeed = 2.0F;
 
-Entity* SpawnEntityAtTopLeft(EntityType type_, const Vec2& pos, State& state) {
-    return world_ops::SpawnEntity(state, type_, [pos](Entity& entity) {
-        entity.pos = pos;
-        entity.vel = Vec2::New(0.0F, 0.0F);
+Ent* SpawnEntAtTopLeft(EntType type_, const Vec2& pos, State& state) {
+    return world_ops::SpawnEnt(state, type_, [pos](Ent& ent) {
+        ent.pos = pos;
+        ent.vel = Vec2::New(0.0F, 0.0F);
     });
 }
 
-EntityType RandomTeleporterVariant(State& state) {
+EntType RandomTeleporterVariant(State& state) {
     return state.drng.RandomIntInclusive(1, 2) == 1
-               ? EntityType::Teleporter
-               : EntityType::TeleporterBackpack;
+               ? EntType::Teleporter
+               : EntType::TeleporterBackpack;
 }
 
-void StepControlledBox(Entity& box, const controls::ControlIntent& control) {
+void StepControlledBox(Ent& box, const controls::ControlIntent& control) {
     if (box.attack_delay_countdown > 0) {
         box.attack_delay_countdown -= 1;
     }
 
     if (control.left && !control.right) {
         box.acc.x -= box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
-        box.facing = LeftOrRight::Left;
+        box.facing = Side::Left;
     } else if (control.right && !control.left) {
         box.acc.x += box.grounded ? kControlledMoveAcc : kControlledAirMoveAcc;
-        box.facing = LeftOrRight::Right;
+        box.facing = Side::Right;
     }
 
     if (control.jump_pressed && box.grounded) {
@@ -53,13 +53,13 @@ void StepControlledBox(Entity& box, const controls::ControlIntent& control) {
     }
 
     if (control.attack_pressed && box.grounded && box.attack_delay_countdown == 0) {
-        box.vel.x = box.facing == LeftOrRight::Left ? -kControlledSlideVel : kControlledSlideVel;
+        box.vel.x = box.facing == Side::Left ? -kControlledSlideVel : kControlledSlideVel;
         box.attack_delay_countdown = kControlledSlideCooldownFrames;
     }
 }
 
-void ControlEntityAsBox(
-    std::size_t entity_idx,
+void ControlEntAsBox(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -68,56 +68,56 @@ void ControlEntityAsBox(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& box = state.entity_manager.entities[entity_idx];
-    if (box.condition == EntityCondition::Dead) {
+    Ent& box = state.ents.ents[ent_idx];
+    if (box.condition == EntCondition::Dead) {
         return;
     }
 
-    StepControlledBox(box, controls::GetControlIntentForEntity(box, state));
+    StepControlledBox(box, controls::GetControlIntentForEnt(box, state));
 }
 
 } // namespace
 
-common::ContactResolution BuildBoxImpactResolution(
+common::ContactResult BuildBoxImpactResolution(
     bool applied
 ) {
-    return common::ContactResolution{
+    return common::ContactResult{
         .blocks_movement = false,
         .stop_sweep = applied,
     };
 }
 
-common::ContactResolution OnEntityContactAsBox(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsBox(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
-    (void)other_entity_idx;
+    (void)other_ent_idx;
     (void)graphics;
     (void)audio;
-    if (!context.mover_vid.has_value() || *context.mover_vid != state.entity_manager.entities[entity_idx].vid) {
-        return common::ContactResolution{};
+    if (!context.mover_vid.has_value() || *context.mover_vid != state.ents.ents[ent_idx].vid) {
+        return common::ContactResult{};
     }
-    return BuildBoxImpactResolution(TryApplyBoxImpact(entity_idx, context, state));
+    return BuildBoxImpactResolution(TryApplyBoxImpact(ent_idx, context, state));
 }
 
-common::ContactResolution OnTileContactAsBox(
-    std::size_t entity_idx,
+common::ContactResult OnTileContactAsBox(
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 ) {
-    return BuildBoxImpactResolution(TryApplyBoxImpact(entity_idx, context, state));
+    return BuildBoxImpactResolution(TryApplyBoxImpact(ent_idx, context, state));
 }
 
-extern const EntityArchetype kBoxArchetype{
-    .type_ = EntityType::Box,
+extern const EntSpec kBoxSpec{
+    .type_ = EntType::Box,
     .size = Vec2::New(12.0F, 12.0F),
     .health = 1,
     .has_physics = true,
@@ -130,39 +130,39 @@ extern const EntityArchetype kBoxArchetype{
     .can_be_stunned = false,
     .buoyancy = 1.0F,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::AnthingExceptJumpOn,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::AnthingExceptJumpOn,
     .collide_sound = audio_asset_ids::Thud,
     .death_sound = audio_asset_ids::BoxBreak,
     .on_death = OnDeathAsBox,
-    .control_logic = ControlEntityAsBox,
-    .step_logic = StepEntityLogicAsBox,
-    .on_entity_contact = OnEntityContactAsBox,
+    .control_logic = ControlEntAsBox,
+    .step_logic = StepEntLogicAsBox,
+    .on_ent_contact = OnEntContactAsBox,
     .on_tile_contact = OnTileContactAsBox,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Box),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Box),
 };
 
-void StepEntityLogicAsBox(
-    std::size_t entity_idx,
+void StepEntLogicAsBox(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    (void)entity_idx;
+    (void)ent_idx;
     (void)state;
     (void)graphics;
     (void)audio;
     (void)dt;
 }
 
-void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsBox(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
 
-    const Entity& box = state.entity_manager.entities[entity_idx];
+    const Ent& box = state.ents.ents[ent_idx];
 
     const Vec2 spawn_pos = box.pos;
     SpawnBreakawayContainerShards(box.GetCenter(), state);
@@ -171,59 +171,59 @@ void OnDeathAsBox(std::size_t entity_idx, State& state, Audio& audio) {
     // intentionally substituted by Pistol for now. HD/2 use the same common
     // tail shape: 1/2 RopePile, otherwise guaranteed BombBag.
     if (state.drng.RandomIntInclusive(1, 500) == 1) {
-        SpawnEntityAtTopLeft(EntityType::JetPack, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::JetPack, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 200) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Cape, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Cape, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Pistol, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Mattock, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Mattock, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 100) == 1) {
-        SpawnEntityAtTopLeft(RandomTeleporterVariant(state), spawn_pos, state);
+        SpawnEntAtTopLeft(RandomTeleporterVariant(state), spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 90) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Gloves, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Gloves, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 90) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Spectacles, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Spectacles, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 80) == 1) {
-        SpawnEntityAtTopLeft(EntityType::WebCannon, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::WebCannon, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 80) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Pistol, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Pistol, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 80) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Mitt, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Mitt, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Paste, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Paste, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::SpringShoes, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::SpringShoes, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::SpikeShoes, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::SpikeShoes, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 60) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Machete, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Machete, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 40) == 1) {
-        SpawnEntityAtTopLeft(EntityType::BombBox, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::BombBox, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 40) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Bow, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Bow, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 20) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Compass, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Compass, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 10) == 1) {
-        SpawnEntityAtTopLeft(EntityType::Parachute, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::Parachute, spawn_pos, state);
     } else if (state.drng.RandomIntInclusive(1, 2) == 1) {
-        SpawnEntityAtTopLeft(EntityType::RopePile, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::RopePile, spawn_pos, state);
     } else {
-        SpawnEntityAtTopLeft(EntityType::BombBag, spawn_pos, state);
+        SpawnEntAtTopLeft(EntType::BombBag, spawn_pos, state);
     }
 }
 
 bool TryApplyBoxImpact(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     const common::ContactContext& context,
     State& state
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& box = state.entity_manager.entities[entity_idx];
-    if (box.type_ != EntityType::Box || box.condition == EntityCondition::Dead) {
+    Ent& box = state.ents.ents[ent_idx];
+    if (box.type_ != EntType::Box || box.condition == EntCondition::Dead) {
         return false;
     }
     if (context.phase != common::ContactPhase::AttemptedBlocked || !context.has_impact) {
@@ -237,4 +237,4 @@ bool TryApplyBoxImpact(
     return true;
 }
 
-} // namespace splonks::entities::box
+} // namespace splonks::ents::box

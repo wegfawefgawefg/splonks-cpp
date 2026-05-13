@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -10,23 +10,23 @@ namespace splonks {
 struct Graphics;
 struct State;
 struct Audio;
-struct Entity;
+struct Ent;
 }
 
-namespace splonks::entities::sac_altar {
+namespace splonks::ents::sac_altar {
 
-extern const EntityArchetype kSacAltarArchetype;
+extern const EntSpec kSacAltarSpec;
 
-void OnDeathAsSacAltarPiece(std::size_t entity_idx, State& state, Audio& audio);
-std::optional<std::int32_t> GetSacrificeFavorValue(const Entity& victim);
-std::optional<std::int32_t> GetLivingSacrificeFavorValue(const Entity& victim);
+void OnDeathAsSacAltarPiece(std::size_t ent_idx, State& state, Audio& audio);
+std::optional<std::int32_t> GetSacrificeFavorValue(const Ent& victim);
+std::optional<std::int32_t> GetLivingSacrificeFavorValue(const Ent& victim);
 void SpawnSacrificeGainEffects(State& state, Audio& audio, const Vec2& pos);
 bool TryDepositStoredFavor(
-    Entity& altar_piece,
+    Ent& altar_piece,
     std::int32_t favor,
     State& state,
     const Graphics& graphics,
     Audio& audio
 );
 
-} // namespace splonks::entities::sac_altar
+} // namespace splonks::ents::sac_altar

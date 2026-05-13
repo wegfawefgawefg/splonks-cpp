@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -9,8 +9,8 @@ struct State;
 
 }
 
-namespace splonks::entities::kali_head {
+namespace splonks::ents::kali_head {
 
-extern const EntityArchetype kKaliHeadArchetype;
+extern const EntSpec kKaliHeadSpec;
 
-} // namespace splonks::entities::kali_head
+} // namespace splonks::ents::kali_head

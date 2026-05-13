@@ -74,23 +74,23 @@ glyphs:
     action: maybe_solid_dirt
   - char: "S"
     spawn_random:
-      - entity: snake
+      - ent: snake
         weight: 4
-      - entity: cobra
+      - ent: cobra
         weight: 1
   - char: "T"
     spawn_random:
-      - entity: chest
+      - ent: chest
         weight: 1
-      - entity: box
+      - ent: box
         weight: 1
-      - entity: emerald_big
+      - ent: emerald_big
         weight: 1
-      - entity: sapphire_big
+      - ent: sapphire_big
         weight: 1
-      - entity: ruby_big
+      - ent: ruby_big
         weight: 1
-      - entity: gold_bars
+      - ent: gold_bars
         weight: 1
   - char: "M"
     tile: boss_dirt

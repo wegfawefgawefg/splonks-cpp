@@ -1,9 +1,9 @@
-#include "entities/teleporter.hpp"
+#include "ents/teleporter.hpp"
 
 #include "audio_asset_id.hpp"
 #include "audio_emitters.hpp"
 #include "controls.hpp"
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace splonks::entities::teleporter {
+namespace splonks::ents::teleporter {
 
 namespace {
 
@@ -29,7 +29,7 @@ constexpr unsigned int kTelefragDamage = 9999;
 enum class TeleportProbeBlockReason {
     None,
     World,
-    BlockingEntity,
+    BlockingEnt,
 };
 
 struct TeleportAim {
@@ -79,41 +79,41 @@ Vec2 GetTeleportOrtho(const Vec2& axis) {
     return Vec2::New(-axis.y, axis.x);
 }
 
-bool HasTeleportAnimation(const Graphics& graphics, FrameDataId animation_id) {
-    return graphics.frame_data_db.FindFrame(animation_id, 0) != nullptr;
+bool HasTeleportAnim(const Graphics& graphics, AFrameId anim_id) {
+    return graphics.aframe_db.FindFrame(anim_id, 0) != nullptr;
 }
 
-FrameDataId GetTeleporterBackpackAnimation(const Entity& teleporter, const Entity* holder, const Graphics& graphics) {
-    if (teleporter.attachment_mode == AttachmentMode::Back) {
+AFrameId GetTeleporterBackpackAnim(const Ent& teleporter, const Ent* holder, const Graphics& graphics) {
+    if (teleporter.attach_mode == AttachMode::Back) {
         if (holder != nullptr) {
-            if (holder->IsHanging() && HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackSide)) {
-                return frame_data_ids::TeleporterBackpackSide;
+            if (holder->IsHanging() && HasTeleportAnim(graphics, aframe_ids::TeleporterBackpackSide)) {
+                return aframe_ids::TeleporterBackpackSide;
             }
-            if (holder->IsClimbing() && HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackBack)) {
-                return frame_data_ids::TeleporterBackpackBack;
+            if (holder->IsClimbing() && HasTeleportAnim(graphics, aframe_ids::TeleporterBackpackBack)) {
+                return aframe_ids::TeleporterBackpackBack;
             }
         }
-        if (HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackBack)) {
-            return frame_data_ids::TeleporterBackpackBack;
+        if (HasTeleportAnim(graphics, aframe_ids::TeleporterBackpackBack)) {
+            return aframe_ids::TeleporterBackpackBack;
         }
     }
-    if (teleporter.held_by_vid.has_value() && HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpackSide)) {
-        return frame_data_ids::TeleporterBackpackSide;
+    if (teleporter.held_by_vid.has_value() && HasTeleportAnim(graphics, aframe_ids::TeleporterBackpackSide)) {
+        return aframe_ids::TeleporterBackpackSide;
     }
-    if (HasTeleportAnimation(graphics, frame_data_ids::TeleporterBackpack)) {
-        return frame_data_ids::TeleporterBackpack;
+    if (HasTeleportAnim(graphics, aframe_ids::TeleporterBackpack)) {
+        return aframe_ids::TeleporterBackpack;
     }
-    return frame_data_ids::Teleporter;
+    return aframe_ids::Teleporter;
 }
 
-TeleportAim GetTeleportAim(const Entity& teleporter, const Entity& holder, const State& state) {
-    const controls::ControlIntent intent = controls::GetControlIntentForEntity(holder, state);
+TeleportAim GetTeleportAim(const Ent& teleporter, const Ent& holder, const State& state) {
+    const controls::ControlIntent intent = controls::GetControlIntentForEnt(holder, state);
 
     const int dx = (intent.right ? 1 : 0) - (intent.left ? 1 : 0);
     const int dy = (intent.down ? 1 : 0) - (intent.up ? 1 : 0);
     IVec2 direction = IVec2::New(dx, dy);
     if (direction.x == 0 && direction.y == 0) {
-        direction = teleporter.facing == LeftOrRight::Left ? IVec2::New(-1, 0) : IVec2::New(1, 0);
+        direction = teleporter.facing == Side::Left ? IVec2::New(-1, 0) : IVec2::New(1, 0);
     }
 
     if (IsDiagonalDirection(direction)) {
@@ -131,91 +131,91 @@ TeleportAim GetTeleportAim(const Entity& teleporter, const Entity& holder, const
     };
 }
 
-Entity BuildTeleporterProbeEntity(
-    const Entity& holder,
+Ent BuildTeleporterProbeEnt(
+    const Ent& holder,
     const Graphics& graphics,
     const Vec2& destination_center
 ) {
-    Entity probe = holder;
-    common::SetVisualCenterForEntity(probe, graphics, destination_center);
+    Ent probe = holder;
+    common::SetVisualCenterForEnt(probe, graphics, destination_center);
     return probe;
 }
 
-bool DoesEntityBlockTeleportDestination(const Entity& entity) {
-    if (!entity.active || entity.condition == EntityCondition::Dead) {
+bool DoesEntBlockTeleportDestination(const Ent& ent) {
+    if (!ent.active || ent.condition == EntCondition::Dead) {
         return false;
     }
-    if (entity.held_by_vid.has_value() || entity.attachment_mode != AttachmentMode::None) {
+    if (ent.held_by_vid.has_value() || ent.attach_mode != AttachMode::None) {
         return true;
     }
-    if (!entity.can_collide) {
+    if (!ent.can_collide) {
         return false;
     }
-    if (entity.impassable) {
+    if (ent.impassable) {
         return true;
     }
-    return !entity.can_be_hit;
+    return !ent.can_be_hit;
 }
 
-bool IsAttackKillableActor(const Entity& entity) {
-    return (entity.can_be_stunned || entity.hurt_on_contact || entity.alignment == Alignment::Enemy) &&
-           common::CanEntityTakeDamageType(entity, DamageType::Attack);
+bool IsAttackKillableActor(const Ent& ent) {
+    return (ent.can_be_stunned || ent.hurt_on_contact || ent.alignment == Alignment::Enemy) &&
+           common::CanEntTakeDamageType(ent, DamageType::Attack);
 }
 
-bool IsAttackKillableBreakable(const Entity& entity) {
-    return entity.on_death != nullptr && common::CanEntityTakeDamageType(entity, DamageType::Attack);
+bool IsAttackKillableBreakable(const Ent& ent) {
+    return ent.on_death != nullptr && common::CanEntTakeDamageType(ent, DamageType::Attack);
 }
 
-bool IsAttackReactiveProp(const Entity& entity) {
-    return entity.on_damage != nullptr;
+bool IsAttackReactiveProp(const Ent& ent) {
+    return ent.on_damage != nullptr;
 }
 
-bool CanTelefragEntity(const Entity& entity) {
-    if (!entity.active || !entity.can_collide || entity.condition == EntityCondition::Dead) {
+bool CanTelefragEnt(const Ent& ent) {
+    if (!ent.active || !ent.can_collide || ent.condition == EntCondition::Dead) {
         return false;
     }
-    if (entity.held_by_vid.has_value() || entity.attachment_mode != AttachmentMode::None) {
+    if (ent.held_by_vid.has_value() || ent.attach_mode != AttachMode::None) {
         return false;
     }
-    if (entity.impassable || !entity.can_be_hit) {
+    if (ent.impassable || !ent.can_be_hit) {
         return false;
     }
 
-    return IsAttackKillableActor(entity) ||
-           IsAttackKillableBreakable(entity) ||
-           IsAttackReactiveProp(entity);
+    return IsAttackKillableActor(ent) ||
+           IsAttackKillableBreakable(ent) ||
+           IsAttackReactiveProp(ent);
 }
 
-bool CanSplatDeadEntity(const Entity& entity) {
-    if (!entity.active || entity.condition != EntityCondition::Dead) {
+bool CanSplatDeadEnt(const Ent& ent) {
+    if (!ent.active || ent.condition != EntCondition::Dead) {
         return false;
     }
-    if (entity.held_by_vid.has_value() || entity.attachment_mode != AttachmentMode::None) {
+    if (ent.held_by_vid.has_value() || ent.attach_mode != AttachMode::None) {
         return false;
     }
-    if (!entity.can_collide || entity.impassable) {
+    if (!ent.can_collide || ent.impassable) {
         return false;
     }
     return true;
 }
 
-bool DoesProbeOverlapEntity(
+bool DoesProbeOverlapEnt(
     const AABB& probe_aabb,
     const Vec2& probe_center,
-    const Entity& other,
+    const Ent& other,
     const State& state,
     const Graphics& graphics
 ) {
     const AABB other_aabb = GetNearestWorldAabb(
         state.stage,
         probe_center,
-        common::GetContactAabbForEntity(other, graphics)
+        common::GetContactAabbForEnt(other, graphics)
     );
     return AabbsIntersect(probe_aabb, other_aabb);
 }
 
 TeleportProbeCandidate EvaluateTeleportProbeCandidate(
-    const Entity& holder,
+    const Ent& holder,
     const TeleportAim& aim,
     std::size_t holder_idx,
     std::size_t teleporter_idx,
@@ -223,7 +223,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
     State& state,
     const Graphics& graphics
 ) {
-    const Vec2 holder_visual_center = common::GetVisualCenterForEntity(holder, graphics, holder.GetCenter());
+    const Vec2 holder_visual_center = common::GetVisualCenterForEnt(holder, graphics, holder.GetCenter());
     const IVec2 holder_tile = state.stage.GetTileCoordAtWc(ToIVec2(holder_visual_center));
     const IVec2 raw_target_tile = holder_tile + IVec2::New(aim.direction.x * distance_tiles, aim.direction.y * distance_tiles);
     const IVec2 target_tile = state.stage.WrapTileCoord(raw_target_tile);
@@ -239,10 +239,10 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
         .splat_vids = {},
     };
 
-    const Entity probe = BuildTeleporterProbeEntity(holder, graphics, destination_center);
-    candidate.destination_aabb = common::GetContactAabbForEntity(probe, graphics);
+    const Ent probe = BuildTeleporterProbeEnt(holder, graphics, destination_center);
+    candidate.destination_aabb = common::GetContactAabbForEnt(probe, graphics);
 
-    if (AabbHitsBlockingWorldGeometryOrImpassableEntities(
+    if (AabbHitsBlockingWorldGeometryOrImpassableEnts(
             state,
             graphics,
             candidate.destination_aabb,
@@ -252,26 +252,26 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
         return candidate;
     }
 
-    for (const VID& other_vid : QueryEntitiesInAabb(state, candidate.destination_aabb, holder.vid)) {
+    for (const VID& other_vid : QueryEntsInAabb(state, candidate.destination_aabb, holder.vid)) {
         if (other_vid.id == teleporter_idx || other_vid.id == holder_idx) {
             continue;
         }
 
-        const Entity* const other = state.entity_manager.GetEntity(other_vid);
-        if (other == nullptr || !DoesProbeOverlapEntity(candidate.destination_aabb, destination_center, *other, state, graphics)) {
+        const Ent* const other = state.ents.GetEnt(other_vid);
+        if (other == nullptr || !DoesProbeOverlapEnt(candidate.destination_aabb, destination_center, *other, state, graphics)) {
             continue;
         }
-        if (CanSplatDeadEntity(*other)) {
+        if (CanSplatDeadEnt(*other)) {
             candidate.splat_vids.push_back(other_vid);
             continue;
         }
-        if (DoesEntityBlockTeleportDestination(*other)) {
-            candidate.block_reason = TeleportProbeBlockReason::BlockingEntity;
+        if (DoesEntBlockTeleportDestination(*other)) {
+            candidate.block_reason = TeleportProbeBlockReason::BlockingEnt;
             candidate.telefrag_vids.clear();
             candidate.splat_vids.clear();
             return candidate;
         }
-        if (CanTelefragEntity(*other)) {
+        if (CanTelefragEnt(*other)) {
             candidate.telefrag_vids.push_back(other_vid);
         }
     }
@@ -280,7 +280,7 @@ TeleportProbeCandidate EvaluateTeleportProbeCandidate(
 }
 
 std::vector<TeleportProbeCandidate> BuildTeleportProbeCandidates(
-    const Entity& holder,
+    const Ent& holder,
     const TeleportAim& aim,
     std::size_t holder_idx,
     std::size_t teleporter_idx,
@@ -322,7 +322,7 @@ const TeleportProbeCandidate* FindFirstBlockedTeleportProbeCandidate(const std::
 }
 
 void SpawnTelefragPhaseParticle(
-    const Entity& entity,
+    const Ent& ent,
     const Graphics& graphics,
     const Vec2& visual_center,
     const Vec2& start_offset,
@@ -332,35 +332,35 @@ void SpawnTelefragPhaseParticle(
     float tint_b,
     State& state
 ) {
-    const FrameData* const frame_data = common::GetCurrentFrameDataForEntity(entity, graphics);
-    if (frame_data == nullptr) {
+    const AFrame* const aframe = common::GetCurrentAFrameForEnt(ent, graphics);
+    if (aframe == nullptr) {
         return;
     }
 
     SpriteParticle particle{};
     particle.counter = 32;
-    particle.draw_layer = entity.draw_layer;
+    particle.draw_layer = ent.draw_layer;
     particle.lighting_mode = ParticleLightingMode::Emissive;
     particle.pos = visual_center + start_offset;
     particle.size = Vec2::New(
-        static_cast<float>(frame_data->sample_rect.w),
-        static_cast<float>(frame_data->sample_rect.h)
-    ) * entity.frame_data_animator.scale;
-    particle.rot = entity.rotation;
+        static_cast<float>(aframe->sample_rect.w),
+        static_cast<float>(aframe->sample_rect.h)
+    ) * ent.aframe_animator.scale;
+    particle.rot = ent.rotation;
     particle.alpha = 0.85F;
     particle.tint_r = tint_r;
     particle.tint_g = tint_g;
     particle.tint_b = tint_b;
-    particle.horizontal_flip = entity.facing == LeftOrRight::Right;
+    particle.horizontal_flip = ent.facing == Side::Right;
     particle.vel = velocity;
     particle.alpha_vel = -0.0275F;
-    particle.frame_data_animator = entity.frame_data_animator;
-    particle.frame_data_animator.animate = false;
+    particle.aframe_animator = ent.aframe_animator;
+    particle.aframe_animator.animate = false;
     state.particles.Add(std::move(particle));
 }
 
 void SpawnTelefragSplitEffectAt(
-    const Entity& entity,
+    const Ent& ent,
     const Graphics& graphics,
     const Vec2& visual_center,
     const IVec2& direction,
@@ -368,23 +368,23 @@ void SpawnTelefragSplitEffectAt(
 ) {
     const Vec2 axis = GetTeleportAxis(direction);
     const Vec2 ortho = GetTeleportOrtho(axis);
-    SpawnTelefragPhaseParticle(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * -0.3F) - (ortho * 0.0625F), 1.0F, 0.20F, 0.20F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), ortho * 0.0375F, 0.25F, 1.0F, 0.25F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, Vec2::New(0.0F, 0.0F), (axis * 0.3F) - (ortho * 0.0625F), 0.30F, 0.30F, 1.0F, state);
 }
 
-void SpawnTelefragSplitEffect(const Entity& entity, const Graphics& graphics, const IVec2& direction, State& state) {
+void SpawnTelefragSplitEffect(const Ent& ent, const Graphics& graphics, const IVec2& direction, State& state) {
     SpawnTelefragSplitEffectAt(
-        entity,
+        ent,
         graphics,
-        common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()),
+        common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter()),
         direction,
         state
     );
 }
 
 void SpawnTelefragMergeEffectAt(
-    const Entity& entity,
+    const Ent& ent,
     const Graphics& graphics,
     const Vec2& visual_center,
     const IVec2& direction,
@@ -392,72 +392,72 @@ void SpawnTelefragMergeEffectAt(
 ) {
     const Vec2 axis = GetTeleportAxis(direction);
     const Vec2 ortho = GetTeleportOrtho(axis);
-    SpawnTelefragPhaseParticle(entity, graphics, visual_center, axis * -3.0F, axis * 0.3F, 1.0F, 0.20F, 0.20F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, visual_center, ortho * 2.0F, ortho * -0.0875F, 0.25F, 1.0F, 0.25F, state);
-    SpawnTelefragPhaseParticle(entity, graphics, visual_center, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, axis * -3.0F, axis * 0.3F, 1.0F, 0.20F, 0.20F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, ortho * 2.0F, ortho * -0.0875F, 0.25F, 1.0F, 0.25F, state);
+    SpawnTelefragPhaseParticle(ent, graphics, visual_center, axis * 3.0F, axis * -0.3F, 0.30F, 0.30F, 1.0F, state);
 }
 
-void SpawnTelefragMergeEffect(const Entity& entity, const Graphics& graphics, const IVec2& direction, State& state) {
+void SpawnTelefragMergeEffect(const Ent& ent, const Graphics& graphics, const IVec2& direction, State& state) {
     SpawnTelefragMergeEffectAt(
-        entity,
+        ent,
         graphics,
-        common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter()),
+        common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter()),
         direction,
         state
     );
 }
 
-void SplatTelefraggedEntity(std::size_t entity_idx, State& state, const Graphics& graphics) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+void SplatTelefraggedEnt(std::size_t ent_idx, State& state, const Graphics& graphics) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.active || entity.impassable) {
+    Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.active || ent.impassable) {
         return;
     }
 
-    SpawnTelefragSplitEffect(entity, graphics, IVec2::New(1, 0), state);
-    common::DropHeldItemFromEntity(entity, state);
-    common::ReleaseEntityFromHolder(entity, state);
-    entity.marked_for_destruction = true;
-    (void)world_ops::DeactivateEntity(state, entity.vid);
+    SpawnTelefragSplitEffect(ent, graphics, IVec2::New(1, 0), state);
+    common::DropHeldItemFromEnt(ent, state);
+    common::ReleaseEntFromHolder(ent, state);
+    ent.marked_for_destruction = true;
+    (void)world_ops::DeactivateEnt(state, ent.vid);
 }
 
 void ApplyTelefragToCandidate(const TeleportProbeCandidate& candidate, State& state, Audio& audio, const Graphics& graphics) {
     for (const VID& other_vid : candidate.splat_vids) {
-        SplatTelefraggedEntity(other_vid.id, state, graphics);
+        SplatTelefraggedEnt(other_vid.id, state, graphics);
     }
 
     for (const VID& other_vid : candidate.telefrag_vids) {
-        if (other_vid.id >= state.entity_manager.entities.size()) {
+        if (other_vid.id >= state.ents.ents.size()) {
             continue;
         }
 
         const common::DamageResult damage_result =
-            common::TryDamageEntity(other_vid.id, state, audio, DamageType::Attack, kTelefragDamage);
+            common::TryDamageEnt(other_vid.id, state, audio, DamageType::Attack, kTelefragDamage);
         if (damage_result == common::DamageResult::Died) {
-            SplatTelefraggedEntity(other_vid.id, state, graphics);
+            SplatTelefraggedEnt(other_vid.id, state, graphics);
         }
     }
 }
 
 void MoveTeleportHolderToDestination(
-    Entity& holder,
+    Ent& holder,
     std::size_t holder_idx,
     const Vec2& destination_center,
     State& state,
     const Graphics& graphics
 ) {
-    common::SetVisualCenterForEntity(holder, graphics, destination_center);
+    common::SetVisualCenterForEnt(holder, graphics, destination_center);
     holder.pos = Vec2::New(std::round(holder.pos.x), std::round(holder.pos.y));
     holder.grounded = false;
     holder.hang_side.reset();
-    SetMovementFlag(holder, EntityMovementFlag::Climbing, false);
-    SetMovementFlag(holder, EntityMovementFlag::Hanging, false);
+    SetMovementFlag(holder, EntMovementFlag::Climbing, false);
+    SetMovementFlag(holder, EntMovementFlag::Hanging, false);
     holder.climb_detach_cooldown = 0;
-    state.UpdateSidForEntity(holder_idx, graphics);
-    common::SyncEntityAttachments(holder_idx, state, graphics);
+    state.UpdateSidForEnt(holder_idx, graphics);
+    common::SyncEntAttachs(holder_idx, state, graphics);
 }
 
 void ApplyTeleportAreaShake(
@@ -465,7 +465,7 @@ void ApplyTeleportAreaShake(
     const Vec2& world_pos,
     float foreground_tile_amount,
     float background_tile_amount,
-    float entity_amount,
+    float ent_amount,
     float radius_tiles
 ) {
     AddShake(
@@ -473,15 +473,15 @@ void ApplyTeleportAreaShake(
         world_pos,
         foreground_tile_amount,
         background_tile_amount,
-        entity_amount,
+        ent_amount,
         radius_tiles,
         std::nullopt
     );
 }
 
 void AddTeleporterDebugAnnotations(
-    const Entity& teleporter,
-    const Entity* holder,
+    const Ent& teleporter,
+    const Ent* holder,
     std::size_t holder_idx,
     std::size_t teleporter_idx,
     State& state,
@@ -508,7 +508,7 @@ void AddTeleporterDebugAnnotations(
             color = DebugAnnotationColor{0, 255, 0, 255};
         } else if (candidate.block_reason == TeleportProbeBlockReason::None) {
             color = DebugAnnotationColor{255, 255, 0, 255};
-        } else if (candidate.block_reason == TeleportProbeBlockReason::BlockingEntity) {
+        } else if (candidate.block_reason == TeleportProbeBlockReason::BlockingEnt) {
             color = DebugAnnotationColor{255, 0, 255, 255};
         }
 
@@ -522,8 +522,8 @@ void AddTeleporterDebugAnnotations(
                            std::to_string(candidate.tile_pos.y) + ")";
         if (candidate.block_reason == TeleportProbeBlockReason::World) {
             text += " blocked";
-        } else if (candidate.block_reason == TeleportProbeBlockReason::BlockingEntity) {
-            text += " entity";
+        } else if (candidate.block_reason == TeleportProbeBlockReason::BlockingEnt) {
+            text += " ent";
         } else {
             if (!candidate.telefrag_vids.empty()) {
                 text += " telefrag";
@@ -542,30 +542,30 @@ void AddTeleporterDebugAnnotations(
 }
 
 void KillTeleportHolder(std::size_t holder_idx, State& state, Audio& audio) {
-    if (holder_idx >= state.entity_manager.entities.size()) {
+    if (holder_idx >= state.ents.ents.size()) {
         return;
     }
-    Entity& holder = state.entity_manager.entities[holder_idx];
+    Ent& holder = state.ents.ents[holder_idx];
     holder.health = 0;
     common::DieIfDead(holder_idx, state, audio);
 }
 
 void CrushTeleportHolder(std::size_t holder_idx, State& state, Audio& audio) {
-    if (holder_idx >= state.entity_manager.entities.size()) {
+    if (holder_idx >= state.ents.ents.size()) {
         return;
     }
-    (void)common::TryDamageEntity(holder_idx, state, audio, DamageType::Crush, 1);
+    (void)common::TryDamageEnt(holder_idx, state, audio, DamageType::Crush, 1);
 }
 
 } // namespace
 
-void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
-    Entity& teleporter = state.entity_manager.entities[entity_idx];
+void OnUseAsTeleporter(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
+    Ent& teleporter = state.ents.ents[ent_idx];
     if (!teleporter.use_state.pressed || !teleporter.held_by_vid.has_value()) {
         return;
     }
 
-    Entity* const holder = state.entity_manager.GetEntityMut(*teleporter.held_by_vid);
+    Ent* const holder = state.ents.GetEntMut(*teleporter.held_by_vid);
     if (holder == nullptr || !holder->active) {
         return;
     }
@@ -573,15 +573,15 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
     const std::size_t holder_idx = holder->vid.id;
     const TeleportAim aim = GetTeleportAim(teleporter, *holder, state);
     const std::vector<TeleportProbeCandidate> candidates =
-        BuildTeleportProbeCandidates(*holder, aim, holder_idx, entity_idx, state, graphics);
+        BuildTeleportProbeCandidates(*holder, aim, holder_idx, ent_idx, state, graphics);
     const TeleportProbeCandidate* const chosen = FindFirstValidTeleportProbeCandidate(candidates);
     const TeleportProbeCandidate* const blocked = FindFirstBlockedTeleportProbeCandidate(candidates);
 
-    (void)PlayEntityCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
+    (void)PlayEntCenterSoundEmitter(state, *holder, audio_asset_ids::Teleport);
     const Vec2 source_center =
-        entities::common::GetVisualCenterForEntity(*holder, graphics, holder->GetCenter());
-    AddEntityShake(*holder, 0.5F);
-    AddEntityShake(teleporter, 0.5F);
+        ents::common::GetVisualCenterForEnt(*holder, graphics, holder->GetCenter());
+    AddEntShake(*holder, 0.5F);
+    AddEntShake(teleporter, 0.5F);
     ApplyTeleportAreaShake(state, source_center, 8.0F, 8.0F, 1.0F, 1.5F);
     SpawnTelefragSplitEffect(*holder, graphics, aim.direction, state);
     SpawnTelefragSplitEffect(teleporter, graphics, aim.direction, state);
@@ -589,15 +589,15 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
     if (chosen == nullptr) {
         if (blocked != nullptr) {
             MoveTeleportHolderToDestination(*holder, holder_idx, blocked->destination_center, state, graphics);
-            AddEntityShake(*holder, 0.5F);
-            AddEntityShake(teleporter, 0.5F);
+            AddEntShake(*holder, 0.5F);
+            AddEntShake(teleporter, 0.5F);
             ApplyTeleportAreaShake(state, blocked->destination_center, 8.0F, 8.0F, 1.0F, 1.5F);
             SpawnTelefragMergeEffect(*holder, graphics, aim.direction, state);
             SpawnTelefragMergeEffect(teleporter, graphics, aim.direction, state);
             CrushTeleportHolder(holder_idx, state, audio);
-            SplatTelefraggedEntity(entity_idx, state, graphics);
+            SplatTelefraggedEnt(ent_idx, state, graphics);
         } else {
-            SplatTelefraggedEntity(entity_idx, state, graphics);
+            SplatTelefraggedEnt(ent_idx, state, graphics);
             KillTeleportHolder(holder_idx, state, audio);
         }
         return;
@@ -605,15 +605,15 @@ void OnUseAsTeleporter(std::size_t entity_idx, State& state, Graphics& graphics,
 
     ApplyTelefragToCandidate(*chosen, state, audio, graphics);
     MoveTeleportHolderToDestination(*holder, holder_idx, chosen->destination_center, state, graphics);
-    AddEntityShake(*holder, 0.5F);
-    AddEntityShake(teleporter, 0.5F);
+    AddEntShake(*holder, 0.5F);
+    AddEntShake(teleporter, 0.5F);
     ApplyTeleportAreaShake(state, chosen->destination_center, 8.0F, 8.0F, 1.0F, 1.5F);
     SpawnTelefragMergeEffect(*holder, graphics, aim.direction, state);
     SpawnTelefragMergeEffect(teleporter, graphics, aim.direction, state);
 }
 
-void StepEntityLogicAsTeleporter(
-    std::size_t entity_idx,
+void StepEntLogicAsTeleporter(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -622,34 +622,34 @@ void StepEntityLogicAsTeleporter(
     (void)audio;
     (void)dt;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
-    Entity& teleporter = state.entity_manager.entities[entity_idx];
+    Ent& teleporter = state.ents.ents[ent_idx];
     if (!teleporter.active) {
         return;
     }
 
-    const Entity* holder = nullptr;
+    const Ent* holder = nullptr;
     if (teleporter.held_by_vid.has_value()) {
-        holder = state.entity_manager.GetEntity(*teleporter.held_by_vid);
+        holder = state.ents.GetEnt(*teleporter.held_by_vid);
     }
 
-    if (teleporter.type_ == EntityType::TeleporterBackpack) {
-        SetAnimation(teleporter, GetTeleporterBackpackAnimation(teleporter, holder, graphics));
+    if (teleporter.type_ == EntType::TeleporterBackpack) {
+        SetAnim(teleporter, GetTeleporterBackpackAnim(teleporter, holder, graphics));
     } else {
-        SetAnimation(teleporter, frame_data_ids::Teleporter);
+        SetAnim(teleporter, aframe_ids::Teleporter);
     }
 
     if (!teleporter.held_by_vid.has_value() || holder == nullptr || !holder->active) {
         return;
     }
 
-    AddTeleporterDebugAnnotations(teleporter, holder, holder->vid.id, entity_idx, state, graphics);
+    AddTeleporterDebugAnnotations(teleporter, holder, holder->vid.id, ent_idx, state, graphics);
 }
 
-extern const EntityArchetype kTeleporterArchetype{
-    .type_ = EntityType::Teleporter,
+extern const EntSpec kTeleporterSpec{
+    .type_ = EntType::Teleporter,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -660,18 +660,18 @@ extern const EntityArchetype kTeleporterArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .on_use = OnUseAsTeleporter,
-    .step_logic = StepEntityLogicAsTeleporter,
+    .step_logic = StepEntLogicAsTeleporter,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Teleporter),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Teleporter),
 };
 
-extern const EntityArchetype kTeleporterBackpackArchetype{
-    .type_ = EntityType::TeleporterBackpack,
+extern const EntSpec kTeleporterBackpackSpec{
+    .type_ = EntType::TeleporterBackpack,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -683,14 +683,14 @@ extern const EntityArchetype kTeleporterBackpackArchetype{
     .can_go_on_back = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .on_use = OnUseAsTeleporter,
-    .step_logic = StepEntityLogicAsTeleporter,
+    .step_logic = StepEntLogicAsTeleporter,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::TeleporterBackpack),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::TeleporterBackpack),
 };
 
-} // namespace splonks::entities::teleporter
+} // namespace splonks::ents::teleporter

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 #include "math_types.hpp"
 #include "vid.hpp"
 
@@ -10,9 +10,9 @@ struct Graphics;
 struct State;
 } // namespace splonks
 
-namespace splonks::entities::teleporter {
+namespace splonks::ents::teleporter {
 
-extern const EntityArchetype kTeleporterArchetype;
-extern const EntityArchetype kTeleporterBackpackArchetype;
+extern const EntSpec kTeleporterSpec;
+extern const EntSpec kTeleporterBackpackSpec;
 
-} // namespace splonks::entities::teleporter
+} // namespace splonks::ents::teleporter

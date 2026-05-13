@@ -26,7 +26,7 @@ std::filesystem::path ResolveQuestPath(
     const std::string& relative_path
 );
 std::string StripQuotes(const std::string& value);
-EntityType ParseEntityTypeOrThrow(const std::string& value, const std::string& path, int line_number);
+EntType ParseEntTypeOrThrow(const std::string& value, const std::string& path, int line_number);
 Tile ParseTileOrThrow(const std::string& value, const std::string& path, int line_number);
 std::vector<Tile> ParseTileList(const std::string& value, const std::string& path, int line_number);
 

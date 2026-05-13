@@ -16,35 +16,35 @@ Recent file-ownership cleanup is done and builds cleanly.
 
 Important folder layout now:
 
-- `src/entity/`: entity framework layer
-- `src/entities/`: concrete entity implementations
+- `src/ent/`: ent framework layer
+- `src/ents/`: concrete ent implementations
 - `src/render/`: render system
 - `src/render/menu/`: menu drawing code
 - `src/menu/`: menu logic/input/state mutation
 - `src/debug/`: debug playback + debug UI
-- `src/tools/`: tool archetypes and tool behaviors
-- `src/entities/common/`: shared entity behavior
+- `src/tools/`: tool specs and tool behaviors
+- `src/ents/common/`: shared ent behavior
 
-## Entity Layout
+## Ent Layout
 
-Entity framework files were moved out of root and into `src/entity/`.
+Ent framework files were moved out of root and into `src/ent/`.
 
 Current framework files:
 
-- `src/entity/archetype.*`
-- `src/entity/archetype_registry.cpp`
-- `src/entity/core_types.hpp`
-- `src/entity/display_states.*`
-- `src/entity/display_support.hpp`
-- `src/entity/draw_layer.hpp`
-- `src/entity/manager.*`
+- `src/ent/spec.*`
+- `src/ent/spec_registry.cpp`
+- `src/ent/core_types.hpp`
+- `src/ent/display_states.*`
+- `src/ent/display_support.hpp`
+- `src/ent/draw_layer.hpp`
+- `src/ent/manager.*`
 
-Two dumb alias headers were pulled out to root because they are not really entity-owned modules:
+Two dumb alias headers were pulled out to root because they are not really ent-owned modules:
 
 - `src/vid.hpp`
 - `src/origin.hpp`
 
-Those both currently just include `src/entity/core_types.hpp`.
+Those both currently just include `src/ent/core_types.hpp`.
 
 Important caveat:
 
@@ -52,10 +52,10 @@ Important caveat:
 - `Origin`
 - `DamageType`
 - `DrawLayer`
-- `EntityMovementFlag`
-- `EntityDisplayState`
+- `EntMovementFlag`
+- `EntDisplayState`
 
-still physically live inside `src/entity/core_types.hpp`.
+still physically live inside `src/ent/core_types.hpp`.
 
 So the file ownership is cleaner, but the type ownership is still partially mixed.
 
@@ -65,12 +65,12 @@ Render was folderified and then split by responsibility.
 
 Current render files:
 
-- `src/render/render.cpp`: top-level dispatcher + final presentation
+- `src/render/render.cpp`: top-level dispatcher + final pres
 - `src/render/gameplay.cpp`: in-game scene render + stage transition/game over/win screens
 - `src/render/postfx.*`
 - `src/render/debug.*`
 - `src/render/ui.*`
-- `src/render/tiles_and_entities.*`
+- `src/render/tiles_and_ents.*`
 - `src/render/stone_overlay.*`
 - `src/render/tile_lighting.*`: draw-side tile lighting helpers
 - `src/render/terrain_lighting.*`: lighting cache/update logic
@@ -95,22 +95,22 @@ Current files there:
 - `playback_core.cpp`
 - `playback_serialization.cpp`
 - `playback_ui_common.cpp`
-- `playback_ui_entities.cpp`
+- `playback_ui_ents.cpp`
 - `playback_ui_menu.cpp`
 - `playback_ui_settings.cpp`
 
-## State / Entity Runtime Cleanup Already Done
+## State / Ent Runtime Cleanup Already Done
 
 These behavior cleanups landed before the file-layout work and are part of the current codebase:
 
-- removed stored `EntityState`
-- removed stored `entity.display_state`
-- `TrySetAnimation(entity, EntityDisplayState)` still exists as the semantic mapper
-- movement now uses `EntityMovementFlag`
+- removed stored `EntState`
+- removed stored `ent.display_state`
+- `TrySetAnim(ent, EntDisplayState)` still exists as the semantic mapper
+- movement now uses `EntMovementFlag`
 - hanging/climbing moved off old booleans into movement flags plus `hang_side`
-- `EntityCondition` is now the main durable condition bucket: `Normal`, `Dead`, `Stunned`
+- `EntCondition` is now the main durable condition bucket: `Normal`, `Dead`, `Stunned`
 - render-side menu code is split from menu logic code
-- entity archetypes are populated centrally via the archetype table
+- ent specs are populated centrally via the spec table
 
 ## Build Status
 
@@ -124,16 +124,16 @@ cmake --build /home/vega/Coding/GameDev/Splonks/splonks-cpp/build --target splon
 
 These are the obvious next cleanup candidates, not active breakages:
 
-1. `src/entity/core_types.hpp` is still too mixed.
-   It contains real entity-owned types and generic-ish types together.
+1. `src/ent/core_types.hpp` is still too mixed.
+   It contains real ent-owned types and generic-ish types together.
 
-2. `VID` is broader than entities.
+2. `VID` is broader than ents.
    It probably wants to live in its own real header eventually instead of only being re-exported by `vid.hpp`.
 
-3. `Origin` is really a sprite/render concept, not an entity concept.
+3. `Origin` is really a sprite/render concept, not an ent concept.
    It probably wants its own real home eventually.
 
-4. `DamageType` may also be broader than entities.
+4. `DamageType` may also be broader than ents.
    Same issue as `VID`: current alias/file layout is better than before, but not fully resolved.
 
 5. `src/render/menu/lighting.cpp` is still a bit large because the lighting screen itself has a lot of line rendering.
@@ -142,7 +142,7 @@ These are the obvious next cleanup candidates, not active breakages:
 
 If continuing the cleanup thread, the most sensible next step is:
 
-1. split `src/entity/core_types.hpp` into a few real headers by ownership
+1. split `src/ent/core_types.hpp` into a few real headers by ownership
 2. make `vid.hpp` define `VID` for real
 3. make `origin.hpp` define `Origin` for real
 4. move `DamageType` to a better-owned header if desired
@@ -153,4 +153,4 @@ If switching back to gameplay/worldgen instead, the cleanup is in a good enough 
 
 Use something like:
 
-> Read `docs/hydration_2026-04-12.md` first. We recently folderified debug/menu/render, moved the entity framework into `src/entity`, and kept concrete entities in `src/entities`. Build is currently clean. Continue from there.
+> Read `docs/hydration_2026-04-12.md` first. We recently folderified debug/menu/render, moved the ent framework into `src/ent`, and kept concrete ents in `src/ents`. Build is currently clean. Continue from there.

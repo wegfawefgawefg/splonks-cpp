@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 
-namespace splonks::entities::machete {
+namespace splonks::ents::machete {
 
-extern const EntityArchetype kMacheteArchetype;
+extern const EntSpec kMacheteSpec;
 
-} // namespace splonks::entities::machete
+} // namespace splonks::ents::machete

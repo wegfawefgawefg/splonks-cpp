@@ -1,9 +1,9 @@
 #include "network/net_lobby_internal.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
-#include "network/net_entity_links.hpp"
+#include "network/net_ent_links.hpp"
 #include "stage_spawning.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
@@ -16,9 +16,9 @@ namespace splonks::network {
 
 Vec2 GetPrimaryPlayerSpawnPos(const State& state) {
     if (const PlayerSlot* const primary = state.players.FindPrimaryLocal()) {
-        if (primary->entity_vid.has_value()) {
-            if (const Entity* const entity = state.entity_manager.GetEntity(*primary->entity_vid)) {
-                return entity->pos;
+        if (primary->ent_vid.has_value()) {
+            if (const Ent* const ent = state.ents.GetEnt(*primary->ent_vid)) {
+                return ent->pos;
             }
         }
     }
@@ -51,13 +51,13 @@ const NetRetainedPlayerState* FindRetainedPlayerState(const State& state, Player
     return nullptr;
 }
 
-void CopyEntityEffectsToRetained(
-    const Entity& entity,
+void CopyEntEffectsToRetained(
+    const Ent& ent,
     std::uint8_t& effect_count,
     std::array<NetRetainedEffect, kNetRetainedEffectCount>& effects_out
 ) {
     effect_count = 0;
-    if (const EntityEffects* const effects = entity.effects.get()) {
+    if (const EntEffects* const effects = ent.effects.get()) {
         effect_count = static_cast<std::uint8_t>(
             std::min<std::size_t>(effects->count, effects_out.size())
         );
@@ -74,17 +74,17 @@ void CopyEntityEffectsToRetained(
 }
 
 void RestoreRetainedEffects(
-    Entity& entity,
+    Ent& ent,
     std::uint8_t effect_count,
     const std::array<NetRetainedEffect, kNetRetainedEffectCount>& retained_effects
 ) {
-    entity.effects.reset();
+    ent.effects.reset();
     const std::size_t count = std::min<std::size_t>(effect_count, retained_effects.size());
     if (count == 0) {
         return;
     }
 
-    EntityEffects& effects = entity.effects.emplace();
+    EntEffects& effects = ent.effects.emplace();
     effects.count = static_cast<std::uint8_t>(count);
     for (std::size_t i = 0; i < count; ++i) {
         const NetRetainedEffect& retained_effect = retained_effects[i];
@@ -97,22 +97,22 @@ void RestoreRetainedEffects(
     }
 }
 
-NetRetainedAttachedEntityState CaptureRetainedAttachedEntity(
+NetRetainedAttachedEntState CaptureRetainedAttachedEnt(
     const State& state,
     std::optional<VID> attached_vid
 ) {
-    NetRetainedAttachedEntityState retained;
+    NetRetainedAttachedEntState retained;
     if (!attached_vid.has_value()) {
         return retained;
     }
 
-    const Entity* const attached = state.entity_manager.GetEntity(*attached_vid);
-    if (attached == nullptr || !attached->active || IsPlayerLikeEntityType(attached->type_)) {
+    const Ent* const attached = state.ents.GetEnt(*attached_vid);
+    if (attached == nullptr || !attached->active || IsPlayerLikeEntType(attached->type_)) {
         return retained;
     }
 
     retained.valid = true;
-    retained.entity_type = attached->type_;
+    retained.ent_type = attached->type_;
     retained.pos = attached->pos;
     retained.vel = attached->vel;
     retained.acc = attached->acc;
@@ -124,9 +124,9 @@ NetRetainedAttachedEntityState CaptureRetainedAttachedEntity(
     retained.counter_d = attached->counter_d;
     retained.health = attached->health;
     retained.money = attached->money;
-    retained.facing = static_cast<std::uint8_t>(attached->facing == LeftOrRight::Right ? 1 : 0);
+    retained.facing = static_cast<std::uint8_t>(attached->facing == Side::Right ? 1 : 0);
     retained.condition = static_cast<std::uint8_t>(attached->condition);
-    CopyEntityEffectsToRetained(*attached, retained.effect_count, retained.effects);
+    CopyEntEffectsToRetained(*attached, retained.effect_count, retained.effects);
     return retained;
 }
 
@@ -143,7 +143,7 @@ void RemoveRetainedPlayerState(State& state, PlayerId player_id) {
     );
 }
 
-void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Entity& player) {
+void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Ent& player) {
     RemoveRetainedPlayerState(state, slot.player_id);
 
     NetRetainedPlayerState retained;
@@ -151,15 +151,15 @@ void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Entity
     retained.display_name = slot.display_name;
     retained.quest_id = state.stage.quest_id;
     retained.quest_stage_id = state.stage.quest_stage_id;
-    retained.entity_type = player.type_;
+    retained.ent_type = player.type_;
     retained.last_pos = player.pos;
     retained.health = player.health;
     retained.money = player.money;
     retained.disconnected_frame = state.frame;
-    retained.held_item = CaptureRetainedAttachedEntity(state, player.holding_vid);
-    retained.back_item = CaptureRetainedAttachedEntity(state, player.back_vid);
+    retained.held_item = CaptureRetainedAttachedEnt(state, player.holding_vid);
+    retained.back_item = CaptureRetainedAttachedEnt(state, player.back_vid);
 
-    if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player.vid)) {
+    if (const EntToolState* const tools = state.ent_tools.FindEntToolState(player.vid)) {
         for (std::size_t i = 0; i < retained.tool_slots.size() && i < tools->slots.size(); ++i) {
             const ToolSlot& tool_slot = tools->slots[i];
             retained.tool_slots[i] = NetRetainedToolSlot{
@@ -171,7 +171,7 @@ void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Entity
         }
     }
 
-    CopyEntityEffectsToRetained(player, retained.effect_count, retained.effects);
+    CopyEntEffectsToRetained(player, retained.effect_count, retained.effects);
 
     state.net_session.retained_players.push_back(retained);
 }
@@ -195,18 +195,18 @@ void CleanupExpiredRetainedPlayerStates(State& state) {
     );
 }
 
-void DeactivateRetainedAttachedEntity(
+void DeactivateRetainedAttachedEnt(
     State& state,
-    const NetRetainedAttachedEntityState& retained,
+    const NetRetainedAttachedEntState& retained,
     std::optional<VID> attached_vid
 ) {
     if (!retained.valid || !attached_vid.has_value()) {
         return;
     }
-    if (const Entity* const attached = state.entity_manager.GetEntity(*attached_vid);
-        attached != nullptr && attached->active && attached->type_ == retained.entity_type &&
-        !IsPlayerLikeEntityType(attached->type_)) {
-        (void)world_ops::DeactivateEntity(state, attached->vid);
+    if (const Ent* const attached = state.ents.GetEnt(*attached_vid);
+        attached != nullptr && attached->active && attached->type_ == retained.ent_type &&
+        !IsPlayerLikeEntType(attached->type_)) {
+        (void)world_ops::DeactivateEnt(state, attached->vid);
     }
 }
 
@@ -216,11 +216,11 @@ bool IsRetainedReconnectMode(NetReconnectSpawnMode mode) {
            mode == NetReconnectSpawnMode::RetainedAtHost;
 }
 
-void ApplyRetainedAttachedEntityState(
+void ApplyRetainedAttachedEntState(
     State& state,
-    Entity& holder,
-    const NetRetainedAttachedEntityState& retained,
-    AttachmentMode mode,
+    Ent& holder,
+    const NetRetainedAttachedEntState& retained,
+    AttachMode mode,
     const Graphics& graphics
 );
 
@@ -257,16 +257,16 @@ void ApplyRetainedPlayerState(
 ) {
     EnsureSpawnedPlayer(state, player_id, false, false, spawn_pos, graphics);
     PlayerSlot* const slot = state.players.Find(player_id);
-    if (slot == nullptr || !slot->entity_vid.has_value()) {
+    if (slot == nullptr || !slot->ent_vid.has_value()) {
         return;
     }
 
-    Entity* const player = state.entity_manager.GetEntityMut(*slot->entity_vid);
+    Ent* const player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr || !player->active) {
         return;
     }
 
-    SetEntityAs(*player, retained.entity_type);
+    SetEntAs(*player, retained.ent_type);
     player->pos = spawn_pos;
     player->vel = Vec2::New(0.0F, 0.0F);
     player->acc = Vec2::New(0.0F, 0.0F);
@@ -275,7 +275,7 @@ void ApplyRetainedPlayerState(
     player->held_by_vid.reset();
     player->holding_vid.reset();
     player->back_vid.reset();
-    player->attachment_mode = AttachmentMode::None;
+    player->attach_mode = AttachMode::None;
     player->stun_timer = 0;
     player->fall_timer = 0;
     player->coyote_time = 0;
@@ -284,7 +284,7 @@ void ApplyRetainedPlayerState(
 
     for (std::size_t i = 0; i < retained.tool_slots.size(); ++i) {
         const NetRetainedToolSlot& retained_tool = retained.tool_slots[i];
-        ToolSlot& tool_slot = state.entity_tools.EnsureToolSlot(player->vid, i);
+        ToolSlot& tool_slot = state.ent_tools.EnsureToolSlot(player->vid, i);
         tool_slot.kind = retained_tool.kind;
         tool_slot.count = retained_tool.count;
         tool_slot.cooldown = retained_tool.cooldown;
@@ -293,57 +293,57 @@ void ApplyRetainedPlayerState(
 
     RestoreRetainedEffects(*player, retained.effect_count, retained.effects);
 
-    state.UpdateSidForEntity(player->vid.id, graphics);
-    ApplyRetainedAttachedEntityState(state, *player, retained.back_item, AttachmentMode::Back, graphics);
-    ApplyRetainedAttachedEntityState(state, *player, retained.held_item, AttachmentMode::Held, graphics);
+    state.UpdateSidForEnt(player->vid.id, graphics);
+    ApplyRetainedAttachedEntState(state, *player, retained.back_item, AttachMode::Back, graphics);
+    ApplyRetainedAttachedEntState(state, *player, retained.held_item, AttachMode::Held, graphics);
 }
 
-void ApplyRetainedAttachedEntityState(
+void ApplyRetainedAttachedEntState(
     State& state,
-    Entity& holder,
-    const NetRetainedAttachedEntityState& retained,
-    AttachmentMode mode,
+    Ent& holder,
+    const NetRetainedAttachedEntState& retained,
+    AttachMode mode,
     const Graphics& graphics
 ) {
     if (!retained.valid) {
         return;
     }
 
-    Entity* const attached = world_ops::SpawnEntity(
+    Ent* const attached = world_ops::SpawnEnt(
         state,
-        retained.entity_type,
-        [&](Entity& entity) {
-            entity.pos = retained.pos;
-            entity.vel = retained.vel;
-            entity.acc = retained.acc;
-            entity.size = retained.size;
-            entity.rotation = retained.rotation;
-            entity.counter_a = retained.counter_a;
-            entity.counter_b = retained.counter_b;
-            entity.counter_c = retained.counter_c;
-            entity.counter_d = retained.counter_d;
-            entity.health = retained.health;
-            entity.money = retained.money;
-            entity.facing = retained.facing != 0 ? LeftOrRight::Right : LeftOrRight::Left;
-            entity.condition = static_cast<EntityCondition>(retained.condition);
-            RestoreRetainedEffects(entity, retained.effect_count, retained.effects);
+        retained.ent_type,
+        [&](Ent& ent) {
+            ent.pos = retained.pos;
+            ent.vel = retained.vel;
+            ent.acc = retained.acc;
+            ent.size = retained.size;
+            ent.rotation = retained.rotation;
+            ent.counter_a = retained.counter_a;
+            ent.counter_b = retained.counter_b;
+            ent.counter_c = retained.counter_c;
+            ent.counter_d = retained.counter_d;
+            ent.health = retained.health;
+            ent.money = retained.money;
+            ent.facing = retained.facing != 0 ? Side::Right : Side::Left;
+            ent.condition = static_cast<EntCondition>(retained.condition);
+            RestoreRetainedEffects(ent, retained.effect_count, retained.effects);
         }
     );
     if (attached == nullptr) {
         return;
     }
 
-    if (mode == AttachmentMode::Back) {
+    if (mode == AttachMode::Back) {
         holder.back_vid = attached->vid;
         attached->held_by_vid = holder.vid;
-        attached->attachment_mode = AttachmentMode::Back;
+        attached->attach_mode = AttachMode::Back;
         attached->has_physics = false;
         attached->can_collide = false;
     } else {
-        entities::common::AttachEntityAsHeld(holder, *attached);
+        ents::common::AttachEntAsHeld(holder, *attached);
     }
 
-    entities::common::SyncEntityAttachments(holder.vid.id, state, graphics);
+    ents::common::SyncEntAttachs(holder.vid.id, state, graphics);
     (void)mode;
 }
 

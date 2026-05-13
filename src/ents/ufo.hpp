@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::ufo {
+namespace splonks::ents::ufo {
 
-extern const EntityArchetype kUfoArchetype;
+extern const EntSpec kUfoSpec;
 
-} // namespace splonks::entities::ufo
+} // namespace splonks::ents::ufo

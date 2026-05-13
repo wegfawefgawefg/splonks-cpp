@@ -1,11 +1,11 @@
-#include "entities/alien_boss.hpp"
+#include "ents/alien_boss.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::alien_boss {
+namespace splonks::ents::alien_boss {
 
-// TODO(classic): AlienBoss is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kAlienBossArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::AlienBoss);
+// TODO(classic): AlienBoss is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kAlienBossSpec =
+    common::MakeUnimplementedClassicSpec(EntType::AlienBoss);
 
-} // namespace splonks::entities::alien_boss
+} // namespace splonks::ents::alien_boss

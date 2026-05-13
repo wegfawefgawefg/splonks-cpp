@@ -6,10 +6,10 @@
 
 namespace splonks {
 
-struct DeterministicRng {
+struct DetRng {
     std::uint64_t state = 0;
 
-    static DeterministicRng New(std::uint32_t seed);
+    static DetRng New(std::uint32_t seed);
     std::uint32_t NextU32();
     int RandomIntInclusive(int minimum, int maximum);
     int RandomIntExclusive(int minimum, int maximum);

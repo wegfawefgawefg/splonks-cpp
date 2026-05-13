@@ -1,7 +1,7 @@
 #include "render/debug_lighting.hpp"
 
-#include "entity.hpp"
-#include "entity/archetype.hpp"
+#include "ent.hpp"
+#include "ent/spec.hpp"
 #include "graphics.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
@@ -19,10 +19,10 @@ namespace {
 
 Vec2 WorldPointToScreen(
     const Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& world_pos
 ) {
-    const float presentation_scale = presentation.w / static_cast<float>(graphics.dims.x);
+    const float pres_scale = pres.w / static_cast<float>(graphics.dims.x);
     const Vec2 internal_screen = Vec2::New(
         std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
                    graphics.camera.offset.x),
@@ -30,8 +30,8 @@ Vec2 WorldPointToScreen(
                    graphics.camera.offset.y)
     );
     return Vec2::New(
-        std::round(presentation.x + internal_screen.x * presentation_scale),
-        std::round(presentation.y + internal_screen.y * presentation_scale)
+        std::round(pres.x + internal_screen.x * pres_scale),
+        std::round(pres.y + internal_screen.y * pres_scale)
     );
 }
 
@@ -48,11 +48,11 @@ SDL_Color LightDebugColor(Color3 color, std::uint8_t alpha = 255) {
 void RenderWorldPointMarker(
     SDL_Renderer* renderer,
     Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& world_pos,
     const SDL_Color& color
 ) {
-    const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
+    const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     for (int offset = -1; offset <= 1; ++offset) {
         SDL_RenderLine(renderer, screen.x - 7.0F, screen.y + static_cast<float>(offset), screen.x + 7.0F, screen.y + static_cast<float>(offset));
@@ -63,7 +63,7 @@ void RenderWorldPointMarker(
 void RenderWorldCircleOutline(
     SDL_Renderer* renderer,
     Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& center,
     float radius,
     const SDL_Color& color
@@ -79,8 +79,8 @@ void RenderWorldCircleOutline(
         const float t = static_cast<float>(i) / static_cast<float>(kSegments);
         const float angle = t * 6.28318530718F;
         const Vec2 current = center + Vec2::New(std::cos(angle) * radius, std::sin(angle) * radius);
-        const Vec2 previous_screen = WorldPointToScreen(graphics, presentation, previous);
-        const Vec2 current_screen = WorldPointToScreen(graphics, presentation, current);
+        const Vec2 previous_screen = WorldPointToScreen(graphics, pres, previous);
+        const Vec2 current_screen = WorldPointToScreen(graphics, pres, current);
         SDL_RenderLine(renderer, previous_screen.x, previous_screen.y, current_screen.x, current_screen.y);
         previous = current;
     }
@@ -89,7 +89,7 @@ void RenderWorldCircleOutline(
 void RenderLightMarker(
     SDL_Renderer* renderer,
     Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& world_pos,
     int radius_tiles,
     float strength,
@@ -100,14 +100,14 @@ void RenderLightMarker(
     RenderWorldCircleOutline(
         renderer,
         graphics,
-        presentation,
+        pres,
         world_pos,
         static_cast<float>(radius_tiles) * static_cast<float>(kTileSize),
         marker_color
     );
-    RenderWorldPointMarker(renderer, graphics, presentation, world_pos, marker_color);
+    RenderWorldPointMarker(renderer, graphics, pres, world_pos, marker_color);
 
-    const Vec2 label_screen = WorldPointToScreen(graphics, presentation, world_pos);
+    const Vec2 label_screen = WorldPointToScreen(graphics, pres, world_pos);
     char text[96];
     std::snprintf(text, sizeof(text), "%s r%d %.2f", label, radius_tiles, strength);
     DrawText(
@@ -128,7 +128,7 @@ void RenderLightOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_lights) {
@@ -151,7 +151,7 @@ void RenderLightOverlay(
             RenderLightMarker(
                 renderer,
                 graphics,
-                presentation,
+                pres,
                 world_pos,
                 light.radius,
                 1.0F + (static_cast<float>(light.radius) * 0.03F),
@@ -160,21 +160,21 @@ void RenderLightOverlay(
             );
         }
 
-        for (const Entity& entity : state.entity_manager.entities) {
-            if (!entity.active || !entity.render_enabled ||
-                entity.condition == EntityCondition::Dead ||
-                entity.light_strength <= 0.0F || entity.light_radius <= 0) {
+        for (const Ent& ent : state.ents.ents) {
+            if (!ent.active || !ent.render_enabled ||
+                ent.condition == EntCondition::Dead ||
+                ent.light_strength <= 0.0F || ent.light_radius <= 0) {
                 continue;
             }
             RenderLightMarker(
                 renderer,
                 graphics,
-                presentation,
-                entity.GetCenter() + render_offset,
-                entity.light_radius,
-                entity.light_strength,
-                entity.light_color,
-                GetEntityTypeName(entity.type_)
+                pres,
+                ent.GetCenter() + render_offset,
+                ent.light_radius,
+                ent.light_strength,
+                ent.light_color,
+                GetEntTypeName(ent.type_)
             );
         }
 
@@ -189,7 +189,7 @@ void RenderLightOverlay(
             RenderLightMarker(
                 renderer,
                 graphics,
-                presentation,
+                pres,
                 light.world_pos + render_offset,
                 light.radius,
                 light.strength * std::clamp(fade, 0.0F, 1.0F),

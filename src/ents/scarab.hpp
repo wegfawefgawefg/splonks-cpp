@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::scarab {
+namespace splonks::ents::scarab {
 
-extern const EntityArchetype kScarabArchetype;
+extern const EntSpec kScarabSpec;
 
-} // namespace splonks::entities::scarab
+} // namespace splonks::ents::scarab

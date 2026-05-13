@@ -6,7 +6,7 @@
 
 namespace splonks {
 
-const EntityPoolConfig* ItemPoolDb::FindPool(std::string_view id) const {
+const EntPoolConfig* ItemPoolDb::FindPool(std::string_view id) const {
     const auto it = pools.find(std::string(id));
     return it == pools.end() ? nullptr : &it->second;
 }
@@ -22,8 +22,8 @@ ItemPoolDb LoadItemPoolDb(const std::string& quest_root_path, const std::string&
     const std::string path = ResolveQuestPath(quest_root_path, pool_file_path).string();
     const std::vector<std::string> lines = ReadLines(path);
     ItemPoolDb db;
-    EntityPoolConfig current_pool;
-    WeightedEntityEntry* current_entry = nullptr;
+    EntPoolConfig current_pool;
+    WeightedEntEntry* current_entry = nullptr;
     bool has_pool = false;
     bool in_pools = false;
     bool in_entries = false;
@@ -33,13 +33,13 @@ ItemPoolDb LoadItemPoolDb(const std::string& quest_root_path, const std::string&
             return;
         }
         if (current_pool.id.empty()) {
-            throw std::runtime_error(path + ": entity pool missing id");
+            throw std::runtime_error(path + ": ent pool missing id");
         }
         if (current_pool.entries.empty()) {
-            throw std::runtime_error(path + ": entity pool has no entries: " + current_pool.id);
+            throw std::runtime_error(path + ": ent pool has no entries: " + current_pool.id);
         }
         db.pools[current_pool.id] = current_pool;
-        current_pool = EntityPoolConfig{};
+        current_pool = EntPoolConfig{};
         current_entry = nullptr;
         has_pool = false;
         in_entries = false;
@@ -99,12 +99,12 @@ ItemPoolDb LoadItemPoolDb(const std::string& quest_root_path, const std::string&
         }
         if (in_entries && indent == 6 && trimmed.rfind("- ", 0) == 0) {
             const auto [key, value] = SplitKeyValue(trimmed.substr(2), path, line_number);
-            if (key != "entity") {
+            if (key != "ent") {
                 throw std::runtime_error(path + ":" + std::to_string(line_number) +
-                                         ": pool entry must start with entity");
+                                         ": pool entry must start with ent");
             }
-            current_pool.entries.push_back(WeightedEntityEntry{
-                .entity_type = ParseEntityTypeOrThrow(value, path, line_number),
+            current_pool.entries.push_back(WeightedEntEntry{
+                .ent_type = ParseEntTypeOrThrow(value, path, line_number),
                 .weight = 1,
             });
             current_entry = &current_pool.entries.back();
@@ -191,7 +191,7 @@ ShopConfigDb LoadShopConfigDb(
         }
         const auto [key, value] = SplitKeyValue(trimmed, path, line_number);
         if (key == "sign") {
-            current_shop.sign = ParseEntityTypeOrThrow(value, path, line_number);
+            current_shop.sign = ParseEntTypeOrThrow(value, path, line_number);
         } else if (key == "item_pool") {
             current_shop.item_pool = value;
         } else if (key == "item_slots") {

@@ -53,7 +53,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
         throw std::runtime_error("Classic stage config missing border_tile: " + stage_config.id);
     }
     stage.border = Stage::MakeUniformBorder(stage_config.border_tile);
-    stage.block_animation_id = stage_config.block_animation_id;
+    stage.block_anim_id = stage_config.block_anim_id;
     std::vector<Tile> backwall_fill_tiles = stage_config.backwall_tiles;
     if (backwall_fill_tiles.empty()) {
         throw std::runtime_error("Classic stage config missing backwall_tiles: " + stage_config.id);
@@ -104,25 +104,25 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                                        [static_cast<std::size_t>(tile_x)];
                 }
             }
-            const std::size_t room_spawn_base_index = stage.entity_spawns.size();
-            for (StageEntitySpawn& spawn : room.entity_spawns) {
+            const std::size_t room_spawn_base_index = stage.ent_spawns.size();
+            for (EntSpawn& spawn : room.ent_spawns) {
                 spawn.pos += room_pos_wc;
-                if (spawn.entity_a_spawn_index.has_value()) {
-                    *spawn.entity_a_spawn_index += room_spawn_base_index;
+                if (spawn.ent_a_spawn_index.has_value()) {
+                    *spawn.ent_a_spawn_index += room_spawn_base_index;
                 }
-                if (spawn.entity_b_spawn_index.has_value()) {
-                    *spawn.entity_b_spawn_index += room_spawn_base_index;
+                if (spawn.ent_b_spawn_index.has_value()) {
+                    *spawn.ent_b_spawn_index += room_spawn_base_index;
                 }
-                if (spawn.entity_c_spawn_index.has_value()) {
-                    *spawn.entity_c_spawn_index += room_spawn_base_index;
+                if (spawn.ent_c_spawn_index.has_value()) {
+                    *spawn.ent_c_spawn_index += room_spawn_base_index;
                 }
-                if (spawn.entity_d_spawn_index.has_value()) {
-                    *spawn.entity_d_spawn_index += room_spawn_base_index;
+                if (spawn.ent_d_spawn_index.has_value()) {
+                    *spawn.ent_d_spawn_index += room_spawn_base_index;
                 }
                 if (spawn.shop_owner_spawn_index.has_value()) {
                     *spawn.shop_owner_spawn_index += room_spawn_base_index;
                 }
-                stage.entity_spawns.push_back(std::move(spawn));
+                stage.ent_spawns.push_back(std::move(spawn));
             }
             const IVec2 room_tile_offset = ToIVec2(room_pos);
             for (StageTileTrigger& trigger : room.tile_triggers) {

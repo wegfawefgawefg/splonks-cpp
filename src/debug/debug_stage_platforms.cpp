@@ -2,7 +2,7 @@
 
 #include "debug/debug_stage_common.hpp"
 #include "effects.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "player_queries.hpp"
 #include "stage_spawning.hpp"
 
@@ -22,19 +22,19 @@ constexpr int kParachuteTestStageHeightTiles = 72;
 std::optional<VID> SpawnMovingPlatform(
     State& state,
     const Vec2& pos,
-    EntityAiState mode,
+    EntAiState mode,
     const IVec2& point_a,
     const IVec2& point_b,
     float counter_a = 0.0F,
     float counter_b = 1.0F,
     float threshold_a = 0.0F
 ) {
-    const std::optional<VID> vid = SpawnStageEntityAtTopLeft(state, EntityType::MovingPlatform, pos);
+    const std::optional<VID> vid = SpawnStageEntAtTopLeft(state, EntType::MovingPlatform, pos);
     if (!vid.has_value()) {
         return std::nullopt;
     }
 
-    Entity* const platform = state.entity_manager.GetEntityMut(*vid);
+    Ent* const platform = state.ents.GetEntMut(*vid);
     if (platform == nullptr) {
         return std::nullopt;
     }
@@ -178,7 +178,7 @@ void InitMovingPlatformTestStage(State& state) {
     (void)SpawnMovingPlatform(
         state,
         left_platform_pos,
-        EntityAiState::Idle,
+        EntAiState::Idle,
         IVec2::New(6 * static_cast<int>(kTileSize), 8 * static_cast<int>(kTileSize)),
         IVec2::New(14 * static_cast<int>(kTileSize), 8 * static_cast<int>(kTileSize))
     );
@@ -190,23 +190,23 @@ void InitMovingPlatformTestStage(State& state) {
     const std::optional<VID> icy_platform_vid = SpawnMovingPlatform(
         state,
         icy_platform_pos,
-        EntityAiState::Idle,
+        EntAiState::Idle,
         IVec2::New(14 * static_cast<int>(kTileSize), 5 * static_cast<int>(kTileSize)),
         IVec2::New(22 * static_cast<int>(kTileSize), 5 * static_cast<int>(kTileSize))
     );
     if (icy_platform_vid.has_value()) {
-        if (Entity* const icy_platform = state.entity_manager.GetEntityMut(*icy_platform_vid)) {
+        if (Ent* const icy_platform = state.ents.GetEntMut(*icy_platform_vid)) {
             icy_platform->size = Vec2::New(64.0F, 16.0F);
             icy_platform->support_ground_friction = 1.0F;
             icy_platform->can_be_hung_on = false;
-            icy_platform->frame_data_animator = FrameDataAnimator::New(frame_data_ids::IceBlock);
+            icy_platform->aframe_animator = AFrameAnimator::New(aframe_ids::IceBlock);
         }
     }
 
     (void)SpawnMovingPlatform(
         state,
         middle_platform_pos,
-        EntityAiState::Patrolling,
+        EntAiState::Patrolling,
         IVec2::New(23 * static_cast<int>(kTileSize), 4 * static_cast<int>(kTileSize)),
         IVec2::New(23 * static_cast<int>(kTileSize), 10 * static_cast<int>(kTileSize))
     );
@@ -214,7 +214,7 @@ void InitMovingPlatformTestStage(State& state) {
     (void)SpawnMovingPlatform(
         state,
         right_platform_pos,
-        EntityAiState::Disturbed,
+        EntAiState::Disturbed,
         ToIVec2(circle_center),
         IVec2::New(0, 0),
         0.0F,
@@ -239,7 +239,7 @@ void InitParachuteTestStage(State& state) {
     const float player_spawn_x = 6.0F * static_cast<float>(kTileSize);
     const float player_spawn_y = 5.0F * static_cast<float>(kTileSize) - 14.0F;
     SpawnPlayer(state, Vec2::New(player_spawn_x, player_spawn_y));
-    if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
+    if (Ent* const player = GetPrimaryLocalPlayerMut(state)) {
         (void)AddEffect(*player, EffectId::Parachute, 1);
     }
 }

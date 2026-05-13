@@ -17,11 +17,11 @@ Vec2 GetRemoteSpawnPos(const State& state);
 Vec2 GetEntranceOrRemoteSpawnPos(const State& state);
 const NetRetainedPlayerState* FindRetainedPlayerState(const State& state, PlayerId player_id);
 void RemoveRetainedPlayerState(State& state, PlayerId player_id);
-void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Entity& player);
+void StoreRetainedPlayerState(State& state, const PlayerSlot& slot, const Ent& player);
 void CleanupExpiredRetainedPlayerStates(State& state);
-void DeactivateRetainedAttachedEntity(
+void DeactivateRetainedAttachedEnt(
     State& state,
-    const NetRetainedAttachedEntityState& retained,
+    const NetRetainedAttachedEntState& retained,
     std::optional<VID> attached_vid
 );
 bool IsRetainedReconnectMode(NetReconnectSpawnMode mode);
@@ -72,7 +72,7 @@ void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
 void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
 
-void HandleJoinRequestAsCoordinator(
+void HandleJoinRequestAsHost(
     State& state,
     const Graphics& graphics,
     NetTransportRuntime& transport,
@@ -85,7 +85,7 @@ void HandleJoinAcceptAsPeer(
     NetTransportRuntime& transport,
     const JoinAcceptPacket& accept
 );
-void HandleLeaveNoticeAsCoordinator(
+void HandleLeaveNoticeAsHost(
     State& state,
     NetTransportRuntime& transport,
     const LeaveNoticePacket& leave

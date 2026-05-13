@@ -1,7 +1,7 @@
-#include "entities/basic_exit.hpp"
+#include "ents/basic_exit.hpp"
 
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "player_queries.hpp"
 #include "stage_progression.hpp"
 #include "world_ops.hpp"
@@ -9,7 +9,7 @@
 
 #include <limits>
 
-namespace splonks::entities::basic_exit {
+namespace splonks::ents::basic_exit {
 
 namespace {
 
@@ -22,29 +22,29 @@ float GetDistanceSq(const Vec2& from, const Vec2& to, const Stage& stage) {
     return (delta.x * delta.x) + (delta.y * delta.y);
 }
 
-const Entity* GetActiveBasicExitEntity(
-    std::size_t entity_idx,
+const Ent* GetActiveBasicExitEnt(
+    std::size_t ent_idx,
     const State& state
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return nullptr;
     }
 
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    if (!entity.active || entity.type_ != EntityType::BasicExit) {
+    const Ent& ent = state.ents.ents[ent_idx];
+    if (!ent.active || ent.type_ != EntType::BasicExit) {
         return nullptr;
     }
-    return &entity;
+    return &ent;
 }
 
-std::optional<ExitPrompt> BuildExitPromptForEntity(
-    std::size_t entity_idx,
+std::optional<ExitPrompt> BuildExitPromptForEnt(
+    std::size_t ent_idx,
     const State& state,
     const Graphics& graphics,
-    const Entity& player
+    const Ent& player
 ) {
-    const Entity* const exit_entity = GetActiveBasicExitEntity(entity_idx, state);
-    if (exit_entity == nullptr) {
+    const Ent* const exit_ent = GetActiveBasicExitEnt(ent_idx, state);
+    if (exit_ent == nullptr) {
         return std::nullopt;
     }
 
@@ -53,15 +53,15 @@ std::optional<ExitPrompt> BuildExitPromptForEntity(
     }
 
     const std::optional<std::size_t> overlapping_exit_idx =
-        FindOverlappingBasicExitEntityIdx(player, state, graphics);
-    if (!overlapping_exit_idx.has_value() || *overlapping_exit_idx != entity_idx) {
+        FindOverlappingBasicExitEntIdx(player, state, graphics);
+    if (!overlapping_exit_idx.has_value() || *overlapping_exit_idx != ent_idx) {
         return std::nullopt;
     }
 
-    const bool allowed = IsStageExitAllowed(state, exit_entity->stage_exit_id);
+    const bool allowed = IsStageExitAllowed(state, exit_ent->stage_exit_id);
 
     return ExitPrompt{
-        .entity_idx = entity_idx,
+        .ent_idx = ent_idx,
         .action_text = "RB",
         .message_text = allowed ? "" : "locked",
         .show_down_arrow = true,
@@ -71,56 +71,56 @@ std::optional<ExitPrompt> BuildExitPromptForEntity(
 
 } // namespace
 
-std::optional<std::size_t> FindOverlappingBasicExitEntityIdx(
-    const Entity& entity,
+std::optional<std::size_t> FindOverlappingBasicExitEntIdx(
+    const Ent& ent,
     const State& state,
     const Graphics& graphics
 ) {
-    if (!entity.active) {
+    if (!ent.active) {
         return std::nullopt;
     }
 
-    const AABB entity_aabb = common::GetContactAabbForEntity(entity, graphics);
-    const Vec2 entity_center = GetAabbCenter(entity_aabb);
-    const std::vector<VID> results = QueryEntitiesInAabb(state, entity_aabb, entity.vid);
+    const AABB ent_aabb = common::GetContactAabbForEnt(ent, graphics);
+    const Vec2 ent_center = GetAabbCenter(ent_aabb);
+    const std::vector<VID> results = QueryEntsInAabb(state, ent_aabb, ent.vid);
 
     float best_distance_sq = std::numeric_limits<float>::max();
-    std::optional<std::size_t> best_entity_idx;
+    std::optional<std::size_t> best_ent_idx;
     for (const VID& vid : results) {
-        const Entity* const other = state.entity_manager.GetEntity(vid);
-        if (other == nullptr || !other->active || other->type_ != EntityType::BasicExit) {
+        const Ent* const other = state.ents.GetEnt(vid);
+        if (other == nullptr || !other->active || other->type_ != EntType::BasicExit) {
             continue;
         }
 
         const AABB other_aabb = GetNearestWorldAabb(
             state.stage,
-            entity_center,
-            common::GetContactAabbForEntity(*other, graphics)
+            ent_center,
+            common::GetContactAabbForEnt(*other, graphics)
         );
-        if (!AabbsIntersect(entity_aabb, other_aabb)) {
+        if (!AabbsIntersect(ent_aabb, other_aabb)) {
             continue;
         }
 
-        const float distance_sq = GetDistanceSq(entity_center, GetAabbCenter(other_aabb), state.stage);
-        if (!best_entity_idx.has_value() || distance_sq < best_distance_sq) {
+        const float distance_sq = GetDistanceSq(ent_center, GetAabbCenter(other_aabb), state.stage);
+        if (!best_ent_idx.has_value() || distance_sq < best_distance_sq) {
             best_distance_sq = distance_sq;
-            best_entity_idx = vid.id;
+            best_ent_idx = vid.id;
         }
     }
 
-    return best_entity_idx;
+    return best_ent_idx;
 }
 
-bool IsEntityTouchingBasicExit(
-    const Entity& entity,
+bool IsEntTouchingBasicExit(
+    const Ent& ent,
     const State& state,
     const Graphics& graphics
 ) {
-    return FindOverlappingBasicExitEntityIdx(entity, state, graphics).has_value();
+    return FindOverlappingBasicExitEntIdx(ent, state, graphics).has_value();
 }
 
-void StepEntityLogicAsBasicExit(
-    std::size_t entity_idx,
+void StepEntLogicAsBasicExit(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -132,30 +132,30 @@ void StepEntityLogicAsBasicExit(
         return;
     }
 
-    const Entity& exit_entity = state.entity_manager.entities[entity_idx];
+    const Ent& exit_ent = state.ents.ents[ent_idx];
     for (const PlayerSlot& slot : state.players.slots) {
         if (!ShouldSimulatePlayerSlotGameplay(state, slot)) {
             continue;
         }
 
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
         if (player == nullptr) {
             continue;
         }
 
         const std::optional<ExitPrompt> player_prompt =
-            BuildExitPromptForEntity(entity_idx, state, graphics, *player);
+            BuildExitPromptForEnt(ent_idx, state, graphics, *player);
         if (!player_prompt.has_value()) {
             continue;
         }
 
-        state.ClaimInteractForEntity(*slot.entity_vid);
-        const AABB player_aabb = common::GetContactAabbForEntity(*player, graphics);
+        state.ClaimInteractForEnt(*slot.ent_vid);
+        const AABB player_aabb = common::GetContactAabbForEnt(*player, graphics);
         const Vec2 player_center = GetAabbCenter(player_aabb);
         const AABB nearest_exit_aabb = GetNearestWorldAabb(
             state.stage,
             player_center,
-            common::GetContactAabbForEntity(exit_entity, graphics)
+            common::GetContactAabbForEnt(exit_ent, graphics)
         );
         const Vec2 prompt_base = GetNearestWorldPoint(
             state.stage,
@@ -169,7 +169,7 @@ void StepEntityLogicAsBasicExit(
             .message_text = player_prompt->message_text,
             .show_down_arrow = player_prompt->show_down_arrow,
             .quantity = 0,
-            .icon_animation_id = std::nullopt,
+            .icon_anim_id = std::nullopt,
         });
 
         if (state.pending_stage_transition.has_value() ||
@@ -178,44 +178,44 @@ void StepEntityLogicAsBasicExit(
             continue;
         }
 
-        (void)world_ops::TryApplyInteractEntity(player->vid, exit_entity.vid, state, graphics, audio);
+        (void)world_ops::TryApplyInteractEnt(player->vid, exit_ent.vid, state, graphics, audio);
         return;
     }
 }
 
 bool OnInteractAsBasicExit(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     std::size_t interactor_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
     (void)audio;
-    const Entity* const exit_entity = GetActiveBasicExitEntity(entity_idx, state);
-    if (exit_entity == nullptr ||
-        interactor_idx >= state.entity_manager.entities.size() ||
+    const Ent* const exit_ent = GetActiveBasicExitEnt(ent_idx, state);
+    if (exit_ent == nullptr ||
+        interactor_idx >= state.ents.ents.size() ||
         state.pending_stage_transition.has_value()) {
         return false;
     }
 
-    const Entity& interactor = state.entity_manager.entities[interactor_idx];
+    const Ent& interactor = state.ents.ents[interactor_idx];
     if (!interactor.active ||
-        !IsEntityTouchingBasicExit(interactor, state, graphics) ||
-        !IsStageExitAllowed(state, exit_entity->stage_exit_id)) {
+        !IsEntTouchingBasicExit(interactor, state, graphics) ||
+        !IsStageExitAllowed(state, exit_ent->stage_exit_id)) {
         return false;
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, *exit_entity, audio_asset_ids::StageWin);
-    if (exit_entity->transition_target.has_value()) {
-        QueueStageTransition(state, *exit_entity->transition_target);
+    (void)PlayEntCenterSoundEmitter(state, *exit_ent, audio_asset_ids::StageWin);
+    if (exit_ent->transition_target.has_value()) {
+        QueueStageTransition(state, *exit_ent->transition_target);
     } else {
-        QueueStageExitTransition(state, exit_entity->stage_exit_id);
+        QueueStageExitTransition(state, exit_ent->stage_exit_id);
     }
     return true;
 }
 
-extern const EntityArchetype kBasicExitArchetype{
-    .type_ = EntityType::BasicExit,
+extern const EntSpec kBasicExitSpec{
+    .type_ = EntType::BasicExit,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -227,14 +227,14 @@ extern const EntityArchetype kBasicExitArchetype{
     .hurt_on_contact = false,
     .can_be_stomped = false,
     .draw_layer = DrawLayer::Background,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .on_interact = OnInteractAsBasicExit,
-    .step_logic = StepEntityLogicAsBasicExit,
+    .step_logic = StepEntLogicAsBasicExit,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Exit),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Exit),
 };
 
-} // namespace splonks::entities::basic_exit
+} // namespace splonks::ents::basic_exit

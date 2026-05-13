@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 
-namespace splonks::entities::pistol {
+namespace splonks::ents::pistol {
 
-extern const EntityArchetype kPistolArchetype;
+extern const EntSpec kPistolSpec;
 
-} // namespace splonks::entities::pistol
+} // namespace splonks::ents::pistol

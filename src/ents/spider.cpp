@@ -1,9 +1,9 @@
-#include "entities/spider.hpp"
+#include "ents/spider.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "on_damage_effects.hpp"
 #include "player_queries.hpp"
 #include "utils.hpp"
@@ -12,7 +12,7 @@
 
 #include <cmath>
 
-namespace splonks::entities::spider {
+namespace splonks::ents::spider {
 
 namespace {
 
@@ -28,34 +28,34 @@ constexpr float kRageSpiderHopSpeedX = 2.5F;
 constexpr float kGiantSpiderHopSpeedX = 2.5F;
 constexpr float kSpiderIdleSpeedThreshold = 0.1F;
 
-std::optional<Vec2> GetNearestPlayerDelta(const Entity& entity, const State& state) {
-    const Entity* const player = FindNearestPlayer(state, entity.GetCenter(), false);
-    if (player == nullptr || player->condition == EntityCondition::Dead) {
+std::optional<Vec2> GetNearestPlayerDelta(const Ent& ent, const State& state) {
+    const Ent* const player = FindNearestPlayer(state, ent.GetCenter(), false);
+    if (player == nullptr || player->condition == EntCondition::Dead) {
         return std::nullopt;
     }
 
-    const Vec2 entity_center = entity.GetCenter();
-    const Vec2 player_center = GetNearestWorldPoint(state.stage, entity_center, player->GetCenter());
-    return player_center - entity_center;
+    const Vec2 ent_center = ent.GetCenter();
+    const Vec2 player_center = GetNearestWorldPoint(state.stage, ent_center, player->GetCenter());
+    return player_center - ent_center;
 }
 
 void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
     const int gem_count = state.drng.RandomIntInclusive(1, 3);
     for (int i = 0; i < gem_count; ++i) {
-        EntityType gem_type = EntityType::EmeraldBig;
+        EntType gem_type = EntType::EmeraldBig;
         switch (state.drng.RandomIntInclusive(1, 3)) {
         case 1:
-            gem_type = EntityType::EmeraldBig;
+            gem_type = EntType::EmeraldBig;
             break;
         case 2:
-            gem_type = EntityType::SapphireBig;
+            gem_type = EntType::SapphireBig;
             break;
         case 3:
-            gem_type = EntityType::RubyBig;
+            gem_type = EntType::RubyBig;
             break;
         }
 
-        if (world_ops::SpawnEntity(state, gem_type, [&](Entity& gem) {
+        if (world_ops::SpawnEnt(state, gem_type, [&](Ent& gem) {
                 gem.SetCenter(center);
                 gem.vel = Vec2::New(
                     state.drng.RandomFloat(-2.0F, 2.0F),
@@ -66,129 +66,129 @@ void SpawnGiantSpiderLoot(const Vec2& center, State& state) {
         }
     }
 
-    (void)world_ops::SpawnEntity(state, EntityType::Paste, [&](Entity& paste) {
+    (void)world_ops::SpawnEnt(state, EntType::Paste, [&](Ent& paste) {
         paste.SetCenter(center);
         paste.vel = Vec2::New(0.0F, 0.0F);
     });
 }
 
-void HandleGiantSpiderDeath(std::size_t entity_idx, State& state, Audio& audio) {
+void HandleGiantSpiderDeath(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& giant_spider = state.entity_manager.entities[entity_idx];
-    SpawnDamageEffectAnimationBurst(frame_data_ids::BloodBall, giant_spider.GetCenter(), state);
+    const Ent& giant_spider = state.ents.ents[ent_idx];
+    SpawnDamageEffectAnimBurst(aframe_ids::BloodBall, giant_spider.GetCenter(), state);
     SpawnGiantSpiderLoot(giant_spider.GetCenter(), state);
 }
 
-void FaceTowardNearestPlayer(Entity& entity, const State& state) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(entity, state);
+void FaceTowardNearestPlayer(Ent& ent, const State& state) {
+    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value()) {
         return;
     }
 
     if (player_delta->x < 0.0F) {
-        entity.facing = LeftOrRight::Left;
+        ent.facing = Side::Left;
     } else if (player_delta->x > 0.0F) {
-        entity.facing = LeftOrRight::Right;
+        ent.facing = Side::Right;
     }
 }
 
-void StepPassiveSpider(Entity& entity, State& state) {
-    if (entity.condition != EntityCondition::Normal) {
+void StepPassiveSpider(Ent& ent, State& state) {
+    if (ent.condition != EntCondition::Normal) {
         return;
     }
 
-    TrySetAnimation(entity, EntityDisplayState::Neutral);
-    if (!entity.grounded) {
+    TrySetAnim(ent, EntDisplayState::Neutral);
+    if (!ent.grounded) {
         return;
     }
 
-    if (entity.counter_a > 0.0F) {
-        entity.counter_a -= 1.0F;
-        if (std::abs(entity.vel.x) < kSpiderIdleSpeedThreshold) {
-            entity.vel.x = 0.0F;
+    if (ent.counter_a > 0.0F) {
+        ent.counter_a -= 1.0F;
+        if (std::abs(ent.vel.x) < kSpiderIdleSpeedThreshold) {
+            ent.vel.x = 0.0F;
         }
         return;
     }
 
     if (state.drng.RandomIntInclusive(0, 1) == 0) {
-        entity.facing = entity.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        ent.facing = ent.facing == Side::Left ? Side::Right : Side::Left;
     }
 
-    entity.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(2, 4));
-    entity.vel.x = entity.facing == LeftOrRight::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX;
-    entity.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
+    ent.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(2, 4));
+    ent.vel.x = ent.facing == Side::Left ? -kPassiveSpiderHopSpeedX : kPassiveSpiderHopSpeedX;
+    ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
         kPassiveSpiderCooldownMinFrames,
         kPassiveSpiderCooldownMaxFrames
     ));
 }
 
 void TryHopTowardPlayer(
-    Entity& entity,
+    Ent& ent,
     State& state,
     int aggro_distance,
     float hop_speed_x,
     int hop_speed_y_min,
     int hop_speed_y_max
 ) {
-    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(entity, state);
+    const std::optional<Vec2> player_delta = GetNearestPlayerDelta(ent, state);
     if (!player_delta.has_value() || Length(*player_delta) > static_cast<float>(aggro_distance)) {
-        entity.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
+        ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
             kAggroSpiderCooldownMinFrames,
             kAggroSpiderCooldownMaxFrames
         ));
         return;
     }
 
-    FaceTowardNearestPlayer(entity, state);
-    entity.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
-    entity.vel.x = entity.facing == LeftOrRight::Left ? -hop_speed_x : hop_speed_x;
-    entity.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
+    FaceTowardNearestPlayer(ent, state);
+    ent.vel.y = -static_cast<float>(state.drng.RandomIntInclusive(hop_speed_y_min, hop_speed_y_max));
+    ent.vel.x = ent.facing == Side::Left ? -hop_speed_x : hop_speed_x;
+    ent.counter_a = static_cast<float>(state.drng.RandomIntInclusive(
         kAggroSpiderCooldownMinFrames,
         kAggroSpiderCooldownMaxFrames
     ));
 }
 
 void StepAggroSpider(
-    Entity& entity,
+    Ent& ent,
     State& state,
     int aggro_distance,
     float hop_speed_x,
     int hop_speed_y_min,
     int hop_speed_y_max
 ) {
-    if (entity.condition != EntityCondition::Normal) {
+    if (ent.condition != EntCondition::Normal) {
         return;
     }
 
-    TrySetAnimation(entity, EntityDisplayState::Neutral);
-    if (!entity.grounded) {
+    TrySetAnim(ent, EntDisplayState::Neutral);
+    if (!ent.grounded) {
         return;
     }
 
-    if (entity.counter_a > 0.0F) {
-        entity.counter_a -= 1.0F;
-        if (std::abs(entity.vel.x) < kSpiderIdleSpeedThreshold) {
-            entity.vel.x = 0.0F;
+    if (ent.counter_a > 0.0F) {
+        ent.counter_a -= 1.0F;
+        if (std::abs(ent.vel.x) < kSpiderIdleSpeedThreshold) {
+            ent.vel.x = 0.0F;
         }
         return;
     }
 
-    TryHopTowardPlayer(entity, state, aggro_distance, hop_speed_x, hop_speed_y_min, hop_speed_y_max);
+    TryHopTowardPlayer(ent, state, aggro_distance, hop_speed_x, hop_speed_y_min, hop_speed_y_max);
 }
 
 } // namespace
 
-void OnDeathAsGiantSpider(std::size_t entity_idx, State& state, Audio& audio) {
-    HandleGiantSpiderDeath(entity_idx, state, audio);
+void OnDeathAsGiantSpider(std::size_t ent_idx, State& state, Audio& audio) {
+    HandleGiantSpiderDeath(ent_idx, state, audio);
 }
 
-void StepEntityLogicAsSpider(
-    std::size_t entity_idx,
+void StepEntLogicAsSpider(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -198,12 +198,12 @@ void StepEntityLogicAsSpider(
     (void)audio;
     (void)dt;
 
-    Entity& spider = state.entity_manager.entities[entity_idx];
+    Ent& spider = state.ents.ents[ent_idx];
     StepPassiveSpider(spider, state);
 }
 
-void StepEntityLogicAsRageSpider(
-    std::size_t entity_idx,
+void StepEntLogicAsRageSpider(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -213,12 +213,12 @@ void StepEntityLogicAsRageSpider(
     (void)audio;
     (void)dt;
 
-    Entity& rage_spider = state.entity_manager.entities[entity_idx];
+    Ent& rage_spider = state.ents.ents[ent_idx];
     StepAggroSpider(rage_spider, state, kRageSpiderAggroDistance, kRageSpiderHopSpeedX, 2, 5);
 }
 
-void StepEntityLogicAsGiantSpider(
-    std::size_t entity_idx,
+void StepEntLogicAsGiantSpider(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -228,12 +228,12 @@ void StepEntityLogicAsGiantSpider(
     (void)audio;
     (void)dt;
 
-    Entity& giant_spider = state.entity_manager.entities[entity_idx];
+    Ent& giant_spider = state.ents.ents[ent_idx];
     StepAggroSpider(giant_spider, state, kGiantSpiderAggroDistance, kGiantSpiderHopSpeedX, 3, 6);
 }
 
-extern const EntityArchetype kSpiderArchetype{
-    .type_ = EntityType::Spider,
+extern const EntSpec kSpiderSpec{
+    .type_ = EntType::Spider,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -246,20 +246,20 @@ extern const EntityArchetype kSpiderArchetype{
     .vanish_on_death = true,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kPassiveSpiderCooldownMinFrames),
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .collide_sound = audio_asset_ids::Thud,
-    .step_logic = StepEntityLogicAsSpider,
+    .step_logic = StepEntLogicAsSpider,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Spider),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Spider),
 };
 
-extern const EntityArchetype kRageSpiderArchetype{
-    .type_ = EntityType::RageSpider,
+extern const EntSpec kRageSpiderSpec{
+    .type_ = EntType::RageSpider,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -272,20 +272,20 @@ extern const EntityArchetype kRageSpiderArchetype{
     .vanish_on_death = true,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kAggroSpiderCooldownMinFrames),
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .collide_sound = audio_asset_ids::Thud,
-    .step_logic = StepEntityLogicAsRageSpider,
+    .step_logic = StepEntLogicAsRageSpider,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::RageSpider),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::RageSpider),
 };
 
-extern const EntityArchetype kGiantSpiderArchetype{
-    .type_ = EntityType::GiantSpider,
+extern const EntSpec kGiantSpiderSpec{
+    .type_ = EntType::GiantSpider,
     .size = Vec2::New(32.0F, 32.0F),
     .health = 10,
     .has_physics = true,
@@ -296,17 +296,17 @@ extern const EntityArchetype kGiantSpiderArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kAggroSpiderCooldownMinFrames),
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .collide_sound = audio_asset_ids::Thud,
     .on_death = OnDeathAsGiantSpider,
-    .step_logic = StepEntityLogicAsGiantSpider,
+    .step_logic = StepEntLogicAsGiantSpider,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::GiantSpider),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::GiantSpider),
 };
 
-} // namespace splonks::entities::spider
+} // namespace splonks::ents::spider

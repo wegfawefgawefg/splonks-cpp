@@ -1,8 +1,8 @@
-#include "entities/shop.hpp"
+#include "ents/shop.hpp"
 
 #include "buying.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
@@ -11,11 +11,11 @@
 #include <algorithm>
 #include <vector>
 
-namespace splonks::entities::shop {
+namespace splonks::ents::shop {
 
 namespace {
 
-std::vector<VID>& EnsureChildVids(Entity& shop) {
+std::vector<VID>& EnsureChildVids(Ent& shop) {
     if (!shop.child_vids.has_value()) {
         shop.child_vids.emplace();
     }
@@ -26,21 +26,21 @@ bool ContainsVid(const std::vector<VID>& vids, VID vid) {
     return std::find(vids.begin(), vids.end(), vid) != vids.end();
 }
 
-void ClearOwnedBuyableIfPresent(Entity& entity, VID shop_vid) {
-    if (!entity.buyable.active || !entity.buyable.shop_owner_vid.has_value() ||
-        *entity.buyable.shop_owner_vid != shop_vid) {
+void ClearOwnedBuyableIfPresent(Ent& ent, VID shop_vid) {
+    if (!ent.buyable.active || !ent.buyable.shop_owner_vid.has_value() ||
+        *ent.buyable.shop_owner_vid != shop_vid) {
         return;
     }
-    ClearEntityBuyableState(entity);
+    ClearEntBuyableState(ent);
 }
 
 } // namespace
 
-AABB GetShopArea(const Entity& shop) {
+AABB GetShopArea(const Ent& shop) {
     return shop.GetAABB();
 }
 
-void SetShopArea(Entity& shop, const AABB& area) {
+void SetShopArea(Ent& shop, const AABB& area) {
     shop.pos = area.tl;
     shop.size = area.br - area.tl + Vec2::New(1.0F, 1.0F);
     shop.point_a = IVec2::New(0, 0);
@@ -49,7 +49,7 @@ void SetShopArea(Entity& shop, const AABB& area) {
     shop.point_label_b = PointLabel::None;
 }
 
-void AddShopChild(Entity& shop, VID child_vid) {
+void AddShopChild(Ent& shop, VID child_vid) {
     std::vector<VID>& child_vids = EnsureChildVids(shop);
     if (!ContainsVid(child_vids, child_vid)) {
         child_vids.push_back(child_vid);
@@ -58,27 +58,27 @@ void AddShopChild(Entity& shop, VID child_vid) {
 
 void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
     (void)audio;
-    if (shop_idx >= state.entity_manager.entities.size()) {
+    if (shop_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& shop = state.entity_manager.entities[shop_idx];
-    if (!shop.active || shop.type_ != EntityType::Shop) {
+    Ent& shop = state.ents.ents[shop_idx];
+    if (!shop.active || shop.type_ != EntType::Shop) {
         return;
     }
 
-    const bool already_disturbed = shop.ai_state == EntityAiState::Disturbed;
-    shop.ai_state = EntityAiState::Disturbed;
+    const bool already_disturbed = shop.ai_state == EntAiState::Disturbed;
+    shop.ai_state = EntAiState::Disturbed;
 
     if (!already_disturbed) {
-        (void)PlayEntityCenterSoundEmitter(state, shop, audio_asset_ids::ShopkeepAnger0);
+        (void)PlayEntCenterSoundEmitter(state, shop, audio_asset_ids::ShopkeepAnger0);
     }
 
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
-        if (Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        if (Ent* const player = state.ents.GetEntMut(*slot.ent_vid);
             player != nullptr && player->active) {
             const bool was_wanted = player->wanted;
             player->wanted = true;
@@ -86,8 +86,8 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
         }
     }
 
-    if (shop.entity_a.has_value()) {
-        if (Entity* const shopkeeper = state.entity_manager.GetEntityMut(*shop.entity_a)) {
+    if (shop.ent_a.has_value()) {
+        if (Ent* const shopkeeper = state.ents.GetEntMut(*shop.ent_a)) {
             const bool was_wanted = shopkeeper->wanted;
             shopkeeper->wanted = true;
             (void)was_wanted;
@@ -99,7 +99,7 @@ void DisturbShop(std::size_t shop_idx, State& state, Audio& audio) {
     }
 
     for (const VID& child_vid : *shop.child_vids) {
-        Entity* const child = state.entity_manager.GetEntityMut(child_vid);
+        Ent* const child = state.ents.GetEntMut(child_vid);
         if (child == nullptr || !child->active) {
             continue;
         }
@@ -112,7 +112,7 @@ void DisturbShopByVid(std::optional<VID> shop_vid, State& state, Audio& audio) {
     if (!shop_vid.has_value()) {
         return;
     }
-    if (shop_vid->id >= state.entity_manager.entities.size()) {
+    if (shop_vid->id >= state.ents.ents.size()) {
         return;
     }
     DisturbShop(shop_vid->id, state, audio);
@@ -127,31 +127,31 @@ void OnShopAreaEnter(
 ) {
     (void)graphics;
 
-    if (area_idx >= state.entity_manager.entities.size() ||
-        other_idx >= state.entity_manager.entities.size()) {
+    if (area_idx >= state.ents.ents.size() ||
+        other_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& shop = state.entity_manager.entities[area_idx];
-    const Entity& other = state.entity_manager.entities[other_idx];
-    if (!shop.active || shop.type_ != EntityType::Shop || !other.active) {
+    const Ent& shop = state.ents.ents[area_idx];
+    const Ent& other = state.ents.ents[other_idx];
+    if (!shop.active || shop.type_ != EntType::Shop || !other.active) {
         return;
     }
 
-    if (other.type_ == EntityType::Block) {
+    if (other.type_ == EntType::Block) {
         DisturbShop(area_idx, state, audio);
         return;
     }
 
-    if (!IsPlayerLikeEntityType(other.type_)) {
+    if (!IsPlayerLikeEntType(other.type_)) {
         return;
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, shop, audio_asset_ids::LawsonEnter);
+    (void)PlayEntCenterSoundEmitter(state, shop, audio_asset_ids::LawsonEnter);
 }
 
-void StepEntityLogicAsShop(
-    std::size_t entity_idx,
+void StepEntLogicAsShop(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -160,20 +160,20 @@ void StepEntityLogicAsShop(
     (void)graphics;
     (void)dt;
 
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& shop = state.entity_manager.entities[entity_idx];
-    if (!shop.active || shop.type_ != EntityType::Shop ||
-        shop.ai_state == EntityAiState::Disturbed ||
+    Ent& shop = state.ents.ents[ent_idx];
+    if (!shop.active || shop.type_ != EntType::Shop ||
+        shop.ai_state == EntAiState::Disturbed ||
         !shop.child_vids.has_value()) {
         return;
     }
 
     const AABB shop_area = GetShopArea(shop);
     for (const VID& child_vid : *shop.child_vids) {
-        Entity* const child = state.entity_manager.GetEntityMut(child_vid);
+        Ent* const child = state.ents.GetEntMut(child_vid);
         if (child == nullptr || !child->active) {
             continue;
         }
@@ -187,13 +187,13 @@ void StepEntityLogicAsShop(
             continue;
         }
 
-        DisturbShop(entity_idx, state, audio);
+        DisturbShop(ent_idx, state, audio);
         return;
     }
 }
 
-extern const EntityArchetype kShopArchetype{
-    .type_ = EntityType::Shop,
+extern const EntSpec kShopSpec{
+    .type_ = EntType::Shop,
     .size = Vec2::New(1.0F, 1.0F),
     .health = 1,
     .has_physics = false,
@@ -207,13 +207,13 @@ extern const EntityArchetype kShopArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Background,
     .render_enabled = false,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .on_area_enter = OnShopAreaEnter,
-    .step_logic = StepEntityLogicAsShop,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+    .step_logic = StepEntLogicAsShop,
+    .aframe_animator = AFrameAnimator::New(aframe_ids::NoSprite),
 };
 
-} // namespace splonks::entities::shop
+} // namespace splonks::ents::shop

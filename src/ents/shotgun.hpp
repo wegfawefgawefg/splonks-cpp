@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 
-namespace splonks::entities::shotgun {
+namespace splonks::ents::shotgun {
 
-extern const EntityArchetype kShotgunArchetype;
+extern const EntSpec kShotgunSpec;
 
-} // namespace splonks::entities::shotgun
+} // namespace splonks::ents::shotgun

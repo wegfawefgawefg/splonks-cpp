@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,15 +10,15 @@ struct State;
 
 }
 
-namespace splonks::entities::giant_tiki_head {
+namespace splonks::ents::giant_tiki_head {
 
-extern const EntityArchetype kGiantTikiHeadArchetype;
-void StepEntityLogicAsGiantTikiHead(
-    std::size_t entity_idx,
+extern const EntSpec kGiantTikiHeadSpec;
+void StepEntLogicAsGiantTikiHead(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::giant_tiki_head
+} // namespace splonks::ents::giant_tiki_head

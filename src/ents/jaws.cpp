@@ -1,11 +1,11 @@
-#include "entities/jaws.hpp"
+#include "ents/jaws.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::jaws {
+namespace splonks::ents::jaws {
 
-// TODO(classic): Jaws is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kJawsArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Jaws);
+// TODO(classic): Jaws is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kJawsSpec =
+    common::MakeUnimplementedClassicSpec(EntType::Jaws);
 
-} // namespace splonks::entities::jaws
+} // namespace splonks::ents::jaws

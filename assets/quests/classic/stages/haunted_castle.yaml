@@ -6,7 +6,7 @@ layout_size: [4, 4]
 glyphs: glyphs/haunted_castle.yaml
 border_tile: temple_dirt
 backwall_tiles: [temple_air0, temple_air1, temple_air2]
-block_animation: temple_block
+block_anim: temple_block
 
 room_pools:
   start: rooms/temple/start
@@ -45,5 +45,5 @@ stage_passes:
     enabled: true
     properties:
       chance_denominator: 3
-  - name: ambient_haunted_castle_entities
+  - name: ambient_haunted_castle_ents
     enabled: true

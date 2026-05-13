@@ -1,15 +1,15 @@
-#include "entities/altar.hpp"
+#include "ents/altar.hpp"
 
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 
-namespace splonks::entities::altar {
+namespace splonks::ents::altar {
 
-extern const EntityArchetype kAltarArchetype{
-    .type_ = EntityType::Altar,
+extern const EntSpec kAltarSpec{
+    .type_ = EntType::Altar,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -20,12 +20,12 @@ extern const EntityArchetype kAltarArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::ExplosionOnly,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::AltarLeft),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::AltarLeft),
 };
 
-} // namespace splonks::entities::altar
+} // namespace splonks::ents::altar

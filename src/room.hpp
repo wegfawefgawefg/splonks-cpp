@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "math_types.hpp"
 #include "tile.hpp"
 
@@ -20,7 +20,7 @@ enum class RoomType {
     Exit,
 };
 
-enum class TemplateTile {
+enum class MetaTile {
     Solid,
     Air,
     MaybeSolid,
@@ -34,7 +34,7 @@ enum class TemplateTile {
 
 struct Room {
     std::vector<std::vector<Tile>> tiles;
-    std::vector<Entity> entities;
+    std::vector<Ent> ents;
 };
 
 struct RoomTilePalette {
@@ -45,11 +45,11 @@ struct RoomTilePalette {
 RoomType RandomRoomType();
 std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type,
                                        RoomTilePalette tile_palette);
-void PasteTemplate(std::vector<std::vector<TemplateTile>>& parent,
-                   const std::vector<std::vector<TemplateTile>>& child, const UVec2& location,
+void PasteTemplate(std::vector<std::vector<MetaTile>>& parent,
+                   const std::vector<std::vector<MetaTile>>& child, const UVec2& location,
                    bool flip_horizontal, bool flip_vertical);
 std::vector<std::vector<Tile>> ResolveRoomTemplate(
-    const std::vector<std::vector<TemplateTile>>& room_template,
+    const std::vector<std::vector<MetaTile>>& room_template,
     RoomTilePalette tile_palette);
 
 } // namespace splonks

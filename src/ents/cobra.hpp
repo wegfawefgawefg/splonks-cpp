@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,33 +10,33 @@ struct State;
 
 } // namespace splonks
 
-namespace splonks::entities::cobra {
+namespace splonks::ents::cobra {
 
-extern const EntityArchetype kCobraArchetype;
-extern const EntityArchetype kCobraSpitArchetype;
+extern const EntSpec kCobraSpec;
+extern const EntSpec kCobraSpitSpec;
 
-void StepEntityLogicAsCobra(
-    std::size_t entity_idx,
+void StepEntLogicAsCobra(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-void StepEntityLogicAsCobraSpit(
-    std::size_t entity_idx,
+void StepEntLogicAsCobraSpit(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-void StepEntityPhysicsAsCobraSpit(
-    std::size_t entity_idx,
+void StepEntPhysicsAsCobraSpit(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::cobra
+} // namespace splonks::ents::cobra

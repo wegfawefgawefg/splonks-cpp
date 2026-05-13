@@ -162,8 +162,8 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::Checkbox("Playback", &debug.playback_window_visible);
     ImGui::Checkbox("Level", &debug.level_window_visible);
     ImGui::Checkbox("Border", &debug.border_window_visible);
-    ImGui::Checkbox("Entities", &debug.entity_inspector_visible);
-    ImGui::Checkbox("Overlay", &debug.entity_annotations_visible);
+    ImGui::Checkbox("Ents", &debug.ent_inspector_visible);
+    ImGui::Checkbox("Overlay", &debug.ent_annotations_visible);
     ImGui::Checkbox("Shake Brush", &debug.shake_brush_window_visible);
     ImGui::Checkbox("Audio Brush", &debug.audio_brush_window_visible);
     ImGui::Checkbox("Tile Brush", &debug.tile_brush_window_visible);
@@ -189,8 +189,8 @@ void DrawDebugMenu(DebugPlayback& debug, State& state) {
     ImGui::TextUnformatted("Persisted acoustics tuning lives in the Audio Settings window.");
     ImGui::Separator();
     ImGui::Text("Playback Active: %s", debug.playback_active ? "true" : "false");
-    ImGui::Text("Selected Entity: %zu", debug.selected_entity_id);
-    ImGui::Text("Entity P/C boxes: %s", state.debug_overlay.show_entity_collision_boxes ? "on" : "off");
+    ImGui::Text("Selected Ent: %zu", debug.selected_ent_id);
+    ImGui::Text("Ent P/C boxes: %s", state.debug_overlay.show_ent_collision_boxes ? "on" : "off");
     ImGui::Text("Chunk bounds: %s", state.debug_overlay.show_chunk_boundaries ? "on" : "off");
 
     ImGui::End();
@@ -368,7 +368,7 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
         ImGui::BeginDisabled();
     }
     if (peer_mutation_disabled) {
-        ImGui::TextDisabled("Stage/debug world mutation disabled on multiplayer peers until admin commands are coordinator-routed.");
+        ImGui::TextDisabled("Stage/debug world mutation disabled on multiplayer peers until admin commands are host-routed.");
     }
 
     const auto apply_stage_fit_camera = [&state, &graphics]() {
@@ -519,11 +519,11 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
     }
     ImGui::Text("Active: %s", DebugLevelKindToString(state.debug_level.kind));
     if (ImGui::Button("Give Players Gloves")) {
-        for (Entity& entity : state.entity_manager.entities) {
-            if (!entity.active || !IsPlayerLikeEntityType(entity.type_)) {
+        for (Ent& ent : state.ents.ents) {
+            if (!ent.active || !IsPlayerLikeEntType(ent.type_)) {
                 continue;
             }
-            SetEffect(entity, EffectId::Gloves, true);
+            SetEffect(ent, EffectId::Gloves, true);
         }
     }
 
@@ -549,14 +549,14 @@ void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics) {
             "Stress Squisher Count",
             &state.debug_level.crusher_trap_test.stress_squisher_count,
             0,
-            static_cast<int>(EntityManager::kMaxNumEntities - 8)
+            static_cast<int>(EntPool::kMaxNumEnts - 8)
         );
     } else if (state.debug_level.kind == DebugLevelKind::LightingStressTest) {
         ImGui::SliderInt(
             "Moving Light Count",
             &state.debug_level.lighting_stress_test.moving_light_count,
             0,
-            static_cast<int>(EntityManager::kMaxNumEntities - 8)
+            static_cast<int>(EntPool::kMaxNumEnts - 8)
         );
     }
 
@@ -609,7 +609,7 @@ void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics) 
         ImGui::BeginDisabled();
     }
     if (peer_mutation_disabled) {
-        ImGui::TextDisabled("Border edits disabled on multiplayer peers until admin commands are coordinator-routed.");
+        ImGui::TextDisabled("Border edits disabled on multiplayer peers until admin commands are host-routed.");
     }
 
     bool border_changed = false;

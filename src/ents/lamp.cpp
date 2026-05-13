@@ -1,12 +1,12 @@
-#include "entities/lamp.hpp"
+#include "ents/lamp.hpp"
 
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
 
-namespace splonks::entities::lamp {
+namespace splonks::ents::lamp {
 
-extern const EntityArchetype kLampArchetype{
-    .type_ = EntityType::Lamp,
+extern const EntSpec kLampSpec{
+    .type_ = EntType::Lamp,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -16,16 +16,16 @@ extern const EntityArchetype kLampArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Lantern),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Lantern),
 };
 
-extern const EntityArchetype kLampRedArchetype{
-    .type_ = EntityType::LampRed,
+extern const EntSpec kLampRedSpec{
+    .type_ = EntType::LampRed,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -35,12 +35,12 @@ extern const EntityArchetype kLampRedArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::LanternRed),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::LanternRed),
 };
 
-} // namespace splonks::entities::lamp
+} // namespace splonks::ents::lamp

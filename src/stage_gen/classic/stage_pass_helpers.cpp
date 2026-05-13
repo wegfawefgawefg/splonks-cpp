@@ -66,7 +66,7 @@ bool IsStartRoomAt(const Stage& stage, int tile_x, int tile_y) {
 }
 
 bool HasSpawnAtWorldPos(const Stage& stage, const Vec2& pos) {
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.pos == pos) {
             return true;
         }
@@ -87,16 +87,16 @@ std::optional<Vec2> FindEntrancePos(const Stage& stage) {
 }
 
 std::optional<Vec2> FindExitPos(const Stage& stage) {
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
-        if (spawn.type_ == EntityType::BasicExit) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
+        if (spawn.type_ == EntType::BasicExit) {
             return spawn.pos;
         }
     }
     return std::nullopt;
 }
 
-bool HasSpawnType(const Stage& stage, EntityType type_) {
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+bool HasSpawnType(const Stage& stage, EntType type_) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ == type_) {
             return true;
         }
@@ -104,9 +104,9 @@ bool HasSpawnType(const Stage& stage, EntityType type_) {
     return false;
 }
 
-float DistanceToNearestSpawnType(const Stage& stage, EntityType type_, const Vec2& pos) {
+float DistanceToNearestSpawnType(const Stage& stage, EntType type_, const Vec2& pos) {
     float nearest = std::numeric_limits<float>::infinity();
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
         if (spawn.type_ != type_) {
             continue;
         }
@@ -115,8 +115,8 @@ float DistanceToNearestSpawnType(const Stage& stage, EntityType type_, const Vec
     return nearest;
 }
 
-bool HasSpawnType(const std::vector<StageEntitySpawn>& spawns, EntityType type_) {
-    for (const StageEntitySpawn& spawn : spawns) {
+bool HasSpawnType(const std::vector<EntSpawn>& spawns, EntType type_) {
+    for (const EntSpawn& spawn : spawns) {
         if (spawn.type_ == type_) {
             return true;
         }
@@ -124,28 +124,28 @@ bool HasSpawnType(const std::vector<StageEntitySpawn>& spawns, EntityType type_)
     return false;
 }
 
-bool HasSpawnType(const Stage& stage, const std::vector<StageEntitySpawn>& spawns,
-                  EntityType type_) {
+bool HasSpawnType(const Stage& stage, const std::vector<EntSpawn>& spawns,
+                  EntType type_) {
     return HasSpawnType(stage, type_) || HasSpawnType(spawns, type_);
 }
 
 bool HasExitSpawn(const Stage& stage, std::string_view exit_id) {
-    for (const StageEntitySpawn& spawn : stage.entity_spawns) {
+    for (const EntSpawn& spawn : stage.ent_spawns) {
         const std::string_view spawn_exit_id =
             spawn.exit_id.empty() ? std::string_view("default") : std::string_view(spawn.exit_id);
-        if (spawn.type_ == EntityType::BasicExit && spawn_exit_id == exit_id) {
+        if (spawn.type_ == EntType::BasicExit && spawn_exit_id == exit_id) {
             return true;
         }
     }
     return false;
 }
 
-void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
-                     LeftOrRight facing) {
+void AddAmbientSpawn(Stage& stage, EntType type_, const Vec2& pos,
+                     Side facing) {
     if (HasSpawnAtWorldPos(stage, pos)) {
         return;
     }
-    stage.entity_spawns.push_back(StageEntitySpawn{
+    stage.ent_spawns.push_back(EntSpawn{
         .type_ = type_,
         .pos = pos,
         .facing = facing,
@@ -153,13 +153,13 @@ void AddAmbientSpawn(Stage& stage, EntityType type_, const Vec2& pos,
     });
 }
 
-bool IsTreasureSpawnType(EntityType type_) {
+bool IsTreasureSpawnType(EntType type_) {
     switch (type_) {
-    case EntityType::Gold:
-    case EntityType::GoldStack:
-    case EntityType::EmeraldBig:
-    case EntityType::SapphireBig:
-    case EntityType::RubyBig:
+    case EntType::Gold:
+    case EntType::GoldStack:
+    case EntType::EmeraldBig:
+    case EntType::SapphireBig:
+    case EntType::RubyBig:
         return true;
     default:
         return false;

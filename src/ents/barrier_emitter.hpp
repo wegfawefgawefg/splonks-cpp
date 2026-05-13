@@ -1,10 +1,10 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::barrier_emitter {
+namespace splonks::ents::barrier_emitter {
 
-extern const EntityArchetype kBarrierEmitterArchetype;
-extern const EntityArchetype kBeamArchetype;
+extern const EntSpec kBarrierEmitterSpec;
+extern const EntSpec kBeamSpec;
 
-} // namespace splonks::entities::barrier_emitter
+} // namespace splonks::ents::barrier_emitter

@@ -2,12 +2,12 @@
 
 ## Goal
 
-Pull reusable gameplay behaviors out of `entities/player.cpp` one at a time so:
+Pull reusable gameplay behaviors out of `ents/player.cpp` one at a time so:
 
-- non-player entities can use them
-- possessed entities can use them
+- non-player ents can use them
+- possessed ents can use them
 - behavior stays explicit and easy to debug
-- entities that do not opt in do not pay for the behavior
+- ents that do not opt in do not pay for the behavior
 
 This is not a blind file-splitting exercise. The goal is to extract reusable
 behavior with clear ownership and clear opt-in points.
@@ -16,38 +16,38 @@ behavior with clear ownership and clear opt-in points.
 
 - Preserve current player behavior unless the specific extraction changes it on
   purpose.
-- Do not introduce broad always-on per-entity scans if only a few entities use
+- Do not introduce broad always-on per-ent scans if only a few ents use
   the behavior.
 - Prefer explicit opt-in flags, labels, or helper calls over magical generic
   systems.
 - Test each extraction with at least:
   - player
-  - one non-player test entity that uses the behavior
+  - one non-player test ent that uses the behavior
   - one dedicated test room/level setup
 
 ## Design Rule: No Cost Unless Used
 
-Shared behavior should be structured so entities only pay for it when they use
+Shared behavior should be structured so ents only pay for it when they use
 it.
 
 Examples:
 
 - contact pickup:
-  - only run for entities marked as collectors
+  - only run for ents marked as collectors
 - stomp logic:
-  - only run for entities marked as stompers
+  - only run for ents marked as stompers
 - push-block logic:
-  - only run for entities marked as block pushers
+  - only run for ents marked as block pushers
 - carry/use logic:
-  - only run for entities marked as carriers/users
+  - only run for ents marked as carriers/users
 
 This can be done with:
 
-- explicit capability flags on `Entity`
-- explicit labels/relationships already present on `Entity`
-- shared helpers called only from entities that need them
+- explicit capability flags on `Ent`
+- explicit labels/relationships already present on `Ent`
+- shared helpers called only from ents that need them
 
-Avoid “every entity checks every behavior every frame.”
+Avoid “every ent checks every behavior every frame.”
 
 ## Candidate Behaviors To Pull Out Of Player
 
@@ -55,10 +55,10 @@ Avoid “every entity checks every behavior every frame.”
 
 Currently in player:
 
-- pick up nearby carryable entity
+- pick up nearby carryable ent
 - maintain `holding_vid`
-- throw held entity
-- drop held entity
+- throw held ent
+- drop held ent
 - set `held_by_vid`
 - set thrown immunity / throw source
 
@@ -66,22 +66,22 @@ Why generic:
 
 - enemies can pick up actors/items
 - enemies can throw actors/items
-- possessed entities may want this too
+- possessed ents may want this too
 
 Good first shared API shape:
 
-- `TryPickUpEntity(...)`
-- `DropHeldEntity(...)`
-- `ThrowHeldEntity(...)`
-- `UpdateHeldEntityPlacement(...)`
+- `TryPickUpEnt(...)`
+- `DropHeldEnt(...)`
+- `ThrowHeldEnt(...)`
+- `UpdateHeldEntPlacement(...)`
 
-Likely entity opt-in:
+Likely ent opt-in:
 
 - `can_pick_up`
 - `can_throw`
 - `can_carry`
 
-Test entity idea:
+Test ent idea:
 
 - a simple humanoid dummy that can pick up and throw rocks/pots/player
 
@@ -97,7 +97,7 @@ Currently in player:
 Why generic:
 
 - backpack-like and weapon-back behavior should not be player-only
-- future entities may wear items
+- future ents may wear items
 
 Likely shared API:
 
@@ -105,11 +105,11 @@ Likely shared API:
 - `TakeBackItemOff(...)`
 - `UpdateBackItemPlacement(...)`
 
-Likely entity opt-in:
+Likely ent opt-in:
 
 - `can_equip_back_items`
 
-Test entity idea:
+Test ent idea:
 
 - a dummy that can equip/unequip a jetpack or weapon
 
@@ -123,19 +123,19 @@ Currently in player:
 
 Why generic:
 
-- possessed entities could push blocks
+- possessed ents could push blocks
 - enemy types may push blocks or heavy objects
 
 Likely shared API:
 
 - `TryPushNearbyBlocks(...)`
 
-Likely entity opt-in:
+Likely ent opt-in:
 
 - `can_push_blocks`
 - maybe a configurable `push_strength`
 
-Test entity idea:
+Test ent idea:
 
 - a simple enemy that walks into blocks and shoves them
 
@@ -156,15 +156,15 @@ Why generic:
 
 Likely shared API:
 
-- `TryStompEntitiesBelow(...)`
+- `TryStompEntsBelow(...)`
 
-Likely entity opt-in:
+Likely ent opt-in:
 
 - `can_stomp`
 - maybe `stomp_damage`
 - maybe `stomp_bounce_velocity`
 
-Test entity idea:
+Test ent idea:
 
 - a special enemy or test dummy that can bounce-kill bats/mice/etc.
 
@@ -179,7 +179,7 @@ Currently in player:
 
 Why generic:
 
-- some entities may collect treasure/items
+- some ents may collect treasure/items
 - possession experiments may want collectors other than player
 
 Important note:
@@ -191,12 +191,12 @@ Likely shared API:
 
 - `CollectTouchingPickups(...)`
 
-Likely entity opt-in:
+Likely ent opt-in:
 
 - `can_collect_money`
 - later maybe more general `collector_mask`
 
-Test entity idea:
+Test ent idea:
 
 - a dummy collector that vacuums up gold on contact
 
@@ -205,30 +205,30 @@ Test entity idea:
 Currently in player:
 
 - cooldown bookkeeping
-- entity spawn
+- ent spawn
 - throw vector assembly from control intent
 - thrown source/immunity setup
 
 Why generic:
 
-- bomb and rope are both “spawn and throw utility entity” behaviors
+- bomb and rope are both “spawn and throw utility ent” behaviors
 - future actors may use one or both
 
 Likely shared API:
 
-- `TryThrowUtilityEntity(...)`
+- `TryThrowUtilityEnt(...)`
 - with parameters for:
-  - entity type/setup function
+  - ent type/setup function
   - inventory count reference
   - cooldown reference
   - immunity duration
 
-Likely entity opt-in:
+Likely ent opt-in:
 
 - `can_throw_bombs`
 - `can_throw_ropes`
 
-Test entity idea:
+Test ent idea:
 
 - a dummy that can throw ropes or bombs on command
 
@@ -237,7 +237,7 @@ Test entity idea:
 Currently in player:
 
 - bat attack cooldown
-- spawn baseball bat entity
+- spawn baseball bat ent
 - attach to holder
 
 Why generic:
@@ -247,14 +247,14 @@ Why generic:
 
 Likely shared API:
 
-- `TrySpawnMeleeAttackEntity(...)`
+- `TrySpawnMeleeAttackEnt(...)`
 
-Likely entity opt-in:
+Likely ent opt-in:
 
 - `can_use_weapons`
 - maybe weapon-specific inventory/reference later
 
-Test entity idea:
+Test ent idea:
 
 - a dummy that swings a bat
 
@@ -281,11 +281,11 @@ Reason:
 For each extracted behavior:
 
 1. Add one dedicated test room/preset.
-2. Add one non-player test entity that uses the behavior.
+2. Add one non-player test ent that uses the behavior.
 3. Verify:
    - player still behaves the same
-   - the test entity can use the shared behavior
-   - unrelated entities do not run that code path
+   - the test ent can use the shared behavior
+   - unrelated ents do not run that code path
 
 ## First Candidate
 
@@ -298,4 +298,4 @@ Reason:
 - low state coupling
 - easy to gate behind a collector capability
 - easy to test with a simple collector dummy
-- useful for both player and future entities
+- useful for both player and future ents

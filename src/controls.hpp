@@ -30,6 +30,6 @@ struct ControlIntent {
     bool no_hang = false;
 };
 
-ControlIntent GetControlIntentForEntity(const Entity& entity, const State& state);
+ControlIntent GetControlIntentForEnt(const Ent& ent, const State& state);
 
 } // namespace splonks::controls

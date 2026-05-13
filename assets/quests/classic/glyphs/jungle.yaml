@@ -77,9 +77,9 @@ glyphs:
     tile: spikes
   - char: "S"
     spawn_random:
-      - entity: snake
+      - ent: snake
         weight: 4
-      - entity: cobra
+      - ent: cobra
         weight: 1
   - char: "T"
     action: tree_growth
@@ -127,9 +127,9 @@ glyphs:
     tile: air
   - char: "p"
     spawn_random:
-      - entity: skeleton
+      - ent: skeleton
         weight: 1
-      - entity: pot
+      - ent: pot
         weight: 1
   - char: "J"
     tile: water_swim

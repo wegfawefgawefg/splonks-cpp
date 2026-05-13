@@ -6,7 +6,7 @@ layout_size: [4, 4]
 glyphs: glyphs/olmec_lair.yaml
 border_tile: boss_dirt
 backwall_tiles: [boss_air0, boss_air1, boss_air2]
-block_animation: boss_block
+block_anim: boss_block
 
 room_pools:
   start: rooms/olmec_lair/main
@@ -41,5 +41,5 @@ stage_passes:
     enabled: false
     properties:
       min_level_number: 2
-  - name: ambient_olmec_entities
+  - name: ambient_olmec_ents
     enabled: true

@@ -7,7 +7,7 @@ path_layout_size: [4, 4]
 glyphs: glyphs/jungle.yaml
 border_tile: jungle_dirt
 backwall_tiles: [jungle_air0, jungle_air1, jungle_air2]
-block_animation: jungle_block
+block_anim: jungle_block
 
 room_pools:
   start: rooms/jungle/start
@@ -69,5 +69,5 @@ stage_passes:
     enabled: false
     properties:
       min_level_number: 2
-  - name: ambient_jungle_entities
+  - name: ambient_jungle_ents
     enabled: true

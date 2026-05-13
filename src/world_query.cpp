@@ -1,8 +1,8 @@
 #include "world_query.hpp"
 
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "state.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 
 
 #include <algorithm>
@@ -255,39 +255,39 @@ bool AabbHitsBlockingWorldGeometry(const Stage& stage, const AABB& area) {
     return AabbTouchesBlockingStageBounds(stage, area) || AabbHitsBlockingTiles(stage, area);
 }
 
-bool AabbHitsImpassableEntities(
+bool AabbHitsImpassableEnts(
     const State& state,
     const Graphics& graphics,
     const AABB& area,
     std::optional<VID> exclude_vid
 ) {
     const Vec2 anchor = (area.tl + area.br) / 2.0F;
-    for (const VID& vid : QueryEntitiesInAabb(state, area, exclude_vid)) {
-        const Entity* const entity = state.entity_manager.GetEntity(vid);
-        if (entity == nullptr || !entity->active || !entity->impassable) {
+    for (const VID& vid : QueryEntsInAabb(state, area, exclude_vid)) {
+        const Ent* const ent = state.ents.GetEnt(vid);
+        if (ent == nullptr || !ent->active || !ent->impassable) {
             continue;
         }
 
-        const AABB entity_aabb = GetNearestWorldAabb(
+        const AABB ent_aabb = GetNearestWorldAabb(
             state.stage,
             anchor,
-            entities::common::GetContactAabbForEntity(*entity, graphics)
+            ents::common::GetContactAabbForEnt(*ent, graphics)
         );
-        if (AabbsIntersect(area, entity_aabb)) {
+        if (AabbsIntersect(area, ent_aabb)) {
             return true;
         }
     }
     return false;
 }
 
-bool AabbHitsBlockingWorldGeometryOrImpassableEntities(
+bool AabbHitsBlockingWorldGeometryOrImpassableEnts(
     const State& state,
     const Graphics& graphics,
     const AABB& area,
     std::optional<VID> exclude_vid
 ) {
     return AabbHitsBlockingWorldGeometry(state.stage, area) ||
-           AabbHitsImpassableEntities(state, graphics, area, exclude_vid);
+           AabbHitsImpassableEnts(state, graphics, area, exclude_vid);
 }
 
 std::optional<WorldTileQueryResult> QueryTileAtTilePos(const Stage& stage, const IVec2& tile_pos) {
@@ -308,13 +308,13 @@ std::optional<WorldTileQueryResult> QueryTileAtWorldPos(const Stage& stage, cons
     return QueryTileAtTilePos(stage, stage.GetTileCoordAtWc(world_pos));
 }
 
-std::vector<VID> QueryEntitiesInAabb(
+std::vector<VID> QueryEntsInAabb(
     const State& state,
     const AABB& area,
     std::optional<VID> exclude_vid
 ) {
     std::vector<VID> result;
-    std::vector<bool> seen(state.entity_manager.entities.size(), false);
+    std::vector<bool> seen(state.ents.ents.size(), false);
     const std::vector<Vec2> offsets = GetQueryOffsets(state.stage, area);
 
     for (const Vec2& offset : offsets) {
@@ -344,14 +344,14 @@ struct RaycastTarget {
 };
 
 std::vector<RaycastTarget> CollectRaycastTargets(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     const AABB& ray_aabb,
     const State& state,
     const Graphics& graphics,
     std::optional<VID> owner_vid
 ) {
-    const std::vector<VID> hits = QueryEntitiesInAabb(state, ray_aabb, source_entity.vid);
+    const std::vector<VID> hits = QueryEntsInAabb(state, ray_aabb, source_ent.vid);
 
     std::vector<RaycastTarget> targets;
     targets.reserve(hits.size());
@@ -360,15 +360,15 @@ std::vector<RaycastTarget> CollectRaycastTargets(
             continue;
         }
 
-        const Entity* const entity = state.entity_manager.GetEntity(vid);
-        if (entity == nullptr || !entity->active) {
+        const Ent* const ent = state.ents.GetEnt(vid);
+        if (ent == nullptr || !ent->active) {
             continue;
         }
-        if (!entity->can_be_hit) {
+        if (!ent->can_be_hit) {
             continue;
         }
-        if (owner_vid.has_value() && entity->held_by_vid.has_value() &&
-            entity->held_by_vid == owner_vid) {
+        if (owner_vid.has_value() && ent->held_by_vid.has_value() &&
+            ent->held_by_vid == owner_vid) {
             continue;
         }
 
@@ -377,7 +377,7 @@ std::vector<RaycastTarget> CollectRaycastTargets(
             .aabb = GetNearestWorldAabb(
                 state.stage,
                 start_pos,
-                entities::common::GetContactAabbForEntity(*entity, graphics)
+                ents::common::GetContactAabbForEnt(*ent, graphics)
             ),
         });
     }
@@ -385,7 +385,7 @@ std::vector<RaycastTarget> CollectRaycastTargets(
     return targets;
 }
 
-std::optional<WorldRayHit> QueryEntityRayHitAtPoint(
+std::optional<WorldRayHit> QueryEntRayHitAtPoint(
     const IVec2& point,
     const std::vector<RaycastTarget>& targets
 ) {
@@ -394,9 +394,9 @@ std::optional<WorldRayHit> QueryEntityRayHitAtPoint(
             continue;
         }
         return WorldRayHit{
-            .type = WorldRayHitType::Entity,
+            .type = WorldRayHitType::Ent,
             .point = point,
-            .entity_vid = target.vid,
+            .ent_vid = target.vid,
         };
     }
     return std::nullopt;
@@ -423,8 +423,8 @@ WorldRayHit QueryWorldRayHitAtPoint(
         };
     }
 
-    if (const std::optional<WorldRayHit> entity_hit = QueryEntityRayHitAtPoint(point, targets)) {
-        return *entity_hit;
+    if (const std::optional<WorldRayHit> ent_hit = QueryEntRayHitAtPoint(point, targets)) {
+        return *ent_hit;
     }
 
     return WorldRayHit{};
@@ -515,7 +515,7 @@ WorldRayHit RaycastTiles(
 }
 
 WorldRayHit RaycastHorizontal(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     int direction,
     int max_distance,
@@ -536,7 +536,7 @@ WorldRayHit RaycastHorizontal(
         Vec2::New(static_cast<float>(std::max(start_x, end_x)), static_cast<float>(ray_y))
     );
     const std::vector<RaycastTarget> targets =
-        CollectRaycastTargets(source_entity, start_pos, ray_aabb, state, graphics, owner_vid);
+        CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = IVec2::New(start_x + (step_dir * step), ray_y);
@@ -550,7 +550,7 @@ WorldRayHit RaycastHorizontal(
 }
 
 WorldRayHit RaycastVertical(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     int direction,
     int max_distance,
@@ -571,7 +571,7 @@ WorldRayHit RaycastVertical(
         Vec2::New(static_cast<float>(ray_x), static_cast<float>(std::max(start_y, end_y)))
     );
     const std::vector<RaycastTarget> targets =
-        CollectRaycastTargets(source_entity, start_pos, ray_aabb, state, graphics, owner_vid);
+        CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = IVec2::New(ray_x, start_y + (step_dir * step));
@@ -584,8 +584,8 @@ WorldRayHit RaycastVertical(
     return WorldRayHit{};
 }
 
-WorldRayHit RaycastEntities(
-    const Entity& source_entity,
+WorldRayHit RaycastEnts(
+    const Ent& source_ent,
     const Vec2& start_pos,
     const Vec2& direction,
     int max_distance,
@@ -604,12 +604,12 @@ WorldRayHit RaycastEntities(
         Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
     );
     const std::vector<RaycastTarget> targets =
-        CollectRaycastTargets(source_entity, start_pos, ray_aabb, state, graphics, owner_vid);
+        CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = ToIVec2(start_pos + (step_dir * static_cast<float>(step)));
-        if (const std::optional<WorldRayHit> entity_hit = QueryEntityRayHitAtPoint(point, targets)) {
-            return *entity_hit;
+        if (const std::optional<WorldRayHit> ent_hit = QueryEntRayHitAtPoint(point, targets)) {
+            return *ent_hit;
         }
     }
 
@@ -617,7 +617,7 @@ WorldRayHit RaycastEntities(
 }
 
 WorldRayHit RaycastWorld(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     const Vec2& direction,
     int max_distance,
@@ -627,7 +627,7 @@ WorldRayHit RaycastWorld(
 ) {
     if (direction.x != 0.0F && direction.y == 0.0F) {
         return RaycastHorizontal(
-            source_entity,
+            source_ent,
             start_pos,
             direction.x < 0.0F ? -1 : 1,
             max_distance,
@@ -638,7 +638,7 @@ WorldRayHit RaycastWorld(
     }
     if (direction.y != 0.0F && direction.x == 0.0F) {
         return RaycastVertical(
-            source_entity,
+            source_ent,
             start_pos,
             direction.y < 0.0F ? -1 : 1,
             max_distance,
@@ -659,7 +659,7 @@ WorldRayHit RaycastWorld(
         Vec2::New(std::max(start_pos.x, end_pos.x), std::max(start_pos.y, end_pos.y))
     );
     const std::vector<RaycastTarget> targets =
-        CollectRaycastTargets(source_entity, start_pos, ray_aabb, state, graphics, owner_vid);
+        CollectRaycastTargets(source_ent, start_pos, ray_aabb, state, graphics, owner_vid);
 
     for (int step = 0; step < max_distance; ++step) {
         const IVec2 point = ToIVec2(start_pos + (step_dir * static_cast<float>(step)));

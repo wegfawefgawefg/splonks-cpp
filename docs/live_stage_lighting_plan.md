@@ -51,8 +51,8 @@ The following should remain:
 ## Later Work
 
 - Add RGB color modulation instead of scalar brightness only.
-- Add entity-attached light emitters.
-- Add tile archetype emissive light fields.
+- Add ent-attached light emitters.
+- Add tile spec emissive light fields.
 - Add fluid-specific absorption/tint.
-- Add bilinear/sub-tile light sampling for entities and water.
+- Add bilinear/sub-tile light sampling for ents and water.
 - Add dirty-region/frontier updates only if full-stage per-frame lighting becomes expensive.

@@ -2,9 +2,9 @@
 
 #include "audio.hpp"
 #include "buying.hpp"
-#include "entity.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
+#include "ent.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
@@ -13,105 +13,105 @@ namespace splonks::world_ops {
 
 namespace {
 
-bool AreEntitiesOverlappingForInteract(
-    const Entity& source,
-    const Entity& target,
+bool AreEntsOverlappingForInteract(
+    const Ent& source,
+    const Ent& target,
     const State& state,
     const Graphics& graphics
 ) {
-    const AABB source_aabb = entities::common::GetContactAabbForEntity(source, graphics);
+    const AABB source_aabb = ents::common::GetContactAabbForEnt(source, graphics);
     const Vec2 source_center = (source_aabb.tl + source_aabb.br) / 2.0F;
     const AABB target_aabb = GetNearestWorldAabb(
         state.stage,
         source_center,
-        entities::common::GetContactAabbForEntity(target, graphics)
+        ents::common::GetContactAabbForEnt(target, graphics)
     );
     return AabbsIntersect(source_aabb, target_aabb);
 }
 
 } // namespace
 
-Entity* SpawnConfiguredEntity(
+Ent* SpawnConfiguredEnt(
     State& state,
-    const EntitySpawnSetup& setup,
+    const EntSpawnSetup& setup,
     std::optional<VID> held_by_vid
 ) {
     (void)held_by_vid;
 
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
+    const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return nullptr;
     }
 
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
+    Ent* const ent = state.ents.GetEntMut(*vid);
+    if (ent == nullptr) {
         return nullptr;
     }
 
     if (setup) {
-        setup(*entity);
+        setup(*ent);
     }
-    return entity;
+    return ent;
 }
 
-Entity* SpawnEntity(
+Ent* SpawnEnt(
     State& state,
-    EntityType type_,
-    const EntitySpawnSetup& setup,
+    EntType type_,
+    const EntSpawnSetup& setup,
     std::optional<VID> held_by_vid
 ) {
-    return SpawnConfiguredEntity(
+    return SpawnConfiguredEnt(
         state,
-        [&](Entity& entity) {
-            SetEntityAs(entity, type_);
+        [&](Ent& ent) {
+            SetEntAs(ent, type_);
             if (setup) {
-                setup(entity);
+                setup(ent);
             }
         },
         held_by_vid
     );
 }
 
-bool DeactivateEntity(State& state, VID entity_vid) {
-    Entity* const entity = state.entity_manager.GetEntityMut(entity_vid);
-    if (entity == nullptr || !entity->active) {
+bool DeactivateEnt(State& state, VID ent_vid) {
+    Ent* const ent = state.ents.GetEntMut(ent_vid);
+    if (ent == nullptr || !ent->active) {
         return false;
     }
 
-    entities::common::ReleaseEntityFromHolder(*entity, state);
+    ents::common::ReleaseEntFromHolder(*ent, state);
 
-    state.entity_manager.SetInactive(entity->vid.id);
+    state.ents.SetInactive(ent->vid.id);
     return true;
 }
 
-bool TryApplyInteractEntity(
+bool TryApplyInteractEnt(
     VID source_vid,
     VID target_vid,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
-    Entity* const source = state.entity_manager.GetEntityMut(source_vid);
-    Entity* const target = state.entity_manager.GetEntityMut(target_vid);
+    Ent* const source = state.ents.GetEntMut(source_vid);
+    Ent* const target = state.ents.GetEntMut(target_vid);
     if (source == nullptr || target == nullptr ||
         !source->active || !target->active ||
-        source->condition == EntityCondition::Dead) {
+        source->condition == EntCondition::Dead) {
         return false;
     }
 
-    if (!AreEntitiesOverlappingForInteract(*source, *target, state, graphics)) {
+    if (!AreEntsOverlappingForInteract(*source, *target, state, graphics)) {
         return false;
     }
 
     if (target->buyable.active) {
-        return TryBuyEntity(target->vid.id, source->vid.id, state, graphics, audio);
+        return TryBuyEnt(target->vid.id, source->vid.id, state, graphics, audio);
     }
 
-    const EntityArchetype& archetype = GetEntityArchetype(target->type_);
-    if (archetype.on_interact == nullptr) {
+    const EntSpec& spec = GetEntSpec(target->type_);
+    if (spec.on_interact == nullptr) {
         return false;
     }
-    return archetype.on_interact(target->vid.id, source->vid.id, state, graphics, audio);
+    return spec.on_interact(target->vid.id, source->vid.id, state, graphics, audio);
 }
 
 } // namespace splonks::world_ops

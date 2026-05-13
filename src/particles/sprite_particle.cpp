@@ -2,13 +2,13 @@
 
 namespace splonks {
 
-void SpriteParticle::Step(const FrameDataDb& frame_data_db, float dt) {
+void SpriteParticle::Step(const AFrameDb& aframe_db, float dt) {
     (void)dt;
     if (counter > 0) {
         counter -= 1;
     }
 
-    frame_data_animator.Step(frame_data_db, dt);
+    aframe_animator.Step(aframe_db, dt);
     vel += acc;
     svel += sacc;
     rotvel += rotacc;
@@ -24,7 +24,7 @@ void SpriteParticle::Step(const FrameDataDb& frame_data_db, float dt) {
 }
 
 bool SpriteParticle::IsFinished() const {
-    return counter == 0 || (finish_on_animation_end && frame_data_animator.IsFinished());
+    return counter == 0 || (finish_on_anim_end && aframe_animator.IsFinished());
 }
 
 } // namespace splonks

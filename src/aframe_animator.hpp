@@ -1,19 +1,19 @@
 #pragma once
 
-#include "frame_data.hpp"
+#include "aframe.hpp"
 
 #include <cstdint>
 
 namespace splonks {
 
-enum class AnimationPlaybackMode : std::uint8_t {
+enum class AnimPlaybackMode : std::uint8_t {
     Forward,
     Reverse,
     PingPong,
 };
 
-struct FrameDataAnimator {
-    FrameDataId animation_id = kInvalidFrameDataId;
+struct AFrameAnimator {
+    AFrameId anim_id = kInvalidAFrameId;
     std::size_t current_frame = 0;
     float current_time = 0.0F;
     float scale = 1.0F;
@@ -21,43 +21,43 @@ struct FrameDataAnimator {
     bool animate = true;
     bool loop = true;
     bool finished = false;
-    AnimationPlaybackMode playback_mode = AnimationPlaybackMode::Forward;
+    AnimPlaybackMode playback_mode = AnimPlaybackMode::Forward;
     std::uint32_t play_count = 1;
     std::uint32_t plays_completed = 0;
     bool playback_dirty = true;
     bool ping_pong_forward = true;
 
-    static FrameDataAnimator New(FrameDataId animation_id_value);
+    static AFrameAnimator New(AFrameId anim_id_value);
 
-    bool HasAnimation() const;
+    bool HasAnim() const;
     bool IsFinished() const;
-    // Raw animation control path.
-    // Use this when entity-owned logic knows the exact authored animation id it wants.
-    void SetAnimation(FrameDataId animation_id_value);
+    // Raw anim control path.
+    // Use this when ent-owned logic knows the exact authored anim id it wants.
+    void SetAnim(AFrameId anim_id_value);
     void SetForcedFrame(std::size_t frame_index);
     void SetSpeed(float speed_value);
     void ResetSpeed();
-    void SetPlaybackMode(AnimationPlaybackMode playback_mode_value);
+    void SetPlaybackMode(AnimPlaybackMode playback_mode_value);
     void SetPlayCount(std::uint32_t play_count_value);
     void Play(
-        FrameDataId animation_id_value,
-        AnimationPlaybackMode playback_mode_value = AnimationPlaybackMode::Forward,
+        AFrameId anim_id_value,
+        AnimPlaybackMode playback_mode_value = AnimPlaybackMode::Forward,
         bool loop_value = true,
         std::uint32_t play_count_value = 1
     );
     void PlayLoop(
-        FrameDataId animation_id_value,
-        AnimationPlaybackMode playback_mode_value = AnimationPlaybackMode::Forward
+        AFrameId anim_id_value,
+        AnimPlaybackMode playback_mode_value = AnimPlaybackMode::Forward
     );
-    void PlayOnce(FrameDataId animation_id_value);
-    void PlayOnceReverse(FrameDataId animation_id_value);
-    void PlayOncePingPong(FrameDataId animation_id_value);
+    void PlayOnce(AFrameId anim_id_value);
+    void PlayOnceReverse(AFrameId anim_id_value);
+    void PlayOncePingPong(AFrameId anim_id_value);
     void PlayNTimes(
-        FrameDataId animation_id_value,
+        AFrameId anim_id_value,
         std::uint32_t play_count_value,
-        AnimationPlaybackMode playback_mode_value = AnimationPlaybackMode::Forward
+        AnimPlaybackMode playback_mode_value = AnimPlaybackMode::Forward
     );
-    void Step(const FrameDataDb& frame_data_db, float dt);
+    void Step(const AFrameDb& aframe_db, float dt);
 };
 
 } // namespace splonks

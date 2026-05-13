@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,15 +10,15 @@ struct State;
 
 }
 
-namespace splonks::entities::store_light {
+namespace splonks::ents::store_light {
 
 constexpr int kStoreLightRadiusTiles = 5;
 
-extern const EntityArchetype kStoreLightArchetype;
+extern const EntSpec kStoreLightSpec;
 
-void AttachStoreLight(Entity& entity, State& state, int radius = kStoreLightRadiusTiles);
-EntityDamageEffectResult OnDamageAsStoreLight(
-    std::size_t entity_idx,
+void AttachStoreLight(Ent& ent, State& state, int radius = kStoreLightRadiusTiles);
+EntDamageEffectResult OnDamageAsStoreLight(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
@@ -26,4 +26,4 @@ EntityDamageEffectResult OnDamageAsStoreLight(
     bool damage_applied
 );
 
-} // namespace splonks::entities::store_light
+} // namespace splonks::ents::store_light

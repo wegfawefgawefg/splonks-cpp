@@ -55,9 +55,9 @@ HD splits worldgen into at least three responsibilities:
 - these scripts use `roomPath` codes plus biome flags to choose room strings and
   obstacle chunks
 
-3. Entity/treasure generation
+3. Ent/treasure generation
 
-- [scrEntityGen.gml](/home/vega/Coding/GameDev/Splonks/SpelunkyClassicHD/scripts/scrEntityGen/scrEntityGen.gml)
+- [scrEntGen.gml](/home/vega/Coding/GameDev/Splonks/SpelunkyClassicHD/scripts/scrEntGen/scrEntGen.gml)
 - this is mostly a later pass over the generated level, not the same thing as
   room tile realization
 
@@ -87,7 +87,7 @@ We should split our own worldgen into these pieces:2
 
 - realized tiles
 - optional room metadata
-- optional marker layer for later entity placement
+- optional marker layer for later ent placement
 
 This is the important cut:
 
@@ -138,7 +138,7 @@ We should not do these in the first slice:
 
 - full GML script interpreter
 - exact port of every obstacle randomization branch
-- exact entity spawning from room markers
+- exact ent spawning from room markers
 - all biomes at once
 - all special cases like Black Market, Moai, City of Gold, etc.
 
@@ -205,7 +205,7 @@ Build this in order:
 - convert HD room strings into our tile/template model
 - for first pass, ignore unsupported glyphs safely and explicitly
 
-6. Keep current random entity population for now
+6. Keep current random ent population for now
 
 - do not block the tilegen migration on marker-based spawns
 
@@ -301,7 +301,7 @@ The right first step is:
 - add a real layout intermediate model
 - extract Area 1 room-path codes
 - extract Area 1 room recipes
-- keep entity population mostly as-is for the first pass
+- keep ent population mostly as-is for the first pass
 
 That gives us a bounded migration with real payoff and keeps the runtime code
 boring enough to debug.

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::debug_moving_light {
+namespace splonks::ents::debug_moving_light {
 
-extern const EntityArchetype kDebugMovingLightArchetype;
+extern const EntSpec kDebugMovingLightSpec;
 
-} // namespace splonks::entities::debug_moving_light
+} // namespace splonks::ents::debug_moving_light

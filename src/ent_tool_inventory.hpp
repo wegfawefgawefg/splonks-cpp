@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sid.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 
 #include <array>
 #include <cstddef>
@@ -19,17 +19,17 @@ struct ToolSlot {
     bool active = false;
 };
 
-struct EntityToolState {
+struct EntToolState {
     VID owner_vid;
     std::array<ToolSlot, kToolSlotCount> slots{};
 };
 
-struct EntityToolInventoryState {
-    std::vector<EntityToolState> tool_states;
+struct EntToolInventoryState {
+    std::vector<EntToolState> tool_states;
 
     void Step();
-    EntityToolState* FindEntityToolStateMut(const VID& owner_vid);
-    const EntityToolState* FindEntityToolState(const VID& owner_vid) const;
+    EntToolState* FindEntToolStateMut(const VID& owner_vid);
+    const EntToolState* FindEntToolState(const VID& owner_vid) const;
     ToolSlot* FindToolSlotMut(const VID& owner_vid, std::size_t slot_index);
     const ToolSlot* FindToolSlot(const VID& owner_vid, std::size_t slot_index) const;
     ToolSlot& EnsureToolSlot(const VID& owner_vid, std::size_t slot_index);

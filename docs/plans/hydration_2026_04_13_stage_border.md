@@ -63,7 +63,7 @@ That means:
 
 ## Current Code Reality
 
-Some systems already sample the old border tile's tile-archetype properties:
+Some systems already sample the old border tile's tile-spec properties:
 
 - render wrapper
 - terrain lighting
@@ -74,12 +74,12 @@ But core movement still hardcodes stage bounds as blocking.
 
 Main files to inspect first:
 
-- [src/entities/common/blocking_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/blocking_contact.cpp)
-- [src/entities/common/physics.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/physics.cpp)
-- [src/entity.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entity.cpp)
-- [src/entities/common/tile_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/tile_contact.cpp)
-- [src/entities/common/hang.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/hang.cpp)
-- [src/render/tiles_and_entities.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/tiles_and_entities.cpp)
+- [src/ents/common/blocking_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/blocking_contact.cpp)
+- [src/ents/common/physics.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/physics.cpp)
+- [src/ent.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ent.cpp)
+- [src/ents/common/tile_contact.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/tile_contact.cpp)
+- [src/ents/common/hang.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/hang.cpp)
+- [src/render/tiles_and_ents.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/tiles_and_ents.cpp)
 - [src/render/tile_lighting.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/tile_lighting.cpp)
 - [src/render/terrain_lighting.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/render/terrain_lighting.cpp)
 - [src/stage.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage.cpp)
@@ -90,15 +90,15 @@ Separate from the border discussion, the tile-family cleanup did land and build.
 
 That work:
 
-- moved tile family to `TileArchetype`
+- moved tile family to `TileSpec`
 - changed dirt/gold/block family helpers to derive from a family anchor tile
 - removed the old repeated stage-type family switch from the hot path
 - threaded family tile through old room generation
 
 Relevant files:
 
-- [src/tile_archetype.hpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile_archetype.hpp)
-- [src/tile_archetype.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile_archetype.cpp)
+- [src/tile_spec.hpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile_spec.hpp)
+- [src/tile_spec.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile_spec.cpp)
 - [src/tile.hpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile.hpp)
 - [src/tile.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile.cpp)
 - [src/room.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/room.cpp)

@@ -1,16 +1,16 @@
-#include "entities/dice.hpp"
+#include "ents/dice.hpp"
 
-#include "entity/archetype.hpp"
-#include "entity/core_types.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent/core_types.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "state.hpp"
 #include "utils.hpp"
 
 #include <cmath>
 
-namespace splonks::entities::dice {
+namespace splonks::ents::dice {
 
 namespace {
 
@@ -22,8 +22,8 @@ int RollDicePairTotal(State& state) {
            state.drng.RandomIntInclusive(1, 6);
 }
 
-void StepEntityLogicAsDice(
-    std::size_t entity_idx,
+void StepEntLogicAsDice(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -32,12 +32,12 @@ void StepEntityLogicAsDice(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& dice = state.entity_manager.entities[entity_idx];
-    if (!dice.active || dice.type_ != EntityType::Dice || dice.counter_b != kRollingState) {
+    Ent& dice = state.ents.ents[ent_idx];
+    if (!dice.active || dice.type_ != EntType::Dice || dice.counter_b != kRollingState) {
         return;
     }
 
@@ -55,8 +55,8 @@ void StepEntityLogicAsDice(
 
 } // namespace
 
-extern const EntityArchetype kDiceArchetype{
-    .type_ = EntityType::Dice,
+extern const EntSpec kDiceSpec{
+    .type_ = EntType::Dice,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = true,
@@ -67,15 +67,15 @@ extern const EntityArchetype kDiceArchetype{
     .can_be_stomped = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .projectile_contact_damage_amount = 0,
-    .can_apply_projectile_contact = false,
-    .step_logic = StepEntityLogicAsDice,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .proj_contact_damage_amount = 0,
+    .can_apply_proj_contact = false,
+    .step_logic = StepEntLogicAsDice,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Dice),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Dice),
 };
 
-} // namespace splonks::entities::dice
+} // namespace splonks::ents::dice

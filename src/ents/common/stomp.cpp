@@ -1,10 +1,10 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 #include "controls.hpp"
 #include "world_query.hpp"
 
 #include <algorithm>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 namespace {
 
@@ -16,14 +16,14 @@ constexpr float kStompVictimKnockbackVelocityX = 1.0F;
 constexpr unsigned int kStompDamage = 1;
 constexpr float kSpringShoeMovementSoundVolume = 0.15F;
 
-bool CanEntityAttemptStomp(const Entity& stomper, const State& state) {
+bool CanEntAttemptStomp(const Ent& stomper, const State& state) {
     if (!stomper.active) {
         return false;
     }
     if (!stomper.can_stomp) {
         return false;
     }
-    if (stomper.condition != EntityCondition::Normal) {
+    if (stomper.condition != EntCondition::Normal) {
         return false;
     }
     if (stomper.vel.y <= 0.0F) {
@@ -32,7 +32,7 @@ bool CanEntityAttemptStomp(const Entity& stomper, const State& state) {
     if (stomper.held_by_vid.has_value()) {
         return false;
     }
-    if (HasMovementFlag(stomper, EntityMovementFlag::Hanging)) {
+    if (HasMovementFlag(stomper, EntMovementFlag::Hanging)) {
         return false;
     }
     if (GetModifiedEffectValue(stomper, EffectModifierTarget::StompDamageScale, 1.0F, &state) <= 0.0F) {
@@ -41,7 +41,7 @@ bool CanEntityAttemptStomp(const Entity& stomper, const State& state) {
     return true;
 }
 
-bool CanEntityBeStomped(const Entity& target) {
+bool CanEntBeStomped(const Ent& target) {
     if (!target.active) {
         return false;
     }
@@ -51,17 +51,17 @@ bool CanEntityBeStomped(const Entity& target) {
     if (target.impassable || !target.can_collide) {
         return false;
     }
-    if (target.condition != EntityCondition::Normal) {
+    if (target.condition != EntCondition::Normal) {
         return false;
     }
-    if (HasMovementFlag(target, EntityMovementFlag::Hanging)) {
+    if (HasMovementFlag(target, EntMovementFlag::Hanging)) {
         return false;
     }
     return true;
 }
 
-void ApplyStompBounce(Entity& stomper, State& state) {
-    const controls::ControlIntent control = controls::GetControlIntentForEntity(stomper, state);
+void ApplyStompBounce(Ent& stomper, State& state) {
+    const controls::ControlIntent control = controls::GetControlIntentForEnt(stomper, state);
     const float base_bounce_impulse = control.jump
         ? -kStompHeldJumpBounceVelocityY
         : -kStompShortBounceVelocityY;
@@ -72,29 +72,29 @@ void ApplyStompBounce(Entity& stomper, State& state) {
 
 } // namespace
 
-bool TryApplyStompContactToEntity(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+bool TryApplyStompContactToEnt(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     State& state,
     const Graphics& graphics,
     Audio& audio
 ) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& stomper = state.entity_manager.entities[entity_idx];
-    Entity* const stomped = state.entity_manager.GetEntityMut(state.entity_manager.entities[other_entity_idx].vid);
+    Ent& stomper = state.ents.ents[ent_idx];
+    Ent* const stomped = state.ents.GetEntMut(state.ents.ents[other_ent_idx].vid);
     if (stomped == nullptr) {
         return false;
     }
 
-    if (!CanEntityAttemptStomp(stomper, state)) {
+    if (!CanEntAttemptStomp(stomper, state)) {
         return false;
     }
-    if (!CanEntityBeStomped(*stomped)) {
+    if (!CanEntBeStomped(*stomped)) {
         return false;
     }
     if (state.contact.HasInteractionCooldown(
@@ -105,21 +105,21 @@ bool TryApplyStompContactToEntity(
         return false;
     }
 
-    const AABB stomper_aabb = GetContactAabbForEntity(stomper, graphics);
+    const AABB stomper_aabb = GetContactAabbForEnt(stomper, graphics);
     const AABB stomped_aabb = GetNearestWorldAabb(
         state.stage,
         stomper.GetCenter(),
-        GetContactAabbForEntity(*stomped, graphics)
+        GetContactAabbForEnt(*stomped, graphics)
     );
     const float stomped_head_band_bottom = stomped_aabb.tl.y + kStompHeadHeight;
     if (stomper_aabb.br.y > stomped_head_band_bottom) {
         return false;
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, stomper, audio_asset_ids::Jump);
+    (void)PlayEntCenterSoundEmitter(state, stomper, audio_asset_ids::Jump);
     const bool has_spring_shoes = HasEffect(stomper, EffectId::SpringShoes);
     if (has_spring_shoes) {
-        (void)PlayEntityCenterSoundEmitter(
+        (void)PlayEntCenterSoundEmitter(
             state,
             stomper,
             audio_asset_ids::SpringShoe,
@@ -127,7 +127,7 @@ bool TryApplyStompContactToEntity(
         );
     }
 
-    if (IsPlayerLikeEntityType(stomper.type_) && IsPlayerLikeEntityType(stomped->type_)) {
+    if (IsPlayerLikeEntType(stomper.type_) && IsPlayerLikeEntType(stomped->type_)) {
         ApplyStompBounce(stomper, state);
         return true;
     }
@@ -154,11 +154,11 @@ bool TryApplyStompContactToEntity(
         .clear_acceleration = true,
         .thrown_by = stomper.vid,
         .thrown_immunity_timer = kThrownByImmunityDuration,
-        .projectile_contact_damage_type = DamageType::Attack,
-        .projectile_contact_damage_amount = 1,
-        .projectile_contact_duration = kProjectileContactDuration,
+        .proj_contact_damage_type = DamageType::Attack,
+        .proj_contact_damage_amount = 1,
+        .proj_contact_duration = kProjContactDuration,
     };
-    (void)TryHitEntity(
+    (void)TryHitEnt(
         stomped->vid.id,
         state,
         audio,
@@ -170,7 +170,7 @@ bool TryApplyStompContactToEntity(
         }
     );
     if (stomped->can_be_stunned) {
-        stomped->condition = EntityCondition::Stunned;
+        stomped->condition = EntCondition::Stunned;
         stomped->stun_timer = kDefaultStunTimer;
     }
     state.contact.AddInteractionCooldown(
@@ -185,4 +185,4 @@ bool TryApplyStompContactToEntity(
     return true;
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

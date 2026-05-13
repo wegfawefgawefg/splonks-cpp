@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::xoc_block {
+namespace splonks::ents::xoc_block {
 
-extern const EntityArchetype kXocBlockArchetype;
+extern const EntSpec kXocBlockSpec;
 
-} // namespace splonks::entities::xoc_block
+} // namespace splonks::ents::xoc_block

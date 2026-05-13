@@ -4,7 +4,7 @@
 
 ## todo
 
-- when entities change they need to version up.
+- when ents change they need to version up.
 - make pots break on falling again, idk why that stopped.
 - BugFix: switching from windowsize1920xdims1929 to windowed, makes the game not fit in the window.
 - fall damage
@@ -17,14 +17,14 @@
 - message queue renders on screen (on screen console)
 - multiple damage preventer (dictionary in state for lookups on vids like this) (unique case for spikes. spikes cant multihit i think)
 
-- display state router for more control on entity animations and rendering? (probably needs a whole system)
+- display state router for more control on ent anims and rendering? (probably needs a whole system)
 - check in on slicing for double mut in player code
 - dog that wanders, gets mad if it sees you.
-- some entity that can pick up and throw things
+- some ent that can pick up and throw things
 - bat makes sound on fall
 - player makes better sound on fall
 - block makes sound on fall
-- entities and projectiles hit eachother multiple times a lot, its bad.
+- ents and projs hit eachother multiple times a lot, its bad.
 - merge groundedness check with collisions
 - rock doesnt always make land sound for some reason
 - narrow the stairs and rope climbing area
@@ -32,13 +32,13 @@
 - rock sometimes throw backwards??
 - figure out how moneys can look different without eating huge portions of the sprite atlas
 - add falling anims, make the player not flinch on fall
-- convert doors to be an entity
+- convert doors to be an ent
 - bens item idea: iron false teeth. lets yu eat dead enemies one time for hp.
-- implement picking up shit for non player entities.
-- stage decorations of some sort... not in entity vector (standalone system)
+- implement picking up shit for non player ents.
+- stage decorations of some sort... not in ent vector (standalone system)
 - make a test room, atelast one. be able to spawn or kill enemies with mouse is nice.
 - make a room for aligning frame offsets
-- convert block tiles to be entity
+- convert block tiles to be ent
 - subdivide the exit templates because sometimes they block the path, or bore a hole into impassable vertically stacked rooms
 - add all base room templates
 - ensure distribution of rooms is kinda same
@@ -53,10 +53,10 @@
 - stage transition
 - boss
 
-- entities can go into above tile on put, sometimes into floor
+- ents can go into above tile on put, sometimes into floor
 - player animating too fast
 - hit manager? hit list to prevent double hits and multi hits, probably hit times and have them expire
-- fix rendering entity and tile scaling at different resolutions.
+- fix rendering ent and tile scaling at different resolutions.
 - fix the title screen rendering for all resolutions
 - abstract away inputs, audio, and rendering into shims for swapping the rendering libraries
 
@@ -66,6 +66,6 @@
 
 ## tomaybe
 
-- displaying icons for an entities state next to them would also be real nice
+- displaying icons for an ents state next to them would also be real nice
 
-- cool entity state viewer??
+- cool ent state viewer??

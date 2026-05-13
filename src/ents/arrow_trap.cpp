@@ -1,10 +1,10 @@
-#include "entities/arrow_trap.hpp"
+#include "ents/arrow_trap.hpp"
 
 #include "audio.hpp"
 #include "effects.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 #include "world_query.hpp"
@@ -12,38 +12,38 @@
 #include <algorithm>
 #include <cmath>
 
-namespace splonks::entities::arrow_trap {
+namespace splonks::ents::arrow_trap {
 
 namespace {
 
 constexpr int kArrowTrapMaxSensorDistance = 96;
 constexpr int kArrowTrapMaxSensorTileSteps = kArrowTrapMaxSensorDistance / static_cast<int>(kTileSize);
 constexpr float kArrowTrapSensorHalfHeight = 3.0F;
-constexpr float kArrowTrapMovingEntitySpeed = 0.05F;
+constexpr float kArrowTrapMovingEntSpeed = 0.05F;
 constexpr float kArrowTrapArrowSpeed = 8.0F;
 constexpr float kArrowGravity = 0.10F;
 constexpr float kArrowRotationVelocityEpsilon = 0.01F;
 constexpr float kArrowImpactVelocityScale = 0.18F;
 constexpr unsigned int kArrowDamage = 2;
 
-bool HasFired(const Entity& trap) {
+bool HasFired(const Ent& trap) {
     return trap.counter_a > 0.0F;
 }
 
-int DirectionForTrap(const Entity& trap) {
-    return trap.facing == LeftOrRight::Left ? -1 : 1;
+int DirectionForTrap(const Ent& trap) {
+    return trap.facing == Side::Left ? -1 : 1;
 }
 
-Vec2 GetSensorStart(const Entity& trap) {
+Vec2 GetSensorStart(const Ent& trap) {
     const int direction = DirectionForTrap(trap);
     return trap.GetCenter() + Vec2::New(static_cast<float>(direction) * 9.0F, 0.0F);
 }
 
-bool ShouldTriggerOnEntity(const Entity& entity) {
-    return Length(entity.vel) > kArrowTrapMovingEntitySpeed;
+bool ShouldTriggerOnEnt(const Ent& ent) {
+    return Length(ent.vel) > kArrowTrapMovingEntSpeed;
 }
 
-void SnapArrowPositionToPixels(Entity& arrow) {
+void SnapArrowPositionToPixels(Ent& arrow) {
     arrow.pos = Vec2::New(std::round(arrow.pos.x), std::round(arrow.pos.y));
 }
 
@@ -64,7 +64,7 @@ int GetOpenSensorCacheMarker(const Stage& stage) {
     return static_cast<int>(stage.tile_change_generation + 1U);
 }
 
-int ComputeOpenSensorDistance(const Entity& trap, const State& state) {
+int ComputeOpenSensorDistance(const Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
     const Vec2 start = GetSensorStart(trap);
     const IVec2 origin_tile = state.stage.GetTileCoordAtWc(ToIVec2(start));
@@ -81,7 +81,7 @@ int ComputeOpenSensorDistance(const Entity& trap, const State& state) {
     );
 }
 
-int GetCachedOpenSensorDistance(Entity& trap, const State& state) {
+int GetCachedOpenSensorDistance(Ent& trap, const State& state) {
     const int cache_marker = GetOpenSensorCacheMarker(state.stage);
     if (trap.point_a.x != cache_marker) {
         trap.point_a.x = cache_marker;
@@ -90,7 +90,7 @@ int GetCachedOpenSensorDistance(Entity& trap, const State& state) {
     return trap.point_a.y;
 }
 
-AABB GetOpenSensorAabb(Entity& trap, const State& state) {
+AABB GetOpenSensorAabb(Ent& trap, const State& state) {
     const int direction = DirectionForTrap(trap);
     const Vec2 start = GetSensorStart(trap);
     const int open_distance = GetCachedOpenSensorDistance(trap, state);
@@ -101,7 +101,7 @@ AABB GetOpenSensorAabb(Entity& trap, const State& state) {
     );
 }
 
-void AddArrowTrapDebugAnnotations(Entity& trap, State& state) {
+void AddArrowTrapDebugAnnotations(Ent& trap, State& state) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
@@ -118,8 +118,8 @@ void AddArrowTrapDebugAnnotations(Entity& trap, State& state) {
     });
 }
 
-bool SensorTouchesMovingEntity(
-    Entity& trap,
+bool SensorTouchesMovingEnt(
+    Ent& trap,
     const State& state,
     const Graphics& graphics
 ) {
@@ -128,19 +128,19 @@ bool SensorTouchesMovingEntity(
         return false;
     }
 
-    const std::vector<VID> hits = QueryEntitiesInAabb(state, sensor_aabb, trap.vid);
+    const std::vector<VID> hits = QueryEntsInAabb(state, sensor_aabb, trap.vid);
     for (const VID& vid : hits) {
-        const Entity* const entity = state.entity_manager.GetEntity(vid);
-        if (entity == nullptr || !entity->active || !entity->can_be_hit) {
+        const Ent* const ent = state.ents.GetEnt(vid);
+        if (ent == nullptr || !ent->active || !ent->can_be_hit) {
             continue;
         }
-        if (!ShouldTriggerOnEntity(*entity)) {
+        if (!ShouldTriggerOnEnt(*ent)) {
             continue;
         }
         if (!WorldAabbsIntersect(
                 state.stage,
                 sensor_aabb,
-                entities::common::GetContactAabbForEntity(*entity, graphics)
+                ents::common::GetContactAabbForEnt(*ent, graphics)
             )) {
             continue;
         }
@@ -150,39 +150,39 @@ bool SensorTouchesMovingEntity(
     return false;
 }
 
-Entity* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap_vid) {
-    return world_ops::SpawnEntity(state, EntityType::Arrow, [&](Entity& arrow) {
+Ent* SpawnArrow(State& state, const Vec2& center, int direction, const VID& trap_vid) {
+    return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         arrow.SetCenter(center);
         arrow.vel = Vec2::New(static_cast<float>(direction) * kArrowTrapArrowSpeed, 0.0F);
         arrow.acc = Vec2::New(0.0F, 0.0F);
-        arrow.facing = direction < 0 ? LeftOrRight::Left : LeftOrRight::Right;
+        arrow.facing = direction < 0 ? Side::Left : Side::Right;
         arrow.rotation = 0.0F;
         arrow.thrown_by = trap_vid;
-        arrow.thrown_immunity_timer = entities::common::kThrownByImmunityDuration;
-        arrow.projectile_contact_damage_type = DamageType::Attack;
-        arrow.projectile_contact_damage_amount = kArrowDamage;
-        arrow.projectile_contact_timer = entities::common::kProjectileContactDuration;
-        arrow.can_apply_projectile_contact = false;
+        arrow.thrown_immunity_timer = ents::common::kThrownByImmunityDuration;
+        arrow.proj_contact_damage_type = DamageType::Attack;
+        arrow.proj_contact_damage_amount = kArrowDamage;
+        arrow.proj_contact_timer = ents::common::kProjContactDuration;
+        arrow.can_apply_proj_contact = false;
         (void)AddEffect(arrow, EffectId::NoGravityUntilContact);
     });
 }
 
-Entity* SpawnLooseArrow(State& state, const Vec2& center) {
-    return world_ops::SpawnEntity(state, EntityType::Arrow, [&](Entity& arrow) {
+Ent* SpawnLooseArrow(State& state, const Vec2& center) {
+    return world_ops::SpawnEnt(state, EntType::Arrow, [&](Ent& arrow) {
         arrow.SetCenter(center);
         SnapArrowPositionToPixels(arrow);
         arrow.vel = Vec2::New(0.0F, 0.0F);
         arrow.acc = Vec2::New(0.0F, 0.0F);
-        arrow.projectile_contact_timer = 0;
-        arrow.projectile_contact_damage_amount = kArrowDamage;
-        arrow.can_apply_projectile_contact = false;
+        arrow.proj_contact_timer = 0;
+        arrow.proj_contact_damage_amount = kArrowDamage;
+        arrow.can_apply_proj_contact = false;
         arrow.thrown_by.reset();
     });
 }
 
-void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
+void FireTrap(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    Entity& trap = state.entity_manager.entities[entity_idx];
+    Ent& trap = state.ents.ents[ent_idx];
     if (HasFired(trap)) {
         return;
     }
@@ -192,7 +192,7 @@ void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
         static_cast<float>(direction) * 10.0F,
         -4.0F
     );
-    Entity* const arrow = SpawnArrow(state, arrow_center, direction, trap.vid);
+    Ent* const arrow = SpawnArrow(state, arrow_center, direction, trap.vid);
     if (arrow == nullptr) {
         return;
     }
@@ -200,34 +200,34 @@ void FireTrap(std::size_t entity_idx, State& state, Audio& audio) {
     (void)PlayWorldSoundEmitter(state, arrow_center, audio_asset_ids::Throw);
 }
 
-void StepEntityLogicAsArrowTrap(
-    std::size_t entity_idx,
+void StepEntLogicAsArrowTrap(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& trap = state.entity_manager.entities[entity_idx];
+    Ent& trap = state.ents.ents[ent_idx];
     if (!trap.active || HasFired(trap)) {
         return;
     }
 
     AddArrowTrapDebugAnnotations(trap, state);
 
-    if (!SensorTouchesMovingEntity(trap, state, graphics)) {
+    if (!SensorTouchesMovingEnt(trap, state, graphics)) {
         return;
     }
 
-    FireTrap(entity_idx, state, audio);
+    FireTrap(ent_idx, state, audio);
 }
 
-void StepEntityLogicAsArrow(
-    std::size_t entity_idx,
+void StepEntLogicAsArrow(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -236,28 +236,28 @@ void StepEntityLogicAsArrow(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& arrow = state.entity_manager.entities[entity_idx];
+    Ent& arrow = state.ents.ents[ent_idx];
     if (arrow.held_by_vid.has_value()) {
-        arrow.entity_a.reset();
+        arrow.ent_a.reset();
         arrow.rotation = 0.0F;
         SnapArrowPositionToPixels(arrow);
         return;
     }
 
-    if (arrow.entity_a.has_value()) {
-        const Entity* const stuck_to = state.entity_manager.GetEntity(*arrow.entity_a);
+    if (arrow.ent_a.has_value()) {
+        const Ent* const stuck_to = state.ents.GetEnt(*arrow.ent_a);
         if (stuck_to == nullptr || !stuck_to->active) {
-            arrow.entity_a.reset();
+            arrow.ent_a.reset();
             arrow.has_physics = true;
             arrow.can_collide = true;
             arrow.vel = Vec2::New(0.0F, 0.0F);
             arrow.acc = Vec2::New(0.0F, kArrowGravity);
-            arrow.projectile_contact_timer = 0;
-            arrow.can_apply_projectile_contact = false;
+            arrow.proj_contact_timer = 0;
+            arrow.can_apply_proj_contact = false;
             return;
         }
 
@@ -276,33 +276,33 @@ void StepEntityLogicAsArrow(
     }
 
     if (Length(arrow.vel) > kArrowRotationVelocityEpsilon) {
-        if (arrow.projectile_contact_timer > 0) {
-            arrow.projectile_contact_damage_amount = kArrowDamage;
+        if (arrow.proj_contact_timer > 0) {
+            arrow.proj_contact_damage_amount = kArrowDamage;
         }
         if (std::abs(arrow.vel.x) > kArrowRotationVelocityEpsilon) {
-            arrow.facing = arrow.vel.x < 0.0F ? LeftOrRight::Left : LeftOrRight::Right;
+            arrow.facing = arrow.vel.x < 0.0F ? Side::Left : Side::Right;
         }
         const float horizontal_speed = std::max(std::abs(arrow.vel.x), kArrowRotationVelocityEpsilon);
         const float relative_rotation =
             std::atan2(arrow.vel.y, horizontal_speed) * (180.0F / 3.14159265F);
-        arrow.rotation = arrow.facing == LeftOrRight::Left ? -relative_rotation : relative_rotation;
+        arrow.rotation = arrow.facing == Side::Left ? -relative_rotation : relative_rotation;
     }
     const float gravity_scale =
         GetModifiedEffectValue(arrow, EffectModifierTarget::GravityScale, 1.0F);
     arrow.acc.y += kArrowGravity * gravity_scale;
 }
 
-bool CanArrowHitEntity(const Entity& arrow, const Entity& other) {
-    if (!arrow.active || !other.active || arrow.projectile_contact_timer == 0) {
+bool CanArrowHitEnt(const Ent& arrow, const Ent& other) {
+    if (!arrow.active || !other.active || arrow.proj_contact_timer == 0) {
         return false;
     }
-    if (other.type_ == EntityType::Arrow) {
+    if (other.type_ == EntType::Arrow) {
         return false;
     }
     if (arrow.held_by_vid.has_value()) {
         return false;
     }
-    if (!other.can_be_hit || !other.can_receive_projectile_contact || !other.can_collide) {
+    if (!other.can_be_hit || !other.can_receive_proj_contact || !other.can_collide) {
         return false;
     }
     if (arrow.thrown_by.has_value() && other.vid == *arrow.thrown_by) {
@@ -311,13 +311,13 @@ bool CanArrowHitEntity(const Entity& arrow, const Entity& other) {
     return true;
 }
 
-Entity* GetHeldBow(Entity& collector, State& state) {
+Ent* GetHeldBow(Ent& collector, State& state) {
     if (!collector.holding_vid.has_value()) {
         return nullptr;
     }
 
-    Entity* const held = state.entity_manager.GetEntityMut(*collector.holding_vid);
-    if (held == nullptr || !held->active || held->type_ != EntityType::Bow) {
+    Ent* const held = state.ents.GetEntMut(*collector.holding_vid);
+    if (held == nullptr || !held->active || held->type_ != EntType::Bow) {
         return nullptr;
     }
     return held;
@@ -331,87 +331,87 @@ bool TryCollectLooseArrowIntoHeldBow(
     Audio* audio
 ) {
     if (graphics == nullptr || audio == nullptr ||
-        arrow_idx >= state.entity_manager.entities.size() ||
-        collector_idx >= state.entity_manager.entities.size()) {
+        arrow_idx >= state.ents.ents.size() ||
+        collector_idx >= state.ents.ents.size()) {
         return false;
     }
 
-    Entity& arrow = state.entity_manager.entities[arrow_idx];
-    Entity& collector = state.entity_manager.entities[collector_idx];
-    if (!arrow.active || arrow.held_by_vid.has_value() || arrow.projectile_contact_timer > 0 ||
+    Ent& arrow = state.ents.ents[arrow_idx];
+    Ent& collector = state.ents.ents[collector_idx];
+    if (!arrow.active || arrow.held_by_vid.has_value() || arrow.proj_contact_timer > 0 ||
         arrow.buyable.active || !collector.can_collect_pickups) {
         return false;
     }
 
-    Entity* const bow = GetHeldBow(collector, state);
+    Ent* const bow = GetHeldBow(collector, state);
     if (bow == nullptr) {
         return false;
     }
 
     bow->counter_b += 1.0F;
-    if (!bow->entity_a.has_value()) {
-        SetAnimation(
+    if (!bow->ent_a.has_value()) {
+        SetAnim(
             *bow,
-            bow->counter_b > 0.0F ? frame_data_ids::BowLooseLoaded
-                                  : frame_data_ids::BowLooseEmpty
+            bow->counter_b > 0.0F ? aframe_ids::BowLooseLoaded
+                                  : aframe_ids::BowLooseEmpty
         );
     }
-    (void)PlayEntityCenterSoundEmitter(state, *bow, audio_asset_ids::Equip);
+    (void)PlayEntCenterSoundEmitter(state, *bow, audio_asset_ids::Equip);
     common::DeactivateCollectedPickup(arrow_idx, state, *graphics);
     return true;
 }
 
-void StickArrowToEntity(Entity& arrow, Entity& other, State& state) {
+void StickArrowToEnt(Ent& arrow, Ent& other, State& state) {
     const Vec2 other_center = other.GetCenter();
     const Vec2 arrow_center = GetNearestWorldPoint(state.stage, other_center, arrow.GetCenter());
     const Vec2 stored_offset = ToStoredArrowOffset(arrow_center - other_center);
 
     arrow.SetCenter(other_center + stored_offset);
     SnapArrowPositionToPixels(arrow);
-    arrow.entity_a = other.vid;
+    arrow.ent_a = other.vid;
     arrow.point_a = ToStoredArrowOffsetPoint(stored_offset);
     arrow.has_physics = false;
     arrow.can_collide = false;
-    arrow.projectile_contact_timer = 0;
-    arrow.can_apply_projectile_contact = false;
+    arrow.proj_contact_timer = 0;
+    arrow.can_apply_proj_contact = false;
     arrow.thrown_by.reset();
     arrow.thrown_immunity_timer = 0;
     arrow.vel = Vec2::New(0.0F, 0.0F);
     arrow.acc = Vec2::New(0.0F, 0.0F);
 }
 
-entities::common::ContactResolution OnEntityContactAsArrow(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
-    const entities::common::ContactContext& context,
+ents::common::ContactResult OnEntContactAsArrow(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
+    const ents::common::ContactContext& context,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
     (void)graphics;
     (void)audio;
-    if (TryCollectLooseArrowIntoHeldBow(entity_idx, other_entity_idx, state, graphics, audio)) {
+    if (TryCollectLooseArrowIntoHeldBow(ent_idx, other_ent_idx, state, graphics, audio)) {
         return {};
     }
 
-    if (entity_idx >= state.entity_manager.entities.size() ||
-        other_entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size() ||
+        other_ent_idx >= state.ents.ents.size()) {
         return {};
     }
 
-    Entity& arrow = state.entity_manager.entities[entity_idx];
-    Entity& other_entity = state.entity_manager.entities[other_entity_idx];
+    Ent& arrow = state.ents.ents[ent_idx];
+    Ent& other_ent = state.ents.ents[other_ent_idx];
 
-    const bool swept_contact = context.phase == entities::common::ContactPhase::SweptEntered;
+    const bool swept_contact = context.phase == ents::common::ContactPhase::SweptEntered;
     const bool blocked_impassable_contact =
-        context.phase == entities::common::ContactPhase::AttemptedBlocked &&
+        context.phase == ents::common::ContactPhase::AttemptedBlocked &&
         context.has_impact &&
-        other_entity.impassable;
+        other_ent.impassable;
     if ((!swept_contact && !blocked_impassable_contact) || audio == nullptr) {
         return {};
     }
 
-    if (!CanArrowHitEntity(arrow, other_entity)) {
+    if (!CanArrowHitEnt(arrow, other_ent)) {
         return {};
     }
 
@@ -419,66 +419,66 @@ entities::common::ContactResolution OnEntityContactAsArrow(
     if (arrow.collide_sound.has_value()) {
         (void)PlayWorldSoundEmitter(state, arrow.GetCenter(), *arrow.collide_sound);
     }
-    const entities::common::DamageResult damage_result = entities::common::TryHitEntity(
-        other_entity_idx,
+    const ents::common::DamageResult damage_result = ents::common::TryHitEnt(
+        other_ent_idx,
         state,
         *audio,
-        arrow.projectile_contact_damage_type,
-        arrow.projectile_contact_damage_amount,
-        entities::common::HitOptions{
+        arrow.proj_contact_damage_type,
+        arrow.proj_contact_damage_amount,
+        ents::common::HitOptions{
             .source_vid = arrow.vid,
-            .knockback = entities::common::KnockbackSpec{
+            .knockback = ents::common::KnockbackSpec{
                 .velocity = arrow.vel * kArrowImpactVelocityScale,
                 .clear_velocity = false,
                 .clear_acceleration = true,
                 .thrown_by = arrow.thrown_by,
-                .thrown_immunity_timer = entities::common::kThrownByImmunityDuration,
-                .projectile_contact_damage_type = DamageType::Attack,
-                .projectile_contact_damage_amount = 1,
-                .projectile_contact_duration = entities::common::kProjectileContactDuration,
+                .thrown_immunity_timer = ents::common::kThrownByImmunityDuration,
+                .proj_contact_damage_type = DamageType::Attack,
+                .proj_contact_damage_amount = 1,
+                .proj_contact_duration = ents::common::kProjContactDuration,
             },
         }
     );
     (void)damage_result;
     arrow.vel = impact_velocity;
-    Entity& updated_other_entity = state.entity_manager.entities[other_entity_idx];
-    if (updated_other_entity.active) {
-        StickArrowToEntity(arrow, updated_other_entity, state);
+    Ent& updated_other_ent = state.ents.ents[other_ent_idx];
+    if (updated_other_ent.active) {
+        StickArrowToEnt(arrow, updated_other_ent, state);
     } else {
-        (void)world_ops::DeactivateEntity(state, arrow.vid);
+        (void)world_ops::DeactivateEnt(state, arrow.vid);
     }
 
-    return entities::common::ContactResolution{.stop_sweep = true};
+    return ents::common::ContactResult{.stop_sweep = true};
 }
 
-entities::common::ContactResolution OnTileContactAsArrow(
-    std::size_t entity_idx,
-    const entities::common::ContactContext& context,
+ents::common::ContactResult OnTileContactAsArrow(
+    std::size_t ent_idx,
+    const ents::common::ContactContext& context,
     State& state
 ) {
-    if (context.phase != entities::common::ContactPhase::AttemptedBlocked ||
-        entity_idx >= state.entity_manager.entities.size()) {
+    if (context.phase != ents::common::ContactPhase::AttemptedBlocked ||
+        ent_idx >= state.ents.ents.size()) {
         return {};
     }
 
-    Entity& arrow = state.entity_manager.entities[entity_idx];
+    Ent& arrow = state.ents.ents[ent_idx];
     if (!arrow.active) {
         return {};
     }
 
     arrow.vel = Vec2::New(0.0F, 0.0F);
     arrow.acc = Vec2::New(0.0F, 0.0F);
-    arrow.projectile_contact_timer = 0;
-    arrow.projectile_contact_damage_amount = 0;
-    arrow.can_apply_projectile_contact = false;
+    arrow.proj_contact_timer = 0;
+    arrow.proj_contact_damage_amount = 0;
+    arrow.can_apply_proj_contact = false;
     arrow.thrown_by.reset();
     arrow.has_physics = false;
     SnapArrowPositionToPixels(arrow);
-    return entities::common::ContactResolution{.stop_sweep = true};
+    return ents::common::ContactResult{.stop_sweep = true};
 }
 
-EntityDamageEffectResult OnDamageAsArrow(
-    std::size_t entity_idx,
+EntDamageEffectResult OnDamageAsArrow(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
@@ -489,26 +489,26 @@ EntityDamageEffectResult OnDamageAsArrow(
     (void)amount;
     (void)damage_applied;
     if (damage_type != DamageType::Explosion ||
-        entity_idx >= state.entity_manager.entities.size()) {
-        return EntityDamageEffectResult::None;
+        ent_idx >= state.ents.ents.size()) {
+        return EntDamageEffectResult::None;
     }
 
-    Entity& arrow = state.entity_manager.entities[entity_idx];
+    Ent& arrow = state.ents.ents[ent_idx];
     arrow.has_physics = true;
     arrow.can_collide = true;
-    arrow.can_apply_projectile_contact = false;
-    arrow.projectile_contact_damage_type = DamageType::Attack;
-    arrow.projectile_contact_damage_amount = kArrowDamage;
-    return EntityDamageEffectResult::None;
+    arrow.can_apply_proj_contact = false;
+    arrow.proj_contact_damage_type = DamageType::Attack;
+    arrow.proj_contact_damage_amount = kArrowDamage;
+    return EntDamageEffectResult::None;
 }
 
-void OnDeathAsArrowTrap(std::size_t entity_idx, State& state, Audio& audio) {
+void OnDeathAsArrowTrap(std::size_t ent_idx, State& state, Audio& audio) {
     (void)audio;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    const Entity& trap = state.entity_manager.entities[entity_idx];
+    const Ent& trap = state.ents.ents[ent_idx];
     if (HasFired(trap)) {
         return;
     }
@@ -517,8 +517,8 @@ void OnDeathAsArrowTrap(std::size_t entity_idx, State& state, Audio& audio) {
 
 } // namespace
 
-extern const EntityArchetype kArrowTrapArchetype{
-    .type_ = EntityType::ArrowTrap,
+extern const EntSpec kArrowTrapSpec{
+    .type_ = EntType::ArrowTrap,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -530,18 +530,18 @@ extern const EntityArchetype kArrowTrapArchetype{
     .vanish_on_death = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::ExplosionOnly,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::ExplosionOnly,
     .on_death = OnDeathAsArrowTrap,
-    .step_logic = StepEntityLogicAsArrowTrap,
+    .step_logic = StepEntLogicAsArrowTrap,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::ArrowTrap),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::ArrowTrap),
 };
 
-extern const EntityArchetype kArrowArchetype{
-    .type_ = EntityType::Arrow,
+extern const EntSpec kArrowSpec{
+    .type_ = EntType::Arrow,
     .size = Vec2::New(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
@@ -553,19 +553,19 @@ extern const EntityArchetype kArrowArchetype{
     .can_be_stunned = false,
     .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::CrushingOnly,
-    .projectile_contact_damage_amount = kArrowDamage,
-    .can_apply_projectile_contact = false,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::CrushingOnly,
+    .proj_contact_damage_amount = kArrowDamage,
+    .can_apply_proj_contact = false,
     .collide_sound = audio_asset_ids::Thud,
     .on_damage = OnDamageAsArrow,
-    .step_logic = StepEntityLogicAsArrow,
-    .on_entity_contact = OnEntityContactAsArrow,
+    .step_logic = StepEntLogicAsArrow,
+    .on_ent_contact = OnEntContactAsArrow,
     .on_tile_contact = OnTileContactAsArrow,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Arrow),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Arrow),
 };
 
-} // namespace splonks::entities::arrow_trap
+} // namespace splonks::ents::arrow_trap

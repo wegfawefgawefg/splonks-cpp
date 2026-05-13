@@ -6,6 +6,6 @@
 
 namespace splonks::stage_gen::cave {
 
-std::vector<std::vector<TemplateTile>> GetRoomTemplate(RoomType room_type);
+std::vector<std::vector<MetaTile>> GetRoomTemplate(RoomType room_type);
 
 } // namespace splonks::stage_gen::cave

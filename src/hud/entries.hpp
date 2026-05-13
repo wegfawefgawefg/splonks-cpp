@@ -6,10 +6,10 @@
 
 namespace splonks {
 
-struct Entity;
+struct Ent;
 struct State;
 
-std::vector<HudEntry> BuildEffectHudEntries(const State& state, const Entity& player);
-std::vector<HudEntry> BuildEquipmentHudEntries(const State& state, const Entity& player);
+std::vector<HudEntry> BuildEffectHudEntries(const State& state, const Ent& player);
+std::vector<HudEntry> BuildEquipmentHudEntries(const State& state, const Ent& player);
 
 } // namespace splonks

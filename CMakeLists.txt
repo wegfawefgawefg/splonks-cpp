@@ -140,7 +140,7 @@ add_executable(splonks-cpp
     src/debug/playback_snapshot_state.cpp
     src/debug/control_server.cpp
     src/debug/playback_ui_common.cpp
-    src/debug/playback_ui_entities.cpp
+    src/debug/playback_ui_ents.cpp
     src/debug/playback_ui_menu.cpp
     src/debug/playback_ui_network.cpp
     src/debug/playback_ui_settings.cpp
@@ -154,121 +154,121 @@ add_executable(splonks-cpp
     src/debug/shop_test_stage.cpp
     src/direction.cpp
     src/effects.cpp
-    src/effects/archetypes.cpp
+    src/effects/specs.cpp
     src/effects/render.cpp
     src/effects/treasure_pickup.cpp
-    src/entity.cpp
-    src/entity_tool_inventory.cpp
-    src/entity/archetype.cpp
-    src/entity/archetype_restore.cpp
-    src/entity/archetype_registry.cpp
-    src/entity/display_states.cpp
-    src/entity/manager.cpp
-    src/entities/altar.cpp
-    src/entities/arrow_trap.cpp
-    src/entities/ball_and_chain.cpp
-    src/entities/baseball_bat.cpp
-    src/entities/basic_exit.cpp
-    src/entities/bat.cpp
-    src/entities/block.cpp
-    src/entities/boulder.cpp
-    src/entities/bomb.cpp
-    src/entities/bow.cpp
-    src/entities/box.cpp
-    src/entities/caveman.cpp
-    src/entities/chest.cpp
-    src/entities/cobra.cpp
-    src/entities/craps_table.cpp
-    src/entities/debug_moving_light.cpp
-    src/entities/jaws.cpp
-    src/entities/crystal_skull.cpp
-    src/entities/bones.cpp
-    src/entities/trap_block.cpp
-    src/entities/ceiling_trap.cpp
-    src/entities/tomb_lord.cpp
-    src/entities/door.cpp
-    src/entities/entrance.cpp
-    src/entities/ankh.cpp
-    src/entities/crown.cpp
-    src/entities/xoc_block.cpp
-    src/entities/moai.cpp
-    src/entities/yeti.cpp
-    src/entities/alien_ship.cpp
-    src/entities/alien_boss.cpp
-    src/entities/barrier_emitter.cpp
-    src/entities/thwomp_trap.cpp
-    src/entities/lamp.cpp
-    src/entities/mantrap.cpp
-    src/entities/frog.cpp
-    src/entities/monkey.cpp
-    src/entities/piranha.cpp
-    src/entities/zombie.cpp
-    src/entities/vampire.cpp
-    src/entities/ufo.cpp
-    src/entities/hawkman.cpp
-    src/entities/skeleton.cpp
-    src/entities/common/contact_damage.cpp
-    src/entities/common/damage.cpp
-    src/entities/common/explosion.cpp
-    src/entities/common/frame.cpp
-    src/entities/common/ground_walker.cpp
-    src/entities/common/hang.cpp
-    src/entities/common/knockback.cpp
-    src/entities/common/physics.cpp
-    src/entities/common/blocking_contact.cpp
-    src/entities/common/entity_contact.cpp
-    src/entities/common/tile_contact.cpp
-    src/entities/common/step.cpp
-    src/entities/common/collect.cpp
-    src/entities/common/stomp.cpp
-    src/entities/common/push.cpp
-    src/entities/common/carry.cpp
-    src/entities/common/throw.cpp
-    src/entities/common/tool_use.cpp
-    src/entities/damsel.cpp
-    src/entities/dvdlogo.cpp
-    src/entities/dice.cpp
-    src/entities/emerald_big.cpp
-    src/entities/flappy_bee.cpp
-    src/entities/flesh_guy.cpp
-    src/entities/gear_items.cpp
-    src/entities/ghost_ball.cpp
-    src/entities/pot.cpp
-    src/entities/giant_tiki_head.cpp
-    src/entities/gold_idol.cpp
-    src/entities/jetpack.cpp
-    src/entities/kali_head.cpp
-    src/entities/lantern.cpp
-    src/entities/machete.cpp
-    src/entities/mattock.cpp
-    src/entities/meathead.cpp
-    src/entities/none_archetype.cpp
-    src/entities/money.cpp
-    src/entities/moving_platform.cpp
-    src/entities/mouse_trailer.cpp
-    src/entities/player.cpp
-    src/entities/rock.cpp
-    src/entities/rope.cpp
-    src/entities/ruby_big.cpp
-    src/entities/sac_altar.cpp
-    src/entities/sac_altar_topper.cpp
-    src/entities/scarab.cpp
-    src/entities/shotgun.cpp
-    src/entities/shop.cpp
-    src/entities/shop_tile_triggers.cpp
-    src/entities/shopkeeper.cpp
-    src/entities/sign.cpp
-    src/entities/sapphire_big.cpp
-    src/entities/snake.cpp
-    src/entities/spider.cpp
-    src/entities/spider_hang.cpp
-    src/entities/stomp_pad.cpp
-    src/entities/store_light.cpp
-    src/entities/teleporter.cpp
-    src/entities/web_cannon.cpp
-    src/entities/pistol.cpp
-    src/frame_data_animator.cpp
-    src/frame_data.cpp
+    src/ent.cpp
+    src/ent_tool_inventory.cpp
+    src/ent/spec.cpp
+    src/ent/spec_restore.cpp
+    src/ent/spec_registry.cpp
+    src/ent/display_states.cpp
+    src/ent/manager.cpp
+    src/ents/altar.cpp
+    src/ents/arrow_trap.cpp
+    src/ents/ball_and_chain.cpp
+    src/ents/baseball_bat.cpp
+    src/ents/basic_exit.cpp
+    src/ents/bat.cpp
+    src/ents/block.cpp
+    src/ents/boulder.cpp
+    src/ents/bomb.cpp
+    src/ents/bow.cpp
+    src/ents/box.cpp
+    src/ents/caveman.cpp
+    src/ents/chest.cpp
+    src/ents/cobra.cpp
+    src/ents/craps_table.cpp
+    src/ents/debug_moving_light.cpp
+    src/ents/jaws.cpp
+    src/ents/crystal_skull.cpp
+    src/ents/bones.cpp
+    src/ents/trap_block.cpp
+    src/ents/ceiling_trap.cpp
+    src/ents/tomb_lord.cpp
+    src/ents/door.cpp
+    src/ents/entrance.cpp
+    src/ents/ankh.cpp
+    src/ents/crown.cpp
+    src/ents/xoc_block.cpp
+    src/ents/moai.cpp
+    src/ents/yeti.cpp
+    src/ents/alien_ship.cpp
+    src/ents/alien_boss.cpp
+    src/ents/barrier_emitter.cpp
+    src/ents/thwomp_trap.cpp
+    src/ents/lamp.cpp
+    src/ents/mantrap.cpp
+    src/ents/frog.cpp
+    src/ents/monkey.cpp
+    src/ents/piranha.cpp
+    src/ents/zombie.cpp
+    src/ents/vampire.cpp
+    src/ents/ufo.cpp
+    src/ents/hawkman.cpp
+    src/ents/skeleton.cpp
+    src/ents/common/contact_damage.cpp
+    src/ents/common/damage.cpp
+    src/ents/common/explosion.cpp
+    src/ents/common/frame.cpp
+    src/ents/common/ground_walker.cpp
+    src/ents/common/hang.cpp
+    src/ents/common/knockback.cpp
+    src/ents/common/physics.cpp
+    src/ents/common/blocking_contact.cpp
+    src/ents/common/ent_contact.cpp
+    src/ents/common/tile_contact.cpp
+    src/ents/common/step.cpp
+    src/ents/common/collect.cpp
+    src/ents/common/stomp.cpp
+    src/ents/common/push.cpp
+    src/ents/common/carry.cpp
+    src/ents/common/throw.cpp
+    src/ents/common/tool_use.cpp
+    src/ents/damsel.cpp
+    src/ents/dvdlogo.cpp
+    src/ents/dice.cpp
+    src/ents/emerald_big.cpp
+    src/ents/flappy_bee.cpp
+    src/ents/flesh_guy.cpp
+    src/ents/gear_items.cpp
+    src/ents/ghost_ball.cpp
+    src/ents/pot.cpp
+    src/ents/giant_tiki_head.cpp
+    src/ents/gold_idol.cpp
+    src/ents/jetpack.cpp
+    src/ents/kali_head.cpp
+    src/ents/lantern.cpp
+    src/ents/machete.cpp
+    src/ents/mattock.cpp
+    src/ents/meathead.cpp
+    src/ents/none_spec.cpp
+    src/ents/money.cpp
+    src/ents/moving_platform.cpp
+    src/ents/mouse_trailer.cpp
+    src/ents/player.cpp
+    src/ents/rock.cpp
+    src/ents/rope.cpp
+    src/ents/ruby_big.cpp
+    src/ents/sac_altar.cpp
+    src/ents/sac_altar_topper.cpp
+    src/ents/scarab.cpp
+    src/ents/shotgun.cpp
+    src/ents/shop.cpp
+    src/ents/shop_tile_triggers.cpp
+    src/ents/shopkeeper.cpp
+    src/ents/sign.cpp
+    src/ents/sapphire_big.cpp
+    src/ents/snake.cpp
+    src/ents/spider.cpp
+    src/ents/spider_hang.cpp
+    src/ents/stomp_pad.cpp
+    src/ents/store_light.cpp
+    src/ents/teleporter.cpp
+    src/ents/web_cannon.cpp
+    src/ents/pistol.cpp
+    src/aframe_animator.cpp
+    src/aframe.cpp
     src/graphics.cpp
     src/hitscan.cpp
     src/imgui_layer.cpp
@@ -282,7 +282,7 @@ add_executable(splonks-cpp
     src/menu/video.cpp
     src/network/input_lockstep.cpp
     src/network/net_fuzzer.cpp
-    src/network/net_entity_links.cpp
+    src/network/net_ent_links.cpp
     src/network/net_lobby.cpp
     src/network/net_lobby_endpoint.cpp
     src/network/net_lobby_input_lockstep.cpp
@@ -299,7 +299,7 @@ add_executable(splonks-cpp
     src/network/net_transport.cpp
     src/on_damage_effects.cpp
     src/player_registry.cpp
-    src/presentation_commands.cpp
+    src/pres_commands.cpp
     src/room.cpp
     src/render/render.cpp
     src/render/camera.cpp
@@ -315,11 +315,11 @@ add_executable(splonks-cpp
     src/render/debug.cpp
     src/render/debug_lighting.cpp
     src/render/stone_overlay.cpp
-    src/render/tiles_and_entities.cpp
+    src/render/tiles_and_ents.cpp
     src/render/ui.cpp
     src/render/world_texture.cpp
     src/raw_audio_asset.cpp
-    src/raw_frame_data.cpp
+    src/raw_aframe.cpp
     src/quest.cpp
     src/quest_glyphs.cpp
     src/quest_parse_utils.cpp
@@ -337,7 +337,7 @@ add_executable(splonks-cpp
     src/stage_tile_triggers.cpp
     src/state_fingerprint.cpp
     src/water.cpp
-    src/world_ops/entity.cpp
+    src/world_ops/ent.cpp
     src/world_ops/tile.cpp
     src/stage_gen/cave.cpp
     src/stage_gen/classic/ambient_passes.cpp
@@ -357,22 +357,22 @@ add_executable(splonks-cpp
     src/stage_progression.cpp
     src/state.cpp
     src/step.cpp
-    src/step_entities.cpp
+    src/step_ents.cpp
     src/text.cpp
     src/world_query.cpp
-    src/tools/tool_archetype.cpp
+    src/tools/tool_spec.cpp
     src/tools/throw_bomb.cpp
     src/tools/throw_pot.cpp
     src/tools/throw_rope.cpp
     src/stage_lighting.cpp
-    src/particles/particle_archetypes.cpp
+    src/particles/particle_specs.cpp
     src/particles/ribbon_particle.cpp
     src/particles/scripted_particle.cpp
     src/particles/segmented_sprite_particle.cpp
     src/particles/sprite_particle.cpp
     src/particles/system.cpp
     src/tile.cpp
-    src/tile_archetype.cpp
+    src/tile_spec.cpp
     src/tile_contact_data.cpp
     src/tile_source_data.cpp
     src/utils.cpp

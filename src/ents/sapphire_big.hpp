@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::sapphire_big {
+namespace splonks::ents::sapphire_big {
 
-extern const EntityArchetype kSapphireBigArchetype;
+extern const EntSpec kSapphireBigSpec;
 
-} // namespace splonks::entities::sapphire_big
+} // namespace splonks::ents::sapphire_big

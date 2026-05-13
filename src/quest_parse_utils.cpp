@@ -126,13 +126,13 @@ std::string StripQuotes(const std::string& value) {
     return trimmed;
 }
 
-EntityType ParseEntityTypeOrThrow(const std::string& value, const std::string& path, int line_number) {
-    const std::optional<EntityType> entity_type = EntityTypeFromContentName(value);
-    if (!entity_type.has_value()) {
+EntType ParseEntTypeOrThrow(const std::string& value, const std::string& path, int line_number) {
+    const std::optional<EntType> ent_type = EntTypeFromContentName(value);
+    if (!ent_type.has_value()) {
         throw std::runtime_error(path + ":" + std::to_string(line_number) +
-                                 ": unknown entity type: " + value);
+                                 ": unknown ent type: " + value);
     }
-    return *entity_type;
+    return *ent_type;
 }
 
 Tile ParseTileOrThrow(const std::string& value, const std::string& path, int line_number) {

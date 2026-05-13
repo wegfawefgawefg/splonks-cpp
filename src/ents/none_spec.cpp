@@ -1,11 +1,11 @@
-#include "entities/none_archetype.hpp"
+#include "ents/none_spec.hpp"
 
-#include "entity/core_types.hpp"
+#include "ent/core_types.hpp"
 
 namespace splonks {
 
-const EntityArchetype kNoneArchetype{
-    .type_ = EntityType::None,
+const EntSpec kNoneSpec{
+    .type_ = EntType::None,
     .has_physics = false,
     .can_collide = false,
 };

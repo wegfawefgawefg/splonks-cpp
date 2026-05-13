@@ -35,13 +35,13 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
 
         if (const std::optional<JoinRequestPacket> request =
                 TryDecodeJoinRequest(packet->bytes.data(), packet->size)) {
-            HandleJoinRequestAsCoordinator(state, graphics, transport, *packet, *request);
+            HandleJoinRequestAsHost(state, graphics, transport, *packet, *request);
             continue;
         }
 
         if (const std::optional<LeaveNoticePacket> leave =
                 TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {
-            HandleLeaveNoticeAsCoordinator(state, transport, *leave);
+            HandleLeaveNoticeAsHost(state, transport, *leave);
             continue;
         }
 
@@ -77,7 +77,7 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
 
         if (const std::optional<LeaveNoticePacket> leave =
                 TryDecodeLeaveNotice(packet->bytes.data(), packet->size)) {
-            HandleLeaveNoticeAsCoordinator(state, transport, *leave);
+            HandleLeaveNoticeAsHost(state, transport, *leave);
             continue;
         }
 

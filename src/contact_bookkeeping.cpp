@@ -4,40 +4,40 @@ namespace splonks {
 
 namespace {
 
-EntityContactDispatchEntry NormalizeEntityContactDispatchEntry(
+EntContactDispatchEntry NormalizeEntContactDispatchEntry(
     const VID& first_vid,
     const VID& second_vid
 ) {
     if (first_vid.id < second_vid.id) {
-        return EntityContactDispatchEntry{
+        return EntContactDispatchEntry{
             .first_vid = first_vid,
             .second_vid = second_vid,
         };
     }
     if (first_vid.id > second_vid.id) {
-        return EntityContactDispatchEntry{
+        return EntContactDispatchEntry{
             .first_vid = second_vid,
             .second_vid = first_vid,
         };
     }
     if (first_vid.version <= second_vid.version) {
-        return EntityContactDispatchEntry{
+        return EntContactDispatchEntry{
             .first_vid = first_vid,
             .second_vid = second_vid,
         };
     }
-    return EntityContactDispatchEntry{
+    return EntContactDispatchEntry{
         .first_vid = second_vid,
         .second_vid = first_vid,
     };
 }
 
-ProjectileBodyImpactCooldownEntry MakeProjectileBodyImpactCooldownEntry(
+ProjBodyImpactCooldownEntry MakeProjBodyImpactCooldownEntry(
     const VID& source_vid,
     const VID& target_vid,
     std::uint32_t expires_on_stage_frame
 ) {
-    return ProjectileBodyImpactCooldownEntry{
+    return ProjBodyImpactCooldownEntry{
         .first_vid = source_vid,
         .second_vid = target_vid,
         .expires_on_stage_frame = expires_on_stage_frame,
@@ -46,17 +46,17 @@ ProjectileBodyImpactCooldownEntry MakeProjectileBodyImpactCooldownEntry(
 
 } // namespace
 
-void ContactBookkeeping::ClearEntityContactDispatchesThisTick() {
-    entity_contact_dispatches_this_tick.clear();
+void ContactBookkeeping::ClearEntContactDispatchesThisTick() {
+    ent_contact_dispatches_this_tick.clear();
 }
 
-bool ContactBookkeeping::HasEntityContactPairDispatchedThisTick(
+bool ContactBookkeeping::HasEntContactPairDispatchedThisTick(
     const VID& first_vid,
     const VID& second_vid
 ) const {
-    const EntityContactDispatchEntry normalized =
-        NormalizeEntityContactDispatchEntry(first_vid, second_vid);
-    for (const EntityContactDispatchEntry& entry : entity_contact_dispatches_this_tick) {
+    const EntContactDispatchEntry normalized =
+        NormalizeEntContactDispatchEntry(first_vid, second_vid);
+    for (const EntContactDispatchEntry& entry : ent_contact_dispatches_this_tick) {
         if (entry.first_vid == normalized.first_vid && entry.second_vid == normalized.second_vid) {
             return true;
         }
@@ -64,16 +64,16 @@ bool ContactBookkeeping::HasEntityContactPairDispatchedThisTick(
     return false;
 }
 
-void ContactBookkeeping::RecordEntityContactPairDispatchedThisTick(
+void ContactBookkeeping::RecordEntContactPairDispatchedThisTick(
     const VID& first_vid,
     const VID& second_vid
 ) {
-    const EntityContactDispatchEntry normalized =
-        NormalizeEntityContactDispatchEntry(first_vid, second_vid);
-    if (HasEntityContactPairDispatchedThisTick(normalized.first_vid, normalized.second_vid)) {
+    const EntContactDispatchEntry normalized =
+        NormalizeEntContactDispatchEntry(first_vid, second_vid);
+    if (HasEntContactPairDispatchedThisTick(normalized.first_vid, normalized.second_vid)) {
         return;
     }
-    entity_contact_dispatches_this_tick.push_back(normalized);
+    ent_contact_dispatches_this_tick.push_back(normalized);
 }
 
 void ContactBookkeeping::StepContactCooldowns(std::uint32_t stage_frame) {
@@ -165,24 +165,24 @@ void ContactBookkeeping::AddInteractionCooldown(
     });
 }
 
-void ContactBookkeeping::StepProjectileBodyImpactCooldowns(std::uint32_t stage_frame) {
-    std::vector<ProjectileBodyImpactCooldownEntry> kept_cooldowns;
-    kept_cooldowns.reserve(projectile_body_impact_cooldowns.size());
-    for (const ProjectileBodyImpactCooldownEntry& entry : projectile_body_impact_cooldowns) {
+void ContactBookkeeping::StepProjBodyImpactCooldowns(std::uint32_t stage_frame) {
+    std::vector<ProjBodyImpactCooldownEntry> kept_cooldowns;
+    kept_cooldowns.reserve(proj_body_impact_cooldowns.size());
+    for (const ProjBodyImpactCooldownEntry& entry : proj_body_impact_cooldowns) {
         if (entry.expires_on_stage_frame > stage_frame) {
             kept_cooldowns.push_back(entry);
         }
     }
-    projectile_body_impact_cooldowns = std::move(kept_cooldowns);
+    proj_body_impact_cooldowns = std::move(kept_cooldowns);
 }
 
-bool ContactBookkeeping::HasProjectileBodyImpactCooldown(
+bool ContactBookkeeping::HasProjBodyImpactCooldown(
     const VID& first_vid,
     const VID& second_vid
 ) const {
-    const ProjectileBodyImpactCooldownEntry ordered =
-        MakeProjectileBodyImpactCooldownEntry(first_vid, second_vid, 0);
-    for (const ProjectileBodyImpactCooldownEntry& entry : projectile_body_impact_cooldowns) {
+    const ProjBodyImpactCooldownEntry ordered =
+        MakeProjBodyImpactCooldownEntry(first_vid, second_vid, 0);
+    for (const ProjBodyImpactCooldownEntry& entry : proj_body_impact_cooldowns) {
         if (entry.first_vid == ordered.first_vid && entry.second_vid == ordered.second_vid) {
             return true;
         }
@@ -190,21 +190,21 @@ bool ContactBookkeeping::HasProjectileBodyImpactCooldown(
     return false;
 }
 
-void ContactBookkeeping::AddProjectileBodyImpactCooldown(
+void ContactBookkeeping::AddProjBodyImpactCooldown(
     const VID& first_vid,
     const VID& second_vid,
     std::uint32_t stage_frame,
     std::uint32_t duration
 ) {
-    const ProjectileBodyImpactCooldownEntry ordered =
-        MakeProjectileBodyImpactCooldownEntry(first_vid, second_vid, stage_frame + duration);
-    for (ProjectileBodyImpactCooldownEntry& entry : projectile_body_impact_cooldowns) {
+    const ProjBodyImpactCooldownEntry ordered =
+        MakeProjBodyImpactCooldownEntry(first_vid, second_vid, stage_frame + duration);
+    for (ProjBodyImpactCooldownEntry& entry : proj_body_impact_cooldowns) {
         if (entry.first_vid == ordered.first_vid && entry.second_vid == ordered.second_vid) {
             entry.expires_on_stage_frame = ordered.expires_on_stage_frame;
             return;
         }
     }
-    projectile_body_impact_cooldowns.push_back(ordered);
+    proj_body_impact_cooldowns.push_back(ordered);
 }
 
 } // namespace splonks

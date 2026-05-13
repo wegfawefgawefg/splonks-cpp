@@ -1,8 +1,8 @@
 #include "effects/treasure_pickup.hpp"
 
-#include "entity.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "particles/lighting_mode.hpp"
 #include "particles/sprite_particle.hpp"
 #include "stage_lighting.hpp"
@@ -13,15 +13,15 @@
 
 namespace splonks::effects {
 
-void SpawnTreasurePickupSparkles(const Entity& pickup, State& state, Color3 color, int count) {
+void SpawnTreasurePickupSparkles(const Ent& pickup, State& state, Color3 color, int count) {
     const Vec2 center = pickup.GetCenter();
     const int particle_count = std::clamp(count, 1, 12);
     for (int i = 0; i < particle_count; ++i) {
         SpriteParticle particle{};
-        particle.frame_data_animator = FrameDataAnimator::New(
-            rng::RandomIntInclusive(0, 1) == 0 ? frame_data_ids::Sparkle : frame_data_ids::Glint
+        particle.aframe_animator = AFrameAnimator::New(
+            rng::RandomIntInclusive(0, 1) == 0 ? aframe_ids::Sparkle : aframe_ids::Glint
         );
-        particle.frame_data_animator.loop = false;
+        particle.aframe_animator.loop = false;
         particle.draw_layer = DrawLayer::Foreground;
         particle.lighting_mode = ParticleLightingMode::Emissive;
         particle.counter = static_cast<std::uint32_t>(rng::RandomIntInclusive(12, 22));

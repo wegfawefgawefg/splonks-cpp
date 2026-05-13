@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "player_id.hpp"
 #include "state.hpp"
 
@@ -11,10 +11,10 @@ namespace splonks {
 
 struct PlayerStageCarryover {
     PlayerId player_id = kInvalidPlayerId;
-    std::optional<Entity> player;
-    std::optional<Entity> held_item;
-    std::optional<Entity> back_item;
-    std::optional<EntityToolState> player_tools;
+    std::optional<Ent> player;
+    std::optional<Ent> held_item;
+    std::optional<Ent> back_item;
+    std::optional<EntToolState> player_tools;
 };
 
 struct StageCarryover {
@@ -31,8 +31,8 @@ void SnapAttachedItemsToPlayer(State& state);
 void SpawnPlayer(State& state, const Vec2& pos);
 std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos);
 
-std::optional<VID> SpawnStageEntityAtTopLeft(State& state, EntityType type_, const Vec2& pos);
-std::optional<VID> SpawnStageEntityAtCenter(State& state, EntityType type_, const Vec2& center);
-void SpawnAuthoredStageEntities(State& state);
+std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec2& pos);
+std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2& center);
+void SpawnAuthoredStageEnts(State& state);
 
 } // namespace splonks

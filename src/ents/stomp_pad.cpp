@@ -1,13 +1,13 @@
-#include "entities/stomp_pad.hpp"
+#include "ents/stomp_pad.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 
-namespace splonks::entities::stomp_pad {
+namespace splonks::ents::stomp_pad {
 
-extern const EntityArchetype kStompPadArchetype{
-    .type_ = EntityType::StompPad,
+extern const EntSpec kStompPadSpec{
+    .type_ = EntType::StompPad,
     .size = Vec2::New(8.0F, 7.0F),
     .health = 1000,
     .has_physics = false,
@@ -17,12 +17,12 @@ extern const EntityArchetype kStompPadArchetype{
     .hurt_on_contact = true,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Pot),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Pot),
 };
 
-} // namespace splonks::entities::stomp_pad
+} // namespace splonks::ents::stomp_pad

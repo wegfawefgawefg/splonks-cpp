@@ -1,17 +1,17 @@
-#include "entities/meathead.hpp"
+#include "ents/meathead.hpp"
 
 #include "audio_emitters.hpp"
-#include "entities/common/common.hpp"
-#include "entity/archetype.hpp"
-#include "frame_data_id.hpp"
-#include "particles/particle_archetypes.hpp"
-#include "tile_archetype.hpp"
+#include "ents/common/common.hpp"
+#include "ent/spec.hpp"
+#include "aframe_id.hpp"
+#include "particles/particle_specs.hpp"
+#include "tile_spec.hpp"
 #include "utils.hpp"
 #include "world_query.hpp"
 
 #include <vector>
 
-namespace splonks::entities::meathead {
+namespace splonks::ents::meathead {
 
 namespace {
 
@@ -21,35 +21,35 @@ constexpr float kMeatheadPickupRange = 16.0F;
 constexpr float kMeatheadPopupSize = 9.0F;
 constexpr int kMeatheadPopupSearchTiles = 2;
 
-common::ContactResolution OnEntityContactAsMeathead(
-    std::size_t entity_idx,
-    std::size_t other_entity_idx,
+common::ContactResult OnEntContactAsMeathead(
+    std::size_t ent_idx,
+    std::size_t other_ent_idx,
     const common::ContactContext&,
     State& state,
     const Graphics* graphics,
     Audio* audio
 ) {
     if (graphics == nullptr || audio == nullptr ||
-        !common::CanCollectPickupFromContact(entity_idx, other_entity_idx, state)) {
-        return common::ContactResolution{};
+        !common::CanCollectPickupFromContact(ent_idx, other_ent_idx, state)) {
+        return common::ContactResult{};
     }
-    Entity& collector = state.entity_manager.entities[other_entity_idx];
-    const Entity& pickup = state.entity_manager.entities[entity_idx];
+    Ent& collector = state.ents.ents[other_ent_idx];
+    const Ent& pickup = state.ents.ents[ent_idx];
     if (!TryCollectInventoryPickup(state, collector, pickup)) {
-        return common::ContactResolution{};
+        return common::ContactResult{};
     }
 
-    (void)PlayEntityCenterSoundEmitter(state, pickup, audio_asset_ids::Present);
-    common::DeactivateCollectedPickup(entity_idx, state, *graphics);
-    return common::ContactResolution{};
+    (void)PlayEntCenterSoundEmitter(state, pickup, audio_asset_ids::Present);
+    common::DeactivateCollectedPickup(ent_idx, state, *graphics);
+    return common::ContactResult{};
 }
 
 bool IsSolidTileAt(const Stage& stage, const IVec2& tile_pos) {
     const std::optional<WorldTileQueryResult> query = QueryTileAtTilePos(stage, tile_pos);
-    return query.has_value() && query->tile != nullptr && GetTileArchetype(*query->tile).solid;
+    return query.has_value() && query->tile != nullptr && GetTileSpec(*query->tile).solid;
 }
 
-std::optional<Vec2> FindMeatheadPopupCenter(const Entity& player, const State& state) {
+std::optional<Vec2> FindMeatheadPopupCenter(const Ent& player, const State& state) {
     if (!player.grounded) {
         return std::nullopt;
     }
@@ -80,16 +80,16 @@ std::optional<Vec2> FindMeatheadPopupCenter(const Entity& player, const State& s
     return Vec2::New(center_x, support_top_y - (kMeatheadPopupSize * 0.5F));
 }
 
-std::optional<Vec2> SpawnMeatheadPopup(State& state, const Entity& player) {
+std::optional<Vec2> SpawnMeatheadPopup(State& state, const Ent& player) {
     const std::optional<Vec2> popup_center = FindMeatheadPopupCenter(player, state);
     if (!popup_center.has_value()) {
         return std::nullopt;
     }
-    state.particles.AddScripted(scripted_particle_archetype_ids::MeatheadPopup, *popup_center, rng::RandomIntInclusive(0, 1) == 1);
+    state.particles.AddScripted(scripted_particle_spec_ids::MeatheadPopup, *popup_center, rng::RandomIntInclusive(0, 1) == 1);
     return popup_center;
 }
 
-void PlayMeatheadHealFeedback(State& state, const Entity& player) {
+void PlayMeatheadHealFeedback(State& state, const Ent& player) {
     const std::optional<Vec2> popup_center = SpawnMeatheadPopup(state, player);
     const Vec2 sound_pos = popup_center.value_or(player.GetCenter());
     (void)PlayWorldSoundEmitter(state, sound_pos, audio_asset_ids::Present);
@@ -103,7 +103,7 @@ AABB ExpandAabb(const AABB& aabb, float amount) {
     );
 }
 
-void AddMeatheadDebugAnnotations(const Entity& player, State& state) {
+void AddMeatheadDebugAnnotations(const Ent& player, State& state) {
     if (!state.debug_overlay.show_debug_annotations) {
         return;
     }
@@ -120,18 +120,18 @@ void AddMeatheadDebugAnnotations(const Entity& player, State& state) {
     });
 }
 
-void BecomeCollectible(Entity& meathead) {
+void BecomeCollectible(Ent& meathead) {
     meathead.can_collide = true;
     meathead.can_be_hit = true;
     meathead.render_enabled = true;
-    meathead.frame_data_animator.SetAnimation(frame_data_ids::Meathead);
-    meathead.frame_data_animator.loop = true;
-    meathead.frame_data_animator.animate = true;
-    meathead.frame_data_animator.finished = false;
+    meathead.aframe_animator.SetAnim(aframe_ids::Meathead);
+    meathead.aframe_animator.loop = true;
+    meathead.aframe_animator.animate = true;
+    meathead.aframe_animator.finished = false;
 }
 
-void StepEntityLogicAsMeathead(
-    std::size_t entity_idx,
+void StepEntLogicAsMeathead(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -140,11 +140,11 @@ void StepEntityLogicAsMeathead(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& meathead = state.entity_manager.entities[entity_idx];
+    Ent& meathead = state.ents.ents[ent_idx];
     if (!meathead.active) {
         return;
     }
@@ -152,15 +152,15 @@ void StepEntityLogicAsMeathead(
     meathead.vel = Vec2::New(0.0F, 0.0F);
     meathead.acc = Vec2::New(0.0F, 0.0F);
 
-    if (meathead.frame_data_animator.animation_id == frame_data_ids::MeatheadRise &&
-        meathead.frame_data_animator.IsFinished()) {
+    if (meathead.aframe_animator.anim_id == aframe_ids::MeatheadRise &&
+        meathead.aframe_animator.IsFinished()) {
         BecomeCollectible(meathead);
     }
 }
 
 } // namespace
 
-void MaybePreviewMeatheadPassive(const Entity& player, State& state) {
+void MaybePreviewMeatheadPassive(const Ent& player, State& state) {
     if (!HasEffect(player, EffectId::Meathead)) {
         return;
     }
@@ -174,7 +174,7 @@ void MaybePreviewMeatheadPassive(const Entity& player, State& state) {
 }
 
 void OnMeatheadEffectHook(
-    Entity& owner,
+    Ent& owner,
     EffectInstance& effect,
     State& state,
     Audio* audio,
@@ -185,11 +185,11 @@ void OnMeatheadEffectHook(
         return;
     }
 
-    const Entity* const victim = state.entity_manager.GetEntity(*hook.target_vid);
-    if (victim == nullptr || !victim->active || victim->condition != EntityCondition::Dead) {
+    const Ent* const victim = state.ents.GetEnt(*hook.target_vid);
+    if (victim == nullptr || !victim->active || victim->condition != EntCondition::Dead) {
         return;
     }
-    if (!owner.active || owner.condition == EntityCondition::Dead) {
+    if (!owner.active || owner.condition == EntCondition::Dead) {
         return;
     }
 
@@ -210,8 +210,8 @@ void OnMeatheadEffectHook(
     }
 }
 
-extern const EntityArchetype kMeatheadArchetype{
-    .type_ = EntityType::Meathead,
+extern const EntSpec kMeatheadSpec{
+    .type_ = EntType::Meathead,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -222,15 +222,15 @@ extern const EntityArchetype kMeatheadArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .pickup_effect = EffectId::Meathead,
-    .step_logic = StepEntityLogicAsMeathead,
-    .on_entity_contact = OnEntityContactAsMeathead,
+    .step_logic = StepEntLogicAsMeathead,
+    .on_ent_contact = OnEntContactAsMeathead,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::MeatheadRise),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::MeatheadRise),
 };
 
-} // namespace splonks::entities::meathead
+} // namespace splonks::ents::meathead

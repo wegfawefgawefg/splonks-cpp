@@ -3,18 +3,18 @@
 #include "audio.hpp"
 #include "audio_acoustics.hpp"
 #include "audio_emitters.hpp"
-#include "entity/archetype.hpp"
-#include "entity.hpp"
-#include "entities/common/common.hpp"
+#include "ent/spec.hpp"
+#include "ent.hpp"
+#include "ents/common/common.hpp"
 #include "graphics.hpp"
 #include "render/debug_lighting.hpp"
 #include "stage_acoustics.hpp"
 #include "state.hpp"
 #include "text.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_query.hpp"
-#include "entities/shop.hpp"
+#include "ents/shop.hpp"
 
 #include <algorithm>
 #include <array>
@@ -32,13 +32,13 @@ struct VisibleWorldRect {
     Vec2 br;
 };
 
-SDL_FRect GetDebugPresentationRect(SDL_Renderer* renderer, const Graphics& graphics) {
+SDL_FRect GetDebugPresRect(SDL_Renderer* renderer, const Graphics& graphics) {
     int output_width = static_cast<int>(graphics.window_dims.x);
     int output_height = static_cast<int>(graphics.window_dims.y);
     if (graphics.fullscreen) {
         SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
     }
-    return GetPresentationRect(graphics, output_width, output_height);
+    return GetPresRect(graphics, output_width, output_height);
 }
 
 VisibleWorldRect GetVisibleWorldRect(const Graphics& graphics) {
@@ -86,11 +86,11 @@ std::vector<Vec2> GetVisibleWrappedRenderOffsets(const Stage& stage, const Graph
 
 SDL_FRect WorldRectToScreen(
     const Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& world_pos,
     const Vec2& world_size
 ) {
-    const float presentation_scale = presentation.w / static_cast<float>(graphics.dims.x);
+    const float pres_scale = pres.w / static_cast<float>(graphics.dims.x);
     const Vec2 internal_screen = Vec2::New(
         std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
                    graphics.camera.offset.x),
@@ -102,23 +102,23 @@ SDL_FRect WorldRectToScreen(
         std::round(world_size.y * graphics.camera.zoom)
     );
     const Vec2 screen = Vec2::New(
-        std::round(presentation.x + internal_screen.x * presentation_scale),
-        std::round(presentation.y + internal_screen.y * presentation_scale)
+        std::round(pres.x + internal_screen.x * pres_scale),
+        std::round(pres.y + internal_screen.y * pres_scale)
     );
     return SDL_FRect{
         screen.x,
         screen.y,
-        std::round(internal_size.x * presentation_scale),
-        std::round(internal_size.y * presentation_scale),
+        std::round(internal_size.x * pres_scale),
+        std::round(internal_size.y * pres_scale),
     };
 }
 
 Vec2 WorldPointToScreen(
     const Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& world_pos
 ) {
-    const float presentation_scale = presentation.w / static_cast<float>(graphics.dims.x);
+    const float pres_scale = pres.w / static_cast<float>(graphics.dims.x);
     const Vec2 internal_screen = Vec2::New(
         std::round(((world_pos.x - graphics.camera.target.x) * graphics.camera.zoom) +
                    graphics.camera.offset.x),
@@ -126,20 +126,20 @@ Vec2 WorldPointToScreen(
                    graphics.camera.offset.y)
     );
     return Vec2::New(
-        std::round(presentation.x + internal_screen.x * presentation_scale),
-        std::round(presentation.y + internal_screen.y * presentation_scale)
+        std::round(pres.x + internal_screen.x * pres_scale),
+        std::round(pres.y + internal_screen.y * pres_scale)
     );
 }
 
-bool IsScreenYVisible(const SDL_FRect& presentation, float y) {
-    return y >= presentation.y - 16.0F && y <= presentation.y + presentation.h + 16.0F;
+bool IsScreenYVisible(const SDL_FRect& pres, float y) {
+    return y >= pres.y - 16.0F && y <= pres.y + pres.h + 16.0F;
 }
 
-bool IsScreenRectVisible(const SDL_FRect& presentation, const SDL_FRect& rect) {
-    return rect.x + rect.w >= presentation.x &&
-           rect.x <= presentation.x + presentation.w &&
-           rect.y + rect.h >= presentation.y &&
-           rect.y <= presentation.y + presentation.h;
+bool IsScreenRectVisible(const SDL_FRect& pres, const SDL_FRect& rect) {
+    return rect.x + rect.w >= pres.x &&
+           rect.x <= pres.x + pres.w &&
+           rect.y + rect.h >= pres.y &&
+           rect.y <= pres.y + pres.h;
 }
 
 SDL_Color ToSdlColor(const DebugAnnotationColor& color) {
@@ -151,7 +151,7 @@ bool ShouldRenderShakeBrushPreview(const State& state) {
     return brush.enabled &&
            ((brush.affect_foreground_tiles && brush.foreground_tile_amount > 0.0F) ||
             (brush.affect_background_tiles && brush.background_tile_amount > 0.0F) ||
-            (brush.affect_entities && brush.entity_amount > 0.0F));
+            (brush.affect_ents && brush.ent_amount > 0.0F));
 }
 
 bool ShouldRenderAudioBrushPreview(const State& state) {
@@ -165,7 +165,7 @@ bool ShouldRenderFluidBrushPreview(const State& state) {
 void RenderWorldCircleOutline(
     SDL_Renderer* renderer,
     Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& center,
     float radius,
     const SDL_Color& color
@@ -181,8 +181,8 @@ void RenderWorldCircleOutline(
         const float t = static_cast<float>(i) / static_cast<float>(kSegments);
         const float angle = t * 6.28318530718F;
         const Vec2 current = center + Vec2::New(std::cos(angle) * radius, std::sin(angle) * radius);
-        const Vec2 previous_screen = WorldPointToScreen(graphics, presentation, previous);
-        const Vec2 current_screen = WorldPointToScreen(graphics, presentation, current);
+        const Vec2 previous_screen = WorldPointToScreen(graphics, pres, previous);
+        const Vec2 current_screen = WorldPointToScreen(graphics, pres, current);
         SDL_RenderLine(renderer, previous_screen.x, previous_screen.y, current_screen.x, current_screen.y);
         previous = current;
     }
@@ -191,11 +191,11 @@ void RenderWorldCircleOutline(
 void RenderWorldPointMarker(
     SDL_Renderer* renderer,
     Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const Vec2& world_pos,
     const SDL_Color& color
 ) {
-    const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
+    const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     for (int offset = -1; offset <= 1; ++offset) {
         SDL_RenderLine(renderer, screen.x - 7.0F, screen.y + static_cast<float>(offset), screen.x + 7.0F, screen.y + static_cast<float>(offset));
@@ -206,18 +206,18 @@ void RenderWorldPointMarker(
 void RenderWorldVerticalGuide(
     SDL_Renderer* renderer,
     Graphics& graphics,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     float world_x,
     const SDL_Color& color,
     int thickness = 3
 ) {
     const Vec2 screen = WorldPointToScreen(
         graphics,
-        presentation,
+        pres,
         Vec2::New(world_x, graphics.camera.target.y)
     );
-    if (screen.x < presentation.x - 2.0F ||
-        screen.x > presentation.x + presentation.w + 2.0F) {
+    if (screen.x < pres.x - 2.0F ||
+        screen.x > pres.x + pres.w + 2.0F) {
         return;
     }
 
@@ -227,9 +227,9 @@ void RenderWorldVerticalGuide(
         SDL_RenderLine(
             renderer,
             screen.x + static_cast<float>(offset),
-            presentation.y,
+            pres.y,
             screen.x + static_cast<float>(offset),
-            presentation.y + presentation.h
+            pres.y + pres.h
         );
     }
 }
@@ -341,7 +341,7 @@ void RenderAudioBrushPreview(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation
+    const SDL_FRect& pres
 ) {
     if (!ShouldRenderAudioBrushPreview(state)) {
         return;
@@ -351,7 +351,7 @@ void RenderAudioBrushPreview(
     RenderWorldPointMarker(
         renderer,
         graphics,
-        presentation,
+        pres,
         mouse_world,
         SDL_Color{0, 255, 255, 255}
     );
@@ -410,12 +410,12 @@ void RenderAudioBrushPreview(
                     for (const Vec2& offset : visible_offsets) {
                         const Vec2 from_screen = WorldPointToScreen(
                             graphics,
-                            presentation,
+                            pres,
                             previous_world + offset
                         );
                         const Vec2 to_screen = WorldPointToScreen(
                             graphics,
-                            presentation,
+                            pres,
                             current_world + offset
                         );
                         RenderScreenLine(
@@ -436,11 +436,11 @@ void RenderAudioBrushPreview(
                     for (const Vec2& offset : visible_offsets) {
                         const SDL_FRect blocker_rect = WorldRectToScreen(
                             graphics,
-                            presentation,
+                            pres,
                             blocker_world + offset,
                             Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                         );
-                        if (IsScreenRectVisible(presentation, blocker_rect)) {
+                        if (IsScreenRectVisible(pres, blocker_rect)) {
                             SDL_RenderRect(renderer, &blocker_rect);
                         }
                     }
@@ -471,14 +471,14 @@ void RenderAudioBrushPreview(
             RenderWorldCircleOutline(
                 renderer,
                 graphics,
-                presentation,
+                pres,
                 listener_world,
                 listener_epsilon_px,
                 SDL_Color{255, 220, 32, 255}
             );
         }
-        const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
-        const Vec2 listener_screen = WorldPointToScreen(graphics, presentation, listener_world);
+        const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
+        const Vec2 listener_screen = WorldPointToScreen(graphics, pres, listener_world);
         RenderScreenLine(
             renderer,
             source_screen,
@@ -498,27 +498,27 @@ void RenderAudioBrushPreview(
     RenderWorldVerticalGuide(
         renderer,
         graphics,
-        presentation,
+        pres,
         listener_world.x,
         SDL_Color{0, 255, 255, 255}
     );
     RenderWorldVerticalGuide(
         renderer,
         graphics,
-        presentation,
+        pres,
         listener_world.x - pan_half_width,
         SDL_Color{0, 160, 255, 255}
     );
     RenderWorldVerticalGuide(
         renderer,
         graphics,
-        presentation,
+        pres,
         listener_world.x + pan_half_width,
         SDL_Color{0, 160, 255, 255}
     );
 
-    const Vec2 listener_screen = WorldPointToScreen(graphics, presentation, listener_world);
-    const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
+    const Vec2 listener_screen = WorldPointToScreen(graphics, pres, listener_world);
+    const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
     RenderScreenLine(
         renderer,
         listener_screen,
@@ -529,14 +529,14 @@ void RenderAudioBrushPreview(
     RenderWorldPointMarker(
         renderer,
         graphics,
-        presentation,
+        pres,
         listener_world,
         SDL_Color{0, 255, 255, 255}
     );
     RenderWorldPointMarker(
         renderer,
         graphics,
-        presentation,
+        pres,
         source_world,
         SDL_Color{255, 192, 64, 255}
     );
@@ -546,7 +546,7 @@ void RenderShakeBrushPreview(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation
+    const SDL_FRect& pres
 ) {
     if (!ShouldRenderShakeBrushPreview(state)) {
         return;
@@ -583,11 +583,11 @@ void RenderShakeBrushPreview(
                 const Vec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
                 const SDL_FRect tile_rect = WorldRectToScreen(
                     graphics,
-                    presentation,
+                    pres,
                     nearest_tile_world,
                     Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
                 );
-                if (!IsScreenRectVisible(presentation, tile_rect)) {
+                if (!IsScreenRectVisible(pres, tile_rect)) {
                     continue;
                 }
 
@@ -603,11 +603,11 @@ void RenderShakeBrushPreview(
         }
     }
 
-    if (brush.affect_entities && brush.entity_amount > 0.0F) {
+    if (brush.affect_ents && brush.ent_amount > 0.0F) {
         RenderWorldCircleOutline(
             renderer,
             graphics,
-            presentation,
+            pres,
             mouse_world,
             radius_tiles * static_cast<float>(kTileSize),
             SDL_Color{255, 180, 64, 255}
@@ -619,7 +619,7 @@ void RenderFluidBrushPreview(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation
+    const SDL_FRect& pres
 ) {
     if (!ShouldRenderFluidBrushPreview(state)) {
         return;
@@ -651,8 +651,8 @@ void RenderFluidBrushPreview(
         );
         RenderScreenLine(
             renderer,
-            WorldPointToScreen(graphics, presentation, stage_center),
-            WorldPointToScreen(graphics, presentation, mouse_world),
+            WorldPointToScreen(graphics, pres, stage_center),
+            WorldPointToScreen(graphics, pres, mouse_world),
             brush_color,
             3
         );
@@ -680,11 +680,11 @@ void RenderFluidBrushPreview(
             const Vec2 nearest_tile_world = GetNearestWorldPoint(state.stage, mouse_world, tile_world);
             const SDL_FRect tile_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 nearest_tile_world,
                 Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
-            if (!IsScreenRectVisible(presentation, tile_rect)) {
+            if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
             }
 
@@ -703,8 +703,8 @@ void RenderFluidBrushPreview(
                                                    (static_cast<float>(kTileSize) * 0.75F);
                 RenderScreenLine(
                     renderer,
-                    WorldPointToScreen(graphics, presentation, from_world),
-                    WorldPointToScreen(graphics, presentation, to_world),
+                    WorldPointToScreen(graphics, pres, from_world),
+                    WorldPointToScreen(graphics, pres, to_world),
                     brush_color,
                     2
                 );
@@ -713,46 +713,46 @@ void RenderFluidBrushPreview(
     }
 }
 
-void RenderEntityCollisionBoxes(
+void RenderEntCollisionBoxes(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     for (const Vec2& render_offset : render_offsets) {
-        for (const Entity& entity : state.entity_manager.entities) {
-            if (!entity.active) {
+        for (const Ent& ent : state.ents.ents) {
+            if (!ent.active) {
                 continue;
             }
 
-            const AABB pbox_aabb = entity.GetAABB();
+            const AABB pbox_aabb = ent.GetAABB();
             const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 pbox_aabb.tl + render_offset,
                 pbox_size
             );
-            const AABB cbox_aabb = entities::common::GetContactAabbForEntity(entity, graphics);
+            const AABB cbox_aabb = ents::common::GetContactAabbForEnt(ent, graphics);
             const Vec2 cbox_size = cbox_aabb.br - cbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect cbox_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 cbox_aabb.tl + render_offset,
                 cbox_size
             );
-            if (!IsScreenRectVisible(presentation, pbox_rect) &&
-                !IsScreenRectVisible(presentation, cbox_rect)) {
+            if (!IsScreenRectVisible(pres, pbox_rect) &&
+                !IsScreenRectVisible(pres, cbox_rect)) {
                 continue;
             }
 
             SDL_Color pbox_color = SDL_Color{255, 255, 0, 255};
             SDL_Color cbox_color = SDL_Color{64, 224, 255, 255};
-            if (IsPlayerLikeEntityType(entity.type_)) {
+            if (IsPlayerLikeEntType(ent.type_)) {
                 pbox_color = SDL_Color{64, 255, 64, 255};
                 cbox_color = SDL_Color{64, 160, 255, 255};
-            } else if (!entity.can_collide) {
+            } else if (!ent.can_collide) {
                 pbox_color = SDL_Color{255, 180, 64, 255};
                 cbox_color = SDL_Color{255, 96, 224, 255};
             }
@@ -781,7 +781,7 @@ void RenderVoidDeathLine(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.stage.HasVoidDeathY()) {
@@ -805,19 +805,19 @@ void RenderVoidDeathLine(
 
         const Vec2 screen = WorldPointToScreen(
             graphics,
-            presentation,
+            pres,
             Vec2::New(graphics.camera.target.x + render_offset.x, void_death_y + render_offset.y)
         );
-        if (!IsScreenYVisible(presentation, screen.y)) {
+        if (!IsScreenYVisible(pres, screen.y)) {
             continue;
         }
 
         SDL_SetRenderDrawColor(renderer, 255, 96, 96, 255);
         SDL_RenderLine(
             renderer,
-            presentation.x,
+            pres.x,
             screen.y,
-            presentation.x + presentation.w,
+            pres.x + pres.w,
             screen.y
         );
 
@@ -829,46 +829,46 @@ void RenderVoidDeathLine(
             10,
             graphics.ui_font,
             text,
-            presentation.x + 6.0F,
+            pres.x + 6.0F,
             screen.y - 12.0F,
             SDL_Color{255, 96, 96, 255}
         );
     }
 }
 
-void RenderEntityLabels(
+void RenderEntLabels(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
-    if (!state.debug_overlay.show_entity_ids && !state.debug_overlay.show_entity_types) {
+    if (!state.debug_overlay.show_ent_ids && !state.debug_overlay.show_ent_types) {
         return;
     }
 
     for (const Vec2& render_offset : render_offsets) {
-        for (const Entity& entity : state.entity_manager.entities) {
-            if (!entity.active) {
+        for (const Ent& ent : state.ents.ents) {
+            if (!ent.active) {
                 continue;
             }
 
-            const AABB pbox_aabb = entity.GetAABB();
+            const AABB pbox_aabb = ent.GetAABB();
             const Vec2 pbox_size = pbox_aabb.br - pbox_aabb.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect pbox_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 pbox_aabb.tl + render_offset,
                 pbox_size
             );
-            if (!IsScreenRectVisible(presentation, pbox_rect)) {
+            if (!IsScreenRectVisible(pres, pbox_rect)) {
                 continue;
             }
 
             float text_y = pbox_rect.y + (pbox_rect.h * 0.5F) - 5.0F;
-            if (state.debug_overlay.show_entity_ids) {
+            if (state.debug_overlay.show_ent_ids) {
                 char label[32];
-                std::snprintf(label, sizeof(label), "%zu", entity.vid.id);
+                std::snprintf(label, sizeof(label), "%zu", ent.vid.id);
                 DrawText(
                     renderer,
                     graphics,
@@ -881,13 +881,13 @@ void RenderEntityLabels(
                 );
                 text_y += 10.0F;
             }
-            if (state.debug_overlay.show_entity_types) {
+            if (state.debug_overlay.show_ent_types) {
                 DrawText(
                     renderer,
                     graphics,
                     10,
                     graphics.ui_font,
-                    GetEntityTypeName(entity.type_),
+                    GetEntTypeName(ent.type_),
                     pbox_rect.x + 1.0F,
                     text_y,
                     SDL_Color{255, 210, 96, 255}
@@ -897,28 +897,28 @@ void RenderEntityLabels(
     }
 }
 
-void RenderEntityRenderCenters(
+void RenderEntRenderCenters(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
-    if (!state.debug_overlay.show_entity_render_centers) {
+    if (!state.debug_overlay.show_ent_render_centers) {
         return;
     }
 
     const SDL_Color color{255, 255, 64, 255};
     for (const Vec2& render_offset : render_offsets) {
-        for (const Entity& entity : state.entity_manager.entities) {
-            if (!entity.active || !entity.render_enabled) {
+        for (const Ent& ent : state.ents.ents) {
+            if (!ent.active || !ent.render_enabled) {
                 continue;
             }
             RenderWorldPointMarker(
                 renderer,
                 graphics,
-                presentation,
-                entity.GetCenter() + render_offset,
+                pres,
+                ent.GetCenter() + render_offset,
                 color
             );
         }
@@ -929,7 +929,7 @@ void RenderDebugAnnotations(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_debug_annotations) {
@@ -941,11 +941,11 @@ void RenderDebugAnnotations(
             const Vec2 world_size = annotation.area.br - annotation.area.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 annotation.area.tl + render_offset,
                 world_size
             );
-            if (!IsScreenRectVisible(presentation, rect)) {
+            if (!IsScreenRectVisible(pres, rect)) {
                 continue;
             }
 
@@ -964,14 +964,14 @@ void RenderDebugAnnotations(
 
         for (const DebugLabelAnnotation& annotation : state.debug_label_annotations) {
             const Vec2 world_pos = annotation.world_pos + render_offset;
-            const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
-            if (screen.x < presentation.x - 32.0F || screen.x > presentation.x + presentation.w + 32.0F ||
-                screen.y < presentation.y - 32.0F || screen.y > presentation.y + presentation.h + 32.0F) {
+            const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
+            if (screen.x < pres.x - 32.0F || screen.x > pres.x + pres.w + 32.0F ||
+                screen.y < pres.y - 32.0F || screen.y > pres.y + pres.h + 32.0F) {
                 continue;
             }
 
             const SDL_Color color = ToSdlColor(annotation.color);
-            RenderWorldPointMarker(renderer, graphics, presentation, world_pos, color);
+            RenderWorldPointMarker(renderer, graphics, pres, world_pos, color);
             DrawText(
                 renderer,
                 graphics,
@@ -988,13 +988,13 @@ void RenderDebugAnnotations(
             const SDL_Color stagegen_color{96, 255, 160, 255};
             for (const StageGenAnnotation& annotation : state.stage.stagegen_annotations) {
                 const Vec2 world_pos = annotation.world_pos + render_offset;
-                const Vec2 screen = WorldPointToScreen(graphics, presentation, world_pos);
-                if (screen.x < presentation.x - 64.0F || screen.x > presentation.x + presentation.w + 64.0F ||
-                    screen.y < presentation.y - 64.0F || screen.y > presentation.y + presentation.h + 64.0F) {
+                const Vec2 screen = WorldPointToScreen(graphics, pres, world_pos);
+                if (screen.x < pres.x - 64.0F || screen.x > pres.x + pres.w + 64.0F ||
+                    screen.y < pres.y - 64.0F || screen.y > pres.y + pres.h + 64.0F) {
                     continue;
                 }
 
-                RenderWorldPointMarker(renderer, graphics, presentation, world_pos, stagegen_color);
+                RenderWorldPointMarker(renderer, graphics, pres, world_pos, stagegen_color);
                 DrawText(
                     renderer,
                     graphics,
@@ -1014,7 +1014,7 @@ void RenderChunkOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_chunk_boundaries && !state.debug_overlay.show_chunk_coords) {
@@ -1035,11 +1035,11 @@ void RenderChunkOverlay(
                 ))) + render_offset;
                 const SDL_FRect room_rect = WorldRectToScreen(
                     graphics,
-                    presentation,
+                    pres,
                     room_tl,
                     ToVec2(room_dims)
                 );
-                if (!IsScreenRectVisible(presentation, room_rect)) {
+                if (!IsScreenRectVisible(pres, room_rect)) {
                     continue;
                 }
 
@@ -1070,7 +1070,7 @@ void RenderTileOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_tile_indexes && !state.debug_overlay.show_tile_types) {
@@ -1093,11 +1093,11 @@ void RenderTileOverlay(
             ) + render_offset;
             const SDL_FRect tile_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 tile_tl,
                 Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
-            if (!IsScreenRectVisible(presentation, tile_rect)) {
+            if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
             }
 
@@ -1143,7 +1143,7 @@ void RenderTileOpennessOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_tile_openness) {
@@ -1163,11 +1163,11 @@ void RenderTileOpennessOverlay(
             const Vec2 tile_tl = TileTopLeftWorld(tile_query.tile_pos) + render_offset;
             const SDL_FRect tile_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 tile_tl,
                 Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
-            if (!IsScreenRectVisible(presentation, tile_rect)) {
+            if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
             }
 
@@ -1208,7 +1208,7 @@ void RenderFluidAmountOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_fluid_amounts) {
@@ -1230,18 +1230,18 @@ void RenderFluidAmountOverlay(
             const auto tile_y = static_cast<unsigned int>(tile_query.tile_pos.y);
             const Tile fluid_tile = state.stage.GetFluidTile(tile_x, tile_y);
             const float amount = state.stage.GetFluidAmount(tile_x, tile_y);
-            if (!GetTileArchetype(fluid_tile).simulated_fluid || amount <= 0.0F) {
+            if (!GetTileSpec(fluid_tile).simulated_fluid || amount <= 0.0F) {
                 continue;
             }
 
             const Vec2 tile_tl = TileTopLeftWorld(tile_query.tile_pos) + render_offset;
             const SDL_FRect tile_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 tile_tl,
                 Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize))
             );
-            if (!IsScreenRectVisible(presentation, tile_rect)) {
+            if (!IsScreenRectVisible(pres, tile_rect)) {
                 continue;
             }
 
@@ -1281,7 +1281,7 @@ void RenderFluidGravityOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_fluid_gravity) {
@@ -1306,8 +1306,8 @@ void RenderFluidGravityOverlay(
         14,
         graphics.ui_font,
         global_label,
-        presentation.x + 8.0F,
-        presentation.y + 8.0F,
+        pres.x + 8.0F,
+        pres.y + 8.0F,
         SDL_Color{128, 255, 255, 255}
     );
 
@@ -1356,7 +1356,7 @@ void RenderFluidGravityOverlay(
             }
 
             const Vec2 tile_center = TileCenterWorld(tile_pos) + render_offset;
-            const Vec2 center_screen = WorldPointToScreen(graphics, presentation, tile_center);
+            const Vec2 center_screen = WorldPointToScreen(graphics, pres, tile_center);
             if (Length(effective_gravity) <= 0.01F) {
                 SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
                 const SDL_FRect zero_rect{
@@ -1375,7 +1375,7 @@ void RenderFluidGravityOverlay(
                 (static_cast<float>(kTileSize) * 0.45F);
             const Vec2 to_screen = WorldPointToScreen(
                 graphics,
-                presentation,
+                pres,
                 tile_center + arrow_delta
             );
             RenderScreenArrow(renderer, center_screen, to_screen, color, 2);
@@ -1388,7 +1388,7 @@ void RenderAreaOverlay(
     SDL_Renderer* renderer,
     Graphics& graphics,
     const State& state,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_area_boundaries &&
@@ -1398,20 +1398,20 @@ void RenderAreaOverlay(
     }
 
     for (const Vec2& render_offset : render_offsets) {
-        for (const Entity& entity : state.entity_manager.entities) {
-            if (!entity.active || entity.type_ != EntityType::Shop) {
+        for (const Ent& ent : state.ents.ents) {
+            if (!ent.active || ent.type_ != EntType::Shop) {
                 continue;
             }
 
-            const AABB area = entities::shop::GetShopArea(entity);
+            const AABB area = ents::shop::GetShopArea(ent);
             const Vec2 area_size = area.br - area.tl + Vec2::New(1.0F, 1.0F);
             const SDL_FRect area_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 area.tl + render_offset,
                 area_size
             );
-            if (!IsScreenRectVisible(presentation, area_rect)) {
+            if (!IsScreenRectVisible(pres, area_rect)) {
                 continue;
             }
 
@@ -1423,7 +1423,7 @@ void RenderAreaOverlay(
             float text_y = area_rect.y + 2.0F;
             if (state.debug_overlay.show_area_ids) {
                 char label[32];
-                std::snprintf(label, sizeof(label), "shop %zu", entity.vid.id);
+                std::snprintf(label, sizeof(label), "shop %zu", ent.vid.id);
                 DrawText(
                     renderer,
                     graphics,
@@ -1460,7 +1460,7 @@ void RenderAudioEmitterOverlay(
     Graphics& graphics,
     State& state,
     const Audio& audio,
-    const SDL_FRect& presentation,
+    const SDL_FRect& pres,
     const std::vector<Vec2>& render_offsets
 ) {
     if (!state.debug_overlay.show_audio_emitters) {
@@ -1478,8 +1478,8 @@ void RenderAudioEmitterOverlay(
         }
 
         Vec2 anchor_world = emitter.world_pos;
-        if (emitter.attached_entity_vid.has_value()) {
-            const Entity* const attached = state.entity_manager.GetEntity(*emitter.attached_entity_vid);
+        if (emitter.attached_ent_vid.has_value()) {
+            const Ent* const attached = state.ents.GetEnt(*emitter.attached_ent_vid);
             if (attached != nullptr) {
                 anchor_world = GetNearestWorldPoint(state.stage, emitter.world_pos, attached->GetCenter());
             }
@@ -1489,11 +1489,11 @@ void RenderAudioEmitterOverlay(
             const Vec2 source_world = emitter.world_pos + render_offset;
             const SDL_FRect source_rect = WorldRectToScreen(
                 graphics,
-                presentation,
+                pres,
                 source_world - Vec2::New(2.0F, 2.0F),
                 Vec2::New(4.0F, 4.0F)
             );
-            if (!IsScreenRectVisible(presentation, source_rect)) {
+            if (!IsScreenRectVisible(pres, source_rect)) {
                 continue;
             }
 
@@ -1530,15 +1530,15 @@ void RenderAudioEmitterOverlay(
                     RenderWorldCircleOutline(
                         renderer,
                         graphics,
-                        presentation,
+                        pres,
                         listener_for_source,
                         listener_epsilon_px,
                         SDL_Color{255, 220, 32, 255}
                     );
                 }
-                const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
+                const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
                 const Vec2 listener_screen =
-                    WorldPointToScreen(graphics, presentation, listener_for_source);
+                    WorldPointToScreen(graphics, pres, listener_for_source);
                 RenderScreenLine(
                     renderer,
                     source_screen,
@@ -1548,10 +1548,10 @@ void RenderAudioEmitterOverlay(
                 );
             }
 
-            if (emitter.attached_entity_vid.has_value()) {
+            if (emitter.attached_ent_vid.has_value()) {
                 const Vec2 anchor_source_world = anchor_world + render_offset;
-                const Vec2 anchor_screen = WorldPointToScreen(graphics, presentation, anchor_source_world);
-                const Vec2 source_screen = WorldPointToScreen(graphics, presentation, source_world);
+                const Vec2 anchor_screen = WorldPointToScreen(graphics, pres, anchor_source_world);
+                const Vec2 source_screen = WorldPointToScreen(graphics, pres, source_world);
                 SDL_RenderLine(
                     renderer,
                     anchor_screen.x,
@@ -1564,8 +1564,8 @@ void RenderAudioEmitterOverlay(
             }
 
             char label[160];
-            const int owner_id = emitter.owner_entity_vid.has_value() ? static_cast<int>(emitter.owner_entity_vid->id) : -1;
-            const int attach_id = emitter.attached_entity_vid.has_value() ? static_cast<int>(emitter.attached_entity_vid->id) : -1;
+            const int owner_id = emitter.owner_ent_vid.has_value() ? static_cast<int>(emitter.owner_ent_vid->id) : -1;
+            const int attach_id = emitter.attached_ent_vid.has_value() ? static_cast<int>(emitter.attached_ent_vid->id) : -1;
             std::snprintf(
                 label,
                 sizeof(label),
@@ -1598,10 +1598,10 @@ void RenderDebugOverlay(
     State& state,
     const Audio& audio
 ) {
-    if (!state.debug_overlay.show_entity_collision_boxes &&
-        !state.debug_overlay.show_entity_ids &&
-        !state.debug_overlay.show_entity_types &&
-        !state.debug_overlay.show_entity_render_centers &&
+    if (!state.debug_overlay.show_ent_collision_boxes &&
+        !state.debug_overlay.show_ent_ids &&
+        !state.debug_overlay.show_ent_types &&
+        !state.debug_overlay.show_ent_render_centers &&
         !state.debug_overlay.show_void_death_line &&
         !state.debug_overlay.show_chunk_boundaries &&
         !state.debug_overlay.show_chunk_coords &&
@@ -1627,53 +1627,53 @@ void RenderDebugOverlay(
         EnsureStageAcoustics(state);
     }
 
-    const SDL_FRect presentation = GetDebugPresentationRect(renderer, graphics);
+    const SDL_FRect pres = GetDebugPresRect(renderer, graphics);
     const std::vector<Vec2> render_offsets =
         GetVisibleWrappedRenderOffsets(state.stage, graphics);
-    if (state.debug_overlay.show_entity_collision_boxes) {
-        RenderEntityCollisionBoxes(renderer, graphics, state, presentation, render_offsets);
+    if (state.debug_overlay.show_ent_collision_boxes) {
+        RenderEntCollisionBoxes(renderer, graphics, state, pres, render_offsets);
     }
-    if (state.debug_overlay.show_entity_ids || state.debug_overlay.show_entity_types) {
-        RenderEntityLabels(renderer, graphics, state, presentation, render_offsets);
+    if (state.debug_overlay.show_ent_ids || state.debug_overlay.show_ent_types) {
+        RenderEntLabels(renderer, graphics, state, pres, render_offsets);
     }
-    if (state.debug_overlay.show_entity_render_centers) {
-        RenderEntityRenderCenters(renderer, graphics, state, presentation, render_offsets);
+    if (state.debug_overlay.show_ent_render_centers) {
+        RenderEntRenderCenters(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_void_death_line) {
-        RenderVoidDeathLine(renderer, graphics, state, presentation, render_offsets);
+        RenderVoidDeathLine(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_chunk_boundaries || state.debug_overlay.show_chunk_coords) {
-        RenderChunkOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderChunkOverlay(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_tile_openness) {
-        RenderTileOpennessOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderTileOpennessOverlay(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_fluid_amounts) {
-        RenderFluidAmountOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderFluidAmountOverlay(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_fluid_gravity) {
-        RenderFluidGravityOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderFluidGravityOverlay(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_tile_indexes || state.debug_overlay.show_tile_types) {
-        RenderTileOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderTileOverlay(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_lights) {
-        RenderLightOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderLightOverlay(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_area_boundaries ||
         state.debug_overlay.show_area_ids ||
         state.debug_overlay.show_area_types) {
-        RenderAreaOverlay(renderer, graphics, state, presentation, render_offsets);
+        RenderAreaOverlay(renderer, graphics, state, pres, render_offsets);
     }
     if (state.debug_overlay.show_audio_emitters) {
-        RenderAudioEmitterOverlay(renderer, graphics, state, audio, presentation, render_offsets);
+        RenderAudioEmitterOverlay(renderer, graphics, state, audio, pres, render_offsets);
     }
     if (state.debug_overlay.show_debug_annotations) {
-        RenderDebugAnnotations(renderer, graphics, state, presentation, render_offsets);
+        RenderDebugAnnotations(renderer, graphics, state, pres, render_offsets);
     }
-    RenderShakeBrushPreview(renderer, graphics, state, presentation);
-    RenderFluidBrushPreview(renderer, graphics, state, presentation);
-    RenderAudioBrushPreview(renderer, graphics, state, presentation);
+    RenderShakeBrushPreview(renderer, graphics, state, pres);
+    RenderFluidBrushPreview(renderer, graphics, state, pres);
+    RenderAudioBrushPreview(renderer, graphics, state, pres);
 }
 
 } // namespace splonks

@@ -1,11 +1,11 @@
-#include "entities/vampire.hpp"
+#include "ents/vampire.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::vampire {
+namespace splonks::ents::vampire {
 
-// TODO(classic): Vampire is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kVampireArchetype =
-    common::MakeUnimplementedClassicArchetype(EntityType::Vampire);
+// TODO(classic): Vampire is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kVampireSpec =
+    common::MakeUnimplementedClassicSpec(EntType::Vampire);
 
-} // namespace splonks::entities::vampire
+} // namespace splonks::ents::vampire

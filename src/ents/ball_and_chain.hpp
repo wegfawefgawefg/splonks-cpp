@@ -1,17 +1,17 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::ball_and_chain {
+namespace splonks::ents::ball_and_chain {
 
-extern const EntityArchetype kBallAndChainBallArchetype;
+extern const EntSpec kBallAndChainBallSpec;
 
-void StepEntityLogicAsBallAndChainBall(
-    std::size_t entity_idx,
+void StepEntLogicAsBallAndChainBall(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::ball_and_chain
+} // namespace splonks::ents::ball_and_chain

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
 namespace splonks {
 
@@ -10,24 +10,24 @@ struct State;
 
 } // namespace splonks
 
-namespace splonks::entities::moving_platform {
+namespace splonks::ents::moving_platform {
 
-extern const EntityArchetype kMovingPlatformArchetype;
+extern const EntSpec kMovingPlatformSpec;
 
-void StepEntityLogicAsMovingPlatform(
-    std::size_t entity_idx,
+void StepEntLogicAsMovingPlatform(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-void StepEntityPhysicsAsMovingPlatform(
-    std::size_t entity_idx,
+void StepEntPhysicsAsMovingPlatform(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::moving_platform
+} // namespace splonks::ents::moving_platform

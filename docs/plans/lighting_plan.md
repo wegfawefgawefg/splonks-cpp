@@ -25,7 +25,7 @@ Notes:
 ### 2. Per-tile light propagation
 
 Each tile stores a light level. Emitters flood outward with falloff, and the
-renderer uses that light map to tint tiles and entities.
+renderer uses that light map to tint tiles and ents.
 
 Notes:
 - Stable and cheap compared to full dynamic shadows.

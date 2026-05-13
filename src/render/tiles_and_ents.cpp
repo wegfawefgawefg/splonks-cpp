@@ -1,9 +1,9 @@
-#include "render/tiles_and_entities.hpp"
+#include "render/tiles_and_ents.hpp"
 
-#include "entity/archetype.hpp"
-#include "entity.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "graphics.hpp"
 #include "render/particles.hpp"
 #include "render/stone_overlay.hpp"
@@ -12,7 +12,7 @@
 #include "state.hpp"
 #include "stage_lighting.hpp"
 #include "tile.hpp"
-#include "tile_archetype.hpp"
+#include "tile_spec.hpp"
 #include "world_query.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -38,14 +38,14 @@ enum class TileCapSide {
 };
 
 struct TileCapSourceData {
-    const FrameData* top = nullptr;
-    const FrameData* bottom = nullptr;
-    const FrameData* left = nullptr;
+    const AFrame* top = nullptr;
+    const AFrame* bottom = nullptr;
+    const AFrame* left = nullptr;
 };
 
 enum class ForegroundTileRenderPass {
-    PreEntity,
-    PostEntity,
+    PreEnt,
+    PostEnt,
 };
 
 int WrapCoordinate(int value, int size) {
@@ -94,7 +94,7 @@ bool IsImmediateBorderRingTile(const Stage& stage, int tile_x, int tile_y) {
 }
 
 bool IsSolidTileForCap(const Stage& stage, int tile_x, int tile_y) {
-    return GetTileArchetype(stage.GetTileOrBorder(tile_x, tile_y)).solid;
+    return GetTileSpec(stage.GetTileOrBorder(tile_x, tile_y)).solid;
 }
 
 bool ShouldRenderTileCap(const Stage& stage, int tile_x, int tile_y, TileCapSide side) {
@@ -171,20 +171,20 @@ Tile GetWrappedFluidTile(const Stage& stage, int tile_x, int tile_y) {
     );
 }
 
-const FrameData* GetAnimationFrameForTick(
-    const FrameDataDb& frame_data_db,
-    FrameDataId animation_id,
+const AFrame* GetAnimFrameForTick(
+    const AFrameDb& aframe_db,
+    AFrameId anim_id,
     std::uint64_t tick
 ) {
-    const FrameDataAnimation* const animation = frame_data_db.FindAnimation(animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
+    const AFrameAnim* const anim = aframe_db.FindAnim(anim_id);
+    if (anim == nullptr || anim->frame_indices.empty()) {
         return nullptr;
     }
 
     std::uint64_t total_duration = 0;
-    for (const std::size_t frame_index : animation->frame_indices) {
+    for (const std::size_t frame_index : anim->frame_indices) {
         total_duration += static_cast<std::uint64_t>(
-            std::max(frame_data_db.frames[frame_index].duration, 1)
+            std::max(aframe_db.frames[frame_index].duration, 1)
         );
     }
     if (total_duration == 0) {
@@ -192,16 +192,16 @@ const FrameData* GetAnimationFrameForTick(
     }
 
     std::uint64_t local_tick = tick % total_duration;
-    for (const std::size_t frame_index : animation->frame_indices) {
-        const FrameData& frame_data = frame_data_db.frames[frame_index];
-        const std::uint64_t duration = static_cast<std::uint64_t>(std::max(frame_data.duration, 1));
+    for (const std::size_t frame_index : anim->frame_indices) {
+        const AFrame& aframe = aframe_db.frames[frame_index];
+        const std::uint64_t duration = static_cast<std::uint64_t>(std::max(aframe.duration, 1));
         if (local_tick < duration) {
-            return &frame_data;
+            return &aframe;
         }
         local_tick -= duration;
     }
 
-    return &frame_data_db.frames[animation->frame_indices.front()];
+    return &aframe_db.frames[anim->frame_indices.front()];
 }
 
 std::optional<TileSourceData> GetAnimatedWaterTopSourceData(
@@ -216,9 +216,9 @@ std::optional<TileSourceData> GetAnimatedWaterTopSourceData(
     }
 
     TileSourceData top_source_data = *fallback_top_source_data;
-    const FrameData* const top_frame = GetAnimationFrameForTick(
-        graphics.frame_data_db,
-        HashFrameDataIdConstexpr("watertop"),
+    const AFrame* const top_frame = GetAnimFrameForTick(
+        graphics.aframe_db,
+        HashAFrameIdConstexpr("watertop"),
         tick
     );
     if (top_frame != nullptr) {
@@ -527,15 +527,15 @@ void RenderFluidBubble(
         return;
     }
 
-    const FrameData* const bubble_frame = GetAnimationFrameForTick(
-        graphics.frame_data_db,
-        HashFrameDataIdConstexpr("bubble"),
+    const AFrame* const bubble_frame = GetAnimFrameForTick(
+        graphics.aframe_db,
+        HashAFrameIdConstexpr("bubble"),
         scene_frame + static_cast<std::uint64_t>(seed & 31U)
     );
     if (bubble_frame == nullptr) {
         return;
     }
-    SDL_Texture* const bubble_texture = graphics.GetFrameDataTexture(bubble_frame->image_id);
+    SDL_Texture* const bubble_texture = graphics.GetAFrameTexture(bubble_frame->image_id);
     if (bubble_texture == nullptr) {
         return;
     }
@@ -640,8 +640,8 @@ bool ShouldRenderBackgroundStamp(const State& state, const BackgroundStamp& stam
     case BackgroundStampCondition::None:
         return true;
     case BackgroundStampCondition::Wanted:
-        for (const Entity& entity : state.entity_manager.entities) {
-            if (entity.active && entity.wanted) {
+        for (const Ent& ent : state.ents.ents) {
+            if (ent.active && ent.wanted) {
                 return true;
             }
         }
@@ -652,74 +652,74 @@ bool ShouldRenderBackgroundStamp(const State& state, const BackgroundStamp& stam
 }
 
 bool ShouldRenderForegroundTileInPass(Tile tile, ForegroundTileRenderPass pass) {
-    const TileArchetype& archetype = GetTileArchetype(tile);
-    const bool pre_entity_tile = archetype.climbable && !archetype.solid;
+    const TileSpec& spec = GetTileSpec(tile);
+    const bool pre_ent_tile = spec.climbable && !spec.solid;
     switch (pass) {
-    case ForegroundTileRenderPass::PreEntity:
-        return pre_entity_tile;
-    case ForegroundTileRenderPass::PostEntity:
-        return !pre_entity_tile;
+    case ForegroundTileRenderPass::PreEnt:
+        return pre_ent_tile;
+    case ForegroundTileRenderPass::PostEnt:
+        return !pre_ent_tile;
     }
     return true;
 }
 
-Color3 GetEntityLightingColor(State& state, const Entity& entity, Graphics& graphics) {
+Color3 GetEntLightingColor(State& state, const Ent& ent, Graphics& graphics) {
     EnsureStageLighting(state);
     const Vec2 visual_center =
-        entities::common::GetVisualCenterForEntity(entity, graphics, entity.GetCenter());
+        ents::common::GetVisualCenterForEnt(ent, graphics, ent.GetCenter());
     Color3 color = SampleForegroundLightColorForRender(state, visual_center);
-    if (entity.self_light > 0.0F) {
-        color = color + (entity.light_color * entity.self_light);
+    if (ent.self_light > 0.0F) {
+        color = color + (ent.light_color * ent.self_light);
     }
     return ClampRenderColor(color);
 }
 
 bool ShouldRevealEmbeddedTreasure(const State& state) {
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
-        if (CanRevealEmbeddedTreasure(entity)) {
+        if (CanRevealEmbeddedTreasure(ent)) {
             return true;
         }
     }
     return false;
 }
 
-const FrameData* GetFirstFrameForAnimationOrFallback(
+const AFrame* GetFirstFrameForAnimOrFallback(
     const Graphics& graphics,
-    FrameDataId animation_id
+    AFrameId anim_id
 ) {
-    const FrameDataAnimation* animation = graphics.frame_data_db.FindAnimation(animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
-        animation = graphics.frame_data_db.FindAnimation(frame_data_ids::NoSprite);
-        if (animation == nullptr || animation->frame_indices.empty()) {
+    const AFrameAnim* anim = graphics.aframe_db.FindAnim(anim_id);
+    if (anim == nullptr || anim->frame_indices.empty()) {
+        anim = graphics.aframe_db.FindAnim(aframe_ids::NoSprite);
+        if (anim == nullptr || anim->frame_indices.empty()) {
             return nullptr;
         }
     }
-    return &graphics.frame_data_db.frames[animation->frame_indices[0]];
+    return &graphics.aframe_db.frames[anim->frame_indices[0]];
 }
 
-const FrameData* GetFirstFrameForAnimation(
+const AFrame* GetFirstFrameForAnim(
     const Graphics& graphics,
-    FrameDataId animation_id
+    AFrameId anim_id
 ) {
-    const FrameDataAnimation* animation = graphics.frame_data_db.FindAnimation(animation_id);
-    if (animation == nullptr || animation->frame_indices.empty()) {
+    const AFrameAnim* anim = graphics.aframe_db.FindAnim(anim_id);
+    if (anim == nullptr || anim->frame_indices.empty()) {
         return nullptr;
     }
-    return &graphics.frame_data_db.frames[animation->frame_indices[0]];
+    return &graphics.aframe_db.frames[anim->frame_indices[0]];
 }
 
 TileCapSourceData GetTileCapSourceData(const Graphics& graphics) {
     return TileCapSourceData{
-        .top = GetFirstFrameForAnimation(graphics, HashFrameDataIdConstexpr("dirt_cap_top")),
-        .bottom = GetFirstFrameForAnimation(graphics, HashFrameDataIdConstexpr("dirt_cap_bottom")),
-        .left = GetFirstFrameForAnimation(graphics, HashFrameDataIdConstexpr("dirt_cap_left")),
+        .top = GetFirstFrameForAnim(graphics, HashAFrameIdConstexpr("dirt_cap_top")),
+        .bottom = GetFirstFrameForAnim(graphics, HashAFrameIdConstexpr("dirt_cap_bottom")),
+        .left = GetFirstFrameForAnim(graphics, HashAFrameIdConstexpr("dirt_cap_left")),
     };
 }
 
-const FrameData* GetTileCapFrameData(const TileCapSourceData& source_data, TileCapSide side) {
+const AFrame* GetTileCapAFrame(const TileCapSourceData& source_data, TileCapSide side) {
     switch (side) {
     case TileCapSide::Top:
         return source_data.top;
@@ -732,7 +732,7 @@ const FrameData* GetTileCapFrameData(const TileCapSourceData& source_data, TileC
     return nullptr;
 }
 
-Vec2 GetTileCapWorldPos(const FrameData& frame_data, int tile_x, int tile_y, TileCapSide side) {
+Vec2 GetTileCapWorldPos(const AFrame& aframe, int tile_x, int tile_y, TileCapSide side) {
     Vec2 pos = Vec2::New(
         static_cast<float>(tile_x * static_cast<int>(kTileSize)),
         static_cast<float>(tile_y * static_cast<int>(kTileSize))
@@ -740,10 +740,10 @@ Vec2 GetTileCapWorldPos(const FrameData& frame_data, int tile_x, int tile_y, Til
 
     switch (side) {
     case TileCapSide::Top:
-        pos.y -= static_cast<float>(frame_data.sample_rect.h);
+        pos.y -= static_cast<float>(aframe.sample_rect.h);
         return pos;
     case TileCapSide::Left:
-        pos.x -= static_cast<float>(frame_data.sample_rect.w);
+        pos.x -= static_cast<float>(aframe.sample_rect.w);
         return pos;
     case TileCapSide::Bottom:
         pos.y += static_cast<float>(kTileSize);
@@ -843,28 +843,28 @@ void RenderTileCap(
         return;
     }
 
-    const FrameData* const frame_data = GetTileCapFrameData(source_data, side);
-    if (frame_data == nullptr) {
+    const AFrame* const aframe = GetTileCapAFrame(source_data, side);
+    if (aframe == nullptr) {
         return;
     }
-    SDL_Texture* const texture = graphics.GetFrameDataTexture(frame_data->image_id);
+    SDL_Texture* const texture = graphics.GetAFrameTexture(aframe->image_id);
     if (texture == nullptr) {
         return;
     }
 
     const SDL_FRect src{
-        static_cast<float>(frame_data->sample_rect.x),
-        static_cast<float>(frame_data->sample_rect.y),
-        static_cast<float>(frame_data->sample_rect.w),
-        static_cast<float>(frame_data->sample_rect.h),
+        static_cast<float>(aframe->sample_rect.x),
+        static_cast<float>(aframe->sample_rect.y),
+        static_cast<float>(aframe->sample_rect.w),
+        static_cast<float>(aframe->sample_rect.h),
     };
     const Vec2 cap_size = Vec2::New(
-        static_cast<float>(frame_data->sample_rect.w),
-        static_cast<float>(frame_data->sample_rect.h)
+        static_cast<float>(aframe->sample_rect.w),
+        static_cast<float>(aframe->sample_rect.h)
     );
     const Vec2 shake_offset = GetShakeOffset(GetTileCapShake(state.stage, tile_x, tile_y));
     const Vec2 cap_world_pos =
-        GetTileCapWorldPos(*frame_data, tile_x, tile_y, side) + render_offset + shake_offset;
+        GetTileCapWorldPos(*aframe, tile_x, tile_y, side) + render_offset + shake_offset;
     const SDL_FRect dst = WorldRectToScreen(
         graphics,
         cap_world_pos,
@@ -1026,7 +1026,7 @@ void RenderStageForegroundTilePass(
                 if (tile == Tile::Air) {
                     continue;
                 }
-                if (!GetTileArchetype(tile).render_enabled) {
+                if (!GetTileSpec(tile).render_enabled) {
                     continue;
                 }
                 if (!ShouldRenderForegroundTileInPass(tile, pass)) {
@@ -1116,12 +1116,12 @@ void RenderStageForegroundTilePass(
     }
 }
 
-void RenderStagePreEntityForegroundTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    RenderStageForegroundTilePass(renderer, state, graphics, ForegroundTileRenderPass::PreEntity);
+void RenderStagePreEntForegroundTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+    RenderStageForegroundTilePass(renderer, state, graphics, ForegroundTileRenderPass::PreEnt);
 }
 
 void RenderStageForegroundTiles(SDL_Renderer* renderer, State& state, Graphics& graphics) {
-    RenderStageForegroundTilePass(renderer, state, graphics, ForegroundTileRenderPass::PostEntity);
+    RenderStageForegroundTilePass(renderer, state, graphics, ForegroundTileRenderPass::PostEnt);
 }
 
 void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -1208,7 +1208,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
     for (int y = 0; y < stage_tile_height; ++y) {
         for (int x = 0; x < stage_tile_width; ++x) {
             FluidRenderCell& cell = *cell_at(x, y);
-            cell.terrain_solid = GetTileArchetype(
+            cell.terrain_solid = GetTileSpec(
                 state.stage.GetTile(static_cast<unsigned int>(x), static_cast<unsigned int>(y))
             ).solid;
             const Tile fluid_tile = state.stage.GetFluidTile(
@@ -1220,7 +1220,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                 static_cast<unsigned int>(y)
             );
             cell.has_liquid =
-                GetTileArchetype(fluid_tile).simulated_fluid &&
+                GetTileSpec(fluid_tile).simulated_fluid &&
                 amount > kMinVisibleDisplayLevel;
             float& display_amount =
                 state.stage.fluid_display_amount[static_cast<std::size_t>(y)]
@@ -1246,7 +1246,7 @@ void RenderStageFluids(SDL_Renderer* renderer, State& state, Graphics& graphics)
                     for (int offset_x = -1; offset_x <= 1; ++offset_x) {
                         const Tile nearby_fluid_tile =
                             GetWrappedFluidTile(state.stage, x + offset_x, y + offset_y);
-                        if (GetTileArchetype(nearby_fluid_tile).simulated_fluid) {
+                        if (GetTileSpec(nearby_fluid_tile).simulated_fluid) {
                             residual_visible_tile = nearby_fluid_tile;
                             break;
                         }
@@ -1712,43 +1712,43 @@ void RenderBackgroundStamps(SDL_Renderer* renderer, State& state, Graphics& grap
     EnsureStageLighting(state);
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     for (const BackgroundStamp& stamp : state.stage.background_stamps) {
-        if (stamp.animation_id == kInvalidFrameDataId) {
+        if (stamp.anim_id == kInvalidAFrameId) {
             continue;
         }
         if (!ShouldRenderBackgroundStamp(state, stamp)) {
             continue;
         }
 
-        const FrameData* const frame_data =
-            GetFirstFrameForAnimationOrFallback(graphics, stamp.animation_id);
-        if (frame_data == nullptr) {
+        const AFrame* const aframe =
+            GetFirstFrameForAnimOrFallback(graphics, stamp.anim_id);
+        if (aframe == nullptr) {
             continue;
         }
-        SDL_Texture* const sprite_texture = graphics.GetFrameDataTexture(frame_data->image_id);
+        SDL_Texture* const sprite_texture = graphics.GetAFrameTexture(aframe->image_id);
         if (sprite_texture == nullptr) {
             continue;
         }
 
         const SDL_FRect src{
-            static_cast<float>(frame_data->sample_rect.x),
-            static_cast<float>(frame_data->sample_rect.y),
-            static_cast<float>(frame_data->sample_rect.w),
-            static_cast<float>(frame_data->sample_rect.h),
+            static_cast<float>(aframe->sample_rect.x),
+            static_cast<float>(aframe->sample_rect.y),
+            static_cast<float>(aframe->sample_rect.w),
+            static_cast<float>(aframe->sample_rect.h),
         };
 
         const int tile_x =
-            static_cast<int>((stamp.pos.x + (static_cast<float>(frame_data->sample_rect.w) * 0.5F)) /
+            static_cast<int>((stamp.pos.x + (static_cast<float>(aframe->sample_rect.w) * 0.5F)) /
                              static_cast<float>(kTileSize));
         const int tile_y =
-            static_cast<int>((stamp.pos.y + (static_cast<float>(frame_data->sample_rect.h) * 0.5F)) /
+            static_cast<int>((stamp.pos.y + (static_cast<float>(aframe->sample_rect.h) * 0.5F)) /
                              static_cast<float>(kTileSize));
         for (const Vec2& render_offset : render_offsets) {
             const SDL_FRect dst = WorldRectToScreen(
                 graphics,
                 stamp.pos + render_offset,
                 Vec2::New(
-                    static_cast<float>(frame_data->sample_rect.w),
-                    static_cast<float>(frame_data->sample_rect.h)
+                    static_cast<float>(aframe->sample_rect.w),
+                    static_cast<float>(aframe->sample_rect.h)
                 )
             );
             ApplyBackwallTileBrightness(sprite_texture, state, graphics, tile_x, tile_y);
@@ -1772,11 +1772,11 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 continue;
             }
 
-            std::optional<FrameDataId> overlay_frame = embedded_treasure.GetOverlayFrame();
+            std::optional<AFrameId> overlay_frame = embedded_treasure.GetOverlayFrame();
             if (!overlay_frame.has_value()) {
                 for (const EmbeddedTreasureDrop& drop : embedded_treasure.drops) {
-                    if (drop.type_ != EntityType::None && drop.count > 0) {
-                        overlay_frame = GetDefaultAnimationIdForArchetype(drop.type_);
+                    if (drop.type_ != EntType::None && drop.count > 0) {
+                        overlay_frame = GetDefaultAnimIdForSpec(drop.type_);
                         break;
                     }
                 }
@@ -1785,12 +1785,12 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 continue;
             }
 
-            const FrameData* const frame_data = GetFirstFrameForAnimation(graphics, *overlay_frame);
-            if (frame_data == nullptr) {
+            const AFrame* const aframe = GetFirstFrameForAnim(graphics, *overlay_frame);
+            if (aframe == nullptr) {
                 continue;
             }
 
-            SDL_Texture* const sprite_texture = graphics.GetFrameDataTexture(frame_data->image_id);
+            SDL_Texture* const sprite_texture = graphics.GetAFrameTexture(aframe->image_id);
             if (sprite_texture == nullptr) {
                 continue;
             }
@@ -1800,18 +1800,18 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                 static_cast<float>(y * kTileSize)
             );
             const int render_offset_x =
-                (static_cast<int>(kTileSize) - frame_data->sample_rect.w) / 2;
+                (static_cast<int>(kTileSize) - aframe->sample_rect.w) / 2;
             const int render_offset_y =
-                (static_cast<int>(kTileSize) - frame_data->sample_rect.h) / 2;
+                (static_cast<int>(kTileSize) - aframe->sample_rect.h) / 2;
             const Vec2 render_world_pos = tile_world_pos + Vec2::New(
                 static_cast<float>(render_offset_x),
                 static_cast<float>(render_offset_y)
             );
             const SDL_FRect src{
-                static_cast<float>(frame_data->sample_rect.x),
-                static_cast<float>(frame_data->sample_rect.y),
-                static_cast<float>(frame_data->sample_rect.w),
-                static_cast<float>(frame_data->sample_rect.h),
+                static_cast<float>(aframe->sample_rect.x),
+                static_cast<float>(aframe->sample_rect.y),
+                static_cast<float>(aframe->sample_rect.w),
+                static_cast<float>(aframe->sample_rect.h),
             };
             const Vec2 overlay_center = tile_world_pos + Vec2::New(
                 static_cast<float>(kTileSize) * 0.5F,
@@ -1832,8 +1832,8 @@ void RenderEmbeddedTreasureOverlays(SDL_Renderer* renderer, State& state, Graphi
                     graphics,
                     render_world_pos + render_offset,
                     Vec2::New(
-                        static_cast<float>(frame_data->sample_rect.w),
-                        static_cast<float>(frame_data->sample_rect.h)
+                        static_cast<float>(aframe->sample_rect.w),
+                        static_cast<float>(aframe->sample_rect.h)
                     )
                 );
                 RenderWorldTexture(renderer, graphics, sprite_texture, &src, dst);
@@ -1848,12 +1848,12 @@ namespace {
 
 } // namespace
 
-void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
+void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     const std::vector<Vec2> render_offsets = GetVisibleWrappedRenderOffsets(state.stage, graphics);
     std::vector<std::size_t> draw_queue;
     std::vector<std::size_t> next_draw_queue;
-    next_draw_queue.reserve(state.entity_manager.entities.size());
-    for (std::size_t i = 0; i < state.entity_manager.entities.size(); ++i) {
+    next_draw_queue.reserve(state.ents.ents.size());
+    for (std::size_t i = 0; i < state.ents.ents.size(); ++i) {
         next_draw_queue.push_back(i);
     }
 
@@ -1861,63 +1861,63 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
         draw_queue.clear();
         draw_queue.insert(draw_queue.end(), next_draw_queue.begin(), next_draw_queue.end());
         next_draw_queue.clear();
-        for (std::size_t entity_id : draw_queue) {
-            const Entity& entity = state.entity_manager.entities[entity_id];
-            if (!entity.active || !entity.render_enabled) {
+        for (std::size_t ent_id : draw_queue) {
+            const Ent& ent = state.ents.ents[ent_id];
+            if (!ent.active || !ent.render_enabled) {
                 continue;
             }
-            if (entity.draw_layer != layer) {
-                next_draw_queue.push_back(entity_id);
+            if (ent.draw_layer != layer) {
+                next_draw_queue.push_back(ent_id);
                 continue;
             }
 
-            const FrameData* const frame_data =
-                entities::common::GetCurrentFrameDataForEntity(entity, graphics);
-            if (frame_data == nullptr) {
+            const AFrame* const aframe =
+                ents::common::GetCurrentAFrameForEnt(ent, graphics);
+            if (aframe == nullptr) {
                 continue;
             }
 
             SDL_Texture* const sprite_texture =
-                graphics.GetFrameDataTexture(frame_data->image_id);
+                graphics.GetAFrameTexture(aframe->image_id);
             if (sprite_texture == nullptr) {
                 continue;
             }
 
             const Vec2 sprite_world_size = Vec2::New(
-                static_cast<float>(frame_data->sample_rect.w),
-                static_cast<float>(frame_data->sample_rect.h)
+                static_cast<float>(aframe->sample_rect.w),
+                static_cast<float>(aframe->sample_rect.h)
             );
             const Vec2 sprite_scaled_size =
-                sprite_world_size * entity.frame_data_animator.scale;
+                sprite_world_size * ent.aframe_animator.scale;
             const Vec2 render_position =
-                entities::common::GetSpriteTopLeftForEntity(entity, *frame_data);
+                ents::common::GetSpriteTopLeftForEnt(ent, *aframe);
 
             const SDL_FRect src{
-                static_cast<float>(frame_data->sample_rect.x),
-                static_cast<float>(frame_data->sample_rect.y),
-                static_cast<float>(frame_data->sample_rect.w),
-                static_cast<float>(frame_data->sample_rect.h),
+                static_cast<float>(aframe->sample_rect.x),
+                static_cast<float>(aframe->sample_rect.y),
+                static_cast<float>(aframe->sample_rect.w),
+                static_cast<float>(aframe->sample_rect.h),
             };
             const SDL_FlipMode flip =
-                entity.facing == LeftOrRight::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-            const Uint8 entity_alpha = static_cast<Uint8>(
-                std::clamp(entity.alpha, 0.0F, 1.0F) * 255.0F);
-            const Color3 entity_brightness = GetEntityLightingColor(state, entity, graphics);
-            SDL_SetTextureAlphaMod(sprite_texture, entity_alpha);
+                ent.facing == Side::Right ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+            const Uint8 ent_alpha = static_cast<Uint8>(
+                std::clamp(ent.alpha, 0.0F, 1.0F) * 255.0F);
+            const Color3 ent_brightness = GetEntLightingColor(state, ent, graphics);
+            SDL_SetTextureAlphaMod(sprite_texture, ent_alpha);
             SDL_SetTextureColorModFloat(
                 sprite_texture,
-                entity_brightness.r,
-                entity_brightness.g,
-                entity_brightness.b
+                ent_brightness.r,
+                ent_brightness.g,
+                ent_brightness.b
             );
-            if (entity.type_ == EntityType::BallAndChainBall && entity.entity_a.has_value()) {
-                if (const Entity* const attached = state.entity_manager.GetEntity(*entity.entity_a)) {
+            if (ent.type_ == EntType::BallAndChainBall && ent.ent_a.has_value()) {
+                if (const Ent* const attached = state.ents.GetEnt(*ent.ent_a)) {
                     if (attached->active) {
                         SDL_SetRenderDrawColor(renderer, 132, 132, 132, 255);
                         const Vec2 anchor_world = attached->GetCenter() +
                                                   Vec2::New(0.0F, (attached->size.y * 0.5F) - 1.0F);
                         const Vec2 ball_world =
-                            GetNearestWorldPoint(state.stage, anchor_world, entity.GetCenter());
+                            GetNearestWorldPoint(state.stage, anchor_world, ent.GetCenter());
                         for (const Vec2& render_offset : render_offsets) {
                             const Vec2 anchor_screen = WorldToScreen(graphics, anchor_world + render_offset);
                             const Vec2 ball_screen = WorldToScreen(graphics, ball_world + render_offset);
@@ -1928,20 +1928,20 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 }
             }
             for (const Vec2& render_offset : render_offsets) {
-                const Vec2 shake_offset = GetShakeOffset(entity.shake);
+                const Vec2 shake_offset = GetShakeOffset(ent.shake);
                 SDL_FRect dst = WorldRectToScreen(
                     graphics,
                     render_position + render_offset + shake_offset,
                     sprite_scaled_size
                 );
-                if (std::abs(entity.rotation) <= 0.01F) {
+                if (std::abs(ent.rotation) <= 0.01F) {
                     RenderWorldTextureRotated(renderer, graphics, sprite_texture, &src, dst, 0.0, nullptr, flip);
                 } else {
                     const Vec2 rotation_world =
-                        entities::common::GetVisualCenterForEntity(
-                            entity,
+                        ents::common::GetVisualCenterForEnt(
+                            ent,
                             graphics,
-                            entity.GetCenter()
+                            ent.GetCenter()
                         ) +
                         render_offset + shake_offset;
                     const Vec2 rotation_screen = WorldToScreen(graphics, rotation_world);
@@ -1955,14 +1955,14 @@ void RenderEntities(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                         sprite_texture,
                         &src,
                         dst,
-                        entity.rotation,
+                        ent.rotation,
                         &rotation_center,
                         flip
                     );
                 }
-                if (entity.stone) {
-                    const AABB stone_overlay_aabb = entity.GetAABB();
-                    RenderStoneEntityOverlay(
+                if (ent.stone) {
+                    const AABB stone_overlay_aabb = ent.GetAABB();
+                    RenderStoneEntOverlay(
                         renderer,
                         state,
                         graphics,

@@ -1,10 +1,10 @@
 #include "debug/playback_internal.hpp"
 
-#include "entity/archetype.hpp"
-#include "entity/archetype_restore.hpp"
-#include "frame_data.hpp"
+#include "ent/spec.hpp"
+#include "ent/spec_restore.hpp"
+#include "aframe.hpp"
 #include "player_queries.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 #include "world_ops.hpp"
 
 #include <imgui.h>
@@ -68,8 +68,8 @@ bool SpawnSearchMatches(const char* query, const char* candidate) {
     return normalized_candidate.find(normalized_query) != std::string::npos;
 }
 
-bool HasStickyBombTool(const EntityToolInventoryState& entity_tools, const VID& owner_vid) {
-    const EntityToolState* const tool_state = entity_tools.FindEntityToolState(owner_vid);
+bool HasStickyBombTool(const EntToolInventoryState& ent_tools, const VID& owner_vid) {
+    const EntToolState* const tool_state = ent_tools.FindEntToolState(owner_vid);
     if (tool_state == nullptr) {
         return false;
     }
@@ -91,40 +91,40 @@ const char* EffectUiKindToString(EffectUiKind kind) {
     return "unknown";
 }
 
-void AddEffectFromDebug(Entity& entity, EffectId effect_id) {
+void AddEffectFromDebug(Ent& ent, EffectId effect_id) {
     if (effect_id == EffectId::NoGravityUntilContact) {
         // Let the debug add survive stale contact state from the previous step.
-        entity.grounded = false;
-        entity.collided = false;
-        entity.collided_last_frame = false;
+        ent.grounded = false;
+        ent.collided = false;
+        ent.collided_last_frame = false;
     }
-    (void)AddEffect(entity, effect_id, GetEffectArchetype(effect_id).default_count);
+    (void)AddEffect(ent, effect_id, GetEffectSpec(effect_id).default_count);
 }
 
-void AddAllPersistentEffectsFromDebug(Entity& entity) {
+void AddAllPersistentEffectsFromDebug(Ent& ent) {
     for (std::uint8_t i = 1; i < static_cast<std::uint8_t>(EffectId::Count); ++i) {
         const EffectId effect_id = static_cast<EffectId>(i);
-        const EffectArchetype& archetype = GetEffectArchetype(effect_id);
-        if (archetype.ui_kind != EffectUiKind::Passive) {
+        const EffectSpec& spec = GetEffectSpec(effect_id);
+        if (spec.ui_kind != EffectUiKind::Passive) {
             continue;
         }
-        AddEffectFromDebug(entity, effect_id);
+        AddEffectFromDebug(ent, effect_id);
     }
 }
 
-bool DrawEntityEffectsEditor(Entity& entity) {
+bool DrawEntEffectsEditor(Ent& ent) {
     bool changed = false;
-    EntityEffects* const effects = entity.effects.get();
+    EntEffects* const effects = ent.effects.get();
     if (effects == nullptr || effects->count == 0) {
         ImGui::TextDisabled("No active effects.");
     } else {
         for (std::size_t effect_index = 0; effect_index < effects->count; ++effect_index) {
             EffectInstance& effect = effects->effects[effect_index];
-            const EffectArchetype& archetype = GetEffectArchetype(effect.id);
+            const EffectSpec& spec = GetEffectSpec(effect.id);
             ImGui::PushID("active_effect");
             ImGui::PushID(static_cast<int>(effect_index));
             ImGui::Separator();
-            ImGui::Text("%s (%s)", archetype.debug_name, EffectUiKindToString(archetype.ui_kind));
+            ImGui::Text("%s (%s)", spec.debug_name, EffectUiKindToString(spec.ui_kind));
 
             int count = effect.count;
             if (ImGui::InputInt("Count##effect_count", &count)) {
@@ -145,7 +145,7 @@ bool DrawEntityEffectsEditor(Entity& entity) {
                 changed = true;
             }
             if (ImGui::Button("Remove##effect_remove")) {
-                RemoveEffect(entity, effect.id);
+                RemoveEffect(ent, effect.id);
                 changed = true;
                 ImGui::PopID();
                 ImGui::PopID();
@@ -162,12 +162,12 @@ bool DrawEntityEffectsEditor(Entity& entity) {
     }
 
     ImGui::Separator();
-    if (ImGui::BeginCombo("Add Effect##entity_effect_add_combo", EffectIdToString(selected_effect))) {
+    if (ImGui::BeginCombo("Add Effect##ent_effect_add_combo", EffectIdToString(selected_effect))) {
         for (std::uint8_t i = 1; i < static_cast<std::uint8_t>(EffectId::Count); ++i) {
             const EffectId effect_id = static_cast<EffectId>(i);
             const bool selected = effect_id == selected_effect;
             char label[96];
-            std::snprintf(label, sizeof(label), "%s##entity_effect_add_%u", EffectIdToString(effect_id), i);
+            std::snprintf(label, sizeof(label), "%s##ent_effect_add_%u", EffectIdToString(effect_id), i);
             if (ImGui::Selectable(label, selected)) {
                 selected_effect = effect_id;
             }
@@ -177,13 +177,13 @@ bool DrawEntityEffectsEditor(Entity& entity) {
         }
         ImGui::EndCombo();
     }
-    if (ImGui::Button("Add Selected Effect##entity_effect_add_button")) {
-        AddEffectFromDebug(entity, selected_effect);
+    if (ImGui::Button("Add Selected Effect##ent_effect_add_button")) {
+        AddEffectFromDebug(ent, selected_effect);
         changed = true;
     }
     ImGui::SameLine();
-    if (ImGui::Button("Add All Persistent##entity_effect_add_all_persistent")) {
-        AddAllPersistentEffectsFromDebug(entity);
+    if (ImGui::Button("Add All Persistent##ent_effect_add_all_persistent")) {
+        AddAllPersistentEffectsFromDebug(ent);
         changed = true;
     }
     if (selected_effect == EffectId::NoGravityUntilContact) {
@@ -192,15 +192,15 @@ bool DrawEntityEffectsEditor(Entity& entity) {
     return changed;
 }
 
-std::vector<EntityType> BuildSortedSpawnTypes() {
-    std::vector<EntityType> types;
-    types.reserve(kEntityTypeCount > 0 ? kEntityTypeCount - 1 : 0);
-    for (std::size_t type_index = 1; type_index < kEntityTypeCount; ++type_index) {
-        types.push_back(static_cast<EntityType>(type_index));
+std::vector<EntType> BuildSortedSpawnTypes() {
+    std::vector<EntType> types;
+    types.reserve(kEntTypeCount > 0 ? kEntTypeCount - 1 : 0);
+    for (std::size_t type_index = 1; type_index < kEntTypeCount; ++type_index) {
+        types.push_back(static_cast<EntType>(type_index));
     }
 
-    std::sort(types.begin(), types.end(), [](EntityType left, EntityType right) {
-        return std::strcmp(GetEntityTypeName(left), GetEntityTypeName(right)) < 0;
+    std::sort(types.begin(), types.end(), [](EntType left, EntType right) {
+        return std::strcmp(GetEntTypeName(left), GetEntTypeName(right)) < 0;
     });
     return types;
 }
@@ -209,39 +209,39 @@ std::vector<EntityType> BuildSortedSpawnTypes() {
 constexpr std::uint16_t kDebugPlayerInitialBombs = 400;
 constexpr std::uint16_t kDebugPlayerInitialRopes = 400;
 
-Entity* FindSwapSourceEntity(State& state, Entity* selected_entity) {
-    if (state.controlled_entity_vid.has_value()) {
-        if (Entity* const controlled = state.entity_manager.GetEntityMut(*state.controlled_entity_vid)) {
+Ent* FindSwapSourceEnt(State& state, Ent* selected_ent) {
+    if (state.controlled_ent_vid.has_value()) {
+        if (Ent* const controlled = state.ents.GetEntMut(*state.controlled_ent_vid)) {
             return controlled;
         }
     }
-    if (Entity* const player = GetPrimaryLocalPlayerMut(state)) {
+    if (Ent* const player = GetPrimaryLocalPlayerMut(state)) {
         return player;
     }
-    return selected_entity;
+    return selected_ent;
 }
 
-const Entity* FindSwapStatsEntity(const State& state, const Entity* source_entity) {
-    if (const Entity* const player = GetPrimaryLocalPlayer(state)) {
+const Ent* FindSwapStatsEnt(const State& state, const Ent* source_ent) {
+    if (const Ent* const player = GetPrimaryLocalPlayer(state)) {
         return player;
     }
-    return source_entity;
+    return source_ent;
 }
 
-std::optional<EntityToolState> CopyToolStateForVid(const State& state, const VID& owner_vid) {
-    if (const EntityToolState* const tool_state = state.entity_tools.FindEntityToolState(owner_vid)) {
+std::optional<EntToolState> CopyToolStateForVid(const State& state, const VID& owner_vid) {
+    if (const EntToolState* const tool_state = state.ent_tools.FindEntToolState(owner_vid)) {
         return *tool_state;
     }
     return std::nullopt;
 }
 
 void RemoveToolStateForVid(State& state, const VID& owner_vid) {
-    auto& tool_states = state.entity_tools.tool_states;
+    auto& tool_states = state.ent_tools.tool_states;
     tool_states.erase(
         std::remove_if(
             tool_states.begin(),
             tool_states.end(),
-            [&owner_vid](const EntityToolState& tool_state) {
+            [&owner_vid](const EntToolState& tool_state) {
                 return tool_state.owner_vid == owner_vid;
             }
         ),
@@ -249,39 +249,39 @@ void RemoveToolStateForVid(State& state, const VID& owner_vid) {
     );
 }
 
-void DetachEntitiesAttachedToVid(State& state, const VID& owner_vid, const Graphics& graphics) {
-    if (Entity* const holder = state.entity_manager.GetEntityMut(owner_vid)) {
+void DetachEntsAttachedToVid(State& state, const VID& owner_vid, const Graphics& graphics) {
+    if (Ent* const holder = state.ents.GetEntMut(owner_vid)) {
         holder->holding_vid.reset();
         holder->holding = false;
         holder->holding_timer = kDefaultHoldingTimer;
         holder->back_vid.reset();
     }
 
-    for (Entity& attached : state.entity_manager.entities) {
+    for (Ent& attached : state.ents.ents) {
         if (!attached.active || !attached.held_by_vid.has_value() || *attached.held_by_vid != owner_vid) {
             continue;
         }
 
         attached.held_by_vid.reset();
-        attached.attachment_mode = AttachmentMode::None;
-        StopUsingEntity(attached);
-        RestoreEntityHasPhysicsFromArchetype(attached);
-        RestoreEntityCanCollideFromArchetype(attached);
-        RestoreEntityDrawLayerFromArchetype(attached);
+        attached.attach_mode = AttachMode::None;
+        StopUsingEnt(attached);
+        RestoreEntHasPhysicsFromSpec(attached);
+        RestoreEntCanCollideFromSpec(attached);
+        RestoreEntDrawLayerFromSpec(attached);
         attached.grounded = false;
-        state.UpdateSidForEntity(attached.vid.id, graphics);
+        state.UpdateSidForEnt(attached.vid.id, graphics);
     }
 }
 
-void GrantFreshStarterTools(State& state, const VID& owner_vid, EntityType type_) {
+void GrantFreshStarterTools(State& state, const VID& owner_vid, EntType type_) {
     RemoveToolStateForVid(state, owner_vid);
-    if (type_ != EntityType::Player) {
+    if (type_ != EntType::Player) {
         return;
     }
 
     if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
         FillToolSlot(
-            state.entity_tools.EnsureToolSlot(owner_vid, 0),
+            state.ent_tools.EnsureToolSlot(owner_vid, 0),
             *bomb_tool_kind,
             kDebugPlayerInitialBombs,
             true
@@ -289,7 +289,7 @@ void GrantFreshStarterTools(State& state, const VID& owner_vid, EntityType type_
     }
     if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
         FillToolSlot(
-            state.entity_tools.EnsureToolSlot(owner_vid, 1),
+            state.ent_tools.EnsureToolSlot(owner_vid, 1),
             *rope_tool_kind,
             kDebugPlayerInitialRopes,
             true
@@ -301,82 +301,82 @@ bool SwapControlledCharacter(
     DebugPlayback& debug,
     State& state,
     const Graphics& graphics,
-    Entity* selected_entity
+    Ent* selected_ent
 ) {
-    const EntityType target_type = debug.character_swap_entity_type;
-    if (target_type == EntityType::None) {
+    const EntType target_type = debug.character_swap_ent_type;
+    if (target_type == EntType::None) {
         debug.character_swap_status = "Select a character type first.";
         return false;
     }
 
-    Entity* const source_entity = FindSwapSourceEntity(state, selected_entity);
-    if (source_entity == nullptr) {
-        debug.character_swap_status = "No controlled, player, or selected entity to swap.";
+    Ent* const source_ent = FindSwapSourceEnt(state, selected_ent);
+    if (source_ent == nullptr) {
+        debug.character_swap_status = "No controlled, player, or selected ent to swap.";
         return false;
     }
 
-    const Entity* const stats_entity = FindSwapStatsEntity(state, source_entity);
+    const Ent* const stats_ent = FindSwapStatsEnt(state, source_ent);
     const bool keep_passives = !debug.character_swap_fresh || debug.character_swap_keep_passives;
     const bool keep_money = !debug.character_swap_fresh || debug.character_swap_keep_money;
     const bool keep_health = !debug.character_swap_fresh || debug.character_swap_keep_health;
     const bool keep_tools = !debug.character_swap_fresh || debug.character_swap_keep_tools;
 
-    const Vec2 spawn_center = source_entity->GetCenter();
-    const LeftOrRight facing = source_entity->facing;
-    const VID replacement_vid = source_entity->vid;
+    const Vec2 spawn_center = source_ent->GetCenter();
+    const Side facing = source_ent->facing;
+    const VID replacement_vid = source_ent->vid;
     const std::optional<VID> old_player_vid = FindPrimaryLocalPlayerVid(state);
-    const EntityEffects* const effects =
-        stats_entity != nullptr ? stats_entity->effects.get() : nullptr;
-    const std::uint32_t money = stats_entity != nullptr ? stats_entity->money : 0;
-    const std::uint32_t health = stats_entity != nullptr ? stats_entity->health : 0;
-    const std::optional<EntityToolState> preserved_tools =
-        stats_entity != nullptr ? CopyToolStateForVid(state, stats_entity->vid) : std::nullopt;
+    const EntEffects* const effects =
+        stats_ent != nullptr ? stats_ent->effects.get() : nullptr;
+    const std::uint32_t money = stats_ent != nullptr ? stats_ent->money : 0;
+    const std::uint32_t health = stats_ent != nullptr ? stats_ent->health : 0;
+    const std::optional<EntToolState> preserved_tools =
+        stats_ent != nullptr ? CopyToolStateForVid(state, stats_ent->vid) : std::nullopt;
 
-    DetachEntitiesAttachedToVid(state, replacement_vid, graphics);
+    DetachEntsAttachedToVid(state, replacement_vid, graphics);
     if (old_player_vid.has_value() && *old_player_vid != replacement_vid) {
-        DetachEntitiesAttachedToVid(state, *old_player_vid, graphics);
-        state.entity_manager.SetInactiveVid(*old_player_vid);
+        DetachEntsAttachedToVid(state, *old_player_vid, graphics);
+        state.ents.SetInactiveVid(*old_player_vid);
         RemoveToolStateForVid(state, *old_player_vid);
-        state.UpdateSidForEntity(old_player_vid->id, graphics);
+        state.UpdateSidForEnt(old_player_vid->id, graphics);
     }
 
-    SetEntityAs(*source_entity, target_type);
-    source_entity->vel = Vec2::New(0.0F, 0.0F);
-    source_entity->acc = Vec2::New(0.0F, 0.0F);
-    source_entity->rotation = 0.0F;
-    source_entity->facing = facing;
-    source_entity->SetCenter(spawn_center);
+    SetEntAs(*source_ent, target_type);
+    source_ent->vel = Vec2::New(0.0F, 0.0F);
+    source_ent->acc = Vec2::New(0.0F, 0.0F);
+    source_ent->rotation = 0.0F;
+    source_ent->facing = facing;
+    source_ent->SetCenter(spawn_center);
 
     if (keep_passives) {
-        source_entity->effects.reset();
+        source_ent->effects.reset();
         if (effects != nullptr) {
-            source_entity->effects.emplace() = *effects;
+            source_ent->effects.emplace() = *effects;
         }
     }
     if (keep_money) {
-        source_entity->money = money;
+        source_ent->money = money;
     }
     if (keep_health) {
-        source_entity->health = health;
+        source_ent->health = health;
     }
 
     RemoveToolStateForVid(state, replacement_vid);
     if (keep_tools && preserved_tools.has_value()) {
-        EntityToolState copied_tools = *preserved_tools;
+        EntToolState copied_tools = *preserved_tools;
         copied_tools.owner_vid = replacement_vid;
-        state.entity_tools.tool_states.push_back(copied_tools);
+        state.ent_tools.tool_states.push_back(copied_tools);
     } else {
         GrantFreshStarterTools(state, replacement_vid, target_type);
     }
 
     if (PlayerSlot* const slot = state.players.FindPrimaryLocal()) {
-        slot->entity_vid = replacement_vid;
+        slot->ent_vid = replacement_vid;
     }
-    state.controlled_entity_vid = replacement_vid;
-    state.UpdateSidForEntity(replacement_vid.id, graphics);
-    debug.selected_entity_id = replacement_vid.id;
-    debug.character_swap_status = std::string("Swapped to ") + GetEntityTypeName(target_type) + ".";
-    if (source_entity->control_logic == nullptr) {
+    state.controlled_ent_vid = replacement_vid;
+    state.UpdateSidForEnt(replacement_vid.id, graphics);
+    debug.selected_ent_id = replacement_vid.id;
+    debug.character_swap_status = std::string("Swapped to ") + GetEntTypeName(target_type) + ".";
+    if (source_ent->control_logic == nullptr) {
         debug.character_swap_status += " Warning: no control callback.";
     }
     return true;
@@ -386,11 +386,11 @@ void DrawCharacterSwapControls(
     DebugPlayback& debug,
     State& state,
     const Graphics& graphics,
-    Entity* selected_entity
+    Ent* selected_ent
 ) {
     ImGui::SeparatorText("Character Swap");
     if (IsPeerDebugWorldMutationDisabled(state)) {
-        ImGui::TextDisabled("Disabled on multiplayer peers until debug/admin commands are coordinator-routed.");
+        ImGui::TextDisabled("Disabled on multiplayer peers until debug/admin commands are host-routed.");
         return;
     }
     if (debug.playback_active) {
@@ -398,7 +398,7 @@ void DrawCharacterSwapControls(
         return;
     }
 
-    ImGui::TextDisabled("Source: controlled entity, then player, then selected entity.");
+    ImGui::TextDisabled("Source: controlled ent, then player, then selected ent.");
     ImGui::InputText(
         "Search##character_swap_search",
         debug.character_swap_search.data(),
@@ -409,17 +409,17 @@ void DrawCharacterSwapControls(
         debug.character_swap_search[0] = '\0';
     }
 
-    const char* current_swap_name = GetEntityTypeName(debug.character_swap_entity_type);
+    const char* current_swap_name = GetEntTypeName(debug.character_swap_ent_type);
     if (ImGui::BeginCombo("Swap Type", current_swap_name)) {
-        const std::vector<EntityType> sorted_spawn_types = BuildSortedSpawnTypes();
-        for (const EntityType type_ : sorted_spawn_types) {
-            const char* type_name = GetEntityTypeName(type_);
+        const std::vector<EntType> sorted_spawn_types = BuildSortedSpawnTypes();
+        for (const EntType type_ : sorted_spawn_types) {
+            const char* type_name = GetEntTypeName(type_);
             if (!SpawnSearchMatches(debug.character_swap_search.data(), type_name)) {
                 continue;
             }
-            const bool selected = debug.character_swap_entity_type == type_;
+            const bool selected = debug.character_swap_ent_type == type_;
             if (ImGui::Selectable(type_name, selected)) {
-                debug.character_swap_entity_type = type_;
+                debug.character_swap_ent_type = type_;
             }
             if (selected) {
                 ImGui::SetItemDefaultFocus();
@@ -430,7 +430,7 @@ void DrawCharacterSwapControls(
 
     ImGui::Checkbox("Fresh Spawn", &debug.character_swap_fresh);
     ImGui::SameLine();
-    ImGui::TextDisabled("fresh uses archetype defaults; keep flags copy selected state after reset");
+    ImGui::TextDisabled("fresh uses spec defaults; keep flags copy selected state after reset");
     ImGui::Checkbox("Keep Passives", &debug.character_swap_keep_passives);
     ImGui::SameLine();
     ImGui::Checkbox("Keep Money", &debug.character_swap_keep_money);
@@ -439,27 +439,27 @@ void DrawCharacterSwapControls(
     ImGui::Checkbox("Keep Tools", &debug.character_swap_keep_tools);
 
     if (ImGui::Button("Swap Controlled Character")) {
-        SwapControlledCharacter(debug, state, graphics, selected_entity);
+        SwapControlledCharacter(debug, state, graphics, selected_ent);
     }
 
     ImGui::SeparatorText("Default Spawn");
     ImGui::Checkbox("Spawn As Default Type", &debug.default_spawn_enabled);
     ImGui::SameLine();
     if (ImGui::Button("Use Swap Type##default_spawn_use_swap_type")) {
-        debug.default_spawn_entity_type = debug.character_swap_entity_type;
+        debug.default_spawn_ent_type = debug.character_swap_ent_type;
     }
 
-    const char* current_default_spawn_name = GetEntityTypeName(debug.default_spawn_entity_type);
+    const char* current_default_spawn_name = GetEntTypeName(debug.default_spawn_ent_type);
     if (ImGui::BeginCombo("Default Spawn Type", current_default_spawn_name)) {
-        const std::vector<EntityType> sorted_spawn_types = BuildSortedSpawnTypes();
-        for (const EntityType type_ : sorted_spawn_types) {
-            const char* type_name = GetEntityTypeName(type_);
+        const std::vector<EntType> sorted_spawn_types = BuildSortedSpawnTypes();
+        for (const EntType type_ : sorted_spawn_types) {
+            const char* type_name = GetEntTypeName(type_);
             if (!SpawnSearchMatches(debug.character_swap_search.data(), type_name)) {
                 continue;
             }
-            const bool selected = debug.default_spawn_entity_type == type_;
+            const bool selected = debug.default_spawn_ent_type == type_;
             if (ImGui::Selectable(type_name, selected)) {
-                debug.default_spawn_entity_type = type_;
+                debug.default_spawn_ent_type = type_;
             }
             if (selected) {
                 ImGui::SetItemDefaultFocus();
@@ -474,33 +474,33 @@ void DrawCharacterSwapControls(
     }
 }
 
-bool SpawnDebugEntity(
+bool SpawnDebugEnt(
     DebugPlayback& debug,
     State& state,
     const Graphics& graphics,
-    EntityType type_,
-    const Entity* selected_entity
+    EntType type_,
+    const Ent* selected_ent
 ) {
     if (IsPeerDebugWorldMutationDisabled(state)) {
         debug.spawn_status =
-            "Debug spawning is disabled on multiplayer peers until admin commands are coordinator-routed.";
+            "Debug spawning is disabled on multiplayer peers until admin commands are host-routed.";
         return false;
     }
-    if (type_ == EntityType::None) {
-        debug.spawn_status = "Select an entity type first.";
+    if (type_ == EntType::None) {
+        debug.spawn_status = "Select an ent type first.";
         return false;
     }
 
-    if (debug.spawn_center_on_selected && selected_entity == nullptr) {
-        debug.spawn_status = "No active selected entity to center spawn on.";
+    if (debug.spawn_center_on_selected && selected_ent == nullptr) {
+        debug.spawn_status = "No active selected ent to center spawn on.";
         return false;
     }
 
     std::optional<VID> holding_player_vid;
     if (debug.spawn_held_by_player) {
-        Entity* const player = GetPrimaryLocalPlayerMut(state);
+        Ent* const player = GetPrimaryLocalPlayerMut(state);
         if (player == nullptr) {
-            debug.spawn_status = "No player to hold spawned entity.";
+            debug.spawn_status = "No player to hold spawned ent.";
             return false;
         }
         if (player->holding_vid.has_value()) {
@@ -511,14 +511,14 @@ bool SpawnDebugEntity(
     }
 
     Vec2 spawn_center = graphics.ScreenToWc(state.playing_inputs.mouse_pos);
-    if (debug.spawn_center_on_selected && selected_entity != nullptr) {
-        spawn_center = selected_entity->GetCenter();
+    if (debug.spawn_center_on_selected && selected_ent != nullptr) {
+        spawn_center = selected_ent->GetCenter();
     }
 
-    Entity* const spawned = world_ops::SpawnEntity(state, type_, [spawn_center](Entity& entity) {
-        entity.vel = Vec2::New(0.0F, 0.0F);
-        entity.acc = Vec2::New(0.0F, 0.0F);
-        entity.SetCenter(spawn_center);
+    Ent* const spawned = world_ops::SpawnEnt(state, type_, [spawn_center](Ent& ent) {
+        ent.vel = Vec2::New(0.0F, 0.0F);
+        ent.acc = Vec2::New(0.0F, 0.0F);
+        ent.SetCenter(spawn_center);
     });
     if (spawned == nullptr) {
         debug.spawn_status = "Spawn failed.";
@@ -526,46 +526,46 @@ bool SpawnDebugEntity(
     }
 
     if (debug.spawn_held_by_player) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*holding_player_vid)) {
+        if (Ent* const player = state.ents.GetEntMut(*holding_player_vid)) {
             player->holding_vid = spawned->vid;
             player->holding = true;
             player->holding_timer = kDefaultHoldingTimer;
             spawned->held_by_vid = player->vid;
-            spawned->attachment_mode = AttachmentMode::Held;
+            spawned->attach_mode = AttachMode::Held;
             spawned->has_physics = false;
             spawned->can_collide = false;
             spawned->facing = player->facing;
             spawned->SetCenter(player->GetCenter());
             debug.spawn_status =
-                std::string("Spawned and attached ") + GetEntityTypeName(type_) + ".";
+                std::string("Spawned and attached ") + GetEntTypeName(type_) + ".";
         }
     } else {
-        debug.spawn_status = std::string("Spawned ") + GetEntityTypeName(type_) + ".";
+        debug.spawn_status = std::string("Spawned ") + GetEntTypeName(type_) + ".";
     }
 
-    state.UpdateSidForEntity(spawned->vid.id, graphics);
-    debug.selected_entity_id = spawned->vid.id;
+    state.UpdateSidForEnt(spawned->vid.id, graphics);
+    debug.selected_ent_id = spawned->vid.id;
     return true;
 }
 
 } // namespace
 
-void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics) {
-    if (!debug.entity_inspector_visible) {
+void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphics) {
+    if (!debug.ent_inspector_visible) {
         return;
     }
 
     ImGui::SetNextWindowBgAlpha(0.9F);
     ImGui::SetNextWindowPos(ImVec2(12.0F, 300.0F), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Debug: Entities", &debug.entity_inspector_visible)) {
+    if (!ImGui::Begin("Debug: Ents", &debug.ent_inspector_visible)) {
         ImGui::End();
         return;
     }
 
-    if (ImGui::BeginListBox("Entities", ImVec2(260.0F, 220.0F))) {
-        for (std::size_t i = 0; i < state.entity_manager.entities.size(); ++i) {
-            const Entity& entity = state.entity_manager.entities[i];
-            if (!entity.active) {
+    if (ImGui::BeginListBox("Ents", ImVec2(260.0F, 220.0F))) {
+        for (std::size_t i = 0; i < state.ents.ents.size(); ++i) {
+            const Ent& ent = state.ents.ents[i];
+            if (!ent.active) {
                 continue;
             }
 
@@ -573,14 +573,14 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             std::snprintf(
                 label,
                 sizeof(label),
-                "%zu: %s##entity_%zu",
+                "%zu: %s##ent_%zu",
                 i,
-                EntityTypeToString(entity.type_),
+                EntTypeToString(ent.type_),
                 i
             );
-            const bool selected = debug.selected_entity_id == i;
+            const bool selected = debug.selected_ent_id == i;
             if (ImGui::Selectable(label, selected)) {
-                debug.selected_entity_id = i;
+                debug.selected_ent_id = i;
             }
             if (selected) {
                 ImGui::SetItemDefaultFocus();
@@ -589,26 +589,26 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         ImGui::EndListBox();
     }
 
-    if (debug.selected_entity_id >= state.entity_manager.entities.size()) {
-        debug.selected_entity_id = 0;
+    if (debug.selected_ent_id >= state.ents.ents.size()) {
+        debug.selected_ent_id = 0;
     }
 
-    Entity* selected_entity = nullptr;
-    if (!state.entity_manager.entities.empty()) {
-        Entity& entity = state.entity_manager.entities[debug.selected_entity_id];
-        if (entity.active) {
-            selected_entity = &entity;
+    Ent* selected_ent = nullptr;
+    if (!state.ents.ents.empty()) {
+        Ent& ent = state.ents.ents[debug.selected_ent_id];
+        if (ent.active) {
+            selected_ent = &ent;
         }
     }
 
     if (IsPeerDebugWorldMutationDisabled(state)) {
         debug.pending_spawn_at_mouse = false;
         ImGui::SeparatorText("Spawner");
-        ImGui::TextDisabled("Entity spawning disabled on multiplayer peers.");
+        ImGui::TextDisabled("Ent spawning disabled on multiplayer peers.");
     } else if (debug.playback_active) {
         debug.pending_spawn_at_mouse = false;
         ImGui::SeparatorText("Spawner");
-        ImGui::TextDisabled("Entity spawning disabled during playback.");
+        ImGui::TextDisabled("Ent spawning disabled during playback.");
     } else {
         ImGui::SeparatorText("Spawner");
         ImGui::InputText("Search", debug.spawn_search.data(), debug.spawn_search.size());
@@ -617,17 +617,17 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             debug.spawn_search[0] = '\0';
         }
 
-        const char* current_spawn_name = GetEntityTypeName(debug.spawn_entity_type);
+        const char* current_spawn_name = GetEntTypeName(debug.spawn_ent_type);
         if (ImGui::BeginCombo("Spawn Type", current_spawn_name)) {
-            const std::vector<EntityType> sorted_spawn_types = BuildSortedSpawnTypes();
-            for (const EntityType type_ : sorted_spawn_types) {
-                const char* type_name = GetEntityTypeName(type_);
+            const std::vector<EntType> sorted_spawn_types = BuildSortedSpawnTypes();
+            for (const EntType type_ : sorted_spawn_types) {
+                const char* type_name = GetEntTypeName(type_);
                 if (!SpawnSearchMatches(debug.spawn_search.data(), type_name)) {
                     continue;
                 }
-                const bool selected = debug.spawn_entity_type == type_;
+                const bool selected = debug.spawn_ent_type == type_;
                 if (ImGui::Selectable(type_name, selected)) {
-                    debug.spawn_entity_type = type_;
+                    debug.spawn_ent_type = type_;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -664,14 +664,14 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             }
             if (debug.pending_spawn_at_mouse && state.now >= debug.pending_spawn_at_mouse_until) {
                 debug.pending_spawn_at_mouse = false;
-                SpawnDebugEntity(debug, state, graphics, debug.spawn_entity_type, selected_entity);
+                SpawnDebugEnt(debug, state, graphics, debug.spawn_ent_type, selected_ent);
             }
         } else {
             const char* spawn_button_label =
-                debug.spawn_center_on_selected ? "Spawn Entity" : "Arm Mouse Spawn";
+                debug.spawn_center_on_selected ? "Spawn Ent" : "Arm Mouse Spawn";
             if (ImGui::Button(spawn_button_label)) {
                 if (debug.spawn_center_on_selected) {
-                    SpawnDebugEntity(debug, state, graphics, debug.spawn_entity_type, selected_entity);
+                    SpawnDebugEnt(debug, state, graphics, debug.spawn_ent_type, selected_ent);
                 } else {
                     debug.pending_spawn_at_mouse = true;
                     debug.pending_spawn_at_mouse_until = state.now + kSpawnAtMouseDelaySeconds;
@@ -685,81 +685,81 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
         }
     }
 
-    DrawCharacterSwapControls(debug, state, graphics, selected_entity);
+    DrawCharacterSwapControls(debug, state, graphics, selected_ent);
 
-    if (selected_entity == nullptr) {
-        ImGui::TextUnformatted("No active entity selected.");
+    if (selected_ent == nullptr) {
+        ImGui::TextUnformatted("No active ent selected.");
         ImGui::End();
         SyncDebugUiSettings(debug, state);
         return;
     }
 
-    Entity& entity = *selected_entity;
-    const AABB aabb = entity.GetAABB();
+    Ent& ent = *selected_ent;
+    const AABB aabb = ent.GetAABB();
     ImGui::Separator();
-    ImGui::Text("Type: %s", EntityTypeToString(entity.type_));
+    ImGui::Text("Type: %s", EntTypeToString(ent.type_));
     ImGui::Text(
         "Controlled: %s",
-        state.controlled_entity_vid.has_value() && entity.vid == *state.controlled_entity_vid
+        state.controlled_ent_vid.has_value() && ent.vid == *state.controlled_ent_vid
             ? "true"
             : "false"
     );
     if (ImGui::Button("Control Selected")) {
-        state.controlled_entity_vid = entity.vid;
+        state.controlled_ent_vid = ent.vid;
     }
     if (const std::optional<VID> player_vid = FindPrimaryLocalPlayerVid(state)) {
         ImGui::SameLine();
         if (ImGui::Button("Control Player")) {
-            state.controlled_entity_vid = *player_vid;
+            state.controlled_ent_vid = *player_vid;
         }
     }
-    ImGui::Text("Animation Id: %u", entity.frame_data_animator.animation_id);
-    ImGui::Text("Condition: %s", ConditionToString(entity.condition));
-    ImGui::Text("AI: %s", AiStateToString(entity.ai_state));
+    ImGui::Text("Anim Id: %u", ent.aframe_animator.anim_id);
+    ImGui::Text("Condition: %s", ConditionToString(ent.condition));
+    ImGui::Text("AI: %s", AiStateToString(ent.ai_state));
     const bool peer_mutation_disabled = IsPeerDebugWorldMutationDisabled(state);
-    bool entity_state_changed = false;
+    bool ent_state_changed = false;
     bool player_state_changed = false;
     if (peer_mutation_disabled) {
         ImGui::BeginDisabled();
     }
-    bool stone = entity.stone;
+    bool stone = ent.stone;
     if (ImGui::Checkbox("Stone", &stone)) {
         if (stone) {
-            EnableStone(entity);
+            EnableStone(ent);
         } else {
-            DisableStone(entity);
+            DisableStone(ent);
         }
-        entity_state_changed = true;
+        ent_state_changed = true;
     }
-    if (ImGui::Checkbox("Wanted", &entity.wanted)) {
-        entity_state_changed = true;
+    if (ImGui::Checkbox("Wanted", &ent.wanted)) {
+        ent_state_changed = true;
         player_state_changed = true;
     }
-    entity_state_changed |= ImGui::Checkbox("Crusher/Pusher", &entity.crusher_pusher);
-    entity_state_changed |= ImGui::Checkbox("Pushable", &entity.pushable);
-    entity_state_changed |= ImGui::DragFloat("Push Acc", &entity.push_acc, 0.01F, 0.0F, 5.0F, "%.2f");
+    ent_state_changed |= ImGui::Checkbox("Crusher/Pusher", &ent.crusher_pusher);
+    ent_state_changed |= ImGui::Checkbox("Pushable", &ent.pushable);
+    ent_state_changed |= ImGui::DragFloat("Push Acc", &ent.push_acc, 0.01F, 0.0F, 5.0F, "%.2f");
     if (peer_mutation_disabled) {
         ImGui::EndDisabled();
-        ImGui::TextDisabled("Entity edits are disabled on multiplayer peers until admin commands are coordinator-routed.");
+        ImGui::TextDisabled("Ent edits are disabled on multiplayer peers until admin commands are host-routed.");
     }
-    ImGui::Text("Facing: %s", LeftOrRightToString(entity.facing));
-    ImGui::Text("Grounded: %s", entity.grounded ? "true" : "false");
-    ImGui::Text("Pos: (%.2f, %.2f)", entity.pos.x, entity.pos.y);
-    ImGui::Text("Vel: (%.2f, %.2f)", entity.vel.x, entity.vel.y);
-    ImGui::Text("Acc: (%.2f, %.2f)", entity.acc.x, entity.acc.y);
-    ImGui::Text("Size: (%.2f, %.2f)", entity.size.x, entity.size.y);
+    ImGui::Text("Facing: %s", SideToString(ent.facing));
+    ImGui::Text("Grounded: %s", ent.grounded ? "true" : "false");
+    ImGui::Text("Pos: (%.2f, %.2f)", ent.pos.x, ent.pos.y);
+    ImGui::Text("Vel: (%.2f, %.2f)", ent.vel.x, ent.vel.y);
+    ImGui::Text("Acc: (%.2f, %.2f)", ent.acc.x, ent.acc.y);
+    ImGui::Text("Size: (%.2f, %.2f)", ent.size.x, ent.size.y);
     ImGui::Text("AABB TL: (%.2f, %.2f)", aabb.tl.x, aabb.tl.y);
     ImGui::Text("AABB BR: (%.2f, %.2f)", aabb.br.x, aabb.br.y);
-    ImGui::Text("Coyote: %u", entity.coyote_time);
-    ImGui::Text("Fall timer: %u", entity.fall_timer);
-    ImGui::Text("Health: %u", entity.health);
-    ImGui::Text("Money: %u", entity.money);
+    ImGui::Text("Coyote: %u", ent.coyote_time);
+    ImGui::Text("Fall timer: %u", ent.fall_timer);
+    ImGui::Text("Health: %u", ent.health);
+    ImGui::Text("Money: %u", ent.money);
     if (!peer_mutation_disabled) {
-        int money = static_cast<int>(entity.money);
+        int money = static_cast<int>(ent.money);
         ImGui::SetNextItemWidth(120.0F);
         if (ImGui::InputInt("Edit Money", &money)) {
-            entity.money = static_cast<std::uint32_t>(std::max(0, money));
-            entity_state_changed = true;
+            ent.money = static_cast<std::uint32_t>(std::max(0, money));
+            ent_state_changed = true;
             player_state_changed = true;
         }
     }
@@ -767,8 +767,8 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     if (peer_mutation_disabled) {
         ImGui::BeginDisabled();
     }
-    if (DrawEntityEffectsEditor(entity)) {
-        entity_state_changed = true;
+    if (DrawEntEffectsEditor(ent)) {
+        ent_state_changed = true;
         player_state_changed = true;
     }
     if (peer_mutation_disabled) {
@@ -781,11 +781,11 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
     } else if (debug.playback_active) {
         ImGui::TextDisabled("Tool editing disabled during playback.");
     } else {
-        const bool has_sticky_bombs = HasStickyBombTool(state.entity_tools, entity.vid);
+        const bool has_sticky_bombs = HasStickyBombTool(state.ent_tools, ent.vid);
         ImGui::Text("Sticky bombs: %s", has_sticky_bombs ? "true" : "false");
         ImGui::SameLine();
         if (ImGui::Button("Upgrade Bombs To Sticky")) {
-            state.entity_tools.UpgradeBombsToSticky(entity.vid);
+            state.ent_tools.UpgradeBombsToSticky(ent.vid);
             player_state_changed = true;
         }
         for (std::size_t slot_index = 0; slot_index < kToolSlotCount; ++slot_index) {
@@ -794,7 +794,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
                     FindPreferredToolKindForSlotIndex(slot_index)) {
                 FillToolSlot(preview_slot, *preferred_tool_kind, 0, false);
             }
-            ToolSlot* slot = state.entity_tools.FindToolSlotMut(entity.vid, slot_index);
+            ToolSlot* slot = state.ent_tools.FindToolSlotMut(ent.vid, slot_index);
             if (slot == nullptr) {
                 slot = &preview_slot;
             }
@@ -802,7 +802,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             ImGui::SeparatorText(slot_index == 0 ? "Tool Slot 1" : "Tool Slot 2");
             bool active = slot->active;
             if (ImGui::Checkbox("Active", &active)) {
-                ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
+                ToolSlot& owned_slot = state.ent_tools.EnsureToolSlot(ent.vid, slot_index);
                 owned_slot = *slot;
                 owned_slot.active = active;
                 slot = &owned_slot;
@@ -816,7 +816,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
                     const ToolKind tool_kind = static_cast<ToolKind>(tool_index);
                     const bool selected = static_cast<int>(tool_index) == kind_index;
                     if (ImGui::Selectable(GetToolKindName(tool_kind), selected)) {
-                        ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
+                        ToolSlot& owned_slot = state.ent_tools.EnsureToolSlot(ent.vid, slot_index);
                         owned_slot = *slot;
                         owned_slot.kind = tool_kind;
                         slot = &owned_slot;
@@ -834,7 +834,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             int cooldown = static_cast<int>(slot->cooldown);
             ImGui::SetNextItemWidth(120.0F);
             if (ImGui::InputInt("Count", &count)) {
-                ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
+                ToolSlot& owned_slot = state.ent_tools.EnsureToolSlot(ent.vid, slot_index);
                 owned_slot = *slot;
                 owned_slot.count = static_cast<std::uint16_t>(std::clamp(count, 0, 65535));
                 slot = &owned_slot;
@@ -842,7 +842,7 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             }
             ImGui::SetNextItemWidth(120.0F);
             if (ImGui::InputInt("Cooldown", &cooldown)) {
-                ToolSlot& owned_slot = state.entity_tools.EnsureToolSlot(entity.vid, slot_index);
+                ToolSlot& owned_slot = state.ent_tools.EnsureToolSlot(ent.vid, slot_index);
                 owned_slot = *slot;
                 owned_slot.cooldown = static_cast<std::uint16_t>(std::clamp(cooldown, 0, 65535));
                 player_state_changed = true;
@@ -850,52 +850,52 @@ void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& gra
             ImGui::PopID();
         }
     }
-    (void)entity_state_changed;
+    (void)ent_state_changed;
     (void)player_state_changed;
-    ImGui::Text("Climbing: %s", entity.IsClimbing() ? "true" : "false");
-    ImGui::Text("Holding: %s", entity.holding ? "true" : "false");
+    ImGui::Text("Climbing: %s", ent.IsClimbing() ? "true" : "false");
+    ImGui::Text("Holding: %s", ent.holding ? "true" : "false");
 
-    if (entity.frame_data_animator.HasAnimation()) {
-        const FrameDataAnimation* animation =
-            graphics.frame_data_db.FindAnimation(entity.frame_data_animator.animation_id);
-        if (animation != nullptr) {
-            ImGui::Text("Anim: %s", animation->name.c_str());
+    if (ent.aframe_animator.HasAnim()) {
+        const AFrameAnim* anim =
+            graphics.aframe_db.FindAnim(ent.aframe_animator.anim_id);
+        if (anim != nullptr) {
+            ImGui::Text("Anim: %s", anim->name.c_str());
             ImGui::Text(
                 "Anim Frame: %zu / %zu",
-                entity.frame_data_animator.current_frame,
-                animation->frame_indices.empty() ? 0 : animation->frame_indices.size() - 1
+                ent.aframe_animator.current_frame,
+                anim->frame_indices.empty() ? 0 : anim->frame_indices.size() - 1
             );
-            const FrameData* frame_data = graphics.frame_data_db.FindFrame(
-                entity.frame_data_animator.animation_id,
-                entity.frame_data_animator.current_frame
+            const AFrame* aframe = graphics.aframe_db.FindFrame(
+                ent.aframe_animator.anim_id,
+                ent.aframe_animator.current_frame
             );
-            if (frame_data != nullptr) {
-                ImGui::Text("Frame Duration: %d", frame_data->duration);
+            if (aframe != nullptr) {
+                ImGui::Text("Frame Duration: %d", aframe->duration);
                 ImGui::Text(
                     "Sample: (%d, %d, %d, %d)",
-                    frame_data->sample_rect.x,
-                    frame_data->sample_rect.y,
-                    frame_data->sample_rect.w,
-                    frame_data->sample_rect.h
+                    aframe->sample_rect.x,
+                    aframe->sample_rect.y,
+                    aframe->sample_rect.w,
+                    aframe->sample_rect.h
                 );
                 ImGui::Text(
                     "Draw Offset: (%d, %d)",
-                    frame_data->draw_offset.x,
-                    frame_data->draw_offset.y
+                    aframe->draw_offset.x,
+                    aframe->draw_offset.y
                 );
                 ImGui::Text(
                     "PBox: (%d, %d, %d, %d)",
-                    frame_data->pbox.x,
-                    frame_data->pbox.y,
-                    frame_data->pbox.w,
-                    frame_data->pbox.h
+                    aframe->pbox.x,
+                    aframe->pbox.y,
+                    aframe->pbox.w,
+                    aframe->pbox.h
                 );
                 ImGui::Text(
                     "CBox: (%d, %d, %d, %d)",
-                    frame_data->cbox.x,
-                    frame_data->cbox.y,
-                    frame_data->cbox.w,
-                    frame_data->cbox.h
+                    aframe->cbox.x,
+                    aframe->cbox.y,
+                    aframe->cbox.w,
+                    aframe->cbox.h
                 );
             }
         }

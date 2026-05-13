@@ -1,25 +1,25 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::thwomp_trap {
+namespace splonks::ents::thwomp_trap {
 
-extern const EntityArchetype kThwompTrapArchetype;
+extern const EntSpec kThwompTrapSpec;
 
-void StepEntityLogicAsThwompTrap(
-    std::size_t entity_idx,
+void StepEntLogicAsThwompTrap(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-void StepEntityPhysicsAsThwompTrap(
-    std::size_t entity_idx,
+void StepEntPhysicsAsThwompTrap(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-} // namespace splonks::entities::thwomp_trap
+} // namespace splonks::ents::thwomp_trap

@@ -64,9 +64,9 @@ glyphs:
     action: maybe_snake_or_solid_dirt
   - char: "S"
     spawn_random:
-      - entity: snake
+      - ent: snake
         weight: 4
-      - entity: cobra
+      - ent: cobra
         weight: 1
   - char: "T"
     spawn: ruby_big

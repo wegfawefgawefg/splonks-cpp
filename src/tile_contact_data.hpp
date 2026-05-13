@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame_data.hpp"
+#include "aframe.hpp"
 #include "tile.hpp"
 
 #include <cstdint>

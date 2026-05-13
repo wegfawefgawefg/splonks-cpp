@@ -1,14 +1,14 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::money {
+namespace splonks::ents::money {
 
-extern const EntityArchetype kGoldArchetype;
-extern const EntityArchetype kGoldStackArchetype;
-extern const EntityArchetype kGoldChunkArchetype;
-extern const EntityArchetype kGoldNuggetArchetype;
-extern const EntityArchetype kGoldBarArchetype;
-extern const EntityArchetype kGoldBarsArchetype;
+extern const EntSpec kGoldSpec;
+extern const EntSpec kGoldStackSpec;
+extern const EntSpec kGoldChunkSpec;
+extern const EntSpec kGoldNuggetSpec;
+extern const EntSpec kGoldBarSpec;
+extern const EntSpec kGoldBarsSpec;
 
-} // namespace splonks::entities::money
+} // namespace splonks::ents::money

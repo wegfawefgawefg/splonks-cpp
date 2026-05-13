@@ -3,9 +3,9 @@
 #include "audio.hpp"
 #include "audio_emitters.hpp"
 #include "contact_bookkeeping.hpp"
-#include "entity/manager.hpp"
-#include "entity_tool_inventory.hpp"
-#include "frame_data_id.hpp"
+#include "ent/manager.hpp"
+#include "ent_tool_inventory.hpp"
+#include "aframe_id.hpp"
 #include "inputs.hpp"
 #include "menu/settings.hpp"
 #include "menu/postfx.hpp"
@@ -19,7 +19,7 @@
 #include "settings.hpp"
 #include "sid.hpp"
 #include "particles/system.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 #include "stage.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_progression.hpp"
@@ -64,7 +64,7 @@ enum class ShakeMask : std::uint8_t {
     None = 0,
     ForegroundTiles = 1 << 0,
     BackgroundTiles = 1 << 1,
-    Entities = 1 << 2,
+    Ents = 1 << 2,
     Tiles = 3,
     All = 7,
 };
@@ -122,10 +122,10 @@ struct DebugLevelConfig {
 };
 
 struct DebugOverlayState {
-    bool show_entity_collision_boxes = false;
-    bool show_entity_ids = false;
-    bool show_entity_types = false;
-    bool show_entity_render_centers = false;
+    bool show_ent_collision_boxes = false;
+    bool show_ent_ids = false;
+    bool show_ent_types = false;
+    bool show_ent_render_centers = false;
     bool show_void_death_line = false;
     bool show_chunk_boundaries = false;
     bool show_chunk_coords = false;
@@ -166,10 +166,10 @@ struct DebugShakeBrushState {
     bool enabled = false;
     bool affect_foreground_tiles = true;
     bool affect_background_tiles = false;
-    bool affect_entities = false;
+    bool affect_ents = false;
     float foreground_tile_amount = 1.0F;
     float background_tile_amount = 1.0F;
-    float entity_amount = 1.0F;
+    float ent_amount = 1.0F;
     float radius_tiles = 2.0F;
 };
 
@@ -215,7 +215,7 @@ struct DebugInputOverrideState {
     bool active = false;
     PlayerId player_id = kInvalidPlayerId;
     int frames_remaining = 0;
-    PlayerInputFrame input = PlayerInputFrame::New();
+    InputFrame input = InputFrame::New();
 };
 
 struct StageRotationState {
@@ -233,7 +233,7 @@ struct WorldPrompt {
     const char* message_text = "";
     bool show_down_arrow = false;
     std::uint32_t quantity = 0;
-    std::optional<FrameDataId> icon_animation_id = std::nullopt;
+    std::optional<AFrameId> icon_anim_id = std::nullopt;
 };
 
 struct PerformanceStats {
@@ -299,7 +299,7 @@ struct State {
     std::uint32_t scene_frame = 0;
     std::uint32_t frame = 0;
     std::uint32_t stage_frame = 0;
-    DeterministicRng drng;
+    DetRng drng;
 
     // Session and progression state.
     Mode menu_return_to = Mode::Title;
@@ -327,7 +327,7 @@ struct State {
 
     // World and debug level state.
     DebugLevelConfig debug_level;
-    EntityManager entity_manager;
+    EntPool ents;
     ParticleSystem particles;
     AudioEmitterManager audio_emitters;
     SID sid;
@@ -336,16 +336,16 @@ struct State {
     StageAcoustics stage_acoustics;
     StageLighting stage_lighting;
 
-    // Common entity references.
-    std::optional<VID> controlled_entity_vid;
+    // Common ent references.
+    std::optional<VID> controlled_ent_vid;
     std::optional<PlayerId> spectator_target_player_id;
     std::optional<VID> mouse_trailer_vid;
 
     // Contact and interaction bookkeeping.
     ContactBookkeeping contact;
 
-    // Per-entity owned tool state.
-    EntityToolInventoryState entity_tools;
+    // Per-ent owned tool state.
+    EntToolInventoryState ent_tools;
     std::vector<WorldPrompt> world_prompts;
     std::vector<DebugRectAnnotation> debug_rect_annotations;
     std::vector<DebugLabelAnnotation> debug_label_annotations;
@@ -353,17 +353,17 @@ struct State {
     static State New();
     void SetMode(Mode new_mode);
     void RebuildSid(const Graphics& graphics);
-    void UpdateSidForEntity(std::size_t entity_id, const Graphics& graphics);
+    void UpdateSidForEnt(std::size_t ent_id, const Graphics& graphics);
     void RebuildAreaListenerCache();
-    void UpdateAreaListenerCacheForEntity(std::size_t entity_id);
+    void UpdateAreaListenerCacheForEnt(std::size_t ent_id);
     void ClearWorldPrompts();
     void AddWorldPrompt(const WorldPrompt& prompt);
     void ClearDebugAnnotations();
     void AddDebugRectAnnotation(const DebugRectAnnotation& annotation);
     void AddDebugLabelAnnotation(const DebugLabelAnnotation& annotation);
     void ClearInteractClaims();
-    void ClaimInteractForEntity(VID entity_vid);
-    bool IsInteractClaimedForEntity(VID entity_vid) const;
+    void ClaimInteractForEnt(VID ent_vid);
+    bool IsInteractClaimedForEnt(VID ent_vid) const;
 };
 
 void AddShake(
@@ -371,16 +371,16 @@ void AddShake(
     const Vec2& world_pos,
     float foreground_tile_amount,
     float background_tile_amount,
-    float entity_amount,
+    float ent_amount,
     float radius_tiles,
-    std::optional<VID> exclude_entity_vid = std::nullopt
+    std::optional<VID> exclude_ent_vid = std::nullopt
 );
 void AddShake(
     State& state,
     const Vec2& world_pos,
     float amount,
     float radius_tiles,
-    std::optional<VID> exclude_entity_vid = std::nullopt
+    std::optional<VID> exclude_ent_vid = std::nullopt
 );
 void AddShake(
     State& state,
@@ -388,7 +388,7 @@ void AddShake(
     float amount,
     float radius_tiles,
     ShakeMask mask,
-    std::optional<VID> exclude_entity_vid = std::nullopt
+    std::optional<VID> exclude_ent_vid = std::nullopt
 );
 
 } // namespace splonks

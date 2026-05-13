@@ -16,16 +16,16 @@ These are still classic step-time overlap contact systems and are the strongest
 targets for migration:
 
 - `MaybeHurtAndStunOnContact(...)`
-- `MaybeHurtAndStunOnContactAsProjectile(...)`
+- `MaybeHurtAndStunOnContactAsProj(...)`
 
 Why:
-- this is real `entity↔entity` contact behavior
+- this is real `ent↔ent` contact behavior
 - it currently depends on snapshot `SID` overlap queries
 - it wants the same pixel-accurate timing as the newer swept contact path
 
 ### `common_stomp.cpp`
 
-- `TryStompEntitiesBelow(...)`
+- `TryStompEntsBelow(...)`
 
 Why:
 - this is really downward contact resolution
@@ -37,7 +37,7 @@ Why:
 The old step-time crush/repel logic has been moved onto contact-driven block shove:
 
 Why:
-- moving blocks now shove contacted entities one pixel at a time
+- moving blocks now shove contacted ents one pixel at a time
 - if the shove fails, they apply crush damage
 - this is the reusable shape future crushers / shields / pushers want
 
@@ -45,18 +45,18 @@ Why:
 
 ### `common_collect.cpp`
 
-- `TryCollectEntityFromContact(...)`
+- `TryCollectEntFromContact(...)`
 
 Current recommendation:
-- moved to collector-driven `entity↔entity` contact dispatch
+- moved to collector-driven `ent↔ent` contact dispatch
 
 Why:
-- gold already participates in the same entity overlap world
+- gold already participates in the same ent overlap world
 - collector-driven contact keeps the behavior explicit and local
 - no special contact cooldown is needed because pickup destroys the collectible
 
 Open design question:
-- should the player/entity query and collect nearby gold
+- should the player/ent query and collect nearby gold
 - or should the gold detect that it is being collected and add itself to the collector
 
 Current lean:
@@ -120,7 +120,7 @@ Why:
 ## Suggested Order
 
 1. `common_collect.cpp`
-   - done: moved to collector-driven entity contact
+   - done: moved to collector-driven ent contact
 2. `common_stomp.cpp`
 3. `block.cpp` shove/crush
    - done: moved to contact-driven 1-pixel shove + crush on failed shove

@@ -5,20 +5,20 @@
 Separate three different concepts that are easy to accidentally mash together:
 
 1. Material response
-- how bouncy / slippery a tile or entity is
+- how bouncy / slippery a tile or ent is
 
 2. Motion policy
-- whether a thing is a grounded actor, a loose body, a projectile, etc.
+- whether a thing is a grounded actor, a loose body, a proj, etc.
 
 3. Condition / gameplay state
 - stunned, dead, normal, and so on
 
-The main reason to split these is that the same entity can need different collision behavior depending on its gameplay condition.
+The main reason to split these is that the same ent can need different collision behavior depending on its gameplay condition.
 
 Example:
 - a caveman walking on dirt should not bounce
 - the same caveman, once stunned and tumbling, should bounce
-- same entity, same tile, different result
+- same ent, same tile, different result
 
 That means a pure material-only system is not enough.
 
@@ -43,7 +43,7 @@ Use two layers.
 
 ### 1. Material data
 
-Put these in tile and entity archetypes:
+Put these in tile and ent specs:
 
 - restitution / bounciness
 - friction
@@ -71,7 +71,7 @@ Then collision response can do:
 - `LooseBody`
   - use bounce + friction response
 
-That lets the same entity swap behavior cleanly:
+That lets the same ent swap behavior cleanly:
 - normal caveman -> `GroundedActor`
 - stunned caveman -> `LooseBody`
 - dead but still moving caveman -> `LooseBody`
@@ -92,11 +92,11 @@ Not for immediate implementation. This is a later cleanup.
 
 When we return to it:
 
-1. Add material fields to tile/entity archetypes.
-2. Add `BodyMotionMode` or equivalent to shared entity/body logic.
+1. Add material fields to tile/ent specs.
+2. Add `BodyMotionMode` or equivalent to shared ent/body logic.
 3. Move loose-object bounce to the generalized material + motion-policy path.
 4. Let stunned/dead-moving enemies opt into `LooseBody`.
-5. Keep entity-specific sprite choice local.
+5. Keep ent-specific sprite choice local.
 
 ## Current Decision
 

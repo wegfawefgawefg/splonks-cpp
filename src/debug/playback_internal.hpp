@@ -6,11 +6,11 @@ namespace splonks::debug_playback_internal {
 
 const char* ModeToString(Mode mode);
 const char* DebugLevelKindToString(DebugLevelKind kind);
-const char* EntityTypeToString(EntityType type);
-const char* DisplayStateToString(EntityDisplayState state);
-const char* ConditionToString(EntityCondition condition);
-const char* AiStateToString(EntityAiState ai_state);
-const char* LeftOrRightToString(LeftOrRight facing);
+const char* EntTypeToString(EntType type);
+const char* DisplayStateToString(EntDisplayState state);
+const char* ConditionToString(EntCondition condition);
+const char* AiStateToString(EntAiState ai_state);
+const char* SideToString(Side facing);
 
 void ClampPlaybackIndex(DebugPlayback& debug);
 void PushSnapshot(DebugPlayback& debug, const State& state, const Graphics& graphics);
@@ -33,7 +33,7 @@ void DrawSimulationControls(DebugPlayback& debug, State& state, Audio& audio, Gr
 void DrawDebugMenu(DebugPlayback& debug, State& state);
 void DrawLevelControls(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawBorderControls(DebugPlayback& debug, State& state, Graphics& graphics);
-void DrawEntityInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
+void DrawEntInspector(DebugPlayback& debug, State& state, const Graphics& graphics);
 void DrawDebugOverlayWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawShakeBrushWindow(DebugPlayback& debug, State& state, Graphics& graphics);
 void DrawAudioBrushWindow(DebugPlayback& debug, State& state, Audio& audio, Graphics& graphics);

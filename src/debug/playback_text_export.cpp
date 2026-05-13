@@ -1,7 +1,7 @@
 #include "debug/playback_internal.hpp"
 
-#include "entity/archetype.hpp"
-#include "frame_data.hpp"
+#include "ent/spec.hpp"
+#include "aframe.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -39,73 +39,73 @@ const char* DebugLevelKindToString(DebugLevelKind kind) {
     return GetDebugLevelKindName(kind);
 }
 
-const char* EntityTypeToString(EntityType type) {
-    return GetEntityTypeName(type);
+const char* EntTypeToString(EntType type) {
+    return GetEntTypeName(type);
 }
 
-const char* DisplayStateToString(EntityDisplayState state) {
+const char* DisplayStateToString(EntDisplayState state) {
     switch (state) {
-    case EntityDisplayState::Neutral:
+    case EntDisplayState::Neutral:
         return "Neutral";
-    case EntityDisplayState::NeutralHolding:
+    case EntDisplayState::NeutralHolding:
         return "NeutralHolding";
-    case EntityDisplayState::Walk:
+    case EntDisplayState::Walk:
         return "Walk";
-    case EntityDisplayState::WalkHolding:
+    case EntDisplayState::WalkHolding:
         return "WalkHolding";
-    case EntityDisplayState::Fly:
+    case EntDisplayState::Fly:
         return "Fly";
-    case EntityDisplayState::Dead:
+    case EntDisplayState::Dead:
         return "Dead";
-    case EntityDisplayState::Stunned:
+    case EntDisplayState::Stunned:
         return "Stunned";
-    case EntityDisplayState::Climbing:
+    case EntDisplayState::Climbing:
         return "Climbing";
-    case EntityDisplayState::Hanging:
+    case EntDisplayState::Hanging:
         return "Hanging";
-    case EntityDisplayState::Falling:
+    case EntDisplayState::Falling:
         return "Falling";
-    case EntityDisplayState::EmoteDab:
+    case EntDisplayState::EmoteDab:
         return "EmoteDab";
-    case EntityDisplayState::EmoteBald:
+    case EntDisplayState::EmoteBald:
         return "EmoteBald";
     }
     return "Unknown";
 }
 
-const char* ConditionToString(EntityCondition condition) {
+const char* ConditionToString(EntCondition condition) {
     switch (condition) {
-    case EntityCondition::Normal:
+    case EntCondition::Normal:
         return "Normal";
-    case EntityCondition::Dead:
+    case EntCondition::Dead:
         return "Dead";
-    case EntityCondition::Stunned:
+    case EntCondition::Stunned:
         return "Stunned";
     }
     return "Unknown";
 }
 
-const char* AiStateToString(EntityAiState ai_state) {
+const char* AiStateToString(EntAiState ai_state) {
     switch (ai_state) {
-    case EntityAiState::Idle:
+    case EntAiState::Idle:
         return "Idle";
-    case EntityAiState::Disturbed:
+    case EntAiState::Disturbed:
         return "Disturbed";
-    case EntityAiState::Patrolling:
+    case EntAiState::Patrolling:
         return "Patrolling";
-    case EntityAiState::Pursuing:
+    case EntAiState::Pursuing:
         return "Pursuing";
-    case EntityAiState::Returning:
+    case EntAiState::Returning:
         return "Returning";
     }
     return "Unknown";
 }
 
-const char* LeftOrRightToString(LeftOrRight facing) {
+const char* SideToString(Side facing) {
     switch (facing) {
-    case LeftOrRight::Left:
+    case Side::Left:
         return "Left";
-    case LeftOrRight::Right:
+    case Side::Right:
         return "Right";
     }
     return "Unknown";
@@ -151,59 +151,59 @@ bool ExportRecordingToTextFile(
             << ")\n";
 
         std::size_t active_count = 0;
-        for (const Entity& entity : snapshot.entity_manager.entities) {
-            if (entity.active) {
+        for (const Ent& ent : snapshot.ents.ents) {
+            if (ent.active) {
                 active_count += 1;
             }
         }
-        out << "  active_entities: " << active_count << "\n";
+        out << "  active_ents: " << active_count << "\n";
 
-        for (std::size_t entity_id = 0; entity_id < snapshot.entity_manager.entities.size();
-             ++entity_id) {
-            const Entity& entity = snapshot.entity_manager.entities[entity_id];
-            if (!entity.active) {
+        for (std::size_t ent_id = 0; ent_id < snapshot.ents.ents.size();
+             ++ent_id) {
+            const Ent& ent = snapshot.ents.ents[ent_id];
+            if (!ent.active) {
                 continue;
             }
 
-            out << "  entity " << entity_id << "\n";
-            out << "    type: " << EntityTypeToString(entity.type_) << "\n";
-            out << "    condition: " << ConditionToString(entity.condition) << "\n";
-            out << "    ai_state: " << AiStateToString(entity.ai_state) << "\n";
-            out << "    facing: " << LeftOrRightToString(entity.facing) << "\n";
-            out << "    grounded: " << (entity.grounded ? "true" : "false") << "\n";
-            out << "    climbing: " << (entity.IsClimbing() ? "true" : "false") << "\n";
-            out << "    holding: " << (entity.holding ? "true" : "false") << "\n";
-            out << "    coyote_time: " << entity.coyote_time << "\n";
-            out << "    fall_timer: " << entity.fall_timer << "\n";
-            out << "    pos: (" << entity.pos.x << ", " << entity.pos.y << ")\n";
-            out << "    vel: (" << entity.vel.x << ", " << entity.vel.y << ")\n";
-            out << "    acc: (" << entity.acc.x << ", " << entity.acc.y << ")\n";
-            out << "    size: (" << entity.size.x << ", " << entity.size.y << ")\n";
-            out << "    health: " << entity.health << "\n";
-            out << "    money: " << entity.money << "\n";
+            out << "  ent " << ent_id << "\n";
+            out << "    type: " << EntTypeToString(ent.type_) << "\n";
+            out << "    condition: " << ConditionToString(ent.condition) << "\n";
+            out << "    ai_state: " << AiStateToString(ent.ai_state) << "\n";
+            out << "    facing: " << SideToString(ent.facing) << "\n";
+            out << "    grounded: " << (ent.grounded ? "true" : "false") << "\n";
+            out << "    climbing: " << (ent.IsClimbing() ? "true" : "false") << "\n";
+            out << "    holding: " << (ent.holding ? "true" : "false") << "\n";
+            out << "    coyote_time: " << ent.coyote_time << "\n";
+            out << "    fall_timer: " << ent.fall_timer << "\n";
+            out << "    pos: (" << ent.pos.x << ", " << ent.pos.y << ")\n";
+            out << "    vel: (" << ent.vel.x << ", " << ent.vel.y << ")\n";
+            out << "    acc: (" << ent.acc.x << ", " << ent.acc.y << ")\n";
+            out << "    size: (" << ent.size.x << ", " << ent.size.y << ")\n";
+            out << "    health: " << ent.health << "\n";
+            out << "    money: " << ent.money << "\n";
 
-            if (entity.frame_data_animator.HasAnimation()) {
-                const FrameDataAnimation* animation =
-                    graphics.frame_data_db.FindAnimation(entity.frame_data_animator.animation_id);
-                if (animation != nullptr) {
-                    out << "    animation: " << animation->name << "\n";
-                    out << "    animation_frame: " << entity.frame_data_animator.current_frame << "\n";
-                    out << "    animation_time: " << entity.frame_data_animator.current_time << "\n";
-                    const FrameData* frame_data = graphics.frame_data_db.FindFrame(
-                        entity.frame_data_animator.animation_id,
-                        entity.frame_data_animator.current_frame
+            if (ent.aframe_animator.HasAnim()) {
+                const AFrameAnim* anim =
+                    graphics.aframe_db.FindAnim(ent.aframe_animator.anim_id);
+                if (anim != nullptr) {
+                    out << "    anim: " << anim->name << "\n";
+                    out << "    anim_frame: " << ent.aframe_animator.current_frame << "\n";
+                    out << "    anim_time: " << ent.aframe_animator.current_time << "\n";
+                    const AFrame* aframe = graphics.aframe_db.FindFrame(
+                        ent.aframe_animator.anim_id,
+                        ent.aframe_animator.current_frame
                     );
-                    if (frame_data != nullptr) {
-                        out << "    frame_duration: " << frame_data->duration << "\n";
-                        out << "    sample_rect: (" << frame_data->sample_rect.x << ", "
-                            << frame_data->sample_rect.y << ", " << frame_data->sample_rect.w
-                            << ", " << frame_data->sample_rect.h << ")\n";
-                        out << "    draw_offset: (" << frame_data->draw_offset.x << ", "
-                            << frame_data->draw_offset.y << ")\n";
-                        out << "    pbox: (" << frame_data->pbox.x << ", " << frame_data->pbox.y
-                            << ", " << frame_data->pbox.w << ", " << frame_data->pbox.h << ")\n";
-                        out << "    cbox: (" << frame_data->cbox.x << ", " << frame_data->cbox.y
-                            << ", " << frame_data->cbox.w << ", " << frame_data->cbox.h << ")\n";
+                    if (aframe != nullptr) {
+                        out << "    frame_duration: " << aframe->duration << "\n";
+                        out << "    sample_rect: (" << aframe->sample_rect.x << ", "
+                            << aframe->sample_rect.y << ", " << aframe->sample_rect.w
+                            << ", " << aframe->sample_rect.h << ")\n";
+                        out << "    draw_offset: (" << aframe->draw_offset.x << ", "
+                            << aframe->draw_offset.y << ")\n";
+                        out << "    pbox: (" << aframe->pbox.x << ", " << aframe->pbox.y
+                            << ", " << aframe->pbox.w << ", " << aframe->pbox.h << ")\n";
+                        out << "    cbox: (" << aframe->cbox.x << ", " << aframe->cbox.y
+                            << ", " << aframe->cbox.w << ", " << aframe->cbox.h << ")\n";
                     }
                 }
             }
@@ -239,7 +239,7 @@ namespace splonks {
 bool ConvertRecordingFileToText(
     const std::string& input_path,
     const std::string& output_path,
-    const FrameDataDb& frame_data_db,
+    const AFrameDb& aframe_db,
     std::string* status_out
 ) {
     DebugPlayback debug = DebugPlayback::New();
@@ -250,7 +250,7 @@ bool ConvertRecordingFileToText(
     }
 
     Graphics graphics{};
-    graphics.frame_data_db = frame_data_db;
+    graphics.aframe_db = aframe_db;
     std::strncpy(debug.file_path.data(), output_path.c_str(), debug.file_path.size() - 1);
     debug.file_path[debug.file_path.size() - 1] = '\0';
     return debug_playback_internal::ExportRecordingToTextFile(debug, graphics, status_out);

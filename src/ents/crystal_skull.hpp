@@ -1,9 +1,9 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::crystal_skull {
+namespace splonks::ents::crystal_skull {
 
-extern const EntityArchetype kCrystalSkullArchetype;
+extern const EntSpec kCrystalSkullSpec;
 
-} // namespace splonks::entities::crystal_skull
+} // namespace splonks::ents::crystal_skull

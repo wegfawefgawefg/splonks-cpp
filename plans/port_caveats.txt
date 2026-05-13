@@ -50,19 +50,19 @@ Current caveats
      Keep the shared behavior explicit and boring in C++; if repeated getter code
      becomes noisy, introduce a tiny helper base struct later instead of a macro.
 
-4. `Origin` peeled out of `entity.rs`
-   - Rust source: `splonks-rs/src/entity.rs`
-   - Current C++ port: `splonks-cpp/src/entity_origin.hpp`
+4. `Origin` peeled out of `ent.rs`
+   - Rust source: `splonks-rs/src/ent.rs`
+   - Current C++ port: `splonks-cpp/src/ent_origin.hpp`
    - Caveat:
-     `sprite.rs` needed `Origin`, but porting all of `entity.rs` this early would
+     `sprite.rs` needed `Origin`, but porting all of `ent.rs` this early would
      drag in a huge non-leaf module.
    - Why:
-     Keep the near-leaf pass moving without fabricating the rest of `entity.rs`.
+     Keep the near-leaf pass moving without fabricating the rest of `ent.rs`.
    - Future plan:
-     Fold this back into the real `entity` port once `entity.rs` is translated.
+     Fold this back into the real `ent` port once `ent.rs` is translated.
      For gameplay physics, the validated path now intentionally uses canonical
      top-left / inclusive bounds semantics again; alternate origins should stay
-     a rendering/attachment concern unless a concrete gameplay need appears.
+     a rendering/attach concern unless a concrete gameplay need appears.
 
 5. Sprite JSON loading backend
    - Rust source: `splonks-rs/src/sprite.rs`
@@ -92,41 +92,41 @@ Current caveats
      Swap the internal backend to SDL3 + a real decoder/playback path later
      without changing callers.
 
-7. Entity display mapping support slice
-   - Rust source: `splonks-rs/src/entity_display_states.rs`
-   - Current C++ port: `splonks-cpp/src/entity_display_states.cpp`
+7. Ent display mapping support slice
+   - Rust source: `splonks-rs/src/ent_display_states.rs`
+   - Current C++ port: `splonks-cpp/src/ent_display_states.cpp`
    - Caveat:
-     Rust takes a full `Entity`.
-     The current C++ port takes a temporary `EntityDisplayInput` carrying only
+     Rust takes a full `Ent`.
+     The current C++ port takes a temporary `EntDisplayInput` carrying only
      `type_` and `display_state`.
    - Why:
      This keeps the display-state mapping literal without dragging the entire
-     `entity.rs` monster into the port yet.
+     `ent.rs` monster into the port yet.
    - Future plan:
-     Fold the support slice back into the real `Entity` port once `entity.rs`
+     Fold the support slice back into the real `Ent` port once `ent.rs`
      lands.
 
-8. Entity core support header
-   - Rust source: `splonks-rs/src/entity.rs`
-   - Current C++ port: `splonks-cpp/src/entity_core_types.hpp`
+8. Ent core support header
+   - Rust source: `splonks-rs/src/ent.rs`
+   - Current C++ port: `splonks-cpp/src/ent_core_types.hpp`
    - Caveat:
-     The full `Entity` struct is still not ported, but many modules need its
-     enums, constants, and identity types.
+     The full `Ent` struct is still not ported, but many modules need its
+     enums, constants, and ident types.
    - Why:
      Centralizing the peeled shared pieces avoids a pile of ad hoc one-off
      support headers and unlocks the rest of the literal port incrementally.
    - Future plan:
-     Keep migrating shared `entity.rs` definitions into the real `entity` port
-     and retire the temporary split once `entity.hpp/.cpp` exist.
+     Keep migrating shared `ent.rs` definitions into the real `ent` port
+     and retire the temporary split once `ent.hpp/.cpp` exist.
 
 9. `JUMP_DELAY_FRAMES` peeled from `player.rs`
-   - Rust source: `splonks-rs/src/entities/player.rs`
-   - Current C++ port: `splonks-cpp/src/entity.hpp`
+   - Rust source: `splonks-rs/src/ents/player.rs`
+   - Current C++ port: `splonks-cpp/src/ent.hpp`
    - Caveat:
-     `Entity::new()` depends on `JUMP_DELAY_FRAMES`, but porting all of
+     `Ent::new()` depends on `JUMP_DELAY_FRAMES`, but porting all of
      `player.rs` just for that constant would be stupid at this stage.
    - Why:
-     Keep the real `entity` port moving.
+     Keep the real `ent` port moving.
    - Future plan:
      Replace the temporary `kJumpDelayFrames` with the actual shared player
      constant once `player.rs` is ported.
@@ -147,8 +147,8 @@ Current caveats
      path with the real layout/build logic.
 
 11. Partial `player.rs` port
-   - Rust source: `splonks-rs/src/entities/player.rs`
-   - Current C++ port: `splonks-cpp/src/entities/player.cpp`
+   - Rust source: `splonks-rs/src/ents/player.rs`
+   - Current C++ port: `splonks-cpp/src/ents/player.cpp`
    - Caveat:
      The C++ file now has the known-good physics and movement behavior ported
      from `splonks-old`, including hang/climb/friction/stomp semantics. The
@@ -161,41 +161,41 @@ Current caveats
      Port the remaining non-physics player action paths into the same file and
      then retire this caveat.
 
-12. `step.rs` / `step_entities.rs` signature and dispatch are partial
-   - Rust source: `splonks-rs/src/step.rs`, `splonks-rs/src/step_entities.rs`
-   - Current C++ port: `splonks-cpp/src/step.cpp`, `splonks-cpp/src/step_entities.cpp`
+12. `step.rs` / `step_ents.rs` signature and dispatch are partial
+   - Rust source: `splonks-rs/src/step.rs`, `splonks-rs/src/step_ents.rs`
+   - Current C++ port: `splonks-cpp/src/step.cpp`, `splonks-cpp/src/step_ents.cpp`
    - Caveat:
      The Rust files take raylib handle/thread parameters and dispatch into the
-     full entity module set.
+     full ent module set.
      The current C++ port collapses the step signatures down to `State`,
-     `Audio`, `Graphics`, and `dt`, and `step_entities.cpp` still reflects the
-     currently landed module set rather than the full eventual entity surface.
+     `Audio`, `Graphics`, and `dt`, and `step_ents.cpp` still reflects the
+     currently landed module set rather than the full eventual ent surface.
    - Why:
      This preserves the real step loop structure and comments now, without
-     pretending every entity module already exists. The fixed-step gameplay
+     pretending every ent module already exists. The fixed-step gameplay
      semantics themselves are now restored and validated.
    - Future plan:
      Rewire these files onto the eventual SDL-side runtime/context and fill in
-     the remaining entity dispatch branches as each entity module lands.
+     the remaining ent dispatch branches as each ent module lands.
 
-13. `entities/common.rs` is only partially live
-   - Rust source: `splonks-rs/src/entities/common.rs`
-   - Current C++ port: `splonks-cpp/src/entities/common.cpp`
+13. `ents/common.rs` is only partially live
+   - Rust source: `splonks-rs/src/ents/common.rs`
+   - Current C++ port: `splonks-cpp/src/ents/common.cpp`
    - Caveat:
      The common file now carries the known-good core physics/collision path from
-     `splonks-old`, including grounded, jump/climb, tile/entity collision, and
+     `splonks-old`, including grounded, jump/climb, tile/ent collision, and
      related helper behavior. The remaining incompleteness is in later helper
      inventory such as explosion/fall support, not in the validated collision
      feel path.
    - Why:
      This unlocks real gameplay support under `player.rs` without pretending the
-     rest of the entity/collision stack already exists.
+     rest of the ent/collision stack already exists.
    - Future plan:
      Keep pulling the remaining literal Rust helper inventory across as the
-     dependent entity files land.
+     dependent ent files land.
 
 14. SDL runtime/render bridge is still a temporary parity layer
-   - Rust source: `splonks-rs/src/render.rs`, `splonks-rs/src/render_tiles_and_entities.rs`,
+   - Rust source: `splonks-rs/src/render.rs`, `splonks-rs/src/render_tiles_and_ents.rs`,
      `splonks-rs/src/render_ui.rs`, `splonks-rs/src/render_debug.rs`,
      `splonks-rs/src/menu_title.rs`, `splonks-rs/src/menu_settings.rs`,
      `splonks-rs/src/menu_video.rs`, `splonks-rs/src/inputs.rs`
@@ -205,7 +205,7 @@ Current caveats
    - Caveat:
      The current C++ port now has real SDL-side input dispatch, menu state
      machines, runtime stepping, SDL_ttf text rendering, title parallax
-     textures, texture-backed tile/entity/effect rendering, and a Rust-shaped
+     textures, texture-backed tile/ent/effect rendering, and a Rust-shaped
      HUD icon/count layout. But the render/runtime layer is still not a literal
      raylib equivalent: controller handling still needs parity cleanup, shader
      behavior is not ported, and `main.cpp` still falls back to empty

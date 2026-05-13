@@ -77,9 +77,9 @@ glyphs:
     action: maybe_solid_dirt
   - char: "S"
     spawn_random:
-      - entity: snake
+      - ent: snake
         weight: 4
-      - entity: cobra
+      - ent: cobra
         weight: 1
   - char: "T"
     action: tree_growth
@@ -103,9 +103,9 @@ glyphs:
     action: temple_treasure_roll
   - char: "c"
     spawn_random:
-      - entity: chest
+      - ent: chest
         weight: 1
-      - entity: box
+      - ent: box
         weight: 1
   - char: "C"
     spawn: ceiling_trap

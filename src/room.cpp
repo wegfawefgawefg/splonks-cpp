@@ -33,7 +33,7 @@ RoomType RandomRoomType() {
 
 std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type,
                                        RoomTilePalette tile_palette) {
-    std::vector<std::vector<TemplateTile>> room_template;
+    std::vector<std::vector<MetaTile>> room_template;
     switch (stage_type) {
     case StageType::Test1:
         room_template = stage_gen::test::GetRoomTemplate(room_type);
@@ -46,8 +46,8 @@ std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type,
     return ResolveRoomTemplate(room_template, tile_palette);
 }
 
-void PasteTemplate(std::vector<std::vector<TemplateTile>>& parent,
-                   const std::vector<std::vector<TemplateTile>>& child, const UVec2& location,
+void PasteTemplate(std::vector<std::vector<MetaTile>>& parent,
+                   const std::vector<std::vector<MetaTile>>& child, const UVec2& location,
                    bool flip_horizontal, bool flip_vertical) {
     for (std::size_t child_y = 0; child_y < child.size(); ++child_y) {
         for (std::size_t child_x = 0; child_x < child[0].size(); ++child_x) {
@@ -68,7 +68,7 @@ void PasteTemplate(std::vector<std::vector<TemplateTile>>& parent,
 }
 
 std::vector<std::vector<Tile>> ResolveRoomTemplate(
-    const std::vector<std::vector<TemplateTile>>& template_tiles,
+    const std::vector<std::vector<MetaTile>>& meta_tiles,
     RoomTilePalette tile_palette) {
     std::vector<std::vector<Tile>> room(
         static_cast<std::size_t>(Stage::kRoomShape.y),
@@ -76,12 +76,12 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
 
     for (unsigned int y = 0; y < Stage::kRoomShape.y; ++y) {
         for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
-            const TemplateTile template_tile =
-                template_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
+            const MetaTile meta_tile =
+                meta_tiles[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
 
             Tile tile_type = Tile::Air;
-            switch (template_tile) {
-            case TemplateTile::Solid: {
+            switch (meta_tile) {
+            case MetaTile::Solid: {
                 const int chance = rng::RandomIntInclusive(0, 99);
                 if (chance < 10) {
                     tile_type = tile_palette.dirt;
@@ -92,34 +92,34 @@ std::vector<std::vector<Tile>> ResolveRoomTemplate(
                 }
                 break;
             }
-            case TemplateTile::Air:
+            case MetaTile::Air:
                 tile_type = Tile::Air;
                 break;
-            case TemplateTile::Ladder:
+            case MetaTile::Ladder:
                 tile_type = Tile::Ladder;
                 break;
-            case TemplateTile::LadderTop:
+            case MetaTile::LadderTop:
                 tile_type = Tile::LadderTop;
                 break;
-            case TemplateTile::MaybeSolid: {
+            case MetaTile::MaybeSolid: {
                 const int chance = rng::RandomIntInclusive(0, 99);
                 tile_type = chance < 50 ? tile_palette.dirt : Tile::Air;
                 break;
             }
-            case TemplateTile::MaybeSpikes: {
+            case MetaTile::MaybeSpikes: {
                 const int chance = rng::RandomIntInclusive(0, 99);
                 tile_type = chance < 50 ? Tile::Spikes : Tile::Air;
                 break;
             }
-            case TemplateTile::MaybeBlock: {
+            case MetaTile::MaybeBlock: {
                 const int chance = rng::RandomIntInclusive(0, 99);
                 tile_type = chance < 50 ? Tile::Air : tile_palette.block;
                 break;
             }
-            case TemplateTile::Entrance:
+            case MetaTile::Entrance:
                 tile_type = Tile::Entrance;
                 break;
-            case TemplateTile::Exit:
+            case MetaTile::Exit:
                 tile_type = Tile::Exit;
                 break;
             }

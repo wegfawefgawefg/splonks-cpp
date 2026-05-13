@@ -3,20 +3,20 @@
 #include "graphics.hpp"
 #include "state.hpp"
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 bool IsSolidTileAtWorldPos(const State& state, const IVec2& world_pos);
 bool HasWallAheadForGroundWalker(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     const Graphics& graphics,
     int direction
 );
 bool HasGroundAheadForGroundWalker(
-    const Entity& entity,
+    const Ent& ent,
     const State& state,
     const Graphics& graphics,
     int direction
 );
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

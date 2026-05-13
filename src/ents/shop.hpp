@@ -1,12 +1,12 @@
 #pragma once
 
-#include "entity/archetype.hpp"
+#include "ent/spec.hpp"
 
-namespace splonks::entities::shop {
+namespace splonks::ents::shop {
 
-AABB GetShopArea(const Entity& shop);
-void SetShopArea(Entity& shop, const AABB& area);
-void AddShopChild(Entity& shop, VID child_vid);
+AABB GetShopArea(const Ent& shop);
+void SetShopArea(Ent& shop, const AABB& area);
+void AddShopChild(Ent& shop, VID child_vid);
 void DisturbShop(std::size_t shop_idx, State& state, Audio& audio);
 void DisturbShopByVid(std::optional<VID> shop_vid, State& state, Audio& audio);
 void OnShopAreaEnter(
@@ -17,14 +17,14 @@ void OnShopAreaEnter(
     Audio& audio
 );
 
-void StepEntityLogicAsShop(
-    std::size_t entity_idx,
+void StepEntLogicAsShop(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 );
 
-extern const EntityArchetype kShopArchetype;
+extern const EntSpec kShopSpec;
 
-} // namespace splonks::entities::shop
+} // namespace splonks::ents::shop

@@ -19,7 +19,7 @@ void StepNetworkLobby(State& state, const Graphics& graphics) {
         return;
     }
 
-    if (state.net_session.role == NetRole::Coordinator) {
+    if (state.net_session.role == NetRole::Host) {
         CleanupExpiredRetainedPlayerStates(state);
         StepHostPackets(state, graphics, transport);
     } else if (state.net_session.role == NetRole::Peer) {

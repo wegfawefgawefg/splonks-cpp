@@ -16,12 +16,12 @@
 - player ledge hanging
 - new tileset
 - controller input
-- entity manager in
-- entity versioned IDS in
-- entity architecture settled
-- animations in
-- common animations step function in
-- entity sprite atlas reasoned out
+- ent manager in
+- ent versioned IDS in
+- ent architecture settled
+- anims in
+- common anims step function in
+- ent sprite atlas reasoned out
 - an enemy of some sort
 - frame skipping for effect
 - picking up things
@@ -31,8 +31,8 @@
 - prevent player from dropping items into collideable tiles, basically just do a check on spawn them, and if they are inside a tile, idk its late
 - tile collisions respect out of bounds now
 - bugfix: picking up items that are behind an unpickubable item
-- entity collisions
-- grounded is for entity collisions too
+- ent collisions
+- grounded is for ent collisions too
 - prevent player from dropping items, that are bigger than or equal to TILE in size, into collideable tiles:
 - double check the grounded check is not just the bottom left corner please
 - redo tile collisions for small and big things.
@@ -40,9 +40,9 @@
 - DEBUG: fix hanging not turning off logic
 - make block kill things
 - add dying
-- double check friction when grounded on other entities
+- double check friction when grounded on other ents
 - make block not kill unkillable things, such as other blocks lol
-- enable hanging right on entities
+- enable hanging right on ents
 - equip item to back
 - jetpack
 - expand bat perching area beyond just top left corner.
@@ -68,8 +68,8 @@
 - make back item blowupable, damageable
 - make ordered rendering (back item being on top of player is weird)
 - make explosion that damages tiles
-- jetpack jump logic, entity agnostic
-- money_entity, but can just implement one in code, but they all call the same update function
+- jetpack jump logic, ent agnostic
+- money_ent, but can just implement one in code, but they all call the same update function
 - picking up money in
 - basic ui, hearts, bomb
 - money ui
@@ -83,13 +83,13 @@
 - grenades omnidirectional throwing
 - rock should stun on hit
 - grenade should do one damage and stun on hit
-- reworked throwing to not depend on facing, but instead on is_trying entity "intentions". same for grenade
+- reworked throwing to not depend on facing, but instead on is_trying ent "intentions". same for grenade
 - put rope in
 - redo title screen
 - box, pot, throwable, spawn innards chance and noise on break
 - jump on thing to do damage
 - thrown bat to stun bats, or hurt them.
-- other entities getting stunned,
+- other ents getting stunned,
 - stun timer becomes common code
 - rocks only do 1 dmg and stun pls
 - baseball_bat swing
@@ -98,8 +98,8 @@
 - level transitions
 - win condition
 - huge abstraction rewrite (lots of code removed, communized)
-- entities can make sound on damage
-- entities have unique crush sounds
+- ents can make sound on damage
+- ents have unique crush sounds
 - main menu
 - settings
 - video settings
@@ -107,5 +107,5 @@
 - working video settings
 - score, money, ui
 - getting hurt
-- seperate effects mini entities for things like smoke and stuff.
+- seperate effects mini ents for things like smoke and stuff.
 - make cam have some momentum, its a nice feel

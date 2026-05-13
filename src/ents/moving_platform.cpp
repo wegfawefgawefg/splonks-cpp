@@ -1,14 +1,14 @@
-#include "entities/moving_platform.hpp"
+#include "ents/moving_platform.hpp"
 
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 
 #include <cmath>
 #include <memory>
 
-namespace splonks::entities::moving_platform {
+namespace splonks::ents::moving_platform {
 
 namespace {
 
@@ -16,19 +16,19 @@ constexpr float kPlatformSpeed = 1.0F;
 constexpr float kCircleAngularSpeed = 0.08F;
 constexpr float kIcyPlatformFriction = 1.0F;
 
-bool IsIcyPlatform(const Entity& platform) {
+bool IsIcyPlatform(const Ent& platform) {
     return platform.impassable &&
            !platform.can_be_hung_on &&
            platform.support_ground_friction >= kIcyPlatformFriction;
 }
 
-void SpawnIcyPlatformParticles(const Entity& platform, State& state) {
+void SpawnIcyPlatformParticles(const Ent& platform, State& state) {
     if ((state.stage_frame + platform.vid.id) % 8U != 0U) {
         return;
     }
 
     SpriteParticle shard{};
-    shard.frame_data_animator = FrameDataAnimator::New(frame_data_ids::IceBlock);
+    shard.aframe_animator = AFrameAnimator::New(aframe_ids::IceBlock);
     shard.draw_layer = DrawLayer::Foreground;
     shard.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(12, 20));
     shard.pos = platform.GetCenter() + Vec2::New(
@@ -50,7 +50,7 @@ void SpawnIcyPlatformParticles(const Entity& platform, State& state) {
     state.particles.Add(std::move(shard));
 }
 
-void StepHorizontalPingPong(Entity& platform) {
+void StepHorizontalPingPong(Ent& platform) {
     const float min_x = static_cast<float>(platform.point_a.x);
     const float max_x = static_cast<float>(platform.point_b.x);
     if (platform.counter_b == 0.0F) {
@@ -68,7 +68,7 @@ void StepHorizontalPingPong(Entity& platform) {
     platform.vel = Vec2::New(platform.counter_b * kPlatformSpeed, 0.0F);
 }
 
-void StepVerticalPingPong(Entity& platform) {
+void StepVerticalPingPong(Ent& platform) {
     const float min_y = static_cast<float>(platform.point_a.y);
     const float max_y = static_cast<float>(platform.point_b.y);
     if (platform.counter_b == 0.0F) {
@@ -86,7 +86,7 @@ void StepVerticalPingPong(Entity& platform) {
     platform.vel = Vec2::New(0.0F, platform.counter_b * kPlatformSpeed);
 }
 
-void StepCircle(Entity& platform) {
+void StepCircle(Ent& platform) {
     const Vec2 center = ToVec2(platform.point_a);
     const float radius = platform.threshold_a;
     const Vec2 desired_pos = center +
@@ -100,8 +100,8 @@ void StepCircle(Entity& platform) {
 
 } // namespace
 
-extern const EntityArchetype kMovingPlatformArchetype{
-    .type_ = EntityType::MovingPlatform,
+extern const EntSpec kMovingPlatformSpec{
+    .type_ = EntType::MovingPlatform,
     .size = Vec2::New(28.0F, 28.0F),
     .health = 1,
     .has_physics = true,
@@ -116,19 +116,19 @@ extern const EntityArchetype kMovingPlatformArchetype{
     .can_be_stunned = false,
     .affected_by_ground_friction = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Right,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .step_logic = StepEntityLogicAsMovingPlatform,
-    .step_physics = StepEntityPhysicsAsMovingPlatform,
+    .facing = Side::Right,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .step_logic = StepEntLogicAsMovingPlatform,
+    .step_physics = StepEntPhysicsAsMovingPlatform,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(HashFrameDataIdConstexpr("boulder")),
+    .aframe_animator = AFrameAnimator::New(HashAFrameIdConstexpr("boulder")),
 };
 
-void StepEntityLogicAsMovingPlatform(
-    std::size_t entity_idx,
+void StepEntLogicAsMovingPlatform(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -138,19 +138,19 @@ void StepEntityLogicAsMovingPlatform(
     (void)audio;
     (void)dt;
 
-    Entity& platform = state.entity_manager.entities[entity_idx];
+    Ent& platform = state.ents.ents[ent_idx];
     switch (platform.ai_state) {
-    case EntityAiState::Idle:
+    case EntAiState::Idle:
         StepHorizontalPingPong(platform);
         break;
-    case EntityAiState::Patrolling:
+    case EntAiState::Patrolling:
         StepVerticalPingPong(platform);
         break;
-    case EntityAiState::Disturbed:
+    case EntAiState::Disturbed:
         StepCircle(platform);
         break;
-    case EntityAiState::Pursuing:
-    case EntityAiState::Returning:
+    case EntAiState::Pursuing:
+    case EntAiState::Returning:
         platform.vel = Vec2::New(0.0F, 0.0F);
         break;
     }
@@ -160,16 +160,16 @@ void StepEntityLogicAsMovingPlatform(
     }
 }
 
-void StepEntityPhysicsAsMovingPlatform(
-    std::size_t entity_idx,
+void StepEntPhysicsAsMovingPlatform(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileAndEntityCollisions(entity_idx, state, graphics, audio);
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    common::PrePartialEulerStep(ent_idx, state, dt);
+    common::DoTileAndEntCollisions(ent_idx, state, graphics, audio);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 }
 
-} // namespace splonks::entities::moving_platform
+} // namespace splonks::ents::moving_platform

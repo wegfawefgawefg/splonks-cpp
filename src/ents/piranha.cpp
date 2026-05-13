@@ -1,10 +1,10 @@
-#include "entities/piranha.hpp"
+#include "ents/piranha.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "math_types.hpp"
 #include "player_queries.hpp"
 #include "state.hpp"
@@ -15,7 +15,7 @@
 #include <cmath>
 #include <optional>
 
-namespace splonks::entities::piranha {
+namespace splonks::ents::piranha {
 
 namespace {
 
@@ -27,15 +27,15 @@ constexpr float kPiranhaSurfaceDiveSpeed = 0.55F;
 constexpr float kPiranhaTargetDistance = 96.0F;
 constexpr float kPiranhaBiteDistance = 12.0F;
 
-bool IsPiranhaInWater(const Entity& piranha, const State& state) {
+bool IsPiranhaInWater(const Ent& piranha, const State& state) {
     const Vec2 center = piranha.GetCenter();
     const float cutoff = state.settings.fluid.render_cutoff_amount;
     return IsWaterAtWorldPos(state.stage, center, cutoff) ||
            IsWaterAtWorldPos(state.stage, center + Vec2::New(0.0F, piranha.size.y * 0.35F), cutoff);
 }
 
-std::optional<Vec2> FindPiranhaTarget(const Entity& piranha, const State& state) {
-    const Entity* const player = FindNearestPlayer(state, piranha.GetCenter());
+std::optional<Vec2> FindPiranhaTarget(const Ent& piranha, const State& state) {
+    const Ent* const player = FindNearestPlayer(state, piranha.GetCenter());
     if (player == nullptr) {
         return std::nullopt;
     }
@@ -47,20 +47,20 @@ std::optional<Vec2> FindPiranhaTarget(const Entity& piranha, const State& state)
     return piranha.GetCenter() + delta;
 }
 
-void PatrolWater(Entity& piranha) {
-    const float target_x = piranha.facing == LeftOrRight::Left ? -kPiranhaMaxSwimSpeed : kPiranhaMaxSwimSpeed;
+void PatrolWater(Ent& piranha) {
+    const float target_x = piranha.facing == Side::Left ? -kPiranhaMaxSwimSpeed : kPiranhaMaxSwimSpeed;
     piranha.acc.x += std::clamp(target_x - piranha.vel.x, -kPiranhaSwimAcceleration, kPiranhaSwimAcceleration);
     piranha.acc.y += std::clamp(-piranha.vel.y, -kPiranhaSwimAcceleration, kPiranhaSwimAcceleration);
 }
 
-void ChaseTarget(Entity& piranha, const Vec2& target, const Stage& stage) {
+void ChaseTarget(Ent& piranha, const Vec2& target, const Stage& stage) {
     const Vec2 delta = GetNearestWorldDelta(stage, piranha.GetCenter(), target);
     const Vec2 direction = NormalizeOrZero(delta);
     piranha.acc += direction * kPiranhaChaseAcceleration;
     if (delta.x < 0.0F) {
-        piranha.facing = LeftOrRight::Left;
+        piranha.facing = Side::Left;
     } else if (delta.x > 0.0F) {
-        piranha.facing = LeftOrRight::Right;
+        piranha.facing = Side::Right;
     }
 }
 
@@ -69,7 +69,7 @@ struct SwimProbeResult {
     bool bottom = false;
 };
 
-SwimProbeResult QuerySwimProbes(const Entity& piranha, const State& state) {
+SwimProbeResult QuerySwimProbes(const Ent& piranha, const State& state) {
     const AABB aabb = piranha.GetAABB();
     const Vec2 center = piranha.GetCenter();
     const float cutoff = state.settings.fluid.render_cutoff_amount;
@@ -81,8 +81,8 @@ SwimProbeResult QuerySwimProbes(const Entity& piranha, const State& state) {
 
 } // namespace
 
-void StepEntityLogicAsPiranha(
-    std::size_t entity_idx,
+void StepEntLogicAsPiranha(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -91,16 +91,16 @@ void StepEntityLogicAsPiranha(
     (void)graphics;
     (void)audio;
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& piranha = state.entity_manager.entities[entity_idx];
-    if (piranha.condition != EntityCondition::Normal) {
+    Ent& piranha = state.ents.ents[ent_idx];
+    if (piranha.condition != EntCondition::Normal) {
         return;
     }
     if (!IsPiranhaInWater(piranha, state)) {
-        TrySetAnimation(piranha, EntityDisplayState::Falling);
+        TrySetAnim(piranha, EntDisplayState::Falling);
         return;
     }
 
@@ -111,33 +111,33 @@ void StepEntityLogicAsPiranha(
     } else {
         PatrolWater(piranha);
     }
-    SetMovementFlag(piranha, EntityMovementFlag::Walking, true);
+    SetMovementFlag(piranha, EntMovementFlag::Walking, true);
     if (biting) {
-        SetAnimation(piranha, frame_data_ids::PiranhaBite);
+        SetAnim(piranha, aframe_ids::PiranhaBite);
     } else {
-        TrySetAnimation(piranha, EntityDisplayState::Walk);
+        TrySetAnim(piranha, EntDisplayState::Walk);
     }
 }
 
-void StepEntityPhysicsAsPiranha(
-    std::size_t entity_idx,
+void StepEntPhysicsAsPiranha(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& piranha = state.entity_manager.entities[entity_idx];
-    if (piranha.condition != EntityCondition::Normal || !IsPiranhaInWater(piranha, state)) {
-        common::StepStandardPhysics(entity_idx, state, graphics, audio, dt);
+    Ent& piranha = state.ents.ents[ent_idx];
+    if (piranha.condition != EntCondition::Normal || !IsPiranhaInWater(piranha, state)) {
+        common::StepStandardPhysics(ent_idx, state, graphics, audio, dt);
         return;
     }
 
     const Vec2 old_pos = piranha.pos;
-    common::PrePartialEulerStep(entity_idx, state, dt);
+    common::PrePartialEulerStep(ent_idx, state, dt);
     piranha.vel = piranha.vel * kPiranhaWaterDamping;
     piranha.vel.x = std::clamp(piranha.vel.x, -kPiranhaMaxSwimSpeed, kPiranhaMaxSwimSpeed);
     piranha.vel.y = std::clamp(piranha.vel.y, -kPiranhaMaxSwimSpeed, kPiranhaMaxSwimSpeed);
@@ -147,21 +147,21 @@ void StepEntityPhysicsAsPiranha(
         if (swim_probe.bottom) {
             piranha.vel.y = std::max(piranha.vel.y, kPiranhaSurfaceDiveSpeed);
             piranha.vel.x *= 0.75F;
-            common::DoEntityCollisions(entity_idx, state, graphics, audio);
-            common::PostPartialEulerStep(entity_idx, state, dt);
+            common::DoEntCollisions(ent_idx, state, graphics, audio);
+            common::PostPartialEulerStep(ent_idx, state, dt);
             return;
         }
         piranha.pos = old_pos;
         piranha.vel = Vec2::New(-piranha.vel.x * 0.5F, -piranha.vel.y * 0.5F);
-        piranha.facing = piranha.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        piranha.facing = piranha.facing == Side::Left ? Side::Right : Side::Left;
     }
 
-    common::DoEntityCollisions(entity_idx, state, graphics, audio);
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    common::DoEntCollisions(ent_idx, state, graphics, audio);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 }
 
-extern const EntityArchetype kPiranhaArchetype{
-    .type_ = EntityType::Piranha,
+extern const EntSpec kPiranhaSpec{
+    .type_ = EntType::Piranha,
     .size = Vec2::New(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
@@ -173,17 +173,17 @@ extern const EntityArchetype kPiranhaArchetype{
     .can_be_stomped = false,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .damage_sound = audio_asset_ids::CavemanHurt,
     .collide_sound = audio_asset_ids::Thud,
-    .step_logic = StepEntityLogicAsPiranha,
-    .step_physics = StepEntityPhysicsAsPiranha,
+    .step_logic = StepEntLogicAsPiranha,
+    .step_physics = StepEntPhysicsAsPiranha,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Piranha),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Piranha),
 };
 
-} // namespace splonks::entities::piranha
+} // namespace splonks::ents::piranha

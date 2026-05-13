@@ -1,7 +1,7 @@
 #pragma once
 
 #include "effects/effect_id.hpp"
-#include "frame_data_id.hpp"
+#include "aframe_id.hpp"
 #include "hud/types.hpp"
 #include "math_types.hpp"
 #include "utils.hpp"
@@ -20,11 +20,11 @@ struct SDL_Renderer;
 namespace splonks {
 
 struct Audio;
-struct Entity;
+struct Ent;
 struct Graphics;
 struct State;
 
-constexpr std::size_t kMaxEntityEffects = 12;
+constexpr std::size_t kMaxEntEffects = 12;
 
 enum class EffectUiKind : std::uint8_t {
     Hidden,
@@ -40,9 +40,9 @@ enum class EffectModifierTarget : std::uint8_t {
     VelocityDampingY,
     // Multiplies controller-chosen horizontal top speeds. Base: 1.0.
     MoveSpeedScale,
-    // Clamps positive/downward velocity. Base: entity/controller max fall speed.
+    // Clamps positive/downward velocity. Base: ent/controller max fall speed.
     MaxFallSpeed,
-    // Upward acceleration applied from fluid-like effects, scaled by entity buoyancy. Base: 0.0.
+    // Upward acceleration applied from fluid-like effects, scaled by ent buoyancy. Base: 0.0.
     BuoyancyStrength,
     // Multiplies fall danger accumulation. Override 0 disables fall damage buildup. Base: 1.0.
     FallTimerRate,
@@ -80,30 +80,30 @@ struct EffectInstance {
     std::uint32_t frames_remaining = 0;
 };
 
-struct EntityEffects {
-    std::array<EffectInstance, kMaxEntityEffects> effects{};
+struct EntEffects {
+    std::array<EffectInstance, kMaxEntEffects> effects{};
     std::uint8_t count = 0;
 };
 
-struct BoxedEntityEffects {
-    std::unique_ptr<EntityEffects> value;
+struct BoxedEntEffects {
+    std::unique_ptr<EntEffects> value;
 
-    BoxedEntityEffects() = default;
-    BoxedEntityEffects(const BoxedEntityEffects& other);
-    BoxedEntityEffects& operator=(const BoxedEntityEffects& other);
-    BoxedEntityEffects(BoxedEntityEffects&& other) noexcept = default;
-    BoxedEntityEffects& operator=(BoxedEntityEffects&& other) noexcept = default;
+    BoxedEntEffects() = default;
+    BoxedEntEffects(const BoxedEntEffects& other);
+    BoxedEntEffects& operator=(const BoxedEntEffects& other);
+    BoxedEntEffects(BoxedEntEffects&& other) noexcept = default;
+    BoxedEntEffects& operator=(BoxedEntEffects&& other) noexcept = default;
 
-    EntityEffects* get() {
+    EntEffects* get() {
         return value.get();
     }
 
-    const EntityEffects* get() const {
+    const EntEffects* get() const {
         return value.get();
     }
 
-    EntityEffects& emplace() {
-        value = std::make_unique<EntityEffects>();
+    EntEffects& emplace() {
+        value = std::make_unique<EntEffects>();
         return *value;
     }
 
@@ -111,11 +111,11 @@ struct BoxedEntityEffects {
         value.reset();
     }
 
-    EntityEffects* operator->() {
+    EntEffects* operator->() {
         return value.get();
     }
 
-    const EntityEffects* operator->() const {
+    const EntEffects* operator->() const {
         return value.get();
     }
 };
@@ -133,21 +133,21 @@ struct EffectHookContext {
     Vec2 world_pos = Vec2::New(0.0F, 0.0F);
 };
 
-using EffectHookHandler = void (*)(Entity& owner, EffectInstance& effect, State& state, Audio* audio, const EffectHookContext& hook);
-using EffectExpiryPredicate = bool (*)(const Entity& owner, const EffectInstance& effect, const State& state, const EffectHookContext& hook);
+using EffectHookHandler = void (*)(Ent& owner, EffectInstance& effect, State& state, Audio* audio, const EffectHookContext& hook);
+using EffectExpiryPredicate = bool (*)(const Ent& owner, const EffectInstance& effect, const State& state, const EffectHookContext& hook);
 using EffectHudCountTextFn = std::optional<std::string> (*)(const EffectInstance& effect);
 using EffectWorldOverlayFn = void (*)(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,
-    const Entity& owner,
+    const Ent& owner,
     const EffectInstance& effect
 );
 
-struct EffectArchetype {
+struct EffectSpec {
     EffectId id = EffectId::None;
     const char* debug_name = "None";
-    FrameDataId icon_animation_id = kInvalidFrameDataId;
+    AFrameId icon_anim_id = kInvalidAFrameId;
     EffectUiKind ui_kind = EffectUiKind::Hidden;
     std::int32_t default_count = 0;
     EffectHudCountTextFn hud_count_text = nullptr;
@@ -158,22 +158,22 @@ struct EffectArchetype {
     EffectExpiryPredicate should_expire = nullptr;
 };
 
-const EffectArchetype& GetEffectArchetype(EffectId id);
+const EffectSpec& GetEffectSpec(EffectId id);
 const char* EffectIdToString(EffectId id);
-EffectInstance* FindEffect(Entity& entity, EffectId id);
-const EffectInstance* FindEffect(const Entity& entity, EffectId id);
-bool HasEffect(const Entity& entity, EffectId id);
-EffectInstance* AddEffect(Entity& entity, EffectId id, std::int32_t count = 0, std::uint32_t frames_remaining = 0);
-void RemoveEffect(Entity& entity, EffectId id);
-void SetEffect(Entity& entity, EffectId id, bool enabled);
-void StepEffectTimers(Entity& entity);
+EffectInstance* FindEffect(Ent& ent, EffectId id);
+const EffectInstance* FindEffect(const Ent& ent, EffectId id);
+bool HasEffect(const Ent& ent, EffectId id);
+EffectInstance* AddEffect(Ent& ent, EffectId id, std::int32_t count = 0, std::uint32_t frames_remaining = 0);
+void RemoveEffect(Ent& ent, EffectId id);
+void SetEffect(Ent& ent, EffectId id, bool enabled);
+void StepEffectTimers(Ent& ent);
 float GetModifiedEffectValue(
-    const Entity& entity,
+    const Ent& ent,
     EffectModifierTarget target,
     float base_value,
     const State* state = nullptr
 );
-void ApplyEffectHookToEntity(Entity& entity, State& state, Audio* audio, const EffectHookContext& hook);
+void ApplyEffectHookToEnt(Ent& ent, State& state, Audio* audio, const EffectHookContext& hook);
 void ApplyEffectHookToAll(State& state, Audio* audio, const EffectHookContext& hook);
 
 } // namespace splonks

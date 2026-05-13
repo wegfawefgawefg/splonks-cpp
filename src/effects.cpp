@@ -1,6 +1,6 @@
 #include "effects.hpp"
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "state.hpp"
 
 #include <algorithm>
@@ -9,17 +9,17 @@ namespace splonks {
 
 namespace {
 
-void RemoveEffectAt(Entity& entity, std::size_t effect_index) {
-    if (entity.effects.get() == nullptr || effect_index >= entity.effects->count) {
+void RemoveEffectAt(Ent& ent, std::size_t effect_index) {
+    if (ent.effects.get() == nullptr || effect_index >= ent.effects->count) {
         return;
     }
-    for (std::size_t i = effect_index; i + 1 < entity.effects->count; ++i) {
-        entity.effects->effects[i] = entity.effects->effects[i + 1];
+    for (std::size_t i = effect_index; i + 1 < ent.effects->count; ++i) {
+        ent.effects->effects[i] = ent.effects->effects[i + 1];
     }
-    entity.effects->count -= 1;
-    entity.effects->effects[entity.effects->count] = EffectInstance{};
-    if (entity.effects->count == 0) {
-        entity.effects.reset();
+    ent.effects->count -= 1;
+    ent.effects->effects[ent.effects->count] = EffectInstance{};
+    if (ent.effects->count == 0) {
+        ent.effects.reset();
     }
 }
 
@@ -91,58 +91,58 @@ EffectModifier ResolveRuntimeModifier(
 
 } // namespace
 
-BoxedEntityEffects::BoxedEntityEffects(const BoxedEntityEffects& other) {
+BoxedEntEffects::BoxedEntEffects(const BoxedEntEffects& other) {
     if (other.value != nullptr) {
-        value = std::make_unique<EntityEffects>(*other.value);
+        value = std::make_unique<EntEffects>(*other.value);
     }
 }
 
-BoxedEntityEffects& BoxedEntityEffects::operator=(const BoxedEntityEffects& other) {
+BoxedEntEffects& BoxedEntEffects::operator=(const BoxedEntEffects& other) {
     if (this == &other) {
         return *this;
     }
     if (other.value != nullptr) {
-        value = std::make_unique<EntityEffects>(*other.value);
+        value = std::make_unique<EntEffects>(*other.value);
         return *this;
     }
     value.reset();
     return *this;
 }
 
-EffectInstance* FindEffect(Entity& entity, EffectId id) {
-    if (entity.effects.get() == nullptr) {
+EffectInstance* FindEffect(Ent& ent, EffectId id) {
+    if (ent.effects.get() == nullptr) {
         return nullptr;
     }
-    for (std::size_t i = 0; i < entity.effects->count; ++i) {
-        if (entity.effects->effects[i].id == id) {
-            return &entity.effects->effects[i];
+    for (std::size_t i = 0; i < ent.effects->count; ++i) {
+        if (ent.effects->effects[i].id == id) {
+            return &ent.effects->effects[i];
         }
     }
     return nullptr;
 }
 
-const EffectInstance* FindEffect(const Entity& entity, EffectId id) {
-    if (entity.effects.get() == nullptr) {
+const EffectInstance* FindEffect(const Ent& ent, EffectId id) {
+    if (ent.effects.get() == nullptr) {
         return nullptr;
     }
-    for (std::size_t i = 0; i < entity.effects->count; ++i) {
-        if (entity.effects->effects[i].id == id) {
-            return &entity.effects->effects[i];
+    for (std::size_t i = 0; i < ent.effects->count; ++i) {
+        if (ent.effects->effects[i].id == id) {
+            return &ent.effects->effects[i];
         }
     }
     return nullptr;
 }
 
-bool HasEffect(const Entity& entity, EffectId id) {
-    return FindEffect(entity, id) != nullptr;
+bool HasEffect(const Ent& ent, EffectId id) {
+    return FindEffect(ent, id) != nullptr;
 }
 
-EffectInstance* AddEffect(Entity& entity, EffectId id, std::int32_t count, std::uint32_t frames_remaining) {
+EffectInstance* AddEffect(Ent& ent, EffectId id, std::int32_t count, std::uint32_t frames_remaining) {
     if (id == EffectId::None || id == EffectId::Count) {
         return nullptr;
     }
 
-    if (EffectInstance* const existing = FindEffect(entity, id)) {
+    if (EffectInstance* const existing = FindEffect(ent, id)) {
         if (count != 0) {
             existing->count += count;
         }
@@ -152,14 +152,14 @@ EffectInstance* AddEffect(Entity& entity, EffectId id, std::int32_t count, std::
         return existing;
     }
 
-    if (entity.effects.get() == nullptr) {
-        entity.effects.emplace();
+    if (ent.effects.get() == nullptr) {
+        ent.effects.emplace();
     }
-    if (entity.effects->count >= entity.effects->effects.size()) {
+    if (ent.effects->count >= ent.effects->effects.size()) {
         return nullptr;
     }
 
-    EffectInstance& effect = entity.effects->effects[entity.effects->count++];
+    EffectInstance& effect = ent.effects->effects[ent.effects->count++];
     effect = EffectInstance{
         .id = id,
         .count = count,
@@ -168,34 +168,34 @@ EffectInstance* AddEffect(Entity& entity, EffectId id, std::int32_t count, std::
     return &effect;
 }
 
-void RemoveEffect(Entity& entity, EffectId id) {
-    if (entity.effects.get() == nullptr) {
+void RemoveEffect(Ent& ent, EffectId id) {
+    if (ent.effects.get() == nullptr) {
         return;
     }
-    for (std::size_t i = 0; i < entity.effects->count; ++i) {
-        if (entity.effects->effects[i].id == id) {
-            RemoveEffectAt(entity, i);
+    for (std::size_t i = 0; i < ent.effects->count; ++i) {
+        if (ent.effects->effects[i].id == id) {
+            RemoveEffectAt(ent, i);
             return;
         }
     }
 }
 
-void SetEffect(Entity& entity, EffectId id, bool enabled) {
+void SetEffect(Ent& ent, EffectId id, bool enabled) {
     if (enabled) {
-        (void)AddEffect(entity, id);
+        (void)AddEffect(ent, id);
         return;
     }
-    RemoveEffect(entity, id);
+    RemoveEffect(ent, id);
 }
 
-void StepEffectTimers(Entity& entity) {
-    if (entity.effects.get() == nullptr) {
+void StepEffectTimers(Ent& ent) {
+    if (ent.effects.get() == nullptr) {
         return;
     }
 
     std::size_t effect_index = 0;
-    while (entity.effects.get() != nullptr && effect_index < entity.effects->count) {
-        EffectInstance& effect = entity.effects->effects[effect_index];
+    while (ent.effects.get() != nullptr && effect_index < ent.effects->count) {
+        EffectInstance& effect = ent.effects->effects[effect_index];
         if (effect.frames_remaining == 0) {
             ++effect_index;
             continue;
@@ -203,7 +203,7 @@ void StepEffectTimers(Entity& entity) {
 
         effect.frames_remaining -= 1;
         if (effect.frames_remaining == 0) {
-            RemoveEffectAt(entity, effect_index);
+            RemoveEffectAt(ent, effect_index);
             continue;
         }
         ++effect_index;
@@ -211,19 +211,19 @@ void StepEffectTimers(Entity& entity) {
 }
 
 float GetModifiedEffectValue(
-    const Entity& entity,
+    const Ent& ent,
     EffectModifierTarget target,
     float base_value,
     const State* state
 ) {
     float value = base_value;
-    if (entity.effects.get() == nullptr) {
+    if (ent.effects.get() == nullptr) {
         return value;
     }
-    for (std::size_t effect_index = 0; effect_index < entity.effects->count; ++effect_index) {
-        const EffectInstance& effect = entity.effects->effects[effect_index];
-        const EffectArchetype& archetype = GetEffectArchetype(effect.id);
-        for (const EffectModifier& modifier : archetype.modifiers) {
+    for (std::size_t effect_index = 0; effect_index < ent.effects->count; ++effect_index) {
+        const EffectInstance& effect = ent.effects->effects[effect_index];
+        const EffectSpec& spec = GetEffectSpec(effect.id);
+        for (const EffectModifier& modifier : spec.modifiers) {
             if (modifier.target == target) {
                 ApplyModifier(value, ResolveRuntimeModifier(effect, modifier, state));
             }
@@ -232,23 +232,23 @@ float GetModifiedEffectValue(
     return value;
 }
 
-void ApplyEffectHookToEntity(Entity& entity, State& state, Audio* audio, const EffectHookContext& hook) {
-    if (entity.effects.get() == nullptr) {
+void ApplyEffectHookToEnt(Ent& ent, State& state, Audio* audio, const EffectHookContext& hook) {
+    if (ent.effects.get() == nullptr) {
         return;
     }
     std::size_t effect_index = 0;
-    while (entity.effects.get() != nullptr && effect_index < entity.effects->count) {
-        EffectInstance& effect = entity.effects->effects[effect_index];
-        const EffectArchetype& archetype = GetEffectArchetype(effect.id);
+    while (ent.effects.get() != nullptr && effect_index < ent.effects->count) {
+        EffectInstance& effect = ent.effects->effects[effect_index];
+        const EffectSpec& spec = GetEffectSpec(effect.id);
         bool expired = false;
-        if (archetype.should_expire != nullptr) {
-            expired = archetype.should_expire(entity, effect, state, hook);
+        if (spec.should_expire != nullptr) {
+            expired = spec.should_expire(ent, effect, state, hook);
         }
-        if (!expired && archetype.on_hook != nullptr) {
-            archetype.on_hook(entity, effect, state, audio, hook);
+        if (!expired && spec.on_hook != nullptr) {
+            spec.on_hook(ent, effect, state, audio, hook);
         }
         if (expired) {
-            RemoveEffectAt(entity, effect_index);
+            RemoveEffectAt(ent, effect_index);
             continue;
         }
         ++effect_index;
@@ -256,11 +256,11 @@ void ApplyEffectHookToEntity(Entity& entity, State& state, Audio* audio, const E
 }
 
 void ApplyEffectHookToAll(State& state, Audio* audio, const EffectHookContext& hook) {
-    for (Entity& entity : state.entity_manager.entities) {
-        if (!entity.active) {
+    for (Ent& ent : state.ents.ents) {
+        if (!ent.active) {
             continue;
         }
-        ApplyEffectHookToEntity(entity, state, audio, hook);
+        ApplyEffectHookToEnt(ent, state, audio, hook);
     }
 }
 

@@ -92,44 +92,44 @@ void RunArrowTrapConversionStagePass(Stage& stage, int, const StagePassConfig& p
     ConvertBlocksToArrowTraps(stage, pass.GetInt("chance_denominator", 4));
 }
 
-void RunAmbientMinesEntitiesStagePass(Stage& stage, int, const StagePassConfig&,
+void RunAmbientMinesEntsStagePass(Stage& stage, int, const StagePassConfig&,
                                       const ItemPoolDb&, QuestState*) {
-    AddAmbientMinesEntities(stage);
+    AddAmbientMinesEnts(stage);
 }
 
-void RunAmbientJungleEntitiesStagePass(Stage& stage, int, const StagePassConfig&,
+void RunAmbientJungleEntsStagePass(Stage& stage, int, const StagePassConfig&,
                                        const ItemPoolDb&, QuestState*) {
-    AddAmbientJungleEntities(stage, false);
+    AddAmbientJungleEnts(stage, false);
 }
 
-void RunAmbientBlackMarketEntitiesStagePass(Stage& stage, int, const StagePassConfig&,
+void RunAmbientBlackMarketEntsStagePass(Stage& stage, int, const StagePassConfig&,
                                             const ItemPoolDb&, QuestState*) {
-    AddAmbientJungleEntities(stage, true);
+    AddAmbientJungleEnts(stage, true);
 }
 
-void RunAmbientHauntedCastleEntitiesStagePass(Stage& stage, int, const StagePassConfig&,
+void RunAmbientHauntedCastleEntsStagePass(Stage& stage, int, const StagePassConfig&,
                                               const ItemPoolDb&, QuestState*) {
-    AddAmbientTempleEntities(stage);
+    AddAmbientTempleEnts(stage);
 }
 
-void RunAmbientIceEntitiesStagePass(Stage& stage, int, const StagePassConfig&, const ItemPoolDb&,
+void RunAmbientIceEntsStagePass(Stage& stage, int, const StagePassConfig&, const ItemPoolDb&,
                                     QuestState*) {
-    AddAmbientIceEntities(stage);
+    AddAmbientIceEnts(stage);
 }
 
-void RunAmbientTempleEntitiesStagePass(Stage& stage, int, const StagePassConfig&,
+void RunAmbientTempleEntsStagePass(Stage& stage, int, const StagePassConfig&,
                                        const ItemPoolDb&, QuestState*) {
-    AddAmbientTempleEntities(stage);
+    AddAmbientTempleEnts(stage);
 }
 
-void RunAmbientCityOfGoldEntitiesStagePass(Stage& stage, int, const StagePassConfig&,
+void RunAmbientCityOfGoldEntsStagePass(Stage& stage, int, const StagePassConfig&,
                                            const ItemPoolDb&, QuestState*) {
-    AddAmbientTempleEntities(stage);
+    AddAmbientTempleEnts(stage);
 }
 
-void RunAmbientOlmecEntitiesStagePass(Stage& stage, int, const StagePassConfig&,
+void RunAmbientOlmecEntsStagePass(Stage& stage, int, const StagePassConfig&,
                                       const ItemPoolDb&, QuestState*) {
-    AddAmbientOlmecEntities(stage);
+    AddAmbientOlmecEnts(stage);
 }
 
 void RunBranchExitStagePass(Stage& stage, int, const StagePassConfig& pass, const ItemPoolDb&,
@@ -144,14 +144,14 @@ constexpr std::array<StagePassDefinition, 14> kStagePasses = {{
     {"floor_treasure", RunFloorTreasureStagePass},
     {"udjat_key_chest", RunUdjatKeyChestStagePass},
     {"arrow_trap_conversion", RunArrowTrapConversionStagePass},
-    {"ambient_mines_entities", RunAmbientMinesEntitiesStagePass},
-    {"ambient_jungle_entities", RunAmbientJungleEntitiesStagePass},
-    {"ambient_black_market_entities", RunAmbientBlackMarketEntitiesStagePass},
-    {"ambient_haunted_castle_entities", RunAmbientHauntedCastleEntitiesStagePass},
-    {"ambient_ice_entities", RunAmbientIceEntitiesStagePass},
-    {"ambient_temple_entities", RunAmbientTempleEntitiesStagePass},
-    {"ambient_city_of_gold_entities", RunAmbientCityOfGoldEntitiesStagePass},
-    {"ambient_olmec_entities", RunAmbientOlmecEntitiesStagePass},
+    {"ambient_mines_ents", RunAmbientMinesEntsStagePass},
+    {"ambient_jungle_ents", RunAmbientJungleEntsStagePass},
+    {"ambient_black_market_ents", RunAmbientBlackMarketEntsStagePass},
+    {"ambient_haunted_castle_ents", RunAmbientHauntedCastleEntsStagePass},
+    {"ambient_ice_ents", RunAmbientIceEntsStagePass},
+    {"ambient_temple_ents", RunAmbientTempleEntsStagePass},
+    {"ambient_city_of_gold_ents", RunAmbientCityOfGoldEntsStagePass},
+    {"ambient_olmec_ents", RunAmbientOlmecEntsStagePass},
 }};
 
 const StagePassDefinition* FindStagePass(std::string_view name) {
@@ -177,13 +177,13 @@ void RunStagePass(Stage& stage, int level_number, const StagePassConfig& pass,
         throw std::runtime_error("Unknown classic stage pass: " + pass.name);
     }
 
-    const std::size_t spawns_before = stage.entity_spawns.size();
+    const std::size_t spawns_before = stage.ent_spawns.size();
     const std::size_t background_before = stage.background_stamps.size();
     definition->run(stage, level_number, pass, item_db, quest_state);
 
     AddStageGenAnnotation(
         stage, "stage pass: " + pass.name + " spawns +" +
-                   std::to_string(stage.entity_spawns.size() - spawns_before) + " stamps +" +
+                   std::to_string(stage.ent_spawns.size() - spawns_before) + " stamps +" +
                    std::to_string(stage.background_stamps.size() - background_before));
 }
 

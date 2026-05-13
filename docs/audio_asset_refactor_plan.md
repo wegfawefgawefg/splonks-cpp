@@ -2,7 +2,7 @@
 
 ## Goal
 
-Replace the current split `Song` / `SoundEffect` identity model with one unified audio asset system that matches the shape of the sprite asset side more closely:
+Replace the current split `Song` / `SoundEffect` ident model with one unified audio asset system that matches the shape of the sprite asset side more closely:
 
 - stable hashed ids in code
 - one asset database owning audio metadata
@@ -14,8 +14,8 @@ This removes the current duplicated sound-definition maintenance and gives audio
 
 The current audio code has a few structural issues:
 
-- sound identity is split across `enum class SoundEffect`, `AllSoundEffects()`, `kSoundEffectCount`, and `GetSoundFileName()`
-- music and sound effects use separate identity systems even though both are just audio assets
+- sound ident is split across `enum class SoundEffect`, `AllSoundEffects()`, `kSoundEffectCount`, and `GetSoundFileName()`
+- music and sound effects use separate ident systems even though both are just audio assets
 - runtime playback policy is mixed together with asset definition
 - adding a new sound requires touching multiple places and keeping ordering consistent
 
@@ -25,7 +25,7 @@ The main correctness risk is order-coupled loading. If the enum order and the lo
 
 ### 1. Unified audio ids
 
-Add `audio_asset_id.hpp` with the same general pattern as `frame_data_id.hpp`.
+Add `audio_asset_id.hpp` with the same general pattern as `aframe_id.hpp`.
 
 ```cpp
 using AudioAssetId = std::uint32_t;
@@ -122,7 +122,7 @@ Audio buses are useful, but they should not be part of the asset definition by d
 Reason:
 
 - the same asset may reasonably be played on different buses in different situations
-- bus routing is a playback concern, not a content identity concern
+- bus routing is a playback concern, not a content ident concern
 
 If buses are needed, they should live in playback params or higher-level wrapper APIs.
 
@@ -159,7 +159,7 @@ The point is not to force all call sites to use one ambiguous `PlayAudio()` func
 
 ## Implementation Plan
 
-### Phase 1: identity and asset db
+### Phase 1: ident and asset db
 
 - add `audio_asset_id.hpp`
 - add `raw_audio_asset.hpp/.cpp` if needed for manifest loading
@@ -183,7 +183,7 @@ The point is not to force all call sites to use one ambiguous `PlayAudio()` func
 
 ### Phase 4: cleanup
 
-- remove the old enum-based identity system entirely
+- remove the old enum-based ident system entirely
 - remove any dead compatibility helpers
 
 ## Non-Goals
@@ -216,4 +216,4 @@ The intended end state is:
 - one manifest-backed audio asset database
 - no duplicated sound-definition switch/list/count maintenance
 - runtime playback policy chosen by the caller
-- songs and sound effects treated as the same kind of asset, with different usage patterns rather than different identity systems
+- songs and sound effects treated as the same kind of asset, with different usage patterns rather than different ident systems

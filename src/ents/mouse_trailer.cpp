@@ -1,16 +1,16 @@
-#include "entities/mouse_trailer.hpp"
+#include "ents/mouse_trailer.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "tile.hpp"
 
-namespace splonks::entities::mouse_trailer {
+namespace splonks::ents::mouse_trailer {
 
-extern const EntityArchetype kMouseTrailerArchetype{
-    .type_ = EntityType::MouseTrailer,
+extern const EntSpec kMouseTrailerSpec{
+    .type_ = EntType::MouseTrailer,
     .size = Vec2::New(static_cast<float>(kTileSize), static_cast<float>(kTileSize)),
     .has_physics = true,
     .can_collide = true,
@@ -21,23 +21,23 @@ extern const EntityArchetype kMouseTrailerArchetype{
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
     .render_enabled = false,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
-    .step_physics = StepEntityPhysicsAsMouseTrailer,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
+    .step_physics = StepEntPhysicsAsMouseTrailer,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::NoSprite),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::NoSprite),
 };
 
-/** mouse_trailer does nothing, if falling, it should instakill if it hits an entity, and that entity is also grounded.
- * It should be a little bit bouncier than normal entities, also,
+/** mouse_trailer does nothing, if falling, it should instakill if it hits an ent, and that ent is also grounded.
+ * It should be a little bit bouncier than normal ents, also,
  * clunky sound on bounces, smack sound on hit something?
  * (do we need some material smack sounds: flesh, metal, bang, stone)
  * if grounded and moving, roll?? so set rotation
- *//** generalize this to all square or rectangular entities somehow */
-void StepEntityPhysicsAsMouseTrailer(
-    std::size_t entity_idx,
+ *//** generalize this to all square or rectangular ents somehow */
+void StepEntPhysicsAsMouseTrailer(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -45,9 +45,9 @@ void StepEntityPhysicsAsMouseTrailer(
 ) {
     (void)graphics;
     (void)audio;
-    common::PrePartialEulerStep(entity_idx, state, dt);
-    common::DoTileCollisions(entity_idx, state);
-    common::PostPartialEulerStep(entity_idx, state, dt);
+    common::PrePartialEulerStep(ent_idx, state, dt);
+    common::DoTileCollisions(ent_idx, state);
+    common::PostPartialEulerStep(ent_idx, state, dt);
 }
 
-} // namespace splonks::entities::mouse_trailer
+} // namespace splonks::ents::mouse_trailer

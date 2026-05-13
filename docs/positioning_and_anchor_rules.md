@@ -20,30 +20,30 @@ The important distinction is:
 Normal movement already behaves like a pixel-grid engine:
 
 - `vel` is accumulated as a float
-- movement is converted into integer pixel steps in `MoveEntityPixelStep()`
+- movement is converted into integer pixel steps in `MoveEntPixelStep()`
 - `pos` is then advanced one whole pixel at a time
 
-So under normal simulation, physics entities tend to stay on integer pixel coordinates.
+So under normal simulation, physics ents tend to stay on integer pixel coordinates.
 
-Problems appear when code bypasses the normal move/sweep path and writes `entity.pos` directly from:
+Problems appear when code bypasses the normal move/sweep path and writes `ent.pos` directly from:
 
 - `SetCenter(...)`
-- `SetVisualCenterForEntity(...)`
+- `SetVisualCenterForEnt(...)`
 - helper functions that spawn or teleport by center
 
 Those paths can easily produce `.5` positions when:
 
-- the entity has an odd-sized collision box
-- the entity has an odd-sized visual box
+- the ent has an odd-sized collision box
+- the ent has an odd-sized visual box
 - frame-data pbox / draw-offset math is involved
 
 Once that happens, grounded checks, rest positions, and rendering can disagree.
 
 ## Engine Rule
 
-For active physics entities:
+For active physics ents:
 
-- `entity.pos` should end a frame on integer pixel coordinates
+- `ent.pos` should end a frame on integer pixel coordinates
 - direct placement APIs should snap the resulting authoritative position
 - placement by visual center is approximate when mapped back onto the integer lattice
 
@@ -55,8 +55,8 @@ Examples:
 
 - particles: fine to stay fractional
 - camera: fine to stay fractional
-- held/back attachments with `has_physics = false`: lower priority, mostly visual
-- active colliding entities: should not be fractional
+- held/back attachs with `has_physics = false`: lower priority, mostly visual
+- active colliding ents: should not be fractional
 
 ## What Is Not A Problem
 
@@ -74,135 +74,135 @@ The correct invariant is "physics anchor must be integral".
 
 These are dangerous in a pixel-step physics engine unless they snap:
 
-- [entity.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entity.cpp)
-  `Entity::SetCenter`
-- [frame.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/frame.cpp)
-  `SetVisualCenterForEntity`
+- [ent.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ent.cpp)
+  `Ent::SetCenter`
+- [frame.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/frame.cpp)
+  `SetVisualCenterForEnt`
 
-As currently written, both can leave `entity.pos` fractional.
+As currently written, both can leave `ent.pos` fractional.
 
 ## Scan Method
 
 Scan target:
 
 - `SetCenter(...)`
-- `SetVisualCenterForEntity(...)`
+- `SetVisualCenterForEnt(...)`
 
 Interpretation:
 
-- "violation" means an unsnapped direct placement path for an active physics entity, or a generic helper that can place one
-- "expected exception" means editor/debug or attachment code where the entity is explicitly non-physics / non-colliding
+- "violation" means an unsnapped direct placement path for an active physics ent, or a generic helper that can place one
+- "expected exception" means editor/debug or attach code where the ent is explicitly non-physics / non-colliding
 
 ## High-Confidence Violations
 
 ### Generic unsafe placement helpers
 
-- [entity.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entity.cpp)
-  `Entity::SetCenter` writes unsnapped `pos`
-- [frame.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/frame.cpp)
-  `SetVisualCenterForEntity` writes unsnapped `pos`
+- [ent.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ent.cpp)
+  `Ent::SetCenter` writes unsnapped `pos`
+- [frame.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/frame.cpp)
+  `SetVisualCenterForEnt` writes unsnapped `pos`
 
 These are root-level violations because many callsites inherit the problem from them.
 
 ### Teleport / direct relocation
 
-- [teleporter.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/teleporter.cpp)
+- [teleporter.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/teleporter.cpp)
   teleports the holder by visual center
   Note:
   this file currently has a local snap after placement, so the immediate bug is mitigated there, but the helper it relies on is still unsafe.
 
-### Generic spawn-by-center helpers for active entities
+### Generic spawn-by-center helpers for active ents
 
 - [stage_break.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage_break.cpp)
-  `SpawnEntityAtCenter`
-- [tile_archetype.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile_archetype.cpp)
-  `SpawnEntityAtCenter`
-- [chest.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/chest.cpp)
-  `SpawnEntityAtCenter`
-- [spider.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/spider.cpp)
-  `SpawnEntityAtCenter`
+  `SpawnEntAtCenter`
+- [tile_spec.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/tile_spec.cpp)
+  `SpawnEntAtCenter`
+- [chest.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/chest.cpp)
+  `SpawnEntAtCenter`
+- [spider.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/spider.cpp)
+  `SpawnEntAtCenter`
 
-These helpers create active entities, call `SetEntityAs(...)`, then place with `SetCenter(...)` and do not snap.
+These helpers create active ents, call `SetEntAs(...)`, then place with `SetCenter(...)` and do not snap.
 
-### Throw / projectile spawn paths
+### Throw / proj spawn paths
 
-- [throw.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/throw.cpp)
-  thrown entities spawn with `spawned_entity->SetCenter(thrower.GetCenter())`
-- [cobra.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/cobra.cpp)
-  `SpawnCobraSpitEntity`
-- [web_cannon.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/web_cannon.cpp)
-  `SpawnWebBallEntity`
-- [web_cannon.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/web_cannon.cpp)
-  `SpawnCobwebEntity`
+- [throw.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/throw.cpp)
+  thrown ents spawn with `spawned_ent->SetCenter(thrower.GetCenter())`
+- [cobra.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/cobra.cpp)
+  `SpawnCobraSpitEnt`
+- [web_cannon.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/web_cannon.cpp)
+  `SpawnWebBallEnt`
+- [web_cannon.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/web_cannon.cpp)
+  `SpawnCobwebEnt`
 
-These are active world entities being center-placed with no snap.
+These are active world ents being center-placed with no snap.
 
 ### Scripted world spawns
 
-- [giant_tiki_head.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/giant_tiki_head.cpp)
+- [giant_tiki_head.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/giant_tiki_head.cpp)
   `SpawnBoulderForHead`
 - [stage_init.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage_init.cpp)
   `SpawnBowlingCaveman`
 - [stage_init.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage_init.cpp)
   `SpawnOpposingBodySmackCaveman`
 
-These use direct center placement for active physics entities and do not snap.
+These use direct center placement for active physics ents and do not snap.
 
 ### Suspected / Needs Review
 
 These sites were found by the same scan and are likely relevant, but they are a bit more context-sensitive than the list above.
 
 - [stage_init.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage_init.cpp)
-  `SpawnStageEntityAtCenter`
-  Generic stage helper that creates active entities and center-places them unsnapped.
-- [skeleton.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/skeleton.cpp)
-  `SpawnEntityAtCenter`
+  `SpawnStageEntAtCenter`
+  Generic stage helper that creates active ents and center-places them unsnapped.
+- [skeleton.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/skeleton.cpp)
+  `SpawnEntAtCenter`
   Same generic pattern as the other spawn helpers.
-- [sac_altar.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/sac_altar.cpp)
-  `SpawnEntityAtCenter`
+- [sac_altar.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/sac_altar.cpp)
+  `SpawnEntAtCenter`
   Likely fine for some rewards, but still an unsnapped active spawn helper.
-- [hang.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/hang.cpp)
-  `SnapEntityToClimbTileCenterline`
-  This one is probably intentional lattice alignment, but it currently relies on `SetCenter(...)`, so odd-size entities could still end up fractional depending on anchor math.
+- [hang.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/hang.cpp)
+  `SnapEntToClimbTileCenterline`
+  This one is probably intentional lattice alignment, but it currently relies on `SetCenter(...)`, so odd-size ents could still end up fractional depending on anchor math.
 
 These should be reviewed after the root setter policy is decided, because some may become automatically correct once the setters themselves are fixed.
 
 ## Expected Exceptions / Lower Priority
 
-These are not counted as primary violations because they are debug/editor or explicitly attachment-style placement.
+These are not counted as primary violations because they are debug/editor or explicitly attach-style placement.
 
-- [playback_ui_entities.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/debug/playback_ui_entities.cpp)
+- [playback_ui_ents.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/debug/playback_ui_ents.cpp)
   debug/editor spawn placement
 - [stage_init.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage_init.cpp)
-  `GiveHeldRockToEntity`
+  `GiveHeldRockToEnt`
 - [stage_init.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/stage_init.cpp)
   `SnapAttachedItemsToPlayer`
-- [carry.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/common/carry.cpp)
-  held/back attachment sync
-- [shopkeeper.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/shopkeeper.cpp)
+- [carry.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/common/carry.cpp)
+  held/back attach sync
+- [shopkeeper.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/shopkeeper.cpp)
   held pistol placement
-- [baseball_bat.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/entities/baseball_bat.cpp)
+- [baseball_bat.cpp](/home/vega/Coding/GameDev/Splonks/splonks-cpp/src/ents/baseball_bat.cpp)
   mounted held bat placement
 
-These should still be reviewed for visual crispness, but they are not the same class of bug as active physics entities ending up fractional in the world.
+These should still be reviewed for visual crispness, but they are not the same class of bug as active physics ents ending up fractional in the world.
 
 ## Plan
 
 ### Phase 1: Root Policy
 
-- decide whether `Entity::SetCenter` and `SetVisualCenterForEntity` snap by default for physics entities
-- keep the rule simple: active physics entities should not be left fractional
+- decide whether `Ent::SetCenter` and `SetVisualCenterForEnt` snap by default for physics ents
+- keep the rule simple: active physics ents should not be left fractional
 
 ### Phase 2: Immediate Bug Fixes
 
 - keep teleporter snapped
-- patch the high-confidence active-physics spawn / projectile helpers so they snap authoritative `pos` after placement
+- patch the high-confidence active-physics spawn / proj helpers so they snap authoritative `pos` after placement
 
 Targets:
 
 - `throw.cpp`
 - `stage_break.cpp`
-- `tile_archetype.cpp`
+- `tile_spec.cpp`
 - `chest.cpp`
 - `spider.cpp`
 - `cobra.cpp`
@@ -212,14 +212,14 @@ Targets:
 
 ### Phase 3: Review Suspected Sites
 
-- review `SpawnStageEntityAtCenter`
+- review `SpawnStageEntAtCenter`
 - review skeleton / sac altar local spawn helpers
 - review climb centerline snap behavior
-- review attachment / held-item placement only for visual crispness, not as a blocking physics bug
+- review attach / held-item placement only for visual crispness, not as a blocking physics bug
 
 ### Phase 4: Debug Guardrail
 
-- add an invariant check for active physics entities that are not attached / held
+- add an invariant check for active physics ents that are not attached / held
 - flag any end-of-frame fractional `pos`
 
 This should catch future regressions immediately.

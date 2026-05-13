@@ -2,10 +2,10 @@
 
 ## Current State
 
-The live lighting grid is the active terrain/entity lighting path. It supports:
+The live lighting grid is the active terrain/ent lighting path. It supports:
 
 - CPU-computed RGB brightness grid.
-- World-position light splatting for stage lights, player lamp, and emitting entities.
+- World-position light splatting for stage lights, player lamp, and emitting ents.
 - Transient world lights for short-lived flashes.
 - Bilinear world-position sampling for moving sprites and overlays.
 - Foreground and backwall vertex/corner lighting.
@@ -14,17 +14,17 @@ The live lighting grid is the active terrain/entity lighting path. It supports:
 - Temporal smoothing.
 - Embedded treasure self-brightness without making every treasure a propagated torch.
 - Particle lighting modes: scene-lit, unlit, and emissive.
-- RGB source colors for stage lights, entity lights, transient lights, tiles, entities, particles, water, and overlays.
+- RGB source colors for stage lights, ent lights, transient lights, tiles, ents, particles, water, and overlays.
 
 ## Completed
 
 - [x] Remove face-shading terrain trick.
 - [x] Replace openness-only lighting with a live propagated light grid.
 - [x] Merge player lamp into the normal live light source path.
-- [x] Add live light source support for entity archetypes and runtime entities.
+- [x] Add live light source support for ent specs and runtime ents.
 - [x] Add transient lights for explosion and gunshot flashes.
-- [x] Add self-light for entities that should read bright without necessarily lighting the world.
-- [x] Add bilinear lighting samples for entity and overlay rendering.
+- [x] Add self-light for ents that should read bright without necessarily lighting the world.
+- [x] Add bilinear lighting samples for ent and overlay rendering.
 - [x] Add vertex lighting for foreground tiles.
 - [x] Add vertex lighting for backwall tiles.
 - [x] Add border lighting samples.
@@ -36,9 +36,9 @@ The live lighting grid is the active terrain/entity lighting path. It supports:
 - [x] Add RGB lighting.
   - Scalar ambient/openness settings still enter the grid as white light.
   - Light sources now carry separate strength and color.
-  - Terrain, backwall, entity, particle, water, tile cap, and embedded overlay render paths sample RGB.
+  - Terrain, backwall, ent, particle, water, tile cap, and embedded overlay render paths sample RGB.
 - [x] Add debug visibility for live light sources.
-  - The existing light overlay now shows stage lights, player lamp, entity-emitted lights, and transient flashes.
+  - The existing light overlay now shows stage lights, player lamp, ent-emitted lights, and transient flashes.
 - [x] Add vertex lighting for tile caps.
   - Caps now sample their exact rendered rect corners instead of using one owning-tile brightness value.
 
@@ -49,7 +49,7 @@ The live lighting grid is the active terrain/entity lighting path. It supports:
   - Useful next cases: sparks, magic effects, lava bursts, and future electrical effects.
 
 - [ ] Profile many live lights.
-  - Current entity lights are fine at normal counts.
+  - Current ent lights are fine at normal counts.
   - If we start lighting every coin/gem/particle, add culling, caps, or light buckets before it becomes a frame-time issue.
 
 ## RGB Implementation
@@ -61,14 +61,14 @@ Implemented shape:
 3. Propagation runs per channel with the same decay rules.
 4. Scalar ambient/openness stays white light.
 5. Terrain and backwall vertex lighting writes per-vertex RGB.
-6. Entity, particle, water, tile cap, and overlay lighting use RGB samples.
+6. Ent, particle, water, tile cap, and overlay lighting use RGB samples.
 7. Old scalar sample helpers remain as brightness wrappers for compatibility.
 
 This lets gems, explosions, teleporter phase effects, lava, water caustics, and weird quest-specific lights tint the world without special render cases.
 
 ## Transient Light Plan
 
-Do not make every flash a real entity. Add a small frame-owned or state-owned list like:
+Do not make every flash a real ent. Add a small frame-owned or state-owned list like:
 
 ```cpp
 struct TransientLight {
@@ -111,6 +111,6 @@ The pragmatic path is:
 
 ## Likely Implementation Order
 
-1. Profile dense light scenes before adding many more always-on entity emitters.
+1. Profile dense light scenes before adding many more always-on ent emitters.
 2. Expand transient light coverage and add colored source data to new light-emitting content as it is implemented.
 3. Consider shaders only after RGB CPU lighting or normal mapping creates a real renderer ceiling.

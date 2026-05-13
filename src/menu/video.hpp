@@ -25,7 +25,7 @@ enum class VideoUpOrDownOrNeither {
     Down,
 };
 
-enum class VideoLeftOrRightOrNeither {
+enum class VideoSideOrNeither {
     Neither,
     Left,
     Right,

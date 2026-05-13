@@ -1,188 +1,188 @@
 pools:
   - id: underground_items
     entries:
-      - entity: jetpack
+      - ent: jetpack
         weight: 1
         unique: true
-      - entity: cape
+      - ent: cape
         weight: 1
         unique: true
-      - entity: mattock
+      - ent: mattock
         weight: 1
         unique: true
-      - entity: teleporter
+      - ent: teleporter
         weight: 1
         unique: true
-      - entity: teleporter_backpack
+      - ent: teleporter_backpack
         weight: 1
         unique: true
-      - entity: gloves
+      - ent: gloves
         weight: 1
         unique: true
-      - entity: spectacles
+      - ent: spectacles
         weight: 1
         unique: true
-      - entity: web_cannon
+      - ent: web_cannon
         weight: 1
         unique: true
-      - entity: pistol
+      - ent: pistol
         weight: 2
-      - entity: mitt
+      - ent: mitt
         weight: 1
         unique: true
-      - entity: paste
+      - ent: paste
         weight: 1
         unique: true
-      - entity: spring_shoes
+      - ent: spring_shoes
         weight: 1
         unique: true
-      - entity: spike_shoes
+      - ent: spike_shoes
         weight: 1
         unique: true
-      - entity: machete
+      - ent: machete
         weight: 1
         unique: true
-      - entity: bomb_box
+      - ent: bomb_box
         weight: 1
-      - entity: bow
-        weight: 1
-        unique: true
-      - entity: compass
+      - ent: bow
         weight: 1
         unique: true
-      - entity: parachute
+      - ent: compass
         weight: 1
-      - entity: rope_pile
+        unique: true
+      - ent: parachute
+        weight: 1
+      - ent: rope_pile
         weight: 1
   - id: high_end_shop_items
     entries:
-      - entity: jetpack
+      - ent: jetpack
         weight: 1
         unique: true
-      - entity: cape
+      - ent: cape
         weight: 1
         unique: true
-      - entity: gloves
+      - ent: gloves
         weight: 2
         unique: true
-      - entity: teleporter
+      - ent: teleporter
         weight: 2
         unique: true
-      - entity: teleporter_backpack
+      - ent: teleporter_backpack
         weight: 2
         unique: true
-      - entity: mattock
+      - ent: mattock
         weight: 3
         unique: true
-      - entity: paste
+      - ent: paste
         weight: 3
         unique: true
-      - entity: spring_shoes
+      - ent: spring_shoes
         weight: 3
         unique: true
-      - entity: spike_shoes
+      - ent: spike_shoes
         weight: 3
         unique: true
-      - entity: compass
+      - ent: compass
         weight: 3
         unique: true
-      - entity: pistol
+      - ent: pistol
         weight: 4
-      - entity: machete
+      - ent: machete
         weight: 3
         unique: true
   - id: general_shop_items
     entries:
-      - entity: mattock
+      - ent: mattock
         weight: 1
         unique: true
-      - entity: gloves
+      - ent: gloves
         weight: 2
         unique: true
-      - entity: compass
+      - ent: compass
         weight: 2
         unique: true
-      - entity: bomb_bag
+      - ent: bomb_bag
         weight: 8
-      - entity: rope_pile
+      - ent: rope_pile
         weight: 8
-      - entity: parachute
+      - ent: parachute
         weight: 8
   - id: bomb_shop_items
     entries:
-      - entity: paste
+      - ent: paste
         weight: 1
         unique: true
-      - entity: bomb_box
+      - ent: bomb_box
         weight: 4
-      - entity: bomb_bag
+      - ent: bomb_bag
         weight: 12
   - id: weapon_shop_items
     unique: true
     entries:
-      - entity: web_cannon
+      - ent: web_cannon
         weight: 1
-      - entity: bomb_box
+      - ent: bomb_box
         weight: 2
-      - entity: pistol
+      - ent: pistol
         weight: 5
-      - entity: machete
+      - ent: machete
         weight: 4
-      - entity: bomb_bag
+      - ent: bomb_bag
         weight: 4
-      - entity: bow
+      - ent: bow
         weight: 3
   - id: clothing_shop_items
     unique: true
     entries:
-      - entity: spring_shoes
+      - ent: spring_shoes
         weight: 3
-      - entity: spectacles
+      - ent: spectacles
         weight: 3
-      - entity: gloves
+      - ent: gloves
         weight: 3
-      - entity: mitt
+      - ent: mitt
         weight: 3
-      - entity: cape
+      - ent: cape
         weight: 2
-      - entity: spike_shoes
+      - ent: spike_shoes
         weight: 3
-      - entity: rope_pile
+      - ent: rope_pile
         weight: 2
   - id: rare_shop_items
     unique: true
     entries:
-      - entity: spring_shoes
+      - ent: spring_shoes
         weight: 3
-      - entity: compass
+      - ent: compass
         weight: 3
-      - entity: mattock
+      - ent: mattock
         weight: 3
-      - entity: spectacles
+      - ent: spectacles
         weight: 3
-      - entity: jetpack
+      - ent: jetpack
         weight: 1
-      - entity: gloves
+      - ent: gloves
         weight: 3
-      - entity: mitt
+      - ent: mitt
         weight: 3
-      - entity: web_cannon
+      - ent: web_cannon
         weight: 2
-      - entity: cape
+      - ent: cape
         weight: 2
-      - entity: teleporter
+      - ent: teleporter
         weight: 2
-      - entity: teleporter_backpack
+      - ent: teleporter_backpack
         weight: 2
-      - entity: spike_shoes
+      - ent: spike_shoes
         weight: 3
-      - entity: bomb_box
+      - ent: bomb_box
         weight: 2
   - id: craps_shop_items
     entries:
-      - entity: dice
+      - ent: dice
         weight: 1
   - id: kissing_shop_items
     entries:
-      - entity: damsel
+      - ent: damsel
         weight: 1

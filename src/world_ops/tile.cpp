@@ -1,6 +1,6 @@
 #include "world_ops.hpp"
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 #include "state.hpp"
@@ -45,10 +45,10 @@ bool SetForegroundTile(
 
 bool PlaceRopeTile(
     State& state,
-    const Entity& source_entity,
+    const Ent& source_ent,
     const IVec2& tile_pos_raw
 ) {
-    (void)source_entity;
+    (void)source_ent;
     return SetForegroundTile(state, tile_pos_raw, Tile::Rope, kTileRotation0);
 }
 

@@ -83,8 +83,8 @@ bool ReadOptionalPod(std::istream& in, std::optional<T>& value) {
     return true;
 }
 
-void WriteEntityEffects(std::ostream& out, const BoxedEntityEffects& effects_box) {
-    const EntityEffects* const effects = effects_box.get();
+void WriteEntEffects(std::ostream& out, const BoxedEntEffects& effects_box) {
+    const EntEffects* const effects = effects_box.get();
     const std::uint8_t count = effects != nullptr ? effects->count : 0;
     WritePod(out, count);
     for (std::uint8_t i = 0; i < count; ++i) {
@@ -92,19 +92,19 @@ void WriteEntityEffects(std::ostream& out, const BoxedEntityEffects& effects_box
     }
 }
 
-bool ReadEntityEffects(std::istream& in, BoxedEntityEffects& effects_box) {
+bool ReadEntEffects(std::istream& in, BoxedEntEffects& effects_box) {
     std::uint8_t count = 0;
     if (!ReadPod(in, count)) {
         return false;
     }
-    if (count > kMaxEntityEffects) {
+    if (count > kMaxEntEffects) {
         return false;
     }
     if (count == 0) {
         effects_box.reset();
         return true;
     }
-    EntityEffects& effects = effects_box.emplace();
+    EntEffects& effects = effects_box.emplace();
     effects.count = count;
     for (std::uint8_t i = 0; i < count; ++i) {
         if (!ReadPod(in, effects.effects[i])) {
@@ -137,264 +137,264 @@ bool ReadOptionalVectorPod(std::istream& in, std::optional<std::vector<T>>& valu
     return ReadVectorPod(in, *values);
 }
 
-void WriteEntity(std::ostream& out, const Entity& entity) {
-    WritePod(out, entity.active);
-    WritePod(out, entity.marked_for_destruction);
-    WritePod(out, entity.type_);
-    WritePod(out, entity.vid);
-    WritePod(out, entity.has_physics);
-    WritePod(out, entity.can_collide);
-    WritePod(out, entity.can_be_hit);
-    WritePod(out, entity.can_receive_projectile_contact);
-    WritePod(out, entity.stone);
-    WritePod(out, entity.wanted);
-    WritePod(out, entity.crusher_pusher);
-    WritePod(out, entity.pushable);
-    WritePod(out, entity.can_stomp);
-    WritePod(out, entity.can_be_stomped);
-    WritePod(out, entity.can_collect_pickups);
-    WritePod(out, entity.can_go_on_back);
-    WritePod(out, entity.grounded);
-    WritePod(out, entity.shake);
-    WritePod(out, entity.rotation);
-    WritePod(out, entity.alpha);
-    WritePod(out, entity.coyote_time);
-    WritePod(out, entity.stun_timer);
-    WritePod(out, entity.stun_recovers_on_ground);
-    WritePod(out, entity.stun_recovers_while_held);
-    WritePod(out, entity.can_be_picked_up);
-    WritePod(out, entity.affected_by_cobweb);
-    WritePod(out, entity.can_only_be_picked_up_if_dead_or_stunned);
-    WritePod(out, entity.impassable);
-    WritePod(out, entity.can_be_hung_on);
-    WritePod(out, entity.fall_timer);
-    WritePod(out, entity.pos);
-    WritePod(out, entity.vel);
-    WritePod(out, entity.acc);
-    WritePod(out, entity.max_speed);
-    WritePod(out, entity.jump_hold_gravity_frames_remaining);
-    WritePod(out, entity.throw_velocity_scale);
-    WriteEntityEffects(out, entity.effects);
-    WritePod(out, entity.size);
-    WritePod(out, entity.dist_traveled_this_frame);
-    WritePod(out, entity.facing);
-    WritePod(out, entity.vertical_flip);
-    WritePod(out, entity.draw_layer);
-    WritePod(out, entity.render_enabled);
-    WritePod(out, entity.frame_data_animator);
-    WritePod(out, entity.jump_delay_frame_count);
-    WritePod(out, entity.jumped_this_frame);
-    WriteOptionalPod(out, entity.hang_side);
-    WritePod(out, entity.can_hang_ledge);
-    WritePod(out, entity.can_hang_wall);
-    WritePod(out, entity.hang_count);
-    WritePod(out, entity.holding);
-    WriteOptionalPod(out, entity.pickup_effect);
-    WritePod(out, entity.money);
-    WritePod(out, entity.buyable);
-    WriteOptionalPod(out, entity.back_vid);
-    WritePod(out, entity.attachment_mode);
-    WritePod(out, entity.use_state);
-    WritePod(out, entity.travel_sound_countdown);
-    WritePod(out, entity.travel_sound);
-    WritePod(out, entity.condition);
-    WritePod(out, entity.last_condition);
-    WritePod(out, entity.ai_state);
-    WritePod(out, entity.last_ai_state);
-    WritePod(out, entity.movement_flags);
-    WritePod(out, entity.health);
-    WritePod(out, entity.hurt_on_contact);
-    WritePod(out, entity.vanish_on_death);
-    WritePod(out, entity.affected_by_ground_friction);
-    WritePod(out, entity.support_ground_friction);
-    WritePod(out, entity.push_acc);
-    WriteOptionalPod(out, entity.damage_animation);
-    WriteOptionalPod(out, entity.damage_sound);
-    WriteOptionalPod(out, entity.collide_sound);
-    WriteOptionalPod(out, entity.death_sound);
-    WritePod(out, entity.on_death);
-    WritePod(out, entity.on_damage);
-    WritePod(out, entity.on_use);
-    WritePod(out, entity.on_area_enter);
-    WritePod(out, entity.on_area_exit);
-    WritePod(out, entity.on_area_tile_changed);
-    WritePod(out, entity.control_logic);
-    WritePod(out, entity.step_logic);
-    WritePod(out, entity.step_physics);
-    WriteOptionalPod(out, entity.transition_target);
-    WritePod(out, entity.stage_exit_id);
-    WritePod(out, entity.attack_weight);
-    WritePod(out, entity.weight);
-    WritePod(out, entity.bomb_throw_delay_countdown);
-    WritePod(out, entity.rope_throw_delay_countdown);
-    WritePod(out, entity.attack_delay_countdown);
-    WritePod(out, entity.equip_delay_countdown);
-    WriteOptionalPod(out, entity.thrown_by);
-    WritePod(out, entity.thrown_immunity_timer);
-    WritePod(out, entity.projectile_contact_damage_type);
-    WritePod(out, entity.projectile_contact_damage_amount);
-    WritePod(out, entity.can_apply_projectile_contact);
-    WritePod(out, entity.projectile_contact_timer);
-    WritePod(out, entity.collided);
-    WritePod(out, entity.collided_last_frame);
-    WritePod(out, entity.contact_sound_cooldown);
-    WritePod(out, entity.damage_vulnerability);
-    WritePod(out, entity.can_be_stunned);
-    WritePod(out, entity.point_a);
-    WritePod(out, entity.point_b);
-    WritePod(out, entity.point_c);
-    WritePod(out, entity.point_d);
-    WritePod(out, entity.point_label_a);
-    WritePod(out, entity.point_label_b);
-    WritePod(out, entity.point_label_c);
-    WritePod(out, entity.point_label_d);
-    WriteOptionalPod(out, entity.holding_vid);
-    WriteOptionalPod(out, entity.held_by_vid);
-    WritePod(out, entity.holding_timer);
-    WriteOptionalPod(out, entity.entity_a);
-    WriteOptionalPod(out, entity.entity_b);
-    WriteOptionalPod(out, entity.entity_c);
-    WriteOptionalPod(out, entity.entity_d);
-    WriteOptionalVectorPod(out, entity.child_vids);
-    WriteOptionalVectorPod(out, entity.inside_vids);
-    WritePod(out, entity.entity_label_a);
-    WritePod(out, entity.alignment);
-    WritePod(out, entity.counter_a);
-    WritePod(out, entity.counter_b);
-    WritePod(out, entity.counter_c);
-    WritePod(out, entity.counter_d);
-    WritePod(out, entity.threshold_a);
-    WritePod(out, entity.threshold_b);
+void WriteEnt(std::ostream& out, const Ent& ent) {
+    WritePod(out, ent.active);
+    WritePod(out, ent.marked_for_destruction);
+    WritePod(out, ent.type_);
+    WritePod(out, ent.vid);
+    WritePod(out, ent.has_physics);
+    WritePod(out, ent.can_collide);
+    WritePod(out, ent.can_be_hit);
+    WritePod(out, ent.can_receive_proj_contact);
+    WritePod(out, ent.stone);
+    WritePod(out, ent.wanted);
+    WritePod(out, ent.crusher_pusher);
+    WritePod(out, ent.pushable);
+    WritePod(out, ent.can_stomp);
+    WritePod(out, ent.can_be_stomped);
+    WritePod(out, ent.can_collect_pickups);
+    WritePod(out, ent.can_go_on_back);
+    WritePod(out, ent.grounded);
+    WritePod(out, ent.shake);
+    WritePod(out, ent.rotation);
+    WritePod(out, ent.alpha);
+    WritePod(out, ent.coyote_time);
+    WritePod(out, ent.stun_timer);
+    WritePod(out, ent.stun_recovers_on_ground);
+    WritePod(out, ent.stun_recovers_while_held);
+    WritePod(out, ent.can_be_picked_up);
+    WritePod(out, ent.affected_by_cobweb);
+    WritePod(out, ent.can_only_be_picked_up_if_dead_or_stunned);
+    WritePod(out, ent.impassable);
+    WritePod(out, ent.can_be_hung_on);
+    WritePod(out, ent.fall_timer);
+    WritePod(out, ent.pos);
+    WritePod(out, ent.vel);
+    WritePod(out, ent.acc);
+    WritePod(out, ent.max_speed);
+    WritePod(out, ent.jump_hold_gravity_frames_remaining);
+    WritePod(out, ent.throw_velocity_scale);
+    WriteEntEffects(out, ent.effects);
+    WritePod(out, ent.size);
+    WritePod(out, ent.dist_traveled_this_frame);
+    WritePod(out, ent.facing);
+    WritePod(out, ent.vertical_flip);
+    WritePod(out, ent.draw_layer);
+    WritePod(out, ent.render_enabled);
+    WritePod(out, ent.aframe_animator);
+    WritePod(out, ent.jump_delay_frame_count);
+    WritePod(out, ent.jumped_this_frame);
+    WriteOptionalPod(out, ent.hang_side);
+    WritePod(out, ent.can_hang_ledge);
+    WritePod(out, ent.can_hang_wall);
+    WritePod(out, ent.hang_count);
+    WritePod(out, ent.holding);
+    WriteOptionalPod(out, ent.pickup_effect);
+    WritePod(out, ent.money);
+    WritePod(out, ent.buyable);
+    WriteOptionalPod(out, ent.back_vid);
+    WritePod(out, ent.attach_mode);
+    WritePod(out, ent.use_state);
+    WritePod(out, ent.travel_sound_countdown);
+    WritePod(out, ent.travel_sound);
+    WritePod(out, ent.condition);
+    WritePod(out, ent.last_condition);
+    WritePod(out, ent.ai_state);
+    WritePod(out, ent.last_ai_state);
+    WritePod(out, ent.movement_flags);
+    WritePod(out, ent.health);
+    WritePod(out, ent.hurt_on_contact);
+    WritePod(out, ent.vanish_on_death);
+    WritePod(out, ent.affected_by_ground_friction);
+    WritePod(out, ent.support_ground_friction);
+    WritePod(out, ent.push_acc);
+    WriteOptionalPod(out, ent.damage_anim);
+    WriteOptionalPod(out, ent.damage_sound);
+    WriteOptionalPod(out, ent.collide_sound);
+    WriteOptionalPod(out, ent.death_sound);
+    WritePod(out, ent.on_death);
+    WritePod(out, ent.on_damage);
+    WritePod(out, ent.on_use);
+    WritePod(out, ent.on_area_enter);
+    WritePod(out, ent.on_area_exit);
+    WritePod(out, ent.on_area_tile_changed);
+    WritePod(out, ent.control_logic);
+    WritePod(out, ent.step_logic);
+    WritePod(out, ent.step_physics);
+    WriteOptionalPod(out, ent.transition_target);
+    WritePod(out, ent.stage_exit_id);
+    WritePod(out, ent.attack_weight);
+    WritePod(out, ent.weight);
+    WritePod(out, ent.bomb_throw_delay_countdown);
+    WritePod(out, ent.rope_throw_delay_countdown);
+    WritePod(out, ent.attack_delay_countdown);
+    WritePod(out, ent.equip_delay_countdown);
+    WriteOptionalPod(out, ent.thrown_by);
+    WritePod(out, ent.thrown_immunity_timer);
+    WritePod(out, ent.proj_contact_damage_type);
+    WritePod(out, ent.proj_contact_damage_amount);
+    WritePod(out, ent.can_apply_proj_contact);
+    WritePod(out, ent.proj_contact_timer);
+    WritePod(out, ent.collided);
+    WritePod(out, ent.collided_last_frame);
+    WritePod(out, ent.contact_sound_cooldown);
+    WritePod(out, ent.damage_vuln);
+    WritePod(out, ent.can_be_stunned);
+    WritePod(out, ent.point_a);
+    WritePod(out, ent.point_b);
+    WritePod(out, ent.point_c);
+    WritePod(out, ent.point_d);
+    WritePod(out, ent.point_label_a);
+    WritePod(out, ent.point_label_b);
+    WritePod(out, ent.point_label_c);
+    WritePod(out, ent.point_label_d);
+    WriteOptionalPod(out, ent.holding_vid);
+    WriteOptionalPod(out, ent.held_by_vid);
+    WritePod(out, ent.holding_timer);
+    WriteOptionalPod(out, ent.ent_a);
+    WriteOptionalPod(out, ent.ent_b);
+    WriteOptionalPod(out, ent.ent_c);
+    WriteOptionalPod(out, ent.ent_d);
+    WriteOptionalVectorPod(out, ent.child_vids);
+    WriteOptionalVectorPod(out, ent.inside_vids);
+    WritePod(out, ent.ent_label_a);
+    WritePod(out, ent.alignment);
+    WritePod(out, ent.counter_a);
+    WritePod(out, ent.counter_b);
+    WritePod(out, ent.counter_c);
+    WritePod(out, ent.counter_d);
+    WritePod(out, ent.threshold_a);
+    WritePod(out, ent.threshold_b);
 }
 
-bool ReadEntity(std::istream& in, Entity& entity) {
-    return ReadPod(in, entity.active) &&
-           ReadPod(in, entity.marked_for_destruction) &&
-           ReadPod(in, entity.type_) &&
-           ReadPod(in, entity.vid) &&
-           ReadPod(in, entity.has_physics) &&
-           ReadPod(in, entity.can_collide) &&
-           ReadPod(in, entity.can_be_hit) &&
-           ReadPod(in, entity.can_receive_projectile_contact) &&
-           ReadPod(in, entity.stone) &&
-           ReadPod(in, entity.wanted) &&
-           ReadPod(in, entity.crusher_pusher) &&
-           ReadPod(in, entity.pushable) &&
-           ReadPod(in, entity.can_stomp) &&
-           ReadPod(in, entity.can_be_stomped) &&
-           ReadPod(in, entity.can_collect_pickups) &&
-           ReadPod(in, entity.can_go_on_back) &&
-           ReadPod(in, entity.grounded) &&
-           ReadPod(in, entity.shake) &&
-           ReadPod(in, entity.rotation) &&
-           ReadPod(in, entity.alpha) &&
-           ReadPod(in, entity.coyote_time) &&
-           ReadPod(in, entity.stun_timer) &&
-           ReadPod(in, entity.stun_recovers_on_ground) &&
-           ReadPod(in, entity.stun_recovers_while_held) &&
-           ReadPod(in, entity.can_be_picked_up) &&
-           ReadPod(in, entity.affected_by_cobweb) &&
-           ReadPod(in, entity.can_only_be_picked_up_if_dead_or_stunned) &&
-           ReadPod(in, entity.impassable) &&
-           ReadPod(in, entity.can_be_hung_on) &&
-           ReadPod(in, entity.fall_timer) &&
-           ReadPod(in, entity.pos) &&
-           ReadPod(in, entity.vel) &&
-           ReadPod(in, entity.acc) &&
-           ReadPod(in, entity.max_speed) &&
-           ReadPod(in, entity.jump_hold_gravity_frames_remaining) &&
-           ReadPod(in, entity.throw_velocity_scale) &&
-           ReadEntityEffects(in, entity.effects) &&
-           ReadPod(in, entity.size) &&
-           ReadPod(in, entity.dist_traveled_this_frame) &&
-           ReadPod(in, entity.facing) &&
-           ReadPod(in, entity.vertical_flip) &&
-           ReadPod(in, entity.draw_layer) &&
-           ReadPod(in, entity.render_enabled) &&
-           ReadPod(in, entity.frame_data_animator) &&
-           ReadPod(in, entity.jump_delay_frame_count) &&
-           ReadPod(in, entity.jumped_this_frame) &&
-           ReadOptionalPod(in, entity.hang_side) &&
-           ReadPod(in, entity.can_hang_ledge) &&
-           ReadPod(in, entity.can_hang_wall) &&
-           ReadPod(in, entity.hang_count) &&
-           ReadPod(in, entity.holding) &&
-           ReadOptionalPod(in, entity.pickup_effect) &&
-           ReadPod(in, entity.money) &&
-           ReadPod(in, entity.buyable) &&
-           ReadOptionalPod(in, entity.back_vid) &&
-           ReadPod(in, entity.attachment_mode) &&
-           ReadPod(in, entity.use_state) &&
-           ReadPod(in, entity.travel_sound_countdown) &&
-           ReadPod(in, entity.travel_sound) &&
-           ReadPod(in, entity.condition) &&
-           ReadPod(in, entity.last_condition) &&
-           ReadPod(in, entity.ai_state) &&
-           ReadPod(in, entity.last_ai_state) &&
-           ReadPod(in, entity.movement_flags) &&
-           ReadPod(in, entity.health) &&
-           ReadPod(in, entity.hurt_on_contact) &&
-           ReadPod(in, entity.vanish_on_death) &&
-           ReadPod(in, entity.affected_by_ground_friction) &&
-           ReadPod(in, entity.support_ground_friction) &&
-           ReadPod(in, entity.push_acc) &&
-           ReadOptionalPod(in, entity.damage_animation) &&
-           ReadOptionalPod(in, entity.damage_sound) &&
-           ReadOptionalPod(in, entity.collide_sound) &&
-           ReadOptionalPod(in, entity.death_sound) &&
-           ReadPod(in, entity.on_death) &&
-           ReadPod(in, entity.on_damage) &&
-           ReadPod(in, entity.on_use) &&
-           ReadPod(in, entity.on_area_enter) &&
-           ReadPod(in, entity.on_area_exit) &&
-           ReadPod(in, entity.on_area_tile_changed) &&
-           ReadPod(in, entity.control_logic) &&
-           ReadPod(in, entity.step_logic) &&
-           ReadPod(in, entity.step_physics) &&
-           ReadOptionalPod(in, entity.transition_target) &&
-           ReadPod(in, entity.stage_exit_id) &&
-           ReadPod(in, entity.attack_weight) &&
-           ReadPod(in, entity.weight) &&
-           ReadPod(in, entity.bomb_throw_delay_countdown) &&
-           ReadPod(in, entity.rope_throw_delay_countdown) &&
-           ReadPod(in, entity.attack_delay_countdown) &&
-           ReadPod(in, entity.equip_delay_countdown) &&
-           ReadOptionalPod(in, entity.thrown_by) &&
-           ReadPod(in, entity.thrown_immunity_timer) &&
-           ReadPod(in, entity.projectile_contact_damage_type) &&
-           ReadPod(in, entity.projectile_contact_damage_amount) &&
-           ReadPod(in, entity.can_apply_projectile_contact) &&
-           ReadPod(in, entity.projectile_contact_timer) &&
-           ReadPod(in, entity.collided) &&
-           ReadPod(in, entity.collided_last_frame) &&
-           ReadPod(in, entity.contact_sound_cooldown) &&
-           ReadPod(in, entity.damage_vulnerability) &&
-           ReadPod(in, entity.can_be_stunned) &&
-           ReadPod(in, entity.point_a) &&
-           ReadPod(in, entity.point_b) &&
-           ReadPod(in, entity.point_c) &&
-           ReadPod(in, entity.point_d) &&
-           ReadPod(in, entity.point_label_a) &&
-           ReadPod(in, entity.point_label_b) &&
-           ReadPod(in, entity.point_label_c) &&
-           ReadPod(in, entity.point_label_d) &&
-           ReadOptionalPod(in, entity.holding_vid) &&
-           ReadOptionalPod(in, entity.held_by_vid) &&
-           ReadPod(in, entity.holding_timer) &&
-           ReadOptionalPod(in, entity.entity_a) &&
-           ReadOptionalPod(in, entity.entity_b) &&
-           ReadOptionalPod(in, entity.entity_c) &&
-           ReadOptionalPod(in, entity.entity_d) &&
-           ReadOptionalVectorPod(in, entity.child_vids) &&
-           ReadOptionalVectorPod(in, entity.inside_vids) &&
-           ReadPod(in, entity.entity_label_a) &&
-           ReadPod(in, entity.alignment) &&
-           ReadPod(in, entity.counter_a) &&
-           ReadPod(in, entity.counter_b) &&
-           ReadPod(in, entity.counter_c) &&
-           ReadPod(in, entity.counter_d) &&
-           ReadPod(in, entity.threshold_a) &&
-           ReadPod(in, entity.threshold_b);
+bool ReadEnt(std::istream& in, Ent& ent) {
+    return ReadPod(in, ent.active) &&
+           ReadPod(in, ent.marked_for_destruction) &&
+           ReadPod(in, ent.type_) &&
+           ReadPod(in, ent.vid) &&
+           ReadPod(in, ent.has_physics) &&
+           ReadPod(in, ent.can_collide) &&
+           ReadPod(in, ent.can_be_hit) &&
+           ReadPod(in, ent.can_receive_proj_contact) &&
+           ReadPod(in, ent.stone) &&
+           ReadPod(in, ent.wanted) &&
+           ReadPod(in, ent.crusher_pusher) &&
+           ReadPod(in, ent.pushable) &&
+           ReadPod(in, ent.can_stomp) &&
+           ReadPod(in, ent.can_be_stomped) &&
+           ReadPod(in, ent.can_collect_pickups) &&
+           ReadPod(in, ent.can_go_on_back) &&
+           ReadPod(in, ent.grounded) &&
+           ReadPod(in, ent.shake) &&
+           ReadPod(in, ent.rotation) &&
+           ReadPod(in, ent.alpha) &&
+           ReadPod(in, ent.coyote_time) &&
+           ReadPod(in, ent.stun_timer) &&
+           ReadPod(in, ent.stun_recovers_on_ground) &&
+           ReadPod(in, ent.stun_recovers_while_held) &&
+           ReadPod(in, ent.can_be_picked_up) &&
+           ReadPod(in, ent.affected_by_cobweb) &&
+           ReadPod(in, ent.can_only_be_picked_up_if_dead_or_stunned) &&
+           ReadPod(in, ent.impassable) &&
+           ReadPod(in, ent.can_be_hung_on) &&
+           ReadPod(in, ent.fall_timer) &&
+           ReadPod(in, ent.pos) &&
+           ReadPod(in, ent.vel) &&
+           ReadPod(in, ent.acc) &&
+           ReadPod(in, ent.max_speed) &&
+           ReadPod(in, ent.jump_hold_gravity_frames_remaining) &&
+           ReadPod(in, ent.throw_velocity_scale) &&
+           ReadEntEffects(in, ent.effects) &&
+           ReadPod(in, ent.size) &&
+           ReadPod(in, ent.dist_traveled_this_frame) &&
+           ReadPod(in, ent.facing) &&
+           ReadPod(in, ent.vertical_flip) &&
+           ReadPod(in, ent.draw_layer) &&
+           ReadPod(in, ent.render_enabled) &&
+           ReadPod(in, ent.aframe_animator) &&
+           ReadPod(in, ent.jump_delay_frame_count) &&
+           ReadPod(in, ent.jumped_this_frame) &&
+           ReadOptionalPod(in, ent.hang_side) &&
+           ReadPod(in, ent.can_hang_ledge) &&
+           ReadPod(in, ent.can_hang_wall) &&
+           ReadPod(in, ent.hang_count) &&
+           ReadPod(in, ent.holding) &&
+           ReadOptionalPod(in, ent.pickup_effect) &&
+           ReadPod(in, ent.money) &&
+           ReadPod(in, ent.buyable) &&
+           ReadOptionalPod(in, ent.back_vid) &&
+           ReadPod(in, ent.attach_mode) &&
+           ReadPod(in, ent.use_state) &&
+           ReadPod(in, ent.travel_sound_countdown) &&
+           ReadPod(in, ent.travel_sound) &&
+           ReadPod(in, ent.condition) &&
+           ReadPod(in, ent.last_condition) &&
+           ReadPod(in, ent.ai_state) &&
+           ReadPod(in, ent.last_ai_state) &&
+           ReadPod(in, ent.movement_flags) &&
+           ReadPod(in, ent.health) &&
+           ReadPod(in, ent.hurt_on_contact) &&
+           ReadPod(in, ent.vanish_on_death) &&
+           ReadPod(in, ent.affected_by_ground_friction) &&
+           ReadPod(in, ent.support_ground_friction) &&
+           ReadPod(in, ent.push_acc) &&
+           ReadOptionalPod(in, ent.damage_anim) &&
+           ReadOptionalPod(in, ent.damage_sound) &&
+           ReadOptionalPod(in, ent.collide_sound) &&
+           ReadOptionalPod(in, ent.death_sound) &&
+           ReadPod(in, ent.on_death) &&
+           ReadPod(in, ent.on_damage) &&
+           ReadPod(in, ent.on_use) &&
+           ReadPod(in, ent.on_area_enter) &&
+           ReadPod(in, ent.on_area_exit) &&
+           ReadPod(in, ent.on_area_tile_changed) &&
+           ReadPod(in, ent.control_logic) &&
+           ReadPod(in, ent.step_logic) &&
+           ReadPod(in, ent.step_physics) &&
+           ReadOptionalPod(in, ent.transition_target) &&
+           ReadPod(in, ent.stage_exit_id) &&
+           ReadPod(in, ent.attack_weight) &&
+           ReadPod(in, ent.weight) &&
+           ReadPod(in, ent.bomb_throw_delay_countdown) &&
+           ReadPod(in, ent.rope_throw_delay_countdown) &&
+           ReadPod(in, ent.attack_delay_countdown) &&
+           ReadPod(in, ent.equip_delay_countdown) &&
+           ReadOptionalPod(in, ent.thrown_by) &&
+           ReadPod(in, ent.thrown_immunity_timer) &&
+           ReadPod(in, ent.proj_contact_damage_type) &&
+           ReadPod(in, ent.proj_contact_damage_amount) &&
+           ReadPod(in, ent.can_apply_proj_contact) &&
+           ReadPod(in, ent.proj_contact_timer) &&
+           ReadPod(in, ent.collided) &&
+           ReadPod(in, ent.collided_last_frame) &&
+           ReadPod(in, ent.contact_sound_cooldown) &&
+           ReadPod(in, ent.damage_vuln) &&
+           ReadPod(in, ent.can_be_stunned) &&
+           ReadPod(in, ent.point_a) &&
+           ReadPod(in, ent.point_b) &&
+           ReadPod(in, ent.point_c) &&
+           ReadPod(in, ent.point_d) &&
+           ReadPod(in, ent.point_label_a) &&
+           ReadPod(in, ent.point_label_b) &&
+           ReadPod(in, ent.point_label_c) &&
+           ReadPod(in, ent.point_label_d) &&
+           ReadOptionalPod(in, ent.holding_vid) &&
+           ReadOptionalPod(in, ent.held_by_vid) &&
+           ReadPod(in, ent.holding_timer) &&
+           ReadOptionalPod(in, ent.ent_a) &&
+           ReadOptionalPod(in, ent.ent_b) &&
+           ReadOptionalPod(in, ent.ent_c) &&
+           ReadOptionalPod(in, ent.ent_d) &&
+           ReadOptionalVectorPod(in, ent.child_vids) &&
+           ReadOptionalVectorPod(in, ent.inside_vids) &&
+           ReadPod(in, ent.ent_label_a) &&
+           ReadPod(in, ent.alignment) &&
+           ReadPod(in, ent.counter_a) &&
+           ReadPod(in, ent.counter_b) &&
+           ReadPod(in, ent.counter_c) &&
+           ReadPod(in, ent.counter_d) &&
+           ReadPod(in, ent.threshold_a) &&
+           ReadPod(in, ent.threshold_b);
 }
 
 void WriteSettings(std::ostream& out, const Settings& settings) {
@@ -722,29 +722,29 @@ bool ReadStage(std::istream& in, Stage& stage) {
     return ReadVectorPod(in, stage.path);
 }
 
-void WriteEntityManager(std::ostream& out, const EntityManager& entity_manager) {
-    const std::uint32_t entity_count = static_cast<std::uint32_t>(entity_manager.entities.size());
-    WritePod(out, entity_count);
-    for (const Entity& entity : entity_manager.entities) {
-        WriteEntity(out, entity);
+void WriteEntPool(std::ostream& out, const EntPool& ents) {
+    const std::uint32_t ent_count = static_cast<std::uint32_t>(ents.ents.size());
+    WritePod(out, ent_count);
+    for (const Ent& ent : ents.ents) {
+        WriteEnt(out, ent);
     }
-    WriteVectorPod(out, entity_manager.available_ids);
+    WriteVectorPod(out, ents.available_ids);
 }
 
-bool ReadEntityManager(std::istream& in, EntityManager& entity_manager) {
-    std::uint32_t entity_count = 0;
-    if (!ReadPod(in, entity_count)) {
+bool ReadEntPool(std::istream& in, EntPool& ents) {
+    std::uint32_t ent_count = 0;
+    if (!ReadPod(in, ent_count)) {
         return false;
     }
 
-    entity_manager.entities.resize(entity_count);
-    for (std::uint32_t i = 0; i < entity_count; ++i) {
-        if (!ReadEntity(in, entity_manager.entities[i])) {
+    ents.ents.resize(ent_count);
+    for (std::uint32_t i = 0; i < ent_count; ++i) {
+        if (!ReadEnt(in, ents.ents[i])) {
             return false;
         }
     }
 
-    return ReadVectorPod(in, entity_manager.available_ids);
+    return ReadVectorPod(in, ents.available_ids);
 }
 
 void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
@@ -793,11 +793,11 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.quest_state);
     WritePod(out, snapshot.frame_pause);
     WritePod(out, snapshot.debug_level);
-    WriteEntityManager(out, snapshot.entity_manager);
+    WriteEntPool(out, snapshot.ents);
     WriteStage(out, snapshot.stage);
-    WriteOptionalPod(out, snapshot.controlled_entity_vid);
+    WriteOptionalPod(out, snapshot.controlled_ent_vid);
     WriteOptionalPod(out, snapshot.mouse_trailer_vid);
-    WriteVectorPod(out, snapshot.entity_tool_states);
+    WriteVectorPod(out, snapshot.ent_tool_states);
     WritePod(out, snapshot.play_cam_pos);
 }
 
@@ -847,11 +847,11 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.quest_state) &&
            ReadPod(in, snapshot.frame_pause) &&
            ReadPod(in, snapshot.debug_level) &&
-           ReadEntityManager(in, snapshot.entity_manager) &&
+           ReadEntPool(in, snapshot.ents) &&
            ReadStage(in, snapshot.stage) &&
-           ReadOptionalPod(in, snapshot.controlled_entity_vid) &&
+           ReadOptionalPod(in, snapshot.controlled_ent_vid) &&
            ReadOptionalPod(in, snapshot.mouse_trailer_vid) &&
-           ReadVectorPod(in, snapshot.entity_tool_states) &&
+           ReadVectorPod(in, snapshot.ent_tool_states) &&
            ReadPod(in, snapshot.play_cam_pos);
 }
 

@@ -419,7 +419,7 @@ sprites:
     emit_point:
       x: 2
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 192
@@ -449,7 +449,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 192
@@ -479,7 +479,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 192
@@ -509,7 +509,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 192
@@ -539,7 +539,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 192
@@ -569,7 +569,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 290
       y: 41
@@ -599,7 +599,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 192
@@ -629,7 +629,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 192
@@ -659,7 +659,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 112
       y: 192
@@ -689,7 +689,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 288
       y: 52
@@ -719,7 +719,7 @@ sprites:
     emit_point:
       x: 6
       y: 6
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 288
       y: 70
@@ -749,7 +749,7 @@ sprites:
     emit_point:
       x: 12
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 304
       y: 69
@@ -779,7 +779,7 @@ sprites:
     emit_point:
       x: 9
       y: 2
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 320
       y: 72
@@ -809,7 +809,7 @@ sprites:
     emit_point:
       x: 0
       y: 1
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 336
       y: 193
@@ -839,7 +839,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 192
@@ -869,7 +869,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 176
       y: 192
@@ -899,7 +899,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 192
       y: 192
@@ -929,7 +929,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 208
       y: 192
@@ -959,7 +959,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 66
       y: 76
@@ -989,7 +989,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 74
       y: 76
@@ -1019,7 +1019,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 82
       y: 76
@@ -1049,7 +1049,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 90
       y: 76
@@ -1079,7 +1079,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 98
       y: 76
@@ -1109,7 +1109,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 106
       y: 76
@@ -1139,7 +1139,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 114
       y: 76
@@ -1169,7 +1169,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 17
       y: 149
@@ -1199,7 +1199,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 3
       y: 404
@@ -1229,7 +1229,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 8
@@ -1259,7 +1259,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 104
       y: 8
@@ -1289,7 +1289,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 112
       y: 8
@@ -1319,7 +1319,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 120
       y: 8
@@ -1349,7 +1349,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 8
@@ -1379,7 +1379,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 136
       y: 8
@@ -1409,7 +1409,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 8
@@ -1439,7 +1439,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 152
       y: 8
@@ -1469,7 +1469,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 8
@@ -1499,7 +1499,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 66
       y: 88
@@ -1529,7 +1529,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 74
       y: 88
@@ -1559,7 +1559,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 82
       y: 88
@@ -1589,7 +1589,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 90
       y: 88
@@ -1619,7 +1619,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 163
@@ -1649,7 +1649,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 172
@@ -1679,7 +1679,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 24
       y: 170
@@ -1709,7 +1709,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 1
       y: 187
@@ -1739,7 +1739,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 9
       y: 187
@@ -1769,7 +1769,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 18
       y: 178
@@ -1799,7 +1799,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 256
       y: 192
@@ -1829,7 +1829,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 288
       y: 192
@@ -1859,7 +1859,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 304
       y: 192
@@ -1889,7 +1889,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 3
       y: 118
@@ -1919,7 +1919,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 17
       y: 118
@@ -1949,7 +1949,7 @@ sprites:
     emit_point:
       x: 6
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 33
       y: 118
@@ -1979,7 +1979,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 27
       y: 409
@@ -2009,7 +2009,7 @@ sprites:
     emit_point:
       x: 2
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 37
       y: 409
@@ -2039,7 +2039,7 @@ sprites:
     emit_point:
       x: 2
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 409
@@ -2069,7 +2069,7 @@ sprites:
     emit_point:
       x: 2
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 6
       y: 16
@@ -2099,7 +2099,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 17
@@ -2129,7 +2129,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 34
       y: 21
@@ -2159,7 +2159,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 49
       y: 28
@@ -2189,7 +2189,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 35
       y: 8
@@ -2219,7 +2219,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 43
       y: 8
@@ -2249,7 +2249,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 51
       y: 8
@@ -2279,7 +2279,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 59
       y: 8
@@ -2309,7 +2309,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 4
       y: 42
@@ -2339,7 +2339,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 0
@@ -2369,7 +2369,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 0
@@ -2399,7 +2399,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 96
@@ -2429,7 +2429,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 96
@@ -2459,7 +2459,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 160
@@ -2489,7 +2489,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 160
@@ -2519,7 +2519,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 114
       y: 163
@@ -2549,7 +2549,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 129
       y: 165
@@ -2579,7 +2579,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 305
       y: 90
@@ -2609,7 +2609,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 36
       y: 167
@@ -2639,7 +2639,7 @@ sprites:
     emit_point:
       x: 4
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 128
@@ -2669,7 +2669,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 128
@@ -2699,7 +2699,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 96
@@ -2729,7 +2729,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 96
@@ -2759,7 +2759,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 176
       y: 96
@@ -2789,7 +2789,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 176
       y: 112
@@ -2819,7 +2819,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 112
@@ -2849,7 +2849,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 112
@@ -2879,7 +2879,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 192
       y: 64
@@ -2909,7 +2909,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 192
       y: 32
@@ -2939,7 +2939,7 @@ sprites:
     emit_point:
       x: 16
       y: 25
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 224
@@ -2969,7 +2969,7 @@ sprites:
     emit_point:
       x: 6
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 176
@@ -2999,7 +2999,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 66
       y: 177
@@ -3029,7 +3029,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 240
@@ -3059,7 +3059,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 240
@@ -3089,7 +3089,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 240
@@ -3119,7 +3119,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 240
@@ -3149,7 +3149,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 240
@@ -3179,7 +3179,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 240
@@ -3209,7 +3209,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 240
@@ -3239,7 +3239,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 112
       y: 240
@@ -3269,7 +3269,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 240
@@ -3299,7 +3299,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 256
@@ -3329,7 +3329,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 256
@@ -3359,7 +3359,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 272
@@ -3389,7 +3389,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 33
       y: 356
@@ -3419,7 +3419,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 288
@@ -3449,7 +3449,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 128
@@ -3479,7 +3479,7 @@ sprites:
     emit_point:
       x: 4
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 288
@@ -3509,7 +3509,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 288
@@ -3539,7 +3539,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 288
@@ -3569,7 +3569,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 304
@@ -3599,7 +3599,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 304
@@ -3629,7 +3629,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 304
@@ -3659,7 +3659,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 304
@@ -3689,7 +3689,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 320
@@ -3719,7 +3719,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 320
@@ -3749,7 +3749,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 320
@@ -3779,7 +3779,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 320
@@ -3809,7 +3809,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 145
       y: 161
@@ -3839,7 +3839,7 @@ sprites:
     emit_point:
       x: 7
       y: 6
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 161
       y: 165
@@ -3869,7 +3869,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 177
       y: 161
@@ -3899,7 +3899,7 @@ sprites:
     emit_point:
       x: 7
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 195
       y: 172
@@ -3929,7 +3929,7 @@ sprites:
     emit_point:
       x: 1
       y: 2
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 213
       y: 172
@@ -3959,7 +3959,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 208
@@ -3989,7 +3989,7 @@ sprites:
     emit_point:
       x: 12
       y: 13
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 208
@@ -4019,7 +4019,7 @@ sprites:
     emit_point:
       x: 12
       y: 13
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 208
@@ -4049,7 +4049,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 208
@@ -4079,7 +4079,7 @@ sprites:
     emit_point:
       x: 12
       y: 14
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 208
@@ -4109,7 +4109,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 176
@@ -4139,7 +4139,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 38
       y: 176
@@ -4169,7 +4169,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 181
@@ -4199,7 +4199,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 38
       y: 176
@@ -4229,7 +4229,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 176
@@ -4259,7 +4259,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 224
@@ -4289,7 +4289,7 @@ sprites:
     emit_point:
       x: 2
       y: 15
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 224
@@ -4319,7 +4319,7 @@ sprites:
     emit_point:
       x: 2
       y: 15
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 224
@@ -4349,7 +4349,7 @@ sprites:
     emit_point:
       x: 6
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 224
@@ -4379,7 +4379,7 @@ sprites:
     emit_point:
       x: 6
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 224
@@ -4409,7 +4409,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 224
@@ -4439,7 +4439,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 320
@@ -4469,7 +4469,7 @@ sprites:
     emit_point:
       x: 10
       y: 10
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 67
       y: 285
@@ -4499,7 +4499,7 @@ sprites:
     emit_point:
       x: 2
       y: 1
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 73
       y: 285
@@ -4529,7 +4529,7 @@ sprites:
     emit_point:
       x: 2
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 83
       y: 285
@@ -4559,7 +4559,7 @@ sprites:
     emit_point:
       x: 2
       y: 1
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 88
       y: 282
@@ -4589,7 +4589,7 @@ sprites:
     emit_point:
       x: 4
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 46
       y: 168
@@ -4619,7 +4619,7 @@ sprites:
     emit_point:
       x: 4
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 57
       y: 168
@@ -4649,7 +4649,7 @@ sprites:
     emit_point:
       x: 4
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 86
       y: 320
@@ -4679,7 +4679,7 @@ sprites:
     emit_point:
       x: 10
       y: 10
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 336
@@ -4709,7 +4709,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 336
@@ -4739,7 +4739,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 272
       y: 130
@@ -4769,7 +4769,7 @@ sprites:
     emit_point:
       x: 13
       y: 27
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 353
@@ -4799,7 +4799,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 63
       y: 355
@@ -4829,7 +4829,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 77
       y: 359
@@ -4859,7 +4859,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 224
       y: 32
@@ -4889,7 +4889,7 @@ sprites:
     emit_point:
       x: 16
       y: 19
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 416
       y: 130
@@ -4919,7 +4919,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 320
       y: 130
@@ -4949,7 +4949,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 369
       y: 130
@@ -4979,7 +4979,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 144
@@ -5009,7 +5009,7 @@ sprites:
     emit_point:
       x: 27
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 240
@@ -5039,7 +5039,7 @@ sprites:
     emit_point:
       x: 26
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 192
       y: 240
@@ -5069,7 +5069,7 @@ sprites:
     emit_point:
       x: 26
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 224
       y: 240
@@ -5099,7 +5099,7 @@ sprites:
     emit_point:
       x: 26
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 256
       y: 240
@@ -5129,7 +5129,7 @@ sprites:
     emit_point:
       x: 26
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 116
       y: 316
@@ -5159,7 +5159,7 @@ sprites:
     emit_point:
       x: 6
       y: 2
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 320
@@ -5189,7 +5189,7 @@ sprites:
     emit_point:
       x: 7
       y: 14
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 320
@@ -5219,7 +5219,7 @@ sprites:
     emit_point:
       x: 8
       y: 13
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 320
@@ -5249,7 +5249,7 @@ sprites:
     emit_point:
       x: 9
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 336
@@ -5279,7 +5279,7 @@ sprites:
     emit_point:
       x: 9
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 336
@@ -5309,7 +5309,7 @@ sprites:
     emit_point:
       x: 8
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 304
@@ -5339,7 +5339,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 304
@@ -5369,7 +5369,7 @@ sprites:
     emit_point:
       x: 6
       y: 10
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 304
@@ -5399,7 +5399,7 @@ sprites:
     emit_point:
       x: 3
       y: 11
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 176
       y: 304
@@ -5429,7 +5429,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 198
       y: 310
@@ -5459,7 +5459,7 @@ sprites:
     emit_point:
       x: 1
       y: 2
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 80
@@ -5489,7 +5489,7 @@ sprites:
     emit_point:
       x: 8
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 17
       y: 376
@@ -5519,7 +5519,7 @@ sprites:
     emit_point:
       x: 1
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 384
@@ -5549,7 +5549,7 @@ sprites:
     emit_point:
       x: 3
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 48
       y: 384
@@ -5579,7 +5579,7 @@ sprites:
     emit_point:
       x: 2
       y: 12
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 384
@@ -5609,7 +5609,7 @@ sprites:
     emit_point:
       x: 3
       y: 13
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 48
@@ -5639,7 +5639,7 @@ sprites:
     emit_point:
       x: 8
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 48
@@ -5669,7 +5669,7 @@ sprites:
     emit_point:
       x: 8
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 48
@@ -5699,7 +5699,7 @@ sprites:
     emit_point:
       x: 9
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 176
       y: 48
@@ -5729,7 +5729,7 @@ sprites:
     emit_point:
       x: 8
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 48
@@ -5759,7 +5759,7 @@ sprites:
     emit_point:
       x: 9
       y: 16
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 48
@@ -5789,7 +5789,7 @@ sprites:
     emit_point:
       x: 8
       y: 16
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 48
@@ -5819,7 +5819,7 @@ sprites:
     emit_point:
       x: 8
       y: 12
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 112
       y: 48
@@ -5849,7 +5849,7 @@ sprites:
     emit_point:
       x: 8
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 288
       y: 75
@@ -5879,7 +5879,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 272
       y: 80
@@ -5909,7 +5909,7 @@ sprites:
     emit_point:
       x: 7
       y: 11
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 256
       y: 80
@@ -5939,7 +5939,7 @@ sprites:
     emit_point:
       x: 8
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 240
       y: 80
@@ -5969,7 +5969,7 @@ sprites:
     emit_point:
       x: 6
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 51
       y: 118
@@ -5999,7 +5999,7 @@ sprites:
     emit_point:
       x: 5
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 65
       y: 118
@@ -6029,7 +6029,7 @@ sprites:
     emit_point:
       x: 5
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 81
       y: 118
@@ -6059,7 +6059,7 @@ sprites:
     emit_point:
       x: 4
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 99
       y: 119
@@ -6089,7 +6089,7 @@ sprites:
     emit_point:
       x: 2
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 240
       y: 102
@@ -6119,7 +6119,7 @@ sprites:
     emit_point:
       x: 7
       y: 6
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 352
       y: 193
@@ -6149,7 +6149,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 368
       y: 193
@@ -6179,7 +6179,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 384
       y: 193
@@ -6209,7 +6209,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 400
       y: 193
@@ -6239,7 +6239,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 416
       y: 193
@@ -6269,7 +6269,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 112
       y: 256
@@ -6299,7 +6299,7 @@ sprites:
     emit_point:
       x: 10
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 2
       y: 179
@@ -6329,7 +6329,7 @@ sprites:
     emit_point:
       x: 3
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 178
@@ -6359,7 +6359,7 @@ sprites:
     emit_point:
       x: 6
       y: 6
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 98
       y: 179
@@ -6389,7 +6389,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 115
       y: 177
@@ -6419,7 +6419,7 @@ sprites:
     emit_point:
       x: 5
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 256
@@ -6449,7 +6449,7 @@ sprites:
     emit_point:
       x: 10
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 256
@@ -6479,7 +6479,7 @@ sprites:
     emit_point:
       x: 10
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 256
@@ -6509,7 +6509,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 256
@@ -6539,7 +6539,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 99
       y: 279
@@ -6569,7 +6569,7 @@ sprites:
     emit_point:
       x: 4
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 109
       y: 279
@@ -6599,7 +6599,7 @@ sprites:
     emit_point:
       x: 4
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 120
       y: 279
@@ -6629,7 +6629,7 @@ sprites:
     emit_point:
       x: 2
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 130
       y: 279
@@ -6659,7 +6659,7 @@ sprites:
     emit_point:
       x: 2
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 286
@@ -6689,7 +6689,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 160
       y: 286
@@ -6719,7 +6719,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 176
       y: 286
@@ -6749,7 +6749,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 113
       y: 330
@@ -6779,7 +6779,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 208
       y: 128
@@ -6809,7 +6809,7 @@ sprites:
     emit_point:
       x: 6
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 224
       y: 128
@@ -6839,7 +6839,7 @@ sprites:
     emit_point:
       x: 10
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 177
       y: 148
@@ -6869,7 +6869,7 @@ sprites:
     emit_point:
       x: 7
       y: 7
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 179
       y: 141
@@ -6899,7 +6899,7 @@ sprites:
     emit_point:
       x: 3
       y: 1
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 84
       y: 395
@@ -6929,7 +6929,7 @@ sprites:
     emit_point:
       x: 1
       y: 2
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 164
       y: 263
@@ -6959,7 +6959,7 @@ sprites:
     emit_point:
       x: 4
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 179
       y: 266
@@ -6989,7 +6989,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 3
       y: 420
@@ -7019,7 +7019,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 425
@@ -7049,7 +7049,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 27
       y: 425
@@ -7079,7 +7079,7 @@ sprites:
     emit_point:
       x: 2
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 37
       y: 425
@@ -7109,7 +7109,7 @@ sprites:
     emit_point:
       x: 2
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 64
       y: 416
@@ -7139,7 +7139,7 @@ sprites:
     emit_point:
       x: 9
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 416
@@ -7169,7 +7169,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 97
       y: 418
@@ -7199,7 +7199,7 @@ sprites:
     emit_point:
       x: 6
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 416
@@ -7229,7 +7229,7 @@ sprites:
     emit_point:
       x: 7
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 112
       y: 452
@@ -7259,7 +7259,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 449
@@ -7289,7 +7289,7 @@ sprites:
     emit_point:
       x: 8
       y: 6
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 455
@@ -7319,7 +7319,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 114
       y: 436
@@ -7349,7 +7349,7 @@ sprites:
     emit_point:
       x: 6
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 434
@@ -7379,7 +7379,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 144
       y: 439
@@ -7409,7 +7409,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 400
@@ -7439,7 +7439,7 @@ sprites:
     emit_point:
       x: 8
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 53
       y: 438
@@ -7469,7 +7469,7 @@ sprites:
     emit_point:
       x: 0
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 65
       y: 438
@@ -7499,7 +7499,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 77
       y: 438
@@ -7529,7 +7529,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 89
       y: 438
@@ -7559,7 +7559,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 53
       y: 447
@@ -7589,7 +7589,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 65
       y: 448
@@ -7619,7 +7619,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 77
       y: 448
@@ -7649,7 +7649,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 89
       y: 448
@@ -7679,7 +7679,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 36
       y: 441
@@ -7709,7 +7709,7 @@ sprites:
     emit_point:
       x: 3
       y: 3
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 448
@@ -7739,7 +7739,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 16
       y: 448
@@ -7769,7 +7769,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 32
       y: 448
@@ -7799,7 +7799,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 114
       y: 147
@@ -7829,7 +7829,7 @@ sprites:
     emit_point:
       x: 5
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 224
       y: 272
@@ -7859,7 +7859,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 240
       y: 272
@@ -7889,7 +7889,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 272
       y: 272
@@ -7919,7 +7919,7 @@ sprites:
     emit_point:
       x: 8
       y: 10
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 256
       y: 272
@@ -7949,7 +7949,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 288
       y: 272
@@ -7979,7 +7979,7 @@ sprites:
     emit_point:
       x: 8
       y: 10
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 304
       y: 272
@@ -8009,7 +8009,7 @@ sprites:
     emit_point:
       x: 8
       y: 10
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 208
       y: 272
@@ -8039,7 +8039,7 @@ sprites:
     emit_point:
       x: 8
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 224
       y: 288
@@ -8069,7 +8069,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 256
       y: 288
@@ -8099,7 +8099,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 240
       y: 288
@@ -8129,7 +8129,7 @@ sprites:
     emit_point:
       x: 0
       y: 0
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 80
       y: 96
@@ -8159,7 +8159,7 @@ sprites:
     emit_point:
       x: 8
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 96
       y: 96
@@ -8189,7 +8189,7 @@ sprites:
     emit_point:
       x: 8
       y: 8
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 112
       y: 384
@@ -8219,7 +8219,7 @@ sprites:
     emit_point:
       x: 8
       y: 13
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 385
@@ -8249,7 +8249,7 @@ sprites:
     emit_point:
       x: 12
       y: 12
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 145
       y: 389
@@ -8279,7 +8279,7 @@ sprites:
     emit_point:
       x: 7
       y: 9
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 163
       y: 394
@@ -8309,7 +8309,7 @@ sprites:
     emit_point:
       x: 7
       y: 5
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 0
       y: 474
@@ -8339,7 +8339,7 @@ sprites:
     emit_point:
       x: 1
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 10
       y: 474
@@ -8369,7 +8369,7 @@ sprites:
     emit_point:
       x: 1
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 20
       y: 474
@@ -8399,7 +8399,7 @@ sprites:
     emit_point:
       x: 1
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 30
       y: 474
@@ -8429,7 +8429,7 @@ sprites:
     emit_point:
       x: 1
       y: 4
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 118
       y: 228
@@ -8459,7 +8459,7 @@ sprites:
     emit_point:
       x: 1
       y: 1
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 192
@@ -8489,7 +8489,7 @@ sprites:
     emit_point:
       x: 8
       y: 10
-  - path: "entities.png"
+  - path: "ents.png"
     aabb:
       x: 128
       y: 208

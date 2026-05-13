@@ -5,7 +5,7 @@
 namespace splonks {
 
 HitscanHit TraceHitscan(
-    const Entity& source_entity,
+    const Ent& source_ent,
     const Vec2& start_pos,
     int direction,
     int max_distance,
@@ -14,7 +14,7 @@ HitscanHit TraceHitscan(
     std::optional<VID> owner_vid
 ) {
     const WorldRayHit hit = RaycastHorizontal(
-        source_entity,
+        source_ent,
         start_pos,
         direction,
         max_distance,
@@ -25,7 +25,7 @@ HitscanHit TraceHitscan(
 
     HitscanHit result;
     result.point = hit.point;
-    result.entity_vid = hit.entity_vid;
+    result.ent_vid = hit.ent_vid;
     switch (hit.type) {
     case WorldRayHitType::None:
         result.type = HitscanHitType::None;
@@ -36,8 +36,8 @@ HitscanHit TraceHitscan(
     case WorldRayHitType::Tile:
         result.type = HitscanHitType::Tile;
         break;
-    case WorldRayHitType::Entity:
-        result.type = HitscanHitType::Entity;
+    case WorldRayHitType::Ent:
+        result.type = HitscanHitType::Ent;
         break;
     }
 

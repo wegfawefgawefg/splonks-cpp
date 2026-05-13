@@ -6,7 +6,7 @@ layout_size: [4, 4]
 glyphs: glyphs/mines.yaml
 border_tile: cave_dirt
 backwall_tiles: [cave_air0, cave_air1, cave_air2]
-block_animation: cave_block
+block_anim: cave_block
 
 room_pools:
   start: rooms/mines/start
@@ -67,5 +67,5 @@ stage_passes:
     enabled: true
     properties:
       chance_denominator: 4
-  - name: ambient_mines_entities
+  - name: ambient_mines_ents
     enabled: true

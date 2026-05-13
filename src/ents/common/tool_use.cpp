@@ -1,11 +1,11 @@
-#include "entities/common/common.hpp"
+#include "ents/common/common.hpp"
 
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 bool TryUseToolSlot(
-    std::size_t entity_idx,
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -14,19 +14,19 @@ bool TryUseToolSlot(
     ToolThrowVelocityBuilder build_throw_velocity,
     std::optional<Vec2> throw_velocity_override
 ) {
-    const Entity& entity = state.entity_manager.entities[entity_idx];
-    const ToolSlot* const tool_slot = state.entity_tools.FindToolSlot(entity.vid, tool_slot_index);
+    const Ent& ent = state.ents.ents[ent_idx];
+    const ToolSlot* const tool_slot = state.ent_tools.FindToolSlot(ent.vid, tool_slot_index);
     if (tool_slot == nullptr || !tool_slot->active) {
         return false;
     }
 
-    const ToolArchetype& tool_archetype = GetToolArchetype(tool_slot->kind);
-    if (tool_archetype.use_fn == nullptr) {
+    const ToolSpec& tool_spec = GetToolSpec(tool_slot->kind);
+    if (tool_spec.use_fn == nullptr) {
         return false;
     }
 
-    return tool_archetype.use_fn(
-        entity_idx,
+    return tool_spec.use_fn(
+        ent_idx,
         state,
         graphics,
         audio,
@@ -37,4 +37,4 @@ bool TryUseToolSlot(
     );
 }
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

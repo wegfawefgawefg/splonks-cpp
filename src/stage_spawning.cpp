@@ -1,14 +1,14 @@
 #include "stage_spawning.hpp"
 
 #include "buying.hpp"
-#include "entity/archetype.hpp"
-#include "entity/archetype_restore.hpp"
-#include "entities/common/common.hpp"
-#include "entities/shop.hpp"
-#include "entities/store_light.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ent/spec_restore.hpp"
+#include "ents/common/common.hpp"
+#include "ents/shop.hpp"
+#include "ents/store_light.hpp"
+#include "aframe_id.hpp"
 #include "player_queries.hpp"
-#include "tools/tool_archetype.hpp"
+#include "tools/tool_spec.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -24,22 +24,22 @@ constexpr std::uint16_t kPlayerInitialBombs = 400;
 constexpr std::uint16_t kPlayerInitialRopes = 400;
 constexpr std::uint32_t kPlayerInitialTestingMoney = 100000;
 
-EntityType GetConfiguredPlayerSpawnType(const State& state) {
+EntType GetConfiguredPlayerSpawnType(const State& state) {
     if (!state.settings.debug_ui.default_spawn_enabled) {
-        return EntityType::Player;
+        return EntType::Player;
     }
 
     const std::uint32_t type_index = state.settings.debug_ui.default_spawn_type;
-    if (type_index == 0 || type_index >= kEntityTypeCount) {
-        return EntityType::Player;
+    if (type_index == 0 || type_index >= kEntTypeCount) {
+        return EntType::Player;
     }
-    return static_cast<EntityType>(type_index);
+    return static_cast<EntType>(type_index);
 }
 
 void GrantPlayerStarterTools(State& state, const VID& player_vid) {
     if (const std::optional<ToolKind> bomb_tool_kind = FindPreferredToolKindForSlotIndex(0)) {
         FillToolSlot(
-            state.entity_tools.EnsureToolSlot(player_vid, 0),
+            state.ent_tools.EnsureToolSlot(player_vid, 0),
             *bomb_tool_kind,
             kPlayerInitialBombs,
             true
@@ -48,7 +48,7 @@ void GrantPlayerStarterTools(State& state, const VID& player_vid) {
 
     if (const std::optional<ToolKind> rope_tool_kind = FindPreferredToolKindForSlotIndex(1)) {
         FillToolSlot(
-            state.entity_tools.EnsureToolSlot(player_vid, 1),
+            state.ent_tools.EnsureToolSlot(player_vid, 1),
             *rope_tool_kind,
             kPlayerInitialRopes,
             true
@@ -56,80 +56,80 @@ void GrantPlayerStarterTools(State& state, const VID& player_vid) {
     }
 }
 
-void RestoreEntitySlot(EntityManager& entity_manager, const Entity& entity) {
-    if (entity.vid.id >= entity_manager.entities.size()) {
+void RestoreEntSlot(EntPool& ents, const Ent& ent) {
+    if (ent.vid.id >= ents.ents.size()) {
         return;
     }
 
-    entity_manager.entities[entity.vid.id] = entity;
-    entity_manager.entities[entity.vid.id].active = true;
+    ents.ents[ent.vid.id] = ent;
+    ents.ents[ent.vid.id].active = true;
 
     const auto it = std::find(
-        entity_manager.available_ids.begin(),
-        entity_manager.available_ids.end(),
-        entity.vid.id
+        ents.available_ids.begin(),
+        ents.available_ids.end(),
+        ent.vid.id
     );
-    if (it != entity_manager.available_ids.end()) {
-        entity_manager.available_ids.erase(it);
+    if (it != ents.available_ids.end()) {
+        ents.available_ids.erase(it);
     }
 }
 
-void PrepareEntityForStageEntry(Entity& entity) {
-    entity.marked_for_destruction = false;
-    entity.buyable = Buyable{};
-    entity.stage_spawn_index.reset();
-    entity.holding = false;
-    entity.holding_vid.reset();
-    entity.back_vid.reset();
-    entity.held_by_vid.reset();
-    entity.attachment_mode = AttachmentMode::None;
-    entity.vel = Vec2::New(0.0F, 0.0F);
-    entity.acc = Vec2::New(0.0F, 0.0F);
-    entity.grounded = false;
-    entity.coyote_time = 0;
-    entity.fall_timer = 0;
-    entity.stun_timer = 0;
-    entity.holding_timer = kDefaultHoldingTimer;
-    entity.dist_traveled_this_frame = 0.0F;
-    entity.jumped_this_frame = false;
-    entity.hang_side.reset();
-    entity.hang_count = 0;
-    entity.climb_detach_cooldown = 0;
-    entity.jump_hold_gravity_frames_remaining = 0;
-    entity.movement_flags = 0;
-    entity.use_state = UseState{};
-    entity.collided = false;
-    entity.collided_last_frame = false;
-    entity.contact_sound_cooldown = 0;
-    entity.thrown_by.reset();
-    entity.thrown_immunity_timer = 0;
-    const EntityArchetype& archetype = GetEntityArchetype(entity.type_);
-    entity.projectile_contact_damage_type = archetype.projectile_contact_damage_type;
-    entity.projectile_contact_damage_amount = archetype.projectile_contact_damage_amount;
-    entity.projectile_contact_timer = 0;
+void PrepareEntForStageEntry(Ent& ent) {
+    ent.marked_for_destruction = false;
+    ent.buyable = Buyable{};
+    ent.stage_spawn_index.reset();
+    ent.holding = false;
+    ent.holding_vid.reset();
+    ent.back_vid.reset();
+    ent.held_by_vid.reset();
+    ent.attach_mode = AttachMode::None;
+    ent.vel = Vec2::New(0.0F, 0.0F);
+    ent.acc = Vec2::New(0.0F, 0.0F);
+    ent.grounded = false;
+    ent.coyote_time = 0;
+    ent.fall_timer = 0;
+    ent.stun_timer = 0;
+    ent.holding_timer = kDefaultHoldingTimer;
+    ent.dist_traveled_this_frame = 0.0F;
+    ent.jumped_this_frame = false;
+    ent.hang_side.reset();
+    ent.hang_count = 0;
+    ent.climb_detach_cooldown = 0;
+    ent.jump_hold_gravity_frames_remaining = 0;
+    ent.movement_flags = 0;
+    ent.use_state = UseState{};
+    ent.collided = false;
+    ent.collided_last_frame = false;
+    ent.contact_sound_cooldown = 0;
+    ent.thrown_by.reset();
+    ent.thrown_immunity_timer = 0;
+    const EntSpec& spec = GetEntSpec(ent.type_);
+    ent.proj_contact_damage_type = spec.proj_contact_damage_type;
+    ent.proj_contact_damage_amount = spec.proj_contact_damage_amount;
+    ent.proj_contact_timer = 0;
 }
 
-void PreparePlayerForStageEntry(Entity& player) {
-    PrepareEntityForStageEntry(player);
-    RestoreEntityConditionFromArchetype(player);
-    RestoreEntitySizeFromArchetype(player);
-    RestoreEntityHasPhysicsFromArchetype(player);
-    RestoreEntityCanCollideFromArchetype(player);
-    RestoreEntityDrawLayerFromArchetype(player);
-    RestoreEntityRenderEnabledFromArchetype(player);
-    RestoreEntityFrameDataAnimatorFromArchetype(player);
+void PreparePlayerForStageEntry(Ent& player) {
+    PrepareEntForStageEntry(player);
+    RestoreEntConditionFromSpec(player);
+    RestoreEntSizeFromSpec(player);
+    RestoreEntHasPhysicsFromSpec(player);
+    RestoreEntCanCollideFromSpec(player);
+    RestoreEntDrawLayerFromSpec(player);
+    RestoreEntRenderEnabledFromSpec(player);
+    RestoreEntAFrameAnimatorFromSpec(player);
 }
 
 } // namespace
 
 void InitCommonStageState(State& state) {
     state.stage_frame = 0;
-    state.entity_manager.ClearAllEntities();
-    state.entity_tools.tool_states.clear();
+    state.ents.ClearAllEnts();
+    state.ent_tools.tool_states.clear();
     state.contact = ContactBookkeeping{};
     state.particles.Clear();
-    state.players.ClearEntityRefs();
-    state.controlled_entity_vid.reset();
+    state.players.ClearEntRefs();
+    state.controlled_ent_vid.reset();
     state.gameplay_camera_anchor_world_pos.reset();
     state.mouse_trailer_vid.reset();
 }
@@ -139,12 +139,12 @@ StageCarryover CaptureStageCarryover(const State& state) {
     constexpr bool preserve_attached_items = true;
     for (const PlayerSlot& slot : state.players.slots) {
         if (!slot.connected ||
-            !slot.entity_vid.has_value()) {
+            !slot.ent_vid.has_value()) {
             continue;
         }
 
-        const Entity* const player = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (player == nullptr || !player->active || player->condition == EntityCondition::Dead) {
+        const Ent* const player = state.ents.GetEnt(*slot.ent_vid);
+        if (player == nullptr || !player->active || player->condition == EntCondition::Dead) {
             continue;
         }
 
@@ -156,9 +156,9 @@ StageCarryover CaptureStageCarryover(const State& state) {
         player_carryover.player->back_vid.reset();
 
         if (preserve_attached_items && player->holding_vid.has_value()) {
-            if (const Entity* const held_item = state.entity_manager.GetEntity(*player->holding_vid)) {
+            if (const Ent* const held_item = state.ents.GetEnt(*player->holding_vid)) {
                 if (held_item->active &&
-                    !state.players.FindPlayerIdForEntity(held_item->vid).has_value()) {
+                    !state.players.FindPlayerIdForEnt(held_item->vid).has_value()) {
                     player_carryover.held_item = *held_item;
                     player_carryover.player->holding_vid = held_item->vid;
                     player_carryover.player->holding = true;
@@ -167,16 +167,16 @@ StageCarryover CaptureStageCarryover(const State& state) {
         }
 
         if (preserve_attached_items && player->back_vid.has_value()) {
-            if (const Entity* const back_item = state.entity_manager.GetEntity(*player->back_vid)) {
+            if (const Ent* const back_item = state.ents.GetEnt(*player->back_vid)) {
                 if (back_item->active &&
-                    !state.players.FindPlayerIdForEntity(back_item->vid).has_value()) {
+                    !state.players.FindPlayerIdForEnt(back_item->vid).has_value()) {
                     player_carryover.back_item = *back_item;
                     player_carryover.player->back_vid = back_item->vid;
                 }
             }
         }
 
-        if (const EntityToolState* const tools = state.entity_tools.FindEntityToolState(player->vid)) {
+        if (const EntToolState* const tools = state.ent_tools.FindEntToolState(player->vid)) {
             player_carryover.player_tools = *tools;
         }
 
@@ -192,7 +192,7 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
             continue;
         }
 
-        Entity player = *player_carryover.player;
+        Ent player = *player_carryover.player;
         PreparePlayerForStageEntry(player);
         if (player_carryover.held_item.has_value()) {
             player.holding = true;
@@ -201,44 +201,44 @@ void RestoreStageCarryover(State& state, const StageCarryover& carryover) {
         if (player_carryover.back_item.has_value()) {
             player.back_vid = player_carryover.back_item->vid;
         }
-        RestoreEntitySlot(state.entity_manager, player);
-        state.players.AssignEntity(player_carryover.player_id, player.vid);
+        RestoreEntSlot(state.ents, player);
+        state.players.AssignEnt(player_carryover.player_id, player.vid);
         if (const PlayerSlot* const slot = state.players.Find(player_carryover.player_id);
             slot != nullptr && slot->primary_local) {
-            state.controlled_entity_vid = player.vid;
+            state.controlled_ent_vid = player.vid;
         }
-        if (!state.controlled_entity_vid.has_value()) {
-            state.controlled_entity_vid = player.vid;
+        if (!state.controlled_ent_vid.has_value()) {
+            state.controlled_ent_vid = player.vid;
         }
 
         if (player_carryover.player_tools.has_value()) {
-            state.entity_tools.tool_states.push_back(*player_carryover.player_tools);
+            state.ent_tools.tool_states.push_back(*player_carryover.player_tools);
         }
 
         if (player_carryover.held_item.has_value()) {
-            Entity held_item = *player_carryover.held_item;
-            PrepareEntityForStageEntry(held_item);
+            Ent held_item = *player_carryover.held_item;
+            PrepareEntForStageEntry(held_item);
             held_item.held_by_vid = player.vid;
-            held_item.attachment_mode = AttachmentMode::Held;
+            held_item.attach_mode = AttachMode::Held;
             held_item.has_physics = false;
             held_item.can_collide = false;
-            RestoreEntitySlot(state.entity_manager, held_item);
+            RestoreEntSlot(state.ents, held_item);
         }
 
         if (player_carryover.back_item.has_value()) {
-            Entity back_item = *player_carryover.back_item;
-            PrepareEntityForStageEntry(back_item);
+            Ent back_item = *player_carryover.back_item;
+            PrepareEntForStageEntry(back_item);
             back_item.held_by_vid = player.vid;
-            back_item.attachment_mode = AttachmentMode::Back;
+            back_item.attach_mode = AttachMode::Back;
             back_item.has_physics = false;
             back_item.can_collide = false;
-            RestoreEntitySlot(state.entity_manager, back_item);
+            RestoreEntSlot(state.ents, back_item);
         }
     }
 }
 
 void PlacePlayerAtPosition(State& state, const Vec2& pos) {
-    Entity* const player = GetPrimaryLocalPlayerMut(state);
+    Ent* const player = GetPrimaryLocalPlayerMut(state);
     if (player == nullptr) {
         return;
     }
@@ -249,11 +249,11 @@ void PlacePlayerAtPosition(State& state, const Vec2& pos) {
 
 void SnapAttachedItemsToPlayer(State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.connected || !slot.entity_vid.has_value()) {
+        if (!slot.connected || !slot.ent_vid.has_value()) {
             continue;
         }
 
-        Entity* const player = state.entity_manager.GetEntityMut(*slot.entity_vid);
+        Ent* const player = state.ents.GetEntMut(*slot.ent_vid);
         if (player == nullptr) {
             continue;
         }
@@ -261,12 +261,12 @@ void SnapAttachedItemsToPlayer(State& state) {
         const Vec2 player_center = player->GetCenter();
 
         if (player->holding_vid.has_value()) {
-            if (Entity* const held_item = state.entity_manager.GetEntityMut(*player->holding_vid)) {
+            if (Ent* const held_item = state.ents.GetEntMut(*player->holding_vid)) {
                 const Vec2 hold_offset = Vec2::New(4.0F, 1.0F);
                 held_item->facing = player->facing;
                 held_item->draw_layer = DrawLayer::Foreground;
                 held_item->SetCenter(
-                    player->facing == LeftOrRight::Left
+                    player->facing == Side::Left
                         ? player_center + Vec2::New(-hold_offset.x, hold_offset.y)
                         : player_center + hold_offset
                 );
@@ -274,13 +274,13 @@ void SnapAttachedItemsToPlayer(State& state) {
         }
 
         if (player->back_vid.has_value()) {
-            if (Entity* const back_item = state.entity_manager.GetEntityMut(*player->back_vid)) {
+            if (Ent* const back_item = state.ents.GetEntMut(*player->back_vid)) {
                 const Vec2 back_offset = Vec2::New(-3.0F, 0.0F);
                 back_item->facing = player->facing;
                 back_item->draw_layer = DrawLayer::Background;
-                TrySetAnimation(*back_item, EntityDisplayState::Neutral);
+                TrySetAnim(*back_item, EntDisplayState::Neutral);
                 back_item->SetCenter(
-                    player->facing == LeftOrRight::Left
+                    player->facing == Side::Left
                         ? player_center + Vec2::New(-back_offset.x, back_offset.y)
                         : player_center + back_offset
                 );
@@ -295,21 +295,21 @@ void SpawnPlayer(State& state, const Vec2& pos) {
     if (!player_vid.has_value()) {
         return;
     }
-    state.controlled_entity_vid = player_vid;
+    state.controlled_ent_vid = player_vid;
 }
 
 std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, const Vec2& pos) {
-    if (const std::optional<VID> player_vid = state.entity_manager.NewEntity()) {
-        if (Entity* const player = state.entity_manager.GetEntityMut(*player_vid)) {
-            const EntityType spawn_type = GetConfiguredPlayerSpawnType(state);
-            SetEntityAs(*player, spawn_type);
+    if (const std::optional<VID> player_vid = state.ents.NewEnt()) {
+        if (Ent* const player = state.ents.GetEntMut(*player_vid)) {
+            const EntType spawn_type = GetConfiguredPlayerSpawnType(state);
+            SetEntAs(*player, spawn_type);
             player->pos = pos;
             player->vel = Vec2::New(0.0F, 0.0F);
             player->acc = Vec2::New(0.0F, 0.0F);
             player->money = kPlayerInitialTestingMoney;
-            state.players.AssignEntity(player_id, *player_vid);
+            state.players.AssignEnt(player_id, *player_vid);
 
-            if (spawn_type == EntityType::Player) {
+            if (spawn_type == EntType::Player) {
                 GrantPlayerStarterTools(state, *player_vid);
             }
         }
@@ -318,99 +318,99 @@ std::optional<VID> SpawnPlayerForPlayerId(State& state, PlayerId player_id, cons
     return std::nullopt;
 }
 
-std::optional<VID> SpawnStageEntityAtTopLeft(State& state, EntityType type_, const Vec2& pos) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
+std::optional<VID> SpawnStageEntAtTopLeft(State& state, EntType type_, const Vec2& pos) {
+    const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
     }
 
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
+    Ent* const ent = state.ents.GetEntMut(*vid);
+    if (ent == nullptr) {
         return std::nullopt;
     }
 
-    SetEntityAs(*entity, type_);
-    entity->pos = pos;
-    entity->vel = Vec2::New(0.0F, 0.0F);
-    if (type_ == EntityType::StoreLight) {
-        entities::store_light::AttachStoreLight(*entity, state);
+    SetEntAs(*ent, type_);
+    ent->pos = pos;
+    ent->vel = Vec2::New(0.0F, 0.0F);
+    if (type_ == EntType::StoreLight) {
+        ents::store_light::AttachStoreLight(*ent, state);
     }
     return vid;
 }
 
-std::optional<VID> SpawnStageEntityAtCenter(State& state, EntityType type_, const Vec2& center) {
-    const std::optional<VID> vid = state.entity_manager.NewEntity();
+std::optional<VID> SpawnStageEntAtCenter(State& state, EntType type_, const Vec2& center) {
+    const std::optional<VID> vid = state.ents.NewEnt();
     if (!vid.has_value()) {
         return std::nullopt;
     }
 
-    Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-    if (entity == nullptr) {
+    Ent* const ent = state.ents.GetEntMut(*vid);
+    if (ent == nullptr) {
         return std::nullopt;
     }
 
-    SetEntityAs(*entity, type_);
-    entity->SetCenter(center);
-    entity->vel = Vec2::New(0.0F, 0.0F);
+    SetEntAs(*ent, type_);
+    ent->SetCenter(center);
+    ent->vel = Vec2::New(0.0F, 0.0F);
     return vid;
 }
 
-void SpawnAuthoredStageEntities(State& state) {
-    std::vector<std::optional<VID>> spawned_vids(state.stage.entity_spawns.size(), std::nullopt);
+void SpawnAuthoredStageEnts(State& state) {
+    std::vector<std::optional<VID>> spawned_vids(state.stage.ent_spawns.size(), std::nullopt);
 
-    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
-        const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
-        if (spawn.type_ == EntityType::None) {
+    for (std::size_t i = 0; i < state.stage.ent_spawns.size(); ++i) {
+        const EntSpawn& spawn = state.stage.ent_spawns[i];
+        if (spawn.type_ == EntType::None) {
             continue;
         }
-        const std::optional<VID> vid = state.entity_manager.NewEntity();
+        const std::optional<VID> vid = state.ents.NewEnt();
         if (!vid) {
             continue;
         }
-        Entity* const entity = state.entity_manager.GetEntityMut(*vid);
-        if (entity == nullptr) {
+        Ent* const ent = state.ents.GetEntMut(*vid);
+        if (ent == nullptr) {
             continue;
         }
 
-        SetEntityAs(*entity, spawn.type_);
-        entity->stage_spawn_index = i;
-        entity->pos = spawn.pos;
+        SetEntAs(*ent, spawn.type_);
+        ent->stage_spawn_index = i;
+        ent->pos = spawn.pos;
         if (spawn.size_override.has_value()) {
-            entity->size = *spawn.size_override;
+            ent->size = *spawn.size_override;
         }
-        entity->facing = spawn.facing;
-        entity->vel = Vec2::New(0.0F, 0.0F);
+        ent->facing = spawn.facing;
+        ent->vel = Vec2::New(0.0F, 0.0F);
         if (spawn.ai_state_override.has_value()) {
-            entity->ai_state = *spawn.ai_state_override;
+            ent->ai_state = *spawn.ai_state_override;
         }
-        if (spawn.type_ == EntityType::BasicExit) {
+        if (spawn.type_ == EntType::BasicExit) {
             const std::string_view exit_id =
                 spawn.exit_id.empty() ? std::string_view("default") : std::string_view(spawn.exit_id);
-            entity->stage_exit_id = state.stage.FindExitId(exit_id);
-            if (!state.stage.exits.empty() && entity->stage_exit_id == kInvalidStageExitId) {
+            ent->stage_exit_id = state.stage.FindExitId(exit_id);
+            if (!state.stage.exits.empty() && ent->stage_exit_id == kInvalidStageExitId) {
                 throw std::runtime_error("BasicExit spawn references unknown stage exit: " +
                                          std::string(exit_id));
             }
         }
         spawned_vids[i] = *vid;
-        if (spawn.type_ == EntityType::StoreLight) {
-            entities::store_light::AttachStoreLight(*entity, state);
+        if (spawn.type_ == EntType::StoreLight) {
+            ents::store_light::AttachStoreLight(*ent, state);
         }
-        if (spawn.animation_id != kInvalidFrameDataId) {
-            SetAnimation(*entity, spawn.animation_id);
+        if (spawn.anim_id != kInvalidAFrameId) {
+            SetAnim(*ent, spawn.anim_id);
         }
     }
 
     const auto resolve_spawn_link = [&](
-        std::size_t entity_spawn_index,
+        std::size_t ent_spawn_index,
         std::optional<std::size_t> linked_spawn_index,
         int slot
     ) {
         if (!linked_spawn_index.has_value()) {
             return;
         }
-        if (entity_spawn_index >= spawned_vids.size() ||
-            !spawned_vids[entity_spawn_index].has_value()) {
+        if (ent_spawn_index >= spawned_vids.size() ||
+            !spawned_vids[ent_spawn_index].has_value()) {
             return;
         }
         if (*linked_spawn_index >= spawned_vids.size() ||
@@ -418,45 +418,45 @@ void SpawnAuthoredStageEntities(State& state) {
             return;
         }
 
-        Entity* const entity = state.entity_manager.GetEntityMut(*spawned_vids[entity_spawn_index]);
-        const Entity* const linked_entity =
-            state.entity_manager.GetEntity(*spawned_vids[*linked_spawn_index]);
-        if (entity == nullptr || linked_entity == nullptr) {
+        Ent* const ent = state.ents.GetEntMut(*spawned_vids[ent_spawn_index]);
+        const Ent* const linked_ent =
+            state.ents.GetEnt(*spawned_vids[*linked_spawn_index]);
+        if (ent == nullptr || linked_ent == nullptr) {
             return;
         }
 
         switch (slot) {
         case 0:
-            entity->entity_a = *spawned_vids[*linked_spawn_index];
-            entity->point_a = ToIVec2(linked_entity->pos);
-            entity->point_label_a = PointLabel::Target;
+            ent->ent_a = *spawned_vids[*linked_spawn_index];
+            ent->point_a = ToIVec2(linked_ent->pos);
+            ent->point_label_a = PointLabel::Target;
             break;
         case 1:
-            entity->entity_b = *spawned_vids[*linked_spawn_index];
-            entity->point_b = ToIVec2(linked_entity->pos);
-            entity->point_label_b = PointLabel::Target;
+            ent->ent_b = *spawned_vids[*linked_spawn_index];
+            ent->point_b = ToIVec2(linked_ent->pos);
+            ent->point_label_b = PointLabel::Target;
             break;
         case 2:
-            entity->entity_c = *spawned_vids[*linked_spawn_index];
-            entity->point_c = ToIVec2(linked_entity->pos);
-            entity->point_label_c = PointLabel::Target;
+            ent->ent_c = *spawned_vids[*linked_spawn_index];
+            ent->point_c = ToIVec2(linked_ent->pos);
+            ent->point_label_c = PointLabel::Target;
             break;
         case 3:
-            entity->entity_d = *spawned_vids[*linked_spawn_index];
-            entity->point_d = ToIVec2(linked_entity->pos);
-            entity->point_label_d = PointLabel::Target;
+            ent->ent_d = *spawned_vids[*linked_spawn_index];
+            ent->point_d = ToIVec2(linked_ent->pos);
+            ent->point_label_d = PointLabel::Target;
             break;
         default:
             break;
         }
     };
 
-    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
-        const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
-        resolve_spawn_link(i, spawn.entity_a_spawn_index, 0);
-        resolve_spawn_link(i, spawn.entity_b_spawn_index, 1);
-        resolve_spawn_link(i, spawn.entity_c_spawn_index, 2);
-        resolve_spawn_link(i, spawn.entity_d_spawn_index, 3);
+    for (std::size_t i = 0; i < state.stage.ent_spawns.size(); ++i) {
+        const EntSpawn& spawn = state.stage.ent_spawns[i];
+        resolve_spawn_link(i, spawn.ent_a_spawn_index, 0);
+        resolve_spawn_link(i, spawn.ent_b_spawn_index, 1);
+        resolve_spawn_link(i, spawn.ent_c_spawn_index, 2);
+        resolve_spawn_link(i, spawn.ent_d_spawn_index, 3);
     }
 
     for (StageTileTrigger& trigger : state.stage.tile_triggers) {
@@ -471,18 +471,18 @@ void SpawnAuthoredStageEntities(State& state) {
         trigger.target_vid = *spawned_vids[*trigger.target_spawn_index];
     }
 
-    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
-        const StageEntitySpawn& spawn = state.stage.entity_spawns[i];
+    for (std::size_t i = 0; i < state.stage.ent_spawns.size(); ++i) {
+        const EntSpawn& spawn = state.stage.ent_spawns[i];
         if (!spawned_vids[i].has_value()) {
             continue;
         }
-        Entity* const entity = state.entity_manager.GetEntityMut(*spawned_vids[i]);
-        if (entity == nullptr) {
+        Ent* const ent = state.ents.GetEntMut(*spawned_vids[i]);
+        if (ent == nullptr) {
             continue;
         }
 
         if (spawn.buyable) {
-            ConfigureEntityAsBuyable(*entity, spawn.buy_price);
+            ConfigureEntAsBuyable(*ent, spawn.buy_price);
         }
 
         if (!spawn.shop_owner_spawn_index.has_value() ||
@@ -491,28 +491,28 @@ void SpawnAuthoredStageEntities(State& state) {
             continue;
         }
 
-        Entity* const shop =
-            state.entity_manager.GetEntityMut(*spawned_vids[*spawn.shop_owner_spawn_index]);
-        if (shop == nullptr || !shop->active || shop->type_ != EntityType::Shop) {
+        Ent* const shop =
+            state.ents.GetEntMut(*spawned_vids[*spawn.shop_owner_spawn_index]);
+        if (shop == nullptr || !shop->active || shop->type_ != EntType::Shop) {
             continue;
         }
 
-        entity->buyable.shop_owner_vid = shop->vid;
-        entities::shop::AddShopChild(*shop, entity->vid);
+        ent->buyable.shop_owner_vid = shop->vid;
+        ents::shop::AddShopChild(*shop, ent->vid);
     }
 
-    for (std::size_t i = 0; i < state.stage.entity_spawns.size(); ++i) {
+    for (std::size_t i = 0; i < state.stage.ent_spawns.size(); ++i) {
         if (!spawned_vids[i].has_value()) {
             continue;
         }
-        Entity* const entity = state.entity_manager.GetEntityMut(*spawned_vids[i]);
-        if (entity == nullptr || !entity->active || entity->type_ != EntityType::Shopkeeper ||
-            !entity->entity_a.has_value()) {
+        Ent* const ent = state.ents.GetEntMut(*spawned_vids[i]);
+        if (ent == nullptr || !ent->active || ent->type_ != EntType::Shopkeeper ||
+            !ent->ent_a.has_value()) {
             continue;
         }
-        Entity* const shop = state.entity_manager.GetEntityMut(*entity->entity_a);
-        if (shop != nullptr && shop->active && shop->type_ == EntityType::Shop) {
-            shop->entity_a = entity->vid;
+        Ent* const shop = state.ents.GetEntMut(*ent->ent_a);
+        if (shop != nullptr && shop->active && shop->type_ == EntType::Shop) {
+            shop->ent_a = ent->vid;
         }
     }
 }

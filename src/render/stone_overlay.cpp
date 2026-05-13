@@ -23,7 +23,7 @@ SDL_Rect ToScreenClipRect(const SDL_FRect& rect) {
 
 } // namespace
 
-void RenderStoneEntityOverlay(
+void RenderStoneEntOverlay(
     SDL_Renderer* renderer,
     const State& state,
     Graphics& graphics,

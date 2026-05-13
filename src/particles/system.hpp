@@ -25,11 +25,11 @@ struct ParticleSystem {
     void Add(const ScriptedParticle& particle);
     void Add(ScriptedParticle&& particle);
     void AddScripted(
-        ScriptedParticleArchetypeId archetype_id,
+        ScriptedParticleSpecId spec_id,
         const Vec2& pos,
         bool horizontal_flip = false
     );
-    void Step(const FrameDataDb& frame_data_db, float dt);
+    void Step(const AFrameDb& aframe_db, float dt);
     void Clear();
 };
 

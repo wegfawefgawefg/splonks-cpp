@@ -1,6 +1,6 @@
-#include "network/net_entity_links.hpp"
+#include "network/net_ent_links.hpp"
 
-#include "entity.hpp"
+#include "ent.hpp"
 #include "network/net_session.hpp"
 #include "state.hpp"
 
@@ -8,65 +8,65 @@ namespace splonks::network {
 
 namespace {
 
-NetEntityId MakeStageEntityId(std::size_t stage_entity_index) {
-    return static_cast<NetEntityId>(stage_entity_index) + 1U;
+NetEntId MakeStageEntId(std::size_t stage_ent_index) {
+    return static_cast<NetEntId>(stage_ent_index) + 1U;
 }
 
-bool IsStageLinkedEntity(const State& state, const Entity& entity) {
-    return entity.active &&
-           entity.stage_spawn_index.has_value() &&
-           !state.players.FindPlayerIdForEntity(entity.vid).has_value();
+bool IsStageLinkedEnt(const State& state, const Ent& ent) {
+    return ent.active &&
+           ent.stage_spawn_index.has_value() &&
+           !state.players.FindPlayerIdForEnt(ent.vid).has_value();
 }
 
-void RegisterPlayerEntityLinks(State& state) {
+void RegisterPlayerEntLinks(State& state) {
     for (const PlayerSlot& slot : state.players.slots) {
-        if (!slot.entity_vid.has_value()) {
+        if (!slot.ent_vid.has_value()) {
             continue;
         }
 
-        const Entity* const entity = state.entity_manager.GetEntity(*slot.entity_vid);
-        if (entity == nullptr || !entity->active) {
+        const Ent* const ent = state.ents.GetEnt(*slot.ent_vid);
+        if (ent == nullptr || !ent->active) {
             continue;
         }
 
-        state.net_session.LinkEntity(MakePlayerNetEntityId(slot.player_id), entity->vid);
+        state.net_session.LinkEnt(MakePlayerNetEntId(slot.player_id), ent->vid);
     }
 }
 
 } // namespace
 
-void RegisterStageEntityLinks(State& state) {
+void RegisterStageEntLinks(State& state) {
     if (state.net_session.role == NetRole::Offline) {
         return;
     }
 
-    RegisterPlayerEntityLinks(state);
+    RegisterPlayerEntLinks(state);
 
-    for (const Entity& entity : state.entity_manager.entities) {
-        if (!IsStageLinkedEntity(state, entity)) {
+    for (const Ent& ent : state.ents.ents) {
+        if (!IsStageLinkedEnt(state, ent)) {
             continue;
         }
-        if (state.net_session.FindNetEntityId(entity.vid).has_value()) {
+        if (state.net_session.FindNetEntId(ent.vid).has_value()) {
             continue;
         }
-        state.net_session.LinkEntity(MakeStageEntityId(*entity.stage_spawn_index), entity.vid);
+        state.net_session.LinkEnt(MakeStageEntId(*ent.stage_spawn_index), ent.vid);
     }
 }
 
-NetEntityId GetOrAssignReplicatedEntityId(State& state, VID entity_vid) {
-    if (const std::optional<NetEntityId> linked = state.net_session.FindNetEntityId(entity_vid)) {
+NetEntId GetOrAssignReplicatedEntId(State& state, VID ent_vid) {
+    if (const std::optional<NetEntId> linked = state.net_session.FindNetEntId(ent_vid)) {
         return *linked;
     }
 
-    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEntity(entity_vid)) {
-        const NetEntityId player_entity_id = MakePlayerNetEntityId(*player_id);
-        state.net_session.LinkEntity(player_entity_id, entity_vid);
-        return player_entity_id;
+    if (const std::optional<PlayerId> player_id = state.players.FindPlayerIdForEnt(ent_vid)) {
+        const NetEntId player_ent_id = MakePlayerNetEntId(*player_id);
+        state.net_session.LinkEnt(player_ent_id, ent_vid);
+        return player_ent_id;
     }
 
-    const NetEntityId runtime_id = state.net_session.AllocateLocalEntityId();
-    state.net_session.LinkEntity(runtime_id, entity_vid);
-    state.net_session.SetEntityInputOwner(runtime_id, std::nullopt);
+    const NetEntId runtime_id = state.net_session.AllocateLocalEntId();
+    state.net_session.LinkEnt(runtime_id, ent_vid);
+    state.net_session.SetEntInputOwner(runtime_id, std::nullopt);
     return runtime_id;
 }
 

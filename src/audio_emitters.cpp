@@ -1,9 +1,9 @@
 #include "audio_emitters.hpp"
 
 #include "audio_acoustics.hpp"
-#include "entity.hpp"
-#include "entities/common/common.hpp"
-#include "entity/manager.hpp"
+#include "ent.hpp"
+#include "ents/common/common.hpp"
+#include "ent/manager.hpp"
 #include "graphics.hpp"
 #include "state.hpp"
 
@@ -25,8 +25,8 @@ void DeactivateEmitter(AudioEmitterManager& manager, AudioEmitter& emitter) {
 
     emitter.active = false;
     ClearEmitterRuntime(emitter);
-    emitter.owner_entity_vid.reset();
-    emitter.attached_entity_vid.reset();
+    emitter.owner_ent_vid.reset();
+    emitter.attached_ent_vid.reset();
     manager.available_ids.insert(manager.available_ids.begin(), emitter.vid.id);
 }
 
@@ -39,18 +39,18 @@ bool HandleMissingTarget(AudioEmitter& emitter, bool owner_missing) {
             return false;
         }
         emitter.source_mode = AudioEmitterSourceMode::FixedWorldPos;
-        emitter.attached_entity_vid.reset();
+        emitter.attached_ent_vid.reset();
         emitter.attached_offset = Vec2::New(0.0F, 0.0F);
         if (owner_missing) {
-            emitter.owner_entity_vid.reset();
+            emitter.owner_ent_vid.reset();
         }
         return true;
     case AudioEmitterTargetLossPolicy::KeepPlayingDetached:
         emitter.source_mode = AudioEmitterSourceMode::FixedWorldPos;
-        emitter.attached_entity_vid.reset();
+        emitter.attached_ent_vid.reset();
         emitter.attached_offset = Vec2::New(0.0F, 0.0F);
         if (owner_missing) {
-            emitter.owner_entity_vid.reset();
+            emitter.owner_ent_vid.reset();
         }
         return true;
     }
@@ -58,20 +58,20 @@ bool HandleMissingTarget(AudioEmitter& emitter, bool owner_missing) {
 }
 
 bool ResolveEmitterWorldPos(State& state, const Graphics& graphics, AudioEmitter& emitter) {
-    if (emitter.owner_entity_vid.has_value() &&
-        state.entity_manager.GetEntity(*emitter.owner_entity_vid) == nullptr) {
+    if (emitter.owner_ent_vid.has_value() &&
+        state.ents.GetEnt(*emitter.owner_ent_vid) == nullptr) {
         return HandleMissingTarget(emitter, true);
     }
 
-    if (emitter.source_mode != AudioEmitterSourceMode::AttachedEntity ||
-        !emitter.attached_entity_vid.has_value()) {
+    if (emitter.source_mode != AudioEmitterSourceMode::AttachedEnt ||
+        !emitter.attached_ent_vid.has_value()) {
         return true;
     }
 
-    const Entity* const attached = state.entity_manager.GetEntity(*emitter.attached_entity_vid);
+    const Ent* const attached = state.ents.GetEnt(*emitter.attached_ent_vid);
     if (attached != nullptr) {
         emitter.world_pos =
-            entities::common::GetVisualCenterForEntity(*attached, graphics, attached->GetCenter()) +
+            ents::common::GetVisualCenterForEnt(*attached, graphics, attached->GetCenter()) +
             emitter.attached_offset;
         return true;
     }
@@ -148,8 +148,8 @@ std::optional<VID> AudioEmitterManager::NewEmitter() {
     emitter.vid.version += 1;
     emitter.started = false;
     emitter.sound_instance_vid = kInvalidAudioInstanceVID;
-    emitter.owner_entity_vid.reset();
-    emitter.attached_entity_vid.reset();
+    emitter.owner_ent_vid.reset();
+    emitter.attached_ent_vid.reset();
     emitter.attached_offset = Vec2::New(0.0F, 0.0F);
     emitter.world_pos = Vec2::New(0.0F, 0.0F);
     return emitter.vid;
@@ -192,8 +192,8 @@ void AudioEmitterManager::ClearAll() {
     for (std::size_t i = 0; i < emitters.size(); ++i) {
         emitters[i].active = false;
         ClearEmitterRuntime(emitters[i]);
-        emitters[i].owner_entity_vid.reset();
-        emitters[i].attached_entity_vid.reset();
+        emitters[i].owner_ent_vid.reset();
+        emitters[i].attached_ent_vid.reset();
         available_ids.insert(available_ids.begin(), i);
     }
 }
@@ -216,15 +216,15 @@ void SetAudioListenerWorldPos(State& state, const Vec2& world_pos) {
 
 std::optional<VID> FindOwnedSoundEmitter(
     const State& state,
-    VID owner_entity_vid,
+    VID owner_ent_vid,
     AudioAssetId audio_asset_id,
     AudioEmitterPlaybackMode playback_mode
 ) {
     for (const AudioEmitter& emitter : state.audio_emitters.emitters) {
-        if (!emitter.active || !emitter.owner_entity_vid.has_value()) {
+        if (!emitter.active || !emitter.owner_ent_vid.has_value()) {
             continue;
         }
-        if (*emitter.owner_entity_vid == owner_entity_vid &&
+        if (*emitter.owner_ent_vid == owner_ent_vid &&
             emitter.audio_asset_id == audio_asset_id &&
             emitter.playback_mode == playback_mode) {
             return emitter.vid;
@@ -256,17 +256,17 @@ std::optional<VID> PlayWorldSoundEmitter(
     emitter->volume_scale = params.volume_scale;
     emitter->playback_mode = params.playback_mode;
     emitter->target_loss_policy = params.target_loss_policy;
-    emitter->owner_entity_vid = params.owner_entity_vid;
+    emitter->owner_ent_vid = params.owner_ent_vid;
     emitter->source_mode = AudioEmitterSourceMode::FixedWorldPos;
     emitter->world_pos = world_pos;
     return emitter->vid;
 }
 
-/// Creates an emitter that follows an entity each frame at entity center + attached_offset.
-/// Use this when the sound source should move with an entity without manual position updates.
+/// Creates an emitter that follows an ent each frame at ent center + attached_offset.
+/// Use this when the sound source should move with an ent without manual position updates.
 std::optional<VID> PlayAttachedSoundEmitter(
     State& state,
-    VID attached_entity_vid,
+    VID attached_ent_vid,
     const Vec2& attached_offset,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params
@@ -285,53 +285,53 @@ std::optional<VID> PlayAttachedSoundEmitter(
     emitter->volume_scale = params.volume_scale;
     emitter->playback_mode = params.playback_mode;
     emitter->target_loss_policy = params.target_loss_policy;
-    emitter->owner_entity_vid =
-        params.owner_entity_vid.has_value() ? params.owner_entity_vid : std::optional<VID>(attached_entity_vid);
-    emitter->source_mode = AudioEmitterSourceMode::AttachedEntity;
-    emitter->attached_entity_vid = attached_entity_vid;
+    emitter->owner_ent_vid =
+        params.owner_ent_vid.has_value() ? params.owner_ent_vid : std::optional<VID>(attached_ent_vid);
+    emitter->source_mode = AudioEmitterSourceMode::AttachedEnt;
+    emitter->attached_ent_vid = attached_ent_vid;
     emitter->attached_offset = attached_offset;
-    if (const Entity* const attached = state.entity_manager.GetEntity(attached_entity_vid)) {
+    if (const Ent* const attached = state.ents.GetEnt(attached_ent_vid)) {
         emitter->world_pos = attached->GetCenter() + attached_offset;
     }
     return emitter->vid;
 }
 
-std::optional<VID> PlayEntitySoundEmitter(
+std::optional<VID> PlayEntSoundEmitter(
     State& state,
-    const Entity& entity,
+    const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params,
     const Vec2& attached_offset
 ) {
-    AudioEmitterPlayParams entity_params = params;
-    if (!entity_params.owner_entity_vid.has_value()) {
-        entity_params.owner_entity_vid = entity.vid;
+    AudioEmitterPlayParams ent_params = params;
+    if (!ent_params.owner_ent_vid.has_value()) {
+        ent_params.owner_ent_vid = ent.vid;
     }
     return PlayAttachedSoundEmitter(
         state,
-        entity.vid,
+        ent.vid,
         attached_offset,
         audio_asset_id,
-        entity_params
+        ent_params
     );
 }
 
-std::optional<VID> PlayEntityCenterSoundEmitter(
+std::optional<VID> PlayEntCenterSoundEmitter(
     State& state,
-    const Entity& entity,
+    const Ent& ent,
     AudioAssetId audio_asset_id,
     const AudioEmitterPlayParams& params,
     const Vec2& world_offset
 ) {
-    AudioEmitterPlayParams entity_params = params;
-    if (!entity_params.owner_entity_vid.has_value()) {
-        entity_params.owner_entity_vid = entity.vid;
+    AudioEmitterPlayParams ent_params = params;
+    if (!ent_params.owner_ent_vid.has_value()) {
+        ent_params.owner_ent_vid = ent.vid;
     }
     return PlayWorldSoundEmitter(
         state,
-        entity.GetCenter() + world_offset,
+        ent.GetCenter() + world_offset,
         audio_asset_id,
-        entity_params
+        ent_params
     );
 }
 
@@ -340,8 +340,8 @@ std::optional<VID> PlayEntityCenterSoundEmitter(
 /// volume, follow target, offset, and loss policy instead of spawning duplicates.
 std::optional<VID> EnsureAttachedLoopingSoundEmitter(
     State& state,
-    VID owner_entity_vid,
-    VID attached_entity_vid,
+    VID owner_ent_vid,
+    VID attached_ent_vid,
     const Vec2& attached_offset,
     AudioAssetId audio_asset_id,
     float volume_scale,
@@ -349,7 +349,7 @@ std::optional<VID> EnsureAttachedLoopingSoundEmitter(
 ) {
     const std::optional<VID> existing = FindOwnedSoundEmitter(
         state,
-        owner_entity_vid,
+        owner_ent_vid,
         audio_asset_id,
         AudioEmitterPlaybackMode::Looping
     );
@@ -357,8 +357,8 @@ std::optional<VID> EnsureAttachedLoopingSoundEmitter(
         AudioEmitter* const emitter = state.audio_emitters.GetEmitterMut(*existing);
         if (emitter != nullptr) {
             emitter->volume_scale = volume_scale;
-            emitter->source_mode = AudioEmitterSourceMode::AttachedEntity;
-            emitter->attached_entity_vid = attached_entity_vid;
+            emitter->source_mode = AudioEmitterSourceMode::AttachedEnt;
+            emitter->attached_ent_vid = attached_ent_vid;
             emitter->attached_offset = attached_offset;
             emitter->target_loss_policy = target_loss_policy;
         }
@@ -369,10 +369,10 @@ std::optional<VID> EnsureAttachedLoopingSoundEmitter(
     params.volume_scale = volume_scale;
     params.playback_mode = AudioEmitterPlaybackMode::Looping;
     params.target_loss_policy = target_loss_policy;
-    params.owner_entity_vid = owner_entity_vid;
+    params.owner_ent_vid = owner_ent_vid;
     return PlayAttachedSoundEmitter(
         state,
-        attached_entity_vid,
+        attached_ent_vid,
         attached_offset,
         audio_asset_id,
         params
@@ -397,12 +397,12 @@ bool StopSoundEmitter(State& state, Audio& audio, VID emitter_vid) {
 bool StopOwnedSoundEmitter(
     State& state,
     Audio& audio,
-    VID owner_entity_vid,
+    VID owner_ent_vid,
     AudioAssetId audio_asset_id,
     AudioEmitterPlaybackMode playback_mode
 ) {
     const std::optional<VID> emitter_vid =
-        FindOwnedSoundEmitter(state, owner_entity_vid, audio_asset_id, playback_mode);
+        FindOwnedSoundEmitter(state, owner_ent_vid, audio_asset_id, playback_mode);
     if (!emitter_vid.has_value()) {
         return false;
     }
@@ -489,7 +489,7 @@ const char* AudioEmitterSourceModeToString(AudioEmitterSourceMode mode) {
     switch (mode) {
     case AudioEmitterSourceMode::FixedWorldPos:
         return "world";
-    case AudioEmitterSourceMode::AttachedEntity:
+    case AudioEmitterSourceMode::AttachedEnt:
         return "attached";
     }
     return "unknown";

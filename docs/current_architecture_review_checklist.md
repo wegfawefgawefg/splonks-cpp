@@ -34,7 +34,7 @@ this as a triage checklist and mark items off intentionally.
 - [x] Move quest route policy out of `BasicExit`.
   - `BasicExit` should own overlap/use/prompt behavior.
   - Quest flags, target resolution, `classic_win`, and legacy stage chain decisions belong in stage progression or quest routing.
-  - Reference: `src/entities/basic_exit.cpp`
+  - Reference: `src/ents/basic_exit.cpp`
   - Done: `Stage` owns generated exit definitions, `BasicExit` stores only a stage-local exit id, and `stage_progression` owns exit permission checks plus transition routing.
 
 - [x] Decouple generic stage progression from the Classic Quest generator.
@@ -43,7 +43,7 @@ this as a triage checklist and mark items off intentionally.
   - Reference: `src/stage_progression.cpp`
   - Done: added `quest_stage_loader.*`; `stage_progression` applies generic transition targets and delegates quest-stage loading/Classic generator selection to that loader.
 
-- [x] Decide whether `StageType` is still real identity or only legacy compatibility.
+- [x] Decide whether `StageType` is still real ident or only legacy compatibility.
   - `StageType` is legacy/debug compatibility only.
   - Quest stages load through `quest_id` and `quest_stage_id`.
   - Removed the Classic Quest to `StageType` bridge and the fake `SplkMines1` debug preset.
@@ -52,7 +52,7 @@ this as a triage checklist and mark items off intentionally.
 ## Quest Data Loading
 
 - [x] Split `src/quest.cpp`.
-  - Current file contains quest parsing, stage parsing, glyph parsing, item/shop pools, and giant entity/tile name maps.
+  - Current file contains quest parsing, stage parsing, glyph parsing, item/shop pools, and giant ent/tile name maps.
   - Likely split candidates: quest parser, stage config parser, glyph parser, pool parser, name registry/conversion.
   - Done: extracted shared YAML parse helpers to `src/quest_parse_utils.*`.
   - Done: extracted stage config parsing to `src/quest_stage_config.cpp`.
@@ -60,38 +60,38 @@ this as a triage checklist and mark items off intentionally.
   - Done: extracted item/shop pool parsing to `src/quest_pools.cpp`.
   - Remaining giant name maps are tracked by the next checkbox.
 
-- [x] Replace giant hardcoded entity/tile name chains with a cleaner registry.
-  - Entity and tile content names should ideally come from archetype/source data tables.
-  - This avoids duplicated content identity across quest parsing and archetype registration.
+- [x] Replace giant hardcoded ent/tile name chains with a cleaner registry.
+  - Ent and tile content names should ideally come from spec/source data tables.
+  - This avoids duplicated content ident across quest parsing and spec registration.
   - Done: added content-name resolution in `src/content_names.*`.
-  - Done: quest YAML parsing now resolves entity names through registered entity archetype names.
-  - Done: quest YAML parsing now resolves tile names through registered tile archetype names.
-  - Done: removed `EntityTypeFromQuestName`, `TileFromQuestName`, and `QuestEntityName` from `src/quest.cpp`.
+  - Done: quest YAML parsing now resolves ent names through registered ent spec names.
+  - Done: quest YAML parsing now resolves tile names through registered tile spec names.
+  - Done: removed `EntTypeFromQuestName`, `TileFromQuestName`, and `QuestEntName` from `src/quest.cpp`.
 
-- [x] Audit `FakeBones` identity.
-  - `Skeleton` is the dormant ambush skeleton identity.
-  - `Bones` plus `Skull` is the inert debris identity.
-  - Done: deleted `EntityType::FakeBones` and its duplicate archetype/step logic.
+- [x] Audit `FakeBones` ident.
+  - `Skeleton` is the dormant ambush skeleton ident.
+  - `Bones` plus `Skull` is the inert debris ident.
+  - Done: deleted `EntType::FakeBones` and its duplicate spec/step logic.
   - Done: Classic glyph data now uses `skeleton` for dormant ambush skeletons.
 
-## Entity And Content Ownership
+## Ent And Content Ownership
 
 - [x] Review `UdjatEye` quest flag mutation in `chest.cpp`.
   - Current behavior directly sets Classic Quest state from item contact.
   - This is acceptable short-term, but a quest notification API would keep content rules less scattered.
   - Accepted for now: quests are not runtime-changeable yet, and Classic Quest completion is higher priority than adding a quest-event abstraction.
-  - Revisit if more unrelated entity files start mutating quest flags directly, or when quests become data/script/plugin driven.
+  - Revisit if more unrelated ent files start mutating quest flags directly, or when quests become data/script/plugin driven.
 
-- [x] Replace the classic placeholder entity bucket with real archetype stubs.
+- [x] Replace the classic placeholder ent bucket with real spec stubs.
   - Deleted `classic_placeholders.cpp/.hpp`.
-  - Missing Classic entities now have explicit entity files and archetype table entries.
-  - Unimplemented behavior is marked in the owning entity file instead of hidden behind a shared placeholder registry.
+  - Missing Classic ents now have explicit ent files and spec table entries.
+  - Unimplemented behavior is marked in the owning ent file instead of hidden behind a shared placeholder registry.
 
 ## Stage Data Shape
 
 - [x] Confirm level/room metadata is stagegen-only.
   - Room metadata should not become required by gameplay systems.
-  - Runtime gameplay should operate on tile/entity arrays and explicit metadata, not assume room grids.
+  - Runtime gameplay should operate on tile/ent arrays and explicit metadata, not assume room grids.
   - Confirmed current uses are Classic stagegen helpers, debug room overlay, replay serialization, and legacy/debug stage construction.
   - No current gameplay system requires room-grid metadata.
 
@@ -108,15 +108,15 @@ this as a triage checklist and mark items off intentionally.
   - Risk only appears if low-level engine systems start interpreting quest-specific policy.
   - Accepted: current metadata is explicit stage context, not low-level engine policy.
 
-- [x] Unimplemented archetype stubs are a reasonable interim strategy.
-  - Missing classic content exists as explicit entity-owned archetype stubs while behavior is filled in later.
+- [x] Unimplemented spec stubs are a reasonable interim strategy.
+  - Missing classic content exists as explicit ent-owned spec stubs while behavior is filled in later.
 
 - [x] Move passive-specific jump bonuses out of common jump code.
-  - The old `EntityPassiveItem` bitset was removed.
+  - The old `EntPassiveItem` bitset was removed.
   - Stomp damage, spike immunity, hidden-treasure visibility, mitt throw boost, and no-gravity-until-contact now route through effects/modifiers/events.
   - Spring shoe jump/bounce audio still checks `EffectId::SpringShoes` where it is making content-specific feedback decisions.
 
 - [x] Move authored tile CBox lookup out of common contact damage.
   - Spike damage now reads authored CBoxes through `TileContactData`, a gameplay-facing cache built from frame data.
-  - `src/entities/common/contact_damage.cpp` no longer depends on `TileSourceData`.
+  - `src/ents/common/contact_damage.cpp` no longer depends on `TileSourceData`.
   - Follow-up only if needed: move `TileContactDb` ownership out of `Graphics` entirely; the current shape is no longer coupled to renderer source structs.

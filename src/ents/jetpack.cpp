@@ -1,16 +1,16 @@
-#include "entities/jetpack.hpp"
+#include "ents/jetpack.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "aframe_id.hpp"
 #include "particles/sprite_particle.hpp"
 #include "state.hpp"
 #include "world_ops.hpp"
 
 #include <memory>
 
-namespace splonks::entities::jetpack {
+namespace splonks::ents::jetpack {
 
 namespace {
 
@@ -20,7 +20,7 @@ void SpawnJetpackSmoke(State& state, const Vec2& pos) {
         const float svel = rng::RandomFloat(vel * 0.1F, vel * 1.0F);
         const float sacc = rng::RandomFloat(vel * 0.01F, vel * 0.02F);
         SpriteParticle effect{};
-        effect.frame_data_animator = FrameDataAnimator::New(frame_data_ids::BigSmoke);
+        effect.aframe_animator = AFrameAnimator::New(aframe_ids::BigSmoke);
         effect.draw_layer = DrawLayer::Foreground;
         effect.counter = static_cast<std::uint32_t>(rng::RandomIntExclusive(0, 32));
         effect.pos = pos;
@@ -41,8 +41,8 @@ void SpawnJetpackSmoke(State& state, const Vec2& pos) {
 
 } // namespace
 
-extern const EntityArchetype kJetPackArchetype{
-    .type_ = EntityType::JetPack,
+extern const EntSpec kJetPackSpec{
+    .type_ = EntType::JetPack,
     .size = Vec2::New(8.0F, 8.0F),
     .health = 1,
     .has_physics = true,
@@ -54,27 +54,27 @@ extern const EntityArchetype kJetPackArchetype{
     .vanish_on_death = true,
     .can_go_on_back = true,
     .can_be_stunned = false,
-    .predict_local_attachment_use = true,
+    .predict_local_attach_use = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = kFuel,
-    .damage_vulnerability = DamageVulnerability::CrushingSpikesAndExplosion,
+    .damage_vuln = DamageVuln::CrushingSpikesAndExplosion,
     .on_death = OnDeathAsJetpack,
     .on_damage = OnDamageAsJetpack,
     .on_use = OnUseAsJetpack,
-    .step_logic = StepEntityLogicAsJetpack,
+    .step_logic = StepEntLogicAsJetpack,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Jetpack),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Jetpack),
 };
 
-void OnDeathAsJetpack(std::size_t entity_idx, State& state, Audio& audio) {
-    common::OnDeathAsExplosion(entity_idx, state, audio);
+void OnDeathAsJetpack(std::size_t ent_idx, State& state, Audio& audio) {
+    common::OnDeathAsExplosion(ent_idx, state, audio);
 }
 
-EntityDamageEffectResult OnDamageAsJetpack(
-    std::size_t entity_idx,
+EntDamageEffectResult OnDamageAsJetpack(
+    std::size_t ent_idx,
     State& state,
     Audio& audio,
     DamageType damage_type,
@@ -85,26 +85,26 @@ EntityDamageEffectResult OnDamageAsJetpack(
     (void)damage_applied;
 
     if (damage_type != DamageType::IgnitingAttack) {
-        return EntityDamageEffectResult::None;
+        return EntDamageEffectResult::None;
     }
-    if (entity_idx >= state.entity_manager.entities.size()) {
-        return EntityDamageEffectResult::None;
+    if (ent_idx >= state.ents.ents.size()) {
+        return EntDamageEffectResult::None;
     }
 
-    Entity& jetpack = state.entity_manager.entities[entity_idx];
-    if (!jetpack.active || jetpack.condition == EntityCondition::Dead) {
-        return EntityDamageEffectResult::None;
+    Ent& jetpack = state.ents.ents[ent_idx];
+    if (!jetpack.active || jetpack.condition == EntCondition::Dead) {
+        return EntDamageEffectResult::None;
     }
 
     jetpack.health = 0;
-    common::DieIfDead(entity_idx, state, audio);
-    return EntityDamageEffectResult::Consumed;
+    common::DieIfDead(ent_idx, state, audio);
+    return EntDamageEffectResult::Consumed;
 }
 
-void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Audio& audio) {
+void OnUseAsJetpack(std::size_t ent_idx, State& state, Graphics& graphics, Audio& audio) {
     (void)graphics;
     (void)audio;
-    Entity& jetpack = state.entity_manager.entities[entity_idx];
+    Ent& jetpack = state.ents.ents[ent_idx];
     if (jetpack.use_state.down == false) {
         return;
     }
@@ -112,7 +112,7 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
     const std::optional<VID> held_by_vid = jetpack.held_by_vid;
     bool refill_fuel = false;
     if (held_by_vid.has_value()) {
-        if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
+        if (Ent* const holder = state.ents.GetEntMut(*held_by_vid)) {
             if (holder->grounded || holder->IsClimbing() || holder->IsHanging() ||
                 holder->jumped_this_frame) {
                 refill_fuel = true;
@@ -127,14 +127,14 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
     }
 
     if (held_by_vid.has_value()) {
-        if (Entity* const holder = state.entity_manager.GetEntityMut(*held_by_vid)) {
+        if (Ent* const holder = state.ents.GetEntMut(*held_by_vid)) {
             const float jetpack_max_upspeed = -2.0F;
             if (holder->vel.y > jetpack_max_upspeed) {
                 holder->acc.y = -0.6F;
                 holder->vel.y = Min(holder->vel.y, jetpack_max_upspeed);
             }
             if (!holder->IsHanging()) {
-                TrySetAnimation(*holder, EntityDisplayState::Neutral);
+                TrySetAnim(*holder, EntDisplayState::Neutral);
             }
         }
     }
@@ -145,7 +145,7 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
         const AudioAssetId sound_effect =
             jetpack.travel_sound == TravelSound::One ? audio_asset_ids::Jetpack1
                                                      : audio_asset_ids::Jetpack2;
-        (void)PlayEntitySoundEmitter(state, jetpack, sound_effect);
+        (void)PlayEntSoundEmitter(state, jetpack, sound_effect);
         jetpack.IncTravelSound();
     }
     jetpack.counter_a -= 1.0F;
@@ -161,8 +161,8 @@ void OnUseAsJetpack(std::size_t entity_idx, State& state, Graphics& graphics, Au
  *      if yes, move towards the player right now.
  *  If no, give up and fly back to the ceiling.
  */
-void StepEntityLogicAsJetpack(
-    std::size_t entity_idx,
+void StepEntLogicAsJetpack(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
@@ -171,23 +171,23 @@ void StepEntityLogicAsJetpack(
     (void)graphics;
     (void)audio;
     (void)dt;
-    Entity& jetpack = state.entity_manager.entities[entity_idx];
-    if (jetpack.attachment_mode == AttachmentMode::Back) {
-        FrameDataId equipped_animation = frame_data_ids::JetpackBack;
+    Ent& jetpack = state.ents.ents[ent_idx];
+    if (jetpack.attach_mode == AttachMode::Back) {
+        AFrameId equipped_anim = aframe_ids::JetpackBack;
         if (jetpack.held_by_vid.has_value()) {
-            if (const Entity* const holder = state.entity_manager.GetEntity(*jetpack.held_by_vid)) {
+            if (const Ent* const holder = state.ents.GetEnt(*jetpack.held_by_vid)) {
                 if (holder->IsHanging()) {
-                    equipped_animation = frame_data_ids::JetpackSide;
+                    equipped_anim = aframe_ids::JetpackSide;
                 } else if (holder->IsClimbing()) {
-                    equipped_animation = frame_data_ids::JetpackBack;
+                    equipped_anim = aframe_ids::JetpackBack;
                 }
             }
         }
-        SetAnimation(jetpack, equipped_animation);
+        SetAnim(jetpack, equipped_anim);
     } else if (jetpack.held_by_vid.has_value()) {
-        SetAnimation(jetpack, frame_data_ids::JetpackSide);
+        SetAnim(jetpack, aframe_ids::JetpackSide);
     } else {
-        SetAnimation(jetpack, frame_data_ids::Jetpack);
+        SetAnim(jetpack, aframe_ids::Jetpack);
     }
 
     if (jetpack.use_state.down == false) {
@@ -195,5 +195,5 @@ void StepEntityLogicAsJetpack(
     }
 }
 
-/** generalize this to all square or rectangular entities somehow */
-} // namespace splonks::entities::jetpack
+/** generalize this to all square or rectangular ents somehow */
+} // namespace splonks::ents::jetpack

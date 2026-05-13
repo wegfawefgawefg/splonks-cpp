@@ -37,20 +37,20 @@ UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded) {
 }
 
 UVec2 FitTemplate(const UVec2& available_area,
-                  const std::vector<std::vector<TemplateTile>>& room_template, bool grounded) {
+                  const std::vector<std::vector<MetaTile>>& room_template, bool grounded) {
     const UVec2 size =
         UVec2::New(static_cast<unsigned int>(room_template[0].size()),
                    static_cast<unsigned int>(room_template.size()));
     return Fit(available_area, size, grounded);
 }
 
-std::vector<std::vector<TemplateTile>> BlankRoom() {
-    return std::vector<std::vector<TemplateTile>>(
+std::vector<std::vector<MetaTile>> BlankRoom() {
+    return std::vector<std::vector<MetaTile>>(
         static_cast<std::size_t>(Stage::kRoomShape.y),
-        std::vector<TemplateTile>(static_cast<std::size_t>(Stage::kRoomShape.x), TemplateTile::Air));
+        std::vector<MetaTile>(static_cast<std::size_t>(Stage::kRoomShape.x), MetaTile::Air));
 }
 
-std::vector<std::vector<TemplateTile>> StandinEntranceTemplate() {
+std::vector<std::vector<MetaTile>> StandinEntranceTemplate() {
     auto room = BlankRoom();
     const UVec2 middle = Stage::kRoomShape / 2U;
     const UVec2 other_middle = middle - UVec2::New(1, 1);
@@ -62,17 +62,17 @@ std::vector<std::vector<TemplateTile>> StandinEntranceTemplate() {
             const bool open =
                 y == middle.y || x == middle.x || y == other_middle.y || x == other_middle.x;
             if (edge && !open) {
-                room[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = TemplateTile::Solid;
+                room[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = MetaTile::Solid;
             }
         }
     }
 
     room[static_cast<std::size_t>(middle.y)][static_cast<std::size_t>(middle.x)] =
-        TemplateTile::Entrance;
+        MetaTile::Entrance;
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> StandinFourWayTemplate() {
+std::vector<std::vector<MetaTile>> StandinFourWayTemplate() {
     auto room = BlankRoom();
     const UVec2 middle = Stage::kRoomShape / 2U;
     const UVec2 other_middle = middle - UVec2::New(1, 1);
@@ -84,221 +84,221 @@ std::vector<std::vector<TemplateTile>> StandinFourWayTemplate() {
             const bool open =
                 y == middle.y || x == middle.x || y == other_middle.y || x == other_middle.x;
             if (edge && !open) {
-                room[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = TemplateTile::Solid;
+                room[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = MetaTile::Solid;
             }
         }
     }
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> StandinBoxTemplate() {
+std::vector<std::vector<MetaTile>> StandinBoxTemplate() {
     auto room = BlankRoom();
     for (unsigned int y = 0; y < Stage::kRoomShape.y; ++y) {
         for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
-            room[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = TemplateTile::Solid;
+            room[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = MetaTile::Solid;
         }
     }
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> StandinLeftDownRightTemplate() {
+std::vector<std::vector<MetaTile>> StandinLeftDownRightTemplate() {
     auto room = BlankRoom();
 
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
-        room[0][static_cast<std::size_t>(x)] = TemplateTile::Solid;
+        room[0][static_cast<std::size_t>(x)] = MetaTile::Solid;
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)]
-        [static_cast<std::size_t>(Stage::kRoomShape.x / 2U)] = TemplateTile::Air;
+        [static_cast<std::size_t>(Stage::kRoomShape.x / 2U)] = MetaTile::Air;
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)]
-        [static_cast<std::size_t>(Stage::kRoomShape.x / 2U - 1U)] = TemplateTile::Air;
+        [static_cast<std::size_t>(Stage::kRoomShape.x / 2U - 1U)] = MetaTile::Air;
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> StandinLeftRightTemplate() {
+std::vector<std::vector<MetaTile>> StandinLeftRightTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
-        room[0][static_cast<std::size_t>(x)] = TemplateTile::Solid;
+        room[0][static_cast<std::size_t>(x)] = MetaTile::Solid;
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> StandinLeftUpRightTemplate() {
+std::vector<std::vector<MetaTile>> StandinLeftUpRightTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
-    room[0][0] = TemplateTile::Solid;
-    room[0][static_cast<std::size_t>(Stage::kRoomShape.x - 1)] = TemplateTile::Solid;
+    room[0][0] = MetaTile::Solid;
+    room[0][static_cast<std::size_t>(Stage::kRoomShape.x - 1)] = MetaTile::Solid;
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> DoubleLadderTemplate() {
+std::vector<std::vector<MetaTile>> DoubleLadderTemplate() {
     return {
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::LadderTop, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::LadderTop,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::LadderTop, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::LadderTop,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Ladder, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::LadderTop, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::LadderTop,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Ladder, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::LadderTop, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::LadderTop,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Ladder, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Ladder, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
     };
 }
 
-std::vector<std::vector<TemplateTile>> BoxDoubleLadderTemplate() {
+std::vector<std::vector<MetaTile>> BoxDoubleLadderTemplate() {
     return {
-        {TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::MaybeSolid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder, TemplateTile::MaybeSolid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::LadderTop, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::LadderTop,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Ladder, TemplateTile::MaybeSolid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Ladder,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Ladder, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Ladder, TemplateTile::Solid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Ladder, TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid},
+        {MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::MaybeSolid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Ladder, MetaTile::MaybeSolid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::LadderTop, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::LadderTop,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Ladder, MetaTile::MaybeSolid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Ladder,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Ladder, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Ladder, MetaTile::Solid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Ladder, MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Ladder, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
 }
 
-std::vector<std::vector<TemplateTile>> SidewaysEtExitTemplate() {
+std::vector<std::vector<MetaTile>> SidewaysEtExitTemplate() {
     return {
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Solid, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Solid, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Exit, TemplateTile::Air, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::MaybeSolid, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Solid, MetaTile::Air,
+         MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Solid, MetaTile::Air,
+         MetaTile::Air, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Air, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Exit, MetaTile::Air, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::MaybeSolid, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
     };
 }
 
 void PasteOHalf(const UVec2& available_area, const UVec2& at,
-                std::vector<std::vector<TemplateTile>>& target, bool grounded) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid},
+                std::vector<std::vector<MetaTile>>& target, bool grounded) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, RandomBool());
 }
 
 void PasteFiveLong(const UVec2& available_area, const UVec2& at,
-                   std::vector<std::vector<TemplateTile>>& target, bool grounded) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid},
+                   std::vector<std::vector<MetaTile>>& target, bool grounded) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFourLong(const UVec2& available_area, const UVec2& at,
-                   std::vector<std::vector<TemplateTile>>& target) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid},
+                   std::vector<std::vector<MetaTile>>& target) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, false) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFourLongMaybe(const UVec2& available_area, const UVec2& at,
-                        std::vector<std::vector<TemplateTile>>& target) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid},
+                        std::vector<std::vector<MetaTile>>& target) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, false) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFiveLongMaybe(const UVec2& available_area, const UVec2& at,
-                        std::vector<std::vector<TemplateTile>>& target, bool grounded) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid},
+                        std::vector<std::vector<MetaTile>>& target, bool grounded) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFourLongWithTwoAboveMaybe(const UVec2& available_area, const UVec2& at,
-                                    std::vector<std::vector<TemplateTile>>& target) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid},
+                                    std::vector<std::vector<MetaTile>>& target) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, false) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteThreeLong(const UVec2& available_area, const UVec2& at,
-                    std::vector<std::vector<TemplateTile>>& target) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air},
+                    std::vector<std::vector<MetaTile>>& target) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air},
+        {MetaTile::Air, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air},
     };
     const UVec2 position = FitTemplate(available_area, room_template, false) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteAirSubroom(const UVec2& subroom_shape, const UVec2& at,
-                     std::vector<std::vector<TemplateTile>>& target) {
+                     std::vector<std::vector<MetaTile>>& target) {
     const int choice = rng::RandomIntInclusive(0, 5);
     if (choice == 0) {
         PasteOHalf(subroom_shape, at, target, false);
@@ -314,57 +314,57 @@ void PasteAirSubroom(const UVec2& subroom_shape, const UVec2& at,
 }
 
 void PasteHillsOnSpikes(const UVec2& available_area, const UVec2& at,
-                        std::vector<std::vector<TemplateTile>>& target, bool grounded) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::Air},
-        {TemplateTile::MaybeSpikes, TemplateTile::Solid, TemplateTile::MaybeSpikes,
-         TemplateTile::Solid, TemplateTile::MaybeSpikes},
+                        std::vector<std::vector<MetaTile>>& target, bool grounded) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::Air},
+        {MetaTile::MaybeSpikes, MetaTile::Solid, MetaTile::MaybeSpikes,
+         MetaTile::Solid, MetaTile::MaybeSpikes},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteHillsOnSpikesAssymetrical(const UVec2& available_area, const UVec2& at,
-                                    std::vector<std::vector<TemplateTile>>& target,
+                                    std::vector<std::vector<MetaTile>>& target,
                                     bool grounded) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Air,
-         TemplateTile::MaybeSolid},
-        {TemplateTile::MaybeSpikes, TemplateTile::MaybeSpikes, TemplateTile::Solid,
-         TemplateTile::MaybeSpikes, TemplateTile::Solid},
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Air,
+         MetaTile::MaybeSolid},
+        {MetaTile::MaybeSpikes, MetaTile::MaybeSpikes, MetaTile::Solid,
+         MetaTile::MaybeSpikes, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, RandomBool(), false);
 }
 
 void PasteStepsAndFloatingBlockWithSpikes(const UVec2& available_area, const UVec2& at,
-                                          std::vector<std::vector<TemplateTile>>& target,
+                                          std::vector<std::vector<MetaTile>>& target,
                                           bool grounded) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Solid, TemplateTile::Air,
-         TemplateTile::MaybeSolid},
-        {TemplateTile::MaybeSpikes, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::MaybeSpikes, TemplateTile::MaybeSpikes},
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::Air, MetaTile::Solid, MetaTile::Air,
+         MetaTile::MaybeSolid},
+        {MetaTile::MaybeSpikes, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::MaybeSpikes, MetaTile::MaybeSpikes},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, RandomBool(), false);
 }
 
 void PasteMound(const UVec2& available_area, const UVec2& at,
-                std::vector<std::vector<TemplateTile>>& target, bool grounded) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::Air},
-        {TemplateTile::MaybeSolid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::MaybeSolid},
+                std::vector<std::vector<MetaTile>>& target, bool grounded) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::Air},
+        {MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::MaybeSolid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteGroundSubroom(const UVec2& subroom_shape, const UVec2& at,
-                        std::vector<std::vector<TemplateTile>>& target) {
+                        std::vector<std::vector<MetaTile>>& target) {
     const int choice = rng::RandomIntInclusive(0, 6);
     if (choice == 0) {
         PasteHillsOnSpikes(subroom_shape, at, target, true);
@@ -384,89 +384,89 @@ void PasteGroundSubroom(const UVec2& subroom_shape, const UVec2& at,
 }
 
 void PasteDoorHutAndPillar(const UVec2& available_area, const UVec2& at,
-                           std::vector<std::vector<TemplateTile>>& target, bool grounded,
+                           std::vector<std::vector<MetaTile>>& target, bool grounded,
                            bool entrance) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid},
-        {TemplateTile::Solid, entrance ? TemplateTile::Entrance : TemplateTile::Exit,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Solid},
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid},
+        {MetaTile::Solid, entrance ? MetaTile::Entrance : MetaTile::Exit,
+         MetaTile::Air, MetaTile::Air, MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, RandomBool(), false);
 }
 
 void PasteDoorPyramid(const UVec2& available_area, const UVec2& at,
-                      std::vector<std::vector<TemplateTile>>& target, bool grounded,
+                      std::vector<std::vector<MetaTile>>& target, bool grounded,
                       bool entrance) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::Air, entrance ? TemplateTile::Entrance : TemplateTile::Exit,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid},
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::Air, entrance ? MetaTile::Entrance : MetaTile::Exit,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteDoorPillared(const UVec2& available_area, const UVec2& at,
-                       std::vector<std::vector<TemplateTile>>& target, bool grounded,
+                       std::vector<std::vector<MetaTile>>& target, bool grounded,
                        bool entrance) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::MaybeSolid,
-         entrance ? TemplateTile::Entrance : TemplateTile::Exit, TemplateTile::MaybeSolid,
-         TemplateTile::Solid},
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::MaybeSolid,
+         entrance ? MetaTile::Entrance : MetaTile::Exit, MetaTile::MaybeSolid,
+         MetaTile::Solid},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteDoorHut(const UVec2& available_area, const UVec2& at,
-                  std::vector<std::vector<TemplateTile>>& target, bool grounded, bool entrance) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid},
-        {TemplateTile::MaybeBlock, TemplateTile::Air, TemplateTile::Air,
-         entrance ? TemplateTile::Entrance : TemplateTile::Exit, TemplateTile::MaybeBlock},
+                  std::vector<std::vector<MetaTile>>& target, bool grounded, bool entrance) {
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid},
+        {MetaTile::MaybeBlock, MetaTile::Air, MetaTile::Air,
+         entrance ? MetaTile::Entrance : MetaTile::Exit, MetaTile::MaybeBlock},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, RandomBool(), false);
 }
 
 void PasteDoorStilted(const UVec2& available_area, const UVec2& at,
-                      std::vector<std::vector<TemplateTile>>& target, bool grounded,
+                      std::vector<std::vector<MetaTile>>& target, bool grounded,
                       bool entrance) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::Air, TemplateTile::Air, entrance ? TemplateTile::Entrance : TemplateTile::Exit,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::Air},
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::Air, MetaTile::Air, entrance ? MetaTile::Entrance : MetaTile::Exit,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::Air},
+        {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::Air},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteDoorFourblock(const UVec2& available_area, const UVec2& at,
-                        std::vector<std::vector<TemplateTile>>& target, bool grounded,
+                        std::vector<std::vector<MetaTile>>& target, bool grounded,
                         bool entrance) {
-    const std::vector<std::vector<TemplateTile>> room_template = {
-        {TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, entrance ? TemplateTile::Entrance : TemplateTile::Exit},
+    const std::vector<std::vector<MetaTile>> room_template = {
+        {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, entrance ? MetaTile::Entrance : MetaTile::Exit},
     };
     const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
     PasteTemplate(target, room_template, position, RandomBool(), false);
 }
 
 void PasteBottomExitSubroom(const UVec2& subroom_shape, const UVec2& at,
-                            std::vector<std::vector<TemplateTile>>& target) {
+                            std::vector<std::vector<MetaTile>>& target) {
     const int choice = rng::RandomIntInclusive(0, 5);
     if (choice == 0) {
         PasteDoorFourblock(subroom_shape, at, target, true, false);
@@ -483,11 +483,11 @@ void PasteBottomExitSubroom(const UVec2& subroom_shape, const UVec2& at,
     }
 }
 
-std::vector<std::vector<TemplateTile>> TwoSubroomsAboveExitTemplate() {
+std::vector<std::vector<MetaTile>> TwoSubroomsAboveExitTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
 
     const UVec2 subroom_shape = UVec2::New(5, 3);
@@ -520,225 +520,225 @@ std::vector<std::vector<TemplateTile>> TwoSubroomsAboveExitTemplate() {
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> BoxDigitEightTemplate() {
+std::vector<std::vector<MetaTile>> BoxDigitEightTemplate() {
     return {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Air,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Air, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Air,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Air, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Air,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Air,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
 }
 
-std::vector<std::vector<TemplateTile>> BoxFallenFloorTemplate() {
+std::vector<std::vector<MetaTile>> BoxFallenFloorTemplate() {
     return {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid, TemplateTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid, MetaTile::Solid},
     };
 }
 
-std::vector<std::vector<TemplateTile>> TwoLineOneSubroomTemplate() {
+std::vector<std::vector<MetaTile>> TwoLineOneSubroomTemplate() {
     auto room = BlankRoom();
-    const std::vector<std::vector<TemplateTile>> two_line_template = {
-        {TemplateTile::Solid, TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Air,
-         TemplateTile::Solid, TemplateTile::Air},
+    const std::vector<std::vector<MetaTile>> two_line_template = {
+        {MetaTile::Solid, MetaTile::Air, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Solid, MetaTile::Solid, MetaTile::Air,
+         MetaTile::Solid, MetaTile::Air},
     };
     PasteTemplate(room, two_line_template, UVec2::New(2, 1), false, false);
-    const std::vector<std::vector<TemplateTile>> bottom_row = {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
+    const std::vector<std::vector<MetaTile>> bottom_row = {
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
     };
     PasteTemplate(room, bottom_row, UVec2::New(0, Stage::kRoomShape.y - 1), false, false);
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 4), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> BoxOneSidedLadderTwoSubroomsTemplate() {
-    auto room = std::vector<std::vector<TemplateTile>>{
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::MaybeBlock},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::LadderTop,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
+std::vector<std::vector<MetaTile>> BoxOneSidedLadderTwoSubroomsTemplate() {
+    auto room = std::vector<std::vector<MetaTile>>{
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::MaybeBlock},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::LadderTop,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
     };
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 4), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> BoxOneSidedLadderOneSubroomTemplate() {
-    auto room = std::vector<std::vector<TemplateTile>>{
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Air, TemplateTile::MaybeBlock},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::LadderTop,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Ladder,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid},
+std::vector<std::vector<MetaTile>> BoxOneSidedLadderOneSubroomTemplate() {
+    auto room = std::vector<std::vector<MetaTile>>{
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Air, MetaTile::MaybeBlock},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::LadderTop,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Ladder,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> BoxFingerHoleTemplate() {
+std::vector<std::vector<MetaTile>> BoxFingerHoleTemplate() {
     return {
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
-        {TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::MaybeSolid, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
+        {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::MaybeSolid, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
     };
 }
 
-std::vector<std::vector<TemplateTile>> LurOneSubroomTemplate() {
+std::vector<std::vector<MetaTile>> LurOneSubroomTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
     PasteGroundSubroom(UVec2::New(5, 3), UVec2::New(5, 4), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> AnthillTemplate() {
+std::vector<std::vector<MetaTile>> AnthillTemplate() {
     return {
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::MaybeSolid, TemplateTile::MaybeSolid, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid,
-         TemplateTile::Air, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::MaybeSolid,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::MaybeSolid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Air},
-        {TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Air},
-        {TemplateTile::Solid, TemplateTile::MaybeSolid, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Air, TemplateTile::Air,
-         TemplateTile::MaybeSolid, TemplateTile::Solid},
-        {TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Air, TemplateTile::Air, TemplateTile::Solid, TemplateTile::Solid,
-         TemplateTile::Solid, TemplateTile::Solid},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid,
+         MetaTile::Air, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Solid, MetaTile::Solid, MetaTile::MaybeSolid,
+         MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Air},
+        {MetaTile::Air, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Air, MetaTile::Air, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Air},
+        {MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::Air,
+         MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
+         MetaTile::MaybeSolid, MetaTile::Solid},
+        {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Air, MetaTile::Air, MetaTile::Solid, MetaTile::Solid,
+         MetaTile::Solid, MetaTile::Solid},
     };
 }
 
-std::vector<std::vector<TemplateTile>> ThreeCornerDropTemplate() {
+std::vector<std::vector<MetaTile>> ThreeCornerDropTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = TemplateTile::MaybeSolid;
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = TemplateTile::Air;
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = TemplateTile::MaybeSolid;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = MetaTile::MaybeSolid;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = MetaTile::Air;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = MetaTile::MaybeSolid;
 
     const UVec2 subroom_shape = UVec2::New(5, 3);
     PasteAirSubroom(subroom_shape, UVec2::New(0, 1), room);
@@ -747,88 +747,88 @@ std::vector<std::vector<TemplateTile>> ThreeCornerDropTemplate() {
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> TunnelAndSubroomTemplate() {
+std::vector<std::vector<MetaTile>> TunnelAndSubroomTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
     const std::size_t tunnel_height = static_cast<std::size_t>(Stage::kRoomShape.y - 3);
-    room[tunnel_height][2] = TemplateTile::MaybeSolid;
-    room[tunnel_height][3] = TemplateTile::MaybeSolid;
-    room[tunnel_height][4] = TemplateTile::Solid;
-    room[tunnel_height][5] = TemplateTile::Solid;
-    room[tunnel_height][6] = TemplateTile::Solid;
-    room[tunnel_height][7] = TemplateTile::Solid;
-    room[tunnel_height + 1][7] = TemplateTile::Solid;
-    room[tunnel_height + 1][8] = TemplateTile::Solid;
-    room[tunnel_height + 2][6] = TemplateTile::Air;
+    room[tunnel_height][2] = MetaTile::MaybeSolid;
+    room[tunnel_height][3] = MetaTile::MaybeSolid;
+    room[tunnel_height][4] = MetaTile::Solid;
+    room[tunnel_height][5] = MetaTile::Solid;
+    room[tunnel_height][6] = MetaTile::Solid;
+    room[tunnel_height][7] = MetaTile::Solid;
+    room[tunnel_height + 1][7] = MetaTile::Solid;
+    room[tunnel_height + 1][8] = MetaTile::Solid;
+    room[tunnel_height + 2][6] = MetaTile::Air;
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> DropWithTwoUpperSubroomsTemplate() {
+std::vector<std::vector<MetaTile>> DropWithTwoUpperSubroomsTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = TemplateTile::MaybeSolid;
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = TemplateTile::Air;
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = TemplateTile::MaybeSolid;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = MetaTile::MaybeSolid;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = MetaTile::Air;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = MetaTile::MaybeSolid;
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room);
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> OpenWideDropTemplate() {
+std::vector<std::vector<MetaTile>> OpenWideDropTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
     const std::size_t crater_height = static_cast<std::size_t>(Stage::kRoomShape.y - 2);
-    room[crater_height][1] = TemplateTile::MaybeSolid;
-    room[crater_height][2] = TemplateTile::MaybeSolid;
-    room[crater_height][7] = TemplateTile::MaybeSolid;
-    room[crater_height][8] = TemplateTile::MaybeSolid;
-    room[crater_height + 1][3] = TemplateTile::MaybeSolid;
-    room[crater_height + 1][4] = TemplateTile::Air;
-    room[crater_height + 1][5] = TemplateTile::Air;
-    room[crater_height + 1][6] = TemplateTile::MaybeSolid;
+    room[crater_height][1] = MetaTile::MaybeSolid;
+    room[crater_height][2] = MetaTile::MaybeSolid;
+    room[crater_height][7] = MetaTile::MaybeSolid;
+    room[crater_height][8] = MetaTile::MaybeSolid;
+    room[crater_height + 1][3] = MetaTile::MaybeSolid;
+    room[crater_height + 1][4] = MetaTile::Air;
+    room[crater_height + 1][5] = MetaTile::Air;
+    room[crater_height + 1][6] = MetaTile::MaybeSolid;
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room);
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> CrestedDropWithUpperSubroomTemplate() {
+std::vector<std::vector<MetaTile>> CrestedDropWithUpperSubroomTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
     const std::size_t crater_height = static_cast<std::size_t>(Stage::kRoomShape.y - 3);
-    room[crater_height][2] = TemplateTile::MaybeSolid;
-    room[crater_height][4] = TemplateTile::MaybeSolid;
-    room[crater_height][5] = TemplateTile::MaybeSolid;
-    room[crater_height][7] = TemplateTile::MaybeSolid;
-    room[crater_height + 1][2] = TemplateTile::Solid;
-    room[crater_height + 1][7] = TemplateTile::Solid;
-    room[crater_height + 2][4] = TemplateTile::Air;
-    room[crater_height + 2][5] = TemplateTile::Air;
+    room[crater_height][2] = MetaTile::MaybeSolid;
+    room[crater_height][4] = MetaTile::MaybeSolid;
+    room[crater_height][5] = MetaTile::MaybeSolid;
+    room[crater_height][7] = MetaTile::MaybeSolid;
+    room[crater_height + 1][2] = MetaTile::Solid;
+    room[crater_height + 1][7] = MetaTile::Solid;
+    room[crater_height + 2][4] = MetaTile::Air;
+    room[crater_height + 2][5] = MetaTile::Air;
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
     return room;
 }
 
-std::vector<std::vector<TemplateTile>> OpenFourSubroomTemplate() {
+std::vector<std::vector<MetaTile>> OpenFourSubroomTemplate() {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
-            TemplateTile::Solid;
+            MetaTile::Solid;
     }
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = TemplateTile::MaybeSolid;
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = TemplateTile::Air;
-    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = TemplateTile::MaybeSolid;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = MetaTile::MaybeSolid;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = MetaTile::Air;
+    room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = MetaTile::MaybeSolid;
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room);
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room);
     PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 4), room);
@@ -838,7 +838,7 @@ std::vector<std::vector<TemplateTile>> OpenFourSubroomTemplate() {
 
 } // namespace
 
-std::vector<std::vector<TemplateTile>> GetRoomTemplate(RoomType room_type) {
+std::vector<std::vector<MetaTile>> GetRoomTemplate(RoomType room_type) {
     switch (room_type) {
     case RoomType::Box: {
         const int choice = rng::RandomIntInclusive(0, 6);

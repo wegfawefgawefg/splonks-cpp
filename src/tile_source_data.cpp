@@ -26,105 +26,105 @@ struct TileSourceNameGroup {
 };
 
 constexpr std::array<TileSourceNameGroup, 55> kTileSourceNameGroups{{
-    {Tile::CaveAir0, {HashFrameDataIdConstexpr("cave_air_0"), 0, 0}, 1},
-    {Tile::CaveAir1, {HashFrameDataIdConstexpr("cave_air_1"), 0, 0}, 1},
-    {Tile::CaveAir2, {HashFrameDataIdConstexpr("cave_air_2"), 0, 0}, 1},
+    {Tile::CaveAir0, {HashAFrameIdConstexpr("cave_air_0"), 0, 0}, 1},
+    {Tile::CaveAir1, {HashAFrameIdConstexpr("cave_air_1"), 0, 0}, 1},
+    {Tile::CaveAir2, {HashAFrameIdConstexpr("cave_air_2"), 0, 0}, 1},
     {Tile::CaveDirt,
-     {HashFrameDataIdConstexpr("cave_dirt_0"), HashFrameDataIdConstexpr("cave_dirt_1"),
-      HashFrameDataIdConstexpr("cave_dirt_2")},
+     {HashAFrameIdConstexpr("cave_dirt_0"), HashAFrameIdConstexpr("cave_dirt_1"),
+      HashAFrameIdConstexpr("cave_dirt_2")},
      3},
-    {Tile::CaveBlock, {HashFrameDataIdConstexpr("cave_block_0"), 0, 0}, 1},
-    {Tile::CaveShopWall, {HashFrameDataIdConstexpr("cave_shop_wall"), 0, 0}, 1},
-    {Tile::CaveSmoothWall, {HashFrameDataIdConstexpr("cave_smooth_wall"), 0, 0}, 1},
-    {Tile::Glass, {HashFrameDataIdConstexpr("glass"), 0, 0}, 1},
-    {Tile::LawsonWall, {HashFrameDataIdConstexpr("lawson_wall"), 0, 0}, 1},
-    {Tile::LawsonInside, {HashFrameDataIdConstexpr("lawson_inside"), 0, 0}, 1},
-    {Tile::LawsonLeftTopper, {HashFrameDataIdConstexpr("lawson_left_topper"), 0, 0}, 1},
-    {Tile::LawsonMiddleTopper, {HashFrameDataIdConstexpr("lawson_middle_topper"), 0, 0}, 1},
-    {Tile::LawsonRightTopper, {HashFrameDataIdConstexpr("lawson_right_topper"), 0, 0}, 1},
-    {Tile::LawsonFloor, {HashFrameDataIdConstexpr("lawson_floor"), 0, 0}, 1},
+    {Tile::CaveBlock, {HashAFrameIdConstexpr("cave_block_0"), 0, 0}, 1},
+    {Tile::CaveShopWall, {HashAFrameIdConstexpr("cave_shop_wall"), 0, 0}, 1},
+    {Tile::CaveSmoothWall, {HashAFrameIdConstexpr("cave_smooth_wall"), 0, 0}, 1},
+    {Tile::Glass, {HashAFrameIdConstexpr("glass"), 0, 0}, 1},
+    {Tile::LawsonWall, {HashAFrameIdConstexpr("lawson_wall"), 0, 0}, 1},
+    {Tile::LawsonInside, {HashAFrameIdConstexpr("lawson_inside"), 0, 0}, 1},
+    {Tile::LawsonLeftTopper, {HashAFrameIdConstexpr("lawson_left_topper"), 0, 0}, 1},
+    {Tile::LawsonMiddleTopper, {HashAFrameIdConstexpr("lawson_middle_topper"), 0, 0}, 1},
+    {Tile::LawsonRightTopper, {HashAFrameIdConstexpr("lawson_right_topper"), 0, 0}, 1},
+    {Tile::LawsonFloor, {HashAFrameIdConstexpr("lawson_floor"), 0, 0}, 1},
 
-    {Tile::IceAir0, {HashFrameDataIdConstexpr("ice_air_0"), 0, 0}, 1},
-    {Tile::IceAir1, {HashFrameDataIdConstexpr("ice_air_1"), 0, 0}, 1},
-    {Tile::IceAir2, {HashFrameDataIdConstexpr("ice_air_2"), 0, 0}, 1},
+    {Tile::IceAir0, {HashAFrameIdConstexpr("ice_air_0"), 0, 0}, 1},
+    {Tile::IceAir1, {HashAFrameIdConstexpr("ice_air_1"), 0, 0}, 1},
+    {Tile::IceAir2, {HashAFrameIdConstexpr("ice_air_2"), 0, 0}, 1},
     {Tile::IceDirt,
-     {HashFrameDataIdConstexpr("ice_dirt_0"), HashFrameDataIdConstexpr("ice_dirt_1"),
-      HashFrameDataIdConstexpr("ice_dirt_2")},
+     {HashAFrameIdConstexpr("ice_dirt_0"), HashAFrameIdConstexpr("ice_dirt_1"),
+      HashAFrameIdConstexpr("ice_dirt_2")},
      3},
-    {Tile::IceBlock, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
+    {Tile::IceBlock, {HashAFrameIdConstexpr("ice_block_0"), 0, 0}, 1},
 
-    {Tile::JungleAir0, {HashFrameDataIdConstexpr("jungle_air_0"), 0, 0}, 1},
-    {Tile::JungleAir1, {HashFrameDataIdConstexpr("jungle_air_1"), 0, 0}, 1},
-    {Tile::JungleAir2, {HashFrameDataIdConstexpr("jungle_air_2"), 0, 0}, 1},
+    {Tile::JungleAir0, {HashAFrameIdConstexpr("jungle_air_0"), 0, 0}, 1},
+    {Tile::JungleAir1, {HashAFrameIdConstexpr("jungle_air_1"), 0, 0}, 1},
+    {Tile::JungleAir2, {HashAFrameIdConstexpr("jungle_air_2"), 0, 0}, 1},
     {Tile::JungleDirt,
-     {HashFrameDataIdConstexpr("jungle_dirt_0"), HashFrameDataIdConstexpr("jungle_dirt_1"),
-      HashFrameDataIdConstexpr("jungle_dirt_2")},
+     {HashAFrameIdConstexpr("jungle_dirt_0"), HashAFrameIdConstexpr("jungle_dirt_1"),
+      HashAFrameIdConstexpr("jungle_dirt_2")},
      3},
-    {Tile::JungleBlock, {HashFrameDataIdConstexpr("jungle_block_0"), 0, 0}, 1},
+    {Tile::JungleBlock, {HashAFrameIdConstexpr("jungle_block_0"), 0, 0}, 1},
 
-    {Tile::TempleAir0, {HashFrameDataIdConstexpr("temple_air_0"), 0, 0}, 1},
-    {Tile::TempleAir1, {HashFrameDataIdConstexpr("temple_air_1"), 0, 0}, 1},
-    {Tile::TempleAir2, {HashFrameDataIdConstexpr("temple_air_2"), 0, 0}, 1},
+    {Tile::TempleAir0, {HashAFrameIdConstexpr("temple_air_0"), 0, 0}, 1},
+    {Tile::TempleAir1, {HashAFrameIdConstexpr("temple_air_1"), 0, 0}, 1},
+    {Tile::TempleAir2, {HashAFrameIdConstexpr("temple_air_2"), 0, 0}, 1},
     {Tile::TempleDirt,
-     {HashFrameDataIdConstexpr("temple_dirt_0"), HashFrameDataIdConstexpr("temple_dirt_1"),
-      HashFrameDataIdConstexpr("temple_dirt_2")},
+     {HashAFrameIdConstexpr("temple_dirt_0"), HashAFrameIdConstexpr("temple_dirt_1"),
+      HashAFrameIdConstexpr("temple_dirt_2")},
      3},
-    {Tile::TempleGold, {HashFrameDataIdConstexpr("temple_gold"), 0, 0}, 1},
-    {Tile::TempleBlock, {HashFrameDataIdConstexpr("temple_block_0"), 0, 0}, 1},
+    {Tile::TempleGold, {HashAFrameIdConstexpr("temple_gold"), 0, 0}, 1},
+    {Tile::TempleBlock, {HashAFrameIdConstexpr("temple_block_0"), 0, 0}, 1},
 
-    {Tile::BossAir0, {HashFrameDataIdConstexpr("boss_air_0"), 0, 0}, 1},
-    {Tile::BossAir1, {HashFrameDataIdConstexpr("boss_air_1"), 0, 0}, 1},
-    {Tile::BossAir2, {HashFrameDataIdConstexpr("boss_air_2"), 0, 0}, 1},
+    {Tile::BossAir0, {HashAFrameIdConstexpr("boss_air_0"), 0, 0}, 1},
+    {Tile::BossAir1, {HashAFrameIdConstexpr("boss_air_1"), 0, 0}, 1},
+    {Tile::BossAir2, {HashAFrameIdConstexpr("boss_air_2"), 0, 0}, 1},
     {Tile::BossDirt,
-     {HashFrameDataIdConstexpr("boss_dirt_0"), HashFrameDataIdConstexpr("boss_dirt_1"),
-      HashFrameDataIdConstexpr("boss_dirt_2")},
+     {HashAFrameIdConstexpr("boss_dirt_0"), HashAFrameIdConstexpr("boss_dirt_1"),
+      HashAFrameIdConstexpr("boss_dirt_2")},
      3},
-    {Tile::BossBlock, {HashFrameDataIdConstexpr("boss_block_0"), 0, 0}, 1},
+    {Tile::BossBlock, {HashAFrameIdConstexpr("boss_block_0"), 0, 0}, 1},
 
-    {Tile::LadderTop, {HashFrameDataIdConstexpr("ladder_top_0"), 0, 0}, 1},
-    {Tile::Ladder, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
-    {Tile::LadderOrange, {HashFrameDataIdConstexpr("ladder_0"), 0, 0}, 1},
-    {Tile::Spikes, {HashFrameDataIdConstexpr("spikes_0"), 0, 0}, 1},
-    {Tile::Rope, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {Tile::Vine, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {Tile::VineTop, {HashFrameDataIdConstexpr("rope"), 0, 0}, 1},
-    {Tile::WaterSwim, {HashFrameDataIdConstexpr("water"), 0, 0}, 1},
-    {Tile::WaterTop, {HashFrameDataIdConstexpr("watertop"), 0, 0}, 1},
-    {Tile::Lava, {HashFrameDataIdConstexpr("cave_air_0"), 0, 0}, 1},
+    {Tile::LadderTop, {HashAFrameIdConstexpr("ladder_top_0"), 0, 0}, 1},
+    {Tile::Ladder, {HashAFrameIdConstexpr("ladder_0"), 0, 0}, 1},
+    {Tile::LadderOrange, {HashAFrameIdConstexpr("ladder_0"), 0, 0}, 1},
+    {Tile::Spikes, {HashAFrameIdConstexpr("spikes_0"), 0, 0}, 1},
+    {Tile::Rope, {HashAFrameIdConstexpr("rope"), 0, 0}, 1},
+    {Tile::Vine, {HashAFrameIdConstexpr("rope"), 0, 0}, 1},
+    {Tile::VineTop, {HashAFrameIdConstexpr("rope"), 0, 0}, 1},
+    {Tile::WaterSwim, {HashAFrameIdConstexpr("water"), 0, 0}, 1},
+    {Tile::WaterTop, {HashAFrameIdConstexpr("watertop"), 0, 0}, 1},
+    {Tile::Lava, {HashAFrameIdConstexpr("cave_air_0"), 0, 0}, 1},
     {Tile::Lush,
-     {HashFrameDataIdConstexpr("jungle_dirt_0"), HashFrameDataIdConstexpr("jungle_dirt_1"),
-      HashFrameDataIdConstexpr("jungle_dirt_2")},
+     {HashAFrameIdConstexpr("jungle_dirt_0"), HashAFrameIdConstexpr("jungle_dirt_1"),
+      HashAFrameIdConstexpr("jungle_dirt_2")},
      3},
-    {Tile::Tree, {HashFrameDataIdConstexpr("jungle_block_0"), 0, 0}, 1},
-    {Tile::ThinIce, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
+    {Tile::Tree, {HashAFrameIdConstexpr("jungle_block_0"), 0, 0}, 1},
+    {Tile::ThinIce, {HashAFrameIdConstexpr("ice_block_0"), 0, 0}, 1},
     {Tile::Dark,
-     {HashFrameDataIdConstexpr("ice_dirt_0"), HashFrameDataIdConstexpr("ice_dirt_1"),
-      HashFrameDataIdConstexpr("ice_dirt_2")},
+     {HashAFrameIdConstexpr("ice_dirt_0"), HashAFrameIdConstexpr("ice_dirt_1"),
+      HashAFrameIdConstexpr("ice_dirt_2")},
      3},
-    {Tile::DarkFall, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
-    {Tile::AlienShip, {HashFrameDataIdConstexpr("ice_block_0"), 0, 0}, 1},
+    {Tile::DarkFall, {HashAFrameIdConstexpr("ice_block_0"), 0, 0}, 1},
+    {Tile::AlienShip, {HashAFrameIdConstexpr("ice_block_0"), 0, 0}, 1},
     {Tile::TempleFake,
-     {HashFrameDataIdConstexpr("temple_dirt_0"), HashFrameDataIdConstexpr("temple_dirt_1"),
-      HashFrameDataIdConstexpr("temple_dirt_2")},
+     {HashAFrameIdConstexpr("temple_dirt_0"), HashAFrameIdConstexpr("temple_dirt_1"),
+      HashAFrameIdConstexpr("temple_dirt_2")},
      3},
-    {Tile::Entrance, {HashFrameDataIdConstexpr("entrance"), 0, 0}, 1},
-    {Tile::Exit, {HashFrameDataIdConstexpr("exit"), 0, 0}, 1},
+    {Tile::Entrance, {HashAFrameIdConstexpr("entrance"), 0, 0}, 1},
+    {Tile::Exit, {HashAFrameIdConstexpr("exit"), 0, 0}, 1},
 }};
 
-const FrameData&
-RequireSingleFrame(const FrameDataDb& frame_data_db,
-                   const std::unordered_map<FrameDataId, std::size_t>& animation_index_by_id,
+const AFrame&
+RequireSingleFrame(const AFrameDb& aframe_db,
+                   const std::unordered_map<AFrameId, std::size_t>& anim_index_by_id,
                    std::uint32_t name_hash) {
-    const auto found = animation_index_by_id.find(name_hash);
-    if (found == animation_index_by_id.end()) {
+    const auto found = anim_index_by_id.find(name_hash);
+    if (found == anim_index_by_id.end()) {
         throw std::runtime_error("TileSourceData build error: mapped frame name hash not found");
     }
 
-    const FrameDataAnimation& animation = frame_data_db.animations[found->second];
-    if (animation.frame_indices.empty()) {
-        throw std::runtime_error("TileSourceData build error: mapped animation has no frames");
+    const AFrameAnim& anim = aframe_db.anims[found->second];
+    if (anim.frame_indices.empty()) {
+        throw std::runtime_error("TileSourceData build error: mapped anim has no frames");
     }
-    return frame_data_db.frames[animation.frame_indices.front()];
+    return aframe_db.frames[anim.frame_indices.front()];
 }
 
 const TileSourceSpan* FindTileSourceSpan(const TileSourceDb& tile_source_db, Tile tile) {
@@ -169,7 +169,7 @@ const TileSourceData* GetSourceDataForSpan(Graphics& graphics, const TileSourceS
 
 } // namespace
 
-TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db) {
+TileSourceDb BuildTileSourceDb(const AFrameDb& aframe_db) {
     TileSourceDb tile_source_db;
     tile_source_db.tile_spans.resize(kTileCount);
 
@@ -179,12 +179,12 @@ TileSourceDb BuildTileSourceDb(const FrameDataDb& frame_data_db) {
         span.source_count = group.count;
 
         for (std::uint32_t i = 0; i < group.count; ++i) {
-            const FrameData& frame_data = RequireSingleFrame(
-                frame_data_db, frame_data_db.animation_indices_by_id, group.name_hashes[i]);
+            const AFrame& aframe = RequireSingleFrame(
+                aframe_db, aframe_db.anim_indices_by_id, group.name_hashes[i]);
             tile_source_db.sources.push_back(TileSourceData{
-                .image_id = frame_data.image_id,
-                .sample_rect = frame_data.sample_rect,
-                .cbox = frame_data.cbox,
+                .image_id = aframe.image_id,
+                .sample_rect = aframe.sample_rect,
+                .cbox = aframe.cbox,
             });
         }
     }
@@ -214,10 +214,10 @@ const TileSourceData* GetTileSourceDataForStage(
 
 SDL_Texture* GetTileTexture(const Graphics& graphics, const TileSourceData& tile_source_data) {
     const std::size_t image_index = static_cast<std::size_t>(tile_source_data.image_id);
-    if (image_index >= graphics.frame_data_images.size()) {
+    if (image_index >= graphics.aframe_images.size()) {
         return nullptr;
     }
-    return graphics.frame_data_images[image_index];
+    return graphics.aframe_images[image_index];
 }
 
 } // namespace splonks

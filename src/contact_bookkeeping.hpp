@@ -24,12 +24,12 @@ struct InteractionCooldownEntry {
     std::uint32_t expires_on_stage_frame = 0;
 };
 
-struct EntityContactDispatchEntry {
+struct EntContactDispatchEntry {
     VID first_vid;
     VID second_vid;
 };
 
-struct ProjectileBodyImpactCooldownEntry {
+struct ProjBodyImpactCooldownEntry {
     VID first_vid;
     VID second_vid;
     std::uint32_t expires_on_stage_frame = 0;
@@ -38,15 +38,15 @@ struct ProjectileBodyImpactCooldownEntry {
 struct ContactBookkeeping {
     std::vector<ContactCooldownEntry> contact_cooldowns;
     std::vector<InteractionCooldownEntry> interaction_cooldowns;
-    std::vector<EntityContactDispatchEntry> entity_contact_dispatches_this_tick;
-    std::vector<ProjectileBodyImpactCooldownEntry> projectile_body_impact_cooldowns;
+    std::vector<EntContactDispatchEntry> ent_contact_dispatches_this_tick;
+    std::vector<ProjBodyImpactCooldownEntry> proj_body_impact_cooldowns;
 
-    void ClearEntityContactDispatchesThisTick();
-    bool HasEntityContactPairDispatchedThisTick(
+    void ClearEntContactDispatchesThisTick();
+    bool HasEntContactPairDispatchedThisTick(
         const VID& first_vid,
         const VID& second_vid
     ) const;
-    void RecordEntityContactPairDispatchedThisTick(
+    void RecordEntContactPairDispatchedThisTick(
         const VID& first_vid,
         const VID& second_vid
     );
@@ -74,12 +74,12 @@ struct ContactBookkeeping {
         std::uint32_t stage_frame,
         std::uint32_t duration
     );
-    void StepProjectileBodyImpactCooldowns(std::uint32_t stage_frame);
-    bool HasProjectileBodyImpactCooldown(
+    void StepProjBodyImpactCooldowns(std::uint32_t stage_frame);
+    bool HasProjBodyImpactCooldown(
         const VID& first_vid,
         const VID& second_vid
     ) const;
-    void AddProjectileBodyImpactCooldown(
+    void AddProjBodyImpactCooldown(
         const VID& first_vid,
         const VID& second_vid,
         std::uint32_t stage_frame,

@@ -1,11 +1,11 @@
-#include "entities/crown.hpp"
+#include "ents/crown.hpp"
 
-#include "entities/common/unimplemented_archetype.hpp"
+#include "ents/common/unimplemented_spec.hpp"
 
-namespace splonks::entities::crown {
+namespace splonks::ents::crown {
 
-// TODO(classic): Crown is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kCrownArchetype =
-    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::Crown);
+// TODO(classic): Crown is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kCrownSpec =
+    common::MakeUnimplementedClassicNonStompableSpec(EntType::Crown);
 
-} // namespace splonks::entities::crown
+} // namespace splonks::ents::crown

@@ -1,17 +1,17 @@
-#include "entities/sign.hpp"
+#include "ents/sign.hpp"
 
-#include "entity/archetype.hpp"
-#include "entities/common/unimplemented_archetype.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/unimplemented_spec.hpp"
+#include "aframe_id.hpp"
 
-namespace splonks::entities::sign {
+namespace splonks::ents::sign {
 
-// TODO(classic): Sign is not implemented yet. This archetype only keeps Classic Quest data spawnable.
-extern const EntityArchetype kSignArchetype =
-    common::MakeUnimplementedClassicNonStompableArchetype(EntityType::Sign);
+// TODO(classic): Sign is not implemented yet. This spec only keeps Classic Quest data spawnable.
+extern const EntSpec kSignSpec =
+    common::MakeUnimplementedClassicNonStompableSpec(EntType::Sign);
 
-extern const EntityArchetype kSignGeneralArchetype{
-    .type_ = EntityType::SignGeneral,
+extern const EntSpec kSignGeneralSpec{
+    .type_ = EntType::SignGeneral,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -21,15 +21,15 @@ extern const EntityArchetype kSignGeneralArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignGeneral),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SignGeneral),
 };
-extern const EntityArchetype kSignBombArchetype{
-    .type_ = EntityType::SignBomb,
+extern const EntSpec kSignBombSpec{
+    .type_ = EntType::SignBomb,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -39,15 +39,15 @@ extern const EntityArchetype kSignBombArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignBomb),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SignBomb),
 };
-extern const EntityArchetype kSignWeaponArchetype{
-    .type_ = EntityType::SignWeapon,
+extern const EntSpec kSignWeaponSpec{
+    .type_ = EntType::SignWeapon,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -57,15 +57,15 @@ extern const EntityArchetype kSignWeaponArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignWeapon),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SignWeapon),
 };
-extern const EntityArchetype kSignRareArchetype{
-    .type_ = EntityType::SignRare,
+extern const EntSpec kSignRareSpec{
+    .type_ = EntType::SignRare,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -75,15 +75,15 @@ extern const EntityArchetype kSignRareArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignRare),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SignRare),
 };
-extern const EntityArchetype kSignClothingArchetype{
-    .type_ = EntityType::SignClothing,
+extern const EntSpec kSignClothingSpec{
+    .type_ = EntType::SignClothing,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -93,15 +93,15 @@ extern const EntityArchetype kSignClothingArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignClothing),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SignClothing),
 };
-extern const EntityArchetype kSignCrapsArchetype{
-    .type_ = EntityType::SignCraps,
+extern const EntSpec kSignCrapsSpec{
+    .type_ = EntType::SignCraps,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -111,15 +111,15 @@ extern const EntityArchetype kSignCrapsArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignCraps),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SignCraps),
 };
-extern const EntityArchetype kSignKissingArchetype{
-    .type_ = EntityType::SignKissing,
+extern const EntSpec kSignKissingSpec{
+    .type_ = EntType::SignKissing,
     .size = Vec2::New(16.0F, 16.0F),
     .health = 1,
     .has_physics = false,
@@ -129,12 +129,12 @@ extern const EntityArchetype kSignKissingArchetype{
     .hurt_on_contact = false,
     .can_be_stunned = false,
     .draw_layer = DrawLayer::Middle,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .display_state = EntityDisplayState::Neutral,
-    .damage_vulnerability = DamageVulnerability::Immune,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .display_state = EntDisplayState::Neutral,
+    .damage_vuln = DamageVuln::Immune,
     .alignment = Alignment::Neutral,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::SignKissing),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::SignKissing),
 };
 
-} // namespace splonks::entities::sign
+} // namespace splonks::ents::sign

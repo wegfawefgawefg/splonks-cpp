@@ -4,7 +4,7 @@
 
 #include <optional>
 
-namespace splonks::entities::common {
+namespace splonks::ents::common {
 
 enum class BlockingImpactAxis {
     Horizontal,
@@ -14,7 +14,7 @@ enum class BlockingImpactAxis {
 enum class BlockingImpactSurface {
     StageBounds,
     Tiles,
-    ImpassableEntity,
+    ImpassableEnt,
 };
 
 enum class ContactPhase {
@@ -33,9 +33,9 @@ struct ContactContext {
     std::optional<VID> other_vid = std::nullopt;
 };
 
-struct ContactResolution {
+struct ContactResult {
     bool blocks_movement = false;
     bool stop_sweep = false;
 };
 
-} // namespace splonks::entities::common
+} // namespace splonks::ents::common

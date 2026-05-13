@@ -1,17 +1,17 @@
-#include "entities/mantrap.hpp"
+#include "ents/mantrap.hpp"
 
 #include "audio.hpp"
-#include "entity/archetype.hpp"
-#include "entities/common/common.hpp"
-#include "entities/common/ground_walker.hpp"
-#include "frame_data_animator.hpp"
-#include "frame_data_id.hpp"
+#include "ent/spec.hpp"
+#include "ents/common/common.hpp"
+#include "ents/common/ground_walker.hpp"
+#include "aframe_animator.hpp"
+#include "aframe_id.hpp"
 #include "state.hpp"
 #include "world_query.hpp"
 
 #include <cmath>
 
-namespace splonks::entities::mantrap {
+namespace splonks::ents::mantrap {
 
 namespace {
 
@@ -23,62 +23,62 @@ constexpr int kMantrapIdleChance = 100;
 constexpr float kMantrapEatFrames = 54.0F;
 constexpr unsigned int kMantrapEatDamage = 9999;
 
-void StartIdle(Entity& mantrap, State& state) {
-    mantrap.ai_state = EntityAiState::Idle;
+void StartIdle(Ent& mantrap, State& state) {
+    mantrap.ai_state = EntAiState::Idle;
     mantrap.counter_a = static_cast<float>(
         state.drng.RandomIntInclusive(kMantrapIdleMinFrames, kMantrapIdleMaxFrames));
     common::DecelerateHorizontallyToStop(mantrap, kMantrapWalkAcceleration);
-    TrySetAnimation(mantrap, EntityDisplayState::Neutral);
+    TrySetAnim(mantrap, EntDisplayState::Neutral);
 }
 
-void StartWalking(Entity& mantrap, const State& state) {
-    mantrap.ai_state = EntityAiState::Patrolling;
+void StartWalking(Ent& mantrap, const State& state) {
+    mantrap.ai_state = EntAiState::Patrolling;
     common::AccelerateHorizontallyTowardSpeed(
         mantrap,
         state,
-        mantrap.facing == LeftOrRight::Left ? -kMantrapWalkSpeed : kMantrapWalkSpeed,
+        mantrap.facing == Side::Left ? -kMantrapWalkSpeed : kMantrapWalkSpeed,
         kMantrapWalkAcceleration
     );
-    TrySetAnimation(mantrap, EntityDisplayState::Walk);
+    TrySetAnim(mantrap, EntDisplayState::Walk);
 }
 
-bool CanMantrapEatEntity(const Entity& target) {
-    if (!target.active || !target.can_collide || target.condition == EntityCondition::Dead) {
+bool CanMantrapEatEnt(const Ent& target) {
+    if (!target.active || !target.can_collide || target.condition == EntCondition::Dead) {
         return false;
     }
 
-    return IsPlayerLikeEntityType(target.type_) ||
-           target.type_ == EntityType::Damsel ||
-           target.type_ == EntityType::Caveman ||
-           target.type_ == EntityType::Shopkeeper;
+    return IsPlayerLikeEntType(target.type_) ||
+           target.type_ == EntType::Damsel ||
+           target.type_ == EntType::Caveman ||
+           target.type_ == EntType::Shopkeeper;
 }
 
-void FaceTarget(Entity& mantrap, const Entity& target, const Stage& stage) {
+void FaceTarget(Ent& mantrap, const Ent& target, const Stage& stage) {
     const Vec2 delta = GetNearestWorldDelta(stage, mantrap.GetCenter(), target.GetCenter());
     if (delta.x < 0.0F) {
-        mantrap.facing = LeftOrRight::Left;
+        mantrap.facing = Side::Left;
     } else if (delta.x > 0.0F) {
-        mantrap.facing = LeftOrRight::Right;
+        mantrap.facing = Side::Right;
     }
 }
 
-bool TryEatOverlappingEntity(
+bool TryEatOverlappingEnt(
     std::size_t mantrap_idx,
     State& state,
     Graphics& graphics,
     Audio& audio
 ) {
-    Entity& mantrap = state.entity_manager.entities[mantrap_idx];
-    const AABB mantrap_aabb = common::GetContactAabbForEntity(mantrap, graphics);
-    for (const VID& target_vid : QueryEntitiesInAabb(state, mantrap_aabb, mantrap.vid)) {
-        Entity* const target = state.entity_manager.GetEntityMut(target_vid);
-        if (target == nullptr || !CanMantrapEatEntity(*target)) {
+    Ent& mantrap = state.ents.ents[mantrap_idx];
+    const AABB mantrap_aabb = common::GetContactAabbForEnt(mantrap, graphics);
+    for (const VID& target_vid : QueryEntsInAabb(state, mantrap_aabb, mantrap.vid)) {
+        Ent* const target = state.ents.GetEntMut(target_vid);
+        if (target == nullptr || !CanMantrapEatEnt(*target)) {
             continue;
         }
         const AABB target_aabb = GetNearestWorldAabb(
             state.stage,
             mantrap.GetCenter(),
-            common::GetContactAabbForEntity(*target, graphics)
+            common::GetContactAabbForEnt(*target, graphics)
         );
         if (!AabbsIntersect(mantrap_aabb, target_aabb)) {
             continue;
@@ -87,14 +87,14 @@ bool TryEatOverlappingEntity(
         FaceTarget(mantrap, *target, state.stage);
         mantrap.vel.x = 0.0F;
         mantrap.counter_b = kMantrapEatFrames;
-        SetAnimation(mantrap, frame_data_ids::MantrapEat);
+        SetAnim(mantrap, aframe_ids::MantrapEat);
         const common::DamageResult damage_result =
-            common::TryDamageEntity(target_vid.id, state, audio, DamageType::Attack, kMantrapEatDamage);
+            common::TryDamageEnt(target_vid.id, state, audio, DamageType::Attack, kMantrapEatDamage);
         if (damage_result == common::DamageResult::Died && target->active &&
-            !IsPlayerLikeEntityType(target->type_)) {
+            !IsPlayerLikeEntType(target->type_)) {
             target->marked_for_destruction = true;
         }
-        (void)PlayEntityCenterSoundEmitter(state, mantrap, audio_asset_ids::AnimalCrush1);
+        (void)PlayEntCenterSoundEmitter(state, mantrap, audio_asset_ids::AnimalCrush1);
         return true;
     }
     return false;
@@ -102,56 +102,56 @@ bool TryEatOverlappingEntity(
 
 } // namespace
 
-void StepEntityLogicAsMantrap(
-    std::size_t entity_idx,
+void StepEntLogicAsMantrap(
+    std::size_t ent_idx,
     State& state,
     Graphics& graphics,
     Audio& audio,
     float dt
 ) {
     (void)dt;
-    if (entity_idx >= state.entity_manager.entities.size()) {
+    if (ent_idx >= state.ents.ents.size()) {
         return;
     }
 
-    Entity& mantrap = state.entity_manager.entities[entity_idx];
-    if (mantrap.last_condition == EntityCondition::Stunned &&
-        mantrap.condition == EntityCondition::Normal) {
+    Ent& mantrap = state.ents.ents[ent_idx];
+    if (mantrap.last_condition == EntCondition::Stunned &&
+        mantrap.condition == EntCondition::Normal) {
         StartIdle(mantrap, state);
     }
-    if (mantrap.condition != EntityCondition::Normal) {
+    if (mantrap.condition != EntCondition::Normal) {
         return;
     }
 
     if (mantrap.counter_b > 0.0F) {
         mantrap.counter_b -= 1.0F;
         mantrap.vel.x = 0.0F;
-        SetAnimation(mantrap, frame_data_ids::MantrapEat);
+        SetAnim(mantrap, aframe_ids::MantrapEat);
         return;
     }
 
-    if (TryEatOverlappingEntity(entity_idx, state, graphics, audio)) {
+    if (TryEatOverlappingEnt(ent_idx, state, graphics, audio)) {
         return;
     }
 
-    if (mantrap.ai_state == EntityAiState::Idle) {
+    if (mantrap.ai_state == EntAiState::Idle) {
         common::DecelerateHorizontallyToStop(mantrap, kMantrapWalkAcceleration);
-        TrySetAnimation(mantrap, EntityDisplayState::Neutral);
+        TrySetAnim(mantrap, EntDisplayState::Neutral);
         if (mantrap.counter_a > 0.0F) {
             mantrap.counter_a -= 1.0F;
             return;
         }
 
         mantrap.facing =
-            state.drng.RandomIntInclusive(0, 1) == 0 ? LeftOrRight::Left : LeftOrRight::Right;
+            state.drng.RandomIntInclusive(0, 1) == 0 ? Side::Left : Side::Right;
         StartWalking(mantrap, state);
         return;
     }
 
-    int direction = mantrap.facing == LeftOrRight::Left ? -1 : 1;
+    int direction = mantrap.facing == Side::Left ? -1 : 1;
     if (common::HasWallAheadForGroundWalker(mantrap, state, graphics, direction) ||
         !common::HasGroundAheadForGroundWalker(mantrap, state, graphics, direction)) {
-        mantrap.facing = mantrap.facing == LeftOrRight::Left ? LeftOrRight::Right : LeftOrRight::Left;
+        mantrap.facing = mantrap.facing == Side::Left ? Side::Right : Side::Left;
         direction = -direction;
     }
 
@@ -166,12 +166,12 @@ void StepEntityLogicAsMantrap(
         static_cast<float>(direction) * kMantrapWalkSpeed,
         kMantrapWalkAcceleration
     );
-    SetMovementFlag(mantrap, EntityMovementFlag::Walking, true);
-    TrySetAnimation(mantrap, EntityDisplayState::Walk);
+    SetMovementFlag(mantrap, EntMovementFlag::Walking, true);
+    TrySetAnim(mantrap, EntDisplayState::Walk);
 }
 
-extern const EntityArchetype kMantrapArchetype{
-    .type_ = EntityType::Mantrap,
+extern const EntSpec kMantrapSpec{
+    .type_ = EntType::Mantrap,
     .size = Vec2::New(9.0F, 13.0F),
     .health = 3,
     .has_physics = true,
@@ -183,18 +183,18 @@ extern const EntityArchetype kMantrapArchetype{
     .can_be_stomped = false,
     .can_be_stunned = true,
     .draw_layer = DrawLayer::Foreground,
-    .facing = LeftOrRight::Left,
-    .condition = EntityCondition::Normal,
-    .ai_state = EntityAiState::Idle,
-    .display_state = EntityDisplayState::Neutral,
+    .facing = Side::Left,
+    .condition = EntCondition::Normal,
+    .ai_state = EntAiState::Idle,
+    .display_state = EntDisplayState::Neutral,
     .counter_a = static_cast<float>(kMantrapIdleMinFrames),
-    .damage_vulnerability = DamageVulnerability::Vulnerable,
-    .damage_animation = frame_data_ids::BloodBall,
+    .damage_vuln = DamageVuln::Vulnerable,
+    .damage_anim = aframe_ids::BloodBall,
     .damage_sound = audio_asset_ids::CavemanHurt,
     .collide_sound = audio_asset_ids::Thud,
-    .step_logic = StepEntityLogicAsMantrap,
+    .step_logic = StepEntLogicAsMantrap,
     .alignment = Alignment::Enemy,
-    .frame_data_animator = FrameDataAnimator::New(frame_data_ids::Mantrap),
+    .aframe_animator = AFrameAnimator::New(aframe_ids::Mantrap),
 };
 
-} // namespace splonks::entities::mantrap
+} // namespace splonks::ents::mantrap

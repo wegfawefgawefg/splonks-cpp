@@ -4,13 +4,13 @@ Status: active plan is input lockstep first, then rollback.
 
 Source of truth: `docs/plans/input_lockstep_rollback_plan.md`.
 
-The previous coordinator-authoritative / Terraria-style mutation replication
+The previous host-authoritative / Terraria-style mutation replication
 plan is archived under `docs/legacy_authoritative_networking/`. Do not use those
 legacy docs as implementation targets.
 
 ## Current Direction
 
-Remote multiplayer should be built around deterministic simulation from shared
+Remote multiplayer should be built around det simulation from shared
 inputs:
 
 - Every player has a stable `PlayerId`.
@@ -18,10 +18,10 @@ inputs:
   must support shapes like two players on one client and three players on
   another, not just one player per connection.
 - Every frame has a complete input record for every active player.
-- Input packets batch all local `PlayerId -> PlayerInputFrame` records owned by
+- Input packets batch all local `PlayerId -> InputFrame` records owned by
   that process for the frame.
 - Gameplay code reads player inputs from a frame input table.
-- All peers start from the same stage seed/state and step the same deterministic
+- All peers start from the same stage seed/state and step the same det
   gameplay code.
 - Networking delivers input frames, frame agreement, hashes, and eventually
   rollback support.
@@ -31,23 +31,23 @@ inputs:
 ## Why
 
 The mutation-replication model made normal content code responsible for too many
-networking facts: authority, prediction, coordinator requests, repair snapshots,
-presentation commands, and per-category state patches. That makes new items,
-entities, fluids, shops, traps, and mods fragile.
+networking facts: authority, prediction, host requests, repair snapshots,
+pres commands, and per-category state patches. That makes new items,
+ents, fluids, shops, traps, and mods fragile.
 
 Input lockstep/rollback has a harder determinism requirement, but it moves
-networking out of content code. If the simulation is deterministic, modded
+networking out of content code. If the simulation is det, modded
 content can work in multiplayer without new protocol fields, as long as all peers
-load the same content and use deterministic gameplay logic.
+load the same content and use det gameplay logic.
 
 ## Near-Term Work
 
-1. Route player controls through `PlayerId -> PlayerInputFrame` tables.
-2. Prove same-process deterministic replay from recorded inputs.
-3. Finish deleting/quarantining leftover coordinator-authoritative mutation
+1. Route player controls through `PlayerId -> InputFrame` tables.
+2. Prove same-process det replay from recorded inputs.
+3. Finish deleting/quarantining leftover host-authoritative mutation
    replication paths, including fluids and obsolete packet smokes.
 4. Add networked delay-based input lockstep.
-5. Add rollback after deterministic lockstep is proven.
+5. Add rollback after det lockstep is proven.
 
 See `docs/plans/input_lockstep_rollback_plan.md` for the detailed checklist.
 
@@ -60,7 +60,7 @@ lockstep, not rollback yet:
 - Any process may own multiple local players.
 - Host/client can connect, carry each other, and transition stages together.
 - Gameplay/content code should become network-agnostic again.
-- Old coordinator-authoritative mutation sync should be deleted or quarantined,
+- Old host-authoritative mutation sync should be deleted or quarantined,
   not kept half-wired.
 - Commit after meaningful chunks and keep the active plan updated with known
   gaps.
@@ -78,22 +78,22 @@ next command sequence, see `Current Worktree Handoff` in
 Working rules:
 
 - Finish delay-based input lockstep first. Do not start rollback until live and
-  fake lockstep are deterministic and playable.
-- Prefer deleting or quarantining old coordinator-authoritative mutation code
+  fake lockstep are det and playable.
+- Prefer deleting or quarantining old host-authoritative mutation code
   over adapting content to another hybrid model.
-- Keep ordinary gameplay/entity code local and network-agnostic. If content code
-  needs to ask whether it is host, peer, coordinator, or authoritative, that is a
+- Keep ordinary gameplay/ent code local and network-agnostic. If content code
+  needs to ask whether it is host, peer, host, or authoritative, that is a
   cleanup target.
-- Use deterministic state and `State::drng` for gameplay randomness. Presentation
+- Use det state and `State::drng` for gameplay randomness. Pres
   randomness can stay local if it does not affect gameplay state.
-- Commit after each meaningful chunk: deterministic cleanup, live transport,
+- Commit after each meaningful chunk: det cleanup, live transport,
   stage transition, carry/player interaction validation, old-cruft removal, or
   test expansion.
 
 Required validation before calling the goal complete:
 
 - Build passes.
-- Existing state equality, deterministic replay, and input-lockstep smokes pass.
+- Existing state equality, det replay, and input-lockstep smokes pass.
 - Two live windows can connect into the same stage using input lockstep.
 - The peer can carry the host player without desync.
 - Both players can transition stages together.
