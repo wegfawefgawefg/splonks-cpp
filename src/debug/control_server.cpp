@@ -122,6 +122,20 @@ const char* NetRoleName(network::NetRole role) {
     return "unknown";
 }
 
+const char* LockstepDesyncRecoveryModeName(network::LockstepDesyncRecoveryMode mode) {
+    switch (mode) {
+    case network::LockstepDesyncRecoveryMode::None:
+        return "none";
+    case network::LockstepDesyncRecoveryMode::PendingRollback:
+        return "pending-rollback";
+    case network::LockstepDesyncRecoveryMode::RollbackRepaired:
+        return "rollback-repaired";
+    case network::LockstepDesyncRecoveryMode::FatalDesync:
+        return "fatal-desync";
+    }
+    return "unknown";
+}
+
 const char* EntConditionName(EntCondition condition) {
     switch (condition) {
     case EntCondition::Normal:
@@ -425,14 +439,31 @@ std::string HandlePerfCommand(const State& state) {
     out << "{\"ok\":true,\"cmd\":\"perf\""
         << ",\"budget_ms\":" << perf.frame_budget_ms
         << ",\"step_ms\":" << perf.step_ms
+        << ",\"network_pump_ms\":" << perf.network_pump_ms
+        << ",\"lockstep_hash_ms\":" << perf.lockstep_hash_ms
+        << ",\"rollback_snapshot_save_ms\":" << perf.rollback_snapshot_save_ms
+        << ",\"rollback_snapshot_restore_ms\":" << perf.rollback_snapshot_restore_ms
+        << ",\"rollback_replay_ms_this_frame\":" << perf.rollback_replay_ms_this_frame
+        << ",\"rollback_replay_frames_this_frame\":" << perf.rollback_replay_frames_this_frame
+        << ",\"rollback_replay_ms_per_frame\":" << perf.rollback_replay_ms_per_frame
+        << ",\"multiplayer_sim_total_ms\":" << perf.multiplayer_sim_total_ms
+        << ",\"rollback_buffer_bytes\":" << perf.rollback_buffer_bytes
         << ",\"render_ms\":" << perf.render_ms
         << ",\"imgui_ms\":" << perf.imgui_ms
         << ",\"present_ms\":" << perf.present_ms
         << ",\"frame_total_ms\":" << perf.frame_total_ms
         << ",\"step_smoothed_ms\":" << perf.step_smoothed_ms
+        << ",\"network_pump_smoothed_ms\":" << perf.network_pump_smoothed_ms
+        << ",\"lockstep_hash_smoothed_ms\":" << perf.lockstep_hash_smoothed_ms
+        << ",\"rollback_replay_smoothed_ms\":" << perf.rollback_replay_smoothed_ms
+        << ",\"multiplayer_sim_total_smoothed_ms\":" << perf.multiplayer_sim_total_smoothed_ms
         << ",\"render_smoothed_ms\":" << perf.render_smoothed_ms
         << ",\"frame_total_smoothed_ms\":" << perf.frame_total_smoothed_ms
         << ",\"step_peak_ms\":" << perf.step_peak_ms
+        << ",\"network_pump_peak_ms\":" << perf.network_pump_peak_ms
+        << ",\"lockstep_hash_peak_ms\":" << perf.lockstep_hash_peak_ms
+        << ",\"rollback_replay_peak_ms\":" << perf.rollback_replay_peak_ms
+        << ",\"multiplayer_sim_total_peak_ms\":" << perf.multiplayer_sim_total_peak_ms
         << ",\"render_peak_ms\":" << perf.render_peak_ms
         << ",\"frame_total_peak_ms\":" << perf.frame_total_peak_ms
         << "}\n";
@@ -789,10 +820,34 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         out << "null";
     }
     out
+        << ",\"lockstep_has_confirmed_hash\":"
+        << (state.net_session.lockstep_has_confirmed_hash ? "true" : "false")
         << ",\"lockstep_last_confirmed_hash_frame\":"
         << state.net_session.lockstep_last_confirmed_hash_frame
         << ",\"lockstep_last_confirmed_hash\":"
         << state.net_session.lockstep_last_confirmed_hash
+        << ",\"lockstep_hash_send_interval_frames\":"
+        << state.net_session.lockstep_hash_send_interval_frames
+        << ",\"lockstep_hash_history_count\":"
+        << state.net_session.lockstep_hash_history.size()
+        << ",\"lockstep_remote_hash_history_count\":"
+        << state.net_session.lockstep_remote_hash_history.size()
+        << ",\"lockstep_pending_remote_hash_count\":"
+        << state.net_session.lockstep_pending_remote_hashes.size()
+        << ",\"lockstep_hash_mismatch_count\":"
+        << state.net_session.lockstep_hash_mismatch_count
+        << ",\"lockstep_last_desync_recovery_mode\":"
+        << JsonString(LockstepDesyncRecoveryModeName(
+               state.net_session.lockstep_last_desync_recovery_mode
+           ))
+        << ",\"lockstep_last_mismatch_peer_id\":"
+        << state.net_session.lockstep_last_mismatch_peer_id
+        << ",\"lockstep_last_mismatch_frame\":"
+        << state.net_session.lockstep_last_mismatch_frame
+        << ",\"lockstep_last_mismatch_local_hash\":"
+        << state.net_session.lockstep_last_mismatch_local_hash
+        << ",\"lockstep_last_mismatch_remote_hash\":"
+        << state.net_session.lockstep_last_mismatch_remote_hash
         << ",\"lockstep_input_record_count\":" << total_input_records
         << ",\"lockstep_remote_input_record_count\":" << remote_input_records
         << ",\"lockstep_predicted_input_record_count\":"

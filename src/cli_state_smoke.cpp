@@ -27,6 +27,7 @@
 #include <cmath>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1175,6 +1176,90 @@ bool RunRollbackRepairSmoke() {
     }
 
     std::cout << "rollback repair smoke ok\n";
+    return true;
+}
+
+bool RunLockstepHashExchangeSmoke() {
+    Graphics graphics;
+    InitCliSmokeRuntimeTables(graphics);
+    State state = State::New();
+    const std::vector<PlayerId> players = {1, 2};
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(state, graphics, players, failed_step)) {
+        std::cerr << "lockstep hash exchange smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    state.net_session.input_lockstep_enabled = true;
+    state.net_session.role = network::NetRole::Peer;
+    state.net_session.local_player_id = 2;
+    state.net_session.host_player_id = 1;
+    state.net_session.stage_instance_id = 99;
+    state.net_session.lockstep_next_frame_to_step = 8;
+    state.net_session.lockstep_last_confirmed_hash_frame = 3;
+    state.net_session.lockstep_last_confirmed_hash = 0x1234ULL;
+    state.net_session.lockstep_has_confirmed_hash = true;
+    state.net_session.lockstep_hash_history.push_back(network::LockstepHashRecord{
+        .frame = 3,
+        .hash = 0x1234ULL,
+    });
+    state.net_session.lockstep_remote_hash_history.push_back(network::LockstepRemoteHashRecord{
+        .peer_id = 1,
+        .frame = 3,
+        .hash = 0x1234ULL,
+    });
+    state.net_session.lockstep_hash_history.push_back(network::LockstepHashRecord{
+        .frame = 4,
+        .hash = 0xAAAAULL,
+    });
+    state.net_session.lockstep_rollback_snapshots.push_back(network::LockstepRollbackSnapshot{
+        .frame = 4,
+        .snapshot = std::make_shared<GameplaySnapshot>(MakeGameplaySnapshot(state, graphics)),
+    });
+
+    network::LockstepHashNetPacket roundtrip;
+    roundtrip.stage_instance_id = state.net_session.stage_instance_id;
+    roundtrip.sender_peer_id = state.net_session.host_player_id;
+    roundtrip.frame = 4;
+    roundtrip.hash = 0xBBBBULL;
+    const network::EncodedNetPacket encoded = network::EncodeLockstepHash(roundtrip);
+    const std::optional<network::LockstepHashNetPacket> decoded =
+        network::TryDecodeLockstepHash(encoded.bytes.data(), encoded.size);
+    if (!decoded.has_value() ||
+        decoded->stage_instance_id != roundtrip.stage_instance_id ||
+        decoded->sender_peer_id != roundtrip.sender_peer_id ||
+        decoded->frame != roundtrip.frame ||
+        decoded->hash != roundtrip.hash) {
+        std::cerr << "lockstep hash exchange smoke failed: packet roundtrip mismatch\n";
+        return false;
+    }
+
+    network::HandleLockstepHashPacket(state, *decoded);
+    if (state.net_session.lockstep_hash_mismatch_count != 1 ||
+        state.net_session.lockstep_last_mismatch_frame != 4 ||
+        state.net_session.lockstep_last_mismatch_local_hash != 0xAAAAULL ||
+        state.net_session.lockstep_last_mismatch_remote_hash != 0xBBBBULL ||
+        state.net_session.lockstep_last_desync_recovery_mode !=
+            network::LockstepDesyncRecoveryMode::PendingRollback ||
+        !state.net_session.lockstep_rollback_requested_frame.has_value() ||
+        *state.net_session.lockstep_rollback_requested_frame != 4) {
+        std::cerr << "lockstep hash exchange smoke failed: mismatch did not request rollback\n";
+        return false;
+    }
+
+    state.net_session.lockstep_rollback_requested_frame = std::nullopt;
+    state.net_session.lockstep_rollback_snapshots.clear();
+    network::LockstepHashNetPacket fatal_packet = roundtrip;
+    fatal_packet.hash = 0xCCCCULL;
+    network::HandleLockstepHashPacket(state, fatal_packet);
+    if (state.net_session.lockstep_last_desync_recovery_mode !=
+        network::LockstepDesyncRecoveryMode::FatalDesync) {
+        std::cerr << "lockstep hash exchange smoke failed: old mismatch did not become fatal\n";
+        return false;
+    }
+
+    std::cout << "lockstep hash exchange smoke ok\n";
     return true;
 }
 
@@ -2464,6 +2549,9 @@ bool CheckInputLockstepSmoke() {
         }
 
         if (!RunRollbackRepairSmoke()) {
+            return false;
+        }
+        if (!RunLockstepHashExchangeSmoke()) {
             return false;
         }
         if (!RunRollbackLatencySmoke()) {

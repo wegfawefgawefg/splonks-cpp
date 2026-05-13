@@ -169,6 +169,13 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             // Settings are host-owned. Ignore peer-originated settings packets.
             continue;
         }
+
+        if (const std::optional<LockstepHashNetPacket> hash =
+                TryDecodeLockstepHash(packet->bytes.data(), packet->size)) {
+            HandleLockstepHashPacket(state, *hash);
+            RelayLockstepHashToOtherRemotes(transport, packet->endpoint, *hash);
+            continue;
+        }
     }
 }
 
@@ -227,6 +234,12 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (const std::optional<LockstepSettingsPacket> settings =
                 TryDecodeLockstepSettings(packet->bytes.data(), packet->size)) {
             HandleLockstepSettingsPacket(state, *settings);
+            continue;
+        }
+
+        if (const std::optional<LockstepHashNetPacket> hash =
+                TryDecodeLockstepHash(packet->bytes.data(), packet->size)) {
+            HandleLockstepHashPacket(state, *hash);
             continue;
         }
     }

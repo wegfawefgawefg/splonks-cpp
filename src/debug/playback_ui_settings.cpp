@@ -767,17 +767,62 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
     ImGui::SeparatorText("Frame Timing");
     ImGui::Text("Frame Budget: %.3f ms (%.0f Hz)", perf.frame_budget_ms, 1000.0 / perf.frame_budget_ms);
     DrawTimingRow("Step", perf.step_smoothed_ms, perf.step_ms, perf.step_peak_ms, perf.frame_budget_ms);
+    DrawTimingRow(
+        "Network Pump",
+        perf.network_pump_smoothed_ms,
+        perf.network_pump_ms,
+        perf.network_pump_peak_ms,
+        perf.frame_budget_ms
+    );
+    DrawTimingRow(
+        "Lockstep Hash",
+        perf.lockstep_hash_smoothed_ms,
+        perf.lockstep_hash_ms,
+        perf.lockstep_hash_peak_ms,
+        perf.frame_budget_ms
+    );
+    DrawTimingRow(
+        "Rollback Replay",
+        perf.rollback_replay_smoothed_ms,
+        perf.rollback_replay_ms_this_frame,
+        perf.rollback_replay_peak_ms,
+        perf.frame_budget_ms
+    );
+    DrawTimingRow(
+        "Multiplayer Sim Total",
+        perf.multiplayer_sim_total_smoothed_ms,
+        perf.multiplayer_sim_total_ms,
+        perf.multiplayer_sim_total_peak_ms,
+        perf.frame_budget_ms
+    );
     DrawTimingRow("Render", perf.render_smoothed_ms, perf.render_ms, perf.render_peak_ms, perf.frame_budget_ms);
     DrawTimingRow("ImGui", perf.imgui_smoothed_ms, perf.imgui_ms, perf.imgui_peak_ms, perf.frame_budget_ms);
     DrawTimingRow("Present", perf.present_smoothed_ms, perf.present_ms, perf.present_peak_ms, perf.frame_budget_ms);
     DrawTimingRow("Frame Total", perf.frame_total_smoothed_ms, perf.frame_total_ms, perf.frame_total_peak_ms, perf.frame_budget_ms);
     if (ImGui::Button("Reset Timing Peaks")) {
         state.performance_stats.step_peak_ms = state.performance_stats.step_ms;
+        state.performance_stats.network_pump_peak_ms = state.performance_stats.network_pump_ms;
+        state.performance_stats.lockstep_hash_peak_ms = state.performance_stats.lockstep_hash_ms;
+        state.performance_stats.rollback_replay_peak_ms =
+            state.performance_stats.rollback_replay_ms_this_frame;
+        state.performance_stats.multiplayer_sim_total_peak_ms =
+            state.performance_stats.multiplayer_sim_total_ms;
         state.performance_stats.render_peak_ms = state.performance_stats.render_ms;
         state.performance_stats.imgui_peak_ms = state.performance_stats.imgui_ms;
         state.performance_stats.present_peak_ms = state.performance_stats.present_ms;
         state.performance_stats.frame_total_peak_ms = state.performance_stats.frame_total_ms;
     }
+    ImGui::Text(
+        "Rollback replay: %u frames, %.3f ms/frame",
+        perf.rollback_replay_frames_this_frame,
+        perf.rollback_replay_ms_per_frame
+    );
+    ImGui::Text(
+        "Rollback snapshots: %zu bytes approx, save %.3fms restore %.3fms",
+        perf.rollback_buffer_bytes,
+        perf.rollback_snapshot_save_ms,
+        perf.rollback_snapshot_restore_ms
+    );
 
     ImGui::SeparatorText("Ent Memory");
     ImGui::Text("Ent Size: %zu bytes", ent_size);

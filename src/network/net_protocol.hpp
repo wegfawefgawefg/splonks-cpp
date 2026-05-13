@@ -29,6 +29,7 @@ enum class NetPacketType : std::uint16_t {
     LeaveNotice = 9,
     InputFrameRecords = 20,
     LockstepSettings = 21,
+    LockstepHash = 22,
 };
 
 struct NetPacketHeader {
@@ -106,6 +107,13 @@ struct LockstepSettingsPacket {
     std::uint32_t max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
 };
 
+struct LockstepHashNetPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint64_t frame = 0;
+    std::uint64_t hash = 0;
+};
+
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -118,6 +126,7 @@ EncodedNetPacket EncodePong(const PongPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet);
 EncodedNetPacket EncodeLockstepSettings(const LockstepSettingsPacket& packet);
+EncodedNetPacket EncodeLockstepHash(const LockstepHashNetPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size);
@@ -125,6 +134,7 @@ std::optional<PongPacket> TryDecodePong(const std::uint8_t* bytes, std::size_t s
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<InputFrameRecordsPacket> TryDecodeInputFrameRecords(const std::uint8_t* bytes, std::size_t size);
 std::optional<LockstepSettingsPacket> TryDecodeLockstepSettings(const std::uint8_t* bytes, std::size_t size);
+std::optional<LockstepHashNetPacket> TryDecodeLockstepHash(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

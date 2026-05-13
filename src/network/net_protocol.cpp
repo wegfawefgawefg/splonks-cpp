@@ -11,6 +11,7 @@ static_assert(sizeof(PongPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader)
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(InputFrameRecordsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LockstepSettingsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(LockstepHashNetPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -90,6 +91,10 @@ EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet) 
 
 EncodedNetPacket EncodeLockstepSettings(const LockstepSettingsPacket& packet) {
     return EncodePayload(NetPacketType::LockstepSettings, packet);
+}
+
+EncodedNetPacket EncodeLockstepHash(const LockstepHashNetPacket& packet) {
+    return EncodePayload(NetPacketType::LockstepHash, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -201,6 +206,18 @@ std::optional<LockstepSettingsPacket> TryDecodeLockstepSettings(const std::uint8
     }
     packet.input_delay_frames = ClampLockstepInputDelayFrames(packet.input_delay_frames);
     packet.max_rollback_frames = ClampLockstepMaxRollbackFrames(packet.max_rollback_frames);
+    return packet;
+}
+
+std::optional<LockstepHashNetPacket> TryDecodeLockstepHash(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::LockstepHash, offset)) {
+        return std::nullopt;
+    }
+    LockstepHashNetPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
     return packet;
 }
 

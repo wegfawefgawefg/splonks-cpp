@@ -107,6 +107,20 @@ const char* MultiplayerRespawnModeName(MultiplayerRespawnMode mode) {
     return "Unknown";
 }
 
+const char* LockstepDesyncRecoveryModeName(network::LockstepDesyncRecoveryMode mode) {
+    switch (mode) {
+    case network::LockstepDesyncRecoveryMode::None:
+        return "none";
+    case network::LockstepDesyncRecoveryMode::PendingRollback:
+        return "pending-rollback";
+    case network::LockstepDesyncRecoveryMode::RollbackRepaired:
+        return "rollback-repaired";
+    case network::LockstepDesyncRecoveryMode::FatalDesync:
+        return "fatal-desync";
+    }
+    return "unknown";
+}
+
 void DrawFuzzerPresetButton(
     const char* label,
     network::NetFuzzerConfig preset,
@@ -576,11 +590,23 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
             session.lockstep_input_delay_frames,
             static_cast<float>(session.lockstep_input_delay_frames) * kNetworkFrameMs
         );
-        ImGui::Text(
-            "Confirmed: frame=%llu hash=%llu",
-            static_cast<unsigned long long>(session.lockstep_last_confirmed_hash_frame),
-            static_cast<unsigned long long>(session.lockstep_last_confirmed_hash)
-        );
+        if (session.lockstep_has_confirmed_hash) {
+            ImGui::Text(
+                "Confirmed: frame=%llu hash=%llu",
+                static_cast<unsigned long long>(session.lockstep_last_confirmed_hash_frame),
+                static_cast<unsigned long long>(session.lockstep_last_confirmed_hash)
+            );
+        } else {
+            ImGui::Text("Confirmed: none");
+        }
+        int hash_interval = static_cast<int>(session.lockstep_hash_send_interval_frames);
+        if (session.role == network::NetRole::Host &&
+            ImGui::SliderInt("Hash send interval", &hash_interval, 1, 120)) {
+            session.lockstep_hash_send_interval_frames =
+                static_cast<std::uint32_t>(std::max(1, hash_interval));
+        } else if (session.role != network::NetRole::Host) {
+            ImGui::Text("Hash send interval: %u", session.lockstep_hash_send_interval_frames);
+        }
         ImGui::Text(
             "Input buffer: total=%zu remote=%zu predicted=%zu wait-blocks=%llu",
             total_input_records,
@@ -609,6 +635,23 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
             prediction_miss_rate * 100.0F,
             session.lockstep_last_prediction_miss_span
         );
+        ImGui::Text(
+            "Hash history=%zu remote=%zu pending=%zu mismatches=%llu recovery=%s",
+            session.lockstep_hash_history.size(),
+            session.lockstep_remote_hash_history.size(),
+            session.lockstep_pending_remote_hashes.size(),
+            static_cast<unsigned long long>(session.lockstep_hash_mismatch_count),
+            LockstepDesyncRecoveryModeName(session.lockstep_last_desync_recovery_mode)
+        );
+        if (session.lockstep_hash_mismatch_count > 0) {
+            ImGui::Text(
+                "Last mismatch: peer=%u frame=%llu local=%llu remote=%llu",
+                session.lockstep_last_mismatch_peer_id,
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_frame),
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_local_hash),
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_remote_hash)
+            );
+        }
     }
     ImGui::Separator();
 

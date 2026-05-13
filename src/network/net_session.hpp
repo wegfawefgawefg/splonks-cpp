@@ -111,6 +111,24 @@ struct LockstepRollbackSnapshot {
     std::shared_ptr<GameplaySnapshot> snapshot;
 };
 
+struct LockstepHashRecord {
+    LockstepFrame frame = 0;
+    std::uint64_t hash = 0;
+};
+
+struct LockstepRemoteHashRecord {
+    PlayerId peer_id = kInvalidPlayerId;
+    LockstepFrame frame = 0;
+    std::uint64_t hash = 0;
+};
+
+enum class LockstepDesyncRecoveryMode : std::uint8_t {
+    None,
+    PendingRollback,
+    RollbackRepaired,
+    FatalDesync,
+};
+
 struct PendingLockstepSettings {
     std::uint32_t sequence = 0;
     LockstepFrame apply_frame = 0;
@@ -158,6 +176,22 @@ struct NetSessionState {
     std::uint32_t lockstep_next_input_sequence = 1;
     std::uint64_t lockstep_last_confirmed_hash_frame = 0;
     std::uint64_t lockstep_last_confirmed_hash = 0;
+    bool lockstep_has_confirmed_hash = false;
+    std::uint32_t lockstep_hash_send_interval_frames = 30;
+    std::vector<LockstepHashRecord> lockstep_hash_history;
+    std::vector<LockstepRemoteHashRecord> lockstep_remote_hash_history;
+    std::vector<LockstepRemoteHashRecord> lockstep_pending_remote_hashes;
+    LockstepFrame lockstep_last_recorded_hash_frame = 0;
+    bool lockstep_has_recorded_hash = false;
+    LockstepFrame lockstep_last_sent_hash_frame = 0;
+    bool lockstep_has_sent_hash = false;
+    std::uint64_t lockstep_hash_mismatch_count = 0;
+    PlayerId lockstep_last_mismatch_peer_id = kInvalidPlayerId;
+    LockstepFrame lockstep_last_mismatch_frame = 0;
+    std::uint64_t lockstep_last_mismatch_local_hash = 0;
+    std::uint64_t lockstep_last_mismatch_remote_hash = 0;
+    LockstepDesyncRecoveryMode lockstep_last_desync_recovery_mode =
+        LockstepDesyncRecoveryMode::None;
     bool lockstep_rollback_enabled = true;
     std::uint32_t lockstep_max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
     std::optional<LockstepFrame> lockstep_rollback_requested_frame = std::nullopt;

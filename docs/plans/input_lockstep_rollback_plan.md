@@ -801,28 +801,28 @@ plus many replayed frames plus hash work.
 
 Add timing fields:
 
-- [ ] `network_pump_ms`: UDP packet receive/send/fuzzer work.
-- [ ] `lockstep_hash_ms`: canonical fingerprint cost for this visible frame.
-- [ ] `lockstep_hash_smoothed_ms` and `lockstep_hash_peak_ms`.
-- [ ] `rollback_snapshot_save_ms`: save-state capture cost.
-- [ ] `rollback_snapshot_restore_ms`: restore cost when rollback starts.
-- [ ] `rollback_replay_ms_this_frame`: total replay cost paid this visible
+- [x] `network_pump_ms`: UDP packet receive/send/fuzzer work.
+- [x] `lockstep_hash_ms`: canonical fingerprint cost for this visible frame.
+- [x] `lockstep_hash_smoothed_ms` and `lockstep_hash_peak_ms`.
+- [x] `rollback_snapshot_save_ms`: save-state capture cost.
+- [x] `rollback_snapshot_restore_ms`: restore cost when rollback starts.
+- [x] `rollback_replay_ms_this_frame`: total replay cost paid this visible
   frame.
-- [ ] `rollback_replay_frames_this_frame`: number of replayed sim frames this
+- [x] `rollback_replay_frames_this_frame`: number of replayed sim frames this
   visible frame.
-- [ ] `rollback_replay_ms_per_frame`: replay cost divided by replayed frames.
-- [ ] `multiplayer_sim_total_ms`: normal step plus network pump, hash, snapshot,
+- [x] `rollback_replay_ms_per_frame`: replay cost divided by replayed frames.
+- [x] `multiplayer_sim_total_ms`: normal step plus network pump, hash, snapshot,
   restore, and replay work.
-- [ ] `rollback_buffer_bytes`: approximate retained rollback snapshot memory.
+- [x] `rollback_buffer_bytes`: approximate retained rollback snapshot memory.
 
 Add debug display:
 
-- [ ] Main Performance window should show `Step`, `Rollback Replay`, `Hash`,
+- [x] Main Performance window should show `Step`, `Rollback Replay`, `Hash`,
   `Network Pump`, and `Multiplayer Sim Total`.
-- [ ] Network debug panel should keep gameplay-specific counters: rollback
+- [x] Network debug panel should keep gameplay-specific counters: rollback
   count, max span, prediction miss count, confirmed hash frame, last mismatch,
   and recovery mode.
-- [ ] `splonksctl perf` should expose the same timing fields for live testing.
+- [x] `splonksctl perf` should expose the same timing fields for live testing.
 
 Measurement rules:
 
@@ -1188,42 +1188,56 @@ Core model:
 Implementation steps:
 
 1. Hash sampling.
-   - [ ] Add a lockstep hash history ring to `NetSessionState`.
-   - [ ] Compute the canonical gameplay hash after each completed lockstep
+   - [x] Add a lockstep hash history ring to `NetSessionState`.
+   - [x] Compute the canonical gameplay hash after each completed lockstep
      frame while a network session is active.
-   - [ ] Keep hash calculation local every frame initially for diagnosis.
+   - [x] Keep hash calculation local every frame initially for diagnosis.
      If measured cost is too high, keep the ring but sample every `2-4` frames.
-   - [ ] Exclude local-only pres/audio/debug/camera data exactly like existing
+   - [x] Exclude local-only pres/audio/debug/camera data exactly like existing
      deterministic fingerprints.
 2. Hash exchange protocol.
-   - [ ] Add a compact lockstep hash packet/message: `frame`, `hash`, and
+   - [x] Add a compact lockstep hash packet/message: `frame`, `hash`, and
      session/stage generation.
-   - [ ] Send hashes every `15-60` frames, configurable in debug.
-   - [ ] Ignore hashes for stale stage/session generations.
-   - [ ] Track latest confirmed matching frame/hash per peer.
+   - [x] Send hashes every `15-60` frames, configurable in debug.
+   - [x] Ignore hashes for stale stage/session generations.
+   - [x] Track latest confirmed matching frame/hash from actual peer hash
+     samples only. Do not treat frame `0` as implicitly confirmed.
 3. Mismatch diagnosis.
-   - [ ] On first mismatch, search local hash history for the last matching
+   - [x] On first mismatch, search local hash history for the last matching
      frame with that peer.
-   - [ ] Record mismatch frame, local hash, remote hash, peer id, and stage id
+   - [x] Record mismatch frame, local hash, remote hash, peer id, and stage id
      for debug UI and logs.
-   - [ ] Add a `splonksctl net` field for last hash mismatch and latest
+   - [x] Add a `splonksctl net` field for last hash mismatch and latest
      confirmed hash frame.
 4. Recovery path.
-   - [ ] If the last matching frame is inside the rollback snapshot window,
+   - [x] If the last matching frame is inside the rollback snapshot window,
      request rollback from that frame and replay to current using recorded
      inputs.
    - [ ] Re-hash after replay and clear the mismatch if hashes converge.
    - [ ] If the match is outside rollback history, or replay still diverges,
      force a same-stage snapshot resync or disconnect with a desync dump.
-   - [ ] Make the fallback explicit in debug: `rollback-repaired`,
+   - [x] Make the fallback explicit in debug: `rollback-repaired`,
      `snapshot-resynced`, or `fatal-desync`.
 5. Smoke tests.
    - [ ] Add a same-process test where one peer is intentionally perturbed,
      hash mismatch is detected, rollback repairs it, and final hashes match.
-   - [ ] Add a test where the mismatch is older than rollback history and the
+   - [x] Add a test where the mismatch is older than rollback history and the
      code takes the configured hard-resync/fatal path.
    - [ ] Add packet-loss/reorder coverage for hash packets so missing hash
      samples do not stall the sim.
+
+Implemented first pass:
+
+- Live hash packet: `LockstepHashNetPacket`.
+- Hash history/pending remote hashes in `NetSessionState`.
+- Peer-specific remote hash history so recovery starts from that peer's last
+  matching sample, not another peer's confirmation.
+- Mismatch telemetry in Debug Network and `splonksctl net`.
+- Rollback request when a matching rollback snapshot is available.
+- Fatal-desync marker when recovery history is unavailable.
+- Fatal-desync marker when a mismatch arrives before any real confirmed hash.
+- Smoke coverage for packet roundtrip, mismatch detection, rollback request,
+  and fatal fallback.
 
 Default policy:
 

@@ -347,6 +347,13 @@ int main(int argc, char** argv) {
             audio.music_volume = state.settings.audio.music_volume;
             audio.sound_effects_volume = state.settings.audio.sfx_volume;
             audio.SetPanHalfWidthPx(state.settings.audio.pan_half_width_px);
+            state.performance_stats.network_pump_ms = 0.0;
+            state.performance_stats.lockstep_hash_ms = 0.0;
+            state.performance_stats.rollback_snapshot_save_ms = 0.0;
+            state.performance_stats.rollback_snapshot_restore_ms = 0.0;
+            state.performance_stats.rollback_replay_ms_this_frame = 0.0;
+            state.performance_stats.rollback_replay_frames_this_frame = 0;
+            state.performance_stats.rollback_replay_ms_per_frame = 0.0;
             const std::uint64_t step_begin_counter = SDL_GetPerformanceCounter();
             splonks::RunSimulationWithDebugControls(
                 window,
@@ -376,6 +383,12 @@ int main(int argc, char** argv) {
 
             state.performance_stats.frame_budget_ms = 1000.0 / static_cast<double>(splonks::kFramesPerSecond);
             state.performance_stats.step_ms = counter_to_ms(step_begin_counter, step_end_counter);
+            state.performance_stats.multiplayer_sim_total_ms = state.performance_stats.step_ms;
+            if (state.performance_stats.rollback_replay_frames_this_frame > 0) {
+                state.performance_stats.rollback_replay_ms_per_frame =
+                    state.performance_stats.rollback_replay_ms_this_frame /
+                    static_cast<double>(state.performance_stats.rollback_replay_frames_this_frame);
+            }
             state.performance_stats.render_ms = counter_to_ms(render_begin_counter, render_end_counter);
             state.performance_stats.imgui_ms = counter_to_ms(imgui_begin_counter, imgui_end_counter);
             state.performance_stats.present_ms = counter_to_ms(present_begin_counter, present_end_counter);
@@ -383,6 +396,12 @@ int main(int argc, char** argv) {
             const double smoothing_alpha = 1.0 - std::exp(-static_cast<double>(dt) * 8.0);
             if (state.performance_stats.step_smoothed_ms == 0.0) {
                 state.performance_stats.step_smoothed_ms = state.performance_stats.step_ms;
+                state.performance_stats.network_pump_smoothed_ms = state.performance_stats.network_pump_ms;
+                state.performance_stats.lockstep_hash_smoothed_ms = state.performance_stats.lockstep_hash_ms;
+                state.performance_stats.rollback_replay_smoothed_ms =
+                    state.performance_stats.rollback_replay_ms_this_frame;
+                state.performance_stats.multiplayer_sim_total_smoothed_ms =
+                    state.performance_stats.multiplayer_sim_total_ms;
                 state.performance_stats.render_smoothed_ms = state.performance_stats.render_ms;
                 state.performance_stats.imgui_smoothed_ms = state.performance_stats.imgui_ms;
                 state.performance_stats.present_smoothed_ms = state.performance_stats.present_ms;
@@ -390,6 +409,18 @@ int main(int argc, char** argv) {
             } else {
                 state.performance_stats.step_smoothed_ms +=
                     (state.performance_stats.step_ms - state.performance_stats.step_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.network_pump_smoothed_ms +=
+                    (state.performance_stats.network_pump_ms -
+                     state.performance_stats.network_pump_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.lockstep_hash_smoothed_ms +=
+                    (state.performance_stats.lockstep_hash_ms -
+                     state.performance_stats.lockstep_hash_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.rollback_replay_smoothed_ms +=
+                    (state.performance_stats.rollback_replay_ms_this_frame -
+                     state.performance_stats.rollback_replay_smoothed_ms) * smoothing_alpha;
+                state.performance_stats.multiplayer_sim_total_smoothed_ms +=
+                    (state.performance_stats.multiplayer_sim_total_ms -
+                     state.performance_stats.multiplayer_sim_total_smoothed_ms) * smoothing_alpha;
                 state.performance_stats.render_smoothed_ms +=
                     (state.performance_stats.render_ms - state.performance_stats.render_smoothed_ms) * smoothing_alpha;
                 state.performance_stats.imgui_smoothed_ms +=
@@ -400,6 +431,16 @@ int main(int argc, char** argv) {
                     (state.performance_stats.frame_total_ms - state.performance_stats.frame_total_smoothed_ms) * smoothing_alpha;
             }
             state.performance_stats.step_peak_ms = std::max(state.performance_stats.step_peak_ms, state.performance_stats.step_ms);
+            state.performance_stats.network_pump_peak_ms = std::max(state.performance_stats.network_pump_peak_ms, state.performance_stats.network_pump_ms);
+            state.performance_stats.lockstep_hash_peak_ms = std::max(state.performance_stats.lockstep_hash_peak_ms, state.performance_stats.lockstep_hash_ms);
+            state.performance_stats.rollback_replay_peak_ms = std::max(
+                state.performance_stats.rollback_replay_peak_ms,
+                state.performance_stats.rollback_replay_ms_this_frame
+            );
+            state.performance_stats.multiplayer_sim_total_peak_ms = std::max(
+                state.performance_stats.multiplayer_sim_total_peak_ms,
+                state.performance_stats.multiplayer_sim_total_ms
+            );
             state.performance_stats.render_peak_ms = std::max(state.performance_stats.render_peak_ms, state.performance_stats.render_ms);
             state.performance_stats.imgui_peak_ms = std::max(state.performance_stats.imgui_peak_ms, state.performance_stats.imgui_ms);
             state.performance_stats.present_peak_ms = std::max(state.performance_stats.present_peak_ms, state.performance_stats.present_ms);

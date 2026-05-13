@@ -2,6 +2,7 @@
 
 #include "inputs.hpp"
 #include "simulation_snapshot.hpp"
+#include "state_fingerprint.hpp"
 #include "state.hpp"
 #include "step.hpp"
 
@@ -9,6 +10,7 @@
 #include <chrono>
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace splonks::network {
@@ -16,6 +18,7 @@ namespace splonks::network {
 namespace {
 
 constexpr LockstepFrame kInputHistoryFrames = 12;
+constexpr std::size_t kMaxPendingRemoteHashes = 128;
 
 struct RollbackPresentationSnapshot {
     ParticleSystem particles;
@@ -27,6 +30,14 @@ struct RollbackPresentationSnapshot {
 };
 
 void PruneRollbackSnapshots(State& state);
+void RequestRollbackFromFrame(State& state, LockstepFrame frame);
+const GameplaySnapshot* FindRollbackSnapshot(const State& state, LockstepFrame frame);
+
+float ElapsedMs(std::chrono::steady_clock::time_point start) {
+    const std::chrono::duration<float, std::milli> elapsed =
+        std::chrono::steady_clock::now() - start;
+    return elapsed.count();
+}
 
 std::uint32_t SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
     constexpr float kNetworkFrameMs = 1000.0F / 60.0F;
@@ -35,6 +46,288 @@ std::uint32_t SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
     const float jitter_margin_ms = std::max(2.0F, std::max(0.0F, jitter_ms) * 2.0F);
     const float frames = std::ceil((one_way_ms + jitter_margin_ms) / kNetworkFrameMs + kSafetyFrames);
     return ClampLockstepInputDelayFrames(static_cast<std::uint32_t>(std::max(0.0F, frames)));
+}
+
+std::size_t ApproxRollbackBufferBytes(const State& state) {
+    std::size_t bytes = 0;
+    for (const LockstepRollbackSnapshot& entry : state.net_session.lockstep_rollback_snapshots) {
+        if (entry.snapshot) {
+            bytes += sizeof(GameplaySnapshot);
+            bytes += entry.snapshot->ents.ents.capacity() * sizeof(Ent);
+            bytes += entry.snapshot->stage.tiles.capacity() * sizeof(std::vector<Tile>);
+            bytes += entry.snapshot->particles.sprite_particles.capacity() *
+                sizeof(SpriteParticle);
+        }
+    }
+    return bytes;
+}
+
+LockstepHashRecord* FindLocalHashRecord(State& state, LockstepFrame frame) {
+    for (LockstepHashRecord& record : state.net_session.lockstep_hash_history) {
+        if (record.frame == frame) {
+            return &record;
+        }
+    }
+    return nullptr;
+}
+
+const LockstepHashRecord* FindLocalHashRecord(const State& state, LockstepFrame frame) {
+    for (const LockstepHashRecord& record : state.net_session.lockstep_hash_history) {
+        if (record.frame == frame) {
+            return &record;
+        }
+    }
+    return nullptr;
+}
+
+void PruneLockstepHashHistory(State& state) {
+    const LockstepFrame next_frame = state.net_session.lockstep_next_frame_to_step;
+    const LockstepFrame keep_frames = std::max<LockstepFrame>(
+        static_cast<LockstepFrame>(state.net_session.lockstep_max_rollback_frames) + 8,
+        static_cast<LockstepFrame>(state.net_session.lockstep_hash_send_interval_frames) * 4 + 8
+    );
+    const LockstepFrame first_kept = next_frame > keep_frames ? next_frame - keep_frames : 0;
+    auto& history = state.net_session.lockstep_hash_history;
+    history.erase(
+        std::remove_if(
+            history.begin(),
+            history.end(),
+            [first_kept](const LockstepHashRecord& record) {
+                return record.frame < first_kept;
+            }
+        ),
+        history.end()
+    );
+
+    auto& pending = state.net_session.lockstep_pending_remote_hashes;
+    pending.erase(
+        std::remove_if(
+            pending.begin(),
+            pending.end(),
+            [first_kept](const LockstepRemoteHashRecord& record) {
+                return record.frame < first_kept;
+            }
+        ),
+        pending.end()
+    );
+
+    auto& remote_history = state.net_session.lockstep_remote_hash_history;
+    remote_history.erase(
+        std::remove_if(
+            remote_history.begin(),
+            remote_history.end(),
+            [first_kept](const LockstepRemoteHashRecord& record) {
+                return record.frame < first_kept;
+            }
+        ),
+        remote_history.end()
+    );
+}
+
+void RecordRemoteHashSample(State& state, const LockstepRemoteHashRecord& remote) {
+    auto& history = state.net_session.lockstep_remote_hash_history;
+    const auto existing = std::find_if(
+        history.begin(),
+        history.end(),
+        [&remote](const LockstepRemoteHashRecord& record) {
+            return record.peer_id == remote.peer_id && record.frame == remote.frame;
+        }
+    );
+    if (existing != history.end()) {
+        *existing = remote;
+        return;
+    }
+    history.push_back(remote);
+}
+
+std::optional<LockstepHashRecord> FindLastMatchingHashWithPeer(
+    const State& state,
+    PlayerId peer_id,
+    LockstepFrame before_frame
+) {
+    std::optional<LockstepHashRecord> best;
+    for (const LockstepRemoteHashRecord& remote : state.net_session.lockstep_remote_hash_history) {
+        if (remote.peer_id != peer_id || remote.frame >= before_frame) {
+            continue;
+        }
+        const LockstepHashRecord* const local = FindLocalHashRecord(state, remote.frame);
+        if (local == nullptr || local->hash != remote.hash) {
+            continue;
+        }
+        if (!best.has_value() || remote.frame > best->frame) {
+            best = LockstepHashRecord{
+                .frame = remote.frame,
+                .hash = local->hash,
+            };
+        }
+    }
+    return best;
+}
+
+void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
+    const LockstepHashRecord* const local = FindLocalHashRecord(state, remote.frame);
+    if (local == nullptr) {
+        return;
+    }
+    RecordRemoteHashSample(state, remote);
+
+    if (local->hash == remote.hash) {
+        if (!state.net_session.lockstep_has_confirmed_hash ||
+            remote.frame >= state.net_session.lockstep_last_confirmed_hash_frame) {
+            state.net_session.lockstep_last_confirmed_hash_frame = remote.frame;
+            state.net_session.lockstep_last_confirmed_hash = local->hash;
+            state.net_session.lockstep_has_confirmed_hash = true;
+        }
+        if (state.net_session.lockstep_last_desync_recovery_mode ==
+            LockstepDesyncRecoveryMode::PendingRollback) {
+            state.net_session.lockstep_last_desync_recovery_mode =
+                LockstepDesyncRecoveryMode::RollbackRepaired;
+        }
+        return;
+    }
+
+    state.net_session.lockstep_hash_mismatch_count += 1;
+    state.net_session.lockstep_last_mismatch_peer_id = remote.peer_id;
+    state.net_session.lockstep_last_mismatch_frame = remote.frame;
+    state.net_session.lockstep_last_mismatch_local_hash = local->hash;
+    state.net_session.lockstep_last_mismatch_remote_hash = remote.hash;
+
+    const std::optional<LockstepHashRecord> last_peer_match =
+        FindLastMatchingHashWithPeer(state, remote.peer_id, remote.frame);
+    if (!last_peer_match.has_value()) {
+        state.net_session.lockstep_last_desync_recovery_mode =
+            LockstepDesyncRecoveryMode::FatalDesync;
+        return;
+    }
+
+    const LockstepFrame rollback_frame =
+        remote.frame > last_peer_match->frame
+            ? last_peer_match->frame + 1
+            : remote.frame;
+    if (FindRollbackSnapshot(state, rollback_frame) != nullptr) {
+        state.net_session.lockstep_last_desync_recovery_mode =
+            LockstepDesyncRecoveryMode::PendingRollback;
+        RequestRollbackFromFrame(state, rollback_frame);
+    } else {
+        state.net_session.lockstep_last_desync_recovery_mode =
+            LockstepDesyncRecoveryMode::FatalDesync;
+    }
+}
+
+void ProcessPendingRemoteHashes(State& state) {
+    auto& pending = state.net_session.lockstep_pending_remote_hashes;
+    pending.erase(
+        std::remove_if(
+            pending.begin(),
+            pending.end(),
+            [&state](const LockstepRemoteHashRecord& remote) {
+                if (FindLocalHashRecord(state, remote.frame) == nullptr) {
+                    return false;
+                }
+                CompareLockstepHash(state, remote);
+                return true;
+            }
+        ),
+        pending.end()
+    );
+}
+
+void StoreOrCompareRemoteHash(State& state, const LockstepRemoteHashRecord& remote) {
+    if (FindLocalHashRecord(state, remote.frame) != nullptr) {
+        CompareLockstepHash(state, remote);
+        return;
+    }
+
+    auto& pending = state.net_session.lockstep_pending_remote_hashes;
+    const auto existing = std::find_if(
+        pending.begin(),
+        pending.end(),
+        [&remote](const LockstepRemoteHashRecord& record) {
+            return record.peer_id == remote.peer_id && record.frame == remote.frame;
+        }
+    );
+    if (existing != pending.end()) {
+        *existing = remote;
+        return;
+    }
+    pending.push_back(remote);
+    if (pending.size() > kMaxPendingRemoteHashes) {
+        pending.erase(pending.begin());
+    }
+}
+
+void RecordCompletedLockstepHash(State& state, LockstepFrame frame) {
+    if (!IsInputLockstepSession(state)) {
+        return;
+    }
+    if (state.net_session.lockstep_has_recorded_hash &&
+        state.net_session.lockstep_last_recorded_hash_frame == frame) {
+        return;
+    }
+
+    const auto hash_start = std::chrono::steady_clock::now();
+    const CanonicalStateFingerprint fingerprint = ComputeGameplayDeterminismFingerprint(state);
+    state.performance_stats.lockstep_hash_ms += ElapsedMs(hash_start);
+
+    LockstepHashRecord* const existing = FindLocalHashRecord(state, frame);
+    if (existing != nullptr) {
+        existing->hash = fingerprint.value;
+    } else {
+        state.net_session.lockstep_hash_history.push_back(LockstepHashRecord{
+            .frame = frame,
+            .hash = fingerprint.value,
+        });
+    }
+    state.net_session.lockstep_last_recorded_hash_frame = frame;
+    state.net_session.lockstep_has_recorded_hash = true;
+    PruneLockstepHashHistory(state);
+    ProcessPendingRemoteHashes(state);
+}
+
+void RecordPreviousCompletedLockstepHash(State& state) {
+    if (state.net_session.lockstep_next_frame_to_step == 0) {
+        return;
+    }
+    RecordCompletedLockstepHash(state, state.net_session.lockstep_next_frame_to_step - 1);
+}
+
+LockstepHashNetPacket MakeLockstepHashPacket(const State& state, const LockstepHashRecord& record) {
+    LockstepHashNetPacket packet;
+    packet.stage_instance_id = state.net_session.stage_instance_id;
+    packet.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
+    packet.frame = record.frame;
+    packet.hash = record.hash;
+    return packet;
+}
+
+void SendDueLockstepHash(State& state, NetTransportRuntime& transport) {
+    if (!state.net_session.lockstep_has_recorded_hash) {
+        return;
+    }
+    const LockstepFrame frame = state.net_session.lockstep_last_recorded_hash_frame;
+    const LockstepFrame interval = std::max<LockstepFrame>(
+        1,
+        static_cast<LockstepFrame>(state.net_session.lockstep_hash_send_interval_frames)
+    );
+    if (state.net_session.lockstep_has_sent_hash &&
+        frame < state.net_session.lockstep_last_sent_hash_frame + interval) {
+        return;
+    }
+
+    const LockstepHashRecord* const record = FindLocalHashRecord(state, frame);
+    if (record == nullptr) {
+        return;
+    }
+    const EncodedNetPacket encoded = EncodeLockstepHash(MakeLockstepHashPacket(state, *record));
+    if (state.net_session.role == NetRole::Host) {
+        for (const NetRemoteEndpoint& remote : transport.remotes) {
+            SendEncodedPacket(transport, remote.endpoint, encoded);
+        }
+    } else if (state.net_session.role == NetRole::Peer && !transport.join_request_pending) {
+        SendEncodedPacket(transport, transport.host_endpoint, encoded);
+    }
+    state.net_session.lockstep_last_sent_hash_frame = frame;
+    state.net_session.lockstep_has_sent_hash = true;
 }
 
 RollbackPresentationSnapshot CaptureRollbackPresentationState(
@@ -430,15 +723,64 @@ void RequestRollbackFromFrame(State& state, LockstepFrame frame) {
     }
 }
 
+void DiscardLockstepHashesFromFrame(State& state, LockstepFrame frame) {
+    auto& history = state.net_session.lockstep_hash_history;
+    history.erase(
+        std::remove_if(
+            history.begin(),
+            history.end(),
+            [frame](const LockstepHashRecord& record) {
+                return record.frame >= frame;
+            }
+        ),
+        history.end()
+    );
+    if (state.net_session.lockstep_has_recorded_hash &&
+        state.net_session.lockstep_last_recorded_hash_frame >= frame) {
+        state.net_session.lockstep_has_recorded_hash = !history.empty();
+        if (state.net_session.lockstep_has_recorded_hash) {
+            state.net_session.lockstep_last_recorded_hash_frame = history.back().frame;
+        }
+    }
+    if (state.net_session.lockstep_has_sent_hash &&
+        state.net_session.lockstep_last_sent_hash_frame >= frame) {
+        state.net_session.lockstep_has_sent_hash = false;
+    }
+    auto& remote_history = state.net_session.lockstep_remote_hash_history;
+    remote_history.erase(
+        std::remove_if(
+            remote_history.begin(),
+            remote_history.end(),
+            [frame](const LockstepRemoteHashRecord& record) {
+                return record.frame >= frame;
+            }
+        ),
+        remote_history.end()
+    );
+    auto& pending = state.net_session.lockstep_pending_remote_hashes;
+    pending.erase(
+        std::remove_if(
+            pending.begin(),
+            pending.end(),
+            [frame](const LockstepRemoteHashRecord& record) {
+                return record.frame >= frame;
+            }
+        ),
+        pending.end()
+    );
+}
+
 void SaveRollbackSnapshot(State& state, const Graphics& graphics, LockstepFrame frame) {
     if (!state.net_session.lockstep_rollback_enabled) {
         return;
     }
+    const auto save_start = std::chrono::steady_clock::now();
     for (LockstepRollbackSnapshot& entry : state.net_session.lockstep_rollback_snapshots) {
         if (entry.frame == frame) {
             entry.snapshot = std::make_shared<GameplaySnapshot>(
                 MakeGameplaySnapshot(state, graphics)
             );
+            state.performance_stats.rollback_snapshot_save_ms += ElapsedMs(save_start);
             return;
         }
     }
@@ -446,6 +788,7 @@ void SaveRollbackSnapshot(State& state, const Graphics& graphics, LockstepFrame 
         .frame = frame,
         .snapshot = std::make_shared<GameplaySnapshot>(MakeGameplaySnapshot(state, graphics)),
     });
+    state.performance_stats.rollback_snapshot_save_ms += ElapsedMs(save_start);
 }
 
 void PruneRollbackSnapshots(State& state) {
@@ -543,6 +886,8 @@ bool ReplayRollbackWindow(
 
     const GameplaySnapshot* const snapshot = FindRollbackSnapshot(state, rollback_frame);
     if (snapshot == nullptr) {
+        state.net_session.lockstep_last_desync_recovery_mode =
+            LockstepDesyncRecoveryMode::FatalDesync;
         return false;
     }
 
@@ -550,8 +895,11 @@ bool ReplayRollbackWindow(
     const RollbackPresentationSnapshot presentation_snapshot =
         CaptureRollbackPresentationState(state, graphics);
     Audio replay_audio;
+    const auto restore_start = std::chrono::steady_clock::now();
     RestoreGameplaySnapshot(*snapshot, state, graphics);
+    state.performance_stats.rollback_snapshot_restore_ms += ElapsedMs(restore_start);
     state.net_session.lockstep_next_frame_to_step = rollback_frame;
+    DiscardLockstepHashesFromFrame(state, rollback_frame);
 
     std::vector<InputFrame> frame_inputs;
     while (state.net_session.lockstep_next_frame_to_step < target_frame) {
@@ -569,6 +917,7 @@ bool ReplayRollbackWindow(
         ApplyLockstepInputsToState(state, required_players, frame_inputs);
         state.net_session.lockstep_next_frame_to_step += 1;
         StepSingleTickWithMode(state, replay_audio, graphics, SimulationTickMode::ReplayNoNetwork);
+        RecordCompletedLockstepHash(state, frame);
     }
     RestoreRollbackPresentationState(presentation_snapshot, state, graphics);
 
@@ -581,11 +930,20 @@ bool ReplayRollbackWindow(
         std::max(state.net_session.lockstep_max_rollback_span, span);
     state.net_session.lockstep_last_rollback_replay_ms = replay_ms.count();
     state.net_session.lockstep_total_rollback_replay_ms += replay_ms.count();
+    state.performance_stats.rollback_replay_ms_this_frame += replay_ms.count();
+    state.performance_stats.rollback_replay_frames_this_frame += span;
+    state.performance_stats.rollback_replay_ms_per_frame =
+        state.performance_stats.rollback_replay_frames_this_frame == 0
+            ? 0.0
+            : state.performance_stats.rollback_replay_ms_this_frame /
+                static_cast<double>(state.performance_stats.rollback_replay_frames_this_frame);
     PruneRollbackSnapshots(state);
+    state.performance_stats.rollback_buffer_bytes = ApproxRollbackBufferBytes(state);
     return true;
 }
 
 void PumpInputLockstepPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
+    const auto pump_start = std::chrono::steady_clock::now();
     FlushFuzzedOutgoingPackets(transport);
     if (state.net_session.role == NetRole::Host) {
         CleanupExpiredRetainedPlayerStates(state);
@@ -595,6 +953,7 @@ void PumpInputLockstepPackets(State& state, const Graphics& graphics, NetTranspo
     }
     FlushFuzzedOutgoingPackets(transport);
     state.net_session.fuzzer_stats = transport.fuzzer_stats;
+    state.performance_stats.network_pump_ms += ElapsedMs(pump_start);
 }
 
 } // namespace
@@ -624,6 +983,21 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_next_input_sequence = 1;
     state.net_session.lockstep_last_confirmed_hash_frame = 0;
     state.net_session.lockstep_last_confirmed_hash = 0;
+    state.net_session.lockstep_has_confirmed_hash = false;
+    state.net_session.lockstep_hash_history.clear();
+    state.net_session.lockstep_remote_hash_history.clear();
+    state.net_session.lockstep_pending_remote_hashes.clear();
+    state.net_session.lockstep_last_recorded_hash_frame = 0;
+    state.net_session.lockstep_has_recorded_hash = false;
+    state.net_session.lockstep_last_sent_hash_frame = 0;
+    state.net_session.lockstep_has_sent_hash = false;
+    state.net_session.lockstep_hash_mismatch_count = 0;
+    state.net_session.lockstep_last_mismatch_peer_id = kInvalidPlayerId;
+    state.net_session.lockstep_last_mismatch_frame = 0;
+    state.net_session.lockstep_last_mismatch_local_hash = 0;
+    state.net_session.lockstep_last_mismatch_remote_hash = 0;
+    state.net_session.lockstep_last_desync_recovery_mode =
+        LockstepDesyncRecoveryMode::None;
     state.net_session.lockstep_rollback_requested_frame = std::nullopt;
     state.net_session.lockstep_rollback_snapshots.clear();
     state.net_session.lockstep_rollback_count = 0;
@@ -644,6 +1018,7 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
 
     NetTransportRuntime& transport = *state.net_transport;
     transport.fuzzer_config = state.net_session.fuzzer_config;
+    RecordPreviousCompletedLockstepHash(state);
     PumpInputLockstepPackets(state, graphics, transport);
     if (state.net_session.role == NetRole::Host && transport.remotes.empty()) {
         return false;
@@ -655,6 +1030,7 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     ApplyDueLockstepSettings(state);
     UpdateLockstepAutoDelay(state);
     SendBroadcastLockstepSettings(state, transport);
+    SendDueLockstepHash(state, transport);
     QueueLocalInputsThroughTargetFrame(state);
     SendLocalInputFramePacket(state, transport);
     FlushFuzzedOutgoingPackets(transport);
@@ -684,6 +1060,7 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     }
 
     SaveRollbackSnapshot(state, graphics, state.net_session.lockstep_next_frame_to_step);
+    state.performance_stats.rollback_buffer_bytes = ApproxRollbackBufferBytes(state);
     ApplyLockstepInputsToState(state, required_players, frame_inputs);
     state.net_session.lockstep_next_frame_to_step += 1;
     const LockstepFrame input_history_frames = std::max<LockstepFrame>(
@@ -749,6 +1126,20 @@ void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& pa
         std::max(state.net_session.lockstep_next_settings_sequence, packet.sequence + 1);
 }
 
+void HandleLockstepHashPacket(State& state, const LockstepHashNetPacket& packet) {
+    if (packet.stage_instance_id != state.net_session.stage_instance_id) {
+        return;
+    }
+    if (packet.sender_peer_id == state.net_session.local_player_id) {
+        return;
+    }
+    StoreOrCompareRemoteHash(state, LockstepRemoteHashRecord{
+        .peer_id = static_cast<PlayerId>(packet.sender_peer_id),
+        .frame = packet.frame,
+        .hash = packet.hash,
+    });
+}
+
 bool ScheduleLockstepSettingsChange(
     State& state,
     std::uint32_t input_delay_frames,
@@ -778,6 +1169,20 @@ void RelayInputFrameRecordsToOtherRemotes(
     const InputFrameRecordsPacket& packet
 ) {
     const EncodedNetPacket encoded = EncodeInputFrameRecords(packet);
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (EndpointsEqual(remote.endpoint, source_endpoint)) {
+            continue;
+        }
+        SendEncodedPacket(transport, remote.endpoint, encoded);
+    }
+}
+
+void RelayLockstepHashToOtherRemotes(
+    NetTransportRuntime& transport,
+    const NetEndpoint& source_endpoint,
+    const LockstepHashNetPacket& packet
+) {
+    const EncodedNetPacket encoded = EncodeLockstepHash(packet);
     for (const NetRemoteEndpoint& remote : transport.remotes) {
         if (EndpointsEqual(remote.endpoint, source_endpoint)) {
             continue;

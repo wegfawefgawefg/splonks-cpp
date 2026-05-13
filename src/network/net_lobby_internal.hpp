@@ -54,6 +54,7 @@ void ResetInputLockstepState(State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
 void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& packet);
+void HandleLockstepHashPacket(State& state, const LockstepHashNetPacket& packet);
 bool ScheduleLockstepSettingsChange(
     State& state,
     std::uint32_t input_delay_frames,
@@ -66,6 +67,11 @@ void RelayInputFrameRecordsToOtherRemotes(
     NetTransportRuntime& transport,
     const NetEndpoint& source_endpoint,
     const InputFrameRecordsPacket& packet
+);
+void RelayLockstepHashToOtherRemotes(
+    NetTransportRuntime& transport,
+    const NetEndpoint& source_endpoint,
+    const LockstepHashNetPacket& packet
 );
 bool EnsureHostSyncedStage(State& state, std::string* status_out);
 void MarkRemoteEndpointHeard(
