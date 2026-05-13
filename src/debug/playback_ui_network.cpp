@@ -326,6 +326,63 @@ void DrawRespawnPolicyControls(State& state) {
     }
 }
 
+void DrawSnapshotResyncControls(State& state, DebugPlayback& debug) {
+    if (!ImGui::CollapsingHeader("Snapshot Resync")) {
+        return;
+    }
+
+    network::NetSessionState& session = state.net_session;
+    ImGui::Text(
+        "Pending=%s waiting_ack=%s target=%u transfer=%u chunks=%u bytes=%u retry=%u",
+        session.lockstep_snapshot_resync_pending_request ? "yes" : "no",
+        session.lockstep_snapshot_resync_waiting_for_ack ? "yes" : "no",
+        session.lockstep_snapshot_resync_target_peer_id,
+        session.lockstep_snapshot_resync_active_transfer_id,
+        session.lockstep_snapshot_resync_chunk_count,
+        session.lockstep_snapshot_resync_total_bytes,
+        session.lockstep_snapshot_resync_retry_ticks
+    );
+
+    if (!network::IsInputLockstepSession(state)) {
+        ImGui::TextUnformatted("No active input-lockstep session.");
+        return;
+    }
+
+    if (session.role == network::NetRole::Host) {
+        bool any_remote = false;
+        for (const network::NetPeerState& peer : session.peers) {
+            if (!peer.connected || peer.player_id == session.local_player_id) {
+                continue;
+            }
+            any_remote = true;
+            const std::string label =
+                "Force Resync Player " + std::to_string(peer.player_id);
+            if (ImGui::Button(label.c_str())) {
+                std::string status;
+                (void)network::ForceLockstepSnapshotResync(
+                    state,
+                    peer.player_id,
+                    &status
+                );
+                debug.network_status = status;
+            }
+        }
+        if (!any_remote) {
+            ImGui::TextUnformatted("No connected remote peers.");
+        }
+    } else if (session.role == network::NetRole::Peer) {
+        if (ImGui::Button("Request Host Snapshot Resync")) {
+            std::string status;
+            (void)network::ForceLockstepSnapshotResync(
+                state,
+                session.local_player_id,
+                &status
+            );
+            debug.network_status = status;
+        }
+    }
+}
+
 void DrawDebugLocalPlayers(State& state, DebugPlayback& debug, const Graphics& graphics) {
     if (!ImGui::CollapsingHeader("Debug Local Players", ImGuiTreeNodeFlags_DefaultOpen)) {
         return;
@@ -670,6 +727,9 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Separator();
 
     DrawReconnectPolicyControls(state);
+    ImGui::Separator();
+
+    DrawSnapshotResyncControls(state, debug);
     ImGui::Separator();
 
     DrawDebugLocalPlayers(state, debug, graphics);

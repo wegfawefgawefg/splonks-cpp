@@ -1314,6 +1314,71 @@ bool IsInputLockstepSession(const State& state) {
            state.net_session.input_lockstep_enabled;
 }
 
+bool ForceLockstepSnapshotResync(
+    State& state,
+    PlayerId target_player_id,
+    std::string* status_out
+) {
+    if (!IsInputLockstepSession(state)) {
+        if (status_out != nullptr) {
+            *status_out = "No active input-lockstep session.";
+        }
+        return false;
+    }
+
+    if (state.net_session.role == NetRole::Host) {
+        if (target_player_id == kInvalidPlayerId) {
+            for (const NetPeerState& peer : state.net_session.peers) {
+                if (peer.connected && peer.player_id != state.net_session.local_player_id) {
+                    target_player_id = peer.player_id;
+                    break;
+                }
+            }
+        }
+        if (target_player_id == kInvalidPlayerId ||
+            target_player_id == state.net_session.local_player_id) {
+            if (status_out != nullptr) {
+                *status_out = "No connected remote player to resync.";
+            }
+            return false;
+        }
+
+        const auto peer_it = std::find_if(
+            state.net_session.peers.begin(),
+            state.net_session.peers.end(),
+            [target_player_id](const NetPeerState& peer) {
+                return peer.connected && peer.player_id == target_player_id;
+            }
+        );
+        if (peer_it == state.net_session.peers.end()) {
+            if (status_out != nullptr) {
+                *status_out = "Target player is not a connected remote peer.";
+            }
+            return false;
+        }
+
+        RequestHostSnapshotResync(state, target_player_id);
+        if (status_out != nullptr) {
+            *status_out = "Queued host snapshot resync for player " +
+                std::to_string(target_player_id) + ".";
+        }
+        return true;
+    }
+
+    if (state.net_session.role == NetRole::Peer) {
+        RequestHostSnapshotResync(state, state.net_session.local_player_id);
+        if (status_out != nullptr) {
+            *status_out = "Queued host snapshot resync request.";
+        }
+        return true;
+    }
+
+    if (status_out != nullptr) {
+        *status_out = "Unsupported network role for snapshot resync.";
+    }
+    return false;
+}
+
 bool HasFatalLockstepDesync(const State& state) {
     return state.net_session.lockstep_last_desync_recovery_mode ==
         LockstepDesyncRecoveryMode::FatalDesync;

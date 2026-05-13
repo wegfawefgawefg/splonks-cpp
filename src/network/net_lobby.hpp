@@ -31,6 +31,7 @@ bool ScheduleLockstepSettingsChange(
     std::uint32_t max_rollback_frames,
     std::string* status_out
 );
+bool ForceLockstepSnapshotResync(State& state, PlayerId target_player_id, std::string* status_out);
 bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
