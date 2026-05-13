@@ -314,6 +314,7 @@ add_executable(splonks-cpp
     src/render/tile_lighting.cpp
     src/render/debug.cpp
     src/render/debug_lighting.cpp
+    src/render/ents.cpp
     src/render/stone_overlay.cpp
     src/render/tiles_and_ents.cpp
     src/render/ui.cpp
