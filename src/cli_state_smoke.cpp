@@ -875,6 +875,40 @@ struct FakeLockstepPeer {
     std::vector<std::uint64_t> frame_hashes;
 };
 
+struct FakeLockstepRunRateSchedule {
+    std::uint32_t peer0_pump_every_ticks = 1;
+    std::uint32_t peer1_pump_every_ticks = 1;
+    std::uint32_t peer0_hitch_every_ticks = 0;
+    std::uint32_t peer0_hitch_length_ticks = 0;
+    std::uint32_t peer1_hitch_every_ticks = 0;
+    std::uint32_t peer1_hitch_length_ticks = 0;
+};
+
+bool ShouldPumpFakePeer(
+    const FakeLockstepRunRateSchedule& schedule,
+    network::LockstepPeerId peer_id,
+    std::uint64_t wall_tick
+) {
+    const std::uint32_t pump_every = peer_id == 0
+        ? schedule.peer0_pump_every_ticks
+        : schedule.peer1_pump_every_ticks;
+    if (pump_every > 1 && wall_tick % pump_every != 0) {
+        return false;
+    }
+
+    const std::uint32_t hitch_every = peer_id == 0
+        ? schedule.peer0_hitch_every_ticks
+        : schedule.peer1_hitch_every_ticks;
+    const std::uint32_t hitch_length = peer_id == 0
+        ? schedule.peer0_hitch_length_ticks
+        : schedule.peer1_hitch_length_ticks;
+    if (hitch_every > 0 && hitch_length > 0 &&
+        wall_tick % hitch_every < hitch_length) {
+        return false;
+    }
+    return true;
+}
+
 InputFrame GetLockstepScriptInput(
     const std::vector<std::array<InputFrame, 2>>& script,
     PlayerId player_id,
@@ -2131,7 +2165,8 @@ bool CheckInputLockstepSmoke() {
             const char* label,
             const network::NetFuzzerConfig& fuzzer,
             std::uint32_t fuzzer_seed,
-            network::LockstepFrame input_delay_frames
+            network::LockstepFrame input_delay_frames,
+            FakeLockstepRunRateSchedule run_rate = {}
         ) -> bool {
             const network::LockstepFrame total_frames =
                 static_cast<network::LockstepFrame>(script.size());
@@ -2174,45 +2209,55 @@ bool CheckInputLockstepSmoke() {
                         total_frames - 1
                     );
 
-                const network::LockstepInputPacket p0_packet =
-                    BuildLockstepInputPacket(peer0, script, latest_input_frame);
-                const network::LockstepInputPacket p1_packet =
-                    BuildLockstepInputPacket(peer1, script, latest_input_frame);
-                network.Send(wall_tick, peer0.peer_id, peer1.peer_id, p0_packet);
-                network.Send(wall_tick, peer1.peer_id, peer0.peer_id, p1_packet);
-
-                for (const network::LockstepInputPacket& packet :
-                     network.ReceiveForPeer(wall_tick, peer0.peer_id)) {
-                    for (const network::LockstepInputRecord& record : packet.records) {
-                        peer0.input_buffer.Store(record);
+                const bool pump_peer0 =
+                    ShouldPumpFakePeer(run_rate, peer0.peer_id, wall_tick);
+                const bool pump_peer1 =
+                    ShouldPumpFakePeer(run_rate, peer1.peer_id, wall_tick);
+                if (pump_peer0) {
+                    const network::LockstepInputPacket p0_packet =
+                        BuildLockstepInputPacket(peer0, script, latest_input_frame);
+                    network.Send(wall_tick, peer0.peer_id, peer1.peer_id, p0_packet);
+                    for (const network::LockstepInputPacket& packet :
+                         network.ReceiveForPeer(wall_tick, peer0.peer_id)) {
+                        for (const network::LockstepInputRecord& record : packet.records) {
+                            peer0.input_buffer.Store(record);
+                        }
+                    }
+                    if (!StepReadyLockstepFrames(
+                            peer0,
+                            required_players,
+                            peer0_audio,
+                            peer0_graphics,
+                            total_frames,
+                            step_error
+                        )) {
+                        std::cerr << "input lockstep smoke " << label
+                                  << " failed while stepping peer0: " << step_error << '\n';
+                        return false;
                     }
                 }
-                for (const network::LockstepInputPacket& packet :
-                     network.ReceiveForPeer(wall_tick, peer1.peer_id)) {
-                    for (const network::LockstepInputRecord& record : packet.records) {
-                        peer1.input_buffer.Store(record);
+                if (pump_peer1) {
+                    const network::LockstepInputPacket p1_packet =
+                        BuildLockstepInputPacket(peer1, script, latest_input_frame);
+                    network.Send(wall_tick, peer1.peer_id, peer0.peer_id, p1_packet);
+                    for (const network::LockstepInputPacket& packet :
+                         network.ReceiveForPeer(wall_tick, peer1.peer_id)) {
+                        for (const network::LockstepInputRecord& record : packet.records) {
+                            peer1.input_buffer.Store(record);
+                        }
                     }
-                }
-
-                if (!StepReadyLockstepFrames(
-                        peer0,
-                        required_players,
-                        peer0_audio,
-                        peer0_graphics,
-                        total_frames,
-                        step_error
-                    ) ||
-                    !StepReadyLockstepFrames(
-                        peer1,
-                        required_players,
-                        peer1_audio,
-                        peer1_graphics,
-                        total_frames,
-                        step_error
-                    )) {
-                    std::cerr << "input lockstep smoke " << label
-                              << " failed while stepping: " << step_error << '\n';
-                    return false;
+                    if (!StepReadyLockstepFrames(
+                            peer1,
+                            required_players,
+                            peer1_audio,
+                            peer1_graphics,
+                            total_frames,
+                            step_error
+                        )) {
+                        std::cerr << "input lockstep smoke " << label
+                                  << " failed while stepping peer1: " << step_error << '\n';
+                        return false;
+                    }
                 }
 
                 const std::size_t comparable_hashes =
@@ -2271,6 +2316,15 @@ bool CheckInputLockstepSmoke() {
         impaired.duplicate_percent = 4.0F;
         impaired.reorder_window_packets = 4;
         if (!run_case("impaired", impaired, 0x1002U, network::kDefaultLockstepInputDelayFrames)) {
+            return false;
+        }
+        FakeLockstepRunRateSchedule run_rate_skew;
+        run_rate_skew.peer1_pump_every_ticks = 2;
+        run_rate_skew.peer0_hitch_every_ticks = 97;
+        run_rate_skew.peer0_hitch_length_ticks = 3;
+        run_rate_skew.peer1_hitch_every_ticks = 131;
+        run_rate_skew.peer1_hitch_length_ticks = 5;
+        if (!run_case("run-rate-skew", clean, 0x1003U, 8, run_rate_skew)) {
             return false;
         }
         if (!RunLockstepSettingsScheduleSmoke()) {

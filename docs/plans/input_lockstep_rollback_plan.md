@@ -1162,6 +1162,9 @@ Goal: reduce input-delay feel while keeping det correctness.
 - [x] Add confirmed frame, per-second rollback count, and prediction miss rate.
 - [x] Validate artificial latency profile plumbing with live host/peer and
   `splonksctl`.
+- [x] Add CLI run-rate skew coverage: fake lockstep peers can pump network and
+  simulation work at asymmetric wall-clock cadences with periodic hitches while
+  still converging to the same deterministic frame hashes.
 - [x] Keep network `GameOver` under lockstep input. Local menu confirm no
   longer respawns only one process; synced jump/confirm input drives restart
   and all-player respawn on the same simulated frame.
