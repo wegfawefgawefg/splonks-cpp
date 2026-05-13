@@ -992,7 +992,10 @@ Goal: boot two game windows and play with delay-based lockstep.
   through `splonksctl input`; both host and peer reported the same carry links.
   Stage-exit carry is covered by `--check-input-lockstep-smoke`
   carry-transition coverage.
-- [ ] Playtest artificial latency profiles.
+- [x] Validate artificial latency profiles in a live two-process session.
+  `splonksctl net fuzzer preset tx-japan` applied to host and peer, debug input
+  advanced both players under ~320ms measured RTT, and rollback counters advanced
+  without stalling.
 - [x] Remove old authoritative ent/network baggage once lockstep is live:
   content should stop carrying special host/peer terms, stale
   request/result paths, and per-item replication hooks that are no longer part
@@ -1020,7 +1023,9 @@ Goal: reduce input-delay feel while keeping det correctness.
 - [x] Suppress duplicate pres/audio during resimulation where needed.
 - [ ] Add richer rollback debug if needed: confirmed frame, prediction miss
   rate, per-second rollback count, and average replay ms.
-- [ ] Playtest artificial latency profiles and tune default delay/prediction.
+- [x] Validate artificial latency profile plumbing with live host/peer and
+  `splonksctl`.
+- [ ] Human-playtest high-latency feel and tune default delay/prediction.
 
 Exit gate: high-latency profile remains locally responsive and hashes converge.
 
