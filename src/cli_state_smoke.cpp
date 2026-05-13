@@ -1177,6 +1177,240 @@ bool RunRollbackRepairSmoke() {
     return true;
 }
 
+struct RollbackSmokeSnapshot {
+    network::LockstepFrame frame = 0;
+    GameplaySnapshot snapshot;
+};
+
+const GameplaySnapshot* FindRollbackSmokeSnapshot(
+    const std::vector<RollbackSmokeSnapshot>& snapshots,
+    network::LockstepFrame frame
+) {
+    for (const RollbackSmokeSnapshot& entry : snapshots) {
+        if (entry.frame == frame) {
+            return &entry.snapshot;
+        }
+    }
+    return nullptr;
+}
+
+void SaveRollbackSmokeSnapshot(
+    std::vector<RollbackSmokeSnapshot>& snapshots,
+    network::LockstepFrame frame,
+    const State& state,
+    const Graphics& graphics
+) {
+    for (RollbackSmokeSnapshot& entry : snapshots) {
+        if (entry.frame == frame) {
+            entry.snapshot = MakeGameplaySnapshot(state, graphics);
+            return;
+        }
+    }
+    snapshots.push_back(RollbackSmokeSnapshot{
+        .frame = frame,
+        .snapshot = MakeGameplaySnapshot(state, graphics),
+    });
+}
+
+InputFrame PredictRollbackSmokeInput(
+    const network::LockstepInputBuffer& buffer,
+    PlayerId player_id,
+    network::LockstepFrame frame
+) {
+    const network::LockstepInputRecord* const latest =
+        buffer.FindLatestRecordBefore(player_id, frame);
+    return latest != nullptr ? latest->input : InputFrame::New();
+}
+
+bool BuildRollbackSmokeInputs(
+    network::LockstepInputBuffer& buffer,
+    network::LockstepFrame frame,
+    std::vector<InputFrame>& out_inputs
+) {
+    out_inputs.clear();
+    out_inputs.reserve(2);
+    for (PlayerId player_id : {1U, 2U}) {
+        const InputFrame* input = buffer.Find(player_id, frame);
+        if (input == nullptr && player_id == 2U) {
+            network::LockstepInputRecord predicted;
+            predicted.player_id = player_id;
+            predicted.frame = frame;
+            predicted.input = PredictRollbackSmokeInput(buffer, player_id, frame);
+            predicted.predicted = true;
+            (void)buffer.Store(predicted);
+            input = buffer.Find(player_id, frame);
+        }
+        if (input == nullptr) {
+            return false;
+        }
+        out_inputs.push_back(*input);
+    }
+    return true;
+}
+
+bool RunRollbackLatencySmoke() {
+    constexpr network::LockstepFrame kFrames = 240;
+
+    Graphics truth_graphics;
+    Graphics predicted_graphics;
+    InitCliSmokeRuntimeTables(truth_graphics);
+    InitCliSmokeRuntimeTables(predicted_graphics);
+    Audio truth_audio;
+    Audio predicted_audio;
+
+    State truth = State::New();
+    State predicted = State::New();
+    const std::vector<PlayerId> players = {1, 2};
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(truth, truth_graphics, players, failed_step) ||
+        !PrepareLockstepSmokeState(predicted, predicted_graphics, players, failed_step)) {
+        std::cerr << "rollback latency smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    const std::vector<std::array<InputFrame, 2>> script = BuildInputLockstepSmokeScript();
+    network::LockstepInputBuffer buffer;
+    std::vector<RollbackSmokeSnapshot> snapshots;
+    std::optional<network::LockstepFrame> rollback_frame;
+    std::vector<InputFrame> frame_inputs;
+    network::LockstepFrame predicted_next_frame = 0;
+    std::uint32_t rollback_count = 0;
+
+    struct Delivery {
+        network::LockstepFrame due_tick = 0;
+        network::LockstepFrame input_frame = 0;
+    };
+    std::vector<Delivery> deliveries;
+    for (network::LockstepFrame frame = 0; frame < kFrames; ++frame) {
+        const network::LockstepFrame delay =
+            2 + static_cast<network::LockstepFrame>((frame * 7U) % 6U);
+        deliveries.push_back(Delivery{.due_tick = frame + delay, .input_frame = frame});
+        if ((frame % 17U) == 0U) {
+            deliveries.push_back(Delivery{
+                .due_tick = frame + delay + 1U,
+                .input_frame = frame,
+            });
+        }
+    }
+    std::sort(
+        deliveries.begin(),
+        deliveries.end(),
+        [](const Delivery& lhs, const Delivery& rhs) {
+            if (lhs.due_tick != rhs.due_tick) {
+                return lhs.due_tick < rhs.due_tick;
+            }
+            return lhs.input_frame > rhs.input_frame;
+        }
+    );
+
+    std::size_t next_delivery = 0;
+    for (network::LockstepFrame frame = 0; frame < kFrames; ++frame) {
+        ApplyLockstepInputsToState(truth, players, {
+            script[static_cast<std::size_t>(frame)][0],
+            script[static_cast<std::size_t>(frame)][1],
+        });
+        StepSingleTickWithMode(truth, truth_audio, truth_graphics, SimulationTickMode::ReplayNoNetwork);
+    }
+
+    for (network::LockstepFrame wall_tick = 0; wall_tick < kFrames + 16U; ++wall_tick) {
+        if (wall_tick < kFrames) {
+            network::LockstepInputRecord local;
+            local.player_id = 1;
+            local.frame = wall_tick;
+            local.input = script[static_cast<std::size_t>(wall_tick)][0];
+            (void)buffer.Store(local);
+        }
+
+        while (next_delivery < deliveries.size() && deliveries[next_delivery].due_tick <= wall_tick) {
+            const network::LockstepFrame frame = deliveries[next_delivery].input_frame;
+            network::LockstepInputRecord remote;
+            remote.player_id = 2;
+            remote.frame = frame;
+            remote.input = script[static_cast<std::size_t>(frame)][1];
+            const network::LockstepInputStoreResult result = buffer.Store(remote);
+            if (result.mismatch_frame.has_value() && *result.mismatch_frame < predicted_next_frame) {
+                if (!rollback_frame.has_value() || *result.mismatch_frame < *rollback_frame) {
+                    rollback_frame = *result.mismatch_frame;
+                }
+            }
+            ++next_delivery;
+        }
+
+        if (rollback_frame.has_value()) {
+            const network::LockstepFrame target = predicted_next_frame;
+            const GameplaySnapshot* const snapshot =
+                FindRollbackSmokeSnapshot(snapshots, *rollback_frame);
+            if (snapshot == nullptr) {
+                std::cerr << "rollback latency smoke failed: missing snapshot\n";
+                return false;
+            }
+            RestoreGameplaySnapshot(*snapshot, predicted, predicted_graphics);
+            predicted_next_frame = *rollback_frame;
+            rollback_frame = std::nullopt;
+            rollback_count += 1;
+            while (predicted_next_frame < target) {
+                if (!BuildRollbackSmokeInputs(buffer, predicted_next_frame, frame_inputs)) {
+                    std::cerr << "rollback latency smoke failed during replay input build\n";
+                    return false;
+                }
+                SaveRollbackSmokeSnapshot(
+                    snapshots,
+                    predicted_next_frame,
+                    predicted,
+                    predicted_graphics
+                );
+                ApplyLockstepInputsToState(predicted, players, frame_inputs);
+                StepSingleTickWithMode(
+                    predicted,
+                    predicted_audio,
+                    predicted_graphics,
+                    SimulationTickMode::ReplayNoNetwork
+                );
+                predicted_next_frame += 1;
+            }
+        }
+
+        if (predicted_next_frame < kFrames) {
+            if (!BuildRollbackSmokeInputs(buffer, predicted_next_frame, frame_inputs)) {
+                continue;
+            }
+            SaveRollbackSmokeSnapshot(
+                snapshots,
+                predicted_next_frame,
+                predicted,
+                predicted_graphics
+            );
+            ApplyLockstepInputsToState(predicted, players, frame_inputs);
+            StepSingleTickWithMode(
+                predicted,
+                predicted_audio,
+                predicted_graphics,
+                SimulationTickMode::ReplayNoNetwork
+            );
+            predicted_next_frame += 1;
+        }
+    }
+
+    if (predicted_next_frame != kFrames || next_delivery != deliveries.size()) {
+        std::cerr << "rollback latency smoke failed: did not finish all frames/deliveries\n";
+        return false;
+    }
+    if (rollback_count == 0) {
+        std::cerr << "rollback latency smoke failed: no rollback was exercised\n";
+        return false;
+    }
+    if (!CompareCanonicalFingerprints(truth, predicted, "rollback latency final")) {
+        std::cerr << "  first simple diff: "
+                  << DescribeFirstStateDifference(truth, predicted) << '\n';
+        return false;
+    }
+
+    std::cout << "rollback latency smoke ok: frames=" << kFrames
+              << " rollbacks=" << rollback_count << '\n';
+    return true;
+}
+
 } // namespace
 
 bool CheckStateFingerprintSmoke() {
@@ -1962,6 +2196,9 @@ bool CheckInputLockstepSmoke() {
         }
 
         if (!RunRollbackRepairSmoke()) {
+            return false;
+        }
+        if (!RunRollbackLatencySmoke()) {
             return false;
         }
 

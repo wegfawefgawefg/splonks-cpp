@@ -94,6 +94,25 @@ Current facts:
 - Rollback is the route to local-feeling controls over long-distance links, but
   it requires retaining and replaying deterministic state.
 
+Implementation direction:
+
+1. Keep configurable input delay as the safe baseline.
+   Delay is deterministic and easy to reason about. It should remain selectable
+   before hosting and visible in debug, because some links may be stable enough
+   to prefer pure delay over frequent rollback.
+2. Use rollback to make the default delay small.
+   The default should stay near `2` frames on good links. Missing remote inputs
+   are predicted, late differing inputs rewind to the saved gameplay snapshot,
+   and the sim replays to the present.
+3. Prove correctness before hiding correction artifacts.
+   The first exit gate is final-state equality under latency/jitter/reorder.
+   Smoothing, camera polish, and duplicate presentation suppression come after
+   rollback replay is deterministic.
+4. Keep gameplay code unaware of networking.
+   Items, ents, traps, shops, fluids, and stage progression should only consume
+   `InputFrame`s and normal state. The lockstep scheduler owns delay,
+   prediction, snapshots, rollback, and replay.
+
 Phase 1: configurable delay.
 
 - [x] Add a host-side debug/network control for `lockstep_input_delay_frames`
@@ -142,6 +161,11 @@ Phase 2: rollback.
   rollback span, max rollback span, last replay ms, and retained snapshot count.
 - [ ] Add richer rollback telemetry later if needed: per-second rollback count,
   average replay ms, and latest mismatch source.
+- [x] Add a focused rollback repair smoke that replaces a wrong predicted input
+  with the real input and proves final state equality after replay.
+- [x] Add a latency/jitter/reorder rollback smoke that forces repeated late
+  remote input delivery, exercises multiple rollbacks, and proves final state
+  equality.
 
 Rollback prerequisites:
 
@@ -152,8 +176,8 @@ Rollback prerequisites:
   equivalent deterministic stream, never process-local random calls.
 - [ ] Audit non-deterministic timers and real-time reads. Simulation decisions
   must depend on frame/tick state, not wall-clock time.
-- [ ] Decide snapshot scope: full `State` copy first for correctness, then
-  optimize entity/state storage only if memory or replay cost requires it.
+- [x] Use broad gameplay snapshot scope first for correctness, then optimize
+  entity/state storage only if memory or replay cost requires it.
 - [ ] Make rollback explicitly exclude presentation-only state if it cannot
   affect gameplay. If presentation state affects gameplay, it is not
   presentation-only and must be deterministic.
@@ -976,17 +1000,21 @@ lockstep only.
 
 ### Phase 7: Rollback
 
-Goal: remove input-delay feel while keeping det correctness.
+Goal: reduce input-delay feel while keeping det correctness.
 
-- [ ] Add save-state ring for the last `N` gameplay frames.
-- [ ] Store input history for every player.
-- [ ] Predict missing remote inputs. Initial policy: repeat last input.
-- [ ] On late real input mismatch, restore last agreed frame and resimulate to
+- [x] Add save-state ring for recent gameplay frames.
+- [x] Store input history for every player.
+- [x] Predict missing remote inputs. Initial policy: repeat last input.
+- [x] On late real input mismatch, restore the mismatch frame and resimulate to
   current frame.
-- [ ] Suppress duplicate pres/audio during resimulation.
-- [ ] Add rollback debug: current frame, confirmed frame, rollback count,
-  rollback span, prediction miss rate.
-- [ ] Add fuzzer tests for rollback under latency/jitter/loss.
+- [x] Add rollback debug: rollback count, last rollback span, max rollback span,
+  last replay ms, and retained snapshot count.
+- [x] Add fuzzer/smoke coverage for rollback under delayed, duplicated, and
+  reordered remote inputs.
+- [ ] Suppress duplicate pres/audio during resimulation where needed.
+- [ ] Add richer rollback debug if needed: confirmed frame, prediction miss
+  rate, per-second rollback count, and average replay ms.
+- [ ] Playtest artificial latency profiles and tune default delay/prediction.
 
 Exit gate: high-latency profile remains locally responsive and hashes converge.
 
