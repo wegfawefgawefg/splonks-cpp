@@ -852,11 +852,117 @@ Allowed policies:
   snapshot frame.
 - Reconnect by restoring a retained player slot at the next safe sync point.
 
-Current implementation target: peers should normally join before stage start,
-but the protocol now has the machinery needed for same-stage hard resync: the
-host can send a chunked current gameplay snapshot, freeze lockstep while the
-peer applies it, and resume once the peer acknowledges. Late active-stage join
-can reuse that same snapshot lane once we add the join-policy UI/validation.
+Current implementation target: late join is a normal join-barrier flow, not a
+desync-recovery flow. Desync recovery may reuse snapshot serialization, but the
+session state and UI must make it clear whether the game is paused because a
+player is joining or because a peer diverged.
+
+### Join Barrier Catchup Plan
+
+Goal: a peer can join an already-running lockstep session without permanently
+stalling the game, and every connected process sees a clear loading state while
+the host catches that peer up.
+
+Important constraints:
+
+- Joins are serialized. It is unlikely that multiple peers join at the exact
+  same time, but a second join can arrive while the first peer is catching up.
+- A peer that joins during a barrier is accepted into a waiting queue, not
+  rejected and not parallel-streamed.
+- Existing synced peers do not step simulation while the host is changing the
+  player set. They display a join/loading overlay until the host releases the
+  barrier.
+- The host remains the source of the catchup snapshot.
+- Late join and desync repair can share chunked snapshot transport, but they
+  must not share ambiguous state names. Join uses a `JoinBarrier`; desync repair
+  uses `SnapshotRepair`.
+
+Host state machine:
+
+- `Running`: normal lockstep. Join requests are accepted and transition to
+  `JoinBarrier`.
+- `JoinBarrier`: simulation is paused for every connected process. The host has
+  a queue of waiting player ids.
+- `CatchingUpPeer`: one queued peer is receiving the host snapshot.
+- `WaitingForPeerAck`: all chunks were sent at least once; host waits for the
+  peer's snapshot-applied ack.
+- `ResumeScheduled`: all queued peers are synced. Host broadcasts a resume
+  frame/settings packet.
+- `Running`: all processes resume from the same lockstep frame.
+
+Peer state machine:
+
+- `Joining`: sent join request, waiting for accept.
+- `WaitingForCatchup`: accepted but not currently receiving snapshot chunks.
+- `ReceivingCatchup`: receiving chunked snapshot from host.
+- `ApplyingCatchup`: reconstructing and applying the snapshot.
+- `ReadyAtBarrier`: snapshot applied and acked; waiting for host resume.
+- `Running`: normal lockstep.
+
+Protocol work:
+
+- Add an explicit `JoinBarrierStatus` packet from host to every peer.
+- Add fields: barrier id, active target player id, queued player ids, snapshot
+  transfer id, total chunks, received/sent chunks, total bytes, sent bytes, and
+  text phase.
+- Add an explicit `JoinBarrierResume` packet with barrier id and resume
+  lockstep frame.
+- Reuse `SnapshotResyncChunkPacket` payload format if practical, but rename or
+  wrap the active path so join catchup does not report as
+  `last_desync_recovery_mode=snapshot-catchup`.
+- Host should pump enough chunks per frame to complete local/LAN joins quickly
+  without starving input/ack packets. Chunk budget should be separately tunable
+  from desync-repair retry policy.
+- Peer acks must identify barrier id and transfer id so late/stale acks do not
+  release the wrong barrier.
+
+Loading overlay:
+
+- Show on every process while `JoinBarrier` is active.
+- Center text above the bar:
+  `Catching Player <id> up...`
+- If this process is queued but not active:
+  `Waiting to catch up Player <id>...`
+- If this process is already synced and waiting:
+  `Waiting for Player <id>...`
+- Bar progress:
+  `received_chunks / total_chunks` on the catching peer.
+- Host/existing peers display active peer progress from the last
+  `JoinBarrierStatus` packet:
+  `sent_chunks / total_chunks` until ack, then complete.
+- Text below the bar should include the current phase and byte progress:
+  `Sending world snapshot: <sent_bytes>/<total_bytes>`
+  `Applying world snapshot`
+  `Waiting for ready ack`
+  `Queued: Player 4, Player 5`
+- If snapshot serialization later becomes sectioned, report sections:
+  `Stage tiles`, `Ents`, `Players`, `Fluids`, `Lighting`, `Run state`.
+  Until then, the honest section name is `World snapshot`.
+
+Implementation checklist:
+
+- [ ] Add join-barrier fields to `NetSessionState`: mode, barrier id, queued
+  player ids, active player id, active transfer id, chunk counts, byte counts,
+  phase text/status, and resume frame.
+- [ ] Replace join-time `RequestHostSnapshotResync` calls with
+  `BeginOrQueueJoinBarrierForPeer`.
+- [ ] Make `PrepareInputLockstepFrame` block on `JoinBarrier`, not on
+  desync-recovery state.
+- [ ] Keep packet pumping active during the barrier so chunks, acks, ping, and
+  new join requests continue moving.
+- [ ] Stream one queued peer at a time; when that peer acks, pop the next queued
+  peer.
+- [ ] Broadcast `JoinBarrierStatus` regularly to all existing peers and queued
+  peers.
+- [ ] Broadcast `JoinBarrierResume` once the queue drains, then clear the
+  barrier on every process.
+- [ ] Add a render overlay for join barrier loading text/progress.
+- [ ] Add debug/network panel fields for current barrier state and queue.
+- [ ] Add a fake/headless test for host + two existing peers + one late join.
+- [ ] Add a fake/headless test where a second peer joins while the first peer is
+  catching up.
+- [ ] Add a live quad-launch validation note once `$mod+Shift+F9` can boot, join
+  all three peers, complete catchup, and start stepping without manual action.
 
 Reconnect policy:
 
