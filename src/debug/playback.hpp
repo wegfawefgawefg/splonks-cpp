@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "graphics.hpp"
+#include "network/lockstep_config.hpp"
 #include "state.hpp"
 
 #include <SDL3/SDL.h>
@@ -134,6 +135,8 @@ struct DebugPlayback {
     std::string aframe_reload_status;
     int network_host_port = 42424;
     int network_join_port = 42424;
+    int network_lockstep_input_delay_frames =
+        static_cast<int>(network::kDefaultLockstepInputDelayFrames);
     std::array<char, 64> network_join_host{};
     std::string network_status;
     bool tile_brush_enabled = false;

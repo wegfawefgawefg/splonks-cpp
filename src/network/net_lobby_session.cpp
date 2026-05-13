@@ -25,7 +25,12 @@ NetTransportRuntime& EnsureTransport(State& state) {
 
 } // namespace
 
-bool StartHostSession(State& state, std::uint16_t port, std::string* status_out) {
+bool StartHostSession(
+    State& state,
+    std::uint16_t port,
+    std::uint32_t input_delay_frames,
+    std::string* status_out
+) {
     NetTransportRuntime& transport = EnsureTransport(state);
     std::string error;
     if (!transport.socket.Open(port, &error)) {
@@ -38,6 +43,7 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
     state.net_session = NetSessionState::NewOffline();
     state.net_session.role = NetRole::Host;
     state.net_session.input_lockstep_enabled = true;
+    state.net_session.lockstep_input_delay_frames = ClampLockstepInputDelayFrames(input_delay_frames);
     state.net_session.local_player_id = kPrimaryLocalPlayerId;
     state.net_session.host_player_id = kPrimaryLocalPlayerId;
     state.net_session.next_player_id = kFirstRemotePlayerId;
@@ -57,6 +63,10 @@ bool StartHostSession(State& state, std::uint16_t port, std::string* status_out)
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
     }
     return true;
+}
+
+bool StartHostSession(State& state, std::uint16_t port, std::string* status_out) {
+    return StartHostSession(state, port, kDefaultLockstepInputDelayFrames, status_out);
 }
 
 bool JoinHostSession(

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "network/lockstep_config.hpp"
 #include "network/net_ids.hpp"
 #include "network/net_limits.hpp"
 
@@ -54,7 +55,7 @@ struct JoinAcceptPacket {
     float host_spawn_y = 0.0F;
     std::uint32_t stage_seed = 1;
     std::uint64_t lockstep_start_frame = 0;
-    std::uint32_t lockstep_input_delay_frames = 8;
+    std::uint32_t lockstep_input_delay_frames = kDefaultLockstepInputDelayFrames;
     std::uint8_t multiplayer_respawn_mode = 0;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};

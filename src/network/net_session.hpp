@@ -4,6 +4,7 @@
 #include "ent/core_types.hpp"
 #include "math_types.hpp"
 #include "network/input_lockstep.hpp"
+#include "network/lockstep_config.hpp"
 #include "network/net_fuzzer.hpp"
 #include "network/net_ids.hpp"
 #include "vid.hpp"
@@ -128,7 +129,7 @@ struct NetSessionState {
     LockstepInputBuffer lockstep_input_buffer;
     LockstepFrame lockstep_next_frame_to_step = 0;
     LockstepFrame lockstep_next_local_input_frame = 0;
-    std::uint32_t lockstep_input_delay_frames = 8;
+    std::uint32_t lockstep_input_delay_frames = kDefaultLockstepInputDelayFrames;
     std::uint32_t lockstep_next_input_sequence = 1;
     std::uint64_t lockstep_last_confirmed_hash_frame = 0;
     std::uint64_t lockstep_last_confirmed_hash = 0;

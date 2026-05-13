@@ -95,19 +95,19 @@ Current facts:
 
 Phase 1: configurable delay.
 
-- [ ] Add a host-side debug/network control for `lockstep_input_delay_frames`
+- [x] Add a host-side debug/network control for `lockstep_input_delay_frames`
   before hosting.
-- [ ] Display delay in both frames and milliseconds.
-- [ ] Display measured RTT/jitter per peer on host and peer.
-- [ ] Add an automatic suggested delay:
+- [x] Display delay in both frames and milliseconds.
+- [x] Display measured RTT/jitter per peer on host and peer.
+- [x] Add an automatic suggested delay:
   `ceil(((RTT / 2) + jitter_margin_ms) / frame_ms) + safety_frames`.
-- [ ] Keep active-session delay changes disabled at first. The join accept
+- [x] Keep active-session delay changes disabled at first. The join accept
   already carries the initial host-selected delay, so pre-session tuning is
   safe.
 - [ ] If live delay changes are needed later, apply them as a scheduled
   lockstep setting change at a future frame. Never mutate delay immediately on
   one process.
-- [ ] Add a smoke or control-server check that starts a fake session with a
+- [x] Add a smoke or control-server check that starts a fake session with a
   non-default delay and proves both sides step identically.
 
 Expected useful delay presets:

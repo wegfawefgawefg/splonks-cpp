@@ -12,6 +12,12 @@ struct State;
 namespace network {
 
 bool StartHostSession(State& state, std::uint16_t port, std::string* status_out);
+bool StartHostSession(
+    State& state,
+    std::uint16_t port,
+    std::uint32_t input_delay_frames,
+    std::string* status_out
+);
 bool JoinHostSession(State& state, const std::string& host, std::uint16_t port, std::string* status_out);
 void DisconnectSession(State& state, std::string* status_out);
 bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);

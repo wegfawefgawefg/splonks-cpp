@@ -28,6 +28,20 @@ const char* NetRoleName(network::NetRole role) {
     return "Unknown";
 }
 
+constexpr float kNetworkFrameMs = 1000.0F / 60.0F;
+
+int SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
+    constexpr float kSafetyFrames = 1.0F;
+    const float one_way_ms = std::max(0.0F, ping_ms) * 0.5F;
+    const float jitter_margin_ms = std::max(2.0F, std::max(0.0F, jitter_ms) * 2.0F);
+    const float frames = std::ceil((one_way_ms + jitter_margin_ms) / kNetworkFrameMs + kSafetyFrames);
+    return static_cast<int>(std::clamp(
+        frames,
+        static_cast<float>(network::kMinLockstepInputDelayFrames),
+        static_cast<float>(network::kMaxLockstepInputDelayFrames)
+    ));
+}
+
 const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
     switch (mode) {
     case network::NetReconnectSpawnMode::FreshAtEntrance:
@@ -317,6 +331,28 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         ? "open :" + std::to_string(network::BoundTransportPort(state))
         : "closed";
     ImGui::Text("Socket: %s", socket_text.c_str());
+    const bool can_change_delay = !network::IsTransportOpen(state);
+    if (!can_change_delay) {
+        ImGui::BeginDisabled();
+    }
+    ImGui::SliderInt(
+        "Input delay frames",
+        &debug.network_lockstep_input_delay_frames,
+        static_cast<int>(network::kMinLockstepInputDelayFrames),
+        static_cast<int>(network::kMaxLockstepInputDelayFrames)
+    );
+    if (!can_change_delay) {
+        ImGui::EndDisabled();
+    }
+    debug.network_lockstep_input_delay_frames = static_cast<int>(network::ClampLockstepInputDelayFrames(
+        static_cast<std::uint32_t>(std::max(0, debug.network_lockstep_input_delay_frames))
+    ));
+    ImGui::Text(
+        "Configured delay: %d frames (%.1fms)%s",
+        debug.network_lockstep_input_delay_frames,
+        static_cast<float>(debug.network_lockstep_input_delay_frames) * kNetworkFrameMs,
+        can_change_delay ? "" : " active next session"
+    );
     ImGui::InputInt("Host port", &debug.network_host_port);
     if (ImGui::Button("Host")) {
         const int clamped_port = std::clamp(debug.network_host_port, 1, 65535);
@@ -324,6 +360,7 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         (void)network::StartHostSession(
             state,
             static_cast<std::uint16_t>(clamped_port),
+            static_cast<std::uint32_t>(debug.network_lockstep_input_delay_frames),
             &debug.network_status
         );
     }
@@ -355,14 +392,16 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
     if (!state.net_session.peers.empty()) {
         ImGui::Text("Peers:");
         for (const network::NetPeerState& peer : state.net_session.peers) {
+            const int suggested_delay = SuggestedLockstepDelayFrames(peer.estimated_ping_ms, peer.jitter_ms);
             ImGui::BulletText(
-                "player=%u %s %s:%u ping=%.1fms jitter=%.1fms",
+                "player=%u %s %s:%u ping=%.1fms jitter=%.1fms suggested_delay=%d",
                 peer.player_id,
                 peer.display_name.c_str(),
                 peer.endpoint_address.c_str(),
                 peer.endpoint_port,
                 peer.estimated_ping_ms,
-                peer.jitter_ms
+                peer.jitter_ms,
+                suggested_delay
             );
         }
     }
@@ -401,10 +440,11 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     if (session.input_lockstep_enabled) {
         ImGui::TextUnformatted("Input lockstep: enabled");
         ImGui::Text(
-            "Frame: next=%llu local_inputs=%llu delay=%u",
+            "Frame: next=%llu local_inputs=%llu delay=%u (%.1fms)",
             static_cast<unsigned long long>(session.lockstep_next_frame_to_step),
             static_cast<unsigned long long>(session.lockstep_next_local_input_frame),
-            session.lockstep_input_delay_frames
+            session.lockstep_input_delay_frames,
+            static_cast<float>(session.lockstep_input_delay_frames) * kNetworkFrameMs
         );
     }
     ImGui::Separator();

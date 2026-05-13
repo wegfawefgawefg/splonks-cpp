@@ -1364,11 +1364,11 @@ bool CheckInputLockstepSmoke() {
         const auto run_case = [&](
             const char* label,
             const network::NetFuzzerConfig& fuzzer,
-            std::uint32_t fuzzer_seed
+            std::uint32_t fuzzer_seed,
+            network::LockstepFrame input_delay_frames
         ) -> bool {
             const network::LockstepFrame total_frames =
                 static_cast<network::LockstepFrame>(script.size());
-            constexpr network::LockstepFrame kInputDelayFrames = 8;
             constexpr std::uint64_t kMaxWallTicks = 6000;
 
             FakeLockstepPeer peer0;
@@ -1386,6 +1386,10 @@ bool CheckInputLockstepSmoke() {
                           << (failed_step != nullptr ? failed_step : "unknown") << '\n';
                 return false;
             }
+            peer0.state.net_session.lockstep_input_delay_frames =
+                network::ClampLockstepInputDelayFrames(static_cast<std::uint32_t>(input_delay_frames));
+            peer1.state.net_session.lockstep_input_delay_frames =
+                network::ClampLockstepInputDelayFrames(static_cast<std::uint32_t>(input_delay_frames));
 
             if (!CompareCanonicalFingerprints(peer0.state, peer1.state, "input lockstep initial")) {
                 std::cerr << "  first simple diff: "
@@ -1400,7 +1404,7 @@ bool CheckInputLockstepSmoke() {
             for (std::uint64_t wall_tick = 0; wall_tick < kMaxWallTicks; ++wall_tick) {
                 const network::LockstepFrame latest_input_frame =
                     std::min<network::LockstepFrame>(
-                        static_cast<network::LockstepFrame>(wall_tick) + kInputDelayFrames,
+                        static_cast<network::LockstepFrame>(wall_tick) + input_delay_frames,
                         total_frames - 1
                     );
 
@@ -1468,6 +1472,7 @@ bool CheckInputLockstepSmoke() {
                         ComputeGameplayDeterminismFingerprint(peer0.state);
                     std::cout << "input lockstep smoke " << label
                               << " ok: frames=" << total_frames
+                              << " input_delay=" << input_delay_frames
                               << " wall_ticks=" << (wall_tick + 1)
                               << " sent=" << network.stats.packets_sent
                               << " recv=" << network.stats.packets_received
@@ -1492,14 +1497,14 @@ bool CheckInputLockstepSmoke() {
 
         network::NetFuzzerConfig clean;
         clean.enabled = false;
-        if (!run_case("clean", clean, 0x1001U)) {
+        if (!run_case("clean", clean, 0x1001U, 3)) {
             return false;
         }
 
         network::NetFuzzerConfig impaired = network::NetFuzzerConfig::TexasToCaliforniaPreset();
         impaired.duplicate_percent = 4.0F;
         impaired.reorder_window_packets = 4;
-        if (!run_case("impaired", impaired, 0x1002U)) {
+        if (!run_case("impaired", impaired, 0x1002U, network::kDefaultLockstepInputDelayFrames)) {
             return false;
         }
 
