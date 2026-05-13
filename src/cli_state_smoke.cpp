@@ -1276,6 +1276,8 @@ bool RunRollbackLatencySmoke() {
     std::vector<InputFrame> frame_inputs;
     network::LockstepFrame predicted_next_frame = 0;
     std::uint32_t rollback_count = 0;
+    std::uint32_t prediction_miss_count = 0;
+    std::uint32_t prediction_late_match_count = 0;
 
     struct Delivery {
         network::LockstepFrame due_tick = 0;
@@ -1329,6 +1331,13 @@ bool RunRollbackLatencySmoke() {
             remote.frame = frame;
             remote.input = script[static_cast<std::size_t>(frame)][1];
             const network::LockstepInputStoreResult result = buffer.Store(remote);
+            if (result.replaced_prediction) {
+                if (result.mismatch_frame.has_value()) {
+                    prediction_miss_count += 1;
+                } else {
+                    prediction_late_match_count += 1;
+                }
+            }
             if (result.mismatch_frame.has_value() && *result.mismatch_frame < predicted_next_frame) {
                 if (!rollback_frame.has_value() || *result.mismatch_frame < *rollback_frame) {
                     rollback_frame = *result.mismatch_frame;
@@ -1400,6 +1409,18 @@ bool RunRollbackLatencySmoke() {
         std::cerr << "rollback latency smoke failed: no rollback was exercised\n";
         return false;
     }
+    if (prediction_miss_count == 0) {
+        std::cerr << "rollback latency smoke failed: prediction misses were not tracked\n";
+        return false;
+    }
+    if (prediction_miss_count + prediction_late_match_count == 0) {
+        std::cerr << "rollback latency smoke failed: no predicted input resolutions were tracked\n";
+        return false;
+    }
+    if (buffer.PredictedRecordCount() != 0) {
+        std::cerr << "rollback latency smoke failed: predicted inputs were left unresolved\n";
+        return false;
+    }
     if (!CompareCanonicalFingerprints(truth, predicted, "rollback latency final")) {
         std::cerr << "  first simple diff: "
                   << DescribeFirstStateDifference(truth, predicted) << '\n';
@@ -1407,7 +1428,9 @@ bool RunRollbackLatencySmoke() {
     }
 
     std::cout << "rollback latency smoke ok: frames=" << kFrames
-              << " rollbacks=" << rollback_count << '\n';
+              << " rollbacks=" << rollback_count
+              << " prediction_misses=" << prediction_miss_count
+              << " prediction_late_matches=" << prediction_late_match_count << '\n';
     return true;
 }
 
