@@ -214,6 +214,44 @@ void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
     }
 }
 
+void ValidateRemoteHashesAfterReplay(
+    State& state,
+    LockstepFrame first_frame,
+    LockstepFrame end_frame
+) {
+    bool checked_any = false;
+    for (const LockstepRemoteHashRecord& remote : state.net_session.lockstep_remote_hash_history) {
+        if (remote.frame < first_frame || remote.frame >= end_frame) {
+            continue;
+        }
+        const LockstepHashRecord* const local = FindLocalHashRecord(state, remote.frame);
+        if (local == nullptr) {
+            continue;
+        }
+        checked_any = true;
+        if (local->hash != remote.hash) {
+            state.net_session.lockstep_last_mismatch_peer_id = remote.peer_id;
+            state.net_session.lockstep_last_mismatch_frame = remote.frame;
+            state.net_session.lockstep_last_mismatch_local_hash = local->hash;
+            state.net_session.lockstep_last_mismatch_remote_hash = remote.hash;
+            state.net_session.lockstep_last_desync_recovery_mode =
+                LockstepDesyncRecoveryMode::FatalDesync;
+            return;
+        }
+        if (!state.net_session.lockstep_has_confirmed_hash ||
+            remote.frame >= state.net_session.lockstep_last_confirmed_hash_frame) {
+            state.net_session.lockstep_last_confirmed_hash_frame = remote.frame;
+            state.net_session.lockstep_last_confirmed_hash = local->hash;
+            state.net_session.lockstep_has_confirmed_hash = true;
+        }
+    }
+    if (checked_any && state.net_session.lockstep_last_desync_recovery_mode ==
+        LockstepDesyncRecoveryMode::PendingRollback) {
+        state.net_session.lockstep_last_desync_recovery_mode =
+            LockstepDesyncRecoveryMode::RollbackRepaired;
+    }
+}
+
 void ProcessPendingRemoteHashes(State& state) {
     auto& pending = state.net_session.lockstep_pending_remote_hashes;
     pending.erase(
@@ -746,17 +784,6 @@ void DiscardLockstepHashesFromFrame(State& state, LockstepFrame frame) {
         state.net_session.lockstep_last_sent_hash_frame >= frame) {
         state.net_session.lockstep_has_sent_hash = false;
     }
-    auto& remote_history = state.net_session.lockstep_remote_hash_history;
-    remote_history.erase(
-        std::remove_if(
-            remote_history.begin(),
-            remote_history.end(),
-            [frame](const LockstepRemoteHashRecord& record) {
-                return record.frame >= frame;
-            }
-        ),
-        remote_history.end()
-    );
     auto& pending = state.net_session.lockstep_pending_remote_hashes;
     pending.erase(
         std::remove_if(
@@ -919,7 +946,12 @@ bool ReplayRollbackWindow(
         StepSingleTickWithMode(state, replay_audio, graphics, SimulationTickMode::ReplayNoNetwork);
         RecordCompletedLockstepHash(state, frame);
     }
+    ValidateRemoteHashesAfterReplay(state, rollback_frame, target_frame);
     RestoreRollbackPresentationState(presentation_snapshot, state, graphics);
+    if (state.net_session.lockstep_last_desync_recovery_mode ==
+        LockstepDesyncRecoveryMode::FatalDesync) {
+        return false;
+    }
 
     const auto replay_end = std::chrono::steady_clock::now();
     const std::chrono::duration<float, std::milli> replay_ms = replay_end - replay_start;
@@ -967,6 +999,11 @@ bool IsInputLockstepActive(const State& state) {
 bool IsInputLockstepSession(const State& state) {
     return state.net_session.role != NetRole::Offline &&
            state.net_session.input_lockstep_enabled;
+}
+
+bool HasFatalLockstepDesync(const State& state) {
+    return state.net_session.lockstep_last_desync_recovery_mode ==
+        LockstepDesyncRecoveryMode::FatalDesync;
 }
 
 void ResetInputLockstepState(State& state) {
@@ -1020,6 +1057,9 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     transport.fuzzer_config = state.net_session.fuzzer_config;
     RecordPreviousCompletedLockstepHash(state);
     PumpInputLockstepPackets(state, graphics, transport);
+    if (HasFatalLockstepDesync(state)) {
+        return false;
+    }
     if (state.net_session.role == NetRole::Host && transport.remotes.empty()) {
         return false;
     }

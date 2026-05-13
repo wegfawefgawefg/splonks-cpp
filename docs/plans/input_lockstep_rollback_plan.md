@@ -1213,9 +1213,10 @@ Implementation steps:
    - [x] If the last matching frame is inside the rollback snapshot window,
      request rollback from that frame and replay to current using recorded
      inputs.
-   - [ ] Re-hash after replay and clear the mismatch if hashes converge.
-   - [ ] If the match is outside rollback history, or replay still diverges,
-     force a same-stage snapshot resync or disconnect with a desync dump.
+   - [x] Re-hash after replay and clear the mismatch if hashes converge.
+   - [x] If the match is outside rollback history, or replay still diverges,
+     enter explicit fatal-desync mode and stop lockstep stepping. Later work can
+     replace this with same-stage snapshot resync.
    - [x] Make the fallback explicit in debug: `rollback-repaired`,
      `snapshot-resynced`, or `fatal-desync`.
 5. Smoke tests.
@@ -1223,7 +1224,7 @@ Implementation steps:
      hash mismatch is detected, rollback repairs it, and final hashes match.
    - [x] Add a test where the mismatch is older than rollback history and the
      code takes the configured hard-resync/fatal path.
-   - [ ] Add packet-loss/reorder coverage for hash packets so missing hash
+   - [x] Add packet-loss/reorder coverage for hash packets so missing hash
      samples do not stall the sim.
 
 Implemented first pass:
@@ -1234,10 +1235,16 @@ Implemented first pass:
   matching sample, not another peer's confirmation.
 - Mismatch telemetry in Debug Network and `splonksctl net`.
 - Rollback request when a matching rollback snapshot is available.
+- Replay rechecks retained remote hash samples against newly generated local
+  hashes and marks recovery repaired only if they converge.
 - Fatal-desync marker when recovery history is unavailable.
 - Fatal-desync marker when a mismatch arrives before any real confirmed hash.
+- Fatal-desync mode now stops lockstep stepping instead of silently continuing.
 - Smoke coverage for packet roundtrip, mismatch detection, rollback request,
   and fatal fallback.
+- The impaired input-lockstep smoke runs with hash exchange enabled, so dropped
+  or reordered hash samples are covered by the same packet fuzzer as input and
+  settings packets.
 
 Default policy:
 
