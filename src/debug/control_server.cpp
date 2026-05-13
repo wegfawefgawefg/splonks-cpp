@@ -889,6 +889,8 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"snapshot_frame\":" << state.net_session.lockstep_snapshot_resync_frame
         << ",\"chunk_count\":" << state.net_session.lockstep_snapshot_resync_chunk_count
         << ",\"total_bytes\":" << state.net_session.lockstep_snapshot_resync_total_bytes
+        << ",\"next_chunk_to_send\":"
+        << state.net_session.lockstep_snapshot_resync_next_chunk_to_send
         << ",\"received_chunks\":"
         << std::count(
                state.net_session.lockstep_snapshot_resync_received_chunks.begin(),

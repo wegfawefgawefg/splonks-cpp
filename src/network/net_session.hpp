@@ -200,6 +200,7 @@ struct NetSessionState {
     std::uint64_t lockstep_snapshot_resync_frame = 0;
     std::uint32_t lockstep_snapshot_resync_chunk_count = 0;
     std::uint32_t lockstep_snapshot_resync_total_bytes = 0;
+    std::uint32_t lockstep_snapshot_resync_next_chunk_to_send = 0;
     std::vector<std::uint8_t> lockstep_snapshot_resync_bytes;
     std::vector<std::uint8_t> lockstep_snapshot_resync_received_chunks;
     std::uint32_t lockstep_snapshot_resync_retry_ticks = 0;

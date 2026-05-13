@@ -19,6 +19,7 @@ namespace {
 
 constexpr LockstepFrame kInputHistoryFrames = 12;
 constexpr std::size_t kMaxPendingRemoteHashes = 128;
+constexpr std::uint32_t kSnapshotResyncChunksPerPump = 48;
 
 struct RollbackPresentationSnapshot {
     ParticleSystem particles;
@@ -86,6 +87,7 @@ void RequestHostSnapshotResync(State& state, PlayerId target_peer_id) {
     state.net_session.lockstep_snapshot_resync_pending_request = true;
     state.net_session.lockstep_snapshot_resync_target_peer_id = target_peer_id;
     state.net_session.lockstep_snapshot_resync_active_transfer_id = 0;
+    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = 0;
     state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
     state.net_session.lockstep_snapshot_resync_waiting_for_ack = false;
     state.net_session.lockstep_snapshot_resync_bytes.clear();
@@ -117,15 +119,16 @@ void SendSnapshotResyncStoredChunks(
         return;
     }
 
-    const std::vector<std::uint8_t>& bytes =
-        state.net_session.lockstep_snapshot_resync_bytes;
-    for (std::uint32_t chunk_index = 0;
-         chunk_index < state.net_session.lockstep_snapshot_resync_chunk_count;
-         ++chunk_index) {
+    const std::vector<std::uint8_t>& bytes = state.net_session.lockstep_snapshot_resync_bytes;
+    const std::uint32_t chunk_count = state.net_session.lockstep_snapshot_resync_chunk_count;
+    std::uint32_t chunk_index =
+        state.net_session.lockstep_snapshot_resync_next_chunk_to_send % chunk_count;
+    for (std::uint32_t sent = 0; sent < kSnapshotResyncChunksPerPump; ++sent) {
         const std::size_t begin =
             static_cast<std::size_t>(chunk_index) * kNetSnapshotChunkPayloadBytes;
         if (begin >= bytes.size()) {
-            break;
+            chunk_index = 0;
+            continue;
         }
         const std::size_t remaining = bytes.size() - begin;
         const std::size_t payload_bytes = std::min<std::size_t>(
@@ -144,7 +147,9 @@ void SendSnapshotResyncStoredChunks(
         packet.snapshot_frame = state.net_session.lockstep_snapshot_resync_frame;
         std::copy_n(bytes.data() + begin, payload_bytes, packet.payload.begin());
         SendEncodedPacket(transport, endpoint, EncodeSnapshotResyncChunk(packet));
+        chunk_index = (chunk_index + 1U) % chunk_count;
     }
+    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = chunk_index;
 }
 
 void SendSnapshotResyncRequest(State& state, NetTransportRuntime& transport) {
@@ -181,6 +186,7 @@ void SendSnapshotResyncChunksToEndpoint(
     state.net_session.lockstep_snapshot_resync_chunk_count = chunk_count;
     state.net_session.lockstep_snapshot_resync_total_bytes =
         static_cast<std::uint32_t>(bytes.size());
+    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = 0;
     state.net_session.lockstep_snapshot_resync_bytes = bytes;
     state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
     state.net_session.lockstep_snapshot_resync_waiting_for_ack = true;
@@ -197,15 +203,6 @@ void SendPendingSnapshotResync(State& state, const Graphics& graphics, NetTransp
             LockstepDesyncRecoveryMode::SnapshotCatchup) {
             return;
         }
-        state.net_session.lockstep_snapshot_resync_retry_ticks += 1;
-        if (state.net_session.lockstep_snapshot_resync_retry_ticks < kSnapshotResyncRetryTicks) {
-            return;
-        }
-        state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
-        if (state.net_session.role == NetRole::Peer) {
-            SendSnapshotResyncRequest(state, transport);
-            return;
-        }
         if (state.net_session.lockstep_snapshot_resync_waiting_for_ack) {
             const PlayerId target_peer_id =
                 state.net_session.lockstep_snapshot_resync_target_peer_id;
@@ -218,6 +215,17 @@ void SendPendingSnapshotResync(State& state, const Graphics& graphics, NetTransp
                 return;
             }
             SendSnapshotResyncStoredChunks(state, transport, *endpoint);
+            state.net_session.lockstep_snapshot_resync_retry_ticks += 1;
+            return;
+        }
+        state.net_session.lockstep_snapshot_resync_retry_ticks += 1;
+        if (state.net_session.lockstep_snapshot_resync_retry_ticks < kSnapshotResyncRetryTicks) {
+            return;
+        }
+        state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
+        if (state.net_session.role == NetRole::Peer) {
+            SendSnapshotResyncRequest(state, transport);
+            return;
         }
         return;
     }
@@ -1279,6 +1287,7 @@ void HandleSnapshotResyncChunk(
     state.net_session.lockstep_snapshot_resync_active_transfer_id = 0;
     state.net_session.lockstep_snapshot_resync_chunk_count = 0;
     state.net_session.lockstep_snapshot_resync_total_bytes = 0;
+    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = 0;
     state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
 }
 
@@ -1294,6 +1303,7 @@ void HandleSnapshotResyncAck(State& state, const SnapshotResyncAckPacket& packet
     state.net_session.lockstep_snapshot_resync_target_peer_id = kInvalidPlayerId;
     state.net_session.lockstep_snapshot_resync_chunk_count = 0;
     state.net_session.lockstep_snapshot_resync_total_bytes = 0;
+    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = 0;
     state.net_session.lockstep_snapshot_resync_bytes.clear();
     state.net_session.lockstep_snapshot_resync_received_chunks.clear();
     state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
@@ -1419,6 +1429,7 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_snapshot_resync_frame = 0;
     state.net_session.lockstep_snapshot_resync_chunk_count = 0;
     state.net_session.lockstep_snapshot_resync_total_bytes = 0;
+    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = 0;
     state.net_session.lockstep_snapshot_resync_bytes.clear();
     state.net_session.lockstep_snapshot_resync_received_chunks.clear();
     state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
