@@ -15,6 +15,8 @@ static_assert(sizeof(LockstepHashNetPacket) <= kNetPacketMaxBytes - sizeof(NetPa
 static_assert(sizeof(SnapshotResyncRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(SnapshotResyncChunkPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(SnapshotResyncAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(JoinBarrierStatusPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(JoinBarrierResumePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -110,6 +112,14 @@ EncodedNetPacket EncodeSnapshotResyncChunk(const SnapshotResyncChunkPacket& pack
 
 EncodedNetPacket EncodeSnapshotResyncAck(const SnapshotResyncAckPacket& packet) {
     return EncodePayload(NetPacketType::SnapshotResyncAck, packet);
+}
+
+EncodedNetPacket EncodeJoinBarrierStatus(const JoinBarrierStatusPacket& packet) {
+    return EncodePayload(NetPacketType::JoinBarrierStatus, packet);
+}
+
+EncodedNetPacket EncodeJoinBarrierResume(const JoinBarrierResumePacket& packet) {
+    return EncodePayload(NetPacketType::JoinBarrierResume, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -279,6 +289,42 @@ std::optional<SnapshotResyncAckPacket> TryDecodeSnapshotResyncAck(
         return std::nullopt;
     }
     SnapshotResyncAckPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<JoinBarrierStatusPacket> TryDecodeJoinBarrierStatus(
+    const std::uint8_t* bytes,
+    std::size_t size
+) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::JoinBarrierStatus, offset)) {
+        return std::nullopt;
+    }
+    JoinBarrierStatusPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.queued_peer_count = std::min<std::uint32_t>(
+        packet.queued_peer_count,
+        static_cast<std::uint32_t>(packet.queued_peer_ids.size())
+    );
+    packet.chunks_done = std::min(packet.chunks_done, packet.chunk_count);
+    packet.bytes_done = std::min(packet.bytes_done, packet.total_bytes);
+    return packet;
+}
+
+std::optional<JoinBarrierResumePacket> TryDecodeJoinBarrierResume(
+    const std::uint8_t* bytes,
+    std::size_t size
+) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::JoinBarrierResume, offset)) {
+        return std::nullopt;
+    }
+    JoinBarrierResumePacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

@@ -189,6 +189,18 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             HandleSnapshotResyncAck(state, *ack);
             continue;
         }
+
+        if (const std::optional<JoinBarrierStatusPacket> status =
+                TryDecodeJoinBarrierStatus(packet->bytes.data(), packet->size)) {
+            // Host owns join barriers. Ignore peer-originated status packets.
+            continue;
+        }
+
+        if (const std::optional<JoinBarrierResumePacket> resume =
+                TryDecodeJoinBarrierResume(packet->bytes.data(), packet->size)) {
+            // Host owns join barriers. Ignore peer-originated resume packets.
+            continue;
+        }
     }
 }
 
@@ -253,6 +265,18 @@ void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& tran
         if (const std::optional<LockstepHashNetPacket> hash =
                 TryDecodeLockstepHash(packet->bytes.data(), packet->size)) {
             HandleLockstepHashPacket(state, *hash);
+            continue;
+        }
+
+        if (const std::optional<JoinBarrierStatusPacket> status =
+                TryDecodeJoinBarrierStatus(packet->bytes.data(), packet->size)) {
+            HandleJoinBarrierStatus(state, *status);
+            continue;
+        }
+
+        if (const std::optional<JoinBarrierResumePacket> resume =
+                TryDecodeJoinBarrierResume(packet->bytes.data(), packet->size)) {
+            HandleJoinBarrierResume(state, *resume);
             continue;
         }
 

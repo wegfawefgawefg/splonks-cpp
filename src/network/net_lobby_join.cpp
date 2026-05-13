@@ -277,11 +277,11 @@ void HandleJoinRequestAsHost(
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
 
-    // Late join changes the lockstep player set. Pause stepping and resync each
-    // connected process from the host snapshot before simulation resumes.
+    // Late join changes the lockstep player set. Pause stepping and catch every
+    // connected peer up from the same host snapshot before simulation resumes.
     for (const NetRemoteEndpoint& remote : transport.remotes) {
         if (!remote.player_ids.empty()) {
-            RequestHostSnapshotResync(state, remote.player_ids.front());
+            BeginJoinBarrierCatchup(state, remote.player_ids.front());
         }
     }
 }
@@ -422,6 +422,9 @@ void HandleJoinAcceptAsPeer(
     state.frame = static_cast<std::uint32_t>(accept.lockstep_start_frame);
     state.stage_frame = static_cast<std::uint32_t>(accept.lockstep_start_frame);
     state.scene_frame = 0;
+    state.net_session.join_barrier_active = true;
+    state.net_session.join_barrier_phase = JoinBarrierPhase::WaitingForCatchup;
+    state.net_session.join_barrier_active_peer_id = state.net_session.local_player_id;
 }
 
 void HandleLeaveNoticeAsHost(

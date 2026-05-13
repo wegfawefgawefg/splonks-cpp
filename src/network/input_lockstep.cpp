@@ -285,6 +285,16 @@ std::size_t LockstepInputBuffer::PredictedRecordCount() const {
     ));
 }
 
+bool LockstepInputBuffer::HasPredictedRecordThroughFrame(LockstepFrame frame) const {
+    return std::any_of(
+        records_.begin(),
+        records_.end(),
+        [frame](const LockstepInputRecord& record) {
+            return record.predicted && record.frame <= frame;
+        }
+    );
+}
+
 void LockstepInputBuffer::ClearBefore(LockstepFrame frame) {
     records_.erase(
         std::remove_if(

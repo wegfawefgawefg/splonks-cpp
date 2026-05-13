@@ -130,6 +130,15 @@ enum class LockstepDesyncRecoveryMode : std::uint8_t {
     FatalDesync,
 };
 
+enum class JoinBarrierPhase : std::uint8_t {
+    None,
+    WaitingForCatchup,
+    SendingSnapshot,
+    WaitingForAck,
+    ReadyToResume,
+    WaitingForResume,
+};
+
 struct PendingLockstepSettings {
     std::uint32_t sequence = 0;
     LockstepFrame apply_frame = 0;
@@ -179,6 +188,7 @@ struct NetSessionState {
     std::uint64_t lockstep_last_confirmed_hash = 0;
     bool lockstep_has_confirmed_hash = false;
     std::uint32_t lockstep_hash_send_interval_frames = 30;
+    std::uint64_t lockstep_hash_ignore_through_frame = 0;
     std::vector<LockstepHashRecord> lockstep_hash_history;
     std::vector<LockstepRemoteHashRecord> lockstep_remote_hash_history;
     std::vector<LockstepRemoteHashRecord> lockstep_pending_remote_hashes;
@@ -206,6 +216,20 @@ struct NetSessionState {
     std::uint32_t lockstep_snapshot_resync_retry_ticks = 0;
     bool lockstep_snapshot_resync_waiting_for_ack = false;
     std::vector<PlayerId> lockstep_snapshot_resync_queue;
+    std::uint32_t lockstep_snapshot_resync_last_acked_transfer_id = 0;
+    std::uint64_t lockstep_snapshot_resync_last_acked_frame = 0;
+    std::uint8_t lockstep_snapshot_resync_last_ack_success = 0;
+    bool join_barrier_active = false;
+    std::uint32_t join_barrier_id = 0;
+    JoinBarrierPhase join_barrier_phase = JoinBarrierPhase::None;
+    PlayerId join_barrier_active_peer_id = kInvalidPlayerId;
+    std::vector<PlayerId> join_barrier_queue;
+    std::uint32_t join_barrier_transfer_id = 0;
+    std::uint64_t join_barrier_snapshot_frame = 0;
+    std::uint32_t join_barrier_chunk_count = 0;
+    std::uint32_t join_barrier_chunks_done = 0;
+    std::uint32_t join_barrier_total_bytes = 0;
+    std::uint32_t join_barrier_bytes_done = 0;
     bool lockstep_rollback_enabled = true;
     std::uint32_t lockstep_max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
     std::optional<LockstepFrame> lockstep_rollback_requested_frame = std::nullopt;

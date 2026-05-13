@@ -34,6 +34,8 @@ enum class NetPacketType : std::uint16_t {
     SnapshotResyncRequest = 23,
     SnapshotResyncChunk = 24,
     SnapshotResyncAck = 25,
+    JoinBarrierStatus = 26,
+    JoinBarrierResume = 27,
 };
 
 struct NetPacketHeader {
@@ -114,6 +116,7 @@ struct LockstepSettingsPacket {
 struct LockstepHashNetPacket {
     StageInstanceId stage_instance_id = kInvalidStageInstanceId;
     std::uint32_t sender_peer_id = 0;
+    std::uint32_t sync_epoch = 0;
     std::uint64_t frame = 0;
     std::uint64_t hash = 0;
 };
@@ -144,6 +147,30 @@ struct SnapshotResyncAckPacket {
     std::uint8_t success = 0;
 };
 
+struct JoinBarrierStatusPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t barrier_id = 0;
+    std::uint8_t active = 0;
+    std::uint8_t phase = 0;
+    PlayerId active_player_id = kInvalidPlayerId;
+    std::uint32_t queued_peer_count = 0;
+    std::array<PlayerId, kNetPlayersPerProcess> queued_peer_ids{};
+    std::uint32_t transfer_id = 0;
+    std::uint64_t snapshot_frame = 0;
+    std::uint32_t chunk_count = 0;
+    std::uint32_t chunks_done = 0;
+    std::uint32_t total_bytes = 0;
+    std::uint32_t bytes_done = 0;
+};
+
+struct JoinBarrierResumePacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t barrier_id = 0;
+    std::uint64_t resume_frame = 0;
+};
+
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -160,6 +187,8 @@ EncodedNetPacket EncodeLockstepHash(const LockstepHashNetPacket& packet);
 EncodedNetPacket EncodeSnapshotResyncRequest(const SnapshotResyncRequestPacket& packet);
 EncodedNetPacket EncodeSnapshotResyncChunk(const SnapshotResyncChunkPacket& packet);
 EncodedNetPacket EncodeSnapshotResyncAck(const SnapshotResyncAckPacket& packet);
+EncodedNetPacket EncodeJoinBarrierStatus(const JoinBarrierStatusPacket& packet);
+EncodedNetPacket EncodeJoinBarrierResume(const JoinBarrierResumePacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size);
@@ -171,6 +200,8 @@ std::optional<LockstepHashNetPacket> TryDecodeLockstepHash(const std::uint8_t* b
 std::optional<SnapshotResyncRequestPacket> TryDecodeSnapshotResyncRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<SnapshotResyncChunkPacket> TryDecodeSnapshotResyncChunk(const std::uint8_t* bytes, std::size_t size);
 std::optional<SnapshotResyncAckPacket> TryDecodeSnapshotResyncAck(const std::uint8_t* bytes, std::size_t size);
+std::optional<JoinBarrierStatusPacket> TryDecodeJoinBarrierStatus(const std::uint8_t* bytes, std::size_t size);
+std::optional<JoinBarrierResumePacket> TryDecodeJoinBarrierResume(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

@@ -76,6 +76,7 @@ public:
     std::size_t RecordCount(bool include_predicted = true) const;
     std::size_t RecordCountForPlayer(PlayerId player_id, bool include_predicted = true) const;
     std::size_t PredictedRecordCount() const;
+    bool HasPredictedRecordThroughFrame(LockstepFrame frame) const;
     void ClearBefore(LockstepFrame frame);
 
 private:

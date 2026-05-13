@@ -1356,6 +1356,8 @@ bool RunLockstepHashExchangeSmoke() {
 
     state.net_session.lockstep_snapshot_resync_pending_request = false;
     state.net_session.lockstep_snapshot_resync_target_peer_id = kInvalidPlayerId;
+    state.net_session.lockstep_last_desync_recovery_mode =
+        network::LockstepDesyncRecoveryMode::None;
     state.net_session.lockstep_rollback_snapshots.clear();
     network::LockstepHashNetPacket fatal_packet = roundtrip;
     fatal_packet.hash = 0xDDDDULL;
@@ -1466,8 +1468,8 @@ bool RunLockstepHashRollbackRepairSmoke() {
     );
 
     const std::uint64_t matching_hash =
-        ComputeGameplayDeterminismFingerprint(truth).value;
-    if (matching_hash != ComputeGameplayDeterminismFingerprint(repaired).value) {
+        ComputeNetworkStateFingerprint(truth).value;
+    if (matching_hash != ComputeNetworkStateFingerprint(repaired).value) {
         std::cerr << "lockstep hash rollback repair smoke failed: setup diverged early\n";
         return false;
     }
@@ -1516,10 +1518,11 @@ bool RunLockstepHashRollbackRepairSmoke() {
         SimulationTickMode::ReplayNoNetwork
     );
     repaired.net_session.lockstep_next_frame_to_step = 2;
+    repaired.points += 1;
 
-    const std::uint64_t truth_hash = ComputeGameplayDeterminismFingerprint(truth).value;
+    const std::uint64_t truth_hash = ComputeNetworkStateFingerprint(truth).value;
     const std::uint64_t repaired_bad_hash =
-        ComputeGameplayDeterminismFingerprint(repaired).value;
+        ComputeNetworkStateFingerprint(repaired).value;
     if (truth_hash == repaired_bad_hash) {
         std::cerr << "lockstep hash rollback repair smoke failed: perturbation did not diverge\n";
         return false;

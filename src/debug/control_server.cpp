@@ -138,6 +138,24 @@ const char* LockstepDesyncRecoveryModeName(network::LockstepDesyncRecoveryMode m
     return "unknown";
 }
 
+const char* JoinBarrierPhaseName(network::JoinBarrierPhase phase) {
+    switch (phase) {
+    case network::JoinBarrierPhase::None:
+        return "none";
+    case network::JoinBarrierPhase::WaitingForCatchup:
+        return "waiting-for-catchup";
+    case network::JoinBarrierPhase::SendingSnapshot:
+        return "sending-snapshot";
+    case network::JoinBarrierPhase::WaitingForAck:
+        return "waiting-for-ack";
+    case network::JoinBarrierPhase::ReadyToResume:
+        return "ready-to-resume";
+    case network::JoinBarrierPhase::WaitingForResume:
+        return "waiting-for-resume";
+    }
+    return "unknown";
+}
+
 const char* EntConditionName(EntCondition condition) {
     switch (condition) {
     case EntCondition::Normal:
@@ -878,6 +896,37 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"lockstep_prediction_miss_rate\":" << prediction_miss_rate
         << ",\"lockstep_last_prediction_miss_span\":"
         << state.net_session.lockstep_last_prediction_miss_span
+        << ",\"lockstep_frame_inputs\":[";
+    {
+        bool first_input_player = true;
+        const network::LockstepFrame debug_frame =
+            state.net_session.lockstep_next_frame_to_step;
+        for (const PlayerSlot& slot : state.players.slots) {
+            if (!slot.connected || slot.player_id == kInvalidPlayerId ||
+                !slot.ent_vid.has_value()) {
+                continue;
+            }
+            if (!first_input_player) {
+                out << ",";
+            }
+            first_input_player = false;
+            const std::optional<network::LockstepFrame> latest =
+                state.net_session.lockstep_input_buffer.LatestFrameForPlayer(slot.player_id, true);
+            out << "{\"player_id\":" << slot.player_id
+                << ",\"has_current\":"
+                << (state.net_session.lockstep_input_buffer.Has(slot.player_id, debug_frame)
+                        ? "true"
+                        : "false")
+                << ",\"latest\":";
+            if (latest.has_value()) {
+                out << *latest;
+            } else {
+                out << "null";
+            }
+            out << "}";
+        }
+    }
+    out << "]"
         << ",\"snapshot_resync\":{"
         << "\"pending_request\":"
         << (state.net_session.lockstep_snapshot_resync_pending_request ? "true" : "false")
@@ -900,6 +949,19 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
            )
         << ",\"retry_ticks\":" << state.net_session.lockstep_snapshot_resync_retry_ticks
         << "}"
+        << ",\"join_barrier\":{"
+        << "\"active\":" << (state.net_session.join_barrier_active ? "true" : "false")
+        << ",\"id\":" << state.net_session.join_barrier_id
+        << ",\"phase\":" << JsonString(JoinBarrierPhaseName(state.net_session.join_barrier_phase))
+        << ",\"active_peer_id\":" << state.net_session.join_barrier_active_peer_id
+        << ",\"queued_peers\":" << state.net_session.join_barrier_queue.size()
+        << ",\"transfer_id\":" << state.net_session.join_barrier_transfer_id
+        << ",\"snapshot_frame\":" << state.net_session.join_barrier_snapshot_frame
+        << ",\"chunk_count\":" << state.net_session.join_barrier_chunk_count
+        << ",\"chunks_done\":" << state.net_session.join_barrier_chunks_done
+        << ",\"total_bytes\":" << state.net_session.join_barrier_total_bytes
+        << ",\"bytes_done\":" << state.net_session.join_barrier_bytes_done
+        << "}"
         << ",\"ent_links\":" << state.net_session.ent_links.size()
         << ",\"fuzzer\":{\"config\":";
     WriteNetFuzzerConfigJson(out, state.net_session.fuzzer_config);
@@ -921,6 +983,8 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
     out << "],\"transport\":";
     if (state.net_transport) {
         out << "{\"socket_port\":" << state.net_transport->socket.BoundPort()
+            << ",\"join_request_pending\":"
+            << (state.net_transport->join_request_pending ? "true" : "false")
             << ",\"remotes\":" << state.net_transport->remotes.size()
             << ",\"remote_endpoints\":[";
         for (std::size_t i = 0; i < state.net_transport->remotes.size(); ++i) {
@@ -951,6 +1015,16 @@ std::string HandleFingerprintCommand(const State& state) {
     const CanonicalStateFingerprint canonical = ComputeCanonicalStateFingerprint(state);
     const CanonicalStateFingerprint gameplay = ComputeGameplayDeterminismFingerprint(state);
     const CanonicalStateFingerprint network = ComputeNetworkStateFingerprint(state);
+    const NetworkStateFingerprintComponents network_components =
+        ComputeNetworkStateFingerprintComponents(state);
+    const std::vector<NetworkEntFingerprint> ent_hashes =
+        ComputeNetworkEntFingerprints(state);
+    double fluid_sum = 0.0;
+    for (const std::vector<float>& row : state.stage.fluid_amount) {
+        for (const float amount : row) {
+            fluid_sum += amount;
+        }
+    }
     std::ostringstream out;
     out << "{\"ok\":true,\"cmd\":\"fingerprint\""
         << ",\"canonical\":{\"hash\":" << canonical.value
@@ -959,6 +1033,37 @@ std::string HandleFingerprintCommand(const State& state) {
         << ",\"summary\":" << JsonString(gameplay.summary) << "}"
         << ",\"network\":{\"hash\":" << network.value
         << ",\"summary\":" << JsonString(network.summary) << "}"
+        << ",\"network_components\":{\"root\":" << network_components.root
+        << ",\"stage\":" << network_components.stage
+        << ",\"players\":" << network_components.players
+        << ",\"tools\":" << network_components.tools
+        << ",\"ents\":" << network_components.ents
+        << "}"
+        << ",\"ent_hashes\":[";
+    for (std::size_t i = 0; i < ent_hashes.size(); ++i) {
+        const NetworkEntFingerprint& ent_hash = ent_hashes[i];
+        if (i > 0) {
+            out << ",";
+        }
+        out << "{\"net_ent_id\":" << ent_hash.net_ent_id
+            << ",\"type\":" << ent_hash.type
+            << ",\"hash\":" << ent_hash.hash
+            << "}";
+    }
+    out << "]"
+        << ",\"debug\":{\"frame\":" << state.frame
+        << ",\"stage_frame\":" << state.stage_frame
+        << ",\"drng\":" << state.drng.state
+        << ",\"points\":" << state.points
+        << ",\"deaths\":" << state.deaths
+        << ",\"favor\":" << state.sac_altar_favor
+        << ",\"reward_tier\":" << state.sac_altar_reward_tier
+        << ",\"game_over\":" << (state.game_over ? "true" : "false")
+        << ",\"win\":" << (state.win ? "true" : "false")
+        << ",\"stage_lights\":" << state.stage.lights.size()
+        << ",\"fluid_sum\":" << fluid_sum
+        << ",\"tool_states\":" << state.ent_tools.tool_states.size()
+        << "}"
         << "}\n";
     return out.str();
 }

@@ -28,6 +28,7 @@ void RestoreEntOnUseFromSpec(Ent& ent);
 void RestoreEntControlLogicFromSpec(Ent& ent);
 void RestoreEntStepLogicFromSpec(Ent& ent);
 void RestoreEntStepPhysicsFromSpec(Ent& ent);
+void RestoreEntRuntimeCallbacksFromSpec(Ent& ent);
 void RestoreEntCrusherPusherFromSpec(Ent& ent);
 void RestoreEntCanGoOnBackFromSpec(Ent& ent);
 void RestoreEntCanHangLedgeFromSpec(Ent& ent);

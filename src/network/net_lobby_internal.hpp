@@ -57,6 +57,9 @@ void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet
 void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& packet);
 void HandleLockstepHashPacket(State& state, const LockstepHashNetPacket& packet);
 void RequestHostSnapshotResync(State& state, PlayerId target_peer_id);
+void BeginJoinBarrierCatchup(State& state, PlayerId target_peer_id);
+void HandleJoinBarrierStatus(State& state, const JoinBarrierStatusPacket& packet);
+void HandleJoinBarrierResume(State& state, const JoinBarrierResumePacket& packet);
 void HandleSnapshotResyncRequest(
     State& state,
     const Graphics& graphics,

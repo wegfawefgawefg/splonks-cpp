@@ -146,8 +146,9 @@ void AddStageFingerprint(FingerprintWriter& writer, const Stage& stage, bool inc
 
 void AddEffectFingerprint(FingerprintWriter& writer, const BoxedEntEffects& effects_box) {
     const EntEffects* const effects = effects_box.get();
-    writer.AddBool(effects != nullptr);
-    if (effects == nullptr) {
+    const bool has_effects = effects != nullptr && effects->count > 0;
+    writer.AddBool(has_effects);
+    if (!has_effects) {
         return;
     }
 
@@ -316,16 +317,28 @@ bool IsMotionIgnoredForPlayer(
     return false;
 }
 
+bool IsMotionIgnoredForAnyPlayer(const State& state, const Ent& ent) {
+    if (ent.type_ == EntType::Player) {
+        return true;
+    }
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || slot.player_id == kInvalidPlayerId) {
+            continue;
+        }
+        if (IsMotionIgnoredForPlayer(state, ent, slot.player_id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AddNetworkEntFingerprint(
     FingerprintWriter& writer,
     const State& state,
-    const Ent& ent,
-    std::optional<PlayerId> ignored_motion_player_id = std::nullopt
+    const Ent& ent
 ) {
     const network::NetEntId ent_id = NetEntIdForVid(state, ent.vid);
-    const bool ignore_motion =
-        ignored_motion_player_id.has_value() &&
-        IsMotionIgnoredForPlayer(state, ent, *ignored_motion_player_id);
+    const bool ignore_motion = IsMotionIgnoredForAnyPlayer(state, ent);
 
     writer.AddPod(ent_id);
     writer.AddBool(ent.active);
@@ -334,26 +347,37 @@ void AddNetworkEntFingerprint(
         return;
     }
 
+    if (ignore_motion) {
+        writer.AddBool(ent.holding);
+        AddNetworkOptionalVid(writer, state, ent.back_vid);
+        AddNetworkOptionalVid(writer, state, ent.holding_vid);
+        AddNetworkOptionalVid(writer, state, ent.held_by_vid);
+        writer.AddPod(ent.health);
+        writer.AddPod(ent.money);
+        AddEffectFingerprint(writer, ent.effects);
+        return;
+    }
+
     writer.AddBool(ent.has_physics);
     writer.AddBool(ent.can_collide);
-    writer.AddBool(ignore_motion ? false : ent.grounded);
+    writer.AddBool(ent.grounded);
     writer.AddBool(ent.holding);
     writer.AddBool(ent.wanted);
     writer.AddBool(ent.render_enabled);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.pos);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.vel);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.acc);
-    writer.AddVec2(ignore_motion ? Vec2::New(0.0F, 0.0F) : ent.size);
-    writer.AddFloat(ignore_motion ? 0.0F : ent.rotation);
-    writer.AddPod(ignore_motion ? 0U : ent.coyote_time);
+    writer.AddVec2(ent.pos);
+    writer.AddVec2(ent.vel);
+    writer.AddVec2(ent.acc);
+    writer.AddVec2(ent.size);
+    writer.AddFloat(ent.rotation);
+    writer.AddPod(ent.coyote_time);
     writer.AddPod(ent.stun_timer);
-    writer.AddPod(ignore_motion ? 0U : ent.fall_timer);
-    writer.AddPod(static_cast<std::uint8_t>(ignore_motion ? Side::Left : ent.facing));
+    writer.AddPod(ent.fall_timer);
+    writer.AddPod(static_cast<std::uint8_t>(ent.facing));
     writer.AddPod(static_cast<std::uint8_t>(ent.draw_layer));
     writer.AddPod(static_cast<std::uint8_t>(ent.condition));
     writer.AddPod(static_cast<std::uint8_t>(ent.ai_state));
     writer.AddPod(static_cast<std::uint8_t>(ent.damage_vuln));
-    writer.AddPod(ignore_motion ? 0U : ent.movement_flags);
+    writer.AddPod(ent.movement_flags);
     writer.AddPod(ent.health);
     AddNetworkOptionalVid(writer, state, ent.back_vid);
     AddNetworkOptionalVid(writer, state, ent.holding_vid);
@@ -377,13 +401,13 @@ void AddNetworkEntFingerprint(
     writer.AddIVec2(ent.point_b);
     writer.AddIVec2(ent.point_c);
     writer.AddIVec2(ent.point_d);
-    writer.AddPod(ignore_motion ? 0 : ent.aframe_animator.anim_id);
-    writer.AddPod(ignore_motion ? 0 : ent.aframe_animator.current_frame);
-    writer.AddFloat(ignore_motion ? 0.0F : ent.aframe_animator.current_time);
-    writer.AddFloat(ignore_motion ? 0.0F : ent.aframe_animator.speed);
-    writer.AddBool(ignore_motion ? false : ent.aframe_animator.animate);
-    writer.AddBool(ignore_motion ? false : ent.aframe_animator.loop);
-    writer.AddBool(ignore_motion ? false : ent.aframe_animator.finished);
+    writer.AddPod(ent.aframe_animator.anim_id);
+    writer.AddPod(ent.aframe_animator.current_frame);
+    writer.AddFloat(ent.aframe_animator.current_time);
+    writer.AddFloat(ent.aframe_animator.speed);
+    writer.AddBool(ent.aframe_animator.animate);
+    writer.AddBool(ent.aframe_animator.loop);
+    writer.AddBool(ent.aframe_animator.finished);
     AddEffectFingerprint(writer, ent.effects);
 }
 
@@ -503,13 +527,11 @@ CanonicalStateFingerprint ComputeGameplayDeterminismFingerprint(const State& sta
     return ComputeCanonicalStateFingerprintWithOptions(state, true);
 }
 
-CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(
-    const State& state,
-    std::optional<PlayerId> ignored_motion_player_id
-) {
+CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
     FingerprintWriter writer;
     writer.AddPod(state.frame);
     writer.AddPod(state.stage_frame);
+    writer.AddPod(state.drng.state);
     writer.AddPod(state.depth);
     writer.AddPod(state.points);
     writer.AddPod(state.deaths);
@@ -552,7 +574,7 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(
 
     writer.AddPod(active_ents.size());
     for (const Ent* const ent : active_ents) {
-        AddNetworkEntFingerprint(writer, state, *ent, ignored_motion_player_id);
+        AddNetworkEntFingerprint(writer, state, *ent);
     }
 
     std::ostringstream summary;
@@ -567,15 +589,104 @@ CanonicalStateFingerprint ComputeNetworkStateFingerprintWithOptions(
     };
 }
 
-CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
-    return ComputeNetworkStateFingerprintWithOptions(state, std::nullopt);
+NetworkStateFingerprintComponents ComputeNetworkStateFingerprintComponents(const State& state) {
+    FingerprintWriter root;
+    root.AddPod(state.frame);
+    root.AddPod(state.stage_frame);
+    root.AddPod(state.drng.state);
+    root.AddPod(state.depth);
+    root.AddPod(state.points);
+    root.AddPod(state.deaths);
+    root.AddPod(static_cast<std::uint8_t>(state.multiplayer_respawn_mode));
+    root.AddPod(state.sac_altar_favor);
+    root.AddPod(state.sac_altar_reward_tier);
+    root.AddBool(state.game_over);
+    root.AddBool(state.win);
+    root.AddPod(static_cast<std::uint8_t>(state.quest_state.quest_id));
+    root.AddBool(state.quest_state.classic.made_black_market);
+    root.AddBool(state.quest_state.classic.made_udjat_eye);
+    root.AddBool(state.quest_state.classic.has_udjat_eye);
+    root.AddBool(state.quest_state.classic.made_moai);
+    root.AddBool(state.quest_state.classic.has_hedjet);
+    root.AddBool(state.quest_state.classic.has_sceptre);
+    root.AddBool(state.quest_state.classic.has_book_of_dead);
+
+    FingerprintWriter stage;
+    AddStageFingerprint(stage, state.stage, false);
+
+    FingerprintWriter players;
+    AddNetworkPlayerRegistryFingerprint(players, state);
+
+    FingerprintWriter tools;
+    AddNetworkToolInventoryFingerprint(tools, state);
+
+    std::vector<const Ent*> active_ents;
+    active_ents.reserve(state.ents.ents.size());
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active) {
+            active_ents.push_back(&ent);
+        }
+    }
+    std::sort(
+        active_ents.begin(),
+        active_ents.end(),
+        [&state](const Ent* lhs, const Ent* rhs) {
+            const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
+            const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
+            if (lhs_id != rhs_id) {
+                return lhs_id < rhs_id;
+            }
+            return lhs->vid.id < rhs->vid.id;
+        }
+    );
+    FingerprintWriter ents;
+    ents.AddPod(active_ents.size());
+    for (const Ent* const ent : active_ents) {
+        AddNetworkEntFingerprint(ents, state, *ent);
+    }
+
+    return NetworkStateFingerprintComponents{
+        .root = root.value,
+        .stage = stage.value,
+        .players = players.value,
+        .tools = tools.value,
+        .ents = ents.value,
+    };
 }
 
-CanonicalStateFingerprint ComputeNetworkStateFingerprintIgnoringPlayerMotion(
-    const State& state,
-    PlayerId player_id
-) {
-    return ComputeNetworkStateFingerprintWithOptions(state, player_id);
+std::vector<NetworkEntFingerprint> ComputeNetworkEntFingerprints(const State& state) {
+    std::vector<const Ent*> active_ents;
+    active_ents.reserve(state.ents.ents.size());
+    for (const Ent& ent : state.ents.ents) {
+        if (ent.active) {
+            active_ents.push_back(&ent);
+        }
+    }
+    std::sort(
+        active_ents.begin(),
+        active_ents.end(),
+        [&state](const Ent* lhs, const Ent* rhs) {
+            const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
+            const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
+            if (lhs_id != rhs_id) {
+                return lhs_id < rhs_id;
+            }
+            return lhs->vid.id < rhs->vid.id;
+        }
+    );
+
+    std::vector<NetworkEntFingerprint> result;
+    result.reserve(active_ents.size());
+    for (const Ent* const ent : active_ents) {
+        FingerprintWriter writer;
+        AddNetworkEntFingerprint(writer, state, *ent);
+        result.push_back(NetworkEntFingerprint{
+            .net_ent_id = NetEntIdForVid(state, ent->vid),
+            .type = static_cast<std::uint16_t>(ent->type_),
+            .hash = writer.value,
+        });
+    }
+    return result;
 }
 
 } // namespace splonks

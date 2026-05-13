@@ -36,6 +36,15 @@ void RestoreEntOnUseFromSpec(Ent& ent) { ent.on_use = GetSpecForEnt(ent).on_use;
 void RestoreEntControlLogicFromSpec(Ent& ent) { ent.control_logic = GetSpecForEnt(ent).control_logic; }
 void RestoreEntStepLogicFromSpec(Ent& ent) { ent.step_logic = GetSpecForEnt(ent).step_logic; }
 void RestoreEntStepPhysicsFromSpec(Ent& ent) { ent.step_physics = GetSpecForEnt(ent).step_physics; }
+void RestoreEntRuntimeCallbacksFromSpec(Ent& ent) {
+    const EntSpec& spec = GetSpecForEnt(ent);
+    ent.on_death = spec.on_death;
+    ent.on_damage = spec.on_damage;
+    ent.on_use = spec.on_use;
+    ent.control_logic = spec.control_logic;
+    ent.step_logic = spec.step_logic;
+    ent.step_physics = spec.step_physics;
+}
 void RestoreEntCrusherPusherFromSpec(Ent& ent) { ent.crusher_pusher = GetSpecForEnt(ent).crusher_pusher; }
 void RestoreEntCanGoOnBackFromSpec(Ent& ent) { ent.can_go_on_back = GetSpecForEnt(ent).can_go_on_back; }
 void RestoreEntCanHangLedgeFromSpec(Ent& ent) { ent.can_hang_ledge = GetSpecForEnt(ent).can_hang_ledge; }
