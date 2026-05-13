@@ -30,6 +30,28 @@ const char* NetRoleName(network::NetRole role) {
 
 constexpr float kNetworkFrameMs = 1000.0F / 60.0F;
 
+std::vector<PlayerId> DebugLocalPlayerIds(const State& state) {
+    std::vector<PlayerId> player_ids;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local &&
+            slot.player_id != kInvalidPlayerId) {
+            player_ids.push_back(slot.player_id);
+        }
+    }
+    return player_ids;
+}
+
+std::size_t DebugLocalInputRecordCount(
+    const State& state,
+    const network::LockstepInputBuffer& buffer
+) {
+    std::size_t count = 0;
+    for (PlayerId player_id : DebugLocalPlayerIds(state)) {
+        count += buffer.RecordCountForPlayer(player_id);
+    }
+    return count;
+}
+
 int SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
     constexpr float kSafetyFrames = 1.0F;
     const float one_way_ms = std::max(0.0F, ping_ms) * 0.5F;
@@ -439,6 +461,23 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     );
     if (session.input_lockstep_enabled) {
         ImGui::TextUnformatted("Input lockstep: enabled");
+        const std::size_t total_input_records = session.lockstep_input_buffer.RecordCount();
+        const std::size_t local_input_records =
+            DebugLocalInputRecordCount(state, session.lockstep_input_buffer);
+        const std::size_t remote_input_records =
+            total_input_records >= local_input_records ? total_input_records - local_input_records : 0;
+        const float simulated_seconds = session.lockstep_next_frame_to_step == 0
+            ? 0.0F
+            : static_cast<float>(session.lockstep_next_frame_to_step) / 60.0F;
+        const float rollbacks_per_second = simulated_seconds <= 0.0F
+            ? 0.0F
+            : static_cast<float>(session.lockstep_rollback_count) / simulated_seconds;
+        const std::uint64_t resolved_predictions =
+            session.lockstep_prediction_miss_count + session.lockstep_prediction_late_match_count;
+        const float prediction_miss_rate = resolved_predictions == 0
+            ? 0.0F
+            : static_cast<float>(session.lockstep_prediction_miss_count) /
+                static_cast<float>(resolved_predictions);
         ImGui::Text(
             "Frame: next=%llu local_inputs=%llu delay=%u (%.1fms)",
             static_cast<unsigned long long>(session.lockstep_next_frame_to_step),
@@ -447,9 +486,22 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
             static_cast<float>(session.lockstep_input_delay_frames) * kNetworkFrameMs
         );
         ImGui::Text(
-            "Rollback: %s count=%llu last=%u max=%u replay=%.3fms avg=%.3fms snapshots=%zu",
+            "Confirmed: frame=%llu hash=%llu",
+            static_cast<unsigned long long>(session.lockstep_last_confirmed_hash_frame),
+            static_cast<unsigned long long>(session.lockstep_last_confirmed_hash)
+        );
+        ImGui::Text(
+            "Input buffer: total=%zu remote=%zu predicted=%zu wait-blocks=%llu",
+            total_input_records,
+            remote_input_records,
+            session.lockstep_input_buffer.PredictedRecordCount(),
+            static_cast<unsigned long long>(session.lockstep_input_wait_block_count)
+        );
+        ImGui::Text(
+            "Rollback: %s count=%llu %.3f/s last=%u max=%u replay=%.3fms avg=%.3fms snapshots=%zu",
             session.lockstep_rollback_enabled ? "enabled" : "disabled",
             static_cast<unsigned long long>(session.lockstep_rollback_count),
+            rollbacks_per_second,
             session.lockstep_last_rollback_span,
             session.lockstep_max_rollback_span,
             session.lockstep_last_rollback_replay_ms,
@@ -460,9 +512,10 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
             session.lockstep_rollback_snapshots.size()
         );
         ImGui::Text(
-            "Prediction: misses=%llu late-matches=%llu last-miss-span=%u",
+            "Prediction: misses=%llu late-matches=%llu miss-rate=%.1f%% last-miss-span=%u",
             static_cast<unsigned long long>(session.lockstep_prediction_miss_count),
             static_cast<unsigned long long>(session.lockstep_prediction_late_match_count),
+            prediction_miss_rate * 100.0F,
             session.lockstep_last_prediction_miss_span
         );
     }

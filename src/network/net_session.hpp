@@ -155,6 +155,7 @@ struct NetSessionState {
     std::uint64_t lockstep_prediction_miss_count = 0;
     std::uint64_t lockstep_prediction_late_match_count = 0;
     std::uint32_t lockstep_last_prediction_miss_span = 0;
+    std::uint64_t lockstep_input_wait_block_count = 0;
 
     static NetSessionState NewOffline();
 

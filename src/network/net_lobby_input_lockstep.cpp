@@ -445,6 +445,7 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_prediction_miss_count = 0;
     state.net_session.lockstep_prediction_late_match_count = 0;
     state.net_session.lockstep_last_prediction_miss_span = 0;
+    state.net_session.lockstep_input_wait_block_count = 0;
 }
 
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
@@ -472,6 +473,7 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
         return false;
     }
     if (!CanStepWithoutRunningAheadOfRemoteInputs(state, required_players)) {
+        state.net_session.lockstep_input_wait_block_count += 1;
         return false;
     }
     if (!ReplayRollbackWindow(state, graphics, required_players)) {

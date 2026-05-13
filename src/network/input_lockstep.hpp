@@ -3,6 +3,7 @@
 #include "inputs.hpp"
 #include "player_id.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -72,6 +73,9 @@ public:
         std::vector<LockstepInputRecord>& out_records,
         std::size_t max_records
     ) const;
+    std::size_t RecordCount(bool include_predicted = true) const;
+    std::size_t RecordCountForPlayer(PlayerId player_id, bool include_predicted = true) const;
+    std::size_t PredictedRecordCount() const;
     void ClearBefore(LockstepFrame frame);
 
 private:

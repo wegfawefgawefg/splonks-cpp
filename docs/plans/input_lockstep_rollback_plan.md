@@ -1018,10 +1018,12 @@ Goal: boot two game windows and play with delay-based lockstep.
   input delay.
 - [ ] Disable active-stage late join initially; peers join before start or wait
   for next stage.
-- [ ] Add debug UI: local frame, remote input buffer depth, blocked frame count,
+- [x] Add debug UI: local frame, remote input buffer depth, blocked frame count,
   hash, last agreed frame, packet loss/jitter profile.
-  Current live debug exposes role, lockstep frame, local-input frame, and input
-  delay. Buffer depth/hash/agreed-frame remain TODO.
+  Debug Network and `splonksctl net` expose role, lockstep frame, local-input
+  frame, input delay, confirmed hash/frame, input buffer totals, remote buffer
+  depth, predicted record count, input-wait block count, and fuzzer loss/jitter
+  profile.
 - [x] Add a clean debug input/script lane for live validation.
   Implemented through `splonksctl input`, which writes a temporary
   `DebugInputOverrideState` consumed by normal input capture. This is not a
@@ -1066,8 +1068,7 @@ Goal: reduce input-delay feel while keeping det correctness.
 - [x] Suppress duplicate pres/audio during resimulation where needed.
 - [x] Add richer rollback debug: prediction miss count, late predicted-input
   match count, last miss span, and average replay ms.
-- [ ] Add confirmed frame, per-second rollback count, and prediction miss rate
-  if live tuning needs more detail.
+- [x] Add confirmed frame, per-second rollback count, and prediction miss rate.
 - [x] Validate artificial latency profile plumbing with live host/peer and
   `splonksctl`.
 - [ ] Human-playtest high-latency feel and tune default delay/prediction.

@@ -249,6 +249,42 @@ void LockstepInputBuffer::CollectRecords(
     }
 }
 
+std::size_t LockstepInputBuffer::RecordCount(bool include_predicted) const {
+    if (include_predicted) {
+        return records_.size();
+    }
+    return static_cast<std::size_t>(std::count_if(
+        records_.begin(),
+        records_.end(),
+        [](const LockstepInputRecord& record) {
+            return !record.predicted;
+        }
+    ));
+}
+
+std::size_t LockstepInputBuffer::RecordCountForPlayer(
+    PlayerId player_id,
+    bool include_predicted
+) const {
+    return static_cast<std::size_t>(std::count_if(
+        records_.begin(),
+        records_.end(),
+        [player_id, include_predicted](const LockstepInputRecord& record) {
+            return record.player_id == player_id && (include_predicted || !record.predicted);
+        }
+    ));
+}
+
+std::size_t LockstepInputBuffer::PredictedRecordCount() const {
+    return static_cast<std::size_t>(std::count_if(
+        records_.begin(),
+        records_.end(),
+        [](const LockstepInputRecord& record) {
+            return record.predicted;
+        }
+    ));
+}
+
 void LockstepInputBuffer::ClearBefore(LockstepFrame frame) {
     records_.erase(
         std::remove_if(

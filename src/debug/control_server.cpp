@@ -95,6 +95,20 @@ std::string JsonString(std::string_view text) {
     return "\"" + JsonEscape(text) + "\"";
 }
 
+std::size_t LocalInputRecordCount(
+    const State& state,
+    const network::LockstepInputBuffer& buffer
+) {
+    std::size_t count = 0;
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connected && slot.connection_kind == PlayerConnectionKind::Local &&
+            slot.player_id != kInvalidPlayerId) {
+            count += buffer.RecordCountForPlayer(slot.player_id);
+        }
+    }
+    return count;
+}
+
 const char* NetRoleName(network::NetRole role) {
     switch (role) {
     case network::NetRole::Offline:
@@ -685,6 +699,26 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         return HandleNetFuzzerCommand(state, parts);
     }
 
+    const std::size_t total_input_records =
+        state.net_session.lockstep_input_buffer.RecordCount();
+    const std::size_t local_input_records =
+        LocalInputRecordCount(state, state.net_session.lockstep_input_buffer);
+    const std::size_t remote_input_records =
+        total_input_records >= local_input_records ? total_input_records - local_input_records : 0;
+    const float simulated_seconds = state.net_session.lockstep_next_frame_to_step == 0
+        ? 0.0F
+        : static_cast<float>(state.net_session.lockstep_next_frame_to_step) / 60.0F;
+    const float rollbacks_per_second = simulated_seconds <= 0.0F
+        ? 0.0F
+        : static_cast<float>(state.net_session.lockstep_rollback_count) / simulated_seconds;
+    const std::uint64_t resolved_predictions =
+        state.net_session.lockstep_prediction_miss_count +
+        state.net_session.lockstep_prediction_late_match_count;
+    const float prediction_miss_rate = resolved_predictions == 0
+        ? 0.0F
+        : static_cast<float>(state.net_session.lockstep_prediction_miss_count) /
+            static_cast<float>(resolved_predictions);
+
     std::ostringstream out;
     out << "{\"ok\":true,\"cmd\":\"net\""
         << ",\"role\":" << JsonString(NetRoleName(state.net_session.role))
@@ -698,9 +732,20 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"lockstep_next_frame\":" << state.net_session.lockstep_next_frame_to_step
         << ",\"lockstep_next_local_input_frame\":" << state.net_session.lockstep_next_local_input_frame
         << ",\"lockstep_input_delay_frames\":" << state.net_session.lockstep_input_delay_frames
+        << ",\"lockstep_last_confirmed_hash_frame\":"
+        << state.net_session.lockstep_last_confirmed_hash_frame
+        << ",\"lockstep_last_confirmed_hash\":"
+        << state.net_session.lockstep_last_confirmed_hash
+        << ",\"lockstep_input_record_count\":" << total_input_records
+        << ",\"lockstep_remote_input_record_count\":" << remote_input_records
+        << ",\"lockstep_predicted_input_record_count\":"
+        << state.net_session.lockstep_input_buffer.PredictedRecordCount()
+        << ",\"lockstep_input_wait_block_count\":"
+        << state.net_session.lockstep_input_wait_block_count
         << ",\"lockstep_rollback_enabled\":"
         << (state.net_session.lockstep_rollback_enabled ? "true" : "false")
         << ",\"lockstep_rollback_count\":" << state.net_session.lockstep_rollback_count
+        << ",\"lockstep_rollbacks_per_second\":" << rollbacks_per_second
         << ",\"lockstep_last_rollback_span\":" << state.net_session.lockstep_last_rollback_span
         << ",\"lockstep_max_rollback_span\":" << state.net_session.lockstep_max_rollback_span
         << ",\"lockstep_last_rollback_replay_ms\":"
@@ -716,6 +761,7 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << state.net_session.lockstep_prediction_miss_count
         << ",\"lockstep_prediction_late_match_count\":"
         << state.net_session.lockstep_prediction_late_match_count
+        << ",\"lockstep_prediction_miss_rate\":" << prediction_miss_rate
         << ",\"lockstep_last_prediction_miss_span\":"
         << state.net_session.lockstep_last_prediction_miss_span
         << ",\"ent_links\":" << state.net_session.ent_links.size()
