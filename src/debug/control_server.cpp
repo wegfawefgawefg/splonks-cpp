@@ -567,6 +567,15 @@ std::string HandleNetCommand(const State& state) {
         << ",\"lockstep_next_frame\":" << state.net_session.lockstep_next_frame_to_step
         << ",\"lockstep_next_local_input_frame\":" << state.net_session.lockstep_next_local_input_frame
         << ",\"lockstep_input_delay_frames\":" << state.net_session.lockstep_input_delay_frames
+        << ",\"lockstep_rollback_enabled\":"
+        << (state.net_session.lockstep_rollback_enabled ? "true" : "false")
+        << ",\"lockstep_rollback_count\":" << state.net_session.lockstep_rollback_count
+        << ",\"lockstep_last_rollback_span\":" << state.net_session.lockstep_last_rollback_span
+        << ",\"lockstep_max_rollback_span\":" << state.net_session.lockstep_max_rollback_span
+        << ",\"lockstep_last_rollback_replay_ms\":"
+        << state.net_session.lockstep_last_rollback_replay_ms
+        << ",\"lockstep_rollback_snapshots\":"
+        << state.net_session.lockstep_rollback_snapshots.size()
         << ",\"ent_links\":" << state.net_session.ent_links.size()
         << ",\"peers\":[";
     for (std::size_t i = 0; i < state.net_session.peers.size(); ++i) {
