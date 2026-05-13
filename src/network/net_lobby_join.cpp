@@ -268,6 +268,7 @@ void HandleJoinRequestAsHost(
     accept.stage_seed = state.net_session.stage_seed;
     accept.lockstep_start_frame = state.net_session.lockstep_next_frame_to_step;
     accept.lockstep_input_delay_frames = state.net_session.lockstep_input_delay_frames;
+    accept.lockstep_max_rollback_frames = state.net_session.lockstep_max_rollback_frames;
     accept.multiplayer_respawn_mode =
         static_cast<std::uint8_t>(state.multiplayer_respawn_mode);
     WriteFixedString(state.net_session.quest_id, accept.quest_id);
@@ -306,6 +307,7 @@ void HandleJoinAcceptAsPeer(
     state.net_session.quest_stage_id = ReadFixedString(accept.quest_stage_id);
     state.net_session.stage_seed = accept.stage_seed;
     state.net_session.lockstep_input_delay_frames = accept.lockstep_input_delay_frames;
+    state.net_session.lockstep_max_rollback_frames = accept.lockstep_max_rollback_frames;
     switch (accept.multiplayer_respawn_mode) {
     case static_cast<std::uint8_t>(MultiplayerRespawnMode::GenerousNextLevel):
         state.multiplayer_respawn_mode = MultiplayerRespawnMode::GenerousNextLevel;

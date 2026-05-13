@@ -2,6 +2,7 @@
 
 #include "ent/spec.hpp"
 #include "network/net_fuzzer.hpp"
+#include "network/net_lobby.hpp"
 #include "network/net_transport.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
@@ -698,6 +699,43 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
     if (parts.size() >= 2 && parts[1] == "fuzzer") {
         return HandleNetFuzzerCommand(state, parts);
     }
+    if (parts.size() >= 2 && parts[1] == "settings") {
+        if (parts.size() >= 3 && parts[2] == "set") {
+            if (parts.size() < 5) {
+                return MakeError("net settings set requires delay_frames and rollback_frames");
+            }
+            std::string status;
+            const bool ok = network::ScheduleLockstepSettingsChange(
+                state,
+                static_cast<std::uint32_t>(std::clamp(ParseIntArg(parts, 3, 2), 0, 999)),
+                static_cast<std::uint32_t>(std::clamp(ParseIntArg(parts, 4, 12), 0, 999)),
+                &status
+            );
+            if (!ok) {
+                return MakeError(status);
+            }
+            return "{\"ok\":true,\"cmd\":\"net settings set\",\"status\":" +
+                JsonString(status) + "}\n";
+        }
+        if (parts.size() >= 3 && parts[2] == "auto") {
+            if (parts.size() < 4) {
+                return MakeError("net settings auto requires on or off");
+            }
+            if (state.net_session.role != network::NetRole::Host) {
+                return MakeError("only the host can change auto delay");
+            }
+            if (parts[3] == "on") {
+                state.net_session.lockstep_auto_delay_enabled = true;
+            } else if (parts[3] == "off") {
+                state.net_session.lockstep_auto_delay_enabled = false;
+                state.net_session.lockstep_auto_delay_candidate_age_frames = 0;
+            } else {
+                return MakeError("net settings auto requires on or off");
+            }
+        } else if (parts.size() >= 3 && parts[2] != "status") {
+            return MakeError("unknown net settings command");
+        }
+    }
 
     const std::size_t total_input_records =
         state.net_session.lockstep_input_buffer.RecordCount();
@@ -732,6 +770,25 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"lockstep_next_frame\":" << state.net_session.lockstep_next_frame_to_step
         << ",\"lockstep_next_local_input_frame\":" << state.net_session.lockstep_next_local_input_frame
         << ",\"lockstep_input_delay_frames\":" << state.net_session.lockstep_input_delay_frames
+        << ",\"lockstep_max_rollback_frames\":" << state.net_session.lockstep_max_rollback_frames
+        << ",\"lockstep_auto_delay_enabled\":"
+        << (state.net_session.lockstep_auto_delay_enabled ? "true" : "false")
+        << ",\"lockstep_auto_delay_candidate_frames\":"
+        << state.net_session.lockstep_auto_delay_candidate_frames
+        << ",\"lockstep_auto_delay_candidate_age_frames\":"
+        << state.net_session.lockstep_auto_delay_candidate_age_frames
+        << ",\"lockstep_pending_settings\":";
+    if (state.net_session.lockstep_pending_settings.has_value()) {
+        const network::PendingLockstepSettings& pending =
+            *state.net_session.lockstep_pending_settings;
+        out << "{\"sequence\":" << pending.sequence
+            << ",\"apply_frame\":" << pending.apply_frame
+            << ",\"input_delay_frames\":" << pending.input_delay_frames
+            << ",\"max_rollback_frames\":" << pending.max_rollback_frames << "}";
+    } else {
+        out << "null";
+    }
+    out
         << ",\"lockstep_last_confirmed_hash_frame\":"
         << state.net_session.lockstep_last_confirmed_hash_frame
         << ",\"lockstep_last_confirmed_hash\":"
@@ -877,7 +934,7 @@ std::string HandleCommand(State& state, std::string_view command) {
         return "{\"ok\":true,\"cmd\":\"ping\",\"pong\":true}\n";
     }
     if (op == "help") {
-        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"net fuzzer status\",\"net fuzzer off\",\"net fuzzer preset <name>\",\"net fuzzer set <latency_ms> <jitter_ms> <loss_pct> <duplicate_pct> <reorder_window>\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
+        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"net settings status\",\"net settings set <delay_frames> <rollback_frames>\",\"net settings auto <on|off>\",\"net fuzzer status\",\"net fuzzer off\",\"net fuzzer preset <name>\",\"net fuzzer set <latency_ms> <jitter_ms> <loss_pct> <duplicate_pct> <reorder_window>\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
     }
     if (op == "status") {
         return HandleStatusCommand(state);

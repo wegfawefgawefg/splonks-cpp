@@ -163,6 +163,12 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             RelayInputFrameRecordsToOtherRemotes(transport, packet->endpoint, *input_frames);
             continue;
         }
+
+        if (const std::optional<LockstepSettingsPacket> settings =
+                TryDecodeLockstepSettings(packet->bytes.data(), packet->size)) {
+            // Settings are host-owned. Ignore peer-originated settings packets.
+            continue;
+        }
     }
 }
 
@@ -215,6 +221,12 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (const std::optional<InputFrameRecordsPacket> input_frames =
                 TryDecodeInputFrameRecords(packet->bytes.data(), packet->size)) {
             HandleInputFrameRecords(state, *input_frames);
+            continue;
+        }
+
+        if (const std::optional<LockstepSettingsPacket> settings =
+                TryDecodeLockstepSettings(packet->bytes.data(), packet->size)) {
+            HandleLockstepSettingsPacket(state, *settings);
             continue;
         }
     }

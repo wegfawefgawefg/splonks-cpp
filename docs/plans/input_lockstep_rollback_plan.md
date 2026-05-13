@@ -13,8 +13,8 @@ content and gives us a cleaner long-term mod story.
 
 ## Current Goal
 
-Implement authoritative input lockstep cleanly, without rollback at first.
-Rollback remains the next phase after delay-based lockstep proves det.
+Implement authoritative input lockstep cleanly, with rollback used to keep
+input delay low after delay-only lockstep proved deterministic.
 
 Success target for the current branch:
 
@@ -48,9 +48,8 @@ Current handoff constraints:
 - Continue from this branch. Do not reset to an older commit just to escape the
   old networking cleanup; the player-slot/input-table refactors are part of the
   lockstep foundation.
-- Delay-based input lockstep is the deliverable for this goal. Rollback is
-  explicitly out of scope until lockstep determinism and live stage traversal
-  are proven.
+- Delay-based input lockstep and rollback are both active for this goal.
+  Delay remains the deterministic fallback; rollback is the latency-feel path.
 - Treat old host-authoritative leftovers as cleanup debt. Remove them
   from active gameplay or quarantine them as legacy tests/tools; do not adapt
   new gameplay code to those paths.
@@ -154,6 +153,57 @@ Implementation order from here:
 6. Add smoothing only for visual correction artifacts; never hide a real
    deterministic divergence with interpolation.
 
+Next tuning plan: live delay/window controls.
+
+Goal: let the host tune latency behavior during a session without breaking
+lockstep determinism.
+
+1. Scheduled input-delay changes.
+   - [x] Add a lockstep settings-change record with:
+     `apply_frame`, `input_delay_frames`, and a monotonically increasing
+     settings sequence.
+   - [x] Host chooses `apply_frame = current_frame + max(old_delay, new_delay) +
+     safety_margin`.
+   - [x] Host sends the settings record through the lockstep packet path and
+     resends it while pending plus a short post-apply retention window.
+   - [x] Peers store the pending change and apply it only when their sim reaches
+     `apply_frame`.
+   - [x] UI and `splonksctl net` show active delay, pending delay, and apply
+     frame.
+   - [x] Manual changes schedule; they do not mutate
+     `lockstep_input_delay_frames` immediately on only one process.
+   - [x] Exit gate: `--check-input-lockstep-smoke` includes a settings smoke
+     that schedules a delay change, verifies it does not apply early, and
+     verifies host/peer apply the same value at the scheduled frame.
+
+2. Scheduled rollback-window changes.
+   - [x] Add `max_rollback_frames` to the same scheduled settings record.
+   - [x] Increasing the window applies at `apply_frame`.
+   - [x] Decreasing the window prunes only snapshots older than the new window
+     after `apply_frame`; it must not delete snapshots needed for already-known
+     pending rollback.
+   - [x] UI and `splonksctl net` show active rollback window, pending rollback
+     window, retained snapshot count, max observed rollback span, and replay
+     cost.
+   - [x] Exit gate: `--check-input-lockstep-smoke` includes a settings smoke
+     that schedules a rollback-window change and verifies host/peer apply the
+     same value at the scheduled frame.
+
+3. Optional host auto-delay.
+   - [x] Host computes a target from connected peers:
+     `ceil(((max_peer_rtt / 2) + jitter_margin_ms) / frame_ms) + safety_frames`.
+   - [x] Smooth the target so it does not flap: require the suggested value to stay
+     different for a cooldown window before scheduling a change.
+   - [x] Manual override disables auto scheduling but still displays the suggested
+     value.
+   - [x] Clamp the target to the configured min/max delay range.
+   - [x] Prefer keeping delay low and letting rollback handle spikes; auto-delay
+     should prevent chronic prediction misses, not hide every transient packet
+     spike.
+   - [x] Exit gate: `--check-input-lockstep-smoke` includes an auto-delay smoke
+     that feeds peer RTT/jitter through the stable-candidate path and verifies a
+     scheduled deterministic settings change.
+
 Phase 1: configurable delay.
 
 - [x] Add a host-side debug/network control for `lockstep_input_delay_frames`
@@ -165,7 +215,7 @@ Phase 1: configurable delay.
 - [x] Keep active-session delay changes disabled at first. The join accept
   already carries the initial host-selected delay, so pre-session tuning is
   safe.
-- [ ] If live delay changes are needed later, apply them as a scheduled
+- [x] If live delay changes are needed later, apply them as a scheduled
   lockstep setting change at a future frame. Never mutate delay immediately on
   one process.
 - [x] Add a smoke or control-server check that starts a fake session with a

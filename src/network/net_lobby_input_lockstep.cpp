@@ -7,7 +7,9 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <memory>
+#include <string>
 
 namespace splonks::network {
 
@@ -23,6 +25,17 @@ struct RollbackPresentationSnapshot {
     std::optional<Vec2> gameplay_camera_anchor_world_pos;
     Vec2 play_cam_pos = Vec2::New(0.0F, 0.0F);
 };
+
+void PruneRollbackSnapshots(State& state);
+
+std::uint32_t SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
+    constexpr float kNetworkFrameMs = 1000.0F / 60.0F;
+    constexpr float kSafetyFrames = 1.0F;
+    const float one_way_ms = std::max(0.0F, ping_ms) * 0.5F;
+    const float jitter_margin_ms = std::max(2.0F, std::max(0.0F, jitter_ms) * 2.0F);
+    const float frames = std::ceil((one_way_ms + jitter_margin_ms) / kNetworkFrameMs + kSafetyFrames);
+    return ClampLockstepInputDelayFrames(static_cast<std::uint32_t>(std::max(0.0F, frames)));
+}
 
 RollbackPresentationSnapshot CaptureRollbackPresentationState(
     const State& state,
@@ -217,6 +230,175 @@ void SendLocalInputFramePacket(State& state, NetTransportRuntime& transport) {
     if (state.net_session.role == NetRole::Peer && !transport.join_request_pending) {
         SendInputFramePacketToEndpoint(state, transport, transport.host_endpoint);
     }
+}
+
+LockstepSettingsPacket MakeLockstepSettingsPacket(
+    const State& state,
+    const PendingLockstepSettings& settings
+) {
+    LockstepSettingsPacket packet;
+    packet.stage_instance_id = state.net_session.stage_instance_id;
+    packet.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
+    packet.sequence = settings.sequence;
+    packet.apply_frame = settings.apply_frame;
+    packet.input_delay_frames = settings.input_delay_frames;
+    packet.max_rollback_frames = settings.max_rollback_frames;
+    return packet;
+}
+
+void ClearExpiredBroadcastLockstepSettings(State& state) {
+    if (!state.net_session.lockstep_broadcast_settings.has_value()) {
+        return;
+    }
+    if (state.net_session.lockstep_next_frame_to_step <=
+        state.net_session.lockstep_broadcast_settings_until_frame) {
+        return;
+    }
+    state.net_session.lockstep_broadcast_settings = std::nullopt;
+    state.net_session.lockstep_broadcast_settings_until_frame = 0;
+}
+
+void SendBroadcastLockstepSettings(State& state, NetTransportRuntime& transport) {
+    ClearExpiredBroadcastLockstepSettings(state);
+    if (state.net_session.role != NetRole::Host ||
+        !state.net_session.lockstep_broadcast_settings.has_value()) {
+        return;
+    }
+
+    const LockstepSettingsPacket packet =
+        MakeLockstepSettingsPacket(state, *state.net_session.lockstep_broadcast_settings);
+    const EncodedNetPacket encoded = EncodeLockstepSettings(packet);
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        SendEncodedPacket(transport, remote.endpoint, encoded);
+    }
+}
+
+bool ScheduleLockstepSettingsChangeImpl(
+    State& state,
+    std::uint32_t input_delay_frames,
+    std::uint32_t max_rollback_frames,
+    bool manual,
+    std::string* status_out
+) {
+    if (!IsInputLockstepSession(state) || state.net_session.role != NetRole::Host) {
+        if (status_out != nullptr) {
+            *status_out = "Only the lockstep host can schedule live settings changes.";
+        }
+        return false;
+    }
+
+    input_delay_frames = ClampLockstepInputDelayFrames(input_delay_frames);
+    max_rollback_frames = ClampLockstepMaxRollbackFrames(max_rollback_frames);
+    if (state.net_session.lockstep_pending_settings.has_value()) {
+        const PendingLockstepSettings& pending = *state.net_session.lockstep_pending_settings;
+        if (pending.input_delay_frames == input_delay_frames &&
+            pending.max_rollback_frames == max_rollback_frames) {
+            if (status_out != nullptr) {
+                *status_out = "Matching lockstep settings change is already pending.";
+            }
+            return true;
+        }
+    }
+    if (!state.net_session.lockstep_pending_settings.has_value() &&
+        state.net_session.lockstep_input_delay_frames == input_delay_frames &&
+        state.net_session.lockstep_max_rollback_frames == max_rollback_frames) {
+        if (manual) {
+            state.net_session.lockstep_auto_delay_enabled = false;
+        }
+        if (status_out != nullptr) {
+            *status_out = "Lockstep settings are already active.";
+        }
+        return true;
+    }
+
+    const std::uint32_t frame_margin =
+        std::max(state.net_session.lockstep_input_delay_frames, input_delay_frames) +
+        kLockstepSettingsApplySafetyFrames;
+    PendingLockstepSettings pending;
+    pending.sequence = state.net_session.lockstep_next_settings_sequence++;
+    pending.apply_frame = state.net_session.lockstep_next_frame_to_step + frame_margin;
+    pending.input_delay_frames = input_delay_frames;
+    pending.max_rollback_frames = max_rollback_frames;
+    state.net_session.lockstep_pending_settings = pending;
+    state.net_session.lockstep_broadcast_settings = pending;
+    state.net_session.lockstep_broadcast_settings_until_frame =
+        pending.apply_frame + frame_margin;
+    if (manual) {
+        state.net_session.lockstep_auto_delay_enabled = false;
+    }
+    if (status_out != nullptr) {
+        *status_out = "Scheduled lockstep settings seq=" + std::to_string(pending.sequence) +
+            " apply_frame=" + std::to_string(pending.apply_frame) +
+            " delay=" + std::to_string(pending.input_delay_frames) +
+            " rollback=" + std::to_string(pending.max_rollback_frames) + ".";
+    }
+    return true;
+}
+
+void ApplyPendingLockstepSettings(State& state) {
+    ClearExpiredBroadcastLockstepSettings(state);
+    if (!state.net_session.lockstep_pending_settings.has_value()) {
+        return;
+    }
+    const PendingLockstepSettings pending = *state.net_session.lockstep_pending_settings;
+    if (state.net_session.lockstep_next_frame_to_step < pending.apply_frame) {
+        return;
+    }
+
+    state.net_session.lockstep_input_delay_frames =
+        ClampLockstepInputDelayFrames(pending.input_delay_frames);
+    state.net_session.lockstep_max_rollback_frames =
+        ClampLockstepMaxRollbackFrames(pending.max_rollback_frames);
+    state.net_session.lockstep_last_applied_settings_sequence =
+        std::max(state.net_session.lockstep_last_applied_settings_sequence, pending.sequence);
+    state.net_session.lockstep_pending_settings = std::nullopt;
+    PruneRollbackSnapshots(state);
+}
+
+void MaybeScheduleAutoDelayChange(State& state) {
+    if (state.net_session.role != NetRole::Host ||
+        !state.net_session.lockstep_auto_delay_enabled ||
+        state.net_session.lockstep_pending_settings.has_value() ||
+        state.net_session.peers.empty()) {
+        state.net_session.lockstep_auto_delay_candidate_age_frames = 0;
+        return;
+    }
+
+    std::uint32_t suggested = kMinLockstepInputDelayFrames;
+    for (const NetPeerState& peer : state.net_session.peers) {
+        if (!peer.connected) {
+            continue;
+        }
+        suggested = std::max(
+            suggested,
+            SuggestedLockstepDelayFrames(peer.estimated_ping_ms, peer.jitter_ms)
+        );
+    }
+    suggested = ClampLockstepInputDelayFrames(suggested);
+    if (suggested == state.net_session.lockstep_input_delay_frames) {
+        state.net_session.lockstep_auto_delay_candidate_frames = suggested;
+        state.net_session.lockstep_auto_delay_candidate_age_frames = 0;
+        return;
+    }
+    if (state.net_session.lockstep_auto_delay_candidate_frames != suggested) {
+        state.net_session.lockstep_auto_delay_candidate_frames = suggested;
+        state.net_session.lockstep_auto_delay_candidate_age_frames = 1;
+        return;
+    }
+    state.net_session.lockstep_auto_delay_candidate_age_frames += 1;
+    if (state.net_session.lockstep_auto_delay_candidate_age_frames <
+        kLockstepAutoDelayStableFrames) {
+        return;
+    }
+
+    (void)ScheduleLockstepSettingsChangeImpl(
+        state,
+        suggested,
+        state.net_session.lockstep_max_rollback_frames,
+        false,
+        nullptr
+    );
+    state.net_session.lockstep_auto_delay_candidate_age_frames = 0;
 }
 
 void ApplyLockstepInputsToState(
@@ -432,6 +614,13 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_input_buffer = LockstepInputBuffer{};
     state.net_session.lockstep_next_frame_to_step = 0;
     state.net_session.lockstep_next_local_input_frame = 0;
+    state.net_session.lockstep_pending_settings = std::nullopt;
+    state.net_session.lockstep_broadcast_settings = std::nullopt;
+    state.net_session.lockstep_broadcast_settings_until_frame = 0;
+    state.net_session.lockstep_last_applied_settings_sequence = 0;
+    state.net_session.lockstep_auto_delay_candidate_frames =
+        state.net_session.lockstep_input_delay_frames;
+    state.net_session.lockstep_auto_delay_candidate_age_frames = 0;
     state.net_session.lockstep_next_input_sequence = 1;
     state.net_session.lockstep_last_confirmed_hash_frame = 0;
     state.net_session.lockstep_last_confirmed_hash = 0;
@@ -463,6 +652,9 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
         return false;
     }
 
+    ApplyDueLockstepSettings(state);
+    UpdateLockstepAutoDelay(state);
+    SendBroadcastLockstepSettings(state, transport);
     QueueLocalInputsThroughTargetFrame(state);
     SendLocalInputFramePacket(state, transport);
     FlushFuzzedOutgoingPackets(transport);
@@ -533,6 +725,51 @@ void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet
             RequestRollbackFromFrame(state, *result.mismatch_frame);
         }
     }
+}
+
+void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& packet) {
+    if (packet.stage_instance_id != state.net_session.stage_instance_id) {
+        return;
+    }
+    if (packet.sequence <= state.net_session.lockstep_last_applied_settings_sequence) {
+        return;
+    }
+    if (state.net_session.lockstep_pending_settings.has_value() &&
+        packet.sequence < state.net_session.lockstep_pending_settings->sequence) {
+        return;
+    }
+
+    PendingLockstepSettings pending;
+    pending.sequence = packet.sequence;
+    pending.apply_frame = packet.apply_frame;
+    pending.input_delay_frames = ClampLockstepInputDelayFrames(packet.input_delay_frames);
+    pending.max_rollback_frames = ClampLockstepMaxRollbackFrames(packet.max_rollback_frames);
+    state.net_session.lockstep_pending_settings = pending;
+    state.net_session.lockstep_next_settings_sequence =
+        std::max(state.net_session.lockstep_next_settings_sequence, packet.sequence + 1);
+}
+
+bool ScheduleLockstepSettingsChange(
+    State& state,
+    std::uint32_t input_delay_frames,
+    std::uint32_t max_rollback_frames,
+    std::string* status_out
+) {
+    return ScheduleLockstepSettingsChangeImpl(
+        state,
+        input_delay_frames,
+        max_rollback_frames,
+        true,
+        status_out
+    );
+}
+
+void ApplyDueLockstepSettings(State& state) {
+    ApplyPendingLockstepSettings(state);
+}
+
+void UpdateLockstepAutoDelay(State& state) {
+    MaybeScheduleAutoDelayChange(state);
 }
 
 void RelayInputFrameRecordsToOtherRemotes(

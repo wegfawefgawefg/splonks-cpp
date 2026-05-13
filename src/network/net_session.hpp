@@ -111,6 +111,13 @@ struct LockstepRollbackSnapshot {
     std::shared_ptr<GameplaySnapshot> snapshot;
 };
 
+struct PendingLockstepSettings {
+    std::uint32_t sequence = 0;
+    LockstepFrame apply_frame = 0;
+    std::uint32_t input_delay_frames = kDefaultLockstepInputDelayFrames;
+    std::uint32_t max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
+};
+
 struct NetSessionState {
     NetRole role = NetRole::Offline;
     PlayerId local_player_id = 1;
@@ -140,11 +147,19 @@ struct NetSessionState {
     LockstepFrame lockstep_next_frame_to_step = 0;
     LockstepFrame lockstep_next_local_input_frame = 0;
     std::uint32_t lockstep_input_delay_frames = kDefaultLockstepInputDelayFrames;
+    std::uint32_t lockstep_next_settings_sequence = 1;
+    std::optional<PendingLockstepSettings> lockstep_pending_settings = std::nullopt;
+    std::optional<PendingLockstepSettings> lockstep_broadcast_settings = std::nullopt;
+    LockstepFrame lockstep_broadcast_settings_until_frame = 0;
+    std::uint32_t lockstep_last_applied_settings_sequence = 0;
+    bool lockstep_auto_delay_enabled = false;
+    std::uint32_t lockstep_auto_delay_candidate_frames = kDefaultLockstepInputDelayFrames;
+    std::uint32_t lockstep_auto_delay_candidate_age_frames = 0;
     std::uint32_t lockstep_next_input_sequence = 1;
     std::uint64_t lockstep_last_confirmed_hash_frame = 0;
     std::uint64_t lockstep_last_confirmed_hash = 0;
     bool lockstep_rollback_enabled = true;
-    std::uint32_t lockstep_max_rollback_frames = 12;
+    std::uint32_t lockstep_max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
     std::optional<LockstepFrame> lockstep_rollback_requested_frame = std::nullopt;
     std::vector<LockstepRollbackSnapshot> lockstep_rollback_snapshots;
     std::uint64_t lockstep_rollback_count = 0;

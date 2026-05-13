@@ -80,6 +80,8 @@ struct DebugPlayback {
     int network_join_port = 42424;
     int network_lockstep_input_delay_frames =
         static_cast<int>(network::kDefaultLockstepInputDelayFrames);
+    int network_lockstep_rollback_frames =
+        static_cast<int>(network::kDefaultLockstepMaxRollbackFrames);
     std::array<char, 64> network_join_host{};
     std::string network_status;
     bool tile_brush_enabled = false;

@@ -8,6 +8,7 @@
 #include "inputs.hpp"
 #include "network/input_lockstep.hpp"
 #include "network/net_fuzzer.hpp"
+#include "network/net_lobby_internal.hpp"
 #include "network/net_lobby.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_aframe.hpp"
@@ -1434,6 +1435,196 @@ bool RunRollbackLatencySmoke() {
     return true;
 }
 
+bool RunLockstepSettingsScheduleSmoke() {
+    Graphics host_graphics;
+    Graphics peer_graphics;
+    InitCliSmokeRuntimeTables(host_graphics);
+    InitCliSmokeRuntimeTables(peer_graphics);
+
+    State host = State::New();
+    State peer = State::New();
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(host, host_graphics, {1}, failed_step) ||
+        !PrepareLockstepSmokeState(peer, peer_graphics, {2}, failed_step)) {
+        std::cerr << "lockstep settings smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+    host.net_session.role = network::NetRole::Host;
+    peer.net_session.role = network::NetRole::Peer;
+    host.net_session.stage_instance_id = 77;
+    peer.net_session.stage_instance_id = 77;
+    host.net_session.lockstep_next_frame_to_step = 100;
+    peer.net_session.lockstep_next_frame_to_step = 100;
+    host.net_session.lockstep_input_delay_frames = 2;
+    peer.net_session.lockstep_input_delay_frames = 2;
+    host.net_session.lockstep_max_rollback_frames = 12;
+    peer.net_session.lockstep_max_rollback_frames = 12;
+
+    std::string status;
+    if (!network::ScheduleLockstepSettingsChange(host, 5, 24, &status)) {
+        std::cerr << "lockstep settings smoke failed scheduling: " << status << '\n';
+        return false;
+    }
+    if (!host.net_session.lockstep_pending_settings.has_value()) {
+        std::cerr << "lockstep settings smoke failed: host has no pending settings\n";
+        return false;
+    }
+    if (!host.net_session.lockstep_broadcast_settings.has_value()) {
+        std::cerr << "lockstep settings smoke failed: host has no broadcast settings\n";
+        return false;
+    }
+    const network::PendingLockstepSettings pending =
+        *host.net_session.lockstep_pending_settings;
+    if (pending.apply_frame <= host.net_session.lockstep_next_frame_to_step ||
+        pending.input_delay_frames != 5 ||
+        pending.max_rollback_frames != 24 ||
+        host.net_session.lockstep_input_delay_frames != 2 ||
+        host.net_session.lockstep_max_rollback_frames != 12) {
+        std::cerr << "lockstep settings smoke failed: host pending settings are invalid\n";
+        return false;
+    }
+    if (host.net_session.lockstep_broadcast_settings->sequence != pending.sequence ||
+        host.net_session.lockstep_broadcast_settings_until_frame <= pending.apply_frame) {
+        std::cerr << "lockstep settings smoke failed: broadcast retention is invalid\n";
+        return false;
+    }
+
+    network::LockstepSettingsPacket packet;
+    packet.stage_instance_id = host.net_session.stage_instance_id;
+    packet.sender_peer_id = host.net_session.local_player_id;
+    packet.sequence = pending.sequence;
+    packet.apply_frame = pending.apply_frame;
+    packet.input_delay_frames = pending.input_delay_frames;
+    packet.max_rollback_frames = pending.max_rollback_frames;
+    const network::EncodedNetPacket encoded = network::EncodeLockstepSettings(packet);
+    const std::optional<network::LockstepSettingsPacket> decoded =
+        network::TryDecodeLockstepSettings(encoded.bytes.data(), encoded.size);
+    if (!decoded.has_value()) {
+        std::cerr << "lockstep settings smoke failed: settings packet did not decode\n";
+        return false;
+    }
+    network::HandleLockstepSettingsPacket(peer, *decoded);
+    if (!peer.net_session.lockstep_pending_settings.has_value() ||
+        peer.net_session.lockstep_pending_settings->sequence != pending.sequence ||
+        peer.net_session.lockstep_pending_settings->apply_frame != pending.apply_frame) {
+        std::cerr << "lockstep settings smoke failed: peer did not store pending settings\n";
+        return false;
+    }
+
+    host.net_session.lockstep_next_frame_to_step = pending.apply_frame - 1;
+    peer.net_session.lockstep_next_frame_to_step = pending.apply_frame - 1;
+    network::ApplyDueLockstepSettings(host);
+    network::ApplyDueLockstepSettings(peer);
+    if (host.net_session.lockstep_input_delay_frames != 2 ||
+        peer.net_session.lockstep_input_delay_frames != 2) {
+        std::cerr << "lockstep settings smoke failed: settings applied too early\n";
+        return false;
+    }
+
+    host.net_session.lockstep_next_frame_to_step = pending.apply_frame;
+    peer.net_session.lockstep_next_frame_to_step = pending.apply_frame;
+    network::ApplyDueLockstepSettings(host);
+    network::ApplyDueLockstepSettings(peer);
+    if (host.net_session.lockstep_input_delay_frames != 5 ||
+        peer.net_session.lockstep_input_delay_frames != 5 ||
+        host.net_session.lockstep_max_rollback_frames != 24 ||
+        peer.net_session.lockstep_max_rollback_frames != 24 ||
+        host.net_session.lockstep_pending_settings.has_value() ||
+        peer.net_session.lockstep_pending_settings.has_value()) {
+        std::cerr << "lockstep settings smoke failed: settings did not apply consistently\n";
+        return false;
+    }
+    if (!host.net_session.lockstep_broadcast_settings.has_value()) {
+        std::cerr << "lockstep settings smoke failed: host stopped rebroadcasting at apply\n";
+        return false;
+    }
+    host.net_session.lockstep_next_frame_to_step =
+        host.net_session.lockstep_broadcast_settings_until_frame + 1;
+    network::ApplyDueLockstepSettings(host);
+    if (host.net_session.lockstep_broadcast_settings.has_value()) {
+        std::cerr << "lockstep settings smoke failed: host retained broadcast settings too long\n";
+        return false;
+    }
+
+    host.net_session.lockstep_next_frame_to_step = pending.apply_frame + 20;
+    peer.net_session.lockstep_next_frame_to_step = pending.apply_frame + 20;
+    if (!network::ScheduleLockstepSettingsChange(host, 4, 6, &status)) {
+        std::cerr << "lockstep settings smoke failed scheduling decrease: " << status << '\n';
+        return false;
+    }
+    const network::PendingLockstepSettings decrease =
+        *host.net_session.lockstep_pending_settings;
+    network::LockstepSettingsPacket decrease_packet;
+    decrease_packet.stage_instance_id = host.net_session.stage_instance_id;
+    decrease_packet.sender_peer_id = host.net_session.local_player_id;
+    decrease_packet.sequence = decrease.sequence;
+    decrease_packet.apply_frame = decrease.apply_frame;
+    decrease_packet.input_delay_frames = decrease.input_delay_frames;
+    decrease_packet.max_rollback_frames = decrease.max_rollback_frames;
+    const network::EncodedNetPacket decrease_encoded =
+        network::EncodeLockstepSettings(decrease_packet);
+    const std::optional<network::LockstepSettingsPacket> decrease_decoded =
+        network::TryDecodeLockstepSettings(decrease_encoded.bytes.data(), decrease_encoded.size);
+    if (!decrease_decoded.has_value()) {
+        std::cerr << "lockstep settings smoke failed: decrease packet did not decode\n";
+        return false;
+    }
+    network::HandleLockstepSettingsPacket(peer, *decrease_decoded);
+    host.net_session.lockstep_next_frame_to_step = decrease.apply_frame;
+    peer.net_session.lockstep_next_frame_to_step = decrease.apply_frame;
+    network::ApplyDueLockstepSettings(host);
+    network::ApplyDueLockstepSettings(peer);
+    if (host.net_session.lockstep_input_delay_frames != 4 ||
+        peer.net_session.lockstep_input_delay_frames != 4 ||
+        host.net_session.lockstep_max_rollback_frames != 6 ||
+        peer.net_session.lockstep_max_rollback_frames != 6) {
+        std::cerr << "lockstep settings smoke failed: decrease did not apply consistently\n";
+        return false;
+    }
+
+    State auto_host = State::New();
+    Graphics auto_graphics;
+    InitCliSmokeRuntimeTables(auto_graphics);
+    if (!PrepareLockstepSmokeState(auto_host, auto_graphics, {1}, failed_step)) {
+        std::cerr << "lockstep settings smoke failed during auto setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+    auto_host.net_session.role = network::NetRole::Host;
+    auto_host.net_session.input_lockstep_enabled = true;
+    auto_host.net_session.lockstep_input_delay_frames = 2;
+    auto_host.net_session.lockstep_max_rollback_frames = 12;
+    auto_host.net_session.lockstep_auto_delay_enabled = true;
+    network::NetPeerState remote;
+    remote.player_id = 2;
+    remote.connected = true;
+    remote.estimated_ping_ms = 150.0F;
+    remote.jitter_ms = 20.0F;
+    auto_host.net_session.peers.push_back(remote);
+    for (std::uint32_t i = 0; i < network::kLockstepAutoDelayStableFrames; ++i) {
+        network::UpdateLockstepAutoDelay(auto_host);
+    }
+    if (!auto_host.net_session.lockstep_pending_settings.has_value()) {
+        std::cerr << "lockstep settings smoke failed: auto delay did not schedule\n";
+        return false;
+    }
+    const network::PendingLockstepSettings auto_pending =
+        *auto_host.net_session.lockstep_pending_settings;
+    if (auto_pending.input_delay_frames <= 2 ||
+        auto_pending.max_rollback_frames != 12 ||
+        auto_pending.apply_frame <= auto_host.net_session.lockstep_next_frame_to_step) {
+        std::cerr << "lockstep settings smoke failed: auto delay pending settings invalid\n";
+        return false;
+    }
+
+    std::cout << "lockstep settings smoke ok: apply_frame=" << pending.apply_frame
+              << " delay=" << host.net_session.lockstep_input_delay_frames
+              << " rollback=" << host.net_session.lockstep_max_rollback_frames
+              << " auto_delay=" << auto_pending.input_delay_frames << '\n';
+    return true;
+}
+
 } // namespace
 
 bool CheckStateFingerprintSmoke() {
@@ -1857,6 +2048,9 @@ bool CheckInputLockstepSmoke() {
         impaired.duplicate_percent = 4.0F;
         impaired.reorder_window_packets = 4;
         if (!run_case("impaired", impaired, 0x1002U, network::kDefaultLockstepInputDelayFrames)) {
+            return false;
+        }
+        if (!RunLockstepSettingsScheduleSmoke()) {
             return false;
         }
 

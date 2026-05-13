@@ -31,8 +31,8 @@ def main() -> int:
         nargs=argparse.REMAINDER,
         help=(
             "command to send: status, players, ents near 96, ent 0, "
-            "tiles x y w h, net, net fuzzer preset tx-japan, perf, "
-            "input 12 right jump"
+            "tiles x y w h, net, net settings set 4 16, "
+            "net fuzzer preset tx-japan, perf, input 12 right jump"
         ),
     )
     args = parser.parse_args()

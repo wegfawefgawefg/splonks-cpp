@@ -53,6 +53,15 @@ bool IsInputLockstepActive(const State& state);
 void ResetInputLockstepState(State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
+void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& packet);
+bool ScheduleLockstepSettingsChange(
+    State& state,
+    std::uint32_t input_delay_frames,
+    std::uint32_t max_rollback_frames,
+    std::string* status_out
+);
+void ApplyDueLockstepSettings(State& state);
+void UpdateLockstepAutoDelay(State& state);
 void RelayInputFrameRecordsToOtherRemotes(
     NetTransportRuntime& transport,
     const NetEndpoint& source_endpoint,

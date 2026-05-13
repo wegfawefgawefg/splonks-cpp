@@ -369,16 +369,30 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
     debug.network_lockstep_input_delay_frames = static_cast<int>(network::ClampLockstepInputDelayFrames(
         static_cast<std::uint32_t>(std::max(0, debug.network_lockstep_input_delay_frames))
     ));
+    ImGui::SliderInt(
+        "Rollback frames",
+        &debug.network_lockstep_rollback_frames,
+        static_cast<int>(network::kMinLockstepMaxRollbackFrames),
+        static_cast<int>(network::kMaxLockstepMaxRollbackFrames)
+    );
+    debug.network_lockstep_rollback_frames = static_cast<int>(network::ClampLockstepMaxRollbackFrames(
+        static_cast<std::uint32_t>(std::max(0, debug.network_lockstep_rollback_frames))
+    ));
     ImGui::Text(
-        "Configured delay: %d frames (%.1fms)%s",
+        "Configured delay: %d frames (%.1fms), rollback: %d frames%s",
         debug.network_lockstep_input_delay_frames,
         static_cast<float>(debug.network_lockstep_input_delay_frames) * kNetworkFrameMs,
+        debug.network_lockstep_rollback_frames,
         can_change_delay ? "" : " active next session"
     );
     ImGui::InputInt("Host port", &debug.network_host_port);
     if (ImGui::Button("Host")) {
         const int clamped_port = std::clamp(debug.network_host_port, 1, 65535);
         debug.network_host_port = clamped_port;
+        state.net_session.lockstep_max_rollback_frames =
+            network::ClampLockstepMaxRollbackFrames(
+                static_cast<std::uint32_t>(debug.network_lockstep_rollback_frames)
+            );
         (void)network::StartHostSession(
             state,
             static_cast<std::uint16_t>(clamped_port),
@@ -406,6 +420,51 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
     ImGui::SameLine();
     if (ImGui::Button("Reload Synced Stage")) {
         (void)network::ReloadSyncedQuestStage(state, graphics, &debug.network_status);
+    }
+
+    if (state.net_session.input_lockstep_enabled) {
+        ImGui::SeparatorText("Live Lockstep Settings");
+        ImGui::Text(
+            "Active delay=%u rollback=%u",
+            state.net_session.lockstep_input_delay_frames,
+            state.net_session.lockstep_max_rollback_frames
+        );
+        if (state.net_session.lockstep_pending_settings.has_value()) {
+            const network::PendingLockstepSettings& pending =
+                *state.net_session.lockstep_pending_settings;
+            ImGui::Text(
+                "Pending seq=%u apply=%llu delay=%u rollback=%u",
+                pending.sequence,
+                static_cast<unsigned long long>(pending.apply_frame),
+                pending.input_delay_frames,
+                pending.max_rollback_frames
+            );
+        } else {
+            ImGui::TextUnformatted("Pending: none");
+        }
+
+        const bool host_active = state.net_session.role == network::NetRole::Host;
+        if (!host_active) {
+            ImGui::BeginDisabled();
+        }
+        ImGui::Checkbox("Auto delay", &state.net_session.lockstep_auto_delay_enabled);
+        ImGui::SameLine();
+        ImGui::Text(
+            "candidate=%u age=%u",
+            state.net_session.lockstep_auto_delay_candidate_frames,
+            state.net_session.lockstep_auto_delay_candidate_age_frames
+        );
+        if (ImGui::Button("Schedule Delay / Rollback")) {
+            (void)network::ScheduleLockstepSettingsChange(
+                state,
+                static_cast<std::uint32_t>(debug.network_lockstep_input_delay_frames),
+                static_cast<std::uint32_t>(debug.network_lockstep_rollback_frames),
+                &debug.network_status
+            );
+        }
+        if (!host_active) {
+            ImGui::EndDisabled();
+        }
     }
 
     if (state.net_transport && !state.net_transport->last_error.empty()) {

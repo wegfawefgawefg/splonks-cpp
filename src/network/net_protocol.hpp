@@ -28,6 +28,7 @@ enum class NetPacketType : std::uint16_t {
     Pong = 4,
     LeaveNotice = 9,
     InputFrameRecords = 20,
+    LockstepSettings = 21,
 };
 
 struct NetPacketHeader {
@@ -56,6 +57,7 @@ struct JoinAcceptPacket {
     std::uint32_t stage_seed = 1;
     std::uint64_t lockstep_start_frame = 0;
     std::uint32_t lockstep_input_delay_frames = kDefaultLockstepInputDelayFrames;
+    std::uint32_t lockstep_max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
     std::uint8_t multiplayer_respawn_mode = 0;
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
@@ -95,6 +97,15 @@ struct InputFrameRecordsPacket {
     std::array<InputFrameRecordEntry, kNetInputFrameRecordsPerPacket> records{};
 };
 
+struct LockstepSettingsPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t sequence = 0;
+    std::uint64_t apply_frame = 0;
+    std::uint32_t input_delay_frames = kDefaultLockstepInputDelayFrames;
+    std::uint32_t max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
+};
+
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -106,12 +117,14 @@ EncodedNetPacket EncodePing(const PingPacket& packet);
 EncodedNetPacket EncodePong(const PongPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet);
+EncodedNetPacket EncodeLockstepSettings(const LockstepSettingsPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size);
 std::optional<PongPacket> TryDecodePong(const std::uint8_t* bytes, std::size_t size);
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<InputFrameRecordsPacket> TryDecodeInputFrameRecords(const std::uint8_t* bytes, std::size_t size);
+std::optional<LockstepSettingsPacket> TryDecodeLockstepSettings(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

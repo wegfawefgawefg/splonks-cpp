@@ -25,6 +25,12 @@ bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std:
 bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string* status_out);
+bool ScheduleLockstepSettingsChange(
+    State& state,
+    std::uint32_t input_delay_frames,
+    std::uint32_t max_rollback_frames,
+    std::string* status_out
+);
 bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);

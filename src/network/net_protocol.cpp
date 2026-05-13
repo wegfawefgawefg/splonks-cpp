@@ -10,6 +10,7 @@ static_assert(sizeof(PingPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader)
 static_assert(sizeof(PongPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(InputFrameRecordsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(LockstepSettingsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -87,6 +88,10 @@ EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet) 
     return EncodePayload(NetPacketType::InputFrameRecords, packet);
 }
 
+EncodedNetPacket EncodeLockstepSettings(const LockstepSettingsPacket& packet) {
+    return EncodePayload(NetPacketType::LockstepSettings, packet);
+}
+
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
     std::size_t offset = 0;
     if (!ReadHeader(bytes, size, NetPacketType::JoinRequest, offset)) {
@@ -122,6 +127,10 @@ std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, s
         1U,
         static_cast<std::uint32_t>(packet.assigned_player_ids.size())
     );
+    packet.lockstep_input_delay_frames =
+        ClampLockstepInputDelayFrames(packet.lockstep_input_delay_frames);
+    packet.lockstep_max_rollback_frames =
+        ClampLockstepMaxRollbackFrames(packet.lockstep_max_rollback_frames);
     return packet;
 }
 
@@ -178,6 +187,20 @@ std::optional<InputFrameRecordsPacket> TryDecodeInputFrameRecords(const std::uin
         packet.record_count,
         static_cast<std::uint32_t>(packet.records.size())
     );
+    return packet;
+}
+
+std::optional<LockstepSettingsPacket> TryDecodeLockstepSettings(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::LockstepSettings, offset)) {
+        return std::nullopt;
+    }
+    LockstepSettingsPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.input_delay_frames = ClampLockstepInputDelayFrames(packet.input_delay_frames);
+    packet.max_rollback_frames = ClampLockstepMaxRollbackFrames(packet.max_rollback_frames);
     return packet;
 }
 
