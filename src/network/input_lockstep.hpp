@@ -45,6 +45,7 @@ public:
     void Store(const LockstepInputRecord& record);
     bool Has(PlayerId player_id, LockstepFrame frame) const;
     const InputFrame* Find(PlayerId player_id, LockstepFrame frame) const;
+    std::optional<LockstepFrame> LatestFrameForPlayer(PlayerId player_id) const;
     bool FrameReady(const std::vector<PlayerId>& required_players, LockstepFrame frame) const;
     bool BuildFrameInputs(
         const std::vector<PlayerId>& required_players,

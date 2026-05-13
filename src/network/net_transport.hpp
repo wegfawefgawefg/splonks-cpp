@@ -56,6 +56,8 @@ struct NetRemoteEndpoint {
     std::vector<PlayerId> player_ids;
     NetEndpoint endpoint;
     std::uint64_t last_heard_frame = 0;
+    std::uint64_t next_ping_send_time_ms = 0;
+    std::uint32_t next_ping_sequence = 1;
 };
 
 struct NetTransportRuntime {
@@ -65,6 +67,8 @@ struct NetTransportRuntime {
     NetEndpoint host_endpoint;
     bool join_request_pending = false;
     std::uint32_t join_request_retry_frames = 0;
+    std::uint64_t next_host_ping_send_time_ms = 0;
+    std::uint32_t next_host_ping_sequence = 1;
     NetFuzzerConfig fuzzer_config;
     NetFuzzerStats fuzzer_stats;
     std::vector<NetFuzzedOutgoingPacket> fuzzed_outgoing_packets;

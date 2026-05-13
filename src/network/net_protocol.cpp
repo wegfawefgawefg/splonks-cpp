@@ -6,6 +6,8 @@ namespace splonks::network {
 
 static_assert(sizeof(JoinRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinAcceptPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(PingPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(PongPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(InputFrameRecordsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
@@ -69,6 +71,14 @@ EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet) {
     return EncodePayload(NetPacketType::JoinAccept, packet);
 }
 
+EncodedNetPacket EncodePing(const PingPacket& packet) {
+    return EncodePayload(NetPacketType::Ping, packet);
+}
+
+EncodedNetPacket EncodePong(const PongPacket& packet) {
+    return EncodePayload(NetPacketType::Pong, packet);
+}
+
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet) {
     return EncodePayload(NetPacketType::LeaveNotice, packet);
 }
@@ -112,6 +122,30 @@ std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, s
         1U,
         static_cast<std::uint32_t>(packet.assigned_player_ids.size())
     );
+    return packet;
+}
+
+std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::Ping, offset)) {
+        return std::nullopt;
+    }
+    PingPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<PongPacket> TryDecodePong(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::Pong, offset)) {
+        return std::nullopt;
+    }
+    PongPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
     return packet;
 }
 

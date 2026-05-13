@@ -23,6 +23,8 @@ constexpr std::size_t kNetInputFrameRecordsPerPacket = 16;
 enum class NetPacketType : std::uint16_t {
     JoinRequest = 1,
     JoinAccept = 2,
+    Ping = 3,
+    Pong = 4,
     LeaveNotice = 9,
     InputFrameRecords = 20,
 };
@@ -64,6 +66,18 @@ struct LeaveNoticePacket {
     std::array<PlayerId, kNetPlayersPerProcess> player_ids{};
 };
 
+struct PingPacket {
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t sequence = 0;
+    std::uint64_t sent_time_ms = 0;
+};
+
+struct PongPacket {
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t sequence = 0;
+    std::uint64_t echoed_sent_time_ms = 0;
+};
+
 struct InputFrameRecordEntry {
     PlayerId player_id = kInvalidPlayerId;
     std::uint64_t frame = 0;
@@ -87,10 +101,14 @@ struct EncodedNetPacket {
 
 EncodedNetPacket EncodeJoinRequest(const JoinRequestPacket& packet);
 EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet);
+EncodedNetPacket EncodePing(const PingPacket& packet);
+EncodedNetPacket EncodePong(const PongPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
+std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size);
+std::optional<PongPacket> TryDecodePong(const std::uint8_t* bytes, std::size_t size);
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);
 std::optional<InputFrameRecordsPacket> TryDecodeInputFrameRecords(const std::uint8_t* bytes, std::size_t size);
 

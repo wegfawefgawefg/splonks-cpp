@@ -356,11 +356,13 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         ImGui::Text("Peers:");
         for (const network::NetPeerState& peer : state.net_session.peers) {
             ImGui::BulletText(
-                "player=%u %s %s:%u",
+                "player=%u %s %s:%u ping=%.1fms jitter=%.1fms",
                 peer.player_id,
                 peer.display_name.c_str(),
                 peer.endpoint_address.c_str(),
-                peer.endpoint_port
+                peer.endpoint_port,
+                peer.estimated_ping_ms,
+                peer.jitter_ms
             );
         }
     }

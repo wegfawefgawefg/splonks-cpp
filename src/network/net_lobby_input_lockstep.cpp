@@ -34,6 +34,36 @@ std::vector<PlayerId> GetLocalPlayerIds(const State& state) {
     return player_ids;
 }
 
+bool CanStepWithoutRunningAheadOfRemoteInputs(
+    const State& state,
+    const std::vector<PlayerId>& required_players
+) {
+    const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
+    const LockstepFrame frame_to_step = state.net_session.lockstep_next_frame_to_step;
+    const LockstepFrame input_delay =
+        static_cast<LockstepFrame>(state.net_session.lockstep_input_delay_frames);
+
+    for (PlayerId player_id : required_players) {
+        if (std::find(local_player_ids.begin(), local_player_ids.end(), player_id) !=
+            local_player_ids.end()) {
+            continue;
+        }
+
+        const std::optional<LockstepFrame> latest =
+            state.net_session.lockstep_input_buffer.LatestFrameForPlayer(player_id);
+        if (!latest.has_value() || *latest < input_delay) {
+            return false;
+        }
+
+        const LockstepFrame remote_advertised_step_frame = *latest - input_delay;
+        if (frame_to_step > remote_advertised_step_frame) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 InputFrame GetCurrentLocalInputFrame(const State& state, const PlayerSlot& slot) {
     if (slot.primary_local) {
         return ToInputFrame(state.playing_input_snapshot);
@@ -212,6 +242,9 @@ bool PrepareInputLockstepFrame(State& state, const Graphics& graphics) {
 
     const std::vector<PlayerId> required_players = GetConnectedPlayerIds(state);
     if (required_players.empty()) {
+        return false;
+    }
+    if (!CanStepWithoutRunningAheadOfRemoteInputs(state, required_players)) {
         return false;
     }
 

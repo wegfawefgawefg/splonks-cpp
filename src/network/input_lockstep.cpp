@@ -120,6 +120,19 @@ const InputFrame* LockstepInputBuffer::Find(
     return nullptr;
 }
 
+std::optional<LockstepFrame> LockstepInputBuffer::LatestFrameForPlayer(PlayerId player_id) const {
+    std::optional<LockstepFrame> latest;
+    for (const LockstepInputRecord& record : records_) {
+        if (record.player_id != player_id) {
+            continue;
+        }
+        if (!latest.has_value() || record.frame > *latest) {
+            latest = record.frame;
+        }
+    }
+    return latest;
+}
+
 bool LockstepInputBuffer::FrameReady(
     const std::vector<PlayerId>& required_players,
     LockstepFrame frame

@@ -64,19 +64,95 @@ Current handoff constraints:
 
 Last known branch: `net-lockstep-experiment`.
 
-Active working tree handoff:
+Active model status:
 
-- Last committed checkpoint is `0c05144 Remove legacy action request lane`.
-- Current uncommitted files are `src/step.cpp` and
-  `src/network/net_lobby_packet_pump.cpp`.
-- The uncommitted patch removes the old ordered-message apply drain from
-  `StepPlaying` and `StepGameOver`.
-- The uncommitted patch also narrows the live packet pump so host/peer packet
-  handling accepts join/leave/input-frame traffic and no longer decodes the
-  old tile/fluid/ent/player/run/pres mutation lanes.
-- This patch is not yet validated or committed. Resume by finishing the legacy
-  cleanup around those removed paths, then build and run the core smokes before
-  committing.
+- Old host-authoritative mutation lanes are no longer active in live packet
+  stepping.
+- Live lockstep uses join/leave/input-frame packets.
+- A lockstep frame-pacing guard prevents a process from stepping past a remote
+  process's advertised sim frame. Remote advertised frame is inferred as
+  `latest input frame received for that remote player - input_delay`.
+- Without that guard, a peer could legally receive the host's future input
+  records and run about one input-delay window ahead of the host. That looked
+  like a huge live desync even when the inputs were arriving.
+
+## Delay And Rollback Plan
+
+Goal: make lockstep feel good without returning networking concerns to
+gameplay/content code.
+
+Current facts:
+
+- Networking is main-thread pumped once per simulation tick. There is no
+  separate net thread.
+- Fixed delay is currently `8` sim frames. At 60fps that is roughly `133ms`
+  before real network latency.
+- Protocol ping/pong now measures application-level RTT and jitter. Same-machine
+  RTT includes simulation scheduling, not just kernel/socket latency.
+- Delay-based lockstep is simple and det, but it always adds input latency.
+- Rollback is the route to local-feeling controls over long-distance links, but
+  it requires retaining and replaying deterministic state.
+
+Phase 1: configurable delay.
+
+- [ ] Add a host-side debug/network control for `lockstep_input_delay_frames`
+  before hosting.
+- [ ] Display delay in both frames and milliseconds.
+- [ ] Display measured RTT/jitter per peer on host and peer.
+- [ ] Add an automatic suggested delay:
+  `ceil(((RTT / 2) + jitter_margin_ms) / frame_ms) + safety_frames`.
+- [ ] Keep active-session delay changes disabled at first. The join accept
+  already carries the initial host-selected delay, so pre-session tuning is
+  safe.
+- [ ] If live delay changes are needed later, apply them as a scheduled
+  lockstep setting change at a future frame. Never mutate delay immediately on
+  one process.
+- [ ] Add a smoke or control-server check that starts a fake session with a
+  non-default delay and proves both sides step identically.
+
+Expected useful delay presets:
+
+- Localhost / same machine: `1-2` frames.
+- Same house / LAN: `2-3` frames.
+- Same city/state: `3-5` frames.
+- Cross-country: `5-8` frames.
+- Texas to Japan or similar: `8+` frames, likely still better with rollback.
+
+Phase 2: rollback.
+
+- [ ] Store a compact deterministic state ring buffer for recent simulation
+  frames. This must not be the heavyweight debug playback history by default,
+  though the existing snapshot/replay code can guide implementation.
+- [ ] Store all local and remote `InputFrame` records by frame.
+- [ ] Step local input immediately or with a very small local delay.
+- [ ] Predict missing remote inputs by reusing the remote player's last known
+  input, or neutral input for disconnected/uninitialized players.
+- [ ] When late real input arrives and differs from the prediction, restore the
+  saved state before the mismatch and replay to the present.
+- [ ] Keep gameplay/content deterministic and network-agnostic. Rollback should
+  live in the simulation scheduler/state layer, not in items, ents, shops, or
+  traps.
+- [ ] Add correction/presentation smoothing only after deterministic rollback is
+  correct. First priority is identical final state, not hiding corrections.
+- [ ] Define a maximum rollback window. Start with `8-12` frames for testing;
+  increase only after measuring memory and replay cost.
+- [ ] Track rollback metrics in Debug Network: rollback count, max rollback
+  frames this second, average replay ms, and latest mismatch source.
+
+Rollback prerequisites:
+
+- [ ] Prove the deterministic replay smoke covers enough real gameplay:
+  movement, jump/hang, pickup/drop/throw, tools, explosions, tile breaks,
+  shops, water, stage transition, death/respawn.
+- [ ] Audit gameplay RNG. Gameplay randomness must use `state.drng` or an
+  equivalent deterministic stream, never process-local random calls.
+- [ ] Audit non-deterministic timers and real-time reads. Simulation decisions
+  must depend on frame/tick state, not wall-clock time.
+- [ ] Decide snapshot scope: full `State` copy first for correctness, then
+  optimize entity/state storage only if memory or replay cost requires it.
+- [ ] Make rollback explicitly exclude presentation-only state if it cannot
+  affect gameplay. If presentation state affects gameplay, it is not
+  presentation-only and must be deterministic.
 
 Immediate resume checklist for the next `/goal` run:
 
