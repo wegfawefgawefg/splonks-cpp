@@ -81,6 +81,20 @@ const LockstepHashRecord* FindLocalHashRecord(const State& state, LockstepFrame 
     return nullptr;
 }
 
+void ClearSnapshotResyncState(State& state) {
+    state.net_session.lockstep_snapshot_resync_pending_request = false;
+    state.net_session.lockstep_snapshot_resync_target_peer_id = kInvalidPlayerId;
+    state.net_session.lockstep_snapshot_resync_active_transfer_id = 0;
+    state.net_session.lockstep_snapshot_resync_frame = 0;
+    state.net_session.lockstep_snapshot_resync_chunk_count = 0;
+    state.net_session.lockstep_snapshot_resync_total_bytes = 0;
+    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = 0;
+    state.net_session.lockstep_snapshot_resync_bytes.clear();
+    state.net_session.lockstep_snapshot_resync_received_chunks.clear();
+    state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
+    state.net_session.lockstep_snapshot_resync_waiting_for_ack = false;
+}
+
 void RequestHostSnapshotResync(State& state, PlayerId target_peer_id) {
     const bool same_target =
         state.net_session.lockstep_snapshot_resync_target_peer_id == target_peer_id ||
@@ -368,6 +382,11 @@ void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
             LockstepDesyncRecoveryMode::PendingRollback) {
             state.net_session.lockstep_last_desync_recovery_mode =
                 LockstepDesyncRecoveryMode::RollbackRepaired;
+        } else if (state.net_session.lockstep_last_desync_recovery_mode ==
+            LockstepDesyncRecoveryMode::SnapshotCatchup) {
+            ClearSnapshotResyncState(state);
+            state.net_session.lockstep_last_desync_recovery_mode =
+                LockstepDesyncRecoveryMode::RollbackRepaired;
         }
         return;
     }
@@ -437,6 +456,10 @@ void ValidateRemoteHashesAfterReplay(
             LockstepDesyncRecoveryMode::PendingRollback ||
         state.net_session.lockstep_last_desync_recovery_mode ==
             LockstepDesyncRecoveryMode::SnapshotCatchup)) {
+        if (state.net_session.lockstep_last_desync_recovery_mode ==
+            LockstepDesyncRecoveryMode::SnapshotCatchup) {
+            ClearSnapshotResyncState(state);
+        }
         state.net_session.lockstep_last_desync_recovery_mode =
             LockstepDesyncRecoveryMode::RollbackRepaired;
     }
@@ -1442,17 +1465,7 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_last_mismatch_remote_hash = 0;
     state.net_session.lockstep_last_desync_recovery_mode =
         LockstepDesyncRecoveryMode::None;
-    state.net_session.lockstep_snapshot_resync_pending_request = false;
-    state.net_session.lockstep_snapshot_resync_target_peer_id = kInvalidPlayerId;
-    state.net_session.lockstep_snapshot_resync_active_transfer_id = 0;
-    state.net_session.lockstep_snapshot_resync_frame = 0;
-    state.net_session.lockstep_snapshot_resync_chunk_count = 0;
-    state.net_session.lockstep_snapshot_resync_total_bytes = 0;
-    state.net_session.lockstep_snapshot_resync_next_chunk_to_send = 0;
-    state.net_session.lockstep_snapshot_resync_bytes.clear();
-    state.net_session.lockstep_snapshot_resync_received_chunks.clear();
-    state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
-    state.net_session.lockstep_snapshot_resync_waiting_for_ack = false;
+    ClearSnapshotResyncState(state);
     state.net_session.lockstep_rollback_requested_frame = std::nullopt;
     state.net_session.lockstep_rollback_snapshots.clear();
     state.net_session.lockstep_rollback_count = 0;
