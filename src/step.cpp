@@ -360,6 +360,30 @@ void StepPlayerSlotControls(State& state, Graphics& graphics, Audio& audio, floa
     }
 }
 
+void ApplyBuyInputsForPlayerSlots(State& state, Graphics& graphics, Audio& audio) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!ShouldSimulatePlayerSlotGameplay(state, slot) ||
+            !slot.inputs.equip_button.pressed ||
+            state.IsInteractClaimedForEnt(*slot.ent_vid)) {
+            continue;
+        }
+
+        const std::optional<std::size_t> buyable_idx =
+            FindOverlappingBuyableEntIdx(state, graphics, slot.ent_vid->id);
+        if (!buyable_idx.has_value()) {
+            continue;
+        }
+
+        (void)world_ops::TryApplyInteractEnt(
+            *slot.ent_vid,
+            state.ents.ents[*buyable_idx].vid,
+            state,
+            graphics,
+            audio
+        );
+    }
+}
+
 ButtonState MakeDebugBotButtonState(bool down, bool previous_down) {
     return ButtonState{
         .down = down,
@@ -541,20 +565,7 @@ void StepPlaying(
     state.stage.AttenuateTileShake(kShakeAttenuationRate);
     AddBuyPromptsForPlayer(state, graphics);
     const std::optional<VID> primary_player_vid = FindPrimaryLocalPlayerVid(state);
-    if (primary_player_vid.has_value() && state.playing_inputs.equip_button.pressed &&
-        !state.IsInteractClaimedForEnt(*primary_player_vid)) {
-        const std::optional<std::size_t> buyable_idx =
-            FindOverlappingBuyableEntIdx(state, graphics, primary_player_vid->id);
-        if (buyable_idx.has_value()) {
-            (void)world_ops::TryApplyInteractEnt(
-                *primary_player_vid,
-                state.ents.ents[*buyable_idx].vid,
-                state,
-                graphics,
-                audio
-            );
-        }
-    }
+    ApplyBuyInputsForPlayerSlots(state, graphics, audio);
     state.particles.Step(graphics.aframe_db, dt);
 
     if (state.net_session.role != network::NetRole::Offline &&

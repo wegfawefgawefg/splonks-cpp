@@ -82,6 +82,20 @@ const LockstepHashRecord* FindLocalHashRecord(const State& state, LockstepFrame 
 }
 
 void RequestHostSnapshotResync(State& state, PlayerId target_peer_id) {
+    const bool same_target =
+        state.net_session.lockstep_snapshot_resync_target_peer_id == target_peer_id ||
+        state.net_session.lockstep_snapshot_resync_target_peer_id == kInvalidPlayerId;
+    const bool transfer_in_progress =
+        state.net_session.lockstep_snapshot_resync_pending_request ||
+        state.net_session.lockstep_snapshot_resync_waiting_for_ack ||
+        state.net_session.lockstep_snapshot_resync_active_transfer_id != 0 ||
+        !state.net_session.lockstep_snapshot_resync_bytes.empty();
+    if (state.net_session.lockstep_last_desync_recovery_mode ==
+            LockstepDesyncRecoveryMode::SnapshotCatchup &&
+        transfer_in_progress && same_target) {
+        return;
+    }
+
     state.net_session.lockstep_last_desync_recovery_mode =
         LockstepDesyncRecoveryMode::SnapshotCatchup;
     state.net_session.lockstep_snapshot_resync_pending_request = true;
@@ -1176,12 +1190,17 @@ void HandleSnapshotResyncRequest(
         packet.stage_instance_id != state.net_session.stage_instance_id) {
         return;
     }
+    const PlayerId target_peer_id = static_cast<PlayerId>(packet.sender_peer_id);
+    if (state.net_session.lockstep_snapshot_resync_waiting_for_ack &&
+        state.net_session.lockstep_snapshot_resync_target_peer_id == target_peer_id) {
+        return;
+    }
     SendSnapshotResyncChunksToEndpoint(
         state,
         graphics,
         transport,
         endpoint,
-        static_cast<PlayerId>(packet.sender_peer_id)
+        target_peer_id
     );
 }
 
