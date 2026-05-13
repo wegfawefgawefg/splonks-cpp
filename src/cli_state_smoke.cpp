@@ -1034,9 +1034,48 @@ bool SmokePlayerHasNoActiveBody(const State& state, PlayerId player_id) {
     return player == nullptr || !player->active || player->condition == EntCondition::Dead;
 }
 
+bool RemoveSmokePlayerBody(State& state, PlayerId player_id, const char*& failed_step) {
+    PlayerSlot* const slot = state.players.Find(player_id);
+    if (slot == nullptr || !slot->ent_vid.has_value()) {
+        failed_step = "find smoke player body to remove";
+        return false;
+    }
+    state.ents.SetInactiveVid(*slot->ent_vid);
+    slot->ent_vid.reset();
+    return true;
+}
+
+bool SmokePlayerOwnershipMatches(
+    const State& state,
+    PlayerId player_id,
+    PlayerConnectionKind expected_kind,
+    bool expected_primary
+) {
+    const PlayerSlot* const slot = state.players.Find(player_id);
+    return slot != nullptr &&
+           slot->connected &&
+           slot->connection_kind == expected_kind &&
+           slot->primary_local == expected_primary;
+}
+
+std::string DescribeSmokePlayerOwnership(const State& state) {
+    std::ostringstream out;
+    for (const PlayerSlot& slot : state.players.slots) {
+        out << " p" << slot.player_id
+            << ":" << (slot.connection_kind == PlayerConnectionKind::Local ? "local" : "remote")
+            << ":primary=" << (slot.primary_local ? "true" : "false")
+            << ":connected=" << (slot.connected ? "true" : "false");
+    }
+    return out.str();
+}
+
 void ConfigureSmokeNetworkRoles(State& peer0, State& peer1) {
     peer0.net_session.role = network::NetRole::Host;
+    peer0.net_session.host_player_id = 1;
+    peer0.net_session.local_player_id = 1;
     peer1.net_session.role = network::NetRole::Peer;
+    peer1.net_session.host_player_id = 1;
+    peer1.net_session.local_player_id = 2;
 }
 
 bool RunSmokeStageTransition(
@@ -2802,6 +2841,10 @@ bool CheckInputLockstepSmoke() {
                 !SmokePlayerIsAlive(peer0.state, 2) ||
                 !SmokePlayerIsAlive(peer1.state, 1) ||
                 !SmokePlayerIsAlive(peer1.state, 2) ||
+                !SmokePlayerOwnershipMatches(peer0.state, 1, PlayerConnectionKind::Local, true) ||
+                !SmokePlayerOwnershipMatches(peer0.state, 2, PlayerConnectionKind::Remote, false) ||
+                !SmokePlayerOwnershipMatches(peer1.state, 1, PlayerConnectionKind::Remote, false) ||
+                !SmokePlayerOwnershipMatches(peer1.state, 2, PlayerConnectionKind::Local, true) ||
                 !CompareCanonicalFingerprints(
                     peer0.state,
                     peer1.state,
@@ -2817,6 +2860,45 @@ bool CheckInputLockstepSmoke() {
                           << ")\n"
                           << "  first simple diff: "
                           << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
+            if (!prepare_pair(peer0, peer1, MultiplayerRespawnMode::GenerousNextLevel) ||
+                !KillSmokePlayer(peer0.state, 1, failed_step) ||
+                !KillSmokePlayer(peer0.state, 2, failed_step) ||
+                !KillSmokePlayer(peer1.state, 1, failed_step) ||
+                !KillSmokePlayer(peer1.state, 2, failed_step) ||
+                !RemoveSmokePlayerBody(peer0.state, 1, failed_step) ||
+                !RemoveSmokePlayerBody(peer0.state, 2, failed_step) ||
+                !RemoveSmokePlayerBody(peer1.state, 1, failed_step) ||
+                !RemoveSmokePlayerBody(peer1.state, 2, failed_step)) {
+                std::cerr << "input lockstep respawn-policy smoke failed during missing-body game-over setup: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+            peer0.state.SetMode(Mode::GameOver);
+            peer1.state.SetMode(Mode::GameOver);
+            peer0.state.scene_frame = 60;
+            peer1.state.scene_frame = 60;
+            ApplyLockstepInputsToState(
+                peer0.state,
+                std::vector<PlayerId>{1, 2},
+                std::vector<InputFrame>{InputFrame::New(), confirm}
+            );
+            ApplyLockstepInputsToState(
+                peer1.state,
+                std::vector<PlayerId>{1, 2},
+                std::vector<InputFrame>{InputFrame::New(), confirm}
+            );
+            StepSingleTick(peer0.state, peer0_audio, peer0_graphics);
+            StepSingleTick(peer1.state, peer1_audio, peer1_graphics);
+            if (!SmokePlayerOwnershipMatches(peer0.state, 1, PlayerConnectionKind::Local, true) ||
+                !SmokePlayerOwnershipMatches(peer0.state, 2, PlayerConnectionKind::Remote, false) ||
+                !SmokePlayerOwnershipMatches(peer1.state, 1, PlayerConnectionKind::Remote, false) ||
+                !SmokePlayerOwnershipMatches(peer1.state, 2, PlayerConnectionKind::Local, true)) {
+                std::cerr << "input lockstep respawn-policy smoke failed: missing-body restart changed slot ownership\n"
+                          << "  peer0 ownership:" << DescribeSmokePlayerOwnership(peer0.state) << '\n'
+                          << "  peer1 ownership:" << DescribeSmokePlayerOwnership(peer1.state) << '\n';
                 return false;
             }
 

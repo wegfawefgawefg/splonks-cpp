@@ -121,7 +121,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
             EnsureSpawnedPlayer(
                 state,
                 slot.player_id,
-                true,
+                slot.connection_kind == PlayerConnectionKind::Local,
                 slot.primary_local,
                 spawn_pos,
                 graphics
