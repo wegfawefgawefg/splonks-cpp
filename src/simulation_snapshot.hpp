@@ -90,5 +90,10 @@ struct GameplaySnapshot {
 
 GameplaySnapshot MakeGameplaySnapshot(const State& state, const Graphics& graphics);
 void RestoreGameplaySnapshot(const GameplaySnapshot& snapshot, State& state, Graphics& graphics);
+std::vector<std::uint8_t> SerializeGameplaySnapshotToBytes(const GameplaySnapshot& snapshot);
+bool DeserializeGameplaySnapshotFromBytes(
+    const std::vector<std::uint8_t>& bytes,
+    GameplaySnapshot& snapshot
+);
 
 } // namespace splonks

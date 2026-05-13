@@ -20,6 +20,7 @@ constexpr std::size_t kNetQuestIdBytes = 32;
 constexpr std::size_t kNetQuestStageIdBytes = 64;
 constexpr std::size_t kNetPlayersPerProcess = 16;
 constexpr std::size_t kNetInputFrameRecordsPerPacket = 16;
+constexpr std::size_t kNetSnapshotChunkPayloadBytes = 480;
 
 enum class NetPacketType : std::uint16_t {
     JoinRequest = 1,
@@ -30,6 +31,9 @@ enum class NetPacketType : std::uint16_t {
     InputFrameRecords = 20,
     LockstepSettings = 21,
     LockstepHash = 22,
+    SnapshotResyncRequest = 23,
+    SnapshotResyncChunk = 24,
+    SnapshotResyncAck = 25,
 };
 
 struct NetPacketHeader {
@@ -114,6 +118,32 @@ struct LockstepHashNetPacket {
     std::uint64_t hash = 0;
 };
 
+struct SnapshotResyncRequestPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint64_t mismatch_frame = 0;
+};
+
+struct SnapshotResyncChunkPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t transfer_id = 0;
+    std::uint32_t chunk_index = 0;
+    std::uint32_t chunk_count = 0;
+    std::uint32_t total_bytes = 0;
+    std::uint32_t payload_bytes = 0;
+    std::uint64_t snapshot_frame = 0;
+    std::array<std::uint8_t, kNetSnapshotChunkPayloadBytes> payload{};
+};
+
+struct SnapshotResyncAckPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    std::uint32_t transfer_id = 0;
+    std::uint64_t snapshot_frame = 0;
+    std::uint8_t success = 0;
+};
+
 struct EncodedNetPacket {
     std::array<std::uint8_t, kNetPacketMaxBytes> bytes{};
     std::size_t size = 0;
@@ -127,6 +157,9 @@ EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
 EncodedNetPacket EncodeInputFrameRecords(const InputFrameRecordsPacket& packet);
 EncodedNetPacket EncodeLockstepSettings(const LockstepSettingsPacket& packet);
 EncodedNetPacket EncodeLockstepHash(const LockstepHashNetPacket& packet);
+EncodedNetPacket EncodeSnapshotResyncRequest(const SnapshotResyncRequestPacket& packet);
+EncodedNetPacket EncodeSnapshotResyncChunk(const SnapshotResyncChunkPacket& packet);
+EncodedNetPacket EncodeSnapshotResyncAck(const SnapshotResyncAckPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
 std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size);
@@ -135,6 +168,9 @@ std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes,
 std::optional<InputFrameRecordsPacket> TryDecodeInputFrameRecords(const std::uint8_t* bytes, std::size_t size);
 std::optional<LockstepSettingsPacket> TryDecodeLockstepSettings(const std::uint8_t* bytes, std::size_t size);
 std::optional<LockstepHashNetPacket> TryDecodeLockstepHash(const std::uint8_t* bytes, std::size_t size);
+std::optional<SnapshotResyncRequestPacket> TryDecodeSnapshotResyncRequest(const std::uint8_t* bytes, std::size_t size);
+std::optional<SnapshotResyncChunkPacket> TryDecodeSnapshotResyncChunk(const std::uint8_t* bytes, std::size_t size);
+std::optional<SnapshotResyncAckPacket> TryDecodeSnapshotResyncAck(const std::uint8_t* bytes, std::size_t size);
 
 template <std::size_t N>
 std::string ReadFixedString(const std::array<char, N>& text) {

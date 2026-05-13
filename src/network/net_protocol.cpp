@@ -12,6 +12,9 @@ static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacket
 static_assert(sizeof(InputFrameRecordsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LockstepSettingsPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LockstepHashNetPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(SnapshotResyncRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(SnapshotResyncChunkPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(SnapshotResyncAckPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 
 namespace {
 
@@ -95,6 +98,18 @@ EncodedNetPacket EncodeLockstepSettings(const LockstepSettingsPacket& packet) {
 
 EncodedNetPacket EncodeLockstepHash(const LockstepHashNetPacket& packet) {
     return EncodePayload(NetPacketType::LockstepHash, packet);
+}
+
+EncodedNetPacket EncodeSnapshotResyncRequest(const SnapshotResyncRequestPacket& packet) {
+    return EncodePayload(NetPacketType::SnapshotResyncRequest, packet);
+}
+
+EncodedNetPacket EncodeSnapshotResyncChunk(const SnapshotResyncChunkPacket& packet) {
+    return EncodePayload(NetPacketType::SnapshotResyncChunk, packet);
+}
+
+EncodedNetPacket EncodeSnapshotResyncAck(const SnapshotResyncAckPacket& packet) {
+    return EncodePayload(NetPacketType::SnapshotResyncAck, packet);
 }
 
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size) {
@@ -215,6 +230,55 @@ std::optional<LockstepHashNetPacket> TryDecodeLockstepHash(const std::uint8_t* b
         return std::nullopt;
     }
     LockstepHashNetPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<SnapshotResyncRequestPacket> TryDecodeSnapshotResyncRequest(
+    const std::uint8_t* bytes,
+    std::size_t size
+) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::SnapshotResyncRequest, offset)) {
+        return std::nullopt;
+    }
+    SnapshotResyncRequestPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    return packet;
+}
+
+std::optional<SnapshotResyncChunkPacket> TryDecodeSnapshotResyncChunk(
+    const std::uint8_t* bytes,
+    std::size_t size
+) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::SnapshotResyncChunk, offset)) {
+        return std::nullopt;
+    }
+    SnapshotResyncChunkPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    packet.payload_bytes = std::min<std::uint32_t>(
+        packet.payload_bytes,
+        static_cast<std::uint32_t>(packet.payload.size())
+    );
+    return packet;
+}
+
+std::optional<SnapshotResyncAckPacket> TryDecodeSnapshotResyncAck(
+    const std::uint8_t* bytes,
+    std::size_t size
+) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::SnapshotResyncAck, offset)) {
+        return std::nullopt;
+    }
+    SnapshotResyncAckPacket packet;
     if (!Read(bytes, size, offset, packet)) {
         return std::nullopt;
     }

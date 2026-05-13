@@ -2,6 +2,9 @@
 
 #include "debug/playback.hpp"
 
+#include <cstdint>
+#include <vector>
+
 namespace splonks::debug_playback_internal {
 
 const char* ModeToString(Mode mode);

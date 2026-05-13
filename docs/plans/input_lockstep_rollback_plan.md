@@ -847,9 +847,21 @@ Allowed policies:
   snapshot frame.
 - Reconnect by restoring a retained player slot at the next safe sync point.
 
-First implementation target: no active-stage late join. Peers join lobby before
-stage start or wait for next stage. Add full snapshot later if the lockstep model
-is retained.
+Current implementation target: peers should normally join before stage start,
+but the protocol now has the machinery needed for same-stage hard resync: the
+host can send a chunked current gameplay snapshot, freeze lockstep while the
+peer applies it, and resume once the peer acknowledges. Late active-stage join
+can reuse that same snapshot lane once we add the join-policy UI/validation.
+
+Reconnect policy:
+
+- The host keeps retained player data for disconnected remote players for
+  `retained_player_lifetime_frames` frames.
+- Retained data includes health, money, effects, tool slots, the held item, and
+  the back item.
+- Reconnect modes are configurable: fresh-at-entrance, fresh-at-host,
+  retained-at-entrance, retained-at-last-position, and retained-at-host.
+- Current default is retained-at-last-position.
 
 ## Pres Policy
 
@@ -1172,9 +1184,8 @@ Goal: reduce input-delay feel while keeping det correctness.
 - [x] Add live hash exchange / desync recovery. Periodic gameplay hashes now
   travel over the lockstep lane, detect arbitrary deterministic-state
   divergence, request rollback from the last peer-specific matching hash, and
-  fall back to a stage-start snapshot catchup if recent rollback history is
-  unavailable, and enter fatal-desync mode only if replaying from frame 0 still
-  diverges or the frame-0 snapshot is missing.
+  fall back to a host-current snapshot resync if recent rollback history is
+  unavailable.
 
 #### Live Hash Exchange And Desync Recovery Plan
 
@@ -1219,17 +1230,22 @@ Implementation steps:
      request rollback from that frame and replay to current using recorded
      inputs.
    - [x] Re-hash after replay and clear the mismatch if hashes converge.
-   - [x] If the match is outside recent rollback history, restore the preserved
-     frame-0 stage snapshot and catch up using the full stage input log.
-   - [x] If catchup from frame 0 still diverges, or the frame-0 snapshot is
-     missing, enter explicit fatal-desync mode and stop lockstep stepping.
+   - [x] If the match is outside recent rollback history, request a current
+     gameplay snapshot from the host instead of keeping an unbounded input log.
+   - [x] Host freezes lockstep, chunks the current snapshot to the peer, and
+     retries snapshot chunks until the peer acknowledges.
+   - [x] Peer applies the snapshot, restores local/remote player-slot roles,
+     clears stale rollback/hash history, acknowledges, and resumes from the
+     host snapshot frame.
+   - [x] If no endpoint exists for the resync target, or the peer cannot decode
+     the snapshot, enter explicit fatal-desync mode and stop lockstep stepping.
    - [x] Make the fallback explicit in debug: `rollback-repaired`,
      `snapshot-catchup`, or `fatal-desync`.
 5. Smoke tests.
    - [x] Add a same-process test where one peer is intentionally perturbed,
      hash mismatch is detected, rollback repairs it, and final hashes match.
    - [x] Add a test where the mismatch is older than rollback history and the
-     code takes the configured hard-resync/fatal path.
+     code requests host-current snapshot resync.
    - [x] Add packet-loss/reorder coverage for hash packets so missing hash
      samples do not stall the sim.
 
@@ -1243,10 +1259,13 @@ Implemented first pass:
 - Rollback request when a matching rollback snapshot is available.
 - Replay rechecks retained remote hash samples against newly generated local
   hashes and marks recovery repaired only if they converge.
-- Snapshot-catchup recovery when recent rollback history is unavailable but
-  the frame-0 snapshot and full stage input log are available.
-- Fatal-desync marker when no usable recovery snapshot exists or full catchup
-  still diverges.
+- Snapshot-catchup recovery when recent rollback history is unavailable.
+  This now uses the host's current gameplay snapshot, not frame-0 replay.
+- Snapshot resync packets: request, chunk, and ack.
+- Host-side snapshot chunk retry while lockstep is paused waiting for ack.
+- Peer-side snapshot request retry while waiting for chunks.
+- Fatal-desync marker when no resync endpoint exists or a snapshot cannot be
+  decoded.
 - Fatal-desync marker when a mismatch arrives before any real confirmed hash.
 - Fatal-desync mode now stops lockstep stepping instead of silently continuing.
 - Smoke coverage for packet roundtrip, mismatch detection, rollback request,

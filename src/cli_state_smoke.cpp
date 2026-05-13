@@ -1225,6 +1225,21 @@ bool RunLockstepHashExchangeSmoke() {
         return false;
     }
 
+    const std::vector<std::uint8_t> snapshot_bytes =
+        SerializeGameplaySnapshotToBytes(MakeGameplaySnapshot(state, graphics));
+    GameplaySnapshot decoded_snapshot;
+    if (!DeserializeGameplaySnapshotFromBytes(snapshot_bytes, decoded_snapshot)) {
+        std::cerr << "lockstep hash exchange smoke failed: snapshot resync decode failed\n";
+        return false;
+    }
+    Graphics roundtrip_graphics;
+    InitCliSmokeRuntimeTables(roundtrip_graphics);
+    State roundtrip_state = State::New();
+    RestoreGameplaySnapshot(decoded_snapshot, roundtrip_state, roundtrip_graphics);
+    if (!CompareCanonicalFingerprints(state, roundtrip_state, "snapshot resync roundtrip")) {
+        return false;
+    }
+
     state.net_session.input_lockstep_enabled = true;
     state.net_session.role = network::NetRole::Peer;
     state.net_session.local_player_id = 2;
@@ -1293,20 +1308,24 @@ bool RunLockstepHashExchangeSmoke() {
     network::HandleLockstepHashPacket(state, catchup_packet);
     if (state.net_session.lockstep_last_desync_recovery_mode !=
             network::LockstepDesyncRecoveryMode::SnapshotCatchup ||
-        !state.net_session.lockstep_rollback_requested_frame.has_value() ||
-        *state.net_session.lockstep_rollback_requested_frame != 0) {
+        !state.net_session.lockstep_snapshot_resync_pending_request ||
+        state.net_session.lockstep_snapshot_resync_target_peer_id != state.net_session.host_player_id ||
+        state.net_session.lockstep_rollback_requested_frame.has_value()) {
         std::cerr << "lockstep hash exchange smoke failed: old mismatch did not request snapshot catchup\n";
         return false;
     }
 
-    state.net_session.lockstep_rollback_requested_frame = std::nullopt;
+    state.net_session.lockstep_snapshot_resync_pending_request = false;
+    state.net_session.lockstep_snapshot_resync_target_peer_id = kInvalidPlayerId;
     state.net_session.lockstep_rollback_snapshots.clear();
     network::LockstepHashNetPacket fatal_packet = roundtrip;
     fatal_packet.hash = 0xDDDDULL;
     network::HandleLockstepHashPacket(state, fatal_packet);
     if (state.net_session.lockstep_last_desync_recovery_mode !=
-        network::LockstepDesyncRecoveryMode::FatalDesync) {
-        std::cerr << "lockstep hash exchange smoke failed: missing snapshot did not become fatal\n";
+            network::LockstepDesyncRecoveryMode::SnapshotCatchup ||
+        !state.net_session.lockstep_snapshot_resync_pending_request ||
+        state.net_session.lockstep_snapshot_resync_target_peer_id != state.net_session.host_player_id) {
+        std::cerr << "lockstep hash exchange smoke failed: missing rollback history did not request host snapshot\n";
         return false;
     }
 

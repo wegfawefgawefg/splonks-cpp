@@ -176,10 +176,22 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
             RelayLockstepHashToOtherRemotes(transport, packet->endpoint, *hash);
             continue;
         }
+
+        if (const std::optional<SnapshotResyncRequestPacket> request =
+                TryDecodeSnapshotResyncRequest(packet->bytes.data(), packet->size)) {
+            HandleSnapshotResyncRequest(state, graphics, transport, packet->endpoint, *request);
+            continue;
+        }
+
+        if (const std::optional<SnapshotResyncAckPacket> ack =
+                TryDecodeSnapshotResyncAck(packet->bytes.data(), packet->size)) {
+            HandleSnapshotResyncAck(state, *ack);
+            continue;
+        }
     }
 }
 
-void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
+void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& transport) {
     if (transport.join_request_pending) {
         if (transport.join_request_retry_frames == 0) {
             SendJoinRequest(state);
@@ -240,6 +252,12 @@ void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (const std::optional<LockstepHashNetPacket> hash =
                 TryDecodeLockstepHash(packet->bytes.data(), packet->size)) {
             HandleLockstepHashPacket(state, *hash);
+            continue;
+        }
+
+        if (const std::optional<SnapshotResyncChunkPacket> chunk =
+                TryDecodeSnapshotResyncChunk(packet->bytes.data(), packet->size)) {
+            HandleSnapshotResyncChunk(state, graphics, transport, *chunk);
             continue;
         }
     }

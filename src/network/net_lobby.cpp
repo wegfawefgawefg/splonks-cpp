@@ -7,7 +7,7 @@
 
 namespace splonks::network {
 
-void StepNetworkLobby(State& state, const Graphics& graphics) {
+void StepNetworkLobby(State& state, Graphics& graphics) {
     if (!state.net_transport || !state.net_transport->socket.IsOpen()) {
         return;
     }

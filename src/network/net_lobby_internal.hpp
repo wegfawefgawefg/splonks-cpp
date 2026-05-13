@@ -56,6 +56,20 @@ bool ReplayPendingInputLockstepRollback(State& state, Graphics& graphics);
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
 void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& packet);
 void HandleLockstepHashPacket(State& state, const LockstepHashNetPacket& packet);
+void HandleSnapshotResyncRequest(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    const SnapshotResyncRequestPacket& packet
+);
+void HandleSnapshotResyncChunk(
+    State& state,
+    Graphics& graphics,
+    NetTransportRuntime& transport,
+    const SnapshotResyncChunkPacket& packet
+);
+void HandleSnapshotResyncAck(State& state, const SnapshotResyncAckPacket& packet);
 bool ScheduleLockstepSettingsChange(
     State& state,
     std::uint32_t input_delay_frames,
@@ -87,7 +101,7 @@ void RemoveRemotePlayers(
 );
 void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport);
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
-void StepPeerPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport);
+void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& transport);
 
 void HandleJoinRequestAsHost(
     State& state,

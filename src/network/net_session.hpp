@@ -193,6 +193,17 @@ struct NetSessionState {
     std::uint64_t lockstep_last_mismatch_remote_hash = 0;
     LockstepDesyncRecoveryMode lockstep_last_desync_recovery_mode =
         LockstepDesyncRecoveryMode::None;
+    bool lockstep_snapshot_resync_pending_request = false;
+    PlayerId lockstep_snapshot_resync_target_peer_id = kInvalidPlayerId;
+    std::uint32_t lockstep_snapshot_resync_next_transfer_id = 1;
+    std::uint32_t lockstep_snapshot_resync_active_transfer_id = 0;
+    std::uint64_t lockstep_snapshot_resync_frame = 0;
+    std::uint32_t lockstep_snapshot_resync_chunk_count = 0;
+    std::uint32_t lockstep_snapshot_resync_total_bytes = 0;
+    std::vector<std::uint8_t> lockstep_snapshot_resync_bytes;
+    std::vector<std::uint8_t> lockstep_snapshot_resync_received_chunks;
+    std::uint32_t lockstep_snapshot_resync_retry_ticks = 0;
+    bool lockstep_snapshot_resync_waiting_for_ack = false;
     bool lockstep_rollback_enabled = true;
     std::uint32_t lockstep_max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
     std::optional<LockstepFrame> lockstep_rollback_requested_frame = std::nullopt;
