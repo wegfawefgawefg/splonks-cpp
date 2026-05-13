@@ -1172,8 +1172,9 @@ Goal: reduce input-delay feel while keeping det correctness.
 - [x] Add live hash exchange / desync recovery. Periodic gameplay hashes now
   travel over the lockstep lane, detect arbitrary deterministic-state
   divergence, request rollback from the last peer-specific matching hash, and
-  enter fatal-desync mode if recovery history is unavailable or replay still
-  diverges.
+  fall back to a stage-start snapshot catchup if recent rollback history is
+  unavailable, and enter fatal-desync mode only if replaying from frame 0 still
+  diverges or the frame-0 snapshot is missing.
 
 #### Live Hash Exchange And Desync Recovery Plan
 
@@ -1218,11 +1219,12 @@ Implementation steps:
      request rollback from that frame and replay to current using recorded
      inputs.
    - [x] Re-hash after replay and clear the mismatch if hashes converge.
-   - [x] If the match is outside rollback history, or replay still diverges,
-     enter explicit fatal-desync mode and stop lockstep stepping. Later work can
-     replace this with same-stage snapshot resync.
+   - [x] If the match is outside recent rollback history, restore the preserved
+     frame-0 stage snapshot and catch up using the full stage input log.
+   - [x] If catchup from frame 0 still diverges, or the frame-0 snapshot is
+     missing, enter explicit fatal-desync mode and stop lockstep stepping.
    - [x] Make the fallback explicit in debug: `rollback-repaired`,
-     `snapshot-resynced`, or `fatal-desync`.
+     `snapshot-catchup`, or `fatal-desync`.
 5. Smoke tests.
    - [x] Add a same-process test where one peer is intentionally perturbed,
      hash mismatch is detected, rollback repairs it, and final hashes match.
@@ -1241,7 +1243,10 @@ Implemented first pass:
 - Rollback request when a matching rollback snapshot is available.
 - Replay rechecks retained remote hash samples against newly generated local
   hashes and marks recovery repaired only if they converge.
-- Fatal-desync marker when recovery history is unavailable.
+- Snapshot-catchup recovery when recent rollback history is unavailable but
+  the frame-0 snapshot and full stage input log are available.
+- Fatal-desync marker when no usable recovery snapshot exists or full catchup
+  still diverges.
 - Fatal-desync marker when a mismatch arrives before any real confirmed hash.
 - Fatal-desync mode now stops lockstep stepping instead of silently continuing.
 - Smoke coverage for packet roundtrip, mismatch detection, rollback request,

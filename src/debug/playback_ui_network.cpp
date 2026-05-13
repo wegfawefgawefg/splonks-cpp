@@ -115,6 +115,8 @@ const char* LockstepDesyncRecoveryModeName(network::LockstepDesyncRecoveryMode m
         return "pending-rollback";
     case network::LockstepDesyncRecoveryMode::RollbackRepaired:
         return "rollback-repaired";
+    case network::LockstepDesyncRecoveryMode::SnapshotCatchup:
+        return "snapshot-catchup";
     case network::LockstepDesyncRecoveryMode::FatalDesync:
         return "fatal-desync";
     }

@@ -1284,12 +1284,29 @@ bool RunLockstepHashExchangeSmoke() {
 
     state.net_session.lockstep_rollback_requested_frame = std::nullopt;
     state.net_session.lockstep_rollback_snapshots.clear();
+    state.net_session.lockstep_rollback_snapshots.push_back(network::LockstepRollbackSnapshot{
+        .frame = 0,
+        .snapshot = std::make_shared<GameplaySnapshot>(MakeGameplaySnapshot(state, graphics)),
+    });
+    network::LockstepHashNetPacket catchup_packet = roundtrip;
+    catchup_packet.hash = 0xCCCCULL;
+    network::HandleLockstepHashPacket(state, catchup_packet);
+    if (state.net_session.lockstep_last_desync_recovery_mode !=
+            network::LockstepDesyncRecoveryMode::SnapshotCatchup ||
+        !state.net_session.lockstep_rollback_requested_frame.has_value() ||
+        *state.net_session.lockstep_rollback_requested_frame != 0) {
+        std::cerr << "lockstep hash exchange smoke failed: old mismatch did not request snapshot catchup\n";
+        return false;
+    }
+
+    state.net_session.lockstep_rollback_requested_frame = std::nullopt;
+    state.net_session.lockstep_rollback_snapshots.clear();
     network::LockstepHashNetPacket fatal_packet = roundtrip;
-    fatal_packet.hash = 0xCCCCULL;
+    fatal_packet.hash = 0xDDDDULL;
     network::HandleLockstepHashPacket(state, fatal_packet);
     if (state.net_session.lockstep_last_desync_recovery_mode !=
         network::LockstepDesyncRecoveryMode::FatalDesync) {
-        std::cerr << "lockstep hash exchange smoke failed: old mismatch did not become fatal\n";
+        std::cerr << "lockstep hash exchange smoke failed: missing snapshot did not become fatal\n";
         return false;
     }
 

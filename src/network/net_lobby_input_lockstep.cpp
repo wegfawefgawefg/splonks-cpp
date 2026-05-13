@@ -80,6 +80,18 @@ const LockstepHashRecord* FindLocalHashRecord(const State& state, LockstepFrame 
     return nullptr;
 }
 
+bool RequestSnapshotCatchupFromStageStart(State& state) {
+    if (FindRollbackSnapshot(state, 0) == nullptr) {
+        state.net_session.lockstep_last_desync_recovery_mode =
+            LockstepDesyncRecoveryMode::FatalDesync;
+        return false;
+    }
+    state.net_session.lockstep_last_desync_recovery_mode =
+        LockstepDesyncRecoveryMode::SnapshotCatchup;
+    RequestRollbackFromFrame(state, 0);
+    return true;
+}
+
 void PruneLockstepHashHistory(State& state) {
     const LockstepFrame next_frame = state.net_session.lockstep_next_frame_to_step;
     const LockstepFrame keep_frames = std::max<LockstepFrame>(
@@ -195,8 +207,7 @@ void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
     const std::optional<LockstepHashRecord> last_peer_match =
         FindLastMatchingHashWithPeer(state, remote.peer_id, remote.frame);
     if (!last_peer_match.has_value()) {
-        state.net_session.lockstep_last_desync_recovery_mode =
-            LockstepDesyncRecoveryMode::FatalDesync;
+        (void)RequestSnapshotCatchupFromStageStart(state);
         return;
     }
 
@@ -209,8 +220,7 @@ void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
             LockstepDesyncRecoveryMode::PendingRollback;
         RequestRollbackFromFrame(state, rollback_frame);
     } else {
-        state.net_session.lockstep_last_desync_recovery_mode =
-            LockstepDesyncRecoveryMode::FatalDesync;
+        (void)RequestSnapshotCatchupFromStageStart(state);
     }
 }
 
@@ -234,8 +244,12 @@ void ValidateRemoteHashesAfterReplay(
             state.net_session.lockstep_last_mismatch_frame = remote.frame;
             state.net_session.lockstep_last_mismatch_local_hash = local->hash;
             state.net_session.lockstep_last_mismatch_remote_hash = remote.hash;
-            state.net_session.lockstep_last_desync_recovery_mode =
-                LockstepDesyncRecoveryMode::FatalDesync;
+            if (first_frame == 0) {
+                state.net_session.lockstep_last_desync_recovery_mode =
+                    LockstepDesyncRecoveryMode::FatalDesync;
+            } else {
+                (void)RequestSnapshotCatchupFromStageStart(state);
+            }
             return;
         }
         if (!state.net_session.lockstep_has_confirmed_hash ||
@@ -245,8 +259,10 @@ void ValidateRemoteHashesAfterReplay(
             state.net_session.lockstep_has_confirmed_hash = true;
         }
     }
-    if (checked_any && state.net_session.lockstep_last_desync_recovery_mode ==
-        LockstepDesyncRecoveryMode::PendingRollback) {
+    if (checked_any && (state.net_session.lockstep_last_desync_recovery_mode ==
+            LockstepDesyncRecoveryMode::PendingRollback ||
+        state.net_session.lockstep_last_desync_recovery_mode ==
+            LockstepDesyncRecoveryMode::SnapshotCatchup)) {
         state.net_session.lockstep_last_desync_recovery_mode =
             LockstepDesyncRecoveryMode::RollbackRepaired;
     }
@@ -833,7 +849,7 @@ void PruneRollbackSnapshots(State& state) {
             snapshots.begin(),
             snapshots.end(),
             [first_kept](const LockstepRollbackSnapshot& entry) {
-                return entry.frame < first_kept;
+                return entry.frame != 0 && entry.frame < first_kept;
             }
         ),
         snapshots.end()
@@ -913,8 +929,7 @@ bool ReplayRollbackWindow(
 
     const GameplaySnapshot* const snapshot = FindRollbackSnapshot(state, rollback_frame);
     if (snapshot == nullptr) {
-        state.net_session.lockstep_last_desync_recovery_mode =
-            LockstepDesyncRecoveryMode::FatalDesync;
+        (void)RequestSnapshotCatchupFromStageStart(state);
         return false;
     }
 
@@ -1111,15 +1126,8 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     state.performance_stats.rollback_buffer_bytes = ApproxRollbackBufferBytes(state);
     ApplyLockstepInputsToState(state, required_players, frame_inputs);
     state.net_session.lockstep_next_frame_to_step += 1;
-    const LockstepFrame input_history_frames = std::max<LockstepFrame>(
-        kInputHistoryFrames,
-        static_cast<LockstepFrame>(state.net_session.lockstep_max_rollback_frames) + 4
-    );
-    if (state.net_session.lockstep_next_frame_to_step > input_history_frames) {
-        state.net_session.lockstep_input_buffer.ClearBefore(
-            state.net_session.lockstep_next_frame_to_step - input_history_frames
-        );
-    }
+    // Keep the full stage input log so the hard recovery path can restore the
+    // frame-0 snapshot and catch up instead of ending the session.
     PruneRollbackSnapshots(state);
     return true;
 }

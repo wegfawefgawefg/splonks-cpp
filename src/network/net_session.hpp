@@ -126,6 +126,7 @@ enum class LockstepDesyncRecoveryMode : std::uint8_t {
     None,
     PendingRollback,
     RollbackRepaired,
+    SnapshotCatchup,
     FatalDesync,
 };
 
