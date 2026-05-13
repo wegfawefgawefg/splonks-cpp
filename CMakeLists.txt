@@ -329,6 +329,8 @@ add_executable(splonks-cpp
     src/settings.cpp
     src/sid.cpp
     src/stage.cpp
+    src/stage_bounds.cpp
+    src/stage_queries.cpp
     src/stage_fluids.cpp
     src/stage_init.cpp
     src/stage_spawning.cpp
