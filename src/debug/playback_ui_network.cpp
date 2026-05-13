@@ -447,13 +447,23 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
             static_cast<float>(session.lockstep_input_delay_frames) * kNetworkFrameMs
         );
         ImGui::Text(
-            "Rollback: %s count=%llu last=%u max=%u replay=%.3fms snapshots=%zu",
+            "Rollback: %s count=%llu last=%u max=%u replay=%.3fms avg=%.3fms snapshots=%zu",
             session.lockstep_rollback_enabled ? "enabled" : "disabled",
             static_cast<unsigned long long>(session.lockstep_rollback_count),
             session.lockstep_last_rollback_span,
             session.lockstep_max_rollback_span,
             session.lockstep_last_rollback_replay_ms,
+            session.lockstep_rollback_count == 0
+                ? 0.0F
+                : session.lockstep_total_rollback_replay_ms /
+                    static_cast<float>(session.lockstep_rollback_count),
             session.lockstep_rollback_snapshots.size()
+        );
+        ImGui::Text(
+            "Prediction: misses=%llu late-matches=%llu last-miss-span=%u",
+            static_cast<unsigned long long>(session.lockstep_prediction_miss_count),
+            static_cast<unsigned long long>(session.lockstep_prediction_late_match_count),
+            session.lockstep_last_prediction_miss_span
         );
     }
     ImGui::Separator();

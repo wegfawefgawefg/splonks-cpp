@@ -398,6 +398,7 @@ bool ReplayRollbackWindow(
     state.net_session.lockstep_max_rollback_span =
         std::max(state.net_session.lockstep_max_rollback_span, span);
     state.net_session.lockstep_last_rollback_replay_ms = replay_ms.count();
+    state.net_session.lockstep_total_rollback_replay_ms += replay_ms.count();
     PruneRollbackSnapshots(state);
     return true;
 }
@@ -440,6 +441,10 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_last_rollback_span = 0;
     state.net_session.lockstep_max_rollback_span = 0;
     state.net_session.lockstep_last_rollback_replay_ms = 0.0F;
+    state.net_session.lockstep_total_rollback_replay_ms = 0.0F;
+    state.net_session.lockstep_prediction_miss_count = 0;
+    state.net_session.lockstep_prediction_late_match_count = 0;
+    state.net_session.lockstep_last_prediction_miss_span = 0;
 }
 
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
@@ -507,6 +512,21 @@ void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet
     for (std::uint32_t i = 0; i < packet.record_count; ++i) {
         const LockstepInputStoreResult result =
             state.net_session.lockstep_input_buffer.Store(MakeLockstepInputRecord(packet.records[i]));
+        if (result.replaced_prediction) {
+            if (result.mismatch_frame.has_value()) {
+                state.net_session.lockstep_prediction_miss_count += 1;
+                if (state.net_session.lockstep_next_frame_to_step > *result.mismatch_frame) {
+                    state.net_session.lockstep_last_prediction_miss_span =
+                        static_cast<std::uint32_t>(
+                            state.net_session.lockstep_next_frame_to_step - *result.mismatch_frame
+                        );
+                } else {
+                    state.net_session.lockstep_last_prediction_miss_span = 0;
+                }
+            } else {
+                state.net_session.lockstep_prediction_late_match_count += 1;
+            }
+        }
         if (result.mismatch_frame.has_value()) {
             RequestRollbackFromFrame(state, *result.mismatch_frame);
         }

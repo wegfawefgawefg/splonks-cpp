@@ -151,6 +151,10 @@ struct NetSessionState {
     std::uint32_t lockstep_last_rollback_span = 0;
     std::uint32_t lockstep_max_rollback_span = 0;
     float lockstep_last_rollback_replay_ms = 0.0F;
+    float lockstep_total_rollback_replay_ms = 0.0F;
+    std::uint64_t lockstep_prediction_miss_count = 0;
+    std::uint64_t lockstep_prediction_late_match_count = 0;
+    std::uint32_t lockstep_last_prediction_miss_span = 0;
 
     static NetSessionState NewOffline();
 

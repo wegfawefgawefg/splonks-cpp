@@ -113,6 +113,47 @@ Implementation direction:
    `InputFrame`s and normal state. The lockstep scheduler owns delay,
    prediction, snapshots, rollback, and replay.
 
+Current two-track plan:
+
+We should do both configurable delay and rollback, but they solve different
+problems.
+
+Track A: delay baseline.
+
+- Keep fixed input delay as the deterministic safety mode.
+- Use it for LAN or stable links where `2-5` frames feels acceptable.
+- Expose measured RTT/jitter and a suggested delay, but do not dynamically
+  mutate the active delay unless the change is scheduled for a future lockstep
+  frame.
+- Exit gate: with rollback disabled, a selected delay produces no missing-input
+  stalls and all peers hash to the same state.
+
+Track B: rollback/prediction.
+
+- Keep the default delay low, currently `2` frames.
+- Predict missing remote input by repeating the last known input.
+- When a late input disagrees, restore the gameplay snapshot for the mismatch
+  frame and replay to current.
+- Keep presentation/audio out of replay so old sounds and particles do not
+  duplicate.
+- Exit gate: under fuzzer latency/jitter/reorder, peers converge to the same
+  gameplay hash, rollback counters advance, and local movement feels better
+  than raising delay to cover worst-case latency.
+
+Implementation order from here:
+
+1. Finish rollback telemetry so we can see prediction misses, rollback count,
+   replay cost, and snapshot depth while testing.
+2. Keep the existing fixed-delay selector and suggested delay UI as the fallback
+   path.
+3. Run smoke coverage for no-fuzzer, LAN-ish, cross-country, and Texas/Japan
+   profiles.
+4. Human-playtest movement, hang, jump, carry/throw, tools, explosives, and
+   stage transition under the fuzzer profiles.
+5. Tune default delay and prediction policy only after correctness is stable.
+6. Add smoothing only for visual correction artifacts; never hide a real
+   deterministic divergence with interpolation.
+
 Phase 1: configurable delay.
 
 - [x] Add a host-side debug/network control for `lockstep_input_delay_frames`
@@ -162,8 +203,10 @@ Phase 2: rollback.
   increase only after measuring memory and replay cost.
 - [x] Track initial rollback metrics in Debug Network: rollback count, last
   rollback span, max rollback span, last replay ms, and retained snapshot count.
-- [ ] Add richer rollback telemetry later if needed: per-second rollback count,
-  average replay ms, and latest mismatch source.
+- [x] Add richer rollback telemetry for tuning: average replay ms, prediction
+  miss count, late predicted-input match count, and last miss span.
+- [ ] Add per-second rollback count and latest mismatch source if live tuning
+  needs more detail.
 - [x] Add a focused rollback repair smoke that replaces a wrong predicted input
   with the real input and proves final state equality after replay.
 - [x] Add a latency/jitter/reorder rollback smoke that forces repeated late
@@ -1021,8 +1064,10 @@ Goal: reduce input-delay feel while keeping det correctness.
 - [x] Add fuzzer/smoke coverage for rollback under delayed, duplicated, and
   reordered remote inputs.
 - [x] Suppress duplicate pres/audio during resimulation where needed.
-- [ ] Add richer rollback debug if needed: confirmed frame, prediction miss
-  rate, per-second rollback count, and average replay ms.
+- [x] Add richer rollback debug: prediction miss count, late predicted-input
+  match count, last miss span, and average replay ms.
+- [ ] Add confirmed frame, per-second rollback count, and prediction miss rate
+  if live tuning needs more detail.
 - [x] Validate artificial latency profile plumbing with live host/peer and
   `splonksctl`.
 - [ ] Human-playtest high-latency feel and tune default delay/prediction.

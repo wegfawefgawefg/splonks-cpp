@@ -705,8 +705,19 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"lockstep_max_rollback_span\":" << state.net_session.lockstep_max_rollback_span
         << ",\"lockstep_last_rollback_replay_ms\":"
         << state.net_session.lockstep_last_rollback_replay_ms
+        << ",\"lockstep_avg_rollback_replay_ms\":"
+        << (state.net_session.lockstep_rollback_count == 0
+                ? 0.0F
+                : state.net_session.lockstep_total_rollback_replay_ms /
+                    static_cast<float>(state.net_session.lockstep_rollback_count))
         << ",\"lockstep_rollback_snapshots\":"
         << state.net_session.lockstep_rollback_snapshots.size()
+        << ",\"lockstep_prediction_miss_count\":"
+        << state.net_session.lockstep_prediction_miss_count
+        << ",\"lockstep_prediction_late_match_count\":"
+        << state.net_session.lockstep_prediction_late_match_count
+        << ",\"lockstep_last_prediction_miss_span\":"
+        << state.net_session.lockstep_last_prediction_miss_span
         << ",\"ent_links\":" << state.net_session.ent_links.size()
         << ",\"fuzzer\":{\"config\":";
     WriteNetFuzzerConfigJson(out, state.net_session.fuzzer_config);
