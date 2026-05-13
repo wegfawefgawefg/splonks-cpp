@@ -1221,7 +1221,7 @@ Implementation steps:
    - [x] Make the fallback explicit in debug: `rollback-repaired`,
      `snapshot-resynced`, or `fatal-desync`.
 5. Smoke tests.
-   - [ ] Add a same-process test where one peer is intentionally perturbed,
+   - [x] Add a same-process test where one peer is intentionally perturbed,
      hash mismatch is detected, rollback repairs it, and final hashes match.
    - [x] Add a test where the mismatch is older than rollback history and the
      code takes the configured hard-resync/fatal path.

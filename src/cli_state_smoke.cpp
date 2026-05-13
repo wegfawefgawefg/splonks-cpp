@@ -1263,6 +1263,144 @@ bool RunLockstepHashExchangeSmoke() {
     return true;
 }
 
+bool RunLockstepHashRollbackRepairSmoke() {
+    Graphics truth_graphics;
+    Graphics repaired_graphics;
+    InitCliSmokeRuntimeTables(truth_graphics);
+    InitCliSmokeRuntimeTables(repaired_graphics);
+    Audio truth_audio;
+    Audio repaired_audio;
+
+    State truth = State::New();
+    State repaired = State::New();
+    const std::vector<PlayerId> players = {1, 2};
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(truth, truth_graphics, {1}, failed_step) ||
+        !PrepareLockstepSmokeState(repaired, repaired_graphics, {1}, failed_step)) {
+        std::cerr << "lockstep hash rollback repair smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    truth.net_session.role = network::NetRole::Peer;
+    truth.net_session.local_player_id = 1;
+    truth.net_session.stage_instance_id = 0xBEEFU;
+    repaired.net_session.role = network::NetRole::Peer;
+    repaired.net_session.local_player_id = 1;
+    repaired.net_session.stage_instance_id = truth.net_session.stage_instance_id;
+
+    InputFrame neutral = InputFrame::New();
+    InputFrame remote_actual = InputFrame::New();
+    remote_actual.right = true;
+    remote_actual.run = true;
+
+    ApplyLockstepInputsToState(truth, players, {neutral, neutral});
+    StepSingleTickWithMode(truth, truth_audio, truth_graphics, SimulationTickMode::ReplayNoNetwork);
+    ApplyLockstepInputsToState(repaired, players, {neutral, neutral});
+    StepSingleTickWithMode(
+        repaired,
+        repaired_audio,
+        repaired_graphics,
+        SimulationTickMode::ReplayNoNetwork
+    );
+
+    const std::uint64_t matching_hash =
+        ComputeGameplayDeterminismFingerprint(truth).value;
+    if (matching_hash != ComputeGameplayDeterminismFingerprint(repaired).value) {
+        std::cerr << "lockstep hash rollback repair smoke failed: setup diverged early\n";
+        return false;
+    }
+
+    repaired.net_session.lockstep_next_frame_to_step = 1;
+    repaired.net_session.lockstep_rollback_snapshots.push_back(network::LockstepRollbackSnapshot{
+        .frame = 1,
+        .snapshot = std::make_shared<GameplaySnapshot>(
+            MakeGameplaySnapshot(repaired, repaired_graphics)
+        ),
+    });
+    repaired.net_session.lockstep_hash_history.push_back(network::LockstepHashRecord{
+        .frame = 0,
+        .hash = matching_hash,
+    });
+    repaired.net_session.lockstep_remote_hash_history.push_back(
+        network::LockstepRemoteHashRecord{
+            .peer_id = 2,
+            .frame = 0,
+            .hash = matching_hash,
+        }
+    );
+    repaired.net_session.lockstep_last_confirmed_hash_frame = 0;
+    repaired.net_session.lockstep_last_confirmed_hash = matching_hash;
+    repaired.net_session.lockstep_has_confirmed_hash = true;
+
+    network::LockstepInputRecord player_1_frame_1;
+    player_1_frame_1.player_id = 1;
+    player_1_frame_1.frame = 1;
+    player_1_frame_1.input = neutral;
+    (void)repaired.net_session.lockstep_input_buffer.Store(player_1_frame_1);
+    network::LockstepInputRecord player_2_frame_1;
+    player_2_frame_1.player_id = 2;
+    player_2_frame_1.frame = 1;
+    player_2_frame_1.input = remote_actual;
+    (void)repaired.net_session.lockstep_input_buffer.Store(player_2_frame_1);
+
+    ApplyLockstepInputsToState(truth, players, {neutral, remote_actual});
+    StepSingleTickWithMode(truth, truth_audio, truth_graphics, SimulationTickMode::ReplayNoNetwork);
+    truth.net_session.lockstep_next_frame_to_step = 2;
+    ApplyLockstepInputsToState(repaired, players, {neutral, neutral});
+    StepSingleTickWithMode(
+        repaired,
+        repaired_audio,
+        repaired_graphics,
+        SimulationTickMode::ReplayNoNetwork
+    );
+    repaired.net_session.lockstep_next_frame_to_step = 2;
+
+    const std::uint64_t truth_hash = ComputeGameplayDeterminismFingerprint(truth).value;
+    const std::uint64_t repaired_bad_hash =
+        ComputeGameplayDeterminismFingerprint(repaired).value;
+    if (truth_hash == repaired_bad_hash) {
+        std::cerr << "lockstep hash rollback repair smoke failed: perturbation did not diverge\n";
+        return false;
+    }
+    repaired.net_session.lockstep_hash_history.push_back(network::LockstepHashRecord{
+        .frame = 1,
+        .hash = repaired_bad_hash,
+    });
+
+    network::LockstepHashNetPacket mismatch;
+    mismatch.stage_instance_id = repaired.net_session.stage_instance_id;
+    mismatch.sender_peer_id = 2;
+    mismatch.frame = 1;
+    mismatch.hash = truth_hash;
+    network::HandleLockstepHashPacket(repaired, mismatch);
+    if (repaired.net_session.lockstep_last_desync_recovery_mode !=
+            network::LockstepDesyncRecoveryMode::PendingRollback ||
+        !repaired.net_session.lockstep_rollback_requested_frame.has_value() ||
+        *repaired.net_session.lockstep_rollback_requested_frame != 1) {
+        std::cerr << "lockstep hash rollback repair smoke failed: mismatch did not request frame 1 rollback\n";
+        return false;
+    }
+
+    if (!network::ReplayPendingInputLockstepRollback(repaired, repaired_graphics)) {
+        std::cerr << "lockstep hash rollback repair smoke failed: rollback replay failed\n";
+        return false;
+    }
+    if (repaired.net_session.lockstep_last_desync_recovery_mode !=
+        network::LockstepDesyncRecoveryMode::RollbackRepaired) {
+        std::cerr << "lockstep hash rollback repair smoke failed: replay did not mark repaired\n";
+        return false;
+    }
+    if (!CompareCanonicalFingerprints(truth, repaired, "lockstep hash rollback repair final")) {
+        std::cerr << "  first simple diff: "
+                  << DescribeFirstStateDifference(truth, repaired) << '\n';
+        return false;
+    }
+
+    std::cout << "lockstep hash rollback repair smoke ok\n";
+    return true;
+}
+
 struct RollbackSmokeSnapshot {
     network::LockstepFrame frame = 0;
     GameplaySnapshot snapshot;
@@ -2552,6 +2690,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunLockstepHashExchangeSmoke()) {
+            return false;
+        }
+        if (!RunLockstepHashRollbackRepairSmoke()) {
             return false;
         }
         if (!RunRollbackLatencySmoke()) {

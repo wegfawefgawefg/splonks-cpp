@@ -1048,6 +1048,14 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_input_wait_block_count = 0;
 }
 
+bool ReplayPendingInputLockstepRollback(State& state, Graphics& graphics) {
+    const std::vector<PlayerId> required_players = GetConnectedPlayerIds(state);
+    if (required_players.empty()) {
+        return false;
+    }
+    return ReplayRollbackWindow(state, graphics, required_players);
+}
+
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     if (!IsInputLockstepActive(state)) {
         return true;
@@ -1084,7 +1092,7 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
         state.net_session.lockstep_input_wait_block_count += 1;
         return false;
     }
-    if (!ReplayRollbackWindow(state, graphics, required_players)) {
+    if (!ReplayPendingInputLockstepRollback(state, graphics)) {
         return false;
     }
 
