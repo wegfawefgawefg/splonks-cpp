@@ -1,9 +1,12 @@
 #include "network/net_transport.hpp"
 
 #include <arpa/inet.h>
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -183,6 +186,44 @@ bool EndpointsEqual(const NetEndpoint& a, const NetEndpoint& b) {
 
 std::string EndpointToString(const NetEndpoint& endpoint) {
     return endpoint.address + ":" + std::to_string(endpoint.port);
+}
+
+std::vector<std::string> GetLocalLanIpv4Addresses() {
+    std::vector<std::string> addresses;
+
+    ifaddrs* interfaces = nullptr;
+    if (getifaddrs(&interfaces) != 0) {
+        return addresses;
+    }
+
+    for (const ifaddrs* iface = interfaces; iface != nullptr; iface = iface->ifa_next) {
+        if (iface->ifa_addr == nullptr || iface->ifa_addr->sa_family != AF_INET) {
+            continue;
+        }
+        if ((iface->ifa_flags & IFF_UP) == 0 || (iface->ifa_flags & IFF_LOOPBACK) != 0) {
+            continue;
+        }
+
+        const sockaddr_in* addr = reinterpret_cast<const sockaddr_in*>(iface->ifa_addr);
+        std::array<char, INET_ADDRSTRLEN> buffer{};
+        const char* text = inet_ntop(
+            AF_INET,
+            &addr->sin_addr,
+            buffer.data(),
+            static_cast<socklen_t>(buffer.size())
+        );
+        if (text == nullptr) {
+            continue;
+        }
+
+        const std::string address = text;
+        if (std::find(addresses.begin(), addresses.end(), address) == addresses.end()) {
+            addresses.push_back(address);
+        }
+    }
+
+    freeifaddrs(interfaces);
+    return addresses;
 }
 
 } // namespace splonks::network

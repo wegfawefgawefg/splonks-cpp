@@ -77,8 +77,8 @@ struct DebugPlayback {
     int quest_stage_seed = 1;
     std::string quest_stage_status;
     std::string aframe_reload_status;
-    int network_host_port = 42424;
-    int network_join_port = 42424;
+    int network_host_port = network::kDefaultMultiplayerPort;
+    int network_join_port = network::kDefaultMultiplayerPort;
     int network_lockstep_input_delay_frames =
         static_cast<int>(network::kDefaultLockstepInputDelayFrames);
     int network_lockstep_rollback_frames =

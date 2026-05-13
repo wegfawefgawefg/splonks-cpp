@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace splonks::network {
 
@@ -61,6 +62,11 @@ bool StartHostSession(
     transport.join_request_pending = false;
     if (status_out != nullptr) {
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
+        const std::vector<std::string> lan_addresses = GetLocalLanIpv4Addresses();
+        if (!lan_addresses.empty()) {
+            *status_out += " LAN join: " + lan_addresses.front() + ":" +
+                std::to_string(transport.socket.BoundPort()) + ".";
+        }
     }
     return true;
 }

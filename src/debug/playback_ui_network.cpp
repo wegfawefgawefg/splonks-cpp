@@ -79,6 +79,28 @@ void SyncLockstepSettingSliderFromActive(
     last_synced_active_value = active_value;
 }
 
+void DrawLanJoinHints(const State& state, const DebugPlayback& debug) {
+    const std::uint16_t port = network::IsTransportOpen(state)
+        ? network::BoundTransportPort(state)
+        : static_cast<std::uint16_t>(std::clamp(debug.network_host_port, 1, 65535));
+    const std::vector<std::string> addresses = network::GetLocalLanIpv4Addresses();
+
+    if (addresses.empty()) {
+        ImGui::TextDisabled("LAN address: none detected");
+        return;
+    }
+
+    ImGui::Text("LAN join address%s:", addresses.size() == 1 ? "" : "es");
+    for (const std::string& address : addresses) {
+        const std::string endpoint = address + ":" + std::to_string(port);
+        ImGui::BulletText("%s", endpoint.c_str());
+    }
+    if (ImGui::SmallButton("Copy First LAN Address")) {
+        const std::string endpoint = addresses.front() + ":" + std::to_string(port);
+        ImGui::SetClipboardText(endpoint.c_str());
+    }
+}
+
 const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
     switch (mode) {
     case network::NetReconnectSpawnMode::FreshAtEntrance:
@@ -441,6 +463,7 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         ? "open :" + std::to_string(network::BoundTransportPort(state))
         : "closed";
     ImGui::Text("Socket: %s", socket_text.c_str());
+    DrawLanJoinHints(state, debug);
     const bool host_live_lockstep =
         state.net_session.input_lockstep_enabled &&
         state.net_session.role == network::NetRole::Host;

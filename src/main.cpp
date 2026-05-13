@@ -28,7 +28,6 @@ namespace {
 
 constexpr int kWindowWidth = 1920;
 constexpr int kWindowHeight = 540;
-constexpr std::uint16_t kDefaultMultiplayerPort = 39000;
 
 enum class StartupNetworkMode {
     None,
@@ -39,7 +38,7 @@ enum class StartupNetworkMode {
 struct StartupNetworkConfig {
     StartupNetworkMode mode = StartupNetworkMode::None;
     std::string host = "127.0.0.1";
-    std::uint16_t port = kDefaultMultiplayerPort;
+    std::uint16_t port = splonks::network::kDefaultMultiplayerPort;
 };
 
 std::uint16_t ParsePortArg(const char* text, std::uint16_t fallback) {

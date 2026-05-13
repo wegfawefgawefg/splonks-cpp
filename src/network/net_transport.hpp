@@ -85,5 +85,6 @@ struct NetTransportRuntime {
 
 bool EndpointsEqual(const NetEndpoint& a, const NetEndpoint& b);
 std::string EndpointToString(const NetEndpoint& endpoint);
+std::vector<std::string> GetLocalLanIpv4Addresses();
 
 } // namespace splonks::network
