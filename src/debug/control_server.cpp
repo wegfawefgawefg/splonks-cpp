@@ -1,6 +1,7 @@
 #include "debug/control_server.hpp"
 
 #include "ent/spec.hpp"
+#include "network/net_fuzzer.hpp"
 #include "network/net_transport.hpp"
 #include "state.hpp"
 #include "state_fingerprint.hpp"
@@ -142,6 +143,55 @@ const char* ConnectionKindName(PlayerConnectionKind kind) {
         return "remote";
     }
     return "unknown";
+}
+
+std::string LowerAscii(std::string_view text) {
+    std::string result;
+    result.reserve(text.size());
+    for (char c : text) {
+        if (c >= 'A' && c <= 'Z') {
+            result.push_back(static_cast<char>(c - 'A' + 'a'));
+        } else {
+            result.push_back(c);
+        }
+    }
+    return result;
+}
+
+std::optional<network::NetFuzzerConfig> NetFuzzerPresetByName(std::string_view raw_name) {
+    const std::string name = LowerAscii(raw_name);
+    if (name == "lan") {
+        return network::NetFuzzerConfig::LanPreset();
+    }
+    if (name == "same-house" || name == "samehouse" || name == "house") {
+        return network::NetFuzzerConfig::SameHousePreset();
+    }
+    if (name == "same-city" || name == "samecity" || name == "city") {
+        return network::NetFuzzerConfig::SameCityPreset();
+    }
+    if (name == "same-state" || name == "samestate" || name == "state") {
+        return network::NetFuzzerConfig::SameStatePreset();
+    }
+    if (name == "same-region" || name == "sameregion" || name == "region") {
+        return network::NetFuzzerConfig::SameRegionPreset();
+    }
+    if (name == "tx-ca" || name == "texas-california" || name == "texas-to-california") {
+        return network::NetFuzzerConfig::TexasToCaliforniaPreset();
+    }
+    if (name == "ca-fl" || name == "california-florida" || name == "california-to-florida") {
+        return network::NetFuzzerConfig::CaliforniaToFloridaPreset();
+    }
+    if (name == "us-cross-country" || name == "cross-country" || name == "crosscountry") {
+        return network::NetFuzzerConfig::UsCrossCountryPreset();
+    }
+    if (name == "tx-japan" || name == "japan-texas" || name == "japan-to-texas" ||
+        name == "texas-to-japan") {
+        return network::NetFuzzerConfig::JapanToTexasPreset();
+    }
+    if (name == "bad-wifi" || name == "badwifi") {
+        return network::NetFuzzerConfig::BadWifiPreset();
+    }
+    return std::nullopt;
 }
 
 void WriteVec2(std::ostringstream& out, const Vec2& value) {
@@ -553,7 +603,88 @@ std::string HandleEntsCommand(const State& state, const std::vector<std::string>
     return out.str();
 }
 
-std::string HandleNetCommand(const State& state) {
+void WriteNetFuzzerConfigJson(std::ostringstream& out, const network::NetFuzzerConfig& config) {
+    out << "{\"enabled\":" << (config.enabled ? "true" : "false")
+        << ",\"latency_ms\":" << config.latency_ms
+        << ",\"jitter_ms\":" << config.jitter_ms
+        << ",\"packet_loss_percent\":" << config.packet_loss_percent
+        << ",\"duplicate_percent\":" << config.duplicate_percent
+        << ",\"reorder_window_packets\":" << config.reorder_window_packets
+        << ",\"bandwidth_cap_bytes_per_second\":"
+        << config.bandwidth_cap_bytes_per_second
+        << ",\"burst_loss_enabled\":"
+        << (config.burst_loss_enabled ? "true" : "false")
+        << ",\"burst_loss_percent\":" << config.burst_loss_percent
+        << ",\"clock_drift_percent\":" << config.clock_drift_percent
+        << "}";
+}
+
+void WriteNetFuzzerStatsJson(std::ostringstream& out, const network::NetFuzzerStats& stats) {
+    out << "{\"packets_sent\":" << stats.packets_sent
+        << ",\"packets_received\":" << stats.packets_received
+        << ",\"packets_dropped\":" << stats.packets_dropped
+        << ",\"packets_duplicated\":" << stats.packets_duplicated
+        << ",\"packets_reordered\":" << stats.packets_reordered
+        << "}";
+}
+
+std::string HandleNetFuzzerCommand(State& state, const std::vector<std::string>& parts) {
+    if (parts.size() < 3 || parts[2] == "status") {
+        std::ostringstream out;
+        out << "{\"ok\":true,\"cmd\":\"net fuzzer\",\"config\":";
+        WriteNetFuzzerConfigJson(out, state.net_session.fuzzer_config);
+        out << ",\"stats\":";
+        WriteNetFuzzerStatsJson(out, state.net_session.fuzzer_stats);
+        out << "}\n";
+        return out.str();
+    }
+
+    if (parts[2] == "off" || parts[2] == "disable") {
+        state.net_session.fuzzer_config = network::NetFuzzerConfig{};
+        state.net_session.fuzzer_config.enabled = false;
+    } else if (parts[2] == "preset") {
+        if (parts.size() < 4) {
+            return MakeError("net fuzzer preset requires a preset name");
+        }
+        const std::optional<network::NetFuzzerConfig> preset = NetFuzzerPresetByName(parts[3]);
+        if (!preset.has_value()) {
+            return MakeError("unknown net fuzzer preset");
+        }
+        state.net_session.fuzzer_config = *preset;
+    } else if (parts[2] == "set") {
+        state.net_session.fuzzer_config.enabled = true;
+        state.net_session.fuzzer_config.latency_ms =
+            std::clamp(ParseFloatArg(parts, 3, state.net_session.fuzzer_config.latency_ms), 0.0F, 300.0F);
+        state.net_session.fuzzer_config.jitter_ms =
+            std::clamp(ParseFloatArg(parts, 4, state.net_session.fuzzer_config.jitter_ms), 0.0F, 150.0F);
+        state.net_session.fuzzer_config.packet_loss_percent =
+            std::clamp(ParseFloatArg(parts, 5, state.net_session.fuzzer_config.packet_loss_percent), 0.0F, 25.0F);
+        state.net_session.fuzzer_config.duplicate_percent =
+            std::clamp(ParseFloatArg(parts, 6, state.net_session.fuzzer_config.duplicate_percent), 0.0F, 25.0F);
+        state.net_session.fuzzer_config.reorder_window_packets =
+            static_cast<std::uint32_t>(std::clamp(ParseIntArg(
+                parts,
+                7,
+                static_cast<int>(state.net_session.fuzzer_config.reorder_window_packets)
+            ), 0, 32));
+    } else {
+        return MakeError("unknown net fuzzer command");
+    }
+
+    std::ostringstream out;
+    out << "{\"ok\":true,\"cmd\":\"net fuzzer\",\"config\":";
+    WriteNetFuzzerConfigJson(out, state.net_session.fuzzer_config);
+    out << ",\"stats\":";
+    WriteNetFuzzerStatsJson(out, state.net_session.fuzzer_stats);
+    out << "}\n";
+    return out.str();
+}
+
+std::string HandleNetCommand(State& state, const std::vector<std::string>& parts) {
+    if (parts.size() >= 2 && parts[1] == "fuzzer") {
+        return HandleNetFuzzerCommand(state, parts);
+    }
+
     std::ostringstream out;
     out << "{\"ok\":true,\"cmd\":\"net\""
         << ",\"role\":" << JsonString(NetRoleName(state.net_session.role))
@@ -577,6 +708,11 @@ std::string HandleNetCommand(const State& state) {
         << ",\"lockstep_rollback_snapshots\":"
         << state.net_session.lockstep_rollback_snapshots.size()
         << ",\"ent_links\":" << state.net_session.ent_links.size()
+        << ",\"fuzzer\":{\"config\":";
+    WriteNetFuzzerConfigJson(out, state.net_session.fuzzer_config);
+    out << ",\"stats\":";
+    WriteNetFuzzerStatsJson(out, state.net_session.fuzzer_stats);
+    out << "}"
         << ",\"peers\":[";
     for (std::size_t i = 0; i < state.net_session.peers.size(); ++i) {
         const network::NetPeerState& peer = state.net_session.peers[i];
@@ -684,7 +820,7 @@ std::string HandleCommand(State& state, std::string_view command) {
         return "{\"ok\":true,\"cmd\":\"ping\",\"pong\":true}\n";
     }
     if (op == "help") {
-        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
+        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"net fuzzer status\",\"net fuzzer off\",\"net fuzzer preset <name>\",\"net fuzzer set <latency_ms> <jitter_ms> <loss_pct> <duplicate_pct> <reorder_window>\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
     }
     if (op == "status") {
         return HandleStatusCommand(state);
@@ -702,7 +838,7 @@ std::string HandleCommand(State& state, std::string_view command) {
         return HandleTilesCommand(state, parts);
     }
     if (op == "net") {
-        return HandleNetCommand(state);
+        return HandleNetCommand(state, parts);
     }
     if (op == "fingerprint") {
         return HandleFingerprintCommand(state);

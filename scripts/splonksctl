@@ -29,7 +29,11 @@ def main() -> int:
     parser.add_argument(
         "command",
         nargs=argparse.REMAINDER,
-        help="command to send: status, players, ents near 96, ent 0, tiles x y w h, net, perf, input 12 right jump",
+        help=(
+            "command to send: status, players, ents near 96, ent 0, "
+            "tiles x y w h, net, net fuzzer preset tx-japan, perf, "
+            "input 12 right jump"
+        ),
     )
     args = parser.parse_args()
 

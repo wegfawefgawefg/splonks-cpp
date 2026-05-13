@@ -962,11 +962,13 @@ frames with matching hashes while exchanging only input and control packets.
 Goal: boot two game windows and play with delay-based lockstep.
 
 - [x] Reuse or replace the current UDP transport for input packets.
-- [ ] Reuse the existing impairment/profile controls where possible:
+- [x] Reuse the existing impairment/profile controls where possible:
   same-house/same-city/same-state/Texas-to-California/California-to-Florida/
   Texas-to-Japan latency, jitter, loss, duplicate, and reorder settings should
   feed the lockstep input transport/fuzzer instead of the retired authoritative
   mutation transport.
+  ImGui Debug Network controls and `splonksctl net fuzzer ...` both write the
+  lockstep transport fuzzer config.
 - [ ] Remove or hide live controls that only make sense for the old
   authoritative snapshot/event lanes once lockstep owns live networking.
 - [x] Add lobby start barrier: stage seed, player list, stage id, start frame,
