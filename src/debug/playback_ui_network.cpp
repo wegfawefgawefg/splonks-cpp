@@ -353,8 +353,11 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         ? "open :" + std::to_string(network::BoundTransportPort(state))
         : "closed";
     ImGui::Text("Socket: %s", socket_text.c_str());
-    const bool can_change_delay = !network::IsTransportOpen(state);
-    if (!can_change_delay) {
+    const bool host_live_lockstep =
+        state.net_session.input_lockstep_enabled &&
+        state.net_session.role == network::NetRole::Host;
+    const bool can_edit_delay = !network::IsTransportOpen(state) || host_live_lockstep;
+    if (!can_edit_delay) {
         ImGui::BeginDisabled();
     }
     ImGui::SliderInt(
@@ -363,7 +366,7 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         static_cast<int>(network::kMinLockstepInputDelayFrames),
         static_cast<int>(network::kMaxLockstepInputDelayFrames)
     );
-    if (!can_change_delay) {
+    if (!can_edit_delay) {
         ImGui::EndDisabled();
     }
     debug.network_lockstep_input_delay_frames = static_cast<int>(network::ClampLockstepInputDelayFrames(
@@ -383,7 +386,9 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         debug.network_lockstep_input_delay_frames,
         static_cast<float>(debug.network_lockstep_input_delay_frames) * kNetworkFrameMs,
         debug.network_lockstep_rollback_frames,
-        can_change_delay ? "" : " active next session"
+        !network::IsTransportOpen(state)
+            ? ""
+            : (host_live_lockstep ? " schedule to apply live" : " active next session")
     );
     ImGui::InputInt("Host port", &debug.network_host_port);
     if (ImGui::Button("Host")) {
