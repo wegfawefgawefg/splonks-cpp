@@ -337,6 +337,7 @@ add_executable(splonks-cpp
     src/stage_init.cpp
     src/stage_spawning.cpp
     src/stage_rotation.cpp
+    src/stage_shake.cpp
     src/stage_wrap.cpp
     src/stage_tile_triggers.cpp
     src/state_fingerprint.cpp
