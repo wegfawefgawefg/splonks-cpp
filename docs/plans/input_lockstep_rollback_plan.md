@@ -1166,10 +1166,11 @@ Goal: reduce input-delay feel while keeping det correctness.
   longer respawns only one process; synced jump/confirm input drives restart
   and all-player respawn on the same simulated frame.
 - [ ] Human-playtest high-latency feel and tune default delay/prediction.
-- [ ] Add live hash exchange / desync recovery. Current rollback repairs
-  prediction mistakes when late real inputs differ from predicted inputs, but
-  it does not yet exchange periodic gameplay hashes and force a rollback or
-  snapshot resync after an arbitrary deterministic-state divergence.
+- [x] Add live hash exchange / desync recovery. Periodic gameplay hashes now
+  travel over the lockstep lane, detect arbitrary deterministic-state
+  divergence, request rollback from the last peer-specific matching hash, and
+  enter fatal-desync mode if recovery history is unavailable or replay still
+  diverges.
 
 #### Live Hash Exchange And Desync Recovery Plan
 
