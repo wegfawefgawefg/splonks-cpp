@@ -51,7 +51,7 @@ void SendLeaveNotice(State& state);
 bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
 void ResetInputLockstepState(State& state);
-bool PrepareInputLockstepFrame(State& state, Audio& audio, Graphics& graphics);
+bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
 void RelayInputFrameRecordsToOtherRemotes(
     NetTransportRuntime& transport,

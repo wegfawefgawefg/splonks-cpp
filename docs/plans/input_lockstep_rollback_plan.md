@@ -153,6 +153,9 @@ Phase 2: rollback.
 - [x] Keep gameplay/content deterministic and network-agnostic. Rollback should
   live in the simulation scheduler/state layer, not in items, ents, shops, or
   traps.
+- [x] Suppress duplicate presentation/audio during rollback resimulation by
+  replaying past frames with a dummy audio sink and restoring the pre-rollback
+  presentation layer after gameplay catches up.
 - [ ] Add correction/presentation smoothing only after deterministic rollback is
   correct. First priority is identical final state, not hiding corrections.
 - [x] Define a maximum rollback window. Start with `8-12` frames for testing;
@@ -178,9 +181,10 @@ Rollback prerequisites:
   must depend on frame/tick state, not wall-clock time.
 - [x] Use broad gameplay snapshot scope first for correctness, then optimize
   entity/state storage only if memory or replay cost requires it.
-- [ ] Make rollback explicitly exclude presentation-only state if it cannot
-  affect gameplay. If presentation state affects gameplay, it is not
-  presentation-only and must be deterministic.
+- [x] During live rollback replay, preserve the current presentation layer
+  instead of replaying old particles/audio/transient lights.
+- [ ] Continue classifying presentation-only state. If presentation state affects
+  gameplay, it is not presentation-only and must be deterministic.
 
 Immediate resume checklist for the next `/goal` run:
 
@@ -1011,7 +1015,7 @@ Goal: reduce input-delay feel while keeping det correctness.
   last replay ms, and retained snapshot count.
 - [x] Add fuzzer/smoke coverage for rollback under delayed, duplicated, and
   reordered remote inputs.
-- [ ] Suppress duplicate pres/audio during resimulation where needed.
+- [x] Suppress duplicate pres/audio during resimulation where needed.
 - [ ] Add richer rollback debug if needed: confirmed frame, prediction miss
   rate, per-second rollback count, and average replay ms.
 - [ ] Playtest artificial latency profiles and tune default delay/prediction.

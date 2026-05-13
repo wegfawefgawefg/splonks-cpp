@@ -15,6 +15,47 @@ namespace {
 
 constexpr LockstepFrame kInputHistoryFrames = 12;
 
+struct RollbackPresentationSnapshot {
+    ParticleSystem particles;
+    AudioEmitterManager audio_emitters;
+    StageLighting stage_lighting;
+    Vec2 audio_listener_world_pos = Vec2::New(0.0F, 0.0F);
+    std::optional<Vec2> gameplay_camera_anchor_world_pos;
+    Vec2 play_cam_pos = Vec2::New(0.0F, 0.0F);
+};
+
+RollbackPresentationSnapshot CaptureRollbackPresentationState(
+    const State& state,
+    const Graphics& graphics
+) {
+    RollbackPresentationSnapshot snapshot;
+    snapshot.particles = state.particles;
+    snapshot.audio_emitters = state.audio_emitters;
+    snapshot.stage_lighting = state.stage_lighting;
+    snapshot.audio_listener_world_pos = state.audio_listener_world_pos;
+    snapshot.gameplay_camera_anchor_world_pos = state.gameplay_camera_anchor_world_pos;
+    snapshot.play_cam_pos = graphics.play_cam.pos;
+    return snapshot;
+}
+
+void RestoreRollbackPresentationState(
+    const RollbackPresentationSnapshot& snapshot,
+    State& state,
+    Graphics& graphics
+) {
+    state.particles = snapshot.particles;
+    state.audio_emitters = snapshot.audio_emitters;
+    state.stage_lighting = snapshot.stage_lighting;
+    state.audio_listener_world_pos = snapshot.audio_listener_world_pos;
+    state.gameplay_camera_anchor_world_pos = snapshot.gameplay_camera_anchor_world_pos;
+    graphics.play_cam.pos = snapshot.play_cam_pos;
+
+    // Corrected gameplay may have changed tiles/fluids while presentation state was
+    // preserved from the pre-rollback present. Rebuild caches on demand.
+    InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
+}
+
 std::vector<PlayerId> GetConnectedPlayerIds(const State& state) {
     std::vector<PlayerId> player_ids;
     for (const PlayerSlot& slot : state.players.slots) {
@@ -304,7 +345,6 @@ bool BuildOrPredictFrameInputs(
 
 bool ReplayRollbackWindow(
     State& state,
-    Audio& audio,
     Graphics& graphics,
     const std::vector<PlayerId>& required_players
 ) {
@@ -325,6 +365,9 @@ bool ReplayRollbackWindow(
     }
 
     const auto replay_start = std::chrono::steady_clock::now();
+    const RollbackPresentationSnapshot presentation_snapshot =
+        CaptureRollbackPresentationState(state, graphics);
+    Audio replay_audio;
     RestoreGameplaySnapshot(*snapshot, state, graphics);
     state.net_session.lockstep_next_frame_to_step = rollback_frame;
 
@@ -343,8 +386,9 @@ bool ReplayRollbackWindow(
         SaveRollbackSnapshot(state, graphics, frame);
         ApplyLockstepInputsToState(state, required_players, frame_inputs);
         state.net_session.lockstep_next_frame_to_step += 1;
-        StepSingleTickWithMode(state, audio, graphics, SimulationTickMode::ReplayNoNetwork);
+        StepSingleTickWithMode(state, replay_audio, graphics, SimulationTickMode::ReplayNoNetwork);
     }
+    RestoreRollbackPresentationState(presentation_snapshot, state, graphics);
 
     const auto replay_end = std::chrono::steady_clock::now();
     const std::chrono::duration<float, std::milli> replay_ms = replay_end - replay_start;
@@ -398,7 +442,7 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_last_rollback_replay_ms = 0.0F;
 }
 
-bool PrepareInputLockstepFrame(State& state, Audio& audio, Graphics& graphics) {
+bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     if (!IsInputLockstepActive(state)) {
         return true;
     }
@@ -425,7 +469,7 @@ bool PrepareInputLockstepFrame(State& state, Audio& audio, Graphics& graphics) {
     if (!CanStepWithoutRunningAheadOfRemoteInputs(state, required_players)) {
         return false;
     }
-    if (!ReplayRollbackWindow(state, audio, graphics, required_players)) {
+    if (!ReplayRollbackWindow(state, graphics, required_players)) {
         return false;
     }
 

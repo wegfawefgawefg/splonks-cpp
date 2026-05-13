@@ -27,7 +27,7 @@ bool RespawnLocalPlayersAtEntrance(State& state, const Graphics& graphics, std::
 bool ReloadSyncedQuestStage(State& state, const Graphics& graphics, std::string* status_out);
 bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
-bool PrepareInputLockstepFrame(State& state, Audio& audio, Graphics& graphics);
+bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
 void StepNetworkLobby(State& state, const Graphics& graphics);
 bool IsTransportOpen(const State& state);
 std::uint16_t BoundTransportPort(const State& state);
