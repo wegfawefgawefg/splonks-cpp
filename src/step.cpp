@@ -385,7 +385,17 @@ void Step(State& state, Audio& audio, Graphics& graphics, float frame_dt) {
 }
 
 void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
-    if ((state.mode == Mode::Playing || state.mode == Mode::StageTransition) &&
+    StepSingleTickWithMode(state, audio, graphics, SimulationTickMode::Normal);
+}
+
+void StepSingleTickWithMode(
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    SimulationTickMode mode
+) {
+    if (mode == SimulationTickMode::Normal &&
+        (state.mode == Mode::Playing || state.mode == Mode::StageTransition) &&
         network::IsInputLockstepActive(state) &&
         !network::PrepareInputLockstepFrame(state, graphics)) {
         return;
@@ -418,7 +428,7 @@ void StepSingleTick(State& state, Audio& audio, Graphics& graphics) {
     case Mode::LightingSettings:
         break;
     case Mode::Playing:
-        StepPlaying(state, audio, graphics, kTimestep);
+        StepPlaying(state, audio, graphics, kTimestep, mode);
         break;
     case Mode::StageTransition:
         StepStageTransition(state, audio, graphics);
@@ -442,6 +452,16 @@ void StepTitle(State& state, Audio& audio) {
 }
 
 void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
+    StepPlaying(state, audio, graphics, dt, SimulationTickMode::Normal);
+}
+
+void StepPlaying(
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    float dt,
+    SimulationTickMode mode
+) {
     // audio
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::Playing as usize]);
@@ -466,7 +486,9 @@ void StepPlaying(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEnts(state, audio, graphics, dt);
-    network::StepNetworkLobby(state, graphics);
+    if (mode == SimulationTickMode::Normal) {
+        network::StepNetworkLobby(state, graphics);
+    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {

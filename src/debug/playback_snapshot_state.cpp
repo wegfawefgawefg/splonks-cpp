@@ -1,4 +1,4 @@
-#include "debug/playback.hpp"
+#include "simulation_snapshot.hpp"
 #include "stage_acoustics.hpp"
 #include "stage_lighting.hpp"
 
