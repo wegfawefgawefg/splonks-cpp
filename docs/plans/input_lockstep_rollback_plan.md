@@ -792,6 +792,47 @@ Required work:
   frames, prediction errors, input delay, remote buffer depth.
 - [ ] Add fuzzer tests for latency, jitter, loss, duplicate, and reordering.
 
+## Multiplayer Performance Telemetry Plan
+
+Current `PerformanceStats` mainly shows one visible forward frame: normal step,
+render, ImGui, present, and total frame time. Rollback multiplayer needs to show
+hidden replay work too, because one visible frame can include one normal step
+plus many replayed frames plus hash work.
+
+Add timing fields:
+
+- [ ] `network_pump_ms`: UDP packet receive/send/fuzzer work.
+- [ ] `lockstep_hash_ms`: canonical fingerprint cost for this visible frame.
+- [ ] `lockstep_hash_smoothed_ms` and `lockstep_hash_peak_ms`.
+- [ ] `rollback_snapshot_save_ms`: save-state capture cost.
+- [ ] `rollback_snapshot_restore_ms`: restore cost when rollback starts.
+- [ ] `rollback_replay_ms_this_frame`: total replay cost paid this visible
+  frame.
+- [ ] `rollback_replay_frames_this_frame`: number of replayed sim frames this
+  visible frame.
+- [ ] `rollback_replay_ms_per_frame`: replay cost divided by replayed frames.
+- [ ] `multiplayer_sim_total_ms`: normal step plus network pump, hash, snapshot,
+  restore, and replay work.
+- [ ] `rollback_buffer_bytes`: approximate retained rollback snapshot memory.
+
+Add debug display:
+
+- [ ] Main Performance window should show `Step`, `Rollback Replay`, `Hash`,
+  `Network Pump`, and `Multiplayer Sim Total`.
+- [ ] Network debug panel should keep gameplay-specific counters: rollback
+  count, max span, prediction miss count, confirmed hash frame, last mismatch,
+  and recovery mode.
+- [ ] `splonksctl perf` should expose the same timing fields for live testing.
+
+Measurement rules:
+
+- Measure hash cost separately from normal step, even if hashing is called from
+  the lockstep step path.
+- Measure rollback replay cost as the sum of all replayed frames caused by one
+  visible frame.
+- Reset per-visible-frame counters after the frame is presented.
+- Keep peak reset behavior consistent with existing performance peaks.
+
 ## Late Join / Reconnect
 
 Input lockstep does not make late join free. A late peer cannot reconstruct the
@@ -1129,6 +1170,67 @@ Goal: reduce input-delay feel while keeping det correctness.
   prediction mistakes when late real inputs differ from predicted inputs, but
   it does not yet exchange periodic gameplay hashes and force a rollback or
   snapshot resync after an arbitrary deterministic-state divergence.
+
+#### Live Hash Exchange And Desync Recovery Plan
+
+Goal: detect arbitrary deterministic-state divergence during live play and
+recover cleanly instead of silently drifting.
+
+Core model:
+
+- Compute a canonical gameplay fingerprint for completed lockstep frames.
+- Store recent `(frame, hash)` records in a small ring buffer on every peer.
+- Exchange hashes periodically over the lockstep control lane.
+- Treat matching hashes as confirmed sync points.
+- Treat mismatching hashes as hard evidence that the sim diverged independently
+  of normal late-input prediction.
+
+Implementation steps:
+
+1. Hash sampling.
+   - [ ] Add a lockstep hash history ring to `NetSessionState`.
+   - [ ] Compute the canonical gameplay hash after each completed lockstep
+     frame while a network session is active.
+   - [ ] Keep hash calculation local every frame initially for diagnosis.
+     If measured cost is too high, keep the ring but sample every `2-4` frames.
+   - [ ] Exclude local-only pres/audio/debug/camera data exactly like existing
+     deterministic fingerprints.
+2. Hash exchange protocol.
+   - [ ] Add a compact lockstep hash packet/message: `frame`, `hash`, and
+     session/stage generation.
+   - [ ] Send hashes every `15-60` frames, configurable in debug.
+   - [ ] Ignore hashes for stale stage/session generations.
+   - [ ] Track latest confirmed matching frame/hash per peer.
+3. Mismatch diagnosis.
+   - [ ] On first mismatch, search local hash history for the last matching
+     frame with that peer.
+   - [ ] Record mismatch frame, local hash, remote hash, peer id, and stage id
+     for debug UI and logs.
+   - [ ] Add a `splonksctl net` field for last hash mismatch and latest
+     confirmed hash frame.
+4. Recovery path.
+   - [ ] If the last matching frame is inside the rollback snapshot window,
+     request rollback from that frame and replay to current using recorded
+     inputs.
+   - [ ] Re-hash after replay and clear the mismatch if hashes converge.
+   - [ ] If the match is outside rollback history, or replay still diverges,
+     force a same-stage snapshot resync or disconnect with a desync dump.
+   - [ ] Make the fallback explicit in debug: `rollback-repaired`,
+     `snapshot-resynced`, or `fatal-desync`.
+5. Smoke tests.
+   - [ ] Add a same-process test where one peer is intentionally perturbed,
+     hash mismatch is detected, rollback repairs it, and final hashes match.
+   - [ ] Add a test where the mismatch is older than rollback history and the
+     code takes the configured hard-resync/fatal path.
+   - [ ] Add packet-loss/reorder coverage for hash packets so missing hash
+     samples do not stall the sim.
+
+Default policy:
+
+- Compute local hash every frame while lockstep is active.
+- Send hash packets every `30` frames.
+- Keep enough hash history to cover rollback window plus a safety margin.
+- Do not freeze gameplay on a missing hash packet; only act on mismatches.
 
 Exit gate: high-latency profile remains locally responsive and hashes converge.
 
