@@ -11,6 +11,7 @@
 #include "network/net_lobby.hpp"
 #include "quest_stage_loader.hpp"
 #include "raw_aframe.hpp"
+#include "simulation_snapshot.hpp"
 #include "stage_spawning.hpp"
 #include "stage_progression.hpp"
 #include "state.hpp"
@@ -1082,6 +1083,100 @@ bool StepReadyLockstepFrames(
     return true;
 }
 
+bool RunRollbackRepairSmoke() {
+    Graphics truth_graphics;
+    Graphics predicted_graphics;
+    InitCliSmokeRuntimeTables(truth_graphics);
+    InitCliSmokeRuntimeTables(predicted_graphics);
+    Audio truth_audio;
+    Audio predicted_audio;
+
+    State truth = State::New();
+    State predicted = State::New();
+    const std::vector<PlayerId> players = {1, 2};
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(truth, truth_graphics, players, failed_step) ||
+        !PrepareLockstepSmokeState(predicted, predicted_graphics, players, failed_step)) {
+        std::cerr << "rollback repair smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    InputFrame neutral = InputFrame::New();
+    InputFrame remote_actual = InputFrame::New();
+    remote_actual.right = true;
+    remote_actual.run = true;
+
+    const GameplaySnapshot pre_frame_0 = MakeGameplaySnapshot(predicted, predicted_graphics);
+
+    ApplyLockstepInputsToState(truth, players, {neutral, remote_actual});
+    StepSingleTickWithMode(truth, truth_audio, truth_graphics, SimulationTickMode::ReplayNoNetwork);
+    ApplyLockstepInputsToState(predicted, players, {neutral, neutral});
+    StepSingleTickWithMode(
+        predicted,
+        predicted_audio,
+        predicted_graphics,
+        SimulationTickMode::ReplayNoNetwork
+    );
+
+    ApplyLockstepInputsToState(truth, players, {neutral, remote_actual});
+    StepSingleTickWithMode(truth, truth_audio, truth_graphics, SimulationTickMode::ReplayNoNetwork);
+    ApplyLockstepInputsToState(predicted, players, {neutral, neutral});
+    StepSingleTickWithMode(
+        predicted,
+        predicted_audio,
+        predicted_graphics,
+        SimulationTickMode::ReplayNoNetwork
+    );
+    if (ComputeGameplayDeterminismFingerprint(truth).value ==
+        ComputeGameplayDeterminismFingerprint(predicted).value) {
+        std::cerr << "rollback repair smoke failed: prediction did not diverge\n";
+        return false;
+    }
+
+    network::LockstepInputBuffer buffer;
+    network::LockstepInputRecord predicted_record;
+    predicted_record.player_id = 2;
+    predicted_record.frame = 0;
+    predicted_record.input = neutral;
+    predicted_record.predicted = true;
+    (void)buffer.Store(predicted_record);
+
+    network::LockstepInputRecord actual_record = predicted_record;
+    actual_record.input = remote_actual;
+    actual_record.predicted = false;
+    const network::LockstepInputStoreResult store_result = buffer.Store(actual_record);
+    if (!store_result.mismatch_frame.has_value() || *store_result.mismatch_frame != 0) {
+        std::cerr << "rollback repair smoke failed: predicted input mismatch not detected\n";
+        return false;
+    }
+
+    RestoreGameplaySnapshot(pre_frame_0, predicted, predicted_graphics);
+    ApplyLockstepInputsToState(predicted, players, {neutral, remote_actual});
+    StepSingleTickWithMode(
+        predicted,
+        predicted_audio,
+        predicted_graphics,
+        SimulationTickMode::ReplayNoNetwork
+    );
+    ApplyLockstepInputsToState(predicted, players, {neutral, remote_actual});
+    StepSingleTickWithMode(
+        predicted,
+        predicted_audio,
+        predicted_graphics,
+        SimulationTickMode::ReplayNoNetwork
+    );
+
+    if (!CompareCanonicalFingerprints(truth, predicted, "rollback repair final")) {
+        std::cerr << "  first simple diff: "
+                  << DescribeFirstStateDifference(truth, predicted) << '\n';
+        return false;
+    }
+
+    std::cout << "rollback repair smoke ok\n";
+    return true;
+}
+
 } // namespace
 
 bool CheckStateFingerprintSmoke() {
@@ -1863,6 +1958,10 @@ bool CheckInputLockstepSmoke() {
         };
 
         if (!run_respawn_policy_case()) {
+            return false;
+        }
+
+        if (!RunRollbackRepairSmoke()) {
             return false;
         }
 

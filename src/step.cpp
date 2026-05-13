@@ -397,7 +397,7 @@ void StepSingleTickWithMode(
     if (mode == SimulationTickMode::Normal &&
         (state.mode == Mode::Playing || state.mode == Mode::StageTransition) &&
         network::IsInputLockstepActive(state) &&
-        !network::PrepareInputLockstepFrame(state, graphics)) {
+        !network::PrepareInputLockstepFrame(state, audio, graphics)) {
         return;
     }
 

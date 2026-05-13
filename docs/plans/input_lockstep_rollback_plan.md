@@ -85,8 +85,9 @@ Current facts:
 
 - Networking is main-thread pumped once per simulation tick. There is no
   separate net thread.
-- Fixed delay is currently `8` sim frames. At 60fps that is roughly `133ms`
-  before real network latency.
+- Default delay is currently `2` sim frames. At 60fps that is roughly `33ms`
+  before real network latency. Higher fixed delays can still be selected before
+  hosting.
 - Protocol ping/pong now measures application-level RTT and jitter. Same-machine
   RTT includes simulation scheduling, not just kernel/socket latency.
 - Delay-based lockstep is simple and det, but it always adds input latency.
@@ -120,24 +121,27 @@ Expected useful delay presets:
 
 Phase 2: rollback.
 
-- [ ] Store a compact deterministic state ring buffer for recent simulation
+- [x] Store a compact deterministic state ring buffer for recent simulation
   frames. This must not be the heavyweight debug playback history by default,
   though the existing snapshot/replay code can guide implementation.
-- [ ] Store all local and remote `InputFrame` records by frame.
-- [ ] Step local input immediately or with a very small local delay.
-- [ ] Predict missing remote inputs by reusing the remote player's last known
+- [x] Store all local and remote `InputFrame` records by frame.
+- [x] Step local input with a small default delay. Rollback is enabled by
+  default, and the host can still select a higher fixed delay before hosting.
+- [x] Predict missing remote inputs by reusing the remote player's last known
   input, or neutral input for disconnected/uninitialized players.
-- [ ] When late real input arrives and differs from the prediction, restore the
+- [x] When late real input arrives and differs from the prediction, restore the
   saved state before the mismatch and replay to the present.
-- [ ] Keep gameplay/content deterministic and network-agnostic. Rollback should
+- [x] Keep gameplay/content deterministic and network-agnostic. Rollback should
   live in the simulation scheduler/state layer, not in items, ents, shops, or
   traps.
 - [ ] Add correction/presentation smoothing only after deterministic rollback is
   correct. First priority is identical final state, not hiding corrections.
-- [ ] Define a maximum rollback window. Start with `8-12` frames for testing;
+- [x] Define a maximum rollback window. Start with `8-12` frames for testing;
   increase only after measuring memory and replay cost.
-- [ ] Track rollback metrics in Debug Network: rollback count, max rollback
-  frames this second, average replay ms, and latest mismatch source.
+- [x] Track initial rollback metrics in Debug Network: rollback count, last
+  rollback span, max rollback span, last replay ms, and retained snapshot count.
+- [ ] Add richer rollback telemetry later if needed: per-second rollback count,
+  average replay ms, and latest mismatch source.
 
 Rollback prerequisites:
 

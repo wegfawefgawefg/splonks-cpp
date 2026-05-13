@@ -1,5 +1,6 @@
 #pragma once
 
+#include "audio.hpp"
 #include "graphics.hpp"
 #include "network/net_protocol.hpp"
 #include "network/net_transport.hpp"
@@ -50,7 +51,7 @@ void SendLeaveNotice(State& state);
 bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
 void ResetInputLockstepState(State& state);
-bool PrepareInputLockstepFrame(State& state, const Graphics& graphics);
+bool PrepareInputLockstepFrame(State& state, Audio& audio, Graphics& graphics);
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
 void RelayInputFrameRecordsToOtherRemotes(
     NetTransportRuntime& transport,

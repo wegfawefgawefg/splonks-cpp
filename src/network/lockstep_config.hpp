@@ -4,7 +4,7 @@
 
 namespace splonks::network {
 
-constexpr std::uint32_t kDefaultLockstepInputDelayFrames = 8;
+constexpr std::uint32_t kDefaultLockstepInputDelayFrames = 2;
 constexpr std::uint32_t kMinLockstepInputDelayFrames = 1;
 constexpr std::uint32_t kMaxLockstepInputDelayFrames = 60;
 

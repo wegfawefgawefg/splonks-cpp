@@ -12,9 +12,14 @@
 
 #include <array>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+
+namespace splonks {
+struct GameplaySnapshot;
+}
 
 namespace splonks::network {
 
@@ -101,6 +106,11 @@ struct NetRetainedPlayerState {
     std::array<NetRetainedEffect, kNetRetainedEffectCount> effects{};
 };
 
+struct LockstepRollbackSnapshot {
+    LockstepFrame frame = 0;
+    std::shared_ptr<GameplaySnapshot> snapshot;
+};
+
 struct NetSessionState {
     NetRole role = NetRole::Offline;
     PlayerId local_player_id = 1;
@@ -133,6 +143,14 @@ struct NetSessionState {
     std::uint32_t lockstep_next_input_sequence = 1;
     std::uint64_t lockstep_last_confirmed_hash_frame = 0;
     std::uint64_t lockstep_last_confirmed_hash = 0;
+    bool lockstep_rollback_enabled = true;
+    std::uint32_t lockstep_max_rollback_frames = 12;
+    std::optional<LockstepFrame> lockstep_rollback_requested_frame = std::nullopt;
+    std::vector<LockstepRollbackSnapshot> lockstep_rollback_snapshots;
+    std::uint64_t lockstep_rollback_count = 0;
+    std::uint32_t lockstep_last_rollback_span = 0;
+    std::uint32_t lockstep_max_rollback_span = 0;
+    float lockstep_last_rollback_replay_ms = 0.0F;
 
     static NetSessionState NewOffline();
 

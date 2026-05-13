@@ -36,6 +36,12 @@ bool HasFlag(std::uint32_t flags, std::uint32_t flag) {
     return (flags & flag) != 0U;
 }
 
+bool InputFramesEqual(const InputFrame& lhs, const InputFrame& rhs) {
+    return PackInputFrame(lhs) == PackInputFrame(rhs) &&
+           lhs.mouse_pos.x == rhs.mouse_pos.x &&
+           lhs.mouse_pos.y == rhs.mouse_pos.y;
+}
+
 } // namespace
 
 std::uint32_t PackInputFrame(const InputFrame& input) {
@@ -87,21 +93,42 @@ InputFrame UnpackInputFrame(std::uint32_t flags, UVec2 mouse_pos) {
     return input;
 }
 
-void LockstepInputBuffer::Store(const LockstepInputRecord& record) {
+LockstepInputStoreResult LockstepInputBuffer::Store(const LockstepInputRecord& record) {
+    LockstepInputStoreResult result;
     if (record.player_id == kInvalidPlayerId) {
-        return;
+        return result;
     }
 
     for (LockstepInputRecord& existing : records_) {
         if (existing.player_id == record.player_id && existing.frame == record.frame) {
+            if (existing.predicted && !record.predicted) {
+                result.replaced_prediction = true;
+                if (!InputFramesEqual(existing.input, record.input)) {
+                    result.changed_existing = true;
+                    result.mismatch_frame = record.frame;
+                }
+                existing = record;
+                return result;
+            }
+
+            if (!existing.predicted && record.predicted) {
+                return result;
+            }
+
             if (record.sequence >= existing.sequence) {
+                if (!InputFramesEqual(existing.input, record.input)) {
+                    result.changed_existing = true;
+                    result.mismatch_frame = record.frame;
+                }
                 existing = record;
             }
-            return;
+            return result;
         }
     }
 
     records_.push_back(record);
+    result.inserted = true;
+    return result;
 }
 
 bool LockstepInputBuffer::Has(PlayerId player_id, LockstepFrame frame) const {
@@ -112,18 +139,51 @@ const InputFrame* LockstepInputBuffer::Find(
     PlayerId player_id,
     LockstepFrame frame
 ) const {
+    const LockstepInputRecord* const record = FindRecord(player_id, frame);
+    if (record == nullptr) {
+        return nullptr;
+    }
+    return &record->input;
+}
+
+const LockstepInputRecord* LockstepInputBuffer::FindRecord(
+    PlayerId player_id,
+    LockstepFrame frame
+) const {
     for (const LockstepInputRecord& record : records_) {
         if (record.player_id == player_id && record.frame == frame) {
-            return &record.input;
+            return &record;
         }
     }
     return nullptr;
 }
 
-std::optional<LockstepFrame> LockstepInputBuffer::LatestFrameForPlayer(PlayerId player_id) const {
+const LockstepInputRecord* LockstepInputBuffer::FindLatestRecordBefore(
+    PlayerId player_id,
+    LockstepFrame frame
+) const {
+    const LockstepInputRecord* latest = nullptr;
+    for (const LockstepInputRecord& record : records_) {
+        if (record.player_id != player_id || record.frame >= frame || record.predicted) {
+            continue;
+        }
+        if (latest == nullptr || record.frame > latest->frame) {
+            latest = &record;
+        }
+    }
+    return latest;
+}
+
+std::optional<LockstepFrame> LockstepInputBuffer::LatestFrameForPlayer(
+    PlayerId player_id,
+    bool include_predicted
+) const {
     std::optional<LockstepFrame> latest;
     for (const LockstepInputRecord& record : records_) {
         if (record.player_id != player_id) {
+            continue;
+        }
+        if (!include_predicted && record.predicted) {
             continue;
         }
         if (!latest.has_value() || record.frame > *latest) {

@@ -446,6 +446,15 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
             session.lockstep_input_delay_frames,
             static_cast<float>(session.lockstep_input_delay_frames) * kNetworkFrameMs
         );
+        ImGui::Text(
+            "Rollback: %s count=%llu last=%u max=%u replay=%.3fms snapshots=%zu",
+            session.lockstep_rollback_enabled ? "enabled" : "disabled",
+            static_cast<unsigned long long>(session.lockstep_rollback_count),
+            session.lockstep_last_rollback_span,
+            session.lockstep_max_rollback_span,
+            session.lockstep_last_rollback_replay_ms,
+            session.lockstep_rollback_snapshots.size()
+        );
     }
     ImGui::Separator();
 

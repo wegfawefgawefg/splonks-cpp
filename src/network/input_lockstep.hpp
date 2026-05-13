@@ -19,6 +19,14 @@ struct LockstepInputRecord {
     LockstepFrame frame = 0;
     std::uint32_t sequence = 0;
     InputFrame input = InputFrame::New();
+    bool predicted = false;
+};
+
+struct LockstepInputStoreResult {
+    bool inserted = false;
+    bool replaced_prediction = false;
+    bool changed_existing = false;
+    std::optional<LockstepFrame> mismatch_frame = std::nullopt;
 };
 
 struct LockstepInputPacket {
@@ -42,10 +50,15 @@ InputFrame UnpackInputFrame(std::uint32_t flags, UVec2 mouse_pos);
 
 class LockstepInputBuffer {
 public:
-    void Store(const LockstepInputRecord& record);
+    LockstepInputStoreResult Store(const LockstepInputRecord& record);
     bool Has(PlayerId player_id, LockstepFrame frame) const;
     const InputFrame* Find(PlayerId player_id, LockstepFrame frame) const;
-    std::optional<LockstepFrame> LatestFrameForPlayer(PlayerId player_id) const;
+    const LockstepInputRecord* FindRecord(PlayerId player_id, LockstepFrame frame) const;
+    const LockstepInputRecord* FindLatestRecordBefore(PlayerId player_id, LockstepFrame frame) const;
+    std::optional<LockstepFrame> LatestFrameForPlayer(
+        PlayerId player_id,
+        bool include_predicted = true
+    ) const;
     bool FrameReady(const std::vector<PlayerId>& required_players, LockstepFrame frame) const;
     bool BuildFrameInputs(
         const std::vector<PlayerId>& required_players,
