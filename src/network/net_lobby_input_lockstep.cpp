@@ -19,7 +19,9 @@ namespace {
 
 constexpr LockstepFrame kInputHistoryFrames = 12;
 constexpr std::size_t kMaxPendingRemoteHashes = 128;
-constexpr std::uint32_t kSnapshotResyncChunksPerPump = 48;
+// Snapshot chunks are UDP packets. Keep this below the packet pump receive budget
+// so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
+constexpr std::uint32_t kSnapshotResyncChunksPerPump = 12;
 
 struct RollbackPresentationSnapshot {
     ParticleSystem particles;
@@ -93,20 +95,51 @@ void ClearSnapshotResyncState(State& state) {
     state.net_session.lockstep_snapshot_resync_received_chunks.clear();
     state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
     state.net_session.lockstep_snapshot_resync_waiting_for_ack = false;
+    state.net_session.lockstep_snapshot_resync_queue.clear();
 }
 
-void RequestHostSnapshotResync(State& state, PlayerId target_peer_id) {
+bool SnapshotResyncTransferInProgress(const State& state) {
+    return state.net_session.lockstep_snapshot_resync_pending_request ||
+           state.net_session.lockstep_snapshot_resync_waiting_for_ack ||
+           state.net_session.lockstep_snapshot_resync_active_transfer_id != 0 ||
+           !state.net_session.lockstep_snapshot_resync_bytes.empty();
+}
+
+void QueueSnapshotResyncTarget(State& state, PlayerId target_peer_id) {
+    if (target_peer_id == kInvalidPlayerId ||
+        target_peer_id == state.net_session.lockstep_snapshot_resync_target_peer_id) {
+        return;
+    }
+    std::vector<PlayerId>& queue = state.net_session.lockstep_snapshot_resync_queue;
+    if (std::find(queue.begin(), queue.end(), target_peer_id) == queue.end()) {
+        queue.push_back(target_peer_id);
+    }
+}
+
+std::optional<PlayerId> PopSnapshotResyncTarget(State& state) {
+    std::vector<PlayerId>& queue = state.net_session.lockstep_snapshot_resync_queue;
+    if (queue.empty()) {
+        return std::nullopt;
+    }
+    const PlayerId target_peer_id = queue.front();
+    queue.erase(queue.begin());
+    return target_peer_id;
+}
+
+void StartOrQueueHostSnapshotResync(State& state, PlayerId target_peer_id) {
+    if (target_peer_id == kInvalidPlayerId) {
+        return;
+    }
     const bool same_target =
         state.net_session.lockstep_snapshot_resync_target_peer_id == target_peer_id ||
         state.net_session.lockstep_snapshot_resync_target_peer_id == kInvalidPlayerId;
-    const bool transfer_in_progress =
-        state.net_session.lockstep_snapshot_resync_pending_request ||
-        state.net_session.lockstep_snapshot_resync_waiting_for_ack ||
-        state.net_session.lockstep_snapshot_resync_active_transfer_id != 0 ||
-        !state.net_session.lockstep_snapshot_resync_bytes.empty();
+    const bool transfer_in_progress = SnapshotResyncTransferInProgress(state);
     if (state.net_session.lockstep_last_desync_recovery_mode ==
             LockstepDesyncRecoveryMode::SnapshotCatchup &&
-        transfer_in_progress && same_target) {
+        transfer_in_progress) {
+        if (!same_target && state.net_session.role == NetRole::Host) {
+            QueueSnapshotResyncTarget(state, target_peer_id);
+        }
         return;
     }
 
@@ -400,7 +433,7 @@ void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
     const std::optional<LockstepHashRecord> last_peer_match =
         FindLastMatchingHashWithPeer(state, remote.peer_id, remote.frame);
     if (!last_peer_match.has_value()) {
-        RequestHostSnapshotResync(state, remote.peer_id);
+        StartOrQueueHostSnapshotResync(state, remote.peer_id);
         return;
     }
 
@@ -413,7 +446,7 @@ void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
             LockstepDesyncRecoveryMode::PendingRollback;
         RequestRollbackFromFrame(state, rollback_frame);
     } else {
-        RequestHostSnapshotResync(state, remote.peer_id);
+        StartOrQueueHostSnapshotResync(state, remote.peer_id);
     }
 }
 
@@ -441,7 +474,7 @@ void ValidateRemoteHashesAfterReplay(
                 state.net_session.lockstep_last_desync_recovery_mode =
                     LockstepDesyncRecoveryMode::FatalDesync;
             } else {
-                RequestHostSnapshotResync(state, remote.peer_id);
+                StartOrQueueHostSnapshotResync(state, remote.peer_id);
             }
             return;
         }
@@ -1126,7 +1159,7 @@ bool ReplayRollbackWindow(
 
     const GameplaySnapshot* const snapshot = FindRollbackSnapshot(state, rollback_frame);
     if (snapshot == nullptr) {
-        RequestHostSnapshotResync(state, state.net_session.lockstep_last_mismatch_peer_id);
+        StartOrQueueHostSnapshotResync(state, state.net_session.lockstep_last_mismatch_peer_id);
         return false;
     }
 
@@ -1202,6 +1235,10 @@ void PumpInputLockstepPackets(State& state, Graphics& graphics, NetTransportRunt
 
 } // namespace
 
+void RequestHostSnapshotResync(State& state, PlayerId target_peer_id) {
+    StartOrQueueHostSnapshotResync(state, target_peer_id);
+}
+
 void HandleSnapshotResyncRequest(
     State& state,
     const Graphics& graphics,
@@ -1214,8 +1251,8 @@ void HandleSnapshotResyncRequest(
         return;
     }
     const PlayerId target_peer_id = static_cast<PlayerId>(packet.sender_peer_id);
-    if (state.net_session.lockstep_snapshot_resync_waiting_for_ack &&
-        state.net_session.lockstep_snapshot_resync_target_peer_id == target_peer_id) {
+    if (SnapshotResyncTransferInProgress(state)) {
+        QueueSnapshotResyncTarget(state, target_peer_id);
         return;
     }
     SendSnapshotResyncChunksToEndpoint(
@@ -1349,10 +1386,18 @@ void HandleSnapshotResyncAck(State& state, const SnapshotResyncAckPacket& packet
     state.net_session.lockstep_snapshot_resync_bytes.clear();
     state.net_session.lockstep_snapshot_resync_received_chunks.clear();
     state.net_session.lockstep_snapshot_resync_retry_ticks = 0;
+    if (packet.success == 0) {
+        state.net_session.lockstep_last_desync_recovery_mode =
+            LockstepDesyncRecoveryMode::FatalDesync;
+        state.net_session.lockstep_snapshot_resync_queue.clear();
+        return;
+    }
+    if (const std::optional<PlayerId> next_target = PopSnapshotResyncTarget(state)) {
+        StartOrQueueHostSnapshotResync(state, *next_target);
+        return;
+    }
     state.net_session.lockstep_last_desync_recovery_mode =
-        packet.success != 0
-            ? LockstepDesyncRecoveryMode::RollbackRepaired
-            : LockstepDesyncRecoveryMode::FatalDesync;
+        LockstepDesyncRecoveryMode::RollbackRepaired;
 }
 
 bool IsInputLockstepActive(const State& state) {
@@ -1409,7 +1454,7 @@ bool ForceLockstepSnapshotResync(
             return false;
         }
 
-        RequestHostSnapshotResync(state, target_player_id);
+        StartOrQueueHostSnapshotResync(state, target_player_id);
         if (status_out != nullptr) {
             *status_out = "Queued host snapshot resync for player " +
                 std::to_string(target_player_id) + ".";
@@ -1418,7 +1463,7 @@ bool ForceLockstepSnapshotResync(
     }
 
     if (state.net_session.role == NetRole::Peer) {
-        RequestHostSnapshotResync(state, state.net_session.local_player_id);
+        StartOrQueueHostSnapshotResync(state, state.net_session.local_player_id);
         if (status_out != nullptr) {
             *status_out = "Queued host snapshot resync request.";
         }

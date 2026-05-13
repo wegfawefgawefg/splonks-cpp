@@ -276,6 +276,14 @@ void HandleJoinRequestAsHost(
     WriteFixedString("Host", accept.host_name);
     const EncodedNetPacket encoded = EncodeJoinAccept(accept);
     SendEncodedPacket(transport, udp_packet.endpoint, encoded);
+
+    // Late join changes the lockstep player set. Pause stepping and resync each
+    // connected process from the host snapshot before simulation resumes.
+    for (const NetRemoteEndpoint& remote : transport.remotes) {
+        if (!remote.player_ids.empty()) {
+            RequestHostSnapshotResync(state, remote.player_ids.front());
+        }
+    }
 }
 
 void HandleJoinAcceptAsPeer(

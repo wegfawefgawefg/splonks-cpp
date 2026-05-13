@@ -205,6 +205,7 @@ struct NetSessionState {
     std::vector<std::uint8_t> lockstep_snapshot_resync_received_chunks;
     std::uint32_t lockstep_snapshot_resync_retry_ticks = 0;
     bool lockstep_snapshot_resync_waiting_for_ack = false;
+    std::vector<PlayerId> lockstep_snapshot_resync_queue;
     bool lockstep_rollback_enabled = true;
     std::uint32_t lockstep_max_rollback_frames = kDefaultLockstepMaxRollbackFrames;
     std::optional<LockstepFrame> lockstep_rollback_requested_frame = std::nullopt;

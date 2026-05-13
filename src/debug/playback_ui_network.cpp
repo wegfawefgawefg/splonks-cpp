@@ -355,10 +355,11 @@ void DrawSnapshotResyncControls(State& state, DebugPlayback& debug) {
 
     network::NetSessionState& session = state.net_session;
     ImGui::Text(
-        "Pending=%s waiting_ack=%s target=%u transfer=%u chunks=%u bytes=%u retry=%u",
+        "Pending=%s waiting_ack=%s target=%u queued=%zu transfer=%u chunks=%u bytes=%u retry=%u",
         session.lockstep_snapshot_resync_pending_request ? "yes" : "no",
         session.lockstep_snapshot_resync_waiting_for_ack ? "yes" : "no",
         session.lockstep_snapshot_resync_target_peer_id,
+        session.lockstep_snapshot_resync_queue.size(),
         session.lockstep_snapshot_resync_active_transfer_id,
         session.lockstep_snapshot_resync_chunk_count,
         session.lockstep_snapshot_resync_total_bytes,

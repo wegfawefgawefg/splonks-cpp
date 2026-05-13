@@ -18,6 +18,7 @@ namespace {
 
 constexpr std::uint32_t kJoinRetryFrames = 30;
 constexpr std::uint64_t kPingIntervalMs = 500;
+constexpr int kPacketsPerPump = 256;
 
 std::uint64_t NowMilliseconds() {
     using Clock = std::chrono::steady_clock;
@@ -119,7 +120,7 @@ void HandlePong(State& state, const NetEndpoint& endpoint, const PongPacket& pon
 
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
     SendDueHostPings(state, transport);
-    for (int i = 0; i < 64; ++i) {
+    for (int i = 0; i < kPacketsPerPump; ++i) {
         std::string error;
         const std::optional<UdpPacket> packet = transport.socket.Receive(&error);
         if (!error.empty()) {
@@ -202,7 +203,7 @@ void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& tran
     }
     SendDuePeerPing(state, transport);
 
-    for (int i = 0; i < 64; ++i) {
+    for (int i = 0; i < kPacketsPerPump; ++i) {
         std::string error;
         const std::optional<UdpPacket> packet = transport.socket.Receive(&error);
         if (!error.empty()) {

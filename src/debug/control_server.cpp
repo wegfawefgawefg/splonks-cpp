@@ -886,6 +886,7 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"target_peer_id\":" << state.net_session.lockstep_snapshot_resync_target_peer_id
         << ",\"active_transfer_id\":"
         << state.net_session.lockstep_snapshot_resync_active_transfer_id
+        << ",\"queued_targets\":" << state.net_session.lockstep_snapshot_resync_queue.size()
         << ",\"snapshot_frame\":" << state.net_session.lockstep_snapshot_resync_frame
         << ",\"chunk_count\":" << state.net_session.lockstep_snapshot_resync_chunk_count
         << ",\"total_bytes\":" << state.net_session.lockstep_snapshot_resync_total_bytes

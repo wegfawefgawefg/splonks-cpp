@@ -56,6 +56,7 @@ bool ReplayPendingInputLockstepRollback(State& state, Graphics& graphics);
 void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet);
 void HandleLockstepSettingsPacket(State& state, const LockstepSettingsPacket& packet);
 void HandleLockstepHashPacket(State& state, const LockstepHashNetPacket& packet);
+void RequestHostSnapshotResync(State& state, PlayerId target_peer_id);
 void HandleSnapshotResyncRequest(
     State& state,
     const Graphics& graphics,
