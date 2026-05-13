@@ -293,6 +293,9 @@ void ProcessInputGameOver(
     if (state.scene_frame < 60) {
         return;
     }
+    if (network::IsInputLockstepActive(state)) {
+        return;
+    }
     if (state.menu_inputs.confirm.down) {
         if (state.net_session.role != network::NetRole::Offline &&
             HasAnyConnectedLivingPlayer(state)) {

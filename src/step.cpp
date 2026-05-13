@@ -232,6 +232,48 @@ void UpdateControlledEnt(State& state) {
     state.controlled_ent_vid.reset();
 }
 
+bool AnyConnectedPlayerConfirmDown(const State& state) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.player_id == kInvalidPlayerId || !slot.connected) {
+            continue;
+        }
+        if (slot.inputs.jump.down) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ApplyLockstepGameOverConfirm(State& state, Graphics& graphics) {
+    if (!network::IsInputLockstepSession(state) || state.scene_frame < 60 ||
+        !AnyConnectedPlayerConfirmDown(state)) {
+        return;
+    }
+
+    if (HasAnyConnectedLivingPlayer(state)) {
+        state.game_over = false;
+        state.scene_frame = 0;
+        state.SetMode(Mode::Playing);
+        return;
+    }
+
+    std::string status;
+    if (network::RespawnLocalPlayersAtEntrance(state, graphics, &status)) {
+        graphics.camera.rotation = 0.0F;
+        InvalidateStageLighting(state);
+        InvalidateStageAcoustics(state);
+        state.scene_frame = 0;
+        state.SetMode(Mode::Playing);
+        return;
+    }
+
+    QueueRespawnTransition(state);
+    graphics.camera.rotation = 0.0F;
+    InvalidateStageLighting(state);
+    InvalidateStageAcoustics(state);
+    state.SetMode(Mode::StageTransition);
+}
+
 void RefreshPlayableCharacterLamp(State& state) {
     for (Ent& ent : state.ents.ents) {
         if (!ent.active || !IsPlayerLikeEntType(ent.type_)) {
@@ -395,7 +437,9 @@ void StepSingleTickWithMode(
     SimulationTickMode mode
 ) {
     if (mode == SimulationTickMode::Normal &&
-        (state.mode == Mode::Playing || state.mode == Mode::StageTransition) &&
+        (state.mode == Mode::Playing ||
+         state.mode == Mode::StageTransition ||
+         state.mode == Mode::GameOver) &&
         network::IsInputLockstepActive(state) &&
         !network::PrepareInputLockstepFrame(state, graphics)) {
         return;
@@ -434,7 +478,7 @@ void StepSingleTickWithMode(
         StepStageTransition(state, audio, graphics);
         break;
     case Mode::GameOver:
-        StepGameOver(state, audio, graphics, kTimestep);
+        StepGameOver(state, audio, graphics, kTimestep, mode);
         break;
     case Mode::Win:
         StepWin(state, audio, graphics);
@@ -586,7 +630,13 @@ void StepStageTransition(State& state, Audio& audio, Graphics& graphics) {
     state.SetMode(Mode::Playing);
 }
 
-void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
+void StepGameOver(
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    float dt,
+    SimulationTickMode mode
+) {
     // audio
     //     .rl_audio_device
     //     .update_music_stream(&mut audio.songs[audio_asset_ids::GameOver as usize]);
@@ -609,7 +659,10 @@ void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt) {
     SetAudioListenerWorldPos(state, GetDefaultGameplayAudioListenerWorldPos(state, graphics));
     state.stage.SyncTileShakeGrid();
     StepEnts(state, audio, graphics, dt);
-    network::StepNetworkLobby(state, graphics);
+    ApplyLockstepGameOverConfirm(state, graphics);
+    if (mode == SimulationTickMode::Normal) {
+        network::StepNetworkLobby(state, graphics);
+    }
     UpdateAudioEmitters(state, audio, graphics);
     for (Ent& ent : state.ents.ents) {
         if (!ent.active) {

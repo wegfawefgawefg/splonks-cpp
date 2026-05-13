@@ -31,7 +31,13 @@ void StepPlaying(
     SimulationTickMode mode = SimulationTickMode::Normal
 );
 void StepStageTransition(State& state, Audio& audio, Graphics& graphics);
-void StepGameOver(State& state, Audio& audio, Graphics& graphics, float dt);
+void StepGameOver(
+    State& state,
+    Audio& audio,
+    Graphics& graphics,
+    float dt,
+    SimulationTickMode mode = SimulationTickMode::Normal
+);
 void StepWin(State& state, Audio& audio, Graphics& graphics);
 
 } // namespace splonks

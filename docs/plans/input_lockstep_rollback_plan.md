@@ -1121,7 +1121,14 @@ Goal: reduce input-delay feel while keeping det correctness.
 - [x] Add confirmed frame, per-second rollback count, and prediction miss rate.
 - [x] Validate artificial latency profile plumbing with live host/peer and
   `splonksctl`.
+- [x] Keep network `GameOver` under lockstep input. Local menu confirm no
+  longer respawns only one process; synced jump/confirm input drives restart
+  and all-player respawn on the same simulated frame.
 - [ ] Human-playtest high-latency feel and tune default delay/prediction.
+- [ ] Add live hash exchange / desync recovery. Current rollback repairs
+  prediction mistakes when late real inputs differ from predicted inputs, but
+  it does not yet exchange periodic gameplay hashes and force a rollback or
+  snapshot resync after an arbitrary deterministic-state divergence.
 
 Exit gate: high-latency profile remains locally responsive and hashes converge.
 

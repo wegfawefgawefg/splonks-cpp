@@ -2404,6 +2404,57 @@ bool CheckInputLockstepSmoke() {
                 return false;
             }
 
+            if (!prepare_pair(peer0, peer1, MultiplayerRespawnMode::GenerousNextLevel) ||
+                !KillSmokePlayer(peer0.state, 1, failed_step) ||
+                !KillSmokePlayer(peer0.state, 2, failed_step) ||
+                !KillSmokePlayer(peer1.state, 1, failed_step) ||
+                !KillSmokePlayer(peer1.state, 2, failed_step)) {
+                std::cerr << "input lockstep respawn-policy smoke failed during game-over setup: "
+                          << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+                return false;
+            }
+            peer0.state.SetMode(Mode::GameOver);
+            peer1.state.SetMode(Mode::GameOver);
+            peer0.state.scene_frame = 60;
+            peer1.state.scene_frame = 60;
+            InputFrame confirm = InputFrame::New();
+            confirm.jump = true;
+            ApplyLockstepInputsToState(
+                peer0.state,
+                std::vector<PlayerId>{1, 2},
+                std::vector<InputFrame>{InputFrame::New(), confirm}
+            );
+            ApplyLockstepInputsToState(
+                peer1.state,
+                std::vector<PlayerId>{1, 2},
+                std::vector<InputFrame>{InputFrame::New(), confirm}
+            );
+            StepSingleTick(peer0.state, peer0_audio, peer0_graphics);
+            StepSingleTick(peer1.state, peer1_audio, peer1_graphics);
+            if (peer0.state.mode != Mode::Playing ||
+                peer1.state.mode != Mode::Playing ||
+                !SmokePlayerIsAlive(peer0.state, 1) ||
+                !SmokePlayerIsAlive(peer0.state, 2) ||
+                !SmokePlayerIsAlive(peer1.state, 1) ||
+                !SmokePlayerIsAlive(peer1.state, 2) ||
+                !CompareCanonicalFingerprints(
+                    peer0.state,
+                    peer1.state,
+                    "input lockstep game-over restart"
+                )) {
+                std::cerr << "input lockstep respawn-policy smoke failed: game-over restart was not deterministic\n";
+                std::cerr << "  peer0 mode=" << static_cast<int>(peer0.state.mode)
+                          << " peer1 mode=" << static_cast<int>(peer1.state.mode)
+                          << " p0_alive=(" << SmokePlayerIsAlive(peer0.state, 1)
+                          << "," << SmokePlayerIsAlive(peer0.state, 2)
+                          << ") p1_alive=(" << SmokePlayerIsAlive(peer1.state, 1)
+                          << "," << SmokePlayerIsAlive(peer1.state, 2)
+                          << ")\n"
+                          << "  first simple diff: "
+                          << DescribeFirstStateDifference(peer0.state, peer1.state) << '\n';
+                return false;
+            }
+
             std::cout << "input lockstep respawn-policy smoke ok\n";
             return true;
         };
