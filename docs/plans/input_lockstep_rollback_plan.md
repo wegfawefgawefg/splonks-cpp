@@ -68,6 +68,11 @@ Active model status:
 - Old host-authoritative mutation lanes are no longer active in live packet
   stepping.
 - Live lockstep uses join/leave/input-frame packets.
+- Stage-transition loading screens are not lockstep-gated. They still pump UDP,
+  but rollback/hash/snapshot-catchup cannot block `scene_frame`; the deterministic
+  stage load itself calls `NotifyStageLoaded`, which resets lockstep state for
+  the new stage. This prevents transition-time desync recovery from wedging the
+  loading screen forever.
 - A lockstep frame-pacing guard prevents a process from stepping past a remote
   process's advertised sim frame. Remote advertised frame is inferred as
   `latest input frame received for that remote player - input_delay`.

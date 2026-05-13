@@ -1333,6 +1333,58 @@ bool RunLockstepHashExchangeSmoke() {
     return true;
 }
 
+bool RunLockstepStageTransitionResyncBlockSmoke() {
+    Graphics graphics;
+    InitCliSmokeRuntimeTables(graphics);
+    Audio audio;
+    State state = State::New();
+    if (!LoadQuestStage(state, "classic", "classic_mines_1", false, 12345U)) {
+        std::cerr << "lockstep stage transition resync-block smoke failed: load stage\n";
+        return false;
+    }
+
+    std::string status;
+    if (!network::StartHostSession(state, 0, network::kDefaultLockstepInputDelayFrames, &status)) {
+        std::cerr << "lockstep stage transition resync-block smoke failed: "
+                  << status << '\n';
+        return false;
+    }
+
+    const StageTransitionTarget transition{
+        .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_2"),
+        .preserve_player_state = true,
+        .seed = 24680U,
+    };
+    QueueStageTransition(state, transition);
+    state.SetMode(Mode::StageTransition);
+    state.scene_frame = 0;
+    state.net_session.lockstep_last_desync_recovery_mode =
+        network::LockstepDesyncRecoveryMode::SnapshotCatchup;
+    state.net_session.lockstep_snapshot_resync_waiting_for_ack = true;
+    state.net_session.lockstep_snapshot_resync_active_transfer_id = 1;
+    state.net_session.lockstep_snapshot_resync_target_peer_id = 2;
+
+    for (std::uint32_t i = 0; i < 70; ++i) {
+        StepSingleTick(state, audio, graphics);
+    }
+
+    if (state.stage.quest_stage_id != "classic_mines_2" ||
+        state.mode != Mode::Playing ||
+        state.net_session.lockstep_last_desync_recovery_mode !=
+            network::LockstepDesyncRecoveryMode::None) {
+        std::cerr << "lockstep stage transition resync-block smoke failed:"
+                  << " stage=" << state.stage.quest_stage_id
+                  << " mode=" << static_cast<int>(state.mode)
+                  << " recovery="
+                  << static_cast<int>(state.net_session.lockstep_last_desync_recovery_mode)
+                  << '\n';
+        return false;
+    }
+
+    std::cout << "lockstep stage transition resync-block smoke ok\n";
+    return true;
+}
+
 bool RunLockstepHashRollbackRepairSmoke() {
     Graphics truth_graphics;
     Graphics repaired_graphics;
@@ -2780,6 +2832,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunLockstepHashExchangeSmoke()) {
+            return false;
+        }
+        if (!RunLockstepStageTransitionResyncBlockSmoke()) {
             return false;
         }
         if (!RunLockstepHashRollbackRepairSmoke()) {

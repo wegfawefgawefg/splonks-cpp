@@ -878,6 +878,25 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"lockstep_prediction_miss_rate\":" << prediction_miss_rate
         << ",\"lockstep_last_prediction_miss_span\":"
         << state.net_session.lockstep_last_prediction_miss_span
+        << ",\"snapshot_resync\":{"
+        << "\"pending_request\":"
+        << (state.net_session.lockstep_snapshot_resync_pending_request ? "true" : "false")
+        << ",\"waiting_for_ack\":"
+        << (state.net_session.lockstep_snapshot_resync_waiting_for_ack ? "true" : "false")
+        << ",\"target_peer_id\":" << state.net_session.lockstep_snapshot_resync_target_peer_id
+        << ",\"active_transfer_id\":"
+        << state.net_session.lockstep_snapshot_resync_active_transfer_id
+        << ",\"snapshot_frame\":" << state.net_session.lockstep_snapshot_resync_frame
+        << ",\"chunk_count\":" << state.net_session.lockstep_snapshot_resync_chunk_count
+        << ",\"total_bytes\":" << state.net_session.lockstep_snapshot_resync_total_bytes
+        << ",\"received_chunks\":"
+        << std::count(
+               state.net_session.lockstep_snapshot_resync_received_chunks.begin(),
+               state.net_session.lockstep_snapshot_resync_received_chunks.end(),
+               static_cast<std::uint8_t>(1)
+           )
+        << ",\"retry_ticks\":" << state.net_session.lockstep_snapshot_resync_retry_ticks
+        << "}"
         << ",\"ent_links\":" << state.net_session.ent_links.size()
         << ",\"fuzzer\":{\"config\":";
     WriteNetFuzzerConfigJson(out, state.net_session.fuzzer_config);
