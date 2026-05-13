@@ -64,6 +64,21 @@ int SuggestedLockstepDelayFrames(float ping_ms, float jitter_ms) {
     ));
 }
 
+void SyncLockstepSettingSliderFromActive(
+    int& slider_value,
+    std::uint32_t& last_synced_active_value,
+    std::uint32_t active_value
+) {
+    const int clamped_active_value = static_cast<int>(active_value);
+    const bool has_unscheduled_edit =
+        slider_value != static_cast<int>(last_synced_active_value) &&
+        slider_value != clamped_active_value;
+    if (!has_unscheduled_edit) {
+        slider_value = clamped_active_value;
+    }
+    last_synced_active_value = active_value;
+}
+
 const char* ReconnectSpawnModeName(network::NetReconnectSpawnMode mode) {
     switch (mode) {
     case network::NetReconnectSpawnMode::FreshAtEntrance:
@@ -357,6 +372,18 @@ void DrawHostJoinControls(State& state, DebugPlayback& debug, const Graphics& gr
         state.net_session.input_lockstep_enabled &&
         state.net_session.role == network::NetRole::Host;
     const bool can_edit_delay = !network::IsTransportOpen(state) || host_live_lockstep;
+    if (state.net_session.input_lockstep_enabled) {
+        SyncLockstepSettingSliderFromActive(
+            debug.network_lockstep_input_delay_frames,
+            debug.network_synced_active_input_delay_frames,
+            state.net_session.lockstep_input_delay_frames
+        );
+        SyncLockstepSettingSliderFromActive(
+            debug.network_lockstep_rollback_frames,
+            debug.network_synced_active_rollback_frames,
+            state.net_session.lockstep_max_rollback_frames
+        );
+    }
     if (!can_edit_delay) {
         ImGui::BeginDisabled();
     }

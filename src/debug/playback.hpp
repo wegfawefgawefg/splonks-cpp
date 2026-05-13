@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <optional>
 #include <string>
@@ -82,6 +83,10 @@ struct DebugPlayback {
         static_cast<int>(network::kDefaultLockstepInputDelayFrames);
     int network_lockstep_rollback_frames =
         static_cast<int>(network::kDefaultLockstepMaxRollbackFrames);
+    std::uint32_t network_synced_active_input_delay_frames =
+        network::kDefaultLockstepInputDelayFrames;
+    std::uint32_t network_synced_active_rollback_frames =
+        network::kDefaultLockstepMaxRollbackFrames;
     std::array<char, 64> network_join_host{};
     std::string network_status;
     bool tile_brush_enabled = false;
