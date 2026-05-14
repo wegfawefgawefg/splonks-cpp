@@ -329,9 +329,9 @@ Rollback prerequisites:
 - [ ] Prove the deterministic replay smoke covers enough real gameplay:
   movement, jump/hang, pickup/drop/throw, tools, explosions, tile breaks,
   shops, water, stage transition, death/respawn.
-- [ ] Audit gameplay RNG. Gameplay randomness must use `state.drng` or an
+- [x] Audit gameplay RNG. Gameplay randomness must use `state.drng` or an
   equivalent deterministic stream, never process-local random calls.
-- [ ] Audit non-deterministic timers and real-time reads. Simulation decisions
+- [x] Audit non-deterministic timers and real-time reads. Simulation decisions
   must depend on frame/tick state, not wall-clock time.
 - [x] Use broad gameplay snapshot scope first for correctness, then optimize
   entity/state storage only if memory or replay cost requires it.
@@ -1170,14 +1170,20 @@ Still add explicit fluid, shop, and stage-transition scripted scenarios.
 
 Goal: remove or isolate obvious nondeterminism before network lockstep hides it.
 
-- [ ] Audit gameplay use of wall-clock time, render frame timing, SDL state, mouse
+- [x] Audit gameplay use of wall-clock time, render frame timing, SDL state, mouse
   state, OS state, pointer addresses, unordered iteration, and random device.
-- [ ] Route gameplay randomness through det RNG stored in `State`.
+- [x] Route gameplay randomness through det RNG stored in `State`.
   `State::drng` is the det RNG stream used by simulation. It must be
   state-owned, not `base_seed + frame`, because a
   frame may perform multiple random draws and skipped/double draws must show up
   as hash divergence. It is now fingerprinted by det replay and seeded
   from the stage seed.
+  - Audit evidence: runtime gameplay RNG in active ent/content paths uses
+    `state.drng`; remaining `rng::` calls are classified as stage generation,
+    debug-only population/input, presentation particles/audio, or render shake.
+  - Audit evidence: wall-clock/SDL time reads are frame pacing, perf counters,
+    file hot-reload checks, or network transport/fuzzer timing. Lockstep
+    simulation decisions use frame/tick state and recorded inputs.
 - [ ] Ensure ent allocation and iteration order are det under the
   same inputs.
 - [ ] Ensure fluid updates are det under the same inputs.
