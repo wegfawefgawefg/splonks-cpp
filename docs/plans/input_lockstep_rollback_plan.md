@@ -253,6 +253,8 @@ Implementation status:
    `scripts/run_lockstep_human_playtest.sh` to record the required profiles
    sequentially and run the telemetry audit. This still requires a filled
    `logs/lockstep_playtest_verdict.json` before this gate can be checked.
+   One-command setup is also available via
+   `scripts/run_lockstep_human_playtest.sh --launch-pair --init-verdict`.
    For longer unattended validation, run
    `scripts/validate_lockstep_live.py --launch-pair --profile all --repeat N --report-json`.
    The report captures every profile/run result and should be kept as the

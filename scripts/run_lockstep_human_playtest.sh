@@ -11,14 +11,17 @@ interval=1
 no_prompt=0
 skip_summary=0
 verdict_json=""
+launch_pair=0
+launch_settle=3
+init_verdict=0
 profiles=()
 
 usage() {
     printf '%s\n' \
         "Usage: scripts/run_lockstep_human_playtest.sh [options]" \
         "" \
-        "Records the required lockstep human-playtest profiles against an already running" \
-        "host/peer pair, then runs the telemetry summary audit." \
+        "Records the required lockstep human-playtest profiles, then runs the" \
+        "telemetry summary audit." \
         "" \
         "Options:" \
         "  --duration SECONDS              Recording duration per profile (default: 300)" \
@@ -27,6 +30,9 @@ usage() {
         "  --interval SECONDS              Telemetry sample interval (default: 1)" \
         "  --profile NAME                  Profile to record; repeatable. Defaults to required set." \
         "  --verdict-json PATH             Also audit a filled human verdict JSON." \
+        "  --init-verdict                  Create logs/lockstep_playtest_verdict.json if missing." \
+        "  --launch-pair                   Launch scripts/run_multiplayer_pair_i3.sh first." \
+        "  --launch-settle SECONDS         Delay after --launch-pair before recording (default: 3)." \
         "  --no-prompt                     Do not pause before each profile." \
         "  --skip-summary                  Record only; do not run the summary audit." \
         "  -h, --help                      Show this help."
@@ -58,6 +64,18 @@ while (($#)); do
             verdict_json="${2:?missing value for --verdict-json}"
             shift 2
             ;;
+        --init-verdict)
+            init_verdict=1
+            shift
+            ;;
+        --launch-pair)
+            launch_pair=1
+            shift
+            ;;
+        --launch-settle)
+            launch_settle="${2:?missing value for --launch-settle}"
+            shift 2
+            ;;
         --no-prompt)
             no_prompt=1
             shift
@@ -83,6 +101,26 @@ if ((${#profiles[@]} == 0)); then
 fi
 
 cd "${repo_root}"
+
+if ((init_verdict != 0)); then
+    mkdir -p logs
+    verdict_path="logs/lockstep_playtest_verdict.json"
+    if [[ -e "${verdict_path}" ]]; then
+        printf 'Verdict JSON already exists: %s\n' "${verdict_path}"
+    else
+        cp docs/plans/lockstep_human_playtest_verdict_template.json "${verdict_path}"
+        printf 'Initialized verdict JSON: %s\n' "${verdict_path}"
+    fi
+    if [[ -z "${verdict_json}" ]]; then
+        verdict_json="${verdict_path}"
+    fi
+fi
+
+if ((launch_pair != 0)); then
+    printf 'Launching local multiplayer pair...\n'
+    "${script_dir}/run_multiplayer_pair_i3.sh"
+    sleep "${launch_settle}"
+fi
 
 printf 'Lockstep human playtest recorder\n'
 printf 'Profiles: %s\n' "${profiles[*]}"
