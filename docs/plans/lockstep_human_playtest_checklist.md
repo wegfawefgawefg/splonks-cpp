@@ -13,7 +13,7 @@ checklist proves control feel and visible gameplay behavior.
    `scripts/validate_lockstep_live.py --profile <profile> --report-json`
    against the live windows to confirm the session starts clean.
 5. While manually playing each profile, run:
-   `scripts/record_lockstep_playtest.py --profile <profile> --duration 300`
+   `scripts/record_lockstep_playtest.py --profile <profile> --apply-profile --wait-ready --duration 300`
    to capture live telemetry into `logs/lockstep_playtest_samples.jsonl` and
    `logs/lockstep_playtest_summary.json`.
 

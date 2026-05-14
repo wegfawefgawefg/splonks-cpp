@@ -59,6 +59,49 @@ def collect_endpoint(
         return {}, str(exc)
 
 
+def is_ready(net: dict[str, Any]) -> bool:
+    barrier = net.get("join_barrier", {})
+    snapshot_resync = net.get("snapshot_resync", {})
+    return (
+        net.get("input_lockstep_enabled") is True and
+        barrier.get("active") is False and
+        barrier.get("phase") in (None, "none") and
+        not bool(snapshot_resync.get("pending_request", False)) and
+        not bool(snapshot_resync.get("waiting_for_ack", False)) and
+        int(snapshot_resync.get("queued_targets", 0)) == 0 and
+        int(snapshot_resync.get("active_transfer_id", 0)) == 0 and
+        net.get("lockstep_last_desync_recovery_mode") != "fatal-desync"
+    )
+
+
+def wait_ready(endpoints: list[Endpoint], timeout_s: float) -> None:
+    deadline = time.monotonic() + timeout_s
+    last_error = ""
+    while time.monotonic() < deadline:
+        try:
+            nets = [control(endpoint, "net") for endpoint in endpoints]
+            if all(is_ready(net) for net in nets):
+                return
+            last_error = "; ".join(
+                f"{endpoint.name}: barrier={net.get('join_barrier', {}).get('phase')} "
+                f"recovery={net.get('lockstep_last_desync_recovery_mode')} "
+                f"snapshot={net.get('snapshot_resync', {})}"
+                for endpoint, net in zip(endpoints, nets, strict=True)
+            )
+        except Exception as exc:
+            last_error = str(exc)
+        time.sleep(0.2)
+    raise RuntimeError(f"lockstep session was not ready within {timeout_s:.1f}s: {last_error}")
+
+
+def apply_profile(endpoints: list[Endpoint], profile: str) -> None:
+    for endpoint in endpoints:
+        if profile == "off":
+            control(endpoint, "net fuzzer off")
+        else:
+            control(endpoint, f"net fuzzer preset {profile}")
+
+
 def parse_endpoint(spec: str) -> Endpoint:
     # Accepted forms:
     #   name:port
@@ -194,6 +237,17 @@ def main() -> int:
     parser.add_argument("--label", default="")
     parser.add_argument("--profile", default="")
     parser.add_argument(
+        "--apply-profile",
+        action="store_true",
+        help="apply --profile as a net fuzzer preset before recording",
+    )
+    parser.add_argument(
+        "--wait-ready",
+        action="store_true",
+        help="wait for lockstep, join barrier, and snapshot resync to be idle before recording",
+    )
+    parser.add_argument("--ready-timeout", type=float, default=20.0)
+    parser.add_argument(
         "--endpoint",
         action="append",
         type=parse_endpoint,
@@ -214,8 +268,17 @@ def main() -> int:
         parser.error("--interval must be positive")
     if args.fingerprint_every < 0:
         parser.error("--fingerprint-every must be >= 0")
+    if args.apply_profile and not args.profile:
+        parser.error("--apply-profile requires --profile")
 
     endpoints = args.endpoint if args.endpoint else default_endpoints()
+    if args.wait_ready:
+        wait_ready(endpoints, args.ready_timeout)
+    if args.apply_profile:
+        apply_profile(endpoints, args.profile)
+    if args.wait_ready:
+        wait_ready(endpoints, args.ready_timeout)
+
     output_path = Path(args.output)
     summary_path = Path(args.summary_json)
     output_path.parent.mkdir(parents=True, exist_ok=True)
