@@ -316,8 +316,12 @@ Phase 2: rollback.
 - [x] Suppress duplicate presentation/audio during rollback resimulation by
   replaying past frames with a dummy audio sink and restoring the pre-rollback
   presentation layer after gameplay catches up.
-- [ ] Add correction/presentation smoothing only after deterministic rollback is
+- [x] Add correction/presentation smoothing only after deterministic rollback is
   correct. First priority is identical final state, not hiding corrections.
+  Evidence: entity render smoothing now lives in `Graphics`, keyed by `VID`,
+  and only interpolates visual positions after a visible frame paid rollback
+  replay work. It does not mutate `State`, entity positions, physics, hashes,
+  or rollback snapshots, and it resets on stage load.
 - [x] Define a maximum rollback window. Start with `8-12` frames for testing;
   increase only after measuring memory and replay cost.
 - [x] Track initial rollback metrics in Debug Network: rollback count, last
@@ -353,6 +357,10 @@ Rollback prerequisites:
   instead of replaying old particles/audio/transient lights.
 - [ ] Continue classifying presentation-only state. If presentation state affects
   gameplay, it is not presentation-only and must be deterministic.
+  Current classified presentation-only state includes particles, audio
+  emitters, stage lighting presentation caches, audio listener/camera anchor,
+  play camera position, and render-only entity correction smoothing. Rollback
+  captures/restores these separately from the deterministic gameplay snapshot.
 
 Immediate resume checklist for the next `/goal` run:
 

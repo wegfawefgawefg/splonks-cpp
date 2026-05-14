@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 namespace splonks {
 
@@ -97,6 +98,79 @@ Color3 GetEntLightingColor(State& state, const Ent& ent, Graphics& graphics) {
     return ClampRenderColor(color);
 }
 
+std::uint64_t MakeEntRenderSmoothingKey(const VID& vid) {
+    return (static_cast<std::uint64_t>(vid.id) << 32U) |
+           static_cast<std::uint64_t>(vid.version);
+}
+
+void PruneStaleEntRenderSmoothing(Graphics& graphics, std::uint32_t frame) {
+    constexpr std::uint32_t kStaleFrameWindow = 120;
+    for (auto it = graphics.ent_render_smoothing.begin();
+         it != graphics.ent_render_smoothing.end();) {
+        if (frame - it->second.last_seen_frame > kStaleFrameWindow) {
+            it = graphics.ent_render_smoothing.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+Vec2 GetSmoothedEntRenderPos(State& state, Graphics& graphics, const Ent& ent) {
+    constexpr float kCorrectionResponse = 0.42F;
+    constexpr float kSettledDistance = 0.20F;
+    constexpr float kSnapDistance = 32.0F;
+
+    if (state.stage_frame <= 1) {
+        if (!graphics.ent_render_smoothing.empty() && state.stage_frame <= 1) {
+            graphics.ent_render_smoothing.clear();
+        }
+        return ent.pos;
+    }
+
+    const bool rollback_this_frame =
+        state.net_session.lockstep_rollback_enabled &&
+        state.performance_stats.rollback_replay_frames_this_frame > 0;
+    const std::uint64_t key = MakeEntRenderSmoothingKey(ent.vid);
+    EntRenderSmoothingState& entry = graphics.ent_render_smoothing[key];
+    entry.last_seen_frame = state.frame;
+
+    if (!entry.active) {
+        entry.render_pos = ent.pos;
+        entry.active = true;
+        return ent.pos;
+    }
+
+    const Vec2 previous = GetNearestWorldPoint(state.stage, ent.pos, entry.render_pos);
+    const Vec2 delta = ent.pos - previous;
+    const float distance = Length(delta);
+    if (!rollback_this_frame && !entry.smoothing_active) {
+        entry.render_pos = ent.pos;
+        PruneStaleEntRenderSmoothing(graphics, state.frame);
+        return ent.pos;
+    }
+    if (distance > kSnapDistance) {
+        entry.render_pos = ent.pos;
+        entry.smoothing_active = false;
+        return ent.pos;
+    }
+    if (distance <= kSettledDistance) {
+        entry.render_pos = ent.pos;
+        entry.smoothing_active = false;
+        return ent.pos;
+    }
+    if (rollback_this_frame) {
+        entry.smoothing_active = true;
+    }
+    if (!entry.smoothing_active) {
+        entry.render_pos = ent.pos;
+        return ent.pos;
+    }
+
+    entry.render_pos = previous + (delta * kCorrectionResponse);
+    PruneStaleEntRenderSmoothing(graphics, state.frame);
+    return entry.render_pos;
+}
+
 } // namespace
 
 void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
@@ -140,8 +214,10 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
             );
             const Vec2 sprite_scaled_size =
                 sprite_world_size * ent.aframe_animator.scale;
+            Ent render_ent = ent;
+            render_ent.pos = GetSmoothedEntRenderPos(state, graphics, ent);
             const Vec2 render_position =
-                ents::common::GetSpriteTopLeftForEnt(ent, *aframe);
+                ents::common::GetSpriteTopLeftForEnt(render_ent, *aframe);
 
             const SDL_FRect src{
                 static_cast<float>(aframe->sample_rect.x),
@@ -190,9 +266,9 @@ void RenderEnts(SDL_Renderer* renderer, State& state, Graphics& graphics) {
                 } else {
                     const Vec2 rotation_world =
                         ents::common::GetVisualCenterForEnt(
-                            ent,
+                            render_ent,
                             graphics,
-                            ent.GetCenter()
+                            render_ent.GetCenter()
                         ) +
                         render_offset + shake_offset;
                     const Vec2 rotation_screen = WorldToScreen(graphics, rotation_world);

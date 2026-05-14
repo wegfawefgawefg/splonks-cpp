@@ -41,6 +41,13 @@ struct PlayCam {
     Vec2 acc;
 };
 
+struct EntRenderSmoothingState {
+    Vec2 render_pos = Vec2::New(0.0F, 0.0F);
+    bool active = false;
+    bool smoothing_active = false;
+    std::uint32_t last_seen_frame = 0;
+};
+
 struct Camera2D {
     Vec2 target;
     Vec2 offset;
@@ -88,6 +95,7 @@ struct Graphics {
     LoadedFont menu_title_font;
     LoadedFont menu_item_font;
     LoadedFont ui_font;
+    std::unordered_map<std::uint64_t, EntRenderSmoothingState> ent_render_smoothing;
 
     static Graphics New(SDL_Renderer* renderer, const std::string& sprite_assets_folder);
     SDL_Texture* GetTexture(TextureName texture) const;
