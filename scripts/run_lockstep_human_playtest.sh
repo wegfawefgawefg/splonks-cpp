@@ -152,6 +152,9 @@ summary_cmd=(
     "${script_dir}/summarize_lockstep_playtest.py"
     --min-duration "${summary_min_duration}"
 )
+for profile in "${profiles[@]}"; do
+    summary_cmd+=(--required-profile "${profile}")
+done
 if [[ -n "${verdict_json}" ]]; then
     summary_cmd+=(--verdict-json "${verdict_json}")
 fi
