@@ -203,20 +203,24 @@ Track C: host-arbitrated skipped input frames.
   host-arbitrated records prevented the missing span from ever reaching the
   neutral-safe policy.
 
-Implementation order from here:
+Implementation status:
 
-1. Fix hash cadence/cost first: no every-frame broad hash in normal play.
-2. Add frame-arbitration telemetry: missing-input frames, skipped-input frames,
-   late-arrival frames, and per-player input age.
-3. Implement host-arbitrated skipped-input frames and canonical input-set
+1. [x] Fix hash cadence/cost first: no every-frame broad hash in normal play.
+2. [x] Add frame-arbitration telemetry: missing-input frames,
+   skipped-input frames, late-arrival frames, and per-player input age.
+3. [x] Implement host-arbitrated skipped-input frames and canonical input-set
    broadcast.
-4. Keep the existing fixed-delay selector and suggested delay UI as the fallback
-   path.
-5. Finish rollback telemetry so we can see prediction misses, rollback count,
-   replay cost, and snapshot depth while testing.
-6. Run smoke coverage for no-fuzzer, LAN-ish, cross-country, and Texas/Japan
-   profiles.
-7. Human-playtest movement, hang, jump, carry/throw, tools, explosives, and
+4. [x] Keep the existing fixed-delay selector and suggested delay UI as the
+   fallback path.
+5. [x] Finish rollback telemetry so we can see prediction misses, rollback
+   count, replay cost, and snapshot depth while testing.
+6. [x] Run smoke coverage for no-fuzzer, LAN-ish, cross-country, and
+   Texas/Japan profiles.
+   Evidence: `--check-input-lockstep-smoke` now runs clean, impaired,
+   same-house, same-city, same-state, Texas/California, California/Florida, US
+   cross-country, Texas/Japan, and run-rate-skew fake-peer cases with matching
+   deterministic hashes.
+7. [ ] Human-playtest movement, hang, jump, carry/throw, tools, explosives, and
    stage transition under the fuzzer profiles.
 8. Tune default delay and prediction policy only after correctness is stable.
 9. Add smoothing only for visual correction artifacts; never hide a real

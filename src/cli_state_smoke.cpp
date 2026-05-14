@@ -3502,6 +3502,66 @@ bool CheckInputLockstepSmoke() {
         if (!run_case("impaired", impaired, 0x1002U, network::kDefaultLockstepInputDelayFrames)) {
             return false;
         }
+        struct FuzzerProfileSmokeCase {
+            const char* label = "";
+            network::NetFuzzerConfig config{};
+            std::uint32_t seed = 0;
+            network::LockstepFrame input_delay_frames = network::kDefaultLockstepInputDelayFrames;
+        };
+        const std::array<FuzzerProfileSmokeCase, 7> profile_cases = {{
+            FuzzerProfileSmokeCase{
+                .label = "same-house-profile",
+                .config = network::NetFuzzerConfig::SameHousePreset(),
+                .seed = 0x1101U,
+                .input_delay_frames = 2,
+            },
+            FuzzerProfileSmokeCase{
+                .label = "same-city-profile",
+                .config = network::NetFuzzerConfig::SameCityPreset(),
+                .seed = 0x1102U,
+                .input_delay_frames = 3,
+            },
+            FuzzerProfileSmokeCase{
+                .label = "same-state-profile",
+                .config = network::NetFuzzerConfig::SameStatePreset(),
+                .seed = 0x1103U,
+                .input_delay_frames = 4,
+            },
+            FuzzerProfileSmokeCase{
+                .label = "tx-ca-profile",
+                .config = network::NetFuzzerConfig::TexasToCaliforniaPreset(),
+                .seed = 0x1104U,
+                .input_delay_frames = 5,
+            },
+            FuzzerProfileSmokeCase{
+                .label = "ca-fl-profile",
+                .config = network::NetFuzzerConfig::CaliforniaToFloridaPreset(),
+                .seed = 0x1105U,
+                .input_delay_frames = 6,
+            },
+            FuzzerProfileSmokeCase{
+                .label = "us-cross-country-profile",
+                .config = network::NetFuzzerConfig::UsCrossCountryPreset(),
+                .seed = 0x1106U,
+                .input_delay_frames = 7,
+            },
+            FuzzerProfileSmokeCase{
+                .label = "tx-japan-profile",
+                .config = network::NetFuzzerConfig::JapanToTexasPreset(),
+                .seed = 0x1107U,
+                .input_delay_frames = 8,
+            },
+        }};
+        for (const FuzzerProfileSmokeCase& profile_case : profile_cases) {
+            if (!run_case(
+                    profile_case.label,
+                    profile_case.config,
+                    profile_case.seed,
+                    profile_case.input_delay_frames
+                )) {
+                return false;
+            }
+        }
         FakeLockstepRunRateSchedule run_rate_skew;
         run_rate_skew.peer1_pump_every_ticks = 2;
         run_rate_skew.peer0_hitch_every_ticks = 97;
