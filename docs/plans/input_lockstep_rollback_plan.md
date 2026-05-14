@@ -244,7 +244,8 @@ Implementation status:
    a substitute for the final human feel call.
    Evidence: `scripts/validate_lockstep_live.py --launch-pair` passes
    `same-house`, `tx-ca`, and `tx-japan` against a real invisible SDL-dummy
-   host/peer pair, with no hash mismatch, fatal desync, or join-barrier stall.
+   host/peer pair, with no hash mismatch, fatal desync, join-barrier stall, or
+   stale confirmed-hash lag beyond the validation threshold.
 8. Tune default delay and prediction policy only after correctness is stable.
 9. Add smoothing only for visual correction artifacts; never hide a real
    deterministic divergence with interpolation.

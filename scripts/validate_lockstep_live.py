@@ -26,6 +26,7 @@ DEFAULT_LAUNCH_NET_PORT = 39200
 DEFAULT_LAUNCH_HOST_CTL_PORT = 41200
 DEFAULT_LAUNCH_PEER_CTL_PORT = 41201
 DEFAULT_PROFILES = ("same-house", "tx-ca", "tx-japan")
+DEFAULT_MAX_CONFIRMED_HASH_LAG_FRAMES = 180
 
 
 class ControlError(RuntimeError):
@@ -134,7 +135,42 @@ def collect(endpoint: Endpoint) -> dict[str, Any]:
     }
 
 
-def summarize_profile(profile: str, samples: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def confirmed_hash_lags(samples: dict[str, dict[str, Any]]) -> dict[str, int]:
+    return {
+        name: int(sample["net"]["lockstep_next_frame"]) -
+        int(sample["net"]["lockstep_last_confirmed_hash_frame"])
+        for name, sample in samples.items()
+    }
+
+
+def wait_recent_confirmed_hash(
+    endpoints: list[Endpoint],
+    timeout_s: float,
+    max_lag_frames: int,
+) -> dict[str, dict[str, Any]]:
+    deadline = time.monotonic() + timeout_s
+    last_samples: dict[str, dict[str, Any]] = {}
+    while time.monotonic() < deadline:
+        last_samples = {endpoint.name: collect(endpoint) for endpoint in endpoints}
+        lags = confirmed_hash_lags(last_samples)
+        if all(
+            sample["net"]["lockstep_has_confirmed_hash"] is True
+            and int(sample["net"]["lockstep_hash_mismatch_count"]) == 0
+            and sample["net"]["lockstep_last_desync_recovery_mode"] != "fatal-desync"
+            for sample in last_samples.values()
+        ) and max(lags.values()) <= max_lag_frames:
+            return last_samples
+        time.sleep(0.25)
+    if not last_samples:
+        last_samples = {endpoint.name: collect(endpoint) for endpoint in endpoints}
+    return last_samples
+
+
+def summarize_profile(
+    profile: str,
+    samples: dict[str, dict[str, Any]],
+    max_confirmed_hash_lag: int,
+) -> dict[str, Any]:
     summary: dict[str, Any] = {"profile": profile, "ok": True, "problems": []}
     frames: dict[str, int] = {}
     stages: dict[str, str] = {}
@@ -148,6 +184,7 @@ def summarize_profile(profile: str, samples: dict[str, dict[str, Any]]) -> dict[
         stages[name] = str(net["stage"])
         confirmed_frames[name] = int(net["lockstep_last_confirmed_hash_frame"])
         confirmed_hashes[name] = int(net["lockstep_last_confirmed_hash"])
+        confirmed_lag = frames[name] - confirmed_frames[name]
         if net["lockstep_last_desync_recovery_mode"] == "fatal-desync":
             summary["problems"].append(f"{name}: fatal desync")
         if int(net["lockstep_hash_mismatch_count"]) != 0:
@@ -156,6 +193,10 @@ def summarize_profile(profile: str, samples: dict[str, dict[str, Any]]) -> dict[
             )
         if net["lockstep_has_confirmed_hash"] is not True:
             summary["problems"].append(f"{name}: no confirmed hash exchange")
+        if confirmed_lag > max_confirmed_hash_lag:
+            summary["problems"].append(
+                f"{name}: confirmed hash lag {confirmed_lag} > {max_confirmed_hash_lag}"
+            )
         if net["join_barrier"]["active"]:
             summary["problems"].append(
                 f"{name}: join barrier still active phase={net['join_barrier']['phase']}"
@@ -169,6 +210,7 @@ def summarize_profile(profile: str, samples: dict[str, dict[str, Any]]) -> dict[
             "prediction_misses": net["lockstep_prediction_miss_count"],
             "skipped_inputs": net["lockstep_arbitrated_missing_input_count"],
             "confirmed_hash_frame": net["lockstep_last_confirmed_hash_frame"],
+            "confirmed_hash_lag": confirmed_lag,
             "hash_mismatches": net["lockstep_hash_mismatch_count"],
             "network_hash": fingerprint["network"]["hash"],
             "multiplayer_sim_total_ms": perf["multiplayer_sim_total_smoothed_ms"],
@@ -299,6 +341,12 @@ def main() -> int:
         default=DEFAULT_LAUNCH_NET_PORT,
         help="UDP port used by --launch-pair.",
     )
+    parser.add_argument(
+        "--max-confirmed-hash-lag",
+        type=int,
+        default=DEFAULT_MAX_CONFIRMED_HASH_LAG_FRAMES,
+        help="maximum allowed local frame minus latest confirmed hash frame.",
+    )
     args = parser.parse_args()
 
     launched: list[subprocess.Popen[bytes]] = []
@@ -325,8 +373,12 @@ def main() -> int:
             wait_ready(endpoints, args.ready_timeout)
             run_action_sequence(host, peer)
             wait_ready(endpoints, args.ready_timeout)
-            samples = {endpoint.name: collect(endpoint) for endpoint in endpoints}
-            results.append(summarize_profile(profile, samples))
+            samples = wait_recent_confirmed_hash(
+                endpoints,
+                args.ready_timeout,
+                args.max_confirmed_hash_lag,
+            )
+            results.append(summarize_profile(profile, samples, args.max_confirmed_hash_lag))
     except ControlError as exc:
         print(f"validate_lockstep_live: {exc}", file=sys.stderr)
         terminate_processes(launched)
@@ -350,6 +402,7 @@ def main() -> int:
                     f"misses={data.get('prediction_misses')} "
                     f"skipped={data.get('skipped_inputs')} "
                     f"hash_frame={data.get('confirmed_hash_frame')} "
+                    f"hash_lag={data.get('confirmed_hash_lag')} "
                     f"hash_ms={data.get('hash_ms'):.3f} "
                     f"sim_ms={data.get('multiplayer_sim_total_ms'):.3f}"
                 )
