@@ -173,8 +173,14 @@ if ((fill_verdict != 0)); then
     verdict_path="${verdict_json:-logs/lockstep_playtest_verdict.json}"
     "${script_dir}/fill_lockstep_playtest_verdict.py" --output "${verdict_path}"
     run_summary "${verdict_path}"
+    "${script_dir}/audit_lockstep_completion.py" \
+        --verdict-json "${verdict_path}" \
+        --min-duration "${summary_min_duration}"
 elif [[ -n "${verdict_json}" ]]; then
     run_summary "${verdict_json}"
+    "${script_dir}/audit_lockstep_completion.py" \
+        --verdict-json "${verdict_json}" \
+        --min-duration "${summary_min_duration}"
 else
     run_summary ""
     printf '\n'
