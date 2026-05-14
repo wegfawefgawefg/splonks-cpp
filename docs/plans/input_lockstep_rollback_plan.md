@@ -1315,7 +1315,7 @@ it is host/peer before doing ordinary gameplay.
   Current state: the retained transport/fuzzer path feeds lockstep input,
   settings, join-barrier, hash, and snapshot-catchup packets. Old durable
   mutation-message traffic is no longer active.
-- [ ] Remove ent/spec/debug baggage added only for the old
+- [x] Remove ent/spec/debug baggage added only for the old
   host-authoritative model: replica stepping, local prediction flags,
   replicated runtime flag helpers, and mutation-message-only state fields.
   - Removed unused ent spec `replica_logic` / `step_as_replica` fields
@@ -1323,6 +1323,10 @@ it is host/peer before doing ordinary gameplay.
   - Renamed the stale carry helper
     `ReleaseEntFromHolderAndEmitNetwork` to
     `ReleaseEntFromHolderIfAttached`.
+  - Deleted unused `src/ent/replicated_runtime_flags.hpp`.
+  - Current `NetEntLink` state remains because snapshot catchup, player id
+    mapping, and diagnostic fingerprints still need stable local-id mapping
+    under lockstep.
 - [x] Keep state fingerprint/replay code if it supports determinism.
   Current state: gameplay/canonical/network fingerprints and replay smokes are
   core lockstep verification tools, so they remain active.
@@ -1380,8 +1384,12 @@ Goal: boot two game windows and play with delay-based lockstep.
   mutation transport.
   ImGui Debug Network controls and `splonksctl net fuzzer ...` both write the
   lockstep transport fuzzer config.
-- [ ] Remove or hide live controls that only make sense for the old
+- [x] Remove or hide live controls that only make sense for the old
   authoritative snapshot/event lanes once lockstep owns live networking.
+  Audit note: Debug Network now exposes fuzzer, lockstep settings, respawn,
+  reconnect, join barrier, hash, and snapshot-catchup controls. Snapshot
+  controls are current lockstep desync-recovery/admin tools, not the retired
+  per-mutation authoritative lane.
 - [x] Add lobby start barrier: stage seed, player list, stage id, start frame,
   input delay.
 - [x] Use active-stage join-barrier catchup instead of disabling late join.
