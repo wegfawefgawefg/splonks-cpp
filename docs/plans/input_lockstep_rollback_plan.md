@@ -316,8 +316,11 @@ Phase 2: rollback.
   rollback span, max rollback span, last replay ms, and retained snapshot count.
 - [x] Add richer rollback telemetry for tuning: average replay ms, prediction
   miss count, late predicted-input match count, and last miss span.
-- [ ] Add per-second rollback count and latest mismatch source if live tuning
+- [x] Add per-second rollback count and latest mismatch source if live tuning
   needs more detail.
+- Evidence: `src/debug/playback_ui_network.cpp` displays rollback count per
+  second and last mismatch peer/frame/hash/component lanes. `src/debug/control_server.cpp`
+  exposes the same rollback and mismatch fields for `splonksctl net`.
 - [x] Add a focused rollback repair smoke that replaces a wrong predicted input
   with the real input and proves final state equality after replay.
 - [x] Add a latency/jitter/reorder rollback smoke that forces repeated late
