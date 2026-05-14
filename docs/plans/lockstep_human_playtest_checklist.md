@@ -17,6 +17,10 @@ checklist proves control feel and visible gameplay behavior.
    to capture live telemetry into profile/timestamped
    `logs/lockstep_playtest_*_samples.jsonl` and
    `logs/lockstep_playtest_*_summary.json` artifacts.
+   Optional guided flow:
+   `scripts/run_lockstep_human_playtest.sh`
+   records `same-house`, `tx-ca`, and `tx-japan` sequentially against the
+   running pair, then runs the telemetry summary audit.
 6. After the required profiles are recorded, run:
    `scripts/summarize_lockstep_playtest.py`
    to verify that `same-house`, `tx-ca`, and `tx-japan` all have clean

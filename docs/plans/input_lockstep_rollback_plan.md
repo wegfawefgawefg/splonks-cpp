@@ -248,6 +248,11 @@ Implementation status:
    injects ordinary host/peer inputs through the control server, and records
    net/perf/fingerprint telemetry. This is a live-path regression harness, not
    a substitute for the final human feel call.
+   Guided human recording: after launching a pair with
+   `scripts/run_multiplayer_pair_i3.sh`, run
+   `scripts/run_lockstep_human_playtest.sh` to record the required profiles
+   sequentially and run the telemetry audit. This still requires a filled
+   `logs/lockstep_playtest_verdict.json` before this gate can be checked.
    For longer unattended validation, run
    `scripts/validate_lockstep_live.py --launch-pair --profile all --repeat N --report-json`.
    The report captures every profile/run result and should be kept as the
