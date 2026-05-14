@@ -1,5 +1,6 @@
 #include "cli_state_smoke.hpp"
 
+#include "debug/shop_test_stage.hpp"
 #include "ent.hpp"
 #include "ent/spec.hpp"
 #include "ents/common/common.hpp"
@@ -480,6 +481,20 @@ std::vector<InputFrame> BuildBroadDetReplayInputScript() {
     return frames;
 }
 
+std::vector<InputFrame> BuildNeutralInputScript(std::size_t frame_count) {
+    std::vector<InputFrame> frames(frame_count, InputFrame::New());
+    for (InputFrame& frame : frames) {
+        frame.mouse_pos = UVec2::New(320, 180);
+    }
+    return frames;
+}
+
+std::vector<InputFrame> BuildShopDetReplayInputScript() {
+    std::vector<InputFrame> frames = BuildNeutralInputScript(90);
+    frames[1].equip_button = true;
+    return frames;
+}
+
 void ApplyPrimaryInputFrame(State& state, const InputFrame& input_frame) {
     state.playing_input_snapshot = ToPlayingInputSnapshot(input_frame);
 }
@@ -565,6 +580,93 @@ bool PrepareBroadDetReplayScenario(State& state, const char*& failed_step) {
     return true;
 }
 
+bool PrepareFluidDetReplayScenario(State& state, const char*& failed_step) {
+    if (!PrepareBroadDetReplayScenario(state, failed_step)) {
+        return false;
+    }
+    Ent* const player = FindPrimaryPlayerMut(state);
+    if (player == nullptr) {
+        failed_step = "find fluid scenario player";
+        return false;
+    }
+
+    state.settings.fluid.simulation_enabled = true;
+    state.settings.fluid.simulation_interval_frames = 1;
+    state.settings.fluid.transfer_per_step = 0.55F;
+    state.settings.fluid.pressure_strength = 0.65F;
+    state.settings.fluid.velocity_damping = 0.86F;
+    state.settings.fluid.gravity_x = 0.0F;
+    state.settings.fluid.gravity_y = 1.0F;
+
+    for (int x = 6; x <= 18; ++x) {
+        if (!SetScenarioForegroundTile(state, IVec2::New(x, 18), Tile::CaveBlock)) {
+            failed_step = "prepare fluid basin floor";
+            return false;
+        }
+    }
+    for (int y = 13; y <= 18; ++y) {
+        if (!SetScenarioForegroundTile(state, IVec2::New(6, y), Tile::CaveBlock) ||
+            !SetScenarioForegroundTile(state, IVec2::New(18, y), Tile::CaveBlock)) {
+            failed_step = "prepare fluid basin walls";
+            return false;
+        }
+    }
+    for (int y = 11; y <= 14; ++y) {
+        for (int x = 8; x <= 13; ++x) {
+            state.stage.SetFluidTile(IVec2::New(x, y), Tile::WaterSwim);
+        }
+    }
+    state.stage.SetFluidGravityOverride(IVec2::New(9, 11), Vec2::New(0.35F, 1.0F));
+    state.stage.AddFluidTempGravity(IVec2::New(12, 11), Vec2::New(1.25F, 0.0F));
+
+    Ent* const box = world_ops::SpawnEnt(state, EntType::Box, [](Ent& ent) {
+        ent.pos = Vec2::New(10.0F * static_cast<float>(kTileSize), 15.0F * static_cast<float>(kTileSize));
+        ent.vel = Vec2::New(0.0F, 0.0F);
+        ent.acc = Vec2::New(0.0F, 0.0F);
+    });
+    if (box == nullptr) {
+        failed_step = "spawn fluid scenario box";
+        return false;
+    }
+
+    player->pos = Vec2::New(
+        22.0F * static_cast<float>(kTileSize),
+        20.0F * static_cast<float>(kTileSize) - player->size.y
+    );
+    player->vel = Vec2::New(0.0F, 0.0F);
+    player->acc = Vec2::New(0.0F, 0.0F);
+    return true;
+}
+
+bool PrepareShopDetReplayScenario(State& state, const char*& failed_step) {
+    state.stage = MakeShopTestStage();
+    InitShopTestStage(state);
+    for (unsigned int y = 0; y < state.stage.GetTileHeight(); ++y) {
+        for (unsigned int x = 0; x < state.stage.GetTileWidth(); ++x) {
+            state.stage.SetBackwallTile(
+                IVec2::New(static_cast<int>(x), static_cast<int>(y)),
+                Tile::CaveAir0
+            );
+        }
+    }
+
+    Ent* const player = FindPrimaryPlayerMut(state);
+    if (player == nullptr) {
+        failed_step = "find shop scenario player";
+        return false;
+    }
+    player->money = 50000;
+    player->pos = Vec2::New(
+        16.0F * static_cast<float>(kTileSize),
+        10.0F * static_cast<float>(kTileSize) - player->size.y
+    );
+    player->vel = Vec2::New(0.0F, 0.0F);
+    player->acc = Vec2::New(0.0F, 0.0F);
+    player->grounded = false;
+    state.mode = Mode::Playing;
+    return true;
+}
+
 bool AddSecondLocalPlayerForDetReplay(State& state, Graphics& graphics) {
     constexpr PlayerId kSecondPlayerId = 2;
     (void)state.players.EnsureLocalPlayer(kSecondPlayerId, "Player 2", false);
@@ -592,6 +694,62 @@ void ApplyMultiLocalInputFrame(
 ) {
     ApplyPrimaryInputFrame(state, input_frame[0]);
     state.players.SetInputFrameForPlayer(2, input_frame[1]);
+}
+
+bool CompareDetReplayFingerprints(
+    const State& recorded,
+    const State& replayed,
+    const char* label,
+    std::size_t frame_index
+) {
+    const CanonicalStateFingerprint recorded_fingerprint =
+        ComputeGameplayDeterminismFingerprint(recorded);
+    const CanonicalStateFingerprint replayed_fingerprint =
+        ComputeGameplayDeterminismFingerprint(replayed);
+    if (recorded_fingerprint.value == replayed_fingerprint.value) {
+        return true;
+    }
+    std::cerr << label << " failed at frame "
+              << frame_index << "\n"
+              << "  recorded " << recorded_fingerprint.summary
+              << " hash=" << recorded_fingerprint.value << "\n"
+              << "  replayed " << replayed_fingerprint.summary
+              << " hash=" << replayed_fingerprint.value << "\n"
+              << "  first simple diff: "
+              << DescribeFirstStateDifference(recorded, replayed) << '\n';
+    return false;
+}
+
+bool RunSinglePlayerDetReplayScenario(
+    State& recorded,
+    State& replayed,
+    Audio& audio,
+    Graphics& graphics,
+    const std::vector<InputFrame>& inputs,
+    const char* label
+) {
+    if (!CompareCanonicalFingerprints(recorded, replayed, label)) {
+        std::cerr << "  first simple diff: "
+                  << DescribeFirstStateDifference(recorded, replayed) << '\n';
+        return false;
+    }
+
+    for (std::size_t frame_index = 0; frame_index < inputs.size(); ++frame_index) {
+        ApplyPrimaryInputFrame(recorded, inputs[frame_index]);
+        ApplyPrimaryInputFrame(replayed, inputs[frame_index]);
+        StepSingleTick(recorded, audio, graphics);
+        StepSingleTick(replayed, audio, graphics);
+        if (!CompareDetReplayFingerprints(recorded, replayed, label, frame_index)) {
+            return false;
+        }
+    }
+
+    const CanonicalStateFingerprint final_fingerprint =
+        ComputeGameplayDeterminismFingerprint(recorded);
+    std::cout << label << " ok: frames=" << inputs.size()
+              << " " << final_fingerprint.summary
+              << " hash=" << final_fingerprint.value << '\n';
+    return true;
 }
 
 std::vector<std::array<InputFrame, 2>> BuildInputLockstepSmokeScript() {
@@ -2367,6 +2525,101 @@ bool CheckDetReplaySmoke() {
         std::cout << "det broad replay smoke ok: frames="
                   << broad_inputs.size() << " " << broad_final_fingerprint.summary
                   << " hash=" << broad_final_fingerprint.value << '\n';
+
+        State fluid_recorded = State::New();
+        State fluid_replayed = State::New();
+        if (!LoadQuestStage(fluid_recorded, "classic", "classic_mines_1", false, seed) ||
+            !LoadQuestStage(fluid_replayed, "classic", "classic_mines_1", false, seed)) {
+            std::cerr << "det fluid replay smoke failed: could not load test stages\n";
+            return false;
+        }
+        failed_step = nullptr;
+        if (!PrepareFluidDetReplayScenario(fluid_recorded, failed_step) ||
+            !PrepareFluidDetReplayScenario(fluid_replayed, failed_step)) {
+            std::cerr << "det fluid replay smoke failed during setup: "
+                      << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+            return false;
+        }
+        if (!RunSinglePlayerDetReplayScenario(
+                fluid_recorded,
+                fluid_replayed,
+                audio,
+                graphics,
+                BuildNeutralInputScript(240),
+                "det fluid replay smoke"
+            )) {
+            return false;
+        }
+
+        State shop_recorded = State::New();
+        State shop_replayed = State::New();
+        failed_step = nullptr;
+        if (!PrepareShopDetReplayScenario(shop_recorded, failed_step) ||
+            !PrepareShopDetReplayScenario(shop_replayed, failed_step)) {
+            std::cerr << "det shop replay smoke failed during setup: "
+                      << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+            return false;
+        }
+        if (!RunSinglePlayerDetReplayScenario(
+                shop_recorded,
+                shop_replayed,
+                audio,
+                graphics,
+                BuildShopDetReplayInputScript(),
+                "det shop replay smoke"
+            )) {
+            return false;
+        }
+
+        State transition_recorded = State::New();
+        State transition_replayed = State::New();
+        if (!LoadQuestStage(transition_recorded, "classic", "classic_mines_1", false, seed) ||
+            !LoadQuestStage(transition_replayed, "classic", "classic_mines_1", false, seed)) {
+            std::cerr << "det stage-transition replay smoke failed: could not load test stages\n";
+            return false;
+        }
+        if (!CompareCanonicalFingerprints(
+                transition_recorded,
+                transition_replayed,
+                "det stage-transition replay initial"
+            )) {
+            std::cerr << "  first simple diff: "
+                      << DescribeFirstStateDifference(transition_recorded, transition_replayed) << '\n';
+            return false;
+        }
+        const StageTransitionTarget transition{
+            .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_2"),
+            .preserve_player_state = true,
+            .seed = seed,
+        };
+        QueueStageTransition(transition_recorded, transition);
+        QueueStageTransition(transition_replayed, transition);
+        ApplyPendingStageTransition(transition_recorded);
+        ApplyPendingStageTransition(transition_replayed);
+        transition_recorded.SetMode(Mode::Playing);
+        transition_replayed.SetMode(Mode::Playing);
+        for (std::size_t frame_index = 0; frame_index < 70; ++frame_index) {
+            StepSingleTick(transition_recorded, audio, graphics);
+            StepSingleTick(transition_replayed, audio, graphics);
+            if (!CompareDetReplayFingerprints(
+                    transition_recorded,
+                    transition_replayed,
+                    "det stage-transition replay smoke",
+                    frame_index
+                )) {
+                return false;
+            }
+        }
+        if (transition_recorded.stage.quest_stage_id != "classic_mines_2" ||
+            transition_replayed.stage.quest_stage_id != "classic_mines_2") {
+            std::cerr << "det stage-transition replay smoke failed: did not enter classic_mines_2\n";
+            return false;
+        }
+        const CanonicalStateFingerprint transition_final_fingerprint =
+            ComputeGameplayDeterminismFingerprint(transition_recorded);
+        std::cout << "det stage-transition replay smoke ok: frames=70 "
+                  << transition_final_fingerprint.summary
+                  << " hash=" << transition_final_fingerprint.value << '\n';
         return true;
     } catch (const std::exception& e) {
         std::cerr << "det replay smoke failed: " << e.what() << '\n';

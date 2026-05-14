@@ -326,9 +326,12 @@ Phase 2: rollback.
 
 Rollback prerequisites:
 
-- [ ] Prove the deterministic replay smoke covers enough real gameplay:
+- [x] Prove the deterministic replay smoke covers enough real gameplay:
   movement, jump/hang, pickup/drop/throw, tools, explosions, tile breaks,
   shops, water, stage transition, death/respawn.
+  `--check-det-replay-smoke` now runs explicit replay scenarios for fluid
+  simulation, shop buying, and quest-stage transition in addition to the broad
+  arena replay.
 - [x] Audit gameplay RNG. Gameplay randomness must use `state.drng` or an
   equivalent deterministic stream, never process-local random calls.
 - [x] Audit non-deterministic timers and real-time reads. Simulation decisions
@@ -1164,7 +1167,8 @@ Exit gate: det same-process replay passes for at least movement,
 jump/climb/hang, tool use, pickup/throw, tile break, explosion, fluid, shop, and
 stage transition scenarios. Current broad replay covers movement, pickup/drop,
 attack, bomb, rope, spawned ents, spikes, ladder, containers, and enemies.
-Still add explicit fluid, shop, and stage-transition scripted scenarios.
+Explicit fluid, shop, and stage-transition replay scenarios are now covered by
+`--check-det-replay-smoke`.
 
 ### Phase 3: Determinism Audit And Cleanup
 
