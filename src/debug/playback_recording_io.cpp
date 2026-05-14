@@ -901,6 +901,7 @@ void WriteSnapshot(std::ostream& out, const GameplaySnapshot& snapshot) {
     WritePod(out, snapshot.frame);
     WritePod(out, snapshot.stage_frame);
     WritePod(out, snapshot.drng);
+    WritePod(out, snapshot.stagegen_drng);
     WritePod(out, snapshot.menu_return_to);
     WritePod(out, snapshot.game_over);
     WritePod(out, snapshot.pause);
@@ -962,6 +963,7 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.frame) &&
            ReadPod(in, snapshot.stage_frame) &&
            ReadPod(in, snapshot.drng) &&
+           ReadPod(in, snapshot.stagegen_drng) &&
            ReadPod(in, snapshot.menu_return_to) &&
            ReadPod(in, snapshot.game_over) &&
            ReadPod(in, snapshot.pause) &&

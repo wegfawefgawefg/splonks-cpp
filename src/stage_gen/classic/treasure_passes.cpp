@@ -52,7 +52,7 @@ bool IsValidTreasureFloorTile(const Stage& stage, int tile_x, int tile_y) {
     return tile_above != Tile::Spikes && tile_above != Tile::Entrance;
 }
 
-std::optional<Vec2> FindBranchExitSpawnPos(const Stage& stage) {
+std::optional<Vec2> FindBranchExitSpawnPos(const Stage& stage, DetRng& det_rng) {
     const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
     const std::optional<Vec2> default_exit_pos = FindExitPos(stage);
     std::vector<Vec2> candidates;
@@ -84,10 +84,10 @@ std::optional<Vec2> FindBranchExitSpawnPos(const Stage& stage) {
     if (candidates.empty()) {
         return std::nullopt;
     }
-    return candidates[static_cast<std::size_t>(PickStagePassIndex(candidates.size()))];
+    return candidates[static_cast<std::size_t>(PickStagePassIndex(candidates.size(), det_rng))];
 }
 
-void AddBranchExit(Stage& stage, const StagePassConfig& pass) {
+void AddBranchExit(Stage& stage, const StagePassConfig& pass, DetRng& det_rng) {
     const std::string exit_id = GetPassString(pass, "exit_id");
     if (exit_id.empty()) {
         AddStageGenAnnotation(stage, "branch exit skipped: missing exit_id");
@@ -109,12 +109,12 @@ void AddBranchExit(Stage& stage, const StagePassConfig& pass) {
     }
 
     const int chance_denominator = pass.GetInt("chance_denominator", 1);
-    if (chance_denominator > 1 && rng::RandomIntInclusive(1, chance_denominator) != 1) {
+    if (chance_denominator > 1 && det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
         AddStageGenAnnotation(stage, "branch exit skipped: chance miss for " + exit_id);
         return;
     }
 
-    const std::optional<Vec2> pos = FindBranchExitSpawnPos(stage);
+    const std::optional<Vec2> pos = FindBranchExitSpawnPos(stage, det_rng);
     if (!pos.has_value()) {
         AddStageGenAnnotation(stage, "branch exit skipped: no candidate for " + exit_id);
         return;
@@ -205,7 +205,7 @@ EmbeddedTreasure MakeVisibleBigGoldEmbed(AFrameId overlay_frame) {
     return embedded_treasure;
 }
 
-bool AddUdjatKeyChest(Stage& stage) {
+bool AddUdjatKeyChest(Stage& stage, DetRng& det_rng) {
     if (stage.quest_level_number < 2) {
         return false;
     }
@@ -233,7 +233,8 @@ bool AddUdjatKeyChest(Stage& stage) {
 
     if (!treasure_indices.empty()) {
         const std::size_t pick =
-            treasure_indices[static_cast<std::size_t>(PickStagePassIndex(treasure_indices.size()))];
+            treasure_indices[static_cast<std::size_t>(
+                PickStagePassIndex(treasure_indices.size(), det_rng))];
         stage.ent_spawns.push_back(EntSpawn{
             .type_ = EntType::KeyChest,
             .pos = *chest_pos,
@@ -271,7 +272,7 @@ bool AddUdjatKeyChest(Stage& stage) {
     return false;
 }
 
-void AddMinesEmbeddedTreasure(Stage& stage, const ItemPoolDb& item_db) {
+void AddMinesEmbeddedTreasure(Stage& stage, const ItemPoolDb& item_db, DetRng& det_rng) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
 
@@ -284,7 +285,7 @@ void AddMinesEmbeddedTreasure(Stage& stage, const ItemPoolDb& item_db) {
                 continue;
             }
 
-            const int visible_gold_roll = rng::RandomIntInclusive(1, 100);
+            const int visible_gold_roll = det_rng.RandomIntInclusive(1, 100);
             if (visible_gold_roll < 20) {
                 stage.SetEmbeddedTreasure(
                     tile_pos,
@@ -306,20 +307,20 @@ void AddMinesEmbeddedTreasure(Stage& stage, const ItemPoolDb& item_db) {
                 continue;
             }
 
-            if (rng::RandomIntInclusive(1, 100) == 1) {
+            if (det_rng.RandomIntInclusive(1, 100) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, EntType::SapphireBig);
-            } else if (rng::RandomIntInclusive(1, 120) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 120) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, EntType::EmeraldBig);
-            } else if (rng::RandomIntInclusive(1, 140) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 140) == 1) {
                 stage.SetEmbeddedTreasure(tile_pos, EntType::RubyBig);
-            } else if (rng::RandomIntInclusive(1, 1200) == 1) {
-                stage.SetEmbeddedTreasure(tile_pos, PickUndergroundItemType(item_db, stage));
+            } else if (det_rng.RandomIntInclusive(1, 1200) == 1) {
+                stage.SetEmbeddedTreasure(tile_pos, PickUndergroundItemType(item_db, stage, det_rng));
             }
         }
     }
 }
 
-void AddMinesTreasure(Stage& stage, int level_number) {
+void AddMinesTreasure(Stage& stage, int level_number, DetRng& det_rng) {
     const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
     const std::optional<Vec2> exit_pos = FindExitPos(stage);
     const int curr_level = std::max(1, level_number);
@@ -370,11 +371,11 @@ void AddMinesTreasure(Stage& stage, int level_number) {
                 continue;
             }
 
-            if (rng::RandomIntInclusive(1, 100) == 1) {
+            if (det_rng.RandomIntInclusive(1, 100) == 1) {
                 AddAmbientSpawn(stage, EntType::Rock, item_pos);
                 continue;
             }
-            if (rng::RandomIntInclusive(1, 40) == 1) {
+            if (det_rng.RandomIntInclusive(1, 40) == 1) {
                 AddAmbientSpawn(stage, EntType::Pot, stack_pos);
                 continue;
             }
@@ -390,32 +391,32 @@ void AddMinesTreasure(Stage& stage, int level_number) {
                     DistanceToNearestSpawnType(stage, EntType::GiantSpiderHang, tile_pos) < 100.0F
                         ? 5
                         : 60;
-                if (rng::RandomIntInclusive(1, web_denominator) == 1) {
+                if (det_rng.RandomIntInclusive(1, web_denominator) == 1) {
                     AddAmbientSpawn(stage, EntType::Cobweb, web_pos);
-                } else if (rng::RandomIntInclusive(1, 10) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 10) == 1) {
                     AddAmbientSpawn(stage, EntType::Box, box_pos);
-                } else if (rng::RandomIntInclusive(1, 15) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 15) == 1) {
                     AddAmbientSpawn(stage, EntType::Chest, chest_pos);
                 } else if (!HasSpawnType(stage, EntType::Damsel) &&
-                           rng::RandomIntInclusive(1, 8) == 1) {
+                           det_rng.RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntType::Damsel, stack_pos);
-                } else if (rng::RandomIntInclusive(1, std::max(1, 40 - 2 * curr_level)) <=
+                } else if (det_rng.RandomIntInclusive(1, std::max(1, 40 - 2 * curr_level)) <=
                            1 + bones_chance) {
-                    if (rng::RandomIntInclusive(1, 8) == 1) {
+                    if (det_rng.RandomIntInclusive(1, 8) == 1) {
                         AddAmbientSpawn(stage, EntType::Skeleton, bones_pos);
                     } else {
                         AddAmbientSpawn(stage, EntType::Bones, bones_pos);
                         AddAmbientSpawn(stage, EntType::Skull, skull_pos);
                     }
-                } else if (rng::RandomIntInclusive(1, 3) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 3) == 1) {
                     AddAmbientSpawn(stage, EntType::Gold, item_pos);
-                } else if (rng::RandomIntInclusive(1, 6) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 6) == 1) {
                     AddAmbientSpawn(stage, EntType::GoldStack, stack_pos);
-                } else if (rng::RandomIntInclusive(1, 6) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 6) == 1) {
                     AddAmbientSpawn(stage, EntType::EmeraldBig, item_pos);
-                } else if (rng::RandomIntInclusive(1, 8) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntType::SapphireBig, item_pos);
-                } else if (rng::RandomIntInclusive(1, 10) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 10) == 1) {
                     AddAmbientSpawn(stage, EntType::RubyBig, item_pos);
                 }
                 continue;
@@ -426,37 +427,37 @@ void AddMinesTreasure(Stage& stage, int level_number) {
                     DistanceToNearestSpawnType(stage, EntType::GiantSpiderHang, tile_pos) < 100.0F
                         ? 10
                         : 60;
-                if (rng::RandomIntInclusive(1, web_denominator) == 1) {
+                if (det_rng.RandomIntInclusive(1, web_denominator) == 1) {
                     AddAmbientSpawn(stage, EntType::Cobweb, web_pos);
-                } else if (rng::RandomIntInclusive(1, 4) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 4) == 1) {
                     AddAmbientSpawn(stage, EntType::Gold, item_pos);
-                } else if (rng::RandomIntInclusive(1, std::max(1, 80 - curr_level)) <=
+                } else if (det_rng.RandomIntInclusive(1, std::max(1, 80 - curr_level)) <=
                            1 + bones_chance) {
-                    if (rng::RandomIntInclusive(1, 8) == 1) {
+                    if (det_rng.RandomIntInclusive(1, 8) == 1) {
                         AddAmbientSpawn(stage, EntType::Skeleton, bones_pos);
                     } else {
                         AddAmbientSpawn(stage, EntType::Bones, bones_pos);
                         AddAmbientSpawn(stage, EntType::Skull, skull_pos);
                     }
-                } else if (rng::RandomIntInclusive(1, 8) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntType::GoldStack, stack_pos);
-                } else if (rng::RandomIntInclusive(1, 8) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntType::EmeraldBig, item_pos);
-                } else if (rng::RandomIntInclusive(1, 9) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 9) == 1) {
                     AddAmbientSpawn(stage, EntType::SapphireBig, item_pos);
-                } else if (rng::RandomIntInclusive(1, 10) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 10) == 1) {
                     AddAmbientSpawn(stage, EntType::RubyBig, item_pos);
                 }
                 continue;
             }
 
-            if (rng::RandomIntInclusive(1, 40) == 1) {
+            if (det_rng.RandomIntInclusive(1, 40) == 1) {
                 AddAmbientSpawn(stage, EntType::Gold, item_pos);
-            } else if (rng::RandomIntInclusive(1, 50) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 50) == 1) {
                 AddAmbientSpawn(stage, EntType::GoldStack, stack_pos);
-            } else if (rng::RandomIntInclusive(1, std::max(1, 140 - 2 * curr_level)) <=
+            } else if (det_rng.RandomIntInclusive(1, std::max(1, 140 - 2 * curr_level)) <=
                        1 + bones_chance) {
-                if (rng::RandomIntInclusive(1, 8) == 1) {
+                if (det_rng.RandomIntInclusive(1, 8) == 1) {
                     AddAmbientSpawn(stage, EntType::Skeleton, bones_pos);
                 } else {
                     AddAmbientSpawn(stage, EntType::Bones, bones_pos);
@@ -467,7 +468,7 @@ void AddMinesTreasure(Stage& stage, int level_number) {
     }
 }
 
-void ConvertBlocksToArrowTraps(Stage& stage, int chance_denominator) {
+void ConvertBlocksToArrowTraps(Stage& stage, int chance_denominator, DetRng& det_rng) {
     const std::optional<Vec2> entrance_pos = FindEntrancePos(stage);
     chance_denominator = std::max(1, chance_denominator);
 
@@ -475,7 +476,7 @@ void ConvertBlocksToArrowTraps(Stage& stage, int chance_denominator) {
         if (IsShopRoomAt(stage, tile_x, tile_y)) {
             return true;
         }
-        if (rng::RandomIntInclusive(1, chance_denominator) != 1) {
+        if (det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
             return true;
         }
 

@@ -213,15 +213,15 @@ std::vector<IAABB> Stage::GetAabbsForAllCollidableTilesInRect(const IVec2& tl,
     return result;
 }
 
-UVec2 Stage::GetRandomRegularRoomGridCoord() const {
+UVec2 Stage::GetRandomRegularRoomGridCoord(DetRng& det_rng) const {
     const UVec2 room_layout_dims = GetRoomLayoutDims();
     return UVec2::New(
-        static_cast<unsigned int>(rng::RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
-        static_cast<unsigned int>(rng::RandomIntExclusive(0, static_cast<int>(room_layout_dims.y)))
+        static_cast<unsigned int>(det_rng.RandomIntExclusive(0, static_cast<int>(room_layout_dims.x))),
+        static_cast<unsigned int>(det_rng.RandomIntExclusive(0, static_cast<int>(room_layout_dims.y)))
     );
 }
 
-std::optional<IVec2> Stage::GetRandomNoncollidablePositionInStage() const {
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInStage(DetRng& det_rng) const {
     std::vector<IVec2> noncollidable_tile_coords;
     for (int y = 0; y < static_cast<int>(GetTileHeight()); ++y) {
         for (int x = 0; x < static_cast<int>(GetTileWidth()); ++x) {
@@ -235,17 +235,19 @@ std::optional<IVec2> Stage::GetRandomNoncollidablePositionInStage() const {
         return std::nullopt;
     }
     const int random_tile_idx =
-        rng::RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
+        det_rng.RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
     const IVec2 tile_coord = noncollidable_tile_coords[static_cast<std::size_t>(random_tile_idx)];
     return tile_coord * static_cast<int>(kTileSize);
 }
 
-std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRandomRegularRoomGridCell() const {
-    const UVec2 random_room = GetRandomRegularRoomGridCoord();
-    return GetRandomNoncollidablePositionInRegularRoomGridCell(random_room);
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRandomRegularRoomGridCell(
+    DetRng& det_rng) const {
+    const UVec2 random_room = GetRandomRegularRoomGridCoord(det_rng);
+    return GetRandomNoncollidablePositionInRegularRoomGridCell(random_room, det_rng);
 }
 
-std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRegularRoomGridCell(const UVec2& room) const {
+std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRegularRoomGridCell(
+    const UVec2& room, DetRng& det_rng) const {
     const auto [room_tl, room_br] = GetRegularRoomGridCorners(room);
 
     if (static_cast<int>(room_tl.x) > static_cast<int>(GetTileWidth()) ||
@@ -277,7 +279,7 @@ std::optional<IVec2> Stage::GetRandomNoncollidablePositionInRegularRoomGridCell(
     }
 
     const int random_tile_idx =
-        rng::RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
+        det_rng.RandomIntExclusive(0, static_cast<int>(noncollidable_tile_coords.size()));
     const IVec2 tile_coord = noncollidable_tile_coords[static_cast<std::size_t>(random_tile_idx)];
     return tile_coord * static_cast<int>(kTileSize);
 }

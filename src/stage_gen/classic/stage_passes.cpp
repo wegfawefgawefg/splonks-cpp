@@ -20,7 +20,14 @@ void AddStageGenAnnotation(Stage& stage, const std::string& text) {
 
 namespace {
 
-using StagePassFn = void (*)(Stage&, int, const StagePassConfig&, const ItemPoolDb&, QuestState*);
+using StagePassFn = void (*)(
+    Stage&,
+    int,
+    const StagePassConfig&,
+    const ItemPoolDb&,
+    DetRng&,
+    QuestState*
+);
 
 struct StagePassDefinition {
     std::string_view name;
@@ -28,18 +35,19 @@ struct StagePassDefinition {
 };
 
 void RunConvertExitTilesStagePass(Stage& stage, int, const StagePassConfig&, const ItemPoolDb&,
+                                  DetRng&,
                                   QuestState*) {
     ConvertExitTilesToBasicExitSpawns(stage);
 }
 
 void RunEmbeddedTreasureStagePass(Stage& stage, int, const StagePassConfig&,
-                                  const ItemPoolDb& item_db, QuestState*) {
-    AddMinesEmbeddedTreasure(stage, item_db);
+                                  const ItemPoolDb& item_db, DetRng& det_rng, QuestState*) {
+    AddMinesEmbeddedTreasure(stage, item_db, det_rng);
 }
 
 void RunFloorTreasureStagePass(Stage& stage, int level_number, const StagePassConfig&,
-                               const ItemPoolDb&, QuestState*) {
-    AddMinesTreasure(stage, level_number);
+                               const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    AddMinesTreasure(stage, level_number, det_rng);
 }
 
 int UdjatChanceDenominatorForLevel(int level_number) {
@@ -56,7 +64,7 @@ int UdjatChanceDenominatorForLevel(int level_number) {
 }
 
 void RunUdjatKeyChestStagePass(Stage& stage, int level_number, const StagePassConfig& pass,
-                               const ItemPoolDb&, QuestState* quest_state) {
+                               const ItemPoolDb&, DetRng& det_rng, QuestState* quest_state) {
     if (level_number < pass.GetInt("min_level_number", 2)) {
         AddStageGenAnnotation(stage, "udjat skipped: level too low");
         return;
@@ -72,12 +80,12 @@ void RunUdjatKeyChestStagePass(Stage& stage, int level_number, const StagePassCo
         AddStageGenAnnotation(stage, "udjat skipped: no classic roll for level");
         return;
     }
-    if (chance_denominator > 1 && rng::RandomIntInclusive(1, chance_denominator) != 1) {
+    if (chance_denominator > 1 && det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
         AddStageGenAnnotation(stage, "udjat skipped: chance miss");
         return;
     }
 
-    if (AddUdjatKeyChest(stage)) {
+    if (AddUdjatKeyChest(stage, det_rng)) {
         if (quest_state != nullptr) {
             quest_state->classic.made_udjat_eye = true;
         }
@@ -88,53 +96,53 @@ void RunUdjatKeyChestStagePass(Stage& stage, int level_number, const StagePassCo
 }
 
 void RunArrowTrapConversionStagePass(Stage& stage, int, const StagePassConfig& pass,
-                                     const ItemPoolDb&, QuestState*) {
-    ConvertBlocksToArrowTraps(stage, pass.GetInt("chance_denominator", 4));
+                                     const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    ConvertBlocksToArrowTraps(stage, pass.GetInt("chance_denominator", 4), det_rng);
 }
 
 void RunAmbientMinesEntsStagePass(Stage& stage, int, const StagePassConfig&,
-                                      const ItemPoolDb&, QuestState*) {
-    AddAmbientMinesEnts(stage);
+                                      const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    AddAmbientMinesEnts(stage, det_rng);
 }
 
 void RunAmbientJungleEntsStagePass(Stage& stage, int, const StagePassConfig&,
-                                       const ItemPoolDb&, QuestState*) {
-    AddAmbientJungleEnts(stage, false);
+                                       const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    AddAmbientJungleEnts(stage, false, det_rng);
 }
 
 void RunAmbientBlackMarketEntsStagePass(Stage& stage, int, const StagePassConfig&,
-                                            const ItemPoolDb&, QuestState*) {
-    AddAmbientJungleEnts(stage, true);
+                                            const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    AddAmbientJungleEnts(stage, true, det_rng);
 }
 
 void RunAmbientHauntedCastleEntsStagePass(Stage& stage, int, const StagePassConfig&,
-                                              const ItemPoolDb&, QuestState*) {
-    AddAmbientTempleEnts(stage);
+                                              const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    AddAmbientTempleEnts(stage, det_rng);
 }
 
 void RunAmbientIceEntsStagePass(Stage& stage, int, const StagePassConfig&, const ItemPoolDb&,
-                                    QuestState*) {
-    AddAmbientIceEnts(stage);
+                                    DetRng& det_rng, QuestState*) {
+    AddAmbientIceEnts(stage, det_rng);
 }
 
 void RunAmbientTempleEntsStagePass(Stage& stage, int, const StagePassConfig&,
-                                       const ItemPoolDb&, QuestState*) {
-    AddAmbientTempleEnts(stage);
+                                       const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    AddAmbientTempleEnts(stage, det_rng);
 }
 
 void RunAmbientCityOfGoldEntsStagePass(Stage& stage, int, const StagePassConfig&,
-                                           const ItemPoolDb&, QuestState*) {
-    AddAmbientTempleEnts(stage);
+                                           const ItemPoolDb&, DetRng& det_rng, QuestState*) {
+    AddAmbientTempleEnts(stage, det_rng);
 }
 
 void RunAmbientOlmecEntsStagePass(Stage& stage, int, const StagePassConfig&,
-                                      const ItemPoolDb&, QuestState*) {
+                                      const ItemPoolDb&, DetRng&, QuestState*) {
     AddAmbientOlmecEnts(stage);
 }
 
 void RunBranchExitStagePass(Stage& stage, int, const StagePassConfig& pass, const ItemPoolDb&,
-                            QuestState*) {
-    AddBranchExit(stage, pass);
+                            DetRng& det_rng, QuestState*) {
+    AddBranchExit(stage, pass, det_rng);
 }
 
 constexpr std::array<StagePassDefinition, 14> kStagePasses = {{
@@ -166,7 +174,7 @@ const StagePassDefinition* FindStagePass(std::string_view name) {
 } // namespace
 
 void RunStagePass(Stage& stage, int level_number, const StagePassConfig& pass,
-                  const ItemPoolDb& item_db, QuestState* quest_state) {
+                  const ItemPoolDb& item_db, DetRng& det_rng, QuestState* quest_state) {
     if (!pass.enabled) {
         AddStageGenAnnotation(stage, "stage pass skipped: " + pass.name);
         return;
@@ -179,7 +187,7 @@ void RunStagePass(Stage& stage, int level_number, const StagePassConfig& pass,
 
     const std::size_t spawns_before = stage.ent_spawns.size();
     const std::size_t background_before = stage.background_stamps.size();
-    definition->run(stage, level_number, pass, item_db, quest_state);
+    definition->run(stage, level_number, pass, item_db, det_rng, quest_state);
 
     AddStageGenAnnotation(
         stage, "stage pass: " + pass.name + " spawns +" +

@@ -261,6 +261,11 @@ const UVec2 Stage::kRoomShape = UVec2::New(10, 8);
 const UVec2 Stage::kRoomLayout = UVec2::New(4, 4);
 
 void Stage::FillBackwall(const std::vector<Tile>& fill_tiles) {
+    DetRng fallback_rng = DetRng::New(1);
+    FillBackwall(fill_tiles, fallback_rng);
+}
+
+void Stage::FillBackwall(const std::vector<Tile>& fill_tiles, DetRng& det_rng) {
     SyncTileShakeGrid();
     backwall_fill_tiles = fill_tiles;
     backwall_tiles = MakeEmptyBackwallTiles(tiles);
@@ -271,7 +276,7 @@ void Stage::FillBackwall(const std::vector<Tile>& fill_tiles) {
     for (std::size_t y = 0; y < backwall_tiles.size(); ++y) {
         for (std::size_t x = 0; x < backwall_tiles[y].size(); ++x) {
             const int fill_index =
-                rng::RandomIntInclusive(0, static_cast<int>(fill_tiles.size()) - 1);
+                det_rng.RandomIntInclusive(0, static_cast<int>(fill_tiles.size()) - 1);
             backwall_tiles[y][x] = fill_tiles[static_cast<std::size_t>(fill_index)];
         }
     }

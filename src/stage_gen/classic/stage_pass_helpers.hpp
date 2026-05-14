@@ -10,7 +10,7 @@
 
 namespace splonks::stage_gen::classic {
 
-int PickStagePassIndex(std::size_t size);
+int PickStagePassIndex(std::size_t size, DetRng& det_rng);
 std::string GetPassString(const StagePassConfig& pass, std::string_view key,
                           std::string_view fallback = "");
 bool TileCoordExists(const Stage& stage, int tile_x, int tile_y);

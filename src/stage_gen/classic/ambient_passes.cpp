@@ -50,11 +50,11 @@ void AddGiantSpiderHangSpawn(Stage& stage, const Vec2& pos) {
     AddAmbientSpawn(stage, EntType::Cobweb, pos + Vec2::New(static_cast<float>(kTileSize), 0.0F));
 }
 
-void AddAmbientMinesEnts(Stage& stage) {
+void AddAmbientMinesEnts(Stage& stage, DetRng& det_rng) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
     const bool dark_level = StageIsDarkLevel(stage);
-    const bool gen_giant_spider = rng::RandomIntInclusive(1, 6) == 1;
+    const bool gen_giant_spider = det_rng.RandomIntInclusive(1, 6) == 1;
     bool giant_spider_spawned = false;
 
     for (int tile_y = 0; tile_y < stage_height; ++tile_y) {
@@ -82,20 +82,20 @@ void AddAmbientMinesEnts(Stage& stage) {
                 if (gen_giant_spider && !giant_spider_spawned && open_below_right &&
                     !HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
                     !HasSpawnAtWorldPos(stage, ceiling_spawn_pos_2) &&
-                    rng::RandomIntInclusive(1, 40) == 1) {
+                    det_rng.RandomIntInclusive(1, 40) == 1) {
                     AddGiantSpiderHangSpawn(stage, ceiling_spawn_pos);
                     giant_spider_spawned = true;
                 } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
-                           dark_level && rng::RandomIntInclusive(1, 60) == 1) {
+                           dark_level && det_rng.RandomIntInclusive(1, 60) == 1) {
                     AddAmbientSpawn(stage, EntType::Lamp, ceiling_spawn_pos);
                 } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
-                           dark_level && rng::RandomIntInclusive(1, 40) == 1) {
+                           dark_level && det_rng.RandomIntInclusive(1, 40) == 1) {
                     AddAmbientSpawn(stage, EntType::Scarab, ceiling_spawn_pos);
                 } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
-                           rng::RandomIntInclusive(1, 60) == 1) {
+                           det_rng.RandomIntInclusive(1, 60) == 1) {
                     AddAmbientSpawn(stage, EntType::Bat, ceiling_spawn_pos);
                 } else if (!HasSpawnAtWorldPos(stage, ceiling_spawn_pos) &&
-                           rng::RandomIntInclusive(1, 80) == 1) {
+                           det_rng.RandomIntInclusive(1, 80) == 1) {
                     AddAmbientSpawn(stage, EntType::SpiderHang, ceiling_spawn_pos);
                 }
             }
@@ -104,16 +104,16 @@ void AddAmbientMinesEnts(Stage& stage) {
                 continue;
             }
             const Vec2 floor_spawn_pos = tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
-            if (rng::RandomIntInclusive(1, 60) == 1) {
+            if (det_rng.RandomIntInclusive(1, 60) == 1) {
                 AddAmbientSpawn(stage, EntType::Snake, floor_spawn_pos);
-            } else if (rng::RandomIntInclusive(1, 800) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 800) == 1) {
                 AddAmbientSpawn(stage, EntType::Caveman, floor_spawn_pos);
             }
         }
     }
 }
 
-void AddAmbientJungleEnts(Stage& stage, bool black_market) {
+void AddAmbientJungleEnts(Stage& stage, bool black_market, DetRng& det_rng) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
     const bool dark_level = StageIsDarkLevel(stage);
@@ -128,12 +128,12 @@ void AddAmbientJungleEnts(Stage& stage, bool black_market) {
                 Vec2::New(static_cast<float>(tile_x * static_cast<int>(kTileSize)),
                           static_cast<float>(tile_y * static_cast<int>(kTileSize)));
 
-            if (!in_shop && IsVineAmbientTile(tile) && rng::RandomIntInclusive(1, 15) == 1) {
+            if (!in_shop && IsVineAmbientTile(tile) && det_rng.RandomIntInclusive(1, 15) == 1) {
                 AddAmbientSpawn(stage, EntType::Monkey, tile_pos);
             }
 
             if (!in_shop && IsWaterAmbientTile(tile) &&
-                !IsCollidableTileAt(stage, tile_x, tile_y) && rng::RandomIntInclusive(1, 30) == 1) {
+                !IsCollidableTileAt(stage, tile_x, tile_y) && det_rng.RandomIntInclusive(1, 30) == 1) {
                 AddAmbientSpawn(stage, EntType::Piranha, tile_pos + Vec2::New(4.0F, 4.0F));
             }
 
@@ -147,9 +147,9 @@ void AddAmbientJungleEnts(Stage& stage, bool black_market) {
             if (tile_y < stage_height - 4 && IsOpenAmbientCeilingSpot(stage, tile_x, tile_y)) {
                 const Vec2 ceiling_spawn_pos =
                     tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
-                if (dark_level && rng::RandomIntInclusive(1, 40) == 1) {
+                if (dark_level && det_rng.RandomIntInclusive(1, 40) == 1) {
                     AddAmbientSpawn(stage, EntType::Scarab, ceiling_spawn_pos);
-                } else if (rng::RandomIntInclusive(1, 80) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 80) == 1) {
                     AddAmbientSpawn(stage, EntType::Bat, ceiling_spawn_pos);
                 }
             }
@@ -163,25 +163,25 @@ void AddAmbientJungleEnts(Stage& stage, bool black_market) {
             if (!in_water) {
                 const bool suppress_mantrap =
                     black_market && ((tile_y * static_cast<int>(kTileSize)) % 128 == 0);
-                if (!suppress_mantrap && rng::RandomIntInclusive(1, 60) == 1) {
+                if (!suppress_mantrap && det_rng.RandomIntInclusive(1, 60) == 1) {
                     AddAmbientSpawn(stage, EntType::Mantrap, floor_spawn_pos);
-                } else if (rng::RandomIntInclusive(1, 60) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 60) == 1) {
                     AddAmbientSpawn(stage, EntType::Caveman, floor_spawn_pos);
-                } else if (rng::RandomIntInclusive(1, 120) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 120) == 1) {
                     AddAmbientSpawn(stage, EntType::FireFrog, floor_spawn_pos);
-                } else if (rng::RandomIntInclusive(1, 30) == 1) {
+                } else if (det_rng.RandomIntInclusive(1, 30) == 1) {
                     AddAmbientSpawn(stage, EntType::Frog, floor_spawn_pos);
                 }
-            } else if (rng::RandomIntInclusive(1, 120) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 120) == 1) {
                 AddAmbientSpawn(stage, EntType::FireFrog, floor_spawn_pos);
-            } else if (rng::RandomIntInclusive(1, 30) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 30) == 1) {
                 AddAmbientSpawn(stage, EntType::Frog, floor_spawn_pos);
             }
         }
     }
 }
 
-void AddAmbientIceEnts(Stage& stage) {
+void AddAmbientIceEnts(Stage& stage, DetRng& det_rng) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
     const bool dark_level = StageIsDarkLevel(stage);
@@ -200,7 +200,7 @@ void AddAmbientIceEnts(Stage& stage) {
             if (IsCollidableTileAt(stage, tile_x, tile_y)) {
                 if (!IsStartRoomAt(stage, tile_x, tile_y) && tile_y < stage_height - 4 &&
                     dark_level && IsOpenAmbientCeilingSpot(stage, tile_x, tile_y) &&
-                    rng::RandomIntInclusive(1, 40) == 1) {
+                    det_rng.RandomIntInclusive(1, 40) == 1) {
                     const Vec2 ceiling_spawn_pos =
                         tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
                     AddAmbientSpawn(stage, EntType::Scarab, ceiling_spawn_pos);
@@ -212,7 +212,7 @@ void AddAmbientIceEnts(Stage& stage) {
                 }
                 const Vec2 floor_spawn_pos =
                     tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize));
-                if (rng::RandomIntInclusive(1, 20) == 1) {
+                if (det_rng.RandomIntInclusive(1, 20) == 1) {
                     AddAmbientSpawn(stage, EntType::Yeti, floor_spawn_pos);
                 }
                 continue;
@@ -225,7 +225,7 @@ void AddAmbientIceEnts(Stage& stage) {
                 IsCollidableTileAt(stage, tile_x, tile_y + 1)) {
                 continue;
             }
-            if (rng::RandomIntInclusive(1, ufo_denominator) == 1) {
+            if (det_rng.RandomIntInclusive(1, ufo_denominator) == 1) {
                 AddAmbientSpawn(stage, EntType::Ufo,
                                 tile_pos - Vec2::New(0.0F, static_cast<float>(kTileSize)));
             }
@@ -233,11 +233,11 @@ void AddAmbientIceEnts(Stage& stage) {
     }
 }
 
-void AddAmbientTempleEnts(Stage& stage) {
+void AddAmbientTempleEnts(Stage& stage, DetRng& det_rng) {
     const int stage_width = static_cast<int>(stage.GetTileWidth());
     const int stage_height = static_cast<int>(stage.GetTileHeight());
     const bool dark_level = StageIsDarkLevel(stage);
-    bool gen_tomb_lord = stage.quest_level_number == 13 || rng::RandomIntInclusive(1, 4) == 1;
+    bool gen_tomb_lord = stage.quest_level_number == 13 || det_rng.RandomIntInclusive(1, 4) == 1;
     bool tomb_lord_spawned = HasSpawnType(stage, EntType::TombLord);
 
     for (int tile_y = 0; tile_y < stage_height; ++tile_y) {
@@ -252,7 +252,7 @@ void AddAmbientTempleEnts(Stage& stage) {
 
             if (tile_y < stage_height - 4 && dark_level &&
                 IsOpenAmbientCeilingSpot(stage, tile_x, tile_y) &&
-                rng::RandomIntInclusive(1, 40) == 1) {
+                det_rng.RandomIntInclusive(1, 40) == 1) {
                 const Vec2 ceiling_spawn_pos =
                     tile_pos + Vec2::New(0.0F, static_cast<float>(kTileSize));
                 AddAmbientSpawn(stage, EntType::Scarab, ceiling_spawn_pos);
@@ -268,14 +268,14 @@ void AddAmbientTempleEnts(Stage& stage) {
             if (gen_tomb_lord && !tomb_lord_spawned && tile_y >= 2 &&
                 !IsCollidableTileAt(stage, tile_x + 1, tile_y - 1) &&
                 !IsCollidableTileAt(stage, tile_x + 2, tile_y - 1) &&
-                rng::RandomIntInclusive(1, 40) == 1) {
+                det_rng.RandomIntInclusive(1, 40) == 1) {
                 AddAmbientSpawn(stage, EntType::TombLord,
                                 floor_spawn_pos - Vec2::New(0.0F, static_cast<float>(kTileSize)));
                 tomb_lord_spawned = true;
                 gen_tomb_lord = false;
-            } else if (rng::RandomIntInclusive(1, 40) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 40) == 1) {
                 AddAmbientSpawn(stage, EntType::Caveman, floor_spawn_pos);
-            } else if (rng::RandomIntInclusive(1, 40) == 1) {
+            } else if (det_rng.RandomIntInclusive(1, 40) == 1) {
                 AddAmbientSpawn(stage, EntType::Hawkman, floor_spawn_pos);
             }
         }

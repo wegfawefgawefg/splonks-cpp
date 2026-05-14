@@ -55,7 +55,7 @@ void ResizeRoomCodeGrid(StageLayout& layout, const UVec2& new_size) {
     layout.room_codes = std::move(resized);
 }
 
-void TryPlaceSnakePit(StageLayout& layout, int chance_denominator) {
+void TryPlaceSnakePit(StageLayout& layout, int chance_denominator, DetRng& det_rng) {
     if (layout.path_layout_size.y < 3) {
         return;
     }
@@ -65,7 +65,7 @@ void TryPlaceSnakePit(StageLayout& layout, int chance_denominator) {
                 GetRoomCode(layout, x, y + 2) != 0) {
                 continue;
             }
-            if (chance_denominator <= 0 || rng::RandomIntInclusive(1, chance_denominator) != 1) {
+            if (chance_denominator <= 0 || det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
                 continue;
             }
 
@@ -84,13 +84,18 @@ void TryPlaceSnakePit(StageLayout& layout, int chance_denominator) {
     }
 }
 
-void TryPlaceShop(StageLayout& layout, int level_number, const StagePassConfig& pass) {
+void TryPlaceShop(
+    StageLayout& layout,
+    int level_number,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     const int shop_min_level = pass.GetInt("min_level_number", 2);
     const bool shop_uses_level_number = pass.GetBool("chance_uses_level_number", true);
     const bool allow_shop = pass.enabled && level_number >= shop_min_level;
     const int shop_chance_denominator = shop_uses_level_number ? level_number : shop_min_level;
     if (!allow_shop || shop_chance_denominator <= 0 ||
-        rng::RandomIntInclusive(1, shop_chance_denominator) > 2) {
+        det_rng.RandomIntInclusive(1, shop_chance_denominator) > 2) {
         return;
     }
 
@@ -130,7 +135,7 @@ void TryPlaceShop(StageLayout& layout, int level_number, const StagePassConfig& 
         return;
     }
 
-    int target = rng::RandomIntInclusive(0, candidate_count - 1);
+    int target = det_rng.RandomIntInclusive(0, candidate_count - 1);
     for (int y = 0; y < static_cast<int>(layout.layout_size.y); ++y) {
         for (int x = 0; x < static_cast<int>(layout.layout_size.x); ++x) {
             if (room_poss[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] == 0) {
@@ -146,12 +151,17 @@ void TryPlaceShop(StageLayout& layout, int level_number, const StagePassConfig& 
     }
 }
 
-void TryPlaceVault(StageLayout& layout, int level_number, const StagePassConfig& pass) {
+void TryPlaceVault(
+    StageLayout& layout,
+    int level_number,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (!pass.enabled || level_number < pass.GetInt("min_level_number", 2)) {
         return;
     }
     const int chance_denominator = pass.GetInt("chance_denominator", 6);
-    if (chance_denominator <= 0 || rng::RandomIntInclusive(1, chance_denominator) != 1) {
+    if (chance_denominator <= 0 || det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
         return;
     }
 
@@ -169,11 +179,11 @@ void TryPlaceVault(StageLayout& layout, int level_number, const StagePassConfig&
     }
 
     const IVec2 room = candidates[static_cast<std::size_t>(
-        rng::RandomIntInclusive(0, static_cast<int>(candidates.size()) - 1))];
+        det_rng.RandomIntInclusive(0, static_cast<int>(candidates.size()) - 1))];
     SetRoomCode(layout, room.x, room.y, static_cast<int>(RoomCode::Vault));
 }
 
-void TryPlaceIdol(StageLayout& layout, const StagePassConfig& pass) {
+void TryPlaceIdol(StageLayout& layout, const StagePassConfig& pass, DetRng& det_rng) {
     if (!pass.enabled || layout.path_layout_size.y < 2) {
         return;
     }
@@ -188,7 +198,7 @@ void TryPlaceIdol(StageLayout& layout, const StagePassConfig& pass) {
             if (GetRoomCode(layout, x, y) != static_cast<int>(RoomCode::Side)) {
                 continue;
             }
-            if (rng::RandomIntInclusive(1, chance_denominator) != 1) {
+            if (det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
                 continue;
             }
             SetRoomCode(layout, x, y, static_cast<int>(RoomCode::Idol));
@@ -197,7 +207,12 @@ void TryPlaceIdol(StageLayout& layout, const StagePassConfig& pass) {
     }
 }
 
-void TryPlaceAltar(StageLayout& layout, int level_number, const StagePassConfig& pass) {
+void TryPlaceAltar(
+    StageLayout& layout,
+    int level_number,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (!pass.enabled || level_number < pass.GetInt("min_level_number", 2)) {
         return;
     }
@@ -211,7 +226,7 @@ void TryPlaceAltar(StageLayout& layout, int level_number, const StagePassConfig&
             if (GetRoomCode(layout, x, y) != static_cast<int>(RoomCode::Side)) {
                 continue;
             }
-            if (rng::RandomIntInclusive(1, chance_denominator) != 1) {
+            if (det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
                 continue;
             }
             SetRoomCode(layout, x, y, static_cast<int>(RoomCode::Altar));
@@ -220,36 +235,61 @@ void TryPlaceAltar(StageLayout& layout, int level_number, const StagePassConfig&
     }
 }
 
-using ClassicRoomLayoutPassFn = void (*)(StageLayout&, int, const StagePassConfig&);
+using ClassicRoomLayoutPassFn = void (*)(StageLayout&, int, const StagePassConfig&, DetRng&);
 
 struct ClassicRoomLayoutPassDefinition {
     std::string_view name;
     ClassicRoomLayoutPassFn run = nullptr;
 };
 
-void RunSnakePitLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
+void RunSnakePitLayoutPass(
+    StageLayout& layout,
+    int,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (pass.enabled) {
-        TryPlaceSnakePit(layout, pass.GetInt("chance_denominator", 8));
+        TryPlaceSnakePit(layout, pass.GetInt("chance_denominator", 8), det_rng);
     }
 }
 
-void RunShopLayoutPass(StageLayout& layout, int level_number, const StagePassConfig& pass) {
-    TryPlaceShop(layout, level_number, pass);
+void RunShopLayoutPass(
+    StageLayout& layout,
+    int level_number,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
+    TryPlaceShop(layout, level_number, pass, det_rng);
 }
 
-void RunVaultLayoutPass(StageLayout& layout, int level_number, const StagePassConfig& pass) {
-    TryPlaceVault(layout, level_number, pass);
+void RunVaultLayoutPass(
+    StageLayout& layout,
+    int level_number,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
+    TryPlaceVault(layout, level_number, pass, det_rng);
 }
 
-void RunIdolLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
-    TryPlaceIdol(layout, pass);
+void RunIdolLayoutPass(StageLayout& layout, int, const StagePassConfig& pass, DetRng& det_rng) {
+    TryPlaceIdol(layout, pass, det_rng);
 }
 
-void RunAltarLayoutPass(StageLayout& layout, int level_number, const StagePassConfig& pass) {
-    TryPlaceAltar(layout, level_number, pass);
+void RunAltarLayoutPass(
+    StageLayout& layout,
+    int level_number,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
+    TryPlaceAltar(layout, level_number, pass, det_rng);
 }
 
-void RunJungleLakeLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
+void RunJungleLakeLayoutPass(
+    StageLayout& layout,
+    int,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (!pass.enabled) {
         return;
     }
@@ -269,15 +309,20 @@ void RunJungleLakeLayoutPass(StageLayout& layout, int, const StagePassConfig& pa
         SetRoomCode(layout, x, lake_bottom_row, static_cast<int>(RoomCode::Special7));
     }
 
-    int mega_mouth_x = rng::RandomIntInclusive(0, static_cast<int>(layout.layout_size.x) - 1);
+    int mega_mouth_x = det_rng.RandomIntInclusive(0, static_cast<int>(layout.layout_size.x) - 1);
     while (layout.layout_size.x > 1 && mega_mouth_x == layout.end_room.x) {
-        mega_mouth_x = rng::RandomIntInclusive(0, static_cast<int>(layout.layout_size.x) - 1);
+        mega_mouth_x = det_rng.RandomIntInclusive(0, static_cast<int>(layout.layout_size.x) - 1);
     }
     SetRoomCode(layout, mega_mouth_x, lake_bottom_row, static_cast<int>(RoomCode::Special9));
     layout.jungle_lake = true;
 }
 
-void RunIceMoaiLayoutPass(StageLayout& layout, int level_number, const StagePassConfig& pass) {
+void RunIceMoaiLayoutPass(
+    StageLayout& layout,
+    int level_number,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (!pass.enabled || layout.path_layout_size.y < 2 || layout.path_layout_size.x == 0) {
         return;
     }
@@ -286,25 +331,30 @@ void RunIceMoaiLayoutPass(StageLayout& layout, int level_number, const StagePass
     else if (level_number == 10) chance_denominator = 3;
     else if (level_number == 11) chance_denominator = 2;
     else if (level_number == 12) chance_denominator = 1;
-    if (chance_denominator <= 0 || rng::RandomIntInclusive(1, chance_denominator) != 1) {
+    if (chance_denominator <= 0 || det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
         return;
     }
     const int max_row = std::min(static_cast<int>(layout.path_layout_size.y) - 1, 2);
-    SetRoomCode(layout, rng::RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1),
-                rng::RandomIntInclusive(1, max_row), static_cast<int>(RoomCode::Special6));
+    SetRoomCode(layout, det_rng.RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1),
+                det_rng.RandomIntInclusive(1, max_row), static_cast<int>(RoomCode::Special6));
 }
 
-void RunIceAlienCraftLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
+void RunIceAlienCraftLayoutPass(
+    StageLayout& layout,
+    int,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (!pass.enabled || layout.path_layout_size.y < 2 || layout.path_layout_size.x < 2) {
         return;
     }
     const int chance_denominator = pass.GetInt("chance_denominator", 10);
-    if (chance_denominator <= 0 || rng::RandomIntInclusive(1, chance_denominator) != 1) {
+    if (chance_denominator <= 0 || det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
         return;
     }
-    const int start_x = rng::RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 2);
+    const int start_x = det_rng.RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 2);
     const int max_row = std::min(static_cast<int>(layout.path_layout_size.y) - 1, 2);
-    const int row = rng::RandomIntInclusive(1, max_row);
+    const int row = det_rng.RandomIntInclusive(1, max_row);
     for (int x = start_x; x < static_cast<int>(layout.path_layout_size.x); ++x) {
         SetRoomCode(layout, x, row,
                     x == start_x ? static_cast<int>(RoomCode::Special7)
@@ -314,17 +364,22 @@ void RunIceAlienCraftLayoutPass(StageLayout& layout, int, const StagePassConfig&
     }
 }
 
-void RunTempleSacPitLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
+void RunTempleSacPitLayoutPass(
+    StageLayout& layout,
+    int,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (!pass.enabled || layout.path_layout_size.y < 4 || layout.path_layout_size.x == 0) {
         return;
     }
     const int chance_denominator = pass.GetInt("chance_denominator", 8);
-    if (chance_denominator <= 0 || rng::RandomIntInclusive(1, chance_denominator) != 1) {
+    if (chance_denominator <= 0 || det_rng.RandomIntInclusive(1, chance_denominator) != 1) {
         return;
     }
-    int column = rng::RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1);
+    int column = det_rng.RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1);
     while (layout.path_layout_size.x > 1 && column == layout.end_room.x) {
-        column = rng::RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1);
+        column = det_rng.RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1);
     }
     SetRoomCode(layout, column, 0, static_cast<int>(RoomCode::Special7));
     for (int y = 1; y < static_cast<int>(layout.path_layout_size.y) - 1; ++y) {
@@ -334,12 +389,17 @@ void RunTempleSacPitLayoutPass(StageLayout& layout, int, const StagePassConfig& 
                 static_cast<int>(RoomCode::Special9));
 }
 
-void RunCityOfGoldXocLayoutPass(StageLayout& layout, int, const StagePassConfig& pass) {
+void RunCityOfGoldXocLayoutPass(
+    StageLayout& layout,
+    int,
+    const StagePassConfig& pass,
+    DetRng& det_rng
+) {
     if (!pass.enabled || layout.path_layout_size.y == 0 || layout.path_layout_size.x == 0) {
         return;
     }
     const int row = std::min(2, static_cast<int>(layout.path_layout_size.y) - 1);
-    SetRoomCode(layout, rng::RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1),
+    SetRoomCode(layout, det_rng.RandomIntInclusive(0, static_cast<int>(layout.path_layout_size.x) - 1),
                 row, static_cast<int>(RoomCode::Special6));
 }
 
@@ -366,12 +426,12 @@ const ClassicRoomLayoutPassDefinition* FindClassicRoomLayoutPass(std::string_vie
 }
 
 void RunClassicRoomLayoutPass(StageLayout& layout, int level_number,
-                              const StagePassConfig& pass) {
+                              const StagePassConfig& pass, DetRng& det_rng) {
     const ClassicRoomLayoutPassDefinition* definition = FindClassicRoomLayoutPass(pass.name);
     if (definition == nullptr) {
         throw std::runtime_error("Unknown classic room layout pass: " + pass.name);
     }
-    definition->run(layout, level_number, pass);
+    definition->run(layout, level_number, pass, det_rng);
 }
 
 std::vector<IVec2> BuildPathFromRoomCodes(const StageLayout& layout,
@@ -433,7 +493,11 @@ std::vector<IVec2> BuildPathFromRoomCodes(const StageLayout& layout,
 
 } // namespace
 
-StageLayout GenerateClassicRoomLayout(int level_number, const StageConfig& stage_config) {
+StageLayout GenerateClassicRoomLayout(
+    int level_number,
+    const StageConfig& stage_config,
+    DetRng& det_rng
+) {
     StageLayout layout;
     layout.layout_size = stage_config.layout_size;
     layout.path_layout_size = GetPathLayoutSize(stage_config);
@@ -450,11 +514,11 @@ StageLayout GenerateClassicRoomLayout(int level_number, const StageConfig& stage
         int move_roll = 5;
 
         if (room_x == 0) {
-            move_roll = rng::RandomIntInclusive(3, 5);
+            move_roll = det_rng.RandomIntInclusive(3, 5);
         } else if (room_x == static_cast<int>(layout.path_layout_size.x) - 1) {
-            move_roll = rng::RandomIntInclusive(5, 7);
+            move_roll = det_rng.RandomIntInclusive(5, 7);
         } else {
-            move_roll = rng::RandomIntInclusive(1, 5);
+            move_roll = det_rng.RandomIntInclusive(1, 5);
         }
 
         if (move_roll < 3 || move_roll > 5) {
@@ -497,7 +561,7 @@ StageLayout GenerateClassicRoomLayout(int level_number, const StageConfig& stage
     }
 
     for (const StagePassConfig& pass : stage_config.layout_passes) {
-        RunClassicRoomLayoutPass(layout, level_number, pass);
+        RunClassicRoomLayoutPass(layout, level_number, pass, det_rng);
     }
 
     layout.path = BuildPathFromRoomCodes(layout, layout.start_room, layout.end_room);

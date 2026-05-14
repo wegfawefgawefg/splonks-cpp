@@ -42,14 +42,14 @@ struct RoomTilePalette {
     Tile block = Tile::CaveBlock;
 };
 
-RoomType RandomRoomType();
+RoomType RandomRoomType(DetRng& det_rng);
 std::vector<std::vector<Tile>> GenRoom(RoomType room_type, StageType stage_type,
-                                       RoomTilePalette tile_palette);
+                                       RoomTilePalette tile_palette, DetRng& det_rng);
 void PasteTemplate(std::vector<std::vector<MetaTile>>& parent,
                    const std::vector<std::vector<MetaTile>>& child, const UVec2& location,
                    bool flip_horizontal, bool flip_vertical);
 std::vector<std::vector<Tile>> ResolveRoomTemplate(
     const std::vector<std::vector<MetaTile>>& room_template,
-    RoomTilePalette tile_palette);
+    RoomTilePalette tile_palette, DetRng& det_rng);
 
 } // namespace splonks

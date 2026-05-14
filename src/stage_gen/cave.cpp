@@ -10,11 +10,11 @@ namespace splonks::stage_gen::cave {
 
 namespace {
 
-bool RandomBool() {
-    return rng::RandomIntInclusive(0, 1) == 0;
+bool RandomBool(DetRng& det_rng) {
+    return det_rng.RandomIntInclusive(0, 1) == 0;
 }
 
-UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded) {
+UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded, DetRng& det_rng) {
     if (available_area.x < size.x || available_area.y < size.y) {
         return UVec2::New(0, 0);
     }
@@ -23,12 +23,12 @@ UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded) {
     unsigned int y = 0;
     if (available_area.x > size.x) {
         x = static_cast<unsigned int>(
-            rng::RandomIntInclusive(0, static_cast<int>(available_area.x - size.x - 1U)));
+            det_rng.RandomIntInclusive(0, static_cast<int>(available_area.x - size.x - 1U)));
     }
     if (!grounded) {
         if (available_area.y > size.y) {
             y = static_cast<unsigned int>(
-                rng::RandomIntInclusive(0, static_cast<int>(available_area.y - size.y - 1U)));
+                det_rng.RandomIntInclusive(0, static_cast<int>(available_area.y - size.y - 1U)));
         }
     } else {
         y = available_area.y - size.y;
@@ -37,11 +37,12 @@ UVec2 Fit(const UVec2& available_area, const UVec2& size, bool grounded) {
 }
 
 UVec2 FitTemplate(const UVec2& available_area,
-                  const std::vector<std::vector<MetaTile>>& room_template, bool grounded) {
+                  const std::vector<std::vector<MetaTile>>& room_template, bool grounded,
+                  DetRng& det_rng) {
     const UVec2 size =
         UVec2::New(static_cast<unsigned int>(room_template[0].size()),
                    static_cast<unsigned int>(room_template.size()));
-    return Fit(available_area, size, grounded);
+    return Fit(available_area, size, grounded, det_rng);
 }
 
 std::vector<std::vector<MetaTile>> BlankRoom() {
@@ -225,66 +226,66 @@ std::vector<std::vector<MetaTile>> SidewaysEtExitTemplate() {
 }
 
 void PasteOHalf(const UVec2& available_area, const UVec2& at,
-                std::vector<std::vector<MetaTile>>& target, bool grounded) {
+                std::vector<std::vector<MetaTile>>& target, bool grounded, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid},
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
-    PasteTemplate(target, room_template, position, false, RandomBool());
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
+    PasteTemplate(target, room_template, position, false, RandomBool(det_rng));
 }
 
 void PasteFiveLong(const UVec2& available_area, const UVec2& at,
-                   std::vector<std::vector<MetaTile>>& target, bool grounded) {
+                   std::vector<std::vector<MetaTile>>& target, bool grounded, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
          MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFourLong(const UVec2& available_area, const UVec2& at,
-                   std::vector<std::vector<MetaTile>>& target) {
+                   std::vector<std::vector<MetaTile>>& target, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, false) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, false, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFourLongMaybe(const UVec2& available_area, const UVec2& at,
-                        std::vector<std::vector<MetaTile>>& target) {
+                        std::vector<std::vector<MetaTile>>& target, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
          MetaTile::MaybeSolid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, false) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, false, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFiveLongMaybe(const UVec2& available_area, const UVec2& at,
-                        std::vector<std::vector<MetaTile>>& target, bool grounded) {
+                        std::vector<std::vector<MetaTile>>& target, bool grounded, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
          MetaTile::MaybeSolid, MetaTile::MaybeSolid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteFourLongWithTwoAboveMaybe(const UVec2& available_area, const UVec2& at,
-                                    std::vector<std::vector<MetaTile>>& target) {
+                                    std::vector<std::vector<MetaTile>>& target, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Air},
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, false) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, false, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteThreeLong(const UVec2& available_area, const UVec2& at,
-                    std::vector<std::vector<MetaTile>>& target) {
+                    std::vector<std::vector<MetaTile>>& target, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
          MetaTile::Air},
@@ -293,112 +294,112 @@ void PasteThreeLong(const UVec2& available_area, const UVec2& at,
         {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
          MetaTile::Air},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, false) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, false, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteAirSubroom(const UVec2& subroom_shape, const UVec2& at,
-                     std::vector<std::vector<MetaTile>>& target) {
-    const int choice = rng::RandomIntInclusive(0, 5);
+                     std::vector<std::vector<MetaTile>>& target, DetRng& det_rng) {
+    const int choice = det_rng.RandomIntInclusive(0, 5);
     if (choice == 0) {
-        PasteOHalf(subroom_shape, at, target, false);
+        PasteOHalf(subroom_shape, at, target, false, det_rng);
     } else if (choice == 1) {
-        PasteFiveLong(subroom_shape, at, target, false);
+        PasteFiveLong(subroom_shape, at, target, false, det_rng);
     } else if (choice == 2) {
-        PasteFiveLongMaybe(subroom_shape, at, target, false);
+        PasteFiveLongMaybe(subroom_shape, at, target, false, det_rng);
     } else if (choice == 3) {
-        PasteFourLongWithTwoAboveMaybe(subroom_shape, at, target);
+        PasteFourLongWithTwoAboveMaybe(subroom_shape, at, target, det_rng);
     } else if (choice == 4) {
-        PasteThreeLong(subroom_shape, at, target);
+        PasteThreeLong(subroom_shape, at, target, det_rng);
     }
 }
 
 void PasteHillsOnSpikes(const UVec2& available_area, const UVec2& at,
-                        std::vector<std::vector<MetaTile>>& target, bool grounded) {
+                        std::vector<std::vector<MetaTile>>& target, bool grounded, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::MaybeSolid,
          MetaTile::Air},
         {MetaTile::MaybeSpikes, MetaTile::Solid, MetaTile::MaybeSpikes,
          MetaTile::Solid, MetaTile::MaybeSpikes},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteHillsOnSpikesAssymetrical(const UVec2& available_area, const UVec2& at,
                                     std::vector<std::vector<MetaTile>>& target,
-                                    bool grounded) {
+                                    bool grounded, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Air,
          MetaTile::MaybeSolid},
         {MetaTile::MaybeSpikes, MetaTile::MaybeSpikes, MetaTile::Solid,
          MetaTile::MaybeSpikes, MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
-    PasteTemplate(target, room_template, position, RandomBool(), false);
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
+    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
 }
 
 void PasteStepsAndFloatingBlockWithSpikes(const UVec2& available_area, const UVec2& at,
                                           std::vector<std::vector<MetaTile>>& target,
-                                          bool grounded) {
+                                          bool grounded, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::Air, MetaTile::Solid, MetaTile::Air,
          MetaTile::MaybeSolid},
         {MetaTile::MaybeSpikes, MetaTile::Solid, MetaTile::Solid,
          MetaTile::MaybeSpikes, MetaTile::MaybeSpikes},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
-    PasteTemplate(target, room_template, position, RandomBool(), false);
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
+    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
 }
 
 void PasteMound(const UVec2& available_area, const UVec2& at,
-                std::vector<std::vector<MetaTile>>& target, bool grounded) {
+                std::vector<std::vector<MetaTile>>& target, bool grounded, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
          MetaTile::MaybeSolid, MetaTile::Air},
         {MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
          MetaTile::MaybeSolid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteGroundSubroom(const UVec2& subroom_shape, const UVec2& at,
-                        std::vector<std::vector<MetaTile>>& target) {
-    const int choice = rng::RandomIntInclusive(0, 6);
+                        std::vector<std::vector<MetaTile>>& target, DetRng& det_rng) {
+    const int choice = det_rng.RandomIntInclusive(0, 6);
     if (choice == 0) {
-        PasteHillsOnSpikes(subroom_shape, at, target, true);
+        PasteHillsOnSpikes(subroom_shape, at, target, true, det_rng);
     } else if (choice == 1) {
-        PasteHillsOnSpikesAssymetrical(subroom_shape, at, target, true);
+        PasteHillsOnSpikesAssymetrical(subroom_shape, at, target, true, det_rng);
     } else if (choice == 2) {
-        PasteMound(subroom_shape, at, target, true);
+        PasteMound(subroom_shape, at, target, true, det_rng);
     } else if (choice == 3) {
-        PasteStepsAndFloatingBlockWithSpikes(subroom_shape, at, target, true);
+        PasteStepsAndFloatingBlockWithSpikes(subroom_shape, at, target, true, det_rng);
     } else if (choice == 4) {
-        PasteFourLong(subroom_shape, at, target);
+        PasteFourLong(subroom_shape, at, target, det_rng);
     } else if (choice == 5) {
-        PasteOHalf(subroom_shape, at, target, true);
+        PasteOHalf(subroom_shape, at, target, true, det_rng);
     } else if (choice == 6) {
-        PasteFiveLong(subroom_shape, at, target, false);
+        PasteFiveLong(subroom_shape, at, target, false, det_rng);
     }
 }
 
 void PasteDoorHutAndPillar(const UVec2& available_area, const UVec2& at,
                            std::vector<std::vector<MetaTile>>& target, bool grounded,
-                           bool entrance) {
+                           bool entrance, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Air, MetaTile::Air,
          MetaTile::Solid},
         {MetaTile::Solid, entrance ? MetaTile::Entrance : MetaTile::Exit,
          MetaTile::Air, MetaTile::Air, MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
-    PasteTemplate(target, room_template, position, RandomBool(), false);
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
+    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
 }
 
 void PasteDoorPyramid(const UVec2& available_area, const UVec2& at,
                       std::vector<std::vector<MetaTile>>& target, bool grounded,
-                      bool entrance) {
+                      bool entrance, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::Air, entrance ? MetaTile::Entrance : MetaTile::Exit,
          MetaTile::Air, MetaTile::Air},
@@ -407,13 +408,13 @@ void PasteDoorPyramid(const UVec2& available_area, const UVec2& at,
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
          MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteDoorPillared(const UVec2& available_area, const UVec2& at,
                        std::vector<std::vector<MetaTile>>& target, bool grounded,
-                       bool entrance) {
+                       bool entrance, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Solid, MetaTile::MaybeSolid, MetaTile::Air, MetaTile::MaybeSolid,
          MetaTile::Solid},
@@ -421,12 +422,13 @@ void PasteDoorPillared(const UVec2& available_area, const UVec2& at,
          entrance ? MetaTile::Entrance : MetaTile::Exit, MetaTile::MaybeSolid,
          MetaTile::Solid},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteDoorHut(const UVec2& available_area, const UVec2& at,
-                  std::vector<std::vector<MetaTile>>& target, bool grounded, bool entrance) {
+                  std::vector<std::vector<MetaTile>>& target, bool grounded, bool entrance,
+                  DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
          MetaTile::Solid},
@@ -435,13 +437,13 @@ void PasteDoorHut(const UVec2& available_area, const UVec2& at,
         {MetaTile::MaybeBlock, MetaTile::Air, MetaTile::Air,
          entrance ? MetaTile::Entrance : MetaTile::Exit, MetaTile::MaybeBlock},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
-    PasteTemplate(target, room_template, position, RandomBool(), false);
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
+    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
 }
 
 void PasteDoorStilted(const UVec2& available_area, const UVec2& at,
                       std::vector<std::vector<MetaTile>>& target, bool grounded,
-                      bool entrance) {
+                      bool entrance, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::Air, MetaTile::Air, entrance ? MetaTile::Entrance : MetaTile::Exit,
          MetaTile::Air, MetaTile::Air},
@@ -450,40 +452,40 @@ void PasteDoorStilted(const UVec2& available_area, const UVec2& at,
         {MetaTile::Air, MetaTile::MaybeSolid, MetaTile::Solid, MetaTile::MaybeSolid,
          MetaTile::Air},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
     PasteTemplate(target, room_template, position, false, false);
 }
 
 void PasteDoorFourblock(const UVec2& available_area, const UVec2& at,
                         std::vector<std::vector<MetaTile>>& target, bool grounded,
-                        bool entrance) {
+                        bool entrance, DetRng& det_rng) {
     const std::vector<std::vector<MetaTile>> room_template = {
         {MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::MaybeSolid,
          MetaTile::MaybeSolid, entrance ? MetaTile::Entrance : MetaTile::Exit},
     };
-    const UVec2 position = FitTemplate(available_area, room_template, grounded) + at;
-    PasteTemplate(target, room_template, position, RandomBool(), false);
+    const UVec2 position = FitTemplate(available_area, room_template, grounded, det_rng) + at;
+    PasteTemplate(target, room_template, position, RandomBool(det_rng), false);
 }
 
 void PasteBottomExitSubroom(const UVec2& subroom_shape, const UVec2& at,
-                            std::vector<std::vector<MetaTile>>& target) {
-    const int choice = rng::RandomIntInclusive(0, 5);
+                            std::vector<std::vector<MetaTile>>& target, DetRng& det_rng) {
+    const int choice = det_rng.RandomIntInclusive(0, 5);
     if (choice == 0) {
-        PasteDoorFourblock(subroom_shape, at, target, true, false);
+        PasteDoorFourblock(subroom_shape, at, target, true, false, det_rng);
     } else if (choice == 1) {
-        PasteDoorHut(subroom_shape, at, target, true, false);
+        PasteDoorHut(subroom_shape, at, target, true, false, det_rng);
     } else if (choice == 2) {
-        PasteDoorHutAndPillar(subroom_shape, at, target, true, false);
+        PasteDoorHutAndPillar(subroom_shape, at, target, true, false, det_rng);
     } else if (choice == 3) {
-        PasteDoorPillared(subroom_shape, at, target, true, false);
+        PasteDoorPillared(subroom_shape, at, target, true, false, det_rng);
     } else if (choice == 4) {
-        PasteDoorPyramid(subroom_shape, at, target, true, false);
+        PasteDoorPyramid(subroom_shape, at, target, true, false, det_rng);
     } else if (choice == 5) {
-        PasteDoorStilted(subroom_shape, at, target, true, false);
+        PasteDoorStilted(subroom_shape, at, target, true, false, det_rng);
     }
 }
 
-std::vector<std::vector<MetaTile>> TwoSubroomsAboveExitTemplate() {
+std::vector<std::vector<MetaTile>> TwoSubroomsAboveExitTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
@@ -492,30 +494,30 @@ std::vector<std::vector<MetaTile>> TwoSubroomsAboveExitTemplate() {
 
     const UVec2 subroom_shape = UVec2::New(5, 3);
     const UVec2 tl_subroom_pos = UVec2::New(0, 0);
-    const int choice_left = rng::RandomIntInclusive(0, 3);
+    const int choice_left = det_rng.RandomIntInclusive(0, 3);
     if (choice_left == 0) {
-        PasteOHalf(subroom_shape, tl_subroom_pos, room, false);
+        PasteOHalf(subroom_shape, tl_subroom_pos, room, false, det_rng);
     } else if (choice_left == 1) {
-        PasteFiveLong(subroom_shape, tl_subroom_pos, room, false);
+        PasteFiveLong(subroom_shape, tl_subroom_pos, room, false, det_rng);
     } else if (choice_left == 2) {
-        PasteFiveLongMaybe(subroom_shape, tl_subroom_pos, room, false);
+        PasteFiveLongMaybe(subroom_shape, tl_subroom_pos, room, false, det_rng);
     } else {
-        PasteFourLongWithTwoAboveMaybe(subroom_shape, tl_subroom_pos, room);
+        PasteFourLongWithTwoAboveMaybe(subroom_shape, tl_subroom_pos, room, det_rng);
     }
 
     const UVec2 tr_subroom_pos = UVec2::New(5, 0);
-    const int choice_right = rng::RandomIntInclusive(0, 3);
+    const int choice_right = det_rng.RandomIntInclusive(0, 3);
     if (choice_right == 0) {
-        PasteOHalf(subroom_shape, tr_subroom_pos, room, false);
+        PasteOHalf(subroom_shape, tr_subroom_pos, room, false, det_rng);
     } else if (choice_right == 1) {
-        PasteFiveLong(subroom_shape, tr_subroom_pos, room, false);
+        PasteFiveLong(subroom_shape, tr_subroom_pos, room, false, det_rng);
     } else if (choice_right == 2) {
-        PasteFiveLongMaybe(subroom_shape, tr_subroom_pos, room, false);
+        PasteFiveLongMaybe(subroom_shape, tr_subroom_pos, room, false, det_rng);
     } else {
-        PasteFourLongWithTwoAboveMaybe(subroom_shape, tr_subroom_pos, room);
+        PasteFourLongWithTwoAboveMaybe(subroom_shape, tr_subroom_pos, room, det_rng);
     }
 
-    PasteBottomExitSubroom(subroom_shape, UVec2::New(3, 4), room);
+    PasteBottomExitSubroom(subroom_shape, UVec2::New(3, 4), room, det_rng);
 
     return room;
 }
@@ -578,7 +580,7 @@ std::vector<std::vector<MetaTile>> BoxFallenFloorTemplate() {
     };
 }
 
-std::vector<std::vector<MetaTile>> TwoLineOneSubroomTemplate() {
+std::vector<std::vector<MetaTile>> TwoLineOneSubroomTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     const std::vector<std::vector<MetaTile>> two_line_template = {
         {MetaTile::Solid, MetaTile::Air, MetaTile::Solid, MetaTile::Solid,
@@ -595,11 +597,11 @@ std::vector<std::vector<MetaTile>> TwoLineOneSubroomTemplate() {
          MetaTile::Solid, MetaTile::Solid},
     };
     PasteTemplate(room, bottom_row, UVec2::New(0, Stage::kRoomShape.y - 1), false, false);
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 4), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 4), room, det_rng);
     return room;
 }
 
-std::vector<std::vector<MetaTile>> BoxOneSidedLadderTwoSubroomsTemplate() {
+std::vector<std::vector<MetaTile>> BoxOneSidedLadderTwoSubroomsTemplate(DetRng& det_rng) {
     auto room = std::vector<std::vector<MetaTile>>{
         {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
          MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
@@ -626,12 +628,12 @@ std::vector<std::vector<MetaTile>> BoxOneSidedLadderTwoSubroomsTemplate() {
          MetaTile::Solid, MetaTile::Solid, MetaTile::Solid, MetaTile::Solid,
          MetaTile::Solid, MetaTile::Solid},
     };
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 4), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room, det_rng);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 4), room, det_rng);
     return room;
 }
 
-std::vector<std::vector<MetaTile>> BoxOneSidedLadderOneSubroomTemplate() {
+std::vector<std::vector<MetaTile>> BoxOneSidedLadderOneSubroomTemplate(DetRng& det_rng) {
     auto room = std::vector<std::vector<MetaTile>>{
         {MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
          MetaTile::Air, MetaTile::Air, MetaTile::Air, MetaTile::Air,
@@ -658,7 +660,7 @@ std::vector<std::vector<MetaTile>> BoxOneSidedLadderOneSubroomTemplate() {
          MetaTile::MaybeSolid, MetaTile::MaybeSolid, MetaTile::Solid,
          MetaTile::Solid, MetaTile::Solid, MetaTile::Solid},
     };
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room, det_rng);
     return room;
 }
 
@@ -691,13 +693,13 @@ std::vector<std::vector<MetaTile>> BoxFingerHoleTemplate() {
     };
 }
 
-std::vector<std::vector<MetaTile>> LurOneSubroomTemplate() {
+std::vector<std::vector<MetaTile>> LurOneSubroomTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
             MetaTile::Solid;
     }
-    PasteGroundSubroom(UVec2::New(5, 3), UVec2::New(5, 4), room);
+    PasteGroundSubroom(UVec2::New(5, 3), UVec2::New(5, 4), room, det_rng);
     return room;
 }
 
@@ -730,7 +732,7 @@ std::vector<std::vector<MetaTile>> AnthillTemplate() {
     };
 }
 
-std::vector<std::vector<MetaTile>> ThreeCornerDropTemplate() {
+std::vector<std::vector<MetaTile>> ThreeCornerDropTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
@@ -741,13 +743,13 @@ std::vector<std::vector<MetaTile>> ThreeCornerDropTemplate() {
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = MetaTile::MaybeSolid;
 
     const UVec2 subroom_shape = UVec2::New(5, 3);
-    PasteAirSubroom(subroom_shape, UVec2::New(0, 1), room);
-    PasteAirSubroom(subroom_shape, UVec2::New(5, 1), room);
-    PasteGroundSubroom(subroom_shape, UVec2::New(5, 4), room);
+    PasteAirSubroom(subroom_shape, UVec2::New(0, 1), room, det_rng);
+    PasteAirSubroom(subroom_shape, UVec2::New(5, 1), room, det_rng);
+    PasteGroundSubroom(subroom_shape, UVec2::New(5, 4), room, det_rng);
     return room;
 }
 
-std::vector<std::vector<MetaTile>> TunnelAndSubroomTemplate() {
+std::vector<std::vector<MetaTile>> TunnelAndSubroomTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
@@ -763,11 +765,11 @@ std::vector<std::vector<MetaTile>> TunnelAndSubroomTemplate() {
     room[tunnel_height + 1][7] = MetaTile::Solid;
     room[tunnel_height + 1][8] = MetaTile::Solid;
     room[tunnel_height + 2][6] = MetaTile::Air;
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room, det_rng);
     return room;
 }
 
-std::vector<std::vector<MetaTile>> DropWithTwoUpperSubroomsTemplate() {
+std::vector<std::vector<MetaTile>> DropWithTwoUpperSubroomsTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
@@ -776,12 +778,12 @@ std::vector<std::vector<MetaTile>> DropWithTwoUpperSubroomsTemplate() {
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = MetaTile::MaybeSolid;
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = MetaTile::Air;
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = MetaTile::MaybeSolid;
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room);
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room, det_rng);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room, det_rng);
     return room;
 }
 
-std::vector<std::vector<MetaTile>> OpenWideDropTemplate() {
+std::vector<std::vector<MetaTile>> OpenWideDropTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
@@ -796,12 +798,12 @@ std::vector<std::vector<MetaTile>> OpenWideDropTemplate() {
     room[crater_height + 1][4] = MetaTile::Air;
     room[crater_height + 1][5] = MetaTile::Air;
     room[crater_height + 1][6] = MetaTile::MaybeSolid;
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room);
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room, det_rng);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room, det_rng);
     return room;
 }
 
-std::vector<std::vector<MetaTile>> CrestedDropWithUpperSubroomTemplate() {
+std::vector<std::vector<MetaTile>> CrestedDropWithUpperSubroomTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
@@ -816,11 +818,11 @@ std::vector<std::vector<MetaTile>> CrestedDropWithUpperSubroomTemplate() {
     room[crater_height + 1][7] = MetaTile::Solid;
     room[crater_height + 2][4] = MetaTile::Air;
     room[crater_height + 2][5] = MetaTile::Air;
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(2, 1), room, det_rng);
     return room;
 }
 
-std::vector<std::vector<MetaTile>> OpenFourSubroomTemplate() {
+std::vector<std::vector<MetaTile>> OpenFourSubroomTemplate(DetRng& det_rng) {
     auto room = BlankRoom();
     for (unsigned int x = 0; x < Stage::kRoomShape.x; ++x) {
         room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][static_cast<std::size_t>(x)] =
@@ -829,19 +831,19 @@ std::vector<std::vector<MetaTile>> OpenFourSubroomTemplate() {
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][1] = MetaTile::MaybeSolid;
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][2] = MetaTile::Air;
     room[static_cast<std::size_t>(Stage::kRoomShape.y - 1)][3] = MetaTile::MaybeSolid;
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room);
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room);
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 4), room);
-    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 4), room);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 1), room, det_rng);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 1), room, det_rng);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(0, 4), room, det_rng);
+    PasteAirSubroom(UVec2::New(5, 3), UVec2::New(5, 4), room, det_rng);
     return room;
 }
 
 } // namespace
 
-std::vector<std::vector<MetaTile>> GetRoomTemplate(RoomType room_type) {
+std::vector<std::vector<MetaTile>> GetRoomTemplate(RoomType room_type, DetRng& det_rng) {
     switch (room_type) {
     case RoomType::Box: {
-        const int choice = rng::RandomIntInclusive(0, 6);
+        const int choice = det_rng.RandomIntInclusive(0, 6);
         if (choice == 0) {
             return BoxDigitEightTemplate();
         }
@@ -849,46 +851,46 @@ std::vector<std::vector<MetaTile>> GetRoomTemplate(RoomType room_type) {
             return BoxFallenFloorTemplate();
         }
         if (choice == 2) {
-            return BoxOneSidedLadderTwoSubroomsTemplate();
+            return BoxOneSidedLadderTwoSubroomsTemplate(det_rng);
         }
         if (choice == 3) {
             return BoxDoubleLadderTemplate();
         }
         if (choice == 4) {
-            return BoxOneSidedLadderOneSubroomTemplate();
+            return BoxOneSidedLadderOneSubroomTemplate(det_rng);
         }
         if (choice == 5) {
-            return TwoLineOneSubroomTemplate();
+            return TwoLineOneSubroomTemplate(det_rng);
         }
         return BoxFingerHoleTemplate();
     }
     case RoomType::FourWay:
-        switch (rng::RandomIntInclusive(0, 6)) {
+        switch (det_rng.RandomIntInclusive(0, 6)) {
         case 0:
-            return OpenFourSubroomTemplate();
+            return OpenFourSubroomTemplate(det_rng);
         case 1:
             return AnthillTemplate();
         case 2:
-            return CrestedDropWithUpperSubroomTemplate();
+            return CrestedDropWithUpperSubroomTemplate(det_rng);
         case 3:
-            return TunnelAndSubroomTemplate();
+            return TunnelAndSubroomTemplate(det_rng);
         case 4:
-            return OpenWideDropTemplate();
+            return OpenWideDropTemplate(det_rng);
         case 5:
-            return ThreeCornerDropTemplate();
+            return ThreeCornerDropTemplate(det_rng);
         case 6:
-            return DropWithTwoUpperSubroomsTemplate();
+            return DropWithTwoUpperSubroomsTemplate(det_rng);
         default:
             return StandinFourWayTemplate();
         }
     case RoomType::LeftDownRight:
-        switch (rng::RandomIntInclusive(0, 2)) {
+        switch (det_rng.RandomIntInclusive(0, 2)) {
         case 0:
             return AnthillTemplate();
         case 1:
             return StandinLeftDownRightTemplate();
         case 2:
-            return ThreeCornerDropTemplate();
+            return ThreeCornerDropTemplate(det_rng);
         default:
             return StandinLeftDownRightTemplate();
         }
@@ -897,7 +899,7 @@ std::vector<std::vector<MetaTile>> GetRoomTemplate(RoomType room_type) {
     case RoomType::LeftUpRight:
         return StandinLeftUpRightTemplate();
     case RoomType::Exit:
-        return rng::RandomIntInclusive(0, 99) < 33 ? SidewaysEtExitTemplate() : TwoSubroomsAboveExitTemplate();
+        return det_rng.RandomIntInclusive(0, 99) < 33 ? SidewaysEtExitTemplate() : TwoSubroomsAboveExitTemplate(det_rng);
     case RoomType::Entrance:
         return StandinEntranceTemplate();
     }

@@ -1109,6 +1109,7 @@ std::string HandleFingerprintCommand(const State& state) {
         << ",\"debug\":{\"frame\":" << state.frame
         << ",\"stage_frame\":" << state.stage_frame
         << ",\"drng\":" << state.drng.state
+        << ",\"stagegen_drng\":" << state.stagegen_drng.state
         << ",\"points\":" << state.points
         << ",\"deaths\":" << state.deaths
         << ",\"favor\":" << state.sac_altar_favor

@@ -7,6 +7,7 @@
 namespace splonks {
 
 enum class StageType : int;
+struct DetRng;
 
 enum class Tile {
     Air,
@@ -81,7 +82,7 @@ constexpr std::uint8_t kTileRotationBit270 = 1 << kTileRotation270;
 constexpr std::uint8_t kTileRotationBitAll =
     kTileRotationBit0 | kTileRotationBit90 | kTileRotationBit180 | kTileRotationBit270;
 
-Tile RandomTile();
+Tile RandomTile(DetRng& det_rng);
 const char* TileToString(Tile tile);
 TileRotation NormalizeTileRotation(int rotation);
 TileRotation RotateTileRotation(TileRotation rotation, int quarter_turns);

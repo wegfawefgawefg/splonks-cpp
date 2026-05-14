@@ -50,8 +50,9 @@ struct ClassicRoomTemplateDb {
 ClassicRoomTemplateDb LoadClassicRoomTemplateDb(const StageConfig& config);
 RoomTemplateSelection SelectRoomTemplate(int room_code, bool is_start_room, bool is_end_room,
                                          int room_code_above, bool jungle_lake_active,
-                                         const ClassicRoomTemplateDb& room_templates);
-std::string ExpandObstacles(std::string_view template_glyphs);
+                                         const ClassicRoomTemplateDb& room_templates,
+                                         DetRng& det_rng);
+std::string ExpandObstacles(std::string_view template_glyphs, DetRng& det_rng);
 std::string_view ShopTypeId(ShopType shop_type);
 
 } // namespace splonks::stage_gen::classic

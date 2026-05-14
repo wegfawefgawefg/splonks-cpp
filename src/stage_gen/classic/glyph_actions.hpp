@@ -22,6 +22,6 @@ ResolvedRoom ResolveRoom(int room_code, int level_number, bool is_start_room, bo
                          bool jungle_lake_active, const UVec2& room_size,
                          const Stage& existing_stage, const ClassicRoomTemplateDb& room_templates,
                          const GlyphMap& glyph_map, const ItemPoolDb& item_db,
-                         const ShopConfigDb& shop_db);
+                         const ShopConfigDb& shop_db, DetRng& det_rng);
 
 } // namespace splonks::stage_gen::classic

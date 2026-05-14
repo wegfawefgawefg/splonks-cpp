@@ -6,8 +6,8 @@
 
 namespace splonks {
 
-Tile RandomTile() {
-    const int tile_index = rng::RandomIntInclusive(0, static_cast<int>(kTileCount) - 1);
+Tile RandomTile(DetRng& det_rng) {
+    const int tile_index = det_rng.RandomIntInclusive(0, static_cast<int>(kTileCount) - 1);
     return static_cast<Tile>(tile_index);
 }
 

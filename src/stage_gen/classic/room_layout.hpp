@@ -36,7 +36,11 @@ struct StageLayout {
     bool jungle_lake = false;
 };
 
-StageLayout GenerateClassicRoomLayout(int level_number, const StageConfig& stage_config);
+StageLayout GenerateClassicRoomLayout(
+    int level_number,
+    const StageConfig& stage_config,
+    DetRng& det_rng
+);
 void ValidateClassicRoomLayoutPasses(const std::vector<StagePassConfig>& passes);
 const char* GetClassicRoomCodeDebugLabel(int room_code);
 

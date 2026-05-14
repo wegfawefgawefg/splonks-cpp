@@ -6,8 +6,8 @@ namespace splonks {
 
 namespace {
 
-bool RandomBool() {
-    return rng::RandomIntExclusive(0, 2) == 0;
+bool RandomBool(DetRng& det_rng) {
+    return det_rng.RandomIntExclusive(0, 2) == 0;
 }
 
 std::vector<std::vector<EmbeddedTreasure>> MakeEmptyEmbeddedTreasures(
@@ -152,7 +152,7 @@ Stage Stage::NewBlank() {
     return stage;
 }
 
-Stage Stage::New(StageType stage_type) {
+Stage Stage::New(StageType stage_type, DetRng& det_rng) {
     std::vector<std::vector<int>> rooms(
         static_cast<std::size_t>(kRoomLayout.y),
         std::vector<int>(static_cast<std::size_t>(kRoomLayout.x),
@@ -161,11 +161,11 @@ Stage Stage::New(StageType stage_type) {
 
     {
         IVec2 current_room_pos = IVec2::New(
-            rng::RandomIntExclusive(0, static_cast<int>(kRoomLayout.x)), 0);
+            det_rng.RandomIntExclusive(0, static_cast<int>(kRoomLayout.x)), 0);
 
         for (unsigned int floor = 0; floor < kRoomLayout.y; ++floor) {
             const int go_down_x =
-                rng::RandomIntExclusive(0, static_cast<int>(kRoomLayout.x));
+                det_rng.RandomIntExclusive(0, static_cast<int>(kRoomLayout.x));
             const int direction = (current_room_pos.x - go_down_x) > 0
                                       ? 1
                                       : ((current_room_pos.x - go_down_x) < 0 ? -1 : 0);
@@ -246,9 +246,9 @@ Stage Stage::New(StageType stage_type) {
                 .block = Tile::CaveBlock,
             };
             const std::vector<std::vector<Tile>> room =
-                GenRoom(room_type, stage_type, room_tile_palette);
+                GenRoom(room_type, stage_type, room_tile_palette, det_rng);
 
-            const bool flip = RandomBool();
+            const bool flip = RandomBool(det_rng);
             for (unsigned int tile_y = 0; tile_y < kRoomShape.y; ++tile_y) {
                 for (unsigned int tile_x = 0; tile_x < kRoomShape.x; ++tile_x) {
                     const UVec2 tile_pos = room_pos + UVec2::New(tile_x, tile_y);
@@ -282,7 +282,7 @@ Stage Stage::New(StageType stage_type) {
     stage.tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tile_shake = MakeEmptyTileShakeGrid(stage.tiles);
     stage.backwall_tiles = MakeEmptyBackwallTiles(stage.tiles);
-    stage.FillBackwall(backwall_fill_tiles);
+    stage.FillBackwall(backwall_fill_tiles, det_rng);
     stage.embedded_treasures = MakeEmptyEmbeddedTreasures(stage.tiles);
     stage.rooms = std::move(rooms);
     stage.path = std::move(path);

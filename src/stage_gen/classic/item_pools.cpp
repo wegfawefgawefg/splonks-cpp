@@ -34,7 +34,7 @@ bool HasSpawnType(const Stage& stage, const std::vector<EntSpawn>& spawns,
     return HasSpawnType(stage, type_) || HasSpawnType(spawns, type_);
 }
 
-EntType PickWeightedEntInternal(const std::vector<WeightedEntEntry>& entries) {
+EntType PickWeightedEntInternal(const std::vector<WeightedEntEntry>& entries, DetRng& det_rng) {
     int total_weight = 0;
     for (const WeightedEntEntry& entry : entries) {
         total_weight += std::max(0, entry.weight);
@@ -42,7 +42,7 @@ EntType PickWeightedEntInternal(const std::vector<WeightedEntEntry>& entries) {
     if (total_weight <= 0) {
         return EntType::None;
     }
-    int roll = rng::RandomIntInclusive(1, total_weight);
+    int roll = det_rng.RandomIntInclusive(1, total_weight);
     for (const WeightedEntEntry& entry : entries) {
         roll -= std::max(0, entry.weight);
         if (roll <= 0) {
@@ -54,7 +54,8 @@ EntType PickWeightedEntInternal(const std::vector<WeightedEntEntry>& entries) {
 
 EntType PickEntFromPool(const EntPoolConfig* pool, std::string_view pool_id,
                               const Stage& stage,
-                              const std::vector<EntSpawn>& room_spawns) {
+                              const std::vector<EntSpawn>& room_spawns,
+                              DetRng& det_rng) {
     if (pool == nullptr) {
         throw std::runtime_error("Classic item pool is not configured: " +
                                  std::string(pool_id));
@@ -73,7 +74,7 @@ EntType PickEntFromPool(const EntPoolConfig* pool, std::string_view pool_id,
         candidates.push_back(entry);
     }
 
-    const EntType picked = PickWeightedEntInternal(candidates);
+    const EntType picked = PickWeightedEntInternal(candidates, det_rng);
     if (picked != EntType::None) {
         return picked;
     }
@@ -83,34 +84,36 @@ EntType PickEntFromPool(const EntPoolConfig* pool, std::string_view pool_id,
 
 EntType PickEntFromPool(const ItemPoolDb& item_db, std::string_view pool_id,
                               const Stage& stage,
-                              const std::vector<EntSpawn>& room_spawns) {
-    return PickEntFromPool(item_db.FindPool(pool_id), pool_id, stage, room_spawns);
+                              const std::vector<EntSpawn>& room_spawns,
+                              DetRng& det_rng) {
+    return PickEntFromPool(item_db.FindPool(pool_id), pool_id, stage, room_spawns, det_rng);
 }
 
 } // namespace
 
-EntType PickWeightedEnt(const std::vector<WeightedEntEntry>& entries) {
-    return PickWeightedEntInternal(entries);
+EntType PickWeightedEnt(const std::vector<WeightedEntEntry>& entries, DetRng& det_rng) {
+    return PickWeightedEntInternal(entries, det_rng);
 }
 
-EntType PickUndergroundItemType(const ItemPoolDb& item_db, const Stage& stage) {
+EntType PickUndergroundItemType(const ItemPoolDb& item_db, const Stage& stage, DetRng& det_rng) {
     static const std::vector<EntSpawn> kNoRoomSpawns;
-    return PickEntFromPool(item_db, "underground_items", stage, kNoRoomSpawns);
+    return PickEntFromPool(item_db, "underground_items", stage, kNoRoomSpawns, det_rng);
 }
 
 EntType PickHighEndShopItemType(const ItemPoolDb& item_db, const Stage& stage,
-                                   const std::vector<EntSpawn>& room_spawns) {
-    return PickEntFromPool(item_db, "high_end_shop_items", stage, room_spawns);
+                                const std::vector<EntSpawn>& room_spawns, DetRng& det_rng) {
+    return PickEntFromPool(item_db, "high_end_shop_items", stage, room_spawns, det_rng);
 }
 
 EntType PickShopItemType(ShopType shop_type, const Stage& stage,
                             const std::vector<EntSpawn>& room_spawns,
-                            const ItemPoolDb& item_db, const ShopConfigDb& shop_db) {
+                            const ItemPoolDb& item_db, const ShopConfigDb& shop_db,
+                            DetRng& det_rng) {
     const ShopTypeConfig* shop_config = shop_db.FindShopType(ShopTypeId(shop_type));
     if (shop_config == nullptr) {
         return EntType::None;
     }
-    return PickEntFromPool(item_db, shop_config->item_pool, stage, room_spawns);
+    return PickEntFromPool(item_db, shop_config->item_pool, stage, room_spawns, det_rng);
 }
 
 } // namespace splonks::stage_gen::classic

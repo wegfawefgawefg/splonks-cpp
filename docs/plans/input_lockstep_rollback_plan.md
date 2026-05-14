@@ -842,10 +842,13 @@ Required work:
 - [x] Define a det gameplay hash that excludes local-only render/audio
   data but includes every gameplay-affecting ent, tile, fluid, player, RNG,
   stage, and progression field.
-- [ ] Make all det RNG use explicit det streams stored in `State`.
-  Started with `State::drng` and snake AI. Remaining call sites must be
-  classified and either converted to state-owned det RNG or explicitly kept
-  pres/stagegen-only.
+- [x] Make all det RNG use explicit det streams stored in `State`.
+  Evidence: gameplay RNG uses `State::drng`; quest/legacy stage generation and
+  stage population use `State::stagegen_drng`. `stagegen_drng` is part of
+  playback snapshots, recording IO, live control-server state, and deterministic
+  fingerprints. Remaining process-global `rng::` call sites are classified as
+  presentation/debug-only: particles, audio/pres variation, render shake/random
+  sprite frame choice, and debug input/stage helper noise.
 - [x] Audit places that read wall-clock time, frame time, random device, pointer
   address, unordered iteration, or local debug flags during gameplay.
 - [x] Ensure ent iteration order is stable.
@@ -1302,10 +1305,14 @@ pres-only files on local RNG unless the result affects gameplay state.
   render shake/random-frame pres only.
 - [x] Debug-stage RNG remains debug-only and is outside lockstep sessions unless
   the resulting stage is snapshotted or generated from explicit seed streams.
-- [ ] Stagegen/helper RNG in `src/stage.cpp`, `src/room.cpp`, `src/tile.cpp`,
-  and `src/stage_gen/**` remains on the explicit stage-seed path for now; move
-  it to named stagegen DRNG streams when stagegen determinism becomes the active
-  task.
+- [x] Stagegen/helper RNG in `src/stage.cpp`, `src/room.cpp`, `src/tile.cpp`,
+  and `src/stage_gen/**` uses explicit stagegen DRNG streams.
+  Evidence: `rg -n "rng::" src/stage.cpp src/room.cpp src/tile.cpp
+  src/stage_factory.cpp src/stage_init.cpp src/stage_queries.cpp src/stage_gen
+  src/quest_stage_loader.cpp` returns no matches. Classic quest generation,
+  old `Stage::New` generation, legacy room-template resolution, stage random
+  position helpers, backwall fill, and legacy stage population all thread
+  `DetRng&` from `State::stagegen_drng`.
 
 ### Phase 4: Strip Host Mutation Replication From Gameplay
 

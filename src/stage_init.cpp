@@ -12,12 +12,12 @@
 namespace splonks {
 
 namespace {
-unsigned int RandomPercent() {
-    return static_cast<unsigned int>(rng::RandomIntInclusive(0, 99));
+unsigned int RandomPercent(DetRng& det_rng) {
+    return static_cast<unsigned int>(det_rng.RandomIntInclusive(0, 99));
 }
 
-int RandomMoneyType() {
-    return rng::RandomIntInclusive(0, 1);
+int RandomMoneyType(DetRng& det_rng) {
+    return det_rng.RandomIntInclusive(0, 1);
 }
 
 void PlacePlayerAtEntrance(State& state) {
@@ -79,7 +79,7 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 2; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInStage()) {
+                    state.stage.GetRandomNoncollidablePositionInStage(state.stagegen_drng)) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const ent = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*ent, EntType::JetPack);
@@ -92,11 +92,11 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 32; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInStage()) {
+                    state.stage.GetRandomNoncollidablePositionInStage(state.stagegen_drng)) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const money = state.ents.GetEntMut(*vid)) {
                         const EntType money_type =
-                            RandomMoneyType() == 0 ? EntType::Gold : EntType::GoldStack;
+                            RandomMoneyType(state.stagegen_drng) == 0 ? EntType::Gold : EntType::GoldStack;
                         SetEntAs(*money, money_type);
                         money->pos = ToVec2(*random_available_position);
                     }
@@ -107,7 +107,7 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 8; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInStage()) {
+                    state.stage.GetRandomNoncollidablePositionInStage(state.stagegen_drng)) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const bat = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*bat, EntType::Bat);
@@ -120,10 +120,10 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 32; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInStage()) {
+                    state.stage.GetRandomNoncollidablePositionInStage(state.stagegen_drng)) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const ent = state.ents.GetEntMut(*vid)) {
-                        const unsigned int random_number = RandomPercent();
+                        const unsigned int random_number = RandomPercent(state.stagegen_drng);
                         if (random_number >= 61 && random_number <= 90) {
                             SetEntAs(*ent, EntType::Pot);
                         } else if (random_number >= 91) {
@@ -140,7 +140,7 @@ void InitStage(State& state, bool preserve_player_state) {
         for (int i = 0; i < 32; ++i) {
             (void)i;
             if (const std::optional<IVec2> random_available_position =
-                    state.stage.GetRandomNoncollidablePositionInStage()) {
+                    state.stage.GetRandomNoncollidablePositionInStage(state.stagegen_drng)) {
                 if (const std::optional<VID> vid = state.ents.NewEnt()) {
                     if (Ent* const block = state.ents.GetEntMut(*vid)) {
                         SetEntAs(*block, EntType::Block);

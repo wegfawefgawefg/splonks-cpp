@@ -122,7 +122,9 @@ bool CheckClassicQuestStagegen() {
         for (const QuestStageDefinition& stage_def : quest.stages) {
             const StageConfig stage_config = LoadStageConfig(GetClassicQuestRootPath(), stage_def.stage_file);
             CheckClassicGlyphCoverage(stage_config);
-            const Stage stage = stage_gen::classic::GenerateStage(quest, stage_def, stage_config);
+            DetRng stagegen_rng = DetRng::New(1U);
+            const Stage stage =
+                stage_gen::classic::GenerateStage(quest, stage_def, stage_config, nullptr, stagegen_rng);
             const auto count_spawns = [&](EntType type_) {
                 return static_cast<std::size_t>(
                     std::count_if(
@@ -236,7 +238,6 @@ bool SampleClassicMinesAltars(int runs) {
         }
 
         for (int run = 0; run < runs; ++run) {
-            rng::SetSeed(static_cast<std::uint32_t>(run + 1));
             for (StageSample& sample : samples) {
                 const QuestStageDefinition* const stage_def = quest.FindStage(sample.id);
                 if (stage_def == nullptr) {
@@ -244,7 +245,9 @@ bool SampleClassicMinesAltars(int runs) {
                 }
                 const StageConfig stage_config =
                     LoadStageConfig(GetClassicQuestRootPath(), stage_def->stage_file);
-                const Stage stage = stage_gen::classic::GenerateStage(quest, *stage_def, stage_config);
+                DetRng stagegen_rng = DetRng::New(static_cast<std::uint32_t>(run + 1));
+                const Stage stage = stage_gen::classic::GenerateStage(
+                    quest, *stage_def, stage_config, nullptr, stagegen_rng);
                 const auto sac_altar_halves = static_cast<int>(
                     std::count_if(
                         stage.ent_spawns.begin(),

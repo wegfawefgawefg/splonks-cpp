@@ -3,6 +3,7 @@
 #include "ent/core_types.hpp"
 #include "math_types.hpp"
 #include "stage.hpp"
+#include "utils.hpp"
 
 #include <optional>
 #include <string>
@@ -140,6 +141,7 @@ struct StageGeneratorContext {
     const QuestStageDefinition* stage_def = nullptr;
     const StageConfig* stage_config = nullptr;
     QuestState* quest_state = nullptr;
+    DetRng* rng = nullptr;
     std::vector<StageGenAnnotation>* annotations = nullptr;
 };
 

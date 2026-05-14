@@ -212,7 +212,7 @@ struct Stage {
     static const UVec2 kRoomLayout;
 
     static Stage NewBlank();
-    static Stage New(StageType stage_type);
+    static Stage New(StageType stage_type, DetRng& det_rng);
     static StageBorder MakeUniformBorder(Tile tile);
     UVec2 GetStageDims() const;
     UVec2 GetRoomLayoutDims() const;
@@ -231,6 +231,7 @@ struct Stage {
     std::vector<const Tile*> GetTilesInRectWc(const IVec2& tl, const IVec2& br) const;
     std::vector<const Tile*> GetTilesInRect(const IVec2& tl, const IVec2& br) const;
     void FillBackwall(const std::vector<Tile>& fill_tiles);
+    void FillBackwall(const std::vector<Tile>& fill_tiles, DetRng& det_rng);
     void SyncTileShakeGrid();
     void SyncTileInstanceMetadataGrid();
     void SyncFluidTileGrid();
@@ -265,10 +266,11 @@ struct Stage {
     void SetTilesInRectWc(const AABB& area, Tile tile_type);
     void SetTilesInRect(const AABB& area, Tile tile_type);
     std::vector<IAABB> GetAabbsForAllCollidableTilesInRect(const IVec2& tl, const IVec2& br) const;
-    UVec2 GetRandomRegularRoomGridCoord() const;
-    std::optional<IVec2> GetRandomNoncollidablePositionInStage() const;
-    std::optional<IVec2> GetRandomNoncollidablePositionInRandomRegularRoomGridCell() const;
-    std::optional<IVec2> GetRandomNoncollidablePositionInRegularRoomGridCell(const UVec2& room) const;
+    UVec2 GetRandomRegularRoomGridCoord(DetRng& det_rng) const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInStage(DetRng& det_rng) const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInRandomRegularRoomGridCell(DetRng& det_rng) const;
+    std::optional<IVec2> GetRandomNoncollidablePositionInRegularRoomGridCell(const UVec2& room,
+                                                                              DetRng& det_rng) const;
     unsigned int GetWidth() const;
     unsigned int GetHeight() const;
     unsigned int GetTileWidth() const;

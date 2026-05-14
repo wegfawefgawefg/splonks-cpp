@@ -4,7 +4,6 @@
 #include "stage_gen/classic/stagegen.hpp"
 #include "stage_init.hpp"
 #include "state.hpp"
-#include "utils.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -40,10 +39,8 @@ bool LoadClassicQuestStage(
     bool preserve_player_state,
     std::optional<std::uint32_t> seed
 ) {
-    if (seed.has_value()) {
-        rng::SetSeed(*seed);
-    }
     state.drng = DetRng::New(seed.value_or(1U));
+    state.stagegen_drng = DetRng::New(seed.value_or(1U));
 
     const QuestDefinition quest =
         LoadQuestDefinition(std::string(GetClassicQuestRootPath()) + "/quest.yaml");
@@ -73,7 +70,8 @@ bool LoadClassicQuestStage(
         quest,
         *stage_def,
         stage_config,
-        &state.quest_state
+        &state.quest_state,
+        state.stagegen_drng
     );
     state.stage.generation_seed = seed;
     ApplyClassicQuestStageEntryFlags(state.quest_state, stage_def->id);

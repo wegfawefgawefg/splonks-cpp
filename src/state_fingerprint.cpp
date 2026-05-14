@@ -474,6 +474,7 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprintWithOptions(
     writer.AddPod(state.stage_frame);
     if (include_drng) {
         writer.AddPod(state.drng.state);
+        writer.AddPod(state.stagegen_drng.state);
     }
     writer.AddPod(state.depth);
     writer.AddPod(state.points);
@@ -566,6 +567,7 @@ NetworkStateFingerprintComponents ComputeNetworkStateFingerprintComponents(const
     root.AddPod(state.frame);
     root.AddPod(state.stage_frame);
     root.AddPod(state.drng.state);
+    root.AddPod(state.stagegen_drng.state);
     root.AddPod(state.depth);
     root.AddPod(state.points);
     root.AddPod(state.deaths);

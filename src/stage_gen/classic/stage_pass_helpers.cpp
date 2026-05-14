@@ -9,8 +9,8 @@
 
 namespace splonks::stage_gen::classic {
 
-int PickStagePassIndex(std::size_t size) {
-    return rng::RandomIntInclusive(0, static_cast<int>(size) - 1);
+int PickStagePassIndex(std::size_t size, DetRng& det_rng) {
+    return det_rng.RandomIntInclusive(0, static_cast<int>(size) - 1);
 }
 
 std::string GetPassString(const StagePassConfig& pass, std::string_view key,

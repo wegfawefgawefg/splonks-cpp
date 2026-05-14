@@ -19,11 +19,15 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
     if (context.stage_config == nullptr) {
         throw std::runtime_error("Classic room graph generator missing stage config");
     }
+    if (context.rng == nullptr) {
+        throw std::runtime_error("Classic room graph generator missing deterministic RNG");
+    }
+    DetRng& det_rng = *context.rng;
     const StageConfig& stage_config = *context.stage_config;
     const QuestDefinition* quest = context.quest;
     const QuestStageDefinition* stage_def = context.stage_def;
     ValidateClassicRoomLayoutPasses(stage_config.layout_passes);
-    const StageLayout layout = GenerateClassicRoomLayout(level_number, stage_config);
+    const StageLayout layout = GenerateClassicRoomLayout(level_number, stage_config, det_rng);
     const ClassicRoomTemplateDb room_templates = LoadClassicRoomTemplateDb(stage_config);
     const GlyphMap glyph_map = LoadGlyphMap(GetClassicQuestRootPath(), stage_config.glyphs_path);
     const ItemPoolDb item_db = LoadItemPoolDb(GetClassicQuestRootPath(), "pools/items.yaml");
@@ -85,7 +89,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
 
             ResolvedRoom room = ResolveRoom(room_code, level_number, is_start_room, is_end_room, room_code_above,
                                             layout.jungle_lake, room_size, stage, room_templates,
-                                            glyph_map, item_db, shop_db);
+                                            glyph_map, item_db, shop_db, det_rng);
 
             const UVec2 room_pos = UVec2::New(room_x * room_size.x, room_y * room_size.y);
             const Vec2 room_pos_wc = Vec2::New(static_cast<float>(room_pos.x * kTileSize),
@@ -147,7 +151,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
     }
 
     stage.tiles = std::move(tiles);
-    stage.FillBackwall(backwall_fill_tiles);
+    stage.FillBackwall(backwall_fill_tiles, det_rng);
     stage.embedded_treasures = std::vector<std::vector<EmbeddedTreasure>>(
         stage.tiles.size(),
         std::vector<EmbeddedTreasure>(stage.tiles.empty() ? 0U : stage.tiles.front().size()));
@@ -160,7 +164,7 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
                                      std::to_string(layout.end_room.y) + ") path " +
                                      std::to_string(layout.path.size()) + " rooms");
     for (const StagePassConfig& pass : stage_config.stage_passes) {
-        RunStagePass(stage, level_number, pass, item_db, context.quest_state);
+        RunStagePass(stage, level_number, pass, item_db, det_rng, context.quest_state);
     }
     return stage;
 }
@@ -168,7 +172,8 @@ Stage GenerateClassicStage(int level_number, const StageGeneratorContext& contex
 } // namespace
 
 Stage GenerateStage(const QuestDefinition& quest, const QuestStageDefinition& stage_def,
-                    const StageConfig& stage_config, QuestState* quest_state) {
+                    const StageConfig& stage_config, QuestState* quest_state,
+                    DetRng& det_rng) {
     if (stage_config.generator != "classic_room_graph") {
         throw std::runtime_error("Unsupported stage generator: " + stage_config.generator);
     }
@@ -177,12 +182,8 @@ Stage GenerateStage(const QuestDefinition& quest, const QuestStageDefinition& st
     context.stage_def = &stage_def;
     context.stage_config = &stage_config;
     context.quest_state = quest_state;
+    context.rng = &det_rng;
     return GenerateClassicStage(stage_def.level_number, context);
-}
-
-Stage GenerateStage(const QuestDefinition& quest, const QuestStageDefinition& stage_def,
-                    const StageConfig& stage_config) {
-    return GenerateStage(quest, stage_def, stage_config, nullptr);
 }
 
 const char* GetRoomCodeDebugLabel(int room_code) {

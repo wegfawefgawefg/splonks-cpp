@@ -152,7 +152,7 @@ void ApplyPendingStageTransition(State& state) {
 
     switch (target.destination.kind) {
     case StageLoadTargetKind::StageType:
-        state.stage = Stage::New(target.destination.stage_type);
+        state.stage = Stage::New(target.destination.stage_type, state.stagegen_drng);
         InitStage(state, target.preserve_player_state);
         break;
     case StageLoadTargetKind::DebugLevel:

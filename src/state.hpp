@@ -323,6 +323,7 @@ struct State {
     std::uint32_t frame = 0;
     std::uint32_t stage_frame = 0;
     DetRng drng;
+    DetRng stagegen_drng;
 
     // Session and progression state.
     Mode menu_return_to = Mode::Title;
