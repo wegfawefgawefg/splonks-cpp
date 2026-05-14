@@ -63,6 +63,61 @@ const char* JoinBarrierPhaseText(network::JoinBarrierPhase phase) {
     return "Unknown";
 }
 
+bool IsLocalJoinBarrierPeer(const State& state) {
+    const PlayerId active_peer_id = state.net_session.join_barrier_active_peer_id;
+    if (active_peer_id == kInvalidPlayerId) {
+        return false;
+    }
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (slot.connected &&
+            slot.connection_kind == PlayerConnectionKind::Local &&
+            slot.player_id == active_peer_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsQueuedJoinBarrierPeer(const State& state) {
+    for (const PlayerSlot& slot : state.players.slots) {
+        if (!slot.connected || slot.connection_kind != PlayerConnectionKind::Local) {
+            continue;
+        }
+        if (std::find(
+                state.net_session.join_barrier_queue.begin(),
+                state.net_session.join_barrier_queue.end(),
+                slot.player_id
+            ) != state.net_session.join_barrier_queue.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string JoinBarrierTitle(const State& state) {
+    const network::NetSessionState& session = state.net_session;
+    const PlayerId active_peer_id = session.join_barrier_active_peer_id;
+    const bool has_active_peer = active_peer_id != kInvalidPlayerId;
+
+    if (session.role == network::NetRole::Host) {
+        return has_active_peer
+            ? "Catching client " + std::to_string(active_peer_id) + " up..."
+            : "Preparing client catchup...";
+    }
+
+    if (IsLocalJoinBarrierPeer(state)) {
+        return "Catching up to host...";
+    }
+
+    if (IsQueuedJoinBarrierPeer(state)) {
+        return "Waiting for sync turn...";
+    }
+
+    return has_active_peer
+        ? "Waiting for client " + std::to_string(active_peer_id) + " to catch up..."
+        : "Waiting for client catchup...";
+}
+
 void RenderJoinBarrierOverlay(SDL_Renderer* renderer, State& state, Graphics& graphics) {
     const network::NetSessionState& session = state.net_session;
     if (!session.join_barrier_active ||
@@ -82,9 +137,7 @@ void RenderJoinBarrierOverlay(SDL_Renderer* renderer, State& state, Graphics& gr
 
     const float center_x = static_cast<float>(graphics.window_dims.x) * 0.5F;
     const float center_y = static_cast<float>(graphics.window_dims.y) * 0.5F;
-    const std::string title = session.role == network::NetRole::Host
-        ? "Catching client " + std::to_string(session.join_barrier_active_peer_id) + " up..."
-        : "Catching up to host...";
+    const std::string title = JoinBarrierTitle(state);
 
     DrawCenteredText(
         renderer,
