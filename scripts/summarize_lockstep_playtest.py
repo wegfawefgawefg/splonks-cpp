@@ -17,6 +17,15 @@ DEFAULT_MIN_DURATION_S = 240.0
 DEFAULT_MAX_SIM_MS = 8.0
 DEFAULT_MAX_HASH_MS = 4.0
 DEFAULT_MAX_ROLLBACK_REPLAY_MS = 4.0
+REQUIRED_VERDICT_FIELDS = (
+    "movement_ok",
+    "hang_jump_climb_ok",
+    "carry_throw_ok",
+    "tools_weapons_ok",
+    "explosives_tiles_ok",
+    "stage_transition_ok",
+    "feel_ok",
+)
 
 
 def load_summary(path: Path) -> dict[str, Any] | None:
@@ -33,6 +42,10 @@ def load_summary(path: Path) -> dict[str, Any] | None:
             "problems": [f"could not read summary: {exc}"],
             "endpoints": {},
         }
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def latest_by_profile(summaries: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -151,6 +164,57 @@ def evaluate_profile(
     return result
 
 
+def evaluate_verdict(
+    verdict: dict[str, Any] | None,
+    required_profiles: tuple[str, ...],
+) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "ok": False,
+        "problems": [],
+        "profiles": {},
+    }
+    if verdict is None:
+        result["problems"].append("missing manual verdict")
+        return result
+    result["raw_ok"] = verdict.get("ok", False)
+    if verdict.get("ok", False) is not True:
+        result["problems"].append("manual verdict ok=false")
+    if verdict.get("default_delay_prediction_ok", False) is not True:
+        result["problems"].append("default_delay_prediction_ok=false")
+
+    profiles = verdict.get("profiles", {})
+    if not isinstance(profiles, dict):
+        result["problems"].append("manual verdict profiles is not an object")
+        return result
+
+    profile_results: dict[str, Any] = {}
+    for profile in required_profiles:
+        profile_verdict = profiles.get(profile)
+        profile_result: dict[str, Any] = {
+            "ok": False,
+            "problems": [],
+        }
+        if not isinstance(profile_verdict, dict):
+            profile_result["problems"].append("missing profile verdict")
+        else:
+            for field in REQUIRED_VERDICT_FIELDS:
+                if profile_verdict.get(field, False) is not True:
+                    profile_result["problems"].append(f"{field}=false")
+            if (
+                profile == "tx-japan" and
+                profile_verdict.get("high_latency_feel_ok", False) is not True
+            ):
+                profile_result["problems"].append("high_latency_feel_ok=false")
+            profile_result["notes"] = profile_verdict.get("notes", "")
+        profile_result["ok"] = not profile_result["problems"]
+        profile_results[profile] = profile_result
+        result["problems"].extend(f"{profile}: {problem}" for problem in profile_result["problems"])
+
+    result["profiles"] = profile_results
+    result["ok"] = not result["problems"]
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Audit lockstep playtest recorder summaries."
@@ -172,6 +236,11 @@ def main() -> int:
     )
     parser.add_argument("--allow-snapshot-resync", action="store_true")
     parser.add_argument("--allow-join-barrier", action="store_true")
+    parser.add_argument(
+        "--verdict-json",
+        default=None,
+        help="optional filled human verdict JSON; required for final completion audit",
+    )
     parser.add_argument("--report-json", default=DEFAULT_REPORT)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
@@ -198,12 +267,29 @@ def main() -> int:
         )
         for profile in required_profiles
     ]
+    verdict_result = None
+    if args.verdict_json:
+        try:
+            verdict_result = evaluate_verdict(
+                load_json(Path(args.verdict_json)),
+                required_profiles,
+            )
+        except Exception as exc:
+            verdict_result = {
+                "ok": False,
+                "problems": [f"could not read manual verdict: {exc}"],
+                "profiles": {},
+            }
     report = {
-        "ok": all(result["ok"] for result in profile_results),
+        "ok": (
+            all(result["ok"] for result in profile_results) and
+            (verdict_result is None or verdict_result["ok"])
+        ),
         "glob": args.glob,
         "required_profiles": list(required_profiles),
         "summary_count": len(summaries),
         "profile_results": profile_results,
+        "verdict": verdict_result,
     }
     report_path = Path(args.report_json)
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -219,6 +305,10 @@ def main() -> int:
                 f"path={result.get('path', '<missing>')}"
             )
             for problem in result["problems"]:
+                print(f"    problem: {problem}")
+        if verdict_result is not None:
+            print(f"  manual verdict: {'ok' if verdict_result['ok'] else 'FAIL'}")
+            for problem in verdict_result["problems"]:
                 print(f"    problem: {problem}")
     return 0 if report["ok"] else 1
 

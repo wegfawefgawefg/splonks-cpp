@@ -21,6 +21,11 @@ checklist proves control feel and visible gameplay behavior.
    `scripts/summarize_lockstep_playtest.py`
    to verify that `same-house`, `tx-ca`, and `tx-japan` all have clean
    telemetry summaries.
+7. Copy `docs/plans/lockstep_human_playtest_verdict_template.json` to
+   `logs/lockstep_playtest_verdict.json`, fill in the human verdict booleans,
+   then run:
+   `scripts/summarize_lockstep_playtest.py --verdict-json logs/lockstep_playtest_verdict.json`
+   to verify both telemetry and subjective feel evidence.
 
 Record for each profile:
 
@@ -40,6 +45,8 @@ If `snapshot_resync_active_samples` grows during an already-started playtest,
 record it as a failure unless it is explained by an intentional late join.
 The summary audit is still not a feel test; it only verifies telemetry evidence
 for the manual profiles.
+The verdict JSON is the explicit human feel gate. Do not set `ok: true` unless
+all required profile checks are actually acceptable.
 
 ## Profiles
 

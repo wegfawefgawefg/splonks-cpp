@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "profiles": {
+    "same-house": {
+      "movement_ok": false,
+      "hang_jump_climb_ok": false,
+      "carry_throw_ok": false,
+      "tools_weapons_ok": false,
+      "explosives_tiles_ok": false,
+      "stage_transition_ok": false,
+      "feel_ok": false,
+      "notes": ""
+    },
+    "tx-ca": {
+      "movement_ok": false,
+      "hang_jump_climb_ok": false,
+      "carry_throw_ok": false,
+      "tools_weapons_ok": false,
+      "explosives_tiles_ok": false,
+      "stage_transition_ok": false,
+      "feel_ok": false,
+      "notes": ""
+    },
+    "tx-japan": {
+      "movement_ok": false,
+      "hang_jump_climb_ok": false,
+      "carry_throw_ok": false,
+      "tools_weapons_ok": false,
+      "explosives_tiles_ok": false,
+      "stage_transition_ok": false,
+      "feel_ok": false,
+      "high_latency_feel_ok": false,
+      "notes": ""
+    }
+  },
+  "default_delay_prediction_ok": false,
+  "overall_notes": ""
+}
