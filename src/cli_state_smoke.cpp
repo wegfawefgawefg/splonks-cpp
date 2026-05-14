@@ -1484,6 +1484,215 @@ bool RunRollbackRepairSmoke() {
     return true;
 }
 
+bool RunJoinBarrierProtocolSmoke() {
+    State host = State::New();
+    host.net_session.role = network::NetRole::Host;
+    host.net_session.local_player_id = 1;
+    host.net_session.stage_instance_id = 44;
+    host.net_session.lockstep_next_frame_to_step = 120;
+
+    network::BeginJoinBarrierCatchup(host, 4);
+    if (!host.net_session.join_barrier_active ||
+        host.net_session.join_barrier_id != 1 ||
+        host.net_session.join_barrier_phase != network::JoinBarrierPhase::WaitingForCatchup ||
+        host.net_session.join_barrier_queue.size() != 1 ||
+        host.net_session.join_barrier_queue[0] != 4) {
+        std::cerr << "join barrier protocol smoke failed: first late join was not queued\n";
+        return false;
+    }
+
+    host.net_session.join_barrier_active_peer_id = 4;
+    host.net_session.join_barrier_phase = network::JoinBarrierPhase::SendingSnapshot;
+    host.net_session.join_barrier_queue.clear();
+    host.net_session.join_barrier_transfer_id = 77;
+    host.net_session.join_barrier_snapshot_frame = 120;
+    host.net_session.join_barrier_chunk_count = 10;
+    host.net_session.join_barrier_chunks_done = 4;
+    host.net_session.join_barrier_total_bytes = 4096;
+    host.net_session.join_barrier_bytes_done = 1600;
+
+    network::BeginJoinBarrierCatchup(host, 5);
+    if (host.net_session.join_barrier_queue.size() != 1 ||
+        host.net_session.join_barrier_queue[0] != 5 ||
+        host.net_session.join_barrier_active_peer_id != 4) {
+        std::cerr << "join barrier protocol smoke failed: second late join did not wait behind active catchup\n";
+        return false;
+    }
+
+    network::JoinBarrierStatusPacket status;
+    status.stage_instance_id = host.net_session.stage_instance_id;
+    status.sender_peer_id = static_cast<std::uint32_t>(host.net_session.local_player_id);
+    status.barrier_id = host.net_session.join_barrier_id;
+    status.active = 1;
+    status.phase = static_cast<std::uint8_t>(host.net_session.join_barrier_phase);
+    status.active_player_id = host.net_session.join_barrier_active_peer_id;
+    status.queued_peer_count = 1;
+    status.queued_peer_ids[0] = host.net_session.join_barrier_queue[0];
+    status.transfer_id = host.net_session.join_barrier_transfer_id;
+    status.snapshot_frame = host.net_session.join_barrier_snapshot_frame;
+    status.chunk_count = host.net_session.join_barrier_chunk_count;
+    status.chunks_done = host.net_session.join_barrier_chunks_done;
+    status.total_bytes = host.net_session.join_barrier_total_bytes;
+    status.bytes_done = host.net_session.join_barrier_bytes_done;
+
+    const network::EncodedNetPacket encoded_status = network::EncodeJoinBarrierStatus(status);
+    const std::optional<network::JoinBarrierStatusPacket> decoded_status =
+        network::TryDecodeJoinBarrierStatus(encoded_status.bytes.data(), encoded_status.size);
+    if (!decoded_status.has_value() ||
+        decoded_status->stage_instance_id != status.stage_instance_id ||
+        decoded_status->barrier_id != status.barrier_id ||
+        decoded_status->active != status.active ||
+        decoded_status->phase != status.phase ||
+        decoded_status->active_player_id != status.active_player_id ||
+        decoded_status->queued_peer_count != status.queued_peer_count ||
+        decoded_status->queued_peer_ids[0] != status.queued_peer_ids[0] ||
+        decoded_status->transfer_id != status.transfer_id ||
+        decoded_status->snapshot_frame != status.snapshot_frame ||
+        decoded_status->chunk_count != status.chunk_count ||
+        decoded_status->chunks_done != status.chunks_done ||
+        decoded_status->total_bytes != status.total_bytes ||
+        decoded_status->bytes_done != status.bytes_done) {
+        std::cerr << "join barrier protocol smoke failed: status packet roundtrip mismatch\n";
+        return false;
+    }
+
+    State existing_peer = State::New();
+    existing_peer.net_session.role = network::NetRole::Peer;
+    existing_peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    existing_peer.net_session.join_barrier_id = status.barrier_id;
+    network::JoinBarrierStatusPacket stale_status = *decoded_status;
+    stale_status.barrier_id = status.barrier_id - 1;
+    network::HandleJoinBarrierStatus(existing_peer, stale_status);
+    if (existing_peer.net_session.join_barrier_active ||
+        existing_peer.net_session.join_barrier_id != status.barrier_id) {
+        std::cerr << "join barrier protocol smoke failed: stale status changed peer barrier state\n";
+        return false;
+    }
+
+    network::HandleJoinBarrierStatus(existing_peer, *decoded_status);
+    if (!existing_peer.net_session.join_barrier_active ||
+        existing_peer.net_session.join_barrier_id != status.barrier_id ||
+        existing_peer.net_session.join_barrier_phase != network::JoinBarrierPhase::SendingSnapshot ||
+        existing_peer.net_session.join_barrier_active_peer_id != 4 ||
+        existing_peer.net_session.join_barrier_queue.size() != 1 ||
+        existing_peer.net_session.join_barrier_queue[0] != 5 ||
+        existing_peer.net_session.join_barrier_transfer_id != 77 ||
+        existing_peer.net_session.join_barrier_snapshot_frame != 120 ||
+        existing_peer.net_session.join_barrier_chunk_count != 10 ||
+        existing_peer.net_session.join_barrier_chunks_done != 4 ||
+        existing_peer.net_session.join_barrier_total_bytes != 4096 ||
+        existing_peer.net_session.join_barrier_bytes_done != 1600) {
+        std::cerr << "join barrier protocol smoke failed: peer did not apply active status\n";
+        return false;
+    }
+
+    State queued_peer = State::New();
+    queued_peer.net_session.role = network::NetRole::Peer;
+    queued_peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    network::HandleJoinBarrierStatus(queued_peer, *decoded_status);
+    if (!queued_peer.net_session.join_barrier_active ||
+        queued_peer.net_session.join_barrier_active_peer_id != 4 ||
+        queued_peer.net_session.join_barrier_queue.size() != 1 ||
+        queued_peer.net_session.join_barrier_queue[0] != 5) {
+        std::cerr << "join barrier protocol smoke failed: queued peer did not observe active catchup\n";
+        return false;
+    }
+
+    State second_existing_peer = State::New();
+    second_existing_peer.net_session.role = network::NetRole::Peer;
+    second_existing_peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    network::HandleJoinBarrierStatus(second_existing_peer, *decoded_status);
+    if (!second_existing_peer.net_session.join_barrier_active ||
+        second_existing_peer.net_session.join_barrier_active_peer_id != 4 ||
+        second_existing_peer.net_session.join_barrier_queue.size() != 1 ||
+        second_existing_peer.net_session.join_barrier_queue[0] != 5) {
+        std::cerr << "join barrier protocol smoke failed: second existing peer did not observe active catchup\n";
+        return false;
+    }
+
+    network::SnapshotResyncAckPacket wrong_ack;
+    wrong_ack.stage_instance_id = host.net_session.stage_instance_id;
+    wrong_ack.sender_peer_id = 4;
+    wrong_ack.transfer_id = 999;
+    wrong_ack.snapshot_frame = host.net_session.join_barrier_snapshot_frame;
+    wrong_ack.success = 1;
+    network::HandleSnapshotResyncAck(host, wrong_ack);
+    if (host.net_session.join_barrier_transfer_id != 77 ||
+        host.net_session.join_barrier_phase != network::JoinBarrierPhase::SendingSnapshot) {
+        std::cerr << "join barrier protocol smoke failed: wrong transfer ack changed host barrier state\n";
+        return false;
+    }
+
+    network::SnapshotResyncAckPacket ack = wrong_ack;
+    ack.transfer_id = host.net_session.join_barrier_transfer_id;
+    network::HandleSnapshotResyncAck(host, ack);
+    if (host.net_session.join_barrier_transfer_id != 0 ||
+        host.net_session.join_barrier_active_peer_id != kInvalidPlayerId ||
+        host.net_session.join_barrier_phase != network::JoinBarrierPhase::WaitingForCatchup ||
+        host.net_session.join_barrier_queue.size() != 1 ||
+        host.net_session.join_barrier_queue[0] != 5) {
+        std::cerr << "join barrier protocol smoke failed: successful ack did not advance queued catchup\n";
+        return false;
+    }
+
+    host.net_session.join_barrier_active_peer_id = 5;
+    host.net_session.join_barrier_phase = network::JoinBarrierPhase::WaitingForAck;
+    host.net_session.join_barrier_transfer_id = 78;
+    host.net_session.join_barrier_queue.clear();
+    ack.sender_peer_id = 5;
+    ack.transfer_id = 78;
+    network::HandleSnapshotResyncAck(host, ack);
+    if (host.net_session.join_barrier_phase != network::JoinBarrierPhase::ReadyToResume ||
+        host.net_session.join_barrier_transfer_id != 0 ||
+        host.net_session.join_barrier_active_peer_id != kInvalidPlayerId) {
+        std::cerr << "join barrier protocol smoke failed: final ack did not enter ready-to-resume\n";
+        return false;
+    }
+
+    network::JoinBarrierResumePacket resume;
+    resume.stage_instance_id = host.net_session.stage_instance_id;
+    resume.sender_peer_id = static_cast<std::uint32_t>(host.net_session.local_player_id);
+    resume.barrier_id = host.net_session.join_barrier_id;
+    resume.resume_frame = 144;
+    const network::EncodedNetPacket encoded_resume = network::EncodeJoinBarrierResume(resume);
+    const std::optional<network::JoinBarrierResumePacket> decoded_resume =
+        network::TryDecodeJoinBarrierResume(encoded_resume.bytes.data(), encoded_resume.size);
+    if (!decoded_resume.has_value() ||
+        decoded_resume->stage_instance_id != resume.stage_instance_id ||
+        decoded_resume->barrier_id != resume.barrier_id ||
+        decoded_resume->resume_frame != resume.resume_frame) {
+        std::cerr << "join barrier protocol smoke failed: resume packet roundtrip mismatch\n";
+        return false;
+    }
+
+    network::JoinBarrierResumePacket stale_resume = *decoded_resume;
+    stale_resume.barrier_id = existing_peer.net_session.join_barrier_id - 1;
+    network::HandleJoinBarrierResume(existing_peer, stale_resume);
+    if (!existing_peer.net_session.join_barrier_active) {
+        std::cerr << "join barrier protocol smoke failed: stale resume cleared peer barrier\n";
+        return false;
+    }
+
+    network::HandleJoinBarrierResume(existing_peer, *decoded_resume);
+    network::HandleJoinBarrierResume(queued_peer, *decoded_resume);
+    network::HandleJoinBarrierResume(second_existing_peer, *decoded_resume);
+    if (existing_peer.net_session.join_barrier_active ||
+        queued_peer.net_session.join_barrier_active ||
+        second_existing_peer.net_session.join_barrier_active ||
+        existing_peer.net_session.lockstep_next_frame_to_step != resume.resume_frame ||
+        existing_peer.net_session.lockstep_next_local_input_frame != resume.resume_frame ||
+        queued_peer.net_session.lockstep_next_frame_to_step != resume.resume_frame ||
+        queued_peer.net_session.lockstep_next_local_input_frame != resume.resume_frame ||
+        second_existing_peer.net_session.lockstep_next_frame_to_step != resume.resume_frame ||
+        second_existing_peer.net_session.lockstep_next_local_input_frame != resume.resume_frame) {
+        std::cerr << "join barrier protocol smoke failed: resume did not clear peer barriers\n";
+        return false;
+    }
+
+    std::cout << "join barrier protocol smoke ok\n";
+    return true;
+}
+
 bool RunLockstepHashExchangeSmoke() {
     Graphics graphics;
     InitCliSmokeRuntimeTables(graphics);
@@ -2811,6 +3020,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunLockstepSettingsScheduleSmoke()) {
+            return false;
+        }
+        if (!RunJoinBarrierProtocolSmoke()) {
             return false;
         }
 

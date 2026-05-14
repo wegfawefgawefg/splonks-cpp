@@ -1055,9 +1055,12 @@ Implementation checklist:
   stale hashes do not trigger immediate false resync.
 - [x] Add debug panel fields for current barrier state and queue if the in-game
   Network window should show more than the overlay.
-- [ ] Add a fake/headless test for host + two existing peers + one late join.
-- [ ] Add a fake/headless test where a second peer joins while the first peer is
+- [x] Add a fake/headless test for host + two existing peers + one late join.
+- [x] Add a fake/headless test where a second peer joins while the first peer is
   catching up.
+- Evidence: `RunJoinBarrierProtocolSmoke` covers join-barrier status/resume
+  packet roundtrips, stale status/resume ordering, host ack progression, an
+  active catchup peer, and a second queued peer observing the barrier.
 - [ ] Add packet-loss/reorder coverage for join-barrier status, chunks, ack, and
   resume.
 - [ ] Add a live quad-launch validation note once `$mod+Shift+F9` can boot, join
