@@ -92,12 +92,20 @@ def update_summary(summary: dict[str, Any], sample: dict[str, Any]) -> None:
             "max_hash_mismatches": 0,
             "max_confirmed_hash_lag": 0,
             "fatal_desync_seen": False,
+            "recovery_mode_counts": {},
+            "snapshot_resync_seen": False,
+            "snapshot_resync_active_samples": 0,
             "join_barrier_seen": False,
+            "join_barrier_active_samples": 0,
             "max_sim_ms": 0.0,
             "max_hash_ms": 0.0,
             "max_rollback_replay_ms": 0.0,
+            "max_rollbacks_per_second": 0.0,
+            "max_prediction_miss_count": 0,
+            "max_arbitrated_missing_input_count": 0,
             "last_stage": "",
             "last_frame": 0,
+            "last_recovery_mode": "none",
         })
         endpoint_summary["sample_count"] += 1
         if endpoint_sample.get("error"):
@@ -124,10 +132,28 @@ def update_summary(summary: dict[str, Any], sample: dict[str, Any]) -> None:
             endpoint_summary["fatal_desync_seen"] or
             net.get("lockstep_last_desync_recovery_mode") == "fatal-desync"
         )
+        recovery_mode = str(net.get("lockstep_last_desync_recovery_mode", "unknown"))
+        recovery_mode_counts = endpoint_summary["recovery_mode_counts"]
+        recovery_mode_counts[recovery_mode] = recovery_mode_counts.get(recovery_mode, 0) + 1
+        endpoint_summary["last_recovery_mode"] = recovery_mode
+        snapshot_resync = net.get("snapshot_resync", {})
+        snapshot_active = (
+            bool(snapshot_resync.get("pending_request", False)) or
+            bool(snapshot_resync.get("waiting_for_ack", False)) or
+            int(snapshot_resync.get("queued_targets", 0)) > 0 or
+            int(snapshot_resync.get("active_transfer_id", 0)) != 0
+        )
+        endpoint_summary["snapshot_resync_seen"] = (
+            endpoint_summary["snapshot_resync_seen"] or snapshot_active
+        )
+        if snapshot_active:
+            endpoint_summary["snapshot_resync_active_samples"] += 1
         endpoint_summary["join_barrier_seen"] = (
             endpoint_summary["join_barrier_seen"] or
             bool(net.get("join_barrier", {}).get("active", False))
         )
+        if bool(net.get("join_barrier", {}).get("active", False)):
+            endpoint_summary["join_barrier_active_samples"] += 1
         endpoint_summary["max_sim_ms"] = max(
             endpoint_summary["max_sim_ms"],
             float(perf.get("multiplayer_sim_total_smoothed_ms", 0.0)),
@@ -139,6 +165,18 @@ def update_summary(summary: dict[str, Any], sample: dict[str, Any]) -> None:
         endpoint_summary["max_rollback_replay_ms"] = max(
             endpoint_summary["max_rollback_replay_ms"],
             float(perf.get("rollback_replay_smoothed_ms", 0.0)),
+        )
+        endpoint_summary["max_rollbacks_per_second"] = max(
+            endpoint_summary["max_rollbacks_per_second"],
+            float(net.get("lockstep_rollbacks_per_second", 0.0)),
+        )
+        endpoint_summary["max_prediction_miss_count"] = max(
+            endpoint_summary["max_prediction_miss_count"],
+            int(net.get("lockstep_prediction_miss_count", 0)),
+        )
+        endpoint_summary["max_arbitrated_missing_input_count"] = max(
+            endpoint_summary["max_arbitrated_missing_input_count"],
+            int(net.get("lockstep_arbitrated_missing_input_count", 0)),
         )
         endpoint_summary["last_stage"] = str(net.get("stage", ""))
         endpoint_summary["last_frame"] = frame

@@ -23,12 +23,16 @@ Record for each profile:
 - Input delay frames and rollback window.
 - Rollbacks/sec, prediction misses, skipped inputs.
 - Latest confirmed hash frame and hash mismatch count.
+- Recovery mode counts, snapshot-resync active samples, and join-barrier active
+  samples.
 - Smoothed multiplayer sim, hash, and rollback replay ms.
 - Any repro steps for visible artifacts.
 
 The recorder summary should stay `ok: true`. If it reports hash mismatches,
 fatal desync, or control-server errors, treat the profile as failed even if the
 visible playtest seemed acceptable.
+If `snapshot_resync_active_samples` grows during an already-started playtest,
+record it as a failure unless it is explained by an intentional late join.
 
 ## Profiles
 
