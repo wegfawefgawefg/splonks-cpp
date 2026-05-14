@@ -236,6 +236,12 @@ Implementation status:
      notes: active delay, rollback window, rollback count/sec, prediction
      misses, skipped inputs, latest confirmed hash frame, hash mismatch count,
      and any repro steps.
+   Automation aid: after launching a pair with
+   `scripts/run_multiplayer_pair_i3.sh`, run
+   `scripts/validate_lockstep_live.py`. It applies the same fuzzer profiles,
+   injects ordinary host/peer inputs through the control server, and records
+   net/perf/fingerprint telemetry. This is a live-path regression harness, not
+   a substitute for the final human feel call.
 8. Tune default delay and prediction policy only after correctness is stable.
 9. Add smoothing only for visual correction artifacts; never hide a real
    deterministic divergence with interpolation.
