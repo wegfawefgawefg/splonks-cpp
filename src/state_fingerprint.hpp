@@ -33,6 +33,9 @@ CanonicalStateFingerprint ComputeCanonicalStateFingerprint(const State& state);
 CanonicalStateFingerprint ComputeGameplayDeterminismFingerprint(const State& state);
 CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state);
 NetworkStateFingerprintComponents ComputeNetworkStateFingerprintComponents(const State& state);
+std::uint64_t CombineNetworkStateFingerprintComponents(
+    const NetworkStateFingerprintComponents& components
+);
 std::vector<NetworkEntFingerprint> ComputeNetworkEntFingerprints(const State& state);
 
 } // namespace splonks

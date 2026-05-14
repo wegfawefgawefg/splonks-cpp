@@ -106,6 +106,7 @@ void ClearLockstepHashState(State& state) {
     state.net_session.lockstep_last_sent_hash_frame = 0;
     state.net_session.lockstep_last_confirmed_hash_frame = 0;
     state.net_session.lockstep_last_confirmed_hash = 0;
+    state.net_session.lockstep_last_mismatch_local_ent_hashes.clear();
 }
 
 void SetPostCatchupHashQuietWindow(State& state, LockstepFrame resume_frame) {
@@ -728,6 +729,43 @@ std::optional<LockstepHashRecord> FindLastMatchingHashWithPeer(
     return best;
 }
 
+void CaptureLockstepMismatchDiagnostics(
+    State& state,
+    const LockstepHashRecord& local,
+    const LockstepRemoteHashRecord& remote
+) {
+    state.net_session.lockstep_last_mismatch_peer_id = remote.peer_id;
+    state.net_session.lockstep_last_mismatch_frame = remote.frame;
+    state.net_session.lockstep_last_mismatch_local_hash = local.hash;
+    state.net_session.lockstep_last_mismatch_remote_hash = remote.hash;
+    state.net_session.lockstep_last_mismatch_local_root = local.component_root;
+    state.net_session.lockstep_last_mismatch_remote_root = remote.component_root;
+    state.net_session.lockstep_last_mismatch_local_stage = local.component_stage;
+    state.net_session.lockstep_last_mismatch_remote_stage = remote.component_stage;
+    state.net_session.lockstep_last_mismatch_local_players = local.component_players;
+    state.net_session.lockstep_last_mismatch_remote_players = remote.component_players;
+    state.net_session.lockstep_last_mismatch_local_tools = local.component_tools;
+    state.net_session.lockstep_last_mismatch_remote_tools = remote.component_tools;
+    state.net_session.lockstep_last_mismatch_local_ents = local.component_ents;
+    state.net_session.lockstep_last_mismatch_remote_ents = remote.component_ents;
+    state.net_session.lockstep_last_mismatch_local_ent_hashes.clear();
+
+    if (local.component_ents != remote.component_ents) {
+        const std::vector<NetworkEntFingerprint> ent_hashes =
+            ComputeNetworkEntFingerprints(state);
+        state.net_session.lockstep_last_mismatch_local_ent_hashes.reserve(ent_hashes.size());
+        for (const NetworkEntFingerprint& ent_hash : ent_hashes) {
+            state.net_session.lockstep_last_mismatch_local_ent_hashes.push_back(
+                LockstepEntHashDiagnostic{
+                    .net_ent_id = ent_hash.net_ent_id,
+                    .type = ent_hash.type,
+                    .hash = ent_hash.hash,
+                }
+            );
+        }
+    }
+}
+
 void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
     const LockstepHashRecord* const local = FindLocalHashRecord(state, remote.frame);
     if (local == nullptr) {
@@ -766,10 +804,7 @@ void CompareLockstepHash(State& state, const LockstepRemoteHashRecord& remote) {
     }
 
     state.net_session.lockstep_hash_mismatch_count += 1;
-    state.net_session.lockstep_last_mismatch_peer_id = remote.peer_id;
-    state.net_session.lockstep_last_mismatch_frame = remote.frame;
-    state.net_session.lockstep_last_mismatch_local_hash = local->hash;
-    state.net_session.lockstep_last_mismatch_remote_hash = remote.hash;
+    CaptureLockstepMismatchDiagnostics(state, *local, remote);
 
     const std::optional<LockstepHashRecord> last_peer_match =
         FindLastMatchingHashWithPeer(state, remote.peer_id, remote.frame);
@@ -807,10 +842,7 @@ void ValidateRemoteHashesAfterReplay(
         }
         checked_any = true;
         if (local->hash != remote.hash) {
-            state.net_session.lockstep_last_mismatch_peer_id = remote.peer_id;
-            state.net_session.lockstep_last_mismatch_frame = remote.frame;
-            state.net_session.lockstep_last_mismatch_local_hash = local->hash;
-            state.net_session.lockstep_last_mismatch_remote_hash = remote.hash;
+            CaptureLockstepMismatchDiagnostics(state, *local, remote);
             if (first_frame == 0) {
                 state.net_session.lockstep_last_desync_recovery_mode =
                     LockstepDesyncRecoveryMode::FatalDesync;
@@ -898,7 +930,9 @@ void RecordCompletedLockstepHash(
     }
 
     const auto hash_start = std::chrono::steady_clock::now();
-    const CanonicalStateFingerprint fingerprint = ComputeNetworkStateFingerprint(state);
+    const NetworkStateFingerprintComponents components =
+        ComputeNetworkStateFingerprintComponents(state);
+    const std::uint64_t hash = CombineNetworkStateFingerprintComponents(components);
     const double hash_ms = ElapsedMs(hash_start);
     state.performance_stats.lockstep_hash_ms += hash_ms;
     state.performance_stats.lockstep_hash_count_this_frame += 1;
@@ -911,11 +945,21 @@ void RecordCompletedLockstepHash(
 
     LockstepHashRecord* const existing = FindLocalHashRecord(state, frame);
     if (existing != nullptr) {
-        existing->hash = fingerprint.value;
+        existing->hash = hash;
+        existing->component_root = components.root;
+        existing->component_stage = components.stage;
+        existing->component_players = components.players;
+        existing->component_tools = components.tools;
+        existing->component_ents = components.ents;
     } else {
         state.net_session.lockstep_hash_history.push_back(LockstepHashRecord{
             .frame = frame,
-            .hash = fingerprint.value,
+            .hash = hash,
+            .component_root = components.root,
+            .component_stage = components.stage,
+            .component_players = components.players,
+            .component_tools = components.tools,
+            .component_ents = components.ents,
         });
     }
     state.net_session.lockstep_last_recorded_hash_frame = frame;
@@ -942,6 +986,11 @@ LockstepHashNetPacket MakeLockstepHashPacket(const State& state, const LockstepH
     packet.sync_epoch = state.net_session.join_barrier_id;
     packet.frame = record.frame;
     packet.hash = record.hash;
+    packet.component_root = record.component_root;
+    packet.component_stage = record.component_stage;
+    packet.component_players = record.component_players;
+    packet.component_tools = record.component_tools;
+    packet.component_ents = record.component_ents;
     return packet;
 }
 
@@ -2175,6 +2224,17 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_last_mismatch_frame = 0;
     state.net_session.lockstep_last_mismatch_local_hash = 0;
     state.net_session.lockstep_last_mismatch_remote_hash = 0;
+    state.net_session.lockstep_last_mismatch_local_root = 0;
+    state.net_session.lockstep_last_mismatch_remote_root = 0;
+    state.net_session.lockstep_last_mismatch_local_stage = 0;
+    state.net_session.lockstep_last_mismatch_remote_stage = 0;
+    state.net_session.lockstep_last_mismatch_local_players = 0;
+    state.net_session.lockstep_last_mismatch_remote_players = 0;
+    state.net_session.lockstep_last_mismatch_local_tools = 0;
+    state.net_session.lockstep_last_mismatch_remote_tools = 0;
+    state.net_session.lockstep_last_mismatch_local_ents = 0;
+    state.net_session.lockstep_last_mismatch_remote_ents = 0;
+    state.net_session.lockstep_last_mismatch_local_ent_hashes.clear();
     state.net_session.lockstep_last_desync_recovery_mode =
         LockstepDesyncRecoveryMode::None;
     ClearSnapshotResyncState(state);
@@ -2369,6 +2429,11 @@ void HandleLockstepHashPacket(State& state, const LockstepHashNetPacket& packet)
         .peer_id = static_cast<PlayerId>(packet.sender_peer_id),
         .frame = packet.frame,
         .hash = packet.hash,
+        .component_root = packet.component_root,
+        .component_stage = packet.component_stage,
+        .component_players = packet.component_players,
+        .component_tools = packet.component_tools,
+        .component_ents = packet.component_ents,
     });
 }
 

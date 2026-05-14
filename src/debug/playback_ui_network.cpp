@@ -757,6 +757,32 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
                 static_cast<unsigned long long>(session.lockstep_last_mismatch_local_hash),
                 static_cast<unsigned long long>(session.lockstep_last_mismatch_remote_hash)
             );
+            ImGui::Text(
+                "  root   local=%llu remote=%llu",
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_local_root),
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_remote_root)
+            );
+            ImGui::Text(
+                "  stage  local=%llu remote=%llu",
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_local_stage),
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_remote_stage)
+            );
+            ImGui::Text(
+                "  player local=%llu remote=%llu",
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_local_players),
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_remote_players)
+            );
+            ImGui::Text(
+                "  tools  local=%llu remote=%llu",
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_local_tools),
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_remote_tools)
+            );
+            ImGui::Text(
+                "  ents   local=%llu remote=%llu local ent hashes=%zu",
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_local_ents),
+                static_cast<unsigned long long>(session.lockstep_last_mismatch_remote_ents),
+                session.lockstep_last_mismatch_local_ent_hashes.size()
+            );
         }
     }
     ImGui::Separator();

@@ -527,64 +527,36 @@ CanonicalStateFingerprint ComputeGameplayDeterminismFingerprint(const State& sta
     return ComputeCanonicalStateFingerprintWithOptions(state, true);
 }
 
-CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
+std::uint64_t CombineNetworkStateFingerprintComponents(
+    const NetworkStateFingerprintComponents& components
+) {
     FingerprintWriter writer;
-    writer.AddPod(state.frame);
-    writer.AddPod(state.stage_frame);
-    writer.AddPod(state.drng.state);
-    writer.AddPod(state.depth);
-    writer.AddPod(state.points);
-    writer.AddPod(state.deaths);
-    writer.AddPod(static_cast<std::uint8_t>(state.multiplayer_respawn_mode));
-    writer.AddPod(state.sac_altar_favor);
-    writer.AddPod(state.sac_altar_reward_tier);
-    writer.AddBool(state.game_over);
-    writer.AddBool(state.win);
-    writer.AddPod(static_cast<std::uint8_t>(state.quest_state.quest_id));
-    writer.AddBool(state.quest_state.classic.made_black_market);
-    writer.AddBool(state.quest_state.classic.made_udjat_eye);
-    writer.AddBool(state.quest_state.classic.has_udjat_eye);
-    writer.AddBool(state.quest_state.classic.made_moai);
-    writer.AddBool(state.quest_state.classic.has_hedjet);
-    writer.AddBool(state.quest_state.classic.has_sceptre);
-    writer.AddBool(state.quest_state.classic.has_book_of_dead);
-    AddStageFingerprint(writer, state.stage, false);
-    AddNetworkPlayerRegistryFingerprint(writer, state);
-    AddNetworkToolInventoryFingerprint(writer, state);
+    writer.AddPod(components.root);
+    writer.AddPod(components.stage);
+    writer.AddPod(components.players);
+    writer.AddPod(components.tools);
+    writer.AddPod(components.ents);
+    return writer.value;
+}
 
-    std::vector<const Ent*> active_ents;
-    active_ents.reserve(state.ents.ents.size());
+CanonicalStateFingerprint ComputeNetworkStateFingerprint(const State& state) {
+    const NetworkStateFingerprintComponents components =
+        ComputeNetworkStateFingerprintComponents(state);
+    int active_ents = 0;
     for (const Ent& ent : state.ents.ents) {
         if (ent.active) {
-            active_ents.push_back(&ent);
+            ++active_ents;
         }
-    }
-    std::sort(
-        active_ents.begin(),
-        active_ents.end(),
-        [&state](const Ent* lhs, const Ent* rhs) {
-            const network::NetEntId lhs_id = NetEntIdForVid(state, lhs->vid);
-            const network::NetEntId rhs_id = NetEntIdForVid(state, rhs->vid);
-            if (lhs_id != rhs_id) {
-                return lhs_id < rhs_id;
-            }
-            return lhs->vid.id < rhs->vid.id;
-        }
-    );
-
-    writer.AddPod(active_ents.size());
-    for (const Ent* const ent : active_ents) {
-        AddNetworkEntFingerprint(writer, state, *ent);
     }
 
     std::ostringstream summary;
     summary << "stage=" << state.stage.quest_stage_id
             << " frame=" << state.frame
             << " stage_frame=" << state.stage_frame
-            << " active_ents=" << active_ents.size()
+            << " active_ents=" << active_ents
             << " tiles=" << state.stage.GetTileWidth() << "x" << state.stage.GetTileHeight();
     return CanonicalStateFingerprint{
-        .value = writer.value,
+        .value = CombineNetworkStateFingerprintComponents(components),
         .summary = summary.str(),
     };
 }

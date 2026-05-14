@@ -1374,6 +1374,11 @@ bool RunLockstepHashExchangeSmoke() {
     state.net_session.lockstep_hash_history.push_back(network::LockstepHashRecord{
         .frame = 4,
         .hash = 0xAAAAULL,
+        .component_root = 0xA001ULL,
+        .component_stage = 0xA002ULL,
+        .component_players = 0xA003ULL,
+        .component_tools = 0xA004ULL,
+        .component_ents = 0xA005ULL,
     });
     state.net_session.lockstep_rollback_snapshots.push_back(network::LockstepRollbackSnapshot{
         .frame = 4,
@@ -1385,6 +1390,11 @@ bool RunLockstepHashExchangeSmoke() {
     roundtrip.sender_peer_id = state.net_session.host_player_id;
     roundtrip.frame = 4;
     roundtrip.hash = 0xBBBBULL;
+    roundtrip.component_root = 0xB001ULL;
+    roundtrip.component_stage = 0xB002ULL;
+    roundtrip.component_players = 0xB003ULL;
+    roundtrip.component_tools = 0xB004ULL;
+    roundtrip.component_ents = 0xB005ULL;
     const network::EncodedNetPacket encoded = network::EncodeLockstepHash(roundtrip);
     const std::optional<network::LockstepHashNetPacket> decoded =
         network::TryDecodeLockstepHash(encoded.bytes.data(), encoded.size);
@@ -1392,7 +1402,12 @@ bool RunLockstepHashExchangeSmoke() {
         decoded->stage_instance_id != roundtrip.stage_instance_id ||
         decoded->sender_peer_id != roundtrip.sender_peer_id ||
         decoded->frame != roundtrip.frame ||
-        decoded->hash != roundtrip.hash) {
+        decoded->hash != roundtrip.hash ||
+        decoded->component_root != roundtrip.component_root ||
+        decoded->component_stage != roundtrip.component_stage ||
+        decoded->component_players != roundtrip.component_players ||
+        decoded->component_tools != roundtrip.component_tools ||
+        decoded->component_ents != roundtrip.component_ents) {
         std::cerr << "lockstep hash exchange smoke failed: packet roundtrip mismatch\n";
         return false;
     }
@@ -1402,6 +1417,11 @@ bool RunLockstepHashExchangeSmoke() {
         state.net_session.lockstep_last_mismatch_frame != 4 ||
         state.net_session.lockstep_last_mismatch_local_hash != 0xAAAAULL ||
         state.net_session.lockstep_last_mismatch_remote_hash != 0xBBBBULL ||
+        state.net_session.lockstep_last_mismatch_local_stage != 0xA002ULL ||
+        state.net_session.lockstep_last_mismatch_remote_stage != 0xB002ULL ||
+        state.net_session.lockstep_last_mismatch_local_ents != 0xA005ULL ||
+        state.net_session.lockstep_last_mismatch_remote_ents != 0xB005ULL ||
+        state.net_session.lockstep_last_mismatch_local_ent_hashes.empty() ||
         state.net_session.lockstep_last_desync_recovery_mode !=
             network::LockstepDesyncRecoveryMode::PendingRollback ||
         !state.net_session.lockstep_rollback_requested_frame.has_value() ||

@@ -114,11 +114,27 @@ struct LockstepRollbackSnapshot {
 struct LockstepHashRecord {
     LockstepFrame frame = 0;
     std::uint64_t hash = 0;
+    std::uint64_t component_root = 0;
+    std::uint64_t component_stage = 0;
+    std::uint64_t component_players = 0;
+    std::uint64_t component_tools = 0;
+    std::uint64_t component_ents = 0;
 };
 
 struct LockstepRemoteHashRecord {
     PlayerId peer_id = kInvalidPlayerId;
     LockstepFrame frame = 0;
+    std::uint64_t hash = 0;
+    std::uint64_t component_root = 0;
+    std::uint64_t component_stage = 0;
+    std::uint64_t component_players = 0;
+    std::uint64_t component_tools = 0;
+    std::uint64_t component_ents = 0;
+};
+
+struct LockstepEntHashDiagnostic {
+    NetEntId net_ent_id = kInvalidNetEntId;
+    std::uint16_t type = 0;
     std::uint64_t hash = 0;
 };
 
@@ -208,6 +224,17 @@ struct NetSessionState {
     LockstepFrame lockstep_last_mismatch_frame = 0;
     std::uint64_t lockstep_last_mismatch_local_hash = 0;
     std::uint64_t lockstep_last_mismatch_remote_hash = 0;
+    std::uint64_t lockstep_last_mismatch_local_root = 0;
+    std::uint64_t lockstep_last_mismatch_remote_root = 0;
+    std::uint64_t lockstep_last_mismatch_local_stage = 0;
+    std::uint64_t lockstep_last_mismatch_remote_stage = 0;
+    std::uint64_t lockstep_last_mismatch_local_players = 0;
+    std::uint64_t lockstep_last_mismatch_remote_players = 0;
+    std::uint64_t lockstep_last_mismatch_local_tools = 0;
+    std::uint64_t lockstep_last_mismatch_remote_tools = 0;
+    std::uint64_t lockstep_last_mismatch_local_ents = 0;
+    std::uint64_t lockstep_last_mismatch_remote_ents = 0;
+    std::vector<LockstepEntHashDiagnostic> lockstep_last_mismatch_local_ent_hashes;
     LockstepDesyncRecoveryMode lockstep_last_desync_recovery_mode =
         LockstepDesyncRecoveryMode::None;
     bool lockstep_snapshot_resync_pending_request = false;

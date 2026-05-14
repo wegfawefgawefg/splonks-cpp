@@ -873,6 +873,33 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << state.net_session.lockstep_last_mismatch_local_hash
         << ",\"lockstep_last_mismatch_remote_hash\":"
         << state.net_session.lockstep_last_mismatch_remote_hash
+        << ",\"lockstep_last_mismatch_components\":{"
+        << "\"local\":{\"root\":" << state.net_session.lockstep_last_mismatch_local_root
+        << ",\"stage\":" << state.net_session.lockstep_last_mismatch_local_stage
+        << ",\"players\":" << state.net_session.lockstep_last_mismatch_local_players
+        << ",\"tools\":" << state.net_session.lockstep_last_mismatch_local_tools
+        << ",\"ents\":" << state.net_session.lockstep_last_mismatch_local_ents
+        << "},\"remote\":{\"root\":" << state.net_session.lockstep_last_mismatch_remote_root
+        << ",\"stage\":" << state.net_session.lockstep_last_mismatch_remote_stage
+        << ",\"players\":" << state.net_session.lockstep_last_mismatch_remote_players
+        << ",\"tools\":" << state.net_session.lockstep_last_mismatch_remote_tools
+        << ",\"ents\":" << state.net_session.lockstep_last_mismatch_remote_ents
+        << "}}"
+        << ",\"lockstep_last_mismatch_local_ent_hashes\":[";
+    for (std::size_t i = 0;
+         i < state.net_session.lockstep_last_mismatch_local_ent_hashes.size();
+         ++i) {
+        const network::LockstepEntHashDiagnostic& ent_hash =
+            state.net_session.lockstep_last_mismatch_local_ent_hashes[i];
+        if (i > 0) {
+            out << ",";
+        }
+        out << "{\"net_ent_id\":" << ent_hash.net_ent_id
+            << ",\"type\":" << ent_hash.type
+            << ",\"hash\":" << ent_hash.hash
+            << "}";
+    }
+    out << "]"
         << ",\"lockstep_input_record_count\":" << total_input_records
         << ",\"lockstep_remote_input_record_count\":" << remote_input_records
         << ",\"lockstep_predicted_input_record_count\":"

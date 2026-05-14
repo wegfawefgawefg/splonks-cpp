@@ -119,6 +119,11 @@ struct LockstepHashNetPacket {
     std::uint32_t sync_epoch = 0;
     std::uint64_t frame = 0;
     std::uint64_t hash = 0;
+    std::uint64_t component_root = 0;
+    std::uint64_t component_stage = 0;
+    std::uint64_t component_players = 0;
+    std::uint64_t component_tools = 0;
+    std::uint64_t component_ents = 0;
 };
 
 struct SnapshotResyncRequestPacket {

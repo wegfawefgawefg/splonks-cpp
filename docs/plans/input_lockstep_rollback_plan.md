@@ -1420,16 +1420,17 @@ Implementation steps:
    - [x] Exclude local-only pres/audio/debug/camera data exactly like existing
      deterministic fingerprints.
    - [x] Keep active ents in the broad live hash. Do not drop ents from the
-     live checksum; only keep expensive per-ent/component breakdowns out of the
-     hot path. `ComputeNetworkStateFingerprint` hashes active ents every sampled
-     frame; `ComputeNetworkStateFingerprintComponents` and
-     `ComputeNetworkEntFingerprints` remain diagnostic-only paths.
+     live checksum; only keep expensive per-ent breakdowns out of the hot path.
+     `ComputeNetworkStateFingerprint` is now the combined
+     `root/stage/players/tools/ents` component hash for sampled frames.
+     `ComputeNetworkEntFingerprints` remains diagnostic-only and is captured
+     only when an ent-lane mismatch is seen.
    - [x] Split hash cost accounting into normal-hash ms, rollback-hash ms, hash
      count this render frame, replayed rollback frames, and snapshot
      restore/save ms. This makes weak-machine bottlenecks visible.
 2. Hash exchange protocol.
-   - [x] Add a compact lockstep hash packet/message: `frame`, `hash`, and
-     session/stage generation.
+   - [x] Add a compact lockstep hash packet/message: `frame`, combined `hash`,
+     component lanes, and session/stage generation.
    - [x] Send hashes every `15-60` frames, configurable in debug.
    - [x] Ignore hashes for stale stage/session generations.
    - [x] Track latest confirmed matching frame/hash from actual peer hash
@@ -1441,7 +1442,7 @@ Implementation steps:
      for debug UI and logs.
    - [x] Add a `splonksctl net` field for last hash mismatch and latest
      confirmed hash frame.
-   - [ ] On mismatch, escalate to diagnostic lanes on demand:
+   - [x] On mismatch, escalate to diagnostic lanes on demand:
      `root/stage/players/tools/ents`, then per-ent fingerprints if the ent lane
      differs. This is Factorio-style "cheap live check, expensive report when
      broken", not normal every-frame diffing.
