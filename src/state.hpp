@@ -241,6 +241,10 @@ struct PerformanceStats {
     double step_ms = 0.0;
     double network_pump_ms = 0.0;
     double lockstep_hash_ms = 0.0;
+    double lockstep_hash_normal_ms = 0.0;
+    double lockstep_hash_rollback_ms = 0.0;
+    std::uint32_t lockstep_hash_count_this_frame = 0;
+    std::uint32_t lockstep_hash_rollback_count_this_frame = 0;
     double rollback_snapshot_save_ms = 0.0;
     double rollback_snapshot_restore_ms = 0.0;
     double rollback_replay_ms_this_frame = 0.0;

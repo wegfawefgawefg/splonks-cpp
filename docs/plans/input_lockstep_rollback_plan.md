@@ -169,19 +169,26 @@ Track B: rollback/prediction.
 
 Track C: host-arbitrated skipped input frames.
 
-- Add a per-player input deadline for each lockstep frame.
-- If a player's input for that frame is missing at the deadline, the host
+- [x] Add canonical host input records so peers can distinguish host-arbitrated
+  frame inputs from peer-proposed local inputs.
+- [x] Stop relaying raw peer inputs to other peers as authoritative data; the
+  host broadcasts canonical records instead.
+- [x] Add a per-player input deadline for each lockstep frame.
+- [x] If a player's input for that frame is missing at the deadline, the host
   advances the frame with a safe input policy for that player:
   `repeat-last-for-movement`, but inject a stop/neutral input when the peer is
   missing too long or when continuing movement would be dangerous.
-- When the late input arrives, do not rewrite the already-arbitrated sacred
+- [x] When the late input arrives, do not rewrite the already-arbitrated sacred
   Game State frame. Schedule it for a later frame if still relevant.
-- Broadcast the host-arbitrated frame input set so all peers step the exact
+- [x] Broadcast the host-arbitrated frame input set so all peers step the exact
   same canonical inputs.
-- Track skipped-input count per player and use it for adaptive latency
+- [x] Track skipped-input count per player and use it for adaptive latency
   suggestions. Do not confuse CPU-bound rollback/hash stalls with network
   delay.
-- Exit gate: one slow laptop cannot force the whole session to 300ms input
+- [x] Host rollback sessions no longer wait at the remote-input age gate before
+  arbitration can run. The host advances with canonical skipped inputs and
+  broadcasts those canonical frame records to peers.
+- [ ] Exit gate: one slow laptop cannot force the whole session to 300ms input
   delay or freeze all other peers; all peers still hash to the same sampled
   frames.
 
@@ -1404,7 +1411,7 @@ Implementation steps:
    - [x] Add a lockstep hash history ring to `NetSessionState`.
    - [x] Compute the canonical gameplay hash after completed lockstep frames
      while a network session is active.
-   - [ ] Stop hashing every completed/replayed frame in normal play. Compute
+   - [x] Stop hashing every completed/replayed frame in normal play. Compute
      the broad gameplay hash only for frames that will be exchanged, frames
      needed for a pending remote comparison, or explicit debug requests.
    - [x] Exclude local-only pres/audio/debug/camera data exactly like existing
@@ -1412,7 +1419,7 @@ Implementation steps:
    - [ ] Keep active ents in the broad live hash. Do not drop ents from the
      live checksum; only keep expensive per-ent/component breakdowns out of the
      hot path.
-   - [ ] Split hash cost accounting into normal-hash ms, rollback-hash ms, hash
+   - [x] Split hash cost accounting into normal-hash ms, rollback-hash ms, hash
      count this render frame, replayed rollback frames, and snapshot
      restore/save ms. This makes weak-machine bottlenecks visible.
 2. Hash exchange protocol.

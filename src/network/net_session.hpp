@@ -122,6 +122,13 @@ struct LockstepRemoteHashRecord {
     std::uint64_t hash = 0;
 };
 
+struct LockstepInputArbitrationStats {
+    PlayerId player_id = kInvalidPlayerId;
+    std::uint64_t missing_input_count = 0;
+    std::uint64_t neutral_input_count = 0;
+    std::uint32_t last_missing_span = 0;
+};
+
 enum class LockstepDesyncRecoveryMode : std::uint8_t {
     None,
     PendingRollback,
@@ -243,6 +250,10 @@ struct NetSessionState {
     std::uint64_t lockstep_prediction_late_match_count = 0;
     std::uint32_t lockstep_last_prediction_miss_span = 0;
     std::uint64_t lockstep_input_wait_block_count = 0;
+    std::uint64_t lockstep_arbitrated_missing_input_count = 0;
+    std::uint64_t lockstep_arbitrated_neutral_input_count = 0;
+    std::uint32_t lockstep_last_arbitrated_missing_span = 0;
+    std::vector<LockstepInputArbitrationStats> lockstep_arbitration_stats_by_player;
 
     static NetSessionState NewOffline();
 

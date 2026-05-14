@@ -813,6 +813,13 @@ void DrawPerformanceSettingsWindow(DebugPlayback& debug, State& state) {
         state.performance_stats.frame_total_peak_ms = state.performance_stats.frame_total_ms;
     }
     ImGui::Text(
+        "Lockstep hash: %u this frame (%u rollback), normal %.3fms rollback %.3fms",
+        perf.lockstep_hash_count_this_frame,
+        perf.lockstep_hash_rollback_count_this_frame,
+        perf.lockstep_hash_normal_ms,
+        perf.lockstep_hash_rollback_ms
+    );
+    ImGui::Text(
         "Rollback replay: %u frames, %.3f ms/frame",
         perf.rollback_replay_frames_this_frame,
         perf.rollback_replay_ms_per_frame

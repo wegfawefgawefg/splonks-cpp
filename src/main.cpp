@@ -361,6 +361,10 @@ int main(int argc, char** argv) {
             audio.SetPanHalfWidthPx(state.settings.audio.pan_half_width_px);
             state.performance_stats.network_pump_ms = 0.0;
             state.performance_stats.lockstep_hash_ms = 0.0;
+            state.performance_stats.lockstep_hash_normal_ms = 0.0;
+            state.performance_stats.lockstep_hash_rollback_ms = 0.0;
+            state.performance_stats.lockstep_hash_count_this_frame = 0;
+            state.performance_stats.lockstep_hash_rollback_count_this_frame = 0;
             state.performance_stats.rollback_snapshot_save_ms = 0.0;
             state.performance_stats.rollback_snapshot_restore_ms = 0.0;
             state.performance_stats.rollback_replay_ms_this_frame = 0.0;

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -20,10 +21,17 @@ namespace {
 
 constexpr LockstepFrame kInputHistoryFrames = 12;
 constexpr std::size_t kMaxPendingRemoteHashes = 128;
+constexpr std::uint32_t kInputRecordFlagCanonical = 1U << 31U;
+constexpr LockstepFrame kSkippedInputNeutralAfterFrames = 6;
 // Snapshot chunks are UDP packets. Keep this below the packet pump receive budget
 // so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
 constexpr std::uint32_t kSnapshotResyncChunksPerPump = 4;
 constexpr std::uint32_t kJoinBarrierChunksPerPump = 8;
+
+enum class LockstepHashContext : std::uint8_t {
+    Normal,
+    Rollback,
+};
 
 struct RollbackPresentationSnapshot {
     ParticleSystem particles;
@@ -665,6 +673,37 @@ void RecordRemoteHashSample(State& state, const LockstepRemoteHashRecord& remote
     history.push_back(remote);
 }
 
+bool HasRemoteHashForFrame(const State& state, LockstepFrame frame) {
+    const auto matches_frame = [frame](const LockstepRemoteHashRecord& record) {
+        return record.frame == frame;
+    };
+    return std::any_of(
+               state.net_session.lockstep_remote_hash_history.begin(),
+               state.net_session.lockstep_remote_hash_history.end(),
+               matches_frame
+           ) ||
+           std::any_of(
+               state.net_session.lockstep_pending_remote_hashes.begin(),
+               state.net_session.lockstep_pending_remote_hashes.end(),
+               matches_frame
+           );
+}
+
+bool IsScheduledLockstepHashFrame(const State& state, LockstepFrame frame) {
+    if (frame == 0 || frame <= state.net_session.lockstep_hash_ignore_through_frame) {
+        return false;
+    }
+    const LockstepFrame interval = std::max<LockstepFrame>(
+        1,
+        static_cast<LockstepFrame>(state.net_session.lockstep_hash_send_interval_frames)
+    );
+    return frame % interval == 0;
+}
+
+bool ShouldRecordCompletedLockstepHash(const State& state, LockstepFrame frame) {
+    return IsScheduledLockstepHashFrame(state, frame) || HasRemoteHashForFrame(state, frame);
+}
+
 std::optional<LockstepHashRecord> FindLastMatchingHashWithPeer(
     const State& state,
     PlayerId peer_id,
@@ -842,7 +881,11 @@ void StoreOrCompareRemoteHash(State& state, const LockstepRemoteHashRecord& remo
     }
 }
 
-void RecordCompletedLockstepHash(State& state, LockstepFrame frame) {
+void RecordCompletedLockstepHash(
+    State& state,
+    LockstepFrame frame,
+    LockstepHashContext context
+) {
     if (!IsInputLockstepSession(state)) {
         return;
     }
@@ -856,7 +899,15 @@ void RecordCompletedLockstepHash(State& state, LockstepFrame frame) {
 
     const auto hash_start = std::chrono::steady_clock::now();
     const CanonicalStateFingerprint fingerprint = ComputeNetworkStateFingerprint(state);
-    state.performance_stats.lockstep_hash_ms += ElapsedMs(hash_start);
+    const double hash_ms = ElapsedMs(hash_start);
+    state.performance_stats.lockstep_hash_ms += hash_ms;
+    state.performance_stats.lockstep_hash_count_this_frame += 1;
+    if (context == LockstepHashContext::Rollback) {
+        state.performance_stats.lockstep_hash_rollback_ms += hash_ms;
+        state.performance_stats.lockstep_hash_rollback_count_this_frame += 1;
+    } else {
+        state.performance_stats.lockstep_hash_normal_ms += hash_ms;
+    }
 
     LockstepHashRecord* const existing = FindLocalHashRecord(state, frame);
     if (existing != nullptr) {
@@ -877,7 +928,11 @@ void RecordPreviousCompletedLockstepHash(State& state) {
     if (state.net_session.lockstep_next_frame_to_step == 0) {
         return;
     }
-    RecordCompletedLockstepHash(state, state.net_session.lockstep_next_frame_to_step - 1);
+    const LockstepFrame frame = state.net_session.lockstep_next_frame_to_step - 1;
+    if (!ShouldRecordCompletedLockstepHash(state, frame)) {
+        return;
+    }
+    RecordCompletedLockstepHash(state, frame, LockstepHashContext::Normal);
 }
 
 LockstepHashNetPacket MakeLockstepHashPacket(const State& state, const LockstepHashRecord& record) {
@@ -898,15 +953,11 @@ void SendDueLockstepHash(State& state, NetTransportRuntime& transport) {
     if (frame <= state.net_session.lockstep_hash_ignore_through_frame) {
         return;
     }
-    const LockstepFrame interval = std::max<LockstepFrame>(
-        1,
-        static_cast<LockstepFrame>(state.net_session.lockstep_hash_send_interval_frames)
-    );
-    if (state.net_session.lockstep_has_sent_hash &&
-        frame < state.net_session.lockstep_last_sent_hash_frame + interval) {
+    if (!IsScheduledLockstepHashFrame(state, frame)) {
         return;
     }
-    if (!AllRequiredInputsConfirmedForFrame(state, frame)) {
+    if (state.net_session.lockstep_has_sent_hash &&
+        frame <= state.net_session.lockstep_last_sent_hash_frame) {
         return;
     }
 
@@ -989,7 +1040,7 @@ bool AllRequiredInputsConfirmedForFrame(const State& state, LockstepFrame frame)
     for (PlayerId player_id : required_players) {
         const LockstepInputRecord* const record =
             state.net_session.lockstep_input_buffer.FindRecord(player_id, frame);
-        if (record == nullptr || record->predicted) {
+        if (record == nullptr || record->predicted || !record->canonical) {
             return false;
         }
     }
@@ -1000,6 +1051,10 @@ bool CanStepWithoutRunningAheadOfRemoteInputs(
     const State& state,
     const std::vector<PlayerId>& required_players
 ) {
+    if (state.net_session.role == NetRole::Host && state.net_session.lockstep_rollback_enabled) {
+        return true;
+    }
+
     const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
     const LockstepFrame frame_to_step = state.net_session.lockstep_next_frame_to_step;
     const LockstepFrame input_delay =
@@ -1030,6 +1085,44 @@ bool CanStepWithoutRunningAheadOfRemoteInputs(
     }
 
     return true;
+}
+
+LockstepInputArbitrationStats& MutableArbitrationStatsForPlayer(
+    State& state,
+    PlayerId player_id
+) {
+    for (LockstepInputArbitrationStats& stats :
+         state.net_session.lockstep_arbitration_stats_by_player) {
+        if (stats.player_id == player_id) {
+            return stats;
+        }
+    }
+
+    state.net_session.lockstep_arbitration_stats_by_player.push_back(
+        LockstepInputArbitrationStats{.player_id = player_id}
+    );
+    return state.net_session.lockstep_arbitration_stats_by_player.back();
+}
+
+void RecordArbitratedMissingInput(
+    State& state,
+    PlayerId player_id,
+    LockstepFrame missing_span,
+    bool neutral
+) {
+    const std::uint32_t clamped_span =
+        static_cast<std::uint32_t>(
+            std::min<LockstepFrame>(missing_span, std::numeric_limits<std::uint32_t>::max())
+        );
+    state.net_session.lockstep_arbitrated_missing_input_count += 1;
+    state.net_session.lockstep_last_arbitrated_missing_span = clamped_span;
+    LockstepInputArbitrationStats& stats = MutableArbitrationStatsForPlayer(state, player_id);
+    stats.missing_input_count += 1;
+    stats.last_missing_span = clamped_span;
+    if (neutral) {
+        state.net_session.lockstep_arbitrated_neutral_input_count += 1;
+        stats.neutral_input_count += 1;
+    }
 }
 
 InputFrame GetCurrentLocalInputFrame(const State& state, const PlayerSlot& slot) {
@@ -1069,6 +1162,9 @@ InputFrameRecordEntry MakeInputFrameRecordEntry(const LockstepInputRecord& recor
     entry.frame = record.frame;
     entry.sequence = record.sequence;
     entry.input_flags = PackInputFrame(record.input);
+    if (record.canonical) {
+        entry.input_flags |= kInputRecordFlagCanonical;
+    }
     entry.mouse_x = record.input.mouse_pos.x;
     entry.mouse_y = record.input.mouse_pos.y;
     return entry;
@@ -1079,7 +1175,11 @@ LockstepInputRecord MakeLockstepInputRecord(const InputFrameRecordEntry& entry) 
     record.player_id = entry.player_id;
     record.frame = entry.frame;
     record.sequence = entry.sequence;
-    record.input = UnpackInputFrame(entry.input_flags, UVec2::New(entry.mouse_x, entry.mouse_y));
+    record.input = UnpackInputFrame(
+        entry.input_flags & ~kInputRecordFlagCanonical,
+        UVec2::New(entry.mouse_x, entry.mouse_y)
+    );
+    record.canonical = (entry.input_flags & kInputRecordFlagCanonical) != 0U;
     return record;
 }
 
@@ -1088,23 +1188,46 @@ InputFrameRecordsPacket BuildLocalInputFramePacket(State& state) {
     packet.stage_instance_id = state.net_session.stage_instance_id;
     packet.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
 
-    const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
-    if (local_player_ids.empty() || state.net_session.lockstep_next_local_input_frame == 0) {
+    std::vector<LockstepInputRecord> records;
+    if (state.net_session.role == NetRole::Host) {
+        const std::vector<PlayerId> connected_player_ids = GetConnectedPlayerIds(state);
+        if (connected_player_ids.empty() || state.net_session.lockstep_next_frame_to_step == 0) {
+            return packet;
+        }
+        const LockstepFrame last_frame = state.net_session.lockstep_next_frame_to_step - 1;
+        const LockstepFrame first_frame = last_frame > kInputHistoryFrames
+            ? last_frame - kInputHistoryFrames
+            : 0;
+        state.net_session.lockstep_input_buffer.CollectCanonicalRecords(
+            connected_player_ids,
+            first_frame,
+            last_frame,
+            records,
+            packet.records.size()
+        );
+    } else {
+        const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
+        if (local_player_ids.empty() || state.net_session.lockstep_next_local_input_frame == 0) {
+            return packet;
+        }
+
+        const LockstepFrame last_frame = state.net_session.lockstep_next_local_input_frame - 1;
+        const LockstepFrame first_frame = last_frame > kInputHistoryFrames
+            ? last_frame - kInputHistoryFrames
+            : 0;
+        state.net_session.lockstep_input_buffer.CollectRecords(
+            local_player_ids,
+            first_frame,
+            last_frame,
+            records,
+            packet.records.size()
+        );
+    }
+
+    if (records.empty()) {
         return packet;
     }
 
-    const LockstepFrame last_frame = state.net_session.lockstep_next_local_input_frame - 1;
-    const LockstepFrame first_frame = last_frame > kInputHistoryFrames
-        ? last_frame - kInputHistoryFrames
-        : 0;
-    std::vector<LockstepInputRecord> records;
-    state.net_session.lockstep_input_buffer.CollectRecords(
-        local_player_ids,
-        first_frame,
-        last_frame,
-        records,
-        packet.records.size()
-    );
     packet.record_count = static_cast<std::uint32_t>(records.size());
     for (std::uint32_t i = 0; i < packet.record_count; ++i) {
         packet.records[i] = MakeInputFrameRecordEntry(records[i]);
@@ -1435,6 +1558,73 @@ InputFrame PredictRemoteInputForFrame(
     return InputFrame::New();
 }
 
+InputFrame StopUnsafeInputActions(InputFrame input) {
+    input.left = false;
+    input.right = false;
+    input.up = false;
+    input.down = false;
+    input.jump = false;
+    input.run = false;
+    input.use_button = false;
+    input.equip_button = false;
+    input.pick_up_drop = false;
+    input.stop = true;
+    input.bomb = false;
+    input.rope = false;
+    input.attack = false;
+    input.buy_button = false;
+    input.emote_up = false;
+    input.emote_down = false;
+    input.quit = false;
+    input.toggle_collision_boxes = false;
+    input.regenerate_level = false;
+    return input;
+}
+
+InputFrame MakeHostArbitratedMissingInput(
+    State& state,
+    PlayerId player_id,
+    LockstepFrame frame
+) {
+    const LockstepInputRecord* const previous =
+        state.net_session.lockstep_input_buffer.FindLatestRecordBefore(player_id, frame);
+    if (previous == nullptr) {
+        RecordArbitratedMissingInput(state, player_id, frame, true);
+        return InputFrame::New();
+    }
+
+    const LockstepFrame missing_span = frame > previous->frame
+        ? frame - previous->frame
+        : 0;
+    if (missing_span > kSkippedInputNeutralAfterFrames) {
+        RecordArbitratedMissingInput(state, player_id, missing_span, true);
+        return StopUnsafeInputActions(previous->input);
+    }
+    RecordArbitratedMissingInput(state, player_id, missing_span, false);
+    return previous->input;
+}
+
+void StoreHostCanonicalInput(
+    State& state,
+    PlayerId player_id,
+    LockstepFrame frame,
+    InputFrame input
+) {
+    LockstepInputRecord canonical;
+    canonical.player_id = player_id;
+    canonical.frame = frame;
+    canonical.sequence = state.net_session.lockstep_next_input_sequence++;
+    canonical.input = input;
+    canonical.predicted = false;
+    canonical.canonical = true;
+    const LockstepInputStoreResult result =
+        state.net_session.lockstep_input_buffer.Store(canonical);
+    if (result.mismatch_frame.has_value() &&
+        frame < state.net_session.lockstep_next_frame_to_step) {
+        RequestRollbackFromFrame(state, *result.mismatch_frame);
+    }
+}
+
 bool BuildOrPredictFrameInputs(
     State& state,
     const std::vector<PlayerId>& required_players,
@@ -1448,6 +1638,21 @@ bool BuildOrPredictFrameInputs(
     const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
     for (PlayerId player_id : required_players) {
         const InputFrame* input = state.net_session.lockstep_input_buffer.Find(player_id, frame);
+        if (state.net_session.role == NetRole::Host) {
+            if (input == nullptr) {
+                const InputFrame arbitrated_input =
+                    MakeHostArbitratedMissingInput(state, player_id, frame);
+                StoreHostCanonicalInput(state, player_id, frame, arbitrated_input);
+                input = state.net_session.lockstep_input_buffer.Find(player_id, frame);
+            } else {
+                const LockstepInputRecord* const record =
+                    state.net_session.lockstep_input_buffer.FindRecord(player_id, frame);
+                if (record != nullptr && !record->canonical) {
+                    StoreHostCanonicalInput(state, player_id, frame, *input);
+                    input = state.net_session.lockstep_input_buffer.Find(player_id, frame);
+                }
+            }
+        }
         if (input == nullptr && allow_prediction &&
             std::find(local_player_ids.begin(), local_player_ids.end(), player_id) ==
                 local_player_ids.end()) {
@@ -1456,6 +1661,7 @@ bool BuildOrPredictFrameInputs(
             prediction.frame = frame;
             prediction.input = PredictRemoteInputForFrame(state, player_id, frame);
             prediction.predicted = true;
+            prediction.canonical = false;
             (void)state.net_session.lockstep_input_buffer.Store(prediction);
             input = state.net_session.lockstep_input_buffer.Find(player_id, frame);
         }
@@ -1516,7 +1722,9 @@ bool ReplayRollbackWindow(
         ApplyLockstepInputsToState(state, required_players, frame_inputs);
         state.net_session.lockstep_next_frame_to_step += 1;
         StepSingleTickWithMode(state, replay_audio, graphics, SimulationTickMode::ReplayNoNetwork);
-        RecordCompletedLockstepHash(state, frame);
+        if (ShouldRecordCompletedLockstepHash(state, frame)) {
+            RecordCompletedLockstepHash(state, frame, LockstepHashContext::Rollback);
+        }
     }
     ValidateRemoteHashesAfterReplay(state, rollback_frame, target_frame);
     RestoreRollbackPresentationState(presentation_snapshot, state, graphics);
@@ -1984,6 +2192,10 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_prediction_late_match_count = 0;
     state.net_session.lockstep_last_prediction_miss_span = 0;
     state.net_session.lockstep_input_wait_block_count = 0;
+    state.net_session.lockstep_arbitrated_missing_input_count = 0;
+    state.net_session.lockstep_arbitrated_neutral_input_count = 0;
+    state.net_session.lockstep_last_arbitrated_missing_span = 0;
+    state.net_session.lockstep_arbitration_stats_by_player.clear();
 }
 
 bool ReplayPendingInputLockstepRollback(State& state, Graphics& graphics) {
@@ -2080,9 +2292,20 @@ void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet
     if (packet.stage_instance_id != state.net_session.stage_instance_id) {
         return;
     }
+    if (state.net_session.role == NetRole::Peer &&
+        static_cast<PlayerId>(packet.sender_peer_id) != state.net_session.host_player_id) {
+        return;
+    }
     for (std::uint32_t i = 0; i < packet.record_count; ++i) {
+        LockstepInputRecord record = MakeLockstepInputRecord(packet.records[i]);
+        if (state.net_session.role == NetRole::Host && record.canonical) {
+            continue;
+        }
+        if (state.net_session.role == NetRole::Peer && !record.canonical) {
+            continue;
+        }
         const LockstepInputStoreResult result =
-            state.net_session.lockstep_input_buffer.Store(MakeLockstepInputRecord(packet.records[i]));
+            state.net_session.lockstep_input_buffer.Store(record);
         if (result.replaced_prediction) {
             if (result.mismatch_frame.has_value()) {
                 state.net_session.lockstep_prediction_miss_count += 1;
@@ -2170,20 +2393,6 @@ void ApplyDueLockstepSettings(State& state) {
 
 void UpdateLockstepAutoDelay(State& state) {
     MaybeScheduleAutoDelayChange(state);
-}
-
-void RelayInputFrameRecordsToOtherRemotes(
-    NetTransportRuntime& transport,
-    const NetEndpoint& source_endpoint,
-    const InputFrameRecordsPacket& packet
-) {
-    const EncodedNetPacket encoded = EncodeInputFrameRecords(packet);
-    for (const NetRemoteEndpoint& remote : transport.remotes) {
-        if (EndpointsEqual(remote.endpoint, source_endpoint)) {
-            continue;
-        }
-        SendEncodedPacket(transport, remote.endpoint, encoded);
-    }
 }
 
 void RelayLockstepHashToOtherRemotes(

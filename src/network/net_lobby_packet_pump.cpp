@@ -161,7 +161,6 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
         if (const std::optional<InputFrameRecordsPacket> input_frames =
                 TryDecodeInputFrameRecords(packet->bytes.data(), packet->size)) {
             HandleInputFrameRecords(state, *input_frames);
-            RelayInputFrameRecordsToOtherRemotes(transport, packet->endpoint, *input_frames);
             continue;
         }
 

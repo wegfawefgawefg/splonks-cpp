@@ -82,11 +82,6 @@ bool ScheduleLockstepSettingsChange(
 );
 void ApplyDueLockstepSettings(State& state);
 void UpdateLockstepAutoDelay(State& state);
-void RelayInputFrameRecordsToOtherRemotes(
-    NetTransportRuntime& transport,
-    const NetEndpoint& source_endpoint,
-    const InputFrameRecordsPacket& packet
-);
 void RelayLockstepHashToOtherRemotes(
     NetTransportRuntime& transport,
     const NetEndpoint& source_endpoint,

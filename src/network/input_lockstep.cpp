@@ -101,6 +101,19 @@ LockstepInputStoreResult LockstepInputBuffer::Store(const LockstepInputRecord& r
 
     for (LockstepInputRecord& existing : records_) {
         if (existing.player_id == record.player_id && existing.frame == record.frame) {
+            if (existing.canonical && !record.canonical) {
+                return result;
+            }
+
+            if (record.canonical) {
+                if (!InputFramesEqual(existing.input, record.input)) {
+                    result.changed_existing = true;
+                    result.mismatch_frame = record.frame;
+                }
+                existing = record;
+                return result;
+            }
+
             if (existing.predicted && !record.predicted) {
                 result.replaced_prediction = true;
                 if (!InputFramesEqual(existing.input, record.input)) {
@@ -238,6 +251,31 @@ void LockstepInputBuffer::CollectRecords(
             }
             for (const LockstepInputRecord& record : records_) {
                 if (record.player_id == player_id && record.frame == frame) {
+                    out_records.push_back(record);
+                    break;
+                }
+            }
+        }
+        if (frame == last_frame) {
+            break;
+        }
+    }
+}
+
+void LockstepInputBuffer::CollectCanonicalRecords(
+    const std::vector<PlayerId>& player_ids,
+    LockstepFrame first_frame,
+    LockstepFrame last_frame,
+    std::vector<LockstepInputRecord>& out_records,
+    std::size_t max_records
+) const {
+    for (LockstepFrame frame = first_frame; frame <= last_frame; ++frame) {
+        for (PlayerId player_id : player_ids) {
+            if (out_records.size() >= max_records) {
+                return;
+            }
+            for (const LockstepInputRecord& record : records_) {
+                if (record.player_id == player_id && record.frame == frame && record.canonical) {
                     out_records.push_back(record);
                     break;
                 }

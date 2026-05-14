@@ -722,6 +722,26 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
             session.lockstep_last_prediction_miss_span
         );
         ImGui::Text(
+            "Arbitration: skipped=%llu neutral=%llu last-missing-span=%u",
+            static_cast<unsigned long long>(session.lockstep_arbitrated_missing_input_count),
+            static_cast<unsigned long long>(session.lockstep_arbitrated_neutral_input_count),
+            session.lockstep_last_arbitrated_missing_span
+        );
+        if (!session.lockstep_arbitration_stats_by_player.empty() &&
+            ImGui::TreeNode("Arbitration By Player")) {
+            for (const network::LockstepInputArbitrationStats& stats :
+                 session.lockstep_arbitration_stats_by_player) {
+                ImGui::Text(
+                    "player=%u skipped=%llu neutral=%llu last-span=%u",
+                    stats.player_id,
+                    static_cast<unsigned long long>(stats.missing_input_count),
+                    static_cast<unsigned long long>(stats.neutral_input_count),
+                    stats.last_missing_span
+                );
+            }
+            ImGui::TreePop();
+        }
+        ImGui::Text(
             "Hash history=%zu remote=%zu pending=%zu mismatches=%llu recovery=%s",
             session.lockstep_hash_history.size(),
             session.lockstep_remote_hash_history.size(),

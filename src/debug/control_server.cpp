@@ -461,6 +461,11 @@ std::string HandlePerfCommand(const State& state) {
         << ",\"step_ms\":" << perf.step_ms
         << ",\"network_pump_ms\":" << perf.network_pump_ms
         << ",\"lockstep_hash_ms\":" << perf.lockstep_hash_ms
+        << ",\"lockstep_hash_normal_ms\":" << perf.lockstep_hash_normal_ms
+        << ",\"lockstep_hash_rollback_ms\":" << perf.lockstep_hash_rollback_ms
+        << ",\"lockstep_hash_count_this_frame\":" << perf.lockstep_hash_count_this_frame
+        << ",\"lockstep_hash_rollback_count_this_frame\":"
+        << perf.lockstep_hash_rollback_count_this_frame
         << ",\"rollback_snapshot_save_ms\":" << perf.rollback_snapshot_save_ms
         << ",\"rollback_snapshot_restore_ms\":" << perf.rollback_snapshot_restore_ms
         << ",\"rollback_replay_ms_this_frame\":" << perf.rollback_replay_ms_this_frame
@@ -896,6 +901,29 @@ std::string HandleNetCommand(State& state, const std::vector<std::string>& parts
         << ",\"lockstep_prediction_miss_rate\":" << prediction_miss_rate
         << ",\"lockstep_last_prediction_miss_span\":"
         << state.net_session.lockstep_last_prediction_miss_span
+        << ",\"lockstep_arbitrated_missing_input_count\":"
+        << state.net_session.lockstep_arbitrated_missing_input_count
+        << ",\"lockstep_arbitrated_neutral_input_count\":"
+        << state.net_session.lockstep_arbitrated_neutral_input_count
+        << ",\"lockstep_last_arbitrated_missing_span\":"
+        << state.net_session.lockstep_last_arbitrated_missing_span
+        << ",\"lockstep_arbitration_by_player\":[";
+    {
+        bool first_arbitration_player = true;
+        for (const network::LockstepInputArbitrationStats& stats :
+             state.net_session.lockstep_arbitration_stats_by_player) {
+            if (!first_arbitration_player) {
+                out << ",";
+            }
+            first_arbitration_player = false;
+            out << "{\"player_id\":" << stats.player_id
+                << ",\"missing_input_count\":" << stats.missing_input_count
+                << ",\"neutral_input_count\":" << stats.neutral_input_count
+                << ",\"last_missing_span\":" << stats.last_missing_span
+                << "}";
+        }
+    }
+    out << "]"
         << ",\"lockstep_frame_inputs\":[";
     {
         bool first_input_player = true;

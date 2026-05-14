@@ -1500,11 +1500,13 @@ bool RunLockstepHashRollbackRepairSmoke() {
     player_1_frame_1.player_id = 1;
     player_1_frame_1.frame = 1;
     player_1_frame_1.input = neutral;
+    player_1_frame_1.canonical = true;
     (void)repaired.net_session.lockstep_input_buffer.Store(player_1_frame_1);
     network::LockstepInputRecord player_2_frame_1;
     player_2_frame_1.player_id = 2;
     player_2_frame_1.frame = 1;
     player_2_frame_1.input = remote_actual;
+    player_2_frame_1.canonical = true;
     (void)repaired.net_session.lockstep_input_buffer.Store(player_2_frame_1);
 
     ApplyLockstepInputsToState(truth, players, {neutral, remote_actual});

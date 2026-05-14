@@ -21,6 +21,7 @@ struct LockstepInputRecord {
     std::uint32_t sequence = 0;
     InputFrame input = InputFrame::New();
     bool predicted = false;
+    bool canonical = false;
 };
 
 struct LockstepInputStoreResult {
@@ -67,6 +68,13 @@ public:
         std::vector<InputFrame>& out_inputs
     ) const;
     void CollectRecords(
+        const std::vector<PlayerId>& player_ids,
+        LockstepFrame first_frame,
+        LockstepFrame last_frame,
+        std::vector<LockstepInputRecord>& out_records,
+        std::size_t max_records
+    ) const;
+    void CollectCanonicalRecords(
         const std::vector<PlayerId>& player_ids,
         LockstepFrame first_frame,
         LockstepFrame last_frame,
