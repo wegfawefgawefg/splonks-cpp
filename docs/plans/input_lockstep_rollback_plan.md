@@ -359,12 +359,17 @@ Rollback prerequisites:
   entity/state storage only if memory or replay cost requires it.
 - [x] During live rollback replay, preserve the current presentation layer
   instead of replaying old particles/audio/transient lights.
-- [ ] Continue classifying presentation-only state. If presentation state affects
+- [x] Continue classifying presentation-only state. If presentation state affects
   gameplay, it is not presentation-only and must be deterministic.
   Current classified presentation-only state includes particles, audio
   emitters, stage lighting presentation caches, audio listener/camera anchor,
   play camera position, and render-only entity correction smoothing. Rollback
   captures/restores these separately from the deterministic gameplay snapshot.
+  Evidence: `RollbackPresentationSnapshot` preserves particles, audio emitters,
+  transient lights, listener/camera anchors, and local play-camera state around
+  rollback replay; gameplay fingerprints exclude local-only render/audio/debug
+  state while det replay and input-lockstep smokes continue to compare gameplay
+  hashes.
 
 Immediate resume checklist for the next `/goal` run:
 
