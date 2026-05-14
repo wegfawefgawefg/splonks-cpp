@@ -3160,6 +3160,44 @@ bool CheckStateFingerprintSmoke() {
             return false;
         }
 
+        State presentation_left = State::New();
+        State presentation_right = State::New();
+        if (!LoadQuestStage(presentation_left, "classic", "classic_mines_1", false, seed) ||
+            !LoadQuestStage(presentation_right, "classic", "classic_mines_1", false, seed)) {
+            std::cerr << "state fingerprint smoke failed: could not load presentation test stages\n";
+            return false;
+        }
+        Ent* presentation_ent = nullptr;
+        for (Ent& ent : presentation_right.ents.ents) {
+            if (ent.active && ent.type_ != EntType::Player) {
+                presentation_ent = &ent;
+                break;
+            }
+        }
+        if (presentation_ent == nullptr) {
+            std::cerr << "state fingerprint smoke failed: no presentation test ent\n";
+            return false;
+        }
+        presentation_ent->render_enabled = !presentation_ent->render_enabled;
+        presentation_ent->draw_layer = DrawLayer::Foreground;
+        presentation_ent->light_strength += 0.5F;
+        presentation_ent->light_radius += 2;
+        presentation_ent->aframe_animator.current_frame += 1;
+        presentation_ent->aframe_animator.current_time += 0.375F;
+        presentation_ent->aframe_animator.finished = !presentation_ent->aframe_animator.finished;
+        const CanonicalStateFingerprint left_network =
+            ComputeNetworkStateFingerprint(presentation_left);
+        const CanonicalStateFingerprint right_network =
+            ComputeNetworkStateFingerprint(presentation_right);
+        if (left_network.value != right_network.value) {
+            std::cerr << "state fingerprint smoke failed: network hash included presentation-only ent state\n"
+                      << "  left  " << left_network.summary << " hash="
+                      << left_network.value << "\n"
+                      << "  right " << right_network.summary << " hash="
+                      << right_network.value << "\n";
+            return false;
+        }
+
         std::cout << "state fingerprint smoke ok: "
                   << first_fingerprint.summary
                   << " hash=" << first_fingerprint.value << '\n';

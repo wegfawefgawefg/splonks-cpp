@@ -363,7 +363,6 @@ void AddNetworkEntFingerprint(
     writer.AddBool(ent.grounded);
     writer.AddBool(ent.holding);
     writer.AddBool(ent.wanted);
-    writer.AddBool(ent.render_enabled);
     writer.AddVec2(ent.pos);
     writer.AddVec2(ent.vel);
     writer.AddVec2(ent.acc);
@@ -373,7 +372,6 @@ void AddNetworkEntFingerprint(
     writer.AddPod(ent.stun_timer);
     writer.AddPod(ent.fall_timer);
     writer.AddPod(static_cast<std::uint8_t>(ent.facing));
-    writer.AddPod(static_cast<std::uint8_t>(ent.draw_layer));
     writer.AddPod(static_cast<std::uint8_t>(ent.condition));
     writer.AddPod(static_cast<std::uint8_t>(ent.ai_state));
     writer.AddPod(static_cast<std::uint8_t>(ent.damage_vuln));
@@ -392,22 +390,10 @@ void AddNetworkEntFingerprint(
     writer.AddFloat(ent.counter_b);
     writer.AddFloat(ent.counter_c);
     writer.AddFloat(ent.counter_d);
-    writer.AddFloat(ent.light_strength);
-    writer.AddFloat(ent.light_color.r);
-    writer.AddFloat(ent.light_color.g);
-    writer.AddFloat(ent.light_color.b);
-    writer.AddPod(ent.light_radius);
     writer.AddIVec2(ent.point_a);
     writer.AddIVec2(ent.point_b);
     writer.AddIVec2(ent.point_c);
     writer.AddIVec2(ent.point_d);
-    writer.AddPod(ent.aframe_animator.anim_id);
-    writer.AddPod(ent.aframe_animator.current_frame);
-    writer.AddFloat(ent.aframe_animator.current_time);
-    writer.AddFloat(ent.aframe_animator.speed);
-    writer.AddBool(ent.aframe_animator.animate);
-    writer.AddBool(ent.aframe_animator.loop);
-    writer.AddBool(ent.aframe_animator.finished);
     AddEffectFingerprint(writer, ent.effects);
 }
 
