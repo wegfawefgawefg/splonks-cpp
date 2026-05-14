@@ -255,6 +255,8 @@ Implementation status:
    `logs/lockstep_playtest_verdict.json` before this gate can be checked.
    One-command setup is also available via
    `scripts/run_lockstep_human_playtest.sh --launch-pair --init-verdict`.
+   Verdict entry helper:
+   `scripts/fill_lockstep_playtest_verdict.py`.
    For longer unattended validation, run
    `scripts/validate_lockstep_live.py --launch-pair --profile all --repeat N --report-json`.
    The report captures every profile/run result and should be kept as the

@@ -32,6 +32,9 @@ checklist proves control feel and visible gameplay behavior.
    then run:
    `scripts/summarize_lockstep_playtest.py --verdict-json logs/lockstep_playtest_verdict.json`
    to verify both telemetry and subjective feel evidence.
+   Instead of hand-editing JSON, run:
+   `scripts/fill_lockstep_playtest_verdict.py`
+   after the playtest and answer the prompts.
 
 Record for each profile:
 
