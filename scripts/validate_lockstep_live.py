@@ -10,15 +10,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import socket
+import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 
 DEFAULT_HOST_PORT = 41000
 DEFAULT_PEER_PORT = 41001
+DEFAULT_LAUNCH_NET_PORT = 39200
+DEFAULT_LAUNCH_HOST_CTL_PORT = 41200
+DEFAULT_LAUNCH_PEER_CTL_PORT = 41201
 DEFAULT_PROFILES = ("same-house", "tx-ca", "tx-japan")
 
 
@@ -130,22 +136,26 @@ def collect(endpoint: Endpoint) -> dict[str, Any]:
 
 def summarize_profile(profile: str, samples: dict[str, dict[str, Any]]) -> dict[str, Any]:
     summary: dict[str, Any] = {"profile": profile, "ok": True, "problems": []}
-    hashes: dict[str, int] = {}
     frames: dict[str, int] = {}
     stages: dict[str, str] = {}
+    confirmed_frames: dict[str, int] = {}
+    confirmed_hashes: dict[str, int] = {}
     for name, sample in samples.items():
         net = sample["net"]
         perf = sample["perf"]
         fingerprint = sample["fingerprint"]
-        hashes[name] = int(fingerprint["network"]["hash"])
         frames[name] = int(net["lockstep_next_frame"])
         stages[name] = str(net["stage"])
+        confirmed_frames[name] = int(net["lockstep_last_confirmed_hash_frame"])
+        confirmed_hashes[name] = int(net["lockstep_last_confirmed_hash"])
         if net["lockstep_last_desync_recovery_mode"] == "fatal-desync":
             summary["problems"].append(f"{name}: fatal desync")
         if int(net["lockstep_hash_mismatch_count"]) != 0:
             summary["problems"].append(
                 f"{name}: hash mismatches={net['lockstep_hash_mismatch_count']}"
             )
+        if net["lockstep_has_confirmed_hash"] is not True:
+            summary["problems"].append(f"{name}: no confirmed hash exchange")
         if net["join_barrier"]["active"]:
             summary["problems"].append(
                 f"{name}: join barrier still active phase={net['join_barrier']['phase']}"
@@ -161,19 +171,98 @@ def summarize_profile(profile: str, samples: dict[str, dict[str, Any]]) -> dict[
             "confirmed_hash_frame": net["lockstep_last_confirmed_hash_frame"],
             "hash_mismatches": net["lockstep_hash_mismatch_count"],
             "network_hash": fingerprint["network"]["hash"],
-            "multiplayer_sim_total_ms": perf["perf"]["multiplayer_sim_total_smoothed_ms"],
-            "hash_ms": perf["perf"]["lockstep_hash_smoothed_ms"],
-            "rollback_replay_ms": perf["perf"]["rollback_replay_smoothed_ms"],
+            "multiplayer_sim_total_ms": perf["multiplayer_sim_total_smoothed_ms"],
+            "hash_ms": perf["lockstep_hash_smoothed_ms"],
+            "rollback_replay_ms": perf["rollback_replay_smoothed_ms"],
         }
 
     if len(set(stages.values())) != 1:
         summary["problems"].append(f"stage mismatch: {stages}")
-    if max(frames.values()) - min(frames.values()) > 2:
+    max_rollback = max(
+        int(summary[name].get("rollback", 0))
+        for name in samples.keys()
+        if isinstance(summary.get(name), dict)
+    )
+    max_allowed_frame_skew = max(2, max_rollback)
+    if max(frames.values()) - min(frames.values()) > max_allowed_frame_skew:
         summary["problems"].append(f"frame mismatch: {frames}")
-    if len(set(hashes.values())) != 1:
-        summary["problems"].append(f"network hash mismatch: {hashes}")
+    shared_confirmed_frames = set(confirmed_frames.values())
+    if len(shared_confirmed_frames) == 1 and len(set(confirmed_hashes.values())) != 1:
+        summary["problems"].append(f"confirmed hash mismatch: {confirmed_hashes}")
     summary["ok"] = len(summary["problems"]) == 0
     return summary
+
+
+def repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def launch_pair(
+    binary: Path,
+    net_port: int,
+    host_control_port: int,
+    peer_control_port: int,
+) -> list[subprocess.Popen[bytes]]:
+    if not binary.exists():
+        raise ControlError(f"binary does not exist: {binary}")
+
+    # Preserve the caller's environment while forcing dummy SDL drivers.
+    env = os.environ.copy()
+    env["SDL_VIDEODRIVER"] = "dummy"
+    env["SDL_AUDIODRIVER"] = "dummy"
+    root = repo_root()
+    logs = root / "logs"
+    logs.mkdir(exist_ok=True)
+    processes: list[subprocess.Popen[bytes]] = []
+    with open(logs / "lockstep_validate_host.log", "wb") as host_log:
+        processes.append(subprocess.Popen(
+            [
+                str(binary),
+                "--multiplayer-host",
+                str(net_port),
+                "--debug-control-port",
+                str(host_control_port),
+            ],
+            cwd=root,
+            env=env,
+            stdout=host_log,
+            stderr=subprocess.STDOUT,
+        ))
+    time.sleep(0.5)
+    with open(logs / "lockstep_validate_peer.log", "wb") as peer_log:
+        processes.append(subprocess.Popen(
+            [
+                str(binary),
+                "--multiplayer-join",
+                "127.0.0.1",
+                str(net_port),
+                "--debug-control-port",
+                str(peer_control_port),
+            ],
+            cwd=root,
+            env=env,
+            stdout=peer_log,
+            stderr=subprocess.STDOUT,
+        ))
+    return processes
+
+
+def terminate_processes(processes: list[subprocess.Popen[bytes]]) -> None:
+    for process in processes:
+        if process.poll() is None:
+            process.terminate()
+    deadline = time.monotonic() + 3.0
+    for process in processes:
+        while process.poll() is None and time.monotonic() < deadline:
+            time.sleep(0.05)
+    for process in processes:
+        if process.poll() is None:
+            process.kill()
+    for process in processes:
+        try:
+            process.wait(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            pass
 
 
 def main() -> int:
@@ -194,7 +283,34 @@ def main() -> int:
         action="store_true",
         help="print full JSON summary instead of one line per profile.",
     )
+    parser.add_argument(
+        "--launch-pair",
+        action="store_true",
+        help="launch an invisible SDL-dummy host/peer pair before validating.",
+    )
+    parser.add_argument(
+        "--binary",
+        default=str(repo_root() / "build" / "splonks-cpp"),
+        help="binary to launch with --launch-pair.",
+    )
+    parser.add_argument(
+        "--net-port",
+        type=int,
+        default=DEFAULT_LAUNCH_NET_PORT,
+        help="UDP port used by --launch-pair.",
+    )
     args = parser.parse_args()
+
+    launched: list[subprocess.Popen[bytes]] = []
+    if args.launch_pair:
+        args.host_control_port = DEFAULT_LAUNCH_HOST_CTL_PORT
+        args.peer_control_port = DEFAULT_LAUNCH_PEER_CTL_PORT
+        launched = launch_pair(
+            Path(args.binary),
+            args.net_port,
+            args.host_control_port,
+            args.peer_control_port,
+        )
 
     host = Endpoint("host", args.host_control_port)
     peer = Endpoint("peer", args.peer_control_port)
@@ -213,7 +329,10 @@ def main() -> int:
             results.append(summarize_profile(profile, samples))
     except ControlError as exc:
         print(f"validate_lockstep_live: {exc}", file=sys.stderr)
+        terminate_processes(launched)
         return 1
+    finally:
+        terminate_processes(launched)
 
     if args.json:
         print(json.dumps({"ok": all(result["ok"] for result in results), "results": results}, indent=2))
