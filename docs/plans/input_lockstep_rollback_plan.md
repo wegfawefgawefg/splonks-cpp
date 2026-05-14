@@ -261,6 +261,8 @@ Implementation status:
    `scripts/run_lockstep_human_playtest.sh --launch-pair --fill-verdict`.
    Completion audit:
    `docs/plans/lockstep_completion_audit.md`.
+   One-command completion verifier:
+   `scripts/audit_lockstep_completion.py`.
    For longer unattended validation, run
    `scripts/validate_lockstep_live.py --launch-pair --profile all --repeat N --report-json`.
    The report captures every profile/run result and should be kept as the
