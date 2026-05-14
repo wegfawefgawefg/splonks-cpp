@@ -29,7 +29,7 @@ Factorio-aligned target and Track C host-arbitrated skipped input frames.
 | Telemetry summarizer exists | `scripts/summarize_lockstep_playtest.py` | Present |
 | Guided playtest runner exists | `scripts/run_lockstep_human_playtest.sh` | Present |
 | Verdict helper exists | `scripts/fill_lockstep_playtest_verdict.py` | Present |
-| Required live automation profiles pass | `scripts/validate_lockstep_live.py --launch-pair --profile all --report-json logs/lockstep_validate_report.json` | Previously recorded as passing in the plan |
+| Required live automation profiles pass | `logs/lockstep_validate_report.json` from `scripts/validate_lockstep_live.py --launch-pair --profile all --report-json logs/lockstep_validate_report.json` | Present: `ok=true`, profiles `same-house`, `same-city`, `same-state`, `tx-ca`, `ca-fl`, `us-cross-country`, `tx-japan` |
 | Human `same-house` telemetry | `logs/lockstep_playtest_*_same-house_summary.json` | Present but too short: latest known duration `0.5s` |
 | Human `tx-ca` telemetry | `logs/lockstep_playtest_*_tx-ca_summary.json` | Missing |
 | Human `tx-japan` telemetry | `logs/lockstep_playtest_*_tx-japan_summary.json` | Missing |
