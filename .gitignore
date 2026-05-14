@@ -38,4 +38,5 @@ debug_recording.*
 logs/network_events_*.log
 logs/network_messages_*.log
 logs/lockstep_validate_*.log
+logs/lockstep_validate_report.json
 .codex

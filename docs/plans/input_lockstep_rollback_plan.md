@@ -242,6 +242,10 @@ Implementation status:
    injects ordinary host/peer inputs through the control server, and records
    net/perf/fingerprint telemetry. This is a live-path regression harness, not
    a substitute for the final human feel call.
+   For longer unattended validation, run
+   `scripts/validate_lockstep_live.py --launch-pair --profile all --repeat N --report-json`.
+   The report captures every profile/run result and should be kept as the
+   machine evidence artifact when chasing intermittent stalls or perf spikes.
    Evidence: `scripts/validate_lockstep_live.py --launch-pair` passes
    `same-house`, `tx-ca`, and `tx-japan` against a real invisible SDL-dummy
    host/peer pair, with no hash mismatch, fatal desync, join-barrier stall, or

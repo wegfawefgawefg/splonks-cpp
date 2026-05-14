@@ -26,6 +26,15 @@ DEFAULT_LAUNCH_NET_PORT = 39200
 DEFAULT_LAUNCH_HOST_CTL_PORT = 41200
 DEFAULT_LAUNCH_PEER_CTL_PORT = 41201
 DEFAULT_PROFILES = ("same-house", "tx-ca", "tx-japan")
+ALL_PROFILES = (
+    "same-house",
+    "same-city",
+    "same-state",
+    "tx-ca",
+    "ca-fl",
+    "us-cross-country",
+    "tx-japan",
+)
 DEFAULT_MAX_CONFIRMED_HASH_LAG_FRAMES = 180
 DEFAULT_MAX_SIM_MS = 8.0
 DEFAULT_MAX_HASH_MS = 4.0
@@ -97,6 +106,18 @@ def apply_profile(endpoints: list[Endpoint], profile: str) -> None:
             control(endpoint, "net fuzzer off")
         else:
             control(endpoint, f"net fuzzer preset {profile}")
+
+
+def expand_profiles(profile_args: list[str] | None) -> tuple[str, ...]:
+    if not profile_args:
+        return DEFAULT_PROFILES
+    expanded: list[str] = []
+    for profile in profile_args:
+        if profile == "all":
+            expanded.extend(ALL_PROFILES)
+        else:
+            expanded.append(profile)
+    return tuple(expanded)
 
 
 def inject_many(actions: list[tuple[Endpoint, int, tuple[str, ...]]]) -> None:
@@ -171,13 +192,21 @@ def wait_recent_confirmed_hash(
 
 def summarize_profile(
     profile: str,
+    run_index: int,
+    repeat_count: int,
     samples: dict[str, dict[str, Any]],
     max_confirmed_hash_lag: int,
     max_sim_ms: float,
     max_hash_ms: float,
     max_rollback_replay_ms: float,
 ) -> dict[str, Any]:
-    summary: dict[str, Any] = {"profile": profile, "ok": True, "problems": []}
+    summary: dict[str, Any] = {
+        "profile": profile,
+        "run_index": run_index,
+        "repeat_count": repeat_count,
+        "ok": True,
+        "problems": [],
+    }
     frames: dict[str, int] = {}
     stages: dict[str, str] = {}
     confirmed_frames: dict[str, int] = {}
@@ -339,13 +368,31 @@ def main() -> int:
         "--profile",
         action="append",
         dest="profiles",
-        help="fuzzer profile to run; repeatable. Defaults to same-house, tx-ca, tx-japan.",
+        help=(
+            "fuzzer profile to run; repeatable; use 'all' for every known preset. "
+            "Defaults to same-house, tx-ca, tx-japan."
+        ),
     )
     parser.add_argument("--ready-timeout", type=float, default=20.0)
     parser.add_argument(
         "--json",
         action="store_true",
         help="print full JSON summary instead of one line per profile.",
+    )
+    parser.add_argument(
+        "--report-json",
+        nargs="?",
+        const=str(repo_root() / "logs" / "lockstep_validate_report.json"),
+        help=(
+            "write full JSON summary to this path. If no path is supplied, writes "
+            "logs/lockstep_validate_report.json."
+        ),
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="number of times to run the selected profile sequence.",
     )
     parser.add_argument(
         "--launch-pair",
@@ -388,6 +435,8 @@ def main() -> int:
         help="maximum allowed smoothed rollback replay time per endpoint.",
     )
     args = parser.parse_args()
+    if args.repeat < 1:
+        parser.error("--repeat must be at least 1")
 
     launched: list[subprocess.Popen[bytes]] = []
     if args.launch_pair:
@@ -403,29 +452,32 @@ def main() -> int:
     host = Endpoint("host", args.host_control_port)
     peer = Endpoint("peer", args.peer_control_port)
     endpoints = [host, peer]
-    profiles = tuple(args.profiles) if args.profiles else DEFAULT_PROFILES
+    profiles = expand_profiles(args.profiles)
 
     results: list[dict[str, Any]] = []
     try:
         wait_ready(endpoints, args.ready_timeout)
-        for profile in profiles:
-            apply_profile(endpoints, profile)
-            wait_ready(endpoints, args.ready_timeout)
-            run_action_sequence(host, peer)
-            wait_ready(endpoints, args.ready_timeout)
-            samples = wait_recent_confirmed_hash(
-                endpoints,
-                args.ready_timeout,
-                args.max_confirmed_hash_lag,
-            )
-            results.append(summarize_profile(
-                profile,
-                samples,
-                args.max_confirmed_hash_lag,
-                args.max_sim_ms,
-                args.max_hash_ms,
-                args.max_rollback_replay_ms,
-            ))
+        for run_index in range(1, args.repeat + 1):
+            for profile in profiles:
+                apply_profile(endpoints, profile)
+                wait_ready(endpoints, args.ready_timeout)
+                run_action_sequence(host, peer)
+                wait_ready(endpoints, args.ready_timeout)
+                samples = wait_recent_confirmed_hash(
+                    endpoints,
+                    args.ready_timeout,
+                    args.max_confirmed_hash_lag,
+                )
+                results.append(summarize_profile(
+                    profile,
+                    run_index,
+                    args.repeat,
+                    samples,
+                    args.max_confirmed_hash_lag,
+                    args.max_sim_ms,
+                    args.max_hash_ms,
+                    args.max_rollback_replay_ms,
+                ))
     except ControlError as exc:
         print(f"validate_lockstep_live: {exc}", file=sys.stderr)
         terminate_processes(launched)
@@ -433,12 +485,28 @@ def main() -> int:
     finally:
         terminate_processes(launched)
 
+    report = {
+        "ok": all(result["ok"] for result in results),
+        "profiles": list(profiles),
+        "repeat": args.repeat,
+        "results": results,
+    }
+    if args.report_json:
+        report_path = Path(args.report_json)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
     if args.json:
-        print(json.dumps({"ok": all(result["ok"] for result in results), "results": results}, indent=2))
+        print(json.dumps(report, indent=2))
     else:
         for result in results:
             status = "ok" if result["ok"] else "FAIL"
-            print(f"{result['profile']}: {status}")
+            run_prefix = (
+                f" run {result['run_index']}/{result['repeat_count']}"
+                if result["repeat_count"] > 1
+                else ""
+            )
+            print(f"{result['profile']}{run_prefix}: {status}")
             for name in ("host", "peer"):
                 data = result.get(name, {})
                 print(
