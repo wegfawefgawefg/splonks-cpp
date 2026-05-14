@@ -1693,6 +1693,180 @@ bool RunJoinBarrierProtocolSmoke() {
     return true;
 }
 
+std::vector<network::SnapshotResyncChunkPacket> BuildSnapshotChunksForSmoke(
+    const State& state,
+    const Graphics& graphics,
+    std::uint32_t transfer_id,
+    network::LockstepFrame snapshot_frame
+) {
+    const std::vector<std::uint8_t> bytes =
+        SerializeGameplaySnapshotToBytes(MakeGameplaySnapshot(state, graphics));
+    const std::uint32_t chunk_count = static_cast<std::uint32_t>(
+        (bytes.size() + network::kNetSnapshotChunkPayloadBytes - 1) /
+        network::kNetSnapshotChunkPayloadBytes
+    );
+    std::vector<network::SnapshotResyncChunkPacket> chunks;
+    chunks.reserve(chunk_count);
+    for (std::uint32_t chunk_index = 0; chunk_index < chunk_count; ++chunk_index) {
+        const std::size_t begin =
+            static_cast<std::size_t>(chunk_index) * network::kNetSnapshotChunkPayloadBytes;
+        const std::size_t remaining = bytes.size() - begin;
+        const std::size_t payload_bytes = std::min<std::size_t>(
+            remaining,
+            network::kNetSnapshotChunkPayloadBytes
+        );
+        network::SnapshotResyncChunkPacket chunk;
+        chunk.stage_instance_id = state.net_session.stage_instance_id;
+        chunk.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
+        chunk.transfer_id = transfer_id;
+        chunk.chunk_index = chunk_index;
+        chunk.chunk_count = chunk_count;
+        chunk.total_bytes = static_cast<std::uint32_t>(bytes.size());
+        chunk.payload_bytes = static_cast<std::uint32_t>(payload_bytes);
+        chunk.snapshot_frame = snapshot_frame;
+        std::copy_n(bytes.data() + begin, payload_bytes, chunk.payload.begin());
+        chunks.push_back(chunk);
+    }
+    return chunks;
+}
+
+std::optional<network::SnapshotResyncAckPacket> LastCapturedSnapshotAck(
+    const network::NetTransportRuntime& transport
+) {
+    for (auto it = transport.captured_packets.rbegin();
+         it != transport.captured_packets.rend();
+         ++it) {
+        const std::optional<network::SnapshotResyncAckPacket> ack =
+            network::TryDecodeSnapshotResyncAck(it->bytes.data(), it->size);
+        if (ack.has_value()) {
+            return ack;
+        }
+    }
+    return std::nullopt;
+}
+
+bool RunJoinBarrierChunkImpairmentSmoke() {
+    Graphics host_graphics;
+    Graphics peer_graphics;
+    InitCliSmokeRuntimeTables(host_graphics);
+    InitCliSmokeRuntimeTables(peer_graphics);
+
+    State host = State::New();
+    State peer = State::New();
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(host, host_graphics, {1}, failed_step) ||
+        !PrepareLockstepSmokeState(peer, peer_graphics, {2}, failed_step)) {
+        std::cerr << "join barrier chunk impairment smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    host.net_session.role = network::NetRole::Host;
+    host.net_session.local_player_id = 1;
+    host.net_session.stage_instance_id = 88;
+    host.net_session.lockstep_next_frame_to_step = 64;
+    host.net_session.join_barrier_active = true;
+    host.net_session.join_barrier_id = 12;
+    host.net_session.join_barrier_phase = network::JoinBarrierPhase::WaitingForAck;
+    host.net_session.join_barrier_active_peer_id = 2;
+    host.net_session.join_barrier_transfer_id = 444;
+
+    peer.net_session.role = network::NetRole::Peer;
+    peer.net_session.local_player_id = 2;
+    peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    peer.net_session.join_barrier_active = true;
+    peer.net_session.join_barrier_id = host.net_session.join_barrier_id;
+    peer.net_session.join_barrier_phase = network::JoinBarrierPhase::WaitingForCatchup;
+
+    const std::vector<network::SnapshotResyncChunkPacket> chunks =
+        BuildSnapshotChunksForSmoke(
+            host,
+            host_graphics,
+            host.net_session.join_barrier_transfer_id,
+            host.net_session.lockstep_next_frame_to_step
+        );
+    if (chunks.size() < 3) {
+        std::cerr << "join barrier chunk impairment smoke failed: snapshot too small for reorder/drop coverage\n";
+        return false;
+    }
+
+    network::NetTransportRuntime peer_transport = network::NetTransportRuntime::New();
+    peer_transport.capture_outgoing_packets = true;
+    peer_transport.host_endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39000};
+
+    const std::uint32_t missing_index = static_cast<std::uint32_t>(chunks.size() / 2);
+    for (std::size_t i = chunks.size(); i-- > 0;) {
+        if (i == missing_index) {
+            continue;
+        }
+        network::HandleSnapshotResyncChunk(peer, peer_graphics, peer_transport, chunks[i]);
+        if (i == chunks.size() - 1) {
+            network::HandleSnapshotResyncChunk(peer, peer_graphics, peer_transport, chunks[i]);
+        }
+    }
+
+    if (!peer_transport.captured_packets.empty() ||
+        peer.net_session.join_barrier_chunks_done >= peer.net_session.join_barrier_chunk_count ||
+        peer.net_session.join_barrier_phase == network::JoinBarrierPhase::WaitingForResume) {
+        std::cerr << "join barrier chunk impairment smoke failed: incomplete snapshot produced ack/resume\n";
+        return false;
+    }
+
+    network::HandleSnapshotResyncChunk(
+        peer,
+        peer_graphics,
+        peer_transport,
+        chunks[missing_index]
+    );
+    const std::optional<network::SnapshotResyncAckPacket> first_ack =
+        LastCapturedSnapshotAck(peer_transport);
+    if (!first_ack.has_value() ||
+        first_ack->transfer_id != host.net_session.join_barrier_transfer_id ||
+        first_ack->snapshot_frame != host.net_session.lockstep_next_frame_to_step ||
+        first_ack->success == 0 ||
+        peer.net_session.join_barrier_phase != network::JoinBarrierPhase::WaitingForResume ||
+        peer.net_session.join_barrier_chunks_done != peer.net_session.join_barrier_chunk_count ||
+        peer.net_session.join_barrier_bytes_done != peer.net_session.join_barrier_total_bytes) {
+        std::cerr << "join barrier chunk impairment smoke failed: complete snapshot did not ack/wait for resume\n";
+        return false;
+    }
+    const std::size_t captured_after_first_ack = peer_transport.captured_packets.size();
+
+    network::HandleSnapshotResyncChunk(
+        peer,
+        peer_graphics,
+        peer_transport,
+        chunks.front()
+    );
+    const std::optional<network::SnapshotResyncAckPacket> resent_ack =
+        LastCapturedSnapshotAck(peer_transport);
+    if (peer_transport.captured_packets.size() <= captured_after_first_ack ||
+        !resent_ack.has_value() ||
+        resent_ack->transfer_id != first_ack->transfer_id ||
+        resent_ack->snapshot_frame != first_ack->snapshot_frame ||
+        resent_ack->success != first_ack->success) {
+        std::cerr << "join barrier chunk impairment smoke failed: duplicate chunk did not resend ack\n";
+        return false;
+    }
+
+    network::HandleSnapshotResyncAck(host, *resent_ack);
+    if (host.net_session.join_barrier_phase != network::JoinBarrierPhase::ReadyToResume ||
+        host.net_session.join_barrier_transfer_id != 0 ||
+        host.net_session.join_barrier_active_peer_id != kInvalidPlayerId) {
+        std::cerr << "join barrier chunk impairment smoke failed: host did not accept resent ack\n";
+        return false;
+    }
+
+    if (!CompareCanonicalFingerprints(host, peer, "join barrier chunk impairment final")) {
+        std::cerr << "  first simple diff: " << DescribeFirstStateDifference(host, peer) << '\n';
+        return false;
+    }
+
+    std::cout << "join barrier chunk impairment smoke ok: chunks="
+              << chunks.size() << '\n';
+    return true;
+}
+
 bool RunLockstepHashExchangeSmoke() {
     Graphics graphics;
     InitCliSmokeRuntimeTables(graphics);
@@ -3023,6 +3197,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunJoinBarrierProtocolSmoke()) {
+            return false;
+        }
+        if (!RunJoinBarrierChunkImpairmentSmoke()) {
             return false;
         }
 

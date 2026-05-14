@@ -1061,8 +1061,12 @@ Implementation checklist:
 - Evidence: `RunJoinBarrierProtocolSmoke` covers join-barrier status/resume
   packet roundtrips, stale status/resume ordering, host ack progression, an
   active catchup peer, and a second queued peer observing the barrier.
-- [ ] Add packet-loss/reorder coverage for join-barrier status, chunks, ack, and
+- [x] Add packet-loss/reorder coverage for join-barrier status, chunks, ack, and
   resume.
+- Evidence: `RunJoinBarrierProtocolSmoke` covers stale/reordered
+  status/resume/ack handling. `RunJoinBarrierChunkImpairmentSmoke` delivers a
+  join-barrier snapshot out of order with a dropped chunk and duplicate chunks,
+  verifies no early ack, then verifies ack resend after a simulated lost ack.
 - [ ] Add a live quad-launch validation note once `$mod+Shift+F9` can boot, join
   all three peers, complete catchup, and start stepping without manual action.
 
