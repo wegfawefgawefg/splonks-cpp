@@ -31,6 +31,8 @@ CMakeUserPresets.json
 *.la
 .ninja_deps
 .ninja_log
+__pycache__/
+*.py[cod]
 
 debug_recording.*
 logs/network_events_*.log
