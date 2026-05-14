@@ -54,14 +54,15 @@ def profile_ok(profile: dict[str, Any], name: str) -> bool:
     return True
 
 
-def recompute_ok(verdict: dict[str, Any], profiles: tuple[str, ...]) -> bool:
+def recompute_ok(verdict: dict[str, Any]) -> bool:
     if verdict.get("default_delay_prediction_ok", False) is not True:
         return False
     profile_map = verdict.get("profiles", {})
     if not isinstance(profile_map, dict):
         return False
-    for name in profiles:
-        profile = profile_map.get(name)
+    if not profile_map:
+        return False
+    for name, profile in profile_map.items():
         if not isinstance(profile, dict) or not profile_ok(profile, name):
             return False
     return True
@@ -121,7 +122,7 @@ def main() -> int:
         bool(verdict.get("default_delay_prediction_ok", False)),
     )
     verdict["overall_notes"] = ask_text("overall_notes", str(verdict.get("overall_notes", "")))
-    verdict["ok"] = recompute_ok(verdict, profiles)
+    verdict["ok"] = recompute_ok(verdict)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(verdict, indent=2) + "\n", encoding="utf-8")
