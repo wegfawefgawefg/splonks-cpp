@@ -12,6 +12,10 @@ checklist proves control feel and visible gameplay behavior.
 4. Before each profile, optionally run:
    `scripts/validate_lockstep_live.py --profile <profile> --report-json`
    against the live windows to confirm the session starts clean.
+5. While manually playing each profile, run:
+   `scripts/record_lockstep_playtest.py --profile <profile> --duration 300`
+   to capture live telemetry into `logs/lockstep_playtest_samples.jsonl` and
+   `logs/lockstep_playtest_summary.json`.
 
 Record for each profile:
 
@@ -21,6 +25,10 @@ Record for each profile:
 - Latest confirmed hash frame and hash mismatch count.
 - Smoothed multiplayer sim, hash, and rollback replay ms.
 - Any repro steps for visible artifacts.
+
+The recorder summary should stay `ok: true`. If it reports hash mismatches,
+fatal desync, or control-server errors, treat the profile as failed even if the
+visible playtest seemed acceptable.
 
 ## Profiles
 
