@@ -11,6 +11,7 @@ interval=1
 no_prompt=0
 skip_summary=0
 verdict_json=""
+initialized_verdict_json=""
 launch_pair=0
 launch_settle=3
 init_verdict=0
@@ -111,9 +112,7 @@ if ((init_verdict != 0)); then
         cp docs/plans/lockstep_human_playtest_verdict_template.json "${verdict_path}"
         printf 'Initialized verdict JSON: %s\n' "${verdict_path}"
     fi
-    if [[ -z "${verdict_json}" ]]; then
-        verdict_json="${verdict_path}"
-    fi
+    initialized_verdict_json="${verdict_path}"
 fi
 
 if ((launch_pair != 0)); then
@@ -164,7 +163,12 @@ fi
 if [[ -z "${verdict_json}" ]]; then
     printf '\n'
     printf 'Telemetry audit finished. Final completion still requires human verdict JSON:\n'
-    printf '  cp docs/plans/lockstep_human_playtest_verdict_template.json logs/lockstep_playtest_verdict.json\n'
-    printf '  edit logs/lockstep_playtest_verdict.json with real playtest booleans\n'
-    printf '  scripts/summarize_lockstep_playtest.py --verdict-json logs/lockstep_playtest_verdict.json\n'
+    if [[ -n "${initialized_verdict_json}" ]]; then
+        printf '  edit %s with real playtest booleans\n' "${initialized_verdict_json}"
+        printf '  scripts/summarize_lockstep_playtest.py --verdict-json %s\n' "${initialized_verdict_json}"
+    else
+        printf '  cp docs/plans/lockstep_human_playtest_verdict_template.json logs/lockstep_playtest_verdict.json\n'
+        printf '  edit logs/lockstep_playtest_verdict.json with real playtest booleans\n'
+        printf '  scripts/summarize_lockstep_playtest.py --verdict-json logs/lockstep_playtest_verdict.json\n'
+    fi
 fi
