@@ -837,13 +837,21 @@ Required work:
   Started with `State::drng` and snake AI. Remaining call sites must be
   classified and either converted to state-owned det RNG or explicitly kept
   pres/stagegen-only.
-- [ ] Audit places that read wall-clock time, frame time, random device, pointer
+- [x] Audit places that read wall-clock time, frame time, random device, pointer
   address, unordered iteration, or local debug flags during gameplay.
-- [ ] Ensure ent iteration order is stable.
-- [ ] Ensure runtime ids allocate detally from the same code paths.
-- [ ] Classify particles/audio/lights as gameplay-affecting or pres-only.
-- [ ] Make fluid stepping det under the same inputs.
-- [ ] Make stage transition det from agreed inputs.
+- [x] Ensure ent iteration order is stable.
+  Evidence: active ent simulation iterates the fixed `EntPool::ents` vector, and
+  deterministic replay plus input-lockstep smokes compare broad gameplay hashes.
+- [x] Ensure runtime ids allocate detally from the same code paths.
+  Evidence: ent allocation uses the deterministic `EntPool::available_ids`
+  stack and the same local gameplay spawn/deactivate paths under replay.
+- [x] Classify particles/audio/lights as gameplay-affecting or pres-only.
+  Evidence: gameplay-affecting visibility/light data is in deterministic state
+  or ent fields; particles, audio emitters, transient flashes, and render-only
+  smoothing are presentation-only and preserved around rollback replay.
+- [x] Make fluid stepping det under the same inputs.
+  Evidence: `--check-det-replay-smoke` includes `det fluid replay smoke ok`.
+- [x] Make stage transition det from agreed inputs.
   - Lockstep-active stage transitions now apply the same pending transition
     locally on every peer after the transition delay, instead of relying on the
     old host stage-sync path.
@@ -852,7 +860,9 @@ Required work:
   - Stage-transition frames are lockstep-gated while a transport is active, so
     one peer cannot count down and load the next stage while another peer is
     stalled waiting on input.
-- [ ] Add a headless same-process det replay test.
+- [x] Add a headless same-process det replay test.
+  Evidence: `--check-det-replay-smoke` runs movement, multi-local, broad,
+  fluid, shop, and stage-transition replay scenarios without a renderer.
 - [x] Add a fake-transport det replay test.
   Implemented by `--check-input-lockstep-smoke`: two independent `State`s,
   two player input streams, fake impaired packet delivery, and per-frame
@@ -864,16 +874,19 @@ Rollback should be added only after det lockstep passes.
 
 Required work:
 
-- [ ] Split or snapshot `State` into gameplay state and non-rollback pres
+- [x] Split or snapshot `State` into gameplay state and non-rollback pres
   state.
-- [ ] Implement a save-state ring for the last `N` frames.
-- [ ] Store local and remote inputs per frame.
-- [ ] Predict missing remote input. Initial policy: repeat last input.
-- [ ] On late real input mismatch, restore the last agreed frame and resimulate.
-- [ ] Suppress duplicate one-shot pres/audio during resimulation.
-- [ ] Add debug overlay: current frame, confirmed frame, rollback count, rollback
+- [x] Implement a save-state ring for the last `N` frames.
+- [x] Store local and remote inputs per frame.
+- [x] Predict missing remote input. Initial policy: repeat last input.
+- [x] On late real input mismatch, restore the last agreed frame and resimulate.
+- [x] Suppress duplicate one-shot pres/audio during resimulation.
+- [x] Add debug overlay: current frame, confirmed frame, rollback count, rollback
   frames, prediction errors, input delay, remote buffer depth.
-- [ ] Add fuzzer tests for latency, jitter, loss, duplicate, and reordering.
+- [x] Add fuzzer tests for latency, jitter, loss, duplicate, and reordering.
+  Evidence: `--check-input-lockstep-smoke` covers clean, impaired,
+  run-rate-skew, rollback repair, hash exchange/recovery, and rollback latency
+  scenarios.
 
 ## Multiplayer Performance Telemetry Plan
 
@@ -1133,7 +1146,7 @@ not active implementation targets.
 Goal: gameplay reads det per-player input from state, not from
 `state.playing_inputs` as a single global player input.
 
-- [ ] Define `PlayerId` / local player slot structs independent of old
+- [x] Define `PlayerId` / local player slot structs independent of old
   host/peer ownership.
   - Current state: stable `PlayerId` and `PlayerSlot` already exist, but slots
     still carry old `Local`/`Remote` connection classification. That can stay
@@ -1214,14 +1227,18 @@ Goal: remove or isolate obvious nondeterminism before network lockstep hides it.
   - Audit evidence: wall-clock/SDL time reads are frame pacing, perf counters,
     file hot-reload checks, or network transport/fuzzer timing. Lockstep
     simulation decisions use frame/tick state and recorded inputs.
-- [ ] Ensure ent allocation and iteration order are det under the
+- [x] Ensure ent allocation and iteration order are det under the
   same inputs.
-- [ ] Ensure fluid updates are det under the same inputs.
-- [ ] Classify particles/lights/audio as gameplay or pres.
-- [ ] Isolate pres-only side effects so replay can suppress or ignore
+- [x] Ensure fluid updates are det under the same inputs.
+- [x] Classify particles/lights/audio as gameplay or pres.
+- [x] Isolate pres-only side effects so replay can suppress or ignore
   them.
-- [ ] Keep debug/editor tools outside det gameplay unless explicitly
+- [x] Keep debug/editor tools outside det gameplay unless explicitly
   part of the scripted test.
+  Evidence: det replay and input-lockstep smoke tests cover ent allocation,
+  fluid stepping, presentation preservation, and debug-input isolation. Render,
+  audio, particle, and transient-light state is either excluded from the
+  gameplay fingerprint or preserved outside rollback replay.
 
 Exit gate: det replay stays green after enabling broad gameplay
 coverage.
@@ -1303,7 +1320,9 @@ it is host/peer before doing ordinary gameplay.
   - Renamed the stale carry helper
     `ReleaseEntFromHolderAndEmitNetwork` to
     `ReleaseEntFromHolderIfAttached`.
-- [ ] Keep state fingerprint/replay code if it supports determinism.
+- [x] Keep state fingerprint/replay code if it supports determinism.
+  Current state: gameplay/canonical/network fingerprints and replay smokes are
+  core lockstep verification tools, so they remain active.
 
 Implementation note: `world_ops::{SpawnEnt,DeactivateEnt,SetForegroundTile}`,
 stage lighting, stage fluids, and carry/damage/tool/tile-break content paths are
