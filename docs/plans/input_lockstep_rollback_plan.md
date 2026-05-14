@@ -1053,7 +1053,7 @@ Implementation checklist:
   applying a catchup snapshot.
 - [x] Hash packets include a barrier/sync epoch and post-catchup quiet window so
   stale hashes do not trigger immediate false resync.
-- [ ] Add debug panel fields for current barrier state and queue if the in-game
+- [x] Add debug panel fields for current barrier state and queue if the in-game
   Network window should show more than the overlay.
 - [ ] Add a fake/headless test for host + two existing peers + one late join.
 - [ ] Add a fake/headless test where a second peer joins while the first peer is

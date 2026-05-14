@@ -145,6 +145,78 @@ const char* LockstepDesyncRecoveryModeName(network::LockstepDesyncRecoveryMode m
     return "unknown";
 }
 
+const char* JoinBarrierPhaseName(network::JoinBarrierPhase phase) {
+    switch (phase) {
+    case network::JoinBarrierPhase::None:
+        return "none";
+    case network::JoinBarrierPhase::WaitingForCatchup:
+        return "waiting-for-catchup";
+    case network::JoinBarrierPhase::SendingSnapshot:
+        return "sending-snapshot";
+    case network::JoinBarrierPhase::WaitingForAck:
+        return "waiting-for-ack";
+    case network::JoinBarrierPhase::ReadyToResume:
+        return "ready-to-resume";
+    case network::JoinBarrierPhase::WaitingForResume:
+        return "waiting-for-resume";
+    }
+    return "unknown";
+}
+
+void DrawJoinBarrierPanel(const network::NetSessionState& session) {
+    if (!ImGui::CollapsingHeader("Join Barrier")) {
+        return;
+    }
+
+    const float byte_progress =
+        session.join_barrier_total_bytes == 0
+            ? 0.0F
+            : static_cast<float>(session.join_barrier_bytes_done) /
+                static_cast<float>(session.join_barrier_total_bytes);
+    const float chunk_progress =
+        session.join_barrier_chunk_count == 0
+            ? 0.0F
+            : static_cast<float>(session.join_barrier_chunks_done) /
+                static_cast<float>(session.join_barrier_chunk_count);
+
+    ImGui::Text(
+        "active=%s id=%u phase=%s active_peer=%u queued=%zu",
+        session.join_barrier_active ? "yes" : "no",
+        session.join_barrier_id,
+        JoinBarrierPhaseName(session.join_barrier_phase),
+        session.join_barrier_active_peer_id,
+        session.join_barrier_queue.size()
+    );
+    ImGui::Text(
+        "transfer=%u snapshot_frame=%llu",
+        session.join_barrier_transfer_id,
+        static_cast<unsigned long long>(session.join_barrier_snapshot_frame)
+    );
+    ImGui::ProgressBar(
+        std::clamp(byte_progress, 0.0F, 1.0F),
+        ImVec2(-1.0F, 0.0F),
+        "bytes"
+    );
+    ImGui::Text(
+        "bytes=%u/%u chunks=%u/%u",
+        session.join_barrier_bytes_done,
+        session.join_barrier_total_bytes,
+        session.join_barrier_chunks_done,
+        session.join_barrier_chunk_count
+    );
+    ImGui::ProgressBar(
+        std::clamp(chunk_progress, 0.0F, 1.0F),
+        ImVec2(-1.0F, 0.0F),
+        "chunks"
+    );
+    if (!session.join_barrier_queue.empty() && ImGui::TreeNode("Queued Peers")) {
+        for (PlayerId queued_peer_id : session.join_barrier_queue) {
+            ImGui::BulletText("player=%u", queued_peer_id);
+        }
+        ImGui::TreePop();
+    }
+}
+
 void DrawFuzzerPresetButton(
     const char* label,
     network::NetFuzzerConfig preset,
@@ -803,6 +875,9 @@ void DrawNetworkWindow(DebugPlayback& debug, State& state, const Graphics& graph
     ImGui::Separator();
 
     DrawSnapshotResyncControls(state, debug);
+    ImGui::Separator();
+
+    DrawJoinBarrierPanel(session);
     ImGui::Separator();
 
     DrawDebugLocalPlayers(state, debug, graphics);
