@@ -1103,8 +1103,14 @@ Implementation checklist:
   status/resume/ack handling. `RunJoinBarrierChunkImpairmentSmoke` delivers a
   join-barrier snapshot out of order with a dropped chunk and duplicate chunks,
   verifies no early ack, then verifies ack resend after a simulated lost ack.
-- [ ] Add a live quad-launch validation note once `$mod+Shift+F9` can boot, join
+- [x] Add a live quad-launch validation note once `$mod+Shift+F9` can boot, join
   all three peers, complete catchup, and start stepping without manual action.
+  Live validation note: the four-window desktop launcher started host plus
+  three peers, a laptop joined as an additional peer, the join barrier caught up
+  clients sequentially, and play resumed after the barrier. Follow-up profiling
+  showed laptop stalls were CPU/hash-cadence related, not join-barrier
+  correctness; the hash section now requires sampled broad hashes rather than
+  every-frame broad hashing.
 
 Reconnect policy:
 
