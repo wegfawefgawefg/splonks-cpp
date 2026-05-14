@@ -15,8 +15,6 @@ from typing import Any
 
 DEFAULT_HOST_PORT = 41000
 DEFAULT_PEER_PORT = 41001
-DEFAULT_OUTPUT = "logs/lockstep_playtest_samples.jsonl"
-DEFAULT_SUMMARY = "logs/lockstep_playtest_summary.json"
 
 
 @dataclass(frozen=True)
@@ -123,6 +121,32 @@ def default_endpoints() -> list[Endpoint]:
         Endpoint("host", "127.0.0.1", DEFAULT_HOST_PORT),
         Endpoint("peer", "127.0.0.1", DEFAULT_PEER_PORT),
     ]
+
+
+def safe_path_component(text: str) -> str:
+    out = []
+    for char in text.lower():
+        if char.isalnum():
+            out.append(char)
+        elif char in ("-", "_"):
+            out.append(char)
+        elif char.isspace():
+            out.append("_")
+    return "".join(out).strip("_") or "session"
+
+
+def default_output_paths(profile: str, label: str, started_at: float) -> tuple[Path, Path]:
+    timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime(started_at))
+    name_parts = [timestamp]
+    if profile:
+        name_parts.append(safe_path_component(profile))
+    if label:
+        name_parts.append(safe_path_component(label))
+    stem = "lockstep_playtest_" + "_".join(name_parts)
+    return (
+        Path("logs") / f"{stem}_samples.jsonl",
+        Path("logs") / f"{stem}_summary.json",
+    )
 
 
 def update_summary(summary: dict[str, Any], sample: dict[str, Any]) -> None:
@@ -253,8 +277,16 @@ def main() -> int:
         type=parse_endpoint,
         help="endpoint to sample as name:port or name:host:port; repeatable",
     )
-    parser.add_argument("--output", default=DEFAULT_OUTPUT)
-    parser.add_argument("--summary-json", default=DEFAULT_SUMMARY)
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="sample JSONL path; defaults to logs/lockstep_playtest_<timestamp>_<profile>_samples.jsonl",
+    )
+    parser.add_argument(
+        "--summary-json",
+        default=None,
+        help="summary JSON path; defaults to logs/lockstep_playtest_<timestamp>_<profile>_summary.json",
+    )
     parser.add_argument(
         "--fingerprint-every",
         type=int,
@@ -279,12 +311,17 @@ def main() -> int:
     if args.wait_ready:
         wait_ready(endpoints, args.ready_timeout)
 
-    output_path = Path(args.output)
-    summary_path = Path(args.summary_json)
+    started_at = time.time()
+    default_output_path, default_summary_path = default_output_paths(
+        args.profile,
+        args.label,
+        started_at,
+    )
+    output_path = Path(args.output) if args.output else default_output_path
+    summary_path = Path(args.summary_json) if args.summary_json else default_summary_path
     output_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
 
-    started_at = time.time()
     monotonic_start = time.monotonic()
     deadline = monotonic_start + args.duration
     summary: dict[str, Any] = {
@@ -296,6 +333,7 @@ def main() -> int:
         "sample_count": 0,
         "endpoints": {},
         "output": str(output_path),
+        "summary": str(summary_path),
     }
 
     sample_index = 0
