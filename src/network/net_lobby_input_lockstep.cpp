@@ -22,6 +22,7 @@ namespace {
 constexpr LockstepFrame kInputHistoryFrames = 12;
 constexpr std::size_t kMaxPendingRemoteHashes = 128;
 constexpr std::uint32_t kInputRecordFlagCanonical = 1U << 31U;
+constexpr std::uint32_t kInputRecordFlagArbitratedMissing = 1U << 30U;
 constexpr LockstepFrame kSkippedInputNeutralAfterFrames = 6;
 // Snapshot chunks are UDP packets. Keep this below the packet pump receive budget
 // so a catchup burst does not overrun peer socket buffers and permanently miss chunks.
@@ -1214,6 +1215,9 @@ InputFrameRecordEntry MakeInputFrameRecordEntry(const LockstepInputRecord& recor
     if (record.canonical) {
         entry.input_flags |= kInputRecordFlagCanonical;
     }
+    if (record.arbitrated_missing) {
+        entry.input_flags |= kInputRecordFlagArbitratedMissing;
+    }
     entry.mouse_x = record.input.mouse_pos.x;
     entry.mouse_y = record.input.mouse_pos.y;
     return entry;
@@ -1225,10 +1229,12 @@ LockstepInputRecord MakeLockstepInputRecord(const InputFrameRecordEntry& entry) 
     record.frame = entry.frame;
     record.sequence = entry.sequence;
     record.input = UnpackInputFrame(
-        entry.input_flags & ~kInputRecordFlagCanonical,
+        entry.input_flags & ~(kInputRecordFlagCanonical | kInputRecordFlagArbitratedMissing),
         UVec2::New(entry.mouse_x, entry.mouse_y)
     );
     record.canonical = (entry.input_flags & kInputRecordFlagCanonical) != 0U;
+    record.arbitrated_missing =
+        (entry.input_flags & kInputRecordFlagArbitratedMissing) != 0U;
     return record;
 }
 
@@ -1635,16 +1641,17 @@ InputFrame MakeHostArbitratedMissingInput(
     PlayerId player_id,
     LockstepFrame frame
 ) {
+    LockstepInputArbitrationStats& stats =
+        MutableArbitrationStatsForPlayer(state, player_id);
+    const LockstepFrame missing_span =
+        static_cast<LockstepFrame>(stats.last_missing_span) + 1;
     const LockstepInputRecord* const previous =
         state.net_session.lockstep_input_buffer.FindLatestRecordBefore(player_id, frame);
     if (previous == nullptr) {
-        RecordArbitratedMissingInput(state, player_id, frame, true);
+        RecordArbitratedMissingInput(state, player_id, missing_span, true);
         return InputFrame::New();
     }
 
-    const LockstepFrame missing_span = frame > previous->frame
-        ? frame - previous->frame
-        : 0;
     if (missing_span > kSkippedInputNeutralAfterFrames) {
         RecordArbitratedMissingInput(state, player_id, missing_span, true);
         return StopUnsafeInputActions(previous->input);
@@ -1657,7 +1664,8 @@ void StoreHostCanonicalInput(
     State& state,
     PlayerId player_id,
     LockstepFrame frame,
-    InputFrame input
+    InputFrame input,
+    bool arbitrated_missing = false
 ) {
     LockstepInputRecord canonical;
     canonical.player_id = player_id;
@@ -1666,6 +1674,10 @@ void StoreHostCanonicalInput(
     canonical.input = input;
     canonical.predicted = false;
     canonical.canonical = true;
+    canonical.arbitrated_missing = arbitrated_missing;
+    if (!arbitrated_missing) {
+        MutableArbitrationStatsForPlayer(state, player_id).last_missing_span = 0;
+    }
     const LockstepInputStoreResult result =
         state.net_session.lockstep_input_buffer.Store(canonical);
     if (result.mismatch_frame.has_value() &&
@@ -1691,7 +1703,7 @@ bool BuildOrPredictFrameInputs(
             if (input == nullptr) {
                 const InputFrame arbitrated_input =
                     MakeHostArbitratedMissingInput(state, player_id, frame);
-                StoreHostCanonicalInput(state, player_id, frame, arbitrated_input);
+                StoreHostCanonicalInput(state, player_id, frame, arbitrated_input, true);
                 input = state.net_session.lockstep_input_buffer.Find(player_id, frame);
             } else {
                 const LockstepInputRecord* const record =

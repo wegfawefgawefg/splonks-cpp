@@ -2649,6 +2649,173 @@ bool RunLockstepSettingsScheduleSmoke() {
     return true;
 }
 
+bool RunHostArbitratedSkippedInputSmoke() {
+    Graphics host_graphics;
+    Graphics replica_graphics;
+    InitCliSmokeRuntimeTables(host_graphics);
+    InitCliSmokeRuntimeTables(replica_graphics);
+
+    Audio host_audio;
+    Audio replica_audio;
+    State host = State::New();
+    State replica = State::New();
+    const char* failed_step = nullptr;
+
+    if (!PrepareLockstepSmokeState(host, host_graphics, {1}, failed_step) ||
+        !PrepareLockstepSmokeState(replica, replica_graphics, {1}, failed_step)) {
+        std::cerr << "host arbitrated skipped-input smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+    if (!CompareCanonicalFingerprints(host, replica, "host arbitration initial")) {
+        std::cerr << "  first simple diff: " << DescribeFirstStateDifference(host, replica) << '\n';
+        return false;
+    }
+
+    host.net_transport =
+        std::make_unique<network::NetTransportRuntime>(network::NetTransportRuntime::New());
+    std::string socket_error;
+    if (!host.net_transport->socket.Open(0, &socket_error)) {
+        std::cerr << "host arbitrated skipped-input smoke failed opening UDP socket: "
+                  << socket_error << '\n';
+        return false;
+    }
+
+    host.net_session.role = network::NetRole::Host;
+    host.net_session.local_player_id = 1;
+    host.net_session.host_player_id = 1;
+    host.net_session.input_lockstep_enabled = true;
+    host.net_session.stage_instance_id = 0x51A7E010U;
+    host.net_session.lockstep_input_delay_frames = network::kDefaultLockstepInputDelayFrames;
+    host.net_session.lockstep_max_rollback_frames = network::kDefaultLockstepMaxRollbackFrames;
+    network::ResetInputLockstepState(host);
+    host.net_transport->remotes.push_back(network::NetRemoteEndpoint{
+        .player_ids = {2},
+        .endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 9},
+        .last_heard_frame = host.frame,
+    });
+    host.net_session.peers.push_back(network::NetPeerState{
+        .player_id = 2,
+        .display_name = "Slow Laptop",
+        .endpoint_address = "127.0.0.1",
+        .endpoint_port = 9,
+        .estimated_ping_ms = 300.0F,
+        .jitter_ms = 50.0F,
+        .connected = true,
+    });
+
+    InputFrame slow_initial = InputFrame::New();
+    slow_initial.right = true;
+    slow_initial.run = true;
+    network::LockstepInputRecord slow_record;
+    slow_record.player_id = 2;
+    slow_record.frame = 0;
+    slow_record.sequence = 1;
+    slow_record.input = slow_initial;
+    host.net_session.lockstep_input_buffer.Store(slow_record);
+
+    const std::vector<PlayerId> required_players = {1, 2};
+    constexpr network::LockstepFrame kTotalFrames = 24;
+    std::vector<InputFrame> canonical_inputs;
+    for (network::LockstepFrame frame = 0; frame < kTotalFrames; ++frame) {
+        InputFrame host_input = InputFrame::New();
+        host_input.right = true;
+        host_input.run = true;
+        host.playing_input_snapshot = ToPlayingInputSnapshot(host_input);
+
+        if (!network::PrepareInputLockstepFrame(host, host_graphics)) {
+            std::cerr << "host arbitrated skipped-input smoke failed: host stalled at frame "
+                      << frame << " wait_blocks="
+                      << host.net_session.lockstep_input_wait_block_count
+                      << " missing="
+                      << host.net_session.lockstep_arbitrated_missing_input_count << '\n';
+            return false;
+        }
+        if (host.net_session.lockstep_next_frame_to_step != frame + 1) {
+            std::cerr << "host arbitrated skipped-input smoke failed: unexpected host frame "
+                      << host.net_session.lockstep_next_frame_to_step
+                      << " after stepping " << frame << '\n';
+            return false;
+        }
+        if (!host.net_session.lockstep_input_buffer.BuildFrameInputs(
+                required_players,
+                frame,
+                canonical_inputs
+            )) {
+            std::cerr << "host arbitrated skipped-input smoke failed: missing canonical frame "
+                      << frame << '\n';
+            return false;
+        }
+        for (PlayerId player_id : required_players) {
+            const network::LockstepInputRecord* const record =
+                host.net_session.lockstep_input_buffer.FindRecord(player_id, frame);
+            if (record == nullptr || !record->canonical || record->predicted) {
+                std::cerr << "host arbitrated skipped-input smoke failed: noncanonical player "
+                          << player_id << " frame " << frame << '\n';
+                return false;
+            }
+        }
+
+        StepSingleTickWithMode(
+            host,
+            host_audio,
+            host_graphics,
+            SimulationTickMode::ReplayNoNetwork
+        );
+        ApplyLockstepInputsToState(replica, required_players, canonical_inputs);
+        StepSingleTickWithMode(
+            replica,
+            replica_audio,
+            replica_graphics,
+            SimulationTickMode::ReplayNoNetwork
+        );
+
+        const CanonicalStateFingerprint host_fingerprint =
+            ComputeGameplayDeterminismFingerprint(host);
+        const CanonicalStateFingerprint replica_fingerprint =
+            ComputeGameplayDeterminismFingerprint(replica);
+        if (host_fingerprint.value != replica_fingerprint.value) {
+            std::cerr << "host arbitrated skipped-input smoke failed: hash mismatch at frame "
+                      << frame
+                      << "\n  host    " << host_fingerprint.summary
+                      << " hash=" << host_fingerprint.value
+                      << "\n  replica " << replica_fingerprint.summary
+                      << " hash=" << replica_fingerprint.value
+                      << "\n  first simple diff: "
+                      << DescribeFirstStateDifference(host, replica) << '\n';
+            return false;
+        }
+    }
+
+    if (host.net_session.lockstep_input_wait_block_count != 0) {
+        std::cerr << "host arbitrated skipped-input smoke failed: host waited "
+                  << host.net_session.lockstep_input_wait_block_count
+                  << " times for slow peer input\n";
+        return false;
+    }
+    if (host.net_session.lockstep_arbitrated_missing_input_count == 0 ||
+        host.net_session.lockstep_arbitrated_neutral_input_count == 0) {
+        std::cerr << "host arbitrated skipped-input smoke failed: expected missing and neutral"
+                  << " arbitration, missing="
+                  << host.net_session.lockstep_arbitrated_missing_input_count
+                  << " neutral="
+                  << host.net_session.lockstep_arbitrated_neutral_input_count << '\n';
+        return false;
+    }
+    if (host.net_session.lockstep_input_delay_frames != network::kDefaultLockstepInputDelayFrames) {
+        std::cerr << "host arbitrated skipped-input smoke failed: input delay changed to "
+                  << host.net_session.lockstep_input_delay_frames << '\n';
+        return false;
+    }
+
+    std::cout << "host arbitrated skipped-input smoke ok: frames=" << kTotalFrames
+              << " missing=" << host.net_session.lockstep_arbitrated_missing_input_count
+              << " neutral=" << host.net_session.lockstep_arbitrated_neutral_input_count
+              << " wait_blocks=" << host.net_session.lockstep_input_wait_block_count
+              << " delay=" << host.net_session.lockstep_input_delay_frames << '\n';
+    return true;
+}
+
 } // namespace
 
 bool CheckStateFingerprintSmoke() {
@@ -3194,6 +3361,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunLockstepSettingsScheduleSmoke()) {
+            return false;
+        }
+        if (!RunHostArbitratedSkippedInputSmoke()) {
             return false;
         }
         if (!RunJoinBarrierProtocolSmoke()) {

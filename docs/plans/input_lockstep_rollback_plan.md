@@ -191,9 +191,17 @@ Track C: host-arbitrated skipped input frames.
 - [x] Add smoke coverage for canonical records replacing predicted inputs,
   including both late-match and late-mismatch cases, and preventing stale
   noncanonical records from overwriting canonical host input.
-- [ ] Exit gate: one slow laptop cannot force the whole session to 300ms input
+- [x] Exit gate: one slow laptop cannot force the whole session to 300ms input
   delay or freeze all other peers; all peers still hash to the same sampled
   frames.
+  Evidence: `RunHostArbitratedSkippedInputSmoke` drives the real
+  `PrepareInputLockstepFrame` host path with one connected remote player that
+  stops sending inputs. The host advances 24 frames with `wait_blocks=0`,
+  keeps delay at `2`, records `missing=23` and `neutral=17`, and a replica
+  applying the host canonical records matches the host gameplay hash every
+  frame. The smoke also exposed and fixed the prior bug where repeated
+  host-arbitrated records prevented the missing span from ever reaching the
+  neutral-safe policy.
 
 Implementation order from here:
 

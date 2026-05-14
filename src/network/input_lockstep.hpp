@@ -22,6 +22,7 @@ struct LockstepInputRecord {
     InputFrame input = InputFrame::New();
     bool predicted = false;
     bool canonical = false;
+    bool arbitrated_missing = false;
 };
 
 struct LockstepInputStoreResult {
