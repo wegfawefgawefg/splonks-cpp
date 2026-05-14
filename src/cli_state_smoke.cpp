@@ -1388,6 +1388,38 @@ bool RunCanonicalInputBufferSmoke() {
         return false;
     }
 
+    network::LockstepInputRecord arbitrated_guess = canonical_mismatch;
+    arbitrated_guess.frame = 7;
+    arbitrated_guess.sequence = 6;
+    arbitrated_guess.input.left = false;
+    arbitrated_guess.input.right = true;
+    arbitrated_guess.canonical = true;
+    arbitrated_guess.arbitrated_missing = true;
+    if (!buffer.Store(arbitrated_guess).inserted) {
+        std::cerr << "canonical input buffer smoke failed: arbitrated insert failed\n";
+        return false;
+    }
+
+    network::LockstepInputRecord late_owner_input = arbitrated_guess;
+    late_owner_input.sequence = 7;
+    late_owner_input.input.left = true;
+    late_owner_input.input.right = false;
+    late_owner_input.canonical = false;
+    late_owner_input.arbitrated_missing = false;
+    const network::LockstepInputStoreResult late_result = buffer.Store(late_owner_input);
+    if (!late_result.changed_existing ||
+        !late_result.mismatch_frame.has_value() ||
+        *late_result.mismatch_frame != 7) {
+        std::cerr << "canonical input buffer smoke failed: late owner input did not replace arbitrated guess\n";
+        return false;
+    }
+    const network::LockstepInputRecord* const late_record = buffer.FindRecord(2, 7);
+    if (late_record == nullptr || late_record->canonical ||
+        !late_record->input.left || late_record->input.right) {
+        std::cerr << "canonical input buffer smoke failed: late owner input not retained for rollback\n";
+        return false;
+    }
+
     std::cout << "canonical input buffer smoke ok\n";
     return true;
 }

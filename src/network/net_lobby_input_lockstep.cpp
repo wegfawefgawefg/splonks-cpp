@@ -2359,6 +2359,9 @@ void HandleInputFrameRecords(State& state, const InputFrameRecordsPacket& packet
         if (state.net_session.role == NetRole::Peer && !record.canonical) {
             continue;
         }
+        if (state.net_session.role == NetRole::Host && !record.canonical) {
+            MutableArbitrationStatsForPlayer(state, record.player_id).last_missing_span = 0;
+        }
         const LockstepInputStoreResult result =
             state.net_session.lockstep_input_buffer.Store(record);
         if (result.replaced_prediction) {

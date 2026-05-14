@@ -102,6 +102,14 @@ LockstepInputStoreResult LockstepInputBuffer::Store(const LockstepInputRecord& r
     for (LockstepInputRecord& existing : records_) {
         if (existing.player_id == record.player_id && existing.frame == record.frame) {
             if (existing.canonical && !record.canonical) {
+                if (existing.arbitrated_missing) {
+                    if (!InputFramesEqual(existing.input, record.input)) {
+                        result.changed_existing = true;
+                        result.mismatch_frame = record.frame;
+                        existing = record;
+                    }
+                    return result;
+                }
                 return result;
             }
 
