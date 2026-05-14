@@ -77,3 +77,9 @@ One-command completion audit:
 ```bash
 scripts/audit_lockstep_completion.py
 ```
+
+Auditor self-test:
+
+```bash
+scripts/audit_lockstep_completion.py --self-test
+```
