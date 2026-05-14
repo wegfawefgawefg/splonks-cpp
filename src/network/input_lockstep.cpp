@@ -106,6 +106,9 @@ LockstepInputStoreResult LockstepInputBuffer::Store(const LockstepInputRecord& r
             }
 
             if (record.canonical) {
+                if (existing.predicted && !record.predicted) {
+                    result.replaced_prediction = true;
+                }
                 if (!InputFramesEqual(existing.input, record.input)) {
                     result.changed_existing = true;
                     result.mismatch_frame = record.frame;

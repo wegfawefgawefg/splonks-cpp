@@ -1158,6 +1158,80 @@ bool StepReadyLockstepFrames(
     return true;
 }
 
+bool RunCanonicalInputBufferSmoke() {
+    network::LockstepInputBuffer buffer;
+
+    InputFrame predicted_input = InputFrame::New();
+    predicted_input.right = true;
+    network::LockstepInputRecord predicted;
+    predicted.player_id = 2;
+    predicted.frame = 5;
+    predicted.sequence = 1;
+    predicted.input = predicted_input;
+    predicted.predicted = true;
+    predicted.canonical = false;
+    if (!buffer.Store(predicted).inserted) {
+        std::cerr << "canonical input buffer smoke failed: predicted insert failed\n";
+        return false;
+    }
+
+    network::LockstepInputRecord canonical_match = predicted;
+    canonical_match.sequence = 2;
+    canonical_match.predicted = false;
+    canonical_match.canonical = true;
+    const network::LockstepInputStoreResult match_result = buffer.Store(canonical_match);
+    if (!match_result.replaced_prediction || match_result.mismatch_frame.has_value()) {
+        std::cerr << "canonical input buffer smoke failed: matching canonical replacement not tracked\n";
+        return false;
+    }
+    const network::LockstepInputRecord* const matched_record = buffer.FindRecord(2, 5);
+    if (matched_record == nullptr || matched_record->predicted || !matched_record->canonical) {
+        std::cerr << "canonical input buffer smoke failed: matching canonical record not stored\n";
+        return false;
+    }
+
+    network::LockstepInputRecord predicted_wrong = predicted;
+    predicted_wrong.frame = 6;
+    predicted_wrong.sequence = 3;
+    predicted_wrong.input.left = false;
+    predicted_wrong.input.right = true;
+    if (!buffer.Store(predicted_wrong).inserted) {
+        std::cerr << "canonical input buffer smoke failed: second predicted insert failed\n";
+        return false;
+    }
+
+    network::LockstepInputRecord canonical_mismatch = predicted_wrong;
+    canonical_mismatch.sequence = 4;
+    canonical_mismatch.input.left = true;
+    canonical_mismatch.input.right = false;
+    canonical_mismatch.predicted = false;
+    canonical_mismatch.canonical = true;
+    const network::LockstepInputStoreResult mismatch_result =
+        buffer.Store(canonical_mismatch);
+    if (!mismatch_result.replaced_prediction ||
+        !mismatch_result.mismatch_frame.has_value() ||
+        *mismatch_result.mismatch_frame != 6) {
+        std::cerr << "canonical input buffer smoke failed: mismatching canonical replacement not tracked\n";
+        return false;
+    }
+
+    network::LockstepInputRecord stale_noncanonical = canonical_mismatch;
+    stale_noncanonical.sequence = 5;
+    stale_noncanonical.input.left = false;
+    stale_noncanonical.input.right = true;
+    stale_noncanonical.canonical = false;
+    (void)buffer.Store(stale_noncanonical);
+    const network::LockstepInputRecord* const canonical_record = buffer.FindRecord(2, 6);
+    if (canonical_record == nullptr || !canonical_record->canonical ||
+        canonical_record->input.right || !canonical_record->input.left) {
+        std::cerr << "canonical input buffer smoke failed: noncanonical input overwrote canonical record\n";
+        return false;
+    }
+
+    std::cout << "canonical input buffer smoke ok\n";
+    return true;
+}
+
 bool RunRollbackRepairSmoke() {
     Graphics truth_graphics;
     Graphics predicted_graphics;
@@ -2288,6 +2362,10 @@ bool CheckInputLockstepSmoke() {
         InitCliSmokeRuntimeTables(peer1_graphics);
         Audio peer0_audio;
         Audio peer1_audio;
+
+        if (!RunCanonicalInputBufferSmoke()) {
+            return false;
+        }
 
         const std::vector<std::array<InputFrame, 2>> script =
             BuildInputLockstepSmokeScript();

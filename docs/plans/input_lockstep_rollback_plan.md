@@ -188,6 +188,9 @@ Track C: host-arbitrated skipped input frames.
 - [x] Host rollback sessions no longer wait at the remote-input age gate before
   arbitration can run. The host advances with canonical skipped inputs and
   broadcasts those canonical frame records to peers.
+- [x] Add smoke coverage for canonical records replacing predicted inputs,
+  including both late-match and late-mismatch cases, and preventing stale
+  noncanonical records from overwriting canonical host input.
 - [ ] Exit gate: one slow laptop cannot force the whole session to 300ms input
   delay or freeze all other peers; all peers still hash to the same sampled
   frames.
@@ -1416,9 +1419,11 @@ Implementation steps:
      needed for a pending remote comparison, or explicit debug requests.
    - [x] Exclude local-only pres/audio/debug/camera data exactly like existing
      deterministic fingerprints.
-   - [ ] Keep active ents in the broad live hash. Do not drop ents from the
+   - [x] Keep active ents in the broad live hash. Do not drop ents from the
      live checksum; only keep expensive per-ent/component breakdowns out of the
-     hot path.
+     hot path. `ComputeNetworkStateFingerprint` hashes active ents every sampled
+     frame; `ComputeNetworkStateFingerprintComponents` and
+     `ComputeNetworkEntFingerprints` remain diagnostic-only paths.
    - [x] Split hash cost accounting into normal-hash ms, rollback-hash ms, hash
      count this render frame, replayed rollback frames, and snapshot
      restore/save ms. This makes weak-machine bottlenecks visible.
