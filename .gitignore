@@ -41,4 +41,5 @@ logs/lockstep_validate_*.log
 logs/lockstep_validate_report.json
 logs/lockstep_playtest_*.json
 logs/lockstep_playtest_*.jsonl
+logs/lockstep_playtest_audit.json
 .codex

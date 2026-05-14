@@ -17,6 +17,10 @@ checklist proves control feel and visible gameplay behavior.
    to capture live telemetry into profile/timestamped
    `logs/lockstep_playtest_*_samples.jsonl` and
    `logs/lockstep_playtest_*_summary.json` artifacts.
+6. After the required profiles are recorded, run:
+   `scripts/summarize_lockstep_playtest.py`
+   to verify that `same-house`, `tx-ca`, and `tx-japan` all have clean
+   telemetry summaries.
 
 Record for each profile:
 
@@ -34,6 +38,8 @@ fatal desync, or control-server errors, treat the profile as failed even if the
 visible playtest seemed acceptable.
 If `snapshot_resync_active_samples` grows during an already-started playtest,
 record it as a failure unless it is explained by an intentional late join.
+The summary audit is still not a feel test; it only verifies telemetry evidence
+for the manual profiles.
 
 ## Profiles
 
