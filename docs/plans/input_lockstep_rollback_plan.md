@@ -257,6 +257,8 @@ Implementation status:
    `scripts/run_lockstep_human_playtest.sh --launch-pair --init-verdict`.
    Verdict entry helper:
    `scripts/fill_lockstep_playtest_verdict.py`.
+   Full guided flow:
+   `scripts/run_lockstep_human_playtest.sh --launch-pair --fill-verdict`.
    For longer unattended validation, run
    `scripts/validate_lockstep_live.py --launch-pair --profile all --repeat N --report-json`.
    The report captures every profile/run result and should be kept as the

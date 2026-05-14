@@ -23,6 +23,8 @@ checklist proves control feel and visible gameplay behavior.
    running pair, then runs the telemetry summary audit.
    To also launch the pair and create the verdict template:
    `scripts/run_lockstep_human_playtest.sh --launch-pair --init-verdict`
+   Full guided flow, including verdict prompts after telemetry passes:
+   `scripts/run_lockstep_human_playtest.sh --launch-pair --fill-verdict`
 6. After the required profiles are recorded, run:
    `scripts/summarize_lockstep_playtest.py`
    to verify that `same-house`, `tx-ca`, and `tx-japan` all have clean

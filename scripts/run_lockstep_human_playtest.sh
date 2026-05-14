@@ -12,6 +12,7 @@ no_prompt=0
 skip_summary=0
 verdict_json=""
 initialized_verdict_json=""
+fill_verdict=0
 launch_pair=0
 launch_settle=3
 init_verdict=0
@@ -31,6 +32,7 @@ usage() {
         "  --interval SECONDS              Telemetry sample interval (default: 1)" \
         "  --profile NAME                  Profile to record; repeatable. Defaults to required set." \
         "  --verdict-json PATH             Also audit a filled human verdict JSON." \
+        "  --fill-verdict                  Prompt for human verdict after telemetry passes." \
         "  --init-verdict                  Create logs/lockstep_playtest_verdict.json if missing." \
         "  --launch-pair                   Launch scripts/run_multiplayer_pair_i3.sh first." \
         "  --launch-settle SECONDS         Delay after --launch-pair before recording (default: 3)." \
@@ -64,6 +66,10 @@ while (($#)); do
         --verdict-json)
             verdict_json="${2:?missing value for --verdict-json}"
             shift 2
+            ;;
+        --fill-verdict)
+            fill_verdict=1
+            shift
             ;;
         --init-verdict)
             init_verdict=1
@@ -142,25 +148,35 @@ for profile in "${profiles[@]}"; do
     printf '\n'
 done
 
+run_summary() {
+    local maybe_verdict="${1:-}"
+    local summary_cmd=(
+        "${script_dir}/summarize_lockstep_playtest.py"
+        --min-duration "${summary_min_duration}"
+    )
+    for profile in "${profiles[@]}"; do
+        summary_cmd+=(--required-profile "${profile}")
+    done
+    if [[ -n "${maybe_verdict}" ]]; then
+        summary_cmd+=(--verdict-json "${maybe_verdict}")
+    fi
+    "${summary_cmd[@]}"
+}
+
 if ((skip_summary != 0)); then
     printf 'Skipped summary audit.\n'
     exit 0
 fi
 
-summary_cmd=(
-    "${script_dir}/summarize_lockstep_playtest.py"
-    --min-duration "${summary_min_duration}"
-)
-for profile in "${profiles[@]}"; do
-    summary_cmd+=(--required-profile "${profile}")
-done
-if [[ -n "${verdict_json}" ]]; then
-    summary_cmd+=(--verdict-json "${verdict_json}")
-fi
-
-"${summary_cmd[@]}"
-
-if [[ -z "${verdict_json}" ]]; then
+if ((fill_verdict != 0)); then
+    run_summary ""
+    verdict_path="${verdict_json:-logs/lockstep_playtest_verdict.json}"
+    "${script_dir}/fill_lockstep_playtest_verdict.py" --output "${verdict_path}"
+    run_summary "${verdict_path}"
+elif [[ -n "${verdict_json}" ]]; then
+    run_summary "${verdict_json}"
+else
+    run_summary ""
     printf '\n'
     printf 'Telemetry audit finished. Final completion still requires human verdict JSON:\n'
     if [[ -n "${initialized_verdict_json}" ]]; then
