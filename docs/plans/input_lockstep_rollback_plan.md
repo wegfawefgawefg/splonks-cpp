@@ -85,6 +85,25 @@ Active model status:
 Goal: make lockstep feel good without returning networking concerns to
 gameplay/content code.
 
+Factorio-aligned target:
+
+- Keep one sacred deterministic Game State. Every peer must step the same
+  gameplay state from the same ordered input/action stream.
+- Keep latency/prediction state separate from sacred Game State. Predicted
+  local movement may affect rendering/control feel, but it must not mutate the
+  authoritative lockstep state directly.
+- Let the host/server arbitrate which input actions execute on which lockstep
+  frame.
+- Do not block the whole session forever waiting for one late client input.
+  If a peer misses the cut-off for a frame, schedule a neutral/safe input for
+  that frame and include the real input on a later frame. Factorio calls out
+  this kind of skipped-tick behavior; inputs are delayed, not discarded.
+- Use rollback only as the local latency-hiding repair mechanism around this
+  ordered Game State stream, not as a substitute for clean frame arbitration.
+- Use periodic broad hashes to detect real deterministic divergence. Use
+  expensive component/per-ent diagnostics only after a mismatch or explicit
+  debug request.
+
 Current facts:
 
 - Networking is main-thread pumped once per simulation tick. There is no
@@ -104,15 +123,19 @@ Implementation direction:
    Delay is deterministic and easy to reason about. It should remain selectable
    before hosting and visible in debug, because some links may be stable enough
    to prefer pure delay over frequent rollback.
-2. Use rollback to make the default delay small.
+2. Add Factorio-style frame arbitration before leaning harder on rollback.
+   The host should pick the canonical input set for each frame. If a client is
+   late, the host should advance with a safe input for that client instead of
+   stalling everybody or forcing global delay up to worst-case latency.
+3. Use rollback/latency state to make the default delay small.
    The default should stay near `2` frames on good links. Missing remote inputs
    are predicted, late differing inputs rewind to the saved gameplay snapshot,
    and the sim replays to the present.
-3. Prove correctness before hiding correction artifacts.
+4. Prove correctness before hiding correction artifacts.
    The first exit gate is final-state equality under latency/jitter/reorder.
    Smoothing, camera polish, and duplicate presentation suppression come after
    rollback replay is deterministic.
-4. Keep gameplay code unaware of networking.
+5. Keep gameplay code unaware of networking.
    Items, ents, traps, shops, fluids, and stage progression should only consume
    `InputFrame`s and normal state. The lockstep scheduler owns delay,
    prediction, snapshots, rollback, and replay.
@@ -144,18 +167,41 @@ Track B: rollback/prediction.
   gameplay hash, rollback counters advance, and local movement feels better
   than raising delay to cover worst-case latency.
 
+Track C: host-arbitrated skipped input frames.
+
+- Add a per-player input deadline for each lockstep frame.
+- If a player's input for that frame is missing at the deadline, the host
+  advances the frame with a safe input policy for that player:
+  `repeat-last-for-movement`, but inject a stop/neutral input when the peer is
+  missing too long or when continuing movement would be dangerous.
+- When the late input arrives, do not rewrite the already-arbitrated sacred
+  Game State frame. Schedule it for a later frame if still relevant.
+- Broadcast the host-arbitrated frame input set so all peers step the exact
+  same canonical inputs.
+- Track skipped-input count per player and use it for adaptive latency
+  suggestions. Do not confuse CPU-bound rollback/hash stalls with network
+  delay.
+- Exit gate: one slow laptop cannot force the whole session to 300ms input
+  delay or freeze all other peers; all peers still hash to the same sampled
+  frames.
+
 Implementation order from here:
 
-1. Finish rollback telemetry so we can see prediction misses, rollback count,
-   replay cost, and snapshot depth while testing.
-2. Keep the existing fixed-delay selector and suggested delay UI as the fallback
+1. Fix hash cadence/cost first: no every-frame broad hash in normal play.
+2. Add frame-arbitration telemetry: missing-input frames, skipped-input frames,
+   late-arrival frames, and per-player input age.
+3. Implement host-arbitrated skipped-input frames and canonical input-set
+   broadcast.
+4. Keep the existing fixed-delay selector and suggested delay UI as the fallback
    path.
-3. Run smoke coverage for no-fuzzer, LAN-ish, cross-country, and Texas/Japan
+5. Finish rollback telemetry so we can see prediction misses, rollback count,
+   replay cost, and snapshot depth while testing.
+6. Run smoke coverage for no-fuzzer, LAN-ish, cross-country, and Texas/Japan
    profiles.
-4. Human-playtest movement, hang, jump, carry/throw, tools, explosives, and
+7. Human-playtest movement, hang, jump, carry/throw, tools, explosives, and
    stage transition under the fuzzer profiles.
-5. Tune default delay and prediction policy only after correctness is stable.
-6. Add smoothing only for visual correction artifacts; never hide a real
+8. Tune default delay and prediction policy only after correctness is stable.
+9. Add smoothing only for visual correction artifacts; never hide a real
    deterministic divergence with interpolation.
 
 Next tuning plan: live delay/window controls.
@@ -1356,12 +1402,19 @@ Implementation steps:
 
 1. Hash sampling.
    - [x] Add a lockstep hash history ring to `NetSessionState`.
-   - [x] Compute the canonical gameplay hash after each completed lockstep
-     frame while a network session is active.
-   - [x] Keep hash calculation local every frame initially for diagnosis.
-     If measured cost is too high, keep the ring but sample every `2-4` frames.
+   - [x] Compute the canonical gameplay hash after completed lockstep frames
+     while a network session is active.
+   - [ ] Stop hashing every completed/replayed frame in normal play. Compute
+     the broad gameplay hash only for frames that will be exchanged, frames
+     needed for a pending remote comparison, or explicit debug requests.
    - [x] Exclude local-only pres/audio/debug/camera data exactly like existing
      deterministic fingerprints.
+   - [ ] Keep active ents in the broad live hash. Do not drop ents from the
+     live checksum; only keep expensive per-ent/component breakdowns out of the
+     hot path.
+   - [ ] Split hash cost accounting into normal-hash ms, rollback-hash ms, hash
+     count this render frame, replayed rollback frames, and snapshot
+     restore/save ms. This makes weak-machine bottlenecks visible.
 2. Hash exchange protocol.
    - [x] Add a compact lockstep hash packet/message: `frame`, `hash`, and
      session/stage generation.
@@ -1376,6 +1429,10 @@ Implementation steps:
      for debug UI and logs.
    - [x] Add a `splonksctl net` field for last hash mismatch and latest
      confirmed hash frame.
+   - [ ] On mismatch, escalate to diagnostic lanes on demand:
+     `root/stage/players/tools/ents`, then per-ent fingerprints if the ent lane
+     differs. This is Factorio-style "cheap live check, expensive report when
+     broken", not normal every-frame diffing.
 4. Recovery path.
    - [x] If the last matching frame is inside the rollback snapshot window,
      request rollback from that frame and replay to current using recorded
@@ -1427,10 +1484,30 @@ Implemented first pass:
 
 Default policy:
 
-- Compute local hash every frame while lockstep is active.
-- Send hash packets every `30` frames.
+- Compute local hash only on due exchange frames, pending remote comparison
+  frames, recovery validation frames, and explicit debug requests.
+- Send hash packets every `30` frames by default.
 - Keep enough hash history to cover rollback window plus a safety margin.
 - Do not freeze gameplay on a missing hash packet; only act on mismatches.
+- Do not auto-raise input delay because one machine is CPU-bound in hashing or
+  rollback. Fix the hot-path cost first; auto-delay should react to network
+  jitter/late input rate, not self-inflicted hash stalls.
+
+Factorio parity note:
+
+- Factorio's public multiplayer model is deterministic lockstep plus latency
+  hiding: everyone simulates the same game state from the same input actions,
+  while a smaller latency state makes common local actions feel immediate.
+- Factorio's server arbitrates which input actions execute on which tick. If a
+  client is late, the sim does not permanently wait for that client; the action
+  is delayed to a later tick and special movement-stop behavior prevents a
+  character from continuing unsafe stale movement forever.
+- Factorio has used whole-map CRC every tick as a special determinism/debug
+  mode, and explicitly noted that this makes the game crawl. That supports our
+  target: periodic broad hashes during live play, expensive component/per-ent
+  diagnostics only after mismatch or debug request.
+- Live hashes must still include active ents. The optimization is cadence and
+  diagnostic depth, not removing ents from desync coverage.
 
 Exit gate: high-latency profile remains locally responsive and hashes converge.
 
