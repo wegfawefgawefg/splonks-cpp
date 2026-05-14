@@ -222,6 +222,7 @@ Implementation status:
    deterministic hashes.
 7. [ ] Human-playtest movement, hang, jump, carry/throw, tools, explosives, and
    stage transition under the fuzzer profiles.
+   Checklist: `docs/plans/lockstep_human_playtest_checklist.md`.
    Live validation matrix:
    - `same-house`: run, jump, ledge hang, climb, carry/drop/throw another
      player, throw rock/pot, rope, grenade, bow/gun/mattock, shop buy, stage
@@ -1514,6 +1515,7 @@ Goal: reduce input-delay feel while keeping det correctness.
   longer respawns only one process; synced jump/confirm input drives restart
   and all-player respawn on the same simulated frame.
 - [ ] Human-playtest high-latency feel and tune default delay/prediction.
+  Checklist: `docs/plans/lockstep_human_playtest_checklist.md`.
   Required evidence:
   - `tx-japan` profile can play a real stage for several minutes without a
     gameplay hash mismatch or snapshot catchup loop.
