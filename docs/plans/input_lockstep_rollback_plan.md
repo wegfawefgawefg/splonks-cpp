@@ -245,7 +245,9 @@ Implementation status:
    Evidence: `scripts/validate_lockstep_live.py --launch-pair` passes
    `same-house`, `tx-ca`, and `tx-japan` against a real invisible SDL-dummy
    host/peer pair, with no hash mismatch, fatal desync, join-barrier stall, or
-   stale confirmed-hash lag beyond the validation threshold.
+   stale confirmed-hash lag beyond the validation threshold. The harness also
+   fails if smoothed multiplayer sim, hash, or rollback replay cost exceeds
+   its configured budget.
 8. Tune default delay and prediction policy only after correctness is stable.
 9. Add smoothing only for visual correction artifacts; never hide a real
    deterministic divergence with interpolation.

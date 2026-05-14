@@ -27,6 +27,9 @@ DEFAULT_LAUNCH_HOST_CTL_PORT = 41200
 DEFAULT_LAUNCH_PEER_CTL_PORT = 41201
 DEFAULT_PROFILES = ("same-house", "tx-ca", "tx-japan")
 DEFAULT_MAX_CONFIRMED_HASH_LAG_FRAMES = 180
+DEFAULT_MAX_SIM_MS = 8.0
+DEFAULT_MAX_HASH_MS = 4.0
+DEFAULT_MAX_ROLLBACK_REPLAY_MS = 4.0
 
 
 class ControlError(RuntimeError):
@@ -170,6 +173,9 @@ def summarize_profile(
     profile: str,
     samples: dict[str, dict[str, Any]],
     max_confirmed_hash_lag: int,
+    max_sim_ms: float,
+    max_hash_ms: float,
+    max_rollback_replay_ms: float,
 ) -> dict[str, Any]:
     summary: dict[str, Any] = {"profile": profile, "ok": True, "problems": []}
     frames: dict[str, int] = {}
@@ -201,6 +207,22 @@ def summarize_profile(
             summary["problems"].append(
                 f"{name}: join barrier still active phase={net['join_barrier']['phase']}"
             )
+        multiplayer_sim_total_ms = float(perf["multiplayer_sim_total_smoothed_ms"])
+        hash_ms = float(perf["lockstep_hash_smoothed_ms"])
+        rollback_replay_ms = float(perf["rollback_replay_smoothed_ms"])
+        if multiplayer_sim_total_ms > max_sim_ms:
+            summary["problems"].append(
+                f"{name}: multiplayer sim {multiplayer_sim_total_ms:.3f}ms > {max_sim_ms:.3f}ms"
+            )
+        if hash_ms > max_hash_ms:
+            summary["problems"].append(
+                f"{name}: hash {hash_ms:.3f}ms > {max_hash_ms:.3f}ms"
+            )
+        if rollback_replay_ms > max_rollback_replay_ms:
+            summary["problems"].append(
+                f"{name}: rollback replay {rollback_replay_ms:.3f}ms > "
+                f"{max_rollback_replay_ms:.3f}ms"
+            )
         summary[name] = {
             "stage": net["stage"],
             "frame": net["lockstep_next_frame"],
@@ -213,9 +235,9 @@ def summarize_profile(
             "confirmed_hash_lag": confirmed_lag,
             "hash_mismatches": net["lockstep_hash_mismatch_count"],
             "network_hash": fingerprint["network"]["hash"],
-            "multiplayer_sim_total_ms": perf["multiplayer_sim_total_smoothed_ms"],
-            "hash_ms": perf["lockstep_hash_smoothed_ms"],
-            "rollback_replay_ms": perf["rollback_replay_smoothed_ms"],
+            "multiplayer_sim_total_ms": multiplayer_sim_total_ms,
+            "hash_ms": hash_ms,
+            "rollback_replay_ms": rollback_replay_ms,
         }
 
     if len(set(stages.values())) != 1:
@@ -347,6 +369,24 @@ def main() -> int:
         default=DEFAULT_MAX_CONFIRMED_HASH_LAG_FRAMES,
         help="maximum allowed local frame minus latest confirmed hash frame.",
     )
+    parser.add_argument(
+        "--max-sim-ms",
+        type=float,
+        default=DEFAULT_MAX_SIM_MS,
+        help="maximum allowed smoothed multiplayer simulation time per endpoint.",
+    )
+    parser.add_argument(
+        "--max-hash-ms",
+        type=float,
+        default=DEFAULT_MAX_HASH_MS,
+        help="maximum allowed smoothed lockstep hash time per endpoint.",
+    )
+    parser.add_argument(
+        "--max-rollback-replay-ms",
+        type=float,
+        default=DEFAULT_MAX_ROLLBACK_REPLAY_MS,
+        help="maximum allowed smoothed rollback replay time per endpoint.",
+    )
     args = parser.parse_args()
 
     launched: list[subprocess.Popen[bytes]] = []
@@ -378,7 +418,14 @@ def main() -> int:
                 args.ready_timeout,
                 args.max_confirmed_hash_lag,
             )
-            results.append(summarize_profile(profile, samples, args.max_confirmed_hash_lag))
+            results.append(summarize_profile(
+                profile,
+                samples,
+                args.max_confirmed_hash_lag,
+                args.max_sim_ms,
+                args.max_hash_ms,
+                args.max_rollback_replay_ms,
+            ))
     except ControlError as exc:
         print(f"validate_lockstep_live: {exc}", file=sys.stderr)
         terminate_processes(launched)
@@ -404,6 +451,7 @@ def main() -> int:
                     f"hash_frame={data.get('confirmed_hash_frame')} "
                     f"hash_lag={data.get('confirmed_hash_lag')} "
                     f"hash_ms={data.get('hash_ms'):.3f} "
+                    f"rollback_ms={data.get('rollback_replay_ms'):.3f} "
                     f"sim_ms={data.get('multiplayer_sim_total_ms'):.3f}"
                 )
             for problem in result["problems"]:
