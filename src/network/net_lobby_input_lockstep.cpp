@@ -17,6 +17,8 @@
 
 namespace splonks::network {
 
+void RelinkPlayerNetEnts(State& state);
+
 namespace {
 
 constexpr LockstepFrame kInputHistoryFrames = 12;
@@ -45,7 +47,7 @@ struct RollbackPresentationSnapshot {
 
 void PruneRollbackSnapshots(State& state);
 void RequestRollbackFromFrame(State& state, LockstepFrame frame);
-const GameplaySnapshot* FindRollbackSnapshot(const State& state, LockstepFrame frame);
+const SimSnapshot* FindRollbackSnapshot(const State& state, LockstepFrame frame);
 std::vector<PlayerId> GetConnectedPlayerIds(const State& state);
 bool AllRequiredInputsConfirmedForFrame(const State& state, LockstepFrame frame);
 
@@ -68,11 +70,9 @@ std::size_t ApproxRollbackBufferBytes(const State& state) {
     std::size_t bytes = 0;
     for (const LockstepRollbackSnapshot& entry : state.net_session.lockstep_rollback_snapshots) {
         if (entry.snapshot) {
-            bytes += sizeof(GameplaySnapshot);
+            bytes += sizeof(SimSnapshot);
             bytes += entry.snapshot->ents.ents.capacity() * sizeof(Ent);
             bytes += entry.snapshot->stage.tiles.capacity() * sizeof(std::vector<Tile>);
-            bytes += entry.snapshot->particles.sprite_particles.capacity() *
-                sizeof(SpriteParticle);
         }
     }
     return bytes;
@@ -300,10 +300,11 @@ void SendSnapshotResyncChunksToEndpoint(
     const NetEndpoint& endpoint,
     PlayerId target_peer_id
 ) {
+    (void)graphics;
     const std::uint32_t transfer_id = state.net_session.lockstep_snapshot_resync_next_transfer_id++;
     const LockstepFrame snapshot_frame = state.net_session.lockstep_next_frame_to_step;
     const std::vector<std::uint8_t> bytes =
-        SerializeGameplaySnapshotToBytes(MakeGameplaySnapshot(state, graphics));
+        SerializeSimSnapshotToBytes(MakeSimSnapshot(state));
     const std::uint32_t chunk_count = static_cast<std::uint32_t>(
         (bytes.size() + kNetSnapshotChunkPayloadBytes - 1) / kNetSnapshotChunkPayloadBytes
     );
@@ -507,10 +508,11 @@ void StartJoinBarrierSnapshotTransfer(
     const NetEndpoint& endpoint,
     PlayerId target_peer_id
 ) {
+    (void)graphics;
     const std::uint32_t transfer_id = state.net_session.lockstep_snapshot_resync_next_transfer_id++;
     const LockstepFrame snapshot_frame = state.net_session.lockstep_next_frame_to_step;
     const std::vector<std::uint8_t> bytes =
-        SerializeGameplaySnapshotToBytes(MakeGameplaySnapshot(state, graphics));
+        SerializeSimSnapshotToBytes(MakeSimSnapshot(state));
     const std::uint32_t chunk_count = static_cast<std::uint32_t>(
         (bytes.size() + kNetSnapshotChunkPayloadBytes - 1) / kNetSnapshotChunkPayloadBytes
     );
@@ -1535,36 +1537,27 @@ void DiscardLockstepHashesFromFrame(State& state, LockstepFrame frame) {
         state.net_session.lockstep_last_sent_hash_frame >= frame) {
         state.net_session.lockstep_has_sent_hash = false;
     }
-    auto& pending = state.net_session.lockstep_pending_remote_hashes;
-    pending.erase(
-        std::remove_if(
-            pending.begin(),
-            pending.end(),
-            [frame](const LockstepRemoteHashRecord& record) {
-                return record.frame >= frame;
-            }
-        ),
-        pending.end()
-    );
+    // Keep remote hash samples for the rollback window. Replayed local hashes
+    // are compared against these samples to prove the rollback actually
+    // repaired the divergence.
 }
 
 void SaveRollbackSnapshot(State& state, const Graphics& graphics, LockstepFrame frame) {
+    (void)graphics;
     if (!state.net_session.lockstep_rollback_enabled) {
         return;
     }
     const auto save_start = std::chrono::steady_clock::now();
     for (LockstepRollbackSnapshot& entry : state.net_session.lockstep_rollback_snapshots) {
         if (entry.frame == frame) {
-            entry.snapshot = std::make_shared<GameplaySnapshot>(
-                MakeGameplaySnapshot(state, graphics)
-            );
+            entry.snapshot = std::make_shared<SimSnapshot>(MakeSimSnapshot(state));
             state.performance_stats.rollback_snapshot_save_ms += ElapsedMs(save_start);
             return;
         }
     }
     state.net_session.lockstep_rollback_snapshots.push_back(LockstepRollbackSnapshot{
         .frame = frame,
-        .snapshot = std::make_shared<GameplaySnapshot>(MakeGameplaySnapshot(state, graphics)),
+        .snapshot = std::make_shared<SimSnapshot>(MakeSimSnapshot(state)),
     });
     state.performance_stats.rollback_snapshot_save_ms += ElapsedMs(save_start);
 }
@@ -1591,7 +1584,7 @@ void PruneRollbackSnapshots(State& state) {
     );
 }
 
-const GameplaySnapshot* FindRollbackSnapshot(const State& state, LockstepFrame frame) {
+const SimSnapshot* FindRollbackSnapshot(const State& state, LockstepFrame frame) {
     for (const LockstepRollbackSnapshot& entry : state.net_session.lockstep_rollback_snapshots) {
         if (entry.frame == frame && entry.snapshot) {
             return entry.snapshot.get();
@@ -1751,7 +1744,7 @@ bool ReplayRollbackWindow(
         return true;
     }
 
-    const GameplaySnapshot* const snapshot = FindRollbackSnapshot(state, rollback_frame);
+    const SimSnapshot* const snapshot = FindRollbackSnapshot(state, rollback_frame);
     if (snapshot == nullptr) {
         StartOrQueueHostSnapshotResync(state, state.net_session.lockstep_last_mismatch_peer_id);
         return false;
@@ -1762,7 +1755,8 @@ bool ReplayRollbackWindow(
         CaptureRollbackPresentationState(state, graphics);
     Audio replay_audio;
     const auto restore_start = std::chrono::steady_clock::now();
-    RestoreGameplaySnapshot(*snapshot, state, graphics);
+    RestoreSimSnapshot(*snapshot, state, graphics);
+    RelinkPlayerNetEnts(state);
     state.performance_stats.rollback_snapshot_restore_ms += ElapsedMs(restore_start);
     state.net_session.lockstep_next_frame_to_step = rollback_frame;
     DiscardLockstepHashesFromFrame(state, rollback_frame);
@@ -1921,7 +1915,7 @@ void HandleSnapshotResyncRequest(
     );
 }
 
-void RestoreLocalPlayerSlotRoles(State& state, const std::vector<PlayerId>& local_player_ids) {
+void RelinkPlayerNetEnts(State& state) {
     state.net_session.ent_links.erase(
         std::remove_if(
             state.net_session.ent_links.begin(),
@@ -1933,13 +1927,7 @@ void RestoreLocalPlayerSlotRoles(State& state, const std::vector<PlayerId>& loca
         state.net_session.ent_links.end()
     );
 
-    for (PlayerSlot& slot : state.players.slots) {
-        const bool local =
-            std::find(local_player_ids.begin(), local_player_ids.end(), slot.player_id) !=
-            local_player_ids.end();
-        slot.connection_kind = local ? PlayerConnectionKind::Local : PlayerConnectionKind::Remote;
-        slot.primary_local = local && slot.player_id == state.net_session.local_player_id;
-        slot.connected = true;
+    for (const PlayerSlot& slot : state.players.slots) {
         if (slot.player_id == kInvalidPlayerId || !slot.ent_vid.has_value()) {
             continue;
         }
@@ -2043,24 +2031,19 @@ void HandleSnapshotResyncChunk(
         return;
     }
 
-    const std::vector<PlayerId> local_player_ids = GetLocalPlayerIds(state);
-    const std::vector<DebugLocalPlayerBot> local_debug_bots = state.debug_local_player_bots;
-    const DebugInputOverrideState local_debug_input_override = state.debug_input_override;
-    GameplaySnapshot snapshot;
-    const bool decoded = DeserializeGameplaySnapshotFromBytes(
+    SimSnapshot snapshot;
+    const bool decoded = DeserializeSimSnapshotFromBytes(
         state.net_session.lockstep_snapshot_resync_bytes,
         snapshot
     );
     if (decoded) {
         const std::vector<StageTileTrigger> local_tile_triggers = state.stage.tile_triggers;
-        RestoreGameplaySnapshot(snapshot, state, graphics);
+        RestoreSimSnapshot(snapshot, state, graphics);
         state.stage.tile_triggers = local_tile_triggers;
-        state.debug_local_player_bots = local_debug_bots;
-        state.debug_input_override = local_debug_input_override;
         for (Ent& ent : state.ents.ents) {
             RestoreEntRuntimeCallbacksFromSpec(ent);
         }
-        RestoreLocalPlayerSlotRoles(state, local_player_ids);
+        RelinkPlayerNetEnts(state);
         state.net_session.lockstep_next_frame_to_step = packet.snapshot_frame;
         state.net_session.lockstep_next_local_input_frame = packet.snapshot_frame;
         state.net_session.lockstep_input_buffer = LockstepInputBuffer{};

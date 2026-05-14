@@ -935,6 +935,16 @@ Required work:
   two player input streams, fake impaired packet delivery, and per-frame
   gameplay hash comparison. Real two-process UDP remains Phase 6.
 
+Snapshot architecture correction:
+
+- Active plan: split broad debug playback snapshots from deterministic
+  simulation snapshots. See `docs/plans/sim_snapshot_split_plan.md`.
+- Current issue: network catchup/rollback still reuse broad `GameplaySnapshot`,
+  which includes local process fields such as `controlled_ent_vid`.
+- Required fix: move rollback and network catchup to `SimSnapshot` plus
+  `LocalOverlaySnapshot`, then delete the temporary post-restore local-control
+  repair branch.
+
 ## Rollback Requirements
 
 Rollback should be added only after det lockstep passes.
@@ -1688,10 +1698,10 @@ Goal: add player/session usability once the base model works.
 - [x] Decide first production policy: use current-stage chunked gameplay
   snapshots. Late join and desync catchup freeze lockstep, stream the host's
   current gameplay state, apply it, then resume from the snapshot frame.
-- [x] Define det gameplay snapshot format.
-  Current format is `GameplaySnapshot` serialized through
-  `SerializeGameplaySnapshotToBytes` / `DeserializeGameplaySnapshotFromBytes`.
-  Snapshot smokes verify roundtrip fingerprints before use.
+- [x] Split det simulation snapshots from broad debug playback snapshots.
+  Network catchup and rollback now use `SimSnapshot`; debug playback remains on
+  the broad local tooling snapshot. Local process fields are preserved through
+  `LocalOverlaySnapshot` instead of imported from host snapshots.
 - [x] Reconnect to retained player slot at safe sync point.
   Current reconnect data stores player id, display name, quest/stage, ent type,
   last position, health, money, tools, effects, held item, and back item.

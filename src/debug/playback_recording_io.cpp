@@ -990,6 +990,134 @@ bool ReadSnapshot(std::istream& in, GameplaySnapshot& snapshot) {
            ReadPod(in, snapshot.play_cam_pos);
 }
 
+void WriteSimPlayerSlotSnapshot(std::ostream& out, const SimPlayerSlotSnapshot& slot) {
+    WritePod(out, slot.player_id);
+    WriteOptionalPod(out, slot.ent_vid);
+    WritePod(out, slot.connected);
+    WriteString(out, slot.display_name);
+    WritePod(out, slot.input_frame);
+    WritePod(out, slot.previous_input_frame);
+    WritePod(out, slot.inputs);
+    WritePod(out, slot.immediate_inputs);
+}
+
+bool ReadSimPlayerSlotSnapshot(std::istream& in, SimPlayerSlotSnapshot& slot) {
+    return ReadPod(in, slot.player_id) &&
+           ReadOptionalPod(in, slot.ent_vid) &&
+           ReadPod(in, slot.connected) &&
+           ReadString(in, slot.display_name) &&
+           ReadPod(in, slot.input_frame) &&
+           ReadPod(in, slot.previous_input_frame) &&
+           ReadPod(in, slot.inputs) &&
+           ReadPod(in, slot.immediate_inputs);
+}
+
+void WriteSimPlayerSlots(std::ostream& out, const std::vector<SimPlayerSlotSnapshot>& slots) {
+    const std::uint32_t count = static_cast<std::uint32_t>(slots.size());
+    WritePod(out, count);
+    for (const SimPlayerSlotSnapshot& slot : slots) {
+        WriteSimPlayerSlotSnapshot(out, slot);
+    }
+}
+
+bool ReadSimPlayerSlots(std::istream& in, std::vector<SimPlayerSlotSnapshot>& slots) {
+    std::uint32_t count = 0;
+    if (!ReadPod(in, count)) {
+        return false;
+    }
+    slots.resize(count);
+    for (SimPlayerSlotSnapshot& slot : slots) {
+        if (!ReadSimPlayerSlotSnapshot(in, slot)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
+    WritePod(out, snapshot.mode);
+    WriteSettings(out, snapshot.settings);
+    WritePod(out, snapshot.playing_inputs);
+    WritePod(out, snapshot.immediate_playing_inputs);
+    WritePod(out, snapshot.playing_input_snapshot);
+    WritePod(out, snapshot.previous_playing_input_snapshot);
+    WritePod(out, snapshot.previous_immediate_playing_input_snapshot);
+    WritePod(out, snapshot.stage_rotation);
+    WritePod(out, snapshot.player_tuning);
+    WritePod(out, snapshot.running);
+    WritePod(out, snapshot.now);
+    WritePod(out, snapshot.time_since_last_update);
+    WritePod(out, snapshot.scene_frame);
+    WritePod(out, snapshot.frame);
+    WritePod(out, snapshot.stage_frame);
+    WritePod(out, snapshot.drng);
+    WritePod(out, snapshot.stagegen_drng);
+    WritePod(out, snapshot.menu_return_to);
+    WritePod(out, snapshot.game_over);
+    WritePod(out, snapshot.pause);
+    WritePod(out, snapshot.win);
+    WritePod(out, snapshot.respawn_target);
+    WriteOptionalPod(out, snapshot.pending_stage_transition);
+    WritePod(out, snapshot.multiplayer_respawn_mode);
+    WritePod(out, snapshot.points);
+    WritePod(out, snapshot.deaths);
+    WritePod(out, snapshot.depth);
+    WritePod(out, snapshot.sac_altar_favor);
+    WritePod(out, snapshot.sac_altar_reward_tier);
+    WriteVectorPod(out, snapshot.interact_claimed_vids_this_frame);
+    WritePod(out, snapshot.quest_state);
+    WriteSimPlayerSlots(out, snapshot.players);
+    WritePod(out, snapshot.frame_pause);
+    WritePod(out, snapshot.debug_level);
+    WriteEntPool(out, snapshot.ents);
+    WriteVectorPod(out, snapshot.area_listener_vids);
+    WriteStage(out, snapshot.stage);
+    WriteContactBookkeeping(out, snapshot.contact);
+    WriteVectorPod(out, snapshot.ent_tool_states);
+}
+
+bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
+    return ReadPod(in, snapshot.mode) &&
+           ReadSettings(in, snapshot.settings) &&
+           ReadPod(in, snapshot.playing_inputs) &&
+           ReadPod(in, snapshot.immediate_playing_inputs) &&
+           ReadPod(in, snapshot.playing_input_snapshot) &&
+           ReadPod(in, snapshot.previous_playing_input_snapshot) &&
+           ReadPod(in, snapshot.previous_immediate_playing_input_snapshot) &&
+           ReadPod(in, snapshot.stage_rotation) &&
+           ReadPod(in, snapshot.player_tuning) &&
+           ReadPod(in, snapshot.running) &&
+           ReadPod(in, snapshot.now) &&
+           ReadPod(in, snapshot.time_since_last_update) &&
+           ReadPod(in, snapshot.scene_frame) &&
+           ReadPod(in, snapshot.frame) &&
+           ReadPod(in, snapshot.stage_frame) &&
+           ReadPod(in, snapshot.drng) &&
+           ReadPod(in, snapshot.stagegen_drng) &&
+           ReadPod(in, snapshot.menu_return_to) &&
+           ReadPod(in, snapshot.game_over) &&
+           ReadPod(in, snapshot.pause) &&
+           ReadPod(in, snapshot.win) &&
+           ReadPod(in, snapshot.respawn_target) &&
+           ReadOptionalPod(in, snapshot.pending_stage_transition) &&
+           ReadPod(in, snapshot.multiplayer_respawn_mode) &&
+           ReadPod(in, snapshot.points) &&
+           ReadPod(in, snapshot.deaths) &&
+           ReadPod(in, snapshot.depth) &&
+           ReadPod(in, snapshot.sac_altar_favor) &&
+           ReadPod(in, snapshot.sac_altar_reward_tier) &&
+           ReadVectorPod(in, snapshot.interact_claimed_vids_this_frame) &&
+           ReadPod(in, snapshot.quest_state) &&
+           ReadSimPlayerSlots(in, snapshot.players) &&
+           ReadPod(in, snapshot.frame_pause) &&
+           ReadPod(in, snapshot.debug_level) &&
+           ReadEntPool(in, snapshot.ents) &&
+           ReadVectorPod(in, snapshot.area_listener_vids) &&
+           ReadStage(in, snapshot.stage) &&
+           ReadContactBookkeeping(in, snapshot.contact) &&
+           ReadVectorPod(in, snapshot.ent_tool_states);
+}
+
 } // namespace
 
 std::vector<std::uint8_t> SerializeGameplaySnapshotToBytes(const GameplaySnapshot& snapshot) {
@@ -1006,6 +1134,22 @@ bool DeserializeGameplaySnapshotFromBytes(
     const std::string text(reinterpret_cast<const char*>(bytes.data()), bytes.size());
     std::istringstream in(text, std::ios::in | std::ios::binary);
     return ReadSnapshot(in, snapshot);
+}
+
+std::vector<std::uint8_t> SerializeSimSnapshotToBytes(const SimSnapshot& snapshot) {
+    std::ostringstream out(std::ios::out | std::ios::binary);
+    WriteSimSnapshot(out, snapshot);
+    const std::string text = out.str();
+    return std::vector<std::uint8_t>(text.begin(), text.end());
+}
+
+bool DeserializeSimSnapshotFromBytes(
+    const std::vector<std::uint8_t>& bytes,
+    SimSnapshot& snapshot
+) {
+    const std::string text(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    std::istringstream in(text, std::ios::in | std::ios::binary);
+    return ReadSimSnapshot(in, snapshot);
 }
 
 bool SaveRecordingToFile(const DebugPlayback& debug, std::string* status_out) {
@@ -1122,6 +1266,17 @@ bool DeserializeGameplaySnapshotFromBytes(
     GameplaySnapshot& snapshot
 ) {
     return debug_playback_internal::DeserializeGameplaySnapshotFromBytes(bytes, snapshot);
+}
+
+std::vector<std::uint8_t> SerializeSimSnapshotToBytes(const SimSnapshot& snapshot) {
+    return debug_playback_internal::SerializeSimSnapshotToBytes(snapshot);
+}
+
+bool DeserializeSimSnapshotFromBytes(
+    const std::vector<std::uint8_t>& bytes,
+    SimSnapshot& snapshot
+) {
+    return debug_playback_internal::DeserializeSimSnapshotFromBytes(bytes, snapshot);
 }
 
 } // namespace splonks

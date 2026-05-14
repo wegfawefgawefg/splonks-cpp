@@ -9,6 +9,7 @@
 #include "graphics.hpp"
 #include "inputs.hpp"
 #include "network/input_lockstep.hpp"
+#include "network/net_ent_links.hpp"
 #include "network/net_fuzzer.hpp"
 #include "network/net_lobby_internal.hpp"
 #include "network/net_lobby.hpp"
@@ -1415,7 +1416,7 @@ bool RunRollbackRepairSmoke() {
     remote_actual.right = true;
     remote_actual.run = true;
 
-    const GameplaySnapshot pre_frame_0 = MakeGameplaySnapshot(predicted, predicted_graphics);
+    const SimSnapshot pre_frame_0 = MakeSimSnapshot(predicted);
 
     ApplyLockstepInputsToState(truth, players, {neutral, remote_actual});
     StepSingleTickWithMode(truth, truth_audio, truth_graphics, SimulationTickMode::ReplayNoNetwork);
@@ -1459,7 +1460,7 @@ bool RunRollbackRepairSmoke() {
         return false;
     }
 
-    RestoreGameplaySnapshot(pre_frame_0, predicted, predicted_graphics);
+    RestoreSimSnapshot(pre_frame_0, predicted, predicted_graphics);
     ApplyLockstepInputsToState(predicted, players, {neutral, remote_actual});
     StepSingleTickWithMode(
         predicted,
@@ -1700,8 +1701,9 @@ std::vector<network::SnapshotResyncChunkPacket> BuildSnapshotChunksForSmoke(
     std::uint32_t transfer_id,
     network::LockstepFrame snapshot_frame
 ) {
+    (void)graphics;
     const std::vector<std::uint8_t> bytes =
-        SerializeGameplaySnapshotToBytes(MakeGameplaySnapshot(state, graphics));
+        SerializeSimSnapshotToBytes(MakeSimSnapshot(state));
     const std::uint32_t chunk_count = static_cast<std::uint32_t>(
         (bytes.size() + network::kNetSnapshotChunkPayloadBytes - 1) /
         network::kNetSnapshotChunkPayloadBytes
@@ -1831,6 +1833,15 @@ bool RunJoinBarrierChunkImpairmentSmoke() {
         std::cerr << "join barrier chunk impairment smoke failed: complete snapshot did not ack/wait for resume\n";
         return false;
     }
+    const PlayerSlot* const peer_primary = peer.players.FindPrimaryLocal();
+    if (peer_primary == nullptr ||
+        peer_primary->player_id != 2 ||
+        !peer_primary->ent_vid.has_value() ||
+        peer.controlled_ent_vid != peer_primary->ent_vid) {
+        std::cerr << "join barrier chunk impairment smoke failed: peer snapshot restore did not preserve local control\n"
+                  << "  peer ownership:" << DescribeSmokePlayerOwnership(peer) << '\n';
+        return false;
+    }
     const std::size_t captured_after_first_ack = peer_transport.captured_packets.size();
 
     network::HandleSnapshotResyncChunk(
@@ -1865,6 +1876,86 @@ bool RunJoinBarrierChunkImpairmentSmoke() {
 
     std::cout << "join barrier chunk impairment smoke ok: chunks="
               << chunks.size() << '\n';
+    return true;
+}
+
+bool AddSmokePlayer(State& state, Graphics& graphics, PlayerId player_id, Vec2 offset) {
+    (void)state.players.EnsureLocalPlayer(
+        player_id,
+        "Player " + std::to_string(player_id),
+        false
+    );
+    Vec2 spawn_pos = Vec2::New(32.0F, 32.0F) + offset;
+    if (const PlayerSlot* const primary = state.players.FindPrimaryLocal();
+        primary != nullptr && primary->ent_vid.has_value()) {
+        if (const Ent* const primary_ent = state.ents.GetEnt(*primary->ent_vid)) {
+            spawn_pos = primary_ent->pos + offset;
+        }
+    }
+    const std::optional<VID> player_vid = SpawnPlayerForPlayerId(state, player_id, spawn_pos);
+    if (!player_vid.has_value()) {
+        return false;
+    }
+    state.UpdateSidForEnt(player_vid->id, graphics);
+    return true;
+}
+
+bool RunSimSnapshotMultiLocalOverlaySmoke() {
+    Graphics source_graphics;
+    Graphics target_graphics;
+    InitCliSmokeRuntimeTables(source_graphics);
+    InitCliSmokeRuntimeTables(target_graphics);
+
+    State source = State::New();
+    State target = State::New();
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(source, source_graphics, {1}, failed_step) ||
+        !PrepareLockstepSmokeState(target, target_graphics, {2}, failed_step) ||
+        !AddSmokePlayer(source, source_graphics, 3, Vec2::New(32.0F, 0.0F)) ||
+        !AddSmokePlayer(target, target_graphics, 3, Vec2::New(32.0F, 0.0F)) ||
+        !ConfigureLockstepSmokeOwnership(source, {1}) ||
+        !ConfigureLockstepSmokeOwnership(target, {2, 3})) {
+        std::cerr << "sim snapshot multi-local overlay smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    const PlayerSlot* const source_primary = source.players.FindPrimaryLocal();
+    const PlayerSlot* const target_primary_before = target.players.FindPrimaryLocal();
+    if (source_primary == nullptr ||
+        source_primary->player_id != 1 ||
+        target_primary_before == nullptr ||
+        target_primary_before->player_id != 2) {
+        std::cerr << "sim snapshot multi-local overlay smoke failed: invalid initial primary slots\n";
+        return false;
+    }
+
+    const SimSnapshot snapshot = MakeSimSnapshot(source);
+    RestoreSimSnapshot(snapshot, target, target_graphics);
+
+    const PlayerSlot* const slot_1 = target.players.Find(1);
+    const PlayerSlot* const slot_2 = target.players.Find(2);
+    const PlayerSlot* const slot_3 = target.players.Find(3);
+    const PlayerSlot* const target_primary_after = target.players.FindPrimaryLocal();
+    if (slot_1 == nullptr ||
+        slot_2 == nullptr ||
+        slot_3 == nullptr ||
+        slot_1->connection_kind != PlayerConnectionKind::Remote ||
+        slot_1->primary_local ||
+        slot_2->connection_kind != PlayerConnectionKind::Local ||
+        !slot_2->primary_local ||
+        slot_3->connection_kind != PlayerConnectionKind::Local ||
+        slot_3->primary_local ||
+        target_primary_after == nullptr ||
+        target_primary_after->player_id != 2 ||
+        !slot_2->ent_vid.has_value() ||
+        target.controlled_ent_vid != slot_2->ent_vid) {
+        std::cerr << "sim snapshot multi-local overlay smoke failed: local overlay was not preserved\n"
+                  << "  ownership:" << DescribeSmokePlayerOwnership(target) << '\n';
+        return false;
+    }
+
+    std::cout << "sim snapshot multi-local overlay smoke ok\n";
     return true;
 }
 
@@ -2031,16 +2122,16 @@ bool RunLockstepHashExchangeSmoke() {
     }
 
     const std::vector<std::uint8_t> snapshot_bytes =
-        SerializeGameplaySnapshotToBytes(MakeGameplaySnapshot(state, graphics));
-    GameplaySnapshot decoded_snapshot;
-    if (!DeserializeGameplaySnapshotFromBytes(snapshot_bytes, decoded_snapshot)) {
+        SerializeSimSnapshotToBytes(MakeSimSnapshot(state));
+    SimSnapshot decoded_snapshot;
+    if (!DeserializeSimSnapshotFromBytes(snapshot_bytes, decoded_snapshot)) {
         std::cerr << "lockstep hash exchange smoke failed: snapshot resync decode failed\n";
         return false;
     }
     Graphics roundtrip_graphics;
     InitCliSmokeRuntimeTables(roundtrip_graphics);
     State roundtrip_state = State::New();
-    RestoreGameplaySnapshot(decoded_snapshot, roundtrip_state, roundtrip_graphics);
+    RestoreSimSnapshot(decoded_snapshot, roundtrip_state, roundtrip_graphics);
     if (!CompareCanonicalFingerprints(state, roundtrip_state, "snapshot resync roundtrip")) {
         return false;
     }
@@ -2074,7 +2165,7 @@ bool RunLockstepHashExchangeSmoke() {
     });
     state.net_session.lockstep_rollback_snapshots.push_back(network::LockstepRollbackSnapshot{
         .frame = 4,
-        .snapshot = std::make_shared<GameplaySnapshot>(MakeGameplaySnapshot(state, graphics)),
+        .snapshot = std::make_shared<SimSnapshot>(MakeSimSnapshot(state)),
     });
 
     network::LockstepHashNetPacket roundtrip;
@@ -2126,7 +2217,7 @@ bool RunLockstepHashExchangeSmoke() {
     state.net_session.lockstep_rollback_snapshots.clear();
     state.net_session.lockstep_rollback_snapshots.push_back(network::LockstepRollbackSnapshot{
         .frame = 0,
-        .snapshot = std::make_shared<GameplaySnapshot>(MakeGameplaySnapshot(state, graphics)),
+        .snapshot = std::make_shared<SimSnapshot>(MakeSimSnapshot(state)),
     });
     network::LockstepHashNetPacket catchup_packet = roundtrip;
     catchup_packet.hash = 0xCCCCULL;
@@ -2237,6 +2328,8 @@ bool RunLockstepHashRollbackRepairSmoke() {
     repaired.net_session.role = network::NetRole::Peer;
     repaired.net_session.local_player_id = 1;
     repaired.net_session.stage_instance_id = truth.net_session.stage_instance_id;
+    network::RegisterStageEntLinks(truth);
+    network::RegisterStageEntLinks(repaired);
 
     InputFrame neutral = InputFrame::New();
     InputFrame remote_actual = InputFrame::New();
@@ -2263,9 +2356,7 @@ bool RunLockstepHashRollbackRepairSmoke() {
     repaired.net_session.lockstep_next_frame_to_step = 1;
     repaired.net_session.lockstep_rollback_snapshots.push_back(network::LockstepRollbackSnapshot{
         .frame = 1,
-        .snapshot = std::make_shared<GameplaySnapshot>(
-            MakeGameplaySnapshot(repaired, repaired_graphics)
-        ),
+        .snapshot = std::make_shared<SimSnapshot>(MakeSimSnapshot(repaired)),
     });
     repaired.net_session.lockstep_hash_history.push_back(network::LockstepHashRecord{
         .frame = 0,
@@ -2340,7 +2431,29 @@ bool RunLockstepHashRollbackRepairSmoke() {
     }
     if (repaired.net_session.lockstep_last_desync_recovery_mode !=
         network::LockstepDesyncRecoveryMode::RollbackRepaired) {
-        std::cerr << "lockstep hash rollback repair smoke failed: replay did not mark repaired\n";
+        const NetworkStateFingerprintComponents truth_components =
+            ComputeNetworkStateFingerprintComponents(truth);
+        const NetworkStateFingerprintComponents repaired_components =
+            ComputeNetworkStateFingerprintComponents(repaired);
+        std::cerr << "lockstep hash rollback repair smoke failed: replay did not mark repaired"
+                  << " mode="
+                  << static_cast<int>(repaired.net_session.lockstep_last_desync_recovery_mode)
+                  << " local_hashes=" << repaired.net_session.lockstep_hash_history.size()
+                  << " remote_hashes=" << repaired.net_session.lockstep_remote_hash_history.size()
+                  << " pending_remote_hashes="
+                  << repaired.net_session.lockstep_pending_remote_hashes.size()
+                  << "\n  truth components root=" << truth_components.root
+                  << " stage=" << truth_components.stage
+                  << " players=" << truth_components.players
+                  << " tools=" << truth_components.tools
+                  << " ents=" << truth_components.ents
+                  << "\n  repaired components root=" << repaired_components.root
+                  << " stage=" << repaired_components.stage
+                  << " players=" << repaired_components.players
+                  << " tools=" << repaired_components.tools
+                  << " ents=" << repaired_components.ents
+                  << "\n  first simple diff: "
+                  << DescribeFirstStateDifference(truth, repaired) << '\n';
         return false;
     }
     if (!CompareCanonicalFingerprints(truth, repaired, "lockstep hash rollback repair final")) {
@@ -2355,10 +2468,10 @@ bool RunLockstepHashRollbackRepairSmoke() {
 
 struct RollbackSmokeSnapshot {
     network::LockstepFrame frame = 0;
-    GameplaySnapshot snapshot;
+    SimSnapshot snapshot;
 };
 
-const GameplaySnapshot* FindRollbackSmokeSnapshot(
+const SimSnapshot* FindRollbackSmokeSnapshot(
     const std::vector<RollbackSmokeSnapshot>& snapshots,
     network::LockstepFrame frame
 ) {
@@ -2376,15 +2489,16 @@ void SaveRollbackSmokeSnapshot(
     const State& state,
     const Graphics& graphics
 ) {
+    (void)graphics;
     for (RollbackSmokeSnapshot& entry : snapshots) {
         if (entry.frame == frame) {
-            entry.snapshot = MakeGameplaySnapshot(state, graphics);
+            entry.snapshot = MakeSimSnapshot(state);
             return;
         }
     }
     snapshots.push_back(RollbackSmokeSnapshot{
         .frame = frame,
-        .snapshot = MakeGameplaySnapshot(state, graphics),
+        .snapshot = MakeSimSnapshot(state),
     });
 }
 
@@ -2524,13 +2638,13 @@ bool RunRollbackLatencySmoke() {
 
         if (rollback_frame.has_value()) {
             const network::LockstepFrame target = predicted_next_frame;
-            const GameplaySnapshot* const snapshot =
+            const SimSnapshot* const snapshot =
                 FindRollbackSmokeSnapshot(snapshots, *rollback_frame);
             if (snapshot == nullptr) {
                 std::cerr << "rollback latency smoke failed: missing snapshot\n";
                 return false;
             }
-            RestoreGameplaySnapshot(*snapshot, predicted, predicted_graphics);
+            RestoreSimSnapshot(*snapshot, predicted, predicted_graphics);
             predicted_next_frame = *rollback_frame;
             rollback_frame = std::nullopt;
             rollback_count += 1;
@@ -3581,6 +3695,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunJoinBarrierChunkImpairmentSmoke()) {
+            return false;
+        }
+        if (!RunSimSnapshotMultiLocalOverlaySmoke()) {
             return false;
         }
         if (!RunRetainedReconnectSmoke()) {

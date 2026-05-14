@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace splonks {
-struct GameplaySnapshot;
+struct SimSnapshot;
 }
 
 namespace splonks::network {
@@ -108,7 +108,7 @@ struct NetRetainedPlayerState {
 
 struct LockstepRollbackSnapshot {
     LockstepFrame frame = 0;
-    std::shared_ptr<GameplaySnapshot> snapshot;
+    std::shared_ptr<SimSnapshot> snapshot;
 };
 
 struct LockstepHashRecord {
