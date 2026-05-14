@@ -252,6 +252,10 @@ Implementation status:
    stale confirmed-hash lag beyond the validation threshold. The harness also
    fails if smoothed multiplayer sim, hash, or rollback replay cost exceeds
    its configured budget.
+   Expanded evidence: `scripts/validate_lockstep_live.py --launch-pair --profile all --report-json`
+   passes all known fuzzer presets (`same-house`, `same-city`, `same-state`,
+   `tx-ca`, `ca-fl`, `us-cross-country`, and `tx-japan`) with the same hash,
+   barrier, and performance gates.
 8. Tune default delay and prediction policy only after correctness is stable.
 9. Add smoothing only for visual correction artifacts; never hide a real
    deterministic divergence with interpolation.
