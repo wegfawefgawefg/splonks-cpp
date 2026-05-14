@@ -4,6 +4,7 @@
 #include "ent.hpp"
 #include "ent/spec.hpp"
 #include "ents/common/common.hpp"
+#include "effects.hpp"
 #include "aframe.hpp"
 #include "graphics.hpp"
 #include "inputs.hpp"
@@ -796,7 +797,7 @@ std::optional<VID> FindPlayerVidForSmoke(State& state, PlayerId player_id) {
     if (slot == nullptr || !slot->connected || !slot->ent_vid.has_value()) {
         return std::nullopt;
     }
-    Ent* const player = state.ents.GetEntMut(*slot->ent_vid);
+    Ent* player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr || !player->active) {
         return std::nullopt;
     }
@@ -1161,7 +1162,7 @@ bool KillSmokePlayer(State& state, PlayerId player_id, const char*& failed_step)
         failed_step = "find smoke player to kill";
         return false;
     }
-    Ent* const player = state.ents.GetEntMut(*slot->ent_vid);
+    Ent* player = state.ents.GetEntMut(*slot->ent_vid);
     if (player == nullptr || !player->active) {
         failed_step = "resolve smoke player to kill";
         return false;
@@ -1864,6 +1865,156 @@ bool RunJoinBarrierChunkImpairmentSmoke() {
 
     std::cout << "join barrier chunk impairment smoke ok: chunks="
               << chunks.size() << '\n';
+    return true;
+}
+
+bool RunRetainedReconnectSmoke() {
+    Graphics graphics;
+    InitCliSmokeRuntimeTables(graphics);
+    State state = State::New();
+    const std::vector<PlayerId> players = {1, 2};
+    const char* failed_step = nullptr;
+    if (!PrepareLockstepSmokeState(state, graphics, players, failed_step)) {
+        std::cerr << "retained reconnect smoke failed during setup: "
+                  << (failed_step != nullptr ? failed_step : "unknown") << '\n';
+        return false;
+    }
+
+    PlayerSlot* const slot = state.players.Find(2);
+    if (slot == nullptr || !slot->ent_vid.has_value()) {
+        std::cerr << "retained reconnect smoke failed: missing player slot\n";
+        return false;
+    }
+    Ent* player = state.ents.GetEntMut(*slot->ent_vid);
+    if (player == nullptr || !player->active) {
+        std::cerr << "retained reconnect smoke failed: missing player ent\n";
+        return false;
+    }
+
+    player->pos = Vec2::New(128.0F, 192.0F);
+    player->health = 277;
+    player->money = 54321;
+    (void)AddEffect(*player, EffectId::Gloves);
+    (void)AddEffect(*player, EffectId::Meathead, 6, 120);
+    FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 0), ToolKind::ThrowBomb, 11, true);
+    FillToolSlot(state.ent_tools.EnsureToolSlot(player->vid, 1), ToolKind::ThrowRope, 7, true);
+
+    Ent* const held = world_ops::SpawnEnt(state, EntType::Rock, [](Ent& ent) {
+        ent.pos = Vec2::New(136.0F, 192.0F);
+        ent.vel = Vec2::New(1.0F, -2.0F);
+        ent.counter_a = 3.0F;
+    });
+    Ent* const back = world_ops::SpawnEnt(state, EntType::Cape, [](Ent& ent) {
+        ent.pos = Vec2::New(120.0F, 192.0F);
+        ent.counter_b = 4.0F;
+    });
+    if (held == nullptr || back == nullptr) {
+        std::cerr << "retained reconnect smoke failed: attached ent spawn failed\n";
+        return false;
+    }
+    ents::common::AttachEntAsHeld(*player, *held);
+    player->back_vid = back->vid;
+    back->held_by_vid = player->vid;
+    back->attach_mode = AttachMode::Back;
+    back->has_physics = false;
+    back->can_collide = false;
+
+    network::StoreRetainedPlayerState(state, *slot, *player);
+    const network::NetRetainedPlayerState* const retained =
+        network::FindRetainedPlayerState(state, slot->player_id);
+    if (retained == nullptr ||
+        retained->last_pos != Vec2::New(128.0F, 192.0F) ||
+        retained->health != 277 ||
+        retained->money != 54321 ||
+        !retained->held_item.valid ||
+        retained->held_item.ent_type != EntType::Rock ||
+        !retained->back_item.valid ||
+        retained->back_item.ent_type != EntType::Cape ||
+        retained->tool_slots[0].kind != ToolKind::ThrowBomb ||
+        retained->tool_slots[0].count != 11 ||
+        retained->tool_slots[1].kind != ToolKind::ThrowRope ||
+        retained->tool_slots[1].count != 7 ||
+        retained->effect_count < 2) {
+        std::cerr << "retained reconnect smoke failed: retained state incomplete\n";
+        return false;
+    }
+
+    network::DeactivateRetainedAttachedEnt(state, retained->held_item, player->holding_vid);
+    network::DeactivateRetainedAttachedEnt(state, retained->back_item, player->back_vid);
+    if ((state.ents.GetEnt(held->vid) != nullptr && state.ents.GetEnt(held->vid)->active) ||
+        (state.ents.GetEnt(back->vid) != nullptr && state.ents.GetEnt(back->vid)->active)) {
+        std::cerr << "retained reconnect smoke failed: old attached ents stayed active\n";
+        return false;
+    }
+
+    player->pos = Vec2::New(16.0F, 16.0F);
+    player->health = 1;
+    player->money = 2;
+    player->holding_vid.reset();
+    player->back_vid.reset();
+    player->effects.reset();
+    if (EntToolState* const tools = state.ent_tools.FindEntToolStateMut(player->vid)) {
+        for (ToolSlot& tool_slot : tools->slots) {
+            tool_slot = ToolSlot{};
+        }
+    }
+
+    state.net_session.reconnect_spawn_mode = network::NetReconnectSpawnMode::RetainedAtLastPosition;
+    const Vec2 spawn_pos = network::ResolveReconnectSpawnPos(state, retained, 1);
+    if (spawn_pos != Vec2::New(128.0F, 192.0F)) {
+        std::cerr << "retained reconnect smoke failed: retained spawn pos mismatch\n";
+        return false;
+    }
+
+    network::ApplyRetainedPlayerState(state, slot->player_id, *retained, spawn_pos, graphics);
+    player = state.ents.GetEntMut(*slot->ent_vid);
+    if (player == nullptr ||
+        player->pos != Vec2::New(128.0F, 192.0F) ||
+        player->health != 277 ||
+        player->money != 54321 ||
+        !HasEffect(*player, EffectId::Gloves) ||
+        !HasEffect(*player, EffectId::Meathead)) {
+        std::cerr << "retained reconnect smoke failed: player state did not restore\n";
+        return false;
+    }
+    const ToolSlot* const restored_bombs = state.ent_tools.FindToolSlot(player->vid, 0);
+    const ToolSlot* const restored_ropes = state.ent_tools.FindToolSlot(player->vid, 1);
+    if (restored_bombs == nullptr ||
+        restored_bombs->kind != ToolKind::ThrowBomb ||
+        restored_bombs->count != 11 ||
+        restored_ropes == nullptr ||
+        restored_ropes->kind != ToolKind::ThrowRope ||
+        restored_ropes->count != 7) {
+        std::cerr << "retained reconnect smoke failed: tools did not restore\n";
+        return false;
+    }
+    if (!player->holding_vid.has_value() ||
+        !player->back_vid.has_value()) {
+        std::cerr << "retained reconnect smoke failed: attached refs did not restore\n";
+        return false;
+    }
+    const Ent* const restored_held = state.ents.GetEnt(*player->holding_vid);
+    const Ent* const restored_back = state.ents.GetEnt(*player->back_vid);
+    if (restored_held == nullptr ||
+        restored_held->type_ != EntType::Rock ||
+        restored_held->held_by_vid != player->vid ||
+        restored_back == nullptr ||
+        restored_back->type_ != EntType::Cape ||
+        restored_back->held_by_vid != player->vid ||
+        restored_back->attach_mode != AttachMode::Back) {
+        std::cerr << "retained reconnect smoke failed: attached ents did not restore\n";
+        return false;
+    }
+
+    state.net_session.retained_player_lifetime_frames = 10;
+    state.frame = static_cast<std::uint32_t>(retained->disconnected_frame + 11);
+    network::CleanupExpiredRetainedPlayerStates(state);
+    if (network::FindRetainedPlayerState(state, slot->player_id) != nullptr) {
+        std::cerr << "retained reconnect smoke failed: expired retained player was kept\n";
+        return false;
+    }
+
+    std::cout << "retained reconnect smoke ok\n";
     return true;
 }
 
@@ -3370,6 +3521,9 @@ bool CheckInputLockstepSmoke() {
             return false;
         }
         if (!RunJoinBarrierChunkImpairmentSmoke()) {
+            return false;
+        }
+        if (!RunRetainedReconnectSmoke()) {
             return false;
         }
 

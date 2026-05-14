@@ -1311,7 +1311,10 @@ it is host/peer before doing ordinary gameplay.
 - [x] Rename remaining live local helper names that still say `Request` but no longer
   cross the network.
 - [x] Delete old network smoke tests that only validate mutation-message lanes.
-- [ ] Keep transport/fuzzer code only if it is useful for input packets.
+- [x] Keep transport/fuzzer code only if it is useful for input packets.
+  Current state: the retained transport/fuzzer path feeds lockstep input,
+  settings, join-barrier, hash, and snapshot-catchup packets. Old durable
+  mutation-message traffic is no longer active.
 - [ ] Remove ent/spec/debug baggage added only for the old
   host-authoritative model: replica stepping, local prediction flags,
   replicated runtime flag helpers, and mutation-message-only state fields.
@@ -1381,8 +1384,10 @@ Goal: boot two game windows and play with delay-based lockstep.
   authoritative snapshot/event lanes once lockstep owns live networking.
 - [x] Add lobby start barrier: stage seed, player list, stage id, start frame,
   input delay.
-- [ ] Disable active-stage late join initially; peers join before start or wait
-  for next stage.
+- [x] Use active-stage join-barrier catchup instead of disabling late join.
+  Current policy is Factorio-style blunt synchronization: pause lockstep while
+  the host catches up queued peers one at a time with a chunked gameplay
+  snapshot, then resume all peers on the same frame.
 - [x] Add debug UI: local frame, remote input buffer depth, blocked frame count,
   hash, last agreed frame, packet loss/jitter profile.
   Debug Network and `splonksctl net` expose role, lockstep frame, local-input
@@ -1393,7 +1398,9 @@ Goal: boot two game windows and play with delay-based lockstep.
   Implemented through `splonksctl input`, which writes a temporary
   `DebugInputOverrideState` consumed by normal input capture. This is not a
   world mutation/admin command.
-- [ ] Keep current multiplayer pair launcher if useful.
+- [x] Keep current multiplayer pair launcher if useful.
+  `scripts/run_multiplayer_pair_i3.sh` remains the quick two-window path, and
+  `scripts/run_multiplayer_quad_i3.sh` covers the four-window stress layout.
 - [x] Playtest same-machine two-window lockstep.
   Basic launch/query verified host and peer connect with the same stage seed,
   lockstep enabled, and matching player/link topology through
@@ -1583,11 +1590,22 @@ Exit gate: high-latency profile remains locally responsive and hashes converge.
 
 Goal: add player/session usability once the base model works.
 
-- [ ] Decide first production policy: wait until next stage, replay from stage
-  start, or snapshot current gameplay state.
-- [ ] If using snapshots, define det gameplay snapshot format.
-- [ ] Reconnect to retained player slot at safe sync point.
-- [ ] Add tests for disconnect/reconnect.
+- [x] Decide first production policy: use current-stage chunked gameplay
+  snapshots. Late join and desync catchup freeze lockstep, stream the host's
+  current gameplay state, apply it, then resume from the snapshot frame.
+- [x] Define det gameplay snapshot format.
+  Current format is `GameplaySnapshot` serialized through
+  `SerializeGameplaySnapshotToBytes` / `DeserializeGameplaySnapshotFromBytes`.
+  Snapshot smokes verify roundtrip fingerprints before use.
+- [x] Reconnect to retained player slot at safe sync point.
+  Current reconnect data stores player id, display name, quest/stage, ent type,
+  last position, health, money, tools, effects, held item, and back item.
+  Spawn policy is configurable: fresh/retained at entrance, host, or last
+  position. Default is retained at last position.
+- [x] Add tests for disconnect/reconnect.
+  Evidence: `--check-input-lockstep-smoke` now includes
+  `retained reconnect smoke ok`, covering retained player stats, effects,
+  tools, held/back attachments, spawn position, and retained-state expiry.
 
 Exit gate: reconnect policy is explicit and does not compromise det
 frame stepping.
