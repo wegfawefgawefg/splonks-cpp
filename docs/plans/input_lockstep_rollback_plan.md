@@ -222,6 +222,20 @@ Implementation status:
    deterministic hashes.
 7. [ ] Human-playtest movement, hang, jump, carry/throw, tools, explosives, and
    stage transition under the fuzzer profiles.
+   Live validation matrix:
+   - `same-house`: run, jump, ledge hang, climb, carry/drop/throw another
+     player, throw rock/pot, rope, grenade, bow/gun/mattock, shop buy, stage
+     exit, death/respawn.
+   - `same-state` or `tx-ca`: repeat the same flow and verify no visible
+     desync, no stalled stage transition, and no persistent rubber-band loop.
+   - `tx-japan`: repeat movement, hang, carry/throw, rope, grenade, and stage
+     exit. Pass criteria are no divergent gameplay hash, no fatal desync, no
+     frozen peers, and latency feel acceptable enough to tune rather than
+     redesign.
+   - Record evidence from `splonksctl net`, the Debug Network panel, and live
+     notes: active delay, rollback window, rollback count/sec, prediction
+     misses, skipped inputs, latest confirmed hash frame, hash mismatch count,
+     and any repro steps.
 8. Tune default delay and prediction policy only after correctness is stable.
 9. Add smoothing only for visual correction artifacts; never hide a real
    deterministic divergence with interpolation.
@@ -1480,6 +1494,13 @@ Goal: reduce input-delay feel while keeping det correctness.
   longer respawns only one process; synced jump/confirm input drives restart
   and all-player respawn on the same simulated frame.
 - [ ] Human-playtest high-latency feel and tune default delay/prediction.
+  Required evidence:
+  - `tx-japan` profile can play a real stage for several minutes without a
+    gameplay hash mismatch or snapshot catchup loop.
+  - Local movement, jump, hanging, carried-player interaction, and stage exit
+    feel are good enough with the selected default delay/rollback settings.
+  - Debug Network shows rollback cost and hash cost within the target machine
+    budget during normal play, not just in same-process smokes.
 - [x] Add live hash exchange / desync recovery. Periodic gameplay hashes now
   travel over the lockstep lane, detect arbitrary deterministic-state
   divergence, request rollback from the last peer-specific matching hash, and
