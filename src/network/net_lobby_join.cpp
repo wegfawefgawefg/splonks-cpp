@@ -148,6 +148,71 @@ void SendLeaveNoticeToEndpoint(NetTransportRuntime& transport, const NetEndpoint
     SendEncodedPacket(transport, endpoint, EncodeLeaveNotice(notice));
 }
 
+bool ShouldDeferJoinRequest(const State& state) {
+    return state.mode == Mode::StageTransition || state.pending_stage_transition.has_value();
+}
+
+void RemovePendingJoinEndpoint(NetTransportRuntime& transport, const NetEndpoint& endpoint) {
+    transport.pending_join_endpoints.erase(
+        std::remove_if(
+            transport.pending_join_endpoints.begin(),
+            transport.pending_join_endpoints.end(),
+            [&endpoint](const NetPendingJoinEndpoint& pending) {
+                return EndpointsEqual(pending.endpoint, endpoint);
+            }
+        ),
+        transport.pending_join_endpoints.end()
+    );
+}
+
+void SendJoinPendingPacket(
+    const State& state,
+    NetTransportRuntime& transport,
+    const NetEndpoint& endpoint,
+    JoinPendingReason reason
+) {
+    JoinPendingPacket pending;
+    pending.stage_instance_id = state.net_session.stage_instance_id;
+    pending.sender_peer_id = state.net_session.local_player_id;
+    pending.reason = reason;
+    pending.pending_join_count =
+        static_cast<std::uint32_t>(transport.pending_join_endpoints.size());
+    SendEncodedPacket(transport, endpoint, EncodeJoinPending(pending));
+}
+
+void QueuePendingJoinRequest(
+    const State& state,
+    NetTransportRuntime& transport,
+    const UdpPacket& udp_packet,
+    const JoinRequestPacket& request
+) {
+    for (NetPendingJoinEndpoint& pending : transport.pending_join_endpoints) {
+        if (EndpointsEqual(pending.endpoint, udp_packet.endpoint)) {
+            pending.request = request;
+            pending.last_heard_pump_tick = transport.pump_tick;
+            SendJoinPendingPacket(
+                state,
+                transport,
+                udp_packet.endpoint,
+                JoinPendingReason::StageTransition
+            );
+            return;
+        }
+    }
+
+    transport.pending_join_endpoints.push_back(NetPendingJoinEndpoint{
+        .endpoint = udp_packet.endpoint,
+        .request = request,
+        .last_heard_pump_tick = transport.pump_tick,
+    });
+    SendJoinPendingPacket(
+        state,
+        transport,
+        udp_packet.endpoint,
+        JoinPendingReason::StageTransition
+    );
+}
+
 } // namespace
 
 void SendLeaveNotice(State& state) {
@@ -165,6 +230,24 @@ void SendLeaveNotice(State& state) {
     }
 }
 
+void DrainPendingJoinRequestsAsHost(
+    State& state,
+    const Graphics& graphics,
+    NetTransportRuntime& transport
+) {
+    if (ShouldDeferJoinRequest(state) || transport.pending_join_endpoints.empty()) {
+        return;
+    }
+
+    std::vector<NetPendingJoinEndpoint> pending = transport.pending_join_endpoints;
+    transport.pending_join_endpoints.clear();
+    for (const NetPendingJoinEndpoint& join : pending) {
+        UdpPacket udp_packet;
+        udp_packet.endpoint = join.endpoint;
+        HandleJoinRequestAsHost(state, graphics, transport, udp_packet, join.request);
+    }
+}
+
 void HandleJoinRequestAsHost(
     State& state,
     const Graphics& graphics,
@@ -172,6 +255,12 @@ void HandleJoinRequestAsHost(
     const UdpPacket& udp_packet,
     const JoinRequestPacket& request
 ) {
+    if (ShouldDeferJoinRequest(state)) {
+        QueuePendingJoinRequest(state, transport, udp_packet, request);
+        return;
+    }
+    RemovePendingJoinEndpoint(transport, udp_packet.endpoint);
+
     std::uint32_t player_count = std::clamp(
         request.local_player_count,
         1U,
@@ -332,6 +421,8 @@ void HandleJoinAcceptAsPeer(
         break;
     }
     transport.join_request_pending = false;
+    transport.join_request_waiting_for_host = false;
+    transport.join_pending_reason = JoinPendingReason::None;
     ResetInputLockstepState(state);
     state.net_session.lockstep_next_frame_to_step = accept.lockstep_start_frame;
     state.net_session.lockstep_next_local_input_frame = accept.lockstep_start_frame;
@@ -426,6 +517,19 @@ void HandleJoinAcceptAsPeer(
     state.net_session.join_barrier_active = true;
     state.net_session.join_barrier_phase = JoinBarrierPhase::WaitingForCatchup;
     state.net_session.join_barrier_active_peer_id = state.net_session.local_player_id;
+}
+
+void HandleJoinPendingAsPeer(
+    State& state,
+    NetTransportRuntime& transport,
+    const JoinPendingPacket& pending
+) {
+    if (state.net_session.role != NetRole::Peer || !transport.join_request_pending) {
+        return;
+    }
+    transport.join_request_waiting_for_host = true;
+    transport.join_pending_reason = pending.reason;
+    transport.join_request_retry_frames = 180;
 }
 
 void HandleLeaveNoticeAsHost(

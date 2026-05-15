@@ -10,7 +10,7 @@ namespace splonks::debug_playback_internal {
 namespace {
 
 constexpr std::uint32_t kRecordingMagic = 0x53504C52U;
-constexpr std::uint32_t kRecordingVersion = 70;
+constexpr std::uint32_t kRecordingVersion = 71;
 
 template <typename T>
 void WritePod(std::ostream& out, const T& value) {
@@ -1034,6 +1034,34 @@ bool ReadSimPlayerSlots(std::istream& in, std::vector<SimPlayerSlotSnapshot>& sl
     return true;
 }
 
+void WriteSimNetEntLinks(
+    std::ostream& out,
+    const std::vector<SimNetEntLinkSnapshot>& links
+) {
+    WriteVectorPod(out, links);
+}
+
+bool ReadSimNetEntLinks(
+    std::istream& in,
+    std::vector<SimNetEntLinkSnapshot>& links
+) {
+    return ReadVectorPod(in, links);
+}
+
+void WriteSimNetEntIdAliases(
+    std::ostream& out,
+    const std::vector<SimNetEntIdAliasSnapshot>& aliases
+) {
+    WriteVectorPod(out, aliases);
+}
+
+bool ReadSimNetEntIdAliases(
+    std::istream& in,
+    std::vector<SimNetEntIdAliasSnapshot>& aliases
+) {
+    return ReadVectorPod(in, aliases);
+}
+
 void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WritePod(out, snapshot.mode);
     WriteSettings(out, snapshot.settings);
@@ -1074,6 +1102,9 @@ void WriteSimSnapshot(std::ostream& out, const SimSnapshot& snapshot) {
     WriteStage(out, snapshot.stage);
     WriteContactBookkeeping(out, snapshot.contact);
     WriteVectorPod(out, snapshot.ent_tool_states);
+    WritePod(out, snapshot.net_next_local_ent_id);
+    WriteSimNetEntLinks(out, snapshot.net_ent_links);
+    WriteSimNetEntIdAliases(out, snapshot.net_ent_id_aliases);
 }
 
 bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
@@ -1115,7 +1146,10 @@ bool ReadSimSnapshot(std::istream& in, SimSnapshot& snapshot) {
            ReadVectorPod(in, snapshot.area_listener_vids) &&
            ReadStage(in, snapshot.stage) &&
            ReadContactBookkeeping(in, snapshot.contact) &&
-           ReadVectorPod(in, snapshot.ent_tool_states);
+           ReadVectorPod(in, snapshot.ent_tool_states) &&
+           ReadPod(in, snapshot.net_next_local_ent_id) &&
+           ReadSimNetEntLinks(in, snapshot.net_ent_links) &&
+           ReadSimNetEntIdAliases(in, snapshot.net_ent_id_aliases);
 }
 
 } // namespace

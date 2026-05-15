@@ -576,6 +576,10 @@ void StepStageTransition(
         if (state.scene_frame < kNetworkStageTransitionFrames) {
             return;
         }
+        if (mode == SimulationTickMode::Normal &&
+            network::IsInputLockstepCatchupBlocking(state)) {
+            return;
+        }
         if (!state.pending_stage_transition.has_value()) {
             state.SetMode(Mode::Win);
             return;

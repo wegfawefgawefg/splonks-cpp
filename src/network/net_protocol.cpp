@@ -6,6 +6,7 @@ namespace splonks::network {
 
 static_assert(sizeof(JoinRequestPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(JoinAcceptPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
+static_assert(sizeof(JoinPendingPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PingPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(PongPacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
 static_assert(sizeof(LeaveNoticePacket) <= kNetPacketMaxBytes - sizeof(NetPacketHeader));
@@ -78,6 +79,10 @@ EncodedNetPacket EncodeJoinRequest(const JoinRequestPacket& packet) {
 
 EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet) {
     return EncodePayload(NetPacketType::JoinAccept, packet);
+}
+
+EncodedNetPacket EncodeJoinPending(const JoinPendingPacket& packet) {
+    return EncodePayload(NetPacketType::JoinPending, packet);
 }
 
 EncodedNetPacket EncodePing(const PingPacket& packet) {
@@ -171,6 +176,21 @@ std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, s
         ClampLockstepInputDelayFrames(packet.lockstep_input_delay_frames);
     packet.lockstep_max_rollback_frames =
         ClampLockstepMaxRollbackFrames(packet.lockstep_max_rollback_frames);
+    return packet;
+}
+
+std::optional<JoinPendingPacket> TryDecodeJoinPending(const std::uint8_t* bytes, std::size_t size) {
+    std::size_t offset = 0;
+    if (!ReadHeader(bytes, size, NetPacketType::JoinPending, offset)) {
+        return std::nullopt;
+    }
+    JoinPendingPacket packet;
+    if (!Read(bytes, size, offset, packet)) {
+        return std::nullopt;
+    }
+    if (packet.reason != JoinPendingReason::StageTransition) {
+        packet.reason = JoinPendingReason::None;
+    }
     return packet;
 }
 

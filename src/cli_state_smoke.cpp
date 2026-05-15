@@ -1776,6 +1776,66 @@ bool RunJoinBarrierProtocolSmoke() {
         return false;
     }
 
+    State transition_host = State::New();
+    Graphics transition_graphics;
+    InitCliSmokeRuntimeTables(transition_graphics);
+    transition_host.net_session.role = network::NetRole::Host;
+    transition_host.net_session.local_player_id = 1;
+    transition_host.net_session.stage_instance_id = host.net_session.stage_instance_id;
+    transition_host.SetMode(Mode::StageTransition);
+    QueueStageTransition(
+        transition_host,
+        StageTransitionTarget{
+            .destination = StageLoadTarget::ForQuestStage("classic", "classic_mines_2"),
+            .preserve_player_state = true,
+            .seed = 9876U,
+        }
+    );
+    network::NetTransportRuntime transition_transport = network::NetTransportRuntime::New();
+    transition_transport.capture_outgoing_packets = true;
+    transition_transport.pump_tick = 100;
+    network::UdpPacket transition_join_packet;
+    transition_join_packet.endpoint = network::NetEndpoint{.address = "127.0.0.1", .port = 39105};
+    network::JoinRequestPacket transition_join_request;
+    transition_join_request.local_player_count = 1;
+    network::HandleJoinRequestAsHost(
+        transition_host,
+        transition_graphics,
+        transition_transport,
+        transition_join_packet,
+        transition_join_request
+    );
+    if (transition_transport.captured_packets.size() != 1 ||
+        !transition_transport.remotes.empty() ||
+        transition_transport.pending_join_endpoints.size() != 1 ||
+        !transition_host.net_session.join_barrier_queue.empty()) {
+        std::cerr << "join barrier protocol smoke failed: host did not defer join during stage transition\n";
+        return false;
+    }
+    const std::optional<network::JoinPendingPacket> decoded_pending =
+        network::TryDecodeJoinPending(
+            transition_transport.captured_packets.back().bytes.data(),
+            transition_transport.captured_packets.back().size
+        );
+    if (!decoded_pending.has_value() ||
+        decoded_pending->reason != network::JoinPendingReason::StageTransition) {
+        std::cerr << "join barrier protocol smoke failed: deferred join did not send pending status\n";
+        return false;
+    }
+    transition_host.SetMode(Mode::Playing);
+    transition_host.pending_stage_transition.reset();
+    network::DrainPendingJoinRequestsAsHost(
+        transition_host,
+        transition_graphics,
+        transition_transport
+    );
+    if (transition_transport.pending_join_endpoints.empty() == false ||
+        transition_transport.remotes.size() != 1 ||
+        transition_host.net_session.join_barrier_queue.empty()) {
+        std::cerr << "join barrier protocol smoke failed: deferred join did not drain after transition\n";
+        return false;
+    }
+
     State existing_peer = State::New();
     existing_peer.net_session.role = network::NetRole::Peer;
     existing_peer.net_session.stage_instance_id = host.net_session.stage_instance_id;
@@ -3276,6 +3336,14 @@ bool RunHostWaitsForMissingInputSmoke() {
                   << ", missing=" << host.net_session.lockstep_arbitrated_missing_input_count
                   << " neutral=" << host.net_session.lockstep_arbitrated_neutral_input_count
                   << '\n';
+        return false;
+    }
+
+    network::RemoveRemotePlayers(host, *host.net_transport, {2});
+    (void)network::PrepareInputLockstepFrame(host, host_graphics);
+    if (!network::PrepareInputLockstepFrame(host, host_graphics)) {
+        std::cerr << "host waits for missing input smoke failed: host did not resume"
+                  << " after all remotes disconnected\n";
         return false;
     }
 

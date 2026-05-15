@@ -27,6 +27,7 @@ enum class NetPacketType : std::uint16_t {
     JoinAccept = 2,
     Ping = 3,
     Pong = 4,
+    JoinPending = 5,
     LeaveNotice = 9,
     InputFrameRecords = 20,
     LockstepSettings = 21,
@@ -38,6 +39,11 @@ enum class NetPacketType : std::uint16_t {
     JoinBarrierResume = 27,
     JoinBarrierTopology = 28,
     JoinBarrierTopologyAck = 29,
+};
+
+enum class JoinPendingReason : std::uint8_t {
+    None = 0,
+    StageTransition = 1,
 };
 
 struct NetPacketHeader {
@@ -71,6 +77,13 @@ struct JoinAcceptPacket {
     std::array<char, kNetQuestIdBytes> quest_id{};
     std::array<char, kNetQuestStageIdBytes> quest_stage_id{};
     std::array<char, kNetNameBytes> host_name{};
+};
+
+struct JoinPendingPacket {
+    StageInstanceId stage_instance_id = kInvalidStageInstanceId;
+    std::uint32_t sender_peer_id = 0;
+    JoinPendingReason reason = JoinPendingReason::None;
+    std::uint32_t pending_join_count = 0;
 };
 
 struct LeaveNoticePacket {
@@ -205,6 +218,7 @@ struct EncodedNetPacket {
 
 EncodedNetPacket EncodeJoinRequest(const JoinRequestPacket& packet);
 EncodedNetPacket EncodeJoinAccept(const JoinAcceptPacket& packet);
+EncodedNetPacket EncodeJoinPending(const JoinPendingPacket& packet);
 EncodedNetPacket EncodePing(const PingPacket& packet);
 EncodedNetPacket EncodePong(const PongPacket& packet);
 EncodedNetPacket EncodeLeaveNotice(const LeaveNoticePacket& packet);
@@ -220,6 +234,7 @@ EncodedNetPacket EncodeJoinBarrierTopology(const JoinBarrierTopologyPacket& pack
 EncodedNetPacket EncodeJoinBarrierTopologyAck(const JoinBarrierTopologyAckPacket& packet);
 std::optional<JoinRequestPacket> TryDecodeJoinRequest(const std::uint8_t* bytes, std::size_t size);
 std::optional<JoinAcceptPacket> TryDecodeJoinAccept(const std::uint8_t* bytes, std::size_t size);
+std::optional<JoinPendingPacket> TryDecodeJoinPending(const std::uint8_t* bytes, std::size_t size);
 std::optional<PingPacket> TryDecodePing(const std::uint8_t* bytes, std::size_t size);
 std::optional<PongPacket> TryDecodePong(const std::uint8_t* bytes, std::size_t size);
 std::optional<LeaveNoticePacket> TryDecodeLeaveNotice(const std::uint8_t* bytes, std::size_t size);

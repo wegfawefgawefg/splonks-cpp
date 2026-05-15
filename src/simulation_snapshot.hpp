@@ -100,6 +100,18 @@ struct SimPlayerSlotSnapshot {
     PlayingInputs immediate_inputs = PlayingInputs::New();
 };
 
+struct SimNetEntLinkSnapshot {
+    network::NetEntId net_id = network::kInvalidNetEntId;
+    VID local_vid{};
+    bool has_input_owner = false;
+    PlayerId input_owner_player_id = kInvalidPlayerId;
+};
+
+struct SimNetEntIdAliasSnapshot {
+    network::NetEntId from_id = network::kInvalidNetEntId;
+    network::NetEntId to_id = network::kInvalidNetEntId;
+};
+
 struct SimSnapshot {
     Mode mode = Mode::Title;
     Settings settings;
@@ -140,6 +152,9 @@ struct SimSnapshot {
     Stage stage;
     ContactBookkeeping contact;
     std::vector<EntToolState> ent_tool_states;
+    network::NetEntId net_next_local_ent_id = 1;
+    std::vector<SimNetEntLinkSnapshot> net_ent_links;
+    std::vector<SimNetEntIdAliasSnapshot> net_ent_id_aliases;
 };
 
 struct LocalOverlaySnapshot {

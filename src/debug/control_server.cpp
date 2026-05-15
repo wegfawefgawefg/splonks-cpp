@@ -1175,7 +1175,11 @@ std::string HandleCommand(State& state, std::string_view command) {
         return "{\"ok\":true,\"cmd\":\"ping\",\"pong\":true}\n";
     }
     if (op == "help") {
-        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"net settings status\",\"net settings set <delay_frames> <rollback_frames>\",\"net settings auto <on|off>\",\"net fuzzer status\",\"net fuzzer off\",\"net fuzzer preset <name>\",\"net fuzzer set <latency_ms> <jitter_ms> <loss_pct> <duplicate_pct> <reorder_window>\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
+        return "{\"ok\":true,\"cmd\":\"help\",\"commands\":[\"ping\",\"quit\",\"status\",\"players\",\"ents [limit]\",\"ents near [radius] [limit]\",\"ent <id>\",\"tiles <x> <y> <w> <h>\",\"net\",\"net settings status\",\"net settings set <delay_frames> <rollback_frames>\",\"net settings auto <on|off>\",\"net fuzzer status\",\"net fuzzer off\",\"net fuzzer preset <name>\",\"net fuzzer set <latency_ms> <jitter_ms> <loss_pct> <duplicate_pct> <reorder_window>\",\"fingerprint\",\"perf\",\"input <frames> [buttons...]\",\"input player <id> <frames> [buttons...]\",\"input clear\",\"input status\"]}\n";
+    }
+    if (op == "quit") {
+        state.running = false;
+        return "{\"ok\":true,\"cmd\":\"quit\"}\n";
     }
     if (op == "status") {
         return HandleStatusCommand(state);

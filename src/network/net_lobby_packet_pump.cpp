@@ -17,6 +17,7 @@ namespace splonks::network {
 namespace {
 
 constexpr std::uint32_t kJoinRetryFrames = 30;
+constexpr std::uint32_t kJoinPendingRefreshFrames = 180;
 constexpr std::uint64_t kPingIntervalMs = 500;
 constexpr int kPacketsPerPump = 256;
 
@@ -121,6 +122,7 @@ void HandlePong(State& state, const NetEndpoint& endpoint, const PongPacket& pon
 void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime& transport) {
     SendDueHostPings(state, transport);
     CleanupTimedOutRemoteEndpoints(state, transport);
+    DrainPendingJoinRequestsAsHost(state, graphics, transport);
     for (int i = 0; i < kPacketsPerPump; ++i) {
         std::string error;
         const std::optional<UdpPacket> packet = transport.socket.Receive(&error);
@@ -219,8 +221,11 @@ void StepHostPackets(State& state, const Graphics& graphics, NetTransportRuntime
 void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& transport) {
     if (transport.join_request_pending) {
         if (transport.join_request_retry_frames == 0) {
+            const bool waiting_for_host = transport.join_request_waiting_for_host;
             SendJoinRequest(state);
-            transport.join_request_retry_frames = kJoinRetryFrames;
+            transport.join_request_retry_frames = waiting_for_host
+                ? kJoinPendingRefreshFrames
+                : kJoinRetryFrames;
         } else {
             transport.join_request_retry_frames -= 1;
         }
@@ -259,6 +264,12 @@ void StepPeerPackets(State& state, Graphics& graphics, NetTransportRuntime& tran
         if (const std::optional<JoinAcceptPacket> accept =
                 TryDecodeJoinAccept(packet->bytes.data(), packet->size)) {
             HandleJoinAcceptAsPeer(state, graphics, transport, *accept);
+            continue;
+        }
+
+        if (const std::optional<JoinPendingPacket> pending =
+                TryDecodeJoinPending(packet->bytes.data(), packet->size)) {
+            HandleJoinPendingAsPeer(state, transport, *pending);
             continue;
         }
 

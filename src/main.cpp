@@ -23,6 +23,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -39,6 +40,7 @@ struct StartupNetworkConfig {
     StartupNetworkMode mode = StartupNetworkMode::None;
     std::string host = "127.0.0.1";
     std::uint16_t port = splonks::network::kDefaultMultiplayerPort;
+    std::vector<splonks::PlayerId> preferred_player_ids;
 };
 
 std::uint16_t ParsePortArg(const char* text, std::uint16_t fallback) {
@@ -54,6 +56,32 @@ std::uint16_t ParsePortArg(const char* text, std::uint16_t fallback) {
     } catch (...) {
         return fallback;
     }
+}
+
+std::vector<splonks::PlayerId> ParsePreferredPlayerIds(const char* text) {
+    std::vector<splonks::PlayerId> result;
+    if (text == nullptr) {
+        return result;
+    }
+    std::string value = text;
+    std::size_t begin = 0;
+    while (begin < value.size()) {
+        const std::size_t comma = value.find(',', begin);
+        const std::string token =
+            value.substr(begin, comma == std::string::npos ? std::string::npos : comma - begin);
+        try {
+            const int player_id = std::stoi(token);
+            if (player_id > 0) {
+                result.push_back(static_cast<splonks::PlayerId>(player_id));
+            }
+        } catch (...) {
+        }
+        if (comma == std::string::npos) {
+            break;
+        }
+        begin = comma + 1;
+    }
+    return result;
 }
 
 StartupNetworkConfig ParseStartupNetworkConfig(int argc, char** argv) {
@@ -75,6 +103,10 @@ StartupNetworkConfig ParseStartupNetworkConfig(int argc, char** argv) {
             if (i + 1 < argc) {
                 config.port = ParsePortArg(argv[++i], config.port);
             }
+            continue;
+        }
+        if (arg == "--preferred-player-ids" && i + 1 < argc) {
+            config.preferred_player_ids = ParsePreferredPlayerIds(argv[++i]);
         }
     }
     return config;
@@ -292,6 +324,7 @@ int main(int argc, char** argv) {
                       state,
                       startup_network.host,
                       startup_network.port,
+                      startup_network.preferred_player_ids,
                       &network_status
                   );
             debug.network_window_visible = true;

@@ -2,6 +2,7 @@
 
 #include "network/net_fuzzer.hpp"
 #include "network/net_limits.hpp"
+#include "network/net_protocol.hpp"
 #include "player_id.hpp"
 
 #include <array>
@@ -61,12 +62,21 @@ struct NetRemoteEndpoint {
     std::uint32_t next_ping_sequence = 1;
 };
 
+struct NetPendingJoinEndpoint {
+    NetEndpoint endpoint;
+    JoinRequestPacket request;
+    std::uint64_t last_heard_pump_tick = 0;
+};
+
 struct NetTransportRuntime {
     UdpSocket socket;
     std::vector<NetRemoteEndpoint> remotes;
+    std::vector<NetPendingJoinEndpoint> pending_join_endpoints;
     std::vector<PlayerId> preferred_player_ids;
     NetEndpoint host_endpoint;
     bool join_request_pending = false;
+    bool join_request_waiting_for_host = false;
+    JoinPendingReason join_pending_reason = JoinPendingReason::None;
     std::uint32_t join_request_retry_frames = 0;
     std::uint64_t next_host_ping_send_time_ms = 0;
     std::uint32_t next_host_ping_sequence = 1;

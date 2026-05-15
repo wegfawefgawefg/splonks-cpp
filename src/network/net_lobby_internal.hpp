@@ -48,8 +48,15 @@ void FlushFuzzedOutgoingPackets(NetTransportRuntime& transport);
 
 void SendJoinRequest(State& state);
 void SendLeaveNotice(State& state);
+void DrainPendingJoinRequestsAsHost(State& state, const Graphics& graphics, NetTransportRuntime& transport);
+void HandleJoinPendingAsPeer(
+    State& state,
+    NetTransportRuntime& transport,
+    const JoinPendingPacket& pending
+);
 bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
+bool IsInputLockstepCatchupBlocking(const State& state);
 void ResetInputLockstepState(State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
 bool ReplayPendingInputLockstepRollback(State& state, Graphics& graphics);
@@ -72,7 +79,7 @@ void HandleJoinBarrierStatus(State& state, const JoinBarrierStatusPacket& packet
 void HandleJoinBarrierResume(State& state, const JoinBarrierResumePacket& packet);
 void HandleJoinBarrierTopology(
     State& state,
-    const Graphics& graphics,
+    Graphics& graphics,
     NetTransportRuntime& transport,
     const JoinBarrierTopologyPacket& packet
 );

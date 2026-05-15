@@ -58,8 +58,11 @@ bool StartHostSession(
     ResetInputLockstepState(state);
     RegisterStageEntLinks(state);
     transport.remotes.clear();
+    transport.pending_join_endpoints.clear();
     transport.preferred_player_ids.clear();
     transport.join_request_pending = false;
+    transport.join_request_waiting_for_host = false;
+    transport.join_pending_reason = JoinPendingReason::None;
     if (status_out != nullptr) {
         *status_out = "Hosting UDP on port " + std::to_string(transport.socket.BoundPort()) + ".";
         const std::vector<std::string> lan_addresses = GetLocalLanIpv4Addresses();
@@ -79,6 +82,7 @@ bool JoinHostSession(
     State& state,
     const std::string& host,
     std::uint16_t port,
+    const std::vector<PlayerId>& preferred_player_ids,
     std::string* status_out
 ) {
     NetTransportRuntime& transport = EnsureTransport(state);
@@ -95,9 +99,13 @@ bool JoinHostSession(
     state.net_session.input_lockstep_enabled = true;
     state.net_session.local_player_id = kPrimaryLocalPlayerId;
     state.net_session.host_player_id = kPrimaryLocalPlayerId;
+    transport.preferred_player_ids = preferred_player_ids;
     transport.host_endpoint = NetEndpoint{.address = host, .port = port};
     transport.remotes.clear();
+    transport.pending_join_endpoints.clear();
     transport.join_request_pending = true;
+    transport.join_request_waiting_for_host = false;
+    transport.join_pending_reason = JoinPendingReason::None;
     transport.join_request_retry_frames = 0;
     ResetInputLockstepState(state);
     SendJoinRequest(state);
@@ -107,12 +115,24 @@ bool JoinHostSession(
     return true;
 }
 
+bool JoinHostSession(
+    State& state,
+    const std::string& host,
+    std::uint16_t port,
+    std::string* status_out
+) {
+    return JoinHostSession(state, host, port, {}, status_out);
+}
+
 void DisconnectSession(State& state, std::string* status_out) {
     if (state.net_transport) {
         SendLeaveNotice(state);
         state.net_transport->socket.Close();
         state.net_transport->remotes.clear();
+        state.net_transport->pending_join_endpoints.clear();
         state.net_transport->join_request_pending = false;
+        state.net_transport->join_request_waiting_for_host = false;
+        state.net_transport->join_pending_reason = JoinPendingReason::None;
     }
     state.net_session = NetSessionState::NewOffline();
     if (status_out != nullptr) {

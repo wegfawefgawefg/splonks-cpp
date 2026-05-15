@@ -252,6 +252,24 @@ SimSnapshot MakeSimSnapshot(const State& state) {
     snapshot.stage = state.stage;
     snapshot.contact = state.contact;
     snapshot.ent_tool_states = state.ent_tools.tool_states;
+    snapshot.net_next_local_ent_id = state.net_session.next_local_ent_id;
+    snapshot.net_ent_links.reserve(state.net_session.ent_links.size());
+    for (const network::NetEntLink& link : state.net_session.ent_links) {
+        snapshot.net_ent_links.push_back(SimNetEntLinkSnapshot{
+            .net_id = link.net_id,
+            .local_vid = link.local_vid,
+            .has_input_owner = link.input_owner_player_id.has_value(),
+            .input_owner_player_id =
+                link.input_owner_player_id.value_or(kInvalidPlayerId),
+        });
+    }
+    snapshot.net_ent_id_aliases.reserve(state.net_session.ent_id_aliases.size());
+    for (const network::NetEntIdAlias& alias : state.net_session.ent_id_aliases) {
+        snapshot.net_ent_id_aliases.push_back(SimNetEntIdAliasSnapshot{
+            .from_id = alias.from_id,
+            .to_id = alias.to_id,
+        });
+    }
     return snapshot;
 }
 
@@ -348,6 +366,26 @@ void RestoreSimSnapshot(const SimSnapshot& snapshot, State& state, Graphics& gra
     state.stage = snapshot.stage;
     state.contact = snapshot.contact;
     state.ent_tools.tool_states = snapshot.ent_tool_states;
+    state.net_session.next_local_ent_id = snapshot.net_next_local_ent_id;
+    state.net_session.ent_links.clear();
+    state.net_session.ent_links.reserve(snapshot.net_ent_links.size());
+    for (const SimNetEntLinkSnapshot& link : snapshot.net_ent_links) {
+        state.net_session.ent_links.push_back(network::NetEntLink{
+            .net_id = link.net_id,
+            .local_vid = link.local_vid,
+            .input_owner_player_id = link.has_input_owner
+                ? std::optional<PlayerId>{link.input_owner_player_id}
+                : std::nullopt,
+        });
+    }
+    state.net_session.ent_id_aliases.clear();
+    state.net_session.ent_id_aliases.reserve(snapshot.net_ent_id_aliases.size());
+    for (const SimNetEntIdAliasSnapshot& alias : snapshot.net_ent_id_aliases) {
+        state.net_session.ent_id_aliases.push_back(network::NetEntIdAlias{
+            .from_id = alias.from_id,
+            .to_id = alias.to_id,
+        });
+    }
     state.world_prompts.clear();
     state.debug_rect_annotations.clear();
     state.debug_label_annotations.clear();

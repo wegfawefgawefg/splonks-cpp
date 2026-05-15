@@ -14,6 +14,27 @@ namespace splonks::network {
 namespace {
 
 constexpr std::uint64_t kRemoteEndpointTimeoutPumpTicks = 180;
+constexpr std::uint64_t kPendingJoinTimeoutPumpTicks = 360;
+
+void DeactivateDepartingAttachedEnt(State& state, std::optional<VID> attached_vid) {
+    if (!attached_vid.has_value()) {
+        return;
+    }
+    const Ent* const attached = state.ents.GetEnt(*attached_vid);
+    if (attached == nullptr || !attached->active || IsPlayerLikeEntType(attached->type_)) {
+        return;
+    }
+    (void)world_ops::DeactivateEnt(state, attached->vid);
+}
+
+void DeactivateDepartingPlayerEnt(State& state, Ent& ent) {
+    const std::optional<VID> held_vid = ent.holding_vid;
+    const std::optional<VID> back_vid = ent.back_vid;
+    (void)ents::common::SeverEntCarryLinksForReset(ent, state);
+    DeactivateDepartingAttachedEnt(state, held_vid);
+    DeactivateDepartingAttachedEnt(state, back_vid);
+    (void)world_ops::DeactivateEnt(state, ent.vid);
+}
 
 } // namespace
 
@@ -44,26 +65,19 @@ void RemoveRemotePlayers(
                 if (slot->ent_vid.has_value()) {
                     if (Ent* const ent = state.ents.GetEntMut(*slot->ent_vid)) {
                         if (ent->active) {
-                            const std::optional<VID> held_vid = ent->holding_vid;
-                            const std::optional<VID> back_vid = ent->back_vid;
                             StoreRetainedPlayerState(state, *slot, *ent);
-                            const NetRetainedPlayerState* const retained =
-                                FindRetainedPlayerState(state, player_id);
-                            const std::vector<VID> changed_ents =
-                                ents::common::SeverEntCarryLinksForReset(*ent, state);
-                            (void)changed_ents;
-                            if (retained != nullptr) {
-                                DeactivateRetainedAttachedEnt(state, retained->held_item, held_vid);
-                                DeactivateRetainedAttachedEnt(state, retained->back_item, back_vid);
-                            }
-                            (void)world_ops::DeactivateEnt(state, ent->vid);
+                            DeactivateDepartingPlayerEnt(state, *ent);
                         }
                     }
                 }
                 state.players.Remove(player_id);
                 state.net_session.UnlinkEnt(MakePlayerNetEntId(player_id));
             } else if (slot->ent_vid.has_value()) {
-                state.ents.SetInactiveVid(*slot->ent_vid);
+                if (Ent* const ent = state.ents.GetEntMut(*slot->ent_vid)) {
+                    if (ent->active) {
+                        DeactivateDepartingPlayerEnt(state, *ent);
+                    }
+                }
             }
         }
         if (state.net_session.role == NetRole::Host) {
@@ -149,6 +163,19 @@ void RemoveRemoteEndpoint(
 }
 
 void CleanupTimedOutRemoteEndpoints(State& state, NetTransportRuntime& transport) {
+    transport.pending_join_endpoints.erase(
+        std::remove_if(
+            transport.pending_join_endpoints.begin(),
+            transport.pending_join_endpoints.end(),
+            [&](const NetPendingJoinEndpoint& pending) {
+                return transport.pump_tick > pending.last_heard_pump_tick &&
+                    transport.pump_tick - pending.last_heard_pump_tick >
+                        kPendingJoinTimeoutPumpTicks;
+            }
+        ),
+        transport.pending_join_endpoints.end()
+    );
+
     std::vector<NetEndpoint> timed_out;
     for (const NetRemoteEndpoint& remote : transport.remotes) {
         if (transport.pump_tick > remote.last_heard_pump_tick &&

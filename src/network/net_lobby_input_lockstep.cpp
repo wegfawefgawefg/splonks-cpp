@@ -418,8 +418,7 @@ void ClearJoinBarrierTransfer(State& state) {
     state.net_session.lockstep_snapshot_resync_waiting_for_ack = false;
 }
 
-void ClearJoinBarrier(State& state) {
-    const LockstepFrame resume_frame = state.net_session.lockstep_next_frame_to_step;
+void ClearJoinBarrierFields(State& state) {
     state.net_session.join_barrier_active = false;
     state.net_session.join_barrier_phase = JoinBarrierPhase::None;
     state.net_session.join_barrier_queue.clear();
@@ -427,6 +426,11 @@ void ClearJoinBarrier(State& state) {
     state.net_session.join_barrier_joined_player_ids.clear();
     state.net_session.join_barrier_removed_player_ids.clear();
     ClearJoinBarrierTransfer(state);
+}
+
+void ClearJoinBarrier(State& state) {
+    const LockstepFrame resume_frame = state.net_session.lockstep_next_frame_to_step;
+    ClearJoinBarrierFields(state);
     ClearLockstepHashState(state);
     SetPostCatchupHashQuietWindow(state, resume_frame);
 }
@@ -1299,6 +1303,26 @@ LockstepInputRecord MakeLockstepInputRecord(const InputFrameRecordEntry& entry) 
     return record;
 }
 
+LockstepFrame FirstInputFrameThatFitsPacket(
+    LockstepFrame last_frame,
+    std::size_t player_count,
+    std::size_t max_records
+) {
+    if (player_count == 0 || max_records == 0) {
+        return last_frame;
+    }
+
+    const std::size_t frames_that_fit = std::max<std::size_t>(1, max_records / player_count);
+    const auto history_frames = static_cast<LockstepFrame>(std::min<std::size_t>(
+        frames_that_fit,
+        static_cast<std::size_t>(kInputHistoryFrames + 1)
+    ));
+    if (last_frame + 1 <= history_frames) {
+        return 0;
+    }
+    return last_frame + 1 - history_frames;
+}
+
 InputFrameRecordsPacket BuildLocalInputFramePacket(State& state) {
     InputFrameRecordsPacket packet;
     packet.stage_instance_id = state.net_session.stage_instance_id;
@@ -1311,9 +1335,11 @@ InputFrameRecordsPacket BuildLocalInputFramePacket(State& state) {
             return packet;
         }
         const LockstepFrame last_frame = state.net_session.lockstep_next_frame_to_step - 1;
-        const LockstepFrame first_frame = last_frame > kInputHistoryFrames
-            ? last_frame - kInputHistoryFrames
-            : 0;
+        const LockstepFrame first_frame = FirstInputFrameThatFitsPacket(
+            last_frame,
+            connected_player_ids.size(),
+            packet.records.size()
+        );
         state.net_session.lockstep_input_buffer.CollectCanonicalRecords(
             connected_player_ids,
             first_frame,
@@ -1328,9 +1354,11 @@ InputFrameRecordsPacket BuildLocalInputFramePacket(State& state) {
         }
 
         const LockstepFrame last_frame = state.net_session.lockstep_next_local_input_frame - 1;
-        const LockstepFrame first_frame = last_frame > kInputHistoryFrames
-            ? last_frame - kInputHistoryFrames
-            : 0;
+        const LockstepFrame first_frame = FirstInputFrameThatFitsPacket(
+            last_frame,
+            local_player_ids.size(),
+            packet.records.size()
+        );
         state.net_session.lockstep_input_buffer.CollectRecords(
             local_player_ids,
             first_frame,
@@ -1691,6 +1719,45 @@ void StoreHostCanonicalInput(
     }
 }
 
+void SeedLockstepInputBaselineForPlayers(
+    State& state,
+    const std::vector<PlayerId>& player_ids,
+    LockstepFrame barrier_frame
+) {
+    if (player_ids.empty()) {
+        return;
+    }
+
+    LockstepFrame baseline_frame = barrier_frame > 0 ? barrier_frame - 1 : 0;
+    baseline_frame = std::max<LockstepFrame>(
+        baseline_frame,
+        static_cast<LockstepFrame>(state.net_session.lockstep_input_delay_frames)
+    );
+
+    for (PlayerId player_id : player_ids) {
+        if (player_id == kInvalidPlayerId) {
+            continue;
+        }
+        const std::optional<LockstepFrame> latest =
+            state.net_session.lockstep_input_buffer.LatestFrameForPlayer(
+                player_id,
+                false
+            );
+        if (latest.has_value() && *latest >= baseline_frame) {
+            continue;
+        }
+
+        LockstepInputRecord baseline;
+        baseline.player_id = player_id;
+        baseline.frame = baseline_frame;
+        baseline.sequence = state.net_session.lockstep_next_input_sequence++;
+        baseline.input = InputFrame::New();
+        baseline.predicted = false;
+        baseline.canonical = false;
+        (void)state.net_session.lockstep_input_buffer.Store(baseline);
+    }
+}
+
 bool BuildOrPredictFrameInputs(
     State& state,
     const std::vector<PlayerId>& required_players,
@@ -2008,9 +2075,41 @@ void HandleJoinBarrierStatus(State& state, const JoinBarrierStatusPacket& packet
     state.net_session.join_barrier_bytes_done = packet.bytes_done;
 }
 
+void SendJoinBarrierTopologyAck(
+    State& state,
+    NetTransportRuntime& transport,
+    std::uint32_t barrier_id,
+    std::uint8_t success
+) {
+    JoinBarrierTopologyAckPacket ack;
+    ack.stage_instance_id = state.net_session.stage_instance_id;
+    ack.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
+    ack.barrier_id = barrier_id;
+    ack.success = success;
+    SendEncodedPacket(transport, transport.host_endpoint, EncodeJoinBarrierTopologyAck(ack));
+}
+
+bool RestoreTopologyBarrierFrame(
+    State& state,
+    Graphics& graphics,
+    LockstepFrame barrier_frame
+) {
+    if (state.net_session.lockstep_next_frame_to_step <= barrier_frame) {
+        return true;
+    }
+
+    const SimSnapshot* const snapshot = FindRollbackSnapshot(state, barrier_frame);
+    if (snapshot == nullptr) {
+        return false;
+    }
+
+    RestoreSimSnapshot(*snapshot, state, graphics);
+    return true;
+}
+
 void HandleJoinBarrierTopology(
     State& state,
-    const Graphics& graphics,
+    Graphics& graphics,
     NetTransportRuntime& transport,
     const JoinBarrierTopologyPacket& packet
 ) {
@@ -2020,12 +2119,19 @@ void HandleJoinBarrierTopology(
         return;
     }
 
+    if (!RestoreTopologyBarrierFrame(state, graphics, packet.barrier_frame)) {
+        SendJoinBarrierTopologyAck(state, transport, packet.barrier_id, 0);
+        return;
+    }
+
     state.net_session.join_barrier_active = true;
     state.net_session.join_barrier_id = packet.barrier_id;
     state.net_session.join_barrier_phase = JoinBarrierPhase::WaitingForResume;
     state.net_session.lockstep_next_frame_to_step = packet.barrier_frame;
-    state.net_session.lockstep_next_local_input_frame = packet.barrier_frame;
-    state.net_session.lockstep_input_buffer = LockstepInputBuffer{};
+    state.net_session.lockstep_next_local_input_frame = std::max<LockstepFrame>(
+        state.net_session.lockstep_next_local_input_frame,
+        packet.barrier_frame
+    );
     state.net_session.lockstep_rollback_snapshots.clear();
     state.net_session.lockstep_rollback_requested_frame = std::nullopt;
     state.net_session.join_barrier_joined_player_ids.clear();
@@ -2068,25 +2174,30 @@ void HandleJoinBarrierTopology(
         );
     }
 
-    JoinBarrierTopologyAckPacket ack;
-    ack.stage_instance_id = state.net_session.stage_instance_id;
-    ack.sender_peer_id = static_cast<std::uint32_t>(state.net_session.local_player_id);
-    ack.barrier_id = packet.barrier_id;
-    ack.success = 1;
-    SendEncodedPacket(transport, transport.host_endpoint, EncodeJoinBarrierTopologyAck(ack));
+    SeedLockstepInputBaselineForPlayers(
+        state,
+        state.net_session.join_barrier_joined_player_ids,
+        packet.barrier_frame
+    );
+
+    SendJoinBarrierTopologyAck(state, transport, packet.barrier_id, 1);
 }
 
 void HandleJoinBarrierTopologyAck(State& state, const JoinBarrierTopologyAckPacket& packet) {
     if (state.net_session.role != NetRole::Host ||
         !state.net_session.join_barrier_active ||
         packet.stage_instance_id != state.net_session.stage_instance_id ||
-        packet.barrier_id != state.net_session.join_barrier_id ||
-        packet.success == 0) {
+        packet.barrier_id != state.net_session.join_barrier_id) {
         return;
     }
     const PlayerId peer_id = static_cast<PlayerId>(packet.sender_peer_id);
     std::vector<PlayerId>& peers = state.net_session.join_barrier_topology_ack_peers;
     peers.erase(std::remove(peers.begin(), peers.end(), peer_id), peers.end());
+    if (packet.success == 0) {
+        QueueJoinBarrierPeer(state, peer_id);
+        state.net_session.join_barrier_phase = JoinBarrierPhase::WaitingForCatchup;
+        return;
+    }
     if (JoinBarrierReadyToResume(state)) {
         state.net_session.join_barrier_phase = JoinBarrierPhase::ReadyToResume;
     }
@@ -2336,6 +2447,11 @@ bool IsInputLockstepSession(const State& state) {
            state.net_session.input_lockstep_enabled;
 }
 
+bool IsInputLockstepCatchupBlocking(const State& state) {
+    return IsInputLockstepSession(state) &&
+           (IsJoinBarrierBlocking(state) || IsSnapshotResyncBlocking(state));
+}
+
 bool ForceLockstepSnapshotResync(
     State& state,
     PlayerId target_player_id,
@@ -2465,6 +2581,7 @@ void ResetInputLockstepState(State& state) {
     state.net_session.lockstep_arbitrated_neutral_input_count = 0;
     state.net_session.lockstep_last_arbitrated_missing_span = 0;
     state.net_session.lockstep_arbitration_stats_by_player.clear();
+    ClearJoinBarrierFields(state);
 }
 
 bool ReplayPendingInputLockstepRollback(State& state, Graphics& graphics) {
@@ -2496,9 +2613,6 @@ bool PrepareInputLockstepFrame(State& state, Graphics& graphics) {
     if (IsSnapshotResyncBlocking(state)) {
         FlushFuzzedOutgoingPackets(transport);
         state.net_session.fuzzer_stats = transport.fuzzer_stats;
-        return false;
-    }
-    if (state.net_session.role == NetRole::Host && transport.remotes.empty()) {
         return false;
     }
     if (state.net_session.role == NetRole::Peer && transport.join_request_pending) {

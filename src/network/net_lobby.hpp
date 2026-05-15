@@ -3,6 +3,7 @@
 #include "network/net_transport.hpp"
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace splonks {
 
@@ -19,7 +20,19 @@ bool StartHostSession(
     std::uint32_t input_delay_frames,
     std::string* status_out
 );
-bool JoinHostSession(State& state, const std::string& host, std::uint16_t port, std::string* status_out);
+bool JoinHostSession(
+    State& state,
+    const std::string& host,
+    std::uint16_t port,
+    std::string* status_out
+);
+bool JoinHostSession(
+    State& state,
+    const std::string& host,
+    std::uint16_t port,
+    const std::vector<PlayerId>& preferred_player_ids,
+    std::string* status_out
+);
 void DisconnectSession(State& state, std::string* status_out);
 bool ReviveNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
 bool RespawnDeadNetworkPlayersAtEntrance(State& state, const Graphics& graphics, std::string* status_out);
@@ -34,6 +47,7 @@ bool ScheduleLockstepSettingsChange(
 bool ForceLockstepSnapshotResync(State& state, PlayerId target_player_id, std::string* status_out);
 bool IsInputLockstepSession(const State& state);
 bool IsInputLockstepActive(const State& state);
+bool IsInputLockstepCatchupBlocking(const State& state);
 bool PrepareInputLockstepFrame(State& state, Graphics& graphics);
 void StepNetworkLobby(State& state, Graphics& graphics);
 bool IsTransportOpen(const State& state);
